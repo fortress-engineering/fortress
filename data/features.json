@@ -244,6 +244,15 @@
             "T-REPO-MODULE-001-R01-002",
             "T-REPO-MODULE-001-R01-003"
           ]
+        },
+        {
+          "id": "AF-SNAPSHOT-GOVERNANCE-0001-R10",
+          "statement": "REPO-DOCS-001 parses canonical Module Markdown structurally, validates typed Module contracts, and deterministically reconciles filesystem catalogs, child catalogs, relationship projections, and relative links without treating unsupported source-dependency inference as evaluated.",
+          "tests": [
+            "T-REPO-DOCS-001-R01-001",
+            "T-REPO-DOCS-001-R01-002",
+            "T-REPO-DOCS-001-R01-003"
+          ]
         }
       ]
     },

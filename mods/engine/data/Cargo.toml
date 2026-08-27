@@ -33,6 +33,10 @@ name = "repo_module_001"
 path = "../mods/snapshot_governance/mods/testing/code/repo_module_001.rs"
 
 [[test]]
+name = "repo_docs_001"
+path = "../mods/snapshot_governance/mods/testing/code/repo_docs_001.rs"
+
+[[test]]
 name = "repository_observation"
 path = "../mods/repository_observation/mods/testing/code/repository_observation.rs"
 
@@ -61,6 +65,7 @@ name = "test_traceability_001"
 path = "../mods/snapshot_governance/mods/testing/code/test_traceability_001.rs"
 
 [dependencies]
+pulldown-cmark = { version = "0.13", default-features = false }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 sha2 = "0.10"

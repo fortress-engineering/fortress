@@ -1,0 +1,6 @@
+{
+  "schema_version": 1,
+  "case": "valid_multi_relationship_target",
+  "expected_relationship_target_count": 1,
+  "expected_relationship_types": ["depends_on", "verifies"]
+}

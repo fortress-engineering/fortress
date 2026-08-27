@@ -1,0 +1,32 @@
+{
+  "$schema": "urn:fortress:schema:v1:rule",
+  "schema_version": 1,
+  "id": "REPO-DOCS-001",
+  "title": "Canonical Module documentation and contract synchronization",
+  "status": "draft",
+  "statement": "Every Module MUST contain a valid canonical contract.json and structurally canonical README.md. Each present code/data/info/mods elemental class MUST have exactly one corresponding canonical documentation file whose direct-element catalog is bijective with the filesystem. README relationship projections MUST be bijective with authoritative typed outbound Module contract relationships, and every relative Markdown link MUST resolve.",
+  "rationale": "Separating filesystem containment, typed machine authority, and synchronized human explanation gives each architectural fact one authority while making the complete Module graph independently inspectable by tools and people.",
+  "failure_prevented": "Stale file catalogs, undocumented child Modules, phantom documentation, broken links, Markdown-only architecture, invisible contract edges, duplicate relationship authority, placeholder prose, and documentation structure that silently diverges from the governed repository.",
+  "applicability": "Every Module in a governed repository using the canonical recursive Module grammar.",
+  "category": "documentation",
+  "integrity_tier": 1,
+  "evaluation": "The Fortress core rereads snapshot-bound files, parses canonical Markdown through a CommonMark event parser, validates exact heading grammars and substantive sections, reconciles direct Code/Data/Info and child Module catalogs, loads canonical Module contracts, validates stable typed relationship targets and dependency acyclicity, reconciles README relationship projections, and resolves relative links deterministically.",
+  "required_capabilities": [
+    "stabilized-repository-observation",
+    "canonical-markdown-parser",
+    "module-contract-loader",
+    "recursive-module-discovery"
+  ],
+  "finding": {
+    "message": "A Module contract, canonical Markdown document, catalog, relationship projection, or relative link violates the synchronized documentation grammar.",
+    "location": "path"
+  },
+  "remediation": "Converge the Module contract and canonical Markdown to the documented grammar, restore exact filesystem catalogs and child catalogs, resolve every relative link, and make README relationship projections exactly match typed outbound contract relationships.",
+  "valid_example": "An atomic Module has README.md, contract.json, code/, and docs/code_docs.md; its Files catalog names every direct Code element exactly once and its README Relationships entries exactly project its contract edges.",
+  "invalid_example": "A Module omits contract.json, uses a noncanonical heading, catalogs a phantom file or grandchild, leaves a child out of mods_docs.md, links to a renamed Module, or explains a dependency absent from its contract.",
+  "exception_policy": "Canonical Module Markdown and contract synchronization have no local exemptions. A future standard edition may change the grammar through a versioned rule contract, not repository-specific prose.",
+  "introduced": "1.0.0-draft.1",
+  "history": [
+    "Introduced after recursive Module convergence to establish machine contract authority and mechanically synchronized human documentation."
+  ]
+}

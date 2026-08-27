@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "cases": [
+    { "name": "missing_readme", "expected": "missing canonical `README.md`" },
+    { "name": "missing_contract", "expected": "missing canonical `contract.json`" },
+    { "name": "missing_companion_docs", "expected": "missing `docs/code_docs.md`" },
+    { "name": "orphan_companion_docs", "expected": "without `data/`" },
+    { "name": "extra_file_under_docs", "expected": "not an applicable direct canonical Module documentation file" },
+    { "name": "subdirectory_under_docs", "expected": "not an applicable direct canonical Module documentation file" },
+    { "name": "wrong_h1", "expected": "exactly one H1" },
+    { "name": "missing_h2", "expected": "H2 sections must be exactly" },
+    { "name": "reordered_h2", "expected": "H2 sections must be exactly" },
+    { "name": "extra_h2", "expected": "H2 sections must be exactly" },
+    { "name": "illegal_h3", "expected": "is not allowed beneath README section" },
+    { "name": "h4_heading", "expected": "prohibited H4 depth" },
+    { "name": "empty_required_section", "expected": "has no substantive content" },
+    { "name": "placeholder_content", "expected": "contains placeholder content" },
+    { "name": "missing_code_entry", "expected": "Physical `code` element" },
+    { "name": "phantom_code_entry", "expected": "Documented `code` element" },
+    { "name": "missing_data_entry", "expected": "Physical `data` element" },
+    { "name": "missing_info_entry", "expected": "Physical `info` element" },
+    { "name": "missing_child_module", "expected": "Physical `mods` element" },
+    { "name": "phantom_child_module", "expected": "does not identify an immediate physical child README" },
+    { "name": "grandchild_cataloged_by_parent", "expected": "does not identify an immediate physical child README" },
+    { "name": "broken_child_readme_link", "expected": "broken or stale" },
+    { "name": "contract_relationship_missing_readme", "expected": "missing from README `Relationships`" },
+    { "name": "readme_relationship_absent_contract", "expected": "has no Module contract authority" },
+    { "name": "mismatched_relationship_type", "expected": "do not match the Module contract" },
+    { "name": "stale_renamed_module_relationship", "expected": "stale relationship to nonexistent Module" }
+  ]
+}
