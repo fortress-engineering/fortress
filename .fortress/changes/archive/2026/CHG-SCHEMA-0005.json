@@ -1,8 +1,8 @@
 {
-  "$schema": "../../../schemas/v1/change.schema.json",
+  "$schema": "../../../../schemas/v1/change.schema.json",
   "schema_version": 1,
   "id": "CHG-SCHEMA-0005",
-  "status": "verifying",
+  "status": "archived",
   "objective": "Make the standard manifest's declared local $schema reference valid under its own additional-properties contract.",
   "baseline": {
     "commit": "eb40239949dd13bb95b65a871fa67e6cbab3cb8c",
@@ -31,7 +31,7 @@
   ],
   "result": {
     "certification_claim": "NOT CERTIFIED",
-    "commit": null,
-    "note": "A valid schema contract and passing local checks do not create certification evidence."
+    "commit": "30a57fd86dd86373b7529d60878161d54120a99b",
+    "note": "The schema repair commit is recorded exactly. A valid schema contract and passing local checks do not create certification evidence."
   }
 }
