@@ -73,6 +73,17 @@ jobs:
           cmp "$first" "$second"
           cmp "$first" info/behavioral_flow_graph.json
 
+      - name: Verify deterministic committed self-PSM
+        shell: bash
+        run: |
+          first="$(mktemp)"
+          second="$(mktemp)"
+          trap 'rm -f "$first" "$second"' EXIT
+          cargo +1.97.1 --config data/cargo_config.toml run --quiet --manifest-path data/Cargo.toml -p fortress-cli -- psm . --format json --output "$first"
+          cargo +1.97.1 --config data/cargo_config.toml run --quiet --manifest-path data/Cargo.toml -p fortress-cli -- psm . --format json --output "$second"
+          cmp "$first" "$second"
+          cmp "$first" info/program_semantic_model.json
+
       - name: Run Fortress self-audit
         run: cargo +1.97.1 --config data/cargo_config.toml run --quiet --manifest-path data/Cargo.toml -p fortress-cli -- audit .
 
