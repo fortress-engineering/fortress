@@ -180,6 +180,13 @@ Root files must be explicitly approved. The root should remain navigable and ins
 
 External-tool configuration that Fortress generates or governs must be documented as a projection rather than hidden independent policy.
 
+The bootstrap-approved root files are `AGENTS.md`, `CONTRIBUTING.md`,
+`GOVERNANCE.md`, `SECURITY.md`, `README.md`, `Cargo.toml`, `Cargo.lock`,
+`rust-toolchain.toml`, and `.gitignore`. `LICENSE` remains intentionally absent
+pending owner authorization. `rust-toolchain.toml` pins the implementation
+toolchain used for reproducible validation; `.gitignore` separates build and
+transient Fortress runtime state from durable repository authority.
+
 ## Naming and placement
 
 Repository paths should use predictable lowercase naming unless ecosystem conventions require otherwise.

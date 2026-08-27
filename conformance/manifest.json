@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "rules": [
+    {
+      "rule_id": "STD-ID-001",
+      "valid": "rules/STD-ID-001/valid/identifier.txt",
+      "invalid": "rules/STD-ID-001/invalid/identifier.txt",
+      "boundary": "rules/STD-ID-001/boundary/identifier.txt",
+      "expected_invalid": "rules/STD-ID-001/expected/invalid.json",
+      "exemption": "not-applicable",
+      "conflict": "not-applicable"
+    }
+  ]
+}
