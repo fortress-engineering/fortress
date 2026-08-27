@@ -1,0 +1,22 @@
+{
+  "$schema": "schemas/v1/project.schema.json",
+  "schema_version": 1,
+  "id": "PF-FORTRESS",
+  "name": "Fortress",
+  "standard": {
+    "id": "STD-FORTRESS-ENGINEERING",
+    "edition": "1.0.0-draft.1",
+    "status": "draft",
+    "digest": null
+  },
+  "archetypes": ["package.library"],
+  "capabilities": [],
+  "languages": ["rust"],
+  "model": {
+    "architecture": "../outside.json",
+    "features": [".fortress/features/bootstrap.json"],
+    "commands": ".fortress/commands/core.json",
+    "certifications": ".fortress/certifications/bootstrap.json",
+    "active_changes": []
+  }
+}
