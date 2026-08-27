@@ -26,6 +26,10 @@ Provides the shared canonical finding representation used across rule-family bou
 
 Analyzes snapshot-bound Rust source independently and emits deterministic implementation dependency facts with provenance.
 
+### [Program Semantics](../mods/program_semantics/README.md)
+
+Analyzes snapshot-bound source into deterministic executable symbols, typed interfaces, calls, bounded value transfers, and cross-Module program facts.
+
 ### [Project Model](../mods/project_model/README.md)
 
 Provides the declared engineering subject and evidence obligations consumed by observation and Snapshot Governance.

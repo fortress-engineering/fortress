@@ -187,13 +187,14 @@
         "AF-CONTRACT-COHERENCY-0001",
         "AF-FINDING-MODEL-0001",
         "AF-IMPLEMENTATION-OBSERVATION-0001",
+        "AF-PROGRAM-SEMANTICS-0001",
         "AF-PROJECT-MODEL-0001",
         "AF-REPOSITORY-OBSERVATION-0001",
         "AF-SNAPSHOT-GOVERNANCE-0001",
         "AF-STANDARD-REGISTRY-0001"
       ],
       "contract_source": "mods/engine/contract.json",
-      "contract_digest": "sha256:e1d643e6aebb05d1e98707988e95d1f9e96bef6412e539a12ceb02d511b8253a",
+      "contract_digest": "sha256:2988925f0c714bbc1a33ba226ffdf153b35fa5771e805ef39cc9d8a1a2ea263d",
       "provenance": {
         "path": "mods/engine/contract.json",
         "pointer": "/"
@@ -229,6 +230,22 @@
         "pointer": "/"
       },
       "containment_derivation": "containment:AF-IMPLEMENTATION-OBSERVATION-0001"
+    },
+    {
+      "id": "AF-PROGRAM-SEMANTICS-0001",
+      "display_name": "Program Semantics",
+      "path": "mods/engine/mods/program_semantics",
+      "parent": "AF-CORE-0001",
+      "children": [
+        "TEST-PROGRAM-SEMANTICS-0001"
+      ],
+      "contract_source": "mods/engine/mods/program_semantics/contract.json",
+      "contract_digest": "sha256:5f92cfe14adb2050c1ea33316518299e0a496bb4387009bd1c2612ed246fa9bc",
+      "provenance": {
+        "path": "mods/engine/mods/program_semantics/contract.json",
+        "pointer": "/"
+      },
+      "containment_derivation": "containment:AF-PROGRAM-SEMANTICS-0001"
     },
     {
       "id": "AF-PROJECT-MODEL-0001",
@@ -271,7 +288,7 @@
         "TEST-SNAPSHOT-GOVERNANCE-0001"
       ],
       "contract_source": "mods/engine/mods/snapshot_governance/contract.json",
-      "contract_digest": "sha256:19472cf22b14f9a8ce2a179ca489331bf3dc3d67235917974e51685d7b718b1d",
+      "contract_digest": "sha256:df6cf669a3c6ae7d2a926d4595668fa9b5349817993c124bbb8a0dac8bd1c4c5",
       "provenance": {
         "path": "mods/engine/mods/snapshot_governance/contract.json",
         "pointer": "/"
@@ -383,6 +400,20 @@
       "containment_derivation": "containment:TEST-IMPLEMENTATION-OBSERVATION-0001"
     },
     {
+      "id": "TEST-PROGRAM-SEMANTICS-0001",
+      "display_name": "Testing",
+      "path": "mods/engine/mods/program_semantics/mods/testing",
+      "parent": "AF-PROGRAM-SEMANTICS-0001",
+      "children": [],
+      "contract_source": "mods/engine/mods/program_semantics/mods/testing/contract.json",
+      "contract_digest": "sha256:27967583625e4162fd6bd6c8e1774e37d0aa26ea4db6612d3e75160386ada434",
+      "provenance": {
+        "path": "mods/engine/mods/program_semantics/mods/testing/contract.json",
+        "pointer": "/"
+      },
+      "containment_derivation": "containment:TEST-PROGRAM-SEMANTICS-0001"
+    },
+    {
       "id": "TEST-PROJECT-MODEL-0001",
       "display_name": "Project Model Testing",
       "path": "mods/engine/mods/project_model/mods/testing",
@@ -447,7 +478,7 @@
         "TEST-CLI-0001"
       ],
       "contract_source": "mods/cli/contract.json",
-      "contract_digest": "sha256:3aa671834c0987ba17127426ec366734c8d123d910cd38b8ae3f842f3dab01b3",
+      "contract_digest": "sha256:48597b6abe8855b3a02b9c7f9a17bc8aac5d778b4d4e17527a9dc842ad8bcaf4",
       "provenance": {
         "path": "mods/cli/contract.json",
         "pointer": "/"
@@ -479,6 +510,7 @@
         "TEST-CLI-0001",
         "TEST-FORTRESS-0001",
         "TEST-IMPLEMENTATION-OBSERVATION-0001",
+        "TEST-PROGRAM-SEMANTICS-0001",
         "TEST-PROJECT-MODEL-0001",
         "TEST-REPOSITORY-OBSERVATION-0001",
         "TEST-STANDARD-REGISTRY-0001",
@@ -510,6 +542,7 @@
         "TEST-CLI-0001",
         "TEST-FORTRESS-0001",
         "TEST-IMPLEMENTATION-OBSERVATION-0001",
+        "TEST-PROGRAM-SEMANTICS-0001",
         "TEST-PROJECT-MODEL-0001",
         "TEST-REPOSITORY-OBSERVATION-0001",
         "TEST-SNAPSHOT-GOVERNANCE-0001",
@@ -531,6 +564,7 @@
         "AF-BEHAVIORAL-SEMANTICS-0001",
         "AF-CONTRACT-COHERENCY-TESTING-0001",
         "AF-CORE-0001",
+        "AF-PROGRAM-SEMANTICS-0001",
         "AF-SNAPSHOT-GOVERNANCE-0001",
         "TEST-ARCHITECTURE-EVALUATION-0001",
         "TEST-BEHAVIORAL-SEMANTICS-0001",
@@ -543,6 +577,7 @@
         "requires:AF-BEHAVIORAL-SEMANTICS-0001:CAP-CONTRACT-COHERENCY",
         "requires:TEST-BEHAVIORAL-SEMANTICS-0001:CAP-CONTRACT-COHERENCY",
         "requires:AF-CONTRACT-COHERENCY-TESTING-0001:CAP-CONTRACT-COHERENCY",
+        "requires:AF-PROGRAM-SEMANTICS-0001:CAP-CONTRACT-COHERENCY",
         "requires:AF-SNAPSHOT-GOVERNANCE-0001:CAP-CONTRACT-COHERENCY",
         "requires:TEST-SNAPSHOT-GOVERNANCE-0001:CAP-CONTRACT-COHERENCY"
       ],
@@ -550,6 +585,7 @@
         "TEST-CLI-0001",
         "TEST-FORTRESS-0001",
         "TEST-IMPLEMENTATION-OBSERVATION-0001",
+        "TEST-PROGRAM-SEMANTICS-0001",
         "TEST-PROJECT-MODEL-0001",
         "TEST-REPOSITORY-OBSERVATION-0001",
         "TEST-STANDARD-REGISTRY-0001",
@@ -586,6 +622,7 @@
         "TEST-CLI-0001",
         "TEST-FORTRESS-0001",
         "TEST-IMPLEMENTATION-OBSERVATION-0001",
+        "TEST-PROGRAM-SEMANTICS-0001",
         "TEST-PROJECT-MODEL-0001",
         "TEST-REPOSITORY-OBSERVATION-0001",
         "TEST-STANDARD-REGISTRY-0001",
@@ -627,6 +664,7 @@
         "TEST-CLI-0001",
         "TEST-FORTRESS-0001",
         "TEST-IMPLEMENTATION-OBSERVATION-0001",
+        "TEST-PROGRAM-SEMANTICS-0001",
         "TEST-PROJECT-MODEL-0001",
         "TEST-REPOSITORY-OBSERVATION-0001",
         "TEST-SNAPSHOT-GOVERNANCE-0001",
@@ -640,6 +678,7 @@
         "requires:TEST-BEHAVIORAL-SEMANTICS-0001:CAP-FORTRESS-ENGINE",
         "requires:AF-CONTRACT-COHERENCY-TESTING-0001:CAP-FORTRESS-ENGINE",
         "requires:TEST-IMPLEMENTATION-OBSERVATION-0001:CAP-FORTRESS-ENGINE",
+        "requires:TEST-PROGRAM-SEMANTICS-0001:CAP-FORTRESS-ENGINE",
         "requires:TEST-PROJECT-MODEL-0001:CAP-FORTRESS-ENGINE",
         "requires:TEST-REPOSITORY-OBSERVATION-0001:CAP-FORTRESS-ENGINE",
         "requires:TEST-SNAPSHOT-GOVERNANCE-0001:CAP-FORTRESS-ENGINE",
@@ -660,6 +699,7 @@
       "direct_consumers": [
         "AF-ARCHITECTURE-EVALUATION-0001",
         "AF-CORE-0001",
+        "AF-PROGRAM-SEMANTICS-0001",
         "AF-SNAPSHOT-GOVERNANCE-0001",
         "TEST-ARCHITECTURE-EVALUATION-0001",
         "TEST-IMPLEMENTATION-OBSERVATION-0001"
@@ -669,6 +709,7 @@
         "requires:AF-ARCHITECTURE-EVALUATION-0001:CAP-IMPLEMENTATION-OBSERVATION",
         "requires:TEST-ARCHITECTURE-EVALUATION-0001:CAP-IMPLEMENTATION-OBSERVATION",
         "requires:TEST-IMPLEMENTATION-OBSERVATION-0001:CAP-IMPLEMENTATION-OBSERVATION",
+        "requires:AF-PROGRAM-SEMANTICS-0001:CAP-IMPLEMENTATION-OBSERVATION",
         "requires:AF-SNAPSHOT-GOVERNANCE-0001:CAP-IMPLEMENTATION-OBSERVATION"
       ],
       "transitively_reachable_by": [
@@ -676,6 +717,7 @@
         "TEST-BEHAVIORAL-SEMANTICS-0001",
         "TEST-CLI-0001",
         "TEST-FORTRESS-0001",
+        "TEST-PROGRAM-SEMANTICS-0001",
         "TEST-PROJECT-MODEL-0001",
         "TEST-REPOSITORY-OBSERVATION-0001",
         "TEST-SNAPSHOT-GOVERNANCE-0001",
@@ -684,6 +726,39 @@
       ],
       "provenance": {
         "path": "mods/engine/mods/implementation_observation/contract.json",
+        "pointer": "/provides/0"
+      }
+    },
+    {
+      "id": "CAP-PROGRAM-SEMANTICS",
+      "provider": "AF-PROGRAM-SEMANTICS-0001",
+      "version": "0.1.0",
+      "visibility": "project",
+      "direct_consumers": [
+        "AF-CORE-0001",
+        "AF-SNAPSHOT-GOVERNANCE-0001",
+        "TEST-PROGRAM-SEMANTICS-0001"
+      ],
+      "direct_requirements": [
+        "requires:AF-CORE-0001:CAP-PROGRAM-SEMANTICS",
+        "requires:TEST-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS",
+        "requires:AF-SNAPSHOT-GOVERNANCE-0001:CAP-PROGRAM-SEMANTICS"
+      ],
+      "transitively_reachable_by": [
+        "AF-CONTRACT-COHERENCY-TESTING-0001",
+        "TEST-ARCHITECTURE-EVALUATION-0001",
+        "TEST-BEHAVIORAL-SEMANTICS-0001",
+        "TEST-CLI-0001",
+        "TEST-FORTRESS-0001",
+        "TEST-IMPLEMENTATION-OBSERVATION-0001",
+        "TEST-PROJECT-MODEL-0001",
+        "TEST-REPOSITORY-OBSERVATION-0001",
+        "TEST-SNAPSHOT-GOVERNANCE-0001",
+        "TEST-STANDARD-REGISTRY-0001",
+        "TF-CLI-0001"
+      ],
+      "provenance": {
+        "path": "mods/engine/mods/program_semantics/contract.json",
         "pointer": "/provides/0"
       }
     },
@@ -713,6 +788,7 @@
         "TEST-CLI-0001",
         "TEST-FORTRESS-0001",
         "TEST-IMPLEMENTATION-OBSERVATION-0001",
+        "TEST-PROGRAM-SEMANTICS-0001",
         "TEST-REPOSITORY-OBSERVATION-0001",
         "TEST-SNAPSHOT-GOVERNANCE-0001",
         "TEST-STANDARD-REGISTRY-0001",
@@ -748,6 +824,7 @@
         "TEST-CLI-0001",
         "TEST-FORTRESS-0001",
         "TEST-IMPLEMENTATION-OBSERVATION-0001",
+        "TEST-PROGRAM-SEMANTICS-0001",
         "TEST-PROJECT-MODEL-0001",
         "TEST-STANDARD-REGISTRY-0001",
         "TF-CLI-0001"
@@ -778,6 +855,7 @@
         "TEST-CLI-0001",
         "TEST-FORTRESS-0001",
         "TEST-IMPLEMENTATION-OBSERVATION-0001",
+        "TEST-PROGRAM-SEMANTICS-0001",
         "TEST-PROJECT-MODEL-0001",
         "TEST-REPOSITORY-OBSERVATION-0001",
         "TEST-STANDARD-REGISTRY-0001",
@@ -817,12 +895,14 @@
       ],
       "transitively_reachable_by": [
         "AF-BEHAVIORAL-SEMANTICS-0001",
+        "AF-PROGRAM-SEMANTICS-0001",
         "AF-REPOSITORY-OBSERVATION-0001",
         "TEST-ARCHITECTURE-EVALUATION-0001",
         "TEST-BEHAVIORAL-SEMANTICS-0001",
         "TEST-CLI-0001",
         "TEST-FORTRESS-0001",
         "TEST-IMPLEMENTATION-OBSERVATION-0001",
+        "TEST-PROGRAM-SEMANTICS-0001",
         "TEST-PROJECT-MODEL-0001",
         "TEST-REPOSITORY-OBSERVATION-0001",
         "TF-CLI-0001"
@@ -915,6 +995,20 @@
       }
     },
     {
+      "id": "AF-PROGRAM-SEMANTICS-0001",
+      "owner": "AF-PROGRAM-SEMANTICS-0001",
+      "version": "0.1.0",
+      "requirements": [
+        "AF-PROGRAM-SEMANTICS-0001-R01",
+        "AF-PROGRAM-SEMANTICS-0001-R02",
+        "AF-PROGRAM-SEMANTICS-0001-R03"
+      ],
+      "provenance": {
+        "path": "mods/engine/mods/program_semantics/contract.json",
+        "pointer": "/features/0/id"
+      }
+    },
+    {
       "id": "AF-PROJECT-MODEL-0001",
       "owner": "AF-PROJECT-MODEL-0001",
       "version": "0.1.0",
@@ -988,7 +1082,8 @@
         "TF-CLI-0001-R03",
         "TF-CLI-0001-R04",
         "TF-CLI-0001-R05",
-        "TF-CLI-0001-R06"
+        "TF-CLI-0001-R06",
+        "TF-CLI-0001-R07"
       ],
       "provenance": {
         "path": "mods/cli/contract.json",
@@ -1203,6 +1298,52 @@
       "provenance": {
         "path": "mods/engine/mods/implementation_observation/contract.json",
         "pointer": "/features/0/requirements/1"
+      }
+    },
+    {
+      "id": "AF-PROGRAM-SEMANTICS-0001-R01",
+      "owner": "AF-PROGRAM-SEMANTICS-0001",
+      "feature": "AF-PROGRAM-SEMANTICS-0001",
+      "statement": "Program Semantics deterministically derives snapshot-bound Rust executable symbols and language-neutral typed interfaces with exact physical Fortress Module ownership and explicit semantic coverage.",
+      "declared_tests": [
+        "T-AF-PROGRAM-SEMANTICS-0001-R01-001",
+        "T-AF-PROGRAM-SEMANTICS-0001-R01-002",
+        "T-AF-PROGRAM-SEMANTICS-0001-R01-003"
+      ],
+      "provenance": {
+        "path": "mods/engine/mods/program_semantics/contract.json",
+        "pointer": "/features/0/requirements/0"
+      }
+    },
+    {
+      "id": "AF-PROGRAM-SEMANTICS-0001-R02",
+      "owner": "AF-PROGRAM-SEMANTICS-0001",
+      "feature": "AF-PROGRAM-SEMANTICS-0001",
+      "statement": "Program Semantics conservatively resolves supported direct Rust calls, preserves every coverage state, and derives deterministic direct, transitive, recursive, cross-Module, and cross-package call topology without converting reachability into intent.",
+      "declared_tests": [
+        "T-AF-PROGRAM-SEMANTICS-0001-R02-001",
+        "T-AF-PROGRAM-SEMANTICS-0001-R02-002",
+        "T-AF-PROGRAM-SEMANTICS-0001-R02-003"
+      ],
+      "provenance": {
+        "path": "mods/engine/mods/program_semantics/contract.json",
+        "pointer": "/features/0/requirements/1"
+      }
+    },
+    {
+      "id": "AF-PROGRAM-SEMANTICS-0001-R03",
+      "owner": "AF-PROGRAM-SEMANTICS-0001",
+      "feature": "AF-PROGRAM-SEMANTICS-0001",
+      "statement": "Program Semantic analysis records bounded value-transfer facts, remains byte deterministic, rejects snapshot mutation, distinguishes production from Testing symbols, and requires every resolved cross-Module call to agree with broader Implementation Observation evidence.",
+      "declared_tests": [
+        "T-AF-PROGRAM-SEMANTICS-0001-R03-001",
+        "T-AF-PROGRAM-SEMANTICS-0001-R03-002",
+        "T-AF-PROGRAM-SEMANTICS-0001-R03-003",
+        "T-AF-PROGRAM-SEMANTICS-0001-R03-004"
+      ],
+      "provenance": {
+        "path": "mods/engine/mods/program_semantics/contract.json",
+        "pointer": "/features/0/requirements/2"
       }
     },
     {
@@ -1600,6 +1741,20 @@
       "provenance": {
         "path": "mods/cli/contract.json",
         "pointer": "/features/0/requirements/5"
+      }
+    },
+    {
+      "id": "TF-CLI-0001-R07",
+      "owner": "TF-CLI-0001",
+      "feature": "TF-CLI-0001",
+      "statement": "The native fortress psm command compiles snapshot-bound Program Semantic Model v1, emits canonical deterministic JSON to standard output or an explicit file, returns non-success for invalid or analyzer-incoherent state, and never implies behavioral realization or certification.",
+      "declared_tests": [
+        "T-TF-CLI-0001-R07-001",
+        "T-TF-CLI-0001-R07-002"
+      ],
+      "provenance": {
+        "path": "mods/cli/contract.json",
+        "pointer": "/features/0/requirements/6"
       }
     }
   ],
@@ -2527,6 +2682,96 @@
         ]
       },
       {
+        "module": "AF-PROGRAM-SEMANTICS-0001",
+        "rule": "BEHAVIOR-FLOW-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "BEHAVIOR-FLOW-001",
+            "rule_path": [
+              "BEHAVIOR-FLOW-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/0"
+            }
+          }
+        ]
+      },
+      {
+        "module": "AF-PROGRAM-SEMANTICS-0001",
+        "rule": "CONTRACT-COHERENCY-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "CONTRACT-COHERENCY-001",
+            "rule_path": [
+              "CONTRACT-COHERENCY-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/1"
+            }
+          }
+        ]
+      },
+      {
+        "module": "AF-PROGRAM-SEMANTICS-0001",
+        "rule": "REPO-DOCS-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "REPO-DOCS-001",
+            "rule_path": [
+              "REPO-DOCS-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/2"
+            }
+          }
+        ]
+      },
+      {
+        "module": "AF-PROGRAM-SEMANTICS-0001",
+        "rule": "REPO-MODULE-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "REPO-MODULE-001",
+            "rule_path": [
+              "REPO-MODULE-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/3"
+            }
+          }
+        ]
+      },
+      {
+        "module": "AF-PROGRAM-SEMANTICS-0001",
+        "rule": "STD-ID-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "STD-ID-001",
+            "rule_path": [
+              "STD-ID-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/4"
+            }
+          }
+        ]
+      },
+      {
         "module": "AF-PROJECT-MODEL-0001",
         "rule": "BEHAVIOR-FLOW-001",
         "origins": [
@@ -3410,6 +3655,96 @@
       },
       {
         "module": "TEST-IMPLEMENTATION-OBSERVATION-0001",
+        "rule": "STD-ID-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "STD-ID-001",
+            "rule_path": [
+              "STD-ID-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/4"
+            }
+          }
+        ]
+      },
+      {
+        "module": "TEST-PROGRAM-SEMANTICS-0001",
+        "rule": "BEHAVIOR-FLOW-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "BEHAVIOR-FLOW-001",
+            "rule_path": [
+              "BEHAVIOR-FLOW-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/0"
+            }
+          }
+        ]
+      },
+      {
+        "module": "TEST-PROGRAM-SEMANTICS-0001",
+        "rule": "CONTRACT-COHERENCY-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "CONTRACT-COHERENCY-001",
+            "rule_path": [
+              "CONTRACT-COHERENCY-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/1"
+            }
+          }
+        ]
+      },
+      {
+        "module": "TEST-PROGRAM-SEMANTICS-0001",
+        "rule": "REPO-DOCS-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "REPO-DOCS-001",
+            "rule_path": [
+              "REPO-DOCS-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/2"
+            }
+          }
+        ]
+      },
+      {
+        "module": "TEST-PROGRAM-SEMANTICS-0001",
+        "rule": "REPO-MODULE-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "REPO-MODULE-001",
+            "rule_path": [
+              "REPO-MODULE-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/3"
+            }
+          }
+        ]
+      },
+      {
+        "module": "TEST-PROGRAM-SEMANTICS-0001",
         "rule": "STD-ID-001",
         "origins": [
           {
@@ -3962,12 +4297,22 @@
       },
       {
         "consumer": "AF-CORE-0001",
+        "provider": "AF-PROGRAM-SEMANTICS-0001",
+        "capability": "CAP-PROGRAM-SEMANTICS",
+        "version_requirement": "^0.1.0",
+        "provenance": {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/5"
+        }
+      },
+      {
+        "consumer": "AF-CORE-0001",
         "provider": "AF-PROJECT-MODEL-0001",
         "capability": "CAP-PROJECT-MODEL",
         "version_requirement": "^0.1.0",
         "provenance": {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/5"
+          "pointer": "/requires/6"
         }
       },
       {
@@ -3977,7 +4322,7 @@
         "version_requirement": "^0.1.0",
         "provenance": {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/6"
+          "pointer": "/requires/7"
         }
       },
       {
@@ -3987,7 +4332,7 @@
         "version_requirement": "^0.1.0",
         "provenance": {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/7"
+          "pointer": "/requires/8"
         }
       },
       {
@@ -3997,7 +4342,7 @@
         "version_requirement": "^0.1.0",
         "provenance": {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/8"
+          "pointer": "/requires/9"
         }
       },
       {
@@ -4231,6 +4576,46 @@
         }
       },
       {
+        "consumer": "AF-PROGRAM-SEMANTICS-0001",
+        "provider": "AF-CONTRACT-COHERENCY-0001",
+        "capability": "CAP-CONTRACT-COHERENCY",
+        "version_requirement": "^0.1.0",
+        "provenance": {
+          "path": "mods/engine/mods/program_semantics/contract.json",
+          "pointer": "/requires/0"
+        }
+      },
+      {
+        "consumer": "AF-PROGRAM-SEMANTICS-0001",
+        "provider": "AF-IMPLEMENTATION-OBSERVATION-0001",
+        "capability": "CAP-IMPLEMENTATION-OBSERVATION",
+        "version_requirement": "^0.1.0",
+        "provenance": {
+          "path": "mods/engine/mods/program_semantics/contract.json",
+          "pointer": "/requires/1"
+        }
+      },
+      {
+        "consumer": "TEST-PROGRAM-SEMANTICS-0001",
+        "provider": "AF-CORE-0001",
+        "capability": "CAP-FORTRESS-ENGINE",
+        "version_requirement": "^0.1.0",
+        "provenance": {
+          "path": "mods/engine/mods/program_semantics/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        }
+      },
+      {
+        "consumer": "TEST-PROGRAM-SEMANTICS-0001",
+        "provider": "AF-PROGRAM-SEMANTICS-0001",
+        "capability": "CAP-PROGRAM-SEMANTICS",
+        "version_requirement": "^0.1.0",
+        "provenance": {
+          "path": "mods/engine/mods/program_semantics/mods/testing/contract.json",
+          "pointer": "/requires/1"
+        }
+      },
+      {
         "consumer": "AF-PROJECT-MODEL-0001",
         "provider": "AF-STANDARD-REGISTRY-0001",
         "capability": "CAP-STANDARD-REGISTRY",
@@ -4342,12 +4727,22 @@
       },
       {
         "consumer": "AF-SNAPSHOT-GOVERNANCE-0001",
+        "provider": "AF-PROGRAM-SEMANTICS-0001",
+        "capability": "CAP-PROGRAM-SEMANTICS",
+        "version_requirement": "^0.1.0",
+        "provenance": {
+          "path": "mods/engine/mods/snapshot_governance/contract.json",
+          "pointer": "/requires/5"
+        }
+      },
+      {
+        "consumer": "AF-SNAPSHOT-GOVERNANCE-0001",
         "provider": "AF-PROJECT-MODEL-0001",
         "capability": "CAP-PROJECT-MODEL",
         "version_requirement": "^0.1.0",
         "provenance": {
           "path": "mods/engine/mods/snapshot_governance/contract.json",
-          "pointer": "/requires/5"
+          "pointer": "/requires/6"
         }
       },
       {
@@ -4357,7 +4752,7 @@
         "version_requirement": "^0.1.0",
         "provenance": {
           "path": "mods/engine/mods/snapshot_governance/contract.json",
-          "pointer": "/requires/6"
+          "pointer": "/requires/7"
         }
       },
       {
@@ -4367,7 +4762,7 @@
         "version_requirement": "^0.1.0",
         "provenance": {
           "path": "mods/engine/mods/snapshot_governance/contract.json",
-          "pointer": "/requires/7"
+          "pointer": "/requires/8"
         }
       },
       {
@@ -4543,6 +4938,18 @@
         }
       },
       {
+        "source": "TEST-PROGRAM-SEMANTICS-0001",
+        "relationship_type": "verifies",
+        "target": "AF-PROGRAM-SEMANTICS-0001",
+        "subjects": [
+          "AF-PROGRAM-SEMANTICS-0001"
+        ],
+        "provenance": {
+          "path": "mods/engine/mods/program_semantics/mods/testing/contract.json",
+          "pointer": "/relationships/0"
+        }
+      },
+      {
         "source": "TEST-PROJECT-MODEL-0001",
         "relationship_type": "verifies",
         "target": "AF-PROJECT-MODEL-0001",
@@ -4652,6 +5059,12 @@
         "consumer": "AF-CORE-0001",
         "capability": "CAP-IMPLEMENTATION-OBSERVATION",
         "derivation": "inverse_consumer:AF-IMPLEMENTATION-OBSERVATION-0001:AF-CORE-0001:CAP-IMPLEMENTATION-OBSERVATION"
+      },
+      {
+        "provider": "AF-PROGRAM-SEMANTICS-0001",
+        "consumer": "AF-CORE-0001",
+        "capability": "CAP-PROGRAM-SEMANTICS",
+        "derivation": "inverse_consumer:AF-PROGRAM-SEMANTICS-0001:AF-CORE-0001:CAP-PROGRAM-SEMANTICS"
       },
       {
         "provider": "AF-PROJECT-MODEL-0001",
@@ -4816,6 +5229,30 @@
         "derivation": "inverse_consumer:AF-IMPLEMENTATION-OBSERVATION-0001:TEST-IMPLEMENTATION-OBSERVATION-0001:CAP-IMPLEMENTATION-OBSERVATION"
       },
       {
+        "provider": "AF-CONTRACT-COHERENCY-0001",
+        "consumer": "AF-PROGRAM-SEMANTICS-0001",
+        "capability": "CAP-CONTRACT-COHERENCY",
+        "derivation": "inverse_consumer:AF-CONTRACT-COHERENCY-0001:AF-PROGRAM-SEMANTICS-0001:CAP-CONTRACT-COHERENCY"
+      },
+      {
+        "provider": "AF-IMPLEMENTATION-OBSERVATION-0001",
+        "consumer": "AF-PROGRAM-SEMANTICS-0001",
+        "capability": "CAP-IMPLEMENTATION-OBSERVATION",
+        "derivation": "inverse_consumer:AF-IMPLEMENTATION-OBSERVATION-0001:AF-PROGRAM-SEMANTICS-0001:CAP-IMPLEMENTATION-OBSERVATION"
+      },
+      {
+        "provider": "AF-CORE-0001",
+        "consumer": "TEST-PROGRAM-SEMANTICS-0001",
+        "capability": "CAP-FORTRESS-ENGINE",
+        "derivation": "inverse_consumer:AF-CORE-0001:TEST-PROGRAM-SEMANTICS-0001:CAP-FORTRESS-ENGINE"
+      },
+      {
+        "provider": "AF-PROGRAM-SEMANTICS-0001",
+        "consumer": "TEST-PROGRAM-SEMANTICS-0001",
+        "capability": "CAP-PROGRAM-SEMANTICS",
+        "derivation": "inverse_consumer:AF-PROGRAM-SEMANTICS-0001:TEST-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS"
+      },
+      {
         "provider": "AF-STANDARD-REGISTRY-0001",
         "consumer": "AF-PROJECT-MODEL-0001",
         "capability": "CAP-STANDARD-REGISTRY",
@@ -4880,6 +5317,12 @@
         "consumer": "AF-SNAPSHOT-GOVERNANCE-0001",
         "capability": "CAP-IMPLEMENTATION-OBSERVATION",
         "derivation": "inverse_consumer:AF-IMPLEMENTATION-OBSERVATION-0001:AF-SNAPSHOT-GOVERNANCE-0001:CAP-IMPLEMENTATION-OBSERVATION"
+      },
+      {
+        "provider": "AF-PROGRAM-SEMANTICS-0001",
+        "consumer": "AF-SNAPSHOT-GOVERNANCE-0001",
+        "capability": "CAP-PROGRAM-SEMANTICS",
+        "derivation": "inverse_consumer:AF-PROGRAM-SEMANTICS-0001:AF-SNAPSHOT-GOVERNANCE-0001:CAP-PROGRAM-SEMANTICS"
       },
       {
         "provider": "AF-PROJECT-MODEL-0001",
@@ -5124,6 +5567,17 @@
       },
       {
         "source": "AF-CONTRACT-COHERENCY-TESTING-0001",
+        "target": "AF-PROGRAM-SEMANTICS-0001",
+        "direct": false,
+        "path": [
+          "AF-CONTRACT-COHERENCY-TESTING-0001",
+          "AF-CORE-0001",
+          "AF-PROGRAM-SEMANTICS-0001"
+        ],
+        "derivation": "dependency_reachability:AF-CONTRACT-COHERENCY-TESTING-0001:AF-PROGRAM-SEMANTICS-0001"
+      },
+      {
+        "source": "AF-CONTRACT-COHERENCY-TESTING-0001",
         "target": "AF-PROJECT-MODEL-0001",
         "direct": false,
         "path": [
@@ -5216,6 +5670,16 @@
       },
       {
         "source": "AF-CORE-0001",
+        "target": "AF-PROGRAM-SEMANTICS-0001",
+        "direct": true,
+        "path": [
+          "AF-CORE-0001",
+          "AF-PROGRAM-SEMANTICS-0001"
+        ],
+        "derivation": "dependency_reachability:AF-CORE-0001:AF-PROGRAM-SEMANTICS-0001"
+      },
+      {
+        "source": "AF-CORE-0001",
         "target": "AF-PROJECT-MODEL-0001",
         "direct": true,
         "path": [
@@ -5263,6 +5727,37 @@
           "AF-STANDARD-REGISTRY-0001"
         ],
         "derivation": "dependency_reachability:AF-FINDING-MODEL-0001:AF-STANDARD-REGISTRY-0001"
+      },
+      {
+        "source": "AF-PROGRAM-SEMANTICS-0001",
+        "target": "AF-CONTRACT-COHERENCY-0001",
+        "direct": true,
+        "path": [
+          "AF-PROGRAM-SEMANTICS-0001",
+          "AF-CONTRACT-COHERENCY-0001"
+        ],
+        "derivation": "dependency_reachability:AF-PROGRAM-SEMANTICS-0001:AF-CONTRACT-COHERENCY-0001"
+      },
+      {
+        "source": "AF-PROGRAM-SEMANTICS-0001",
+        "target": "AF-IMPLEMENTATION-OBSERVATION-0001",
+        "direct": true,
+        "path": [
+          "AF-PROGRAM-SEMANTICS-0001",
+          "AF-IMPLEMENTATION-OBSERVATION-0001"
+        ],
+        "derivation": "dependency_reachability:AF-PROGRAM-SEMANTICS-0001:AF-IMPLEMENTATION-OBSERVATION-0001"
+      },
+      {
+        "source": "AF-PROGRAM-SEMANTICS-0001",
+        "target": "AF-STANDARD-REGISTRY-0001",
+        "direct": false,
+        "path": [
+          "AF-PROGRAM-SEMANTICS-0001",
+          "AF-CONTRACT-COHERENCY-0001",
+          "AF-STANDARD-REGISTRY-0001"
+        ],
+        "derivation": "dependency_reachability:AF-PROGRAM-SEMANTICS-0001:AF-STANDARD-REGISTRY-0001"
       },
       {
         "source": "AF-PROJECT-MODEL-0001",
@@ -5344,6 +5839,16 @@
           "AF-IMPLEMENTATION-OBSERVATION-0001"
         ],
         "derivation": "dependency_reachability:AF-SNAPSHOT-GOVERNANCE-0001:AF-IMPLEMENTATION-OBSERVATION-0001"
+      },
+      {
+        "source": "AF-SNAPSHOT-GOVERNANCE-0001",
+        "target": "AF-PROGRAM-SEMANTICS-0001",
+        "direct": true,
+        "path": [
+          "AF-SNAPSHOT-GOVERNANCE-0001",
+          "AF-PROGRAM-SEMANTICS-0001"
+        ],
+        "derivation": "dependency_reachability:AF-SNAPSHOT-GOVERNANCE-0001:AF-PROGRAM-SEMANTICS-0001"
       },
       {
         "source": "AF-SNAPSHOT-GOVERNANCE-0001",
@@ -5436,6 +5941,17 @@
           "AF-IMPLEMENTATION-OBSERVATION-0001"
         ],
         "derivation": "dependency_reachability:TEST-ARCHITECTURE-EVALUATION-0001:AF-IMPLEMENTATION-OBSERVATION-0001"
+      },
+      {
+        "source": "TEST-ARCHITECTURE-EVALUATION-0001",
+        "target": "AF-PROGRAM-SEMANTICS-0001",
+        "direct": false,
+        "path": [
+          "TEST-ARCHITECTURE-EVALUATION-0001",
+          "AF-CORE-0001",
+          "AF-PROGRAM-SEMANTICS-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-ARCHITECTURE-EVALUATION-0001:AF-PROGRAM-SEMANTICS-0001"
       },
       {
         "source": "TEST-ARCHITECTURE-EVALUATION-0001",
@@ -5545,6 +6061,17 @@
       },
       {
         "source": "TEST-BEHAVIORAL-SEMANTICS-0001",
+        "target": "AF-PROGRAM-SEMANTICS-0001",
+        "direct": false,
+        "path": [
+          "TEST-BEHAVIORAL-SEMANTICS-0001",
+          "AF-CORE-0001",
+          "AF-PROGRAM-SEMANTICS-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-BEHAVIORAL-SEMANTICS-0001:AF-PROGRAM-SEMANTICS-0001"
+      },
+      {
+        "source": "TEST-BEHAVIORAL-SEMANTICS-0001",
         "target": "AF-PROJECT-MODEL-0001",
         "direct": false,
         "path": [
@@ -5651,6 +6178,17 @@
           "AF-IMPLEMENTATION-OBSERVATION-0001"
         ],
         "derivation": "dependency_reachability:TEST-CLI-0001:AF-IMPLEMENTATION-OBSERVATION-0001"
+      },
+      {
+        "source": "TEST-CLI-0001",
+        "target": "AF-PROGRAM-SEMANTICS-0001",
+        "direct": false,
+        "path": [
+          "TEST-CLI-0001",
+          "AF-CORE-0001",
+          "AF-PROGRAM-SEMANTICS-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-CLI-0001:AF-PROGRAM-SEMANTICS-0001"
       },
       {
         "source": "TEST-CLI-0001",
@@ -5773,6 +6311,17 @@
       },
       {
         "source": "TEST-FORTRESS-0001",
+        "target": "AF-PROGRAM-SEMANTICS-0001",
+        "direct": false,
+        "path": [
+          "TEST-FORTRESS-0001",
+          "AF-CORE-0001",
+          "AF-PROGRAM-SEMANTICS-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-FORTRESS-0001:AF-PROGRAM-SEMANTICS-0001"
+      },
+      {
+        "source": "TEST-FORTRESS-0001",
         "target": "AF-PROJECT-MODEL-0001",
         "direct": false,
         "path": [
@@ -5891,6 +6440,17 @@
       },
       {
         "source": "TEST-IMPLEMENTATION-OBSERVATION-0001",
+        "target": "AF-PROGRAM-SEMANTICS-0001",
+        "direct": false,
+        "path": [
+          "TEST-IMPLEMENTATION-OBSERVATION-0001",
+          "AF-CORE-0001",
+          "AF-PROGRAM-SEMANTICS-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-IMPLEMENTATION-OBSERVATION-0001:AF-PROGRAM-SEMANTICS-0001"
+      },
+      {
+        "source": "TEST-IMPLEMENTATION-OBSERVATION-0001",
         "target": "AF-PROJECT-MODEL-0001",
         "direct": false,
         "path": [
@@ -5932,6 +6492,125 @@
           "AF-STANDARD-REGISTRY-0001"
         ],
         "derivation": "dependency_reachability:TEST-IMPLEMENTATION-OBSERVATION-0001:AF-STANDARD-REGISTRY-0001"
+      },
+      {
+        "source": "TEST-PROGRAM-SEMANTICS-0001",
+        "target": "AF-ARCHITECTURE-EVALUATION-0001",
+        "direct": false,
+        "path": [
+          "TEST-PROGRAM-SEMANTICS-0001",
+          "AF-CORE-0001",
+          "AF-ARCHITECTURE-EVALUATION-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-ARCHITECTURE-EVALUATION-0001"
+      },
+      {
+        "source": "TEST-PROGRAM-SEMANTICS-0001",
+        "target": "AF-BEHAVIORAL-SEMANTICS-0001",
+        "direct": false,
+        "path": [
+          "TEST-PROGRAM-SEMANTICS-0001",
+          "AF-CORE-0001",
+          "AF-BEHAVIORAL-SEMANTICS-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-BEHAVIORAL-SEMANTICS-0001"
+      },
+      {
+        "source": "TEST-PROGRAM-SEMANTICS-0001",
+        "target": "AF-CONTRACT-COHERENCY-0001",
+        "direct": false,
+        "path": [
+          "TEST-PROGRAM-SEMANTICS-0001",
+          "AF-CORE-0001",
+          "AF-CONTRACT-COHERENCY-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-CONTRACT-COHERENCY-0001"
+      },
+      {
+        "source": "TEST-PROGRAM-SEMANTICS-0001",
+        "target": "AF-CORE-0001",
+        "direct": true,
+        "path": [
+          "TEST-PROGRAM-SEMANTICS-0001",
+          "AF-CORE-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-CORE-0001"
+      },
+      {
+        "source": "TEST-PROGRAM-SEMANTICS-0001",
+        "target": "AF-FINDING-MODEL-0001",
+        "direct": false,
+        "path": [
+          "TEST-PROGRAM-SEMANTICS-0001",
+          "AF-CORE-0001",
+          "AF-FINDING-MODEL-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-FINDING-MODEL-0001"
+      },
+      {
+        "source": "TEST-PROGRAM-SEMANTICS-0001",
+        "target": "AF-IMPLEMENTATION-OBSERVATION-0001",
+        "direct": false,
+        "path": [
+          "TEST-PROGRAM-SEMANTICS-0001",
+          "AF-CORE-0001",
+          "AF-IMPLEMENTATION-OBSERVATION-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-IMPLEMENTATION-OBSERVATION-0001"
+      },
+      {
+        "source": "TEST-PROGRAM-SEMANTICS-0001",
+        "target": "AF-PROGRAM-SEMANTICS-0001",
+        "direct": true,
+        "path": [
+          "TEST-PROGRAM-SEMANTICS-0001",
+          "AF-PROGRAM-SEMANTICS-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-PROGRAM-SEMANTICS-0001"
+      },
+      {
+        "source": "TEST-PROGRAM-SEMANTICS-0001",
+        "target": "AF-PROJECT-MODEL-0001",
+        "direct": false,
+        "path": [
+          "TEST-PROGRAM-SEMANTICS-0001",
+          "AF-CORE-0001",
+          "AF-PROJECT-MODEL-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-PROJECT-MODEL-0001"
+      },
+      {
+        "source": "TEST-PROGRAM-SEMANTICS-0001",
+        "target": "AF-REPOSITORY-OBSERVATION-0001",
+        "direct": false,
+        "path": [
+          "TEST-PROGRAM-SEMANTICS-0001",
+          "AF-CORE-0001",
+          "AF-REPOSITORY-OBSERVATION-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-REPOSITORY-OBSERVATION-0001"
+      },
+      {
+        "source": "TEST-PROGRAM-SEMANTICS-0001",
+        "target": "AF-SNAPSHOT-GOVERNANCE-0001",
+        "direct": false,
+        "path": [
+          "TEST-PROGRAM-SEMANTICS-0001",
+          "AF-CORE-0001",
+          "AF-SNAPSHOT-GOVERNANCE-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-SNAPSHOT-GOVERNANCE-0001"
+      },
+      {
+        "source": "TEST-PROGRAM-SEMANTICS-0001",
+        "target": "AF-STANDARD-REGISTRY-0001",
+        "direct": false,
+        "path": [
+          "TEST-PROGRAM-SEMANTICS-0001",
+          "AF-CORE-0001",
+          "AF-STANDARD-REGISTRY-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-STANDARD-REGISTRY-0001"
       },
       {
         "source": "TEST-PROJECT-MODEL-0001",
@@ -5997,6 +6676,17 @@
           "AF-IMPLEMENTATION-OBSERVATION-0001"
         ],
         "derivation": "dependency_reachability:TEST-PROJECT-MODEL-0001:AF-IMPLEMENTATION-OBSERVATION-0001"
+      },
+      {
+        "source": "TEST-PROJECT-MODEL-0001",
+        "target": "AF-PROGRAM-SEMANTICS-0001",
+        "direct": false,
+        "path": [
+          "TEST-PROJECT-MODEL-0001",
+          "AF-CORE-0001",
+          "AF-PROGRAM-SEMANTICS-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-PROJECT-MODEL-0001:AF-PROGRAM-SEMANTICS-0001"
       },
       {
         "source": "TEST-PROJECT-MODEL-0001",
@@ -6108,6 +6798,17 @@
       },
       {
         "source": "TEST-REPOSITORY-OBSERVATION-0001",
+        "target": "AF-PROGRAM-SEMANTICS-0001",
+        "direct": false,
+        "path": [
+          "TEST-REPOSITORY-OBSERVATION-0001",
+          "AF-CORE-0001",
+          "AF-PROGRAM-SEMANTICS-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-REPOSITORY-OBSERVATION-0001:AF-PROGRAM-SEMANTICS-0001"
+      },
+      {
+        "source": "TEST-REPOSITORY-OBSERVATION-0001",
         "target": "AF-PROJECT-MODEL-0001",
         "direct": false,
         "path": [
@@ -6210,6 +6911,17 @@
           "AF-IMPLEMENTATION-OBSERVATION-0001"
         ],
         "derivation": "dependency_reachability:TEST-SNAPSHOT-GOVERNANCE-0001:AF-IMPLEMENTATION-OBSERVATION-0001"
+      },
+      {
+        "source": "TEST-SNAPSHOT-GOVERNANCE-0001",
+        "target": "AF-PROGRAM-SEMANTICS-0001",
+        "direct": false,
+        "path": [
+          "TEST-SNAPSHOT-GOVERNANCE-0001",
+          "AF-CORE-0001",
+          "AF-PROGRAM-SEMANTICS-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-SNAPSHOT-GOVERNANCE-0001:AF-PROGRAM-SEMANTICS-0001"
       },
       {
         "source": "TEST-SNAPSHOT-GOVERNANCE-0001",
@@ -6319,6 +7031,17 @@
       },
       {
         "source": "TEST-STANDARD-REGISTRY-0001",
+        "target": "AF-PROGRAM-SEMANTICS-0001",
+        "direct": false,
+        "path": [
+          "TEST-STANDARD-REGISTRY-0001",
+          "AF-CORE-0001",
+          "AF-PROGRAM-SEMANTICS-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-STANDARD-REGISTRY-0001:AF-PROGRAM-SEMANTICS-0001"
+      },
+      {
+        "source": "TEST-STANDARD-REGISTRY-0001",
         "target": "AF-PROJECT-MODEL-0001",
         "direct": false,
         "path": [
@@ -6424,6 +7147,17 @@
           "AF-IMPLEMENTATION-OBSERVATION-0001"
         ],
         "derivation": "dependency_reachability:TF-CLI-0001:AF-IMPLEMENTATION-OBSERVATION-0001"
+      },
+      {
+        "source": "TF-CLI-0001",
+        "target": "AF-PROGRAM-SEMANTICS-0001",
+        "direct": false,
+        "path": [
+          "TF-CLI-0001",
+          "AF-CORE-0001",
+          "AF-PROGRAM-SEMANTICS-0001"
+        ],
+        "derivation": "dependency_reachability:TF-CLI-0001:AF-PROGRAM-SEMANTICS-0001"
       },
       {
         "source": "TF-CLI-0001",
@@ -6643,6 +7377,18 @@
       },
       {
         "source": "AF-CONTRACT-COHERENCY-TESTING-0001",
+        "capability": "CAP-PROGRAM-SEMANTICS",
+        "provider": "AF-PROGRAM-SEMANTICS-0001",
+        "path": [
+          "AF-CONTRACT-COHERENCY-TESTING-0001",
+          "AF-CORE-0001",
+          "AF-PROGRAM-SEMANTICS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:AF-CONTRACT-COHERENCY-TESTING-0001:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS"
+      },
+      {
+        "source": "AF-CONTRACT-COHERENCY-TESTING-0001",
         "capability": "CAP-PROJECT-MODEL",
         "provider": "AF-PROJECT-MODEL-0001",
         "path": [
@@ -6744,6 +7490,17 @@
       },
       {
         "source": "AF-CORE-0001",
+        "capability": "CAP-PROGRAM-SEMANTICS",
+        "provider": "AF-PROGRAM-SEMANTICS-0001",
+        "path": [
+          "AF-CORE-0001",
+          "AF-PROGRAM-SEMANTICS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:AF-CORE-0001:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS"
+      },
+      {
+        "source": "AF-CORE-0001",
         "capability": "CAP-PROJECT-MODEL",
         "provider": "AF-PROJECT-MODEL-0001",
         "path": [
@@ -6796,6 +7553,40 @@
         ],
         "reexported": false,
         "derivation": "capability_reachability:AF-FINDING-MODEL-0001:AF-STANDARD-REGISTRY-0001:CAP-STANDARD-REGISTRY"
+      },
+      {
+        "source": "AF-PROGRAM-SEMANTICS-0001",
+        "capability": "CAP-CONTRACT-COHERENCY",
+        "provider": "AF-CONTRACT-COHERENCY-0001",
+        "path": [
+          "AF-PROGRAM-SEMANTICS-0001",
+          "AF-CONTRACT-COHERENCY-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:AF-PROGRAM-SEMANTICS-0001:AF-CONTRACT-COHERENCY-0001:CAP-CONTRACT-COHERENCY"
+      },
+      {
+        "source": "AF-PROGRAM-SEMANTICS-0001",
+        "capability": "CAP-IMPLEMENTATION-OBSERVATION",
+        "provider": "AF-IMPLEMENTATION-OBSERVATION-0001",
+        "path": [
+          "AF-PROGRAM-SEMANTICS-0001",
+          "AF-IMPLEMENTATION-OBSERVATION-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:AF-PROGRAM-SEMANTICS-0001:AF-IMPLEMENTATION-OBSERVATION-0001:CAP-IMPLEMENTATION-OBSERVATION"
+      },
+      {
+        "source": "AF-PROGRAM-SEMANTICS-0001",
+        "capability": "CAP-STANDARD-REGISTRY",
+        "provider": "AF-STANDARD-REGISTRY-0001",
+        "path": [
+          "AF-PROGRAM-SEMANTICS-0001",
+          "AF-CONTRACT-COHERENCY-0001",
+          "AF-STANDARD-REGISTRY-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:AF-PROGRAM-SEMANTICS-0001:AF-STANDARD-REGISTRY-0001:CAP-STANDARD-REGISTRY"
       },
       {
         "source": "AF-PROJECT-MODEL-0001",
@@ -6885,6 +7676,17 @@
         ],
         "reexported": false,
         "derivation": "capability_reachability:AF-SNAPSHOT-GOVERNANCE-0001:AF-IMPLEMENTATION-OBSERVATION-0001:CAP-IMPLEMENTATION-OBSERVATION"
+      },
+      {
+        "source": "AF-SNAPSHOT-GOVERNANCE-0001",
+        "capability": "CAP-PROGRAM-SEMANTICS",
+        "provider": "AF-PROGRAM-SEMANTICS-0001",
+        "path": [
+          "AF-SNAPSHOT-GOVERNANCE-0001",
+          "AF-PROGRAM-SEMANTICS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:AF-SNAPSHOT-GOVERNANCE-0001:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS"
       },
       {
         "source": "AF-SNAPSHOT-GOVERNANCE-0001",
@@ -6986,6 +7788,18 @@
         ],
         "reexported": false,
         "derivation": "capability_reachability:TEST-ARCHITECTURE-EVALUATION-0001:AF-IMPLEMENTATION-OBSERVATION-0001:CAP-IMPLEMENTATION-OBSERVATION"
+      },
+      {
+        "source": "TEST-ARCHITECTURE-EVALUATION-0001",
+        "capability": "CAP-PROGRAM-SEMANTICS",
+        "provider": "AF-PROGRAM-SEMANTICS-0001",
+        "path": [
+          "TEST-ARCHITECTURE-EVALUATION-0001",
+          "AF-CORE-0001",
+          "AF-PROGRAM-SEMANTICS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-ARCHITECTURE-EVALUATION-0001:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS"
       },
       {
         "source": "TEST-ARCHITECTURE-EVALUATION-0001",
@@ -7105,6 +7919,18 @@
       },
       {
         "source": "TEST-BEHAVIORAL-SEMANTICS-0001",
+        "capability": "CAP-PROGRAM-SEMANTICS",
+        "provider": "AF-PROGRAM-SEMANTICS-0001",
+        "path": [
+          "TEST-BEHAVIORAL-SEMANTICS-0001",
+          "AF-CORE-0001",
+          "AF-PROGRAM-SEMANTICS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-BEHAVIORAL-SEMANTICS-0001:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS"
+      },
+      {
+        "source": "TEST-BEHAVIORAL-SEMANTICS-0001",
         "capability": "CAP-PROJECT-MODEL",
         "provider": "AF-PROJECT-MODEL-0001",
         "path": [
@@ -7221,6 +8047,18 @@
         ],
         "reexported": false,
         "derivation": "capability_reachability:TEST-CLI-0001:AF-IMPLEMENTATION-OBSERVATION-0001:CAP-IMPLEMENTATION-OBSERVATION"
+      },
+      {
+        "source": "TEST-CLI-0001",
+        "capability": "CAP-PROGRAM-SEMANTICS",
+        "provider": "AF-PROGRAM-SEMANTICS-0001",
+        "path": [
+          "TEST-CLI-0001",
+          "AF-CORE-0001",
+          "AF-PROGRAM-SEMANTICS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-CLI-0001:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS"
       },
       {
         "source": "TEST-CLI-0001",
@@ -7354,6 +8192,18 @@
       },
       {
         "source": "TEST-FORTRESS-0001",
+        "capability": "CAP-PROGRAM-SEMANTICS",
+        "provider": "AF-PROGRAM-SEMANTICS-0001",
+        "path": [
+          "TEST-FORTRESS-0001",
+          "AF-CORE-0001",
+          "AF-PROGRAM-SEMANTICS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-FORTRESS-0001:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS"
+      },
+      {
+        "source": "TEST-FORTRESS-0001",
         "capability": "CAP-PROJECT-MODEL",
         "provider": "AF-PROJECT-MODEL-0001",
         "path": [
@@ -7483,6 +8333,18 @@
       },
       {
         "source": "TEST-IMPLEMENTATION-OBSERVATION-0001",
+        "capability": "CAP-PROGRAM-SEMANTICS",
+        "provider": "AF-PROGRAM-SEMANTICS-0001",
+        "path": [
+          "TEST-IMPLEMENTATION-OBSERVATION-0001",
+          "AF-CORE-0001",
+          "AF-PROGRAM-SEMANTICS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-IMPLEMENTATION-OBSERVATION-0001:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS"
+      },
+      {
+        "source": "TEST-IMPLEMENTATION-OBSERVATION-0001",
         "capability": "CAP-PROJECT-MODEL",
         "provider": "AF-PROJECT-MODEL-0001",
         "path": [
@@ -7528,6 +8390,136 @@
         ],
         "reexported": false,
         "derivation": "capability_reachability:TEST-IMPLEMENTATION-OBSERVATION-0001:AF-STANDARD-REGISTRY-0001:CAP-STANDARD-REGISTRY"
+      },
+      {
+        "source": "TEST-PROGRAM-SEMANTICS-0001",
+        "capability": "CAP-ARCHITECTURE-EVALUATION",
+        "provider": "AF-ARCHITECTURE-EVALUATION-0001",
+        "path": [
+          "TEST-PROGRAM-SEMANTICS-0001",
+          "AF-CORE-0001",
+          "AF-ARCHITECTURE-EVALUATION-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-ARCHITECTURE-EVALUATION-0001:CAP-ARCHITECTURE-EVALUATION"
+      },
+      {
+        "source": "TEST-PROGRAM-SEMANTICS-0001",
+        "capability": "CAP-BEHAVIORAL-SEMANTICS",
+        "provider": "AF-BEHAVIORAL-SEMANTICS-0001",
+        "path": [
+          "TEST-PROGRAM-SEMANTICS-0001",
+          "AF-CORE-0001",
+          "AF-BEHAVIORAL-SEMANTICS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-BEHAVIORAL-SEMANTICS-0001:CAP-BEHAVIORAL-SEMANTICS"
+      },
+      {
+        "source": "TEST-PROGRAM-SEMANTICS-0001",
+        "capability": "CAP-CONTRACT-COHERENCY",
+        "provider": "AF-CONTRACT-COHERENCY-0001",
+        "path": [
+          "TEST-PROGRAM-SEMANTICS-0001",
+          "AF-CORE-0001",
+          "AF-CONTRACT-COHERENCY-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-CONTRACT-COHERENCY-0001:CAP-CONTRACT-COHERENCY"
+      },
+      {
+        "source": "TEST-PROGRAM-SEMANTICS-0001",
+        "capability": "CAP-FORTRESS-ENGINE",
+        "provider": "AF-CORE-0001",
+        "path": [
+          "TEST-PROGRAM-SEMANTICS-0001",
+          "AF-CORE-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-CORE-0001:CAP-FORTRESS-ENGINE"
+      },
+      {
+        "source": "TEST-PROGRAM-SEMANTICS-0001",
+        "capability": "CAP-FINDING-MODEL",
+        "provider": "AF-FINDING-MODEL-0001",
+        "path": [
+          "TEST-PROGRAM-SEMANTICS-0001",
+          "AF-CORE-0001",
+          "AF-FINDING-MODEL-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-FINDING-MODEL-0001:CAP-FINDING-MODEL"
+      },
+      {
+        "source": "TEST-PROGRAM-SEMANTICS-0001",
+        "capability": "CAP-IMPLEMENTATION-OBSERVATION",
+        "provider": "AF-IMPLEMENTATION-OBSERVATION-0001",
+        "path": [
+          "TEST-PROGRAM-SEMANTICS-0001",
+          "AF-CORE-0001",
+          "AF-IMPLEMENTATION-OBSERVATION-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-IMPLEMENTATION-OBSERVATION-0001:CAP-IMPLEMENTATION-OBSERVATION"
+      },
+      {
+        "source": "TEST-PROGRAM-SEMANTICS-0001",
+        "capability": "CAP-PROGRAM-SEMANTICS",
+        "provider": "AF-PROGRAM-SEMANTICS-0001",
+        "path": [
+          "TEST-PROGRAM-SEMANTICS-0001",
+          "AF-PROGRAM-SEMANTICS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS"
+      },
+      {
+        "source": "TEST-PROGRAM-SEMANTICS-0001",
+        "capability": "CAP-PROJECT-MODEL",
+        "provider": "AF-PROJECT-MODEL-0001",
+        "path": [
+          "TEST-PROGRAM-SEMANTICS-0001",
+          "AF-CORE-0001",
+          "AF-PROJECT-MODEL-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-PROJECT-MODEL-0001:CAP-PROJECT-MODEL"
+      },
+      {
+        "source": "TEST-PROGRAM-SEMANTICS-0001",
+        "capability": "CAP-REPOSITORY-OBSERVATION",
+        "provider": "AF-REPOSITORY-OBSERVATION-0001",
+        "path": [
+          "TEST-PROGRAM-SEMANTICS-0001",
+          "AF-CORE-0001",
+          "AF-REPOSITORY-OBSERVATION-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-REPOSITORY-OBSERVATION-0001:CAP-REPOSITORY-OBSERVATION"
+      },
+      {
+        "source": "TEST-PROGRAM-SEMANTICS-0001",
+        "capability": "CAP-SNAPSHOT-GOVERNANCE",
+        "provider": "AF-SNAPSHOT-GOVERNANCE-0001",
+        "path": [
+          "TEST-PROGRAM-SEMANTICS-0001",
+          "AF-CORE-0001",
+          "AF-SNAPSHOT-GOVERNANCE-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-SNAPSHOT-GOVERNANCE-0001:CAP-SNAPSHOT-GOVERNANCE"
+      },
+      {
+        "source": "TEST-PROGRAM-SEMANTICS-0001",
+        "capability": "CAP-STANDARD-REGISTRY",
+        "provider": "AF-STANDARD-REGISTRY-0001",
+        "path": [
+          "TEST-PROGRAM-SEMANTICS-0001",
+          "AF-CORE-0001",
+          "AF-STANDARD-REGISTRY-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-STANDARD-REGISTRY-0001:CAP-STANDARD-REGISTRY"
       },
       {
         "source": "TEST-PROJECT-MODEL-0001",
@@ -7599,6 +8591,18 @@
         ],
         "reexported": false,
         "derivation": "capability_reachability:TEST-PROJECT-MODEL-0001:AF-IMPLEMENTATION-OBSERVATION-0001:CAP-IMPLEMENTATION-OBSERVATION"
+      },
+      {
+        "source": "TEST-PROJECT-MODEL-0001",
+        "capability": "CAP-PROGRAM-SEMANTICS",
+        "provider": "AF-PROGRAM-SEMANTICS-0001",
+        "path": [
+          "TEST-PROJECT-MODEL-0001",
+          "AF-CORE-0001",
+          "AF-PROGRAM-SEMANTICS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-PROJECT-MODEL-0001:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS"
       },
       {
         "source": "TEST-PROJECT-MODEL-0001",
@@ -7720,6 +8724,18 @@
       },
       {
         "source": "TEST-REPOSITORY-OBSERVATION-0001",
+        "capability": "CAP-PROGRAM-SEMANTICS",
+        "provider": "AF-PROGRAM-SEMANTICS-0001",
+        "path": [
+          "TEST-REPOSITORY-OBSERVATION-0001",
+          "AF-CORE-0001",
+          "AF-PROGRAM-SEMANTICS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-REPOSITORY-OBSERVATION-0001:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS"
+      },
+      {
+        "source": "TEST-REPOSITORY-OBSERVATION-0001",
         "capability": "CAP-PROJECT-MODEL",
         "provider": "AF-PROJECT-MODEL-0001",
         "path": [
@@ -7832,6 +8848,18 @@
         ],
         "reexported": false,
         "derivation": "capability_reachability:TEST-SNAPSHOT-GOVERNANCE-0001:AF-IMPLEMENTATION-OBSERVATION-0001:CAP-IMPLEMENTATION-OBSERVATION"
+      },
+      {
+        "source": "TEST-SNAPSHOT-GOVERNANCE-0001",
+        "capability": "CAP-PROGRAM-SEMANTICS",
+        "provider": "AF-PROGRAM-SEMANTICS-0001",
+        "path": [
+          "TEST-SNAPSHOT-GOVERNANCE-0001",
+          "AF-CORE-0001",
+          "AF-PROGRAM-SEMANTICS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-SNAPSHOT-GOVERNANCE-0001:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS"
       },
       {
         "source": "TEST-SNAPSHOT-GOVERNANCE-0001",
@@ -7948,6 +8976,18 @@
         ],
         "reexported": false,
         "derivation": "capability_reachability:TEST-STANDARD-REGISTRY-0001:AF-IMPLEMENTATION-OBSERVATION-0001:CAP-IMPLEMENTATION-OBSERVATION"
+      },
+      {
+        "source": "TEST-STANDARD-REGISTRY-0001",
+        "capability": "CAP-PROGRAM-SEMANTICS",
+        "provider": "AF-PROGRAM-SEMANTICS-0001",
+        "path": [
+          "TEST-STANDARD-REGISTRY-0001",
+          "AF-CORE-0001",
+          "AF-PROGRAM-SEMANTICS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-STANDARD-REGISTRY-0001:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS"
       },
       {
         "source": "TEST-STANDARD-REGISTRY-0001",
@@ -8069,6 +9109,18 @@
       },
       {
         "source": "TF-CLI-0001",
+        "capability": "CAP-PROGRAM-SEMANTICS",
+        "provider": "AF-PROGRAM-SEMANTICS-0001",
+        "path": [
+          "TF-CLI-0001",
+          "AF-CORE-0001",
+          "AF-PROGRAM-SEMANTICS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TF-CLI-0001:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS"
+      },
+      {
+        "source": "TF-CLI-0001",
         "capability": "CAP-PROJECT-MODEL",
         "provider": "AF-PROJECT-MODEL-0001",
         "path": [
@@ -8161,6 +9213,17 @@
         ],
         "provenance": {
           "path": "mods/engine/mods/implementation_observation/mods/testing/contract.json",
+          "pointer": "/relationships/0"
+        }
+      },
+      {
+        "parent": "AF-PROGRAM-SEMANTICS-0001",
+        "testing_module": "TEST-PROGRAM-SEMANTICS-0001",
+        "verified_features": [
+          "AF-PROGRAM-SEMANTICS-0001"
+        ],
+        "provenance": {
+          "path": "mods/engine/mods/program_semantics/mods/testing/contract.json",
           "pointer": "/relationships/0"
         }
       },
@@ -8480,6 +9543,62 @@
         ],
         "complete_declared_support": true,
         "derivation": "verification_support:AF-IMPLEMENTATION-OBSERVATION-0001-R02"
+      },
+      {
+        "requirement": "AF-PROGRAM-SEMANTICS-0001-R01",
+        "owner": "AF-PROGRAM-SEMANTICS-0001",
+        "feature": "AF-PROGRAM-SEMANTICS-0001",
+        "testing_module": "TEST-PROGRAM-SEMANTICS-0001",
+        "declared_tests": [
+          "T-AF-PROGRAM-SEMANTICS-0001-R01-001",
+          "T-AF-PROGRAM-SEMANTICS-0001-R01-002",
+          "T-AF-PROGRAM-SEMANTICS-0001-R01-003"
+        ],
+        "observed_tests": [
+          "T-AF-PROGRAM-SEMANTICS-0001-R01-001",
+          "T-AF-PROGRAM-SEMANTICS-0001-R01-002",
+          "T-AF-PROGRAM-SEMANTICS-0001-R01-003"
+        ],
+        "complete_declared_support": true,
+        "derivation": "verification_support:AF-PROGRAM-SEMANTICS-0001-R01"
+      },
+      {
+        "requirement": "AF-PROGRAM-SEMANTICS-0001-R02",
+        "owner": "AF-PROGRAM-SEMANTICS-0001",
+        "feature": "AF-PROGRAM-SEMANTICS-0001",
+        "testing_module": "TEST-PROGRAM-SEMANTICS-0001",
+        "declared_tests": [
+          "T-AF-PROGRAM-SEMANTICS-0001-R02-001",
+          "T-AF-PROGRAM-SEMANTICS-0001-R02-002",
+          "T-AF-PROGRAM-SEMANTICS-0001-R02-003"
+        ],
+        "observed_tests": [
+          "T-AF-PROGRAM-SEMANTICS-0001-R02-001",
+          "T-AF-PROGRAM-SEMANTICS-0001-R02-002",
+          "T-AF-PROGRAM-SEMANTICS-0001-R02-003"
+        ],
+        "complete_declared_support": true,
+        "derivation": "verification_support:AF-PROGRAM-SEMANTICS-0001-R02"
+      },
+      {
+        "requirement": "AF-PROGRAM-SEMANTICS-0001-R03",
+        "owner": "AF-PROGRAM-SEMANTICS-0001",
+        "feature": "AF-PROGRAM-SEMANTICS-0001",
+        "testing_module": "TEST-PROGRAM-SEMANTICS-0001",
+        "declared_tests": [
+          "T-AF-PROGRAM-SEMANTICS-0001-R03-001",
+          "T-AF-PROGRAM-SEMANTICS-0001-R03-002",
+          "T-AF-PROGRAM-SEMANTICS-0001-R03-003",
+          "T-AF-PROGRAM-SEMANTICS-0001-R03-004"
+        ],
+        "observed_tests": [
+          "T-AF-PROGRAM-SEMANTICS-0001-R03-001",
+          "T-AF-PROGRAM-SEMANTICS-0001-R03-002",
+          "T-AF-PROGRAM-SEMANTICS-0001-R03-003",
+          "T-AF-PROGRAM-SEMANTICS-0001-R03-004"
+        ],
+        "complete_declared_support": true,
+        "derivation": "verification_support:AF-PROGRAM-SEMANTICS-0001-R03"
       },
       {
         "requirement": "AF-PROJECT-MODEL-0001-R01",
@@ -8962,6 +10081,22 @@
         ],
         "complete_declared_support": true,
         "derivation": "verification_support:TF-CLI-0001-R06"
+      },
+      {
+        "requirement": "TF-CLI-0001-R07",
+        "owner": "TF-CLI-0001",
+        "feature": "TF-CLI-0001",
+        "testing_module": "TEST-CLI-0001",
+        "declared_tests": [
+          "T-TF-CLI-0001-R07-001",
+          "T-TF-CLI-0001-R07-002"
+        ],
+        "observed_tests": [
+          "T-TF-CLI-0001-R07-001",
+          "T-TF-CLI-0001-R07-002"
+        ],
+        "complete_declared_support": true,
+        "derivation": "verification_support:TF-CLI-0001-R07"
       }
     ],
     "observed_tests": [
@@ -9323,6 +10458,126 @@
         "provenance": {
           "path": "mods/engine/mods/implementation_observation/mods/testing/code/implementation_observation.rs",
           "pointer": "symbol:workspace_facades_testing_ownership_and_edge_evidence_are_preserved"
+        }
+      },
+      {
+        "id": "T-AF-PROGRAM-SEMANTICS-0001-R01-001",
+        "testing_module": "TEST-PROGRAM-SEMANTICS-0001",
+        "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+        "symbol": "symbols_and_recursive_types_preserve_declared_rust_interfaces",
+        "classification": "behavioral",
+        "declared_requirement": "AF-PROGRAM-SEMANTICS-0001-R01",
+        "provenance": {
+          "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+          "pointer": "symbol:symbols_and_recursive_types_preserve_declared_rust_interfaces"
+        }
+      },
+      {
+        "id": "T-AF-PROGRAM-SEMANTICS-0001-R01-002",
+        "testing_module": "TEST-PROGRAM-SEMANTICS-0001",
+        "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+        "symbol": "methods_associated_functions_and_traits_receive_distinct_identities",
+        "classification": "behavioral",
+        "declared_requirement": "AF-PROGRAM-SEMANTICS-0001-R01",
+        "provenance": {
+          "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+          "pointer": "symbol:methods_associated_functions_and_traits_receive_distinct_identities"
+        }
+      },
+      {
+        "id": "T-AF-PROGRAM-SEMANTICS-0001-R01-003",
+        "testing_module": "TEST-PROGRAM-SEMANTICS-0001",
+        "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+        "symbol": "deepest_module_ownership_and_testing_classification_are_independent_of_rust_namespaces",
+        "classification": "behavioral",
+        "declared_requirement": "AF-PROGRAM-SEMANTICS-0001-R01",
+        "provenance": {
+          "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+          "pointer": "symbol:deepest_module_ownership_and_testing_classification_are_independent_of_rust_namespaces"
+        }
+      },
+      {
+        "id": "T-AF-PROGRAM-SEMANTICS-0001-R02-001",
+        "testing_module": "TEST-PROGRAM-SEMANTICS-0001",
+        "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+        "symbol": "static_external_dynamic_unresolved_and_collapsed_call_states_are_explicit",
+        "classification": "behavioral",
+        "declared_requirement": "AF-PROGRAM-SEMANTICS-0001-R02",
+        "provenance": {
+          "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+          "pointer": "symbol:static_external_dynamic_unresolved_and_collapsed_call_states_are_explicit"
+        }
+      },
+      {
+        "id": "T-AF-PROGRAM-SEMANTICS-0001-R02-002",
+        "testing_module": "TEST-PROGRAM-SEMANTICS-0001",
+        "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+        "symbol": "cross_module_cross_crate_alias_and_facade_calls_preserve_the_boundary",
+        "classification": "behavioral",
+        "declared_requirement": "AF-PROGRAM-SEMANTICS-0001-R02",
+        "provenance": {
+          "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+          "pointer": "symbol:cross_module_cross_crate_alias_and_facade_calls_preserve_the_boundary"
+        }
+      },
+      {
+        "id": "T-AF-PROGRAM-SEMANTICS-0001-R02-003",
+        "testing_module": "TEST-PROGRAM-SEMANTICS-0001",
+        "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+        "symbol": "direct_and_mutual_recursion_form_deterministic_call_components",
+        "classification": "behavioral",
+        "declared_requirement": "AF-PROGRAM-SEMANTICS-0001-R02",
+        "provenance": {
+          "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+          "pointer": "symbol:direct_and_mutual_recursion_form_deterministic_call_components"
+        }
+      },
+      {
+        "id": "T-AF-PROGRAM-SEMANTICS-0001-R03-001",
+        "testing_module": "TEST-PROGRAM-SEMANTICS-0001",
+        "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+        "symbol": "assignments_arguments_returns_and_option_result_transforms_are_retained",
+        "classification": "behavioral",
+        "declared_requirement": "AF-PROGRAM-SEMANTICS-0001-R03",
+        "provenance": {
+          "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+          "pointer": "symbol:assignments_arguments_returns_and_option_result_transforms_are_retained"
+        }
+      },
+      {
+        "id": "T-AF-PROGRAM-SEMANTICS-0001-R03-002",
+        "testing_module": "TEST-PROGRAM-SEMANTICS-0001",
+        "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+        "symbol": "snapshot_mutation_is_rejected_and_canonical_bytes_and_digest_repeat",
+        "classification": "behavioral",
+        "declared_requirement": "AF-PROGRAM-SEMANTICS-0001-R03",
+        "provenance": {
+          "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+          "pointer": "symbol:snapshot_mutation_is_rejected_and_canonical_bytes_and_digest_repeat"
+        }
+      },
+      {
+        "id": "T-AF-PROGRAM-SEMANTICS-0001-R03-003",
+        "testing_module": "TEST-PROGRAM-SEMANTICS-0001",
+        "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+        "symbol": "analyzer_disagreement_is_a_hard_coherency_failure",
+        "classification": "behavioral",
+        "declared_requirement": "AF-PROGRAM-SEMANTICS-0001-R03",
+        "provenance": {
+          "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+          "pointer": "symbol:analyzer_disagreement_is_a_hard_coherency_failure"
+        }
+      },
+      {
+        "id": "T-AF-PROGRAM-SEMANTICS-0001-R03-004",
+        "testing_module": "TEST-PROGRAM-SEMANTICS-0001",
+        "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+        "symbol": "live_fortress_psm_is_coherent_deterministic_and_invalid_free",
+        "classification": "behavioral",
+        "declared_requirement": "AF-PROGRAM-SEMANTICS-0001-R03",
+        "provenance": {
+          "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+          "pointer": "symbol:live_fortress_psm_is_coherent_deterministic_and_invalid_free"
         }
       },
       {
@@ -10464,6 +11719,30 @@
           "path": "mods/cli/mods/testing/code/cli.rs",
           "pointer": "symbol:bfg_rejects_unsupported_formats"
         }
+      },
+      {
+        "id": "T-TF-CLI-0001-R07-001",
+        "testing_module": "TEST-CLI-0001",
+        "path": "mods/cli/mods/testing/code/cli.rs",
+        "symbol": "psm_json_is_observed_schema_versioned_and_repeatable",
+        "classification": "behavioral",
+        "declared_requirement": "TF-CLI-0001-R07",
+        "provenance": {
+          "path": "mods/cli/mods/testing/code/cli.rs",
+          "pointer": "symbol:psm_json_is_observed_schema_versioned_and_repeatable"
+        }
+      },
+      {
+        "id": "T-TF-CLI-0001-R07-002",
+        "testing_module": "TEST-CLI-0001",
+        "path": "mods/cli/mods/testing/code/cli.rs",
+        "symbol": "psm_rejects_unsupported_formats",
+        "classification": "behavioral",
+        "declared_requirement": "TF-CLI-0001-R07",
+        "provenance": {
+          "path": "mods/cli/mods/testing/code/cli.rs",
+          "pointer": "symbol:psm_rejects_unsupported_formats"
+        }
       }
     ]
   },
@@ -10925,6 +12204,26 @@
       ]
     },
     {
+      "id": "capability_reachability:AF-CONTRACT-COHERENCY-TESTING-0001:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:AF-CONTRACT-COHERENCY-TESTING-0001:CAP-PROGRAM-SEMANTICS",
+      "input_facts": [
+        "dependency_reachability:AF-CONTRACT-COHERENCY-TESTING-0001:AF-PROGRAM-SEMANTICS-0001",
+        "provides:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS"
+      ],
+      "explanation_path": [
+        "AF-CONTRACT-COHERENCY-TESTING-0001",
+        "AF-CORE-0001",
+        "AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
       "id": "capability_reachability:AF-CONTRACT-COHERENCY-TESTING-0001:AF-PROJECT-MODEL-0001:CAP-PROJECT-MODEL",
       "kind": "capability_reachability",
       "fact": "reachable_capability:AF-CONTRACT-COHERENCY-TESTING-0001:CAP-PROJECT-MODEL",
@@ -11098,6 +12397,25 @@
       ]
     },
     {
+      "id": "capability_reachability:AF-CORE-0001:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:AF-CORE-0001:CAP-PROGRAM-SEMANTICS",
+      "input_facts": [
+        "dependency_reachability:AF-CORE-0001:AF-PROGRAM-SEMANTICS-0001",
+        "provides:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS"
+      ],
+      "explanation_path": [
+        "AF-CORE-0001",
+        "AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
       "id": "capability_reachability:AF-CORE-0001:AF-PROJECT-MODEL-0001:CAP-PROJECT-MODEL",
       "kind": "capability_reachability",
       "fact": "reachable_capability:AF-CORE-0001:CAP-PROJECT-MODEL",
@@ -11183,6 +12501,64 @@
       ],
       "explanation_path": [
         "AF-FINDING-MODEL-0001",
+        "AF-STANDARD-REGISTRY-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/standard_registry/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:AF-PROGRAM-SEMANTICS-0001:AF-CONTRACT-COHERENCY-0001:CAP-CONTRACT-COHERENCY",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:AF-PROGRAM-SEMANTICS-0001:CAP-CONTRACT-COHERENCY",
+      "input_facts": [
+        "dependency_reachability:AF-PROGRAM-SEMANTICS-0001:AF-CONTRACT-COHERENCY-0001",
+        "provides:AF-CONTRACT-COHERENCY-0001:CAP-CONTRACT-COHERENCY"
+      ],
+      "explanation_path": [
+        "AF-PROGRAM-SEMANTICS-0001",
+        "AF-CONTRACT-COHERENCY-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/contract_coherency/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:AF-PROGRAM-SEMANTICS-0001:AF-IMPLEMENTATION-OBSERVATION-0001:CAP-IMPLEMENTATION-OBSERVATION",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:AF-PROGRAM-SEMANTICS-0001:CAP-IMPLEMENTATION-OBSERVATION",
+      "input_facts": [
+        "dependency_reachability:AF-PROGRAM-SEMANTICS-0001:AF-IMPLEMENTATION-OBSERVATION-0001",
+        "provides:AF-IMPLEMENTATION-OBSERVATION-0001:CAP-IMPLEMENTATION-OBSERVATION"
+      ],
+      "explanation_path": [
+        "AF-PROGRAM-SEMANTICS-0001",
+        "AF-IMPLEMENTATION-OBSERVATION-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/implementation_observation/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:AF-PROGRAM-SEMANTICS-0001:AF-STANDARD-REGISTRY-0001:CAP-STANDARD-REGISTRY",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:AF-PROGRAM-SEMANTICS-0001:CAP-STANDARD-REGISTRY",
+      "input_facts": [
+        "dependency_reachability:AF-PROGRAM-SEMANTICS-0001:AF-STANDARD-REGISTRY-0001",
+        "provides:AF-STANDARD-REGISTRY-0001:CAP-STANDARD-REGISTRY"
+      ],
+      "explanation_path": [
+        "AF-PROGRAM-SEMANTICS-0001",
+        "AF-CONTRACT-COHERENCY-0001",
         "AF-STANDARD-REGISTRY-0001"
       ],
       "provenance_closure": [
@@ -11341,6 +12717,25 @@
       "provenance_closure": [
         {
           "path": "mods/engine/mods/implementation_observation/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:AF-SNAPSHOT-GOVERNANCE-0001:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:AF-SNAPSHOT-GOVERNANCE-0001:CAP-PROGRAM-SEMANTICS",
+      "input_facts": [
+        "dependency_reachability:AF-SNAPSHOT-GOVERNANCE-0001:AF-PROGRAM-SEMANTICS-0001",
+        "provides:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS"
+      ],
+      "explanation_path": [
+        "AF-SNAPSHOT-GOVERNANCE-0001",
+        "AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/contract.json",
           "pointer": "/provides/0"
         }
       ]
@@ -11514,6 +12909,26 @@
       "provenance_closure": [
         {
           "path": "mods/engine/mods/implementation_observation/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-ARCHITECTURE-EVALUATION-0001:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-ARCHITECTURE-EVALUATION-0001:CAP-PROGRAM-SEMANTICS",
+      "input_facts": [
+        "dependency_reachability:TEST-ARCHITECTURE-EVALUATION-0001:AF-PROGRAM-SEMANTICS-0001",
+        "provides:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS"
+      ],
+      "explanation_path": [
+        "TEST-ARCHITECTURE-EVALUATION-0001",
+        "AF-CORE-0001",
+        "AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/contract.json",
           "pointer": "/provides/0"
         }
       ]
@@ -11715,6 +13130,26 @@
       ]
     },
     {
+      "id": "capability_reachability:TEST-BEHAVIORAL-SEMANTICS-0001:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-BEHAVIORAL-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS",
+      "input_facts": [
+        "dependency_reachability:TEST-BEHAVIORAL-SEMANTICS-0001:AF-PROGRAM-SEMANTICS-0001",
+        "provides:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS"
+      ],
+      "explanation_path": [
+        "TEST-BEHAVIORAL-SEMANTICS-0001",
+        "AF-CORE-0001",
+        "AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
       "id": "capability_reachability:TEST-BEHAVIORAL-SEMANTICS-0001:AF-PROJECT-MODEL-0001:CAP-PROJECT-MODEL",
       "kind": "capability_reachability",
       "fact": "reachable_capability:TEST-BEHAVIORAL-SEMANTICS-0001:CAP-PROJECT-MODEL",
@@ -11909,6 +13344,26 @@
       "provenance_closure": [
         {
           "path": "mods/engine/mods/implementation_observation/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-CLI-0001:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-CLI-0001:CAP-PROGRAM-SEMANTICS",
+      "input_facts": [
+        "dependency_reachability:TEST-CLI-0001:AF-PROGRAM-SEMANTICS-0001",
+        "provides:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS"
+      ],
+      "explanation_path": [
+        "TEST-CLI-0001",
+        "AF-CORE-0001",
+        "AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/contract.json",
           "pointer": "/provides/0"
         }
       ]
@@ -12132,6 +13587,26 @@
       ]
     },
     {
+      "id": "capability_reachability:TEST-FORTRESS-0001:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-FORTRESS-0001:CAP-PROGRAM-SEMANTICS",
+      "input_facts": [
+        "dependency_reachability:TEST-FORTRESS-0001:AF-PROGRAM-SEMANTICS-0001",
+        "provides:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS"
+      ],
+      "explanation_path": [
+        "TEST-FORTRESS-0001",
+        "AF-CORE-0001",
+        "AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
       "id": "capability_reachability:TEST-FORTRESS-0001:AF-PROJECT-MODEL-0001:CAP-PROJECT-MODEL",
       "kind": "capability_reachability",
       "fact": "reachable_capability:TEST-FORTRESS-0001:CAP-PROJECT-MODEL",
@@ -12349,6 +13824,26 @@
       ]
     },
     {
+      "id": "capability_reachability:TEST-IMPLEMENTATION-OBSERVATION-0001:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-IMPLEMENTATION-OBSERVATION-0001:CAP-PROGRAM-SEMANTICS",
+      "input_facts": [
+        "dependency_reachability:TEST-IMPLEMENTATION-OBSERVATION-0001:AF-PROGRAM-SEMANTICS-0001",
+        "provides:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS"
+      ],
+      "explanation_path": [
+        "TEST-IMPLEMENTATION-OBSERVATION-0001",
+        "AF-CORE-0001",
+        "AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
       "id": "capability_reachability:TEST-IMPLEMENTATION-OBSERVATION-0001:AF-PROJECT-MODEL-0001:CAP-PROJECT-MODEL",
       "kind": "capability_reachability",
       "fact": "reachable_capability:TEST-IMPLEMENTATION-OBSERVATION-0001:CAP-PROJECT-MODEL",
@@ -12418,6 +13913,224 @@
       ],
       "explanation_path": [
         "TEST-IMPLEMENTATION-OBSERVATION-0001",
+        "AF-CORE-0001",
+        "AF-STANDARD-REGISTRY-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/standard_registry/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-ARCHITECTURE-EVALUATION-0001:CAP-ARCHITECTURE-EVALUATION",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-PROGRAM-SEMANTICS-0001:CAP-ARCHITECTURE-EVALUATION",
+      "input_facts": [
+        "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-ARCHITECTURE-EVALUATION-0001",
+        "provides:AF-ARCHITECTURE-EVALUATION-0001:CAP-ARCHITECTURE-EVALUATION"
+      ],
+      "explanation_path": [
+        "TEST-PROGRAM-SEMANTICS-0001",
+        "AF-CORE-0001",
+        "AF-ARCHITECTURE-EVALUATION-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/architecture_evaluation/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-BEHAVIORAL-SEMANTICS-0001:CAP-BEHAVIORAL-SEMANTICS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-PROGRAM-SEMANTICS-0001:CAP-BEHAVIORAL-SEMANTICS",
+      "input_facts": [
+        "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-BEHAVIORAL-SEMANTICS-0001",
+        "provides:AF-BEHAVIORAL-SEMANTICS-0001:CAP-BEHAVIORAL-SEMANTICS"
+      ],
+      "explanation_path": [
+        "TEST-PROGRAM-SEMANTICS-0001",
+        "AF-CORE-0001",
+        "AF-BEHAVIORAL-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/behavioral_semantics/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-CONTRACT-COHERENCY-0001:CAP-CONTRACT-COHERENCY",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-PROGRAM-SEMANTICS-0001:CAP-CONTRACT-COHERENCY",
+      "input_facts": [
+        "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-CONTRACT-COHERENCY-0001",
+        "provides:AF-CONTRACT-COHERENCY-0001:CAP-CONTRACT-COHERENCY"
+      ],
+      "explanation_path": [
+        "TEST-PROGRAM-SEMANTICS-0001",
+        "AF-CORE-0001",
+        "AF-CONTRACT-COHERENCY-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/contract_coherency/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-CORE-0001:CAP-FORTRESS-ENGINE",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-PROGRAM-SEMANTICS-0001:CAP-FORTRESS-ENGINE",
+      "input_facts": [
+        "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-CORE-0001",
+        "provides:AF-CORE-0001:CAP-FORTRESS-ENGINE"
+      ],
+      "explanation_path": [
+        "TEST-PROGRAM-SEMANTICS-0001",
+        "AF-CORE-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-FINDING-MODEL-0001:CAP-FINDING-MODEL",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-PROGRAM-SEMANTICS-0001:CAP-FINDING-MODEL",
+      "input_facts": [
+        "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-FINDING-MODEL-0001",
+        "provides:AF-FINDING-MODEL-0001:CAP-FINDING-MODEL"
+      ],
+      "explanation_path": [
+        "TEST-PROGRAM-SEMANTICS-0001",
+        "AF-CORE-0001",
+        "AF-FINDING-MODEL-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/finding_model/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-IMPLEMENTATION-OBSERVATION-0001:CAP-IMPLEMENTATION-OBSERVATION",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-PROGRAM-SEMANTICS-0001:CAP-IMPLEMENTATION-OBSERVATION",
+      "input_facts": [
+        "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-IMPLEMENTATION-OBSERVATION-0001",
+        "provides:AF-IMPLEMENTATION-OBSERVATION-0001:CAP-IMPLEMENTATION-OBSERVATION"
+      ],
+      "explanation_path": [
+        "TEST-PROGRAM-SEMANTICS-0001",
+        "AF-CORE-0001",
+        "AF-IMPLEMENTATION-OBSERVATION-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/implementation_observation/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS",
+      "input_facts": [
+        "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-PROGRAM-SEMANTICS-0001",
+        "provides:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS"
+      ],
+      "explanation_path": [
+        "TEST-PROGRAM-SEMANTICS-0001",
+        "AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-PROJECT-MODEL-0001:CAP-PROJECT-MODEL",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-PROGRAM-SEMANTICS-0001:CAP-PROJECT-MODEL",
+      "input_facts": [
+        "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-PROJECT-MODEL-0001",
+        "provides:AF-PROJECT-MODEL-0001:CAP-PROJECT-MODEL"
+      ],
+      "explanation_path": [
+        "TEST-PROGRAM-SEMANTICS-0001",
+        "AF-CORE-0001",
+        "AF-PROJECT-MODEL-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/project_model/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-REPOSITORY-OBSERVATION-0001:CAP-REPOSITORY-OBSERVATION",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-PROGRAM-SEMANTICS-0001:CAP-REPOSITORY-OBSERVATION",
+      "input_facts": [
+        "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-REPOSITORY-OBSERVATION-0001",
+        "provides:AF-REPOSITORY-OBSERVATION-0001:CAP-REPOSITORY-OBSERVATION"
+      ],
+      "explanation_path": [
+        "TEST-PROGRAM-SEMANTICS-0001",
+        "AF-CORE-0001",
+        "AF-REPOSITORY-OBSERVATION-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/repository_observation/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-SNAPSHOT-GOVERNANCE-0001:CAP-SNAPSHOT-GOVERNANCE",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-PROGRAM-SEMANTICS-0001:CAP-SNAPSHOT-GOVERNANCE",
+      "input_facts": [
+        "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-SNAPSHOT-GOVERNANCE-0001",
+        "provides:AF-SNAPSHOT-GOVERNANCE-0001:CAP-SNAPSHOT-GOVERNANCE"
+      ],
+      "explanation_path": [
+        "TEST-PROGRAM-SEMANTICS-0001",
+        "AF-CORE-0001",
+        "AF-SNAPSHOT-GOVERNANCE-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/snapshot_governance/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-STANDARD-REGISTRY-0001:CAP-STANDARD-REGISTRY",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-PROGRAM-SEMANTICS-0001:CAP-STANDARD-REGISTRY",
+      "input_facts": [
+        "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-STANDARD-REGISTRY-0001",
+        "provides:AF-STANDARD-REGISTRY-0001:CAP-STANDARD-REGISTRY"
+      ],
+      "explanation_path": [
+        "TEST-PROGRAM-SEMANTICS-0001",
         "AF-CORE-0001",
         "AF-STANDARD-REGISTRY-0001"
       ],
@@ -12543,6 +14256,26 @@
       "provenance_closure": [
         {
           "path": "mods/engine/mods/implementation_observation/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-PROJECT-MODEL-0001:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-PROJECT-MODEL-0001:CAP-PROGRAM-SEMANTICS",
+      "input_facts": [
+        "dependency_reachability:TEST-PROJECT-MODEL-0001:AF-PROGRAM-SEMANTICS-0001",
+        "provides:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS"
+      ],
+      "explanation_path": [
+        "TEST-PROJECT-MODEL-0001",
+        "AF-CORE-0001",
+        "AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/contract.json",
           "pointer": "/provides/0"
         }
       ]
@@ -12746,6 +14479,26 @@
       ]
     },
     {
+      "id": "capability_reachability:TEST-REPOSITORY-OBSERVATION-0001:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-REPOSITORY-OBSERVATION-0001:CAP-PROGRAM-SEMANTICS",
+      "input_facts": [
+        "dependency_reachability:TEST-REPOSITORY-OBSERVATION-0001:AF-PROGRAM-SEMANTICS-0001",
+        "provides:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS"
+      ],
+      "explanation_path": [
+        "TEST-REPOSITORY-OBSERVATION-0001",
+        "AF-CORE-0001",
+        "AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
       "id": "capability_reachability:TEST-REPOSITORY-OBSERVATION-0001:AF-PROJECT-MODEL-0001:CAP-PROJECT-MODEL",
       "kind": "capability_reachability",
       "fact": "reachable_capability:TEST-REPOSITORY-OBSERVATION-0001:CAP-PROJECT-MODEL",
@@ -12936,6 +14689,26 @@
       "provenance_closure": [
         {
           "path": "mods/engine/mods/implementation_observation/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-SNAPSHOT-GOVERNANCE-0001:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-SNAPSHOT-GOVERNANCE-0001:CAP-PROGRAM-SEMANTICS",
+      "input_facts": [
+        "dependency_reachability:TEST-SNAPSHOT-GOVERNANCE-0001:AF-PROGRAM-SEMANTICS-0001",
+        "provides:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS"
+      ],
+      "explanation_path": [
+        "TEST-SNAPSHOT-GOVERNANCE-0001",
+        "AF-CORE-0001",
+        "AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/contract.json",
           "pointer": "/provides/0"
         }
       ]
@@ -13137,6 +14910,26 @@
       ]
     },
     {
+      "id": "capability_reachability:TEST-STANDARD-REGISTRY-0001:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-STANDARD-REGISTRY-0001:CAP-PROGRAM-SEMANTICS",
+      "input_facts": [
+        "dependency_reachability:TEST-STANDARD-REGISTRY-0001:AF-PROGRAM-SEMANTICS-0001",
+        "provides:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS"
+      ],
+      "explanation_path": [
+        "TEST-STANDARD-REGISTRY-0001",
+        "AF-CORE-0001",
+        "AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
       "id": "capability_reachability:TEST-STANDARD-REGISTRY-0001:AF-PROJECT-MODEL-0001:CAP-PROJECT-MODEL",
       "kind": "capability_reachability",
       "fact": "reachable_capability:TEST-STANDARD-REGISTRY-0001:CAP-PROJECT-MODEL",
@@ -13330,6 +15123,26 @@
       "provenance_closure": [
         {
           "path": "mods/engine/mods/implementation_observation/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TF-CLI-0001:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TF-CLI-0001:CAP-PROGRAM-SEMANTICS",
+      "input_facts": [
+        "dependency_reachability:TF-CLI-0001:AF-PROGRAM-SEMANTICS-0001",
+        "provides:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS"
+      ],
+      "explanation_path": [
+        "TF-CLI-0001",
+        "AF-CORE-0001",
+        "AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/contract.json",
           "pointer": "/provides/0"
         }
       ]
@@ -13541,6 +15354,24 @@
       ]
     },
     {
+      "id": "containment:AF-PROGRAM-SEMANTICS-0001",
+      "kind": "physical_containment",
+      "fact": "module_parent:AF-PROGRAM-SEMANTICS-0001",
+      "input_facts": [
+        "contract:AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "explanation_path": [
+        "AF-CORE-0001",
+        "AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/contract.json",
+          "pointer": "/id"
+        }
+      ]
+    },
+    {
       "id": "containment:AF-PROJECT-MODEL-0001",
       "kind": "physical_containment",
       "fact": "module_parent:AF-PROJECT-MODEL-0001",
@@ -13715,6 +15546,24 @@
       "provenance_closure": [
         {
           "path": "mods/engine/mods/implementation_observation/mods/testing/contract.json",
+          "pointer": "/id"
+        }
+      ]
+    },
+    {
+      "id": "containment:TEST-PROGRAM-SEMANTICS-0001",
+      "kind": "physical_containment",
+      "fact": "module_parent:TEST-PROGRAM-SEMANTICS-0001",
+      "input_facts": [
+        "contract:TEST-PROGRAM-SEMANTICS-0001"
+      ],
+      "explanation_path": [
+        "AF-PROGRAM-SEMANTICS-0001",
+        "TEST-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/mods/testing/contract.json",
           "pointer": "/id"
         }
       ]
@@ -14110,6 +15959,30 @@
       ]
     },
     {
+      "id": "dependency_reachability:AF-CONTRACT-COHERENCY-TESTING-0001:AF-PROGRAM-SEMANTICS-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:AF-CONTRACT-COHERENCY-TESTING-0001:AF-PROGRAM-SEMANTICS-0001",
+      "input_facts": [
+        "dependency:AF-CONTRACT-COHERENCY-TESTING-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "explanation_path": [
+        "AF-CONTRACT-COHERENCY-TESTING-0001",
+        "AF-CORE-0001",
+        "AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/contract_coherency/mods/testing/contract.json",
+          "pointer": "/requires/1"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/5"
+        }
+      ]
+    },
+    {
       "id": "dependency_reachability:AF-CONTRACT-COHERENCY-TESTING-0001:AF-PROJECT-MODEL-0001",
       "kind": "transitive_dependency",
       "fact": "dependency_reachability:AF-CONTRACT-COHERENCY-TESTING-0001:AF-PROJECT-MODEL-0001",
@@ -14129,7 +16002,7 @@
         },
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/5"
+          "pointer": "/requires/6"
         }
       ]
     },
@@ -14153,7 +16026,7 @@
         },
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/6"
+          "pointer": "/requires/7"
         }
       ]
     },
@@ -14284,6 +16157,24 @@
       ]
     },
     {
+      "id": "dependency_reachability:AF-CORE-0001:AF-PROGRAM-SEMANTICS-0001",
+      "kind": "direct_dependency",
+      "fact": "dependency_reachability:AF-CORE-0001:AF-PROGRAM-SEMANTICS-0001",
+      "input_facts": [
+        "dependency:AF-CORE-0001:AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "explanation_path": [
+        "AF-CORE-0001",
+        "AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/5"
+        }
+      ]
+    },
+    {
       "id": "dependency_reachability:AF-CORE-0001:AF-PROJECT-MODEL-0001",
       "kind": "direct_dependency",
       "fact": "dependency_reachability:AF-CORE-0001:AF-PROJECT-MODEL-0001",
@@ -14297,7 +16188,7 @@
       "provenance_closure": [
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/5"
+          "pointer": "/requires/6"
         }
       ]
     },
@@ -14315,7 +16206,7 @@
       "provenance_closure": [
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/6"
+          "pointer": "/requires/7"
         }
       ]
     },
@@ -14333,7 +16224,7 @@
       "provenance_closure": [
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/7"
+          "pointer": "/requires/8"
         }
       ]
     },
@@ -14351,7 +16242,7 @@
       "provenance_closure": [
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/8"
+          "pointer": "/requires/9"
         }
       ]
     },
@@ -14369,6 +16260,66 @@
       "provenance_closure": [
         {
           "path": "mods/engine/mods/finding_model/contract.json",
+          "pointer": "/requires/0"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:AF-PROGRAM-SEMANTICS-0001:AF-CONTRACT-COHERENCY-0001",
+      "kind": "direct_dependency",
+      "fact": "dependency_reachability:AF-PROGRAM-SEMANTICS-0001:AF-CONTRACT-COHERENCY-0001",
+      "input_facts": [
+        "dependency:AF-PROGRAM-SEMANTICS-0001:AF-CONTRACT-COHERENCY-0001"
+      ],
+      "explanation_path": [
+        "AF-PROGRAM-SEMANTICS-0001",
+        "AF-CONTRACT-COHERENCY-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/contract.json",
+          "pointer": "/requires/0"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:AF-PROGRAM-SEMANTICS-0001:AF-IMPLEMENTATION-OBSERVATION-0001",
+      "kind": "direct_dependency",
+      "fact": "dependency_reachability:AF-PROGRAM-SEMANTICS-0001:AF-IMPLEMENTATION-OBSERVATION-0001",
+      "input_facts": [
+        "dependency:AF-PROGRAM-SEMANTICS-0001:AF-IMPLEMENTATION-OBSERVATION-0001"
+      ],
+      "explanation_path": [
+        "AF-PROGRAM-SEMANTICS-0001",
+        "AF-IMPLEMENTATION-OBSERVATION-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/contract.json",
+          "pointer": "/requires/1"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:AF-PROGRAM-SEMANTICS-0001:AF-STANDARD-REGISTRY-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:AF-PROGRAM-SEMANTICS-0001:AF-STANDARD-REGISTRY-0001",
+      "input_facts": [
+        "dependency:AF-PROGRAM-SEMANTICS-0001:AF-CONTRACT-COHERENCY-0001",
+        "dependency:AF-CONTRACT-COHERENCY-0001:AF-STANDARD-REGISTRY-0001"
+      ],
+      "explanation_path": [
+        "AF-PROGRAM-SEMANTICS-0001",
+        "AF-CONTRACT-COHERENCY-0001",
+        "AF-STANDARD-REGISTRY-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/mods/contract_coherency/contract.json",
           "pointer": "/requires/0"
         }
       ]
@@ -14524,6 +16475,24 @@
       ]
     },
     {
+      "id": "dependency_reachability:AF-SNAPSHOT-GOVERNANCE-0001:AF-PROGRAM-SEMANTICS-0001",
+      "kind": "direct_dependency",
+      "fact": "dependency_reachability:AF-SNAPSHOT-GOVERNANCE-0001:AF-PROGRAM-SEMANTICS-0001",
+      "input_facts": [
+        "dependency:AF-SNAPSHOT-GOVERNANCE-0001:AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "explanation_path": [
+        "AF-SNAPSHOT-GOVERNANCE-0001",
+        "AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/snapshot_governance/contract.json",
+          "pointer": "/requires/5"
+        }
+      ]
+    },
+    {
       "id": "dependency_reachability:AF-SNAPSHOT-GOVERNANCE-0001:AF-PROJECT-MODEL-0001",
       "kind": "direct_dependency",
       "fact": "dependency_reachability:AF-SNAPSHOT-GOVERNANCE-0001:AF-PROJECT-MODEL-0001",
@@ -14537,7 +16506,7 @@
       "provenance_closure": [
         {
           "path": "mods/engine/mods/snapshot_governance/contract.json",
-          "pointer": "/requires/5"
+          "pointer": "/requires/6"
         }
       ]
     },
@@ -14555,7 +16524,7 @@
       "provenance_closure": [
         {
           "path": "mods/engine/mods/snapshot_governance/contract.json",
-          "pointer": "/requires/6"
+          "pointer": "/requires/7"
         }
       ]
     },
@@ -14573,7 +16542,7 @@
       "provenance_closure": [
         {
           "path": "mods/engine/mods/snapshot_governance/contract.json",
-          "pointer": "/requires/7"
+          "pointer": "/requires/8"
         }
       ]
     },
@@ -14698,6 +16667,30 @@
       ]
     },
     {
+      "id": "dependency_reachability:TEST-ARCHITECTURE-EVALUATION-0001:AF-PROGRAM-SEMANTICS-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-ARCHITECTURE-EVALUATION-0001:AF-PROGRAM-SEMANTICS-0001",
+      "input_facts": [
+        "dependency:TEST-ARCHITECTURE-EVALUATION-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "explanation_path": [
+        "TEST-ARCHITECTURE-EVALUATION-0001",
+        "AF-CORE-0001",
+        "AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/architecture_evaluation/mods/testing/contract.json",
+          "pointer": "/requires/2"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/5"
+        }
+      ]
+    },
+    {
       "id": "dependency_reachability:TEST-ARCHITECTURE-EVALUATION-0001:AF-PROJECT-MODEL-0001",
       "kind": "transitive_dependency",
       "fact": "dependency_reachability:TEST-ARCHITECTURE-EVALUATION-0001:AF-PROJECT-MODEL-0001",
@@ -14759,7 +16752,7 @@
         },
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/7"
+          "pointer": "/requires/8"
         }
       ]
     },
@@ -14914,6 +16907,30 @@
       ]
     },
     {
+      "id": "dependency_reachability:TEST-BEHAVIORAL-SEMANTICS-0001:AF-PROGRAM-SEMANTICS-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-BEHAVIORAL-SEMANTICS-0001:AF-PROGRAM-SEMANTICS-0001",
+      "input_facts": [
+        "dependency:TEST-BEHAVIORAL-SEMANTICS-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "explanation_path": [
+        "TEST-BEHAVIORAL-SEMANTICS-0001",
+        "AF-CORE-0001",
+        "AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/behavioral_semantics/mods/testing/contract.json",
+          "pointer": "/requires/2"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/5"
+        }
+      ]
+    },
+    {
       "id": "dependency_reachability:TEST-BEHAVIORAL-SEMANTICS-0001:AF-PROJECT-MODEL-0001",
       "kind": "transitive_dependency",
       "fact": "dependency_reachability:TEST-BEHAVIORAL-SEMANTICS-0001:AF-PROJECT-MODEL-0001",
@@ -14933,7 +16950,7 @@
         },
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/5"
+          "pointer": "/requires/6"
         }
       ]
     },
@@ -14957,7 +16974,7 @@
         },
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/6"
+          "pointer": "/requires/7"
         }
       ]
     },
@@ -14981,7 +16998,7 @@
         },
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/7"
+          "pointer": "/requires/8"
         }
       ]
     },
@@ -15148,6 +17165,30 @@
       ]
     },
     {
+      "id": "dependency_reachability:TEST-CLI-0001:AF-PROGRAM-SEMANTICS-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-CLI-0001:AF-PROGRAM-SEMANTICS-0001",
+      "input_facts": [
+        "dependency:TEST-CLI-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "explanation_path": [
+        "TEST-CLI-0001",
+        "AF-CORE-0001",
+        "AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/cli/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/5"
+        }
+      ]
+    },
+    {
       "id": "dependency_reachability:TEST-CLI-0001:AF-PROJECT-MODEL-0001",
       "kind": "transitive_dependency",
       "fact": "dependency_reachability:TEST-CLI-0001:AF-PROJECT-MODEL-0001",
@@ -15167,7 +17208,7 @@
         },
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/5"
+          "pointer": "/requires/6"
         }
       ]
     },
@@ -15191,7 +17232,7 @@
         },
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/6"
+          "pointer": "/requires/7"
         }
       ]
     },
@@ -15215,7 +17256,7 @@
         },
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/7"
+          "pointer": "/requires/8"
         }
       ]
     },
@@ -15239,7 +17280,7 @@
         },
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/8"
+          "pointer": "/requires/9"
         }
       ]
     },
@@ -15400,6 +17441,30 @@
       ]
     },
     {
+      "id": "dependency_reachability:TEST-FORTRESS-0001:AF-PROGRAM-SEMANTICS-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-FORTRESS-0001:AF-PROGRAM-SEMANTICS-0001",
+      "input_facts": [
+        "dependency:TEST-FORTRESS-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "explanation_path": [
+        "TEST-FORTRESS-0001",
+        "AF-CORE-0001",
+        "AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/5"
+        }
+      ]
+    },
+    {
       "id": "dependency_reachability:TEST-FORTRESS-0001:AF-PROJECT-MODEL-0001",
       "kind": "transitive_dependency",
       "fact": "dependency_reachability:TEST-FORTRESS-0001:AF-PROJECT-MODEL-0001",
@@ -15419,7 +17484,7 @@
         },
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/5"
+          "pointer": "/requires/6"
         }
       ]
     },
@@ -15443,7 +17508,7 @@
         },
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/6"
+          "pointer": "/requires/7"
         }
       ]
     },
@@ -15467,7 +17532,7 @@
         },
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/7"
+          "pointer": "/requires/8"
         }
       ]
     },
@@ -15491,7 +17556,7 @@
         },
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/8"
+          "pointer": "/requires/9"
         }
       ]
     },
@@ -15646,6 +17711,30 @@
       ]
     },
     {
+      "id": "dependency_reachability:TEST-IMPLEMENTATION-OBSERVATION-0001:AF-PROGRAM-SEMANTICS-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-IMPLEMENTATION-OBSERVATION-0001:AF-PROGRAM-SEMANTICS-0001",
+      "input_facts": [
+        "dependency:TEST-IMPLEMENTATION-OBSERVATION-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "explanation_path": [
+        "TEST-IMPLEMENTATION-OBSERVATION-0001",
+        "AF-CORE-0001",
+        "AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/implementation_observation/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/5"
+        }
+      ]
+    },
+    {
       "id": "dependency_reachability:TEST-IMPLEMENTATION-OBSERVATION-0001:AF-PROJECT-MODEL-0001",
       "kind": "transitive_dependency",
       "fact": "dependency_reachability:TEST-IMPLEMENTATION-OBSERVATION-0001:AF-PROJECT-MODEL-0001",
@@ -15665,7 +17754,7 @@
         },
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/5"
+          "pointer": "/requires/6"
         }
       ]
     },
@@ -15689,7 +17778,7 @@
         },
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/6"
+          "pointer": "/requires/7"
         }
       ]
     },
@@ -15713,7 +17802,7 @@
         },
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/7"
+          "pointer": "/requires/8"
         }
       ]
     },
@@ -15737,7 +17826,259 @@
         },
         {
           "path": "mods/engine/contract.json",
+          "pointer": "/requires/9"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-ARCHITECTURE-EVALUATION-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-ARCHITECTURE-EVALUATION-0001",
+      "input_facts": [
+        "dependency:TEST-PROGRAM-SEMANTICS-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-ARCHITECTURE-EVALUATION-0001"
+      ],
+      "explanation_path": [
+        "TEST-PROGRAM-SEMANTICS-0001",
+        "AF-CORE-0001",
+        "AF-ARCHITECTURE-EVALUATION-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/0"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-BEHAVIORAL-SEMANTICS-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-BEHAVIORAL-SEMANTICS-0001",
+      "input_facts": [
+        "dependency:TEST-PROGRAM-SEMANTICS-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-BEHAVIORAL-SEMANTICS-0001"
+      ],
+      "explanation_path": [
+        "TEST-PROGRAM-SEMANTICS-0001",
+        "AF-CORE-0001",
+        "AF-BEHAVIORAL-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/1"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-CONTRACT-COHERENCY-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-CONTRACT-COHERENCY-0001",
+      "input_facts": [
+        "dependency:TEST-PROGRAM-SEMANTICS-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-CONTRACT-COHERENCY-0001"
+      ],
+      "explanation_path": [
+        "TEST-PROGRAM-SEMANTICS-0001",
+        "AF-CORE-0001",
+        "AF-CONTRACT-COHERENCY-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/2"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-CORE-0001",
+      "kind": "direct_dependency",
+      "fact": "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-CORE-0001",
+      "input_facts": [
+        "dependency:TEST-PROGRAM-SEMANTICS-0001:AF-CORE-0001"
+      ],
+      "explanation_path": [
+        "TEST-PROGRAM-SEMANTICS-0001",
+        "AF-CORE-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-FINDING-MODEL-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-FINDING-MODEL-0001",
+      "input_facts": [
+        "dependency:TEST-PROGRAM-SEMANTICS-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-FINDING-MODEL-0001"
+      ],
+      "explanation_path": [
+        "TEST-PROGRAM-SEMANTICS-0001",
+        "AF-CORE-0001",
+        "AF-FINDING-MODEL-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/3"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-IMPLEMENTATION-OBSERVATION-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-IMPLEMENTATION-OBSERVATION-0001",
+      "input_facts": [
+        "dependency:TEST-PROGRAM-SEMANTICS-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-IMPLEMENTATION-OBSERVATION-0001"
+      ],
+      "explanation_path": [
+        "TEST-PROGRAM-SEMANTICS-0001",
+        "AF-CORE-0001",
+        "AF-IMPLEMENTATION-OBSERVATION-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/4"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-PROGRAM-SEMANTICS-0001",
+      "kind": "direct_dependency",
+      "fact": "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-PROGRAM-SEMANTICS-0001",
+      "input_facts": [
+        "dependency:TEST-PROGRAM-SEMANTICS-0001:AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "explanation_path": [
+        "TEST-PROGRAM-SEMANTICS-0001",
+        "AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/mods/testing/contract.json",
+          "pointer": "/requires/1"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-PROJECT-MODEL-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-PROJECT-MODEL-0001",
+      "input_facts": [
+        "dependency:TEST-PROGRAM-SEMANTICS-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-PROJECT-MODEL-0001"
+      ],
+      "explanation_path": [
+        "TEST-PROGRAM-SEMANTICS-0001",
+        "AF-CORE-0001",
+        "AF-PROJECT-MODEL-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/6"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-REPOSITORY-OBSERVATION-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-REPOSITORY-OBSERVATION-0001",
+      "input_facts": [
+        "dependency:TEST-PROGRAM-SEMANTICS-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-REPOSITORY-OBSERVATION-0001"
+      ],
+      "explanation_path": [
+        "TEST-PROGRAM-SEMANTICS-0001",
+        "AF-CORE-0001",
+        "AF-REPOSITORY-OBSERVATION-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/7"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-SNAPSHOT-GOVERNANCE-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-SNAPSHOT-GOVERNANCE-0001",
+      "input_facts": [
+        "dependency:TEST-PROGRAM-SEMANTICS-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-SNAPSHOT-GOVERNANCE-0001"
+      ],
+      "explanation_path": [
+        "TEST-PROGRAM-SEMANTICS-0001",
+        "AF-CORE-0001",
+        "AF-SNAPSHOT-GOVERNANCE-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
           "pointer": "/requires/8"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-STANDARD-REGISTRY-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-STANDARD-REGISTRY-0001",
+      "input_facts": [
+        "dependency:TEST-PROGRAM-SEMANTICS-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-STANDARD-REGISTRY-0001"
+      ],
+      "explanation_path": [
+        "TEST-PROGRAM-SEMANTICS-0001",
+        "AF-CORE-0001",
+        "AF-STANDARD-REGISTRY-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/9"
         }
       ]
     },
@@ -15880,6 +18221,30 @@
       ]
     },
     {
+      "id": "dependency_reachability:TEST-PROJECT-MODEL-0001:AF-PROGRAM-SEMANTICS-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-PROJECT-MODEL-0001:AF-PROGRAM-SEMANTICS-0001",
+      "input_facts": [
+        "dependency:TEST-PROJECT-MODEL-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "explanation_path": [
+        "TEST-PROJECT-MODEL-0001",
+        "AF-CORE-0001",
+        "AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/project_model/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/5"
+        }
+      ]
+    },
+    {
       "id": "dependency_reachability:TEST-PROJECT-MODEL-0001:AF-PROJECT-MODEL-0001",
       "kind": "direct_dependency",
       "fact": "dependency_reachability:TEST-PROJECT-MODEL-0001:AF-PROJECT-MODEL-0001",
@@ -15917,7 +18282,7 @@
         },
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/6"
+          "pointer": "/requires/7"
         }
       ]
     },
@@ -15941,7 +18306,7 @@
         },
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/7"
+          "pointer": "/requires/8"
         }
       ]
     },
@@ -15965,7 +18330,7 @@
         },
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/8"
+          "pointer": "/requires/9"
         }
       ]
     },
@@ -16108,6 +18473,30 @@
       ]
     },
     {
+      "id": "dependency_reachability:TEST-REPOSITORY-OBSERVATION-0001:AF-PROGRAM-SEMANTICS-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-REPOSITORY-OBSERVATION-0001:AF-PROGRAM-SEMANTICS-0001",
+      "input_facts": [
+        "dependency:TEST-REPOSITORY-OBSERVATION-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "explanation_path": [
+        "TEST-REPOSITORY-OBSERVATION-0001",
+        "AF-CORE-0001",
+        "AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/repository_observation/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/5"
+        }
+      ]
+    },
+    {
       "id": "dependency_reachability:TEST-REPOSITORY-OBSERVATION-0001:AF-PROJECT-MODEL-0001",
       "kind": "transitive_dependency",
       "fact": "dependency_reachability:TEST-REPOSITORY-OBSERVATION-0001:AF-PROJECT-MODEL-0001",
@@ -16127,7 +18516,7 @@
         },
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/5"
+          "pointer": "/requires/6"
         }
       ]
     },
@@ -16169,7 +18558,7 @@
         },
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/7"
+          "pointer": "/requires/8"
         }
       ]
     },
@@ -16193,7 +18582,7 @@
         },
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/8"
+          "pointer": "/requires/9"
         }
       ]
     },
@@ -16314,6 +18703,30 @@
         {
           "path": "mods/engine/mods/architecture_evaluation/contract.json",
           "pointer": "/requires/2"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:TEST-SNAPSHOT-GOVERNANCE-0001:AF-PROGRAM-SEMANTICS-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-SNAPSHOT-GOVERNANCE-0001:AF-PROGRAM-SEMANTICS-0001",
+      "input_facts": [
+        "dependency:TEST-SNAPSHOT-GOVERNANCE-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "explanation_path": [
+        "TEST-SNAPSHOT-GOVERNANCE-0001",
+        "AF-CORE-0001",
+        "AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/snapshot_governance/mods/testing/contract.json",
+          "pointer": "/requires/2"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/5"
         }
       ]
     },
@@ -16534,6 +18947,30 @@
       ]
     },
     {
+      "id": "dependency_reachability:TEST-STANDARD-REGISTRY-0001:AF-PROGRAM-SEMANTICS-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-STANDARD-REGISTRY-0001:AF-PROGRAM-SEMANTICS-0001",
+      "input_facts": [
+        "dependency:TEST-STANDARD-REGISTRY-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "explanation_path": [
+        "TEST-STANDARD-REGISTRY-0001",
+        "AF-CORE-0001",
+        "AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/standard_registry/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/5"
+        }
+      ]
+    },
+    {
       "id": "dependency_reachability:TEST-STANDARD-REGISTRY-0001:AF-PROJECT-MODEL-0001",
       "kind": "transitive_dependency",
       "fact": "dependency_reachability:TEST-STANDARD-REGISTRY-0001:AF-PROJECT-MODEL-0001",
@@ -16553,7 +18990,7 @@
         },
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/5"
+          "pointer": "/requires/6"
         }
       ]
     },
@@ -16577,7 +19014,7 @@
         },
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/6"
+          "pointer": "/requires/7"
         }
       ]
     },
@@ -16601,7 +19038,7 @@
         },
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/7"
+          "pointer": "/requires/8"
         }
       ]
     },
@@ -16762,6 +19199,30 @@
       ]
     },
     {
+      "id": "dependency_reachability:TF-CLI-0001:AF-PROGRAM-SEMANTICS-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TF-CLI-0001:AF-PROGRAM-SEMANTICS-0001",
+      "input_facts": [
+        "dependency:TF-CLI-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "explanation_path": [
+        "TF-CLI-0001",
+        "AF-CORE-0001",
+        "AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/cli/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/5"
+        }
+      ]
+    },
+    {
       "id": "dependency_reachability:TF-CLI-0001:AF-PROJECT-MODEL-0001",
       "kind": "transitive_dependency",
       "fact": "dependency_reachability:TF-CLI-0001:AF-PROJECT-MODEL-0001",
@@ -16781,7 +19242,7 @@
         },
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/5"
+          "pointer": "/requires/6"
         }
       ]
     },
@@ -16805,7 +19266,7 @@
         },
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/6"
+          "pointer": "/requires/7"
         }
       ]
     },
@@ -16829,7 +19290,7 @@
         },
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/7"
+          "pointer": "/requires/8"
         }
       ]
     },
@@ -16853,7 +19314,7 @@
         },
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/8"
+          "pointer": "/requires/9"
         }
       ]
     },
@@ -17406,6 +19867,24 @@
       ]
     },
     {
+      "id": "inverse_consumer:AF-CONTRACT-COHERENCY-0001:AF-PROGRAM-SEMANTICS-0001:CAP-CONTRACT-COHERENCY",
+      "kind": "inverse_consumer",
+      "fact": "consumer:AF-CONTRACT-COHERENCY-0001:AF-PROGRAM-SEMANTICS-0001:CAP-CONTRACT-COHERENCY",
+      "input_facts": [
+        "requires:AF-PROGRAM-SEMANTICS-0001:CAP-CONTRACT-COHERENCY"
+      ],
+      "explanation_path": [
+        "AF-PROGRAM-SEMANTICS-0001",
+        "AF-CONTRACT-COHERENCY-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/contract.json",
+          "pointer": "/requires/0"
+        }
+      ]
+    },
+    {
       "id": "inverse_consumer:AF-CONTRACT-COHERENCY-0001:AF-SNAPSHOT-GOVERNANCE-0001:CAP-CONTRACT-COHERENCY",
       "kind": "inverse_consumer",
       "fact": "consumer:AF-CONTRACT-COHERENCY-0001:AF-SNAPSHOT-GOVERNANCE-0001:CAP-CONTRACT-COHERENCY",
@@ -17581,6 +20060,24 @@
       "provenance_closure": [
         {
           "path": "mods/engine/mods/implementation_observation/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        }
+      ]
+    },
+    {
+      "id": "inverse_consumer:AF-CORE-0001:TEST-PROGRAM-SEMANTICS-0001:CAP-FORTRESS-ENGINE",
+      "kind": "inverse_consumer",
+      "fact": "consumer:AF-CORE-0001:TEST-PROGRAM-SEMANTICS-0001:CAP-FORTRESS-ENGINE",
+      "input_facts": [
+        "requires:TEST-PROGRAM-SEMANTICS-0001:CAP-FORTRESS-ENGINE"
+      ],
+      "explanation_path": [
+        "TEST-PROGRAM-SEMANTICS-0001",
+        "AF-CORE-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/mods/testing/contract.json",
           "pointer": "/requires/0"
         }
       ]
@@ -17802,6 +20299,24 @@
       ]
     },
     {
+      "id": "inverse_consumer:AF-IMPLEMENTATION-OBSERVATION-0001:AF-PROGRAM-SEMANTICS-0001:CAP-IMPLEMENTATION-OBSERVATION",
+      "kind": "inverse_consumer",
+      "fact": "consumer:AF-IMPLEMENTATION-OBSERVATION-0001:AF-PROGRAM-SEMANTICS-0001:CAP-IMPLEMENTATION-OBSERVATION",
+      "input_facts": [
+        "requires:AF-PROGRAM-SEMANTICS-0001:CAP-IMPLEMENTATION-OBSERVATION"
+      ],
+      "explanation_path": [
+        "AF-PROGRAM-SEMANTICS-0001",
+        "AF-IMPLEMENTATION-OBSERVATION-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/contract.json",
+          "pointer": "/requires/1"
+        }
+      ]
+    },
+    {
       "id": "inverse_consumer:AF-IMPLEMENTATION-OBSERVATION-0001:AF-SNAPSHOT-GOVERNANCE-0001:CAP-IMPLEMENTATION-OBSERVATION",
       "kind": "inverse_consumer",
       "fact": "consumer:AF-IMPLEMENTATION-OBSERVATION-0001:AF-SNAPSHOT-GOVERNANCE-0001:CAP-IMPLEMENTATION-OBSERVATION",
@@ -17856,6 +20371,60 @@
       ]
     },
     {
+      "id": "inverse_consumer:AF-PROGRAM-SEMANTICS-0001:AF-CORE-0001:CAP-PROGRAM-SEMANTICS",
+      "kind": "inverse_consumer",
+      "fact": "consumer:AF-PROGRAM-SEMANTICS-0001:AF-CORE-0001:CAP-PROGRAM-SEMANTICS",
+      "input_facts": [
+        "requires:AF-CORE-0001:CAP-PROGRAM-SEMANTICS"
+      ],
+      "explanation_path": [
+        "AF-CORE-0001",
+        "AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/5"
+        }
+      ]
+    },
+    {
+      "id": "inverse_consumer:AF-PROGRAM-SEMANTICS-0001:AF-SNAPSHOT-GOVERNANCE-0001:CAP-PROGRAM-SEMANTICS",
+      "kind": "inverse_consumer",
+      "fact": "consumer:AF-PROGRAM-SEMANTICS-0001:AF-SNAPSHOT-GOVERNANCE-0001:CAP-PROGRAM-SEMANTICS",
+      "input_facts": [
+        "requires:AF-SNAPSHOT-GOVERNANCE-0001:CAP-PROGRAM-SEMANTICS"
+      ],
+      "explanation_path": [
+        "AF-SNAPSHOT-GOVERNANCE-0001",
+        "AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/snapshot_governance/contract.json",
+          "pointer": "/requires/5"
+        }
+      ]
+    },
+    {
+      "id": "inverse_consumer:AF-PROGRAM-SEMANTICS-0001:TEST-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS",
+      "kind": "inverse_consumer",
+      "fact": "consumer:AF-PROGRAM-SEMANTICS-0001:TEST-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS",
+      "input_facts": [
+        "requires:TEST-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS"
+      ],
+      "explanation_path": [
+        "TEST-PROGRAM-SEMANTICS-0001",
+        "AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/mods/testing/contract.json",
+          "pointer": "/requires/1"
+        }
+      ]
+    },
+    {
       "id": "inverse_consumer:AF-PROJECT-MODEL-0001:AF-ARCHITECTURE-EVALUATION-0001:CAP-PROJECT-MODEL",
       "kind": "inverse_consumer",
       "fact": "consumer:AF-PROJECT-MODEL-0001:AF-ARCHITECTURE-EVALUATION-0001:CAP-PROJECT-MODEL",
@@ -17887,7 +20456,7 @@
       "provenance_closure": [
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/5"
+          "pointer": "/requires/6"
         }
       ]
     },
@@ -17923,7 +20492,7 @@
       "provenance_closure": [
         {
           "path": "mods/engine/mods/snapshot_governance/contract.json",
-          "pointer": "/requires/5"
+          "pointer": "/requires/6"
         }
       ]
     },
@@ -17959,7 +20528,7 @@
       "provenance_closure": [
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/6"
+          "pointer": "/requires/7"
         }
       ]
     },
@@ -17977,7 +20546,7 @@
       "provenance_closure": [
         {
           "path": "mods/engine/mods/snapshot_governance/contract.json",
-          "pointer": "/requires/6"
+          "pointer": "/requires/7"
         }
       ]
     },
@@ -18067,7 +20636,7 @@
       "provenance_closure": [
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/7"
+          "pointer": "/requires/8"
         }
       ]
     },
@@ -18157,7 +20726,7 @@
       "provenance_closure": [
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/8"
+          "pointer": "/requires/9"
         }
       ]
     },
@@ -18211,7 +20780,7 @@
       "provenance_closure": [
         {
           "path": "mods/engine/mods/snapshot_governance/contract.json",
-          "pointer": "/requires/7"
+          "pointer": "/requires/8"
         }
       ]
     },
@@ -18359,6 +20928,25 @@
       "provenance_closure": [
         {
           "path": "mods/engine/mods/implementation_observation/mods/testing/contract.json",
+          "pointer": "/relationships/0"
+        }
+      ]
+    },
+    {
+      "id": "verification_boundary:AF-PROGRAM-SEMANTICS-0001:TEST-PROGRAM-SEMANTICS-0001",
+      "kind": "verification_boundary",
+      "fact": "testing_boundary:AF-PROGRAM-SEMANTICS-0001",
+      "input_facts": [
+        "containment:TEST-PROGRAM-SEMANTICS-0001",
+        "verifies:TEST-PROGRAM-SEMANTICS-0001:AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "explanation_path": [
+        "AF-PROGRAM-SEMANTICS-0001",
+        "TEST-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/mods/testing/contract.json",
           "pointer": "/relationships/0"
         }
       ]
@@ -18794,6 +21382,76 @@
         {
           "path": "mods/engine/mods/implementation_observation/contract.json",
           "pointer": "/features/0/requirements/1"
+        }
+      ]
+    },
+    {
+      "id": "verification_support:AF-PROGRAM-SEMANTICS-0001-R01",
+      "kind": "verification_support",
+      "fact": "requirement_support:AF-PROGRAM-SEMANTICS-0001-R01",
+      "input_facts": [
+        "requirement:AF-PROGRAM-SEMANTICS-0001-R01",
+        "testing_boundary:AF-PROGRAM-SEMANTICS-0001:TEST-PROGRAM-SEMANTICS-0001",
+        "declared_test:AF-PROGRAM-SEMANTICS-0001-R01:T-AF-PROGRAM-SEMANTICS-0001-R01-001",
+        "declared_test:AF-PROGRAM-SEMANTICS-0001-R01:T-AF-PROGRAM-SEMANTICS-0001-R01-002",
+        "declared_test:AF-PROGRAM-SEMANTICS-0001-R01:T-AF-PROGRAM-SEMANTICS-0001-R01-003"
+      ],
+      "explanation_path": [
+        "AF-PROGRAM-SEMANTICS-0001",
+        "AF-PROGRAM-SEMANTICS-0001-R01",
+        "TEST-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/contract.json",
+          "pointer": "/features/0/requirements/0"
+        }
+      ]
+    },
+    {
+      "id": "verification_support:AF-PROGRAM-SEMANTICS-0001-R02",
+      "kind": "verification_support",
+      "fact": "requirement_support:AF-PROGRAM-SEMANTICS-0001-R02",
+      "input_facts": [
+        "requirement:AF-PROGRAM-SEMANTICS-0001-R02",
+        "testing_boundary:AF-PROGRAM-SEMANTICS-0001:TEST-PROGRAM-SEMANTICS-0001",
+        "declared_test:AF-PROGRAM-SEMANTICS-0001-R02:T-AF-PROGRAM-SEMANTICS-0001-R02-001",
+        "declared_test:AF-PROGRAM-SEMANTICS-0001-R02:T-AF-PROGRAM-SEMANTICS-0001-R02-002",
+        "declared_test:AF-PROGRAM-SEMANTICS-0001-R02:T-AF-PROGRAM-SEMANTICS-0001-R02-003"
+      ],
+      "explanation_path": [
+        "AF-PROGRAM-SEMANTICS-0001",
+        "AF-PROGRAM-SEMANTICS-0001-R02",
+        "TEST-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/contract.json",
+          "pointer": "/features/0/requirements/1"
+        }
+      ]
+    },
+    {
+      "id": "verification_support:AF-PROGRAM-SEMANTICS-0001-R03",
+      "kind": "verification_support",
+      "fact": "requirement_support:AF-PROGRAM-SEMANTICS-0001-R03",
+      "input_facts": [
+        "requirement:AF-PROGRAM-SEMANTICS-0001-R03",
+        "testing_boundary:AF-PROGRAM-SEMANTICS-0001:TEST-PROGRAM-SEMANTICS-0001",
+        "declared_test:AF-PROGRAM-SEMANTICS-0001-R03:T-AF-PROGRAM-SEMANTICS-0001-R03-001",
+        "declared_test:AF-PROGRAM-SEMANTICS-0001-R03:T-AF-PROGRAM-SEMANTICS-0001-R03-002",
+        "declared_test:AF-PROGRAM-SEMANTICS-0001-R03:T-AF-PROGRAM-SEMANTICS-0001-R03-003",
+        "declared_test:AF-PROGRAM-SEMANTICS-0001-R03:T-AF-PROGRAM-SEMANTICS-0001-R03-004"
+      ],
+      "explanation_path": [
+        "AF-PROGRAM-SEMANTICS-0001",
+        "AF-PROGRAM-SEMANTICS-0001-R03",
+        "TEST-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/contract.json",
+          "pointer": "/features/0/requirements/2"
         }
       ]
     },
@@ -19401,6 +22059,28 @@
           "pointer": "/features/0/requirements/5"
         }
       ]
+    },
+    {
+      "id": "verification_support:TF-CLI-0001-R07",
+      "kind": "verification_support",
+      "fact": "requirement_support:TF-CLI-0001-R07",
+      "input_facts": [
+        "requirement:TF-CLI-0001-R07",
+        "testing_boundary:TF-CLI-0001:TEST-CLI-0001",
+        "declared_test:TF-CLI-0001-R07:T-TF-CLI-0001-R07-001",
+        "declared_test:TF-CLI-0001-R07:T-TF-CLI-0001-R07-002"
+      ],
+      "explanation_path": [
+        "TF-CLI-0001",
+        "TF-CLI-0001-R07",
+        "TEST-CLI-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/cli/contract.json",
+          "pointer": "/features/0/requirements/6"
+        }
+      ]
     }
   ],
   "provenance": [
@@ -19463,6 +22143,14 @@
     {
       "path": "mods/cli/mods/testing/code/cli.rs",
       "pointer": "symbol:no_arguments_render_help"
+    },
+    {
+      "path": "mods/cli/mods/testing/code/cli.rs",
+      "pointer": "symbol:psm_json_is_observed_schema_versioned_and_repeatable"
+    },
+    {
+      "path": "mods/cli/mods/testing/code/cli.rs",
+      "pointer": "symbol:psm_rejects_unsupported_formats"
     },
     {
       "path": "mods/cli/mods/testing/code/cli.rs",
@@ -19674,6 +22362,54 @@
     },
     {
       "path": "mods/engine/mods/implementation_observation/mods/testing/contract.json",
+      "pointer": "/"
+    },
+    {
+      "path": "mods/engine/mods/program_semantics/contract.json",
+      "pointer": "/"
+    },
+    {
+      "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+      "pointer": "symbol:analyzer_disagreement_is_a_hard_coherency_failure"
+    },
+    {
+      "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+      "pointer": "symbol:assignments_arguments_returns_and_option_result_transforms_are_retained"
+    },
+    {
+      "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+      "pointer": "symbol:cross_module_cross_crate_alias_and_facade_calls_preserve_the_boundary"
+    },
+    {
+      "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+      "pointer": "symbol:deepest_module_ownership_and_testing_classification_are_independent_of_rust_namespaces"
+    },
+    {
+      "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+      "pointer": "symbol:direct_and_mutual_recursion_form_deterministic_call_components"
+    },
+    {
+      "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+      "pointer": "symbol:live_fortress_psm_is_coherent_deterministic_and_invalid_free"
+    },
+    {
+      "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+      "pointer": "symbol:methods_associated_functions_and_traits_receive_distinct_identities"
+    },
+    {
+      "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+      "pointer": "symbol:snapshot_mutation_is_rejected_and_canonical_bytes_and_digest_repeat"
+    },
+    {
+      "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+      "pointer": "symbol:static_external_dynamic_unresolved_and_collapsed_call_states_are_explicit"
+    },
+    {
+      "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+      "pointer": "symbol:symbols_and_recursive_types_preserve_declared_rust_interfaces"
+    },
+    {
+      "path": "mods/engine/mods/program_semantics/mods/testing/contract.json",
       "pointer": "/"
     },
     {

@@ -53,6 +53,10 @@ name = "project_model"
 path = "../mods/project_model/mods/testing/code/project_model.rs"
 
 [[test]]
+name = "program_semantics"
+path = "../mods/program_semantics/mods/testing/code/program_semantics.rs"
+
+[[test]]
 name = "repo_module_001"
 path = "../mods/snapshot_governance/mods/testing/code/repo_module_001.rs"
 
@@ -103,6 +107,7 @@ path = "../mods/snapshot_governance/mods/testing/code/test_boundary_001.rs"
 [dependencies]
 pulldown-cmark = { version = "0.13", default-features = false }
 proc-macro2 = { version = "1.0", features = ["span-locations"] }
+quote = "1.0"
 semver = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"

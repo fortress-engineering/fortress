@@ -78,6 +78,14 @@
             "T-TF-CLI-0001-R06-001",
             "T-TF-CLI-0001-R06-002"
           ]
+        },
+        {
+          "id": "TF-CLI-0001-R07",
+          "statement": "The native fortress psm command compiles snapshot-bound Program Semantic Model v1, emits canonical deterministic JSON to standard output or an explicit file, returns non-success for invalid or analyzer-incoherent state, and never implies behavioral realization or certification.",
+          "tests": [
+            "T-TF-CLI-0001-R07-001",
+            "T-TF-CLI-0001-R07-002"
+          ]
         }
       ]
     }

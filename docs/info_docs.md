@@ -6,15 +6,15 @@ Persist computational output whose exact content is required for reproducible re
 
 ## Production
 
-Cargo produces the resolver lock record from package constraints. The Contract Coherency compiler produces the self-CCG from canonical contracts, recursive containment, standard logic, and supported verification facts. Behavioral Semantics produces the self-BFG from CCG-preserved authored checkpoints and graph semantics.
+Cargo produces the resolver lock record from package constraints. The Contract Coherency compiler produces the self-CCG from canonical contracts, recursive containment, standard logic, and supported verification facts. Behavioral Semantics produces the self-BFG from CCG-preserved authored checkpoints and graph semantics. Program Semantics produces the self-PSM from the exact semantic source identity, snapshot-bound Cargo manifests, recursive Module ownership, and structurally parsed Rust source.
 
 ## Semantics
 
-The lock record identifies one exact dependency resolution. The CCG records the deterministic derived semantic ecosystem, its provenance, effective obligations, relationships, support topology, and supported coherency result. The Intended BFG records meaningful Feature-flow intent, Module lanes, boundary crossings, branches, loops, dominators, post-dominators, provenance, and explicit unsupported semantics without becoming authored authority, realized behavior, or certification evidence.
+The lock record identifies one exact dependency resolution. The CCG records the deterministic derived semantic ecosystem, its provenance, effective obligations, relationships, support topology, and supported coherency result. The Intended BFG records meaningful Feature-flow intent, Module lanes, boundary crossings, branches, loops, dominators, post-dominators, provenance, and explicit unsupported semantics. The PSM records observed executable symbols, typed interfaces, supported calls, bounded value transfers, call topology, coverage states, and analyzer coherency without becoming authored authority, realized behavior, or certification evidence.
 
 ## Lifecycle
 
-Cargo regenerates the lock record when dependency inputs change. Fortress regenerates the CCG whenever one of its explicit semantic inputs changes and regenerates the BFG whenever its CCG or authored behavior changes; CI rejects either stale committed projection. Build products remain transient outside the repository.
+Cargo regenerates the lock record when dependency inputs change. Fortress regenerates the CCG whenever one of its explicit semantic inputs changes, the BFG whenever its CCG or authored behavior changes, and the PSM whenever its explicit semantic source identity or analyzer changes; CI rejects any stale committed projection. Build products remain transient outside the repository.
 
 ## Files
 
@@ -29,3 +29,7 @@ Persists Fortress's canonical derived Intended BFG v1 so local and hosted gates 
 ### [`contract_coherency_graph.json`](../info/contract_coherency_graph.json)
 
 Persists Fortress's canonical derived self-CCG so local and hosted gates can compare fresh compiler output byte for byte.
+
+### [`program_semantic_model.json`](../info/program_semantic_model.json)
+
+Persists Fortress's canonical derived self-PSM v1 so local and hosted gates can compare snapshot-bound executable semantics byte for byte without claiming full data flow, function correctness, capability realization, or behavioral realization.

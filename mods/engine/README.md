@@ -12,7 +12,7 @@ Compose the implemented core capabilities behind a stable Rust library facade wh
 
 ### Includes
 
-The crate facade, package contract, and integration of standard registry, finding model, contract coherency, Behavioral Semantics, project model, repository observation, implementation observation, architecture evaluation, and Snapshot Governance capabilities.
+The crate facade, package contract, and integration of standard registry, finding model, contract coherency, Behavioral Semantics, project model, repository observation, implementation observation, Program Semantics, architecture evaluation, and Snapshot Governance capabilities.
 
 ### Excludes
 
@@ -49,6 +49,12 @@ Supplies the shared validated, content-addressed evidence representation used by
 **Types:** `depends_on`
 
 Supplies independent snapshot-bound Rust source facts and normalized direct Module dependency evidence.
+
+### [Program Semantics](mods/program_semantics/README.md)
+
+**Types:** `depends_on`
+
+Supplies deterministic executable symbols, typed interfaces, supported static calls, bounded value-transfer facts, and analyzer-coherency evidence.
 
 ### [Project Model](mods/project_model/README.md)
 

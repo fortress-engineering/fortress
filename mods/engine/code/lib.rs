@@ -36,6 +36,8 @@ pub mod observation;
 pub mod ownership;
 #[path = "../mods/snapshot_governance/code/placement.rs"]
 pub mod placement;
+#[path = "../mods/program_semantics/code/program.rs"]
+pub mod program_semantics;
 #[path = "../mods/project_model/code/project.rs"]
 pub mod project;
 #[path = "../mods/snapshot_governance/code/rust_test_analyzer.rs"]

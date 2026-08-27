@@ -1,0 +1,401 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:program-semantic-model",
+  "title": "Fortress Program Semantic Model v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "semantic_version",
+    "project_id",
+    "source_identity",
+    "analyzers",
+    "languages",
+    "packages",
+    "symbols",
+    "types",
+    "calls",
+    "value_transfers",
+    "transformations",
+    "module_boundaries",
+    "call_topology",
+    "coverage",
+    "analyzer_coherency",
+    "unsupported_semantics",
+    "provenance"
+  ],
+  "properties": {
+    "$schema": { "const": "urn:fortress:schema:v1:program-semantic-model" },
+    "schema_version": { "const": 1 },
+    "semantic_version": { "$ref": "#/$defs/semver" },
+    "project_id": { "$ref": "#/$defs/stable_id" },
+    "source_identity": { "$ref": "#/$defs/digest" },
+    "analyzers": { "type": "array", "items": { "$ref": "#/$defs/analyzer" } },
+    "languages": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "packages": { "type": "array", "items": { "$ref": "#/$defs/package" } },
+    "symbols": { "type": "array", "items": { "$ref": "#/$defs/symbol" } },
+    "types": { "type": "array", "items": { "$ref": "#/$defs/type_fact" } },
+    "calls": { "type": "array", "items": { "$ref": "#/$defs/call" } },
+    "value_transfers": { "type": "array", "items": { "$ref": "#/$defs/transfer" } },
+    "transformations": { "type": "array", "items": { "$ref": "#/$defs/transformation" } },
+    "module_boundaries": { "type": "array", "items": { "$ref": "#/$defs/module_boundary" } },
+    "call_topology": { "$ref": "#/$defs/call_topology" },
+    "coverage": { "$ref": "#/$defs/coverage" },
+    "analyzer_coherency": { "$ref": "#/$defs/analyzer_coherency" },
+    "unsupported_semantics": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "provenance": { "$ref": "#/$defs/model_provenance" }
+  },
+  "$defs": {
+    "semver": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "stable_id": { "type": "string", "pattern": "^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)+$" },
+    "nullable_string": { "type": ["string", "null"] },
+    "string_array": { "type": "array", "items": { "type": "string" } },
+    "analyzer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "semantic_version", "language", "package_authority", "declaration_authority", "call_resolution_authority"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "semantic_version": { "$ref": "#/$defs/semver" },
+        "language": { "type": "string", "minLength": 1 },
+        "package_authority": { "type": "string", "minLength": 1 },
+        "declaration_authority": { "type": "string", "minLength": 1 },
+        "call_resolution_authority": { "type": "string", "minLength": 1 }
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["crate_name", "kind", "source_root"],
+      "properties": {
+        "crate_name": { "type": "string", "minLength": 1 },
+        "kind": { "enum": ["library", "binary", "test"] },
+        "source_root": { "type": "string", "minLength": 1 }
+      }
+    },
+    "package": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "manifest", "targets", "workspace_dependencies", "external_dependencies"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "manifest": { "type": "string", "minLength": 1 },
+        "targets": { "type": "array", "items": { "$ref": "#/$defs/target" } },
+        "workspace_dependencies": { "$ref": "#/$defs/string_array" },
+        "external_dependencies": { "$ref": "#/$defs/string_array" }
+      }
+    },
+    "location": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["line", "column"],
+      "properties": {
+        "line": { "type": "integer", "minimum": 1 },
+        "column": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "location", "symbol_context", "analyzer", "analyzer_semantic_version"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "location": { "$ref": "#/$defs/location" },
+        "symbol_context": { "$ref": "#/$defs/nullable_string" },
+        "analyzer": { "type": "string", "minLength": 1 },
+        "analyzer_semantic_version": { "$ref": "#/$defs/semver" }
+      }
+    },
+    "semantic_type": {
+      "oneOf": [
+        { "$ref": "#/$defs/type_unit" },
+        { "$ref": "#/$defs/type_never" },
+        { "$ref": "#/$defs/type_bool" },
+        { "$ref": "#/$defs/type_char" },
+        { "$ref": "#/$defs/type_integer" },
+        { "$ref": "#/$defs/type_float" },
+        { "$ref": "#/$defs/type_string" },
+        { "$ref": "#/$defs/type_tuple" },
+        { "$ref": "#/$defs/type_array" },
+        { "$ref": "#/$defs/type_slice" },
+        { "$ref": "#/$defs/type_reference" },
+        { "$ref": "#/$defs/type_pointer" },
+        { "$ref": "#/$defs/type_named" },
+        { "$ref": "#/$defs/type_generic" },
+        { "$ref": "#/$defs/type_option" },
+        { "$ref": "#/$defs/type_result" },
+        { "$ref": "#/$defs/type_function" },
+        { "$ref": "#/$defs/type_unknown" }
+      ]
+    },
+    "type_unit": { "type": "object", "additionalProperties": false, "required": ["kind"], "properties": { "kind": { "const": "unit" } } },
+    "type_never": { "type": "object", "additionalProperties": false, "required": ["kind"], "properties": { "kind": { "const": "never" } } },
+    "type_bool": { "type": "object", "additionalProperties": false, "required": ["kind"], "properties": { "kind": { "const": "bool" } } },
+    "type_char": { "type": "object", "additionalProperties": false, "required": ["kind"], "properties": { "kind": { "const": "char" } } },
+    "type_integer": { "type": "object", "additionalProperties": false, "required": ["kind", "family"], "properties": { "kind": { "const": "integer" }, "family": { "type": "string" } } },
+    "type_float": { "type": "object", "additionalProperties": false, "required": ["kind", "family"], "properties": { "kind": { "const": "float" }, "family": { "type": "string" } } },
+    "type_string": { "type": "object", "additionalProperties": false, "required": ["kind", "representation"], "properties": { "kind": { "const": "string" }, "representation": { "type": "string" } } },
+    "type_tuple": { "type": "object", "additionalProperties": false, "required": ["kind", "elements"], "properties": { "kind": { "const": "tuple" }, "elements": { "type": "array", "items": { "$ref": "#/$defs/semantic_type" } } } },
+    "type_array": { "type": "object", "additionalProperties": false, "required": ["kind", "element", "length"], "properties": { "kind": { "const": "array" }, "element": { "$ref": "#/$defs/semantic_type" }, "length": { "type": "string" } } },
+    "type_slice": { "type": "object", "additionalProperties": false, "required": ["kind", "element"], "properties": { "kind": { "const": "slice" }, "element": { "$ref": "#/$defs/semantic_type" } } },
+    "type_reference": { "type": "object", "additionalProperties": false, "required": ["kind", "mutable", "lifetime", "target"], "properties": { "kind": { "const": "reference" }, "mutable": { "type": "boolean" }, "lifetime": { "$ref": "#/$defs/nullable_string" }, "target": { "$ref": "#/$defs/semantic_type" } } },
+    "type_pointer": { "type": "object", "additionalProperties": false, "required": ["kind", "mutable", "target"], "properties": { "kind": { "const": "pointer" }, "mutable": { "type": "boolean" }, "target": { "$ref": "#/$defs/semantic_type" } } },
+    "type_named": { "type": "object", "additionalProperties": false, "required": ["kind", "name", "arguments"], "properties": { "kind": { "const": "named" }, "name": { "type": "string" }, "arguments": { "type": "array", "items": { "$ref": "#/$defs/semantic_type" } } } },
+    "type_generic": { "type": "object", "additionalProperties": false, "required": ["kind", "name"], "properties": { "kind": { "const": "generic_parameter" }, "name": { "type": "string" } } },
+    "type_option": { "type": "object", "additionalProperties": false, "required": ["kind", "value"], "properties": { "kind": { "const": "option" }, "value": { "$ref": "#/$defs/semantic_type" } } },
+    "type_result": { "type": "object", "additionalProperties": false, "required": ["kind", "success", "error"], "properties": { "kind": { "const": "result" }, "success": { "$ref": "#/$defs/semantic_type" }, "error": { "$ref": "#/$defs/semantic_type" } } },
+    "type_function": { "type": "object", "additionalProperties": false, "required": ["kind", "parameters", "result"], "properties": { "kind": { "const": "function" }, "parameters": { "type": "array", "items": { "$ref": "#/$defs/semantic_type" } }, "result": { "$ref": "#/$defs/semantic_type" } } },
+    "type_unknown": { "type": "object", "additionalProperties": false, "required": ["kind", "rust_spelling"], "properties": { "kind": { "const": "unknown" }, "rust_spelling": { "type": "string" } } },
+    "type_fact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "language", "semantic", "rust_spellings"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^type:sha256:[0-9a-f]{64}$" },
+        "language": { "const": "rust" },
+        "semantic": { "$ref": "#/$defs/semantic_type" },
+        "rust_spellings": { "$ref": "#/$defs/string_array" }
+      }
+    },
+    "interface_type": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type_id", "rust_spelling", "resolution"],
+      "properties": {
+        "type_id": { "type": "string", "pattern": "^type:sha256:[0-9a-f]{64}$" },
+        "rust_spelling": { "type": "string" },
+        "resolution": { "enum": ["DECLARED_EXACT", "UNSUPPORTED"] }
+      }
+    },
+    "parameter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["position", "name", "parameter_type", "provenance"],
+      "properties": {
+        "position": { "type": "integer", "minimum": 0 },
+        "name": { "type": "string" },
+        "parameter_type": { "$ref": "#/$defs/interface_type" },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+    "receiver": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["mutable", "by_reference", "explicit_type"],
+      "properties": {
+        "mutable": { "type": "boolean" },
+        "by_reference": { "type": "boolean" },
+        "explicit_type": { "oneOf": [{ "$ref": "#/$defs/interface_type" }, { "type": "null" }] }
+      }
+    },
+    "visibility": {
+      "oneOf": [
+        { "enum": ["private", "crate", "public"] },
+        { "type": "object", "additionalProperties": false, "required": ["restricted"], "properties": { "restricted": { "type": "string" } } }
+      ]
+    },
+    "symbol": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "qualified_name", "language", "package", "crate_name", "rust_module", "fortress_module", "classification", "source_path", "kind", "owner_type", "owner_trait", "parameters", "return_type", "receiver", "generic_parameters", "lifetimes", "qualifiers", "visibility", "body_state", "provenance"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^rust_symbol:sha256:[0-9a-f]{64}$" },
+        "qualified_name": { "type": "string", "minLength": 1 },
+        "language": { "const": "rust" },
+        "package": { "type": "string", "minLength": 1 },
+        "crate_name": { "type": "string", "minLength": 1 },
+        "rust_module": { "type": "string" },
+        "fortress_module": { "$ref": "#/$defs/stable_id" },
+        "classification": { "enum": ["production", "testing"] },
+        "source_path": { "type": "string", "minLength": 1 },
+        "kind": { "enum": ["free_function", "associated_function", "inherent_method", "trait_method_declaration", "trait_method_implementation"] },
+        "owner_type": { "$ref": "#/$defs/nullable_string" },
+        "owner_trait": { "$ref": "#/$defs/nullable_string" },
+        "parameters": { "type": "array", "items": { "$ref": "#/$defs/parameter" } },
+        "return_type": { "$ref": "#/$defs/interface_type" },
+        "receiver": { "$ref": "#/$defs/receiver" },
+        "generic_parameters": { "$ref": "#/$defs/string_array" },
+        "lifetimes": { "$ref": "#/$defs/string_array" },
+        "qualifiers": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["is_async", "is_unsafe", "is_const"],
+          "properties": {
+            "is_async": { "type": "boolean" },
+            "is_unsafe": { "type": "boolean" },
+            "is_const": { "type": "boolean" }
+          }
+        },
+        "visibility": { "$ref": "#/$defs/visibility" },
+        "body_state": { "enum": ["DECLARATION", "DEFINITION"] },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+    "call_evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reference", "argument_count", "provenance"],
+      "properties": {
+        "reference": { "type": "string" },
+        "argument_count": { "type": "integer", "minimum": 0 },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+    "call": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "caller", "state", "authority", "callee", "boundary_target_module", "external_target", "candidate_callees", "evidence"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^call:sha256:[0-9a-f]{64}$" },
+        "caller": { "type": "string" },
+        "state": { "enum": ["RESOLVED_STATIC", "EXTERNAL", "DYNAMIC_DISPATCH", "UNRESOLVED", "UNSUPPORTED", "INVALID"] },
+        "authority": { "enum": ["cargo_manifest", "structural_exact", "conservative", "unsupported"] },
+        "callee": { "$ref": "#/$defs/nullable_string" },
+        "boundary_target_module": { "$ref": "#/$defs/nullable_string" },
+        "external_target": { "$ref": "#/$defs/nullable_string" },
+        "candidate_callees": { "$ref": "#/$defs/string_array" },
+        "evidence": { "type": "array", "items": { "$ref": "#/$defs/call_evidence" } }
+      }
+    },
+    "endpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["symbol", "role", "name", "static_type"],
+      "properties": {
+        "symbol": { "type": "string" },
+        "role": { "type": "string" },
+        "name": { "type": "string" },
+        "static_type": { "$ref": "#/$defs/nullable_string" }
+      }
+    },
+    "transfer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "producer", "consumer", "resolution", "provenance"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^value_transfer:sha256:[0-9a-f]{64}$" },
+        "kind": { "enum": ["parameter_to_binding", "expression_to_binding", "assignment", "expression_to_return", "argument_to_parameter", "return_to_consumer"] },
+        "producer": { "$ref": "#/$defs/endpoint" },
+        "consumer": { "$ref": "#/$defs/endpoint" },
+        "resolution": { "enum": ["SYNTAX_EXACT", "RESOLVED_STATIC_CALL", "TYPE_UNKNOWN", "UNSUPPORTED"] },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+    "transformation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "symbol", "kind", "source_type", "target_type", "provenance"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^transformation:sha256:[0-9a-f]{64}$" },
+        "symbol": { "type": "string" },
+        "kind": { "enum": ["construction", "destructuring", "cast", "conversion_call", "option_transition", "result_transition", "pattern_narrowing", "reference_transition"] },
+        "source_type": { "$ref": "#/$defs/nullable_string" },
+        "target_type": { "$ref": "#/$defs/nullable_string" },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+    "module_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["caller", "callee", "source_module", "target_module", "callee_module", "call", "evidence"],
+      "properties": {
+        "caller": { "type": "string" },
+        "callee": { "type": "string" },
+        "source_module": { "$ref": "#/$defs/stable_id" },
+        "target_module": { "$ref": "#/$defs/stable_id" },
+        "callee_module": { "$ref": "#/$defs/stable_id" },
+        "call": { "type": "string" },
+        "evidence": { "type": "array", "items": { "$ref": "#/$defs/call_evidence" } }
+      }
+    },
+    "string_map": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/string_array" }
+    },
+    "component": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "symbols", "recursive"],
+      "properties": {
+        "id": { "type": "string" },
+        "symbols": { "$ref": "#/$defs/string_array" },
+        "recursive": { "type": "boolean" }
+      }
+    },
+    "call_topology": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["direct_callees", "direct_callers", "transitive_reachability", "strongly_connected_components", "recursive_symbols", "entry_candidates", "leaf_symbols", "cross_package_calls"],
+      "properties": {
+        "direct_callees": { "$ref": "#/$defs/string_map" },
+        "direct_callers": { "$ref": "#/$defs/string_map" },
+        "transitive_reachability": { "$ref": "#/$defs/string_map" },
+        "strongly_connected_components": { "type": "array", "items": { "$ref": "#/$defs/component" } },
+        "recursive_symbols": { "$ref": "#/$defs/string_array" },
+        "entry_candidates": { "$ref": "#/$defs/string_array" },
+        "leaf_symbols": { "$ref": "#/$defs/string_array" },
+        "cross_package_calls": { "$ref": "#/$defs/string_array" }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_files", "packages", "executable_symbols", "production_symbols", "testing_symbols", "free_functions", "associated_functions", "inherent_methods", "trait_method_declarations", "trait_method_implementations", "resolved_static_calls", "external_calls", "dynamic_dispatch_calls", "unresolved_calls", "unsupported_calls", "invalid_calls", "cross_module_calls", "cross_package_calls", "recursive_components", "value_transfers", "transformations"],
+      "properties": {
+        "source_files": { "type": "integer", "minimum": 0 },
+        "packages": { "type": "integer", "minimum": 0 },
+        "executable_symbols": { "type": "integer", "minimum": 0 },
+        "production_symbols": { "type": "integer", "minimum": 0 },
+        "testing_symbols": { "type": "integer", "minimum": 0 },
+        "free_functions": { "type": "integer", "minimum": 0 },
+        "associated_functions": { "type": "integer", "minimum": 0 },
+        "inherent_methods": { "type": "integer", "minimum": 0 },
+        "trait_method_declarations": { "type": "integer", "minimum": 0 },
+        "trait_method_implementations": { "type": "integer", "minimum": 0 },
+        "resolved_static_calls": { "type": "integer", "minimum": 0 },
+        "external_calls": { "type": "integer", "minimum": 0 },
+        "dynamic_dispatch_calls": { "type": "integer", "minimum": 0 },
+        "unresolved_calls": { "type": "integer", "minimum": 0 },
+        "unsupported_calls": { "type": "integer", "minimum": 0 },
+        "invalid_calls": { "type": "integer", "minimum": 0 },
+        "cross_module_calls": { "type": "integer", "minimum": 0 },
+        "cross_package_calls": { "type": "integer", "minimum": 0 },
+        "recursive_components": { "type": "integer", "minimum": 0 },
+        "value_transfers": { "type": "integer", "minimum": 0 },
+        "transformations": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "analyzer_coherency": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "checked_cross_module_calls", "missing_observation_edges"],
+      "properties": {
+        "status": { "const": "coherent" },
+        "checked_cross_module_calls": { "type": "integer", "minimum": 0 },
+        "missing_observation_edges": { "$ref": "#/$defs/string_array" }
+      }
+    },
+    "source_input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "model_provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["identity_kind", "semantic_inputs", "ownership_authority", "testing_authority"],
+      "properties": {
+        "identity_kind": { "const": "snapshot_bound_semantic_input_subset" },
+        "semantic_inputs": { "type": "array", "items": { "$ref": "#/$defs/source_input" } },
+        "ownership_authority": { "const": "ccg_physical_module_containment" },
+        "testing_authority": { "const": "ccg_verification_topology" }
+      }
+    }
+  }
+}

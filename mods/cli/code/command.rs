@@ -44,6 +44,13 @@ const BUILTIN_COMMANDS: &[CommandDescriptor] = &[
         description: "Compile and render the deterministic Intended Behavioral Flow Graph.",
         usage: "fortress bfg [path] [--format json] [--output path]",
     },
+    CommandDescriptor {
+        id: "CMD-PROGRAM-PSM",
+        name: "psm",
+        aliases: &[],
+        description: "Compile and render the deterministic Program Semantic Model.",
+        usage: "fortress psm [path] [--format json] [--output path]",
+    },
 ];
 
 /// Discoverable metadata for one registered Fortress command.

@@ -455,6 +455,39 @@ fn bfg_rejects_unsupported_formats() {
     assert!(String::from_utf8_lossy(&output.stderr).contains("--format json"));
 }
 
+/// `T-TF-CLI-0001-R07-001`
+/// Fortress requirement: TF-CLI-0001-R07
+#[test]
+fn psm_json_is_observed_schema_versioned_and_repeatable() {
+    let fixture = AuditFixture::new();
+    let arguments = ["psm".into(), fixture.argument(), "--format=json".into()];
+    let first = run_owned(&arguments);
+    let second = run_owned(&arguments);
+    assert!(
+        first.status.success(),
+        "{}",
+        String::from_utf8_lossy(&first.stderr)
+    );
+    assert_eq!(first.stdout, second.stdout);
+    let value: serde_json::Value =
+        serde_json::from_slice(&first.stdout).expect("PSM output is JSON");
+    assert_eq!(
+        value["$schema"],
+        "urn:fortress:schema:v1:program-semantic-model"
+    );
+    assert_eq!(value["schema_version"], 1);
+    assert_eq!(value["analyzer_coherency"]["status"], "coherent");
+}
+
+/// `T-TF-CLI-0001-R07-002`
+/// Fortress requirement: TF-CLI-0001-R07
+#[test]
+fn psm_rejects_unsupported_formats() {
+    let output = run(&["psm", "--format", "dot"]);
+    assert_eq!(output.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("--format json"));
+}
+
 /// `T-TF-CLI-0001-R01-001`
 /// Fortress requirement: TF-CLI-0001-R01
 #[test]

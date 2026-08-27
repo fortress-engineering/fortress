@@ -1,0 +1,65 @@
+{
+  "$schema": "urn:fortress:schema:v2:module-contract",
+  "schema_version": 2,
+  "id": "AF-PROGRAM-SEMANTICS-0001",
+  "display_name": "Program Semantics",
+  "provides": [
+    {
+      "id": "CAP-PROGRAM-SEMANTICS",
+      "version": "0.1.0",
+      "visibility": "project"
+    }
+  ],
+  "requires": [
+    {
+      "provider": "AF-CONTRACT-COHERENCY-0001",
+      "capability": "CAP-CONTRACT-COHERENCY",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-IMPLEMENTATION-OBSERVATION-0001",
+      "capability": "CAP-IMPLEMENTATION-OBSERVATION",
+      "version": "^0.1.0"
+    }
+  ],
+  "relationships": [],
+  "constraints": [],
+  "guarantees": [],
+  "features": [
+    {
+      "id": "AF-PROGRAM-SEMANTICS-0001",
+      "version": "0.1.0",
+      "requirements": [
+        {
+          "id": "AF-PROGRAM-SEMANTICS-0001-R01",
+          "statement": "Program Semantics deterministically derives snapshot-bound Rust executable symbols and language-neutral typed interfaces with exact physical Fortress Module ownership and explicit semantic coverage.",
+          "tests": [
+            "T-AF-PROGRAM-SEMANTICS-0001-R01-001",
+            "T-AF-PROGRAM-SEMANTICS-0001-R01-002",
+            "T-AF-PROGRAM-SEMANTICS-0001-R01-003"
+          ]
+        },
+        {
+          "id": "AF-PROGRAM-SEMANTICS-0001-R02",
+          "statement": "Program Semantics conservatively resolves supported direct Rust calls, preserves every coverage state, and derives deterministic direct, transitive, recursive, cross-Module, and cross-package call topology without converting reachability into intent.",
+          "tests": [
+            "T-AF-PROGRAM-SEMANTICS-0001-R02-001",
+            "T-AF-PROGRAM-SEMANTICS-0001-R02-002",
+            "T-AF-PROGRAM-SEMANTICS-0001-R02-003"
+          ]
+        },
+        {
+          "id": "AF-PROGRAM-SEMANTICS-0001-R03",
+          "statement": "Program Semantic analysis records bounded value-transfer facts, remains byte deterministic, rejects snapshot mutation, distinguishes production from Testing symbols, and requires every resolved cross-Module call to agree with broader Implementation Observation evidence.",
+          "tests": [
+            "T-AF-PROGRAM-SEMANTICS-0001-R03-001",
+            "T-AF-PROGRAM-SEMANTICS-0001-R03-002",
+            "T-AF-PROGRAM-SEMANTICS-0001-R03-003",
+            "T-AF-PROGRAM-SEMANTICS-0001-R03-004"
+          ]
+        }
+      ]
+    }
+  ],
+  "behavior": []
+}

@@ -56,6 +56,17 @@
       "duration": "short",
       "resumability": "restartable",
       "certification_implications": "Renders intended Feature behavior only; it is not implementation realization or certification evidence."
+    },
+    {
+      "id": "CMD-PROGRAM-PSM",
+      "name": "psm",
+      "aliases": [],
+      "description": "Compile and render the deterministic Program Semantic Model.",
+      "owner": "TF-CLI-0001",
+      "executor": "builtin-sync",
+      "duration": "short",
+      "resumability": "restartable",
+      "certification_implications": "Renders observed executable structure only; it is not behavioral realization, function correctness, or certification evidence."
     }
   ]
 }

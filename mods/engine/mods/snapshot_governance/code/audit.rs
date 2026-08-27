@@ -32,6 +32,10 @@ use crate::implementation_observation::{
     ObservedImplementation, SnapshotBoundFile, observe_rust_implementation,
 };
 use crate::observation::{ObservationError, ObservationPolicy, RepositoryObservation};
+use crate::program_semantics::{
+    ProgramSemanticError, ProgramSemanticInput, ProgramSemanticModel,
+    compile_program_semantic_model,
+};
 use crate::project::{ProjectConfiguration, ProjectConfigurationLoadError};
 use crate::rust_test_analyzer::{RustAnalyzerError, analyze_observed_rust_tests};
 use crate::snapshot::{
@@ -255,6 +259,49 @@ pub fn compile_repository_bfg(
     root: impl AsRef<Path>,
 ) -> Result<IntendedBehavioralFlowGraph, AuditError> {
     audit_repository_with_models(root.as_ref(), false).map(|(_, _, bfg)| bfg)
+}
+
+/// Compiles the canonical snapshot-bound Rust Program Semantic Model.
+///
+/// Program facts remain independent of the CCG and Intended BFG. The CCG is
+/// consulted only for physical Module ownership and Testing classification,
+/// while Implementation Observation supplies the broader dependency projection
+/// used for analyzer-coherency validation.
+///
+/// # Errors
+///
+/// Returns [`AuditError`] for malformed or unstable repository state, source
+/// analysis failure, or disagreement between supported source analyzers.
+pub fn compile_repository_psm(root: impl AsRef<Path>) -> Result<ProgramSemanticModel, AuditError> {
+    let prepared = prepare_audit(root.as_ref())?;
+    let ccg = prepared
+        .ccg_compilation
+        .graph()
+        .ok_or_else(|| AuditError::ContractState("prepared audit did not contain a CCG".into()))?;
+    let observation_input =
+        implementation_input(&prepared.snapshot, ccg, &prepared.observed_files)?;
+    let observed = observe_rust_implementation(&observation_input)
+        .map_err(AuditError::ImplementationObservation)?;
+    let testing_modules = ccg
+        .modules()
+        .iter()
+        .filter(|(_, module)| {
+            module.path() == "mods/testing" || module.path().ends_with("/mods/testing")
+        })
+        .map(|(id, _)| id.clone());
+    let observed_dependencies = observed.module_dependencies().iter().map(|dependency| {
+        (
+            dependency.source_module().to_owned(),
+            dependency.target_module().to_owned(),
+        )
+    });
+    compile_program_semantic_model(&ProgramSemanticInput::new(
+        prepared.snapshot.project_id(),
+        observation_input,
+        testing_modules,
+        observed_dependencies,
+    ))
+    .map_err(AuditError::ProgramSemantics)
 }
 
 fn audit_repository_with_models(
@@ -694,6 +741,8 @@ pub enum AuditError {
     RustAnalyzer(RustAnalyzerError),
     /// Snapshot-bound implementation observation failed.
     ImplementationObservation(ImplementationObservationError),
+    /// Snapshot-bound Program Semantic Model compilation failed.
+    ProgramSemantics(ProgramSemanticError),
     /// Architecture diagnostic derivation failed.
     ArchitectureDiagnostics(ArchitectureDiagnosticError),
     /// Intended behavioral semantics could not compile or normalize.
@@ -731,6 +780,9 @@ impl Display for AuditError {
             Self::RustAnalyzer(error) => write!(formatter, "Rust test analysis failed: {error}"),
             Self::ImplementationObservation(error) => {
                 write!(formatter, "implementation observation failed: {error}")
+            }
+            Self::ProgramSemantics(error) => {
+                write!(formatter, "program semantics failed: {error}")
             }
             Self::ArchitectureDiagnostics(error) => {
                 write!(
