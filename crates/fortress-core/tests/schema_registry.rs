@@ -80,11 +80,14 @@ fn draft_manifest_agrees_with_implemented_registry() {
 
 /// `T-AF-STANDARD-REGISTRY-0001-R03-003`
 #[test]
-fn rule_schema_allows_declared_instance_schema_references() {
-    let schema = read_json("schemas/v1/rule.schema.json");
-    assert!(schema["properties"]["$schema"].is_object());
+fn standard_instance_schemas_allow_declared_schema_references() {
+    let rule_schema = read_json("schemas/v1/rule.schema.json");
+    assert!(rule_schema["properties"]["$schema"].is_object());
+    let manifest_schema = read_json("schemas/v1/standard-manifest.schema.json");
+    assert!(manifest_schema["properties"]["$schema"].is_object());
 
     let manifest = read_json("standard/drafts/1.0.0/manifest.json");
+    assert!(manifest["$schema"].is_string());
     for relative_path in manifest["rules"]
         .as_array()
         .expect("standard manifest must contain rules")

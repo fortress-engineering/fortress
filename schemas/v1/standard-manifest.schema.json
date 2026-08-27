@@ -6,6 +6,7 @@
   "additionalProperties": false,
   "required": ["schema_version", "id", "title", "edition", "status", "rules"],
   "properties": {
+    "$schema": { "type": "string", "minLength": 1 },
     "schema_version": { "$ref": "urn:fortress:schema:v1:common#/$defs/schema-version" },
     "id": { "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id" },
     "title": { "$ref": "urn:fortress:schema:v1:common#/$defs/non-empty-string" },
