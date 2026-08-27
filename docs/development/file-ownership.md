@@ -1,7 +1,7 @@
 # Declared file ownership reconciliation
 
-**Status:** Implemented Snapshot Governance rule  
-**Rule:** `ARCH-OWNERSHIP-001`  
+**Status:** Implemented Snapshot Governance rule
+**Rule:** `ARCH-OWNERSHIP-001`
 **Owning capability:** `AF-SNAPSHOT-GOVERNANCE-0001`
 
 The evaluator reconciles the stabilized observed path inventory with the
