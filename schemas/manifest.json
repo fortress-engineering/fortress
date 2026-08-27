@@ -1,0 +1,17 @@
+{
+  "$schema": "./v1/schema-manifest.schema.json",
+  "schema_version": 1,
+  "id": "fortress-schema-registry-v1",
+  "schemas": [
+    "v1/schema-manifest.schema.json",
+    "v1/common.schema.json",
+    "v1/standard-manifest.schema.json",
+    "v1/rule.schema.json",
+    "v1/project.schema.json",
+    "v1/feature.schema.json",
+    "v1/architecture.schema.json",
+    "v1/command.schema.json",
+    "v1/change.schema.json",
+    "v1/certification.schema.json"
+  ]
+}

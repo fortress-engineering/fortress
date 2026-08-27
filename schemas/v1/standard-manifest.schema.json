@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:standard-manifest",
+  "title": "Fortress Engineering Standard manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "id", "title", "edition", "status", "rules"],
+  "properties": {
+    "schema_version": { "$ref": "urn:fortress:schema:v1:common#/$defs/schema-version" },
+    "id": { "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id" },
+    "title": { "$ref": "urn:fortress:schema:v1:common#/$defs/non-empty-string" },
+    "edition": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$" },
+    "status": { "enum": ["draft", "candidate", "released", "retired"] },
+    "release_digest": {
+      "oneOf": [
+        { "$ref": "urn:fortress:schema:v1:common#/$defs/sha256" },
+        { "type": "null" }
+      ]
+    },
+    "rules": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "urn:fortress:schema:v1:common#/$defs/relative-path" }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "status": { "const": "released" } } },
+      "then": { "required": ["release_digest"], "properties": { "release_digest": { "$ref": "urn:fortress:schema:v1:common#/$defs/sha256" } } }
+    }
+  ]
+}

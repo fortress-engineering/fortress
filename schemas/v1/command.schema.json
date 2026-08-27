@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:command",
+  "title": "Fortress command registry",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "commands"],
+  "properties": {
+    "$schema": { "type": "string", "minLength": 1 },
+    "schema_version": { "$ref": "urn:fortress:schema:v1:common#/$defs/schema-version" },
+    "commands": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "description", "owner", "executor", "duration", "resumability", "certification_implications"],
+        "properties": {
+          "id": { "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id" },
+          "name": { "type": "string", "pattern": "^[a-z][a-z0-9-]*(?: [a-z][a-z0-9-]*)*$" },
+          "aliases": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+          "description": { "$ref": "urn:fortress:schema:v1:common#/$defs/non-empty-string" },
+          "owner": { "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id" },
+          "executor": { "enum": ["builtin-sync", "builtin-job", "external", "provider"] },
+          "duration": { "enum": ["instant", "short", "long", "indeterminate"] },
+          "resumability": { "enum": ["restartable", "idempotent", "checkpointable", "shardable", "remote-resumable", "non-resumable"] },
+          "certification_implications": { "$ref": "urn:fortress:schema:v1:common#/$defs/non-empty-string" }
+        }
+      }
+    }
+  }
+}

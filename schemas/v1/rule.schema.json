@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:rule",
+  "title": "Fortress rule record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "id", "title", "status", "statement", "rationale",
+    "failure_prevented", "applicability", "category", "integrity_tier",
+    "evaluation", "finding", "remediation", "valid_example",
+    "invalid_example", "exception_policy", "introduced", "history"
+  ],
+  "properties": {
+    "schema_version": { "$ref": "urn:fortress:schema:v1:common#/$defs/schema-version" },
+    "id": { "$ref": "urn:fortress:schema:v1:common#/$defs/rule-id" },
+    "title": { "$ref": "urn:fortress:schema:v1:common#/$defs/non-empty-string" },
+    "status": { "enum": ["draft", "candidate", "released", "retired"] },
+    "statement": { "$ref": "urn:fortress:schema:v1:common#/$defs/non-empty-string" },
+    "rationale": { "$ref": "urn:fortress:schema:v1:common#/$defs/non-empty-string" },
+    "failure_prevented": { "$ref": "urn:fortress:schema:v1:common#/$defs/non-empty-string" },
+    "applicability": { "$ref": "urn:fortress:schema:v1:common#/$defs/non-empty-string" },
+    "category": { "enum": ["architecture", "dependency", "contract", "source", "documentation", "testing", "certification", "pipeline", "change", "onboarding", "security", "repository", "standard"] },
+    "integrity_tier": { "type": "integer", "minimum": 0, "maximum": 4 },
+    "evaluation": { "$ref": "urn:fortress:schema:v1:common#/$defs/non-empty-string" },
+    "required_capabilities": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["message", "location"],
+      "properties": {
+        "message": { "$ref": "urn:fortress:schema:v1:common#/$defs/non-empty-string" },
+        "location": { "enum": ["entity", "path", "span", "repository"] }
+      }
+    },
+    "remediation": { "$ref": "urn:fortress:schema:v1:common#/$defs/non-empty-string" },
+    "valid_example": { "$ref": "urn:fortress:schema:v1:common#/$defs/non-empty-string" },
+    "invalid_example": { "$ref": "urn:fortress:schema:v1:common#/$defs/non-empty-string" },
+    "exception_policy": { "$ref": "urn:fortress:schema:v1:common#/$defs/non-empty-string" },
+    "introduced": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$" },
+    "history": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+  }
+}

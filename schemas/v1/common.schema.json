@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:common",
+  "title": "Fortress common contract definitions",
+  "$defs": {
+    "schema-version": { "const": 1 },
+    "stable-id": {
+      "type": "string",
+      "pattern": "^(PF|AF|TF|T|DOC|INV|CHG|TRANS|CERT|EX|ADR|CMD|ARCH|DEP|CONTRACT|SRC|TEST|PIPE|CHANGE|ONBOARD|SEC|REPO|STD)-[A-Z0-9]+(?:-[A-Z0-9]+)*$"
+    },
+    "rule-id": {
+      "type": "string",
+      "pattern": "^(ARCH|DEP|CONTRACT|SRC|DOC|TEST|CERT|PIPE|CHANGE|ONBOARD|SEC|REPO|STD)-[A-Z0-9]+(?:-[A-Z0-9]+)*$"
+    },
+    "non-empty-string": { "type": "string", "minLength": 1 },
+    "relative-path": {
+      "type": "string",
+      "minLength": 1,
+      "not": { "pattern": "^(?:[A-Za-z]:|/|\\\\)" }
+    },
+    "sha256": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+  }
+}

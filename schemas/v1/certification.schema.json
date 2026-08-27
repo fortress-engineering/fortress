@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:certification",
+  "title": "Fortress certification declaration and evidence identity",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "project", "claim", "units"],
+  "properties": {
+    "$schema": { "type": "string", "minLength": 1 },
+    "schema_version": { "$ref": "urn:fortress:schema:v1:common#/$defs/schema-version" },
+    "project": { "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id" },
+    "claim": { "enum": ["CERTIFIED", "NOT CERTIFIED"] },
+    "units": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "description", "status", "trust", "inputs", "upstream", "evidence"],
+        "properties": {
+          "id": { "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id" },
+          "description": { "$ref": "urn:fortress:schema:v1:common#/$defs/non-empty-string" },
+          "status": { "enum": ["PASS", "FAIL", "STALE", "MISSING", "INVALID"] },
+          "trust": { "enum": ["untrusted-local", "trusted-development", "release-grade"] },
+          "inputs": { "type": "array", "uniqueItems": true, "items": { "$ref": "urn:fortress:schema:v1:common#/$defs/relative-path" } },
+          "upstream": { "type": "array", "uniqueItems": true, "items": { "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id" } },
+          "input_fingerprint": { "oneOf": [{ "$ref": "urn:fortress:schema:v1:common#/$defs/sha256" }, { "type": "null" }] },
+          "evidence": { "oneOf": [{ "$ref": "urn:fortress:schema:v1:common#/$defs/relative-path" }, { "type": "null" }] }
+        }
+      }
+    }
+  }
+}

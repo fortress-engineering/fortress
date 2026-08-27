@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:architecture",
+  "title": "Fortress architecture and dependency declaration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "zones", "components"],
+  "properties": {
+    "$schema": { "type": "string", "minLength": 1 },
+    "schema_version": { "$ref": "urn:fortress:schema:v1:common#/$defs/schema-version" },
+    "zones": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" } },
+    "components": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "title", "zone", "paths", "depends_on"],
+        "properties": {
+          "id": { "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id" },
+          "title": { "$ref": "urn:fortress:schema:v1:common#/$defs/non-empty-string" },
+          "zone": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+          "paths": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "urn:fortress:schema:v1:common#/$defs/relative-path" } },
+          "depends_on": { "type": "array", "uniqueItems": true, "items": { "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id" } }
+        }
+      }
+    }
+  }
+}

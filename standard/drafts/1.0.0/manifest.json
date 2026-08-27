@@ -1,0 +1,12 @@
+{
+  "$schema": "../../../schemas/v1/standard-manifest.schema.json",
+  "schema_version": 1,
+  "id": "STD-FORTRESS-ENGINEERING",
+  "title": "Fortress Engineering Standard",
+  "edition": "1.0.0-draft.1",
+  "status": "draft",
+  "release_digest": null,
+  "rules": [
+    "rules/STD-ID-001.json"
+  ]
+}

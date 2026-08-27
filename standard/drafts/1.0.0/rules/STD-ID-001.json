@@ -1,0 +1,29 @@
+{
+  "$schema": "../../../../schemas/v1/rule.schema.json",
+  "schema_version": 1,
+  "id": "STD-ID-001",
+  "title": "Stable serialized identity",
+  "status": "draft",
+  "statement": "Fortress-authored machine-readable entity identities MUST use a registered uppercase ASCII namespace followed by one or more non-empty uppercase alphanumeric segments separated by ASCII hyphens.",
+  "rationale": "One case-sensitive, locale-independent interchange form prevents ambiguous cross-language identity, unstable normalization, and accidental duplication while allowing source languages to retain idiomatic naming.",
+  "failure_prevented": "Case or separator variants that refer to the same conceptual entity, identifiers that cannot be parsed deterministically, and identity drift between tools or languages.",
+  "applicability": "All stable entity and rule identities authored in Fortress machine-readable standard, project, change, command, and certification contracts.",
+  "category": "standard",
+  "integrity_tier": 1,
+  "evaluation": "The Fortress core identity parser validates the registered namespace and segment grammar before an identity enters a registry or project model.",
+  "required_capabilities": [
+    "stable-id-validation"
+  ],
+  "finding": {
+    "message": "Identity does not satisfy the Fortress stable serialized identity grammar.",
+    "location": "entity"
+  },
+  "remediation": "Choose the registered namespace for the entity class, normalize segments to uppercase ASCII alphanumerics, separate segments with hyphens, and preserve an already published compatible identity.",
+  "valid_example": "ARCH-DEPENDENCY-001",
+  "invalid_example": "arch_dependency_001",
+  "exception_policy": "No exemptions. External identifiers remain external data and must be carried in explicitly typed external-identity fields rather than presented as Fortress IDs.",
+  "introduced": "1.0.0-draft.1",
+  "history": [
+    "Introduced during CHG-BOOTSTRAP-0001 as the first mechanically enforced draft rule."
+  ]
+}

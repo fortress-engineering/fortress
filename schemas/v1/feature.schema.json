@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:feature",
+  "title": "Fortress feature and capability ownership manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "features"],
+  "properties": {
+    "$schema": { "type": "string", "minLength": 1 },
+    "schema_version": { "$ref": "urn:fortress:schema:v1:common#/$defs/schema-version" },
+    "features": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "title", "status", "owner", "zone", "owned_paths", "requirements"],
+        "properties": {
+          "id": { "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id" },
+          "title": { "$ref": "urn:fortress:schema:v1:common#/$defs/non-empty-string" },
+          "status": { "enum": ["planned", "active", "deprecated", "retired"] },
+          "parent": { "oneOf": [{ "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id" }, { "type": "null" }] },
+          "owner": { "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id" },
+          "zone": { "$ref": "urn:fortress:schema:v1:common#/$defs/non-empty-string" },
+          "owned_paths": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "urn:fortress:schema:v1:common#/$defs/relative-path" } },
+          "dependencies": { "type": "array", "uniqueItems": true, "items": { "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id" } },
+          "requirements": { "type": "array", "items": { "type": "object", "additionalProperties": false, "required": ["id", "statement", "tests"], "properties": { "id": { "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id" }, "statement": { "$ref": "urn:fortress:schema:v1:common#/$defs/non-empty-string" }, "tests": { "type": "array", "uniqueItems": true, "items": { "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id" } } } } }
+        }
+      }
+    }
+  }
+}
