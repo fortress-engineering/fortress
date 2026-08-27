@@ -10,15 +10,17 @@ use std::fmt::{self, Display, Formatter};
 use serde::Serialize;
 
 use crate::architecture::{ARCH_DEPENDENCY_RULE_ID, ArchitectureManifest};
+use crate::contract::{CONTRACT_COHERENCY_RULE_ID, ContractCoherencyEvaluation};
 use crate::documentation::{DocumentationConformanceReport, REPO_DOCS_RULE_ID};
-use crate::feature::FeatureContract;
 use crate::finding::{CanonicalFinding, FindingError};
 use crate::ownership::{ARCH_OWNERSHIP_RULE_ID, evaluate_file_ownership};
 use crate::placement::{REPO_MODULE_RULE_ID, evaluate_module_grammar};
 use crate::rust_test_analyzer::RustTestFact;
 use crate::snapshot::RepositorySnapshot;
 use crate::standard::StandardBundle;
-use crate::traceability::{TEST_TRACEABILITY_RULE_ID, evaluate_test_traceability};
+use crate::traceability::{
+    RequirementEvidence, TEST_TRACEABILITY_RULE_ID, evaluate_test_traceability,
+};
 
 /// Truthful execution result for one applicable standard rule.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
@@ -65,6 +67,12 @@ impl RuleExecution {
     #[must_use]
     pub const fn finding_count(&self) -> usize {
         self.findings
+    }
+
+    /// Returns the truthful evaluator detail, including explicit unsupported semantics.
+    #[must_use]
+    pub fn detail(&self) -> &str {
+        &self.detail
     }
 }
 
@@ -148,6 +156,33 @@ impl SnapshotEvaluation {
 #[derive(Clone, Copy, Debug, Default)]
 pub struct SnapshotRuleEngine;
 
+/// Complete snapshot-bound evidence supplied to all implemented rule families.
+#[derive(Clone, Copy, Debug)]
+pub struct CompleteEvaluationInputs<'a> {
+    requirements: &'a [RequirementEvidence],
+    rust_tests: &'a [RustTestFact],
+    documentation: &'a DocumentationConformanceReport,
+    contract_coherency: &'a ContractCoherencyEvaluation,
+}
+
+impl<'a> CompleteEvaluationInputs<'a> {
+    /// Groups the current complete evaluator inputs without creating another authority.
+    #[must_use]
+    pub const fn new(
+        requirements: &'a [RequirementEvidence],
+        rust_tests: &'a [RustTestFact],
+        documentation: &'a DocumentationConformanceReport,
+        contract_coherency: &'a ContractCoherencyEvaluation,
+    ) -> Self {
+        Self {
+            requirements,
+            rust_tests,
+            documentation,
+            contract_coherency,
+        }
+    }
+}
+
 impl SnapshotRuleEngine {
     /// Returns the built-in Snapshot Governance evaluator registry.
     #[must_use]
@@ -171,7 +206,7 @@ impl SnapshotRuleEngine {
         snapshot: &RepositorySnapshot,
         architecture: &ArchitectureManifest,
     ) -> Result<SnapshotEvaluation, EvaluationError> {
-        Self::evaluate_internal(standard, snapshot, architecture, None, None)
+        Self::evaluate_internal(standard, snapshot, architecture, None, None, None)
     }
 
     /// Evaluates the bundle with complete declared feature and Rust test facts.
@@ -184,14 +219,15 @@ impl SnapshotRuleEngine {
         standard: &StandardBundle,
         snapshot: &RepositorySnapshot,
         architecture: &ArchitectureManifest,
-        feature_contracts: &[FeatureContract],
+        requirements: &[RequirementEvidence],
         rust_tests: &[RustTestFact],
     ) -> Result<SnapshotEvaluation, EvaluationError> {
         Self::evaluate_internal(
             standard,
             snapshot,
             architecture,
-            Some((feature_contracts, rust_tests)),
+            Some((requirements, rust_tests)),
+            None,
             None,
         )
     }
@@ -206,16 +242,15 @@ impl SnapshotRuleEngine {
         standard: &StandardBundle,
         snapshot: &RepositorySnapshot,
         architecture: &ArchitectureManifest,
-        feature_contracts: &[FeatureContract],
-        rust_tests: &[RustTestFact],
-        documentation: &DocumentationConformanceReport,
+        inputs: CompleteEvaluationInputs<'_>,
     ) -> Result<SnapshotEvaluation, EvaluationError> {
         Self::evaluate_internal(
             standard,
             snapshot,
             architecture,
-            Some((feature_contracts, rust_tests)),
-            Some(documentation),
+            Some((inputs.requirements, inputs.rust_tests)),
+            Some(inputs.documentation),
+            Some(inputs.contract_coherency),
         )
     }
 
@@ -223,8 +258,9 @@ impl SnapshotRuleEngine {
         standard: &StandardBundle,
         snapshot: &RepositorySnapshot,
         architecture: &ArchitectureManifest,
-        traceability_inputs: Option<(&[FeatureContract], &[RustTestFact])>,
+        traceability_inputs: Option<(&[RequirementEvidence], &[RustTestFact])>,
         documentation: Option<&DocumentationConformanceReport>,
+        contract_coherency: Option<&ContractCoherencyEvaluation>,
     ) -> Result<SnapshotEvaluation, EvaluationError> {
         if standard.edition() != snapshot.standard_edition() {
             return Err(EvaluationError::StandardEditionMismatch {
@@ -251,6 +287,16 @@ impl SnapshotRuleEngine {
                         ))
                     },
                     |report| Ok(documentation_execution(rule.id(), report)),
+                )?
+            } else if rule.id() == CONTRACT_COHERENCY_RULE_ID {
+                contract_coherency.map_or_else(
+                    || {
+                        Ok(unsupported_execution(
+                            rule.id(),
+                            "Contract coherency requires canonical Module Contract v2 repository bytes, observed test evidence, and parsed README relationship projections.",
+                        ))
+                    },
+                    |result| Ok(contract_execution(rule.id(), result)),
                 )?
             } else if rule.id() == TEST_TRACEABILITY_RULE_ID {
                 if let Some((contracts, rust_tests)) = traceability_inputs {
@@ -326,11 +372,11 @@ fn ownership_execution(
 
 fn traceability_execution(
     rule_id: &str,
-    contracts: &[FeatureContract],
+    requirements: &[RequirementEvidence],
     rust_tests: &[RustTestFact],
     standard_edition: &str,
 ) -> Result<(RuleExecution, Vec<CanonicalFinding>), EvaluationError> {
-    let result = evaluate_test_traceability(contracts, rust_tests, standard_edition)
+    let result = evaluate_test_traceability(requirements, rust_tests, standard_edition)
         .map_err(EvaluationError::Finding)?;
     Ok((
         completed_execution(
@@ -340,6 +386,31 @@ fn traceability_execution(
         ),
         result.findings().to_vec(),
     ))
+}
+
+fn contract_execution(
+    rule_id: &str,
+    result: &ContractCoherencyEvaluation,
+) -> (RuleExecution, Vec<CanonicalFinding>) {
+    let findings = result.findings().to_vec();
+    (
+        RuleExecution {
+            rule_id: rule_id.into(),
+            state: if findings.is_empty() {
+                RuleExecutionState::Passed
+            } else {
+                RuleExecutionState::Failed
+            },
+            applicable: true,
+            findings: findings.len(),
+            detail: format!(
+                "Module Contract v2 resolver ran with test-reference support {} and produced {} coherency violation(s); general rule satisfiability and capability-effect closure remain unsupported.",
+                result.test_reference_resolution_supported(),
+                findings.len()
+            ),
+        },
+        findings,
+    )
 }
 
 fn placement_execution(

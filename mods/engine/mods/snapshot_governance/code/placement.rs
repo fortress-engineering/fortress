@@ -13,7 +13,8 @@ pub const REPO_MODULE_RULE_ID: &str = "REPO-MODULE-001";
 const REMEDIATION: &str = "Converge the path to the recursive Module grammar: keep README.md and contract.json at every Module root, keep direct elements in code/data/info/docs, place child Modules only beneath mods, add every bidirectional canonical documentation file including mods_docs.md, and use canonical lowercase underscore names.";
 const CANONICAL_DIRECTORIES: [&str; 5] = ["code", "data", "info", "docs", "mods"];
 const ATTRIBUTE_DIRECTORIES: [&str; 4] = ["code", "data", "info", "docs"];
-const ROOT_SPECIAL_FILES: [&str; 8] = [
+const ROOT_SPECIAL_FILES: [&str; 9] = [
+    ".gitattributes",
     ".gitignore",
     "CONTRIBUTING.md",
     "GOVERNANCE.md",

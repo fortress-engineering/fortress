@@ -22,7 +22,7 @@ Provider-independent rule meaning, production command implementation, persisted 
 
 ### [CLI](../../README.md)
 
-**Types:** `verifies`
+**Types:** `depends_on`, `verifies`
 
 Exercises the parent native command surface from the process boundary.
 

@@ -30,10 +30,6 @@ Defines the version-one machine representation and validation boundary for certi
 
 Defines the version-one machine representation and validation boundary for change records owned by this Module.
 
-### [`feature_schema_v1.json`](../data/feature_schema_v1.json)
+### [`project_schema_v2.json`](../data/project_schema_v2.json)
 
-Defines the version-one machine representation and validation boundary for feature records owned by this Module.
-
-### [`project_schema_v1.json`](../data/project_schema_v1.json)
-
-Defines the version-one machine representation and validation boundary for project records owned by this Module.
+Defines the closed version-two operational project configuration after architectural intent moved to distributed Module contracts.

@@ -1,30 +1,17 @@
 {
-  "architecture": {
-    "$schema": "urn:fortress:schema:v1:architecture",
-    "schema_version": 1,
-    "zones": ["core"],
+  "ownership": {
     "components": [
       {
         "id": "AF-CORE-0001",
         "title": "Core",
-        "zone": "core",
-        "paths": ["src/", "missing/"],
+        "paths": ["README.md", "src/", "missing/"],
         "depends_on": []
       },
       {
         "id": "AF-SHARED-0001",
         "title": "Shared",
-        "zone": "core",
         "paths": ["src/shared/"],
         "depends_on": []
-      }
-    ],
-    "repository_artifacts": [
-      {
-        "path": "README.md",
-        "owner": "AF-CORE-0001",
-        "classification": "repository-metadata",
-        "required": true
       }
     ]
   },

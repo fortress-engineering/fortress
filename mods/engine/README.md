@@ -24,7 +24,7 @@ Terminal rendering, hosted-provider adapters, persistent jobs, onboarding, deplo
 
 **Types:** `depends_on`
 
-Supplies validated declared architecture and dependency evaluation through the Engine facade.
+Supplies validated Module Contract v2 resolution, derived capability dependencies, and architecture evaluation through the Engine facade.
 
 ### [Project Model](mods/project_model/README.md)
 

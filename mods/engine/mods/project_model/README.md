@@ -2,21 +2,21 @@
 
 ## Purpose
 
-The Project Model exists so Fortress evaluates explicit project claims rather than inferring identity, standard applicability, feature ownership, or required evidence from incidental source layout.
+The Project Model exists to hold operational project configuration that is neither architectural intent nor safely derivable from the repository grammar.
 
 ## Responsibility
 
-Load and validate typed project, feature, requirement, change, command-reference, and certification declarations with stable identities and canonical repository-relative paths.
+Load and validate root operational configuration plus the remaining change and certification record schemas owned by the project-model boundary.
 
 ## Scope
 
 ### Includes
 
-Project standard claims, model pointers, feature and requirement ownership, supported evidence references, observation exclusions, and schema contracts for current declaration families.
+Observation exclusions and schema contracts for operational project, change, and certification record families.
 
 ### Excludes
 
-Normative standard meaning, observed repository facts, architecture rule findings, and generated certification evidence.
+Module identity, standard selection, capability and Feature authority, physical containment, observed repository facts, and generated certification evidence.
 
 ## Relationships
 
@@ -24,8 +24,8 @@ Normative standard meaning, observed repository facts, architecture rule finding
 
 **Types:** `depends_on`
 
-Uses stable Fortress identity and standard-claim semantics when validating project declarations.
+Uses stable Fortress identity and standard semantics when validating governed configuration and record families.
 
 ## Guarantees
 
-Declarations reject invalid or duplicate identities, unsafe paths, inconsistent evidence references, and malformed standard claims before evaluation.
+Operational configuration rejects unsafe or duplicate observation paths, while retained record schemas preserve explicit stable identities.

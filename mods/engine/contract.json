@@ -1,38 +1,45 @@
 {
-  "$schema": "urn:fortress:schema:v1:module-contract",
-  "schema_version": 1,
+  "$schema": "urn:fortress:schema:v2:module-contract",
+  "schema_version": 2,
   "id": "AF-CORE-0001",
   "display_name": "Engine",
-  "relationships": [
+  "provides": [
     {
-      "target": "AF-ARCHITECTURE-EVALUATION-0001",
-      "types": [
-        "depends_on"
-      ]
-    },
-    {
-      "target": "AF-PROJECT-MODEL-0001",
-      "types": [
-        "depends_on"
-      ]
-    },
-    {
-      "target": "AF-REPOSITORY-OBSERVATION-0001",
-      "types": [
-        "depends_on"
-      ]
-    },
-    {
-      "target": "AF-SNAPSHOT-GOVERNANCE-0001",
-      "types": [
-        "depends_on"
-      ]
-    },
-    {
-      "target": "AF-STANDARD-REGISTRY-0001",
-      "types": [
-        "depends_on"
-      ]
+      "id": "CAP-FORTRESS-ENGINE",
+      "version": "0.1.0",
+      "visibility": "public"
     }
-  ]
+  ],
+  "requires": [
+    {
+      "provider": "AF-ARCHITECTURE-EVALUATION-0001",
+      "capability": "CAP-ARCHITECTURE-EVALUATION",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-PROJECT-MODEL-0001",
+      "capability": "CAP-PROJECT-MODEL",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-REPOSITORY-OBSERVATION-0001",
+      "capability": "CAP-REPOSITORY-OBSERVATION",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-SNAPSHOT-GOVERNANCE-0001",
+      "capability": "CAP-SNAPSHOT-GOVERNANCE",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-STANDARD-REGISTRY-0001",
+      "capability": "CAP-STANDARD-REGISTRY",
+      "version": "^0.1.0"
+    }
+  ],
+  "relationships": [],
+  "constraints": [],
+  "guarantees": [],
+  "features": [],
+  "behavior": []
 }

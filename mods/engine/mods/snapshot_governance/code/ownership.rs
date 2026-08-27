@@ -1,8 +1,8 @@
 //! Reconciliation of stabilized repository paths with declared owners.
 //!
-//! This evaluator consumes only declared ownership and observed path facts. It
-//! does not infer owners, exempt Fortress-specific filenames, or redefine the
-//! governing standard rule.
+//! This evaluator consumes only contract-resolved Module territory and observed
+//! path facts. It does not add ecosystem-specific filename exceptions or
+//! redefine the governing standard rule.
 
 use std::collections::BTreeSet;
 
@@ -15,7 +15,7 @@ use crate::finding::{
 /// Stable identity of exact declared repository ownership.
 pub const ARCH_OWNERSHIP_RULE_ID: &str = "ARCH-OWNERSHIP-001";
 
-const REMEDIATION: &str = "Declare one canonical architectural owner for the governed path, remove incompatible overlapping declarations, or explicitly classify a legitimate repository-level or generated artifact under one declared owner.";
+const REMEDIATION: &str = "Converge the path to one canonical Module territory, remove incompatible overlapping fixture declarations, and represent generated or repository-level material through its actual Module ownership.";
 
 /// One deterministic observed-path-to-owner assignment.
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
@@ -61,11 +61,8 @@ impl OwnershipEvaluation {
 
 /// Evaluates exact-one ownership for all stabilized governed paths.
 ///
-/// Component path declarations match an exact file or, when ending in `/`,
-/// every descendant. Explicit repository artifact declarations match exactly
-/// and contribute their declared owner. A component path is a required
-/// declaration and therefore must match at least one observed path; explicit
-/// artifacts use their own `required` flag.
+/// Derived component paths match exact observed files. Specification fixtures
+/// may also use a trailing `/` prefix to exercise orphan and overlap semantics.
 ///
 /// # Errors
 ///
@@ -133,12 +130,6 @@ fn evaluate_observed_paths(
                 owners.insert(component.id().to_owned());
             }
         }
-        for artifact in architecture.repository_artifacts() {
-            if artifact.path() == path {
-                owners.insert(artifact.owner().to_owned());
-            }
-        }
-
         match owners.len() {
             0 => findings.push(make_finding(
                 definition,
@@ -204,28 +195,6 @@ fn evaluate_required_declarations(
             }
         }
     }
-    for artifact in architecture
-        .repository_artifacts()
-        .iter()
-        .filter(|artifact| artifact.required())
-    {
-        if !observed_paths.iter().any(|path| path == artifact.path()) {
-            findings.push(make_finding(
-                definition,
-                evaluator,
-                vec![artifact.owner().to_owned()],
-                artifact.path(),
-                format!(
-                    "Required {} artifact `{}` for `{}` does not exist in the governed observation.",
-                    artifact.classification().as_str(),
-                    artifact.path(),
-                    artifact.owner()
-                ),
-                standard_edition,
-            )?);
-        }
-    }
-
     Ok(())
 }
 

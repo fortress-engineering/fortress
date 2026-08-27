@@ -21,3 +21,7 @@ A violated assertion or fixture-loading failure fails the test target and surfac
 ### [`arch_dependency_001.rs`](../code/arch_dependency_001.rs)
 
 Verifies valid, cyclic, and minimum architecture graphs against ARCH-DEPENDENCY-001.
+
+### [`module_contract_v2.rs`](../code/module_contract_v2.rs)
+
+Exercises canonical local parsing and repository-wide Module Contract v2 resolution across invalid semantics and deterministic simple and complex ecosystems.

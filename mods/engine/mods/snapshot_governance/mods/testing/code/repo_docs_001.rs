@@ -5,6 +5,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use fortress_core::documentation::evaluate_documentation_files;
+use fortress_core::module_contract::ModuleContract;
 use serde::Deserialize;
 use serde_json::json;
 
@@ -29,14 +30,76 @@ fn bytes(value: impl Into<String>) -> Vec<u8> {
 }
 
 fn contract(id: &str, display_name: &str, relationships: &serde_json::Value) -> Vec<u8> {
-    serde_json::to_vec_pretty(&json!({
-        "$schema": "urn:fortress:schema:v1:module-contract",
-        "schema_version": 1,
+    let capability = format!(
+        "CAP-{}",
+        id.split('-')
+            .skip(1)
+            .take_while(|segment| !segment.bytes().all(|byte| byte.is_ascii_digit()))
+            .collect::<Vec<_>>()
+            .join("-")
+    );
+    let groups = relationships
+        .as_array()
+        .expect("relationship fixture is array");
+    let requires = groups
+        .iter()
+        .filter(|group| {
+            group["types"]
+                .as_array()
+                .is_some_and(|types| types.iter().any(|kind| kind == "depends_on"))
+        })
+        .map(|group| {
+            let target = group["target"].as_str().expect("target is string");
+            let target_capability = format!(
+                "CAP-{}",
+                target
+                    .split('-')
+                    .skip(1)
+                    .take_while(|segment| !segment.bytes().all(|byte| byte.is_ascii_digit()))
+                    .collect::<Vec<_>>()
+                    .join("-")
+            );
+            json!({
+                "provider": target,
+                "capability": target_capability,
+                "version": "^0.1.0"
+            })
+        })
+        .collect::<Vec<_>>();
+    let verifies = groups
+        .iter()
+        .filter(|group| {
+            group["types"]
+                .as_array()
+                .is_some_and(|types| types.iter().any(|kind| kind == "verifies"))
+        })
+        .map(|group| {
+            json!({
+                "type": "verifies",
+                "target": group["target"],
+                "subjects": []
+            })
+        })
+        .collect::<Vec<_>>();
+    let value = json!({
+        "$schema": "urn:fortress:schema:v2:module-contract",
+        "schema_version": 2,
         "id": id,
         "display_name": display_name,
-        "relationships": relationships
-    }))
-    .expect("fixture contract serializes")
+        "provides": [{"id": capability, "version": "0.1.0", "visibility": "project"}],
+        "requires": requires,
+        "relationships": verifies,
+        "constraints": [],
+        "guarantees": [],
+        "features": [],
+        "behavior": []
+    });
+    let contract: ModuleContract =
+        serde_json::from_value(value).expect("fixture contract deserializes");
+    contract
+        .to_canonical_json()
+        .expect("fixture contract serializes")
+        .into_bytes()
 }
 
 fn readme(name: &str, relationships: &str) -> Vec<u8> {
@@ -468,7 +531,7 @@ fn invalid_case(name: &str) -> BTreeMap<String, Vec<u8>> {
                     "AF-CONSUMER-0001",
                     "Consumer",
                     &json!([
-                        { "target": "AF-PROVIDER-0001", "types": ["depends_on"] },
+                        { "target": "AF-PROVIDER-0001", "types": ["verifies"] },
                         { "target": "AF-PROVIDER-0001", "types": ["verifies"] }
                     ]),
                 ),

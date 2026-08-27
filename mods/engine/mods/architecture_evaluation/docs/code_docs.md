@@ -20,8 +20,8 @@ Invalid inputs and inability to fulfill the responsibility return explicit typed
 
 ### [`architecture.rs`](../code/architecture.rs)
 
-Loads zones, components, ownership paths, artifact classes, and dependencies and evaluates declared cycles.
+Derives physical Module ownership and capability dependency edges from the resolved contract ecosystem, then evaluates dependency cycles.
 
 ### [`module_contract.rs`](../code/module_contract.rs)
 
-Loads stable Module identities and sorted typed outbound relationships without duplicating filesystem containment.
+Parses canonical Module Contract v2 files and deterministically resolves ecosystem identities, capabilities, constraints, guarantees, Features, requirements, behavioral checkpoints, provenance, and digests.

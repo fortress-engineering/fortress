@@ -19,7 +19,7 @@ use crate::finding::{
     CanonicalFinding, EvaluatorProvenance, FindingCategory, FindingError, FindingLocation,
     FindingOccurrence, RuleFindingDefinition,
 };
-use crate::module_contract::{ModuleContract, ModuleRelationshipType};
+use crate::module_contract::{ModuleContract, ResolvedRelationshipType};
 use crate::snapshot::RepositorySnapshot;
 
 /// Stable identity of canonical Module documentation synchronization.
@@ -129,6 +129,7 @@ pub struct DocumentationSummary {
     documented_child_modules: usize,
     contract_relationships: usize,
     documented_relationships: usize,
+    relationship_violations: usize,
     broken_or_stale_links: usize,
     structural_markdown_violations: usize,
     unexpected_docs_files: usize,
@@ -176,6 +177,12 @@ impl DocumentationSummary {
     #[must_use]
     pub const fn relationship_bijection(&self) -> (usize, usize) {
         (self.contract_relationships, self.documented_relationships)
+    }
+
+    /// Returns README/contract relationship synchronization violations.
+    #[must_use]
+    pub const fn relationship_violations(&self) -> usize {
+        self.relationship_violations
     }
 
     /// Returns broken or stale relative-link count.
@@ -422,7 +429,7 @@ impl EvaluationContext<'_> {
         self.summary.contract_relationships = self
             .contracts
             .values()
-            .map(|contract| contract.relationships().len())
+            .map(|contract| authoritative_relationships(contract).len())
             .sum();
         Ok(())
     }
@@ -441,14 +448,9 @@ impl EvaluationContext<'_> {
                     module.clone(),
                     contract.id().into(),
                     contract
-                        .relationships()
+                        .requires()
                         .iter()
-                        .filter(|relationship| {
-                            relationship
-                                .types()
-                                .contains(&ModuleRelationshipType::DependsOn)
-                        })
-                        .map(|relationship| relationship.target().to_owned())
+                        .map(|requirement| requirement.provider().to_owned())
                         .collect(),
                 )
             })
@@ -457,13 +459,17 @@ impl EvaluationContext<'_> {
             .contracts
             .iter()
             .flat_map(|(module, contract)| {
-                contract.relationships().iter().map(|relationship| {
-                    (
-                        module.clone(),
-                        contract.id().to_owned(),
-                        relationship.target().to_owned(),
+                contract
+                    .requires()
+                    .iter()
+                    .map(crate::module_contract::RequiredCapability::provider)
+                    .chain(
+                        contract
+                            .relationships()
+                            .iter()
+                            .map(crate::module_contract::ModuleRelationship::target),
                     )
-                })
+                    .map(|target| (module.clone(), contract.id().to_owned(), target.to_owned()))
             })
             .collect();
         for (module, source, target) in declared_targets {
@@ -628,7 +634,8 @@ impl EvaluationContext<'_> {
         path: &str,
         document: &MarkdownDocument,
     ) -> Result<(), FindingError> {
-        let mut documented = BTreeMap::<String, Vec<ModuleRelationshipType>>::new();
+        let findings_before = self.findings.len();
+        let mut documented = BTreeMap::<String, Vec<ResolvedRelationshipType>>::new();
         for heading in document.headings.iter().filter(|heading| {
             heading.level == 3 && heading.parent_h2.as_deref() == Some("Relationships")
         }) {
@@ -676,12 +683,12 @@ impl EvaluationContext<'_> {
                 )?;
                 continue;
             };
-            let types: Vec<ModuleRelationshipType> = types_paragraph
+            let types: Vec<ResolvedRelationshipType> = types_paragraph
                 .codes
                 .iter()
                 .filter_map(|value| match value.as_str() {
-                    "depends_on" => Some(ModuleRelationshipType::DependsOn),
-                    "verifies" => Some(ModuleRelationshipType::Verifies),
+                    "depends_on" => Some(ResolvedRelationshipType::DependsOn),
+                    "verifies" => Some(ResolvedRelationshipType::Verifies),
                     _ => None,
                 })
                 .collect();
@@ -718,11 +725,11 @@ impl EvaluationContext<'_> {
         }
 
         if let Some(contract) = self.contracts.get(module) {
-            let authoritative: BTreeMap<String, Vec<ModuleRelationshipType>> = contract
-                .relationships()
-                .iter()
-                .map(|relationship| (relationship.target().into(), relationship.types().to_vec()))
-                .collect();
+            let authoritative: BTreeMap<String, Vec<ResolvedRelationshipType>> =
+                authoritative_relationships(contract)
+                    .into_iter()
+                    .map(|(target, types)| (target, types.into_iter().collect()))
+                    .collect();
             for (target, types) in &authoritative {
                 match documented.get(target) {
                     None => self.markdown_finding(path, format!("Contract relationship to `{target}` is missing from README `Relationships`."))?,
@@ -741,6 +748,7 @@ impl EvaluationContext<'_> {
                 }
             }
         }
+        self.summary.relationship_violations += self.findings.len() - findings_before;
         Ok(())
     }
 
@@ -1367,6 +1375,25 @@ fn resolve_relative(source_path: &str, link: &str) -> Option<String> {
         }
     }
     Some(segments.join("/"))
+}
+
+fn authoritative_relationships(
+    contract: &ModuleContract,
+) -> BTreeMap<String, BTreeSet<ResolvedRelationshipType>> {
+    let mut relationships = BTreeMap::<String, BTreeSet<ResolvedRelationshipType>>::new();
+    for requirement in contract.requires() {
+        relationships
+            .entry(requirement.provider().to_owned())
+            .or_default()
+            .insert(ResolvedRelationshipType::DependsOn);
+    }
+    for relationship in contract.relationships() {
+        relationships
+            .entry(relationship.target().to_owned())
+            .or_default()
+            .insert(ResolvedRelationshipType::Verifies);
+    }
+    relationships
 }
 
 fn dependency_cycle(contracts: &[(String, String, Vec<String>)]) -> Option<Vec<String>> {

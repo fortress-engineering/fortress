@@ -1,14 +1,50 @@
 {
-  "$schema": "urn:fortress:schema:v1:module-contract",
-  "schema_version": 1,
+  "$schema": "urn:fortress:schema:v2:module-contract",
+  "schema_version": 2,
   "id": "AF-PROJECT-MODEL-0001",
   "display_name": "Project Model",
-  "relationships": [
+  "provides": [
     {
-      "target": "AF-STANDARD-REGISTRY-0001",
-      "types": [
-        "depends_on"
+      "id": "CAP-PROJECT-MODEL",
+      "version": "0.1.0",
+      "visibility": "project"
+    }
+  ],
+  "requires": [
+    {
+      "provider": "AF-STANDARD-REGISTRY-0001",
+      "capability": "CAP-STANDARD-REGISTRY",
+      "version": "^0.1.0"
+    }
+  ],
+  "relationships": [],
+  "constraints": [],
+  "guarantees": [],
+  "features": [
+    {
+      "id": "AF-PROJECT-MODEL-0001",
+      "version": "0.1.0",
+      "requirements": [
+        {
+          "id": "AF-PROJECT-MODEL-0001-R01",
+          "statement": "The core loads schema-versioned operational project configuration and rejects invalid, duplicate, or unsafe repository observation exclusions.",
+          "tests": [
+            "T-AF-PROJECT-MODEL-0001-R01-001",
+            "T-AF-PROJECT-MODEL-0001-R01-002",
+            "T-AF-PROJECT-MODEL-0001-R02-001",
+            "T-AF-PROJECT-MODEL-0001-R02-002",
+            "T-AF-PROJECT-MODEL-0001-R02-003"
+          ]
+        },
+        {
+          "id": "AF-PROJECT-MODEL-0001-R03",
+          "statement": "The temporal change schema represents ordinary changes without requiring bootstrap-only packet provenance.",
+          "tests": [
+            "T-AF-PROJECT-MODEL-0001-R03-001"
+          ]
+        }
       ]
     }
-  ]
+  ],
+  "behavior": []
 }

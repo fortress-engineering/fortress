@@ -1,16 +1,31 @@
 //! Implementation exercise of specification-authored `ARCH-OWNERSHIP-001` fixtures.
 
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use fortress_core::architecture::ArchitectureManifest;
+use fortress_core::architecture::{ArchitectureManifest, ComponentDeclaration};
+use fortress_core::module_contract::{ContractStandardIndex, resolve_contracts};
 use fortress_core::ownership::evaluate_file_ownership;
 use serde::Deserialize;
 
 #[derive(Deserialize)]
 struct Fixture {
-    architecture: serde_json::Value,
+    ownership: ArchitectureWire,
     observed_paths: Vec<String>,
+}
+
+#[derive(Deserialize)]
+struct ArchitectureWire {
+    components: Vec<ComponentWire>,
+}
+
+#[derive(Deserialize)]
+struct ComponentWire {
+    id: String,
+    title: String,
+    paths: Vec<String>,
+    depends_on: Vec<String>,
 }
 
 fn fixture_root() -> PathBuf {
@@ -26,14 +41,27 @@ fn read(relative_path: &str) -> String {
 fn load(relative_path: &str) -> (ArchitectureManifest, Vec<String>) {
     let fixture: Fixture =
         serde_json::from_str(&read(relative_path)).expect("fixture is valid JSON");
-    let architecture = ArchitectureManifest::from_json_str(&fixture.architecture.to_string())
-        .expect("fixture architecture is valid");
+    let architecture = ArchitectureManifest::from_components(
+        fixture
+            .ownership
+            .components
+            .into_iter()
+            .map(|component| {
+                ComponentDeclaration::new(
+                    component.id,
+                    component.title,
+                    component.paths,
+                    component.depends_on,
+                )
+            })
+            .collect(),
+    );
     (architecture, fixture.observed_paths)
 }
 
 /// `T-ARCH-OWNERSHIP-001-R01-001`
 #[test]
-fn complete_ownership_and_explicit_repository_metadata_pass() {
+fn complete_ownership_passes() {
     let (architecture, paths) = load("ownership_valid.json");
     let result = evaluate_file_ownership(&architecture, &paths, "1.0.0-draft.1")
         .expect("evaluation completes");
@@ -69,9 +97,6 @@ fn one_exact_path_is_the_minimum_boundary() {
 #[test]
 fn fortress_self_inventory_has_exactly_one_declared_owner() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..");
-    let source = fs::read_to_string(root.join("data/architecture.json"))
-        .expect("self architecture is readable");
-    let architecture = ArchitectureManifest::from_json_str(&source).expect("architecture loads");
     let policy = fortress_core::observation::ObservationPolicy::new([".git", "target"])
         .expect("self exclusions are canonical");
     let observation = fortress_core::observation::observe_repository(&root, &policy)
@@ -81,6 +106,51 @@ fn fortress_self_inventory_has_exactly_one_declared_owner() {
         .iter()
         .map(|file| file.path().to_owned())
         .collect();
+    let files: BTreeMap<String, Vec<u8>> = observation
+        .files()
+        .iter()
+        .map(|file| {
+            (
+                file.path().to_owned(),
+                fs::read(root.join(file.path())).expect("observed bytes read"),
+            )
+        })
+        .collect();
+    let mut tests = Vec::new();
+    for (path, bytes) in &files {
+        if Path::new(path)
+            .extension()
+            .is_some_and(|extension| extension == "rs")
+        {
+            let source = std::str::from_utf8(bytes).expect("Rust source is UTF-8");
+            tests.extend(
+                fortress_core::rust_test_analyzer::analyze_rust_source(path, source)
+                    .expect("Rust test facts analyze"),
+            );
+        }
+    }
+    let test_ids = tests.iter().map(|test| test.id().to_owned()).collect();
+    let resolution = resolve_contracts(
+        &files,
+        &ContractStandardIndex::new(
+            "STD-FORTRESS-ENGINEERING",
+            "1.0.0-draft.1",
+            [
+                "ARCH-DEPENDENCY-001",
+                "ARCH-OWNERSHIP-001",
+                "CONTRACT-COHERENCY-001",
+                "REPO-DOCS-001",
+                "REPO-MODULE-001",
+                "STD-ID-001",
+                "TEST-TRACEABILITY-001",
+            ],
+        ),
+        Some(&test_ids),
+    );
+    let resolved = resolution
+        .resolved()
+        .unwrap_or_else(|| panic!("self contracts resolve: {:#?}", resolution.violations()));
+    let architecture = ArchitectureManifest::from_resolved_contracts(resolved, &paths);
     let result = evaluate_file_ownership(&architecture, &paths, "1.0.0-draft.1")
         .expect("evaluation completes");
     assert!(

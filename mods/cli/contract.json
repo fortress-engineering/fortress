@@ -1,14 +1,70 @@
 {
-  "$schema": "urn:fortress:schema:v1:module-contract",
-  "schema_version": 1,
+  "$schema": "urn:fortress:schema:v2:module-contract",
+  "schema_version": 2,
   "id": "TF-CLI-0001",
   "display_name": "CLI",
-  "relationships": [
+  "provides": [
     {
-      "target": "AF-CORE-0001",
-      "types": [
-        "depends_on"
+      "id": "CAP-FORTRESS-CLI",
+      "version": "0.1.0",
+      "visibility": "public"
+    }
+  ],
+  "requires": [
+    {
+      "provider": "AF-CORE-0001",
+      "capability": "CAP-FORTRESS-ENGINE",
+      "version": "^0.1.0"
+    }
+  ],
+  "relationships": [],
+  "constraints": [],
+  "guarantees": [],
+  "features": [
+    {
+      "id": "TF-CLI-0001",
+      "version": "0.1.0",
+      "requirements": [
+        {
+          "id": "TF-CLI-0001-R01",
+          "statement": "The core command registry exposes only unique, stable, implemented command contracts.",
+          "tests": [
+            "T-TF-CLI-0001-R01-001",
+            "T-TF-CLI-0001-R01-002",
+            "T-TF-CLI-0001-R01-003"
+          ]
+        },
+        {
+          "id": "TF-CLI-0001-R02",
+          "statement": "CLI dispatch renders discovery and returns non-success for unsupported commands.",
+          "tests": [
+            "T-TF-CLI-0001-R02-001",
+            "T-TF-CLI-0001-R02-002"
+          ]
+        },
+        {
+          "id": "TF-CLI-0001-R03",
+          "statement": "The native process implements version and help entrypoints with stable failure semantics.",
+          "tests": [
+            "T-TF-CLI-0001-R03-001",
+            "T-TF-CLI-0001-R03-002",
+            "T-TF-CLI-0001-R03-003",
+            "T-TF-CLI-0001-R03-004"
+          ]
+        },
+        {
+          "id": "TF-CLI-0001-R04",
+          "statement": "The native fortress audit command accepts an optional repository root, renders deterministic human or schema-versioned JSON output, succeeds only without evaluated violations, and rejects malformed project state or unsupported options.",
+          "tests": [
+            "T-TF-CLI-0001-R04-001",
+            "T-TF-CLI-0001-R04-002",
+            "T-TF-CLI-0001-R04-003",
+            "T-TF-CLI-0001-R04-004",
+            "T-TF-CLI-0001-R04-005"
+          ]
+        }
       ]
     }
-  ]
+  ],
+  "behavior": []
 }

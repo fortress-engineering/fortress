@@ -1,7 +1,53 @@
 {
-  "$schema": "urn:fortress:schema:v1:module-contract",
-  "schema_version": 1,
+  "$schema": "urn:fortress:schema:v2:module-contract",
+  "schema_version": 2,
   "id": "PF-FORTRESS",
   "display_name": "Fortress",
-  "relationships": []
+  "ecosystem": {
+    "repository_grammar": 1,
+    "standard": {
+      "id": "STD-FORTRESS-ENGINEERING",
+      "edition": "1.0.0-draft.1"
+    }
+  },
+  "provides": [],
+  "requires": [],
+  "relationships": [],
+  "constraints": [
+    {
+      "rule": "CONTRACT-COHERENCY-001",
+      "scope": "subtree"
+    },
+    {
+      "rule": "REPO-DOCS-001",
+      "scope": "subtree"
+    },
+    {
+      "rule": "REPO-MODULE-001",
+      "scope": "subtree"
+    },
+    {
+      "rule": "STD-ID-001",
+      "scope": "subtree"
+    }
+  ],
+  "guarantees": [],
+  "features": [
+    {
+      "id": "AF-BOOTSTRAP-GOVERNANCE-0001",
+      "version": "0.1.0",
+      "requirements": [
+        {
+          "id": "AF-BOOTSTRAP-GOVERNANCE-0001-R01",
+          "statement": "Fortress records its current declared model and accurately reports that it is not certified.",
+          "tests": [
+            "T-AF-BOOTSTRAP-GOVERNANCE-0001-R01-001",
+            "T-AF-BOOTSTRAP-GOVERNANCE-0001-R01-002",
+            "T-AF-BOOTSTRAP-GOVERNANCE-0001-R01-003"
+          ]
+        }
+      ]
+    }
+  ],
+  "behavior": []
 }

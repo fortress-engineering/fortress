@@ -2,12 +2,12 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use crate::feature::{FeatureContract, FeatureStatus, RequirementDeclaration};
 use crate::finding::{
     CanonicalFinding, EvaluatorProvenance, FindingCategory, FindingError, FindingLocation,
     FindingOccurrence, RuleFindingDefinition,
 };
 use crate::identity::StableId;
+use crate::module_contract::ResolvedContractSet;
 use crate::rust_test_analyzer::{RustTestClassification, RustTestFact};
 
 /// Stable identity of mandatory requirement/test traceability.
@@ -50,10 +50,74 @@ impl TraceabilityEvaluation {
     }
 }
 
-struct RequirementRef<'a> {
-    contract_path: &'a str,
-    feature_id: &'a str,
-    requirement: &'a RequirementDeclaration,
+/// One distributed contract requirement projected for traceability evaluation.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct RequirementEvidence {
+    contract_path: String,
+    feature_id: String,
+    id: String,
+    statement: String,
+    tests: Vec<String>,
+}
+
+impl RequirementEvidence {
+    /// Creates a requirement fact for specification conformance fixtures.
+    #[must_use]
+    pub fn new<I, S>(
+        contract_path: impl Into<String>,
+        feature_id: impl Into<String>,
+        id: impl Into<String>,
+        statement: impl Into<String>,
+        tests: I,
+    ) -> Self
+    where
+        I: IntoIterator<Item = S>,
+        S: Into<String>,
+    {
+        Self {
+            contract_path: contract_path.into(),
+            feature_id: feature_id.into(),
+            id: id.into(),
+            statement: statement.into(),
+            tests: tests.into_iter().map(Into::into).collect(),
+        }
+    }
+
+    /// Returns the requirement identity.
+    #[must_use]
+    pub fn id(&self) -> &str {
+        &self.id
+    }
+
+    /// Returns the requirement statement.
+    #[must_use]
+    pub fn statement(&self) -> &str {
+        &self.statement
+    }
+
+    /// Returns declared test references.
+    #[must_use]
+    pub fn tests(&self) -> &[String] {
+        &self.tests
+    }
+}
+
+/// Projects distributed resolved contracts into deterministic requirement facts.
+#[must_use]
+pub fn requirements_from_resolved(contracts: &ResolvedContractSet) -> Vec<RequirementEvidence> {
+    contracts
+        .requirements()
+        .iter()
+        .map(|(id, requirement)| {
+            RequirementEvidence::new(
+                requirement.provenance().contract_path(),
+                requirement.feature(),
+                id,
+                requirement.statement(),
+                requirement.tests().iter().cloned(),
+            )
+        })
+        .collect()
 }
 
 /// Evaluates active requirement and Rust test evidence traceability.
@@ -67,7 +131,7 @@ struct RequirementRef<'a> {
 ///
 /// Returns [`FindingError`] only if deterministic finding construction fails.
 pub fn evaluate_test_traceability(
-    contracts: &[FeatureContract],
+    requirements: &[RequirementEvidence],
     tests: &[RustTestFact],
     standard_edition: &str,
 ) -> Result<TraceabilityEvaluation, FindingError> {
@@ -79,10 +143,9 @@ pub fn evaluate_test_traceability(
     )?;
     let evaluator =
         EvaluatorProvenance::new("fortress-core/traceability", env!("CARGO_PKG_VERSION"))?;
-    let requirements = active_requirements(contracts);
     let mut findings = Vec::new();
     let (requirement_ids, references) = evaluate_requirements(
-        &requirements,
+        requirements,
         &definition,
         &evaluator,
         standard_edition,
@@ -118,34 +181,12 @@ pub fn evaluate_test_traceability(
     })
 }
 
-fn active_requirements(contracts: &[FeatureContract]) -> Vec<RequirementRef<'_>> {
-    contracts
-        .iter()
-        .flat_map(|contract| {
-            contract
-                .features()
-                .iter()
-                .filter(|feature| feature.status() == FeatureStatus::Active)
-                .flat_map(|feature| {
-                    feature
-                        .requirements()
-                        .iter()
-                        .map(|requirement| RequirementRef {
-                            contract_path: contract.source_path(),
-                            feature_id: feature.id(),
-                            requirement,
-                        })
-                })
-        })
-        .collect()
-}
-
-type RequirementIds<'a> = BTreeMap<&'a str, Vec<&'a RequirementRef<'a>>>;
-type TestReferences<'a> = BTreeMap<&'a str, Vec<&'a RequirementRef<'a>>>;
+type RequirementIds<'a> = BTreeMap<&'a str, Vec<&'a RequirementEvidence>>;
+type TestReferences<'a> = BTreeMap<&'a str, Vec<&'a RequirementEvidence>>;
 
 #[allow(clippy::too_many_arguments)]
 fn evaluate_requirements<'a>(
-    requirements: &'a [RequirementRef<'a>],
+    requirements: &'a [RequirementEvidence],
     definition: &RuleFindingDefinition,
     evaluator: &EvaluatorProvenance,
     standard_edition: &str,
@@ -154,7 +195,7 @@ fn evaluate_requirements<'a>(
     let mut requirement_ids: RequirementIds<'a> = BTreeMap::new();
     let mut references: TestReferences<'a> = BTreeMap::new();
     for reference in requirements {
-        let requirement = reference.requirement;
+        let requirement = reference;
         if canonical_entity(requirement.id()) {
             requirement_ids
                 .entry(requirement.id())
@@ -165,7 +206,7 @@ fn evaluate_requirements<'a>(
                 definition,
                 evaluator,
                 reference,
-                valid_entities([reference.feature_id]),
+                valid_entities([reference.feature_id.as_str()]),
                 format!(
                     "Active requirement ID `{}` is not canonical.",
                     requirement.id()
@@ -232,10 +273,7 @@ fn evaluate_requirements<'a>(
     }
     for (id, mappings) in &references {
         if mappings.len() > 1 {
-            let requirements: Vec<&str> = mappings
-                .iter()
-                .map(|mapping| mapping.requirement.id())
-                .collect();
+            let requirements: Vec<&str> = mappings.iter().map(|mapping| mapping.id()).collect();
             findings.push(contract_finding(
                 definition,
                 evaluator,
@@ -294,11 +332,10 @@ fn evaluate_observed_tests(
                     ),
                     standard_edition,
                 )?);
-            } else if !references.get(test.id()).is_some_and(|mappings| {
-                mappings
-                    .iter()
-                    .any(|mapping| mapping.requirement.id() == declared)
-            }) {
+            } else if !references
+                .get(test.id())
+                .is_some_and(|mappings| mappings.iter().any(|mapping| mapping.id() == declared))
+            {
                 findings.push(test_finding(
                     definition,
                     evaluator,
@@ -344,10 +381,10 @@ fn evaluate_stale_references(
                 definition,
                 evaluator,
                 mappings[0],
-                valid_entities([mappings[0].requirement.id(), *test_id]),
+                valid_entities([mappings[0].id(), *test_id]),
                 format!(
                     "Requirement `{}` references test `{test_id}` absent from the supported Rust evidence inventory.",
-                    mappings[0].requirement.id()
+                    mappings[0].id()
                 ),
                 standard_edition,
             )?);
@@ -359,7 +396,7 @@ fn evaluate_stale_references(
 fn contract_finding(
     definition: &RuleFindingDefinition,
     evaluator: &EvaluatorProvenance,
-    reference: &RequirementRef<'_>,
+    reference: &RequirementEvidence,
     entities: Vec<String>,
     message: String,
     standard_edition: &str,
@@ -368,7 +405,7 @@ fn contract_finding(
         definition,
         evaluator,
         entities,
-        FindingLocation::at_path(reference.contract_path)?,
+        FindingLocation::at_path(&reference.contract_path)?,
         message,
         standard_edition,
     )

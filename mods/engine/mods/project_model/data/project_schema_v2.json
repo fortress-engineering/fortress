@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v2:project-configuration",
+  "title": "Fortress project operation configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "schema_version", "observation_exclusions"],
+  "properties": {
+    "$schema": { "const": "urn:fortress:schema:v2:project-configuration" },
+    "schema_version": { "const": 2 },
+    "observation_exclusions": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  }
+}

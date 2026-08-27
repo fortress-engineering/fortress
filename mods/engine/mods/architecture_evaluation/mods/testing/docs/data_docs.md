@@ -22,6 +22,14 @@ Fixtures change deliberately with compatible rule clarification or an explicit s
 
 ## Files
 
+### [`contract_complex.json`](../data/contract_complex.json)
+
+Defines a nested multi-branch ecosystem that stresses capabilities, inheritance, verification, guarantees, distributed Features, and behavioral checkpoints.
+
+### [`contract_simple.json`](../data/contract_simple.json)
+
+Defines a compact provider, CLI consumer, and verifier ecosystem for end-to-end contract resolution.
+
 ### [`dependency_boundary.json`](../data/dependency_boundary.json)
 
 Provides specification-authored boundary conformance data for dependency behavior.

@@ -12,13 +12,14 @@ use std::path::{Path, PathBuf};
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 
+use crate::module_contract::ResolvedContractSet;
 use crate::observation::{
     ObservationError, ObservationPolicy, ObservedFile, RepositoryObservation, observe_repository,
 };
-use crate::project::{ProjectManifest, StandardStatus};
+use crate::standard::StandardBundle;
 
 /// Current canonical repository snapshot schema family.
-pub const SNAPSHOT_SCHEMA_VERSION: u16 = 1;
+pub const SNAPSHOT_SCHEMA_VERSION: u16 = 2;
 
 /// Fortress engine version participating in snapshot interpretation.
 pub const SNAPSHOT_ENGINE_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -28,9 +29,8 @@ pub const SNAPSHOT_ENGINE_VERSION: &str = env!("CARGO_PKG_VERSION");
 pub struct SnapshotDocuments<'a> {
     standard_manifest: &'a [u8],
     standard_documents: Vec<SnapshotDocument<'a>>,
-    project_declaration: &'a [u8],
-    architecture_declaration: &'a [u8],
-    feature_contracts: Vec<SnapshotDocument<'a>>,
+    project_configuration: &'a [u8],
+    module_contracts: Vec<SnapshotDocument<'a>>,
 }
 
 impl<'a> SnapshotDocuments<'a> {
@@ -43,9 +43,8 @@ impl<'a> SnapshotDocuments<'a> {
         standard_manifest_path: S,
         standard_manifest: &'a [u8],
         standard_rule_documents: I,
-        project_declaration: &'a [u8],
-        architecture_declaration: &'a [u8],
-        feature_contracts: F,
+        project_configuration: &'a [u8],
+        module_contracts: F,
     ) -> Self
     where
         S: Into<String>,
@@ -67,9 +66,8 @@ impl<'a> SnapshotDocuments<'a> {
         Self {
             standard_manifest,
             standard_documents,
-            project_declaration,
-            architecture_declaration,
-            feature_contracts: feature_contracts
+            project_configuration,
+            module_contracts: module_contracts
                 .into_iter()
                 .map(|(path, bytes)| SnapshotDocument {
                     path: path.into(),
@@ -197,29 +195,32 @@ pub fn observe_repository_stably(
 pub fn build_repository_snapshot(
     root: impl AsRef<Path>,
     policy: &ObservationPolicy,
-    project: &ProjectManifest,
+    contracts: &ResolvedContractSet,
+    standard_bundle: &StandardBundle,
     documents: &SnapshotDocuments<'_>,
 ) -> Result<RepositorySnapshot, SnapshotError> {
     let standard_documents =
         canonical_document_digests(&documents.standard_documents, "standard input")?;
-    let feature_contracts =
-        canonical_document_digests(&documents.feature_contracts, "feature contract")?;
+    let module_contracts =
+        canonical_document_digests(&documents.module_contracts, "Module contract")?;
     let observation = observe_repository_stably(root, policy)?;
     let repository_content_fingerprint = canonical_sha256(&observation)?;
 
     let standard_input_fingerprint = canonical_sha256(&standard_documents)?;
     let standard = SnapshotStandard {
-        edition: project.standard().edition().to_owned(),
-        status: standard_status_name(project.standard().status()).to_owned(),
-        declared_bundle_digest: project.standard().digest().map(str::to_owned),
+        id: standard_bundle.id().to_owned(),
+        edition: standard_bundle.edition().to_owned(),
+        status: standard_bundle.status().to_owned(),
+        declared_bundle_digest: None,
         manifest_digest: sha256_bytes(documents.standard_manifest),
         input_documents: standard_documents,
         input_fingerprint: standard_input_fingerprint,
     };
+    let contract_set_fingerprint = canonical_sha256(&module_contracts)?;
     let inputs = SnapshotInputDigests {
-        project_declaration_digest: sha256_bytes(documents.project_declaration),
-        architecture_declaration_digest: sha256_bytes(documents.architecture_declaration),
-        feature_contracts,
+        project_configuration_digest: sha256_bytes(documents.project_configuration),
+        module_contracts,
+        contract_set_fingerprint,
     };
     let observation_policy = SnapshotObservationPolicy {
         excluded_prefixes: policy.excluded_prefixes().to_vec(),
@@ -238,7 +239,10 @@ pub fn build_repository_snapshot(
 
     let material = SnapshotIdentityMaterial {
         schema_version: SNAPSHOT_SCHEMA_VERSION,
-        project_id: project.id(),
+        project_id: contracts
+            .root()
+            .map(|module| module.contract().id())
+            .ok_or(SnapshotError::MissingRootContract)?,
         standard: &standard,
         inputs: &inputs,
         observation_policy: &observation_policy,
@@ -251,7 +255,10 @@ pub fn build_repository_snapshot(
 
     Ok(RepositorySnapshot {
         schema_version: SNAPSHOT_SCHEMA_VERSION,
-        project_id: project.id().to_owned(),
+        project_id: contracts
+            .root()
+            .map(|module| module.contract().id().to_owned())
+            .ok_or(SnapshotError::MissingRootContract)?,
         standard,
         inputs,
         observation_policy,
@@ -266,6 +273,8 @@ pub fn build_repository_snapshot(
 /// Explains why a canonical repository snapshot could not be created.
 #[derive(Debug)]
 pub enum SnapshotError {
+    /// A supposedly resolved contract set had no root Module contract.
+    MissingRootContract,
     /// A repository observation pass failed.
     Observation(ObservationError),
     /// The two canonical observations did not describe identical content.
@@ -296,6 +305,9 @@ pub enum SnapshotError {
 impl Display for SnapshotError {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
         match self {
+            Self::MissingRootContract => {
+                formatter.write_str("resolved contract set has no root Module contract")
+            }
             Self::Observation(error) => write!(formatter, "repository observation failed: {error}"),
             Self::UnstableRepository {
                 first_fingerprint,
@@ -329,7 +341,8 @@ impl Error for SnapshotError {
         match self {
             Self::Observation(error) => Some(error),
             Self::Serialization(error) => Some(error),
-            Self::UnstableRepository { .. }
+            Self::MissingRootContract
+            | Self::UnstableRepository { .. }
             | Self::InvalidDocumentPath { .. }
             | Self::DuplicateDocumentPath { .. } => None,
         }
@@ -350,6 +363,7 @@ struct SnapshotDocument<'a> {
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 struct SnapshotStandard {
+    id: String,
     edition: String,
     status: String,
     declared_bundle_digest: Option<String>,
@@ -360,9 +374,9 @@ struct SnapshotStandard {
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 struct SnapshotInputDigests {
-    project_declaration_digest: String,
-    architecture_declaration_digest: String,
-    feature_contracts: Vec<SnapshotDocumentDigest>,
+    project_configuration_digest: String,
+    module_contracts: Vec<SnapshotDocumentDigest>,
+    contract_set_fingerprint: String,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
@@ -461,14 +475,6 @@ fn sha256_bytes(bytes: &[u8]) -> String {
     format!("sha256:{:x}", Sha256::digest(bytes))
 }
 
-fn standard_status_name(status: StandardStatus) -> &'static str {
-    match status {
-        StandardStatus::Draft => "draft",
-        StandardStatus::Candidate => "candidate",
-        StandardStatus::Released => "released",
-    }
-}
-
 fn is_canonical_relative_path(value: &str) -> bool {
     let bytes = value.as_bytes();
     let drive_path = bytes.len() >= 2 && bytes[0].is_ascii_alphabetic() && bytes[1] == b':';
@@ -484,12 +490,14 @@ fn is_canonical_relative_path(value: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::{BTreeMap, BTreeSet};
     use std::fs;
     use std::path::{Path, PathBuf};
     use std::sync::atomic::{AtomicU64, Ordering};
 
+    use crate::module_contract::{ContractStandardIndex, ResolvedContractSet, resolve_contracts};
     use crate::observation::ObservationPolicy;
-    use crate::project::ProjectManifest;
+    use crate::standard::StandardBundle;
 
     use super::{
         SnapshotDocuments, SnapshotError, build_repository_snapshot, observe_repository_stably_with,
@@ -529,34 +537,28 @@ mod tests {
         }
     }
 
-    fn project() -> ProjectManifest {
-        ProjectManifest::from_json_str(
-            r#"{
-                "$schema": "urn:fortress:schema:v1:project",
-                "schema_version": 1,
-                "id": "PF-SNAPSHOT-TEST",
-                "name": "Snapshot test",
-                "standard": {
-                    "id": "STD-FORTRESS-ENGINEERING",
-                    "edition": "1.0.0-draft.1",
-                    "status": "draft",
-                    "digest": null,
-                    "manifest": "mods/engine/mods/standard_registry/data/standard_manifest.json"
-                },
-                "archetypes": ["package.library"],
-                "capabilities": ["AF-SNAPSHOT-GOVERNANCE-0001"],
-                "languages": ["rust"],
-                "model": {
-                    "architecture": "data/architecture.json",
-                    "features": ["data/features.json"],
-                    "commands": "mods/cli/data/commands.json",
-                    "certifications": "data/certification.json",
-                    "active_changes": [],
-                    "observation_exclusions": [".git", "target"]
-                }
-            }"#,
+    fn standard() -> StandardBundle {
+        let manifest = r#"{"$schema":"urn:fortress:schema:v1:standard-manifest","schema_version":1,"id":"STD-FORTRESS-ENGINEERING","title":"Test","edition":"1.0.0-draft.1","status":"draft","release_digest":null,"rules":["rule.json"]}"#;
+        let rule = r#"{"$schema":"urn:fortress:schema:v1:rule","schema_version":1,"id":"STD-ID-001","title":"Identity","status":"draft","statement":"Identity is stable.","rationale":"Determinism.","failure_prevented":"Ambiguity.","applicability":"All identities.","category":"standard","integrity_tier":1,"evaluation":"Parse IDs.","required_capabilities":[],"finding":{"message":"Invalid.","location":"entity"},"remediation":"Correct it.","valid_example":"AF-CORE-0001","invalid_example":"bad","exception_policy":"None.","introduced":"1.0.0-draft.1","history":[]}"#;
+        StandardBundle::from_json_documents(manifest, &[("rule.json", rule)])
+            .expect("test standard validates")
+    }
+
+    fn contracts() -> ResolvedContractSet {
+        let source = "{\n  \"$schema\": \"urn:fortress:schema:v2:module-contract\",\n  \"schema_version\": 2,\n  \"id\": \"PF-SNAPSHOT-TEST\",\n  \"display_name\": \"Snapshot Test\",\n  \"ecosystem\": {\n    \"repository_grammar\": 1,\n    \"standard\": {\n      \"id\": \"STD-FORTRESS-ENGINEERING\",\n      \"edition\": \"1.0.0-draft.1\"\n    }\n  },\n  \"provides\": [],\n  \"requires\": [],\n  \"relationships\": [],\n  \"constraints\": [],\n  \"guarantees\": [],\n  \"features\": [],\n  \"behavior\": []\n}\n";
+        let files = BTreeMap::from([("contract.json".into(), source.as_bytes().to_vec())]);
+        resolve_contracts(
+            &files,
+            &ContractStandardIndex::new(
+                "STD-FORTRESS-ENGINEERING",
+                "1.0.0-draft.1",
+                ["STD-ID-001"],
+            ),
+            Some(&BTreeSet::new()),
         )
-        .expect("test project must validate")
+        .resolved()
+        .expect("test contract resolves")
+        .clone()
     }
 
     fn documents() -> SnapshotDocuments<'static> {
@@ -568,8 +570,7 @@ mod tests {
                 &b"rule"[..],
             )],
             b"project",
-            b"architecture",
-            [("data/features.json", &b"features"[..])],
+            [("contract.json", &b"contract"[..])],
         )
     }
 
@@ -581,7 +582,8 @@ mod tests {
         let snapshot = build_repository_snapshot(
             repository.path(),
             &ObservationPolicy::default(),
-            &project(),
+            &contracts(),
+            &standard(),
             &documents(),
         )
         .expect("stable repository must produce a snapshot");
@@ -598,14 +600,16 @@ mod tests {
         let first = build_repository_snapshot(
             repository.path(),
             &ObservationPolicy::default(),
-            &project(),
+            &contracts(),
+            &standard(),
             &documents(),
         )
         .expect("first snapshot must succeed");
         let second = build_repository_snapshot(
             repository.path(),
             &ObservationPolicy::default(),
-            &project(),
+            &contracts(),
+            &standard(),
             &documents(),
         )
         .expect("second snapshot must succeed");

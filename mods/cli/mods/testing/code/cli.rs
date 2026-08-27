@@ -5,6 +5,8 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 use std::sync::atomic::{AtomicU64, Ordering};
 
+use fortress_core::module_contract::ModuleContract;
+
 static NEXT_FIXTURE: AtomicU64 = AtomicU64::new(1);
 
 fn run(arguments: &[&str]) -> Output {
@@ -43,11 +45,8 @@ impl AuditFixture {
         .expect("root contract writes");
         fs::create_dir_all(root.join("data")).expect("root data creates");
         fs::create_dir_all(root.join("docs")).expect("root docs creates");
-        fs::write(
-            root.join("docs/data_docs.md"),
-            data_docs(&["architecture.json", "features.json", "project.json"]),
-        )
-        .expect("root data documentation writes");
+        fs::write(root.join("docs/data_docs.md"), data_docs(&["project.json"]))
+            .expect("root data documentation writes");
         fs::write(
             root.join("docs/mods_docs.md"),
             modules_docs(&[("engine", "Fixture Engine")]),
@@ -118,6 +117,7 @@ impl AuditFixture {
             "mods/engine/mods/snapshot_governance/data/traceability_rule.json",
             "mods/engine/mods/snapshot_governance/data/module_rule.json",
             "mods/engine/mods/snapshot_governance/data/documentation_rule.json",
+            "mods/engine/mods/snapshot_governance/data/contract_rule.json",
         ] {
             fs::copy(repository.join(relative), root.join(relative)).expect("standard file copies");
         }
@@ -135,6 +135,7 @@ impl AuditFixture {
             root.join("mods/engine/mods/snapshot_governance/docs/data_docs.md"),
             data_docs(&[
                 "documentation_rule.json",
+                "contract_rule.json",
                 "module_rule.json",
                 "ownership_rule.json",
                 "traceability_rule.json",
@@ -142,9 +143,6 @@ impl AuditFixture {
         )
         .expect("snapshot Data documentation writes");
         fs::write(root.join("data/project.json"), project_json()).expect("project writes");
-        fs::write(root.join("data/architecture.json"), architecture_json())
-            .expect("architecture writes");
-        fs::write(root.join("data/features.json"), feature_json()).expect("features write");
         Self { root }
     }
 
@@ -154,14 +152,39 @@ impl AuditFixture {
 }
 
 fn module_contract(identity: &str, display_name: &str) -> String {
-    serde_json::to_string_pretty(&serde_json::json!({
-        "$schema": "urn:fortress:schema:v1:module-contract",
-        "schema_version": 1,
+    let ecosystem = (identity == "PF-FIXTURE").then(|| {
+        serde_json::json!({
+            "repository_grammar": 1,
+            "standard": {
+                "id": "STD-FORTRESS-ENGINEERING",
+                "edition": "1.0.0-draft.1"
+            }
+        })
+    });
+    let mut value = serde_json::json!({
+        "$schema": "urn:fortress:schema:v2:module-contract",
+        "schema_version": 2,
         "id": identity,
         "display_name": display_name,
-        "relationships": []
-    }))
-    .expect("fixture contract serializes")
+        "provides": [],
+        "requires": [],
+        "relationships": [],
+        "constraints": [],
+        "guarantees": [],
+        "features": [],
+        "behavior": []
+    });
+    if let Some(ecosystem) = ecosystem {
+        value
+            .as_object_mut()
+            .expect("contract is object")
+            .insert("ecosystem".into(), ecosystem);
+    }
+    let contract: ModuleContract =
+        serde_json::from_value(value).expect("fixture contract deserializes");
+    contract
+        .to_canonical_json()
+        .expect("fixture contract serializes")
 }
 
 fn module_readme(display_name: &str) -> String {
@@ -223,25 +246,8 @@ impl Drop for AuditFixture {
 
 fn project_json() -> &'static str {
     r#"{
-      "$schema":"urn:fortress:schema:v1:project","schema_version":1,
-      "id":"PF-FIXTURE","name":"Fixture",
-      "standard":{"id":"STD-FORTRESS-ENGINEERING","edition":"1.0.0-draft.1","status":"draft","digest":null,"manifest":"mods/engine/mods/standard_registry/data/standard_manifest.json"},
-      "archetypes":["package.library"],"capabilities":[],"languages":["rust"],
-      "model":{"architecture":"data/architecture.json","features":["data/features.json"],"commands":"data/commands.json","certifications":"data/certification.json","active_changes":[],"observation_exclusions":[".git"]}
-    }"#
-}
-
-fn architecture_json() -> &'static str {
-    r#"{
-      "$schema":"urn:fortress:schema:v1:architecture","schema_version":1,"zones":["core"],
-      "components":[{"id":"AF-MODEL-0001","title":"Model","zone":"core","paths":["README.md","contract.json","data/","docs/","mods/"],"depends_on":[]}]
-    }"#
-}
-
-fn feature_json() -> &'static str {
-    r#"{
-      "$schema":"urn:fortress:schema:v1:feature","schema_version":1,
-      "features":[{"id":"AF-FIXTURE-0001","title":"Fixture","status":"active","parent":null,"owner":"AF-MODEL-0001","zone":"core","owned_paths":["mods/"],"dependencies":[],"requirements":[]}]
+      "$schema":"urn:fortress:schema:v2:project-configuration","schema_version":2,
+      "observation_exclusions":[".git"]
     }"#
 }
 
@@ -303,7 +309,7 @@ fn audit_success_renders_human_snapshot_report() {
         String::from_utf8_lossy(&output.stderr)
     );
     assert!(stdout.contains("Fortress Snapshot Audit"));
-    assert!(stdout.contains("PASS: 5"));
+    assert!(stdout.contains("PASS: 6"));
     assert!(stdout.contains("Unsupported: 1"));
     assert!(!stdout.contains("certification"));
 }

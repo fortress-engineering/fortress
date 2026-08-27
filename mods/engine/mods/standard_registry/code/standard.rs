@@ -49,6 +49,12 @@ const DRAFT_RULES: &[RuleDescriptor] = &[
         status: RuleStatus::Draft,
         integrity_tier: 1,
     },
+    RuleDescriptor {
+        id: "CONTRACT-COHERENCY-001",
+        title: "Resolved Module Contract v2 ecosystem coherency",
+        status: RuleStatus::Draft,
+        integrity_tier: 1,
+    },
 ];
 
 /// Release state of a rule exposed by a standard registry.
@@ -651,13 +657,15 @@ mod tests {
         include_str!("../../snapshot_governance/data/traceability_rule.json");
     const REPO_MODULE: &str = include_str!("../../snapshot_governance/data/module_rule.json");
     const REPO_DOCS: &str = include_str!("../../snapshot_governance/data/documentation_rule.json");
+    const CONTRACT_COHERENCY: &str =
+        include_str!("../../snapshot_governance/data/contract_rule.json");
 
     /// `T-AF-STANDARD-REGISTRY-0001-R02-001`
     #[test]
     fn draft_registry_is_structurally_valid() {
         let registry = StandardRegistry::draft_1_0();
         assert_eq!(registry.status(), RuleStatus::Draft);
-        assert_eq!(registry.rules().len(), 6);
+        assert_eq!(registry.rules().len(), 7);
         assert!(registry.validate().is_ok());
     }
 
@@ -702,11 +710,15 @@ mod tests {
                     "mods/engine/mods/snapshot_governance/data/documentation_rule.json",
                     REPO_DOCS,
                 ),
+                (
+                    "mods/engine/mods/snapshot_governance/data/contract_rule.json",
+                    CONTRACT_COHERENCY,
+                ),
             ],
         )
         .expect("draft bundle must validate");
         assert_eq!(bundle.edition(), "1.0.0-draft.1");
-        assert_eq!(bundle.rules().len(), 6);
+        assert_eq!(bundle.rules().len(), 7);
         assert!(matches!(
             StandardBundle::from_json_documents(
                 MANIFEST,

@@ -1,0 +1,140 @@
+{
+  "standard": {
+    "id": "STD-FORTRESS-ENGINEERING",
+    "edition": "1.0.0-draft.1",
+    "rules": [
+      "STD-ID-001"
+    ]
+  },
+  "tests": [
+    "T-UTILITY-FEATURE-R01-001"
+  ],
+  "expected": {
+    "modules": 4,
+    "capabilities": 1,
+    "features": 1,
+    "requirements": 1,
+    "guarantees": 1,
+    "checkpoints": 0,
+    "direct_requirements": 1,
+    "relationships": 1
+  },
+  "contracts": [
+    {
+      "path": "contract.json",
+      "contract": {
+        "$schema": "urn:fortress:schema:v2:module-contract",
+        "schema_version": 2,
+        "id": "PF-UTILITY",
+        "display_name": "Utility",
+        "ecosystem": {
+          "repository_grammar": 1,
+          "standard": {
+            "id": "STD-FORTRESS-ENGINEERING",
+            "edition": "1.0.0-draft.1"
+          }
+        },
+        "provides": [],
+        "requires": [],
+        "relationships": [],
+        "constraints": [],
+        "guarantees": [],
+        "features": [],
+        "behavior": []
+      }
+    },
+    {
+      "path": "mods/provider/contract.json",
+      "contract": {
+        "$schema": "urn:fortress:schema:v2:module-contract",
+        "schema_version": 2,
+        "id": "AF-UTILITY-PROVIDER-0001",
+        "display_name": "Utility Provider",
+        "provides": [
+          {
+            "id": "CAP-UTILITY",
+            "version": "0.1.0",
+            "visibility": "public"
+          }
+        ],
+        "requires": [],
+        "relationships": [],
+        "constraints": [],
+        "guarantees": [
+          {
+            "id": "GUA-UTILITY-DETERMINISM",
+            "subject": {
+              "kind": "capability",
+              "id": "CAP-UTILITY"
+            },
+            "requirements": [
+              "AF-UTILITY-FEATURE-0001-R01"
+            ]
+          }
+        ],
+        "features": [
+          {
+            "id": "AF-UTILITY-FEATURE-0001",
+            "version": "0.1.0",
+            "requirements": [
+              {
+                "id": "AF-UTILITY-FEATURE-0001-R01",
+                "statement": "Equivalent utility inputs produce equivalent outputs.",
+                "tests": [
+                  "T-UTILITY-FEATURE-R01-001"
+                ]
+              }
+            ]
+          }
+        ],
+        "behavior": []
+      }
+    },
+    {
+      "path": "mods/cli/contract.json",
+      "contract": {
+        "$schema": "urn:fortress:schema:v2:module-contract",
+        "schema_version": 2,
+        "id": "TF-UTILITY-CLI-0001",
+        "display_name": "Utility CLI",
+        "provides": [],
+        "requires": [
+          {
+            "provider": "AF-UTILITY-PROVIDER-0001",
+            "capability": "CAP-UTILITY",
+            "version": "^0.1.0"
+          }
+        ],
+        "relationships": [],
+        "constraints": [],
+        "guarantees": [],
+        "features": [],
+        "behavior": []
+      }
+    },
+    {
+      "path": "mods/provider/mods/testing/contract.json",
+      "contract": {
+        "$schema": "urn:fortress:schema:v2:module-contract",
+        "schema_version": 2,
+        "id": "TF-UTILITY-TESTING-0001",
+        "display_name": "Utility Testing",
+        "provides": [],
+        "requires": [],
+        "relationships": [
+          {
+            "type": "verifies",
+            "target": "AF-UTILITY-PROVIDER-0001",
+            "subjects": [
+              "GUA-UTILITY-DETERMINISM"
+            ]
+          }
+        ],
+        "constraints": [],
+        "guarantees": [],
+        "features": [],
+        "behavior": []
+      }
+    }
+  ]
+}

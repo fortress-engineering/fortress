@@ -14,8 +14,8 @@ in [`fortress-engineering/.github`](https://github.com/fortress-engineering/.git
   to owner-controlled `main`.
 - Keep every commit atomically meaningful and use a clear Conventional Commit
   subject.
-- Update the governing contract or architecture declaration before or with a
-  behavior change.
+- Update the governing Module contract before or with an architectural-intent
+  change; physical containment remains filesystem authority.
 - Keep any active `CHG-*` declaration as root Module Data while work is in
   progress; completed history remains recoverable from Git rather than an
   archive tree.

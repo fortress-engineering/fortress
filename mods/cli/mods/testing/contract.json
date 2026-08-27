@@ -1,14 +1,25 @@
 {
-  "$schema": "urn:fortress:schema:v1:module-contract",
-  "schema_version": 1,
+  "$schema": "urn:fortress:schema:v2:module-contract",
+  "schema_version": 2,
   "id": "TEST-CLI-0001",
   "display_name": "CLI Testing",
+  "provides": [],
+  "requires": [
+    {
+      "provider": "TF-CLI-0001",
+      "capability": "CAP-FORTRESS-CLI",
+      "version": "^0.1.0"
+    }
+  ],
   "relationships": [
     {
+      "type": "verifies",
       "target": "TF-CLI-0001",
-      "types": [
-        "verifies"
-      ]
+      "subjects": []
     }
-  ]
+  ],
+  "constraints": [],
+  "guarantees": [],
+  "features": [],
+  "behavior": []
 }

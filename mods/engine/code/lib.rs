@@ -10,12 +10,12 @@
 pub mod architecture;
 #[path = "../mods/snapshot_governance/code/audit.rs"]
 pub mod audit;
+#[path = "../mods/snapshot_governance/code/contract.rs"]
+pub mod contract;
 #[path = "../mods/snapshot_governance/code/documentation.rs"]
 pub mod documentation;
 #[path = "../mods/snapshot_governance/code/evaluation.rs"]
 pub mod evaluation;
-#[path = "../mods/project_model/code/feature.rs"]
-pub mod feature;
 #[path = "../mods/snapshot_governance/code/finding.rs"]
 pub mod finding;
 #[path = "../mods/standard_registry/code/identity.rs"]

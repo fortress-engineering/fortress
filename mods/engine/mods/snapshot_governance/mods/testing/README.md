@@ -22,7 +22,7 @@ Normative rule meaning, production evaluators, whole-repository integration owne
 
 ### [Snapshot Governance](../../README.md)
 
-**Types:** `verifies`
+**Types:** `depends_on`, `verifies`
 
 Exercises the parent snapshot, rule, finding, analyzer, and audit boundaries.
 

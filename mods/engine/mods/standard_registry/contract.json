@@ -1,7 +1,69 @@
 {
-  "$schema": "urn:fortress:schema:v1:module-contract",
-  "schema_version": 1,
+  "$schema": "urn:fortress:schema:v2:module-contract",
+  "schema_version": 2,
   "id": "AF-STANDARD-REGISTRY-0001",
   "display_name": "Standard Registry",
-  "relationships": []
+  "provides": [
+    {
+      "id": "CAP-STANDARD-REGISTRY",
+      "version": "0.1.0",
+      "visibility": "project"
+    }
+  ],
+  "requires": [],
+  "relationships": [],
+  "constraints": [],
+  "guarantees": [
+    {
+      "id": "GUA-STANDARD-REGISTRY-INTEGRITY",
+      "subject": {
+        "kind": "capability",
+        "id": "CAP-STANDARD-REGISTRY"
+      },
+      "requirements": [
+        "AF-STANDARD-REGISTRY-0001-R01",
+        "AF-STANDARD-REGISTRY-0001-R02",
+        "AF-STANDARD-REGISTRY-0001-R03"
+      ]
+    }
+  ],
+  "features": [
+    {
+      "id": "AF-STANDARD-REGISTRY-0001",
+      "version": "0.1.0",
+      "requirements": [
+        {
+          "id": "AF-STANDARD-REGISTRY-0001-R01",
+          "statement": "The core validates canonical stable Fortress entity and rule identities under STD-ID-001.",
+          "tests": [
+            "T-AF-STANDARD-REGISTRY-0001-R01-001",
+            "T-AF-STANDARD-REGISTRY-0001-R01-002",
+            "T-AF-STANDARD-REGISTRY-0001-R01-003",
+            "T-STD-ID-001-R01-001",
+            "T-STD-ID-001-R01-002",
+            "T-STD-ID-001-R01-003"
+          ]
+        },
+        {
+          "id": "AF-STANDARD-REGISTRY-0001-R02",
+          "statement": "The draft registry exposes unique valid rule metadata without claiming a released edition.",
+          "tests": [
+            "T-AF-STANDARD-REGISTRY-0001-R02-001",
+            "T-AF-STANDARD-REGISTRY-0001-R02-002"
+          ]
+        },
+        {
+          "id": "AF-STANDARD-REGISTRY-0001-R03",
+          "statement": "Every registered schema and draft standard record parses, has unique identity, and agrees with the implemented registry.",
+          "tests": [
+            "T-AF-STANDARD-REGISTRY-0001-R03-001",
+            "T-AF-STANDARD-REGISTRY-0001-R03-002",
+            "T-AF-STANDARD-REGISTRY-0001-R03-003",
+            "T-AF-STANDARD-REGISTRY-0001-R03-004"
+          ]
+        }
+      ]
+    }
+  ],
+  "behavior": []
 }

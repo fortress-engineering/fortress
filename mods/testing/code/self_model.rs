@@ -8,7 +8,9 @@ use std::path::{Path, PathBuf};
 
 use fortress_cli::command::CommandRegistry;
 use fortress_core::architecture::ArchitectureManifest;
-use fortress_core::project::ProjectManifest;
+use fortress_core::module_contract::{ContractStandardIndex, resolve_contracts};
+use fortress_core::observation::{ObservationPolicy, observe_repository};
+use fortress_core::project::ProjectConfiguration;
 use serde_json::Value;
 
 /// Returns the checked-out repository root for integration fixtures.
@@ -36,22 +38,11 @@ fn array_member<'a>(document: &'a Value, name: &str) -> &'a [Value] {
 #[test]
 fn declared_project_loads_and_references_existing_documents() {
     let source = fs::read_to_string(repository_root().join("data/project.json"))
-        .expect("self project manifest must be readable");
-    let project =
-        ProjectManifest::from_json_str(&source).expect("self project model must validate");
-
-    let referenced = std::iter::once(project.model().architecture())
-        .chain(project.model().features().iter().map(String::as_str))
-        .chain(std::iter::once(project.model().commands()))
-        .chain(std::iter::once(project.model().certifications()))
-        .chain(project.model().active_changes().iter().map(String::as_str));
-
-    for relative_path in referenced {
-        assert!(
-            repository_root().join(relative_path).is_file(),
-            "declared model document is missing: {relative_path}"
-        );
-    }
+        .expect("self project configuration must be readable");
+    let project = ProjectConfiguration::from_json_str(&source)
+        .expect("self project configuration must validate");
+    assert_eq!(project.observation_exclusions(), [".git"]);
+    assert!(repository_root().join("contract.json").is_file());
 }
 
 /// `T-AF-BOOTSTRAP-GOVERNANCE-0001-R01-002`
@@ -93,11 +84,45 @@ fn certification_scaffold_makes_no_false_pass_claim() {
 /// `T-AF-ARCHITECTURE-EVALUATION-0001-R02-001`
 #[test]
 fn declared_self_architecture_is_acyclic() {
-    let path = repository_root().join("data/architecture.json");
-    let source = fs::read_to_string(&path)
-        .unwrap_or_else(|error| panic!("failed to read {}: {error}", path.display()));
-    let architecture =
-        ArchitectureManifest::from_json_str(&source).expect("self architecture must validate");
+    let root = repository_root();
+    let policy = ObservationPolicy::new([".git"]).expect("policy validates");
+    let observation = observe_repository(&root, &policy).expect("repository observes");
+    let files = observation
+        .files()
+        .iter()
+        .map(|file| {
+            (
+                file.path().to_owned(),
+                fs::read(root.join(file.path())).expect("observed file reads"),
+            )
+        })
+        .collect();
+    let resolution = resolve_contracts(
+        &files,
+        &ContractStandardIndex::new(
+            "STD-FORTRESS-ENGINEERING",
+            "1.0.0-draft.1",
+            [
+                "ARCH-DEPENDENCY-001",
+                "ARCH-OWNERSHIP-001",
+                "CONTRACT-COHERENCY-001",
+                "REPO-DOCS-001",
+                "REPO-MODULE-001",
+                "STD-ID-001",
+                "TEST-TRACEABILITY-001",
+            ],
+        ),
+        None,
+    );
+    let paths = observation
+        .files()
+        .iter()
+        .map(|file| file.path().to_owned())
+        .collect::<Vec<_>>();
+    let resolved = resolution
+        .resolved()
+        .unwrap_or_else(|| panic!("self contracts resolve: {:#?}", resolution.violations()));
+    let architecture = ArchitectureManifest::from_resolved_contracts(resolved, &paths);
     assert!(
         architecture
             .evaluate_acyclic_dependencies("1.0.0-draft.1")

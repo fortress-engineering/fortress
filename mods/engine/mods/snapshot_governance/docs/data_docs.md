@@ -22,6 +22,10 @@ Maintainers update Data through reviewed semantic changes; schema versions chang
 
 ## Files
 
+### [`contract_rule.json`](../data/contract_rule.json)
+
+Carries the draft normative coherency rule record interpreted by the Module Contract v2 evaluator.
+
 ### [`documentation_rule.json`](../data/documentation_rule.json)
 
 Carries the draft normative rule record interpreted by the documentation evaluator.
@@ -34,9 +38,9 @@ Carries the draft normative rule record interpreted by the module evaluator.
 
 Carries the draft normative rule record interpreted by the ownership evaluator.
 
-### [`repository_snapshot_schema_v1.json`](../data/repository_snapshot_schema_v1.json)
+### [`repository_snapshot_schema_v2.json`](../data/repository_snapshot_schema_v2.json)
 
-Defines the version-one machine representation and validation boundary for repository snapshot records owned by this Module.
+Defines the version-two snapshot identity that binds distributed Module contracts and their resolved-set fingerprint.
 
 ### [`snapshot_audit_schema_v1.json`](../data/snapshot_audit_schema_v1.json)
 

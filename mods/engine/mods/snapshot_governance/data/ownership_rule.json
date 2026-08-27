@@ -2,30 +2,31 @@
   "$schema": "urn:fortress:schema:v1:rule",
   "schema_version": 1,
   "id": "ARCH-OWNERSHIP-001",
-  "title": "Exact declared repository file ownership",
+  "title": "Exact physical Module file ownership",
   "status": "draft",
-  "statement": "Every governed repository file MUST belong to exactly one declared architectural owner unless it is explicitly classified as a repository-level or generated artifact under exactly one declared owner; required declared paths MUST exist.",
+  "statement": "Every governed repository file MUST resolve to exactly one physical Module territory; any explicit ownership claim evaluated in conformance evidence MUST exist and MUST NOT overlap incompatibly.",
   "rationale": "Exact ownership makes impact, responsibility, and architectural boundaries mechanically decidable without filename exceptions or inferred authority.",
-  "failure_prevented": "Orphan source, incompatible overlapping responsibility, stale required path declarations, and ungoverned repository or generated artifacts.",
-  "applicability": "Every stabilized governed file inventory evaluated against a declared Fortress architecture model.",
+  "failure_prevented": "Orphan source, incompatible overlapping responsibility, stale ownership claims, and files escaping the recursive Module boundary.",
+  "applicability": "Every stabilized governed file inventory evaluated against physical Module territories discovered through the recursive repository grammar.",
   "category": "architecture",
   "integrity_tier": 1,
-  "evaluation": "The Fortress core matches every observed path against declared component paths and exact artifact declarations, requires one unique owner, and verifies every component path plus every required artifact declaration has an observed match.",
+  "evaluation": "The Fortress core assigns each observed path to the deepest containing physical Module and requires exactly one owner; specification fixtures may supply explicit exact or prefix claims to prove orphan, overlap, and missing-claim behavior.",
   "required_capabilities": [
     "stabilized-repository-observation",
-    "declared-architecture-loading",
+    "module-contract-v2-resolution",
     "exact-file-ownership-reconciliation"
   ],
   "finding": {
     "message": "A governed path has zero or multiple declared owners, or a required declared path is absent.",
     "location": "path"
   },
-  "remediation": "Declare one canonical architectural owner for the governed path, remove incompatible overlapping declarations, or explicitly classify a legitimate repository-level or generated artifact under one declared owner.",
-  "valid_example": "src/lib.rs is covered by exactly one component prefix and Cargo.toml is explicitly classified as repository metadata under one owner.",
-  "invalid_example": "src/lib.rs is uncovered or simultaneously covered by AF-CORE-0001 and AF-ADAPTER-0001, or a required declared path has no observed file.",
+  "remediation": "Converge the path to one canonical Module territory, remove incompatible overlapping fixture claims, and represent generated or repository-level material through its actual Module ownership.",
+  "valid_example": "A root Cargo workspace manifest is owned by the root Module Data territory and an Engine source file is owned by the deepest Engine capability Module containing it.",
+  "invalid_example": "A governed file escapes every Module territory or an explicit conformance claim assigns it simultaneously to AF-CORE-0001 and AF-ADAPTER-0001.",
   "exception_policy": "Excluded observation paths are outside the governed inventory. Any future exemption must reference the rule without changing its exact-one ownership meaning.",
   "introduced": "1.0.0-draft.1",
   "history": [
-    "Introduced during CHG-SNAPSHOT-0006 as the first declaration-versus-observation Snapshot Governance rule."
+    "Introduced during CHG-SNAPSHOT-0006 as the first declaration-versus-observation Snapshot Governance rule.",
+    "Ownership authority migrated from centralized path declarations to physical recursive Module territory during Module Contract v2 convergence."
   ]
 }

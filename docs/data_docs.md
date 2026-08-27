@@ -2,11 +2,11 @@
 
 ## Role
 
-Persist the project-wide declarations and build inputs that govern Fortress as one repository, including its exact project, architecture, feature, workspace, toolchain, and truthful certification state.
+Persist root-owned operational and build inputs that cannot be derived from Module contracts or physical containment.
 
 ## Origin
 
-Maintainers author the project and architecture declarations, feature registry, workspace manifest, Cargo configuration, and toolchain pin. The certification scaffold is also authored because it states the current absence of certification evidence rather than recording a generated audit result.
+Maintainers author the observation configuration, workspace manifest, Cargo configuration, and toolchain pin. The certification scaffold is also authored because it states the current absence of certification evidence rather than recording a generated audit result.
 
 ## Semantics
 
@@ -24,10 +24,6 @@ Maintainers update Data through reviewed semantic changes; schema versions chang
 
 ## Files
 
-### [`architecture.json`](../data/architecture.json)
-
-Declares capability zones, ownership paths, repository artifact classes, and the current component dependency graph.
-
 ### [`cargo_config.toml`](../data/cargo_config.toml)
 
 Configures Cargo to keep generated lock and build state outside authored Data locations under the canonical grammar.
@@ -40,13 +36,9 @@ Declares the Cargo workspace members, common package metadata, Rust edition, and
 
 Records the truthful NOT CERTIFIED scaffold without fabricated evidence or upgraded claims.
 
-### [`features.json`](../data/features.json)
-
-Declares active Fortress capabilities, mandatory requirements, and canonical Rust test evidence identities.
-
 ### [`project.json`](../data/project.json)
 
-Declares Fortress project identity, pinned draft standard, model inputs, capabilities, languages, and observation exclusions.
+Declares only the root observation exclusions that are operational input rather than architectural intent.
 
 ### [`rust_toolchain.toml`](../data/rust_toolchain.toml)
 

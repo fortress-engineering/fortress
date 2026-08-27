@@ -1,6 +1,6 @@
 [
   {
-    "finding_fingerprint": "sha256:33f4a6423ffb6e5aa8a85614800896ca07444bb5074437371b4dcffc0d4bcb76",
+    "finding_fingerprint": "sha256:c5aa12a9bd54f2edf857ae41aabc73b3c5f29eedb2a714dbe773d66f22437205",
     "rule_id": "ARCH-OWNERSHIP-001",
     "integrity_tier": 1,
     "category": "architecture",
@@ -11,8 +11,8 @@
       "span": null,
       "symbol": null
     },
-    "message": "Required repository-metadata artifact `README.md` for `AF-CORE-0001` does not exist in the governed observation.",
-    "remediation": "Declare one canonical architectural owner for the governed path, remove incompatible overlapping declarations, or explicitly classify a legitimate repository-level or generated artifact under one declared owner.",
+    "message": "Declared owned path `README.md` for `AF-CORE-0001` does not exist in the governed observation.",
+    "remediation": "Converge the path to one canonical Module territory, remove incompatible overlapping fixture declarations, and represent generated or repository-level material through its actual Module ownership.",
     "evaluator": {
       "id": "fortress-core/ownership",
       "version": "0.1.0"
@@ -21,7 +21,7 @@
     "exemption_reference": null
   },
   {
-    "finding_fingerprint": "sha256:d78f95bc41cd7a2f296094c2609f5e66de4c04960dea0157f9648bcddf16dc7f",
+    "finding_fingerprint": "sha256:e42bc6fd37d7600a03f2700159fd83f3497783927206364d73f8ab244eafd470",
     "rule_id": "ARCH-OWNERSHIP-001",
     "integrity_tier": 1,
     "category": "architecture",
@@ -33,7 +33,7 @@
       "symbol": null
     },
     "message": "Declared owned path `missing/` for `AF-CORE-0001` does not exist in the governed observation.",
-    "remediation": "Declare one canonical architectural owner for the governed path, remove incompatible overlapping declarations, or explicitly classify a legitimate repository-level or generated artifact under one declared owner.",
+    "remediation": "Converge the path to one canonical Module territory, remove incompatible overlapping fixture declarations, and represent generated or repository-level material through its actual Module ownership.",
     "evaluator": {
       "id": "fortress-core/ownership",
       "version": "0.1.0"
@@ -42,7 +42,7 @@
     "exemption_reference": null
   },
   {
-    "finding_fingerprint": "sha256:3740df6aeaafc1db8d3896817a7ffd75e784d9d0de0b7282a94dd833c4220fec",
+    "finding_fingerprint": "sha256:e8c0a233883381c29e80d66e578b2c96839027486b503f5d52500760577b03ce",
     "rule_id": "ARCH-OWNERSHIP-001",
     "integrity_tier": 1,
     "category": "architecture",
@@ -54,7 +54,7 @@
       "symbol": null
     },
     "message": "Governed repository file `orphan.txt` has no declared architectural owner.",
-    "remediation": "Declare one canonical architectural owner for the governed path, remove incompatible overlapping declarations, or explicitly classify a legitimate repository-level or generated artifact under one declared owner.",
+    "remediation": "Converge the path to one canonical Module territory, remove incompatible overlapping fixture declarations, and represent generated or repository-level material through its actual Module ownership.",
     "evaluator": {
       "id": "fortress-core/ownership",
       "version": "0.1.0"
@@ -63,7 +63,7 @@
     "exemption_reference": null
   },
   {
-    "finding_fingerprint": "sha256:cfe5e7e149f9dbf9ddfe50b9be39d2c0bf04a2191d4d20439aa2600c0f306b04",
+    "finding_fingerprint": "sha256:18dc896dd2af4b4b2d51955c97eff6aed89ae80d553942c57d6e124e9b468367",
     "rule_id": "ARCH-OWNERSHIP-001",
     "integrity_tier": 1,
     "category": "architecture",
@@ -75,7 +75,7 @@
       "symbol": null
     },
     "message": "Governed repository file `src/shared/value.rs` matches incompatible declared owners: AF-CORE-0001, AF-SHARED-0001.",
-    "remediation": "Declare one canonical architectural owner for the governed path, remove incompatible overlapping declarations, or explicitly classify a legitimate repository-level or generated artifact under one declared owner.",
+    "remediation": "Converge the path to one canonical Module territory, remove incompatible overlapping fixture declarations, and represent generated or repository-level material through its actual Module ownership.",
     "evaluator": {
       "id": "fortress-core/ownership",
       "version": "0.1.0"

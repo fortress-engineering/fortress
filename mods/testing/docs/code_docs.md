@@ -24,4 +24,4 @@ Checks the complete physical repository against the recursive Module grammar ind
 
 ### [`self_model.rs`](../code/self_model.rs)
 
-Checks root declaration references, command registry agreement, architecture acyclicity, and truthful non-certification state.
+Checks root operational configuration, command registry agreement, resolved contract dependency acyclicity, and truthful non-certification state.

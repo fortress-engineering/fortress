@@ -1,13 +1,9 @@
 {
-  "architecture": {
-    "$schema": "urn:fortress:schema:v1:architecture",
-    "schema_version": 1,
-    "zones": ["core"],
+  "ownership": {
     "components": [
       {
         "id": "AF-CORE-0001",
         "title": "Minimum",
-        "zone": "core",
         "paths": ["single.txt"],
         "depends_on": []
       }

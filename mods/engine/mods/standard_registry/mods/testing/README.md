@@ -22,7 +22,7 @@ Normative rule meaning, production registry implementation, and whole-repository
 
 ### [Standard Registry](../../README.md)
 
-**Types:** `verifies`
+**Types:** `depends_on`, `verifies`
 
 Exercises the parent registry boundary and its stable identity and schema invariants.
 

@@ -28,6 +28,7 @@
   "introduced": "1.0.0-draft.1",
   "history": [
     "Introduced during CHG-REPOSITORY-GRAMMAR-0007 as the canonical replacement for the earlier project-declared placement model.",
-    "Extended to require one Module contract and bidirectional mods_docs.md decomposition documentation."
+    "Extended to require one Module contract and bidirectional mods_docs.md decomposition documentation.",
+    "Recognizes root .gitattributes as GitHub-supported integration authority needed to preserve canonical LF contract bytes across platforms."
   ]
 }

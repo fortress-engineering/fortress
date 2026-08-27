@@ -1,12 +1,12 @@
 [
   {
-    "finding_fingerprint": "sha256:e22d0cd59c35b93bd45e1d0c801c9dd38fb290e8e31b7e058fb8d6bf168eb13a",
+    "finding_fingerprint": "sha256:8adc15a621b028e123558eb48edcdf59f7de759c00530b7eb996e09dc57498ce",
     "rule_id": "TEST-TRACEABILITY-001",
     "integrity_tier": 1,
     "category": "testing",
     "state": "FAIL",
     "entities": ["AF-SAMPLE-0001-R01", "T-AF-SAMPLE-0001-R01-002"],
-    "location": { "path": "fixtures/feature.json", "span": null, "symbol": null },
+    "location": { "path": "fixtures/contract.json", "span": null, "symbol": null },
     "message": "Requirement `AF-SAMPLE-0001-R01` references test `T-AF-SAMPLE-0001-R01-002` absent from the supported Rust evidence inventory.",
     "remediation": "Give each active mandatory requirement unique canonical test evidence, ensure every referenced test exists exactly once in the supported evidence inventory, and map every behavioral or conformance test to one valid active requirement; classify implementation-only tests explicitly.",
     "evaluator": { "id": "fortress-core/traceability", "version": "0.1.0" },
@@ -14,13 +14,13 @@
     "exemption_reference": null
   },
   {
-    "finding_fingerprint": "sha256:1ebeb47070640acd443a0c0c0a17cd5d2018a9b00be381951845f4ed6f4ce5f9",
+    "finding_fingerprint": "sha256:4e5fa942b467431f929f8ba87a3fa03549f393c04b3c98dd98e6942d7975f534",
     "rule_id": "TEST-TRACEABILITY-001",
     "integrity_tier": 1,
     "category": "testing",
     "state": "FAIL",
     "entities": ["AF-SAMPLE-0001-R02"],
-    "location": { "path": "fixtures/feature.json", "span": null, "symbol": null },
+    "location": { "path": "fixtures/contract.json", "span": null, "symbol": null },
     "message": "Active mandatory requirement `AF-SAMPLE-0001-R02` declares no required test evidence.",
     "remediation": "Give each active mandatory requirement unique canonical test evidence, ensure every referenced test exists exactly once in the supported evidence inventory, and map every behavioral or conformance test to one valid active requirement; classify implementation-only tests explicitly.",
     "evaluator": { "id": "fortress-core/traceability", "version": "0.1.0" },
@@ -28,13 +28,13 @@
     "exemption_reference": null
   },
   {
-    "finding_fingerprint": "sha256:85d8dba34c0ed86dbfa2cd770d6690104f0233d6b53f6e3303bca8716736250f",
+    "finding_fingerprint": "sha256:9eb29c22aaf0e1068eeed8789e035380e168e62178f2d2a70dd35fa96fb40415",
     "rule_id": "TEST-TRACEABILITY-001",
     "integrity_tier": 1,
     "category": "testing",
     "state": "FAIL",
     "entities": ["AF-SAMPLE-0001-R02"],
-    "location": { "path": "fixtures/feature.json", "span": null, "symbol": null },
+    "location": { "path": "fixtures/contract.json", "span": null, "symbol": null },
     "message": "Active requirement ID `AF-SAMPLE-0001-R02` is declared more than once.",
     "remediation": "Give each active mandatory requirement unique canonical test evidence, ensure every referenced test exists exactly once in the supported evidence inventory, and map every behavioral or conformance test to one valid active requirement; classify implementation-only tests explicitly.",
     "evaluator": { "id": "fortress-core/traceability", "version": "0.1.0" },
@@ -42,13 +42,13 @@
     "exemption_reference": null
   },
   {
-    "finding_fingerprint": "sha256:7ee459efee802abdc166891f38f7c1c9308ada9ae8af98d677182f3d45a5ac16",
+    "finding_fingerprint": "sha256:3c14e180b95c702fb11e4a48c25f691cdbb9eeddced0520f6421ede291d49718",
     "rule_id": "TEST-TRACEABILITY-001",
     "integrity_tier": 1,
     "category": "testing",
     "state": "FAIL",
     "entities": ["T-AF-SAMPLE-0001-R01-003", "AF-SAMPLE-0001-R01", "AF-SAMPLE-0001-R02"],
-    "location": { "path": "fixtures/feature.json", "span": null, "symbol": null },
+    "location": { "path": "fixtures/contract.json", "span": null, "symbol": null },
     "message": "Test evidence `T-AF-SAMPLE-0001-R01-003` is mapped more than once: AF-SAMPLE-0001-R01, AF-SAMPLE-0001-R02.",
     "remediation": "Give each active mandatory requirement unique canonical test evidence, ensure every referenced test exists exactly once in the supported evidence inventory, and map every behavioral or conformance test to one valid active requirement; classify implementation-only tests explicitly.",
     "evaluator": { "id": "fortress-core/traceability", "version": "0.1.0" },

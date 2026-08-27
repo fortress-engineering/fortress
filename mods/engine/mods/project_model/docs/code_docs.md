@@ -18,10 +18,6 @@ Invalid inputs and inability to fulfill the responsibility return explicit typed
 
 ## Files
 
-### [`feature.rs`](../code/feature.rs)
-
-Loads feature, requirement, and test-evidence declarations and rejects invalid or duplicate references.
-
 ### [`project.rs`](../code/project.rs)
 
-Loads project identity, pinned standard claim, model paths, capabilities, languages, and observation exclusions.
+Loads the root operational project configuration and validates canonical observation exclusions.

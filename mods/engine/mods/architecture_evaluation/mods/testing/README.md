@@ -2,30 +2,30 @@
 
 ## Purpose
 
-This verification Module exists to prove declared dependency evaluation for valid, cyclic, and minimum architecture graphs.
+This verification Module exists to prove canonical Module Contract v2 resolution and derived dependency evaluation across valid, invalid, boundary, and composed ecosystem cases.
 
 ## Responsibility
 
-Load specification-authored graph fixtures and compare invalid evaluation with its canonical normalized finding.
+Exercise local and repository-wide contract gates, resolve simple and complex ecosystems repeatedly, and compare cyclic dependency evaluation with its canonical normalized finding.
 
 ## Scope
 
 ### Includes
 
-Rust verification code and direct valid, invalid, boundary, and expected dependency fixtures.
+Rust verification code, composed contract ecosystems, and direct valid, invalid, boundary, and expected dependency fixtures.
 
 ### Excludes
 
-Source dependency extraction, production graph ownership, and whole-repository documentation synchronization.
+README synchronization, source dependency extraction, final CCG construction, and whole-repository documentation evaluation.
 
 ## Relationships
 
 ### [Architecture Evaluation](../../README.md)
 
-**Types:** `verifies`
+**Types:** `depends_on`, `verifies`
 
-Exercises the parent architecture loader and ARCH-DEPENDENCY-001 evaluator.
+Exercises the parent Module Contract v2 resolver and ARCH-DEPENDENCY-001 evaluator.
 
 ## Guarantees
 
-The suite is deterministic and expected findings remain specification-authored rather than generated from implementation output.
+The suite is deterministic, repeated resolution preserves identical indexes and digests, and expected findings remain specification-authored rather than generated from implementation output.

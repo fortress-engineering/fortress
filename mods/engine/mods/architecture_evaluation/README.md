@@ -2,21 +2,21 @@
 
 ## Purpose
 
-Architecture Evaluation exists to validate declared architectural ownership and dependency meaning separately from observed source dependencies and physical Module containment.
+Architecture Evaluation exists to resolve distributed Module intent into a deterministic ecosystem model and evaluate capability dependency meaning without duplicating filesystem authority.
 
 ## Responsibility
 
-Load typed zones, components, paths, artifacts, dependencies, and Module contracts, then evaluate declared dependency cycles using canonical findings.
+Load and validate Module Contract v2, resolve repository-wide capabilities and typed intent with provenance, derive physical ownership and dependencies, and evaluate dependency cycles using canonical findings.
 
 ## Scope
 
 ### Includes
 
-Architecture and Module-contract schemas, declared component graph validation, explicit repository artifact classification, typed Module relationships, and ARCH-DEPENDENCY-001 evaluation.
+Module-contract schema and canonical serialization, ecosystem identity indexes, capability resolution, constraint inheritance, guarantee and Feature ownership, behavioral checkpoint validation, derived dependency ownership, and ARCH-DEPENDENCY-001 evaluation.
 
 ### Excludes
 
-Repository observation, filesystem placement inference, source dependency extraction, Snapshot Governance aggregation, and terminal presentation.
+Repository observation, physical containment authority, source dependency extraction, future semantic satisfiability analysis, Snapshot Governance aggregation, and terminal presentation.
 
 ## Relationships
 
@@ -24,7 +24,7 @@ Repository observation, filesystem placement inference, source dependency extrac
 
 **Types:** `depends_on`
 
-Uses project-declared identity and path conventions when interpreting architecture inputs.
+Uses operational project-model boundaries without treating project configuration as architectural authority.
 
 ### [Standard Registry](../standard_registry/README.md)
 
@@ -34,4 +34,4 @@ Uses stable identities and the governing dependency rule contract.
 
 ## Guarantees
 
-Unknown targets, duplicate paths or relationships, self-relationships, invalid identities, and prohibited declared cycles fail deterministically without treating dependency as containment.
+Unknown providers or targets, duplicate identities or edges, incompatible capability versions, invalid inherited obligations, incoherent behavior, and prohibited dependency cycles fail deterministically without treating dependency as containment.

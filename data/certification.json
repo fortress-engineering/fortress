@@ -49,12 +49,12 @@
     },
     {
       "id": "CERT-ARCHITECTURE-DECLARED",
-      "description": "Typed declared architecture integrity and ARCH-DEPENDENCY-001 evaluation.",
+      "description": "Resolved Module Contract v2 dependency integrity and ARCH-DEPENDENCY-001 evaluation.",
       "status": "MISSING",
       "trust": "untrusted-local",
       "inputs": [
-        "data/architecture.json",
-        "mods/engine/mods/architecture_evaluation/"
+        "contract.json",
+        "mods/"
       ],
       "upstream": [],
       "input_fingerprint": null,
@@ -80,11 +80,10 @@
       "status": "MISSING",
       "trust": "untrusted-local",
       "inputs": [
+        "contract.json",
         "data/project.json",
-        "data/architecture.json",
-        "data/features.json",
         "mods/engine/mods/standard_registry/data/standard_manifest.json",
-        "mods/engine/mods/snapshot_governance/"
+        "mods/"
       ],
       "upstream": [
         "CERT-OBSERVATION-INVENTORY"

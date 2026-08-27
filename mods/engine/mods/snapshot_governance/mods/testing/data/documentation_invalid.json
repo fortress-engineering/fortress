@@ -27,8 +27,8 @@
     { "name": "readme_relationship_absent_contract", "expected": "has no Module contract authority" },
     { "name": "mismatched_relationship_type", "expected": "do not match the Module contract" },
     { "name": "stale_renamed_module_relationship", "expected": "stale relationship to nonexistent Module" },
-    { "name": "self_relationship", "expected": "must not declare a relationship to itself" },
-    { "name": "duplicate_relationship_target", "expected": "relationship target `AF-PROVIDER-0001` is duplicated" },
+    { "name": "self_relationship", "expected": "must not require itself" },
+    { "name": "duplicate_relationship_target", "expected": "`relationships` must be strictly sorted and contain no duplicates" },
     { "name": "dependency_cycle", "expected": "contain a prohibited cycle" }
   ]
 }

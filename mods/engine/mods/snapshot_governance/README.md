@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Snapshot Governance exists to answer what is true and what violates the declared engineering model for one exact repository content state, project declaration, architecture, and draft standard.
+Snapshot Governance exists to answer what is true and what violates the declared engineering model for one exact repository content state, operational configuration, resolved Module-contract ecosystem, and draft standard.
 
 ## Responsibility
 
@@ -12,7 +12,7 @@ Build stabilized content-addressed repository snapshots, analyze supported Rust 
 
 ### Includes
 
-Snapshot and audit schemas; findings; ownership, traceability, recursive Module, and documentation synchronization rules; Markdown and Rust analyzers; two-pass stabilization; and exact rule execution reporting.
+Snapshot and audit schemas; findings; contract coherency, ownership, traceability, recursive Module, and documentation synchronization rules; Markdown and Rust analyzers; two-pass stabilization; and exact rule execution reporting.
 
 ### Excludes
 
@@ -24,13 +24,13 @@ Certification or attestation, onboarding and migration state, persistent jobs, p
 
 **Types:** `depends_on`
 
-Consumes validated architecture declarations and shared dependency evaluation behavior.
+Consumes the validated resolved contract ecosystem, its derived capability dependency graph, and shared dependency evaluation behavior.
 
 ### [Project Model](../project_model/README.md)
 
 **Types:** `depends_on`
 
-Consumes project identity, feature contracts, requirement evidence declarations, and model pointers.
+Consumes only operational project configuration; project identity, Features, and requirements arrive through resolved Module contracts.
 
 ### [Repository Observation](../repository_observation/README.md)
 

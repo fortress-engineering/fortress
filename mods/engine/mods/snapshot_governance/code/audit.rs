@@ -1,5 +1,6 @@
 //! End-to-end provider-independent Snapshot Governance repository audit.
 
+use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
 use std::fs;
@@ -8,18 +9,23 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
-use crate::architecture::{ArchitectureLoadError, ArchitectureManifest};
+use crate::architecture::ArchitectureManifest;
+use crate::contract::evaluate_contract_coherency;
 use crate::documentation::{DocumentationEvaluationError, evaluate_repository_documentation};
-use crate::evaluation::{EvaluationError, RuleExecution, SnapshotRuleEngine};
-use crate::feature::{FeatureContract, FeatureLoadError};
+use crate::evaluation::{
+    CompleteEvaluationInputs, EvaluationError, RuleExecution, SnapshotRuleEngine,
+};
 use crate::finding::CanonicalFinding;
-use crate::observation::{ObservationError, ObservationPolicy};
-use crate::project::{ProjectLoadError, ProjectManifest};
+use crate::module_contract::{ContractStandardIndex, resolve_contracts};
+use crate::observation::{ObservationError, ObservationPolicy, RepositoryObservation};
+use crate::project::{ProjectConfiguration, ProjectConfigurationLoadError};
 use crate::rust_test_analyzer::{RustAnalyzerError, analyze_snapshot_rust_tests};
 use crate::snapshot::{
     RepositorySnapshot, SnapshotDocuments, SnapshotError, build_repository_snapshot,
+    observe_repository_stably,
 };
 use crate::standard::{StandardBundle, StandardLoadError};
+use crate::traceability::requirements_from_resolved;
 
 /// Current stable machine-readable snapshot audit schema family.
 pub const AUDIT_RESULT_SCHEMA_VERSION: u16 = 1;
@@ -61,6 +67,12 @@ impl AuditResult {
     #[must_use]
     pub fn findings(&self) -> &[CanonicalFinding] {
         &self.findings
+    }
+
+    /// Returns deterministic execution records for every applicable standard rule.
+    #[must_use]
+    pub fn rules(&self) -> &[RuleExecution] {
+        &self.rules
     }
 
     /// Serializes stable pretty JSON with deterministic collection ordering.
@@ -161,9 +173,15 @@ impl AuditSummary {
 pub fn audit_repository(root: impl AsRef<Path>) -> Result<AuditResult, AuditError> {
     let root = root.as_ref();
     let project_document = read_document(root, "data/project.json")?;
-    let project =
-        ProjectManifest::from_json_str(project_document.source()?).map_err(AuditError::Project)?;
-    let standard_manifest = read_document(root, project.standard().manifest())?;
+    let project = ProjectConfiguration::from_json_str(project_document.source()?)
+        .map_err(AuditError::Project)?;
+    let policy = ObservationPolicy::new(project.observation_exclusions().iter().cloned())
+        .map_err(AuditError::ObservationPolicy)?;
+    let initial_observation =
+        observe_repository_stably(root, &policy).map_err(AuditError::Snapshot)?;
+    let observed_files = read_observed_files(root, &initial_observation)?;
+    let standard_manifest_path = find_standard_manifest(&observed_files)?;
+    let standard_manifest = read_document(root, &standard_manifest_path)?;
     let index: StandardManifestIndex = serde_json::from_str(standard_manifest.source()?)
         .map_err(AuditError::StandardManifestIndex)?;
     let rule_documents: Vec<LoadedDocument> = index
@@ -178,48 +196,27 @@ pub fn audit_repository(root: impl AsRef<Path>) -> Result<AuditResult, AuditErro
         .collect::<Result<_, AuditError>>()?;
     let standard = StandardBundle::from_json_documents(standard_manifest.source()?, &rule_sources)
         .map_err(AuditError::Standard)?;
-    if standard.id() != project.standard().id()
-        || standard.edition() != project.standard().edition()
-        || standard.status() != project.standard().status().as_str()
-    {
-        return Err(AuditError::StandardClaimMismatch {
-            declared: format!(
-                "{} {} {}",
-                project.standard().id(),
-                project.standard().edition(),
-                project.standard().status().as_str()
-            )
-            .into(),
-            loaded: format!(
-                "{} {} {}",
-                standard.id(),
-                standard.edition(),
-                standard.status()
-            )
-            .into(),
-        });
-    }
-
-    let architecture_document = read_document(root, project.model().architecture())?;
-    let architecture = ArchitectureManifest::from_json_str(architecture_document.source()?)
-        .map_err(AuditError::Architecture)?;
-    let feature_documents: Vec<LoadedDocument> = project
-        .model()
-        .features()
+    let standard_index = ContractStandardIndex::from_bundle(&standard);
+    let initial_contract_resolution = resolve_contracts(&observed_files, &standard_index, None);
+    let initial_contracts = initial_contract_resolution.resolved().ok_or_else(|| {
+        AuditError::ContractState(
+            initial_contract_resolution
+                .violations()
+                .iter()
+                .map(ToString::to_string)
+                .collect::<Vec<_>>()
+                .join("; ")
+                .into(),
+        )
+    })?;
+    let contract_documents: Vec<LoadedDocument> = observed_files
         .iter()
-        .map(|path| read_document(root, path))
-        .collect::<Result<_, _>>()?;
-    let features: Vec<FeatureContract> = feature_documents
-        .iter()
-        .map(|document| {
-            FeatureContract::from_json_str(&document.path, document.source()?).map_err(|source| {
-                AuditError::Feature {
-                    path: document.path.clone().into(),
-                    source,
-                }
-            })
+        .filter(|(path, _)| path.as_str() == "contract.json" || path.ends_with("/contract.json"))
+        .map(|(path, bytes)| LoadedDocument {
+            path: path.clone(),
+            bytes: bytes.clone(),
         })
-        .collect::<Result<_, _>>()?;
+        .collect();
 
     let documents = SnapshotDocuments::new(
         &standard_manifest.path,
@@ -228,42 +225,56 @@ pub fn audit_repository(root: impl AsRef<Path>) -> Result<AuditResult, AuditErro
             .iter()
             .map(|document| (document.path.as_str(), document.bytes.as_slice())),
         &project_document.bytes,
-        &architecture_document.bytes,
-        feature_documents
+        contract_documents
             .iter()
             .map(|document| (document.path.as_str(), document.bytes.as_slice())),
     );
-    let policy = ObservationPolicy::new(project.model().observation_exclusions().iter().cloned())
-        .map_err(AuditError::ObservationPolicy)?;
-    let snapshot = build_repository_snapshot(root, &policy, &project, &documents)
-        .map_err(AuditError::Snapshot)?;
+    let snapshot =
+        build_repository_snapshot(root, &policy, initial_contracts, &standard, &documents)
+            .map_err(AuditError::Snapshot)?;
     verify_loaded_inputs(
         &snapshot,
         std::iter::once(&project_document)
             .chain(std::iter::once(&standard_manifest))
             .chain(rule_documents.iter())
-            .chain(std::iter::once(&architecture_document))
-            .chain(feature_documents.iter()),
+            .chain(contract_documents.iter()),
     )?;
     let rust_tests =
         analyze_snapshot_rust_tests(root, &snapshot).map_err(AuditError::RustAnalyzer)?;
+    let observed_test_ids: BTreeSet<String> =
+        rust_tests.iter().map(|test| test.id().to_owned()).collect();
+    let contract_resolution =
+        resolve_contracts(&observed_files, &standard_index, Some(&observed_test_ids));
     let documentation = evaluate_repository_documentation(root, &snapshot, standard.edition())
         .map_err(AuditError::Documentation)?;
+    let contract_coherency =
+        evaluate_contract_coherency(contract_resolution, &documentation, standard.edition())
+            .map_err(EvaluationError::Finding)
+            .map_err(AuditError::Evaluation)?;
+    let paths: Vec<String> = snapshot
+        .files()
+        .iter()
+        .map(|file| file.path().to_owned())
+        .collect();
+    let architecture = ArchitectureManifest::from_resolved_contracts(initial_contracts, &paths);
+    let requirements = requirements_from_resolved(initial_contracts);
     let evaluation = SnapshotRuleEngine::builtin()
         .evaluate_complete(
             &standard,
             &snapshot,
             &architecture,
-            &features,
-            &rust_tests,
-            &documentation,
+            CompleteEvaluationInputs::new(
+                &requirements,
+                &rust_tests,
+                &documentation,
+                &contract_coherency,
+            ),
         )
         .map_err(AuditError::Evaluation)?;
-    Ok(result_from_evaluation(&project, &snapshot, &evaluation))
+    Ok(result_from_evaluation(&snapshot, &evaluation))
 }
 
 fn result_from_evaluation(
-    project: &ProjectManifest,
     snapshot: &RepositorySnapshot,
     evaluation: &crate::evaluation::SnapshotEvaluation,
 ) -> AuditResult {
@@ -275,7 +286,7 @@ fn result_from_evaluation(
     };
     AuditResult {
         schema_version: AUDIT_RESULT_SCHEMA_VERSION,
-        project_id: project.id().into(),
+        project_id: snapshot.project_id().into(),
         standard: AuditStandard {
             edition: snapshot.standard_edition().into(),
             status: snapshot.standard_status().into(),
@@ -321,6 +332,43 @@ fn read_document(root: &Path, path: &str) -> Result<LoadedDocument, AuditError> 
     })
 }
 
+fn read_observed_files(
+    root: &Path,
+    observation: &RepositoryObservation,
+) -> Result<BTreeMap<String, Vec<u8>>, AuditError> {
+    observation
+        .files()
+        .iter()
+        .map(|file| {
+            let document = read_document(root, file.path())?;
+            Ok((document.path, document.bytes))
+        })
+        .collect()
+}
+
+fn find_standard_manifest(files: &BTreeMap<String, Vec<u8>>) -> Result<String, AuditError> {
+    let candidates: Vec<String> = files
+        .keys()
+        .filter(|path| {
+            path.as_str() == "standard_manifest.json" || path.ends_with("/standard_manifest.json")
+        })
+        .cloned()
+        .collect();
+    match candidates.as_slice() {
+        [path] => Ok(path.clone()),
+        [] => Err(AuditError::StandardManifestDiscovery(
+            "no standard_manifest.json exists in the stabilized repository".into(),
+        )),
+        _ => Err(AuditError::StandardManifestDiscovery(
+            format!(
+                "multiple standard_manifest.json candidates exist: {}",
+                candidates.join(", ")
+            )
+            .into(),
+        )),
+    }
+}
+
 fn verify_loaded_inputs<'a>(
     snapshot: &RepositorySnapshot,
     documents: impl IntoIterator<Item = &'a LoadedDocument>,
@@ -351,28 +399,16 @@ pub enum AuditError {
     },
     /// A required JSON document was not UTF-8.
     NonUtf8(Box<str>),
-    /// Project declaration was invalid.
-    Project(ProjectLoadError),
+    /// Operational project configuration was invalid.
+    Project(ProjectConfigurationLoadError),
+    /// The applicable standard manifest could not be discovered unambiguously.
+    StandardManifestDiscovery(Box<str>),
     /// Standard manifest rule index was invalid JSON.
     StandardManifestIndex(serde_json::Error),
     /// Exact standard bundle was invalid.
     Standard(StandardLoadError),
-    /// Loaded standard identity did not match the project claim.
-    StandardClaimMismatch {
-        /// Project-declared identity, edition, and status.
-        declared: Box<str>,
-        /// Loaded bundle identity, edition, and status.
-        loaded: Box<str>,
-    },
-    /// Architecture declaration was invalid.
-    Architecture(ArchitectureLoadError),
-    /// Feature declaration was invalid.
-    Feature {
-        /// Canonical feature-contract path.
-        path: Box<str>,
-        /// Typed feature load failure.
-        source: FeatureLoadError,
-    },
+    /// Contracts could not form the minimum resolved state needed for snapshot identity.
+    ContractState(Box<str>),
     /// Observation exclusions were invalid.
     ObservationPolicy(ObservationError),
     /// Stabilized snapshot construction failed.
@@ -395,18 +431,14 @@ impl Display for AuditError {
             }
             Self::NonUtf8(path) => write!(formatter, "audit input `{path}` is not UTF-8"),
             Self::Project(error) => write!(formatter, "invalid project state: {error}"),
+            Self::StandardManifestDiscovery(error) => {
+                write!(formatter, "standard manifest discovery failed: {error}")
+            }
             Self::StandardManifestIndex(error) => {
                 write!(formatter, "invalid standard manifest rule index: {error}")
             }
             Self::Standard(error) => write!(formatter, "invalid standard bundle: {error}"),
-            Self::StandardClaimMismatch { declared, loaded } => write!(
-                formatter,
-                "project standard claim `{declared}` does not match loaded bundle `{loaded}`"
-            ),
-            Self::Architecture(error) => write!(formatter, "invalid architecture state: {error}"),
-            Self::Feature { path, source } => {
-                write!(formatter, "invalid feature contract `{path}`: {source}")
-            }
+            Self::ContractState(error) => write!(formatter, "invalid contract state: {error}"),
             Self::ObservationPolicy(error) => {
                 write!(formatter, "invalid observation policy: {error}")
             }

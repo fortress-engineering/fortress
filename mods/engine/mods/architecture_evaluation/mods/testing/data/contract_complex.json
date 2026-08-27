@@ -1,0 +1,301 @@
+{
+  "standard": {
+    "id": "STD-FORTRESS-ENGINEERING",
+    "edition": "1.0.0-draft.1",
+    "rules": [
+      "STD-ID-001"
+    ]
+  },
+  "tests": [
+    "T-APPLICATION-FEATURE-R01-001",
+    "T-RESEARCH-FEATURE-R01-001"
+  ],
+  "expected": {
+    "modules": 6,
+    "capabilities": 4,
+    "features": 2,
+    "requirements": 2,
+    "guarantees": 2,
+    "checkpoints": 5,
+    "direct_requirements": 5,
+    "relationships": 2
+  },
+  "contracts": [
+    {
+      "path": "contract.json",
+      "contract": {
+        "$schema": "urn:fortress:schema:v2:module-contract",
+        "schema_version": 2,
+        "id": "PF-COMPLEX",
+        "display_name": "Complex Ecosystem",
+        "ecosystem": {
+          "repository_grammar": 1,
+          "standard": {
+            "id": "STD-FORTRESS-ENGINEERING",
+            "edition": "1.0.0-draft.1"
+          }
+        },
+        "provides": [],
+        "requires": [],
+        "relationships": [],
+        "constraints": [
+          {
+            "rule": "STD-ID-001",
+            "scope": "subtree"
+          }
+        ],
+        "guarantees": [],
+        "features": [],
+        "behavior": []
+      }
+    },
+    {
+      "path": "mods/application/contract.json",
+      "contract": {
+        "$schema": "urn:fortress:schema:v2:module-contract",
+        "schema_version": 2,
+        "id": "AF-APPLICATION-0001",
+        "display_name": "Application",
+        "provides": [
+          {
+            "id": "CAP-APPLICATION",
+            "version": "0.1.0",
+            "visibility": "project"
+          }
+        ],
+        "requires": [
+          {
+            "provider": "AF-RESEARCH-0001",
+            "capability": "CAP-RESEARCH",
+            "version": "^0.2.0"
+          }
+        ],
+        "relationships": [],
+        "constraints": [],
+        "guarantees": [
+          {
+            "id": "GUA-APPLICATION-CORRECTNESS",
+            "subject": {
+              "kind": "feature",
+              "id": "AF-APPLICATION-FEATURE-0001"
+            },
+            "requirements": [
+              "AF-APPLICATION-FEATURE-0001-R01"
+            ]
+          }
+        ],
+        "features": [
+          {
+            "id": "AF-APPLICATION-FEATURE-0001",
+            "version": "0.1.0",
+            "requirements": [
+              {
+                "id": "AF-APPLICATION-FEATURE-0001-R01",
+                "statement": "The application completes through one modeled terminal outcome.",
+                "tests": [
+                  "T-APPLICATION-FEATURE-R01-001"
+                ]
+              }
+            ]
+          }
+        ],
+        "behavior": []
+      }
+    },
+    {
+      "path": "mods/application/mods/interface/contract.json",
+      "contract": {
+        "$schema": "urn:fortress:schema:v2:module-contract",
+        "schema_version": 2,
+        "id": "TF-APPLICATION-INTERFACE-0001",
+        "display_name": "Application Interface",
+        "provides": [
+          {
+            "id": "CAP-INTERFACE",
+            "version": "0.1.0",
+            "visibility": "public"
+          }
+        ],
+        "requires": [
+          {
+            "provider": "AF-APPLICATION-0001",
+            "capability": "CAP-APPLICATION",
+            "version": "^0.1.0"
+          }
+        ],
+        "relationships": [],
+        "constraints": [],
+        "guarantees": [],
+        "features": [],
+        "behavior": [
+          {
+            "id": "CHK-APP-ACTION",
+            "feature": "AF-APPLICATION-FEATURE-0001",
+            "kind": "action",
+            "transitions": [
+              {
+                "target": "CHK-APP-DECIDE"
+              }
+            ]
+          },
+          {
+            "id": "CHK-APP-DECIDE",
+            "feature": "AF-APPLICATION-FEATURE-0001",
+            "kind": "decision",
+            "transitions": [
+              {
+                "outcome": "failure",
+                "target": "CHK-APP-FAIL"
+              },
+              {
+                "outcome": "success",
+                "target": "CHK-APP-SUCCESS"
+              }
+            ]
+          },
+          {
+            "id": "CHK-APP-FAIL",
+            "feature": "AF-APPLICATION-FEATURE-0001",
+            "kind": "terminal",
+            "outcome": "failed",
+            "transitions": []
+          },
+          {
+            "id": "CHK-APP-SUCCESS",
+            "feature": "AF-APPLICATION-FEATURE-0001",
+            "kind": "terminal",
+            "outcome": "completed",
+            "transitions": []
+          },
+          {
+            "id": "CHK-APP-TRIGGER",
+            "feature": "AF-APPLICATION-FEATURE-0001",
+            "kind": "trigger",
+            "transitions": [
+              {
+                "target": "CHK-APP-ACTION"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "path": "mods/research/contract.json",
+      "contract": {
+        "$schema": "urn:fortress:schema:v2:module-contract",
+        "schema_version": 2,
+        "id": "AF-RESEARCH-0001",
+        "display_name": "Research",
+        "provides": [
+          {
+            "id": "CAP-RESEARCH",
+            "version": "0.2.0",
+            "visibility": "project"
+          }
+        ],
+        "requires": [],
+        "relationships": [],
+        "constraints": [],
+        "guarantees": [
+          {
+            "id": "GUA-RESEARCH-INTEGRITY",
+            "subject": {
+              "kind": "capability",
+              "id": "CAP-RESEARCH"
+            },
+            "requirements": [
+              "AF-RESEARCH-FEATURE-0001-R01"
+            ]
+          }
+        ],
+        "features": [
+          {
+            "id": "AF-RESEARCH-FEATURE-0001",
+            "version": "0.1.0",
+            "requirements": [
+              {
+                "id": "AF-RESEARCH-FEATURE-0001-R01",
+                "statement": "Research output preserves the declared input interpretation.",
+                "tests": [
+                  "T-RESEARCH-FEATURE-R01-001"
+                ]
+              }
+            ]
+          }
+        ],
+        "behavior": []
+      }
+    },
+    {
+      "path": "mods/operations/contract.json",
+      "contract": {
+        "$schema": "urn:fortress:schema:v2:module-contract",
+        "schema_version": 2,
+        "id": "AF-OPERATIONS-0001",
+        "display_name": "Operations",
+        "provides": [
+          {
+            "id": "CAP-OPERATIONS",
+            "version": "0.1.0",
+            "visibility": "project"
+          }
+        ],
+        "requires": [
+          {
+            "provider": "AF-APPLICATION-0001",
+            "capability": "CAP-APPLICATION",
+            "version": "^0.1.0"
+          }
+        ],
+        "relationships": [],
+        "constraints": [],
+        "guarantees": [],
+        "features": [],
+        "behavior": []
+      }
+    },
+    {
+      "path": "mods/testing/contract.json",
+      "contract": {
+        "$schema": "urn:fortress:schema:v2:module-contract",
+        "schema_version": 2,
+        "id": "TF-ECOSYSTEM-TESTING-0001",
+        "display_name": "Ecosystem Testing",
+        "provides": [],
+        "requires": [
+          {
+            "provider": "AF-APPLICATION-0001",
+            "capability": "CAP-APPLICATION",
+            "version": "^0.1.0"
+          },
+          {
+            "provider": "AF-RESEARCH-0001",
+            "capability": "CAP-RESEARCH",
+            "version": "^0.2.0"
+          }
+        ],
+        "relationships": [
+          {
+            "type": "verifies",
+            "target": "AF-APPLICATION-0001",
+            "subjects": [
+              "GUA-APPLICATION-CORRECTNESS"
+            ]
+          },
+          {
+            "type": "verifies",
+            "target": "AF-RESEARCH-0001",
+            "subjects": [
+              "AF-RESEARCH-FEATURE-0001-R01"
+            ]
+          }
+        ],
+        "constraints": [],
+        "guarantees": [],
+        "features": [],
+        "behavior": []
+      }
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "$schema": "urn:fortress:schema:v1:rule",
+  "schema_version": 1,
+  "id": "CONTRACT-COHERENCY-001",
+  "title": "Resolved Module Contract v2 ecosystem coherency",
+  "status": "draft",
+  "statement": "Every canonical Module Contract v2 document MUST serialize canonically and the complete repository contract set MUST resolve unique identities, compatible exact-provider capabilities, supported typed relationships, standard-backed inherited constraints, requirement-backed guarantees, distributed Feature and requirement ownership, valid referenced test evidence, valid modeled behavioral checkpoints, and synchronized README relationship projections.",
+  "rationale": "One distributed intent language eliminates competing architecture and Feature manifests while preserving filesystem containment and Markdown explanation as distinct authorities.",
+  "failure_prevented": "Ambiguous providers, stale dependency intent, incompatible versions, duplicate identities, invalid proof targets, broken inheritance, behavior graphs that cannot be traversed, and human architecture that diverges from machine authority.",
+  "applicability": "Every governed repository using Fortress Module Contract v2.",
+  "category": "architecture",
+  "integrity_tier": 1,
+  "evaluation": "Fortress discovers Modules from the recursive filesystem grammar, rejects noncanonical v2 JSON and unsupported v1, builds globally unique indexes with source provenance, resolves capability versions and typed verification subjects, computes inherited constraints, validates guarantees, Features, requirements, observed tests, optional behavioral checkpoints, and compares resolved outbound relationships with structurally parsed README projections.",
+  "required_capabilities": [
+    "canonical-module-contract-v2-loader",
+    "contract-ecosystem-resolver",
+    "resolved-test-evidence",
+    "synchronized-module-documentation"
+  ],
+  "finding": {
+    "message": "A Module Contract v2 source or currently implemented ecosystem coherency invariant is invalid.",
+    "location": "path"
+  },
+  "remediation": "Restore canonical v2 contract serialization and correct the precise unresolved identity, capability, relationship, constraint, guarantee, Feature, requirement, evidence, checkpoint, or README projection.",
+  "valid_example": "A consumer requires one compatible capability from its exact provider and documents the derived depends_on relationship once in its README.",
+  "invalid_example": "A Module names a missing capability, duplicates a requirement ID, redeclares an inherited subtree constraint, or invents a README-only dependency.",
+  "exception_policy": "Implemented structural and resolution gates have no local exemption. General semantic satisfiability and capability-effect closure remain explicitly unsupported until a future rule language can express them.",
+  "introduced": "1.0.0-draft.1",
+  "history": [
+    "Introduced with Module Contract v2 as the first deterministic ecosystem intent resolution rule."
+  ]
+}

@@ -6,7 +6,39 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use fortress_core::architecture::ArchitectureManifest;
+use fortress_core::architecture::{ArchitectureManifest, ComponentDeclaration};
+use serde::Deserialize;
+
+#[derive(Deserialize)]
+struct ArchitectureWire {
+    components: Vec<ComponentWire>,
+}
+
+#[derive(Deserialize)]
+struct ComponentWire {
+    id: String,
+    title: String,
+    paths: Vec<String>,
+    depends_on: Vec<String>,
+}
+
+fn load(relative_path: &str) -> ArchitectureManifest {
+    let wire: ArchitectureWire =
+        serde_json::from_str(&read_fixture(relative_path)).expect("fixture must parse");
+    ArchitectureManifest::from_components(
+        wire.components
+            .into_iter()
+            .map(|component| {
+                ComponentDeclaration::new(
+                    component.id,
+                    component.title,
+                    component.paths,
+                    component.depends_on,
+                )
+            })
+            .collect(),
+    )
+}
 
 fn fixture_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../mods/architecture_evaluation/mods/testing/data")
@@ -21,8 +53,7 @@ fn read_fixture(relative_path: &str) -> String {
 /// `T-ARCH-DEPENDENCY-001-R01-001`
 #[test]
 fn valid_declared_graph_passes() {
-    let architecture = ArchitectureManifest::from_json_str(&read_fixture("dependency_valid.json"))
-        .expect("positive architecture fixture must load");
+    let architecture = load("dependency_valid.json");
     assert!(
         architecture
             .evaluate_acyclic_dependencies("1.0.0-draft.1")
@@ -34,9 +65,7 @@ fn valid_declared_graph_passes() {
 /// `T-ARCH-DEPENDENCY-001-R01-002`
 #[test]
 fn cycle_produces_the_expected_normalized_finding() {
-    let architecture =
-        ArchitectureManifest::from_json_str(&read_fixture("dependency_invalid.json"))
-            .expect("negative architecture fixture must be structurally valid");
+    let architecture = load("dependency_invalid.json");
     let actual = architecture
         .evaluate_acyclic_dependencies("1.0.0-draft.1")
         .expect("finding normalization must succeed")
@@ -51,9 +80,7 @@ fn cycle_produces_the_expected_normalized_finding() {
 /// `T-ARCH-DEPENDENCY-001-R01-003`
 #[test]
 fn one_component_no_edge_boundary_passes() {
-    let architecture =
-        ArchitectureManifest::from_json_str(&read_fixture("dependency_boundary.json"))
-            .expect("boundary architecture fixture must load");
+    let architecture = load("dependency_boundary.json");
     assert!(
         architecture
             .evaluate_acyclic_dependencies("1.0.0-draft.1")

@@ -6,13 +6,13 @@ Fortress exists to make declared engineering coherence executable against an exa
 
 ## Responsibility
 
-The root Module governs Fortress as one repository: it owns project-wide declarations and reproducibility output, composes the provider-independent Engine, native CLI, and whole-repository verification, and states development authority without turning audit success into certification.
+The root Module governs Fortress as one repository: its contract selects the project identity and standard interpretation, it owns root operational Data and reproducibility Info, composes the provider-independent Engine, native CLI, and whole-repository verification, and states development authority without turning audit success into certification.
 
 ## Scope
 
 ### Includes
 
-Project identity, architecture, features, toolchain and workspace inputs; the generated dependency lock; the recursive Module system; GitHub-recognized integration surfaces; Snapshot Governance development behavior; and the authority doctrine prioritizing engineering strategy, entropy reduction, and low-friction conventions.
+Root ecosystem interpretation, toolchain and workspace inputs; the generated dependency lock; distributed Module contracts, capabilities, Features, requirements, and constraints; the recursive Module system; GitHub-recognized integration surfaces; Snapshot Governance development behavior; and the authority doctrine prioritizing engineering strategy, entropy reduction, and low-friction conventions.
 
 ### Excludes
 

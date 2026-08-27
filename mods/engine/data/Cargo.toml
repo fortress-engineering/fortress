@@ -17,6 +17,10 @@ name = "arch_dependency_001"
 path = "../mods/architecture_evaluation/mods/testing/code/arch_dependency_001.rs"
 
 [[test]]
+name = "module_contract_v2"
+path = "../mods/architecture_evaluation/mods/testing/code/module_contract_v2.rs"
+
+[[test]]
 name = "arch_ownership_001"
 path = "../mods/snapshot_governance/mods/testing/code/arch_ownership_001.rs"
 
@@ -66,6 +70,7 @@ path = "../mods/snapshot_governance/mods/testing/code/test_traceability_001.rs"
 
 [dependencies]
 pulldown-cmark = { version = "0.13", default-features = false }
+semver = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 sha2 = "0.10"

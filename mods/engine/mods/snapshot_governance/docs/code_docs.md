@@ -22,6 +22,10 @@ Invalid inputs and inability to fulfill the responsibility return explicit typed
 
 Orchestrates declaration loading, stabilized snapshot construction, analyzers, rule execution, and deterministic audit rendering data.
 
+### [`contract.rs`](../code/contract.rs)
+
+Normalizes implemented Module Contract v2 ecosystem and README-projection violations into canonical snapshot findings.
+
 ### [`documentation.rs`](../code/documentation.rs)
 
 Parses canonical Markdown structurally and reconciles Module contracts, catalogs, child decomposition, and links.
@@ -52,4 +56,4 @@ Builds two-pass stabilized content-addressed repository snapshots and rejects mu
 
 ### [`traceability.rs`](../code/traceability.rs)
 
-Reconciles active requirements and supported Rust test evidence bidirectionally.
+Reconciles distributed Module-contract requirements and supported Rust test evidence bidirectionally.

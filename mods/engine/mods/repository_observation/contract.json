@@ -1,14 +1,62 @@
 {
-  "$schema": "urn:fortress:schema:v1:module-contract",
-  "schema_version": 1,
+  "$schema": "urn:fortress:schema:v2:module-contract",
+  "schema_version": 2,
   "id": "AF-REPOSITORY-OBSERVATION-0001",
   "display_name": "Repository Observation",
-  "relationships": [
+  "provides": [
     {
-      "target": "AF-PROJECT-MODEL-0001",
-      "types": [
-        "depends_on"
+      "id": "CAP-REPOSITORY-OBSERVATION",
+      "version": "0.1.0",
+      "visibility": "project"
+    }
+  ],
+  "requires": [
+    {
+      "provider": "AF-PROJECT-MODEL-0001",
+      "capability": "CAP-PROJECT-MODEL",
+      "version": "^0.1.0"
+    }
+  ],
+  "relationships": [],
+  "constraints": [],
+  "guarantees": [
+    {
+      "id": "GUA-REPOSITORY-OBSERVATION-DETERMINISM",
+      "subject": {
+        "kind": "capability",
+        "id": "CAP-REPOSITORY-OBSERVATION"
+      },
+      "requirements": [
+        "AF-REPOSITORY-OBSERVATION-0001-R01",
+        "AF-REPOSITORY-OBSERVATION-0001-R02"
       ]
     }
-  ]
+  ],
+  "features": [
+    {
+      "id": "AF-REPOSITORY-OBSERVATION-0001",
+      "version": "0.1.0",
+      "requirements": [
+        {
+          "id": "AF-REPOSITORY-OBSERVATION-0001-R01",
+          "statement": "Repository observation emits deterministic sorted repository-relative file facts with byte size and SHA-256 content identity.",
+          "tests": [
+            "T-AF-REPOSITORY-OBSERVATION-0001-R01-001",
+            "T-AF-REPOSITORY-OBSERVATION-0001-R01-002",
+            "T-AF-REPOSITORY-OBSERVATION-0001-R01-003"
+          ]
+        },
+        {
+          "id": "AF-REPOSITORY-OBSERVATION-0001-R02",
+          "statement": "Observation rejects unsafe exclusion paths and applies explicit exclusions without converting observations into declarations.",
+          "tests": [
+            "T-AF-REPOSITORY-OBSERVATION-0001-R02-001",
+            "T-AF-REPOSITORY-OBSERVATION-0001-R02-002",
+            "T-AF-REPOSITORY-OBSERVATION-0001-R02-003"
+          ]
+        }
+      ]
+    }
+  ],
+  "behavior": []
 }

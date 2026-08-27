@@ -22,7 +22,7 @@ Persisted runtime repositories, project ownership meaning, snapshot stabilizatio
 
 ### [Repository Observation](../../README.md)
 
-**Types:** `verifies`
+**Types:** `depends_on`, `verifies`
 
 Exercises the parent observation boundary across stable, excluded, and nested repository cases.
 

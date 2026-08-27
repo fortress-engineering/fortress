@@ -8,8 +8,9 @@ use std::error::Error;
 use std::fmt::{self, Display, Formatter};
 
 const ENTITY_NAMESPACES: &[&str] = &[
-    "ADR", "AF", "ARCH", "CERT", "CHANGE", "CHG", "CMD", "CONTRACT", "DEP", "DOC", "EX", "INV",
-    "ONBOARD", "PF", "PIPE", "REPO", "SEC", "SRC", "STD", "T", "TEST", "TF", "TRANS",
+    "ADR", "AF", "ARCH", "CAP", "CERT", "CHANGE", "CHG", "CHK", "CMD", "CONTRACT", "DEP", "DOC",
+    "EX", "GUA", "INV", "ONBOARD", "PF", "PIPE", "REPO", "SEC", "SRC", "STD", "T", "TEST", "TF",
+    "TRANS",
 ];
 
 const RULE_NAMESPACES: &[&str] = &[

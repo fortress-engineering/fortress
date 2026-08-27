@@ -2,21 +2,21 @@
   "$schema": "urn:fortress:schema:v1:rule",
   "schema_version": 1,
   "id": "ARCH-DEPENDENCY-001",
-  "title": "Acyclic declared component dependencies",
+  "title": "Acyclic resolved Module capability dependencies",
   "status": "draft",
-  "statement": "The declared Fortress component dependency graph MUST NOT contain a directed cycle.",
+  "statement": "The Fortress Module dependency graph derived from resolved required capabilities MUST NOT contain a directed cycle.",
   "rationale": "A cycle prevents a stable dependency direction, obscures impact boundaries, and indicates that the participating responsibilities must be separated or deliberately modeled as one component.",
   "failure_prevented": "Mutually dependent architectural components that cannot be ordered, independently reasoned about, or safely invalidated for downstream certification.",
-  "applicability": "Every declared component graph in a Fortress project architecture model.",
+  "applicability": "Every resolved Module Contract v2 ecosystem containing functional capability requirements.",
   "category": "architecture",
   "integrity_tier": 1,
-  "evaluation": "The Fortress core validates component and dependency identities, then performs deterministic graph traversal and emits a canonical finding when a back-edge closes a dependency cycle.",
+  "evaluation": "The Fortress core resolves each required capability to its exact provider Module, derives one functional dependency edge, then performs deterministic graph traversal and emits a canonical finding when a back-edge closes a dependency cycle.",
   "required_capabilities": [
-    "declared-architecture-loading",
+    "module-contract-v2-resolution",
     "component-dependency-cycle-detection"
   ],
   "finding": {
-    "message": "Declared component dependency graph contains a cycle.",
+    "message": "Resolved Module capability dependency graph contains a cycle.",
     "location": "entity"
   },
   "remediation": "Separate responsibilities to restore one-way dependency flow or model a genuinely inseparable strongly connected cluster as one component. A temporary exception requires a governed transition or exemption.",
@@ -26,6 +26,7 @@
   "introduced": "1.0.0-draft.1",
   "history": [
     "Introduced during CHG-ARCHITECTURE-0004 after deterministic repository observation became available.",
-    "Finding evidence migrated to the shared content-addressed Snapshot Governance finding contract during CHG-SNAPSHOT-0006 without changing rule meaning."
+    "Finding evidence migrated to the shared content-addressed Snapshot Governance finding contract during CHG-SNAPSHOT-0006 without changing rule meaning.",
+    "Dependency authority migrated from the centralized architecture manifest to resolved Module Contract v2 capability requirements."
   ]
 }

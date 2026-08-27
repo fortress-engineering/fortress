@@ -1,17 +1,8 @@
 {
-  "feature_contract": {
-    "$schema": "urn:fortress:schema:v1:feature",
-    "schema_version": 1,
+  "module_contract": {
     "features": [
       {
         "id": "AF-SAMPLE-0001",
-        "title": "Minimum",
-        "status": "active",
-        "parent": null,
-        "owner": "AF-SAMPLE-0001",
-        "zone": "core",
-        "owned_paths": ["src/"],
-        "dependencies": [],
         "requirements": [
           {
             "id": "AF-SAMPLE-0001-R01",

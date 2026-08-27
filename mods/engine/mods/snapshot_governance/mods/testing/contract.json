@@ -1,14 +1,27 @@
 {
-  "$schema": "urn:fortress:schema:v1:module-contract",
-  "schema_version": 1,
+  "$schema": "urn:fortress:schema:v2:module-contract",
+  "schema_version": 2,
   "id": "TEST-SNAPSHOT-GOVERNANCE-0001",
   "display_name": "Snapshot Governance Testing",
+  "provides": [],
+  "requires": [
+    {
+      "provider": "AF-SNAPSHOT-GOVERNANCE-0001",
+      "capability": "CAP-SNAPSHOT-GOVERNANCE",
+      "version": "^0.1.0"
+    }
+  ],
   "relationships": [
     {
+      "type": "verifies",
       "target": "AF-SNAPSHOT-GOVERNANCE-0001",
-      "types": [
-        "verifies"
+      "subjects": [
+        "GUA-SNAPSHOT-DETERMINISM"
       ]
     }
-  ]
+  ],
+  "constraints": [],
+  "guarantees": [],
+  "features": [],
+  "behavior": []
 }
