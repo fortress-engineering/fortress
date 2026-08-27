@@ -13,6 +13,7 @@ pub mod evaluation;
 pub mod feature;
 pub mod finding;
 pub mod identity;
+pub mod module_grammar;
 pub mod observation;
 pub mod ownership;
 pub mod placement;

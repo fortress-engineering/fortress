@@ -289,6 +289,17 @@
           "tests": [
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R08-001"
           ]
+        },
+        {
+          "id": "AF-SNAPSHOT-GOVERNANCE-0001-R09",
+          "statement": "REPO-MODULE-001 defines and deterministically evaluates the canonical recursive Module grammar, including root surfaces, Module obligations, attribute flatness, documentation correspondence, and filesystem naming.",
+          "tests": [
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R09-001",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R09-002",
+            "T-REPO-MODULE-001-R01-001",
+            "T-REPO-MODULE-001-R01-002",
+            "T-REPO-MODULE-001-R01-003"
+          ]
         }
       ]
     },

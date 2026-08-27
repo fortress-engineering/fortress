@@ -1,0 +1,74 @@
+[
+  {
+    "path": "AGENTS.md",
+    "message": "Filename `AGENTS.md` violates the lowercase underscore filename grammar."
+  },
+  {
+    "path": "AGENTS.md",
+    "message": "Root file `AGENTS.md` is not the Module README or a recognized GitHub repository surface."
+  },
+  {
+    "path": "Cargo.toml",
+    "message": "Ecosystem file `Cargo.toml` is derived or consumed as `data/` and must be placed there."
+  },
+  {
+    "path": "Cargo.toml",
+    "message": "Root file `Cargo.toml` is not the Module README or a recognized GitHub repository surface."
+  },
+  {
+    "path": "Code",
+    "message": "Directory `Code` must use canonical spelling `code`."
+  },
+  {
+    "path": "README.md",
+    "message": "Module `.` is missing its mandatory `README.md`."
+  },
+  {
+    "path": "crates",
+    "message": "Root directory `crates` is not a canonical Module directory or the GitHub integration namespace."
+  },
+  {
+    "path": "mods/bad-name",
+    "message": "Module name `bad-name` violates the lowercase underscore filename grammar."
+  },
+  {
+    "path": "mods/bad-name/README.md",
+    "message": "Module `mods/bad-name` has neither directly owned `code/` nor child Modules beneath `mods/`."
+  },
+  {
+    "path": "mods/bad_version/code/schema_v01.json",
+    "message": "Filename `schema_v01.json` violates the lowercase underscore filename grammar."
+  },
+  {
+    "path": "mods/excess/docs/data_docs.md",
+    "message": "Module `mods/excess` has `docs/data_docs.md` without the corresponding `data/` directory."
+  },
+  {
+    "path": "mods/invalid_docs/docs/guide.md",
+    "message": "Documentation file `mods/invalid_docs/docs/guide.md` is not one of code_docs.md, data_docs.md, or info_docs.md."
+  },
+  {
+    "path": "mods/loose.txt",
+    "message": "File `mods/loose.txt` is loose beneath `mods/`; `mods/` may contain Module directories only."
+  },
+  {
+    "path": "mods/missing_data/docs/data_docs.md",
+    "message": "Module `mods/missing_data` has `data/` but is missing `docs/data_docs.md`."
+  },
+  {
+    "path": "mods/nested/code/internal",
+    "message": "Attribute directory `mods/nested/code/` contains nested directory `mods/nested/code/internal`; attribute elements must be direct files."
+  },
+  {
+    "path": "mods/no_readme/README.md",
+    "message": "Module `mods/no_readme` is missing its mandatory `README.md`."
+  },
+  {
+    "path": "mods/no_readme/code/Bad-Name.rs",
+    "message": "Filename `Bad-Name.rs` violates the lowercase underscore filename grammar."
+  },
+  {
+    "path": "mods/no_readme/docs/code_docs.md",
+    "message": "Module `mods/no_readme` has `code/` but is missing `docs/code_docs.md`."
+  }
+]

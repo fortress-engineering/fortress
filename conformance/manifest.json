@@ -45,6 +45,15 @@
       "expected_invalid": "rules/REPO-PLACEMENT-001/expected/invalid.json",
       "exemption": "deferred-until-exemption-model",
       "conflict": "not-applicable"
+    },
+    {
+      "rule_id": "REPO-MODULE-001",
+      "valid": "rules/REPO-MODULE-001/valid/input.json",
+      "invalid": "rules/REPO-MODULE-001/invalid/input.json",
+      "boundary": "rules/REPO-MODULE-001/boundary/input.json",
+      "expected_invalid": "rules/REPO-MODULE-001/expected/invalid.json",
+      "exemption": "closed-github-root-surfaces-only",
+      "conflict": "not-applicable"
     }
   ]
 }

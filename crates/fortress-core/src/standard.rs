@@ -43,6 +43,12 @@ const DRAFT_RULES: &[RuleDescriptor] = &[
         status: RuleStatus::Draft,
         integrity_tier: 1,
     },
+    RuleDescriptor {
+        id: "REPO-MODULE-001",
+        title: "Canonical recursive repository Module grammar",
+        status: RuleStatus::Draft,
+        integrity_tier: 1,
+    },
 ];
 
 /// Release state of a rule exposed by a standard registry.
@@ -646,13 +652,15 @@ mod tests {
         include_str!("../../../standard/drafts/1.0.0/rules/TEST-TRACEABILITY-001.json");
     const REPO_PLACEMENT: &str =
         include_str!("../../../standard/drafts/1.0.0/rules/REPO-PLACEMENT-001.json");
+    const REPO_MODULE: &str =
+        include_str!("../../../standard/drafts/1.0.0/rules/REPO-MODULE-001.json");
 
     /// `T-AF-STANDARD-REGISTRY-0001-R02-001`
     #[test]
     fn draft_registry_is_structurally_valid() {
         let registry = StandardRegistry::draft_1_0();
         assert_eq!(registry.status(), RuleStatus::Draft);
-        assert_eq!(registry.rules().len(), 5);
+        assert_eq!(registry.rules().len(), 6);
         assert!(registry.validate().is_ok());
     }
 
@@ -678,11 +686,12 @@ mod tests {
                 ("rules/ARCH-OWNERSHIP-001.json", ARCH_OWNERSHIP),
                 ("rules/TEST-TRACEABILITY-001.json", TEST_TRACEABILITY),
                 ("rules/REPO-PLACEMENT-001.json", REPO_PLACEMENT),
+                ("rules/REPO-MODULE-001.json", REPO_MODULE),
             ],
         )
         .expect("draft bundle must validate");
         assert_eq!(bundle.edition(), "1.0.0-draft.1");
-        assert_eq!(bundle.rules().len(), 5);
+        assert_eq!(bundle.rules().len(), 6);
         assert!(matches!(
             StandardBundle::from_json_documents(MANIFEST, &[("rules/STD-ID-001.json", STD_ID)]),
             Err(StandardLoadError::MissingRuleDocument(_))

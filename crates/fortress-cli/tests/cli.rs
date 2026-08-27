@@ -46,6 +46,7 @@ impl AuditFixture {
             "ARCH-OWNERSHIP-001.json",
             "TEST-TRACEABILITY-001.json",
             "REPO-PLACEMENT-001.json",
+            "REPO-MODULE-001.json",
         ] {
             fs::copy(
                 repository.join("standard/drafts/1.0.0/rules").join(rule),
@@ -161,7 +162,7 @@ fn audit_success_renders_human_snapshot_report() {
     );
     assert!(stdout.contains("Fortress Snapshot Audit"));
     assert!(stdout.contains("PASS: 4"));
-    assert!(stdout.contains("Unsupported: 1"));
+    assert!(stdout.contains("Unsupported: 2"));
     assert!(!stdout.contains("certification"));
 }
 

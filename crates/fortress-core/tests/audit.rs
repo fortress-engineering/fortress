@@ -16,6 +16,6 @@ fn fortress_self_audit_passes_every_implemented_rule() {
     assert_eq!(result.summary().rules_evaluated(), 4);
     assert_eq!(result.summary().passed(), 4);
     assert_eq!(result.summary().failed(), 0);
-    assert_eq!(result.summary().unsupported(), 1);
+    assert_eq!(result.summary().unsupported(), 2);
     assert!(result.findings().is_empty());
 }
