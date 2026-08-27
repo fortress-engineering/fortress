@@ -1,4 +1,4 @@
-//! Direct whole-repository evidence for the canonical recursive Module grammar.
+//! Parent-local self-application evidence for recursive Module grammar and documentation.
 
 use std::collections::BTreeMap;
 use std::fs;
@@ -13,6 +13,7 @@ fn repository_root() -> PathBuf {
 }
 
 /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R10-001`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R10
 #[test]
 fn fortress_documentation_is_complete_synchronized_and_deterministic() {
     let root = repository_root();
@@ -72,6 +73,7 @@ fn fortress_documentation_is_complete_synchronized_and_deterministic() {
 }
 
 /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R09-003`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R09
 #[test]
 fn fortress_physical_tree_satisfies_recursive_module_grammar() {
     let root = repository_root();

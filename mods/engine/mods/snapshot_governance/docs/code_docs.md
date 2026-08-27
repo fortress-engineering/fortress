@@ -57,3 +57,7 @@ Builds two-pass stabilized content-addressed repository snapshots and rejects mu
 ### [`traceability.rs`](../code/traceability.rs)
 
 Reconciles distributed Module-contract requirements and supported Rust test evidence bidirectionally.
+
+### [`testing_boundary.rs`](../code/testing_boundary.rs)
+
+Enforces recursive Testing-child presence, exact parent Feature subjects, role restrictions, and canonical Rust test placement.

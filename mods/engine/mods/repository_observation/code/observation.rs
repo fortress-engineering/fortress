@@ -372,26 +372,3 @@ fn is_canonical_relative_path(value: &str) -> bool {
             .split('/')
             .all(|segment| !segment.is_empty() && segment != "." && segment != "..")
 }
-
-#[cfg(test)]
-mod tests {
-    use super::{ObservationError, ObservationPolicy};
-
-    /// `T-AF-REPOSITORY-OBSERVATION-0001-R02-001`
-    #[test]
-    fn exclusion_policy_rejects_parent_traversal() {
-        let result = ObservationPolicy::new(["../outside"]);
-        assert!(matches!(
-            result,
-            Err(ObservationError::InvalidExcludedPrefix(_))
-        ));
-    }
-
-    /// `T-AF-REPOSITORY-OBSERVATION-0001-R02-002`
-    #[test]
-    fn exclusion_policy_is_sorted_and_deduplicated() {
-        let policy = ObservationPolicy::new(["target", ".git", "target"])
-            .expect("canonical exclusions are valid");
-        assert_eq!(policy.excluded_prefixes(), [".git", "target"]);
-    }
-}

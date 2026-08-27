@@ -9,6 +9,7 @@ fn repository_root() -> PathBuf {
 }
 
 /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R01-004`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R01
 #[test]
 fn fortress_self_snapshot_is_repeatable_and_binds_distributed_contracts() {
     let root = repository_root();

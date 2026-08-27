@@ -20,6 +20,7 @@ fn read_fixture(relative_path: &str) -> String {
 }
 
 /// `T-STD-ID-001-R01-001`
+/// Fortress requirement: AF-STANDARD-REGISTRY-0001-R01
 #[test]
 fn valid_fixture_passes() {
     let input = read_fixture("std_id_valid.txt");
@@ -27,6 +28,7 @@ fn valid_fixture_passes() {
 }
 
 /// `T-STD-ID-001-R01-002`
+/// Fortress requirement: AF-STANDARD-REGISTRY-0001-R01
 #[test]
 fn invalid_fixture_produces_expected_rule_finding() {
     let input = read_fixture("std_id_invalid.txt");
@@ -40,6 +42,7 @@ fn invalid_fixture_produces_expected_rule_finding() {
 }
 
 /// `T-STD-ID-001-R01-003`
+/// Fortress requirement: AF-STANDARD-REGISTRY-0001-R01
 #[test]
 fn shortest_registered_boundary_fixture_passes() {
     let input = read_fixture("std_id_boundary.txt");

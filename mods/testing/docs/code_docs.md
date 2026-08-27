@@ -18,10 +18,6 @@ A violated assertion or fixture-loading failure fails the test target and surfac
 
 ## Files
 
-### [`repository_grammar.rs`](../code/repository_grammar.rs)
-
-Checks the complete physical repository against the recursive Module grammar independently of CLI orchestration.
-
 ### [`self_model.rs`](../code/self_model.rs)
 
-Checks root operational configuration, command registry agreement, resolved contract dependency acyclicity, and truthful non-certification state.
+Checks root operational configuration, command registry agreement, complete contract resolution, and truthful non-certification state.

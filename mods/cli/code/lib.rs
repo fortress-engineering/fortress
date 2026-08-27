@@ -220,30 +220,3 @@ fn render_command_help<O: Write>(command: &CommandDescriptor, output: &mut O) ->
     }
     Ok(())
 }
-
-#[cfg(test)]
-mod tests {
-    use super::{EXIT_SUCCESS, EXIT_USAGE, run};
-
-    /// `T-TF-CLI-0001-R02-001`
-    #[test]
-    fn no_arguments_render_help() {
-        let mut output = Vec::new();
-        let mut error = Vec::new();
-        let status = run(Vec::<String>::new(), &mut output, &mut error).expect("write succeeds");
-        assert_eq!(status, EXIT_SUCCESS);
-        assert!(String::from_utf8_lossy(&output).contains("IMPLEMENTED COMMANDS"));
-        assert!(error.is_empty());
-    }
-
-    /// `T-TF-CLI-0001-R02-002`
-    #[test]
-    fn unknown_command_is_non_success() {
-        let mut output = Vec::new();
-        let mut error = Vec::new();
-        let status = run(["certify"], &mut output, &mut error).expect("write succeeds");
-        assert_eq!(status, EXIT_USAGE);
-        assert!(output.is_empty());
-        assert!(String::from_utf8_lossy(&error).contains("unsupported command `certify`"));
-    }
-}

@@ -5,6 +5,8 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 use std::sync::atomic::{AtomicU64, Ordering};
 
+use fortress_cli::command::{CommandDescriptor, CommandRegistry};
+use fortress_cli::{EXIT_SUCCESS, EXIT_USAGE};
 use fortress_core::module_contract::ModuleContract;
 
 static NEXT_FIXTURE: AtomicU64 = AtomicU64::new(1);
@@ -115,6 +117,7 @@ impl AuditFixture {
             "mods/engine/mods/architecture_evaluation/data/dependency_rule.json",
             "mods/engine/mods/snapshot_governance/data/ownership_rule.json",
             "mods/engine/mods/snapshot_governance/data/traceability_rule.json",
+            "mods/engine/mods/snapshot_governance/data/test_boundary_rule.json",
             "mods/engine/mods/snapshot_governance/data/module_rule.json",
             "mods/engine/mods/snapshot_governance/data/documentation_rule.json",
             "mods/engine/mods/snapshot_governance/data/contract_rule.json",
@@ -138,6 +141,7 @@ impl AuditFixture {
                 "contract_rule.json",
                 "module_rule.json",
                 "ownership_rule.json",
+                "test_boundary_rule.json",
                 "traceability_rule.json",
             ]),
         )
@@ -252,6 +256,7 @@ fn project_json() -> &'static str {
 }
 
 /// `T-TF-CLI-0001-R03-001`
+/// Fortress requirement: TF-CLI-0001-R03
 #[test]
 fn version_flag_reports_implementation_identity() {
     let output = run(&["--version"]);
@@ -261,6 +266,7 @@ fn version_flag_reports_implementation_identity() {
 }
 
 /// `T-TF-CLI-0001-R03-002`
+/// Fortress requirement: TF-CLI-0001-R03
 #[test]
 fn help_discovers_only_implemented_commands() {
     let output = run(&["help"]);
@@ -281,6 +287,7 @@ fn help_discovers_only_implemented_commands() {
 }
 
 /// `T-TF-CLI-0001-R03-003`
+/// Fortress requirement: TF-CLI-0001-R03
 #[test]
 fn unsupported_certification_command_fails() {
     let output = run(&["certify"]);
@@ -290,6 +297,7 @@ fn unsupported_certification_command_fails() {
 }
 
 /// `T-TF-CLI-0001-R03-004`
+/// Fortress requirement: TF-CLI-0001-R03
 #[test]
 fn version_rejects_extra_arguments() {
     let output = run(&["--version", "unexpected"]);
@@ -298,6 +306,7 @@ fn version_rejects_extra_arguments() {
 }
 
 /// `T-TF-CLI-0001-R04-001`
+/// Fortress requirement: TF-CLI-0001-R04
 #[test]
 fn audit_success_renders_human_snapshot_report() {
     let fixture = AuditFixture::new();
@@ -309,12 +318,13 @@ fn audit_success_renders_human_snapshot_report() {
         String::from_utf8_lossy(&output.stderr)
     );
     assert!(stdout.contains("Fortress Snapshot Audit"));
-    assert!(stdout.contains("PASS: 6"));
+    assert!(stdout.contains("PASS: 7"));
     assert!(stdout.contains("Unsupported: 1"));
     assert!(!stdout.contains("certification"));
 }
 
 /// `T-TF-CLI-0001-R04-002`
+/// Fortress requirement: TF-CLI-0001-R04
 #[test]
 fn audit_rule_failure_returns_violation_status() {
     let fixture = AuditFixture::new();
@@ -326,6 +336,7 @@ fn audit_rule_failure_returns_violation_status() {
 }
 
 /// `T-TF-CLI-0001-R04-003`
+/// Fortress requirement: TF-CLI-0001-R04
 #[test]
 fn audit_malformed_project_state_is_non_success() {
     let fixture = AuditFixture::new();
@@ -336,6 +347,7 @@ fn audit_malformed_project_state_is_non_success() {
 }
 
 /// `T-TF-CLI-0001-R04-004`
+/// Fortress requirement: TF-CLI-0001-R04
 #[test]
 fn audit_json_is_valid_and_repeatable() {
     let fixture = AuditFixture::new();
@@ -351,9 +363,60 @@ fn audit_json_is_valid_and_repeatable() {
 }
 
 /// `T-TF-CLI-0001-R04-005`
+/// Fortress requirement: TF-CLI-0001-R04
 #[test]
 fn audit_rejects_unsupported_options() {
     let output = run(&["audit", "--format", "xml"]);
     assert_eq!(output.status.code(), Some(2));
     assert!(String::from_utf8_lossy(&output.stderr).contains("human` or `json"));
+}
+
+/// `T-TF-CLI-0001-R01-001`
+/// Fortress requirement: TF-CLI-0001-R01
+#[test]
+fn builtin_registry_is_valid() {
+    assert!(CommandRegistry::builtin().validate().is_ok());
+}
+
+/// `T-TF-CLI-0001-R01-002`
+/// Fortress requirement: TF-CLI-0001-R01
+#[test]
+fn aliases_resolve_to_registered_descriptors() {
+    let registry = CommandRegistry::builtin();
+    assert_eq!(
+        registry.find("--version").map(CommandDescriptor::id),
+        Some("CMD-CORE-VERSION")
+    );
+}
+
+/// `T-TF-CLI-0001-R01-003`
+/// Fortress requirement: TF-CLI-0001-R01
+#[test]
+fn unimplemented_operation_is_absent() {
+    assert!(CommandRegistry::builtin().find("certify").is_none());
+}
+
+/// `T-TF-CLI-0001-R02-001`
+/// Fortress requirement: TF-CLI-0001-R02
+#[test]
+fn no_arguments_render_help() {
+    let mut output = Vec::new();
+    let mut error = Vec::new();
+    let status =
+        fortress_cli::run(Vec::<String>::new(), &mut output, &mut error).expect("write succeeds");
+    assert_eq!(status, EXIT_SUCCESS);
+    assert!(String::from_utf8_lossy(&output).contains("IMPLEMENTED COMMANDS"));
+    assert!(error.is_empty());
+}
+
+/// `T-TF-CLI-0001-R02-002`
+/// Fortress requirement: TF-CLI-0001-R02
+#[test]
+fn unknown_command_is_non_success() {
+    let mut output = Vec::new();
+    let mut error = Vec::new();
+    let status = fortress_cli::run(["certify"], &mut output, &mut error).expect("write succeeds");
+    assert_eq!(status, EXIT_USAGE);
+    assert!(output.is_empty());
+    assert!(String::from_utf8_lossy(&error).contains("unsupported command `certify`"));
 }

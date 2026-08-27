@@ -25,3 +25,7 @@ Verifies valid, cyclic, and minimum architecture graphs against ARCH-DEPENDENCY-
 ### [`module_contract_v2.rs`](../code/module_contract_v2.rs)
 
 Exercises canonical local parsing and repository-wide Module Contract v2 resolution across invalid semantics and deterministic simple and complex ecosystems.
+
+### [`self_architecture.rs`](../code/self_architecture.rs)
+
+Resolves Fortress's live distributed contracts and verifies that its parent-owned architecture requirement remains acyclic.

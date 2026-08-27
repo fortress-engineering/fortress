@@ -179,6 +179,7 @@ fn load_ecosystem_fixture(name: &str) -> EcosystemFixture {
 }
 
 /// `T-AF-ARCHITECTURE-EVALUATION-0001-R01-001`
+/// Fortress requirement: AF-ARCHITECTURE-EVALUATION-0001-R01
 #[test]
 fn local_contract_shape_and_canonical_bytes_are_strict() {
     let minimal = canonical(&contract("AF-MINIMAL-0001", "Minimal", false));
@@ -230,6 +231,7 @@ fn local_contract_shape_and_canonical_bytes_are_strict() {
 }
 
 /// `T-AF-ARCHITECTURE-EVALUATION-0001-R01-002`
+/// Fortress requirement: AF-ARCHITECTURE-EVALUATION-0001-R01
 #[test]
 #[allow(clippy::too_many_lines)]
 fn ecosystem_resolution_rejects_incoherent_intent() {
@@ -585,6 +587,7 @@ fn ecosystem_resolution_rejects_incoherent_intent() {
 }
 
 /// `T-AF-ARCHITECTURE-EVALUATION-0001-R01-003`
+/// Fortress requirement: AF-ARCHITECTURE-EVALUATION-0001-R01
 #[test]
 fn simple_and_complex_ecosystems_resolve_deterministically() {
     for name in ["contract_simple.json", "contract_complex.json"] {

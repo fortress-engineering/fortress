@@ -191,30 +191,3 @@ impl Error for CommandRegistryError {
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::CommandRegistry;
-
-    /// `T-TF-CLI-0001-R01-001`
-    #[test]
-    fn builtin_registry_is_valid() {
-        assert!(CommandRegistry::builtin().validate().is_ok());
-    }
-
-    /// `T-TF-CLI-0001-R01-002`
-    #[test]
-    fn aliases_resolve_to_registered_descriptors() {
-        let registry = CommandRegistry::builtin();
-        assert_eq!(
-            registry.find("--version").map(super::CommandDescriptor::id),
-            Some("CMD-CORE-VERSION")
-        );
-    }
-
-    /// `T-TF-CLI-0001-R01-003`
-    #[test]
-    fn unimplemented_operation_is_absent() {
-        assert!(CommandRegistry::builtin().find("certify").is_none());
-    }
-}

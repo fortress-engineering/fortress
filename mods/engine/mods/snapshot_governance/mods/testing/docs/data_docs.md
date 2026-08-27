@@ -81,3 +81,15 @@ Provides specification-authored invalid conformance data for traceability behavi
 ### [`traceability_valid.json`](../data/traceability_valid.json)
 
 Provides specification-authored valid conformance data for traceability behavior.
+
+### [`testing_cases.json`](../data/testing_cases.json)
+
+Defines deterministic negative mutations for missing, misplaced, cross-level, duplicated, and noncanonical Testing boundaries.
+
+### [`testing_complex.json`](../data/testing_complex.json)
+
+Defines a multi-level ecosystem where atomic, compositional, and root Features are verified only by their direct parent-local Testing Modules.
+
+### [`testing_simple.json`](../data/testing_simple.json)
+
+Defines a compact provider, CLI, and root utility ecosystem with exact recursive Testing ownership and legitimate unmapped infrastructure evidence.

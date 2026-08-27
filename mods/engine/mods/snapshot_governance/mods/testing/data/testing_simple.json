@@ -1,0 +1,99 @@
+{
+  "modules": [
+    {
+      "path": "",
+      "id": "PF-UTILITY",
+      "display_name": "Utility",
+      "features": [
+        {
+          "id": "AF-UTILITY-FLOW-0001",
+          "requirement": "AF-UTILITY-FLOW-0001-R01",
+          "test": "T-AF-UTILITY-FLOW-0001-R01-001"
+        }
+      ]
+    },
+    {
+      "path": "mods/testing",
+      "id": "TEST-UTILITY-0001",
+      "display_name": "Utility Testing",
+      "verifies": {
+        "target": "PF-UTILITY",
+        "subjects": [
+          "AF-UTILITY-FLOW-0001"
+        ]
+      }
+    },
+    {
+      "path": "mods/provider",
+      "id": "AF-UTILITY-PROVIDER-0001",
+      "display_name": "Utility Provider",
+      "features": [
+        {
+          "id": "AF-UTILITY-PROVIDER-0001",
+          "requirement": "AF-UTILITY-PROVIDER-0001-R01",
+          "test": "T-AF-UTILITY-PROVIDER-0001-R01-001"
+        }
+      ]
+    },
+    {
+      "path": "mods/provider/mods/testing",
+      "id": "TEST-UTILITY-PROVIDER-0001",
+      "display_name": "Utility Provider Testing",
+      "verifies": {
+        "target": "AF-UTILITY-PROVIDER-0001",
+        "subjects": [
+          "AF-UTILITY-PROVIDER-0001"
+        ]
+      }
+    },
+    {
+      "path": "mods/cli",
+      "id": "TF-UTILITY-CLI-0001",
+      "display_name": "Utility CLI",
+      "features": [
+        {
+          "id": "TF-UTILITY-CLI-0001",
+          "requirement": "TF-UTILITY-CLI-0001-R01",
+          "test": "T-TF-UTILITY-CLI-0001-R01-001"
+        }
+      ]
+    },
+    {
+      "path": "mods/cli/mods/testing",
+      "id": "TEST-UTILITY-CLI-0001",
+      "display_name": "Utility CLI Testing",
+      "verifies": {
+        "target": "TF-UTILITY-CLI-0001",
+        "subjects": [
+          "TF-UTILITY-CLI-0001"
+        ]
+      }
+    }
+  ],
+  "tests": [
+    {
+      "id": "T-AF-UTILITY-FLOW-0001-R01-001",
+      "path": "mods/testing/code/utility_flow.rs",
+      "requirement": "AF-UTILITY-FLOW-0001-R01",
+      "classification": "behavioral"
+    },
+    {
+      "id": "T-AF-UTILITY-PROVIDER-0001-R01-001",
+      "path": "mods/provider/mods/testing/code/provider.rs",
+      "requirement": "AF-UTILITY-PROVIDER-0001-R01",
+      "classification": "behavioral"
+    },
+    {
+      "id": "T-TF-UTILITY-CLI-0001-R01-001",
+      "path": "mods/cli/mods/testing/code/cli.rs",
+      "requirement": "TF-UTILITY-CLI-0001-R01",
+      "classification": "behavioral"
+    },
+    {
+      "id": "T-UTILITY-INFRA-0001",
+      "path": "mods/testing/code/harness.rs",
+      "requirement": null,
+      "classification": "infrastructure"
+    }
+  ]
+}

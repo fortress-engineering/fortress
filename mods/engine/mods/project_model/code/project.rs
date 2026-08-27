@@ -156,35 +156,3 @@ fn is_canonical_relative_path(value: &str) -> bool {
             .split('/')
             .all(|segment| !segment.is_empty() && segment != "." && segment != "..")
 }
-
-#[cfg(test)]
-mod tests {
-    use super::{ProjectConfiguration, ProjectConfigurationLoadError};
-
-    /// `T-AF-PROJECT-MODEL-0001-R01-001`
-    #[test]
-    fn minimal_operational_configuration_is_valid() {
-        let source = r#"{
-          "$schema": "urn:fortress:schema:v2:project-configuration",
-          "schema_version": 2,
-          "observation_exclusions": [".git"]
-        }"#;
-        let configuration =
-            ProjectConfiguration::from_json_str(source).expect("configuration validates");
-        assert_eq!(configuration.observation_exclusions(), [".git"]);
-    }
-
-    /// `T-AF-PROJECT-MODEL-0001-R01-002`
-    #[test]
-    fn invalid_or_duplicate_exclusions_fail() {
-        let invalid = r#"{
-          "$schema": "urn:fortress:schema:v2:project-configuration",
-          "schema_version": 2,
-          "observation_exclusions": ["../outside"]
-        }"#;
-        assert!(matches!(
-            ProjectConfiguration::from_json_str(invalid),
-            Err(ProjectConfigurationLoadError::Model(_))
-        ));
-    }
-}

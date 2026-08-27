@@ -4,13 +4,13 @@
   "id": "TEST-TRACEABILITY-001",
   "title": "Active requirement and test traceability",
   "status": "draft",
-  "statement": "Every active mandatory requirement MUST have unique canonical test evidence that exists in the supported evidence inventory, and every observed behavioral or conformance test MUST map to exactly one valid active requirement; explicitly classified infrastructure tests MAY remain unmapped.",
+  "statement": "Every active mandatory requirement MUST have unique canonical test evidence that exists in its owning Module's direct Testing child, and every observed behavioral or conformance test MUST contain one exact requirement marker matching that evidence; explicitly classified infrastructure tests MAY remain unmapped and MUST NOT satisfy Feature coverage.",
   "rationale": "Bidirectional traceability prevents declarations from claiming nonexistent evidence and prevents product behavior tests from becoming detached from the requirements they protect.",
-  "failure_prevented": "Orphan requirements, orphan behavior tests, duplicate test identities, stale requirement/test references, and misleading evidence coverage.",
+  "failure_prevented": "Orphan requirements, orphan behavior tests, duplicate test identities, stale requirement/test references, cross-Module evidence claims, missing source markers, and misleading infrastructure coverage.",
   "applicability": "Active Fortress feature contracts and supported snapshot-bound Rust test evidence inventories.",
   "category": "testing",
   "integrity_tier": 1,
-  "evaluation": "The Fortress core loads typed feature contracts, structurally parses snapshot-bound Rust test sources, and deterministically reconciles active requirements, declared test evidence, observed test identities, optional source requirement markers, and explicit infrastructure classifications.",
+  "evaluation": "The Fortress core loads distributed Feature requirements, structurally parses snapshot-bound Rust test sources, and deterministically reconciles test identity, exact source requirement markers, immediate parent Testing ownership, and explicit infrastructure classifications.",
   "required_capabilities": [
     "typed-feature-contract-loading",
     "snapshot-bound-rust-test-analysis",
@@ -20,12 +20,13 @@
     "message": "Active requirement/test traceability is incomplete, stale, ambiguous, or duplicated.",
     "location": "path"
   },
-  "remediation": "Give each active mandatory requirement unique canonical test evidence, ensure every referenced test exists exactly once in the supported evidence inventory, and map every behavioral or conformance test to one valid active requirement; classify implementation-only tests explicitly.",
-  "valid_example": "Each active requirement references one or more unique observed Rust test IDs, every behavior/conformance test is referenced once, and an unreferenced helper test is explicitly infrastructure-classified.",
-  "invalid_example": "An active requirement has no tests, references a missing test, or a behavioral test ID is duplicated or has no active requirement mapping.",
+  "remediation": "Give each active mandatory requirement unique canonical test evidence, place that evidence in the owning Module's direct Testing child, add one exact source requirement marker to every behavioral or conformance test, and classify truly unmapped implementation-only tests as infrastructure.",
+  "valid_example": "Each active requirement references unique observed Rust test IDs beneath its owner's direct Testing child, every behavior/conformance test carries its exact requirement marker, and an unreferenced helper test is explicitly infrastructure-classified.",
+  "invalid_example": "An active requirement has no tests, references a missing or cross-boundary test, a behavioral marker is absent or stale, or an infrastructure test is counted as mandatory evidence.",
   "exception_policy": "Infrastructure classification describes intentionally non-product test evidence; it is not an exemption for behavioral coverage. Future exemptions must preserve explicit traceability state.",
   "introduced": "1.0.0-draft.1",
   "history": [
-    "Introduced during CHG-SNAPSHOT-0006 with deterministic Rust test fact extraction and no cross-language analyzer claim."
+    "Introduced during CHG-SNAPSHOT-0006 with deterministic Rust test fact extraction and no cross-language analyzer claim.",
+    "Strengthened during recursive Testing convergence with exact source markers, parent-local ownership, and non-counting infrastructure semantics."
   ]
 }

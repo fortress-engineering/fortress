@@ -18,6 +18,7 @@ use crate::placement::{REPO_MODULE_RULE_ID, evaluate_module_grammar};
 use crate::rust_test_analyzer::RustTestFact;
 use crate::snapshot::RepositorySnapshot;
 use crate::standard::StandardBundle;
+use crate::testing_boundary::{TEST_BOUNDARY_RULE_ID, evaluate_testing_boundaries};
 use crate::traceability::{
     RequirementEvidence, TEST_TRACEABILITY_RULE_ID, evaluate_test_traceability,
 };
@@ -307,6 +308,29 @@ impl SnapshotRuleEngine {
                         "Traceability evaluation requires declared feature contracts and snapshot-bound Rust test facts.",
                     )
                 }
+            } else if rule.id() == TEST_BOUNDARY_RULE_ID {
+                if let (Some((_, rust_tests)), Some(contract_coherency)) =
+                    (traceability_inputs, contract_coherency)
+                {
+                    if let Some(contracts) = contract_coherency.resolved() {
+                        testing_boundary_execution(
+                            rule.id(),
+                            contracts,
+                            rust_tests,
+                            standard.edition(),
+                        )?
+                    } else {
+                        unsupported_execution(
+                            rule.id(),
+                            "Testing-boundary evaluation requires a successfully resolved Module Contract v2 ecosystem.",
+                        )
+                    }
+                } else {
+                    unsupported_execution(
+                        rule.id(),
+                        "Testing-boundary evaluation requires resolved Module contracts and snapshot-bound Rust test facts.",
+                    )
+                }
             } else {
                 unsupported_execution(
                     rule.id(),
@@ -326,6 +350,25 @@ impl SnapshotRuleEngine {
             findings,
         })
     }
+}
+
+fn testing_boundary_execution(
+    rule_id: &str,
+    contracts: &crate::module_contract::ResolvedContractSet,
+    rust_tests: &[RustTestFact],
+    standard_edition: &str,
+) -> Result<(RuleExecution, Vec<CanonicalFinding>), EvaluationError> {
+    let result = evaluate_testing_boundaries(contracts, rust_tests, standard_edition)
+        .map_err(EvaluationError::Finding)?;
+    let findings = result.findings().to_vec();
+    Ok((
+        completed_execution(
+            rule_id,
+            findings.len(),
+            "recursive testing-boundary violation(s)",
+        ),
+        findings,
+    ))
 }
 
 fn dependency_execution(

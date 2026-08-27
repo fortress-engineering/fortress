@@ -50,6 +50,10 @@ Defines the version-one machine representation and validation boundary for snaps
 
 Defines the version-one machine representation and validation boundary for snapshot finding records owned by this Module.
 
+### [`test_boundary_rule.json`](../data/test_boundary_rule.json)
+
+Carries the draft normative rule for recursive parent-local Feature verification boundaries.
+
 ### [`traceability_rule.json`](../data/traceability_rule.json)
 
 Carries the draft normative rule record interpreted by the traceability evaluator.

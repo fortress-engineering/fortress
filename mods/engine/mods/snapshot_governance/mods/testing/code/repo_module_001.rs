@@ -43,6 +43,7 @@ fn projection(findings: &[fortress_core::finding::CanonicalFinding]) -> Value {
 }
 
 /// `T-REPO-MODULE-001-R01-001`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R09
 #[test]
 fn recursive_composite_and_atomic_modules_pass() {
     let paths = load("module_valid.json");
@@ -51,6 +52,7 @@ fn recursive_composite_and_atomic_modules_pass() {
 }
 
 /// `T-REPO-MODULE-001-R01-002`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R09
 #[test]
 fn invalid_recursive_grammar_matches_expected_findings() {
     let paths = load("module_invalid.json");
@@ -68,6 +70,7 @@ fn invalid_recursive_grammar_matches_expected_findings() {
 }
 
 /// `T-REPO-MODULE-001-R01-003`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R09
 #[test]
 fn one_atomic_child_is_the_minimum_recursive_boundary() {
     let paths = load("module_boundary.json");

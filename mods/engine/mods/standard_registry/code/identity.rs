@@ -197,29 +197,3 @@ impl Error for RuleIdError {
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::{RuleId, RuleIdError, StableId, StableIdError};
-
-    /// `T-AF-STANDARD-REGISTRY-0001-R01-001`
-    #[test]
-    fn stable_identity_accepts_registered_nested_segments() {
-        let identity = StableId::parse("T-TF-CLI-0001-R01-001");
-        assert!(identity.is_ok());
-    }
-
-    /// `T-AF-STANDARD-REGISTRY-0001-R01-002`
-    #[test]
-    fn stable_identity_rejects_lowercase_segments() {
-        let error = StableId::parse("arch-dependency-001");
-        assert!(matches!(error, Err(StableIdError::UnknownNamespace(_))));
-    }
-
-    /// `T-AF-STANDARD-REGISTRY-0001-R01-003`
-    #[test]
-    fn rule_identity_rejects_entity_only_namespace() {
-        let error = RuleId::parse("PF-PROJECT-0001");
-        assert!(matches!(error, Err(RuleIdError::NonRuleNamespace(_))));
-    }
-}

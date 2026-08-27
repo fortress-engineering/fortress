@@ -1,0 +1,206 @@
+{
+  "modules": [
+    {
+      "path": "",
+      "id": "PF-ECOSYSTEM",
+      "display_name": "Ecosystem",
+      "features": [
+        {
+          "id": "AF-ECOSYSTEM-FLOW-0001",
+          "requirement": "AF-ECOSYSTEM-FLOW-0001-R01",
+          "test": "T-AF-ECOSYSTEM-FLOW-0001-R01-001"
+        }
+      ]
+    },
+    {
+      "path": "mods/testing",
+      "id": "TEST-ECOSYSTEM-0001",
+      "display_name": "Ecosystem Testing",
+      "verifies": {
+        "target": "PF-ECOSYSTEM",
+        "subjects": [
+          "AF-ECOSYSTEM-FLOW-0001"
+        ]
+      }
+    },
+    {
+      "path": "mods/application",
+      "id": "AF-APPLICATION-0001",
+      "display_name": "Application",
+      "requires": [
+        {
+          "provider": "AF-RESEARCH-0001",
+          "capability": "CAP-RESEARCH-EVIDENCE",
+          "version": "^0.1.0"
+        },
+        {
+          "provider": "AF-SERVICE-0001",
+          "capability": "CAP-SERVICE-BEHAVIOR",
+          "version": "^0.1.0"
+        }
+      ],
+      "features": [
+        {
+          "id": "AF-APPLICATION-FLOW-0001",
+          "requirement": "AF-APPLICATION-FLOW-0001-R01",
+          "test": "T-AF-APPLICATION-FLOW-0001-R01-001"
+        },
+        {
+          "id": "AF-APPLICATION-RECOVERY-0001",
+          "requirement": "AF-APPLICATION-RECOVERY-0001-R01",
+          "test": "T-AF-APPLICATION-RECOVERY-0001-R01-001"
+        }
+      ]
+    },
+    {
+      "path": "mods/application/mods/testing",
+      "id": "TEST-APPLICATION-0001",
+      "display_name": "Application Testing",
+      "requires": [
+        {
+          "provider": "AF-RESEARCH-0001",
+          "capability": "CAP-RESEARCH-EVIDENCE",
+          "version": "^0.1.0"
+        },
+        {
+          "provider": "AF-SERVICE-0001",
+          "capability": "CAP-SERVICE-BEHAVIOR",
+          "version": "^0.1.0"
+        }
+      ],
+      "verifies": {
+        "target": "AF-APPLICATION-0001",
+        "subjects": [
+          "AF-APPLICATION-FLOW-0001",
+          "AF-APPLICATION-RECOVERY-0001"
+        ]
+      }
+    },
+    {
+      "path": "mods/application/mods/service",
+      "id": "AF-SERVICE-0001",
+      "display_name": "Service",
+      "provides": [
+        {
+          "id": "CAP-SERVICE-BEHAVIOR",
+          "version": "0.1.0",
+          "visibility": "project"
+        }
+      ],
+      "features": [
+        {
+          "id": "AF-SERVICE-BEHAVIOR-0001",
+          "requirement": "AF-SERVICE-BEHAVIOR-0001-R01",
+          "test": "T-AF-SERVICE-BEHAVIOR-0001-R01-001"
+        }
+      ]
+    },
+    {
+      "path": "mods/application/mods/service/mods/testing",
+      "id": "TEST-SERVICE-0001",
+      "display_name": "Service Testing",
+      "verifies": {
+        "target": "AF-SERVICE-0001",
+        "subjects": [
+          "AF-SERVICE-BEHAVIOR-0001"
+        ]
+      }
+    },
+    {
+      "path": "mods/research",
+      "id": "AF-RESEARCH-0001",
+      "display_name": "Research",
+      "provides": [
+        {
+          "id": "CAP-RESEARCH-EVIDENCE",
+          "version": "0.1.0",
+          "visibility": "project"
+        }
+      ],
+      "features": [
+        {
+          "id": "AF-RESEARCH-EVIDENCE-0001",
+          "requirement": "AF-RESEARCH-EVIDENCE-0001-R01",
+          "test": "T-AF-RESEARCH-EVIDENCE-0001-R01-001"
+        }
+      ]
+    },
+    {
+      "path": "mods/research/mods/testing",
+      "id": "TEST-RESEARCH-0001",
+      "display_name": "Research Testing",
+      "verifies": {
+        "target": "AF-RESEARCH-0001",
+        "subjects": [
+          "AF-RESEARCH-EVIDENCE-0001"
+        ]
+      }
+    },
+    {
+      "path": "mods/operations",
+      "id": "AF-OPERATIONS-0001",
+      "display_name": "Operations"
+    },
+    {
+      "path": "mods/operations/mods/worker",
+      "id": "AF-WORKER-0001",
+      "display_name": "Worker",
+      "features": [
+        {
+          "id": "AF-WORKER-BEHAVIOR-0001",
+          "requirement": "AF-WORKER-BEHAVIOR-0001-R01",
+          "test": "T-AF-WORKER-BEHAVIOR-0001-R01-001"
+        }
+      ]
+    },
+    {
+      "path": "mods/operations/mods/worker/mods/testing",
+      "id": "TEST-WORKER-0001",
+      "display_name": "Worker Testing",
+      "verifies": {
+        "target": "AF-WORKER-0001",
+        "subjects": [
+          "AF-WORKER-BEHAVIOR-0001"
+        ]
+      }
+    }
+  ],
+  "tests": [
+    {
+      "id": "T-AF-ECOSYSTEM-FLOW-0001-R01-001",
+      "path": "mods/testing/code/ecosystem.rs",
+      "requirement": "AF-ECOSYSTEM-FLOW-0001-R01",
+      "classification": "behavioral"
+    },
+    {
+      "id": "T-AF-APPLICATION-FLOW-0001-R01-001",
+      "path": "mods/application/mods/testing/code/application.rs",
+      "requirement": "AF-APPLICATION-FLOW-0001-R01",
+      "classification": "behavioral"
+    },
+    {
+      "id": "T-AF-APPLICATION-RECOVERY-0001-R01-001",
+      "path": "mods/application/mods/testing/code/recovery.rs",
+      "requirement": "AF-APPLICATION-RECOVERY-0001-R01",
+      "classification": "behavioral"
+    },
+    {
+      "id": "T-AF-SERVICE-BEHAVIOR-0001-R01-001",
+      "path": "mods/application/mods/service/mods/testing/code/service.rs",
+      "requirement": "AF-SERVICE-BEHAVIOR-0001-R01",
+      "classification": "conformance"
+    },
+    {
+      "id": "T-AF-RESEARCH-EVIDENCE-0001-R01-001",
+      "path": "mods/research/mods/testing/code/research.rs",
+      "requirement": "AF-RESEARCH-EVIDENCE-0001-R01",
+      "classification": "behavioral"
+    },
+    {
+      "id": "T-AF-WORKER-BEHAVIOR-0001-R01-001",
+      "path": "mods/operations/mods/worker/mods/testing/code/worker.rs",
+      "requirement": "AF-WORKER-BEHAVIOR-0001-R01",
+      "classification": "behavioral"
+    }
+  ]
+}

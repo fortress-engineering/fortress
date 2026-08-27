@@ -51,6 +51,7 @@ fn read_fixture(relative_path: &str) -> String {
 }
 
 /// `T-ARCH-DEPENDENCY-001-R01-001`
+/// Fortress requirement: AF-ARCHITECTURE-EVALUATION-0001-R02
 #[test]
 fn valid_declared_graph_passes() {
     let architecture = load("dependency_valid.json");
@@ -63,6 +64,7 @@ fn valid_declared_graph_passes() {
 }
 
 /// `T-ARCH-DEPENDENCY-001-R01-002`
+/// Fortress requirement: AF-ARCHITECTURE-EVALUATION-0001-R02
 #[test]
 fn cycle_produces_the_expected_normalized_finding() {
     let architecture = load("dependency_invalid.json");
@@ -78,6 +80,7 @@ fn cycle_produces_the_expected_normalized_finding() {
 }
 
 /// `T-ARCH-DEPENDENCY-001-R01-003`
+/// Fortress requirement: AF-ARCHITECTURE-EVALUATION-0001-R02
 #[test]
 fn one_component_no_edge_boundary_passes() {
     let architecture = load("dependency_boundary.json");

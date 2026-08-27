@@ -492,7 +492,10 @@ fn is_allowed_docs_filename(name: &str) -> bool {
     )
 }
 
-fn is_lexical_name(name: &str, allow_extension: bool) -> bool {
+/// Returns whether a Fortress-controlled file or Module name satisfies the
+/// canonical lexical grammar.
+#[must_use]
+pub fn is_lexical_name(name: &str, allow_extension: bool) -> bool {
     let (stem, extension) = if allow_extension {
         name.rsplit_once('.')
             .map_or((name, None), |(stem, extension)| (stem, Some(extension)))
@@ -569,31 +572,4 @@ fn path_finding(
         standard_edition,
         None,
     )
-}
-
-#[cfg(test)]
-mod tests {
-    use super::is_lexical_name;
-
-    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R09-001`
-    #[test]
-    fn lexical_names_accept_three_words_and_canonical_versions() {
-        assert!(is_lexical_name("repository_schema_rule_v2.json", true));
-        assert!(is_lexical_name("snapshot_governance", false));
-    }
-
-    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R09-002`
-    #[test]
-    fn lexical_names_reject_noncanonical_forms() {
-        for name in [
-            "Bad.rs",
-            "bad-name.rs",
-            "bad__name.rs",
-            "_bad.rs",
-            "one_two_three_four.rs",
-            "schema_v01.json",
-        ] {
-            assert!(!is_lexical_name(name, true), "{name} must be rejected");
-        }
-    }
 }

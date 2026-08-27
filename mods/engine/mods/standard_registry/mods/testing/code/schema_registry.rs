@@ -26,6 +26,7 @@ fn read_json(relative_path: &str) -> Value {
 }
 
 /// `T-AF-STANDARD-REGISTRY-0001-R03-001`
+/// Fortress requirement: AF-STANDARD-REGISTRY-0001-R03
 #[test]
 fn registered_schemas_are_unique_json_schema_documents() {
     let manifest = read_json("mods/engine/mods/standard_registry/data/schema_manifest.json");
@@ -53,6 +54,7 @@ fn registered_schemas_are_unique_json_schema_documents() {
 }
 
 /// `T-AF-STANDARD-REGISTRY-0001-R03-002`
+/// Fortress requirement: AF-STANDARD-REGISTRY-0001-R03
 #[test]
 fn draft_manifest_agrees_with_implemented_registry() {
     let manifest = read_json("mods/engine/mods/standard_registry/data/standard_manifest.json");
@@ -79,6 +81,7 @@ fn draft_manifest_agrees_with_implemented_registry() {
 }
 
 /// `T-AF-STANDARD-REGISTRY-0001-R03-003`
+/// Fortress requirement: AF-STANDARD-REGISTRY-0001-R03
 #[test]
 fn standard_instance_schemas_allow_declared_schema_references() {
     let rule_schema = read_json("mods/engine/mods/standard_registry/data/rule_schema_v1.json");
@@ -102,6 +105,7 @@ fn standard_instance_schemas_allow_declared_schema_references() {
 }
 
 /// `T-AF-STANDARD-REGISTRY-0001-R03-004`
+/// Fortress requirement: AF-STANDARD-REGISTRY-0001-R03
 #[test]
 fn local_schema_references_resolve_from_their_documents() {
     fn collect_json_documents(directory: &Path, documents: &mut Vec<PathBuf>) {
@@ -162,16 +166,4 @@ fn local_schema_references_resolve_from_their_documents() {
             path.display()
         );
     }
-}
-
-/// `T-AF-PROJECT-MODEL-0001-R03-001`
-#[test]
-fn general_change_schema_does_not_require_bootstrap_provenance() {
-    let schema = read_json("mods/engine/mods/project_model/data/change_schema_v1.json");
-    let required = schema["required"]
-        .as_array()
-        .expect("change schema required list must be an array");
-    assert!(required.iter().any(|value| value == "authority_refs"));
-    assert!(!required.iter().any(|value| value == "bootstrap_provenance"));
-    assert!(schema["properties"]["bootstrap_provenance"].is_object());
 }

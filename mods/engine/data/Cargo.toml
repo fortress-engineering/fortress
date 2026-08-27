@@ -21,6 +21,10 @@ name = "module_contract_v2"
 path = "../mods/architecture_evaluation/mods/testing/code/module_contract_v2.rs"
 
 [[test]]
+name = "self_architecture"
+path = "../mods/architecture_evaluation/mods/testing/code/self_architecture.rs"
+
+[[test]]
 name = "arch_ownership_001"
 path = "../mods/snapshot_governance/mods/testing/code/arch_ownership_001.rs"
 
@@ -50,7 +54,11 @@ path = "../mods/snapshot_governance/mods/testing/code/repository_snapshot.rs"
 
 [[test]]
 name = "repository_grammar"
-path = "../../../mods/testing/code/repository_grammar.rs"
+path = "../mods/snapshot_governance/mods/testing/code/repository_grammar.rs"
+
+[[test]]
+name = "registry_primitives"
+path = "../mods/standard_registry/mods/testing/code/registry_primitives.rs"
 
 [[test]]
 name = "schema_registry"
@@ -61,12 +69,20 @@ name = "snapshot_evaluation"
 path = "../mods/snapshot_governance/mods/testing/code/snapshot_evaluation.rs"
 
 [[test]]
+name = "snapshot_primitives"
+path = "../mods/snapshot_governance/mods/testing/code/snapshot_primitives.rs"
+
+[[test]]
 name = "std_id_001"
 path = "../mods/standard_registry/mods/testing/code/std_id_001.rs"
 
 [[test]]
 name = "test_traceability_001"
 path = "../mods/snapshot_governance/mods/testing/code/test_traceability_001.rs"
+
+[[test]]
+name = "test_boundary_001"
+path = "../mods/snapshot_governance/mods/testing/code/test_boundary_001.rs"
 
 [dependencies]
 pulldown-cmark = { version = "0.13", default-features = false }

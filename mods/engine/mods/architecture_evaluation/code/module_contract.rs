@@ -503,7 +503,7 @@ impl ModuleRelationship {
         &self.target
     }
 
-    /// Returns target-owned guarantee or requirement subjects.
+    /// Returns target-owned Feature, guarantee, or requirement subjects.
     #[must_use]
     pub fn subjects(&self) -> &[String] {
         &self.subjects
@@ -1689,13 +1689,16 @@ impl<'a> Resolver<'a> {
                         .is_some_and(|value| value.owner == relationship.target)
                         || requirements
                             .get(subject)
+                            .is_some_and(|value| value.owner == relationship.target)
+                        || features
+                            .get(subject)
                             .is_some_and(|value| value.owner == relationship.target);
                     if !valid {
                         self.violation(
                             contract_path,
                             format!("/relationships/{index}/subjects"),
                             format!(
-                                "verification subject `{subject}` is not a guarantee or requirement owned by target `{}`",
+                                "verification subject `{subject}` is not a Feature, guarantee, or requirement owned by target `{}`",
                                 relationship.target
                             ),
                         );

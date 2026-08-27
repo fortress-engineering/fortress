@@ -60,6 +60,7 @@ fn load(relative_path: &str) -> (ArchitectureManifest, Vec<String>) {
 }
 
 /// `T-ARCH-OWNERSHIP-001-R01-001`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R05
 #[test]
 fn complete_ownership_passes() {
     let (architecture, paths) = load("ownership_valid.json");
@@ -72,6 +73,7 @@ fn complete_ownership_passes() {
 }
 
 /// `T-ARCH-OWNERSHIP-001-R01-002`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R05
 #[test]
 fn orphan_overlap_and_missing_declarations_match_expected_findings() {
     let (architecture, paths) = load("ownership_invalid.json");
@@ -84,6 +86,7 @@ fn orphan_overlap_and_missing_declarations_match_expected_findings() {
 }
 
 /// `T-ARCH-OWNERSHIP-001-R01-003`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R05
 #[test]
 fn one_exact_path_is_the_minimum_boundary() {
     let (architecture, paths) = load("ownership_boundary.json");
@@ -94,6 +97,7 @@ fn one_exact_path_is_the_minimum_boundary() {
 }
 
 /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R05-001`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R05
 #[test]
 fn fortress_self_inventory_has_exactly_one_declared_owner() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..");

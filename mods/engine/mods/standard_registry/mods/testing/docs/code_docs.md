@@ -18,6 +18,10 @@ A violated assertion or fixture-loading failure fails the test target and surfac
 
 ## Files
 
+### [`registry_primitives.rs`](../code/registry_primitives.rs)
+
+Verifies stable identity parsing and exact draft rule registry metadata at the Standard Registry boundary.
+
 ### [`schema_registry.rs`](../code/schema_registry.rs)
 
 Checks schema identities and references plus agreement between the draft manifest and implemented rule registry.

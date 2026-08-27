@@ -102,7 +102,7 @@
         },
         {
           "id": "AF-SNAPSHOT-GOVERNANCE-0001-R06",
-          "statement": "TEST-TRACEABILITY-001 loads active requirement declarations, extracts deterministic snapshot-bound Rust test facts, and rejects missing, orphaned, stale, duplicate, or invalid requirement/test evidence while preserving explicit infrastructure-test classification.",
+          "statement": "TEST-TRACEABILITY-001 loads distributed requirement ownership, extracts deterministic snapshot-bound Rust test facts, and rejects missing, orphaned, stale, duplicate, cross-boundary, marker-mismatched, or infrastructure-counted evidence.",
           "tests": [
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R06-001",
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R06-002",
@@ -146,6 +146,16 @@
           "statement": "CONTRACT-COHERENCY-001 passes only when every implemented Module Contract v2 local, ecosystem-resolution, evidence, behavioral, and README relationship-projection check succeeds while future semantic satisfiability remains explicit and unsupported.",
           "tests": [
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R11-001"
+          ]
+        },
+        {
+          "id": "AF-SNAPSHOT-GOVERNANCE-0001-R12",
+          "statement": "TEST-BOUNDARY-001 deterministically enforces recursive parent-local Feature verification through exact Testing-child presence, Feature subjects, role restrictions, source placement, and ownership-aware requirement evidence without introducing unit, integration, or end-to-end filesystem taxonomies.",
+          "tests": [
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R12-001",
+            "T-TEST-BOUNDARY-001-R01-001",
+            "T-TEST-BOUNDARY-001-R01-002",
+            "T-TEST-BOUNDARY-001-R01-003"
           ]
         }
       ]

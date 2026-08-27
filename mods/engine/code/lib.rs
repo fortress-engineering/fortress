@@ -36,5 +36,7 @@ pub mod rust_test_analyzer;
 pub mod snapshot;
 #[path = "../mods/standard_registry/code/standard.rs"]
 pub mod standard;
+#[path = "../mods/snapshot_governance/code/testing_boundary.rs"]
+pub mod testing_boundary;
 #[path = "../mods/snapshot_governance/code/traceability.rs"]
 pub mod traceability;

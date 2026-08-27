@@ -1,0 +1,172 @@
+{
+  "base": "testing_complex.json",
+  "cases": [
+    {
+      "name": "missing_testing_child",
+      "operation": {
+        "kind": "remove_module",
+        "path": "mods/application/mods/testing"
+      },
+      "expected": "has no direct `mods/testing` child"
+    },
+    {
+      "name": "tests_substitute",
+      "operation": {
+        "kind": "rename_module",
+        "from": "mods/application/mods/testing",
+        "to": "mods/application/mods/tests"
+      },
+      "expected": "parallel testing taxonomy"
+    },
+    {
+      "name": "wrong_parent",
+      "operation": {
+        "kind": "set_verifies",
+        "path": "mods/application/mods/testing",
+        "target": "AF-RESEARCH-0001",
+        "subjects": [
+          "AF-RESEARCH-EVIDENCE-0001"
+        ]
+      },
+      "expected": "must declare exactly one `verifies` relationship"
+    },
+    {
+      "name": "empty_feature_subjects",
+      "operation": {
+        "kind": "set_verifies",
+        "path": "mods/application/mods/testing",
+        "target": "AF-APPLICATION-0001",
+        "subjects": []
+      },
+      "expected": "exact local Feature subjects"
+    },
+    {
+      "name": "omitted_parent_feature",
+      "operation": {
+        "kind": "set_verifies",
+        "path": "mods/application/mods/testing",
+        "target": "AF-APPLICATION-0001",
+        "subjects": [
+          "AF-APPLICATION-FLOW-0001"
+        ]
+      },
+      "expected": "exact local Feature subjects"
+    },
+    {
+      "name": "descendant_feature_subject",
+      "operation": {
+        "kind": "set_verifies",
+        "path": "mods/application/mods/testing",
+        "target": "AF-APPLICATION-0001",
+        "subjects": [
+          "AF-SERVICE-BEHAVIOR-0001"
+        ]
+      },
+      "expected": "not a Feature, guarantee, or requirement owned by target"
+    },
+    {
+      "name": "testing_owns_feature",
+      "operation": {
+        "kind": "add_testing_feature",
+        "path": "mods/application/mods/testing",
+        "feature": "AF-TESTING-BEHAVIOR-0001",
+        "requirement": "AF-TESTING-BEHAVIOR-0001-R01",
+        "test": "T-AF-TESTING-BEHAVIOR-0001-R01-001"
+      },
+      "expected": "must keep `provides`, `guarantees`, `features`, and `behavior` empty"
+    },
+    {
+      "name": "test_in_parent_code",
+      "operation": {
+        "kind": "move_test",
+        "id": "T-AF-APPLICATION-FLOW-0001-R01-001",
+        "path": "mods/application/code/application.rs"
+      },
+      "expected": "not directly beneath the Testing Module"
+    },
+    {
+      "name": "ancestor_testing_retest",
+      "operation": {
+        "kind": "move_test",
+        "id": "T-AF-SERVICE-BEHAVIOR-0001-R01-001",
+        "path": "mods/testing/code/service.rs"
+      },
+      "expected": "not directly beneath the Testing Module"
+    },
+    {
+      "name": "descendant_testing_retest",
+      "operation": {
+        "kind": "move_test",
+        "id": "T-AF-APPLICATION-FLOW-0001-R01-001",
+        "path": "mods/application/mods/service/mods/testing/code/application.rs"
+      },
+      "expected": "not directly beneath the Testing Module"
+    },
+    {
+      "name": "sibling_testing_retest",
+      "operation": {
+        "kind": "move_test",
+        "id": "T-AF-RESEARCH-EVIDENCE-0001-R01-001",
+        "path": "mods/application/mods/service/mods/testing/code/research.rs"
+      },
+      "expected": "not directly beneath the Testing Module"
+    },
+    {
+      "name": "behavioral_missing_marker",
+      "operation": {
+        "kind": "clear_requirement",
+        "id": "T-AF-APPLICATION-FLOW-0001-R01-001"
+      },
+      "expected": "has no explicit `Fortress requirement:` marker"
+    },
+    {
+      "name": "behavioral_marker_mismatch",
+      "operation": {
+        "kind": "set_requirement",
+        "id": "T-AF-APPLICATION-FLOW-0001-R01-001",
+        "requirement": "AF-SERVICE-BEHAVIOR-0001-R01"
+      },
+      "expected": "does not reference the test"
+    },
+    {
+      "name": "infrastructure_counted_as_coverage",
+      "operation": {
+        "kind": "set_classification",
+        "id": "T-AF-SERVICE-BEHAVIOR-0001-R01-001",
+        "classification": "infrastructure"
+      },
+      "expected": "infrastructure tests cannot satisfy Feature coverage"
+    },
+    {
+      "name": "duplicate_test_across_testing_modules",
+      "operation": {
+        "kind": "duplicate_test",
+        "id": "T-AF-SERVICE-BEHAVIOR-0001-R01-001",
+        "path": "mods/research/mods/testing/code/duplicate.rs"
+      },
+      "expected": "is observed more than once"
+    },
+    {
+      "name": "featureless_parent_with_testing",
+      "operation": {
+        "kind": "add_module",
+        "path": "mods/operations/mods/testing",
+        "id": "TEST-OPERATIONS-0001",
+        "target": "AF-OPERATIONS-0001",
+        "subjects": []
+      },
+      "expected": "Featureless Module"
+    },
+    {
+      "name": "parallel_integration_taxonomy",
+      "operation": {
+        "kind": "add_module",
+        "path": "mods/application/mods/integration_tests",
+        "id": "TEST-INTEGRATION-0001",
+        "target": null,
+        "subjects": []
+      },
+      "expected": "parallel testing taxonomy"
+    }
+  ]
+}

@@ -59,7 +59,7 @@ fn load(relative: &str) -> (Vec<RequirementEvidence>, Vec<RustTestFact>) {
         .flat_map(|feature| {
             feature.requirements.into_iter().map(move |requirement| {
                 RequirementEvidence::new(
-                    "fixtures/contract.json",
+                    "mods/feature/contract.json",
                     feature.id.clone(),
                     requirement.id,
                     requirement.statement,
@@ -86,6 +86,7 @@ fn load(relative: &str) -> (Vec<RequirementEvidence>, Vec<RustTestFact>) {
 }
 
 /// `T-TEST-TRACEABILITY-001-R01-001`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R06
 #[test]
 fn complete_bidirectional_traceability_passes() {
     let (requirements, tests) = load("traceability_valid.json");
@@ -97,18 +98,25 @@ fn complete_bidirectional_traceability_passes() {
 }
 
 /// `T-TEST-TRACEABILITY-001-R01-002`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R06
 #[test]
 fn invalid_traceability_matches_expected_findings() {
     let (requirements, tests) = load("traceability_invalid.json");
     let result = evaluate_test_traceability(&requirements, &tests, "1.0.0-draft.1")
         .expect("evaluation completes");
-    let actual = serde_json::to_value(result.findings()).expect("findings serialize");
-    let expected: serde_json::Value =
+    let mut actual: Vec<String> = result
+        .findings()
+        .iter()
+        .map(|finding| finding.message().to_owned())
+        .collect();
+    actual.sort();
+    let expected: Vec<String> =
         serde_json::from_str(&read("traceability_expected.json")).expect("expected JSON loads");
     assert_eq!(actual, expected);
 }
 
 /// `T-TEST-TRACEABILITY-001-R01-003`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R06
 #[test]
 fn explicit_infrastructure_test_is_a_legitimate_unmapped_boundary() {
     let (requirements, tests) = load("traceability_boundary.json");

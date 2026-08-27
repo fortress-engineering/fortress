@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use fortress_core::observation::{
-    KnowledgeState, ObservationPolicy, ObservedFile, observe_repository,
+    KnowledgeState, ObservationError, ObservationPolicy, ObservedFile, observe_repository,
 };
 use serde::Deserialize;
 
@@ -73,6 +73,7 @@ impl Drop for ObservationFixture {
 }
 
 /// `T-AF-REPOSITORY-OBSERVATION-0001-R01-001`
+/// Fortress requirement: AF-REPOSITORY-OBSERVATION-0001-R01
 #[test]
 fn observation_emits_sorted_relative_content_facts() {
     let case = load_case("positive");
@@ -98,6 +99,7 @@ fn observation_emits_sorted_relative_content_facts() {
 }
 
 /// `T-AF-REPOSITORY-OBSERVATION-0001-R01-002`
+/// Fortress requirement: AF-REPOSITORY-OBSERVATION-0001-R01
 #[test]
 fn repeated_observation_and_json_are_deterministic() {
     let case = load_case("positive");
@@ -117,6 +119,7 @@ fn repeated_observation_and_json_are_deterministic() {
 }
 
 /// `T-AF-REPOSITORY-OBSERVATION-0001-R01-003`
+/// Fortress requirement: AF-REPOSITORY-OBSERVATION-0001-R01
 #[test]
 fn fully_excluded_boundary_produces_empty_observed_inventory() {
     let case = load_case("boundary");
@@ -129,6 +132,7 @@ fn fully_excluded_boundary_produces_empty_observed_inventory() {
 }
 
 /// `T-AF-REPOSITORY-OBSERVATION-0001-R02-003`
+/// Fortress requirement: AF-REPOSITORY-OBSERVATION-0001-R02
 #[test]
 fn fortress_observes_itself_without_transient_roots() {
     let policy = ObservationPolicy::new([".git"]).expect("self-observation exclusions are valid");
@@ -144,4 +148,24 @@ fn fortress_observes_itself_without_transient_roots() {
             .iter()
             .all(|path| !path.starts_with(".git/") && !path.starts_with("target/"))
     );
+}
+
+/// `T-AF-REPOSITORY-OBSERVATION-0001-R02-001`
+/// Fortress requirement: AF-REPOSITORY-OBSERVATION-0001-R02
+#[test]
+fn exclusion_policy_rejects_parent_traversal() {
+    let result = ObservationPolicy::new(["../outside"]);
+    assert!(matches!(
+        result,
+        Err(ObservationError::InvalidExcludedPrefix(_))
+    ));
+}
+
+/// `T-AF-REPOSITORY-OBSERVATION-0001-R02-002`
+/// Fortress requirement: AF-REPOSITORY-OBSERVATION-0001-R02
+#[test]
+fn exclusion_policy_is_sorted_and_deduplicated() {
+    let policy = ObservationPolicy::new(["target", ".git", "target"])
+        .expect("canonical exclusions are valid");
+    assert_eq!(policy.excluded_prefixes(), [".git", "target"]);
 }

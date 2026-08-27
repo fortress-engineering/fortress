@@ -38,9 +38,21 @@ Executes valid, invalid, and boundary recursive Module grammar fixtures.
 
 Verifies self-snapshot repeatability and binding to every declared draft rule.
 
+### [`repository_grammar.rs`](../code/repository_grammar.rs)
+
+Checks Fortress's physical repository and canonical documentation at the Snapshot Governance boundary that implements those rules.
+
 ### [`snapshot_evaluation.rs`](../code/snapshot_evaluation.rs)
 
 Verifies truthful rule dispatch, unsupported reporting, and complete self traceability inputs.
+
+### [`snapshot_primitives.rs`](../code/snapshot_primitives.rs)
+
+Verifies snapshot stabilization, finding normalization, lexical placement, Rust analysis, and exact draft bundle loading as parent-owned behavior.
+
+### [`test_boundary_001.rs`](../code/test_boundary_001.rs)
+
+Exercises simple, complex, invalid, cross-level, infrastructure, and recursive parent-local TEST-BOUNDARY-001 scenarios.
 
 ### [`test_traceability_001.rs`](../code/test_traceability_001.rs)
 

@@ -8,7 +8,6 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use fortress_cli::command::CommandRegistry;
-use fortress_core::architecture::ArchitectureManifest;
 use fortress_core::module_contract::{ContractStandardIndex, resolve_contracts};
 use fortress_core::observation::{ObservationPolicy, observe_repository};
 use fortress_core::project::ProjectConfiguration;
@@ -37,6 +36,7 @@ fn array_member<'a>(document: &'a Value, name: &str) -> &'a [Value] {
 }
 
 /// `T-AF-BOOTSTRAP-GOVERNANCE-0001-R01-001`
+/// Fortress requirement: AF-BOOTSTRAP-GOVERNANCE-0001-R01
 #[test]
 fn declared_project_loads_and_references_existing_documents() {
     let source = fs::read_to_string(repository_root().join("data/project.json"))
@@ -48,6 +48,7 @@ fn declared_project_loads_and_references_existing_documents() {
 }
 
 /// `T-AF-BOOTSTRAP-GOVERNANCE-0001-R01-002`
+/// Fortress requirement: AF-BOOTSTRAP-GOVERNANCE-0001-R01
 #[test]
 fn declared_commands_match_the_implemented_registry() {
     let declared = read_json("mods/cli/data/commands.json");
@@ -72,6 +73,7 @@ fn declared_commands_match_the_implemented_registry() {
 }
 
 /// `T-AF-BOOTSTRAP-GOVERNANCE-0001-R01-003`
+/// Fortress requirement: AF-BOOTSTRAP-GOVERNANCE-0001-R01
 #[test]
 fn certification_scaffold_makes_no_false_pass_claim() {
     let certification = read_json("data/certification.json");
@@ -84,6 +86,7 @@ fn certification_scaffold_makes_no_false_pass_claim() {
 }
 
 /// `T-AF-BOOTSTRAP-GOVERNANCE-0001-R02-001`
+/// Fortress requirement: AF-BOOTSTRAP-GOVERNANCE-0001-R02
 #[test]
 fn live_contract_v2_ecosystem_resolves_completely() {
     let root = repository_root();
@@ -123,6 +126,7 @@ fn live_contract_v2_ecosystem_resolves_completely() {
                 "REPO-DOCS-001",
                 "REPO-MODULE-001",
                 "STD-ID-001",
+                "TEST-BOUNDARY-001",
                 "TEST-TRACEABILITY-001",
             ],
         ),
@@ -134,7 +138,7 @@ fn live_contract_v2_ecosystem_resolves_completely() {
     assert_eq!(resolved.modules().len(), 15);
     assert_eq!(resolved.capabilities().len(), 7);
     assert_eq!(resolved.features().len(), 7);
-    assert_eq!(resolved.requirements().len(), 25);
+    assert_eq!(resolved.requirements().len(), 26);
     assert_eq!(resolved.guarantees().len(), 3);
     assert_eq!(resolved.checkpoints().len(), 0);
     assert_eq!(resolved.direct_requirements().len(), 22);
@@ -147,55 +151,5 @@ fn live_contract_v2_ecosystem_resolves_completely() {
             .effective_constraints()
             .values()
             .all(|values| values.len() == 4)
-    );
-}
-
-/// `T-AF-ARCHITECTURE-EVALUATION-0001-R02-001`
-#[test]
-fn declared_self_architecture_is_acyclic() {
-    let root = repository_root();
-    let policy = ObservationPolicy::new([".git"]).expect("policy validates");
-    let observation = observe_repository(&root, &policy).expect("repository observes");
-    let files = observation
-        .files()
-        .iter()
-        .map(|file| {
-            (
-                file.path().to_owned(),
-                fs::read(root.join(file.path())).expect("observed file reads"),
-            )
-        })
-        .collect();
-    let resolution = resolve_contracts(
-        &files,
-        &ContractStandardIndex::new(
-            "STD-FORTRESS-ENGINEERING",
-            "1.0.0-draft.1",
-            [
-                "ARCH-DEPENDENCY-001",
-                "ARCH-OWNERSHIP-001",
-                "CONTRACT-COHERENCY-001",
-                "REPO-DOCS-001",
-                "REPO-MODULE-001",
-                "STD-ID-001",
-                "TEST-TRACEABILITY-001",
-            ],
-        ),
-        None,
-    );
-    let paths = observation
-        .files()
-        .iter()
-        .map(|file| file.path().to_owned())
-        .collect::<Vec<_>>();
-    let resolved = resolution
-        .resolved()
-        .unwrap_or_else(|| panic!("self contracts resolve: {:#?}", resolution.violations()));
-    let architecture = ArchitectureManifest::from_resolved_contracts(resolved, &paths);
-    assert!(
-        architecture
-            .evaluate_acyclic_dependencies("1.0.0-draft.1")
-            .expect("finding normalization must succeed")
-            .is_none()
     );
 }

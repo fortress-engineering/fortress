@@ -38,6 +38,12 @@ const DRAFT_RULES: &[RuleDescriptor] = &[
         integrity_tier: 1,
     },
     RuleDescriptor {
+        id: "TEST-BOUNDARY-001",
+        title: "Recursive parent-local Feature verification boundaries",
+        status: RuleStatus::Draft,
+        integrity_tier: 1,
+    },
+    RuleDescriptor {
         id: "REPO-MODULE-001",
         title: "Canonical recursive repository Module grammar",
         status: RuleStatus::Draft,
@@ -642,92 +648,4 @@ fn is_canonical_relative_path(value: &str) -> bool {
         && value
             .split('/')
             .all(|segment| !segment.is_empty() && segment != "." && segment != "..")
-}
-
-#[cfg(test)]
-mod tests {
-    use super::{RuleStatus, StandardBundle, StandardLoadError, StandardRegistry};
-
-    const MANIFEST: &str = include_str!("../data/standard_manifest.json");
-    const STD_ID: &str = include_str!("../data/std_id_rule.json");
-    const ARCH_DEPENDENCY: &str =
-        include_str!("../../architecture_evaluation/data/dependency_rule.json");
-    const ARCH_OWNERSHIP: &str = include_str!("../../snapshot_governance/data/ownership_rule.json");
-    const TEST_TRACEABILITY: &str =
-        include_str!("../../snapshot_governance/data/traceability_rule.json");
-    const REPO_MODULE: &str = include_str!("../../snapshot_governance/data/module_rule.json");
-    const REPO_DOCS: &str = include_str!("../../snapshot_governance/data/documentation_rule.json");
-    const CONTRACT_COHERENCY: &str =
-        include_str!("../../snapshot_governance/data/contract_rule.json");
-
-    /// `T-AF-STANDARD-REGISTRY-0001-R02-001`
-    #[test]
-    fn draft_registry_is_structurally_valid() {
-        let registry = StandardRegistry::draft_1_0();
-        assert_eq!(registry.status(), RuleStatus::Draft);
-        assert_eq!(registry.rules().len(), 7);
-        assert!(registry.validate().is_ok());
-    }
-
-    /// `T-AF-STANDARD-REGISTRY-0001-R02-002`
-    #[test]
-    fn draft_registry_exposes_stable_rule_metadata() {
-        let registry = StandardRegistry::draft_1_0();
-        let descriptor = registry.find("STD-ID-001");
-        assert_eq!(
-            descriptor.map(super::RuleDescriptor::title),
-            Some("Stable serialized identity")
-        );
-    }
-
-    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R04-001`
-    #[test]
-    fn exact_draft_standard_documents_load_as_one_validated_bundle() {
-        let bundle = StandardBundle::from_json_documents(
-            MANIFEST,
-            &[
-                (
-                    "mods/engine/mods/standard_registry/data/std_id_rule.json",
-                    STD_ID,
-                ),
-                (
-                    "mods/engine/mods/architecture_evaluation/data/dependency_rule.json",
-                    ARCH_DEPENDENCY,
-                ),
-                (
-                    "mods/engine/mods/snapshot_governance/data/ownership_rule.json",
-                    ARCH_OWNERSHIP,
-                ),
-                (
-                    "mods/engine/mods/snapshot_governance/data/traceability_rule.json",
-                    TEST_TRACEABILITY,
-                ),
-                (
-                    "mods/engine/mods/snapshot_governance/data/module_rule.json",
-                    REPO_MODULE,
-                ),
-                (
-                    "mods/engine/mods/snapshot_governance/data/documentation_rule.json",
-                    REPO_DOCS,
-                ),
-                (
-                    "mods/engine/mods/snapshot_governance/data/contract_rule.json",
-                    CONTRACT_COHERENCY,
-                ),
-            ],
-        )
-        .expect("draft bundle must validate");
-        assert_eq!(bundle.edition(), "1.0.0-draft.1");
-        assert_eq!(bundle.rules().len(), 7);
-        assert!(matches!(
-            StandardBundle::from_json_documents(
-                MANIFEST,
-                &[(
-                    "mods/engine/mods/standard_registry/data/std_id_rule.json",
-                    STD_ID
-                )],
-            ),
-            Err(StandardLoadError::MissingRuleDocument(_))
-        ));
-    }
 }

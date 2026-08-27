@@ -46,6 +46,7 @@ fn invalid_architecture() -> ArchitectureManifest {
 }
 
 /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R04-002`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R04
 #[test]
 fn registered_architecture_evaluator_distinguishes_pass_and_failure() {
     let audit = audit_repository(repository_root()).expect("self audit completes");
@@ -63,6 +64,7 @@ fn registered_architecture_evaluator_distinguishes_pass_and_failure() {
 }
 
 /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R04-003`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R04
 #[test]
 fn missing_snapshot_evaluator_is_unsupported_not_passed() {
     let audit = audit_repository(repository_root()).expect("self audit completes");
@@ -77,6 +79,7 @@ fn missing_snapshot_evaluator_is_unsupported_not_passed() {
 }
 
 /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R06-003`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R06
 #[test]
 fn fortress_active_requirements_have_complete_snapshot_bound_rust_evidence() {
     let audit = audit_repository(repository_root()).expect("self audit completes");
@@ -90,6 +93,7 @@ fn fortress_active_requirements_have_complete_snapshot_bound_rust_evidence() {
 }
 
 /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R11-001`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R11
 #[test]
 fn contract_coherency_passes_without_overclaiming_semantic_closure() {
     let audit = audit_repository(repository_root()).expect("self audit completes");
@@ -102,4 +106,18 @@ fn contract_coherency_passes_without_overclaiming_semantic_closure() {
     assert_eq!(execution.finding_count(), 0);
     assert!(execution.detail().contains("general rule satisfiability"));
     assert!(execution.detail().contains("remain unsupported"));
+}
+
+/// `T-AF-SNAPSHOT-GOVERNANCE-0001-R12-001`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R12
+#[test]
+fn recursive_testing_boundaries_pass_for_fortress_itself() {
+    let audit = audit_repository(repository_root()).expect("self audit completes");
+    let execution = audit
+        .rules()
+        .iter()
+        .find(|execution| execution.rule_id() == "TEST-BOUNDARY-001")
+        .expect("testing-boundary execution is reported");
+    assert_eq!(execution.state(), RuleExecutionState::Passed);
+    assert_eq!(execution.finding_count(), 0);
 }

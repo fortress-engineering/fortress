@@ -1,0 +1,32 @@
+{
+  "$schema": "urn:fortress:schema:v1:rule",
+  "schema_version": 1,
+  "id": "TEST-BOUNDARY-001",
+  "title": "Recursive parent-local Feature verification boundaries",
+  "status": "draft",
+  "statement": "Verification MUST occur at the narrowest Module boundary where a Feature is introduced: every Feature-owning Module MUST have one direct mods/testing child that verifies exactly the parent's locally owned Features, and requirement evidence MUST be owned by that same parent-local Testing boundary.",
+  "rationale": "Mirroring Feature ownership with recursive Testing Modules prevents higher architectural levels from claiming or duplicating evidence for behavior introduced by descendants while allowing composition tests to prove only the new proposition introduced by their parent.",
+  "failure_prevented": "Missing Feature verification boundaries, ancestor or descendant retesting, sibling evidence claims, misplaced Rust tests, empty verification subjects, feature-owning Testing infrastructure, and parallel unit/integration/end-to-end test taxonomies.",
+  "applicability": "Every Module Contract v2 ecosystem and supported snapshot-bound Rust test inventory governed by the recursive repository grammar.",
+  "category": "testing",
+  "integrity_tier": 1,
+  "evaluation": "The Fortress core resolves physical containment, local Feature and requirement ownership, canonical Testing children, exact verifies Feature subjects, Testing role restrictions, and direct Rust test placement; TEST-TRACEABILITY-001 reconciles each test identity and requirement owner without duplicating normalized findings.",
+  "required_capabilities": [
+    "module-contract-v2-resolution",
+    "recursive-module-containment",
+    "snapshot-bound-rust-test-analysis",
+    "parent-local-testing-reconciliation"
+  ],
+  "finding": {
+    "message": "A Feature or its verification evidence is outside its canonical parent-local Testing boundary.",
+    "location": "path"
+  },
+  "remediation": "Give every Feature-owning Module exactly one direct mods/testing child, make that Testing contract verify exactly its immediate parent's local Features, keep canonical Testing Modules featureless, and place every Rust test directly beneath a canonical Testing Module's code directory.",
+  "valid_example": "An atomic child Feature is verified by that child's Testing Module, a composite parent Feature is verified by the parent's Testing Module, and neither test suite maps evidence to the other's requirements.",
+  "invalid_example": "A root Testing Module maps evidence to a descendant Feature requirement, a Feature-owning Module lacks mods/testing, or a tests/unit_tests child is used as a parallel verification taxonomy.",
+  "exception_policy": "No implicit hierarchy exception exists in this draft. Future non-Feature proof obligations require an explicit contract-language extension rather than an informal Testing Module.",
+  "introduced": "1.0.0-draft.1",
+  "history": [
+    "Introduced during recursive parent-local Testing convergence with Feature-subject verification and ownership-aware Rust evidence placement."
+  ]
+}

@@ -13,7 +13,7 @@ use crate::rust_test_analyzer::{RustTestClassification, RustTestFact};
 /// Stable identity of mandatory requirement/test traceability.
 pub const TEST_TRACEABILITY_RULE_ID: &str = "TEST-TRACEABILITY-001";
 
-const REMEDIATION: &str = "Give each active mandatory requirement unique canonical test evidence, ensure every referenced test exists exactly once in the supported evidence inventory, and map every behavioral or conformance test to one valid active requirement; classify implementation-only tests explicitly.";
+const REMEDIATION: &str = "Give each active mandatory requirement unique canonical test evidence, place that evidence in the owning Module's direct Testing child, add one exact source requirement marker to every behavioral or conformance test, and classify truly unmapped implementation-only tests as infrastructure.";
 
 /// Deterministic traceability coverage and findings.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -54,6 +54,7 @@ impl TraceabilityEvaluation {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct RequirementEvidence {
     contract_path: String,
+    owner_module_id: String,
     feature_id: String,
     id: String,
     statement: String,
@@ -74,13 +75,45 @@ impl RequirementEvidence {
         I: IntoIterator<Item = S>,
         S: Into<String>,
     {
+        let feature_id = feature_id.into();
         Self {
             contract_path: contract_path.into(),
+            owner_module_id: feature_id.clone(),
+            feature_id,
+            id: id.into(),
+            statement: statement.into(),
+            tests: tests.into_iter().map(Into::into).collect(),
+        }
+    }
+
+    /// Creates a requirement fact with its exact owning Module identity.
+    #[must_use]
+    pub fn new_with_owner<I, S>(
+        contract_path: impl Into<String>,
+        owner_module_id: impl Into<String>,
+        feature_id: impl Into<String>,
+        id: impl Into<String>,
+        statement: impl Into<String>,
+        tests: I,
+    ) -> Self
+    where
+        I: IntoIterator<Item = S>,
+        S: Into<String>,
+    {
+        Self {
+            contract_path: contract_path.into(),
+            owner_module_id: owner_module_id.into(),
             feature_id: feature_id.into(),
             id: id.into(),
             statement: statement.into(),
             tests: tests.into_iter().map(Into::into).collect(),
         }
+    }
+
+    /// Returns the Module that directly owns the requirement's Feature.
+    #[must_use]
+    pub fn owner_module_id(&self) -> &str {
+        &self.owner_module_id
     }
 
     /// Returns the requirement identity.
@@ -109,8 +142,9 @@ pub fn requirements_from_resolved(contracts: &ResolvedContractSet) -> Vec<Requir
         .requirements()
         .iter()
         .map(|(id, requirement)| {
-            RequirementEvidence::new(
+            RequirementEvidence::new_with_owner(
                 requirement.provenance().contract_path(),
+                requirement.owner(),
                 requirement.feature(),
                 id,
                 requirement.statement(),
@@ -124,8 +158,9 @@ pub fn requirements_from_resolved(contracts: &ResolvedContractSet) -> Vec<Requir
 ///
 /// Planned, deprecated, and retired feature requirements are preserved but are
 /// not mandatory in this snapshot rule. Behavioral and conformance test facts
-/// require exactly one active requirement relation. Explicitly classified
-/// infrastructure tests may remain unmapped.
+/// require one exact source marker, one active requirement relation, and the
+/// owning Module's direct Testing path. Explicitly classified infrastructure
+/// tests may remain unmapped but cannot satisfy requirement evidence.
 ///
 /// # Errors
 ///
@@ -303,52 +338,15 @@ fn evaluate_observed_tests(
     let mut observed: BTreeMap<&str, Vec<&RustTestFact>> = BTreeMap::new();
     for test in tests {
         observed.entry(test.id()).or_default().push(test);
-        if test.classification() != RustTestClassification::Infrastructure
-            && !references.contains_key(test.id())
-        {
-            findings.push(test_finding(
-                definition,
-                evaluator,
-                test,
-                valid_entities([test.id()]),
-                format!(
-                    "Observed {} Rust test `{}` is not mapped to an active requirement.",
-                    test.classification().as_str(),
-                    test.id()
-                ),
-                standard_edition,
-            )?);
-        }
-        if let Some(declared) = test.declared_requirement() {
-            if !requirement_ids.contains_key(declared) {
-                findings.push(test_finding(
-                    definition,
-                    evaluator,
-                    test,
-                    valid_entities([test.id(), declared]),
-                    format!(
-                        "Rust test `{}` declares nonexistent active requirement `{declared}`.",
-                        test.id()
-                    ),
-                    standard_edition,
-                )?);
-            } else if !references
-                .get(test.id())
-                .is_some_and(|mappings| mappings.iter().any(|mapping| mapping.id() == declared))
-            {
-                findings.push(test_finding(
-                    definition,
-                    evaluator,
-                    test,
-                    valid_entities([test.id(), declared]),
-                    format!(
-                        "Rust test `{}` declares requirement `{declared}` but that requirement does not reference the test.",
-                        test.id()
-                    ),
-                    standard_edition,
-                )?);
-            }
-        }
+        evaluate_one_observed_test(
+            test,
+            requirement_ids,
+            references,
+            definition,
+            evaluator,
+            standard_edition,
+            findings,
+        )?;
     }
     for (id, facts) in observed {
         if facts.len() > 1 {
@@ -363,6 +361,127 @@ fn evaluate_observed_tests(
         }
     }
     Ok(())
+}
+
+fn evaluate_one_observed_test(
+    test: &RustTestFact,
+    requirement_ids: &RequirementIds<'_>,
+    references: &TestReferences<'_>,
+    definition: &RuleFindingDefinition,
+    evaluator: &EvaluatorProvenance,
+    standard_edition: &str,
+    findings: &mut Vec<CanonicalFinding>,
+) -> Result<(), FindingError> {
+    if test.classification() == RustTestClassification::Infrastructure {
+        if references.contains_key(test.id()) {
+            findings.push(test_finding(
+                    definition,
+                    evaluator,
+                    test,
+                    valid_entities([test.id()]),
+                    format!(
+                        "Infrastructure Rust test `{}` is referenced as mandatory requirement evidence; infrastructure tests cannot satisfy Feature coverage.",
+                        test.id()
+                    ),
+                    standard_edition,
+                )?);
+        }
+    } else {
+        if !references.contains_key(test.id()) {
+            findings.push(test_finding(
+                definition,
+                evaluator,
+                test,
+                valid_entities([test.id()]),
+                format!(
+                    "Observed {} Rust test `{}` is not mapped to an active requirement.",
+                    test.classification().as_str(),
+                    test.id()
+                ),
+                standard_edition,
+            )?);
+        }
+        if test.declared_requirement().is_none() {
+            findings.push(test_finding(
+                definition,
+                evaluator,
+                test,
+                valid_entities([test.id()]),
+                format!(
+                    "Observed {} Rust test `{}` has no explicit `Fortress requirement:` marker.",
+                    test.classification().as_str(),
+                    test.id()
+                ),
+                standard_edition,
+            )?);
+        }
+        if let Some([mapping]) = references.get(test.id()).map(Vec::as_slice)
+            && !is_direct_parent_testing_evidence(test.path(), mapping)
+        {
+            findings.push(test_finding(
+                        definition,
+                        evaluator,
+                        test,
+                        valid_entities([
+                            test.id(),
+                            mapping.id(),
+                            mapping.owner_module_id(),
+                        ]),
+                        format!(
+                            "Rust test `{}` for requirement `{}` is not directly beneath the Testing Module of owning Module `{}`.",
+                            test.id(),
+                            mapping.id(),
+                            mapping.owner_module_id()
+                        ),
+                        standard_edition,
+                    )?);
+        }
+    }
+    if let Some(declared) = test.declared_requirement() {
+        if !requirement_ids.contains_key(declared) {
+            findings.push(test_finding(
+                definition,
+                evaluator,
+                test,
+                valid_entities([test.id(), declared]),
+                format!(
+                    "Rust test `{}` declares nonexistent active requirement `{declared}`.",
+                    test.id()
+                ),
+                standard_edition,
+            )?);
+        } else if !references
+            .get(test.id())
+            .is_some_and(|mappings| mappings.iter().any(|mapping| mapping.id() == declared))
+        {
+            findings.push(test_finding(
+                    definition,
+                    evaluator,
+                    test,
+                    valid_entities([test.id(), declared]),
+                    format!(
+                        "Rust test `{}` declares requirement `{declared}` but that requirement does not reference the test.",
+                        test.id()
+                    ),
+                    standard_edition,
+                )?);
+        }
+    }
+    Ok(())
+}
+
+fn is_direct_parent_testing_evidence(path: &str, requirement: &RequirementEvidence) -> bool {
+    let module_path = requirement
+        .contract_path
+        .strip_suffix("/contract.json")
+        .unwrap_or_default();
+    let prefix = if module_path.is_empty() {
+        "mods/testing/code/".to_owned()
+    } else {
+        format!("{module_path}/mods/testing/code/")
+    };
+    path.strip_prefix(&prefix)
+        .is_some_and(|relative| !relative.is_empty() && !relative.contains('/'))
 }
 
 #[allow(clippy::too_many_arguments)]

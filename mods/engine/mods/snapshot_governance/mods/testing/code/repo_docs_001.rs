@@ -305,6 +305,7 @@ struct BoundaryFixture {
 }
 
 /// `T-REPO-DOCS-001-R01-001`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R10
 #[test]
 fn valid_documentation_fixtures_pass() {
     let fixture: ValidFixture = fixture("documentation_valid.json");
@@ -559,6 +560,7 @@ fn invalid_case(name: &str) -> BTreeMap<String, Vec<u8>> {
 }
 
 /// `T-REPO-DOCS-001-R01-002`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R10
 #[test]
 fn invalid_documentation_fixtures_fail_with_specific_findings() {
     let fixture: InvalidFixture = fixture("documentation_invalid.json");
@@ -581,6 +583,7 @@ fn invalid_documentation_fixtures_fail_with_specific_findings() {
 }
 
 /// `T-REPO-DOCS-001-R01-003`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R10
 #[test]
 fn boundary_fixture_groups_multiple_relationship_types_by_target() {
     let fixture: BoundaryFixture = fixture("documentation_boundary.json");
