@@ -1,0 +1,31 @@
+{
+  "$schema": "urn:fortress:schema:v1:rule",
+  "schema_version": 1,
+  "id": "ARCH-OWNERSHIP-001",
+  "title": "Exact declared repository file ownership",
+  "status": "draft",
+  "statement": "Every governed repository file MUST belong to exactly one declared architectural owner unless it is explicitly classified as a repository-level or generated artifact under exactly one declared owner; required declared paths MUST exist.",
+  "rationale": "Exact ownership makes impact, responsibility, and architectural boundaries mechanically decidable without filename exceptions or inferred authority.",
+  "failure_prevented": "Orphan source, incompatible overlapping responsibility, stale required path declarations, and ungoverned repository or generated artifacts.",
+  "applicability": "Every stabilized governed file inventory evaluated against a declared Fortress architecture model.",
+  "category": "architecture",
+  "integrity_tier": 1,
+  "evaluation": "The Fortress core matches every observed path against declared component paths and exact artifact declarations, requires one unique owner, and verifies every component path plus every required artifact declaration has an observed match.",
+  "required_capabilities": [
+    "stabilized-repository-observation",
+    "declared-architecture-loading",
+    "exact-file-ownership-reconciliation"
+  ],
+  "finding": {
+    "message": "A governed path has zero or multiple declared owners, or a required declared path is absent.",
+    "location": "path"
+  },
+  "remediation": "Declare one canonical architectural owner for the governed path, remove incompatible overlapping declarations, or explicitly classify a legitimate repository-level or generated artifact under one declared owner.",
+  "valid_example": "src/lib.rs is covered by exactly one component prefix and Cargo.toml is explicitly classified as repository metadata under one owner.",
+  "invalid_example": "src/lib.rs is uncovered or simultaneously covered by AF-CORE-0001 and AF-ADAPTER-0001, or a required declared path has no observed file.",
+  "exception_policy": "Excluded observation paths are outside the governed inventory. Any future exemption must reference the rule without changing its exact-one ownership meaning.",
+  "introduced": "1.0.0-draft.1",
+  "history": [
+    "Introduced during CHG-SNAPSHOT-0006 as the first declaration-versus-observation Snapshot Governance rule."
+  ]
+}

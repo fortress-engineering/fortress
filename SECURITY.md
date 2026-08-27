@@ -15,6 +15,6 @@ certification implications, and known mitigations. Do not send live credentials
 or unnecessary personal data.
 
 Fortress is pre-release and has not yet made a supported-version or response
-time commitment. The normative threat and evidence model is
-[docs/architecture/trust.md](docs/architecture/trust.md). A green test result or
-user-editable PASS field is not trusted certification evidence.
+time commitment. The trust boundary is documented in the root and Snapshot
+Governance Module contracts. A green test result or user-editable PASS field is
+not trusted certification evidence.

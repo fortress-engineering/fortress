@@ -1,0 +1,16 @@
+{
+  "positive": {
+    "exclusions": ["excluded"],
+    "files": [
+      { "path": "alpha.txt", "content": "alpha\n" },
+      { "path": "nested/beta.txt", "content": "beta\n" },
+      { "path": "excluded/cache.txt", "content": "cache\n" }
+    ]
+  },
+  "boundary": {
+    "exclusions": ["ignored.txt"],
+    "files": [
+      { "path": "ignored.txt", "content": "ignored\n" }
+    ]
+  }
+}

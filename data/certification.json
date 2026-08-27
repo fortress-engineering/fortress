@@ -1,0 +1,110 @@
+{
+  "$schema": "urn:fortress:schema:v1:certification",
+  "schema_version": 1,
+  "project": "PF-FORTRESS",
+  "claim": "NOT CERTIFIED",
+  "units": [
+    {
+      "id": "CERT-BOOTSTRAP-FORMAT",
+      "description": "Rust source formatting under the pinned bootstrap toolchain.",
+      "status": "MISSING",
+      "trust": "untrusted-local",
+      "inputs": [
+        "data/Cargo.toml",
+        "data/rust_toolchain.toml",
+        "mods/"
+      ],
+      "upstream": [],
+      "input_fingerprint": null,
+      "evidence": null
+    },
+    {
+      "id": "CERT-BOOTSTRAP-LINT",
+      "description": "Warnings-denied Rust and Clippy analysis.",
+      "status": "MISSING",
+      "trust": "untrusted-local",
+      "inputs": [
+        "data/Cargo.toml",
+        "info/Cargo.lock",
+        "data/rust_toolchain.toml",
+        "mods/"
+      ],
+      "upstream": [],
+      "input_fingerprint": null,
+      "evidence": null
+    },
+    {
+      "id": "CERT-BOOTSTRAP-TEST",
+      "description": "Workspace implementation tests and current rule conformance fixtures.",
+      "status": "MISSING",
+      "trust": "untrusted-local",
+      "inputs": [
+        "data/Cargo.toml",
+        "info/Cargo.lock",
+        "mods/"
+      ],
+      "upstream": [],
+      "input_fingerprint": null,
+      "evidence": null
+    },
+    {
+      "id": "CERT-ARCHITECTURE-DECLARED",
+      "description": "Typed declared architecture integrity and ARCH-DEPENDENCY-001 evaluation.",
+      "status": "MISSING",
+      "trust": "untrusted-local",
+      "inputs": [
+        "data/architecture.json",
+        "mods/engine/mods/architecture_evaluation/"
+      ],
+      "upstream": [],
+      "input_fingerprint": null,
+      "evidence": null
+    },
+    {
+      "id": "CERT-OBSERVATION-INVENTORY",
+      "description": "Deterministic universal repository file observation behavior.",
+      "status": "MISSING",
+      "trust": "untrusted-local",
+      "inputs": [
+        "data/Cargo.toml",
+        "info/Cargo.lock",
+        "mods/engine/mods/repository_observation/"
+      ],
+      "upstream": [],
+      "input_fingerprint": null,
+      "evidence": null
+    },
+    {
+      "id": "CERT-SNAPSHOT-GOVERNANCE",
+      "description": "Stabilized canonical repository snapshot identity and declared input provenance.",
+      "status": "MISSING",
+      "trust": "untrusted-local",
+      "inputs": [
+        "data/project.json",
+        "data/architecture.json",
+        "data/features.json",
+        "mods/engine/mods/standard_registry/data/standard_manifest.json",
+        "mods/engine/mods/snapshot_governance/"
+      ],
+      "upstream": [
+        "CERT-OBSERVATION-INVENTORY"
+      ],
+      "input_fingerprint": null,
+      "evidence": null
+    },
+    {
+      "id": "CERT-BOOTSTRAP-DOCS",
+      "description": "Rust documentation with warnings denied.",
+      "status": "MISSING",
+      "trust": "untrusted-local",
+      "inputs": [
+        "data/Cargo.toml",
+        "data/rust_toolchain.toml",
+        "mods/"
+      ],
+      "upstream": [],
+      "input_fingerprint": null,
+      "evidence": null
+    }
+  ]
+}

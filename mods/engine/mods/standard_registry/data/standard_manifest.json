@@ -1,0 +1,16 @@
+{
+  "$schema": "urn:fortress:schema:v1:standard-manifest",
+  "schema_version": 1,
+  "id": "STD-FORTRESS-ENGINEERING",
+  "title": "Fortress Engineering Standard",
+  "edition": "1.0.0-draft.1",
+  "status": "draft",
+  "release_digest": null,
+  "rules": [
+    "mods/engine/mods/standard_registry/data/std_id_rule.json",
+    "mods/engine/mods/architecture_evaluation/data/dependency_rule.json",
+    "mods/engine/mods/snapshot_governance/data/ownership_rule.json",
+    "mods/engine/mods/snapshot_governance/data/traceability_rule.json",
+    "mods/engine/mods/snapshot_governance/data/module_rule.json"
+  ]
+}

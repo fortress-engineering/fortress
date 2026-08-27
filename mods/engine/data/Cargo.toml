@@ -1,0 +1,70 @@
+[package]
+name = "fortress-core"
+workspace = "../../../data"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+description.workspace = true
+repository.workspace = true
+autotests = false
+
+[lib]
+path = "../code/lib.rs"
+
+[[test]]
+name = "arch_dependency_001"
+path = "../mods/architecture_evaluation/mods/testing/code/arch_dependency_001.rs"
+
+[[test]]
+name = "arch_ownership_001"
+path = "../mods/snapshot_governance/mods/testing/code/arch_ownership_001.rs"
+
+[[test]]
+name = "audit"
+path = "../mods/snapshot_governance/mods/testing/code/audit.rs"
+
+[[test]]
+name = "project_model"
+path = "../mods/project_model/mods/testing/code/project_model.rs"
+
+[[test]]
+name = "repo_module_001"
+path = "../mods/snapshot_governance/mods/testing/code/repo_module_001.rs"
+
+[[test]]
+name = "repository_observation"
+path = "../mods/repository_observation/mods/testing/code/repository_observation.rs"
+
+[[test]]
+name = "repository_snapshot"
+path = "../mods/snapshot_governance/mods/testing/code/repository_snapshot.rs"
+
+[[test]]
+name = "repository_grammar"
+path = "../../../mods/testing/code/repository_grammar.rs"
+
+[[test]]
+name = "schema_registry"
+path = "../mods/standard_registry/mods/testing/code/schema_registry.rs"
+
+[[test]]
+name = "snapshot_evaluation"
+path = "../mods/snapshot_governance/mods/testing/code/snapshot_evaluation.rs"
+
+[[test]]
+name = "std_id_001"
+path = "../mods/standard_registry/mods/testing/code/std_id_001.rs"
+
+[[test]]
+name = "test_traceability_001"
+path = "../mods/snapshot_governance/mods/testing/code/test_traceability_001.rs"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sha2 = "0.10"
+syn = { version = "2.0", features = ["full", "visit"] }
+
+[lints]
+workspace = true

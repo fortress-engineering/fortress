@@ -1,0 +1,38 @@
+{
+  "$schema": "urn:fortress:schema:v1:project",
+  "schema_version": 1,
+  "id": "PF-FORTRESS",
+  "name": "Fortress",
+  "standard": {
+    "id": "STD-FORTRESS-ENGINEERING",
+    "edition": "1.0.0-draft.1",
+    "status": "draft",
+    "digest": null,
+    "manifest": "mods/engine/mods/standard_registry/data/standard_manifest.json"
+  },
+  "archetypes": [
+    "package.library",
+    "package.cli"
+  ],
+  "capabilities": [
+    "AF-STANDARD-REGISTRY-0001",
+    "AF-PROJECT-MODEL-0001"
+  ],
+  "languages": [
+    "rust"
+  ],
+  "model": {
+    "architecture": "data/architecture.json",
+    "features": [
+      "data/features.json"
+    ],
+    "commands": "mods/cli/data/commands.json",
+    "certifications": "data/certification.json",
+    "active_changes": [
+      "data/change.json"
+    ],
+    "observation_exclusions": [
+      ".git"
+    ]
+  }
+}

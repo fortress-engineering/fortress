@@ -1,0 +1,25 @@
+{
+  "architecture": {
+    "$schema": "urn:fortress:schema:v1:architecture",
+    "schema_version": 1,
+    "zones": ["core"],
+    "components": [
+      {
+        "id": "AF-CORE-0001",
+        "title": "Core",
+        "zone": "core",
+        "paths": ["src/"],
+        "depends_on": []
+      }
+    ],
+    "repository_artifacts": [
+      {
+        "path": "Cargo.toml",
+        "owner": "AF-CORE-0001",
+        "classification": "repository-metadata",
+        "required": true
+      }
+    ]
+  },
+  "observed_paths": ["Cargo.toml", "src/lib.rs"]
+}

@@ -5,8 +5,9 @@
 
 ## Authority
 
-The Fortress product and standard hierarchy is defined in
-[docs/README.md](docs/README.md). The owner retains final authority over
+The Fortress product and standard hierarchy is defined in the root
+[Module contract](README.md) and the recursively nested Module contracts. The
+owner retains final authority over
 constitutional meaning, protected `main`, stable standards, releases, public
 compatibility promises, licensing, publishing, and irreversible external
 service commitments.
@@ -35,6 +36,6 @@ history.
 
 ## Licensing and releases
 
-License selection remains blocked on [owner decision 0001](docs/decisions/0001-license-selection.md).
-No package, standard edition, certification claim, release, tag, or deployment
+License selection remains owner-gated. No package, standard edition,
+certification claim, release, tag, or deployment
 may be published without separate authorization and all applicable gates.

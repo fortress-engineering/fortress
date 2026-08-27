@@ -1,0 +1,161 @@
+{
+  "$schema": "urn:fortress:schema:v1:architecture",
+  "schema_version": 1,
+  "zones": ["normative", "core", "presentation", "governance"],
+  "components": [
+    {
+      "id": "AF-STANDARD-REGISTRY-0001",
+      "title": "Draft standard registry and stable identity",
+      "zone": "normative",
+      "paths": ["mods/engine/mods/standard_registry/"],
+      "depends_on": []
+    },
+    {
+      "id": "AF-PROJECT-MODEL-0001",
+      "title": "Declared project model",
+      "zone": "core",
+      "paths": ["mods/engine/mods/project_model/"],
+      "depends_on": ["AF-STANDARD-REGISTRY-0001"]
+    },
+    {
+      "id": "AF-REPOSITORY-OBSERVATION-0001",
+      "title": "Deterministic repository observation",
+      "zone": "core",
+      "paths": ["mods/engine/mods/repository_observation/"],
+      "depends_on": ["AF-PROJECT-MODEL-0001"]
+    },
+    {
+      "id": "AF-ARCHITECTURE-EVALUATION-0001",
+      "title": "Declared architecture evaluation",
+      "zone": "core",
+      "paths": ["mods/engine/mods/architecture_evaluation/"],
+      "depends_on": ["AF-STANDARD-REGISTRY-0001", "AF-PROJECT-MODEL-0001"]
+    },
+    {
+      "id": "AF-SNAPSHOT-GOVERNANCE-0001",
+      "title": "Snapshot Governance",
+      "zone": "core",
+      "paths": ["mods/engine/mods/snapshot_governance/"],
+      "depends_on": [
+        "AF-STANDARD-REGISTRY-0001",
+        "AF-PROJECT-MODEL-0001",
+        "AF-REPOSITORY-OBSERVATION-0001",
+        "AF-ARCHITECTURE-EVALUATION-0001"
+      ]
+    },
+    {
+      "id": "AF-CORE-0001",
+      "title": "Provider-independent Fortress engine facade",
+      "zone": "core",
+      "paths": [
+        "mods/engine/README.md",
+        "mods/engine/code/",
+        "mods/engine/data/",
+        "mods/engine/docs/"
+      ],
+      "depends_on": [
+        "AF-STANDARD-REGISTRY-0001",
+        "AF-PROJECT-MODEL-0001",
+        "AF-REPOSITORY-OBSERVATION-0001",
+        "AF-ARCHITECTURE-EVALUATION-0001",
+        "AF-SNAPSHOT-GOVERNANCE-0001"
+      ]
+    },
+    {
+      "id": "TF-CLI-0001",
+      "title": "Native command-line presentation",
+      "zone": "presentation",
+      "paths": ["mods/cli/"],
+      "depends_on": ["AF-CORE-0001"]
+    },
+    {
+      "id": "AF-BOOTSTRAP-GOVERNANCE-0001",
+      "title": "Fortress self-governance declarations",
+      "zone": "governance",
+      "paths": [
+        "data/certification.json",
+        "data/change.json",
+        "data/features.json",
+        "data/project.json"
+      ],
+      "depends_on": ["AF-PROJECT-MODEL-0001"]
+    },
+    {
+      "id": "AF-REPOSITORY-GOVERNANCE-0001",
+      "title": "Repository-wide structure and integration authority",
+      "zone": "governance",
+      "paths": [
+        ".github/",
+        ".gitignore",
+        "CONTRIBUTING.md",
+        "GOVERNANCE.md",
+        "README.md",
+        "SECURITY.md",
+        "data/Cargo.toml",
+        "data/architecture.json",
+        "data/cargo_config.toml",
+        "data/rust_toolchain.toml",
+        "docs/",
+        "info/",
+        "mods/testing/"
+      ],
+      "depends_on": ["AF-STANDARD-REGISTRY-0001", "AF-PROJECT-MODEL-0001"]
+    }
+  ],
+  "repository_artifacts": [
+    {
+      "path": ".gitignore",
+      "owner": "AF-REPOSITORY-GOVERNANCE-0001",
+      "classification": "repository-metadata",
+      "required": true
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "owner": "AF-REPOSITORY-GOVERNANCE-0001",
+      "classification": "repository-metadata",
+      "required": true
+    },
+    {
+      "path": "GOVERNANCE.md",
+      "owner": "AF-REPOSITORY-GOVERNANCE-0001",
+      "classification": "repository-metadata",
+      "required": true
+    },
+    {
+      "path": "README.md",
+      "owner": "AF-REPOSITORY-GOVERNANCE-0001",
+      "classification": "repository-metadata",
+      "required": true
+    },
+    {
+      "path": "SECURITY.md",
+      "owner": "AF-REPOSITORY-GOVERNANCE-0001",
+      "classification": "repository-metadata",
+      "required": true
+    },
+    {
+      "path": "data/Cargo.toml",
+      "owner": "AF-REPOSITORY-GOVERNANCE-0001",
+      "classification": "repository-metadata",
+      "required": true
+    },
+    {
+      "path": "data/cargo_config.toml",
+      "owner": "AF-REPOSITORY-GOVERNANCE-0001",
+      "classification": "repository-metadata",
+      "required": true
+    },
+    {
+      "path": "data/rust_toolchain.toml",
+      "owner": "AF-REPOSITORY-GOVERNANCE-0001",
+      "classification": "repository-metadata",
+      "required": true
+    },
+    {
+      "path": "info/Cargo.lock",
+      "owner": "AF-REPOSITORY-GOVERNANCE-0001",
+      "classification": "generated",
+      "required": true
+    }
+  ]
+}

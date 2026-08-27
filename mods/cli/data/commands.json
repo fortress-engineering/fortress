@@ -1,0 +1,39 @@
+{
+  "$schema": "urn:fortress:schema:v1:command",
+  "schema_version": 1,
+  "commands": [
+    {
+      "id": "CMD-CORE-HELP",
+      "name": "help",
+      "aliases": ["-h", "--help"],
+      "description": "List available commands or explain one registered command.",
+      "owner": "TF-CLI-0001",
+      "executor": "builtin-sync",
+      "duration": "instant",
+      "resumability": "restartable",
+      "certification_implications": "None; command discovery produces no certification evidence."
+    },
+    {
+      "id": "CMD-CORE-VERSION",
+      "name": "version",
+      "aliases": ["-V", "--version"],
+      "description": "Print the Fortress CLI implementation version.",
+      "owner": "TF-CLI-0001",
+      "executor": "builtin-sync",
+      "duration": "instant",
+      "resumability": "restartable",
+      "certification_implications": "None; implementation identity output is not certification evidence."
+    },
+    {
+      "id": "CMD-SNAPSHOT-AUDIT",
+      "name": "audit",
+      "aliases": [],
+      "description": "Build and evaluate a stabilized repository snapshot.",
+      "owner": "TF-CLI-0001",
+      "executor": "builtin-sync",
+      "duration": "short",
+      "resumability": "restartable",
+      "certification_implications": "Produces deterministic development audit evidence only; it is not Fortress certification."
+    }
+  ]
+}

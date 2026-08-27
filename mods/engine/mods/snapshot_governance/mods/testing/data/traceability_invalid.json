@@ -1,0 +1,76 @@
+{
+  "feature_contract": {
+    "$schema": "urn:fortress:schema:v1:feature",
+    "schema_version": 1,
+    "features": [
+      {
+        "id": "AF-SAMPLE-0001",
+        "title": "Sample",
+        "status": "active",
+        "parent": null,
+        "owner": "AF-SAMPLE-0001",
+        "zone": "core",
+        "owned_paths": ["src/"],
+        "dependencies": [],
+        "requirements": [
+          {
+            "id": "AF-SAMPLE-0001-R01",
+            "statement": "Primary behavior.",
+            "tests": [
+              "T-AF-SAMPLE-0001-R01-001",
+              "T-AF-SAMPLE-0001-R01-002",
+              "T-AF-SAMPLE-0001-R01-003"
+            ]
+          },
+          {
+            "id": "AF-SAMPLE-0001-R02",
+            "statement": "Orphan requirement.",
+            "tests": []
+          },
+          {
+            "id": "AF-SAMPLE-0001-R02",
+            "statement": "Duplicate requirement identity.",
+            "tests": ["T-AF-SAMPLE-0001-R01-003"]
+          }
+        ]
+      }
+    ]
+  },
+  "tests": [
+    {
+      "id": "T-AF-SAMPLE-0001-R01-001",
+      "path": "mods/feature/mods/testing/code/primary.rs",
+      "symbol": "primary",
+      "classification": "behavioral",
+      "declared_requirement": null
+    },
+    {
+      "id": "T-AF-SAMPLE-0001-R01-003",
+      "path": "mods/feature/mods/testing/code/duplicate_a.rs",
+      "symbol": "duplicate_a",
+      "classification": "behavioral",
+      "declared_requirement": null
+    },
+    {
+      "id": "T-AF-SAMPLE-0001-R01-003",
+      "path": "mods/feature/mods/testing/code/duplicate_b.rs",
+      "symbol": "duplicate_b",
+      "classification": "behavioral",
+      "declared_requirement": null
+    },
+    {
+      "id": "T-AF-SAMPLE-0001-R09-001",
+      "path": "mods/feature/mods/testing/code/orphan.rs",
+      "symbol": "orphan",
+      "classification": "behavioral",
+      "declared_requirement": null
+    },
+    {
+      "id": "T-AF-SAMPLE-0001-R09-002",
+      "path": "mods/feature/mods/testing/code/stale_requirement.rs",
+      "symbol": "stale_requirement",
+      "classification": "behavioral",
+      "declared_requirement": "AF-MISSING-0001-R01"
+    }
+  ]
+}

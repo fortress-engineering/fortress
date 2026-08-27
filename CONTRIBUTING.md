@@ -3,8 +3,9 @@
 **Status:** Repository contribution policy
 **Authority class:** Operational governance
 
-Read [AGENTS.md](AGENTS.md) and the [authority map](docs/README.md) before
-changing Fortress. The organization-wide contribution and conduct defaults live
+Read the root [Module and authority contract](README.md) and the narrowest
+affected Module README before changing Fortress. The organization-wide
+contribution and conduct defaults live
 in [`fortress-engineering/.github`](https://github.com/fortress-engineering/.github).
 
 ## Change discipline
@@ -15,8 +16,9 @@ in [`fortress-engineering/.github`](https://github.com/fortress-engineering/.git
   subject.
 - Update the governing contract or architecture declaration before or with a
   behavior change.
-- Record substantial work in a `CHG-*` temporal record as soon as the current
-  schema can represent it.
+- Keep any active `CHG-*` declaration as root Module Data while work is in
+  progress; completed history remains recoverable from Git rather than an
+  archive tree.
 - Add appropriate positive, negative, boundary, integration, and conformance
   evidence. Tests do not redefine the standard.
 - Document public behavior, errors, invariants, and architecture impact.

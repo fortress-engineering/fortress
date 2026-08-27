@@ -1,0 +1,21 @@
+{
+  "$schema": "urn:fortress:schema:v1:architecture",
+  "schema_version": 1,
+  "zones": ["core"],
+  "components": [
+    {
+      "id": "AF-A",
+      "title": "A",
+      "zone": "core",
+      "paths": ["a/"],
+      "depends_on": ["AF-B"]
+    },
+    {
+      "id": "AF-B",
+      "title": "B",
+      "zone": "core",
+      "paths": ["b/"],
+      "depends_on": ["AF-A"]
+    }
+  ]
+}

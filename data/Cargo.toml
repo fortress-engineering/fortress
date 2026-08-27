@@ -1,0 +1,23 @@
+[workspace]
+members = [
+  "../mods/engine/data",
+  "../mods/cli/data",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.97"
+authors = ["Fortress Engineering"]
+description = "Engineering control plane for coherent, auditable, certifiable software development"
+repository = "https://github.com/fortress-engineering/fortress"
+
+[workspace.lints.rust]
+missing_docs = "deny"
+unsafe_code = "forbid"
+warnings = "deny"
+
+[workspace.lints.clippy]
+all = "deny"
+pedantic = "deny"
