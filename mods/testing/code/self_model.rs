@@ -3,6 +3,7 @@
 //! These tests prove structural agreement among current declarations and code.
 //! They do not create content-addressed certification evidence or a PASS claim.
 
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -11,6 +12,7 @@ use fortress_core::architecture::ArchitectureManifest;
 use fortress_core::module_contract::{ContractStandardIndex, resolve_contracts};
 use fortress_core::observation::{ObservationPolicy, observe_repository};
 use fortress_core::project::ProjectConfiguration;
+use fortress_core::rust_test_analyzer::analyze_rust_source;
 use serde_json::Value;
 
 /// Returns the checked-out repository root for integration fixtures.
@@ -78,6 +80,73 @@ fn certification_scaffold_makes_no_false_pass_claim() {
         array_member(&certification, "units")
             .iter()
             .all(|unit| unit["status"] == "MISSING" && unit["evidence"].is_null())
+    );
+}
+
+/// `T-AF-BOOTSTRAP-GOVERNANCE-0001-R02-001`
+#[test]
+fn live_contract_v2_ecosystem_resolves_completely() {
+    let root = repository_root();
+    let policy = ObservationPolicy::new([".git"]).expect("policy validates");
+    let observation = observe_repository(&root, &policy).expect("repository observes");
+    let files: BTreeMap<String, Vec<u8>> = observation
+        .files()
+        .iter()
+        .map(|file| {
+            (
+                file.path().to_owned(),
+                fs::read(root.join(file.path())).expect("observed file reads"),
+            )
+        })
+        .collect();
+    let mut test_ids = BTreeSet::new();
+    for (path, bytes) in &files {
+        if Path::new(path)
+            .extension()
+            .is_some_and(|extension| extension == "rs")
+        {
+            let source = std::str::from_utf8(bytes).expect("Rust source is UTF-8");
+            for fact in analyze_rust_source(path, source).expect("Rust test facts analyze") {
+                assert!(test_ids.insert(fact.id().to_owned()));
+            }
+        }
+    }
+    let resolution = resolve_contracts(
+        &files,
+        &ContractStandardIndex::new(
+            "STD-FORTRESS-ENGINEERING",
+            "1.0.0-draft.1",
+            [
+                "ARCH-DEPENDENCY-001",
+                "ARCH-OWNERSHIP-001",
+                "CONTRACT-COHERENCY-001",
+                "REPO-DOCS-001",
+                "REPO-MODULE-001",
+                "STD-ID-001",
+                "TEST-TRACEABILITY-001",
+            ],
+        ),
+        Some(&test_ids),
+    );
+    let resolved = resolution
+        .resolved()
+        .unwrap_or_else(|| panic!("live contracts resolve: {:#?}", resolution.violations()));
+    assert_eq!(resolved.modules().len(), 15);
+    assert_eq!(resolved.capabilities().len(), 7);
+    assert_eq!(resolved.features().len(), 7);
+    assert_eq!(resolved.requirements().len(), 25);
+    assert_eq!(resolved.guarantees().len(), 3);
+    assert_eq!(resolved.checkpoints().len(), 0);
+    assert_eq!(resolved.direct_requirements().len(), 22);
+    assert_eq!(resolved.relationships().len(), 7);
+    assert!(resolved.modules().values().all(|module| {
+        module.contract().behavior().is_empty() && module.digest().starts_with("sha256:")
+    }));
+    assert!(
+        resolved
+            .effective_constraints()
+            .values()
+            .all(|values| values.len() == 4)
     );
 }
 
