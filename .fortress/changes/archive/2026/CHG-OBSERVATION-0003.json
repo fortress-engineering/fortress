@@ -2,7 +2,7 @@
   "$schema": "../../../schemas/v1/change.schema.json",
   "schema_version": 1,
   "id": "CHG-OBSERVATION-0003",
-  "status": "verifying",
+  "status": "archived",
   "objective": "Implement deterministic universal repository file observation as the next prerequisite for declared-versus-observed architecture and contract evaluation.",
   "baseline": {
     "commit": "b1abea783e87740751e3883f5bcd0760121fc365",
@@ -40,7 +40,7 @@
   ],
   "result": {
     "certification_claim": "NOT CERTIFIED",
-    "commit": null,
-    "note": "Repository observation validation passed. The implementation commit remains null until this self-referential record is committed; observed facts are not certification evidence."
+    "commit": "4c5bebcd11051ef52a1bbdc0000137a0cabdbc84",
+    "note": "The implementation commit is recorded exactly. This archival-only follow-up preserves the temporal record; observed facts are not certification evidence."
   }
 }
