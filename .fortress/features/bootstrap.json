@@ -1,0 +1,158 @@
+{
+  "$schema": "../../schemas/v1/feature.schema.json",
+  "schema_version": 1,
+  "features": [
+    {
+      "id": "AF-STANDARD-REGISTRY-0001",
+      "title": "Draft standard registry and stable identity",
+      "status": "active",
+      "parent": null,
+      "owner": "AF-CORE-0001",
+      "zone": "core",
+      "owned_paths": [
+        "standard/",
+        "schemas/v1/common.schema.json",
+        "schemas/v1/rule.schema.json",
+        "schemas/v1/standard-manifest.schema.json",
+        "crates/fortress-core/src/identity.rs",
+        "crates/fortress-core/src/standard.rs",
+        "conformance/rules/STD-ID-001/"
+      ],
+      "dependencies": [
+        "AF-STANDARD-AUTHORITY-0001"
+      ],
+      "requirements": [
+        {
+          "id": "AF-STANDARD-REGISTRY-0001-R01",
+          "statement": "The core validates canonical stable Fortress entity and rule identities under STD-ID-001.",
+          "tests": [
+            "T-AF-STANDARD-REGISTRY-0001-R01-001",
+            "T-AF-STANDARD-REGISTRY-0001-R01-002",
+            "T-AF-STANDARD-REGISTRY-0001-R01-003",
+            "T-STD-ID-001-R01-001",
+            "T-STD-ID-001-R01-002",
+            "T-STD-ID-001-R01-003"
+          ]
+        },
+        {
+          "id": "AF-STANDARD-REGISTRY-0001-R02",
+          "statement": "The draft registry exposes unique valid rule metadata without claiming a released edition.",
+          "tests": [
+            "T-AF-STANDARD-REGISTRY-0001-R02-001",
+            "T-AF-STANDARD-REGISTRY-0001-R02-002"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AF-PROJECT-MODEL-0001",
+      "title": "Declared project model",
+      "status": "active",
+      "parent": null,
+      "owner": "AF-CORE-0001",
+      "zone": "core",
+      "owned_paths": [
+        "schemas/v1/project.schema.json",
+        "schemas/v1/feature.schema.json",
+        "schemas/v1/architecture.schema.json",
+        "schemas/v1/command.schema.json",
+        "schemas/v1/change.schema.json",
+        "schemas/v1/certification.schema.json",
+        "crates/fortress-core/src/project.rs",
+        "tests/fixtures/project-model/",
+        "docs/development/project-model.md"
+      ],
+      "dependencies": [
+        "AF-STANDARD-REGISTRY-0001"
+      ],
+      "requirements": [
+        {
+          "id": "AF-PROJECT-MODEL-0001-R01",
+          "statement": "The core loads a schema-versioned project declaration and rejects invalid identity, standard, uniqueness, syntax, digest, and path invariants.",
+          "tests": [
+            "T-AF-PROJECT-MODEL-0001-R01-001",
+            "T-AF-PROJECT-MODEL-0001-R01-002",
+            "T-AF-PROJECT-MODEL-0001-R02-001",
+            "T-AF-PROJECT-MODEL-0001-R02-002",
+            "T-AF-PROJECT-MODEL-0001-R02-003"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "TF-CLI-0001",
+      "title": "Minimal native CLI",
+      "status": "active",
+      "parent": null,
+      "owner": "TF-CLI-0001",
+      "zone": "presentation",
+      "owned_paths": [
+        "crates/fortress-core/src/command.rs",
+        "crates/fortress-cli/",
+        "docs/development/cli.md"
+      ],
+      "dependencies": [
+        "AF-STANDARD-REGISTRY-0001"
+      ],
+      "requirements": [
+        {
+          "id": "TF-CLI-0001-R01",
+          "statement": "The core command registry exposes only unique, stable, implemented command contracts.",
+          "tests": [
+            "T-TF-CLI-0001-R01-001",
+            "T-TF-CLI-0001-R01-002",
+            "T-TF-CLI-0001-R01-003"
+          ]
+        },
+        {
+          "id": "TF-CLI-0001-R02",
+          "statement": "CLI dispatch renders discovery and returns non-success for unsupported commands.",
+          "tests": [
+            "T-TF-CLI-0001-R02-001",
+            "T-TF-CLI-0001-R02-002"
+          ]
+        },
+        {
+          "id": "TF-CLI-0001-R03",
+          "statement": "The native process implements version and help entrypoints with stable failure semantics.",
+          "tests": [
+            "T-TF-CLI-0001-R03-001",
+            "T-TF-CLI-0001-R03-002",
+            "T-TF-CLI-0001-R03-003",
+            "T-TF-CLI-0001-R03-004"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AF-BOOTSTRAP-GOVERNANCE-0001",
+      "title": "Bootstrap self-governance",
+      "status": "active",
+      "parent": null,
+      "owner": "AF-BOOTSTRAP-GOVERNANCE-0001",
+      "zone": "governance",
+      "owned_paths": [
+        ".fortress/",
+        "docs/README.md",
+        "docs/governance/",
+        "docs/history/",
+        "docs/decisions/"
+      ],
+      "dependencies": [
+        "AF-PROJECT-MODEL-0001"
+      ],
+      "requirements": [
+        {
+          "id": "AF-BOOTSTRAP-GOVERNANCE-0001-R01",
+          "statement": "Fortress records its current declared model and accurately reports that it is not certified.",
+          "tests": [
+            "T-AF-BOOTSTRAP-GOVERNANCE-0001-R01-001",
+            "T-AF-BOOTSTRAP-GOVERNANCE-0001-R01-002",
+            "T-AF-BOOTSTRAP-GOVERNANCE-0001-R01-003",
+            "T-AF-BOOTSTRAP-GOVERNANCE-0001-R01-004"
+          ]
+        }
+      ]
+    }
+  ]
+}

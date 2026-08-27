@@ -1,0 +1,36 @@
+{
+  "$schema": "../schemas/v1/project.schema.json",
+  "schema_version": 1,
+  "id": "PF-FORTRESS",
+  "name": "Fortress",
+  "standard": {
+    "id": "STD-FORTRESS-ENGINEERING",
+    "edition": "1.0.0-draft.1",
+    "status": "draft",
+    "digest": null
+  },
+  "archetypes": [
+    "package.library",
+    "package.cli"
+  ],
+  "capabilities": [
+    "AF-STANDARD-REGISTRY-0001",
+    "AF-PROJECT-MODEL-0001",
+    "AF-BOOTSTRAP-GOVERNANCE-0001",
+    "TF-CLI-0001"
+  ],
+  "languages": [
+    "rust"
+  ],
+  "model": {
+    "architecture": ".fortress/architecture/architecture.json",
+    "features": [
+      ".fortress/features/bootstrap.json"
+    ],
+    "commands": ".fortress/commands/core.json",
+    "certifications": ".fortress/certifications/bootstrap.json",
+    "active_changes": [
+      ".fortress/changes/active/CHG-BOOTSTRAP-0001.json"
+    ]
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "$schema": "../../schemas/v1/architecture.schema.json",
+  "schema_version": 1,
+  "zones": [
+    "normative",
+    "core",
+    "presentation",
+    "governance",
+    "evidence"
+  ],
+  "components": [
+    {
+      "id": "AF-STANDARD-AUTHORITY-0001",
+      "title": "Standard and schema authority",
+      "zone": "normative",
+      "paths": [
+        "standard/",
+        "schemas/",
+        "docs/standard/"
+      ],
+      "depends_on": []
+    },
+    {
+      "id": "AF-CORE-0001",
+      "title": "Provider-independent Fortress core",
+      "zone": "core",
+      "paths": [
+        "crates/fortress-core/"
+      ],
+      "depends_on": [
+        "AF-STANDARD-AUTHORITY-0001"
+      ]
+    },
+    {
+      "id": "TF-CLI-0001",
+      "title": "Native command-line presentation",
+      "zone": "presentation",
+      "paths": [
+        "crates/fortress-cli/"
+      ],
+      "depends_on": [
+        "AF-CORE-0001"
+      ]
+    },
+    {
+      "id": "AF-BOOTSTRAP-GOVERNANCE-0001",
+      "title": "Fortress self-governance declarations",
+      "zone": "governance",
+      "paths": [
+        ".fortress/",
+        "docs/governance/",
+        "docs/decisions/",
+        "docs/history/"
+      ],
+      "depends_on": [
+        "AF-STANDARD-AUTHORITY-0001"
+      ]
+    },
+    {
+      "id": "AF-CONFORMANCE-0001",
+      "title": "Rule and implementation evidence",
+      "zone": "evidence",
+      "paths": [
+        "conformance/",
+        "tests/"
+      ],
+      "depends_on": [
+        "AF-STANDARD-AUTHORITY-0001",
+        "AF-CORE-0001"
+      ]
+    }
+  ]
+}

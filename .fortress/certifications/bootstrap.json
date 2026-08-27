@@ -1,0 +1,69 @@
+{
+  "$schema": "../../schemas/v1/certification.schema.json",
+  "schema_version": 1,
+  "project": "PF-FORTRESS",
+  "claim": "NOT CERTIFIED",
+  "units": [
+    {
+      "id": "CERT-BOOTSTRAP-FORMAT",
+      "description": "Rust source formatting under the pinned bootstrap toolchain.",
+      "status": "MISSING",
+      "trust": "untrusted-local",
+      "inputs": [
+        "Cargo.toml",
+        "rust-toolchain.toml",
+        "crates/"
+      ],
+      "upstream": [],
+      "input_fingerprint": null,
+      "evidence": null
+    },
+    {
+      "id": "CERT-BOOTSTRAP-LINT",
+      "description": "Warnings-denied Rust and Clippy analysis.",
+      "status": "MISSING",
+      "trust": "untrusted-local",
+      "inputs": [
+        "Cargo.toml",
+        "Cargo.lock",
+        "rust-toolchain.toml",
+        "crates/"
+      ],
+      "upstream": [],
+      "input_fingerprint": null,
+      "evidence": null
+    },
+    {
+      "id": "CERT-BOOTSTRAP-TEST",
+      "description": "Workspace implementation tests and current rule conformance fixtures.",
+      "status": "MISSING",
+      "trust": "untrusted-local",
+      "inputs": [
+        "Cargo.toml",
+        "Cargo.lock",
+        "crates/",
+        "tests/",
+        "conformance/",
+        "standard/",
+        "schemas/"
+      ],
+      "upstream": [],
+      "input_fingerprint": null,
+      "evidence": null
+    },
+    {
+      "id": "CERT-BOOTSTRAP-DOCS",
+      "description": "Rust documentation with warnings denied.",
+      "status": "MISSING",
+      "trust": "untrusted-local",
+      "inputs": [
+        "Cargo.toml",
+        "rust-toolchain.toml",
+        "crates/"
+      ],
+      "upstream": [],
+      "input_fingerprint": null,
+      "evidence": null
+    }
+  ]
+}
