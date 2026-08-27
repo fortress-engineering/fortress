@@ -7,6 +7,7 @@
 #![deny(missing_docs, rustdoc::broken_intra_doc_links, warnings)]
 
 pub mod architecture;
+pub mod audit;
 pub mod command;
 pub mod evaluation;
 pub mod feature;

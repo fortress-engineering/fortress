@@ -13,12 +13,13 @@
     "standard": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "edition", "status", "digest"],
+      "required": ["id", "edition", "status", "digest", "manifest"],
       "properties": {
         "id": { "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id" },
         "edition": { "type": "string", "minLength": 1 },
         "status": { "enum": ["draft", "candidate", "released"] },
-        "digest": { "oneOf": [{ "$ref": "urn:fortress:schema:v1:common#/$defs/sha256" }, { "type": "null" }] }
+        "digest": { "oneOf": [{ "$ref": "urn:fortress:schema:v1:common#/$defs/sha256" }, { "type": "null" }] },
+        "manifest": { "$ref": "urn:fortress:schema:v1:common#/$defs/relative-path" }
       }
     },
     "archetypes": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]*(?:\\.[a-z][a-z0-9-]*)+$" } },
@@ -27,13 +28,14 @@
     "model": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["architecture", "features", "commands", "certifications", "active_changes"],
+      "required": ["architecture", "features", "commands", "certifications", "active_changes", "observation_exclusions"],
       "properties": {
         "architecture": { "$ref": "urn:fortress:schema:v1:common#/$defs/relative-path" },
         "features": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "urn:fortress:schema:v1:common#/$defs/relative-path" } },
         "commands": { "$ref": "urn:fortress:schema:v1:common#/$defs/relative-path" },
         "certifications": { "$ref": "urn:fortress:schema:v1:common#/$defs/relative-path" },
-        "active_changes": { "type": "array", "uniqueItems": true, "items": { "$ref": "urn:fortress:schema:v1:common#/$defs/relative-path" } }
+        "active_changes": { "type": "array", "uniqueItems": true, "items": { "$ref": "urn:fortress:schema:v1:common#/$defs/relative-path" } },
+        "observation_exclusions": { "type": "array", "uniqueItems": true, "items": { "$ref": "urn:fortress:schema:v1:common#/$defs/relative-path" } }
       }
     }
   }

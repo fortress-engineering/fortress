@@ -49,15 +49,21 @@ Potential `analyzers/`, `adapters/`, and `examples/` roots remain reserved in th
 [repository architecture](docs/architecture/repository.md) until real content
 justifies creating them.
 
-## Current CLI
+## Current capabilities
 
-The initial Rust implementation provides a real, deliberately narrow command
-surface:
+The Rust implementation now provides deterministic repository observation,
+stabilized content-addressed snapshots, shared normalized findings, declared
+dependency/ownership/placement evaluation, Rust requirement/test traceability,
+and a real repository audit command. These are development audit capabilities,
+not Fortress certification.
+
+The deliberately narrow command surface is:
 
 ```text
 fortress --version
 fortress help
 fortress help <implemented-command>
+fortress audit [path] [--format human|json]
 ```
 
 Build and exercise it from the repository root:
@@ -66,10 +72,13 @@ Build and exercise it from the repository root:
 cargo build --workspace
 cargo run -p fortress-cli -- --version
 cargo run -p fortress-cli -- help
+cargo run -p fortress-cli -- audit --format json
 ```
 
-Unlisted commands are unsupported and return a non-success status. See the
-[CLI capability record](docs/development/cli.md).
+Audit succeeds only when every implemented applicable mandatory snapshot rule
+passes. Unsupported standard rules are reported explicitly and are never shown
+as passes. Unlisted commands are unsupported and return a non-success status.
+See the [CLI capability record](docs/development/cli.md).
 
 ## Organization surfaces
 

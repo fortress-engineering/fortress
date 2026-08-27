@@ -7,7 +7,8 @@
     "id": "STD-FORTRESS-ENGINEERING",
     "edition": "1.0.0-draft.1",
     "status": "draft",
-    "digest": null
+    "digest": null,
+    "manifest": "standard/drafts/1.0.0/manifest.json"
   },
   "archetypes": [
     "package.library",
@@ -29,6 +30,10 @@
     "certifications": ".fortress/certifications/bootstrap.json",
     "active_changes": [
       ".fortress/changes/active/CHG-BOOTSTRAP-0001.json"
+    ],
+    "observation_exclusions": [
+      ".git",
+      "target"
     ]
   }
 }

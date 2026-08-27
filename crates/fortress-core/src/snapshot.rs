@@ -540,7 +540,8 @@ mod tests {
                     "id": "STD-FORTRESS-ENGINEERING",
                     "edition": "1.0.0-draft.1",
                     "status": "draft",
-                    "digest": null
+                    "digest": null,
+                    "manifest": "standard/manifest.json"
                 },
                 "archetypes": ["package.library"],
                 "capabilities": ["AF-SNAPSHOT-GOVERNANCE-0001"],
@@ -550,7 +551,8 @@ mod tests {
                     "features": [".fortress/features.json"],
                     "commands": ".fortress/commands.json",
                     "certifications": ".fortress/certifications.json",
-                    "active_changes": []
+                    "active_changes": [],
+                    "observation_exclusions": [".git", "target"]
                 }
             }"#,
         )

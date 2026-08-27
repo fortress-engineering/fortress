@@ -186,6 +186,8 @@
       "owned_paths": [
         "schemas/v1/repository-snapshot.schema.json",
         "schemas/v1/snapshot-finding.schema.json",
+        "schemas/v1/snapshot-audit.schema.json",
+        "crates/fortress-core/src/audit.rs",
         "crates/fortress-core/src/evaluation.rs",
         "crates/fortress-core/src/feature.rs",
         "crates/fortress-core/src/finding.rs",
@@ -194,6 +196,7 @@
         "crates/fortress-core/src/rust_test_analyzer.rs",
         "crates/fortress-core/src/traceability.rs",
         "crates/fortress-core/tests/snapshot_evaluation.rs",
+        "crates/fortress-core/tests/audit.rs",
         "crates/fortress-core/tests/arch_ownership_001.rs",
         "crates/fortress-core/tests/repo_placement_001.rs",
         "crates/fortress-core/tests/test_traceability_001.rs",
@@ -279,6 +282,13 @@
             "T-REPO-PLACEMENT-001-R01-003",
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R07-001"
           ]
+        },
+        {
+          "id": "AF-SNAPSHOT-GOVERNANCE-0001-R08",
+          "statement": "A repository audit loads the exact declared inputs, builds a stabilized content-addressed snapshot, requires loaded declaration bytes to match it, analyzes supported Rust test facts, and deterministically evaluates every implemented applicable snapshot rule without claiming certification.",
+          "tests": [
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R08-001"
+          ]
         }
       ]
     },
@@ -291,6 +301,7 @@
       "zone": "presentation",
       "owned_paths": [
         "crates/fortress-core/src/command.rs",
+        ".fortress/commands/core.json",
         "crates/fortress-cli/",
         "docs/development/cli.md"
       ],
@@ -323,6 +334,17 @@
             "T-TF-CLI-0001-R03-002",
             "T-TF-CLI-0001-R03-003",
             "T-TF-CLI-0001-R03-004"
+          ]
+        },
+        {
+          "id": "TF-CLI-0001-R04",
+          "statement": "The native fortress audit command accepts an optional repository root, renders deterministic human or schema-versioned JSON output, succeeds only without evaluated violations, and rejects malformed project state or unsupported options.",
+          "tests": [
+            "T-TF-CLI-0001-R04-001",
+            "T-TF-CLI-0001-R04-002",
+            "T-TF-CLI-0001-R04-003",
+            "T-TF-CLI-0001-R04-004",
+            "T-TF-CLI-0001-R04-005"
           ]
         }
       ]

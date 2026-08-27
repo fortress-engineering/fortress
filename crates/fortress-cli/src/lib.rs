@@ -1,18 +1,23 @@
 //! Terminal presentation and argument dispatch for the Fortress CLI.
 //!
-//! This crate renders the provider-independent command registry from
-//! `fortress-core`. It registers no placeholder operation and reports an
-//! unsupported command with a non-success exit code.
+//! This crate renders the provider-independent command registry and executes
+//! the real Snapshot Governance audit pipeline from `fortress-core`. It
+//! registers no placeholder operation and reports unsupported commands with a
+//! non-success exit code.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs, rustdoc::broken_intra_doc_links, warnings)]
 
 use std::io::{self, Write};
+use std::path::PathBuf;
 
+use fortress_core::audit::audit_repository;
 use fortress_core::command::{CommandDescriptor, CommandRegistry};
 
 /// Successful process exit status.
 pub const EXIT_SUCCESS: u8 = 0;
+/// Evaluated mandatory snapshot rule violation exit status.
+pub const EXIT_VIOLATION: u8 = 1;
 /// User invocation or unsupported-command exit status.
 pub const EXIT_USAGE: u8 = 2;
 
@@ -49,6 +54,7 @@ where
     match command.id() {
         "CMD-CORE-HELP" => run_help(&registry, &arguments[1..], output, error),
         "CMD-CORE-VERSION" => run_version(&arguments[1..], output, error),
+        "CMD-SNAPSHOT-AUDIT" => run_audit(&arguments[1..], output, error),
         _ => {
             writeln!(
                 error,
@@ -57,6 +63,78 @@ where
             )?;
             Ok(EXIT_USAGE)
         }
+    }
+}
+
+#[derive(Clone, Copy)]
+enum AuditFormat {
+    Human,
+    Json,
+}
+
+fn run_audit<O: Write, E: Write>(
+    arguments: &[String],
+    output: &mut O,
+    error: &mut E,
+) -> io::Result<u8> {
+    let (root, format) = match parse_audit_arguments(arguments) {
+        Ok(parsed) => parsed,
+        Err(message) => {
+            writeln!(error, "{message}")?;
+            return Ok(EXIT_USAGE);
+        }
+    };
+    let result = match audit_repository(&root) {
+        Ok(result) => result,
+        Err(audit_error) => {
+            writeln!(error, "audit failed: {audit_error}")?;
+            return Ok(EXIT_USAGE);
+        }
+    };
+    match format {
+        AuditFormat::Human => write!(output, "{}", result.to_human())?,
+        AuditFormat::Json => writeln!(
+            output,
+            "{}",
+            result.to_json_pretty().map_err(io::Error::other)?
+        )?,
+    }
+    Ok(if result.is_success() {
+        EXIT_SUCCESS
+    } else {
+        EXIT_VIOLATION
+    })
+}
+
+fn parse_audit_arguments(arguments: &[String]) -> Result<(PathBuf, AuditFormat), &'static str> {
+    let mut root = None;
+    let mut format = AuditFormat::Human;
+    let mut index = 0;
+    while index < arguments.len() {
+        let argument = &arguments[index];
+        if argument == "--format" {
+            index += 1;
+            let Some(value) = arguments.get(index) else {
+                return Err("usage: fortress audit [path] [--format human|json]");
+            };
+            format = parse_audit_format(value)?;
+        } else if let Some(value) = argument.strip_prefix("--format=") {
+            format = parse_audit_format(value)?;
+        } else if argument.starts_with('-') || root.is_some() {
+            return Err("usage: fortress audit [path] [--format human|json]");
+        } else {
+            root = Some(PathBuf::from(argument));
+        }
+        index += 1;
+    }
+    Ok((root.unwrap_or_else(|| PathBuf::from(".")), format))
+}
+
+fn parse_audit_format(value: &str) -> Result<AuditFormat, &'static str> {
+    match value {
+        "human" => Ok(AuditFormat::Human),
+        "json" => Ok(AuditFormat::Json),
+        _ => Err("audit format must be `human` or `json`"),
     }
 }
 
@@ -161,9 +239,9 @@ mod tests {
     fn unknown_command_is_non_success() {
         let mut output = Vec::new();
         let mut error = Vec::new();
-        let status = run(["audit"], &mut output, &mut error).expect("write succeeds");
+        let status = run(["certify"], &mut output, &mut error).expect("write succeeds");
         assert_eq!(status, EXIT_USAGE);
         assert!(output.is_empty());
-        assert!(String::from_utf8_lossy(&error).contains("unsupported command `audit`"));
+        assert!(String::from_utf8_lossy(&error).contains("unsupported command `certify`"));
     }
 }

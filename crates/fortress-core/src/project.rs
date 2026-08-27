@@ -156,6 +156,7 @@ pub struct StandardReference {
     edition: String,
     status: StandardStatus,
     digest: Option<String>,
+    manifest: String,
 }
 
 impl StandardReference {
@@ -173,6 +174,7 @@ impl StandardReference {
         if let Some(digest) = &self.digest {
             validate_sha256(digest)?;
         }
+        validate_relative_path("standard.manifest", &self.manifest)?;
         Ok(())
     }
 
@@ -199,6 +201,12 @@ impl StandardReference {
     pub fn digest(&self) -> Option<&str> {
         self.digest.as_deref()
     }
+
+    /// Returns the repository-relative applicable standard manifest path.
+    #[must_use]
+    pub fn manifest(&self) -> &str {
+        &self.manifest
+    }
 }
 
 /// Release state of a project-referenced standard bundle.
@@ -213,6 +221,18 @@ pub enum StandardStatus {
     Released,
 }
 
+impl StandardStatus {
+    /// Returns the canonical serialized status spelling.
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Draft => "draft",
+            Self::Candidate => "candidate",
+            Self::Released => "released",
+        }
+    }
+}
+
 /// Repository-relative locations of declared model documents.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
 pub struct ModelPaths {
@@ -221,6 +241,7 @@ pub struct ModelPaths {
     commands: String,
     certifications: String,
     active_changes: Vec<String>,
+    observation_exclusions: Vec<String>,
 }
 
 impl ModelPaths {
@@ -235,6 +256,13 @@ impl ModelPaths {
         validate_unique(CollectionKind::ActiveChangePath, &self.active_changes)?;
         for path in &self.active_changes {
             validate_relative_path("model.active_changes", path)?;
+        }
+        validate_unique(
+            CollectionKind::ObservationExclusion,
+            &self.observation_exclusions,
+        )?;
+        for path in &self.observation_exclusions {
+            validate_relative_path("model.observation_exclusions", path)?;
         }
         Ok(())
     }
@@ -268,6 +296,12 @@ impl ModelPaths {
     pub fn active_changes(&self) -> &[String] {
         &self.active_changes
     }
+
+    /// Returns explicit repository-relative observation exclusion prefixes.
+    #[must_use]
+    pub fn observation_exclusions(&self) -> &[String] {
+        &self.observation_exclusions
+    }
 }
 
 /// Collection whose syntax or uniqueness invariant failed.
@@ -283,6 +317,8 @@ pub enum CollectionKind {
     FeaturePath,
     /// Active temporal change paths.
     ActiveChangePath,
+    /// Repository observation exclusion prefixes.
+    ObservationExclusion,
 }
 
 impl Display for CollectionKind {
@@ -293,6 +329,7 @@ impl Display for CollectionKind {
             Self::Language => "languages",
             Self::FeaturePath => "model.features",
             Self::ActiveChangePath => "model.active_changes",
+            Self::ObservationExclusion => "model.observation_exclusions",
         })
     }
 }
@@ -496,7 +533,8 @@ mod tests {
             "id": "STD-FORTRESS-ENGINEERING",
             "edition": "1.0.0-draft.1",
             "status": "draft",
-            "digest": null
+            "digest": null,
+            "manifest": "standard/drafts/1.0.0/manifest.json"
         },
         "archetypes": ["package.library"],
         "capabilities": [],
@@ -506,7 +544,8 @@ mod tests {
             "features": [".fortress/features.json"],
             "commands": ".fortress/commands.json",
             "certifications": ".fortress/certifications.json",
-            "active_changes": []
+            "active_changes": [],
+            "observation_exclusions": [".git", "target", ".fortress/state"]
         }
     }"#;
 

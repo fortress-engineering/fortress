@@ -23,6 +23,13 @@ const BUILTIN_COMMANDS: &[CommandDescriptor] = &[
         description: "Print the Fortress CLI implementation version.",
         usage: "fortress --version",
     },
+    CommandDescriptor {
+        id: "CMD-SNAPSHOT-AUDIT",
+        name: "audit",
+        aliases: &[],
+        description: "Build and evaluate a stabilized repository snapshot.",
+        usage: "fortress audit [path] [--format human|json]",
+    },
 ];
 
 /// Discoverable metadata for one registered Fortress command.

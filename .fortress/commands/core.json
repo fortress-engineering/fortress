@@ -23,6 +23,17 @@
       "duration": "instant",
       "resumability": "restartable",
       "certification_implications": "None; implementation identity output is not certification evidence."
+    },
+    {
+      "id": "CMD-SNAPSHOT-AUDIT",
+      "name": "audit",
+      "aliases": [],
+      "description": "Build and evaluate a stabilized repository snapshot.",
+      "owner": "TF-CLI-0001",
+      "executor": "builtin-sync",
+      "duration": "short",
+      "resumability": "restartable",
+      "certification_implications": "Produces deterministic development audit evidence only; it is not Fortress certification."
     }
   ]
 }
