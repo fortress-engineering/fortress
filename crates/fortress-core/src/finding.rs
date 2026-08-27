@@ -8,13 +8,13 @@ use std::cmp::Ordering;
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 use crate::identity::{RuleId, RuleIdError, StableId, StableIdError};
 
 /// Rule category attached to a canonical finding.
-#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum FindingCategory {
     /// Architecture topology, ownership, or boundary integrity.
