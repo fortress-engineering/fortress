@@ -1,4 +1,4 @@
-name: Bootstrap quality gates
+name: Snapshot Governance quality gates
 
 on:
   push:
@@ -13,7 +13,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: bootstrap-ci-${{ github.workflow }}-${{ github.ref }}
+  group: snapshot-ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -43,7 +43,25 @@ jobs:
         run: cargo +1.85.1 test -p fortress-core --test self_model
 
       - name: Run implemented rule conformance
-        run: cargo +1.85.1 test -p fortress-core --test std_id_001
+        run: |
+          cargo +1.85.1 test -p fortress-core --test std_id_001
+          cargo +1.85.1 test -p fortress-core --test arch_dependency_001
+          cargo +1.85.1 test -p fortress-core --test arch_ownership_001
+          cargo +1.85.1 test -p fortress-core --test test_traceability_001
+          cargo +1.85.1 test -p fortress-core --test repo_placement_001
+
+      - name: Run Fortress self-audit
+        run: cargo +1.85.1 run --quiet -p fortress-cli -- audit
+
+      - name: Verify deterministic audit JSON
+        shell: bash
+        run: |
+          first="$(mktemp)"
+          second="$(mktemp)"
+          trap 'rm -f "$first" "$second"' EXIT
+          cargo +1.85.1 run --quiet -p fortress-cli -- audit --format json > "$first"
+          cargo +1.85.1 run --quiet -p fortress-cli -- audit --format json > "$second"
+          cmp "$first" "$second"
 
       - name: Run workspace tests
         run: cargo +1.85.1 test --workspace --all-targets --all-features
