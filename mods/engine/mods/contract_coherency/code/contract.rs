@@ -10,7 +10,7 @@ mod graph;
 
 pub use graph::*;
 
-use std::collections::{BTreeMap, BTreeSet, VecDeque};
+use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
 
@@ -1935,7 +1935,6 @@ impl<'a> Resolver<'a> {
         features: &BTreeMap<String, OwnedIdentity>,
         checkpoints: &BTreeMap<String, ResolvedCheckpoint>,
     ) {
-        let mut by_feature = BTreeMap::<String, Vec<&BehaviorCheckpoint>>::new();
         for (module_path, (contract_path, contract, _)) in loaded {
             for (index, checkpoint) in contract.behavior.iter().enumerate() {
                 let Some(feature) = features.get(&checkpoint.feature) else {
@@ -1974,71 +1973,6 @@ impl<'a> Resolver<'a> {
                         ),
                         Some(_) => {}
                     }
-                }
-                by_feature
-                    .entry(checkpoint.feature.clone())
-                    .or_default()
-                    .push(checkpoint);
-            }
-        }
-        for (feature, checkpoints_for_feature) in by_feature {
-            let triggers: Vec<&BehaviorCheckpoint> = checkpoints_for_feature
-                .iter()
-                .copied()
-                .filter(|checkpoint| checkpoint.kind == CheckpointKind::Trigger)
-                .collect();
-            if triggers.len() != 1 {
-                self.violation(
-                    features[&feature].provenance.contract_path.clone(),
-                    features[&feature].provenance.pointer.clone(),
-                    format!(
-                        "modeled Feature `{feature}` must have exactly one trigger, found {}",
-                        triggers.len()
-                    ),
-                );
-                continue;
-            }
-            if !checkpoints_for_feature
-                .iter()
-                .any(|checkpoint| checkpoint.kind == CheckpointKind::Terminal)
-            {
-                self.violation(
-                    features[&feature].provenance.contract_path.clone(),
-                    features[&feature].provenance.pointer.clone(),
-                    format!("modeled Feature `{feature}` has no terminal checkpoint"),
-                );
-            }
-            let by_id: BTreeMap<&str, &BehaviorCheckpoint> = checkpoints_for_feature
-                .iter()
-                .map(|checkpoint| (checkpoint.id.as_str(), *checkpoint))
-                .collect();
-            let mut reachable = BTreeSet::new();
-            let mut queue = VecDeque::from([triggers[0].id.as_str()]);
-            while let Some(id) = queue.pop_front() {
-                if !reachable.insert(id) {
-                    continue;
-                }
-                if let Some(checkpoint) = by_id.get(id) {
-                    queue.extend(
-                        checkpoint
-                            .transitions
-                            .iter()
-                            .filter(|transition| by_id.contains_key(transition.target.as_str()))
-                            .map(|transition| transition.target.as_str()),
-                    );
-                }
-            }
-            for checkpoint in checkpoints_for_feature {
-                if !reachable.contains(checkpoint.id.as_str()) {
-                    let resolved = &checkpoints[&checkpoint.id];
-                    self.violation(
-                        resolved.provenance.contract_path.clone(),
-                        resolved.provenance.pointer.clone(),
-                        format!(
-                            "checkpoint `{}` is unreachable from Feature `{feature}` trigger",
-                            checkpoint.id
-                        ),
-                    );
                 }
             }
         }

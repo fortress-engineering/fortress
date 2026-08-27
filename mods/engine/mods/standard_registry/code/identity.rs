@@ -8,14 +8,14 @@ use std::error::Error;
 use std::fmt::{self, Display, Formatter};
 
 const ENTITY_NAMESPACES: &[&str] = &[
-    "ADR", "AF", "ARCH", "CAP", "CERT", "CHANGE", "CHG", "CHK", "CMD", "CONTRACT", "DEP", "DOC",
-    "EX", "GUA", "INV", "ONBOARD", "PF", "PIPE", "REPO", "SEC", "SRC", "STD", "T", "TEST", "TF",
-    "TRANS",
+    "ADR", "AF", "ARCH", "BEHAVIOR", "CAP", "CERT", "CHANGE", "CHG", "CHK", "CMD", "CONTRACT",
+    "DEP", "DOC", "EX", "GUA", "INV", "ONBOARD", "PF", "PIPE", "REPO", "SEC", "SRC", "STD", "T",
+    "TEST", "TF", "TRANS",
 ];
 
 const RULE_NAMESPACES: &[&str] = &[
-    "ARCH", "CERT", "CHANGE", "CONTRACT", "DEP", "DOC", "ONBOARD", "PIPE", "REPO", "SEC", "SRC",
-    "STD", "TEST",
+    "ARCH", "BEHAVIOR", "CERT", "CHANGE", "CONTRACT", "DEP", "DOC", "ONBOARD", "PIPE", "REPO",
+    "SEC", "SRC", "STD", "TEST",
 ];
 
 /// A validated Fortress entity identity.

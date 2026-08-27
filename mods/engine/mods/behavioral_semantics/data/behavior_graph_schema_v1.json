@@ -1,0 +1,336 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:behavioral-flow-graph",
+  "title": "Fortress Intended Behavioral Flow Graph v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "semantic_version",
+    "project_id",
+    "standard",
+    "source_ccg_digest",
+    "view",
+    "summary",
+    "feature_states",
+    "flows",
+    "violations",
+    "unsupported_semantics"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:schema:v1:behavioral-flow-graph"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "semantic_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "project_id": {
+      "$ref": "#/$defs/identity"
+    },
+    "standard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "edition"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/identity"
+        },
+        "edition": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "source_ccg_digest": {
+      "$ref": "#/$defs/digest"
+    },
+    "view": {
+      "const": "intended"
+    },
+    "summary": {
+      "$ref": "#/$defs/summary"
+    },
+    "feature_states": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/feature_state"
+      }
+    },
+    "flows": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/flow"
+      }
+    },
+    "violations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/violation"
+      }
+    },
+    "unsupported_semantics": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    }
+  },
+  "$defs": {
+    "identity": {
+      "type": "string",
+      "minLength": 1
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "nullable_identity": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/identity"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "string_array": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "pointer"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pointer": {
+          "type": "string",
+          "pattern": "^/"
+        }
+      }
+    },
+    "provenance_array": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/provenance"
+      },
+      "uniqueItems": true
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "total_features",
+        "modeled_features",
+        "unmodeled_features",
+        "coherent_features",
+        "incoherent_features",
+        "checkpoints",
+        "edges",
+        "decisions",
+        "terminals",
+        "participant_modules",
+        "boundary_crossings",
+        "loops"
+      ],
+      "properties": {
+        "total_features": { "type": "integer", "minimum": 0 },
+        "modeled_features": { "type": "integer", "minimum": 0 },
+        "unmodeled_features": { "type": "integer", "minimum": 0 },
+        "coherent_features": { "type": "integer", "minimum": 0 },
+        "incoherent_features": { "type": "integer", "minimum": 0 },
+        "checkpoints": { "type": "integer", "minimum": 0 },
+        "edges": { "type": "integer", "minimum": 0 },
+        "decisions": { "type": "integer", "minimum": 0 },
+        "terminals": { "type": "integer", "minimum": 0 },
+        "participant_modules": { "type": "integer", "minimum": 0 },
+        "boundary_crossings": { "type": "integer", "minimum": 0 },
+        "loops": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "feature_state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "feature",
+        "owner",
+        "state"
+      ],
+      "properties": {
+        "feature": { "$ref": "#/$defs/identity" },
+        "owner": { "$ref": "#/$defs/identity" },
+        "state": {
+          "enum": [
+            "UNMODELED",
+            "MODELED_COHERENT",
+            "MODELED_INCOHERENT"
+          ]
+        }
+      }
+    },
+    "node": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "checkpoint",
+        "module",
+        "kind",
+        "terminal_outcome",
+        "provenance"
+      ],
+      "properties": {
+        "checkpoint": { "$ref": "#/$defs/identity" },
+        "module": { "$ref": "#/$defs/identity" },
+        "kind": { "enum": ["trigger", "action", "decision", "terminal"] },
+        "terminal_outcome": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
+        },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+    "edge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "target",
+        "decision_outcome",
+        "crosses_module_boundary",
+        "provenance"
+      ],
+      "properties": {
+        "source": { "$ref": "#/$defs/identity" },
+        "target": { "$ref": "#/$defs/identity" },
+        "decision_outcome": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
+        },
+        "crosses_module_boundary": { "type": "boolean" },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+    "branch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["decision", "outcome", "target", "can_reach_terminal", "derivation"],
+      "properties": {
+        "decision": { "$ref": "#/$defs/identity" },
+        "outcome": { "type": "string", "minLength": 1 },
+        "target": { "$ref": "#/$defs/identity" },
+        "can_reach_terminal": { "type": "boolean" },
+        "derivation": { "type": "string", "minLength": 1 }
+      }
+    },
+    "component": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "checkpoints", "is_loop", "can_reach_terminal", "derivation"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "checkpoints": { "$ref": "#/$defs/string_array" },
+        "is_loop": { "type": "boolean" },
+        "can_reach_terminal": { "type": "boolean" },
+        "derivation": { "type": "string", "minLength": 1 }
+      }
+    },
+    "domination": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["checkpoint", "immediate", "derivation"],
+      "properties": {
+        "checkpoint": { "$ref": "#/$defs/identity" },
+        "immediate": { "$ref": "#/$defs/nullable_identity" },
+        "derivation": { "type": "string", "minLength": 1 }
+      }
+    },
+    "derivation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "fact", "input_facts", "explanation_path", "provenance"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "kind": { "type": "string", "minLength": 1 },
+        "fact": { "type": "string", "minLength": 1 },
+        "input_facts": { "$ref": "#/$defs/string_array" },
+        "explanation_path": { "$ref": "#/$defs/string_array" },
+        "provenance": { "$ref": "#/$defs/provenance_array" }
+      }
+    },
+    "flow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "feature",
+        "owner",
+        "state",
+        "participating_modules",
+        "trigger_checkpoint",
+        "terminal_checkpoints",
+        "nodes",
+        "edges",
+        "module_boundary_crossings",
+        "decision_branches",
+        "strongly_connected_components",
+        "immediate_dominators",
+        "immediate_post_dominators",
+        "derivations",
+        "provenance"
+      ],
+      "properties": {
+        "feature": { "$ref": "#/$defs/identity" },
+        "owner": { "$ref": "#/$defs/identity" },
+        "state": { "enum": ["MODELED_COHERENT", "MODELED_INCOHERENT"] },
+        "participating_modules": { "$ref": "#/$defs/string_array" },
+        "trigger_checkpoint": { "$ref": "#/$defs/nullable_identity" },
+        "terminal_checkpoints": { "$ref": "#/$defs/string_array" },
+        "nodes": { "type": "array", "items": { "$ref": "#/$defs/node" } },
+        "edges": { "type": "array", "items": { "$ref": "#/$defs/edge" } },
+        "module_boundary_crossings": { "type": "array", "items": { "$ref": "#/$defs/edge" } },
+        "decision_branches": { "type": "array", "items": { "$ref": "#/$defs/branch" } },
+        "strongly_connected_components": { "type": "array", "items": { "$ref": "#/$defs/component" } },
+        "immediate_dominators": { "type": "array", "items": { "$ref": "#/$defs/domination" } },
+        "immediate_post_dominators": { "type": "array", "items": { "$ref": "#/$defs/domination" } },
+        "derivations": { "type": "array", "items": { "$ref": "#/$defs/derivation" } },
+        "provenance": { "$ref": "#/$defs/provenance_array" }
+      }
+    },
+    "violation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "feature", "checkpoint", "message", "input_facts", "provenance"],
+      "properties": {
+        "code": { "type": "string", "minLength": 1 },
+        "feature": { "$ref": "#/$defs/identity" },
+        "checkpoint": { "$ref": "#/$defs/nullable_identity" },
+        "message": { "type": "string", "minLength": 1 },
+        "input_facts": { "$ref": "#/$defs/string_array" },
+        "provenance": { "$ref": "#/$defs/provenance_array" }
+      }
+    }
+  }
+}

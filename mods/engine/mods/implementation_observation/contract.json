@@ -50,5 +50,16 @@
       ]
     }
   ],
-  "behavior": []
+  "behavior": [
+    {
+      "id": "CHK-IMPLEMENTATION-OBSERVED",
+      "feature": "AF-FORTRESS-AUDIT-0001",
+      "kind": "action",
+      "transitions": [
+        {
+          "target": "CHK-ARCHITECTURE-EVALUATED"
+        }
+      ]
+    }
+  ]
 }

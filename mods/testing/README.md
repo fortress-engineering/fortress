@@ -2,17 +2,17 @@
 
 ## Purpose
 
-This verification Module exists to prove only the bootstrap-governance Feature introduced directly by the Fortress root Module.
+This verification Module exists to prove only the bootstrap-governance and complete audit Features introduced directly by the Fortress root Module.
 
 ## Responsibility
 
-Validate the root-owned self-model, command-declaration agreement, complete contract resolution, and truthful non-certification state without claiming evidence for descendant Features.
+Validate the root-owned self-model, command-declaration agreement, complete contract resolution, truthful non-certification state, and cross-subsystem repository audit lifecycle without claiming evidence for descendant Features.
 
 ## Scope
 
 ### Includes
 
-Rust verification code whose claims map exclusively to root-owned bootstrap-governance requirements while using descendant capabilities where execution requires them.
+Rust verification code whose claims map exclusively to root-owned bootstrap-governance and Fortress audit requirements while using descendant capabilities where execution requires them.
 
 ### Excludes
 
@@ -30,7 +30,7 @@ Uses provider-independent loaders and evaluators while checking the complete sel
 
 **Types:** `verifies`
 
-Verifies root declarations, physical Module structure, ownership, and truthful certification state.
+Verifies root declarations, physical Module structure, ownership, truthful certification state, and the intended audit behavior introduced at the CLI/Engine lowest common Module scope.
 
 ### [CLI](../cli/README.md)
 

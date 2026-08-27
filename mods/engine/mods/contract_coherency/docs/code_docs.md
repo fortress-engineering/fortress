@@ -20,7 +20,7 @@ Invalid authored facts produce sorted typed CCG violations; supported logical co
 
 ### [`contract.rs`](../code/contract.rs)
 
-Defines canonical Module Contract v2 syntax and the single repository-wide semantic compiler.
+Defines canonical Module Contract v2 syntax and the single repository-wide semantic compiler, preserving behavioral declarations while validating only local and ecosystem declaration integrity rather than BFG flow semantics.
 
 ### [`graph.rs`](../code/graph.rs)
 

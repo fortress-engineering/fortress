@@ -1,0 +1,57 @@
+{
+  "$schema": "urn:fortress:schema:v2:module-contract",
+  "schema_version": 2,
+  "id": "AF-BEHAVIORAL-SEMANTICS-0001",
+  "display_name": "Behavioral Semantics",
+  "provides": [
+    {
+      "id": "CAP-BEHAVIORAL-SEMANTICS",
+      "version": "0.1.0",
+      "visibility": "project"
+    }
+  ],
+  "requires": [
+    {
+      "provider": "AF-CONTRACT-COHERENCY-0001",
+      "capability": "CAP-CONTRACT-COHERENCY",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-FINDING-MODEL-0001",
+      "capability": "CAP-FINDING-MODEL",
+      "version": "^0.1.0"
+    }
+  ],
+  "relationships": [],
+  "constraints": [],
+  "guarantees": [],
+  "features": [
+    {
+      "id": "AF-BEHAVIORAL-SEMANTICS-0001",
+      "version": "0.1.0",
+      "requirements": [
+        {
+          "id": "AF-BEHAVIORAL-SEMANTICS-0001-R01",
+          "statement": "Behavioral Semantics deterministically compiles CCG-preserved distributed checkpoints into canonical Intended BFG v1 Feature flows with Module participation, boundary crossings, reachability, SCC, dominator, post-dominator, provenance, and explicit unsupported-semantics facts.",
+          "tests": [
+            "T-AF-BEHAVIORAL-SEMANTICS-0001-R01-001",
+            "T-AF-BEHAVIORAL-SEMANTICS-0001-R01-002",
+            "T-AF-BEHAVIORAL-SEMANTICS-0001-R01-003",
+            "T-AF-BEHAVIORAL-SEMANTICS-0001-R01-004"
+          ]
+        },
+        {
+          "id": "AF-BEHAVIORAL-SEMANTICS-0001-R02",
+          "statement": "BEHAVIOR-FLOW-001 rejects implemented graph contradictions in modeled Features while preserving legal terminal-reaching loops and representing unmodeled Features explicitly without treating them as passing modeled flows.",
+          "tests": [
+            "T-AF-BEHAVIORAL-SEMANTICS-0001-R02-001",
+            "T-BEHAVIOR-FLOW-001-R01-001",
+            "T-BEHAVIOR-FLOW-001-R01-002",
+            "T-BEHAVIOR-FLOW-001-R01-003"
+          ]
+        }
+      ]
+    }
+  ],
+  "behavior": []
+}

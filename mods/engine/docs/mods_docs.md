@@ -10,6 +10,10 @@ The Engine responsibility is decomposed where durable child boundaries have excl
 
 Consumes the CCG dependency and containment semantics to provide architecture rule evaluation and physical ownership views.
 
+### [Behavioral Semantics](../mods/behavioral_semantics/README.md)
+
+Compiles CCG-preserved distributed checkpoints into deterministic intended Feature flows and evaluates their graph-level coherence.
+
 ### [Contract Coherency](../mods/contract_coherency/README.md)
 
 Compiles distributed contracts, containment, standard logic, and verification declarations into the deterministic semantic graph shared by downstream evaluators.

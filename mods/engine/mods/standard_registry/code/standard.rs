@@ -18,6 +18,8 @@ use crate::identity::{RuleId, RuleIdError, StableId, StableIdError};
 pub enum FindingCategory {
     /// Architecture topology, ownership, or boundary integrity.
     Architecture,
+    /// Intended behavioral-flow coherence.
+    Behavior,
     /// Declared or observed dependency integrity.
     Dependency,
     /// Project contract integrity.
@@ -60,6 +62,12 @@ const DRAFT_RULES: &[RuleDescriptor] = &[
     RuleDescriptor {
         id: "ARCH-REALIZATION-001",
         title: "Observed implementation conforms to declared architectural dependencies",
+        status: RuleStatus::Draft,
+        integrity_tier: 1,
+    },
+    RuleDescriptor {
+        id: "BEHAVIOR-FLOW-001",
+        title: "Modeled Feature behavior forms a coherent intended flow",
         status: RuleStatus::Draft,
         integrity_tier: 1,
     },

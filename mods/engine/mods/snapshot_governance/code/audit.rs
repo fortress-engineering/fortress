@@ -14,9 +14,12 @@ use crate::architecture_diagnostics::{
     ArchitectureDiagnostic, ArchitectureDiagnosticError, derive_architecture_diagnostics,
 };
 use crate::architecture_realization::{ArchitectureRealization, reconcile_implementation};
+use crate::behavioral_semantics::{
+    BehavioralSemanticsError, IntendedBehavioralFlowGraph, evaluate_behavioral_semantics,
+};
 use crate::contract::evaluate_contract_coherency;
 use crate::contract_coherency::{
-    CcgObservedTestFact, ContractCoherencyGraph, ContractStandardIndex,
+    CcgCompilation, CcgObservedTestFact, ContractCoherencyGraph, ContractStandardIndex,
     compile_contract_coherency_graph,
 };
 use crate::documentation::{DocumentationEvaluationError, evaluate_repository_documentation};
@@ -219,7 +222,7 @@ impl AuditSummary {
 /// Returns [`AuditError`] for invalid/missing declarations, unstable or
 /// inconsistent snapshot inputs, analyzer failure, or rule-evaluation failure.
 pub fn audit_repository(root: impl AsRef<Path>) -> Result<AuditResult, AuditError> {
-    audit_repository_with_ccg(root.as_ref(), true).map(|(audit, _)| audit)
+    audit_repository_with_models(root.as_ref(), true).map(|(audit, _, _)| audit)
 }
 
 /// Compiles the canonical CCG for a stabilized repository input set.
@@ -237,26 +240,109 @@ pub fn audit_repository(root: impl AsRef<Path>) -> Result<AuditResult, AuditErro
 pub fn compile_repository_ccg(
     root: impl AsRef<Path>,
 ) -> Result<ContractCoherencyGraph, AuditError> {
-    audit_repository_with_ccg(root.as_ref(), false).map(|(_, ccg)| ccg)
+    audit_repository_with_models(root.as_ref(), false).map(|(_, ccg, _)| ccg)
 }
 
-fn audit_repository_with_ccg(
+/// Compiles the canonical Intended BFG for one stabilized repository.
+///
+/// The graph is derived from the same immutable CCG and standard interpretation
+/// used by [`audit_repository`]; observed implementation facts never enter it.
+///
+/// # Errors
+///
+/// Returns [`AuditError`] for malformed, unstable, or incoherent repository state.
+pub fn compile_repository_bfg(
+    root: impl AsRef<Path>,
+) -> Result<IntendedBehavioralFlowGraph, AuditError> {
+    audit_repository_with_models(root.as_ref(), false).map(|(_, _, bfg)| bfg)
+}
+
+fn audit_repository_with_models(
     root: &Path,
     include_implementation_observation: bool,
-) -> Result<(AuditResult, ContractCoherencyGraph), AuditError> {
+) -> Result<
+    (
+        AuditResult,
+        ContractCoherencyGraph,
+        IntendedBehavioralFlowGraph,
+    ),
+    AuditError,
+> {
+    let prepared = prepare_audit(root)?;
+    let standard = &prepared.standard.bundle;
+    let ccg = prepared
+        .ccg_compilation
+        .graph()
+        .ok_or_else(|| AuditError::ContractState("prepared audit did not contain a CCG".into()))?;
+    let (observed_implementation, architecture_realization) = reconcile_repository_implementation(
+        &prepared.snapshot,
+        ccg,
+        &prepared.observed_files,
+        standard.edition(),
+        include_implementation_observation,
+    )?;
+    let documentation =
+        evaluate_repository_documentation(root, &prepared.snapshot, ccg, standard.edition())
+            .map_err(AuditError::Documentation)?;
+    let contract_coherency =
+        evaluate_contract_coherency(prepared.ccg_compilation, &documentation, standard.edition())
+            .map_err(EvaluationError::Finding)
+            .map_err(AuditError::Evaluation)?;
+    let ccg = contract_coherency.graph().ok_or_else(|| {
+        AuditError::ContractState("CCG compilation did not produce a graph".into())
+    })?;
+    let behavioral_semantics = evaluate_behavioral_semantics(ccg, standard.edition())
+        .map_err(AuditError::BehavioralSemantics)?;
+    let architecture_diagnostics =
+        derive_architecture_diagnostics(ccg, &observed_implementation, &architecture_realization)
+            .map_err(AuditError::ArchitectureDiagnostics)?;
+    let evaluation_inputs = CompleteEvaluationInputs::new(
+        &prepared.rust_tests,
+        &documentation,
+        &contract_coherency,
+        &architecture_realization,
+        &behavioral_semantics,
+    );
+    let evaluation = evaluate_snapshot_rules(standard, &prepared.snapshot, ccg, evaluation_inputs)?;
+    let mut unsupported_analysis = architecture_diagnostics.unsupported_analysis().to_vec();
+    unsupported_analysis.extend(
+        behavioral_semantics
+            .graph()
+            .unsupported_semantics()
+            .iter()
+            .map(|value| format!("intended_bfg:{value}")),
+    );
+    unsupported_analysis.sort();
+    unsupported_analysis.dedup();
+    Ok((
+        result_from_evaluation(
+            &prepared.snapshot,
+            &evaluation,
+            &architecture_diagnostics,
+            unsupported_analysis,
+        ),
+        ccg.clone(),
+        behavioral_semantics.graph().clone(),
+    ))
+}
+
+struct PreparedAudit {
+    observed_files: BTreeMap<String, Vec<u8>>,
+    standard: LoadedStandard,
+    rust_tests: Vec<crate::rust_test_analyzer::RustTestFact>,
+    ccg_compilation: CcgCompilation,
+    snapshot: RepositorySnapshot,
+}
+
+fn prepare_audit(root: &Path) -> Result<PreparedAudit, AuditError> {
     let project_document = read_document(root, "data/project.json")?;
     let project = ProjectConfiguration::from_json_str(project_document.source()?)
         .map_err(AuditError::Project)?;
     let policy = ObservationPolicy::new(project.observation_exclusions().iter().cloned())
         .map_err(AuditError::ObservationPolicy)?;
-    let initial_observation =
-        observe_repository_stably(root, &policy).map_err(AuditError::Snapshot)?;
-    let observed_files = read_observed_files(root, &initial_observation)?;
-    let loaded_standard = load_standard(root, &observed_files)?;
-    let standard_manifest = &loaded_standard.manifest;
-    let rule_documents = &loaded_standard.rules;
-    let standard = &loaded_standard.bundle;
-    let standard_index = ContractStandardIndex::from_bundle(standard);
+    let observation = observe_repository_stably(root, &policy).map_err(AuditError::Snapshot)?;
+    let observed_files = read_observed_files(root, &observation)?;
+    let standard = load_standard(root, &observed_files)?;
     let rust_tests = analyze_observed_rust_tests(
         observed_files
             .iter()
@@ -267,7 +353,7 @@ fn audit_repository_with_ccg(
         rust_tests.iter().map(CcgObservedTestFact::from).collect();
     let ccg_compilation = compile_contract_coherency_graph(
         &observed_files,
-        &standard_index,
+        &ContractStandardIndex::from_bundle(&standard.bundle),
         Some(&observed_test_facts),
     );
     let ccg = ccg_compilation.graph().ok_or_else(|| {
@@ -281,19 +367,12 @@ fn audit_repository_with_ccg(
                 .into(),
         )
     })?;
-    let contract_documents: Vec<LoadedDocument> = observed_files
-        .iter()
-        .filter(|(path, _)| path.as_str() == "contract.json" || path.ends_with("/contract.json"))
-        .map(|(path, bytes)| LoadedDocument {
-            path: path.clone(),
-            bytes: bytes.clone(),
-        })
-        .collect();
-
+    let contract_documents = contract_documents(&observed_files);
     let documents = SnapshotDocuments::new(
-        &standard_manifest.path,
-        &standard_manifest.bytes,
-        rule_documents
+        &standard.manifest.path,
+        &standard.manifest.bytes,
+        standard
+            .rules
             .iter()
             .map(|document| (document.path.as_str(), document.bytes.as_slice())),
         &project_document.bytes,
@@ -301,58 +380,41 @@ fn audit_repository_with_ccg(
             .iter()
             .map(|document| (document.path.as_str(), document.bytes.as_slice())),
     );
-    let snapshot = build_repository_snapshot(root, &policy, ccg, standard, &documents)
+    let snapshot = build_repository_snapshot(root, &policy, ccg, &standard.bundle, &documents)
         .map_err(AuditError::Snapshot)?;
     verify_loaded_inputs(
         &snapshot,
         std::iter::once(&project_document)
-            .chain(std::iter::once(standard_manifest))
-            .chain(rule_documents.iter())
+            .chain(std::iter::once(&standard.manifest))
+            .chain(standard.rules.iter())
             .chain(contract_documents.iter()),
     )?;
     verify_observed_files(&snapshot, &observed_files)?;
-    let (observed_implementation, architecture_realization) = reconcile_repository_implementation(
-        &snapshot,
-        ccg,
-        &observed_files,
-        standard.edition(),
-        include_implementation_observation,
-    )?;
-    let documentation = evaluate_repository_documentation(root, &snapshot, ccg, standard.edition())
-        .map_err(AuditError::Documentation)?;
-    let contract_coherency =
-        evaluate_contract_coherency(ccg_compilation, &documentation, standard.edition())
-            .map_err(EvaluationError::Finding)
-            .map_err(AuditError::Evaluation)?;
-    let ccg = contract_coherency.graph().ok_or_else(|| {
-        AuditError::ContractState("CCG compilation did not produce a graph".into())
-    })?;
-    let architecture_diagnostics =
-        derive_architecture_diagnostics(ccg, &observed_implementation, &architecture_realization)
-            .map_err(AuditError::ArchitectureDiagnostics)?;
-    let evaluation = evaluate_snapshot_rules(
+    Ok(PreparedAudit {
+        observed_files,
         standard,
-        &snapshot,
-        ccg,
-        &rust_tests,
-        &documentation,
-        &contract_coherency,
-        &architecture_realization,
-    )?;
-    Ok((
-        result_from_evaluation(&snapshot, &evaluation, &architecture_diagnostics),
-        ccg.clone(),
-    ))
+        rust_tests,
+        ccg_compilation,
+        snapshot,
+    })
+}
+
+fn contract_documents(files: &BTreeMap<String, Vec<u8>>) -> Vec<LoadedDocument> {
+    files
+        .iter()
+        .filter(|(path, _)| path.as_str() == "contract.json" || path.ends_with("/contract.json"))
+        .map(|(path, bytes)| LoadedDocument {
+            path: path.clone(),
+            bytes: bytes.clone(),
+        })
+        .collect()
 }
 
 fn evaluate_snapshot_rules(
     standard: &StandardBundle,
     snapshot: &RepositorySnapshot,
     ccg: &ContractCoherencyGraph,
-    rust_tests: &[crate::rust_test_analyzer::RustTestFact],
-    documentation: &crate::documentation::DocumentationConformanceReport,
-    contract_coherency: &crate::contract::ContractCoherencyEvaluation,
-    architecture_realization: &ArchitectureRealization,
+    inputs: CompleteEvaluationInputs<'_>,
 ) -> Result<crate::evaluation::SnapshotEvaluation, AuditError> {
     let paths: Vec<String> = snapshot
         .files()
@@ -361,17 +423,7 @@ fn evaluate_snapshot_rules(
         .collect();
     let architecture = ArchitectureManifest::from_ccg(ccg, &paths);
     SnapshotRuleEngine::builtin()
-        .evaluate_complete(
-            standard,
-            snapshot,
-            &architecture,
-            CompleteEvaluationInputs::new(
-                rust_tests,
-                documentation,
-                contract_coherency,
-                architecture_realization,
-            ),
-        )
+        .evaluate_complete(standard, snapshot, &architecture, inputs)
         .map_err(AuditError::Evaluation)
 }
 
@@ -440,6 +492,7 @@ fn result_from_evaluation(
     snapshot: &RepositorySnapshot,
     evaluation: &crate::evaluation::SnapshotEvaluation,
     architecture_diagnostics: &crate::architecture_diagnostics::ArchitectureDiagnostics,
+    unsupported_analysis: Vec<String>,
 ) -> AuditResult {
     let summary = AuditSummary {
         rules_evaluated: evaluation.evaluated_count(),
@@ -465,7 +518,7 @@ fn result_from_evaluation(
         rules: evaluation.rules().to_vec(),
         findings: evaluation.findings().to_vec(),
         diagnostics: architecture_diagnostics.diagnostics().to_vec(),
-        unsupported_analysis: architecture_diagnostics.unsupported_analysis().to_vec(),
+        unsupported_analysis,
     }
 }
 
@@ -643,6 +696,8 @@ pub enum AuditError {
     ImplementationObservation(ImplementationObservationError),
     /// Architecture diagnostic derivation failed.
     ArchitectureDiagnostics(ArchitectureDiagnosticError),
+    /// Intended behavioral semantics could not compile or normalize.
+    BehavioralSemantics(BehavioralSemanticsError),
     /// Snapshot-bound documentation and contract evaluation failed.
     Documentation(DocumentationEvaluationError),
     /// Rule evaluation failed.
@@ -682,6 +737,9 @@ impl Display for AuditError {
                     formatter,
                     "architecture diagnostic derivation failed: {error}"
                 )
+            }
+            Self::BehavioralSemantics(error) => {
+                write!(formatter, "behavioral semantics failed: {error}")
             }
             Self::Documentation(error) => {
                 write!(formatter, "documentation evaluation failed: {error}")

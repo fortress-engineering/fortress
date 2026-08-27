@@ -15,7 +15,7 @@
     "integrity_tier": { "type": "integer", "minimum": 0, "maximum": 4 },
     "category": {
       "enum": [
-        "architecture", "dependency", "contract", "source", "documentation",
+        "architecture", "behavior", "dependency", "contract", "source", "documentation",
         "testing", "certification", "pipeline", "change", "onboarding",
         "security", "repository", "standard"
       ]

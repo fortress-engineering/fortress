@@ -12,7 +12,7 @@ use std::fs;
 use std::io::{self, Write};
 use std::path::PathBuf;
 
-use fortress_core::audit::{audit_repository, compile_repository_ccg};
+use fortress_core::audit::{audit_repository, compile_repository_bfg, compile_repository_ccg};
 use fortress_core::contract_coherency::CcgCoherencyStatus;
 pub mod command;
 
@@ -60,6 +60,7 @@ where
         "CMD-CORE-VERSION" => run_version(&arguments[1..], output, error),
         "CMD-SNAPSHOT-AUDIT" => run_audit(&arguments[1..], output, error),
         "CMD-CONTRACT-CCG" => run_ccg(&arguments[1..], output, error),
+        "CMD-BEHAVIOR-BFG" => run_bfg(&arguments[1..], output, error),
         _ => {
             writeln!(
                 error,
@@ -69,6 +70,71 @@ where
             Ok(EXIT_USAGE)
         }
     }
+}
+
+fn run_bfg<O: Write, E: Write>(
+    arguments: &[String],
+    output: &mut O,
+    error: &mut E,
+) -> io::Result<u8> {
+    let (root, destination) = match parse_bfg_arguments(arguments) {
+        Ok(parsed) => parsed,
+        Err(message) => {
+            writeln!(error, "{message}")?;
+            return Ok(EXIT_USAGE);
+        }
+    };
+    let graph = match compile_repository_bfg(&root) {
+        Ok(graph) => graph,
+        Err(graph_error) => {
+            writeln!(error, "BFG compilation failed: {graph_error}")?;
+            return Ok(EXIT_USAGE);
+        }
+    };
+    let document = graph.to_canonical_json().map_err(io::Error::other)?;
+    if let Some(destination) = destination {
+        fs::write(destination, document)?;
+    } else {
+        write!(output, "{document}")?;
+    }
+    Ok(if graph.violations().is_empty() {
+        EXIT_SUCCESS
+    } else {
+        EXIT_VIOLATION
+    })
+}
+
+fn parse_bfg_arguments(arguments: &[String]) -> Result<(PathBuf, Option<PathBuf>), &'static str> {
+    let mut root = None;
+    let mut destination = None;
+    let mut index = 0;
+    while index < arguments.len() {
+        let argument = &arguments[index];
+        if argument == "--format" {
+            index += 1;
+            if arguments.get(index).map(String::as_str) != Some("json") {
+                return Err("usage: fortress bfg [path] [--format json] [--output path]");
+            }
+        } else if let Some(value) = argument.strip_prefix("--format=") {
+            if value != "json" {
+                return Err("BFG format must be `json`");
+            }
+        } else if argument == "--output" {
+            index += 1;
+            let Some(value) = arguments.get(index) else {
+                return Err("usage: fortress bfg [path] [--format json] [--output path]");
+            };
+            if destination.replace(PathBuf::from(value)).is_some() {
+                return Err("usage: fortress bfg [path] [--format json] [--output path]");
+            }
+        } else if argument.starts_with('-') || root.is_some() {
+            return Err("usage: fortress bfg [path] [--format json] [--output path]");
+        } else {
+            root = Some(PathBuf::from(argument));
+        }
+        index += 1;
+    }
+    Ok((root.unwrap_or_else(|| PathBuf::from(".")), destination))
 }
 
 fn run_ccg<O: Write, E: Write>(

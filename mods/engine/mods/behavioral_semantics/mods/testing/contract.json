@@ -1,0 +1,37 @@
+{
+  "$schema": "urn:fortress:schema:v2:module-contract",
+  "schema_version": 2,
+  "id": "TEST-BEHAVIORAL-SEMANTICS-0001",
+  "display_name": "Behavioral Semantics Testing",
+  "provides": [],
+  "requires": [
+    {
+      "provider": "AF-BEHAVIORAL-SEMANTICS-0001",
+      "capability": "CAP-BEHAVIORAL-SEMANTICS",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-CONTRACT-COHERENCY-0001",
+      "capability": "CAP-CONTRACT-COHERENCY",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-CORE-0001",
+      "capability": "CAP-FORTRESS-ENGINE",
+      "version": "^0.1.0"
+    }
+  ],
+  "relationships": [
+    {
+      "type": "verifies",
+      "target": "AF-BEHAVIORAL-SEMANTICS-0001",
+      "subjects": [
+        "AF-BEHAVIORAL-SEMANTICS-0001"
+      ]
+    }
+  ],
+  "constraints": [],
+  "guarantees": [],
+  "features": [],
+  "behavior": []
+}

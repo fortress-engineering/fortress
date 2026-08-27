@@ -24,6 +24,10 @@ path = "../mods/testing/code/cli.rs"
 name = "self_model"
 path = "../../../mods/testing/code/self_model.rs"
 
+[[test]]
+name = "audit_flow"
+path = "../../../mods/testing/code/audit_flow.rs"
+
 [dependencies]
 fortress-core = { path = "../../engine/data" }
 

@@ -12,7 +12,7 @@ Compose the implemented core capabilities behind a stable Rust library facade wh
 
 ### Includes
 
-The crate facade, package contract, and integration of standard registry, finding model, contract coherency, project model, repository observation, implementation observation, architecture evaluation, and Snapshot Governance capabilities.
+The crate facade, package contract, and integration of standard registry, finding model, contract coherency, Behavioral Semantics, project model, repository observation, implementation observation, architecture evaluation, and Snapshot Governance capabilities.
 
 ### Excludes
 
@@ -25,6 +25,12 @@ Terminal rendering, hosted-provider adapters, persistent jobs, onboarding, deplo
 **Types:** `depends_on`
 
 Supplies CCG-backed architecture and dependency evaluation through the Engine facade.
+
+### [Behavioral Semantics](mods/behavioral_semantics/README.md)
+
+**Types:** `depends_on`
+
+Supplies deterministic Intended BFG compilation, graph-level flow coherence, and explicit behavioral modeling states.
 
 ### [Contract Coherency](mods/contract_coherency/README.md)
 

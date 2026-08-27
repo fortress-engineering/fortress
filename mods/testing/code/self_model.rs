@@ -127,6 +127,7 @@ fn live_contract_v2_ecosystem_resolves_completely() {
                 "ARCH-DEPENDENCY-001",
                 "ARCH-OWNERSHIP-001",
                 "ARCH-REALIZATION-001",
+                "BEHAVIOR-FLOW-001",
                 "CONTRACT-COHERENCY-001",
                 "REPO-DOCS-001",
                 "REPO-MODULE-001",
@@ -145,21 +146,24 @@ fn live_contract_v2_ecosystem_resolves_completely() {
         "live CCG must be coherent: {:#?}",
         resolution.violations()
     );
-    assert_eq!(resolved.modules().len(), 20);
-    assert_eq!(resolved.capabilities().len(), 10);
-    assert_eq!(resolved.features().len(), 9);
-    assert_eq!(resolved.requirements().len(), 35);
+    assert_eq!(resolved.modules().len(), 22);
+    assert_eq!(resolved.capabilities().len(), 11);
+    assert_eq!(resolved.features().len(), 11);
+    assert_eq!(resolved.requirements().len(), 40);
     assert_eq!(resolved.guarantees().len(), 5);
-    assert_eq!(resolved.checkpoints().len(), 0);
-    assert_eq!(resolved.direct_requirements().len(), 53);
-    assert_eq!(resolved.relationships().len(), 9);
-    assert!(resolved.modules().values().all(|module| {
-        module.contract().behavior().is_empty() && module.digest().starts_with("sha256:")
-    }));
+    assert_eq!(resolved.checkpoints().len(), 10);
+    assert_eq!(resolved.direct_requirements().len(), 60);
+    assert_eq!(resolved.relationships().len(), 10);
+    assert!(
+        resolved
+            .modules()
+            .values()
+            .all(|module| module.digest().starts_with("sha256:"))
+    );
     assert!(
         resolved
             .effective_constraints()
             .values()
-            .all(|values| values.len() == 4)
+            .all(|values| values.len() == 5)
     );
 }

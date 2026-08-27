@@ -37,6 +37,13 @@ const BUILTIN_COMMANDS: &[CommandDescriptor] = &[
         description: "Compile and render the deterministic Contract Coherency Graph.",
         usage: "fortress ccg [path] [--format json] [--output path]",
     },
+    CommandDescriptor {
+        id: "CMD-BEHAVIOR-BFG",
+        name: "bfg",
+        aliases: &[],
+        description: "Compile and render the deterministic Intended Behavioral Flow Graph.",
+        usage: "fortress bfg [path] [--format json] [--output path]",
+    },
 ];
 
 /// Discoverable metadata for one registered Fortress command.

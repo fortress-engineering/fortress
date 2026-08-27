@@ -12,11 +12,11 @@ Compile canonical Module Contract v2 authority, physical Module containment, sta
 
 ### Includes
 
-Contract v2 parsing and canonical serialization, ecosystem identity indexing, capability and dependency closure, rule implication and conflict closure, effective constraints, guarantee support topology, parent-local verification topology, behavioral checkpoint preservation, canonical CCG serialization, graph digests, and explicit unsupported semantic classes.
+Contract v2 parsing and canonical serialization, ecosystem identity indexing, capability and dependency closure, rule implication and conflict closure, effective constraints, guarantee support topology, parent-local verification topology, global behavioral checkpoint identity, Feature/Module ownership, transition integrity and provenance preservation, canonical CCG serialization, graph digests, and explicit unsupported semantic classes.
 
 ### Excludes
 
-Repository byte observation, source dependency realization, behavioral-flow compilation, empirical test execution evidence, certification, onboarding, temporal governance, arbitrary natural-language theorem proving, and presentation-specific graph visualization.
+Repository byte observation, source dependency realization, trigger or terminal cardinality, reachability, branch viability, SCC or dominator interpretation, behavioral-flow compilation, empirical test execution evidence, certification, onboarding, temporal governance, arbitrary natural-language theorem proving, and presentation-specific graph visualization.
 
 ## Relationships
 
@@ -28,4 +28,4 @@ Supplies the exact selected standard identity, registered rules, and formal impl
 
 ## Guarantees
 
-Equal semantic inputs produce byte-identical LF-terminated CCG JSON and the same SHA-256 digest; provided capabilities remain distinct from requirements and reachability; contradictions fail without priority or override; and every conclusion retains canonical source or derivation provenance.
+Equal semantic inputs produce byte-identical LF-terminated CCG JSON and the same SHA-256 digest; provided capabilities remain distinct from requirements and reachability; declaration-integrity contradictions fail without priority or override; graph-level behavioral conclusions remain owned by Behavioral Semantics; and every CCG conclusion retains canonical source or derivation provenance.

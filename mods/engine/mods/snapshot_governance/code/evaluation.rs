@@ -11,6 +11,7 @@ use serde::Serialize;
 
 use crate::architecture::{ARCH_DEPENDENCY_RULE_ID, ArchitectureManifest};
 use crate::architecture_realization::{ARCH_REALIZATION_RULE_ID, ArchitectureRealization};
+use crate::behavioral_semantics::{BEHAVIOR_FLOW_RULE_ID, BehavioralSemanticsEvaluation};
 use crate::contract::{CONTRACT_COHERENCY_RULE_ID, ContractCoherencyEvaluation};
 use crate::documentation::{DocumentationConformanceReport, REPO_DOCS_RULE_ID};
 use crate::finding::{CanonicalFinding, FindingError};
@@ -116,10 +117,11 @@ impl SnapshotEvaluation {
         self.rules
             .iter()
             .filter(|execution| {
-                matches!(
-                    execution.state,
-                    RuleExecutionState::Passed | RuleExecutionState::Failed
-                )
+                execution.applicable
+                    && matches!(
+                        execution.state,
+                        RuleExecutionState::Passed | RuleExecutionState::Failed
+                    )
             })
             .count()
     }
@@ -129,7 +131,9 @@ impl SnapshotEvaluation {
     pub fn passed_count(&self) -> usize {
         self.rules
             .iter()
-            .filter(|execution| execution.state == RuleExecutionState::Passed)
+            .filter(|execution| {
+                execution.applicable && execution.state == RuleExecutionState::Passed
+            })
             .count()
     }
 
@@ -138,7 +142,9 @@ impl SnapshotEvaluation {
     pub fn failed_count(&self) -> usize {
         self.rules
             .iter()
-            .filter(|execution| execution.state == RuleExecutionState::Failed)
+            .filter(|execution| {
+                execution.applicable && execution.state == RuleExecutionState::Failed
+            })
             .count()
     }
 
@@ -163,6 +169,7 @@ pub struct CompleteEvaluationInputs<'a> {
     documentation: &'a DocumentationConformanceReport,
     contract_coherency: &'a ContractCoherencyEvaluation,
     architecture_realization: &'a ArchitectureRealization,
+    behavioral_semantics: &'a BehavioralSemanticsEvaluation,
 }
 
 impl<'a> CompleteEvaluationInputs<'a> {
@@ -173,12 +180,35 @@ impl<'a> CompleteEvaluationInputs<'a> {
         documentation: &'a DocumentationConformanceReport,
         contract_coherency: &'a ContractCoherencyEvaluation,
         architecture_realization: &'a ArchitectureRealization,
+        behavioral_semantics: &'a BehavioralSemanticsEvaluation,
     ) -> Self {
         Self {
             rust_tests,
             documentation,
             contract_coherency,
             architecture_realization,
+            behavioral_semantics,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default)]
+struct EvaluationInputs<'a> {
+    rust_tests: Option<&'a [RustTestFact]>,
+    documentation: Option<&'a DocumentationConformanceReport>,
+    contract_coherency: Option<&'a ContractCoherencyEvaluation>,
+    architecture_realization: Option<&'a ArchitectureRealization>,
+    behavioral_semantics: Option<&'a BehavioralSemanticsEvaluation>,
+}
+
+impl<'a> From<CompleteEvaluationInputs<'a>> for EvaluationInputs<'a> {
+    fn from(inputs: CompleteEvaluationInputs<'a>) -> Self {
+        Self {
+            rust_tests: Some(inputs.rust_tests),
+            documentation: Some(inputs.documentation),
+            contract_coherency: Some(inputs.contract_coherency),
+            architecture_realization: Some(inputs.architecture_realization),
+            behavioral_semantics: Some(inputs.behavioral_semantics),
         }
     }
 }
@@ -206,7 +236,12 @@ impl SnapshotRuleEngine {
         snapshot: &RepositorySnapshot,
         architecture: &ArchitectureManifest,
     ) -> Result<SnapshotEvaluation, EvaluationError> {
-        Self::evaluate_internal(standard, snapshot, architecture, None, None, None, None)
+        Self::evaluate_internal(
+            standard,
+            snapshot,
+            architecture,
+            EvaluationInputs::default(),
+        )
     }
 
     /// Evaluates the bundle with all currently supported snapshot-bound inputs.
@@ -221,114 +256,27 @@ impl SnapshotRuleEngine {
         architecture: &ArchitectureManifest,
         inputs: CompleteEvaluationInputs<'_>,
     ) -> Result<SnapshotEvaluation, EvaluationError> {
-        Self::evaluate_internal(
-            standard,
-            snapshot,
-            architecture,
-            Some(inputs.rust_tests),
-            Some(inputs.documentation),
-            Some(inputs.contract_coherency),
-            Some(inputs.architecture_realization),
-        )
+        Self::evaluate_internal(standard, snapshot, architecture, inputs.into())
     }
 
     fn evaluate_internal(
         standard: &StandardBundle,
         snapshot: &RepositorySnapshot,
         architecture: &ArchitectureManifest,
-        rust_tests: Option<&[RustTestFact]>,
-        documentation: Option<&DocumentationConformanceReport>,
-        contract_coherency: Option<&ContractCoherencyEvaluation>,
-        architecture_realization: Option<&ArchitectureRealization>,
+        inputs: EvaluationInputs<'_>,
     ) -> Result<SnapshotEvaluation, EvaluationError> {
         validate_standard_edition(standard, snapshot)?;
 
         let mut rules = Vec::with_capacity(standard.rules().len());
         let mut findings = Vec::new();
         for rule in standard.rules() {
-            let (execution, mut rule_findings) = if rule.id() == ARCH_DEPENDENCY_RULE_ID {
-                dependency_execution(rule.id(), architecture, standard.edition())?
-            } else if rule.id() == ARCH_REALIZATION_RULE_ID {
-                architecture_realization.map_or_else(
-                    || {
-                        Ok(unsupported_execution(
-                            rule.id(),
-                            "Architecture realization requires one snapshot-bound observed implementation and one compiled CCG reconciliation.",
-                        ))
-                    },
-                    |result| Ok(realization_execution(rule.id(), result)),
-                )?
-            } else if rule.id() == ARCH_OWNERSHIP_RULE_ID {
-                ownership_execution(rule.id(), architecture, snapshot, standard.edition())?
-            } else if rule.id() == REPO_MODULE_RULE_ID {
-                placement_execution(rule.id(), snapshot, standard.edition())?
-            } else if rule.id() == REPO_DOCS_RULE_ID {
-                documentation.map_or_else(
-                    || {
-                        Ok(unsupported_execution(
-                            rule.id(),
-                            "Documentation evaluation requires snapshot-bound repository bytes and canonical Module contracts.",
-                        ))
-                    },
-                    |report| Ok(documentation_execution(rule.id(), report)),
-                )?
-            } else if rule.id() == CONTRACT_COHERENCY_RULE_ID {
-                contract_coherency.map_or_else(
-                    || {
-                        Ok(unsupported_execution(
-                            rule.id(),
-                            "Contract coherency requires canonical Module Contract v2 repository bytes, observed test evidence, and parsed README relationship projections.",
-                        ))
-                    },
-                    |result| Ok(contract_execution(rule.id(), result)),
-                )?
-            } else if rule.id() == TEST_TRACEABILITY_RULE_ID {
-                if let (Some(rust_tests), Some(contract_coherency)) =
-                    (rust_tests, contract_coherency)
-                {
-                    if let Some(ccg) = contract_coherency.graph() {
-                        traceability_execution(rule.id(), ccg, rust_tests, standard.edition())?
-                    } else {
-                        unsupported_execution(
-                            rule.id(),
-                            "Traceability evaluation requires a compiled CCG verification topology.",
-                        )
-                    }
-                } else {
-                    unsupported_execution(
-                        rule.id(),
-                        "Traceability evaluation requires a compiled CCG and snapshot-bound Rust test facts.",
-                    )
-                }
-            } else if rule.id() == TEST_BOUNDARY_RULE_ID {
-                if let (Some(rust_tests), Some(contract_coherency)) =
-                    (rust_tests, contract_coherency)
-                {
-                    if let Some(contracts) = contract_coherency.graph() {
-                        testing_boundary_execution(
-                            rule.id(),
-                            contracts,
-                            rust_tests,
-                            standard.edition(),
-                        )?
-                    } else {
-                        unsupported_execution(
-                            rule.id(),
-                            "Testing-boundary evaluation requires a successfully resolved Module Contract v2 ecosystem.",
-                        )
-                    }
-                } else {
-                    unsupported_execution(
-                        rule.id(),
-                        "Testing-boundary evaluation requires resolved Module contracts and snapshot-bound Rust test facts.",
-                    )
-                }
-            } else {
-                unsupported_execution(
-                    rule.id(),
-                    "No Snapshot Governance evaluator is registered for this rule.",
-                )
-            };
+            let (execution, mut rule_findings) = evaluate_rule(
+                rule.id(),
+                standard.edition(),
+                snapshot,
+                architecture,
+                inputs,
+            )?;
             rules.push(execution);
             findings.append(&mut rule_findings);
         }
@@ -342,6 +290,121 @@ impl SnapshotRuleEngine {
             findings,
         })
     }
+}
+
+fn evaluate_rule(
+    rule_id: &str,
+    edition: &str,
+    snapshot: &RepositorySnapshot,
+    architecture: &ArchitectureManifest,
+    inputs: EvaluationInputs<'_>,
+) -> Result<(RuleExecution, Vec<CanonicalFinding>), EvaluationError> {
+    match rule_id {
+        ARCH_DEPENDENCY_RULE_ID => dependency_execution(rule_id, architecture, edition),
+        ARCH_REALIZATION_RULE_ID => Ok(inputs.architecture_realization.map_or_else(
+            || unsupported_execution(rule_id, "Architecture realization requires one snapshot-bound observed implementation and one compiled CCG reconciliation."),
+            |result| realization_execution(rule_id, result),
+        )),
+        BEHAVIOR_FLOW_RULE_ID => Ok(inputs.behavioral_semantics.map_or_else(
+            || unsupported_execution(rule_id, "Behavioral-flow evaluation requires one Intended BFG compiled from the audit CCG."),
+            |result| behavior_execution(rule_id, result),
+        )),
+        ARCH_OWNERSHIP_RULE_ID => ownership_execution(rule_id, architecture, snapshot, edition),
+        REPO_MODULE_RULE_ID => placement_execution(rule_id, snapshot, edition),
+        REPO_DOCS_RULE_ID => Ok(inputs.documentation.map_or_else(
+            || unsupported_execution(rule_id, "Documentation evaluation requires snapshot-bound repository bytes and canonical Module contracts."),
+            |report| documentation_execution(rule_id, report),
+        )),
+        CONTRACT_COHERENCY_RULE_ID => Ok(inputs.contract_coherency.map_or_else(
+            || unsupported_execution(rule_id, "Contract coherency requires canonical Module Contract v2 repository bytes, observed test evidence, and parsed README relationship projections."),
+            |result| contract_execution(rule_id, result),
+        )),
+        TEST_TRACEABILITY_RULE_ID => traceability_from_inputs(rule_id, edition, inputs),
+        TEST_BOUNDARY_RULE_ID => testing_boundary_from_inputs(rule_id, edition, inputs),
+        _ => Ok(unsupported_execution(
+            rule_id,
+            "No Snapshot Governance evaluator is registered for this rule.",
+        )),
+    }
+}
+
+fn traceability_from_inputs(
+    rule_id: &str,
+    edition: &str,
+    inputs: EvaluationInputs<'_>,
+) -> Result<(RuleExecution, Vec<CanonicalFinding>), EvaluationError> {
+    let (Some(rust_tests), Some(contract_coherency)) =
+        (inputs.rust_tests, inputs.contract_coherency)
+    else {
+        return Ok(unsupported_execution(
+            rule_id,
+            "Traceability evaluation requires a compiled CCG and snapshot-bound Rust test facts.",
+        ));
+    };
+    contract_coherency.graph().map_or_else(
+        || {
+            Ok(unsupported_execution(
+                rule_id,
+                "Traceability evaluation requires a compiled CCG verification topology.",
+            ))
+        },
+        |ccg| traceability_execution(rule_id, ccg, rust_tests, edition),
+    )
+}
+
+fn testing_boundary_from_inputs(
+    rule_id: &str,
+    edition: &str,
+    inputs: EvaluationInputs<'_>,
+) -> Result<(RuleExecution, Vec<CanonicalFinding>), EvaluationError> {
+    let (Some(rust_tests), Some(contract_coherency)) =
+        (inputs.rust_tests, inputs.contract_coherency)
+    else {
+        return Ok(unsupported_execution(
+            rule_id,
+            "Testing-boundary evaluation requires resolved Module contracts and snapshot-bound Rust test facts.",
+        ));
+    };
+    contract_coherency.graph().map_or_else(
+        || {
+            Ok(unsupported_execution(
+                rule_id,
+                "Testing-boundary evaluation requires a successfully resolved Module Contract v2 ecosystem.",
+            ))
+        },
+        |ccg| testing_boundary_execution(rule_id, ccg, rust_tests, edition),
+    )
+}
+
+fn behavior_execution(
+    rule_id: &str,
+    result: &BehavioralSemanticsEvaluation,
+) -> (RuleExecution, Vec<CanonicalFinding>) {
+    let findings = result.findings().to_vec();
+    let summary = result.graph().summary();
+    let applicable = summary.modeled_features() > 0;
+    (
+        RuleExecution {
+            rule_id: rule_id.into(),
+            state: if findings.is_empty() {
+                RuleExecutionState::Passed
+            } else {
+                RuleExecutionState::Failed
+            },
+            applicable,
+            findings: findings.len(),
+            detail: format!(
+                "Intended BFG v1 compiled {} modeled Feature(s): {} coherent, {} incoherent, with {} unmodeled Feature(s) preserved as {} and {} finding(s).",
+                summary.modeled_features(),
+                summary.coherent_features(),
+                summary.incoherent_features(),
+                summary.unmodeled_features(),
+                "UNMODELED",
+                findings.len(),
+            ),
+        },
+        findings,
+    )
 }
 
 fn validate_standard_edition(

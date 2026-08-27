@@ -1,0 +1,34 @@
+{
+  "$schema": "urn:fortress:schema:v1:rule",
+  "schema_version": 1,
+  "id": "BEHAVIOR-FLOW-001",
+  "title": "Modeled Feature behavior forms a coherent intended flow",
+  "status": "draft",
+  "statement": "Every Feature with one or more authored behavioral checkpoints MUST form one structurally coherent intended flow with exactly one trigger, at least one reachable terminal, no dead region, viable decision branches, and no closed nonterminating component.",
+  "rationale": "Explicit behavioral intent becomes actionable only when its distributed checkpoints compose into one explainable graph whose meaningful branches can begin and terminate. Structural BFG coherence is distinct from proof that implementation behavior realizes the intent.",
+  "failure_prevented": "Contradictory, unreachable, nonterminating, or structurally incomplete authored Feature behavior being treated as a valid intended lifecycle.",
+  "applicability": "Every Feature containing at least one authored Contract v2 behavioral checkpoint. Features with no checkpoints are UNMODELED and are not failed or treated as passing modeled flows in this draft edition.",
+  "category": "behavior",
+  "integrity_tier": 1,
+  "evaluation": "Fortress compiles the CCG-preserved checkpoint declarations once into Intended BFG v1, derives graph reachability, decision viability and strongly connected components, and emits canonical findings for implemented graph contradictions. Terminal-reaching loops are allowed; unsupported implementation and general behavioral semantics remain explicit.",
+  "required_capabilities": [
+    "contract-coherency-graph-v1",
+    "intended-behavioral-flow-graph-v1"
+  ],
+  "logic": {
+    "implies": [],
+    "conflicts_with": []
+  },
+  "finding": {
+    "message": "Authored checkpoints do not form a coherent intended Feature flow.",
+    "location": "path"
+  },
+  "remediation": "Correct the authored Contract v2 checkpoints so the modeled Feature has exactly one trigger, terminal-reaching nonterminal checkpoints and decision branches, no dead region, and no closed nonterminating component.",
+  "valid_example": "One trigger reaches an action, a decision whose uniquely labeled branches each reach a terminal, and an optional retry loop with a terminal escape.",
+  "invalid_example": "A modeled Feature has two triggers, an unreachable action, or a decision branch entering a closed loop with no terminal path.",
+  "exception_policy": "Unmodeled Features remain explicit and non-failing in this draft. No exemption exists for contradictions inside an explicitly modeled flow.",
+  "introduced": "1.0.0-draft.1",
+  "history": [
+    "Introduced with Intended Behavioral Flow Graph v1 structural semantics."
+  ]
+}

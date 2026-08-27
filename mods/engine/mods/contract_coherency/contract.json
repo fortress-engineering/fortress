@@ -65,5 +65,16 @@
       ]
     }
   ],
-  "behavior": []
+  "behavior": [
+    {
+      "id": "CHK-CONTRACT-ECOSYSTEM-COMPILED",
+      "feature": "AF-FORTRESS-AUDIT-0001",
+      "kind": "action",
+      "transitions": [
+        {
+          "target": "CHK-IMPLEMENTATION-OBSERVED"
+        }
+      ]
+    }
+  ]
 }

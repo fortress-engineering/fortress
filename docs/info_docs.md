@@ -6,21 +6,25 @@ Persist computational output whose exact content is required for reproducible re
 
 ## Production
 
-Cargo produces the resolver lock record from package constraints. The Contract Coherency compiler produces the self-CCG from canonical contracts, recursive containment, standard logic, and supported verification facts.
+Cargo produces the resolver lock record from package constraints. The Contract Coherency compiler produces the self-CCG from canonical contracts, recursive containment, standard logic, and supported verification facts. Behavioral Semantics produces the self-BFG from CCG-preserved authored checkpoints and graph semantics.
 
 ## Semantics
 
-The lock record identifies one exact dependency resolution. The CCG records the deterministic derived semantic ecosystem, its provenance, effective obligations, relationships, support topology, and supported coherency result without becoming authored intent authority or certification evidence.
+The lock record identifies one exact dependency resolution. The CCG records the deterministic derived semantic ecosystem, its provenance, effective obligations, relationships, support topology, and supported coherency result. The Intended BFG records meaningful Feature-flow intent, Module lanes, boundary crossings, branches, loops, dominators, post-dominators, provenance, and explicit unsupported semantics without becoming authored authority, realized behavior, or certification evidence.
 
 ## Lifecycle
 
-Cargo regenerates the lock record when dependency inputs change. Fortress regenerates the CCG whenever one of its explicit semantic inputs changes, and CI rejects a stale committed projection. Build products remain transient outside the repository.
+Cargo regenerates the lock record when dependency inputs change. Fortress regenerates the CCG whenever one of its explicit semantic inputs changes and regenerates the BFG whenever its CCG or authored behavior changes; CI rejects either stale committed projection. Build products remain transient outside the repository.
 
 ## Files
 
 ### [`Cargo.lock`](../info/Cargo.lock)
 
 Records Cargo-produced exact dependency resolution for reproducible builds under the configured external lockfile path.
+
+### [`behavioral_flow_graph.json`](../info/behavioral_flow_graph.json)
+
+Persists Fortress's canonical derived Intended BFG v1 so local and hosted gates can compare fresh behavioral compilation byte for byte without claiming implementation realization.
 
 ### [`contract_coherency_graph.json`](../info/contract_coherency_graph.json)
 

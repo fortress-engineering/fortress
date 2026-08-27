@@ -70,9 +70,42 @@
             "T-TF-CLI-0001-R05-001",
             "T-TF-CLI-0001-R05-002"
           ]
+        },
+        {
+          "id": "TF-CLI-0001-R06",
+          "statement": "The native fortress bfg command compiles Intended BFG v1 from the repository CCG, emits canonical deterministic JSON to standard output or an explicit file, returns non-success for incoherent modeled flow or invalid state, and never implies behavior realization or certification.",
+          "tests": [
+            "T-TF-CLI-0001-R06-001",
+            "T-TF-CLI-0001-R06-002"
+          ]
         }
       ]
     }
   ],
-  "behavior": []
+  "behavior": [
+    {
+      "id": "CHK-AUDIT-FAILED",
+      "feature": "AF-FORTRESS-AUDIT-0001",
+      "kind": "terminal",
+      "outcome": "fail",
+      "transitions": []
+    },
+    {
+      "id": "CHK-AUDIT-INTERPRETED",
+      "feature": "AF-FORTRESS-AUDIT-0001",
+      "kind": "action",
+      "transitions": [
+        {
+          "target": "CHK-REPOSITORY-STABILIZED"
+        }
+      ]
+    },
+    {
+      "id": "CHK-AUDIT-PASSED",
+      "feature": "AF-FORTRESS-AUDIT-0001",
+      "kind": "terminal",
+      "outcome": "pass",
+      "transitions": []
+    }
+  ]
 }

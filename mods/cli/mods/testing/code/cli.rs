@@ -70,6 +70,7 @@ impl AuditFixture {
             root.join("mods/engine/docs/mods_docs.md"),
             modules_docs(&[
                 ("architecture_evaluation", "Architecture Evaluation"),
+                ("behavioral_semantics", "Behavioral Semantics"),
                 ("snapshot_governance", "Snapshot Governance"),
                 ("standard_registry", "Standard Registry"),
             ]),
@@ -85,6 +86,11 @@ impl AuditFixture {
                 "architecture_evaluation",
                 "AF-FIXTURE-ARCHITECTURE-0001",
                 "Architecture Evaluation",
+            ),
+            (
+                "behavioral_semantics",
+                "AF-FIXTURE-BEHAVIOR-0001",
+                "Behavioral Semantics",
             ),
             (
                 "snapshot_governance",
@@ -116,6 +122,7 @@ impl AuditFixture {
             "mods/engine/mods/standard_registry/data/std_id_rule.json",
             "mods/engine/mods/architecture_evaluation/data/dependency_rule.json",
             "mods/engine/mods/architecture_evaluation/data/realization_rule.json",
+            "mods/engine/mods/behavioral_semantics/data/behavior_flow_rule.json",
             "mods/engine/mods/snapshot_governance/data/ownership_rule.json",
             "mods/engine/mods/snapshot_governance/data/traceability_rule.json",
             "mods/engine/mods/snapshot_governance/data/test_boundary_rule.json",
@@ -135,6 +142,11 @@ impl AuditFixture {
             data_docs(&["dependency_rule.json", "realization_rule.json"]),
         )
         .expect("architecture Data documentation writes");
+        fs::write(
+            root.join("mods/engine/mods/behavioral_semantics/docs/data_docs.md"),
+            data_docs(&["behavior_flow_rule.json"]),
+        )
+        .expect("behavior Data documentation writes");
         fs::write(
             root.join("mods/engine/mods/snapshot_governance/docs/data_docs.md"),
             data_docs(&[
@@ -405,6 +417,40 @@ fn ccg_json_is_schema_versioned_and_repeatable() {
 #[test]
 fn ccg_rejects_unsupported_formats() {
     let output = run(&["ccg", "--format", "dot"]);
+    assert_eq!(output.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("--format json"));
+}
+
+/// `T-TF-CLI-0001-R06-001`
+/// Fortress requirement: TF-CLI-0001-R06
+#[test]
+fn bfg_json_is_intended_schema_versioned_and_repeatable() {
+    let fixture = AuditFixture::new();
+    let arguments = ["bfg".into(), fixture.argument(), "--format=json".into()];
+    let first = run_owned(&arguments);
+    let second = run_owned(&arguments);
+    assert!(
+        first.status.success(),
+        "{}",
+        String::from_utf8_lossy(&first.stderr)
+    );
+    assert_eq!(first.stdout, second.stdout);
+    let value: serde_json::Value =
+        serde_json::from_slice(&first.stdout).expect("BFG output is JSON");
+    assert_eq!(
+        value["$schema"],
+        "urn:fortress:schema:v1:behavioral-flow-graph"
+    );
+    assert_eq!(value["schema_version"], 1);
+    assert_eq!(value["view"], "intended");
+    assert_eq!(value["summary"]["modeled_features"], 0);
+}
+
+/// `T-TF-CLI-0001-R06-002`
+/// Fortress requirement: TF-CLI-0001-R06
+#[test]
+fn bfg_rejects_unsupported_formats() {
+    let output = run(&["bfg", "--format", "svg"]);
     assert_eq!(output.status.code(), Some(2));
     assert!(String::from_utf8_lossy(&output.stderr).contains("--format json"));
 }

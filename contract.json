@@ -15,6 +15,10 @@
   "relationships": [],
   "constraints": [
     {
+      "rule": "BEHAVIOR-FLOW-001",
+      "scope": "subtree"
+    },
+    {
       "rule": "CONTRACT-COHERENCY-001",
       "scope": "subtree"
     },
@@ -54,7 +58,32 @@
           ]
         }
       ]
+    },
+    {
+      "id": "AF-FORTRESS-AUDIT-0001",
+      "version": "0.1.0",
+      "requirements": [
+        {
+          "id": "AF-FORTRESS-AUDIT-0001-R01",
+          "statement": "The complete Fortress repository audit is modeled as one coherent deterministic intended Feature flow at the root Module scope spanning CLI request interpretation, repository stabilization, CCG compilation, implementation observation, architecture and rule evaluation, and truthful PASS or FAIL classification.",
+          "tests": [
+            "T-AF-FORTRESS-AUDIT-0001-R01-001",
+            "T-AF-FORTRESS-AUDIT-0001-R01-002"
+          ]
+        }
+      ]
     }
   ],
-  "behavior": []
+  "behavior": [
+    {
+      "id": "CHK-AUDIT-REQUESTED",
+      "feature": "AF-FORTRESS-AUDIT-0001",
+      "kind": "trigger",
+      "transitions": [
+        {
+          "target": "CHK-AUDIT-INTERPRETED"
+        }
+      ]
+    }
+  ]
 }

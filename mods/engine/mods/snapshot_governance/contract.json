@@ -17,6 +17,11 @@
       "version": "^0.1.0"
     },
     {
+      "provider": "AF-BEHAVIORAL-SEMANTICS-0001",
+      "capability": "CAP-BEHAVIORAL-SEMANTICS",
+      "version": "^0.1.0"
+    },
+    {
       "provider": "AF-CONTRACT-COHERENCY-0001",
       "capability": "CAP-CONTRACT-COHERENCY",
       "version": "^0.1.0"
@@ -172,9 +177,52 @@
             "T-TEST-BOUNDARY-001-R01-002",
             "T-TEST-BOUNDARY-001-R01-003"
           ]
+        },
+        {
+          "id": "AF-SNAPSHOT-GOVERNANCE-0001-R13",
+          "statement": "A complete snapshot audit compiles Intended BFG semantics once from the same immutable CCG, evaluates BEHAVIOR-FLOW-001 without rebuilding graphs per rule, and leaves unmodeled Features explicit and non-failing.",
+          "tests": [
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R13-001"
+          ]
         }
       ]
     }
   ],
-  "behavior": []
+  "behavior": [
+    {
+      "id": "CHK-AUDIT-RESULT-CLASSIFIED",
+      "feature": "AF-FORTRESS-AUDIT-0001",
+      "kind": "decision",
+      "transitions": [
+        {
+          "outcome": "fail",
+          "target": "CHK-AUDIT-FAILED"
+        },
+        {
+          "outcome": "pass",
+          "target": "CHK-AUDIT-PASSED"
+        }
+      ]
+    },
+    {
+      "id": "CHK-REPOSITORY-STABILIZED",
+      "feature": "AF-FORTRESS-AUDIT-0001",
+      "kind": "action",
+      "transitions": [
+        {
+          "target": "CHK-CONTRACT-ECOSYSTEM-COMPILED"
+        }
+      ]
+    },
+    {
+      "id": "CHK-RULES-EVALUATED",
+      "feature": "AF-FORTRESS-AUDIT-0001",
+      "kind": "action",
+      "transitions": [
+        {
+          "target": "CHK-AUDIT-RESULT-CLASSIFIED"
+        }
+      ]
+    }
+  ]
 }

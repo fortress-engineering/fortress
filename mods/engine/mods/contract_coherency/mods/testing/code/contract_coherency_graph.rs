@@ -626,42 +626,6 @@ fn ecosystem_resolution_rejects_incoherent_intent() {
         "Feature `AF-MISSING-FEATURE-0001` does not exist",
     );
 
-    let mut multiple_triggers = behavior.clone();
-    multiple_triggers["behavior"]
-        .as_array_mut()
-        .expect("array")
-        .insert(
-            1,
-            checkpoint(
-                "CHK-FLOW-START-TWO",
-                feature,
-                "trigger",
-                None,
-                &json!([{"target": "CHK-FLOW-TERMINAL"}]),
-            ),
-        );
-    assert_violation(
-        &[
-            ("contract.json", root.clone()),
-            ("mods/provider/contract.json", multiple_triggers),
-        ],
-        "must have exactly one trigger, found 2",
-    );
-
-    let mut missing_terminal = behavior.clone();
-    missing_terminal["behavior"]
-        .as_array_mut()
-        .expect("array")
-        .pop();
-    missing_terminal["behavior"][0]["transitions"] = json!([{"target": "CHK-FLOW-START"}]);
-    assert_violation(
-        &[
-            ("contract.json", root.clone()),
-            ("mods/provider/contract.json", missing_terminal),
-        ],
-        "has no terminal checkpoint",
-    );
-
     let mut invalid_decision = behavior.clone();
     invalid_decision["behavior"][0] = checkpoint(
         "CHK-FLOW-START",
@@ -701,28 +665,6 @@ fn ecosystem_resolution_rejects_incoherent_intent() {
         Some(&cross_tests),
     );
     assert!(messages(&cross).contains("crosses from Feature"));
-
-    let mut unreachable = behavior;
-    unreachable["behavior"]
-        .as_array_mut()
-        .expect("array")
-        .insert(
-            0,
-            checkpoint(
-                "CHK-FLOW-ORPHAN",
-                feature,
-                "terminal",
-                Some("orphaned"),
-                &json!([]),
-            ),
-        );
-    assert_violation(
-        &[
-            ("contract.json", root.clone()),
-            ("mods/provider/contract.json", unreachable),
-        ],
-        "is unreachable",
-    );
 
     let mut cycle_a = provider_contract();
     cycle_a["requires"] = json!([{

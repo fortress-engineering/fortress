@@ -271,6 +271,7 @@ fn live_fortress_has_no_unauthorized_or_transitive_bypass_rust_edges() {
                 "ARCH-DEPENDENCY-001",
                 "ARCH-OWNERSHIP-001",
                 "ARCH-REALIZATION-001",
+                "BEHAVIOR-FLOW-001",
                 "CONTRACT-COHERENCY-001",
                 "REPO-DOCS-001",
                 "REPO-MODULE-001",

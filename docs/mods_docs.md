@@ -16,7 +16,7 @@ Combines all provider-independent Fortress capabilities into the callable core u
 
 ### [Fortress Testing](../mods/testing/README.md)
 
-Verifies only the bootstrap-governance Feature introduced directly by the Fortress root and does not claim requirements owned by descendant Modules.
+Verifies only the bootstrap-governance and complete repository-audit Features introduced directly by the Fortress root and does not claim requirements owned by descendant Modules.
 
 ## Coordination
 

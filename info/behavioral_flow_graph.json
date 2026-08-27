@@ -1,0 +1,4056 @@
+{
+  "$schema": "urn:fortress:schema:v1:behavioral-flow-graph",
+  "schema_version": 1,
+  "semantic_version": "1.0.0",
+  "project_id": "PF-FORTRESS",
+  "standard": {
+    "id": "STD-FORTRESS-ENGINEERING",
+    "edition": "1.0.0-draft.1"
+  },
+  "source_ccg_digest": "sha256:82fbb68627c188857f985b4a33634c3c125a035ba7fe03729a67d1970c0f0057",
+  "view": "intended",
+  "summary": {
+    "total_features": 11,
+    "modeled_features": 1,
+    "unmodeled_features": 10,
+    "coherent_features": 1,
+    "incoherent_features": 0,
+    "checkpoints": 10,
+    "edges": 9,
+    "decisions": 1,
+    "terminals": 2,
+    "participant_modules": 6,
+    "boundary_crossings": 8,
+    "loops": 0
+  },
+  "feature_states": [
+    {
+      "feature": "AF-ARCHITECTURE-EVALUATION-0001",
+      "owner": "AF-ARCHITECTURE-EVALUATION-0001",
+      "state": "UNMODELED"
+    },
+    {
+      "feature": "AF-BEHAVIORAL-SEMANTICS-0001",
+      "owner": "AF-BEHAVIORAL-SEMANTICS-0001",
+      "state": "UNMODELED"
+    },
+    {
+      "feature": "AF-BOOTSTRAP-GOVERNANCE-0001",
+      "owner": "PF-FORTRESS",
+      "state": "UNMODELED"
+    },
+    {
+      "feature": "AF-CONTRACT-COHERENCY-0001",
+      "owner": "AF-CONTRACT-COHERENCY-0001",
+      "state": "UNMODELED"
+    },
+    {
+      "feature": "AF-FORTRESS-AUDIT-0001",
+      "owner": "PF-FORTRESS",
+      "state": "MODELED_COHERENT"
+    },
+    {
+      "feature": "AF-IMPLEMENTATION-OBSERVATION-0001",
+      "owner": "AF-IMPLEMENTATION-OBSERVATION-0001",
+      "state": "UNMODELED"
+    },
+    {
+      "feature": "AF-PROJECT-MODEL-0001",
+      "owner": "AF-PROJECT-MODEL-0001",
+      "state": "UNMODELED"
+    },
+    {
+      "feature": "AF-REPOSITORY-OBSERVATION-0001",
+      "owner": "AF-REPOSITORY-OBSERVATION-0001",
+      "state": "UNMODELED"
+    },
+    {
+      "feature": "AF-SNAPSHOT-GOVERNANCE-0001",
+      "owner": "AF-SNAPSHOT-GOVERNANCE-0001",
+      "state": "UNMODELED"
+    },
+    {
+      "feature": "AF-STANDARD-REGISTRY-0001",
+      "owner": "AF-STANDARD-REGISTRY-0001",
+      "state": "UNMODELED"
+    },
+    {
+      "feature": "TF-CLI-0001",
+      "owner": "TF-CLI-0001",
+      "state": "UNMODELED"
+    }
+  ],
+  "flows": [
+    {
+      "feature": "AF-FORTRESS-AUDIT-0001",
+      "owner": "PF-FORTRESS",
+      "state": "MODELED_COHERENT",
+      "participating_modules": [
+        "AF-ARCHITECTURE-EVALUATION-0001",
+        "AF-CONTRACT-COHERENCY-0001",
+        "AF-IMPLEMENTATION-OBSERVATION-0001",
+        "AF-SNAPSHOT-GOVERNANCE-0001",
+        "PF-FORTRESS",
+        "TF-CLI-0001"
+      ],
+      "trigger_checkpoint": "CHK-AUDIT-REQUESTED",
+      "terminal_checkpoints": [
+        "CHK-AUDIT-FAILED",
+        "CHK-AUDIT-PASSED"
+      ],
+      "nodes": [
+        {
+          "checkpoint": "CHK-ARCHITECTURE-EVALUATED",
+          "module": "AF-ARCHITECTURE-EVALUATION-0001",
+          "kind": "action",
+          "terminal_outcome": null,
+          "provenance": {
+            "path": "mods/engine/mods/architecture_evaluation/contract.json",
+            "pointer": "/behavior/0"
+          }
+        },
+        {
+          "checkpoint": "CHK-AUDIT-FAILED",
+          "module": "TF-CLI-0001",
+          "kind": "terminal",
+          "terminal_outcome": "fail",
+          "provenance": {
+            "path": "mods/cli/contract.json",
+            "pointer": "/behavior/0"
+          }
+        },
+        {
+          "checkpoint": "CHK-AUDIT-INTERPRETED",
+          "module": "TF-CLI-0001",
+          "kind": "action",
+          "terminal_outcome": null,
+          "provenance": {
+            "path": "mods/cli/contract.json",
+            "pointer": "/behavior/1"
+          }
+        },
+        {
+          "checkpoint": "CHK-AUDIT-PASSED",
+          "module": "TF-CLI-0001",
+          "kind": "terminal",
+          "terminal_outcome": "pass",
+          "provenance": {
+            "path": "mods/cli/contract.json",
+            "pointer": "/behavior/2"
+          }
+        },
+        {
+          "checkpoint": "CHK-AUDIT-REQUESTED",
+          "module": "PF-FORTRESS",
+          "kind": "trigger",
+          "terminal_outcome": null,
+          "provenance": {
+            "path": "contract.json",
+            "pointer": "/behavior/0"
+          }
+        },
+        {
+          "checkpoint": "CHK-AUDIT-RESULT-CLASSIFIED",
+          "module": "AF-SNAPSHOT-GOVERNANCE-0001",
+          "kind": "decision",
+          "terminal_outcome": null,
+          "provenance": {
+            "path": "mods/engine/mods/snapshot_governance/contract.json",
+            "pointer": "/behavior/0"
+          }
+        },
+        {
+          "checkpoint": "CHK-CONTRACT-ECOSYSTEM-COMPILED",
+          "module": "AF-CONTRACT-COHERENCY-0001",
+          "kind": "action",
+          "terminal_outcome": null,
+          "provenance": {
+            "path": "mods/engine/mods/contract_coherency/contract.json",
+            "pointer": "/behavior/0"
+          }
+        },
+        {
+          "checkpoint": "CHK-IMPLEMENTATION-OBSERVED",
+          "module": "AF-IMPLEMENTATION-OBSERVATION-0001",
+          "kind": "action",
+          "terminal_outcome": null,
+          "provenance": {
+            "path": "mods/engine/mods/implementation_observation/contract.json",
+            "pointer": "/behavior/0"
+          }
+        },
+        {
+          "checkpoint": "CHK-REPOSITORY-STABILIZED",
+          "module": "AF-SNAPSHOT-GOVERNANCE-0001",
+          "kind": "action",
+          "terminal_outcome": null,
+          "provenance": {
+            "path": "mods/engine/mods/snapshot_governance/contract.json",
+            "pointer": "/behavior/1"
+          }
+        },
+        {
+          "checkpoint": "CHK-RULES-EVALUATED",
+          "module": "AF-SNAPSHOT-GOVERNANCE-0001",
+          "kind": "action",
+          "terminal_outcome": null,
+          "provenance": {
+            "path": "mods/engine/mods/snapshot_governance/contract.json",
+            "pointer": "/behavior/2"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "source": "CHK-ARCHITECTURE-EVALUATED",
+          "target": "CHK-RULES-EVALUATED",
+          "decision_outcome": null,
+          "crosses_module_boundary": true,
+          "provenance": {
+            "path": "mods/engine/mods/architecture_evaluation/contract.json",
+            "pointer": "/behavior/0/transitions/0"
+          }
+        },
+        {
+          "source": "CHK-AUDIT-INTERPRETED",
+          "target": "CHK-REPOSITORY-STABILIZED",
+          "decision_outcome": null,
+          "crosses_module_boundary": true,
+          "provenance": {
+            "path": "mods/cli/contract.json",
+            "pointer": "/behavior/1/transitions/0"
+          }
+        },
+        {
+          "source": "CHK-AUDIT-REQUESTED",
+          "target": "CHK-AUDIT-INTERPRETED",
+          "decision_outcome": null,
+          "crosses_module_boundary": true,
+          "provenance": {
+            "path": "contract.json",
+            "pointer": "/behavior/0/transitions/0"
+          }
+        },
+        {
+          "source": "CHK-AUDIT-RESULT-CLASSIFIED",
+          "target": "CHK-AUDIT-FAILED",
+          "decision_outcome": "fail",
+          "crosses_module_boundary": true,
+          "provenance": {
+            "path": "mods/engine/mods/snapshot_governance/contract.json",
+            "pointer": "/behavior/0/transitions/0"
+          }
+        },
+        {
+          "source": "CHK-AUDIT-RESULT-CLASSIFIED",
+          "target": "CHK-AUDIT-PASSED",
+          "decision_outcome": "pass",
+          "crosses_module_boundary": true,
+          "provenance": {
+            "path": "mods/engine/mods/snapshot_governance/contract.json",
+            "pointer": "/behavior/0/transitions/1"
+          }
+        },
+        {
+          "source": "CHK-CONTRACT-ECOSYSTEM-COMPILED",
+          "target": "CHK-IMPLEMENTATION-OBSERVED",
+          "decision_outcome": null,
+          "crosses_module_boundary": true,
+          "provenance": {
+            "path": "mods/engine/mods/contract_coherency/contract.json",
+            "pointer": "/behavior/0/transitions/0"
+          }
+        },
+        {
+          "source": "CHK-IMPLEMENTATION-OBSERVED",
+          "target": "CHK-ARCHITECTURE-EVALUATED",
+          "decision_outcome": null,
+          "crosses_module_boundary": true,
+          "provenance": {
+            "path": "mods/engine/mods/implementation_observation/contract.json",
+            "pointer": "/behavior/0/transitions/0"
+          }
+        },
+        {
+          "source": "CHK-REPOSITORY-STABILIZED",
+          "target": "CHK-CONTRACT-ECOSYSTEM-COMPILED",
+          "decision_outcome": null,
+          "crosses_module_boundary": true,
+          "provenance": {
+            "path": "mods/engine/mods/snapshot_governance/contract.json",
+            "pointer": "/behavior/1/transitions/0"
+          }
+        },
+        {
+          "source": "CHK-RULES-EVALUATED",
+          "target": "CHK-AUDIT-RESULT-CLASSIFIED",
+          "decision_outcome": null,
+          "crosses_module_boundary": false,
+          "provenance": {
+            "path": "mods/engine/mods/snapshot_governance/contract.json",
+            "pointer": "/behavior/2/transitions/0"
+          }
+        }
+      ],
+      "module_boundary_crossings": [
+        {
+          "source": "CHK-ARCHITECTURE-EVALUATED",
+          "target": "CHK-RULES-EVALUATED",
+          "decision_outcome": null,
+          "crosses_module_boundary": true,
+          "provenance": {
+            "path": "mods/engine/mods/architecture_evaluation/contract.json",
+            "pointer": "/behavior/0/transitions/0"
+          }
+        },
+        {
+          "source": "CHK-AUDIT-INTERPRETED",
+          "target": "CHK-REPOSITORY-STABILIZED",
+          "decision_outcome": null,
+          "crosses_module_boundary": true,
+          "provenance": {
+            "path": "mods/cli/contract.json",
+            "pointer": "/behavior/1/transitions/0"
+          }
+        },
+        {
+          "source": "CHK-AUDIT-REQUESTED",
+          "target": "CHK-AUDIT-INTERPRETED",
+          "decision_outcome": null,
+          "crosses_module_boundary": true,
+          "provenance": {
+            "path": "contract.json",
+            "pointer": "/behavior/0/transitions/0"
+          }
+        },
+        {
+          "source": "CHK-AUDIT-RESULT-CLASSIFIED",
+          "target": "CHK-AUDIT-FAILED",
+          "decision_outcome": "fail",
+          "crosses_module_boundary": true,
+          "provenance": {
+            "path": "mods/engine/mods/snapshot_governance/contract.json",
+            "pointer": "/behavior/0/transitions/0"
+          }
+        },
+        {
+          "source": "CHK-AUDIT-RESULT-CLASSIFIED",
+          "target": "CHK-AUDIT-PASSED",
+          "decision_outcome": "pass",
+          "crosses_module_boundary": true,
+          "provenance": {
+            "path": "mods/engine/mods/snapshot_governance/contract.json",
+            "pointer": "/behavior/0/transitions/1"
+          }
+        },
+        {
+          "source": "CHK-CONTRACT-ECOSYSTEM-COMPILED",
+          "target": "CHK-IMPLEMENTATION-OBSERVED",
+          "decision_outcome": null,
+          "crosses_module_boundary": true,
+          "provenance": {
+            "path": "mods/engine/mods/contract_coherency/contract.json",
+            "pointer": "/behavior/0/transitions/0"
+          }
+        },
+        {
+          "source": "CHK-IMPLEMENTATION-OBSERVED",
+          "target": "CHK-ARCHITECTURE-EVALUATED",
+          "decision_outcome": null,
+          "crosses_module_boundary": true,
+          "provenance": {
+            "path": "mods/engine/mods/implementation_observation/contract.json",
+            "pointer": "/behavior/0/transitions/0"
+          }
+        },
+        {
+          "source": "CHK-REPOSITORY-STABILIZED",
+          "target": "CHK-CONTRACT-ECOSYSTEM-COMPILED",
+          "decision_outcome": null,
+          "crosses_module_boundary": true,
+          "provenance": {
+            "path": "mods/engine/mods/snapshot_governance/contract.json",
+            "pointer": "/behavior/1/transitions/0"
+          }
+        }
+      ],
+      "decision_branches": [
+        {
+          "decision": "CHK-AUDIT-RESULT-CLASSIFIED",
+          "outcome": "fail",
+          "target": "CHK-AUDIT-FAILED",
+          "can_reach_terminal": true,
+          "derivation": "branch_viability:CHK-AUDIT-RESULT-CLASSIFIED:CHK-AUDIT-FAILED"
+        },
+        {
+          "decision": "CHK-AUDIT-RESULT-CLASSIFIED",
+          "outcome": "pass",
+          "target": "CHK-AUDIT-PASSED",
+          "can_reach_terminal": true,
+          "derivation": "branch_viability:CHK-AUDIT-RESULT-CLASSIFIED:CHK-AUDIT-PASSED"
+        }
+      ],
+      "strongly_connected_components": [
+        {
+          "id": "scc:CHK-ARCHITECTURE-EVALUATED",
+          "checkpoints": [
+            "CHK-ARCHITECTURE-EVALUATED"
+          ],
+          "is_loop": false,
+          "can_reach_terminal": true,
+          "derivation": "strongly_connected_component:CHK-ARCHITECTURE-EVALUATED"
+        },
+        {
+          "id": "scc:CHK-AUDIT-FAILED",
+          "checkpoints": [
+            "CHK-AUDIT-FAILED"
+          ],
+          "is_loop": false,
+          "can_reach_terminal": true,
+          "derivation": "strongly_connected_component:CHK-AUDIT-FAILED"
+        },
+        {
+          "id": "scc:CHK-AUDIT-INTERPRETED",
+          "checkpoints": [
+            "CHK-AUDIT-INTERPRETED"
+          ],
+          "is_loop": false,
+          "can_reach_terminal": true,
+          "derivation": "strongly_connected_component:CHK-AUDIT-INTERPRETED"
+        },
+        {
+          "id": "scc:CHK-AUDIT-PASSED",
+          "checkpoints": [
+            "CHK-AUDIT-PASSED"
+          ],
+          "is_loop": false,
+          "can_reach_terminal": true,
+          "derivation": "strongly_connected_component:CHK-AUDIT-PASSED"
+        },
+        {
+          "id": "scc:CHK-AUDIT-REQUESTED",
+          "checkpoints": [
+            "CHK-AUDIT-REQUESTED"
+          ],
+          "is_loop": false,
+          "can_reach_terminal": true,
+          "derivation": "strongly_connected_component:CHK-AUDIT-REQUESTED"
+        },
+        {
+          "id": "scc:CHK-AUDIT-RESULT-CLASSIFIED",
+          "checkpoints": [
+            "CHK-AUDIT-RESULT-CLASSIFIED"
+          ],
+          "is_loop": false,
+          "can_reach_terminal": true,
+          "derivation": "strongly_connected_component:CHK-AUDIT-RESULT-CLASSIFIED"
+        },
+        {
+          "id": "scc:CHK-CONTRACT-ECOSYSTEM-COMPILED",
+          "checkpoints": [
+            "CHK-CONTRACT-ECOSYSTEM-COMPILED"
+          ],
+          "is_loop": false,
+          "can_reach_terminal": true,
+          "derivation": "strongly_connected_component:CHK-CONTRACT-ECOSYSTEM-COMPILED"
+        },
+        {
+          "id": "scc:CHK-IMPLEMENTATION-OBSERVED",
+          "checkpoints": [
+            "CHK-IMPLEMENTATION-OBSERVED"
+          ],
+          "is_loop": false,
+          "can_reach_terminal": true,
+          "derivation": "strongly_connected_component:CHK-IMPLEMENTATION-OBSERVED"
+        },
+        {
+          "id": "scc:CHK-REPOSITORY-STABILIZED",
+          "checkpoints": [
+            "CHK-REPOSITORY-STABILIZED"
+          ],
+          "is_loop": false,
+          "can_reach_terminal": true,
+          "derivation": "strongly_connected_component:CHK-REPOSITORY-STABILIZED"
+        },
+        {
+          "id": "scc:CHK-RULES-EVALUATED",
+          "checkpoints": [
+            "CHK-RULES-EVALUATED"
+          ],
+          "is_loop": false,
+          "can_reach_terminal": true,
+          "derivation": "strongly_connected_component:CHK-RULES-EVALUATED"
+        }
+      ],
+      "immediate_dominators": [
+        {
+          "checkpoint": "CHK-ARCHITECTURE-EVALUATED",
+          "immediate": "CHK-IMPLEMENTATION-OBSERVED",
+          "derivation": "dominator:CHK-ARCHITECTURE-EVALUATED:CHK-IMPLEMENTATION-OBSERVED"
+        },
+        {
+          "checkpoint": "CHK-AUDIT-FAILED",
+          "immediate": "CHK-AUDIT-RESULT-CLASSIFIED",
+          "derivation": "dominator:CHK-AUDIT-FAILED:CHK-AUDIT-RESULT-CLASSIFIED"
+        },
+        {
+          "checkpoint": "CHK-AUDIT-INTERPRETED",
+          "immediate": "CHK-AUDIT-REQUESTED",
+          "derivation": "dominator:CHK-AUDIT-INTERPRETED:CHK-AUDIT-REQUESTED"
+        },
+        {
+          "checkpoint": "CHK-AUDIT-PASSED",
+          "immediate": "CHK-AUDIT-RESULT-CLASSIFIED",
+          "derivation": "dominator:CHK-AUDIT-PASSED:CHK-AUDIT-RESULT-CLASSIFIED"
+        },
+        {
+          "checkpoint": "CHK-AUDIT-REQUESTED",
+          "immediate": null,
+          "derivation": "dominator:CHK-AUDIT-REQUESTED:root"
+        },
+        {
+          "checkpoint": "CHK-AUDIT-RESULT-CLASSIFIED",
+          "immediate": "CHK-RULES-EVALUATED",
+          "derivation": "dominator:CHK-AUDIT-RESULT-CLASSIFIED:CHK-RULES-EVALUATED"
+        },
+        {
+          "checkpoint": "CHK-CONTRACT-ECOSYSTEM-COMPILED",
+          "immediate": "CHK-REPOSITORY-STABILIZED",
+          "derivation": "dominator:CHK-CONTRACT-ECOSYSTEM-COMPILED:CHK-REPOSITORY-STABILIZED"
+        },
+        {
+          "checkpoint": "CHK-IMPLEMENTATION-OBSERVED",
+          "immediate": "CHK-CONTRACT-ECOSYSTEM-COMPILED",
+          "derivation": "dominator:CHK-IMPLEMENTATION-OBSERVED:CHK-CONTRACT-ECOSYSTEM-COMPILED"
+        },
+        {
+          "checkpoint": "CHK-REPOSITORY-STABILIZED",
+          "immediate": "CHK-AUDIT-INTERPRETED",
+          "derivation": "dominator:CHK-REPOSITORY-STABILIZED:CHK-AUDIT-INTERPRETED"
+        },
+        {
+          "checkpoint": "CHK-RULES-EVALUATED",
+          "immediate": "CHK-ARCHITECTURE-EVALUATED",
+          "derivation": "dominator:CHK-RULES-EVALUATED:CHK-ARCHITECTURE-EVALUATED"
+        }
+      ],
+      "immediate_post_dominators": [
+        {
+          "checkpoint": "CHK-ARCHITECTURE-EVALUATED",
+          "immediate": "CHK-RULES-EVALUATED",
+          "derivation": "post_dominator:CHK-ARCHITECTURE-EVALUATED:CHK-RULES-EVALUATED"
+        },
+        {
+          "checkpoint": "CHK-AUDIT-FAILED",
+          "immediate": null,
+          "derivation": "post_dominator:CHK-AUDIT-FAILED:__BFG_COMMON_EXIT__"
+        },
+        {
+          "checkpoint": "CHK-AUDIT-INTERPRETED",
+          "immediate": "CHK-REPOSITORY-STABILIZED",
+          "derivation": "post_dominator:CHK-AUDIT-INTERPRETED:CHK-REPOSITORY-STABILIZED"
+        },
+        {
+          "checkpoint": "CHK-AUDIT-PASSED",
+          "immediate": null,
+          "derivation": "post_dominator:CHK-AUDIT-PASSED:__BFG_COMMON_EXIT__"
+        },
+        {
+          "checkpoint": "CHK-AUDIT-REQUESTED",
+          "immediate": "CHK-AUDIT-INTERPRETED",
+          "derivation": "post_dominator:CHK-AUDIT-REQUESTED:CHK-AUDIT-INTERPRETED"
+        },
+        {
+          "checkpoint": "CHK-AUDIT-RESULT-CLASSIFIED",
+          "immediate": null,
+          "derivation": "post_dominator:CHK-AUDIT-RESULT-CLASSIFIED:__BFG_COMMON_EXIT__"
+        },
+        {
+          "checkpoint": "CHK-CONTRACT-ECOSYSTEM-COMPILED",
+          "immediate": "CHK-IMPLEMENTATION-OBSERVED",
+          "derivation": "post_dominator:CHK-CONTRACT-ECOSYSTEM-COMPILED:CHK-IMPLEMENTATION-OBSERVED"
+        },
+        {
+          "checkpoint": "CHK-IMPLEMENTATION-OBSERVED",
+          "immediate": "CHK-ARCHITECTURE-EVALUATED",
+          "derivation": "post_dominator:CHK-IMPLEMENTATION-OBSERVED:CHK-ARCHITECTURE-EVALUATED"
+        },
+        {
+          "checkpoint": "CHK-REPOSITORY-STABILIZED",
+          "immediate": "CHK-CONTRACT-ECOSYSTEM-COMPILED",
+          "derivation": "post_dominator:CHK-REPOSITORY-STABILIZED:CHK-CONTRACT-ECOSYSTEM-COMPILED"
+        },
+        {
+          "checkpoint": "CHK-RULES-EVALUATED",
+          "immediate": "CHK-AUDIT-RESULT-CLASSIFIED",
+          "derivation": "post_dominator:CHK-RULES-EVALUATED:CHK-AUDIT-RESULT-CLASSIFIED"
+        }
+      ],
+      "derivations": [
+        {
+          "id": "boundary:CHK-ARCHITECTURE-EVALUATED:CHK-RULES-EVALUATED",
+          "kind": "boundary_crossing",
+          "fact": "CHK-ARCHITECTURE-EVALUATED -> CHK-RULES-EVALUATED crosses Module ownership",
+          "input_facts": [
+            "edge:CHK-ARCHITECTURE-EVALUATED:CHK-RULES-EVALUATED"
+          ],
+          "explanation_path": [
+            "CHK-ARCHITECTURE-EVALUATED",
+            "CHK-RULES-EVALUATED"
+          ],
+          "provenance": [
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            }
+          ]
+        },
+        {
+          "id": "boundary:CHK-AUDIT-INTERPRETED:CHK-REPOSITORY-STABILIZED",
+          "kind": "boundary_crossing",
+          "fact": "CHK-AUDIT-INTERPRETED -> CHK-REPOSITORY-STABILIZED crosses Module ownership",
+          "input_facts": [
+            "edge:CHK-AUDIT-INTERPRETED:CHK-REPOSITORY-STABILIZED"
+          ],
+          "explanation_path": [
+            "CHK-AUDIT-INTERPRETED",
+            "CHK-REPOSITORY-STABILIZED"
+          ],
+          "provenance": [
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            }
+          ]
+        },
+        {
+          "id": "boundary:CHK-AUDIT-REQUESTED:CHK-AUDIT-INTERPRETED",
+          "kind": "boundary_crossing",
+          "fact": "CHK-AUDIT-REQUESTED -> CHK-AUDIT-INTERPRETED crosses Module ownership",
+          "input_facts": [
+            "edge:CHK-AUDIT-REQUESTED:CHK-AUDIT-INTERPRETED"
+          ],
+          "explanation_path": [
+            "CHK-AUDIT-REQUESTED",
+            "CHK-AUDIT-INTERPRETED"
+          ],
+          "provenance": [
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            }
+          ]
+        },
+        {
+          "id": "boundary:CHK-AUDIT-RESULT-CLASSIFIED:CHK-AUDIT-FAILED",
+          "kind": "boundary_crossing",
+          "fact": "CHK-AUDIT-RESULT-CLASSIFIED -> CHK-AUDIT-FAILED crosses Module ownership",
+          "input_facts": [
+            "edge:CHK-AUDIT-RESULT-CLASSIFIED:CHK-AUDIT-FAILED"
+          ],
+          "explanation_path": [
+            "CHK-AUDIT-RESULT-CLASSIFIED",
+            "CHK-AUDIT-FAILED"
+          ],
+          "provenance": [
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            }
+          ]
+        },
+        {
+          "id": "boundary:CHK-AUDIT-RESULT-CLASSIFIED:CHK-AUDIT-PASSED",
+          "kind": "boundary_crossing",
+          "fact": "CHK-AUDIT-RESULT-CLASSIFIED -> CHK-AUDIT-PASSED crosses Module ownership",
+          "input_facts": [
+            "edge:CHK-AUDIT-RESULT-CLASSIFIED:CHK-AUDIT-PASSED"
+          ],
+          "explanation_path": [
+            "CHK-AUDIT-RESULT-CLASSIFIED",
+            "CHK-AUDIT-PASSED"
+          ],
+          "provenance": [
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/1"
+            }
+          ]
+        },
+        {
+          "id": "boundary:CHK-CONTRACT-ECOSYSTEM-COMPILED:CHK-IMPLEMENTATION-OBSERVED",
+          "kind": "boundary_crossing",
+          "fact": "CHK-CONTRACT-ECOSYSTEM-COMPILED -> CHK-IMPLEMENTATION-OBSERVED crosses Module ownership",
+          "input_facts": [
+            "edge:CHK-CONTRACT-ECOSYSTEM-COMPILED:CHK-IMPLEMENTATION-OBSERVED"
+          ],
+          "explanation_path": [
+            "CHK-CONTRACT-ECOSYSTEM-COMPILED",
+            "CHK-IMPLEMENTATION-OBSERVED"
+          ],
+          "provenance": [
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            }
+          ]
+        },
+        {
+          "id": "boundary:CHK-IMPLEMENTATION-OBSERVED:CHK-ARCHITECTURE-EVALUATED",
+          "kind": "boundary_crossing",
+          "fact": "CHK-IMPLEMENTATION-OBSERVED -> CHK-ARCHITECTURE-EVALUATED crosses Module ownership",
+          "input_facts": [
+            "edge:CHK-IMPLEMENTATION-OBSERVED:CHK-ARCHITECTURE-EVALUATED"
+          ],
+          "explanation_path": [
+            "CHK-IMPLEMENTATION-OBSERVED",
+            "CHK-ARCHITECTURE-EVALUATED"
+          ],
+          "provenance": [
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            }
+          ]
+        },
+        {
+          "id": "boundary:CHK-REPOSITORY-STABILIZED:CHK-CONTRACT-ECOSYSTEM-COMPILED",
+          "kind": "boundary_crossing",
+          "fact": "CHK-REPOSITORY-STABILIZED -> CHK-CONTRACT-ECOSYSTEM-COMPILED crosses Module ownership",
+          "input_facts": [
+            "edge:CHK-REPOSITORY-STABILIZED:CHK-CONTRACT-ECOSYSTEM-COMPILED"
+          ],
+          "explanation_path": [
+            "CHK-REPOSITORY-STABILIZED",
+            "CHK-CONTRACT-ECOSYSTEM-COMPILED"
+          ],
+          "provenance": [
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            }
+          ]
+        },
+        {
+          "id": "dominator:CHK-ARCHITECTURE-EVALUATED:CHK-IMPLEMENTATION-OBSERVED",
+          "kind": "dominator",
+          "fact": "CHK-ARCHITECTURE-EVALUATED immediate dominator is CHK-IMPLEMENTATION-OBSERVED",
+          "input_facts": [
+            "feature_graph:AF-FORTRESS-AUDIT-0001"
+          ],
+          "explanation_path": [
+            "CHK-IMPLEMENTATION-OBSERVED",
+            "CHK-ARCHITECTURE-EVALUATED"
+          ],
+          "provenance": [
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2/transitions/0"
+            }
+          ]
+        },
+        {
+          "id": "dominator:CHK-AUDIT-FAILED:CHK-AUDIT-RESULT-CLASSIFIED",
+          "kind": "dominator",
+          "fact": "CHK-AUDIT-FAILED immediate dominator is CHK-AUDIT-RESULT-CLASSIFIED",
+          "input_facts": [
+            "feature_graph:AF-FORTRESS-AUDIT-0001"
+          ],
+          "explanation_path": [
+            "CHK-AUDIT-RESULT-CLASSIFIED",
+            "CHK-AUDIT-FAILED"
+          ],
+          "provenance": [
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2/transitions/0"
+            }
+          ]
+        },
+        {
+          "id": "dominator:CHK-AUDIT-INTERPRETED:CHK-AUDIT-REQUESTED",
+          "kind": "dominator",
+          "fact": "CHK-AUDIT-INTERPRETED immediate dominator is CHK-AUDIT-REQUESTED",
+          "input_facts": [
+            "feature_graph:AF-FORTRESS-AUDIT-0001"
+          ],
+          "explanation_path": [
+            "CHK-AUDIT-REQUESTED",
+            "CHK-AUDIT-INTERPRETED"
+          ],
+          "provenance": [
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2/transitions/0"
+            }
+          ]
+        },
+        {
+          "id": "dominator:CHK-AUDIT-PASSED:CHK-AUDIT-RESULT-CLASSIFIED",
+          "kind": "dominator",
+          "fact": "CHK-AUDIT-PASSED immediate dominator is CHK-AUDIT-RESULT-CLASSIFIED",
+          "input_facts": [
+            "feature_graph:AF-FORTRESS-AUDIT-0001"
+          ],
+          "explanation_path": [
+            "CHK-AUDIT-RESULT-CLASSIFIED",
+            "CHK-AUDIT-PASSED"
+          ],
+          "provenance": [
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2/transitions/0"
+            }
+          ]
+        },
+        {
+          "id": "dominator:CHK-AUDIT-REQUESTED:root",
+          "kind": "dominator",
+          "fact": "CHK-AUDIT-REQUESTED immediate dominator is none",
+          "input_facts": [
+            "feature_graph:AF-FORTRESS-AUDIT-0001"
+          ],
+          "explanation_path": [
+            "CHK-AUDIT-REQUESTED"
+          ],
+          "provenance": [
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2/transitions/0"
+            }
+          ]
+        },
+        {
+          "id": "dominator:CHK-AUDIT-RESULT-CLASSIFIED:CHK-RULES-EVALUATED",
+          "kind": "dominator",
+          "fact": "CHK-AUDIT-RESULT-CLASSIFIED immediate dominator is CHK-RULES-EVALUATED",
+          "input_facts": [
+            "feature_graph:AF-FORTRESS-AUDIT-0001"
+          ],
+          "explanation_path": [
+            "CHK-RULES-EVALUATED",
+            "CHK-AUDIT-RESULT-CLASSIFIED"
+          ],
+          "provenance": [
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2/transitions/0"
+            }
+          ]
+        },
+        {
+          "id": "dominator:CHK-CONTRACT-ECOSYSTEM-COMPILED:CHK-REPOSITORY-STABILIZED",
+          "kind": "dominator",
+          "fact": "CHK-CONTRACT-ECOSYSTEM-COMPILED immediate dominator is CHK-REPOSITORY-STABILIZED",
+          "input_facts": [
+            "feature_graph:AF-FORTRESS-AUDIT-0001"
+          ],
+          "explanation_path": [
+            "CHK-REPOSITORY-STABILIZED",
+            "CHK-CONTRACT-ECOSYSTEM-COMPILED"
+          ],
+          "provenance": [
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2/transitions/0"
+            }
+          ]
+        },
+        {
+          "id": "dominator:CHK-IMPLEMENTATION-OBSERVED:CHK-CONTRACT-ECOSYSTEM-COMPILED",
+          "kind": "dominator",
+          "fact": "CHK-IMPLEMENTATION-OBSERVED immediate dominator is CHK-CONTRACT-ECOSYSTEM-COMPILED",
+          "input_facts": [
+            "feature_graph:AF-FORTRESS-AUDIT-0001"
+          ],
+          "explanation_path": [
+            "CHK-CONTRACT-ECOSYSTEM-COMPILED",
+            "CHK-IMPLEMENTATION-OBSERVED"
+          ],
+          "provenance": [
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2/transitions/0"
+            }
+          ]
+        },
+        {
+          "id": "dominator:CHK-REPOSITORY-STABILIZED:CHK-AUDIT-INTERPRETED",
+          "kind": "dominator",
+          "fact": "CHK-REPOSITORY-STABILIZED immediate dominator is CHK-AUDIT-INTERPRETED",
+          "input_facts": [
+            "feature_graph:AF-FORTRESS-AUDIT-0001"
+          ],
+          "explanation_path": [
+            "CHK-AUDIT-INTERPRETED",
+            "CHK-REPOSITORY-STABILIZED"
+          ],
+          "provenance": [
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2/transitions/0"
+            }
+          ]
+        },
+        {
+          "id": "dominator:CHK-RULES-EVALUATED:CHK-ARCHITECTURE-EVALUATED",
+          "kind": "dominator",
+          "fact": "CHK-RULES-EVALUATED immediate dominator is CHK-ARCHITECTURE-EVALUATED",
+          "input_facts": [
+            "feature_graph:AF-FORTRESS-AUDIT-0001"
+          ],
+          "explanation_path": [
+            "CHK-ARCHITECTURE-EVALUATED",
+            "CHK-RULES-EVALUATED"
+          ],
+          "provenance": [
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2/transitions/0"
+            }
+          ]
+        },
+        {
+          "id": "participant:AF-FORTRESS-AUDIT-0001:AF-ARCHITECTURE-EVALUATION-0001",
+          "kind": "participant_module",
+          "fact": "Feature `AF-FORTRESS-AUDIT-0001` includes Module `AF-ARCHITECTURE-EVALUATION-0001`",
+          "input_facts": [
+            "checkpoint_owner:AF-ARCHITECTURE-EVALUATION-0001"
+          ],
+          "explanation_path": [
+            "AF-FORTRESS-AUDIT-0001",
+            "AF-ARCHITECTURE-EVALUATION-0001"
+          ],
+          "provenance": [
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2/transitions/0"
+            }
+          ]
+        },
+        {
+          "id": "participant:AF-FORTRESS-AUDIT-0001:AF-CONTRACT-COHERENCY-0001",
+          "kind": "participant_module",
+          "fact": "Feature `AF-FORTRESS-AUDIT-0001` includes Module `AF-CONTRACT-COHERENCY-0001`",
+          "input_facts": [
+            "checkpoint_owner:AF-CONTRACT-COHERENCY-0001"
+          ],
+          "explanation_path": [
+            "AF-FORTRESS-AUDIT-0001",
+            "AF-CONTRACT-COHERENCY-0001"
+          ],
+          "provenance": [
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2/transitions/0"
+            }
+          ]
+        },
+        {
+          "id": "participant:AF-FORTRESS-AUDIT-0001:AF-IMPLEMENTATION-OBSERVATION-0001",
+          "kind": "participant_module",
+          "fact": "Feature `AF-FORTRESS-AUDIT-0001` includes Module `AF-IMPLEMENTATION-OBSERVATION-0001`",
+          "input_facts": [
+            "checkpoint_owner:AF-IMPLEMENTATION-OBSERVATION-0001"
+          ],
+          "explanation_path": [
+            "AF-FORTRESS-AUDIT-0001",
+            "AF-IMPLEMENTATION-OBSERVATION-0001"
+          ],
+          "provenance": [
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2/transitions/0"
+            }
+          ]
+        },
+        {
+          "id": "participant:AF-FORTRESS-AUDIT-0001:AF-SNAPSHOT-GOVERNANCE-0001",
+          "kind": "participant_module",
+          "fact": "Feature `AF-FORTRESS-AUDIT-0001` includes Module `AF-SNAPSHOT-GOVERNANCE-0001`",
+          "input_facts": [
+            "checkpoint_owner:AF-SNAPSHOT-GOVERNANCE-0001"
+          ],
+          "explanation_path": [
+            "AF-FORTRESS-AUDIT-0001",
+            "AF-SNAPSHOT-GOVERNANCE-0001"
+          ],
+          "provenance": [
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2/transitions/0"
+            }
+          ]
+        },
+        {
+          "id": "participant:AF-FORTRESS-AUDIT-0001:PF-FORTRESS",
+          "kind": "participant_module",
+          "fact": "Feature `AF-FORTRESS-AUDIT-0001` includes Module `PF-FORTRESS`",
+          "input_facts": [
+            "checkpoint_owner:PF-FORTRESS"
+          ],
+          "explanation_path": [
+            "AF-FORTRESS-AUDIT-0001",
+            "PF-FORTRESS"
+          ],
+          "provenance": [
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2/transitions/0"
+            }
+          ]
+        },
+        {
+          "id": "participant:AF-FORTRESS-AUDIT-0001:TF-CLI-0001",
+          "kind": "participant_module",
+          "fact": "Feature `AF-FORTRESS-AUDIT-0001` includes Module `TF-CLI-0001`",
+          "input_facts": [
+            "checkpoint_owner:TF-CLI-0001"
+          ],
+          "explanation_path": [
+            "AF-FORTRESS-AUDIT-0001",
+            "TF-CLI-0001"
+          ],
+          "provenance": [
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2/transitions/0"
+            }
+          ]
+        },
+        {
+          "id": "post_dominator:CHK-ARCHITECTURE-EVALUATED:CHK-RULES-EVALUATED",
+          "kind": "post_dominator",
+          "fact": "CHK-ARCHITECTURE-EVALUATED immediate post_dominator is CHK-RULES-EVALUATED",
+          "input_facts": [
+            "feature_graph:AF-FORTRESS-AUDIT-0001"
+          ],
+          "explanation_path": [
+            "CHK-RULES-EVALUATED",
+            "CHK-ARCHITECTURE-EVALUATED"
+          ],
+          "provenance": [
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2/transitions/0"
+            }
+          ]
+        },
+        {
+          "id": "post_dominator:CHK-AUDIT-FAILED:__BFG_COMMON_EXIT__",
+          "kind": "post_dominator",
+          "fact": "CHK-AUDIT-FAILED immediate post_dominator is none",
+          "input_facts": [
+            "feature_graph:AF-FORTRESS-AUDIT-0001"
+          ],
+          "explanation_path": [
+            "CHK-AUDIT-FAILED"
+          ],
+          "provenance": [
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2/transitions/0"
+            }
+          ]
+        },
+        {
+          "id": "post_dominator:CHK-AUDIT-INTERPRETED:CHK-REPOSITORY-STABILIZED",
+          "kind": "post_dominator",
+          "fact": "CHK-AUDIT-INTERPRETED immediate post_dominator is CHK-REPOSITORY-STABILIZED",
+          "input_facts": [
+            "feature_graph:AF-FORTRESS-AUDIT-0001"
+          ],
+          "explanation_path": [
+            "CHK-REPOSITORY-STABILIZED",
+            "CHK-AUDIT-INTERPRETED"
+          ],
+          "provenance": [
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2/transitions/0"
+            }
+          ]
+        },
+        {
+          "id": "post_dominator:CHK-AUDIT-PASSED:__BFG_COMMON_EXIT__",
+          "kind": "post_dominator",
+          "fact": "CHK-AUDIT-PASSED immediate post_dominator is none",
+          "input_facts": [
+            "feature_graph:AF-FORTRESS-AUDIT-0001"
+          ],
+          "explanation_path": [
+            "CHK-AUDIT-PASSED"
+          ],
+          "provenance": [
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2/transitions/0"
+            }
+          ]
+        },
+        {
+          "id": "post_dominator:CHK-AUDIT-REQUESTED:CHK-AUDIT-INTERPRETED",
+          "kind": "post_dominator",
+          "fact": "CHK-AUDIT-REQUESTED immediate post_dominator is CHK-AUDIT-INTERPRETED",
+          "input_facts": [
+            "feature_graph:AF-FORTRESS-AUDIT-0001"
+          ],
+          "explanation_path": [
+            "CHK-AUDIT-INTERPRETED",
+            "CHK-AUDIT-REQUESTED"
+          ],
+          "provenance": [
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2/transitions/0"
+            }
+          ]
+        },
+        {
+          "id": "post_dominator:CHK-AUDIT-RESULT-CLASSIFIED:__BFG_COMMON_EXIT__",
+          "kind": "post_dominator",
+          "fact": "CHK-AUDIT-RESULT-CLASSIFIED immediate post_dominator is none",
+          "input_facts": [
+            "feature_graph:AF-FORTRESS-AUDIT-0001"
+          ],
+          "explanation_path": [
+            "CHK-AUDIT-RESULT-CLASSIFIED"
+          ],
+          "provenance": [
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2/transitions/0"
+            }
+          ]
+        },
+        {
+          "id": "post_dominator:CHK-CONTRACT-ECOSYSTEM-COMPILED:CHK-IMPLEMENTATION-OBSERVED",
+          "kind": "post_dominator",
+          "fact": "CHK-CONTRACT-ECOSYSTEM-COMPILED immediate post_dominator is CHK-IMPLEMENTATION-OBSERVED",
+          "input_facts": [
+            "feature_graph:AF-FORTRESS-AUDIT-0001"
+          ],
+          "explanation_path": [
+            "CHK-IMPLEMENTATION-OBSERVED",
+            "CHK-CONTRACT-ECOSYSTEM-COMPILED"
+          ],
+          "provenance": [
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2/transitions/0"
+            }
+          ]
+        },
+        {
+          "id": "post_dominator:CHK-IMPLEMENTATION-OBSERVED:CHK-ARCHITECTURE-EVALUATED",
+          "kind": "post_dominator",
+          "fact": "CHK-IMPLEMENTATION-OBSERVED immediate post_dominator is CHK-ARCHITECTURE-EVALUATED",
+          "input_facts": [
+            "feature_graph:AF-FORTRESS-AUDIT-0001"
+          ],
+          "explanation_path": [
+            "CHK-ARCHITECTURE-EVALUATED",
+            "CHK-IMPLEMENTATION-OBSERVED"
+          ],
+          "provenance": [
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2/transitions/0"
+            }
+          ]
+        },
+        {
+          "id": "post_dominator:CHK-REPOSITORY-STABILIZED:CHK-CONTRACT-ECOSYSTEM-COMPILED",
+          "kind": "post_dominator",
+          "fact": "CHK-REPOSITORY-STABILIZED immediate post_dominator is CHK-CONTRACT-ECOSYSTEM-COMPILED",
+          "input_facts": [
+            "feature_graph:AF-FORTRESS-AUDIT-0001"
+          ],
+          "explanation_path": [
+            "CHK-CONTRACT-ECOSYSTEM-COMPILED",
+            "CHK-REPOSITORY-STABILIZED"
+          ],
+          "provenance": [
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2/transitions/0"
+            }
+          ]
+        },
+        {
+          "id": "post_dominator:CHK-RULES-EVALUATED:CHK-AUDIT-RESULT-CLASSIFIED",
+          "kind": "post_dominator",
+          "fact": "CHK-RULES-EVALUATED immediate post_dominator is CHK-AUDIT-RESULT-CLASSIFIED",
+          "input_facts": [
+            "feature_graph:AF-FORTRESS-AUDIT-0001"
+          ],
+          "explanation_path": [
+            "CHK-AUDIT-RESULT-CLASSIFIED",
+            "CHK-RULES-EVALUATED"
+          ],
+          "provenance": [
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2/transitions/0"
+            }
+          ]
+        },
+        {
+          "id": "strongly_connected_component:CHK-ARCHITECTURE-EVALUATED",
+          "kind": "strongly_connected_component",
+          "fact": "SCC contains CHK-ARCHITECTURE-EVALUATED",
+          "input_facts": [
+            "checkpoint:CHK-ARCHITECTURE-EVALUATED"
+          ],
+          "explanation_path": [
+            "CHK-ARCHITECTURE-EVALUATED"
+          ],
+          "provenance": [
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2/transitions/0"
+            }
+          ]
+        },
+        {
+          "id": "strongly_connected_component:CHK-AUDIT-FAILED",
+          "kind": "strongly_connected_component",
+          "fact": "SCC contains CHK-AUDIT-FAILED",
+          "input_facts": [
+            "checkpoint:CHK-AUDIT-FAILED"
+          ],
+          "explanation_path": [
+            "CHK-AUDIT-FAILED"
+          ],
+          "provenance": [
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2/transitions/0"
+            }
+          ]
+        },
+        {
+          "id": "strongly_connected_component:CHK-AUDIT-INTERPRETED",
+          "kind": "strongly_connected_component",
+          "fact": "SCC contains CHK-AUDIT-INTERPRETED",
+          "input_facts": [
+            "checkpoint:CHK-AUDIT-INTERPRETED"
+          ],
+          "explanation_path": [
+            "CHK-AUDIT-INTERPRETED"
+          ],
+          "provenance": [
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2/transitions/0"
+            }
+          ]
+        },
+        {
+          "id": "strongly_connected_component:CHK-AUDIT-PASSED",
+          "kind": "strongly_connected_component",
+          "fact": "SCC contains CHK-AUDIT-PASSED",
+          "input_facts": [
+            "checkpoint:CHK-AUDIT-PASSED"
+          ],
+          "explanation_path": [
+            "CHK-AUDIT-PASSED"
+          ],
+          "provenance": [
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2/transitions/0"
+            }
+          ]
+        },
+        {
+          "id": "strongly_connected_component:CHK-AUDIT-REQUESTED",
+          "kind": "strongly_connected_component",
+          "fact": "SCC contains CHK-AUDIT-REQUESTED",
+          "input_facts": [
+            "checkpoint:CHK-AUDIT-REQUESTED"
+          ],
+          "explanation_path": [
+            "CHK-AUDIT-REQUESTED"
+          ],
+          "provenance": [
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2/transitions/0"
+            }
+          ]
+        },
+        {
+          "id": "strongly_connected_component:CHK-AUDIT-RESULT-CLASSIFIED",
+          "kind": "strongly_connected_component",
+          "fact": "SCC contains CHK-AUDIT-RESULT-CLASSIFIED",
+          "input_facts": [
+            "checkpoint:CHK-AUDIT-RESULT-CLASSIFIED"
+          ],
+          "explanation_path": [
+            "CHK-AUDIT-RESULT-CLASSIFIED"
+          ],
+          "provenance": [
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2/transitions/0"
+            }
+          ]
+        },
+        {
+          "id": "strongly_connected_component:CHK-CONTRACT-ECOSYSTEM-COMPILED",
+          "kind": "strongly_connected_component",
+          "fact": "SCC contains CHK-CONTRACT-ECOSYSTEM-COMPILED",
+          "input_facts": [
+            "checkpoint:CHK-CONTRACT-ECOSYSTEM-COMPILED"
+          ],
+          "explanation_path": [
+            "CHK-CONTRACT-ECOSYSTEM-COMPILED"
+          ],
+          "provenance": [
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2/transitions/0"
+            }
+          ]
+        },
+        {
+          "id": "strongly_connected_component:CHK-IMPLEMENTATION-OBSERVED",
+          "kind": "strongly_connected_component",
+          "fact": "SCC contains CHK-IMPLEMENTATION-OBSERVED",
+          "input_facts": [
+            "checkpoint:CHK-IMPLEMENTATION-OBSERVED"
+          ],
+          "explanation_path": [
+            "CHK-IMPLEMENTATION-OBSERVED"
+          ],
+          "provenance": [
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2/transitions/0"
+            }
+          ]
+        },
+        {
+          "id": "strongly_connected_component:CHK-REPOSITORY-STABILIZED",
+          "kind": "strongly_connected_component",
+          "fact": "SCC contains CHK-REPOSITORY-STABILIZED",
+          "input_facts": [
+            "checkpoint:CHK-REPOSITORY-STABILIZED"
+          ],
+          "explanation_path": [
+            "CHK-REPOSITORY-STABILIZED"
+          ],
+          "provenance": [
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2/transitions/0"
+            }
+          ]
+        },
+        {
+          "id": "strongly_connected_component:CHK-RULES-EVALUATED",
+          "kind": "strongly_connected_component",
+          "fact": "SCC contains CHK-RULES-EVALUATED",
+          "input_facts": [
+            "checkpoint:CHK-RULES-EVALUATED"
+          ],
+          "explanation_path": [
+            "CHK-RULES-EVALUATED"
+          ],
+          "provenance": [
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/cli/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/architecture_evaluation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/contract_coherency/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/implementation_observation/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/0/transitions/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/1/transitions/0"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2"
+            },
+            {
+              "path": "mods/engine/mods/snapshot_governance/contract.json",
+              "pointer": "/behavior/2/transitions/0"
+            }
+          ]
+        }
+      ],
+      "provenance": [
+        {
+          "path": "contract.json",
+          "pointer": "/behavior/0"
+        },
+        {
+          "path": "contract.json",
+          "pointer": "/behavior/0/transitions/0"
+        },
+        {
+          "path": "mods/cli/contract.json",
+          "pointer": "/behavior/0"
+        },
+        {
+          "path": "mods/cli/contract.json",
+          "pointer": "/behavior/1"
+        },
+        {
+          "path": "mods/cli/contract.json",
+          "pointer": "/behavior/1/transitions/0"
+        },
+        {
+          "path": "mods/cli/contract.json",
+          "pointer": "/behavior/2"
+        },
+        {
+          "path": "mods/engine/mods/architecture_evaluation/contract.json",
+          "pointer": "/behavior/0"
+        },
+        {
+          "path": "mods/engine/mods/architecture_evaluation/contract.json",
+          "pointer": "/behavior/0/transitions/0"
+        },
+        {
+          "path": "mods/engine/mods/contract_coherency/contract.json",
+          "pointer": "/behavior/0"
+        },
+        {
+          "path": "mods/engine/mods/contract_coherency/contract.json",
+          "pointer": "/behavior/0/transitions/0"
+        },
+        {
+          "path": "mods/engine/mods/implementation_observation/contract.json",
+          "pointer": "/behavior/0"
+        },
+        {
+          "path": "mods/engine/mods/implementation_observation/contract.json",
+          "pointer": "/behavior/0/transitions/0"
+        },
+        {
+          "path": "mods/engine/mods/snapshot_governance/contract.json",
+          "pointer": "/behavior/0"
+        },
+        {
+          "path": "mods/engine/mods/snapshot_governance/contract.json",
+          "pointer": "/behavior/0/transitions/0"
+        },
+        {
+          "path": "mods/engine/mods/snapshot_governance/contract.json",
+          "pointer": "/behavior/0/transitions/1"
+        },
+        {
+          "path": "mods/engine/mods/snapshot_governance/contract.json",
+          "pointer": "/behavior/1"
+        },
+        {
+          "path": "mods/engine/mods/snapshot_governance/contract.json",
+          "pointer": "/behavior/1/transitions/0"
+        },
+        {
+          "path": "mods/engine/mods/snapshot_governance/contract.json",
+          "pointer": "/behavior/2"
+        },
+        {
+          "path": "mods/engine/mods/snapshot_governance/contract.json",
+          "pointer": "/behavior/2/transitions/0"
+        }
+      ]
+    }
+  ],
+  "violations": [],
+  "unsupported_semantics": [
+    "concurrency_liveness_proof",
+    "effect_system_proof",
+    "environment_api_nondeterminism",
+    "failure_crash_semantics",
+    "formal_state_variable_invariants",
+    "function_call_realization",
+    "implementation_behavior_realization",
+    "natural_language_requirement_satisfiability",
+    "pre_postcondition_proof",
+    "runtime_frequency_probability",
+    "security_information_flow_proof",
+    "value_data_flow_realization"
+  ]
+}
