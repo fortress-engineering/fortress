@@ -97,6 +97,69 @@ fn rule_schema_allows_declared_instance_schema_references() {
     }
 }
 
+/// `T-AF-STANDARD-REGISTRY-0001-R03-004`
+#[test]
+fn local_schema_references_resolve_from_their_documents() {
+    fn collect_json_documents(directory: &Path, documents: &mut Vec<PathBuf>) {
+        let entries = fs::read_dir(directory)
+            .unwrap_or_else(|error| panic!("failed to read {}: {error}", directory.display()));
+        for entry in entries {
+            let entry = entry.unwrap_or_else(|error| {
+                panic!(
+                    "failed to read entry under {}: {error}",
+                    directory.display()
+                )
+            });
+            let path = entry.path();
+            let file_type = entry
+                .file_type()
+                .unwrap_or_else(|error| panic!("failed to inspect {}: {error}", path.display()));
+            if file_type.is_symlink() {
+                continue;
+            }
+            if file_type.is_dir() {
+                let name = entry.file_name();
+                if name != ".git" && name != "target" {
+                    collect_json_documents(&path, documents);
+                }
+            } else if path
+                .extension()
+                .is_some_and(|extension| extension == "json")
+            {
+                documents.push(path);
+            }
+        }
+    }
+
+    let root = repository_root();
+    let mut documents = Vec::new();
+    collect_json_documents(&root, &mut documents);
+    documents.sort_unstable();
+
+    for path in documents {
+        let source = fs::read_to_string(&path)
+            .unwrap_or_else(|error| panic!("failed to read {}: {error}", path.display()));
+        let document: Value = serde_json::from_str(&source)
+            .unwrap_or_else(|error| panic!("failed to parse {}: {error}", path.display()));
+        let Some(reference) = document["$schema"].as_str() else {
+            continue;
+        };
+        if reference.starts_with("https://") || reference.starts_with("urn:") {
+            continue;
+        }
+
+        let resolved = path
+            .parent()
+            .expect("JSON document path must have a parent")
+            .join(reference);
+        assert!(
+            resolved.is_file(),
+            "local schema reference `{reference}` from {} does not resolve",
+            path.display()
+        );
+    }
+}
+
 /// `T-AF-PROJECT-MODEL-0001-R03-001`
 #[test]
 fn general_change_schema_does_not_require_bootstrap_provenance() {
