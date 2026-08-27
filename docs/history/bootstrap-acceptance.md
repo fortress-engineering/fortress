@@ -237,3 +237,60 @@ The task MUST NOT declare bootstrap complete by:
 Bootstrap is done when the repository has become a **coherent, buildable, documented, self-governed starting system** whose next development tasks can be bounded by permanent project authorities rather than by this temporary packet.
 
 It is not done because Fortress 1.0 is implemented. It is done because Fortress 1.0 can now be developed without foundational architectural improvisation.
+
+---
+
+## Execution result — 2026-08-26
+
+**Result:** Bootstrap accepted on `dev`; Fortress remains **NOT CERTIFIED**.
+
+The final implementation state validated before this self-referential closeout
+record was commit `9a1f9aae348f17525c696ccf63ec8784489c5bff`. The closeout and packet
+disposition are committed afterward. Exact remote branch state is reported at
+the end of the execution window.
+
+| Criterion | Result | Evidence |
+| --- | --- | --- |
+| Repository identity | PASS | Product/organization naming, accurate pre-release README, community entrypoints, and links are present. License is intentionally omitted under `ADR-LICENSE-0001`. |
+| Authority hierarchy | PASS | `docs/README.md` defines precedence from constitutional meaning through history; all 25 manifest artifacts have permanent targets. |
+| Repository structure | PASS | `.fortress/`, `.github/`, `crates/`, `standard/`, `schemas/`, `conformance/`, `tests/`, and `docs/` contain justified content; speculative optional roots are absent. |
+| Standard bootstrap | PASS | `standard/drafts/1.0.0/` is explicitly draft, schema-backed, and contains `STD-ID-001`; no released directory or stable claim exists. |
+| Fortress self-model | PASS | `.fortress/project.json` references architecture, ownership, commands, certifications, and the temporal ledger; consistency tests pass. |
+| Canonical CLI skeleton | PASS | `fortress --version`, `fortress help`, and command-specific help are implemented; unsupported `certify` returns exit code 2. |
+| Core library boundary | PASS | `fortress-core` owns provider-independent identity, standard, project, and command models; `fortress-cli` owns terminal presentation. |
+| Initial schemas | PASS | Schema family `v1` covers registry, common identity, standard, rule, project, feature, architecture, command, change, and certification records. |
+| Test and conformance harness | PASS | Crate tests are distinct from specification-authored `STD-ID-001` valid, invalid, and boundary fixtures with stable test IDs. |
+| Source quality gates | PASS | Rustfmt, warnings-denied Clippy, workspace tests, and warnings-denied rustdoc pass under pinned Rust 1.85.1; unsafe code is forbidden. |
+| Documentation quality | PASS | Permanent documents identify status/authority; source modules and substantive public APIs use rustdoc; generated evidence is explicitly subordinate. |
+| Generated artifact governance | PASS | `docs/development/generated-artifacts.md` governs `Cargo.lock`; build and rustdoc output remain ignored and uncommitted. |
+| CI skeleton | PASS | GitHub Actions mirrors only implemented low-cost format, lint, schema/self-model, conformance, test, and docs gates. |
+| Branch/governance policy | PASS | `GOVERNANCE.md` and `AGENTS.md` reserve `main` for the owner and authorize validated work on `dev`; provider ruleset enforcement is not falsely claimed. |
+| Bootstrap change record | PASS | `CHG-BOOTSTRAP-0001` records baseline, packet digests, scope, promotions, checks, deferred capabilities, owner decision, and truthful result. |
+| Packet disposition | PASS | `docs/history/bootstrap-disposition.md` covers all 28 supplied files; digests are preserved and no duplicate full packet remains. |
+| Completion evidence | PASS | This result, the disposition matrix, self-model, Git history, and final report identify files, checks, state, and deferred work. |
+| Prohibited shortcuts | PASS | No green stub, warning suppression, invented license, released 1.0 claim, fake PASS evidence, empty crate, or speculative architecture root exists. |
+| Definition of bootstrap done | PASS | The repository is buildable, documented, self-governed, and ready for dependency-valid development under permanent authorities. |
+
+### Validation summary
+
+- All 27 files listed by `SHA256SUMS.txt` matched; the inventory itself has
+  digest `sha256:99a4404aa9a139d458c8921312903511c135159fc18c6512de7673477c55ed91`.
+- `cargo fmt --all --check` passed.
+- `cargo clippy --workspace --all-targets --all-features -- -D warnings` passed.
+- `cargo test --workspace --all-targets --all-features` passed with 28 tests.
+- `RUSTDOCFLAGS="-D warnings" cargo doc --workspace --all-features --no-deps`
+  passed.
+- All tracked JSON documents parsed; schema registry, draft standard, self-model,
+  command/model agreement, and packet digest identity checks passed.
+- The GitHub Actions workflow parsed as YAML.
+- `fortress --version` and `fortress help` returned 0; unsupported
+  `fortress certify` returned 2.
+- The committed top-level root matched the explicit repository architecture.
+
+### Deferred without overstatement
+
+Full JSON Schema vocabulary evaluation, repository observation, architecture and
+contract evaluation, normalized findings, affected analysis, certification
+fingerprints/evidence/attestations, language analyzers, adapters, jobs,
+provider-governed pipelines, complete temporal governance, onboarding, release,
+and stable 1.0 self-certification remain future dependency-ordered work.

@@ -2,7 +2,7 @@
   "$schema": "../../../schemas/v1/change.schema.json",
   "schema_version": 1,
   "id": "CHG-BOOTSTRAP-0001",
-  "status": "in-progress",
+  "status": "archived",
   "objective": "Promote the authoritative bootstrap design into a coherent, buildable, self-governed Fortress repository and continue through the first dependency-valid core capabilities.",
   "baseline": {
     "commit": "c6e46eea6fc09debc50aca7e96ef528d8e5de03a",
@@ -39,7 +39,8 @@
       { "path": "fortress-bootstrap-design/21-self-application.md", "sha256": "sha256:9ec0be279edc13300ff99a5e47b46d27212fdfc1fc685eee6e652f6c3fa240c9" },
       { "path": "fortress-bootstrap-design/22-1.0-scope.md", "sha256": "sha256:cb99918f4a5693592c8b3f33cc773a8daf19fdf33f6658148211a9da414e4967" },
       { "path": "fortress-bootstrap-design/23-brand-and-public-identity.md", "sha256": "sha256:ee363d012bd757acd58d10e47e00c869be4e1227a0e1429d85f627248411c321" },
-      { "path": "fortress-bootstrap-design/24-bootstrap-acceptance-criteria.md", "sha256": "sha256:16416beb342824bbc8bdc8b8181225b51687456973d9057e6d9640bce0414651" }
+      { "path": "fortress-bootstrap-design/24-bootstrap-acceptance-criteria.md", "sha256": "sha256:16416beb342824bbc8bdc8b8181225b51687456973d9057e6d9640bce0414651" },
+      { "path": "fortress-bootstrap-design/SHA256SUMS.txt", "sha256": "sha256:99a4404aa9a139d458c8921312903511c135159fc18c6512de7673477c55ed91" }
     ]
   },
   "scope": [
@@ -79,13 +80,16 @@
     { "source": "fortress-bootstrap-design/24-bootstrap-acceptance-criteria.md", "target": "docs/history/bootstrap-acceptance.md", "disposition": "archived" }
   ],
   "checks": [
-    { "command": "SHA256SUMS.txt verification", "status": "passed", "summary": "All 27 listed packet files matched their declared SHA-256 digests." },
+    { "command": "SHA256SUMS.txt verification", "status": "passed", "summary": "All 27 listed packet files matched their declared SHA-256 digests; the inventory file digest is also recorded." },
     { "command": "cargo fmt --all --check", "status": "passed", "summary": "All current Rust source is deterministically formatted." },
     { "command": "cargo clippy --workspace --all-targets --all-features -- -D warnings", "status": "passed", "summary": "Core and CLI compile with Clippy and warnings denied." },
     { "command": "cargo test --workspace --all-targets --all-features", "status": "passed", "summary": "Current unit, integration, process, and STD-ID-001 fixture tests pass." },
     { "command": "RUSTDOCFLAGS=-D warnings cargo doc --workspace --all-features --no-deps", "status": "passed", "summary": "Rust documentation builds with warnings denied." },
     { "command": "JSON structural parsing", "status": "passed", "summary": "Current schemas, standard records, fixtures, and self-model documents parse as JSON." },
-    { "command": "fortress --version; fortress help; fortress certify", "status": "passed", "summary": "Version and help succeed; unsupported certify returns exit code 2." }
+    { "command": "fortress --version; fortress help; fortress certify", "status": "passed", "summary": "Version and help succeed; unsupported certify returns exit code 2." },
+    { "command": "git diff --check", "status": "passed", "summary": "No whitespace errors were present in tracked bootstrap changes." },
+    { "command": "top-level root allowlist audit", "status": "passed", "summary": "Every committed top-level path is required by repository architecture or an explicitly approved root file." },
+    { "command": "CI workflow YAML parse", "status": "passed", "summary": "The bootstrap GitHub Actions workflow parses as YAML and mirrors implemented local gates." }
   ],
   "decisions": [
     "ADR-LICENSE-0001"
@@ -104,7 +108,7 @@
   ],
   "result": {
     "certification_claim": "NOT CERTIFIED",
-    "commit": null,
-    "note": "Bootstrap is still active. Local validation results are not content-addressed or attested certification evidence."
+    "commit": "9a1f9aae348f17525c696ccf63ec8784489c5bff",
+    "note": "This is the final validated implementation commit before the self-referential closeout record. Local validation results are not content-addressed or attested certification evidence."
   }
 }

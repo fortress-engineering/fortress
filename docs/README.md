@@ -61,8 +61,8 @@ architecture, quality and trust, release scope, brand, and bootstrap history.
   [onboarding](onboarding/governance.md)
 - Quality and trust: [documentation](standard/documentation.md),
   [testing](standard/testing.md), and [trust](architecture/trust.md)
-- History: [bootstrap acceptance](history/bootstrap-acceptance.md) and the
-  packet disposition record created at bootstrap completion
+- History: [bootstrap acceptance](history/bootstrap-acceptance.md) and
+  [packet disposition](history/bootstrap-disposition.md)
 
 ## Change discipline
 
