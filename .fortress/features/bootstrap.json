@@ -95,6 +95,44 @@
       ]
     },
     {
+      "id": "AF-REPOSITORY-OBSERVATION-0001",
+      "title": "Universal repository file observation",
+      "status": "active",
+      "parent": null,
+      "owner": "AF-CORE-0001",
+      "zone": "core",
+      "owned_paths": [
+        "schemas/v1/repository-observation.schema.json",
+        "crates/fortress-core/src/observation.rs",
+        "crates/fortress-core/tests/repository_observation.rs",
+        "tests/fixtures/repository-observation/",
+        "docs/development/repository-observation.md"
+      ],
+      "dependencies": [
+        "AF-PROJECT-MODEL-0001"
+      ],
+      "requirements": [
+        {
+          "id": "AF-REPOSITORY-OBSERVATION-0001-R01",
+          "statement": "Repository observation emits deterministic sorted repository-relative file facts with byte size and SHA-256 content identity.",
+          "tests": [
+            "T-AF-REPOSITORY-OBSERVATION-0001-R01-001",
+            "T-AF-REPOSITORY-OBSERVATION-0001-R01-002",
+            "T-AF-REPOSITORY-OBSERVATION-0001-R01-003"
+          ]
+        },
+        {
+          "id": "AF-REPOSITORY-OBSERVATION-0001-R02",
+          "statement": "Observation rejects unsafe exclusion paths and applies explicit exclusions without converting observations into declarations.",
+          "tests": [
+            "T-AF-REPOSITORY-OBSERVATION-0001-R02-001",
+            "T-AF-REPOSITORY-OBSERVATION-0001-R02-002",
+            "T-AF-REPOSITORY-OBSERVATION-0001-R02-003"
+          ]
+        }
+      ]
+    },
+    {
       "id": "TF-CLI-0001",
       "title": "Minimal native CLI",
       "status": "active",

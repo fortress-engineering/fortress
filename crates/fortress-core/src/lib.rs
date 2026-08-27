@@ -8,5 +8,6 @@
 
 pub mod command;
 pub mod identity;
+pub mod observation;
 pub mod project;
 pub mod standard;

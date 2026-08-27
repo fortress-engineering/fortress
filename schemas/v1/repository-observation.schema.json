@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:repository-observation",
+  "title": "Fortress observed repository file inventory",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "knowledge_state", "files"],
+  "properties": {
+    "schema_version": { "$ref": "urn:fortress:schema:v1:common#/$defs/schema-version" },
+    "knowledge_state": { "const": "OBSERVED" },
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "size", "sha256"],
+        "properties": {
+          "path": { "$ref": "urn:fortress:schema:v1:common#/$defs/relative-path" },
+          "size": { "type": "integer", "minimum": 0 },
+          "sha256": { "$ref": "urn:fortress:schema:v1:common#/$defs/sha256" }
+        }
+      }
+    }
+  }
+}

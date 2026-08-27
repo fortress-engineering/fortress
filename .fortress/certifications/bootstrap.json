@@ -52,6 +52,23 @@
       "evidence": null
     },
     {
+      "id": "CERT-OBSERVATION-INVENTORY",
+      "description": "Deterministic universal repository file observation behavior.",
+      "status": "MISSING",
+      "trust": "untrusted-local",
+      "inputs": [
+        "Cargo.toml",
+        "Cargo.lock",
+        "crates/fortress-core/src/observation.rs",
+        "crates/fortress-core/tests/repository_observation.rs",
+        "tests/fixtures/repository-observation/",
+        "schemas/v1/repository-observation.schema.json"
+      ],
+      "upstream": [],
+      "input_fingerprint": null,
+      "evidence": null
+    },
+    {
       "id": "CERT-BOOTSTRAP-DOCS",
       "description": "Rust documentation with warnings denied.",
       "status": "MISSING",
