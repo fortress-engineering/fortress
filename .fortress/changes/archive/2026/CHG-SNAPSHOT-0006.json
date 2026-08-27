@@ -1,8 +1,8 @@
 {
-  "$schema": "../../../schemas/v1/change.schema.json",
+  "$schema": "../../../../schemas/v1/change.schema.json",
   "schema_version": 1,
   "id": "CHG-SNAPSHOT-0006",
-  "status": "in-progress",
+  "status": "archived",
   "objective": "Establish the first executable Snapshot Governance vertical slice: stabilized content identity, canonical findings, truthful rule evaluation, ownership/traceability/structure reconciliation, and a real audit command.",
   "baseline": {
     "commit": "3657357c6dbe0259d573262154f5ad3f5ed5b191",
@@ -32,11 +32,31 @@
     "Fortress self-audit and model hardening"
   ],
   "checks": [
-    { "command": "cargo fmt --all --check", "status": "pending", "summary": "Validate Rust formatting after each implementation unit." },
-    { "command": "cargo clippy --workspace --all-targets --all-features -- -D warnings", "status": "pending", "summary": "Validate warnings-denied Rust analysis without weakening gates." },
-    { "command": "cargo test --workspace --all-targets --all-features", "status": "pending", "summary": "Validate snapshot, rule, conformance, CLI, and self-model behavior." },
-    { "command": "RUSTDOCFLAGS=-D warnings cargo doc --workspace --all-features --no-deps", "status": "pending", "summary": "Validate complete Rust documentation." },
-    { "command": "fortress audit --format json repeatability", "status": "pending", "summary": "Require a stable self-audit result and identical machine output for identical content." }
+    {
+      "command": "cargo fmt --all --check",
+      "status": "passed",
+      "summary": "Rust formatting is canonical across the workspace."
+    },
+    {
+      "command": "cargo clippy --workspace --all-targets --all-features -- -D warnings",
+      "status": "passed",
+      "summary": "All targets and features pass warnings-denied Clippy analysis."
+    },
+    {
+      "command": "cargo test --workspace --all-targets --all-features",
+      "status": "passed",
+      "summary": "All 77 implementation, schema, conformance, CLI, and self-model tests pass."
+    },
+    {
+      "command": "RUSTDOCFLAGS=-D warnings cargo doc --workspace --all-features --no-deps",
+      "status": "passed",
+      "summary": "Workspace documentation builds with warnings denied."
+    },
+    {
+      "command": "fortress audit --format json repeatability",
+      "status": "passed",
+      "summary": "Two observations of the same repository content produced byte-identical JSON; four implemented rules passed, no rule failed, and STD-ID-001 was truthfully unsupported by Snapshot Governance."
+    }
   ],
   "decisions": [],
   "deferred_capabilities": [
@@ -52,7 +72,7 @@
   ],
   "result": {
     "certification_claim": "NOT CERTIFIED",
-    "commit": null,
-    "note": "Snapshot audit evidence is development evidence and must not be represented as Fortress certification."
+    "commit": "53a2fda611ffd7d5fe4209312fe7c9c6745a0d7c",
+    "note": "Fortress's four implemented Snapshot Governance rule evaluators pass against its stabilized self-snapshot with zero findings. STD-ID-001 remains explicitly unsupported by this snapshot engine. This development evidence is not Fortress certification."
   }
 }
