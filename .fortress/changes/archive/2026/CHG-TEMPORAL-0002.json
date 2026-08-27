@@ -2,7 +2,7 @@
   "$schema": "../../../schemas/v1/change.schema.json",
   "schema_version": 1,
   "id": "CHG-TEMPORAL-0002",
-  "status": "verifying",
+  "status": "archived",
   "objective": "Generalize the initial temporal change schema so ordinary changes do not require bootstrap packet provenance.",
   "baseline": {
     "commit": "4a45c20c9e04a3998dd1a54211c2783530a67a1c",
@@ -35,7 +35,7 @@
   ],
   "result": {
     "certification_claim": "NOT CERTIFIED",
-    "commit": null,
-    "note": "Implementation validation passed; the commit remains null until this self-referential change record is committed. Ordinary tests are not certification evidence."
+    "commit": "3392fd4845b00813ad8080350b6b80c1bfceef24",
+    "note": "The implementation commit is recorded exactly. This archival-only follow-up preserves the temporal record; ordinary tests are not certification evidence."
   }
 }
