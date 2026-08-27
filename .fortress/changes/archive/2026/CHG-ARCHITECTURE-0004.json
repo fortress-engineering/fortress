@@ -1,8 +1,8 @@
 {
-  "$schema": "../../../schemas/v1/change.schema.json",
+  "$schema": "../../../../schemas/v1/change.schema.json",
   "schema_version": 1,
   "id": "CHG-ARCHITECTURE-0004",
-  "status": "verifying",
+  "status": "archived",
   "objective": "Implement typed declared architecture loading and deterministic enforcement of acyclic component dependencies under draft rule ARCH-DEPENDENCY-001.",
   "baseline": {
     "commit": "8b742d4911253c3b590e3e1793795d7b4750dbe0",
@@ -28,7 +28,8 @@
     { "command": "cargo fmt --all --check", "status": "passed", "summary": "The complete Rust workspace is canonically formatted." },
     { "command": "cargo clippy --workspace --all-targets --all-features -- -D warnings", "status": "passed", "summary": "The complete Rust workspace passed warnings-denied Clippy analysis without exemptions." },
     { "command": "cargo test --workspace --all-targets --all-features", "status": "passed", "summary": "All 44 unit, integration, conformance, boundary, and self-model tests passed, including resolution of every local $schema reference." },
-    { "command": "RUSTDOCFLAGS=-D warnings cargo doc --workspace --all-features --no-deps", "status": "passed", "summary": "Workspace documentation built with warnings denied." }
+    { "command": "RUSTDOCFLAGS=-D warnings cargo doc --workspace --all-features --no-deps", "status": "passed", "summary": "Workspace documentation built with warnings denied." },
+    { "command": "cargo metadata --locked --no-deps --format-version 1", "status": "passed", "summary": "The pinned workspace and committed dependency lock resolved without mutation." }
   ],
   "decisions": [],
   "deferred_capabilities": [
@@ -40,7 +41,7 @@
   ],
   "result": {
     "certification_claim": "NOT CERTIFIED",
-    "commit": null,
-    "note": "Declared architecture loading and deterministic cycle evaluation passed local verification. This evaluates declarations only and does not create certification evidence or a PASS claim."
+    "commit": "9479c15e3069a60bc379a0127a16ff6dda043760",
+    "note": "The architecture capability commit and follow-up schema-reference integrity fix conclude at the recorded commit. Evaluation covers declarations only and does not create certification evidence or a PASS claim."
   }
 }
