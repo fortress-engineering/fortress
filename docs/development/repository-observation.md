@@ -23,10 +23,11 @@ overflow produce explicit errors. Absolute paths and parent traversal are never
 serialized into observation output.
 
 Given the same readable file tree, bytes, and exclusion policy, output ordering,
-sizes, and digests are deterministic. This initial implementation does not lock
-the repository or prove that a file remained unchanged while it was read. A
-later snapshot/fingerprint unit must close that race before observation can
-support protected certification evidence.
+sizes, and digests are deterministic. A single observation does not lock the
+repository or prove that files remained stable while read. The downstream
+`AF-SNAPSHOT-GOVERNANCE-0001` capability closes this gap for development audit
+snapshots with two identical complete passes; the observer itself remains a
+single-pass fact source.
 
 ## Non-claims
 

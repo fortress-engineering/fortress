@@ -177,6 +177,46 @@
       ]
     },
     {
+      "id": "AF-SNAPSHOT-GOVERNANCE-0001",
+      "title": "Canonical stabilized repository snapshot",
+      "status": "active",
+      "parent": null,
+      "owner": "AF-CORE-0001",
+      "zone": "core",
+      "owned_paths": [
+        "schemas/v1/repository-snapshot.schema.json",
+        "crates/fortress-core/src/snapshot.rs",
+        "crates/fortress-core/tests/repository_snapshot.rs",
+        "docs/development/snapshot-governance.md"
+      ],
+      "dependencies": [
+        "AF-STANDARD-REGISTRY-0001",
+        "AF-PROJECT-MODEL-0001",
+        "AF-REPOSITORY-OBSERVATION-0001"
+      ],
+      "requirements": [
+        {
+          "id": "AF-SNAPSHOT-GOVERNANCE-0001-R01",
+          "statement": "A canonical repository snapshot deterministically binds the exact declared standard/project inputs, explicit observation policy, stable observed file inventory, engine interpretation version, and content fingerprints without wall-clock identity.",
+          "tests": [
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R01-001",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R01-002",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R01-003",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R01-004"
+          ]
+        },
+        {
+          "id": "AF-SNAPSHOT-GOVERNANCE-0001-R02",
+          "statement": "Snapshot creation rejects a repository whose included path set, byte sizes, or content digests change between two canonical observation passes.",
+          "tests": [
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R02-001",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R02-002",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R02-003"
+          ]
+        }
+      ]
+    },
+    {
       "id": "TF-CLI-0001",
       "title": "Minimal native CLI",
       "status": "active",

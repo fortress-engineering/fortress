@@ -1,0 +1,58 @@
+{
+  "$schema": "../../../schemas/v1/change.schema.json",
+  "schema_version": 1,
+  "id": "CHG-SNAPSHOT-0006",
+  "status": "in-progress",
+  "objective": "Establish the first executable Snapshot Governance vertical slice: stabilized content identity, canonical findings, truthful rule evaluation, ownership/traceability/structure reconciliation, and a real audit command.",
+  "baseline": {
+    "commit": "3657357c6dbe0259d573262154f5ad3f5ed5b191",
+    "branch": "dev"
+  },
+  "authority_refs": [
+    "docs/product/definition.md",
+    "docs/standard/model.md",
+    "docs/standard/rules.md",
+    "docs/standard/testing.md",
+    "docs/architecture/system.md",
+    "docs/architecture/repository.md",
+    "docs/architecture/contracts.md",
+    "docs/architecture/trust.md",
+    "docs/certification/model.md",
+    "docs/certification/incremental.md",
+    "docs/governance/self-application.md"
+  ],
+  "scope": [
+    "canonical stabilized repository snapshot",
+    "shared normalized snapshot finding model",
+    "truthful snapshot rule evaluation engine",
+    "declared file ownership reconciliation",
+    "requirement and Rust test traceability",
+    "declared repository placement evaluation",
+    "human and JSON fortress audit output",
+    "Fortress self-audit and model hardening"
+  ],
+  "checks": [
+    { "command": "cargo fmt --all --check", "status": "pending", "summary": "Validate Rust formatting after each implementation unit." },
+    { "command": "cargo clippy --workspace --all-targets --all-features -- -D warnings", "status": "pending", "summary": "Validate warnings-denied Rust analysis without weakening gates." },
+    { "command": "cargo test --workspace --all-targets --all-features", "status": "pending", "summary": "Validate snapshot, rule, conformance, CLI, and self-model behavior." },
+    { "command": "RUSTDOCFLAGS=-D warnings cargo doc --workspace --all-features --no-deps", "status": "pending", "summary": "Validate complete Rust documentation." },
+    { "command": "fortress audit --format json repeatability", "status": "pending", "summary": "Require a stable self-audit result and identical machine output for identical content." }
+  ],
+  "decisions": [],
+  "deferred_capabilities": [
+    "onboarding and convergence governance",
+    "architectural hypothesis generation",
+    "migration and violation activation",
+    "change workflow state machines",
+    "persistent jobs and fortressd",
+    "CI-provider execution",
+    "release and deployment orchestration",
+    "certification and cryptographic attestation",
+    "standard upgrade planning"
+  ],
+  "result": {
+    "certification_claim": "NOT CERTIFIED",
+    "commit": null,
+    "note": "Snapshot audit evidence is development evidence and must not be represented as Fortress certification."
+  }
+}

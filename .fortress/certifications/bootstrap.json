@@ -85,6 +85,25 @@
       "evidence": null
     },
     {
+      "id": "CERT-SNAPSHOT-GOVERNANCE",
+      "description": "Stabilized canonical repository snapshot identity and declared input provenance.",
+      "status": "MISSING",
+      "trust": "untrusted-local",
+      "inputs": [
+        "schemas/v1/repository-snapshot.schema.json",
+        "crates/fortress-core/src/snapshot.rs",
+        ".fortress/project.json",
+        ".fortress/architecture/architecture.json",
+        ".fortress/features/bootstrap.json",
+        "standard/drafts/1.0.0/manifest.json"
+      ],
+      "upstream": [
+        "CERT-OBSERVATION-INVENTORY"
+      ],
+      "input_fingerprint": null,
+      "evidence": null
+    },
+    {
       "id": "CERT-BOOTSTRAP-DOCS",
       "description": "Rust documentation with warnings denied.",
       "status": "MISSING",

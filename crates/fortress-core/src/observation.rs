@@ -16,7 +16,7 @@ use sha2::{Digest, Sha256};
 pub const OBSERVATION_SCHEMA_VERSION: u16 = 1;
 
 /// Explicit caller policy for repository paths omitted from observation.
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize)]
 pub struct ObservationPolicy {
     excluded_prefixes: Vec<String>,
 }

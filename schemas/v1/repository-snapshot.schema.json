@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:repository-snapshot",
+  "title": "Canonical stabilized Fortress repository snapshot",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "project_id", "standard", "inputs", "observation_policy",
+    "files", "repository_content_fingerprint", "engine", "provenance", "snapshot_fingerprint"
+  ],
+  "properties": {
+    "schema_version": { "$ref": "urn:fortress:schema:v1:common#/$defs/schema-version" },
+    "project_id": { "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id" },
+    "standard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "edition", "status", "declared_bundle_digest", "manifest_digest",
+        "input_documents", "input_fingerprint"
+      ],
+      "properties": {
+        "edition": { "type": "string", "minLength": 1 },
+        "status": { "enum": ["draft", "candidate", "released"] },
+        "declared_bundle_digest": {
+          "oneOf": [
+            { "$ref": "urn:fortress:schema:v1:common#/$defs/sha256" },
+            { "type": "null" }
+          ]
+        },
+        "manifest_digest": { "$ref": "urn:fortress:schema:v1:common#/$defs/sha256" },
+        "input_documents": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "sha256"],
+            "properties": {
+              "path": { "$ref": "urn:fortress:schema:v1:common#/$defs/relative-path" },
+              "sha256": { "$ref": "urn:fortress:schema:v1:common#/$defs/sha256" }
+            }
+          }
+        },
+        "input_fingerprint": { "$ref": "urn:fortress:schema:v1:common#/$defs/sha256" }
+      }
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["project_declaration_digest", "architecture_declaration_digest", "feature_contracts"],
+      "properties": {
+        "project_declaration_digest": { "$ref": "urn:fortress:schema:v1:common#/$defs/sha256" },
+        "architecture_declaration_digest": { "$ref": "urn:fortress:schema:v1:common#/$defs/sha256" },
+        "feature_contracts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "sha256"],
+            "properties": {
+              "path": { "$ref": "urn:fortress:schema:v1:common#/$defs/relative-path" },
+              "sha256": { "$ref": "urn:fortress:schema:v1:common#/$defs/sha256" }
+            }
+          }
+        }
+      }
+    },
+    "observation_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["excluded_prefixes"],
+      "properties": {
+        "excluded_prefixes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "urn:fortress:schema:v1:common#/$defs/relative-path" }
+        }
+      }
+    },
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "size", "sha256"],
+        "properties": {
+          "path": { "$ref": "urn:fortress:schema:v1:common#/$defs/relative-path" },
+          "size": { "type": "integer", "minimum": 0 },
+          "sha256": { "$ref": "urn:fortress:schema:v1:common#/$defs/sha256" }
+        }
+      }
+    },
+    "repository_content_fingerprint": { "$ref": "urn:fortress:schema:v1:common#/$defs/sha256" },
+    "engine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": { "const": "fortress" },
+        "version": { "type": "string", "minLength": 1 }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["observation_passes", "hash_algorithm", "symlink_policy", "root_kind"],
+      "properties": {
+        "observation_passes": { "const": 2 },
+        "hash_algorithm": { "const": "sha256" },
+        "symlink_policy": { "const": "reject" },
+        "root_kind": { "const": "caller-supplied-local-directory" }
+      }
+    },
+    "snapshot_fingerprint": { "$ref": "urn:fortress:schema:v1:common#/$defs/sha256" }
+  }
+}

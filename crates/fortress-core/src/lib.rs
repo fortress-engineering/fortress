@@ -11,4 +11,5 @@ pub mod command;
 pub mod identity;
 pub mod observation;
 pub mod project;
+pub mod snapshot;
 pub mod standard;
