@@ -24,7 +24,7 @@ Orchestrates declaration loading, stabilized snapshot construction, analyzers, r
 
 ### [`contract.rs`](../code/contract.rs)
 
-Normalizes implemented Module Contract v2 ecosystem and README-projection violations into canonical snapshot findings.
+Projects CCG compilation, supported logical coherency, and README synchronization into canonical CONTRACT-COHERENCY-001 findings.
 
 ### [`documentation.rs`](../code/documentation.rs)
 
@@ -56,8 +56,8 @@ Builds two-pass stabilized content-addressed repository snapshots and rejects mu
 
 ### [`traceability.rs`](../code/traceability.rs)
 
-Reconciles distributed Module-contract requirements and supported Rust test evidence bidirectionally.
+Projects CCG requirement/test identity findings and deterministic coverage counts without rebuilding verification topology.
 
 ### [`testing_boundary.rs`](../code/testing_boundary.rs)
 
-Enforces recursive Testing-child presence, exact parent Feature subjects, role restrictions, and canonical Rust test placement.
+Projects CCG recursive Testing-child, exact parent Feature subject, role, and Rust evidence-placement findings.

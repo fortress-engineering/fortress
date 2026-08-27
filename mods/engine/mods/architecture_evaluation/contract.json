@@ -12,6 +12,11 @@
   ],
   "requires": [
     {
+      "provider": "AF-CONTRACT-COHERENCY-0001",
+      "capability": "CAP-CONTRACT-COHERENCY",
+      "version": "^0.1.0"
+    },
+    {
       "provider": "AF-PROJECT-MODEL-0001",
       "capability": "CAP-PROJECT-MODEL",
       "version": "^0.1.0"
@@ -32,11 +37,9 @@
       "requirements": [
         {
           "id": "AF-ARCHITECTURE-EVALUATION-0001-R01",
-          "statement": "The core parses canonical Module Contract v2 documents and deterministically resolves ecosystem identities, capabilities, relationships, constraints, guarantees, Features, requirements, evidence, and behavioral checkpoints.",
+          "statement": "Architecture Evaluation consumes the canonical CCG Module and dependency facts to derive architecture and physical ownership views without owning or rebuilding contract resolution.",
           "tests": [
-            "T-AF-ARCHITECTURE-EVALUATION-0001-R01-001",
-            "T-AF-ARCHITECTURE-EVALUATION-0001-R01-002",
-            "T-AF-ARCHITECTURE-EVALUATION-0001-R01-003"
+            "T-AF-ARCHITECTURE-EVALUATION-0001-R01-001"
           ]
         },
         {

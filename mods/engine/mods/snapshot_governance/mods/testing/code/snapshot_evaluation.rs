@@ -104,8 +104,16 @@ fn contract_coherency_passes_without_overclaiming_semantic_closure() {
         .expect("contract coherency execution is reported");
     assert_eq!(execution.state(), RuleExecutionState::Passed);
     assert_eq!(execution.finding_count(), 0);
-    assert!(execution.detail().contains("general rule satisfiability"));
-    assert!(execution.detail().contains("remain unsupported"));
+    assert!(
+        execution
+            .detail()
+            .contains("arbitrary_natural_language_requirement_contradiction")
+    );
+    assert!(
+        execution
+            .detail()
+            .contains("source_code_dependency_realization")
+    );
 }
 
 /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R12-001`

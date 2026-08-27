@@ -6,17 +6,17 @@ This verification Module exists to prove only the Architecture Evaluation Featur
 
 ## Responsibility
 
-Exercise local and repository-wide contract gates, resolve simple and complex ecosystems repeatedly, and map dependency findings exclusively to parent-owned requirements.
+Exercise the parent architecture projection and dependency evaluator against canonical CCG facts, and map findings exclusively to parent-owned requirements.
 
 ## Scope
 
 ### Includes
 
-Rust verification code, composed contract ecosystems, and direct fixtures providing evidence for the immediate parent's local Feature.
+Rust verification code, dependency fixtures, and the live Fortress CCG projection providing evidence for the immediate parent's local Feature.
 
 ### Excludes
 
-Ancestor, sibling, or descendant Feature requirements; README synchronization; source dependency extraction; final CCG construction; and documentation evaluation owned elsewhere.
+Ancestor, sibling, or descendant Feature requirements; README synchronization; source dependency extraction; CCG compilation; and documentation evaluation owned elsewhere.
 
 ## Relationships
 
@@ -24,8 +24,8 @@ Ancestor, sibling, or descendant Feature requirements; README synchronization; s
 
 **Types:** `depends_on`, `verifies`
 
-Exercises the parent Module Contract v2 resolver and ARCH-DEPENDENCY-001 evaluator.
+Exercises the parent CCG architecture projection and ARCH-DEPENDENCY-001 evaluator.
 
 ## Guarantees
 
-The suite is deterministic, repeated resolution preserves identical indexes and digests, and expected findings remain specification-authored rather than generated from implementation output.
+The suite is deterministic, CCG projections preserve canonical dependency identities, and expected findings remain specification-authored rather than generated from implementation output.

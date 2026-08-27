@@ -12,6 +12,8 @@ pub mod architecture;
 pub mod audit;
 #[path = "../mods/snapshot_governance/code/contract.rs"]
 pub mod contract;
+#[path = "../mods/contract_coherency/code/contract.rs"]
+pub mod contract_coherency;
 #[path = "../mods/snapshot_governance/code/documentation.rs"]
 pub mod documentation;
 #[path = "../mods/snapshot_governance/code/evaluation.rs"]
@@ -20,8 +22,6 @@ pub mod evaluation;
 pub mod finding;
 #[path = "../mods/standard_registry/code/identity.rs"]
 pub mod identity;
-#[path = "../mods/architecture_evaluation/code/module_contract.rs"]
-pub mod module_contract;
 #[path = "../mods/repository_observation/code/observation.rs"]
 pub mod observation;
 #[path = "../mods/snapshot_governance/code/ownership.rs"]

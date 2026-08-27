@@ -1,0 +1,69 @@
+{
+  "$schema": "urn:fortress:schema:v2:module-contract",
+  "schema_version": 2,
+  "id": "AF-CONTRACT-COHERENCY-0001",
+  "display_name": "Contract Coherency",
+  "provides": [
+    {
+      "id": "CAP-CONTRACT-COHERENCY",
+      "version": "0.1.0",
+      "visibility": "project"
+    }
+  ],
+  "requires": [
+    {
+      "provider": "AF-STANDARD-REGISTRY-0001",
+      "capability": "CAP-STANDARD-REGISTRY",
+      "version": "^0.1.0"
+    }
+  ],
+  "relationships": [],
+  "constraints": [],
+  "guarantees": [
+    {
+      "id": "GUA-CONTRACT-COHERENCY-DETERMINISM",
+      "subject": {
+        "kind": "capability",
+        "id": "CAP-CONTRACT-COHERENCY"
+      },
+      "requirements": [
+        "AF-CONTRACT-COHERENCY-0001-R01",
+        "AF-CONTRACT-COHERENCY-0001-R02",
+        "AF-CONTRACT-COHERENCY-0001-R03"
+      ]
+    }
+  ],
+  "features": [
+    {
+      "id": "AF-CONTRACT-COHERENCY-0001",
+      "version": "0.1.0",
+      "requirements": [
+        {
+          "id": "AF-CONTRACT-COHERENCY-0001-R01",
+          "statement": "The compiler loads canonical Module Contract v2 and recursively discovered containment into one schema-versioned CCG containing every supported semantic domain with precise source provenance.",
+          "tests": [
+            "T-AF-CONTRACT-COHERENCY-0001-R01-001",
+            "T-AF-CONTRACT-COHERENCY-0001-R01-002"
+          ]
+        },
+        {
+          "id": "AF-CONTRACT-COHERENCY-0001-R02",
+          "statement": "The CCG deterministically derives dependency reachability, inverse consumers, inherited and implied constraints, conflict failures, guarantee support, and parent-local verification topology without implicit capability re-export or unsupported proof claims.",
+          "tests": [
+            "T-AF-CONTRACT-COHERENCY-0001-R02-001",
+            "T-AF-CONTRACT-COHERENCY-0001-R02-002"
+          ]
+        },
+        {
+          "id": "AF-CONTRACT-COHERENCY-0001-R03",
+          "statement": "Canonical CCG serialization is UTF-8, LF-terminated, deterministically ordered, content-addressed outside its own bytes, repeatable, and equal to Fortress's committed self-CCG Info artifact.",
+          "tests": [
+            "T-AF-CONTRACT-COHERENCY-0001-R03-001",
+            "T-AF-CONTRACT-COHERENCY-0001-R03-002"
+          ]
+        }
+      ]
+    }
+  ],
+  "behavior": []
+}

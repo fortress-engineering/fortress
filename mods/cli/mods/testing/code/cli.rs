@@ -7,7 +7,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 use fortress_cli::command::{CommandDescriptor, CommandRegistry};
 use fortress_cli::{EXIT_SUCCESS, EXIT_USAGE};
-use fortress_core::module_contract::ModuleContract;
+use fortress_core::contract_coherency::ModuleContract;
 
 static NEXT_FIXTURE: AtomicU64 = AtomicU64::new(1);
 
@@ -369,6 +369,39 @@ fn audit_rejects_unsupported_options() {
     let output = run(&["audit", "--format", "xml"]);
     assert_eq!(output.status.code(), Some(2));
     assert!(String::from_utf8_lossy(&output.stderr).contains("human` or `json"));
+}
+
+/// `T-TF-CLI-0001-R05-001`
+/// Fortress requirement: TF-CLI-0001-R05
+#[test]
+fn ccg_json_is_schema_versioned_and_repeatable() {
+    let fixture = AuditFixture::new();
+    let arguments = ["ccg".into(), fixture.argument(), "--format=json".into()];
+    let first = run_owned(&arguments);
+    let second = run_owned(&arguments);
+    assert!(
+        first.status.success(),
+        "{}",
+        String::from_utf8_lossy(&first.stderr)
+    );
+    assert_eq!(first.stdout, second.stdout);
+    let value: serde_json::Value =
+        serde_json::from_slice(&first.stdout).expect("CCG output is JSON");
+    assert_eq!(
+        value["$schema"],
+        "urn:fortress:schema:v1:contract-coherency-graph"
+    );
+    assert_eq!(value["schema_version"], 1);
+    assert_eq!(value["coherency"]["status"], "coherent");
+}
+
+/// `T-TF-CLI-0001-R05-002`
+/// Fortress requirement: TF-CLI-0001-R05
+#[test]
+fn ccg_rejects_unsupported_formats() {
+    let output = run(&["ccg", "--format", "dot"]);
+    assert_eq!(output.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("--format json"));
 }
 
 /// `T-TF-CLI-0001-R01-001`

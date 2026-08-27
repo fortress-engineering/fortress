@@ -10,7 +10,7 @@
   "applicability": "Active Fortress feature contracts and supported snapshot-bound Rust test evidence inventories.",
   "category": "testing",
   "integrity_tier": 1,
-  "evaluation": "The Fortress core loads distributed Feature requirements, structurally parses snapshot-bound Rust test sources, and deterministically reconciles test identity, exact source requirement markers, immediate parent Testing ownership, and explicit infrastructure classifications.",
+  "evaluation": "The CCG compiler indexes distributed Feature requirements and snapshot-bound Rust test facts once, derives exact test identity, source requirement markers, parent-local ownership, and infrastructure status, and TEST-TRACEABILITY-001 projects the resulting identity-coherency findings without rebuilding that topology.",
   "required_capabilities": [
     "typed-feature-contract-loading",
     "snapshot-bound-rust-test-analysis",

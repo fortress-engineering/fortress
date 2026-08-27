@@ -15,13 +15,8 @@
           },
           {
             "id": "AF-SAMPLE-0001-R02",
-            "statement": "Orphan requirement.",
-            "tests": []
-          },
-          {
-            "id": "AF-SAMPLE-0001-R02",
-            "statement": "Duplicate requirement identity.",
-            "tests": ["T-AF-SAMPLE-0001-R01-003"]
+            "statement": "Second behavior with stale evidence.",
+            "tests": ["T-AF-SAMPLE-0001-R02-001"]
           }
         ]
       }
@@ -41,6 +36,20 @@
       "symbol": "duplicate_a",
       "classification": "behavioral",
       "declared_requirement": "AF-SAMPLE-0001-R01"
+    },
+    {
+      "id": "T-AF-SAMPLE-0001-R01-002",
+      "path": "mods/feature/mods/testing/code/secondary.rs",
+      "symbol": "secondary",
+      "classification": "behavioral",
+      "declared_requirement": "AF-SAMPLE-0001-R01"
+    },
+    {
+      "id": "T-AF-SAMPLE-0001-R02-001",
+      "path": "mods/feature/mods/testing/code/second_behavior.rs",
+      "symbol": "second_behavior",
+      "classification": "conformance",
+      "declared_requirement": "AF-SAMPLE-0001-R02"
     },
     {
       "id": "T-AF-SAMPLE-0001-R01-003",

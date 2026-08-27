@@ -1,11 +1,5 @@
 [
-  "Active mandatory requirement `AF-SAMPLE-0001-R02` declares no required test evidence.",
-  "Active requirement ID `AF-SAMPLE-0001-R02` is declared more than once.",
-  "Observed behavioral Rust test `T-AF-SAMPLE-0001-R09-001` has no explicit `Fortress requirement:` marker.",
-  "Observed behavioral Rust test `T-AF-SAMPLE-0001-R09-001` is not mapped to an active requirement.",
-  "Observed behavioral Rust test `T-AF-SAMPLE-0001-R09-002` is not mapped to an active requirement.",
-  "Requirement `AF-SAMPLE-0001-R01` references test `T-AF-SAMPLE-0001-R01-002` absent from the supported Rust evidence inventory.",
-  "Rust test ID `T-AF-SAMPLE-0001-R01-003` is observed more than once.",
-  "Rust test `T-AF-SAMPLE-0001-R09-002` declares nonexistent active requirement `AF-MISSING-0001-R01`.",
-  "Test evidence `T-AF-SAMPLE-0001-R01-003` is mapped more than once: AF-SAMPLE-0001-R01, AF-SAMPLE-0001-R02."
+  "symbol:duplicate_a: test ID `T-AF-SAMPLE-0001-R01-003` is observed more than once",
+  "symbol:orphan: test `T-AF-SAMPLE-0001-R09-001` has no explicit `Fortress requirement:` marker",
+  "symbol:stale_requirement: test `T-AF-SAMPLE-0001-R09-002` declares unknown requirement `AF-MISSING-0001-R01`"
 ]

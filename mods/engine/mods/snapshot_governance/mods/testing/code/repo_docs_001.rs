@@ -4,8 +4,8 @@ use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use fortress_core::contract_coherency::ModuleContract;
 use fortress_core::documentation::evaluate_documentation_files;
-use fortress_core::module_contract::ModuleContract;
 use serde::Deserialize;
 use serde_json::json;
 

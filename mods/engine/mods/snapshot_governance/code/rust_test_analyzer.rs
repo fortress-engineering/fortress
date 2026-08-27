@@ -10,6 +10,7 @@ use sha2::{Digest, Sha256};
 use syn::visit::Visit;
 use syn::{Attribute, Expr, ItemFn, Lit, Meta};
 
+use crate::contract_coherency::{CcgObservedTestFact, CcgTestClassification};
 use crate::identity::StableId;
 use crate::snapshot::RepositorySnapshot;
 
@@ -119,6 +120,22 @@ impl RustTestFact {
     }
 }
 
+impl From<&RustTestFact> for CcgObservedTestFact {
+    fn from(test: &RustTestFact) -> Self {
+        Self::new(
+            test.id(),
+            test.path(),
+            test.symbol(),
+            match test.classification() {
+                RustTestClassification::Behavioral => CcgTestClassification::Behavioral,
+                RustTestClassification::Conformance => CcgTestClassification::Conformance,
+                RustTestClassification::Infrastructure => CcgTestClassification::Infrastructure,
+            },
+            test.declared_requirement().map(str::to_owned),
+        )
+    }
+}
+
 /// Analyzes all Rust source files whose exact content is bound into a snapshot.
 ///
 /// Each file is re-read and compared with the snapshot byte size and SHA-256
@@ -154,6 +171,35 @@ pub fn analyze_snapshot_rust_tests(
         let source = std::str::from_utf8(&bytes)
             .map_err(|_| RustAnalyzerError::NonUtf8(file.path().into()))?;
         facts.extend(analyze_rust_source(file.path(), source)?);
+    }
+    facts.sort();
+    Ok(facts)
+}
+
+/// Analyzes Rust test facts from an already stabilized repository byte set.
+///
+/// This boundary lets orchestration compile the CCG once from the exact bytes
+/// captured by repository observation. Callers remain responsible for proving
+/// that the byte set still matches the finalized repository snapshot.
+///
+/// # Errors
+///
+/// Returns [`RustAnalyzerError`] for invalid UTF-8, Rust syntax, or Fortress
+/// test metadata.
+pub fn analyze_observed_rust_tests<'a>(
+    files: impl IntoIterator<Item = (&'a str, &'a [u8])>,
+) -> Result<Vec<RustTestFact>, RustAnalyzerError> {
+    let mut facts = Vec::new();
+    for (path, bytes) in files {
+        if !Path::new(path)
+            .extension()
+            .is_some_and(|extension| extension.eq_ignore_ascii_case("rs"))
+        {
+            continue;
+        }
+        let source = std::str::from_utf8(bytes)
+            .map_err(|_| RustAnalyzerError::NonUtf8(path.to_owned().into()))?;
+        facts.extend(analyze_rust_source(path, source)?);
     }
     facts.sort();
     Ok(facts)

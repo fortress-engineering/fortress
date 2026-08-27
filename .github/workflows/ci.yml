@@ -51,6 +51,17 @@ jobs:
       - name: Run workspace tests
         run: cargo +1.97.1 --config data/cargo_config.toml test --manifest-path data/Cargo.toml --workspace --all-targets --all-features
 
+      - name: Verify deterministic committed self-CCG
+        shell: bash
+        run: |
+          first="$(mktemp)"
+          second="$(mktemp)"
+          trap 'rm -f "$first" "$second"' EXIT
+          cargo +1.97.1 --config data/cargo_config.toml run --quiet --manifest-path data/Cargo.toml -p fortress-cli -- ccg . --format json --output "$first"
+          cargo +1.97.1 --config data/cargo_config.toml run --quiet --manifest-path data/Cargo.toml -p fortress-cli -- ccg . --format json --output "$second"
+          cmp "$first" "$second"
+          cmp "$first" info/contract_coherency_graph.json
+
       - name: Run Fortress self-audit
         run: cargo +1.97.1 --config data/cargo_config.toml run --quiet --manifest-path data/Cargo.toml -p fortress-cli -- audit .
 

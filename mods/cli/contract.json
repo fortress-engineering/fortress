@@ -62,6 +62,14 @@
             "T-TF-CLI-0001-R04-004",
             "T-TF-CLI-0001-R04-005"
           ]
+        },
+        {
+          "id": "TF-CLI-0001-R05",
+          "statement": "The native fortress ccg command compiles the canonical repository semantic IR once, renders deterministic canonical JSON, returns non-success for incoherency or invalid state, and rejects unsupported formats without implying certification.",
+          "tests": [
+            "T-TF-CLI-0001-R05-001",
+            "T-TF-CLI-0001-R05-002"
+          ]
         }
       ]
     }

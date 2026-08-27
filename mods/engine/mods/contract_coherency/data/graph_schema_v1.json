@@ -1,0 +1,996 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:contract-coherency-graph",
+  "title": "Fortress Contract Coherency Graph v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "identity",
+    "standard",
+    "modules",
+    "capabilities",
+    "features",
+    "requirements",
+    "guarantees",
+    "constraints",
+    "relationships",
+    "verification",
+    "behavior_declarations",
+    "derivations",
+    "provenance",
+    "coherency"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:schema:v1:contract-coherency-graph"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "project_id",
+        "repository_grammar"
+      ],
+      "properties": {
+        "project_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "repository_grammar": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "standard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "edition",
+        "status",
+        "bundle_digest",
+        "rules"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "edition": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "bundle_digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/rule_logic"
+          }
+        }
+      }
+    },
+    "modules": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/module"
+      }
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/capability"
+      }
+    },
+    "features": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/feature"
+      }
+    },
+    "requirements": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/requirement"
+      }
+    },
+    "guarantees": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/guarantee"
+      }
+    },
+    "constraints": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "explicit",
+        "effective"
+      ],
+      "properties": {
+        "explicit": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/explicit_constraint"
+          }
+        },
+        "effective": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/effective_constraint"
+          }
+        }
+      }
+    },
+    "relationships": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "capability_requirements",
+        "typed",
+        "inverse_consumers",
+        "dependency_reachability",
+        "reachable_capabilities"
+      ],
+      "properties": {
+        "capability_requirements": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/capability_requirement"
+          }
+        },
+        "typed": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/typed_relationship"
+          }
+        },
+        "inverse_consumers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/inverse_consumer"
+          }
+        },
+        "dependency_reachability": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/dependency_reachability"
+          }
+        },
+        "reachable_capabilities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/reachable_capability"
+          }
+        }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "observed_test_source_resolution_supported",
+        "testing_boundaries",
+        "requirement_support",
+        "observed_tests"
+      ],
+      "properties": {
+        "observed_test_source_resolution_supported": {
+          "type": "boolean"
+        },
+        "testing_boundaries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/testing_boundary"
+          }
+        },
+        "requirement_support": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/requirement_support"
+          }
+        },
+        "observed_tests": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/observed_test"
+          }
+        }
+      }
+    },
+    "behavior_declarations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/behavior"
+      }
+    },
+    "derivations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/derivation"
+      }
+    },
+    "provenance": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/provenance"
+      }
+    },
+    "coherency": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "findings",
+        "unsupported_semantics"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "coherent",
+            "incoherent"
+          ]
+        },
+        "findings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/finding"
+          }
+        },
+        "unsupported_semantics": {
+          "$ref": "#/$defs/string_array"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "string_array": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "nullable_string": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "pointer"
+      ],
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "pointer": {
+          "type": "string"
+        }
+      }
+    },
+    "rule_logic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "source_digest",
+        "implies",
+        "conflicts_with",
+        "provenance"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "source_digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "implies": {
+          "$ref": "#/$defs/string_array"
+        },
+        "conflicts_with": {
+          "$ref": "#/$defs/string_array"
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        }
+      }
+    },
+    "module": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "display_name",
+        "path",
+        "parent",
+        "children",
+        "contract_source",
+        "contract_digest",
+        "provenance",
+        "containment_derivation"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "display_name": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "parent": {
+          "$ref": "#/$defs/nullable_string"
+        },
+        "children": {
+          "$ref": "#/$defs/string_array"
+        },
+        "contract_source": {
+          "type": "string"
+        },
+        "contract_digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        },
+        "containment_derivation": {
+          "type": "string"
+        }
+      }
+    },
+    "capability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "provider",
+        "version",
+        "visibility",
+        "direct_consumers",
+        "direct_requirements",
+        "transitively_reachable_by",
+        "provenance"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "provider": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "visibility": {
+          "enum": [
+            "project",
+            "public"
+          ]
+        },
+        "direct_consumers": {
+          "$ref": "#/$defs/string_array"
+        },
+        "direct_requirements": {
+          "$ref": "#/$defs/string_array"
+        },
+        "transitively_reachable_by": {
+          "$ref": "#/$defs/string_array"
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        }
+      }
+    },
+    "feature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "owner",
+        "version",
+        "requirements",
+        "provenance"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "owner": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "requirements": {
+          "$ref": "#/$defs/string_array"
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        }
+      }
+    },
+    "requirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "owner",
+        "feature",
+        "statement",
+        "declared_tests",
+        "provenance"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "owner": {
+          "type": "string"
+        },
+        "feature": {
+          "type": "string"
+        },
+        "statement": {
+          "type": "string"
+        },
+        "declared_tests": {
+          "$ref": "#/$defs/string_array"
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        }
+      }
+    },
+    "guarantee": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "owner",
+        "subject_kind",
+        "subject_id",
+        "backing_requirements",
+        "support_topology",
+        "complete_declared_verification_obligations",
+        "provenance"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "owner": {
+          "type": "string"
+        },
+        "subject_kind": {
+          "enum": [
+            "module",
+            "capability",
+            "feature"
+          ]
+        },
+        "subject_id": {
+          "type": "string"
+        },
+        "backing_requirements": {
+          "$ref": "#/$defs/string_array"
+        },
+        "support_topology": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/guarantee_support"
+          }
+        },
+        "complete_declared_verification_obligations": {
+          "type": "boolean"
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        }
+      }
+    },
+    "guarantee_support": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requirement",
+        "feature",
+        "testing_module",
+        "declared_tests",
+        "derivation"
+      ],
+      "properties": {
+        "requirement": {
+          "type": "string"
+        },
+        "feature": {
+          "type": "string"
+        },
+        "testing_module": {
+          "$ref": "#/$defs/nullable_string"
+        },
+        "declared_tests": {
+          "$ref": "#/$defs/string_array"
+        },
+        "derivation": {
+          "type": "string"
+        }
+      }
+    },
+    "explicit_constraint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "module",
+        "rule",
+        "scope",
+        "provenance"
+      ],
+      "properties": {
+        "module": {
+          "type": "string"
+        },
+        "rule": {
+          "type": "string"
+        },
+        "scope": {
+          "enum": [
+            "self",
+            "subtree"
+          ]
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        }
+      }
+    },
+    "constraint_origin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "declared_by",
+        "declared_rule",
+        "rule_path",
+        "provenance"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "explicit",
+            "inherited",
+            "implied"
+          ]
+        },
+        "declared_by": {
+          "type": "string"
+        },
+        "declared_rule": {
+          "type": "string"
+        },
+        "rule_path": {
+          "$ref": "#/$defs/string_array"
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        }
+      }
+    },
+    "effective_constraint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "module",
+        "rule",
+        "origins"
+      ],
+      "properties": {
+        "module": {
+          "type": "string"
+        },
+        "rule": {
+          "type": "string"
+        },
+        "origins": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/constraint_origin"
+          }
+        }
+      }
+    },
+    "capability_requirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "consumer",
+        "provider",
+        "capability",
+        "version_requirement",
+        "provenance"
+      ],
+      "properties": {
+        "consumer": {
+          "type": "string"
+        },
+        "provider": {
+          "type": "string"
+        },
+        "capability": {
+          "type": "string"
+        },
+        "version_requirement": {
+          "type": "string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        }
+      }
+    },
+    "typed_relationship": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "relationship_type",
+        "target",
+        "subjects",
+        "provenance"
+      ],
+      "properties": {
+        "source": {
+          "type": "string"
+        },
+        "relationship_type": {
+          "const": "verifies"
+        },
+        "target": {
+          "type": "string"
+        },
+        "subjects": {
+          "$ref": "#/$defs/string_array"
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        }
+      }
+    },
+    "inverse_consumer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider",
+        "consumer",
+        "capability",
+        "derivation"
+      ],
+      "properties": {
+        "provider": {
+          "type": "string"
+        },
+        "consumer": {
+          "type": "string"
+        },
+        "capability": {
+          "type": "string"
+        },
+        "derivation": {
+          "type": "string"
+        }
+      }
+    },
+    "dependency_reachability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "target",
+        "direct",
+        "path",
+        "derivation"
+      ],
+      "properties": {
+        "source": {
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "direct": {
+          "type": "boolean"
+        },
+        "path": {
+          "$ref": "#/$defs/string_array"
+        },
+        "derivation": {
+          "type": "string"
+        }
+      }
+    },
+    "reachable_capability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "capability",
+        "provider",
+        "path",
+        "reexported",
+        "derivation"
+      ],
+      "properties": {
+        "source": {
+          "type": "string"
+        },
+        "capability": {
+          "type": "string"
+        },
+        "provider": {
+          "type": "string"
+        },
+        "path": {
+          "$ref": "#/$defs/string_array"
+        },
+        "reexported": {
+          "type": "boolean"
+        },
+        "derivation": {
+          "type": "string"
+        }
+      }
+    },
+    "testing_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "parent",
+        "testing_module",
+        "verified_features",
+        "provenance"
+      ],
+      "properties": {
+        "parent": {
+          "type": "string"
+        },
+        "testing_module": {
+          "type": "string"
+        },
+        "verified_features": {
+          "$ref": "#/$defs/string_array"
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        }
+      }
+    },
+    "requirement_support": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requirement",
+        "owner",
+        "feature",
+        "testing_module",
+        "declared_tests",
+        "observed_tests",
+        "complete_declared_support",
+        "derivation"
+      ],
+      "properties": {
+        "requirement": {
+          "type": "string"
+        },
+        "owner": {
+          "type": "string"
+        },
+        "feature": {
+          "type": "string"
+        },
+        "testing_module": {
+          "$ref": "#/$defs/nullable_string"
+        },
+        "declared_tests": {
+          "$ref": "#/$defs/string_array"
+        },
+        "observed_tests": {
+          "$ref": "#/$defs/string_array"
+        },
+        "complete_declared_support": {
+          "type": "boolean"
+        },
+        "derivation": {
+          "type": "string"
+        }
+      }
+    },
+    "observed_test": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "testing_module",
+        "path",
+        "symbol",
+        "classification",
+        "declared_requirement",
+        "provenance"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "testing_module": {
+          "$ref": "#/$defs/nullable_string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "symbol": {
+          "type": "string"
+        },
+        "classification": {
+          "enum": [
+            "behavioral",
+            "conformance",
+            "infrastructure"
+          ]
+        },
+        "declared_requirement": {
+          "$ref": "#/$defs/nullable_string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        }
+      }
+    },
+    "behavior": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "owner",
+        "feature",
+        "kind",
+        "outcome",
+        "transitions",
+        "provenance"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "owner": {
+          "type": "string"
+        },
+        "feature": {
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "trigger",
+            "action",
+            "decision",
+            "terminal"
+          ]
+        },
+        "outcome": {
+          "$ref": "#/$defs/nullable_string"
+        },
+        "transitions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/transition"
+          }
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        }
+      }
+    },
+    "transition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "outcome",
+        "target"
+      ],
+      "properties": {
+        "outcome": {
+          "$ref": "#/$defs/nullable_string"
+        },
+        "target": {
+          "type": "string"
+        }
+      }
+    },
+    "derivation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "fact",
+        "input_facts",
+        "explanation_path",
+        "provenance_closure"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "type": "string"
+        },
+        "fact": {
+          "type": "string"
+        },
+        "input_facts": {
+          "$ref": "#/$defs/string_array"
+        },
+        "explanation_path": {
+          "$ref": "#/$defs/string_array"
+        },
+        "provenance_closure": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/provenance"
+          }
+        }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "path",
+        "pointer",
+        "message",
+        "input_facts",
+        "provenance_closure"
+      ],
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "pointer": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "input_facts": {
+          "$ref": "#/$defs/string_array"
+        },
+        "provenance_closure": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/provenance"
+          }
+        }
+      }
+    }
+  }
+}

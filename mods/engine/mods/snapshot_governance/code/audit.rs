@@ -1,6 +1,6 @@
 //! End-to-end provider-independent Snapshot Governance repository audit.
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
 use std::fs;
@@ -11,21 +11,23 @@ use sha2::{Digest, Sha256};
 
 use crate::architecture::ArchitectureManifest;
 use crate::contract::evaluate_contract_coherency;
+use crate::contract_coherency::{
+    CcgObservedTestFact, ContractCoherencyGraph, ContractStandardIndex,
+    compile_contract_coherency_graph,
+};
 use crate::documentation::{DocumentationEvaluationError, evaluate_repository_documentation};
 use crate::evaluation::{
     CompleteEvaluationInputs, EvaluationError, RuleExecution, SnapshotRuleEngine,
 };
 use crate::finding::CanonicalFinding;
-use crate::module_contract::{ContractStandardIndex, resolve_contracts};
 use crate::observation::{ObservationError, ObservationPolicy, RepositoryObservation};
 use crate::project::{ProjectConfiguration, ProjectConfigurationLoadError};
-use crate::rust_test_analyzer::{RustAnalyzerError, analyze_snapshot_rust_tests};
+use crate::rust_test_analyzer::{RustAnalyzerError, analyze_observed_rust_tests};
 use crate::snapshot::{
     RepositorySnapshot, SnapshotDocuments, SnapshotError, build_repository_snapshot,
     observe_repository_stably,
 };
 use crate::standard::{StandardBundle, StandardLoadError};
-use crate::traceability::requirements_from_resolved;
 
 /// Current stable machine-readable snapshot audit schema family.
 pub const AUDIT_RESULT_SCHEMA_VERSION: u16 = 1;
@@ -171,7 +173,28 @@ impl AuditSummary {
 /// Returns [`AuditError`] for invalid/missing declarations, unstable or
 /// inconsistent snapshot inputs, analyzer failure, or rule-evaluation failure.
 pub fn audit_repository(root: impl AsRef<Path>) -> Result<AuditResult, AuditError> {
-    let root = root.as_ref();
+    audit_repository_with_ccg(root.as_ref()).map(|(audit, _)| audit)
+}
+
+/// Compiles the canonical CCG for a stabilized repository input set.
+///
+/// The same orchestration path used by [`audit_repository`] supplies standard,
+/// contract, containment, and observed Rust verification facts. Audit rules are
+/// evaluated as a consistency guard, but their result is not embedded in the
+/// graph.
+///
+/// # Errors
+///
+/// Returns [`AuditError`] for malformed or unstable repository state.
+pub fn compile_repository_ccg(
+    root: impl AsRef<Path>,
+) -> Result<ContractCoherencyGraph, AuditError> {
+    audit_repository_with_ccg(root.as_ref()).map(|(_, ccg)| ccg)
+}
+
+fn audit_repository_with_ccg(
+    root: &Path,
+) -> Result<(AuditResult, ContractCoherencyGraph), AuditError> {
     let project_document = read_document(root, "data/project.json")?;
     let project = ProjectConfiguration::from_json_str(project_document.source()?)
         .map_err(AuditError::Project)?;
@@ -197,10 +220,22 @@ pub fn audit_repository(root: impl AsRef<Path>) -> Result<AuditResult, AuditErro
     let standard = StandardBundle::from_json_documents(standard_manifest.source()?, &rule_sources)
         .map_err(AuditError::Standard)?;
     let standard_index = ContractStandardIndex::from_bundle(&standard);
-    let initial_contract_resolution = resolve_contracts(&observed_files, &standard_index, None);
-    let initial_contracts = initial_contract_resolution.resolved().ok_or_else(|| {
+    let rust_tests = analyze_observed_rust_tests(
+        observed_files
+            .iter()
+            .map(|(path, bytes)| (path.as_str(), bytes.as_slice())),
+    )
+    .map_err(AuditError::RustAnalyzer)?;
+    let observed_test_facts: Vec<CcgObservedTestFact> =
+        rust_tests.iter().map(CcgObservedTestFact::from).collect();
+    let ccg_compilation = compile_contract_coherency_graph(
+        &observed_files,
+        &standard_index,
+        Some(&observed_test_facts),
+    );
+    let ccg = ccg_compilation.graph().ok_or_else(|| {
         AuditError::ContractState(
-            initial_contract_resolution
+            ccg_compilation
                 .violations()
                 .iter()
                 .map(ToString::to_string)
@@ -229,9 +264,8 @@ pub fn audit_repository(root: impl AsRef<Path>) -> Result<AuditResult, AuditErro
             .iter()
             .map(|document| (document.path.as_str(), document.bytes.as_slice())),
     );
-    let snapshot =
-        build_repository_snapshot(root, &policy, initial_contracts, &standard, &documents)
-            .map_err(AuditError::Snapshot)?;
+    let snapshot = build_repository_snapshot(root, &policy, ccg, &standard, &documents)
+        .map_err(AuditError::Snapshot)?;
     verify_loaded_inputs(
         &snapshot,
         std::iter::once(&project_document)
@@ -239,39 +273,49 @@ pub fn audit_repository(root: impl AsRef<Path>) -> Result<AuditResult, AuditErro
             .chain(rule_documents.iter())
             .chain(contract_documents.iter()),
     )?;
-    let rust_tests =
-        analyze_snapshot_rust_tests(root, &snapshot).map_err(AuditError::RustAnalyzer)?;
-    let observed_test_ids: BTreeSet<String> =
-        rust_tests.iter().map(|test| test.id().to_owned()).collect();
-    let contract_resolution =
-        resolve_contracts(&observed_files, &standard_index, Some(&observed_test_ids));
-    let documentation = evaluate_repository_documentation(root, &snapshot, standard.edition())
+    verify_observed_files(&snapshot, &observed_files)?;
+    let documentation = evaluate_repository_documentation(root, &snapshot, ccg, standard.edition())
         .map_err(AuditError::Documentation)?;
     let contract_coherency =
-        evaluate_contract_coherency(contract_resolution, &documentation, standard.edition())
+        evaluate_contract_coherency(ccg_compilation, &documentation, standard.edition())
             .map_err(EvaluationError::Finding)
             .map_err(AuditError::Evaluation)?;
+    let ccg = contract_coherency.graph().ok_or_else(|| {
+        AuditError::ContractState("CCG compilation did not produce a graph".into())
+    })?;
+    let evaluation = evaluate_snapshot_rules(
+        &standard,
+        &snapshot,
+        ccg,
+        &rust_tests,
+        &documentation,
+        &contract_coherency,
+    )?;
+    Ok((result_from_evaluation(&snapshot, &evaluation), ccg.clone()))
+}
+
+fn evaluate_snapshot_rules(
+    standard: &StandardBundle,
+    snapshot: &RepositorySnapshot,
+    ccg: &ContractCoherencyGraph,
+    rust_tests: &[crate::rust_test_analyzer::RustTestFact],
+    documentation: &crate::documentation::DocumentationConformanceReport,
+    contract_coherency: &crate::contract::ContractCoherencyEvaluation,
+) -> Result<crate::evaluation::SnapshotEvaluation, AuditError> {
     let paths: Vec<String> = snapshot
         .files()
         .iter()
         .map(|file| file.path().to_owned())
         .collect();
-    let architecture = ArchitectureManifest::from_resolved_contracts(initial_contracts, &paths);
-    let requirements = requirements_from_resolved(initial_contracts);
-    let evaluation = SnapshotRuleEngine::builtin()
+    let architecture = ArchitectureManifest::from_ccg(ccg, &paths);
+    SnapshotRuleEngine::builtin()
         .evaluate_complete(
-            &standard,
-            &snapshot,
+            standard,
+            snapshot,
             &architecture,
-            CompleteEvaluationInputs::new(
-                &requirements,
-                &rust_tests,
-                &documentation,
-                &contract_coherency,
-            ),
+            CompleteEvaluationInputs::new(rust_tests, documentation, contract_coherency),
         )
-        .map_err(AuditError::Evaluation)?;
-    Ok(result_from_evaluation(&snapshot, &evaluation))
+        .map_err(AuditError::Evaluation)
 }
 
 fn result_from_evaluation(
@@ -344,6 +388,30 @@ fn read_observed_files(
             Ok((document.path, document.bytes))
         })
         .collect()
+}
+
+fn verify_observed_files(
+    snapshot: &RepositorySnapshot,
+    files: &BTreeMap<String, Vec<u8>>,
+) -> Result<(), AuditError> {
+    if snapshot.files().len() != files.len() {
+        return Err(AuditError::InputMismatch(
+            "stabilized repository inventory".into(),
+        ));
+    }
+    for (path, bytes) in files {
+        let digest = format!("sha256:{:x}", Sha256::digest(bytes));
+        let size = u64::try_from(bytes.len())
+            .map_err(|_| AuditError::InputMismatch(path.clone().into()))?;
+        if !snapshot
+            .files()
+            .iter()
+            .any(|file| file.path() == path && file.size() == size && file.sha256() == digest)
+        {
+            return Err(AuditError::InputMismatch(path.clone().into()));
+        }
+    }
+    Ok(())
 }
 
 fn find_standard_manifest(files: &BTreeMap<String, Vec<u8>>) -> Result<String, AuditError> {

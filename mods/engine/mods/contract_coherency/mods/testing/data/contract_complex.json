@@ -11,13 +11,13 @@
     "T-RESEARCH-FEATURE-R01-001"
   ],
   "expected": {
-    "modules": 6,
-    "capabilities": 4,
+    "modules": 8,
+    "capabilities": 5,
     "features": 2,
     "requirements": 2,
     "guarantees": 2,
     "checkpoints": 5,
-    "direct_requirements": 5,
+    "direct_requirements": 6,
     "relationships": 2
   },
   "contracts": [
@@ -246,6 +246,11 @@
             "provider": "AF-APPLICATION-0001",
             "capability": "CAP-APPLICATION",
             "version": "^0.1.0"
+          },
+          {
+            "provider": "AF-GOVERNANCE-0001",
+            "capability": "CAP-GOVERNANCE",
+            "version": "^0.1.0"
           }
         ],
         "relationships": [],
@@ -256,19 +261,71 @@
       }
     },
     {
-      "path": "mods/testing/contract.json",
+      "path": "mods/governance/contract.json",
       "contract": {
         "$schema": "urn:fortress:schema:v2:module-contract",
         "schema_version": 2,
-        "id": "TF-ECOSYSTEM-TESTING-0001",
-        "display_name": "Ecosystem Testing",
+        "id": "AF-GOVERNANCE-0001",
+        "display_name": "Governance",
+        "provides": [
+          {
+            "id": "CAP-GOVERNANCE",
+            "version": "0.1.0",
+            "visibility": "project"
+          }
+        ],
+        "requires": [],
+        "relationships": [],
+        "constraints": [
+          {
+            "rule": "STD-ID-001",
+            "scope": "self"
+          }
+        ],
+        "guarantees": [],
+        "features": [],
+        "behavior": []
+      }
+    },
+    {
+      "path": "mods/application/mods/testing/contract.json",
+      "contract": {
+        "$schema": "urn:fortress:schema:v2:module-contract",
+        "schema_version": 2,
+        "id": "AF-APPLICATION-TESTING-0001",
+        "display_name": "Application Testing",
         "provides": [],
         "requires": [
           {
             "provider": "AF-APPLICATION-0001",
             "capability": "CAP-APPLICATION",
             "version": "^0.1.0"
-          },
+          }
+        ],
+        "relationships": [
+          {
+            "type": "verifies",
+            "target": "AF-APPLICATION-0001",
+            "subjects": [
+              "AF-APPLICATION-FEATURE-0001"
+            ]
+          }
+        ],
+        "constraints": [],
+        "guarantees": [],
+        "features": [],
+        "behavior": []
+      }
+    },
+    {
+      "path": "mods/research/mods/testing/contract.json",
+      "contract": {
+        "$schema": "urn:fortress:schema:v2:module-contract",
+        "schema_version": 2,
+        "id": "AF-RESEARCH-TESTING-0001",
+        "display_name": "Research Testing",
+        "provides": [],
+        "requires": [
           {
             "provider": "AF-RESEARCH-0001",
             "capability": "CAP-RESEARCH",
@@ -278,16 +335,9 @@
         "relationships": [
           {
             "type": "verifies",
-            "target": "AF-APPLICATION-0001",
-            "subjects": [
-              "GUA-APPLICATION-CORRECTNESS"
-            ]
-          },
-          {
-            "type": "verifies",
             "target": "AF-RESEARCH-0001",
             "subjects": [
-              "AF-RESEARCH-FEATURE-0001-R01"
+              "AF-RESEARCH-FEATURE-0001"
             ]
           }
         ],

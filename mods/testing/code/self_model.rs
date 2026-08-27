@@ -8,7 +8,9 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use fortress_cli::command::CommandRegistry;
-use fortress_core::module_contract::{ContractStandardIndex, resolve_contracts};
+use fortress_core::contract_coherency::{
+    CcgObservedTestFact, ContractStandardIndex, compile_contract_coherency_graph,
+};
 use fortress_core::observation::{ObservationPolicy, observe_repository};
 use fortress_core::project::ProjectConfiguration;
 use fortress_core::rust_test_analyzer::analyze_rust_source;
@@ -103,6 +105,7 @@ fn live_contract_v2_ecosystem_resolves_completely() {
         })
         .collect();
     let mut test_ids = BTreeSet::new();
+    let mut test_facts = Vec::new();
     for (path, bytes) in &files {
         if Path::new(path)
             .extension()
@@ -111,10 +114,11 @@ fn live_contract_v2_ecosystem_resolves_completely() {
             let source = std::str::from_utf8(bytes).expect("Rust source is UTF-8");
             for fact in analyze_rust_source(path, source).expect("Rust test facts analyze") {
                 assert!(test_ids.insert(fact.id().to_owned()));
+                test_facts.push(CcgObservedTestFact::from(&fact));
             }
         }
     }
-    let resolution = resolve_contracts(
+    let resolution = compile_contract_coherency_graph(
         &files,
         &ContractStandardIndex::new(
             "STD-FORTRESS-ENGINEERING",
@@ -130,19 +134,24 @@ fn live_contract_v2_ecosystem_resolves_completely() {
                 "TEST-TRACEABILITY-001",
             ],
         ),
-        Some(&test_ids),
+        Some(&test_facts),
     );
     let resolved = resolution
-        .resolved()
+        .graph()
         .unwrap_or_else(|| panic!("live contracts resolve: {:#?}", resolution.violations()));
-    assert_eq!(resolved.modules().len(), 15);
-    assert_eq!(resolved.capabilities().len(), 7);
-    assert_eq!(resolved.features().len(), 7);
-    assert_eq!(resolved.requirements().len(), 26);
-    assert_eq!(resolved.guarantees().len(), 3);
+    assert!(
+        resolution.is_success(),
+        "live CCG must be coherent: {:#?}",
+        resolution.violations()
+    );
+    assert_eq!(resolved.modules().len(), 17);
+    assert_eq!(resolved.capabilities().len(), 8);
+    assert_eq!(resolved.features().len(), 8);
+    assert_eq!(resolved.requirements().len(), 31);
+    assert_eq!(resolved.guarantees().len(), 4);
     assert_eq!(resolved.checkpoints().len(), 0);
-    assert_eq!(resolved.direct_requirements().len(), 22);
-    assert_eq!(resolved.relationships().len(), 7);
+    assert_eq!(resolved.direct_requirements().len(), 27);
+    assert_eq!(resolved.relationships().len(), 8);
     assert!(resolved.modules().values().all(|module| {
         module.contract().behavior().is_empty() && module.digest().starts_with("sha256:")
     }));

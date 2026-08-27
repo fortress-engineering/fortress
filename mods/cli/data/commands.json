@@ -34,6 +34,17 @@
       "duration": "short",
       "resumability": "restartable",
       "certification_implications": "Produces deterministic development audit evidence only; it is not Fortress certification."
+    },
+    {
+      "id": "CMD-CONTRACT-CCG",
+      "name": "ccg",
+      "aliases": [],
+      "description": "Compile and render the deterministic Contract Coherency Graph.",
+      "owner": "TF-CLI-0001",
+      "executor": "builtin-sync",
+      "duration": "short",
+      "resumability": "restartable",
+      "certification_implications": "Renders derived semantic intent and coherency only; it is not certification evidence."
     }
   ]
 }

@@ -22,10 +22,6 @@ A violated assertion or fixture-loading failure fails the test target and surfac
 
 Verifies valid, cyclic, and minimum architecture graphs against ARCH-DEPENDENCY-001.
 
-### [`module_contract_v2.rs`](../code/module_contract_v2.rs)
-
-Exercises canonical local parsing and repository-wide Module Contract v2 resolution across invalid semantics and deterministic simple and complex ecosystems.
-
 ### [`self_architecture.rs`](../code/self_architecture.rs)
 
-Resolves Fortress's live distributed contracts and verifies that its parent-owned architecture requirement remains acyclic.
+Compiles Fortress's live CCG and verifies that the parent architecture projection remains acyclic.

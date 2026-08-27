@@ -15,11 +15,11 @@ use pulldown_cmark::{Event, HeadingLevel, Options, Parser, Tag, TagEnd};
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 
+use crate::contract_coherency::{ContractCoherencyGraph, ModuleContract, ResolvedRelationshipType};
 use crate::finding::{
     CanonicalFinding, EvaluatorProvenance, FindingCategory, FindingError, FindingLocation,
     FindingOccurrence, RuleFindingDefinition,
 };
-use crate::module_contract::{ModuleContract, ResolvedRelationshipType};
 use crate::snapshot::RepositorySnapshot;
 
 /// Stable identity of canonical Module documentation synchronization.
@@ -222,6 +222,7 @@ impl DocumentationSummary {
 pub fn evaluate_repository_documentation(
     root: impl AsRef<Path>,
     snapshot: &RepositorySnapshot,
+    ccg: &ContractCoherencyGraph,
     standard_edition: &str,
 ) -> Result<DocumentationConformanceReport, DocumentationEvaluationError> {
     let root = root.as_ref();
@@ -242,7 +243,7 @@ pub fn evaluate_repository_documentation(
         }
         files.insert(observed.path().to_owned(), bytes);
     }
-    evaluate_documentation_files(&files, standard_edition)
+    evaluate_documentation_files_with_ccg(&files, standard_edition, Some(ccg))
         .map_err(DocumentationEvaluationError::Finding)
 }
 
@@ -257,6 +258,14 @@ pub fn evaluate_repository_documentation(
 pub fn evaluate_documentation_files(
     files: &BTreeMap<String, Vec<u8>>,
     standard_edition: &str,
+) -> Result<DocumentationConformanceReport, FindingError> {
+    evaluate_documentation_files_with_ccg(files, standard_edition, None)
+}
+
+fn evaluate_documentation_files_with_ccg(
+    files: &BTreeMap<String, Vec<u8>>,
+    standard_edition: &str,
+    ccg: Option<&ContractCoherencyGraph>,
 ) -> Result<DocumentationConformanceReport, FindingError> {
     let definition = RuleFindingDefinition::new(
         REPO_DOCS_RULE_ID,
@@ -283,6 +292,7 @@ pub fn evaluate_documentation_files(
         parsed: BTreeMap::new(),
         contracts: BTreeMap::new(),
         contract_paths: BTreeMap::new(),
+        ccg,
     };
 
     context.validate_structural_surfaces()?;
@@ -319,6 +329,7 @@ struct EvaluationContext<'a> {
     parsed: BTreeMap<String, MarkdownDocument>,
     contracts: BTreeMap<String, ModuleContract>,
     contract_paths: BTreeMap<String, String>,
+    ccg: Option<&'a ContractCoherencyGraph>,
 }
 
 impl EvaluationContext<'_> {
@@ -391,6 +402,22 @@ impl EvaluationContext<'_> {
     }
 
     fn load_contracts(&mut self) -> Result<(), FindingError> {
+        if let Some(ccg) = self.ccg {
+            for module in ccg.modules().values() {
+                self.contract_paths.insert(
+                    module.contract().id().to_owned(),
+                    module.contract_path().to_owned(),
+                );
+                self.contracts
+                    .insert(module.path().to_owned(), module.contract().clone());
+            }
+            self.summary.contract_relationships = ccg
+                .expected_readme_relationships()
+                .values()
+                .map(BTreeMap::len)
+                .sum();
+            return Ok(());
+        }
         for module in self.modules {
             let path = child_path(module, "contract.json");
             let Some(bytes) = self.files.get(&path) else {
@@ -435,6 +462,9 @@ impl EvaluationContext<'_> {
     }
 
     fn validate_contract_graph(&mut self) -> Result<(), FindingError> {
+        if self.ccg.is_some() {
+            return Ok(());
+        }
         let identities: BTreeSet<String> = self
             .contracts
             .values()
@@ -462,12 +492,12 @@ impl EvaluationContext<'_> {
                 contract
                     .requires()
                     .iter()
-                    .map(crate::module_contract::RequiredCapability::provider)
+                    .map(crate::contract_coherency::RequiredCapability::provider)
                     .chain(
                         contract
                             .relationships()
                             .iter()
-                            .map(crate::module_contract::ModuleRelationship::target),
+                            .map(crate::contract_coherency::ModuleRelationship::target),
                     )
                     .map(|target| (module.clone(), contract.id().to_owned(), target.to_owned()))
             })
@@ -725,11 +755,14 @@ impl EvaluationContext<'_> {
         }
 
         if let Some(contract) = self.contracts.get(module) {
-            let authoritative: BTreeMap<String, Vec<ResolvedRelationshipType>> =
-                authoritative_relationships(contract)
-                    .into_iter()
-                    .map(|(target, types)| (target, types.into_iter().collect()))
-                    .collect();
+            let authoritative: BTreeMap<String, Vec<ResolvedRelationshipType>> = self
+                .ccg
+                .and_then(|ccg| ccg.expected_readme_relationships().get(contract.id()))
+                .cloned()
+                .unwrap_or_else(|| authoritative_relationships(contract))
+                .into_iter()
+                .map(|(target, types)| (target, types.into_iter().collect()))
+                .collect();
             for (target, types) in &authoritative {
                 match documented.get(target) {
                     None => self.markdown_finding(path, format!("Contract relationship to `{target}` is missing from README `Relationships`."))?,

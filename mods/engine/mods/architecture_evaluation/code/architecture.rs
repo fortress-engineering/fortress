@@ -1,17 +1,17 @@
 //! Derived architecture dependency and ownership views.
 //!
-//! The v2 Module contract set owns functional intent. This module derives the
-//! graph edges from exact capability requirements and derives physical
-//! territory from canonical Module containment. It introduces no writable
-//! architecture manifest authority.
+//! Module Contract v2 owns functional intent and the CCG owns its canonical
+//! derived dependency graph. This module projects those CCG edges and derives
+//! physical territory from canonical Module containment. It introduces no
+//! writable architecture manifest authority.
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
+use crate::contract_coherency::ContractCoherencyGraph;
 use crate::finding::{
     CanonicalFinding, EvaluatorProvenance, FindingCategory, FindingError, FindingLocation,
     FindingOccurrence, RuleFindingDefinition,
 };
-use crate::module_contract::ResolvedContractSet;
 
 /// Stable identity of the declared dependency-cycle rule.
 pub const ARCH_DEPENDENCY_RULE_ID: &str = "ARCH-DEPENDENCY-001";
@@ -22,15 +22,13 @@ const ARCH_DEPENDENCY_REMEDIATION: &str = "Separate responsibilities to restore 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ArchitectureManifest {
     components: Vec<ComponentDeclaration>,
+    dependency_cycles: Vec<Vec<String>>,
 }
 
 impl ArchitectureManifest {
-    /// Derives dependency edges and exact observed ownership from a resolved contract set.
+    /// Projects dependency edges and exact observed ownership from the canonical CCG.
     #[must_use]
-    pub fn from_resolved_contracts(
-        contracts: &ResolvedContractSet,
-        observed_paths: &[String],
-    ) -> Self {
+    pub fn from_ccg(contracts: &ContractCoherencyGraph, observed_paths: &[String]) -> Self {
         let mut dependencies = BTreeMap::<String, BTreeSet<String>>::new();
         for requirement in contracts.direct_requirements() {
             dependencies
@@ -59,7 +57,10 @@ impl ArchitectureManifest {
             })
             .collect();
         components.sort_by(|left, right| left.id.cmp(&right.id));
-        Self { components }
+        Self {
+            components,
+            dependency_cycles: contracts.dependency_cycles(),
+        }
     }
 
     /// Constructs a deterministic architecture view for specification fixtures.
@@ -69,13 +70,23 @@ impl ArchitectureManifest {
     #[must_use]
     pub fn from_components(mut components: Vec<ComponentDeclaration>) -> Self {
         components.sort_by(|left, right| left.id.cmp(&right.id));
-        Self { components }
+        let dependency_cycles = first_dependency_cycle(&components).into_iter().collect();
+        Self {
+            components,
+            dependency_cycles,
+        }
     }
 
     /// Returns derived architecture components.
     #[must_use]
     pub fn components(&self) -> &[ComponentDeclaration] {
         &self.components
+    }
+
+    /// Returns dependency cycles compiled by the CCG or by fixture construction.
+    #[must_use]
+    pub fn dependency_cycles(&self) -> &[Vec<String>] {
+        &self.dependency_cycles
     }
 
     /// Evaluates draft rule `ARCH-DEPENDENCY-001` against derived edges.
@@ -91,89 +102,85 @@ impl ArchitectureManifest {
         &self,
         standard_edition: &str,
     ) -> Result<Option<CanonicalFinding>, FindingError> {
-        let adjacency: BTreeMap<&str, Vec<&str>> = self
-            .components
-            .iter()
-            .map(|component| {
-                (
-                    component.id.as_str(),
-                    component.depends_on.iter().map(String::as_str).collect(),
-                )
-            })
-            .collect();
-        let mut states = HashMap::with_capacity(self.components.len());
-        for start in adjacency.keys().copied() {
-            if states.contains_key(start) {
+        let Some(entities) = self.dependency_cycles.first() else {
+            return Ok(None);
+        };
+        let route = entities.join(" -> ");
+        let definition = RuleFindingDefinition::new(
+            ARCH_DEPENDENCY_RULE_ID,
+            1,
+            FindingCategory::Architecture,
+            ARCH_DEPENDENCY_REMEDIATION,
+        )?;
+        let occurrence = FindingOccurrence::new(
+            entities.clone(),
+            FindingLocation::none(),
+            format!("CCG Module capability dependency graph contains a cycle: {route}."),
+        )?;
+        let evaluator =
+            EvaluatorProvenance::new("fortress-core/architecture", env!("CARGO_PKG_VERSION"))?;
+        CanonicalFinding::failure(definition, occurrence, evaluator, standard_edition, None)
+            .map(Some)
+    }
+}
+
+fn first_dependency_cycle(components: &[ComponentDeclaration]) -> Option<Vec<String>> {
+    let adjacency: BTreeMap<&str, Vec<&str>> = components
+        .iter()
+        .map(|component| {
+            (
+                component.id.as_str(),
+                component.depends_on.iter().map(String::as_str).collect(),
+            )
+        })
+        .collect();
+    let mut states = HashMap::with_capacity(components.len());
+    for start in adjacency.keys().copied() {
+        if states.contains_key(start) {
+            continue;
+        }
+        states.insert(start, VisitState::Visiting);
+        let mut path = vec![start];
+        let mut stack = vec![(start, 0_usize)];
+        while let Some(&(node, next_offset)) = stack.last() {
+            let dependencies = adjacency.get(node).map_or(&[][..], Vec::as_slice);
+            let Some(&dependency) = dependencies.get(next_offset) else {
+                states.insert(node, VisitState::Complete);
+                stack.pop();
+                path.pop();
                 continue;
+            };
+            if let Some(last) = stack.last_mut() {
+                last.1 += 1;
             }
-            states.insert(start, VisitState::Visiting);
-            let mut path = vec![start];
-            let mut stack = vec![(start, 0_usize)];
-            while let Some(&(node, next_offset)) = stack.last() {
-                let dependencies = adjacency.get(node).map_or(&[][..], Vec::as_slice);
-                let Some(&dependency) = dependencies.get(next_offset) else {
-                    states.insert(node, VisitState::Complete);
-                    stack.pop();
-                    path.pop();
-                    continue;
-                };
-                if let Some(last) = stack.last_mut() {
-                    last.1 += 1;
+            match states
+                .get(dependency)
+                .copied()
+                .unwrap_or(VisitState::Unseen)
+            {
+                VisitState::Unseen => {
+                    states.insert(dependency, VisitState::Visiting);
+                    path.push(dependency);
+                    stack.push((dependency, 0));
                 }
-                match states
-                    .get(dependency)
-                    .copied()
-                    .unwrap_or(VisitState::Unseen)
-                {
-                    VisitState::Unseen => {
-                        states.insert(dependency, VisitState::Visiting);
-                        path.push(dependency);
-                        stack.push((dependency, 0));
+                VisitState::Visiting => {
+                    if let Some(cycle_start) =
+                        path.iter().position(|identity| *identity == dependency)
+                    {
+                        let mut entities: Vec<String> = path
+                            .iter()
+                            .skip(cycle_start)
+                            .map(|identity| (*identity).to_owned())
+                            .collect();
+                        entities.push(dependency.to_owned());
+                        return Some(entities);
                     }
-                    VisitState::Visiting => {
-                        if let Some(cycle_start) =
-                            path.iter().position(|identity| *identity == dependency)
-                        {
-                            let mut entities: Vec<String> = path
-                                .iter()
-                                .skip(cycle_start)
-                                .map(|identity| (*identity).to_owned())
-                                .collect();
-                            entities.push(dependency.to_owned());
-                            let route = entities.join(" -> ");
-                            let definition = RuleFindingDefinition::new(
-                                ARCH_DEPENDENCY_RULE_ID,
-                                1,
-                                FindingCategory::Architecture,
-                                ARCH_DEPENDENCY_REMEDIATION,
-                            )?;
-                            let occurrence = FindingOccurrence::new(
-                                entities,
-                                FindingLocation::none(),
-                                format!(
-                                    "Resolved Module capability dependency graph contains a cycle: {route}."
-                                ),
-                            )?;
-                            let evaluator = EvaluatorProvenance::new(
-                                "fortress-core/architecture",
-                                env!("CARGO_PKG_VERSION"),
-                            )?;
-                            return CanonicalFinding::failure(
-                                definition,
-                                occurrence,
-                                evaluator,
-                                standard_edition,
-                                None,
-                            )
-                            .map(Some);
-                        }
-                    }
-                    VisitState::Complete => {}
                 }
+                VisitState::Complete => {}
             }
         }
-        Ok(None)
     }
+    None
 }
 
 /// One derived Module node with exact direct territory and capability edges.
@@ -244,7 +251,7 @@ enum VisitState {
     Complete,
 }
 
-fn deepest_owner(contracts: &ResolvedContractSet, path: &str) -> Option<String> {
+fn deepest_owner(contracts: &ContractCoherencyGraph, path: &str) -> Option<String> {
     contracts
         .modules()
         .iter()

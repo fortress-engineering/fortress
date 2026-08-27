@@ -25,7 +25,3 @@ Maintainers update Data through reviewed semantic changes; schema versions chang
 ### [`dependency_rule.json`](../data/dependency_rule.json)
 
 Carries the draft normative rule record interpreted by the dependency evaluator.
-
-### [`module_contract_schema_v2.json`](../data/module_contract_schema_v2.json)
-
-Defines the closed Module Contract v2 source language for ecosystem intent, capabilities, constraints, guarantees, Features, and future behavioral checkpoints.

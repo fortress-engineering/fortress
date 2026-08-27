@@ -5,7 +5,9 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use fortress_core::architecture::{ArchitectureManifest, ComponentDeclaration};
-use fortress_core::module_contract::{ContractStandardIndex, resolve_contracts};
+use fortress_core::contract_coherency::{
+    CcgObservedTestFact, ContractStandardIndex, compile_contract_coherency_graph,
+};
 use fortress_core::ownership::evaluate_file_ownership;
 use serde::Deserialize;
 
@@ -133,8 +135,9 @@ fn fortress_self_inventory_has_exactly_one_declared_owner() {
             );
         }
     }
-    let test_ids = tests.iter().map(|test| test.id().to_owned()).collect();
-    let resolution = resolve_contracts(
+    let test_facts: Vec<CcgObservedTestFact> =
+        tests.iter().map(CcgObservedTestFact::from).collect();
+    let resolution = compile_contract_coherency_graph(
         &files,
         &ContractStandardIndex::new(
             "STD-FORTRESS-ENGINEERING",
@@ -149,12 +152,12 @@ fn fortress_self_inventory_has_exactly_one_declared_owner() {
                 "TEST-TRACEABILITY-001",
             ],
         ),
-        Some(&test_ids),
+        Some(&test_facts),
     );
     let resolved = resolution
-        .resolved()
+        .graph()
         .unwrap_or_else(|| panic!("self contracts resolve: {:#?}", resolution.violations()));
-    let architecture = ArchitectureManifest::from_resolved_contracts(resolved, &paths);
+    let architecture = ArchitectureManifest::from_ccg(resolved, &paths);
     let result = evaluate_file_ownership(&architecture, &paths, "1.0.0-draft.1")
         .expect("evaluation completes");
     assert!(

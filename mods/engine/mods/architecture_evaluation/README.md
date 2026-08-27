@@ -2,23 +2,29 @@
 
 ## Purpose
 
-Architecture Evaluation exists to resolve distributed Module intent into a deterministic ecosystem model and evaluate capability dependency meaning without duplicating filesystem authority.
+Architecture Evaluation exists to interpret canonical CCG dependency and containment facts as architecture rule evidence without rebuilding contract semantics or duplicating filesystem authority.
 
 ## Responsibility
 
-Load and validate Module Contract v2, resolve repository-wide capabilities and typed intent with provenance, derive physical ownership and dependencies, and evaluate dependency cycles using canonical findings.
+Consume the Contract Coherency Graph, derive physical ownership views for stabilized repository paths, and evaluate declared capability dependency cycles using canonical findings.
 
 ## Scope
 
 ### Includes
 
-Module-contract schema and canonical serialization, ecosystem identity indexes, capability resolution, constraint inheritance, guarantee and Feature ownership, behavioral checkpoint validation, derived dependency ownership, and ARCH-DEPENDENCY-001 evaluation.
+CCG Module containment and dependency facts, derived physical path ownership, component projections, and ARCH-DEPENDENCY-001 evaluation.
 
 ### Excludes
 
-Repository observation, physical containment authority, source dependency extraction, future semantic satisfiability analysis, Snapshot Governance aggregation, and terminal presentation.
+Contract parsing or semantic compilation, repository observation, physical containment authority, source dependency extraction, constraint satisfiability, Snapshot Governance aggregation, and terminal presentation.
 
 ## Relationships
+
+### [Contract Coherency](../contract_coherency/README.md)
+
+**Types:** `depends_on`
+
+Supplies the one canonical semantic dependency and containment model consumed by architecture projections and cycle evaluation.
 
 ### [Project Model](../project_model/README.md)
 
@@ -34,4 +40,4 @@ Uses stable identities and the governing dependency rule contract.
 
 ## Guarantees
 
-Unknown providers or targets, duplicate identities or edges, incompatible capability versions, invalid inherited obligations, incoherent behavior, and prohibited dependency cycles fail deterministically without treating dependency as containment. The resolved contract set is a provenance-preserving direct input foundation for a future Contract Coherency Graph; it is not itself named, serialized, or claimed as the completed CCG, and its behavioral checkpoints are not a BFG renderer.
+Architecture views preserve the CCG distinction between containment and dependency, never infer capability re-export, assign observed paths to the deepest containing Module, and report dependency cycles deterministically without owning a competing resolved-contract model.

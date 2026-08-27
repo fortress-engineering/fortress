@@ -12,7 +12,7 @@ The root Module governs Fortress as one repository: its contract selects the pro
 
 ### Includes
 
-Root ecosystem interpretation, toolchain and workspace inputs; the generated dependency lock; distributed Module contracts, capabilities, Features, requirements, and constraints; the recursive Module system; GitHub-recognized integration surfaces; Snapshot Governance development behavior; and the authority doctrine prioritizing engineering strategy, entropy reduction, and low-friction conventions.
+Root ecosystem interpretation, toolchain and workspace inputs; the generated dependency lock and persisted self-CCG; distributed Module contracts, capabilities, Features, requirements, rule logic, guarantees, and constraints; the recursive Module system; GitHub-recognized integration surfaces; Snapshot Governance development behavior; and the authority doctrine prioritizing engineering strategy, entropy reduction, and low-friction conventions.
 
 ### Excludes
 
@@ -24,4 +24,4 @@ This Module declares no outbound architectural relationships.
 
 ## Guarantees
 
-The repository keeps machine authority, observed facts, human explanation, and derived evidence distinguishable; audits are deterministic and never labeled certification; build output remains outside the governed tree; development changes stay on dev while main remains owner-controlled.
+The repository keeps authored machine authority, observed facts, human explanation, derived semantic IR, and future executed evidence distinguishable; audits and CCG compilation are deterministic and never labeled certification; CI rejects stale self-CCG output; build output remains outside the governed tree; development changes stay on dev while main remains owner-controlled.

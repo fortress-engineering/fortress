@@ -1,10 +1,14 @@
-//! Canonical Fortress Module Contract v2 loading and ecosystem resolution.
+//! Canonical Fortress Module Contract v2 loading and CCG compilation.
 //!
 //! Filesystem containment remains authoritative for Module location, parentage,
 //! direct elemental ownership, and child membership. A contract owns stable
-//! architectural intent that containment cannot safely express. The resolved
-//! set deliberately stops short of claiming to be the future Contract
-//! Coherency Graph.
+//! architectural intent that containment cannot safely express. Repository-wide
+//! compilation produces the one canonical Contract Coherency Graph.
+
+#[path = "graph.rs"]
+mod graph;
+
+pub use graph::*;
 
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::error::Error;
@@ -836,7 +840,10 @@ impl CheckpointTransition {
 pub struct ContractStandardIndex {
     id: String,
     edition: String,
+    digest: String,
     rule_ids: BTreeSet<String>,
+    status: String,
+    rules: BTreeMap<String, IndexedRuleLogic>,
 }
 
 impl ContractStandardIndex {
@@ -846,10 +853,27 @@ impl ContractStandardIndex {
         Self {
             id: bundle.id().into(),
             edition: bundle.edition().into(),
+            digest: bundle.digest().into(),
             rule_ids: bundle
                 .rules()
                 .iter()
                 .map(|rule| rule.id().to_owned())
+                .collect(),
+            status: bundle.status().into(),
+            rules: bundle
+                .rules()
+                .iter()
+                .map(|rule| {
+                    (
+                        rule.id().to_owned(),
+                        IndexedRuleLogic {
+                            implies: rule.logic().implies().to_vec(),
+                            conflicts_with: rule.logic().conflicts_with().to_vec(),
+                            source_path: rule.source_path().to_owned(),
+                            source_digest: rule.source_digest().to_owned(),
+                        },
+                    )
+                })
                 .collect(),
         }
     }
@@ -861,48 +885,66 @@ impl ContractStandardIndex {
         I: IntoIterator<Item = S>,
         S: Into<String>,
     {
+        let id = id.into();
+        let edition = edition.into();
+        let rule_ids: BTreeSet<String> = rules.into_iter().map(Into::into).collect();
+        let digest_material = format!(
+            "{id}\n{edition}\n{}",
+            rule_ids.iter().cloned().collect::<Vec<_>>().join("\n")
+        );
         Self {
-            id: id.into(),
-            edition: edition.into(),
-            rule_ids: rules.into_iter().map(Into::into).collect(),
+            id,
+            edition,
+            digest: sha256_bytes(digest_material.as_bytes()),
+            rule_ids,
+            status: "draft".into(),
+            rules: BTreeMap::new(),
         }
     }
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct IndexedRuleLogic {
+    implies: Vec<String>,
+    conflicts_with: Vec<String>,
+    source_path: String,
+    source_digest: String,
+}
+
 /// Resolves every Module contract in a canonical repository inventory.
 #[must_use]
-pub fn resolve_contracts(
+pub fn compile_contract_coherency_graph(
     files: &BTreeMap<String, Vec<u8>>,
     standard: &ContractStandardIndex,
-    observed_test_ids: Option<&BTreeSet<String>>,
-) -> ContractResolution {
-    Resolver::new(files, standard, observed_test_ids).resolve()
+    observed_tests: Option<&[CcgObservedTestFact]>,
+) -> CcgCompilation {
+    Resolver::new(files, standard, observed_tests).resolve()
 }
 
 /// Deterministic success or violations from repository-wide contract resolution.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct ContractResolution {
-    resolved: Option<ResolvedContractSet>,
-    violations: Vec<ContractViolation>,
+pub struct CcgCompilation {
+    graph: Option<ContractCoherencyGraph>,
+    violations: Vec<CcgViolation>,
     test_reference_resolution_supported: bool,
 }
 
-impl ContractResolution {
+impl CcgCompilation {
     /// Returns whether all implemented checks passed.
     #[must_use]
     pub fn is_success(&self) -> bool {
-        self.resolved.is_some() && self.violations.is_empty()
+        self.graph.is_some() && self.violations.is_empty()
     }
 
-    /// Returns the resolved ecosystem only after every implemented gate passes.
+    /// Returns the compiled graph when structural compilation produced one.
     #[must_use]
-    pub const fn resolved(&self) -> Option<&ResolvedContractSet> {
-        self.resolved.as_ref()
+    pub const fn graph(&self) -> Option<&ContractCoherencyGraph> {
+        self.graph.as_ref()
     }
 
     /// Returns deterministic contract violations.
     #[must_use]
-    pub fn violations(&self) -> &[ContractViolation] {
+    pub fn violations(&self) -> &[CcgViolation] {
         &self.violations
     }
 
@@ -915,13 +957,22 @@ impl ContractResolution {
 
 /// One precise contract source violation.
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
-pub struct ContractViolation {
+pub struct CcgViolation {
+    code: String,
     path: String,
     pointer: String,
     message: String,
+    input_facts: Vec<String>,
+    provenance_closure: Vec<CcgSourceProvenance>,
 }
 
-impl ContractViolation {
+impl CcgViolation {
+    /// Returns the stable semantic violation code.
+    #[must_use]
+    pub fn code(&self) -> &str {
+        &self.code
+    }
+
     /// Returns the contract or expected contract path.
     #[must_use]
     pub fn path(&self) -> &str {
@@ -939,9 +990,21 @@ impl ContractViolation {
     pub fn message(&self) -> &str {
         &self.message
     }
+
+    /// Returns the canonical source or derived facts that make the violation true.
+    #[must_use]
+    pub fn input_facts(&self) -> &[String] {
+        &self.input_facts
+    }
+
+    /// Returns the complete source provenance closure for the violation.
+    #[must_use]
+    pub fn provenance_closure(&self) -> &[CcgSourceProvenance] {
+        &self.provenance_closure
+    }
 }
 
-impl Display for ContractViolation {
+impl Display for CcgViolation {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
         write!(
             formatter,
@@ -951,9 +1014,9 @@ impl Display for ContractViolation {
     }
 }
 
-/// Deterministic resolved contract ecosystem ready for future graph construction.
+/// Canonical derived semantic graph of the governed contract ecosystem.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct ResolvedContractSet {
+pub struct ContractCoherencyGraph {
     modules: BTreeMap<String, ResolvedModule>,
     module_paths: BTreeMap<String, String>,
     capabilities: BTreeMap<String, ResolvedCapability>,
@@ -968,9 +1031,12 @@ pub struct ResolvedContractSet {
     consumers: BTreeMap<String, Vec<String>>,
     expected_readme_relationships:
         BTreeMap<String, BTreeMap<String, BTreeSet<ResolvedRelationshipType>>>,
+    standard: ContractStandardIndex,
+    observed_tests: Option<Vec<CcgObservedTestFact>>,
+    coherency_findings: Vec<CcgViolation>,
 }
 
-impl ResolvedContractSet {
+impl ContractCoherencyGraph {
     /// Returns Modules keyed by stable identity.
     #[must_use]
     pub const fn modules(&self) -> &BTreeMap<String, ResolvedModule> {
@@ -1396,26 +1462,26 @@ impl ResolvedRelationshipType {
 struct Resolver<'a> {
     files: &'a BTreeMap<String, Vec<u8>>,
     standard: &'a ContractStandardIndex,
-    observed_test_ids: Option<&'a BTreeSet<String>>,
-    violations: Vec<ContractViolation>,
+    observed_tests: Option<&'a [CcgObservedTestFact]>,
+    violations: Vec<CcgViolation>,
 }
 
 impl<'a> Resolver<'a> {
     fn new(
         files: &'a BTreeMap<String, Vec<u8>>,
         standard: &'a ContractStandardIndex,
-        observed_test_ids: Option<&'a BTreeSet<String>>,
+        observed_tests: Option<&'a [CcgObservedTestFact]>,
     ) -> Self {
         Self {
             files,
             standard,
-            observed_test_ids,
+            observed_tests,
             violations: Vec::new(),
         }
     }
 
     #[allow(clippy::too_many_lines)]
-    fn resolve(mut self) -> ContractResolution {
+    fn resolve(mut self) -> CcgCompilation {
         let module_paths = discover_module_paths(self.files.keys().map(String::as_str));
         let mut loaded = BTreeMap::<String, (String, ModuleContract, String)>::new();
         for module_path in &module_paths {
@@ -1555,9 +1621,9 @@ impl<'a> Resolver<'a> {
                             ),
                         );
                     }
-                    if let Some(observed) = self.observed_test_ids {
+                    if let Some(observed) = self.observed_tests {
                         for test in &requirement.tests {
-                            if !observed.contains(test) {
+                            if !observed.iter().any(|fact| fact.id() == test) {
                                 self.violation(
                                     contract_path,
                                     format!(
@@ -1744,27 +1810,33 @@ impl<'a> Resolver<'a> {
                 )
             })
             .collect();
-        ContractResolution {
-            resolved: Some(ResolvedContractSet {
-                modules,
-                module_paths: id_to_path,
-                capabilities,
-                features,
-                requirements,
-                guarantees,
-                checkpoints,
-                direct_requirements,
-                relationships,
-                effective_constraints,
-                containment,
-                consumers: consumers
-                    .into_iter()
-                    .map(|(provider, values)| (provider, values.into_iter().collect()))
-                    .collect(),
-                expected_readme_relationships: expected,
-            }),
-            violations: Vec::new(),
-            test_reference_resolution_supported: self.observed_test_ids.is_some(),
+        let mut graph = ContractCoherencyGraph {
+            modules,
+            module_paths: id_to_path,
+            capabilities,
+            features,
+            requirements,
+            guarantees,
+            checkpoints,
+            direct_requirements,
+            relationships,
+            effective_constraints,
+            containment,
+            consumers: consumers
+                .into_iter()
+                .map(|(provider, values)| (provider, values.into_iter().collect()))
+                .collect(),
+            expected_readme_relationships: expected,
+            standard: self.standard.clone(),
+            observed_tests: self.observed_tests.map(<[_]>::to_vec),
+            coherency_findings: Vec::new(),
+        };
+        let semantic_violations = graph.analyze_coherency();
+        graph.coherency_findings.clone_from(&semantic_violations);
+        CcgCompilation {
+            graph: Some(graph),
+            violations: semantic_violations,
+            test_reference_resolution_supported: self.observed_tests.is_some(),
         }
     }
 
@@ -1978,20 +2050,25 @@ impl<'a> Resolver<'a> {
         pointer: impl Into<String>,
         message: impl Into<String>,
     ) {
-        self.violations.push(ContractViolation {
-            path: path.into(),
-            pointer: pointer.into(),
+        let path = path.into();
+        let pointer = pointer.into();
+        self.violations.push(CcgViolation {
+            code: "CCG-CONTRACT-INVALID".into(),
+            input_facts: vec![format!("source:{path}:{pointer}")],
+            provenance_closure: vec![CcgSourceProvenance::new(&path, &pointer)],
+            path,
+            pointer,
             message: message.into(),
         });
     }
 
-    fn failure(mut self) -> ContractResolution {
+    fn failure(mut self) -> CcgCompilation {
         self.violations.sort();
         self.violations.dedup();
-        ContractResolution {
-            resolved: None,
+        CcgCompilation {
+            graph: None,
             violations: self.violations,
-            test_reference_resolution_supported: self.observed_test_ids.is_some(),
+            test_reference_resolution_supported: self.observed_tests.is_some(),
         }
     }
 }

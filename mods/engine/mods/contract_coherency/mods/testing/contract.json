@@ -1,0 +1,27 @@
+{
+  "$schema": "urn:fortress:schema:v2:module-contract",
+  "schema_version": 2,
+  "id": "AF-CONTRACT-COHERENCY-TESTING-0001",
+  "display_name": "Contract Coherency Testing",
+  "provides": [],
+  "requires": [
+    {
+      "provider": "AF-CONTRACT-COHERENCY-0001",
+      "capability": "CAP-CONTRACT-COHERENCY",
+      "version": "^0.1.0"
+    }
+  ],
+  "relationships": [
+    {
+      "type": "verifies",
+      "target": "AF-CONTRACT-COHERENCY-0001",
+      "subjects": [
+        "AF-CONTRACT-COHERENCY-0001"
+      ]
+    }
+  ],
+  "constraints": [],
+  "guarantees": [],
+  "features": [],
+  "behavior": []
+}

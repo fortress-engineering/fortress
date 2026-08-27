@@ -8,7 +8,11 @@ The Engine responsibility is decomposed where durable child boundaries have excl
 
 ### [Architecture Evaluation](../mods/architecture_evaluation/README.md)
 
-Provides validated architectural declarations and relationship contracts to the evaluation pipeline.
+Consumes the CCG dependency and containment semantics to provide architecture rule evaluation and physical ownership views.
+
+### [Contract Coherency](../mods/contract_coherency/README.md)
+
+Compiles distributed contracts, containment, standard logic, and verification declarations into the deterministic semantic graph shared by downstream evaluators.
 
 ### [Project Model](../mods/project_model/README.md)
 

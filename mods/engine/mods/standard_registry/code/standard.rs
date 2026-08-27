@@ -8,6 +8,7 @@ use std::error::Error;
 use std::fmt::{self, Display, Formatter};
 
 use serde::Deserialize;
+use sha2::{Digest, Sha256};
 
 use crate::finding::FindingCategory;
 use crate::identity::{RuleId, RuleIdError, StableId, StableIdError};
@@ -57,7 +58,7 @@ const DRAFT_RULES: &[RuleDescriptor] = &[
     },
     RuleDescriptor {
         id: "CONTRACT-COHERENCY-001",
-        title: "Resolved Module Contract v2 ecosystem coherency",
+        title: "Contract Coherency Graph compilation and supported logical coherency",
         status: RuleStatus::Draft,
         integrity_tier: 1,
     },
@@ -240,6 +241,7 @@ pub struct StandardBundle {
     title: String,
     edition: String,
     status: String,
+    digest: String,
     rules: Vec<StandardRule>,
 }
 
@@ -308,7 +310,7 @@ impl StandardBundle {
                     wire.schema_version,
                 ));
             }
-            let rule = validate_rule_wire(path, wire)?;
+            let rule = validate_rule_wire(path, wire, sha256(source.as_bytes()))?;
             if !rule_ids.insert(rule.id.clone()) {
                 return Err(StandardLoadError::DuplicateRuleId(rule.id.into()));
             }
@@ -319,11 +321,13 @@ impl StandardBundle {
         }
         validate_rule_logic(&rules)?;
 
+        let digest = bundle_digest(manifest_source, rule_documents);
         Ok(Self {
             id: manifest.id,
             title: manifest.title,
             edition: manifest.edition,
             status: manifest.status,
+            digest,
             rules,
         })
     }
@@ -352,6 +356,12 @@ impl StandardBundle {
         &self.status
     }
 
+    /// Returns the SHA-256 identity of the exact manifest and rule bytes.
+    #[must_use]
+    pub fn digest(&self) -> &str {
+        &self.digest
+    }
+
     /// Returns validated rules in manifest order.
     #[must_use]
     pub fn rules(&self) -> &[StandardRule] {
@@ -372,6 +382,7 @@ pub struct StandardRule {
     required_capabilities: Vec<String>,
     logic: RuleLogic,
     source_path: String,
+    source_digest: String,
 }
 
 impl StandardRule {
@@ -433,6 +444,12 @@ impl StandardRule {
     #[must_use]
     pub fn source_path(&self) -> &str {
         &self.source_path
+    }
+
+    /// Returns the exact rule-document SHA-256 identity.
+    #[must_use]
+    pub fn source_digest(&self) -> &str {
+        &self.source_digest
     }
 }
 
@@ -703,6 +720,7 @@ struct RuleLogicWire {
 fn validate_rule_wire(
     source_path: String,
     wire: StandardRuleWire,
+    source_digest: String,
 ) -> Result<StandardRule, StandardLoadError> {
     RuleId::parse(&wire.id).map_err(|source| StandardLoadError::InvalidRuleId {
         value: wire.id.clone().into(),
@@ -746,6 +764,7 @@ fn validate_rule_wire(
             )?,
         },
         source_path,
+        source_digest,
     })
 }
 
@@ -871,4 +890,26 @@ fn is_canonical_relative_path(value: &str) -> bool {
         && value
             .split('/')
             .all(|segment| !segment.is_empty() && segment != "." && segment != "..")
+}
+
+fn sha256(bytes: &[u8]) -> String {
+    format!("sha256:{:x}", Sha256::digest(bytes))
+}
+
+fn bundle_digest(manifest_source: &str, rule_documents: &[(&str, &str)]) -> String {
+    let mut documents = rule_documents.to_vec();
+    documents.sort_unstable_by_key(|(path, _)| *path);
+    let mut hasher = Sha256::new();
+    update_digest(&mut hasher, b"standard_manifest");
+    update_digest(&mut hasher, manifest_source.as_bytes());
+    for (path, source) in documents {
+        update_digest(&mut hasher, path.as_bytes());
+        update_digest(&mut hasher, source.as_bytes());
+    }
+    format!("sha256:{:x}", hasher.finalize())
+}
+
+fn update_digest(hasher: &mut Sha256, bytes: &[u8]) {
+    hasher.update(u64::try_from(bytes.len()).unwrap_or(u64::MAX).to_be_bytes());
+    hasher.update(bytes);
 }

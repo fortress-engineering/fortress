@@ -30,6 +30,13 @@ const BUILTIN_COMMANDS: &[CommandDescriptor] = &[
         description: "Build and evaluate a stabilized repository snapshot.",
         usage: "fortress audit [path] [--format human|json]",
     },
+    CommandDescriptor {
+        id: "CMD-CONTRACT-CCG",
+        name: "ccg",
+        aliases: &[],
+        description: "Compile and render the deterministic Contract Coherency Graph.",
+        usage: "fortress ccg [path] [--format json] [--output path]",
+    },
 ];
 
 /// Discoverable metadata for one registered Fortress command.

@@ -12,7 +12,7 @@ use std::path::{Path, PathBuf};
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 
-use crate::module_contract::ResolvedContractSet;
+use crate::contract_coherency::ContractCoherencyGraph;
 use crate::observation::{
     ObservationError, ObservationPolicy, ObservedFile, RepositoryObservation, observe_repository,
 };
@@ -195,7 +195,7 @@ pub fn observe_repository_stably(
 pub fn build_repository_snapshot(
     root: impl AsRef<Path>,
     policy: &ObservationPolicy,
-    contracts: &ResolvedContractSet,
+    contracts: &ContractCoherencyGraph,
     standard_bundle: &StandardBundle,
     documents: &SnapshotDocuments<'_>,
 ) -> Result<RepositorySnapshot, SnapshotError> {

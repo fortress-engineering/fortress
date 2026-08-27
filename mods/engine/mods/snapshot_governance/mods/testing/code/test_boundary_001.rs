@@ -1,13 +1,15 @@
 //! Conformance evidence for recursive parent-local Feature verification boundaries.
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use fortress_core::module_contract::{ContractStandardIndex, resolve_contracts};
+use fortress_core::contract_coherency::{
+    CcgObservedTestFact, ContractStandardIndex, compile_contract_coherency_graph,
+};
 use fortress_core::rust_test_analyzer::{RustTestClassification, RustTestFact};
 use fortress_core::testing_boundary::evaluate_testing_boundaries;
-use fortress_core::traceability::{evaluate_test_traceability, requirements_from_resolved};
+use fortress_core::traceability::evaluate_ccg_test_traceability;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Deserialize)]
@@ -252,27 +254,6 @@ fn evaluate(fixture: &Fixture) -> Vec<String> {
             (path, contract_source(module).into_bytes())
         })
         .collect();
-    let observed_ids: BTreeSet<String> = fixture.tests.iter().map(|test| test.id.clone()).collect();
-    let resolution = resolve_contracts(
-        &files,
-        &ContractStandardIndex::new(
-            "STD-FORTRESS-ENGINEERING",
-            "1.0.0-draft.1",
-            [
-                "CONTRACT-COHERENCY-001",
-                "TEST-BOUNDARY-001",
-                "TEST-TRACEABILITY-001",
-            ],
-        ),
-        Some(&observed_ids),
-    );
-    let Some(resolved) = resolution.resolved() else {
-        return resolution
-            .violations()
-            .iter()
-            .map(ToString::to_string)
-            .collect();
-    };
     let tests: Vec<RustTestFact> = fixture
         .tests
         .iter()
@@ -287,10 +268,31 @@ fn evaluate(fixture: &Fixture) -> Vec<String> {
             .expect("fixture test fact validates")
         })
         .collect();
+    let observed_facts: Vec<CcgObservedTestFact> =
+        tests.iter().map(CcgObservedTestFact::from).collect();
+    let resolution = compile_contract_coherency_graph(
+        &files,
+        &ContractStandardIndex::new(
+            "STD-FORTRESS-ENGINEERING",
+            "1.0.0-draft.1",
+            [
+                "CONTRACT-COHERENCY-001",
+                "TEST-BOUNDARY-001",
+                "TEST-TRACEABILITY-001",
+            ],
+        ),
+        Some(&observed_facts),
+    );
+    let Some(resolved) = resolution.graph() else {
+        return resolution
+            .violations()
+            .iter()
+            .map(ToString::to_string)
+            .collect();
+    };
     let boundary = evaluate_testing_boundaries(resolved, &tests, "1.0.0-draft.1")
         .expect("boundary evaluation completes");
-    let requirements = requirements_from_resolved(resolved);
-    let traceability = evaluate_test_traceability(&requirements, &tests, "1.0.0-draft.1")
+    let traceability = evaluate_ccg_test_traceability(resolved, &tests, "1.0.0-draft.1")
         .expect("traceability evaluation completes");
     boundary
         .findings()

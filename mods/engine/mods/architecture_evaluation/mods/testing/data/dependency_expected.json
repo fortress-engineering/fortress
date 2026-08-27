@@ -1,5 +1,5 @@
 {
-  "finding_fingerprint": "sha256:52e207eaef2efa840efcf498b46dee5fe9a1c886397b8b8752643446fa545e03",
+  "finding_fingerprint": "sha256:d1a83dbb6c507aa4b70cbc1b4f217868a07eec64d296eeefb986e7ee8e05df49",
   "rule_id": "ARCH-DEPENDENCY-001",
   "integrity_tier": 1,
   "category": "architecture",
@@ -10,7 +10,7 @@
     "span": null,
     "symbol": null
   },
-  "message": "Resolved Module capability dependency graph contains a cycle: AF-A -> AF-B -> AF-A.",
+  "message": "CCG Module capability dependency graph contains a cycle: AF-A -> AF-B -> AF-A.",
   "remediation": "Separate responsibilities to restore one-way dependency flow or model a genuinely inseparable strongly connected cluster as one Module. A temporary exception requires a governed transition or exemption.",
   "evaluator": {
     "id": "fortress-core/architecture",

@@ -17,6 +17,11 @@
       "version": "^0.1.0"
     },
     {
+      "provider": "AF-CONTRACT-COHERENCY-0001",
+      "capability": "CAP-CONTRACT-COHERENCY",
+      "version": "^0.1.0"
+    },
+    {
       "provider": "AF-PROJECT-MODEL-0001",
       "capability": "CAP-PROJECT-MODEL",
       "version": "^0.1.0"
@@ -143,7 +148,7 @@
         },
         {
           "id": "AF-SNAPSHOT-GOVERNANCE-0001-R11",
-          "statement": "CONTRACT-COHERENCY-001 passes only when every implemented Module Contract v2 local, ecosystem-resolution, evidence, behavioral, and README relationship-projection check succeeds while future semantic satisfiability remains explicit and unsupported.",
+          "statement": "CONTRACT-COHERENCY-001 passes only when canonical CCG compilation succeeds, its supported semantic graph is coherent, provenance is complete, and README relationship projection agrees while explicitly unsupported semantic classes remain non-evidence.",
           "tests": [
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R11-001"
           ]

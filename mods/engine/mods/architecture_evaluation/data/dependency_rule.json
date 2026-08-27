@@ -2,17 +2,17 @@
   "$schema": "urn:fortress:schema:v1:rule",
   "schema_version": 1,
   "id": "ARCH-DEPENDENCY-001",
-  "title": "Acyclic resolved Module capability dependencies",
+  "title": "Acyclic CCG Module capability dependencies",
   "status": "draft",
-  "statement": "The Fortress Module dependency graph derived from resolved required capabilities MUST NOT contain a directed cycle.",
+  "statement": "The Fortress CCG Module dependency graph derived from resolved required capabilities MUST NOT contain a directed cycle.",
   "rationale": "A cycle prevents a stable dependency direction, obscures impact boundaries, and indicates that the participating responsibilities must be separated or deliberately modeled as one component.",
   "failure_prevented": "Mutually dependent architectural components that cannot be ordered, independently reasoned about, or safely invalidated for downstream certification.",
-  "applicability": "Every resolved Module Contract v2 ecosystem containing functional capability requirements.",
+  "applicability": "Every compiled CCG containing functional capability requirements.",
   "category": "architecture",
   "integrity_tier": 1,
-  "evaluation": "The Fortress core resolves each required capability to its exact provider Module, derives one functional dependency edge, then performs deterministic graph traversal and emits a canonical finding when a back-edge closes a dependency cycle.",
+  "evaluation": "The CCG compiler resolves each required capability to its exact provider Module and derives the canonical functional dependency graph; Architecture Evaluation consumes that graph and emits a canonical finding for every deterministic cycle conclusion.",
   "required_capabilities": [
-    "module-contract-v2-resolution",
+    "contract-coherency-graph-v1",
     "component-dependency-cycle-detection"
   ],
   "logic": {
@@ -20,7 +20,7 @@
     "conflicts_with": []
   },
   "finding": {
-    "message": "Resolved Module capability dependency graph contains a cycle.",
+    "message": "CCG Module capability dependency graph contains a cycle.",
     "location": "entity"
   },
   "remediation": "Separate responsibilities to restore one-way dependency flow or model a genuinely inseparable strongly connected cluster as one component. A temporary exception requires a governed transition or exemption.",
@@ -31,6 +31,7 @@
   "history": [
     "Introduced during CHG-ARCHITECTURE-0004 after deterministic repository observation became available.",
     "Finding evidence migrated to the shared content-addressed Snapshot Governance finding contract during CHG-SNAPSHOT-0006 without changing rule meaning.",
-    "Dependency authority migrated from the centralized architecture manifest to resolved Module Contract v2 capability requirements."
+    "Dependency authority migrated from the centralized architecture manifest to resolved Module Contract v2 capability requirements.",
+    "Cycle evaluation migrated to the canonical Contract Coherency Graph without changing the acyclicity obligation."
   ]
 }

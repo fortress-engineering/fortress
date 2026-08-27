@@ -24,7 +24,7 @@ Maintainers update Data through reviewed semantic changes; schema versions chang
 
 ### [`contract_rule.json`](../data/contract_rule.json)
 
-Carries the draft normative coherency rule record interpreted by the Module Contract v2 evaluator.
+Carries the draft normative rule governing canonical CCG compilation and currently supported logical coherency.
 
 ### [`documentation_rule.json`](../data/documentation_rule.json)
 

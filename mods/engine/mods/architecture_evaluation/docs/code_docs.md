@@ -20,8 +20,4 @@ Invalid inputs and inability to fulfill the responsibility return explicit typed
 
 ### [`architecture.rs`](../code/architecture.rs)
 
-Derives physical Module ownership and capability dependency edges from the resolved contract ecosystem, then evaluates dependency cycles.
-
-### [`module_contract.rs`](../code/module_contract.rs)
-
-Parses canonical Module Contract v2 files and deterministically resolves ecosystem identities, capabilities, constraints, guarantees, Features, requirements, behavioral checkpoints, provenance, and digests.
+Derives physical Module ownership and component views from the canonical CCG, then evaluates its declared dependency graph without rebuilding semantic resolution.

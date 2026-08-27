@@ -1,16 +1,16 @@
 //! Parent-local verification of snapshot, finding, placement, analyzer, and bundle primitives.
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 
+use fortress_core::contract_coherency::{
+    ContractCoherencyGraph, ContractStandardIndex, compile_contract_coherency_graph,
+};
 use fortress_core::finding::{
     CanonicalFinding, EvaluatorProvenance, FindingCategory, FindingLocation, FindingOccurrence,
     RuleFindingDefinition,
-};
-use fortress_core::module_contract::{
-    ContractStandardIndex, ResolvedContractSet, resolve_contracts,
 };
 use fortress_core::observation::ObservationPolicy;
 use fortress_core::placement::is_lexical_name;
@@ -63,15 +63,15 @@ fn standard() -> StandardBundle {
         .expect("test standard validates")
 }
 
-fn contracts() -> ResolvedContractSet {
+fn contracts() -> ContractCoherencyGraph {
     let source = "{\n  \"$schema\": \"urn:fortress:schema:v2:module-contract\",\n  \"schema_version\": 2,\n  \"id\": \"PF-SNAPSHOT-TEST\",\n  \"display_name\": \"Snapshot Test\",\n  \"ecosystem\": {\n    \"repository_grammar\": 1,\n    \"standard\": {\n      \"id\": \"STD-FORTRESS-ENGINEERING\",\n      \"edition\": \"1.0.0-draft.1\"\n    }\n  },\n  \"provides\": [],\n  \"requires\": [],\n  \"relationships\": [],\n  \"constraints\": [],\n  \"guarantees\": [],\n  \"features\": [],\n  \"behavior\": []\n}\n";
     let files = BTreeMap::from([("contract.json".into(), source.as_bytes().to_vec())]);
-    resolve_contracts(
+    compile_contract_coherency_graph(
         &files,
         &ContractStandardIndex::new("STD-FORTRESS-ENGINEERING", "1.0.0-draft.1", ["STD-ID-001"]),
-        Some(&BTreeSet::new()),
+        Some(&[]),
     )
-    .resolved()
+    .graph()
     .expect("test contract resolves")
     .clone()
 }
