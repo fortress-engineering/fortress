@@ -77,3 +77,15 @@ fn draft_manifest_agrees_with_implemented_registry() {
         );
     }
 }
+
+/// `T-AF-PROJECT-MODEL-0001-R03-001`
+#[test]
+fn general_change_schema_does_not_require_bootstrap_provenance() {
+    let schema = read_json("schemas/v1/change.schema.json");
+    let required = schema["required"]
+        .as_array()
+        .expect("change schema required list must be an array");
+    assert!(required.iter().any(|value| value == "authority_refs"));
+    assert!(!required.iter().any(|value| value == "bootstrap_provenance"));
+    assert!(schema["properties"]["bootstrap_provenance"].is_object());
+}

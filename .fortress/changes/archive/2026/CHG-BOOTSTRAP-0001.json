@@ -8,7 +8,12 @@
     "commit": "c6e46eea6fc09debc50aca7e96ef528d8e5de03a",
     "branch": "dev"
   },
-  "authority": {
+  "authority_refs": [
+    "docs/README.md",
+    "docs/history/bootstrap-acceptance.md",
+    "docs/standard/philosophy.md"
+  ],
+  "bootstrap_provenance": {
     "packet_kind": "extracted-directory",
     "archive_digest": null,
     "digest_kind": "files-only",

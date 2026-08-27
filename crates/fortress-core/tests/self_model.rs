@@ -93,7 +93,7 @@ fn certification_scaffold_makes_no_false_pass_claim() {
 #[test]
 fn recorded_packet_digests_are_canonical_sha256_identities() {
     let change = read_json(".fortress/changes/archive/2026/CHG-BOOTSTRAP-0001.json");
-    let digests = array_member(&change["authority"], "digests");
+    let digests = array_member(&change["bootstrap_provenance"], "digests");
     assert_eq!(digests.len(), 28);
     for record in digests {
         let value = record["sha256"]
