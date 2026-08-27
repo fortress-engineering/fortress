@@ -33,7 +33,9 @@
     ],
     "commands": ".fortress/commands/core.json",
     "certifications": ".fortress/certifications/bootstrap.json",
-    "active_changes": [],
+    "active_changes": [
+      ".fortress/changes/active/CHG-REPOSITORY-GRAMMAR-0007.json"
+    ],
     "observation_exclusions": [
       ".fortress/state",
       ".git",
