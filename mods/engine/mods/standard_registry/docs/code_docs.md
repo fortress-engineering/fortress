@@ -24,4 +24,4 @@ Validates canonical stable entity and rule identities under the registered Fortr
 
 ### [`standard.rs`](../code/standard.rs)
 
-Loads the exact draft manifest and complete rule-document bundle while rejecting registry disagreement.
+Loads the exact draft manifest and complete rule-document bundle, validates canonical implication/conflict metadata, and rejects registry disagreement or inherently unsatisfiable rule logic.

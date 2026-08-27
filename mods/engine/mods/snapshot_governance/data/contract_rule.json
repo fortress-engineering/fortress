@@ -17,6 +17,10 @@
     "resolved-test-evidence",
     "synchronized-module-documentation"
   ],
+  "logic": {
+    "implies": [],
+    "conflicts_with": []
+  },
   "finding": {
     "message": "A Module Contract v2 source or currently implemented ecosystem coherency invariant is invalid.",
     "location": "path"

@@ -16,6 +16,10 @@
     "snapshot-bound-rust-test-analysis",
     "requirement-test-reconciliation"
   ],
+  "logic": {
+    "implies": [],
+    "conflicts_with": []
+  },
   "finding": {
     "message": "Active requirement/test traceability is incomplete, stale, ambiguous, or duplicated.",
     "location": "path"

@@ -58,7 +58,7 @@ impl Drop for TestRepository {
 
 fn standard() -> StandardBundle {
     let manifest = r#"{"$schema":"urn:fortress:schema:v1:standard-manifest","schema_version":1,"id":"STD-FORTRESS-ENGINEERING","title":"Test","edition":"1.0.0-draft.1","status":"draft","release_digest":null,"rules":["rule.json"]}"#;
-    let rule = r#"{"$schema":"urn:fortress:schema:v1:rule","schema_version":1,"id":"STD-ID-001","title":"Identity","status":"draft","statement":"Identity is stable.","rationale":"Determinism.","failure_prevented":"Ambiguity.","applicability":"All identities.","category":"standard","integrity_tier":1,"evaluation":"Parse IDs.","required_capabilities":[],"finding":{"message":"Invalid.","location":"entity"},"remediation":"Correct it.","valid_example":"AF-CORE-0001","invalid_example":"bad","exception_policy":"None.","introduced":"1.0.0-draft.1","history":[]}"#;
+    let rule = r#"{"$schema":"urn:fortress:schema:v1:rule","schema_version":1,"id":"STD-ID-001","title":"Identity","status":"draft","statement":"Identity is stable.","rationale":"Determinism.","failure_prevented":"Ambiguity.","applicability":"All identities.","category":"standard","integrity_tier":1,"evaluation":"Parse IDs.","required_capabilities":[],"logic":{"implies":[],"conflicts_with":[]},"finding":{"message":"Invalid.","location":"entity"},"remediation":"Correct it.","valid_example":"AF-CORE-0001","invalid_example":"bad","exception_policy":"None.","introduced":"1.0.0-draft.1","history":[]}"#;
     StandardBundle::from_json_documents(manifest, &[("rule.json", rule)])
         .expect("test standard validates")
 }

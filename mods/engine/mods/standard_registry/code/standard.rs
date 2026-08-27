@@ -3,7 +3,7 @@
 //! The registry exposes stable rule metadata independently from repository
 //! observation, execution, certification, and presentation.
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet, VecDeque};
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
 
@@ -308,48 +308,16 @@ impl StandardBundle {
                     wire.schema_version,
                 ));
             }
-            RuleId::parse(&wire.id).map_err(|source| StandardLoadError::InvalidRuleId {
-                value: wire.id.clone().into(),
-                source,
-            })?;
-            if !rule_ids.insert(wire.id.clone()) {
-                return Err(StandardLoadError::DuplicateRuleId(wire.id.into()));
+            let rule = validate_rule_wire(path, wire)?;
+            if !rule_ids.insert(rule.id.clone()) {
+                return Err(StandardLoadError::DuplicateRuleId(rule.id.into()));
             }
-            validate_non_empty("rule.title", &wire.title)?;
-            validate_status("rule.status", &wire.status)?;
-            validate_non_empty("rule.applicability", &wire.applicability)?;
-            validate_non_empty("rule.remediation", &wire.remediation)?;
-            if wire.integrity_tier > 4 {
-                return Err(StandardLoadError::InvalidIntegrityTier {
-                    rule_id: wire.id.into(),
-                    tier: wire.integrity_tier,
-                });
-            }
-            let mut capabilities = HashSet::with_capacity(wire.required_capabilities.len());
-            for capability in &wire.required_capabilities {
-                if capability.is_empty() {
-                    return Err(StandardLoadError::EmptyField("rule.required_capabilities"));
-                }
-                if !capabilities.insert(capability.as_str()) {
-                    return Err(StandardLoadError::DuplicateRequiredCapability(
-                        capability.clone().into(),
-                    ));
-                }
-            }
-            rules.push(StandardRule {
-                id: wire.id,
-                title: wire.title,
-                status: wire.status,
-                applicability: wire.applicability,
-                category: wire.category,
-                integrity_tier: wire.integrity_tier,
-                remediation: wire.remediation,
-                required_capabilities: wire.required_capabilities,
-            });
+            rules.push(rule);
         }
         if let Some(path) = supplied.keys().min() {
             return Err(StandardLoadError::UndeclaredRuleDocument((*path).into()));
         }
+        validate_rule_logic(&rules)?;
 
         Ok(Self {
             id: manifest.id,
@@ -402,6 +370,8 @@ pub struct StandardRule {
     integrity_tier: u8,
     remediation: String,
     required_capabilities: Vec<String>,
+    logic: RuleLogic,
+    source_path: String,
 }
 
 impl StandardRule {
@@ -451,6 +421,39 @@ impl StandardRule {
     #[must_use]
     pub fn required_capabilities(&self) -> &[String] {
         &self.required_capabilities
+    }
+
+    /// Returns formal implication and conflict metadata used by the CCG.
+    #[must_use]
+    pub const fn logic(&self) -> &RuleLogic {
+        &self.logic
+    }
+
+    /// Returns the canonical repository-relative rule document path.
+    #[must_use]
+    pub fn source_path(&self) -> &str {
+        &self.source_path
+    }
+}
+
+/// Machine-readable logical relations authored by one standard rule.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct RuleLogic {
+    implies: Vec<String>,
+    conflicts_with: Vec<String>,
+}
+
+impl RuleLogic {
+    /// Returns directly implied rule identities in canonical order.
+    #[must_use]
+    pub fn implies(&self) -> &[String] {
+        &self.implies
+    }
+
+    /// Returns directly authored conflict identities in canonical order.
+    #[must_use]
+    pub fn conflicts_with(&self) -> &[String] {
+        &self.conflicts_with
     }
 }
 
@@ -503,6 +506,42 @@ pub enum StandardLoadError {
     },
     /// A required analyzer/evaluator capability was repeated.
     DuplicateRequiredCapability(Box<str>),
+    /// A rule-logic array was not sorted or repeated an identity.
+    NoncanonicalRuleLogic {
+        /// Rule-logic field.
+        field: &'static str,
+        /// Repeated or out-of-order value.
+        value: Box<str>,
+    },
+    /// A rule-logic identity did not satisfy the rule ID grammar.
+    InvalidLogicRuleId {
+        /// Rule-logic field.
+        field: &'static str,
+        /// Invalid target identity.
+        value: Box<str>,
+        /// Identity parsing failure.
+        source: RuleIdError,
+    },
+    /// A formal implication or conflict referenced no rule in the bundle.
+    UnknownLogicRule {
+        /// Declaring rule identity.
+        rule_id: Box<str>,
+        /// Rule-logic field.
+        field: &'static str,
+        /// Missing target identity.
+        target: Box<str>,
+    },
+    /// A rule declared itself as a conflict.
+    SelfConflictingRule(Box<str>),
+    /// Applying one rule necessarily activates a conflicting rule pair.
+    InherentlyUnsatisfiableRule {
+        /// Rule whose implication closure is impossible.
+        rule_id: Box<str>,
+        /// First conflicting effective rule.
+        first: Box<str>,
+        /// Second conflicting effective rule.
+        second: Box<str>,
+    },
 }
 
 impl Display for StandardLoadError {
@@ -553,6 +592,37 @@ impl Display for StandardLoadError {
                 formatter,
                 "standard required capability `{capability}` is duplicated"
             ),
+            Self::NoncanonicalRuleLogic { field, value } => write!(
+                formatter,
+                "standard rule field `{field}` is not strictly sorted and unique at `{value}`"
+            ),
+            Self::InvalidLogicRuleId {
+                field,
+                value,
+                source,
+            } => write!(
+                formatter,
+                "standard rule field `{field}` contains invalid rule ID `{value}`: {source}"
+            ),
+            Self::UnknownLogicRule {
+                rule_id,
+                field,
+                target,
+            } => write!(
+                formatter,
+                "standard rule `{rule_id}` field `{field}` references unknown rule `{target}`"
+            ),
+            Self::SelfConflictingRule(rule_id) => {
+                write!(formatter, "standard rule `{rule_id}` conflicts with itself")
+            }
+            Self::InherentlyUnsatisfiableRule {
+                rule_id,
+                first,
+                second,
+            } => write!(
+                formatter,
+                "standard rule `{rule_id}` is inherently unsatisfiable because its implication closure contains conflicting rules `{first}` and `{second}`"
+            ),
         }
     }
 }
@@ -562,7 +632,9 @@ impl Error for StandardLoadError {
         match self {
             Self::Json { source, .. } => Some(source),
             Self::InvalidStandardId(error) => Some(error),
-            Self::InvalidRuleId { source, .. } => Some(source),
+            Self::InvalidRuleId { source, .. } | Self::InvalidLogicRuleId { source, .. } => {
+                Some(source)
+            }
             _ => None,
         }
     }
@@ -605,6 +677,7 @@ struct StandardRuleWire {
     _evaluation: String,
     #[serde(default)]
     required_capabilities: Vec<String>,
+    logic: RuleLogicWire,
     #[serde(rename = "finding")]
     _finding: serde_json::Value,
     remediation: String,
@@ -618,6 +691,156 @@ struct StandardRuleWire {
     _introduced: String,
     #[serde(rename = "history")]
     _history: Vec<String>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RuleLogicWire {
+    implies: Vec<String>,
+    conflicts_with: Vec<String>,
+}
+
+fn validate_rule_wire(
+    source_path: String,
+    wire: StandardRuleWire,
+) -> Result<StandardRule, StandardLoadError> {
+    RuleId::parse(&wire.id).map_err(|source| StandardLoadError::InvalidRuleId {
+        value: wire.id.clone().into(),
+        source,
+    })?;
+    validate_non_empty("rule.title", &wire.title)?;
+    validate_status("rule.status", &wire.status)?;
+    validate_non_empty("rule.applicability", &wire.applicability)?;
+    validate_non_empty("rule.remediation", &wire.remediation)?;
+    if wire.integrity_tier > 4 {
+        return Err(StandardLoadError::InvalidIntegrityTier {
+            rule_id: wire.id.into(),
+            tier: wire.integrity_tier,
+        });
+    }
+    let mut capabilities = HashSet::with_capacity(wire.required_capabilities.len());
+    for capability in &wire.required_capabilities {
+        if capability.is_empty() {
+            return Err(StandardLoadError::EmptyField("rule.required_capabilities"));
+        }
+        if !capabilities.insert(capability.as_str()) {
+            return Err(StandardLoadError::DuplicateRequiredCapability(
+                capability.clone().into(),
+            ));
+        }
+    }
+    Ok(StandardRule {
+        id: wire.id,
+        title: wire.title,
+        status: wire.status,
+        applicability: wire.applicability,
+        category: wire.category,
+        integrity_tier: wire.integrity_tier,
+        remediation: wire.remediation,
+        required_capabilities: wire.required_capabilities,
+        logic: RuleLogic {
+            implies: validate_logic_references("logic.implies", &wire.logic.implies)?,
+            conflicts_with: validate_logic_references(
+                "logic.conflicts_with",
+                &wire.logic.conflicts_with,
+            )?,
+        },
+        source_path,
+    })
+}
+
+fn validate_logic_references(
+    field: &'static str,
+    values: &[String],
+) -> Result<Vec<String>, StandardLoadError> {
+    for value in values {
+        RuleId::parse(value).map_err(|source| StandardLoadError::InvalidLogicRuleId {
+            field,
+            value: value.clone().into(),
+            source,
+        })?;
+    }
+    if let Some(pair) = values.windows(2).find(|pair| pair[0] >= pair[1]) {
+        return Err(StandardLoadError::NoncanonicalRuleLogic {
+            field,
+            value: pair[1].clone().into(),
+        });
+    }
+    Ok(values.to_vec())
+}
+
+fn validate_rule_logic(rules: &[StandardRule]) -> Result<(), StandardLoadError> {
+    let known: BTreeSet<&str> = rules.iter().map(StandardRule::id).collect();
+    for rule in rules {
+        for (field, targets) in [
+            ("logic.implies", rule.logic.implies()),
+            ("logic.conflicts_with", rule.logic.conflicts_with()),
+        ] {
+            for target in targets {
+                if !known.contains(target.as_str()) {
+                    return Err(StandardLoadError::UnknownLogicRule {
+                        rule_id: rule.id().into(),
+                        field,
+                        target: target.clone().into(),
+                    });
+                }
+            }
+        }
+        if rule.logic.conflicts_with().iter().any(|id| id == rule.id()) {
+            return Err(StandardLoadError::SelfConflictingRule(rule.id().into()));
+        }
+    }
+
+    let implications: BTreeMap<&str, Vec<&str>> = rules
+        .iter()
+        .map(|rule| {
+            (
+                rule.id(),
+                rule.logic.implies().iter().map(String::as_str).collect(),
+            )
+        })
+        .collect();
+    let conflicts: BTreeSet<(&str, &str)> = rules
+        .iter()
+        .flat_map(|rule| {
+            rule.logic.conflicts_with().iter().map(move |target| {
+                if rule.id() < target {
+                    (rule.id(), target.as_str())
+                } else {
+                    (target.as_str(), rule.id())
+                }
+            })
+        })
+        .collect();
+    for rule in rules {
+        let mut closure = BTreeSet::new();
+        let mut queue = VecDeque::from([rule.id()]);
+        while let Some(current) = queue.pop_front() {
+            if !closure.insert(current) {
+                continue;
+            }
+            if let Some(targets) = implications.get(current) {
+                queue.extend(targets.iter().copied());
+            }
+        }
+        for first in &closure {
+            for second in closure.range(*first..) {
+                let pair = if first < second {
+                    (*first, *second)
+                } else {
+                    (*second, *first)
+                };
+                if conflicts.contains(&pair) {
+                    return Err(StandardLoadError::InherentlyUnsatisfiableRule {
+                        rule_id: rule.id().into(),
+                        first: pair.0.into(),
+                        second: pair.1.into(),
+                    });
+                }
+            }
+        }
+    }
+    Ok(())
 }
 
 fn validate_non_empty(field: &'static str, value: &str) -> Result<(), StandardLoadError> {

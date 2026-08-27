@@ -17,6 +17,10 @@
     "snapshot-bound-rust-test-analysis",
     "parent-local-testing-reconciliation"
   ],
+  "logic": {
+    "implies": [],
+    "conflicts_with": []
+  },
   "finding": {
     "message": "A Feature or its verification evidence is outside its canonical parent-local Testing boundary.",
     "location": "path"

@@ -28,7 +28,7 @@ Defines the version-one machine representation and validation boundary for commo
 
 ### [`rule_schema_v1.json`](../data/rule_schema_v1.json)
 
-Defines the version-one machine representation and validation boundary for rule records owned by this Module.
+Defines the version-one machine representation and validation boundary for rule records, including formal implication and conflict logic, owned by this Module.
 
 ### [`schema_manifest_schema_v1.json`](../data/schema_manifest_schema_v1.json)
 

@@ -7,7 +7,7 @@
   "required": [
     "schema_version", "id", "title", "status", "statement", "rationale",
     "failure_prevented", "applicability", "category", "integrity_tier",
-    "evaluation", "finding", "remediation", "valid_example",
+    "evaluation", "logic", "finding", "remediation", "valid_example",
     "invalid_example", "exception_policy", "introduced", "history"
   ],
   "properties": {
@@ -24,6 +24,15 @@
     "integrity_tier": { "type": "integer", "minimum": 0, "maximum": 4 },
     "evaluation": { "$ref": "urn:fortress:schema:v1:common#/$defs/non-empty-string" },
     "required_capabilities": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+    "logic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["implies", "conflicts_with"],
+      "properties": {
+        "implies": { "type": "array", "uniqueItems": true, "items": { "$ref": "urn:fortress:schema:v1:common#/$defs/rule-id" } },
+        "conflicts_with": { "type": "array", "uniqueItems": true, "items": { "$ref": "urn:fortress:schema:v1:common#/$defs/rule-id" } }
+      }
+    },
     "finding": {
       "type": "object",
       "additionalProperties": false,

@@ -17,6 +17,10 @@
     "module-contract-loader",
     "recursive-module-discovery"
   ],
+  "logic": {
+    "implies": [],
+    "conflicts_with": []
+  },
   "finding": {
     "message": "A Module contract, canonical Markdown document, catalog, relationship projection, or relative link violates the synchronized documentation grammar.",
     "location": "path"

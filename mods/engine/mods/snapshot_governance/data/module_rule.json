@@ -17,6 +17,10 @@
     "canonical-path-grammar",
     "module-documentation-reconciliation"
   ],
+  "logic": {
+    "implies": [],
+    "conflicts_with": []
+  },
   "finding": {
     "message": "An observed path or inferred Module violates the canonical recursive repository grammar.",
     "location": "path-or-module"

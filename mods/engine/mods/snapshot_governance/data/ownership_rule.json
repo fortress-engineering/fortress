@@ -16,6 +16,10 @@
     "module-contract-v2-resolution",
     "exact-file-ownership-reconciliation"
   ],
+  "logic": {
+    "implies": [],
+    "conflicts_with": []
+  },
   "finding": {
     "message": "A governed path has zero or multiple declared owners, or a required declared path is absent.",
     "location": "path"

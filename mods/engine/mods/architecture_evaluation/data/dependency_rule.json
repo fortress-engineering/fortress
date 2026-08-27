@@ -15,6 +15,10 @@
     "module-contract-v2-resolution",
     "component-dependency-cycle-detection"
   ],
+  "logic": {
+    "implies": [],
+    "conflicts_with": []
+  },
   "finding": {
     "message": "Resolved Module capability dependency graph contains a cycle.",
     "location": "entity"

@@ -23,7 +23,8 @@
       "requirements": [
         "AF-STANDARD-REGISTRY-0001-R01",
         "AF-STANDARD-REGISTRY-0001-R02",
-        "AF-STANDARD-REGISTRY-0001-R03"
+        "AF-STANDARD-REGISTRY-0001-R03",
+        "AF-STANDARD-REGISTRY-0001-R04"
       ]
     }
   ],
@@ -60,6 +61,15 @@
             "T-AF-STANDARD-REGISTRY-0001-R03-002",
             "T-AF-STANDARD-REGISTRY-0001-R03-003",
             "T-AF-STANDARD-REGISTRY-0001-R03-004"
+          ]
+        },
+        {
+          "id": "AF-STANDARD-REGISTRY-0001-R04",
+          "statement": "The selected standard validates canonical rule implication and conflict metadata, permits satisfiable implication cycles, and rejects unknown, self-conflicting, or inherently unsatisfiable rule logic.",
+          "tests": [
+            "T-AF-STANDARD-REGISTRY-0001-R04-001",
+            "T-AF-STANDARD-REGISTRY-0001-R04-002",
+            "T-AF-STANDARD-REGISTRY-0001-R04-003"
           ]
         }
       ]
