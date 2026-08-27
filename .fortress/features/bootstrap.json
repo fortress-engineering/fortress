@@ -187,14 +187,19 @@
         "schemas/v1/repository-snapshot.schema.json",
         "schemas/v1/snapshot-finding.schema.json",
         "crates/fortress-core/src/evaluation.rs",
+        "crates/fortress-core/src/feature.rs",
         "crates/fortress-core/src/finding.rs",
         "crates/fortress-core/src/ownership.rs",
+        "crates/fortress-core/src/rust_test_analyzer.rs",
+        "crates/fortress-core/src/traceability.rs",
         "crates/fortress-core/tests/snapshot_evaluation.rs",
         "crates/fortress-core/tests/arch_ownership_001.rs",
+        "crates/fortress-core/tests/test_traceability_001.rs",
         "crates/fortress-core/src/snapshot.rs",
         "crates/fortress-core/tests/repository_snapshot.rs",
         "docs/development/snapshot-evaluation.md",
         "docs/development/file-ownership.md",
+        "docs/development/test-traceability.md",
         "docs/development/snapshot-governance.md"
       ],
       "dependencies": [
@@ -248,6 +253,18 @@
             "T-ARCH-OWNERSHIP-001-R01-002",
             "T-ARCH-OWNERSHIP-001-R01-003",
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R05-001"
+          ]
+        },
+        {
+          "id": "AF-SNAPSHOT-GOVERNANCE-0001-R06",
+          "statement": "TEST-TRACEABILITY-001 loads active requirement declarations, extracts deterministic snapshot-bound Rust test facts, and rejects missing, orphaned, stale, duplicate, or invalid requirement/test evidence while preserving explicit infrastructure-test classification.",
+          "tests": [
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R06-001",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R06-002",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R06-003",
+            "T-TEST-TRACEABILITY-001-R01-001",
+            "T-TEST-TRACEABILITY-001-R01-002",
+            "T-TEST-TRACEABILITY-001-R01-003"
           ]
         }
       ]

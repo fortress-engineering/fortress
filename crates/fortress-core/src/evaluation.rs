@@ -10,10 +10,13 @@ use std::fmt::{self, Display, Formatter};
 use serde::Serialize;
 
 use crate::architecture::{ARCH_DEPENDENCY_RULE_ID, ArchitectureManifest};
+use crate::feature::FeatureContract;
 use crate::finding::{CanonicalFinding, FindingError};
 use crate::ownership::{ARCH_OWNERSHIP_RULE_ID, evaluate_file_ownership};
+use crate::rust_test_analyzer::RustTestFact;
 use crate::snapshot::RepositorySnapshot;
 use crate::standard::StandardBundle;
+use crate::traceability::{TEST_TRACEABILITY_RULE_ID, evaluate_test_traceability};
 
 /// Truthful execution result for one applicable standard rule.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
@@ -166,6 +169,36 @@ impl SnapshotRuleEngine {
         snapshot: &RepositorySnapshot,
         architecture: &ArchitectureManifest,
     ) -> Result<SnapshotEvaluation, EvaluationError> {
+        Self::evaluate_internal(standard, snapshot, architecture, None)
+    }
+
+    /// Evaluates the bundle with complete declared feature and Rust test facts.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`EvaluationError`] under the same conditions as [`Self::evaluate`].
+    pub fn evaluate_with_traceability(
+        &self,
+        standard: &StandardBundle,
+        snapshot: &RepositorySnapshot,
+        architecture: &ArchitectureManifest,
+        feature_contracts: &[FeatureContract],
+        rust_tests: &[RustTestFact],
+    ) -> Result<SnapshotEvaluation, EvaluationError> {
+        Self::evaluate_internal(
+            standard,
+            snapshot,
+            architecture,
+            Some((feature_contracts, rust_tests)),
+        )
+    }
+
+    fn evaluate_internal(
+        standard: &StandardBundle,
+        snapshot: &RepositorySnapshot,
+        architecture: &ArchitectureManifest,
+        traceability_inputs: Option<(&[FeatureContract], &[RustTestFact])>,
+    ) -> Result<SnapshotEvaluation, EvaluationError> {
         if standard.edition() != snapshot.standard_edition() {
             return Err(EvaluationError::StandardEditionMismatch {
                 bundle: standard.edition().into(),
@@ -176,64 +209,27 @@ impl SnapshotRuleEngine {
         let mut rules = Vec::with_capacity(standard.rules().len());
         let mut findings = Vec::new();
         for rule in standard.rules() {
-            if rule.id() == ARCH_DEPENDENCY_RULE_ID {
-                let finding = architecture
-                    .evaluate_acyclic_dependencies(standard.edition())
-                    .map_err(EvaluationError::Finding)?;
-                if let Some(finding) = finding {
-                    findings.push(finding);
-                    rules.push(RuleExecution {
-                        rule_id: rule.id().into(),
-                        state: RuleExecutionState::Failed,
-                        applicable: true,
-                        findings: 1,
-                        detail:
-                            "Evaluator ran and produced one declared dependency-cycle violation."
-                                .into(),
-                    });
-                } else {
-                    rules.push(RuleExecution {
-                        rule_id: rule.id().into(),
-                        state: RuleExecutionState::Passed,
-                        applicable: true,
-                        findings: 0,
-                        detail:
-                            "Evaluator ran and produced no declared dependency-cycle violation."
-                                .into(),
-                    });
-                }
+            let (execution, mut rule_findings) = if rule.id() == ARCH_DEPENDENCY_RULE_ID {
+                dependency_execution(rule.id(), architecture, standard.edition())?
             } else if rule.id() == ARCH_OWNERSHIP_RULE_ID {
-                let paths: Vec<String> = snapshot
-                    .files()
-                    .iter()
-                    .map(|file| file.path().to_owned())
-                    .collect();
-                let result = evaluate_file_ownership(architecture, &paths, standard.edition())
-                    .map_err(EvaluationError::Finding)?;
-                let finding_count = result.findings().len();
-                findings.extend_from_slice(result.findings());
-                rules.push(RuleExecution {
-                    rule_id: rule.id().into(),
-                    state: if finding_count == 0 {
-                        RuleExecutionState::Passed
-                    } else {
-                        RuleExecutionState::Failed
-                    },
-                    applicable: true,
-                    findings: finding_count,
-                    detail: format!(
-                        "Evaluator ran and produced {finding_count} declared file ownership violation(s)."
-                    ),
-                });
+                ownership_execution(rule.id(), architecture, snapshot, standard.edition())?
+            } else if rule.id() == TEST_TRACEABILITY_RULE_ID {
+                if let Some((contracts, rust_tests)) = traceability_inputs {
+                    traceability_execution(rule.id(), contracts, rust_tests, standard.edition())?
+                } else {
+                    unsupported_execution(
+                        rule.id(),
+                        "Traceability evaluation requires declared feature contracts and snapshot-bound Rust test facts.",
+                    )
+                }
             } else {
-                rules.push(RuleExecution {
-                    rule_id: rule.id().into(),
-                    state: RuleExecutionState::Unsupported,
-                    applicable: true,
-                    findings: 0,
-                    detail: "No Snapshot Governance evaluator is registered for this rule.".into(),
-                });
-            }
+                unsupported_execution(
+                    rule.id(),
+                    "No Snapshot Governance evaluator is registered for this rule.",
+                )
+            };
+            rules.push(execution);
+            findings.append(&mut rule_findings);
         }
         rules.sort_unstable_by(|left, right| left.rule_id.cmp(&right.rule_id));
         findings.sort();
@@ -245,6 +241,93 @@ impl SnapshotRuleEngine {
             findings,
         })
     }
+}
+
+fn dependency_execution(
+    rule_id: &str,
+    architecture: &ArchitectureManifest,
+    standard_edition: &str,
+) -> Result<(RuleExecution, Vec<CanonicalFinding>), EvaluationError> {
+    let finding = architecture
+        .evaluate_acyclic_dependencies(standard_edition)
+        .map_err(EvaluationError::Finding)?;
+    let findings: Vec<CanonicalFinding> = finding.into_iter().collect();
+    Ok((
+        completed_execution(
+            rule_id,
+            findings.len(),
+            "declared dependency-cycle violation(s)",
+        ),
+        findings,
+    ))
+}
+
+fn ownership_execution(
+    rule_id: &str,
+    architecture: &ArchitectureManifest,
+    snapshot: &RepositorySnapshot,
+    standard_edition: &str,
+) -> Result<(RuleExecution, Vec<CanonicalFinding>), EvaluationError> {
+    let paths: Vec<String> = snapshot
+        .files()
+        .iter()
+        .map(|file| file.path().to_owned())
+        .collect();
+    let result = evaluate_file_ownership(architecture, &paths, standard_edition)
+        .map_err(EvaluationError::Finding)?;
+    Ok((
+        completed_execution(
+            rule_id,
+            result.findings().len(),
+            "declared file ownership violation(s)",
+        ),
+        result.findings().to_vec(),
+    ))
+}
+
+fn traceability_execution(
+    rule_id: &str,
+    contracts: &[FeatureContract],
+    rust_tests: &[RustTestFact],
+    standard_edition: &str,
+) -> Result<(RuleExecution, Vec<CanonicalFinding>), EvaluationError> {
+    let result = evaluate_test_traceability(contracts, rust_tests, standard_edition)
+        .map_err(EvaluationError::Finding)?;
+    Ok((
+        completed_execution(
+            rule_id,
+            result.findings().len(),
+            "requirement/test traceability violation(s)",
+        ),
+        result.findings().to_vec(),
+    ))
+}
+
+fn completed_execution(rule_id: &str, findings: usize, subject: &str) -> RuleExecution {
+    RuleExecution {
+        rule_id: rule_id.into(),
+        state: if findings == 0 {
+            RuleExecutionState::Passed
+        } else {
+            RuleExecutionState::Failed
+        },
+        applicable: true,
+        findings,
+        detail: format!("Evaluator ran and produced {findings} {subject}."),
+    }
+}
+
+fn unsupported_execution(rule_id: &str, detail: &str) -> (RuleExecution, Vec<CanonicalFinding>) {
+    (
+        RuleExecution {
+            rule_id: rule_id.into(),
+            state: RuleExecutionState::Unsupported,
+            applicable: true,
+            findings: 0,
+            detail: detail.into(),
+        },
+        Vec::new(),
+    )
 }
 
 /// Explains why a snapshot rule evaluation could not complete.

@@ -1,0 +1,31 @@
+{
+  "$schema": "../../../../schemas/v1/rule.schema.json",
+  "schema_version": 1,
+  "id": "TEST-TRACEABILITY-001",
+  "title": "Active requirement and test traceability",
+  "status": "draft",
+  "statement": "Every active mandatory requirement MUST have unique canonical test evidence that exists in the supported evidence inventory, and every observed behavioral or conformance test MUST map to exactly one valid active requirement; explicitly classified infrastructure tests MAY remain unmapped.",
+  "rationale": "Bidirectional traceability prevents declarations from claiming nonexistent evidence and prevents product behavior tests from becoming detached from the requirements they protect.",
+  "failure_prevented": "Orphan requirements, orphan behavior tests, duplicate test identities, stale requirement/test references, and misleading evidence coverage.",
+  "applicability": "Active Fortress feature contracts and supported snapshot-bound Rust test evidence inventories.",
+  "category": "testing",
+  "integrity_tier": 1,
+  "evaluation": "The Fortress core loads typed feature contracts, structurally parses snapshot-bound Rust test sources, and deterministically reconciles active requirements, declared test evidence, observed test identities, optional source requirement markers, and explicit infrastructure classifications.",
+  "required_capabilities": [
+    "typed-feature-contract-loading",
+    "snapshot-bound-rust-test-analysis",
+    "requirement-test-reconciliation"
+  ],
+  "finding": {
+    "message": "Active requirement/test traceability is incomplete, stale, ambiguous, or duplicated.",
+    "location": "path"
+  },
+  "remediation": "Give each active mandatory requirement unique canonical test evidence, ensure every referenced test exists exactly once in the supported evidence inventory, and map every behavioral or conformance test to one valid active requirement; classify implementation-only tests explicitly.",
+  "valid_example": "Each active requirement references one or more unique observed Rust test IDs, every behavior/conformance test is referenced once, and an unreferenced helper test is explicitly infrastructure-classified.",
+  "invalid_example": "An active requirement has no tests, references a missing test, or a behavioral test ID is duplicated or has no active requirement mapping.",
+  "exception_policy": "Infrastructure classification describes intentionally non-product test evidence; it is not an exemption for behavioral coverage. Future exemptions must preserve explicit traceability state.",
+  "introduced": "1.0.0-draft.1",
+  "history": [
+    "Introduced during CHG-SNAPSHOT-0006 with deterministic Rust test fact extraction and no cross-language analyzer claim."
+  ]
+}

@@ -27,6 +27,15 @@
       "expected_invalid": "rules/ARCH-OWNERSHIP-001/expected/invalid.json",
       "exemption": "deferred-until-exemption-model",
       "conflict": "not-applicable"
+    },
+    {
+      "rule_id": "TEST-TRACEABILITY-001",
+      "valid": "rules/TEST-TRACEABILITY-001/valid/input.json",
+      "invalid": "rules/TEST-TRACEABILITY-001/invalid/input.json",
+      "boundary": "rules/TEST-TRACEABILITY-001/boundary/input.json",
+      "expected_invalid": "rules/TEST-TRACEABILITY-001/expected/invalid.json",
+      "exemption": "not-applicable",
+      "conflict": "not-applicable"
     }
   ]
 }

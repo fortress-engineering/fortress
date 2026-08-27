@@ -5,8 +5,10 @@ use std::path::{Path, PathBuf};
 
 use fortress_core::architecture::ArchitectureManifest;
 use fortress_core::evaluation::{RuleExecutionState, SnapshotRuleEngine};
+use fortress_core::feature::FeatureContract;
 use fortress_core::observation::ObservationPolicy;
 use fortress_core::project::ProjectManifest;
+use fortress_core::rust_test_analyzer::analyze_snapshot_rust_tests;
 use fortress_core::snapshot::{RepositorySnapshot, SnapshotDocuments, build_repository_snapshot};
 use fortress_core::standard::StandardBundle;
 use serde_json::Value;
@@ -150,5 +152,34 @@ fn missing_snapshot_evaluator_is_unsupported_not_passed() {
         .expect("STD-ID-001 execution is reported");
     assert_eq!(unsupported.state(), RuleExecutionState::Unsupported);
     assert_eq!(unsupported.finding_count(), 0);
-    assert_eq!(result.unsupported_count(), 1);
+    assert_eq!(result.unsupported_count(), 2);
+}
+
+/// `T-AF-SNAPSHOT-GOVERNANCE-0001-R06-003`
+#[test]
+fn fortress_active_requirements_have_complete_snapshot_bound_rust_evidence() {
+    let (snapshot, standard) = self_snapshot_and_standard();
+    let root = repository_root();
+    let architecture_source =
+        fs::read_to_string(root.join(".fortress/architecture/architecture.json"))
+            .expect("self architecture is readable");
+    let architecture =
+        ArchitectureManifest::from_json_str(&architecture_source).expect("architecture loads");
+    let feature_source = fs::read_to_string(root.join(".fortress/features/bootstrap.json"))
+        .expect("self feature contract is readable");
+    let feature =
+        FeatureContract::from_json_str(".fortress/features/bootstrap.json", &feature_source)
+            .expect("feature contract loads");
+    let rust_tests = analyze_snapshot_rust_tests(&root, &snapshot)
+        .expect("snapshot-bound Rust test analysis completes");
+    let result = SnapshotRuleEngine::builtin()
+        .evaluate_with_traceability(&standard, &snapshot, &architecture, &[feature], &rust_tests)
+        .expect("evaluation completes");
+    let execution = result
+        .rules()
+        .iter()
+        .find(|execution| execution.rule_id() == "TEST-TRACEABILITY-001")
+        .expect("traceability execution is reported");
+    assert_eq!(execution.state(), RuleExecutionState::Passed);
+    assert_eq!(execution.finding_count(), 0);
 }

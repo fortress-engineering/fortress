@@ -9,10 +9,13 @@
 pub mod architecture;
 pub mod command;
 pub mod evaluation;
+pub mod feature;
 pub mod finding;
 pub mod identity;
 pub mod observation;
 pub mod ownership;
 pub mod project;
+pub mod rust_test_analyzer;
 pub mod snapshot;
 pub mod standard;
+pub mod traceability;
