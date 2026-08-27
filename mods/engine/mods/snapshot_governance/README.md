@@ -16,7 +16,7 @@ Snapshot and audit schemas; findings; contract coherency, ownership, traceabilit
 
 ### Excludes
 
-Certification or attestation, onboarding and migration state, persistent jobs, provider-hosted execution, release orchestration, unsupported language analyzers, and inferred source dependency reconciliation.
+Certification or attestation, onboarding and migration state, persistent jobs, provider-hosted execution, release orchestration, unsupported language analyzers, inferred source dependency reconciliation, final CCG semantic satisfiability, and BFG construction or visualization.
 
 ## Relationships
 

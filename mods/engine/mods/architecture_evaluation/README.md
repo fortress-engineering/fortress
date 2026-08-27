@@ -34,4 +34,4 @@ Uses stable identities and the governing dependency rule contract.
 
 ## Guarantees
 
-Unknown providers or targets, duplicate identities or edges, incompatible capability versions, invalid inherited obligations, incoherent behavior, and prohibited dependency cycles fail deterministically without treating dependency as containment.
+Unknown providers or targets, duplicate identities or edges, incompatible capability versions, invalid inherited obligations, incoherent behavior, and prohibited dependency cycles fail deterministically without treating dependency as containment. The resolved contract set is a provenance-preserving direct input foundation for a future Contract Coherency Graph; it is not itself named, serialized, or claimed as the completed CCG, and its behavioral checkpoints are not a BFG renderer.
