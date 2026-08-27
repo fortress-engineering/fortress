@@ -26,6 +26,10 @@ Verifies valid, cyclic, and minimum architecture graphs against ARCH-DEPENDENCY-
 
 Verifies every reconciliation state, exact transitive-bypass paths, declared-unobserved truthfulness, invalid observation failure, unsupported coverage, and deterministic conclusions for ARCH-REALIZATION-001.
 
+### [`architecture_diagnostics.rs`](../code/architecture_diagnostics.rs)
+
+Verifies production Module profiles, physical LCA, Testing-topology exclusion, all four non-normative diagnostic predicates, evidence direction, deduplication, deterministic fingerprints, epistemic limits, and live audit integration.
+
 ### [`self_architecture.rs`](../code/self_architecture.rs)
 
 Compiles Fortress's live CCG and verifies that the parent architecture projection remains acyclic.

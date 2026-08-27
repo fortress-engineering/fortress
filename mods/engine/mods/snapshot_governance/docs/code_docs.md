@@ -20,7 +20,7 @@ Invalid inputs and inability to fulfill the responsibility return explicit typed
 
 ### [`audit.rs`](../code/audit.rs)
 
-Orchestrates declaration loading, stabilized snapshot construction, analyzers, rule execution, and deterministic audit rendering data.
+Orchestrates declaration loading, stabilized snapshot construction, analyzers, rule execution, and deterministic audit v2 rendering with normative findings, non-normative architecture diagnostics, and unsupported analysis kept distinct.
 
 ### [`contract.rs`](../code/contract.rs)
 

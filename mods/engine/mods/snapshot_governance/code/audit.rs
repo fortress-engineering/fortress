@@ -10,6 +10,9 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 use crate::architecture::ArchitectureManifest;
+use crate::architecture_diagnostics::{
+    ArchitectureDiagnostic, ArchitectureDiagnosticError, derive_architecture_diagnostics,
+};
 use crate::architecture_realization::{ArchitectureRealization, reconcile_implementation};
 use crate::contract::evaluate_contract_coherency;
 use crate::contract_coherency::{
@@ -23,7 +26,7 @@ use crate::evaluation::{
 use crate::finding::CanonicalFinding;
 use crate::implementation_observation::{
     ImplementationObservationError, ImplementationObservationInput, ModuleTerritory,
-    SnapshotBoundFile, observe_rust_implementation,
+    ObservedImplementation, SnapshotBoundFile, observe_rust_implementation,
 };
 use crate::observation::{ObservationError, ObservationPolicy, RepositoryObservation};
 use crate::project::{ProjectConfiguration, ProjectConfigurationLoadError};
@@ -35,7 +38,7 @@ use crate::snapshot::{
 use crate::standard::{StandardBundle, StandardLoadError};
 
 /// Current stable machine-readable snapshot audit schema family.
-pub const AUDIT_RESULT_SCHEMA_VERSION: u16 = 1;
+pub const AUDIT_RESULT_SCHEMA_VERSION: u16 = 2;
 
 /// Deterministic repository audit result; this is not certification evidence.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
@@ -49,6 +52,8 @@ pub struct AuditResult {
     summary: AuditSummary,
     rules: Vec<RuleExecution>,
     findings: Vec<CanonicalFinding>,
+    diagnostics: Vec<ArchitectureDiagnostic>,
+    unsupported_analysis: Vec<String>,
 }
 
 impl AuditResult {
@@ -76,6 +81,18 @@ impl AuditResult {
         &self.findings
     }
 
+    /// Returns evidence-backed architecture interpretations that do not affect outcome.
+    #[must_use]
+    pub fn diagnostics(&self) -> &[ArchitectureDiagnostic] {
+        &self.diagnostics
+    }
+
+    /// Returns architecture conclusions deliberately unsupported by diagnostics v1.
+    #[must_use]
+    pub fn unsupported_analysis(&self) -> &[String] {
+        &self.unsupported_analysis
+    }
+
     /// Returns deterministic execution records for every applicable standard rule.
     #[must_use]
     pub fn rules(&self) -> &[RuleExecution] {
@@ -86,7 +103,7 @@ impl AuditResult {
     ///
     /// # Errors
     ///
-    /// Returns a serialization error if the version-one contract cannot be represented.
+    /// Returns a serialization error if the version-two contract cannot be represented.
     pub fn to_json_pretty(&self) -> Result<String, serde_json::Error> {
         serde_json::to_string_pretty(self)
     }
@@ -114,6 +131,30 @@ impl AuditResult {
                 output.push_str(location);
                 output.push_str(": ");
                 output.push_str(finding.message());
+                output.push('\n');
+            }
+        }
+        output.push_str("\nArchitecture diagnostics:\n");
+        if self.diagnostics.is_empty() {
+            output.push_str("None\n");
+        } else {
+            for diagnostic in &self.diagnostics {
+                output.push_str("- [");
+                output.push_str(diagnostic.kind().as_str());
+                output.push_str("] ");
+                output.push_str(diagnostic.primary_module());
+                output.push_str(": ");
+                output.push_str(diagnostic.summary());
+                output.push('\n');
+            }
+        }
+        output.push_str("\nUnsupported analysis:\n");
+        if self.unsupported_analysis.is_empty() {
+            output.push_str("None\n");
+        } else {
+            for unsupported in &self.unsupported_analysis {
+                output.push_str("- ");
+                output.push_str(unsupported);
                 output.push('\n');
             }
         }
@@ -270,7 +311,7 @@ fn audit_repository_with_ccg(
             .chain(contract_documents.iter()),
     )?;
     verify_observed_files(&snapshot, &observed_files)?;
-    let architecture_realization = reconcile_repository_implementation(
+    let (observed_implementation, architecture_realization) = reconcile_repository_implementation(
         &snapshot,
         ccg,
         &observed_files,
@@ -286,6 +327,9 @@ fn audit_repository_with_ccg(
     let ccg = contract_coherency.graph().ok_or_else(|| {
         AuditError::ContractState("CCG compilation did not produce a graph".into())
     })?;
+    let architecture_diagnostics =
+        derive_architecture_diagnostics(ccg, &observed_implementation, &architecture_realization)
+            .map_err(AuditError::ArchitectureDiagnostics)?;
     let evaluation = evaluate_snapshot_rules(
         standard,
         &snapshot,
@@ -295,7 +339,10 @@ fn audit_repository_with_ccg(
         &contract_coherency,
         &architecture_realization,
     )?;
-    Ok((result_from_evaluation(&snapshot, &evaluation), ccg.clone()))
+    Ok((
+        result_from_evaluation(&snapshot, &evaluation, &architecture_diagnostics),
+        ccg.clone(),
+    ))
 }
 
 fn evaluate_snapshot_rules(
@@ -370,7 +417,7 @@ fn reconcile_repository_implementation(
     files: &BTreeMap<String, Vec<u8>>,
     standard_edition: &str,
     include_observation: bool,
-) -> Result<ArchitectureRealization, AuditError> {
+) -> Result<(ObservedImplementation, ArchitectureRealization), AuditError> {
     let observed = if include_observation {
         let input = implementation_input(snapshot, ccg, files)?;
         observe_rust_implementation(&input).map_err(AuditError::ImplementationObservation)?
@@ -383,14 +430,16 @@ fn reconcile_repository_implementation(
             Vec::new(),
         )
     };
-    reconcile_implementation(ccg, &observed, standard_edition)
+    let realization = reconcile_implementation(ccg, &observed, standard_edition)
         .map_err(EvaluationError::Finding)
-        .map_err(AuditError::Evaluation)
+        .map_err(AuditError::Evaluation)?;
+    Ok((observed, realization))
 }
 
 fn result_from_evaluation(
     snapshot: &RepositorySnapshot,
     evaluation: &crate::evaluation::SnapshotEvaluation,
+    architecture_diagnostics: &crate::architecture_diagnostics::ArchitectureDiagnostics,
 ) -> AuditResult {
     let summary = AuditSummary {
         rules_evaluated: evaluation.evaluated_count(),
@@ -415,6 +464,8 @@ fn result_from_evaluation(
         summary,
         rules: evaluation.rules().to_vec(),
         findings: evaluation.findings().to_vec(),
+        diagnostics: architecture_diagnostics.diagnostics().to_vec(),
+        unsupported_analysis: architecture_diagnostics.unsupported_analysis().to_vec(),
     }
 }
 
@@ -590,6 +641,8 @@ pub enum AuditError {
     RustAnalyzer(RustAnalyzerError),
     /// Snapshot-bound implementation observation failed.
     ImplementationObservation(ImplementationObservationError),
+    /// Architecture diagnostic derivation failed.
+    ArchitectureDiagnostics(ArchitectureDiagnosticError),
     /// Snapshot-bound documentation and contract evaluation failed.
     Documentation(DocumentationEvaluationError),
     /// Rule evaluation failed.
@@ -623,6 +676,12 @@ impl Display for AuditError {
             Self::RustAnalyzer(error) => write!(formatter, "Rust test analysis failed: {error}"),
             Self::ImplementationObservation(error) => {
                 write!(formatter, "implementation observation failed: {error}")
+            }
+            Self::ArchitectureDiagnostics(error) => {
+                write!(
+                    formatter,
+                    "architecture diagnostic derivation failed: {error}"
+                )
             }
             Self::Documentation(error) => {
                 write!(formatter, "documentation evaluation failed: {error}")

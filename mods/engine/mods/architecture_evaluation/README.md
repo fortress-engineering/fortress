@@ -2,21 +2,21 @@
 
 ## Purpose
 
-Architecture Evaluation exists to interpret canonical CCG dependency and containment facts as architecture rule evidence without rebuilding contract semantics or duplicating filesystem authority.
+Architecture Evaluation exists to judge declared and realized architecture against normative rules and to expose evidence-backed structural pressure that deserves review without turning interpretation into conformance law.
 
 ## Responsibility
 
-Consume the Contract Coherency Graph and independent Implementation Observation, derive physical ownership views, evaluate declared capability dependency cycles, and reconcile observed direct source dependencies with intended architecture using canonical findings.
+Consume the Contract Coherency Graph and independent Implementation Observation, derive physical ownership and production Module profiles, evaluate declared capability dependency cycles, reconcile observed direct source dependencies with intended architecture using canonical findings, and derive deterministic non-normative diagnostics with complete evidence.
 
 ## Scope
 
 ### Includes
 
-CCG Module containment, direct dependency and reachability facts; observed Rust Module dependencies and evidence; derived physical path ownership; component projections; ARCH-DEPENDENCY-001 evaluation; and ARCH-REALIZATION-001 reconciliation.
+CCG Module containment, direct dependency and reachability facts; observed Rust Module dependencies and evidence; production and verification topology separation; derived physical path ownership; component projections; Module lowest common ancestor; architecture profiles; scope and consumer-distribution diagnostics; facade-pressure and internal-isolation diagnostics; ARCH-DEPENDENCY-001 evaluation; and ARCH-REALIZATION-001 reconciliation.
 
 ### Excludes
 
-Contract parsing or semantic compilation, repository byte observation, physical containment authority, language source extraction, capability-to-symbol realization, semantic restructuring advice, Snapshot Governance aggregation, and terminal presentation.
+Contract parsing or semantic compilation, repository byte observation, physical containment authority, language source extraction, capability-to-symbol realization, automatic restructuring decisions, natural-language architectural inference, correctness claims about candidate placement, Snapshot Governance aggregation, and terminal presentation.
 
 ## Relationships
 
@@ -52,4 +52,4 @@ Uses stable identities and the governing dependency rule contract.
 
 ## Guarantees
 
-Architecture views preserve the distinctions among containment, declared dependency, reachability, and observed access; never infer capability re-export or capability realization; assign observed paths to the deepest containing Module; and report cycles, unauthorized edges, and transitive bypasses deterministically without owning competing intent or observation models.
+Architecture views preserve five distinct authorities: the CCG supplies declared semantic intent, Implementation Observation supplies source-derived facts, Architecture Realization establishes intent/implementation agreement, Architecture Diagnostics interprets those facts non-normatively, and canonical findings represent only Standard violations. Profiles and diagnostics exclude CCG-identified Testing Modules from production placement inference, never infer capability re-export or realization, never read intent from names or prose, and preserve deterministic evidence, ordering, and fingerprints.

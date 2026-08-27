@@ -321,6 +321,8 @@ fn audit_success_renders_human_snapshot_report() {
     assert!(stdout.contains("Fortress Snapshot Audit"));
     assert!(stdout.contains("PASS: 8"));
     assert!(stdout.contains("Unsupported: 1"));
+    assert!(stdout.contains("Architecture diagnostics:"));
+    assert!(stdout.contains("Unsupported analysis:"));
     assert!(!stdout.contains("certification"));
 }
 
@@ -359,8 +361,10 @@ fn audit_json_is_valid_and_repeatable() {
     assert_eq!(first.stdout, second.stdout);
     let value: serde_json::Value =
         serde_json::from_slice(&first.stdout).expect("audit output is JSON");
-    assert_eq!(value["schema_version"], 1);
+    assert_eq!(value["schema_version"], 2);
     assert_eq!(value["outcome"], "PASS");
+    assert!(value["diagnostics"].is_array());
+    assert!(value["unsupported_analysis"].is_array());
 }
 
 /// `T-TF-CLI-0001-R04-005`

@@ -1,0 +1,162 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v2:snapshot-audit",
+  "title": "Fortress deterministic snapshot audit result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "project_id", "standard", "snapshot_fingerprint", "repository_content_fingerprint", "outcome", "summary", "rules", "findings", "diagnostics", "unsupported_analysis"],
+  "properties": {
+    "schema_version": { "const": 2 },
+    "project_id": { "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id" },
+    "standard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["edition", "status"],
+      "properties": {
+        "edition": { "type": "string", "minLength": 1 },
+        "status": { "enum": ["draft", "candidate", "released"] }
+      }
+    },
+    "snapshot_fingerprint": { "$ref": "urn:fortress:schema:v1:common#/$defs/sha256" },
+    "repository_content_fingerprint": { "$ref": "urn:fortress:schema:v1:common#/$defs/sha256" },
+    "outcome": { "enum": ["PASS", "FAIL"] },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rules_evaluated", "passed", "failed", "unsupported"],
+      "properties": {
+        "rules_evaluated": { "type": "integer", "minimum": 0 },
+        "passed": { "type": "integer", "minimum": 0 },
+        "failed": { "type": "integer", "minimum": 0 },
+        "unsupported": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["rule_id", "state", "applicable", "findings", "detail"],
+        "properties": {
+          "rule_id": { "$ref": "urn:fortress:schema:v1:common#/$defs/rule-id" },
+          "state": { "enum": ["PASSED", "FAILED", "UNSUPPORTED"] },
+          "applicable": { "type": "boolean" },
+          "findings": { "type": "integer", "minimum": 0 },
+          "detail": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "urn:fortress:schema:v1:snapshot-finding" }
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/architecture-diagnostic" }
+    },
+    "unsupported_analysis": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    }
+  },
+  "$defs": {
+    "architecture-diagnostic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "primary_module", "related_modules", "summary", "reasoning", "declared_evidence", "observed_evidence", "candidate_structural_scope", "provenance", "fingerprint"],
+      "properties": {
+        "kind": { "enum": ["CROSS_SCOPE_PROVIDER", "FRAGMENTED_FOREIGN_SURFACE", "ISOLATED_INTERNAL_PROVIDER", "NARROWER_CONSUMER_SCOPE"] },
+        "primary_module": { "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id" },
+        "related_modules": {
+          "type": "array",
+          "items": { "$ref": "urn:fortress:schema:v2:module-contract#/$defs/stable_id" },
+          "uniqueItems": true
+        },
+        "summary": { "type": "string", "minLength": 1 },
+        "reasoning": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "declared_evidence": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/declared-dependency-evidence" }
+        },
+        "observed_evidence": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/observation-provenance" }
+        },
+        "candidate_structural_scope": {
+          "oneOf": [
+            { "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id" },
+            { "type": "null" }
+          ]
+        },
+        "provenance": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/diagnostic-provenance" },
+          "uniqueItems": true
+        },
+        "fingerprint": { "$ref": "urn:fortress:schema:v1:common#/$defs/sha256" }
+      }
+    },
+    "declared-dependency-evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["consumer", "provider", "capabilities", "provenance"],
+      "properties": {
+        "consumer": { "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id" },
+        "provider": { "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id" },
+        "capabilities": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "urn:fortress:schema:v2:module-contract#/$defs/stable_id" },
+          "uniqueItems": true
+        },
+        "provenance": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/diagnostic-provenance" },
+          "uniqueItems": true
+        }
+      }
+    },
+    "observation-provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_path", "source_module", "reference", "location", "resolved_target"],
+      "properties": {
+        "source_path": { "$ref": "urn:fortress:schema:v1:common#/$defs/relative-path" },
+        "source_module": { "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id" },
+        "reference": { "type": "string", "minLength": 1 },
+        "location": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["line", "column"],
+          "properties": {
+            "line": { "type": "integer", "minimum": 1 },
+            "column": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "resolved_target": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "diagnostic-provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["authority", "path", "location"],
+      "properties": {
+        "authority": { "enum": ["contract", "filesystem", "source"] },
+        "path": { "$ref": "urn:fortress:schema:v1:common#/$defs/relative-path" },
+        "location": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

@@ -72,6 +72,18 @@
             "T-ARCH-REALIZATION-001-R01-003",
             "T-ARCH-REALIZATION-001-R01-004"
           ]
+        },
+        {
+          "id": "AF-ARCHITECTURE-EVALUATION-0001-R04",
+          "statement": "Architecture Evaluation deterministically derives non-normative architecture diagnostics from canonical CCG containment and dependency facts plus independently observed realization while separating evidence-backed structural opportunities from rule violations.",
+          "tests": [
+            "T-AF-ARCHITECTURE-EVALUATION-0001-R04-001",
+            "T-AF-ARCHITECTURE-EVALUATION-0001-R04-002",
+            "T-AF-ARCHITECTURE-EVALUATION-0001-R04-003",
+            "T-AF-ARCHITECTURE-EVALUATION-0001-R04-004",
+            "T-AF-ARCHITECTURE-EVALUATION-0001-R04-005",
+            "T-AF-ARCHITECTURE-EVALUATION-0001-R04-006"
+          ]
         }
       ]
     }

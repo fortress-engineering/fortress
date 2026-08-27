@@ -113,7 +113,7 @@
         "TEST-ARCHITECTURE-EVALUATION-0001"
       ],
       "contract_source": "mods/engine/mods/architecture_evaluation/contract.json",
-      "contract_digest": "sha256:4791adb496d4c40c171cfdc31cdb708a4f20d931c1650e54eb20a92c5ace58d1",
+      "contract_digest": "sha256:0a025d0f7e0e94188b13b8e23f973904af6e4aeda2bd9fa28ed36dcd232b255f",
       "provenance": {
         "path": "mods/engine/mods/architecture_evaluation/contract.json",
         "pointer": "/"
@@ -752,7 +752,8 @@
       "requirements": [
         "AF-ARCHITECTURE-EVALUATION-0001-R01",
         "AF-ARCHITECTURE-EVALUATION-0001-R02",
-        "AF-ARCHITECTURE-EVALUATION-0001-R03"
+        "AF-ARCHITECTURE-EVALUATION-0001-R03",
+        "AF-ARCHITECTURE-EVALUATION-0001-R04"
       ],
       "provenance": {
         "path": "mods/engine/mods/architecture_evaluation/contract.json",
@@ -924,6 +925,24 @@
       "provenance": {
         "path": "mods/engine/mods/architecture_evaluation/contract.json",
         "pointer": "/features/0/requirements/2"
+      }
+    },
+    {
+      "id": "AF-ARCHITECTURE-EVALUATION-0001-R04",
+      "owner": "AF-ARCHITECTURE-EVALUATION-0001",
+      "feature": "AF-ARCHITECTURE-EVALUATION-0001",
+      "statement": "Architecture Evaluation deterministically derives non-normative architecture diagnostics from canonical CCG containment and dependency facts plus independently observed realization while separating evidence-backed structural opportunities from rule violations.",
+      "declared_tests": [
+        "T-AF-ARCHITECTURE-EVALUATION-0001-R04-001",
+        "T-AF-ARCHITECTURE-EVALUATION-0001-R04-002",
+        "T-AF-ARCHITECTURE-EVALUATION-0001-R04-003",
+        "T-AF-ARCHITECTURE-EVALUATION-0001-R04-004",
+        "T-AF-ARCHITECTURE-EVALUATION-0001-R04-005",
+        "T-AF-ARCHITECTURE-EVALUATION-0001-R04-006"
+      ],
+      "provenance": {
+        "path": "mods/engine/mods/architecture_evaluation/contract.json",
+        "pointer": "/features/0/requirements/3"
       }
     },
     {
@@ -6835,6 +6854,30 @@
         "derivation": "verification_support:AF-ARCHITECTURE-EVALUATION-0001-R03"
       },
       {
+        "requirement": "AF-ARCHITECTURE-EVALUATION-0001-R04",
+        "owner": "AF-ARCHITECTURE-EVALUATION-0001",
+        "feature": "AF-ARCHITECTURE-EVALUATION-0001",
+        "testing_module": "TEST-ARCHITECTURE-EVALUATION-0001",
+        "declared_tests": [
+          "T-AF-ARCHITECTURE-EVALUATION-0001-R04-001",
+          "T-AF-ARCHITECTURE-EVALUATION-0001-R04-002",
+          "T-AF-ARCHITECTURE-EVALUATION-0001-R04-003",
+          "T-AF-ARCHITECTURE-EVALUATION-0001-R04-004",
+          "T-AF-ARCHITECTURE-EVALUATION-0001-R04-005",
+          "T-AF-ARCHITECTURE-EVALUATION-0001-R04-006"
+        ],
+        "observed_tests": [
+          "T-AF-ARCHITECTURE-EVALUATION-0001-R04-001",
+          "T-AF-ARCHITECTURE-EVALUATION-0001-R04-002",
+          "T-AF-ARCHITECTURE-EVALUATION-0001-R04-003",
+          "T-AF-ARCHITECTURE-EVALUATION-0001-R04-004",
+          "T-AF-ARCHITECTURE-EVALUATION-0001-R04-005",
+          "T-AF-ARCHITECTURE-EVALUATION-0001-R04-006"
+        ],
+        "complete_declared_support": true,
+        "derivation": "verification_support:AF-ARCHITECTURE-EVALUATION-0001-R04"
+      },
+      {
         "requirement": "AF-BOOTSTRAP-GOVERNANCE-0001-R01",
         "owner": "PF-FORTRESS",
         "feature": "AF-BOOTSTRAP-GOVERNANCE-0001",
@@ -7434,6 +7477,78 @@
         "provenance": {
           "path": "mods/engine/mods/architecture_evaluation/mods/testing/code/arch_realization_001.rs",
           "pointer": "symbol:reconciliation_distinguishes_every_supported_state_without_circular_observation"
+        }
+      },
+      {
+        "id": "T-AF-ARCHITECTURE-EVALUATION-0001-R04-001",
+        "testing_module": "TEST-ARCHITECTURE-EVALUATION-0001",
+        "path": "mods/engine/mods/architecture_evaluation/mods/testing/code/architecture_diagnostics.rs",
+        "symbol": "profiles_lca_and_testing_topology_are_recursive_and_distinct",
+        "classification": "behavioral",
+        "declared_requirement": "AF-ARCHITECTURE-EVALUATION-0001-R04",
+        "provenance": {
+          "path": "mods/engine/mods/architecture_evaluation/mods/testing/code/architecture_diagnostics.rs",
+          "pointer": "symbol:profiles_lca_and_testing_topology_are_recursive_and_distinct"
+        }
+      },
+      {
+        "id": "T-AF-ARCHITECTURE-EVALUATION-0001-R04-002",
+        "testing_module": "TEST-ARCHITECTURE-EVALUATION-0001",
+        "path": "mods/engine/mods/architecture_evaluation/mods/testing/code/architecture_diagnostics.rs",
+        "symbol": "cross_scope_provider_collapses_consumers_and_preserves_lca_evidence",
+        "classification": "behavioral",
+        "declared_requirement": "AF-ARCHITECTURE-EVALUATION-0001-R04",
+        "provenance": {
+          "path": "mods/engine/mods/architecture_evaluation/mods/testing/code/architecture_diagnostics.rs",
+          "pointer": "symbol:cross_scope_provider_collapses_consumers_and_preserves_lca_evidence"
+        }
+      },
+      {
+        "id": "T-AF-ARCHITECTURE-EVALUATION-0001-R04-003",
+        "testing_module": "TEST-ARCHITECTURE-EVALUATION-0001",
+        "path": "mods/engine/mods/architecture_evaluation/mods/testing/code/architecture_diagnostics.rs",
+        "symbol": "narrower_and_isolated_diagnostics_respect_visibility_ancestry_and_testing",
+        "classification": "behavioral",
+        "declared_requirement": "AF-ARCHITECTURE-EVALUATION-0001-R04",
+        "provenance": {
+          "path": "mods/engine/mods/architecture_evaluation/mods/testing/code/architecture_diagnostics.rs",
+          "pointer": "symbol:narrower_and_isolated_diagnostics_respect_visibility_ancestry_and_testing"
+        }
+      },
+      {
+        "id": "T-AF-ARCHITECTURE-EVALUATION-0001-R04-004",
+        "testing_module": "TEST-ARCHITECTURE-EVALUATION-0001",
+        "path": "mods/engine/mods/architecture_evaluation/mods/testing/code/architecture_diagnostics.rs",
+        "symbol": "fragmented_authorized_surface_is_diagnostic_while_unauthorized_access_is_finding",
+        "classification": "behavioral",
+        "declared_requirement": "AF-ARCHITECTURE-EVALUATION-0001-R04",
+        "provenance": {
+          "path": "mods/engine/mods/architecture_evaluation/mods/testing/code/architecture_diagnostics.rs",
+          "pointer": "symbol:fragmented_authorized_surface_is_diagnostic_while_unauthorized_access_is_finding"
+        }
+      },
+      {
+        "id": "T-AF-ARCHITECTURE-EVALUATION-0001-R04-005",
+        "testing_module": "TEST-ARCHITECTURE-EVALUATION-0001",
+        "path": "mods/engine/mods/architecture_evaluation/mods/testing/code/architecture_diagnostics.rs",
+        "symbol": "diagnostics_are_content_addressed_deterministic_and_epistemically_limited",
+        "classification": "behavioral",
+        "declared_requirement": "AF-ARCHITECTURE-EVALUATION-0001-R04",
+        "provenance": {
+          "path": "mods/engine/mods/architecture_evaluation/mods/testing/code/architecture_diagnostics.rs",
+          "pointer": "symbol:diagnostics_are_content_addressed_deterministic_and_epistemically_limited"
+        }
+      },
+      {
+        "id": "T-AF-ARCHITECTURE-EVALUATION-0001-R04-006",
+        "testing_module": "TEST-ARCHITECTURE-EVALUATION-0001",
+        "path": "mods/engine/mods/architecture_evaluation/mods/testing/code/architecture_diagnostics.rs",
+        "symbol": "live_fortress_diagnostics_execute_repeatably_without_affecting_audit_outcome",
+        "classification": "behavioral",
+        "declared_requirement": "AF-ARCHITECTURE-EVALUATION-0001-R04",
+        "provenance": {
+          "path": "mods/engine/mods/architecture_evaluation/mods/testing/code/architecture_diagnostics.rs",
+          "pointer": "symbol:live_fortress_diagnostics_execute_repeatably_without_affecting_audit_outcome"
         }
       },
       {
@@ -15358,6 +15473,32 @@
       ]
     },
     {
+      "id": "verification_support:AF-ARCHITECTURE-EVALUATION-0001-R04",
+      "kind": "verification_support",
+      "fact": "requirement_support:AF-ARCHITECTURE-EVALUATION-0001-R04",
+      "input_facts": [
+        "requirement:AF-ARCHITECTURE-EVALUATION-0001-R04",
+        "testing_boundary:AF-ARCHITECTURE-EVALUATION-0001:TEST-ARCHITECTURE-EVALUATION-0001",
+        "declared_test:AF-ARCHITECTURE-EVALUATION-0001-R04:T-AF-ARCHITECTURE-EVALUATION-0001-R04-001",
+        "declared_test:AF-ARCHITECTURE-EVALUATION-0001-R04:T-AF-ARCHITECTURE-EVALUATION-0001-R04-002",
+        "declared_test:AF-ARCHITECTURE-EVALUATION-0001-R04:T-AF-ARCHITECTURE-EVALUATION-0001-R04-003",
+        "declared_test:AF-ARCHITECTURE-EVALUATION-0001-R04:T-AF-ARCHITECTURE-EVALUATION-0001-R04-004",
+        "declared_test:AF-ARCHITECTURE-EVALUATION-0001-R04:T-AF-ARCHITECTURE-EVALUATION-0001-R04-005",
+        "declared_test:AF-ARCHITECTURE-EVALUATION-0001-R04:T-AF-ARCHITECTURE-EVALUATION-0001-R04-006"
+      ],
+      "explanation_path": [
+        "AF-ARCHITECTURE-EVALUATION-0001",
+        "AF-ARCHITECTURE-EVALUATION-0001-R04",
+        "TEST-ARCHITECTURE-EVALUATION-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/architecture_evaluation/contract.json",
+          "pointer": "/features/0/requirements/3"
+        }
+      ]
+    },
+    {
       "id": "verification_support:AF-BOOTSTRAP-GOVERNANCE-0001-R01",
       "kind": "verification_support",
       "fact": "requirement_support:AF-BOOTSTRAP-GOVERNANCE-0001-R01",
@@ -16198,6 +16339,30 @@
     {
       "path": "mods/engine/mods/architecture_evaluation/mods/testing/code/arch_realization_001.rs",
       "pointer": "symbol:transitive_reachability_never_authorizes_direct_source_access"
+    },
+    {
+      "path": "mods/engine/mods/architecture_evaluation/mods/testing/code/architecture_diagnostics.rs",
+      "pointer": "symbol:cross_scope_provider_collapses_consumers_and_preserves_lca_evidence"
+    },
+    {
+      "path": "mods/engine/mods/architecture_evaluation/mods/testing/code/architecture_diagnostics.rs",
+      "pointer": "symbol:diagnostics_are_content_addressed_deterministic_and_epistemically_limited"
+    },
+    {
+      "path": "mods/engine/mods/architecture_evaluation/mods/testing/code/architecture_diagnostics.rs",
+      "pointer": "symbol:fragmented_authorized_surface_is_diagnostic_while_unauthorized_access_is_finding"
+    },
+    {
+      "path": "mods/engine/mods/architecture_evaluation/mods/testing/code/architecture_diagnostics.rs",
+      "pointer": "symbol:live_fortress_diagnostics_execute_repeatably_without_affecting_audit_outcome"
+    },
+    {
+      "path": "mods/engine/mods/architecture_evaluation/mods/testing/code/architecture_diagnostics.rs",
+      "pointer": "symbol:narrower_and_isolated_diagnostics_respect_visibility_ancestry_and_testing"
+    },
+    {
+      "path": "mods/engine/mods/architecture_evaluation/mods/testing/code/architecture_diagnostics.rs",
+      "pointer": "symbol:profiles_lca_and_testing_topology_are_recursive_and_distinct"
     },
     {
       "path": "mods/engine/mods/architecture_evaluation/mods/testing/code/self_architecture.rs",

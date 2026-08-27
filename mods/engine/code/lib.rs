@@ -8,6 +8,8 @@
 
 #[path = "../mods/architecture_evaluation/code/architecture.rs"]
 pub mod architecture;
+#[path = "../mods/architecture_evaluation/code/diagnostics.rs"]
+pub mod architecture_diagnostics;
 #[path = "../mods/architecture_evaluation/code/realization.rs"]
 pub mod architecture_realization;
 #[path = "../mods/snapshot_governance/code/audit.rs"]

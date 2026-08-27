@@ -19,4 +19,10 @@ fn fortress_self_audit_passes_every_implemented_rule() {
     assert_eq!(result.summary().failed(), 0);
     assert_eq!(result.summary().unsupported(), 1);
     assert!(result.findings().is_empty());
+    assert!(
+        result
+            .unsupported_analysis()
+            .contains(&"capability_to_symbol_realization".to_owned())
+    );
+    assert_eq!(result.is_success(), result.findings().is_empty());
 }

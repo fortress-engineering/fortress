@@ -6,13 +6,13 @@ Snapshot Governance exists to answer what is true and what violates the declared
 
 ## Responsibility
 
-Build stabilized content-addressed repository snapshots, coordinate one CCG and one independent Rust implementation observation, analyze supported Rust test facts, execute implemented rules truthfully, normalize deterministic findings, and orchestrate machine-readable and human repository audits.
+Build stabilized content-addressed repository snapshots, coordinate one CCG and one independent Rust implementation observation, analyze supported Rust test facts, execute implemented rules truthfully, normalize deterministic findings, retain Architecture Evaluation diagnostics as a separate non-normative projection, and orchestrate machine-readable and human repository audits.
 
 ## Scope
 
 ### Includes
 
-Snapshot and audit schemas; audit orchestration; contract coherency, ownership, realization, traceability, recursive Module, and documentation synchronization rule dispatch; Markdown and Rust test analyzers; two-pass stabilization; and exact rule execution reporting.
+Snapshot and audit schemas; audit orchestration; separate findings, architecture diagnostics, and unsupported-analysis reporting; contract coherency, ownership, realization, traceability, recursive Module, and documentation synchronization rule dispatch; Markdown and Rust test analyzers; two-pass stabilization; and exact rule execution reporting.
 
 ### Excludes
 
@@ -64,4 +64,4 @@ Consumes the exact applicable rule bundle and stable rule identities.
 
 ## Guarantees
 
-No wall-clock or absolute path enters snapshot or CCG identity; repository mutation is rejected when observed bytes diverge; the CCG and observed implementation are each compiled once per complete audit; unimplemented rules remain UNSUPPORTED; findings never redefine rules; audit output never claims certification. Stabilization is an optimistic content protocol rather than a filesystem lock, so a malicious host or a transient mutation reverted to identical bytes remains outside its trust guarantee.
+No wall-clock or absolute path enters snapshot or CCG identity; repository mutation is rejected when observed bytes diverge; the CCG and observed implementation are each compiled once per complete audit; unimplemented rules remain UNSUPPORTED; findings never redefine rules; diagnostics never alter PASS or FAIL; audit output never claims certification. Stabilization is an optimistic content protocol rather than a filesystem lock, so a malicious host or a transient mutation reverted to identical bytes remains outside its trust guarantee.
