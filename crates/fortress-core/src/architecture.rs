@@ -32,6 +32,8 @@ pub struct ArchitectureManifest {
     schema_version: u16,
     zones: Vec<String>,
     components: Vec<ComponentDeclaration>,
+    #[serde(default)]
+    repository_artifacts: Vec<RepositoryArtifactDeclaration>,
 }
 
 impl ArchitectureManifest {
@@ -113,6 +115,33 @@ impl ArchitectureManifest {
             validate_dependencies(component)?;
         }
 
+        let mut artifact_paths = HashSet::with_capacity(self.repository_artifacts.len());
+        for artifact in &self.repository_artifacts {
+            if !is_exact_relative_path(&artifact.path) {
+                return Err(ArchitectureModelError::InvalidRepositoryArtifactPath(
+                    artifact.path.clone().into(),
+                ));
+            }
+            if !artifact_paths.insert(artifact.path.as_str()) {
+                return Err(ArchitectureModelError::DuplicateRepositoryArtifactPath(
+                    artifact.path.clone().into(),
+                ));
+            }
+            StableId::parse(&artifact.owner).map_err(|source| {
+                ArchitectureModelError::InvalidIdentity {
+                    field: "repository_artifacts.owner",
+                    value: artifact.owner.clone().into(),
+                    source,
+                }
+            })?;
+            if !component_ids.contains(artifact.owner.as_str()) {
+                return Err(ArchitectureModelError::UnknownRepositoryArtifactOwner {
+                    path: artifact.path.clone().into(),
+                    owner: artifact.owner.clone().into(),
+                });
+            }
+        }
+
         for component in &self.components {
             for dependency in &component.depends_on {
                 if !component_ids.contains(dependency.as_str()) {
@@ -137,6 +166,12 @@ impl ArchitectureManifest {
     #[must_use]
     pub fn components(&self) -> &[ComponentDeclaration] {
         &self.components
+    }
+
+    /// Returns explicitly classified repository-level or generated artifacts.
+    #[must_use]
+    pub fn repository_artifacts(&self) -> &[RepositoryArtifactDeclaration] {
+        &self.repository_artifacts
     }
 
     /// Evaluates draft rule `ARCH-DEPENDENCY-001` against declared edges.
@@ -235,6 +270,62 @@ impl ArchitectureManifest {
         }
 
         Ok(None)
+    }
+}
+
+/// An exact repository path whose ownership and non-source classification are declared.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+pub struct RepositoryArtifactDeclaration {
+    path: String,
+    owner: String,
+    classification: RepositoryArtifactClassification,
+    required: bool,
+}
+
+impl RepositoryArtifactDeclaration {
+    /// Returns the exact canonical repository-relative artifact path.
+    #[must_use]
+    pub fn path(&self) -> &str {
+        &self.path
+    }
+
+    /// Returns the declared architectural owner.
+    #[must_use]
+    pub fn owner(&self) -> &str {
+        &self.owner
+    }
+
+    /// Returns the declared artifact class.
+    #[must_use]
+    pub const fn classification(&self) -> RepositoryArtifactClassification {
+        self.classification
+    }
+
+    /// Returns whether observation must contain this exact artifact.
+    #[must_use]
+    pub const fn required(&self) -> bool {
+        self.required
+    }
+}
+
+/// Supported explicit non-source repository artifact classes.
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq)]
+#[serde(rename_all = "kebab-case")]
+pub enum RepositoryArtifactClassification {
+    /// A repository-wide build, policy, automation, or descriptive record.
+    RepositoryMetadata,
+    /// A generated artifact retained under a declared authority.
+    Generated,
+}
+
+impl RepositoryArtifactClassification {
+    /// Returns the canonical serialized classification spelling.
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::RepositoryMetadata => "repository-metadata",
+            Self::Generated => "generated",
+        }
     }
 }
 
@@ -370,6 +461,17 @@ pub enum ArchitectureModelError {
         /// Missing dependency identity.
         dependency: Box<str>,
     },
+    /// A repository artifact path was not exact, canonical, and relative.
+    InvalidRepositoryArtifactPath(Box<str>),
+    /// A repository artifact path was declared more than once.
+    DuplicateRepositoryArtifactPath(Box<str>),
+    /// A repository artifact referenced an undeclared component owner.
+    UnknownRepositoryArtifactOwner {
+        /// Exact declared artifact path.
+        path: Box<str>,
+        /// Missing component identity.
+        owner: Box<str>,
+    },
 }
 
 impl Display for ArchitectureModelError {
@@ -433,6 +535,17 @@ impl Display for ArchitectureModelError {
             } => write!(
                 formatter,
                 "component `{component}` references unknown dependency `{dependency}`"
+            ),
+            Self::InvalidRepositoryArtifactPath(path) => write!(
+                formatter,
+                "repository artifact path `{path}` is not exact, canonical, and relative"
+            ),
+            Self::DuplicateRepositoryArtifactPath(path) => {
+                write!(formatter, "repository artifact path `{path}` is duplicated")
+            }
+            Self::UnknownRepositoryArtifactOwner { path, owner } => write!(
+                formatter,
+                "repository artifact `{path}` references unknown owner `{owner}`"
             ),
         }
     }
@@ -517,6 +630,10 @@ fn is_relative_path_or_prefix(value: &str) -> bool {
         && path
             .split('/')
             .all(|segment| !segment.is_empty() && segment != "." && segment != "..")
+}
+
+fn is_exact_relative_path(value: &str) -> bool {
+    is_relative_path_or_prefix(value) && !value.ends_with('/')
 }
 
 #[cfg(test)]

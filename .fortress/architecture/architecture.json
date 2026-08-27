@@ -68,6 +68,79 @@
         "AF-STANDARD-AUTHORITY-0001",
         "AF-CORE-0001"
       ]
+    },
+    {
+      "id": "AF-REPOSITORY-GOVERNANCE-0001",
+      "title": "Repository-wide structure and development authority",
+      "zone": "governance",
+      "paths": [
+        ".github/",
+        "docs/README.md",
+        "docs/architecture/",
+        "docs/certification/",
+        "docs/development/",
+        "docs/onboarding/",
+        "docs/product/"
+      ],
+      "depends_on": [
+        "AF-STANDARD-AUTHORITY-0001"
+      ]
+    }
+  ],
+  "repository_artifacts": [
+    {
+      "path": ".gitignore",
+      "owner": "AF-REPOSITORY-GOVERNANCE-0001",
+      "classification": "repository-metadata",
+      "required": true
+    },
+    {
+      "path": "AGENTS.md",
+      "owner": "AF-REPOSITORY-GOVERNANCE-0001",
+      "classification": "repository-metadata",
+      "required": true
+    },
+    {
+      "path": "Cargo.lock",
+      "owner": "AF-REPOSITORY-GOVERNANCE-0001",
+      "classification": "generated",
+      "required": true
+    },
+    {
+      "path": "Cargo.toml",
+      "owner": "AF-REPOSITORY-GOVERNANCE-0001",
+      "classification": "repository-metadata",
+      "required": true
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "owner": "AF-REPOSITORY-GOVERNANCE-0001",
+      "classification": "repository-metadata",
+      "required": true
+    },
+    {
+      "path": "GOVERNANCE.md",
+      "owner": "AF-REPOSITORY-GOVERNANCE-0001",
+      "classification": "repository-metadata",
+      "required": true
+    },
+    {
+      "path": "README.md",
+      "owner": "AF-REPOSITORY-GOVERNANCE-0001",
+      "classification": "repository-metadata",
+      "required": true
+    },
+    {
+      "path": "rust-toolchain.toml",
+      "owner": "AF-REPOSITORY-GOVERNANCE-0001",
+      "classification": "repository-metadata",
+      "required": true
+    },
+    {
+      "path": "SECURITY.md",
+      "owner": "AF-REPOSITORY-GOVERNANCE-0001",
+      "classification": "repository-metadata",
+      "required": true
     }
   ]
 }

@@ -18,6 +18,15 @@
       "expected_invalid": "rules/ARCH-DEPENDENCY-001/expected/invalid.json",
       "exemption": "deferred-until-transition-and-exemption-model",
       "conflict": "not-applicable"
+    },
+    {
+      "rule_id": "ARCH-OWNERSHIP-001",
+      "valid": "rules/ARCH-OWNERSHIP-001/valid/input.json",
+      "invalid": "rules/ARCH-OWNERSHIP-001/invalid/input.json",
+      "boundary": "rules/ARCH-OWNERSHIP-001/boundary/input.json",
+      "expected_invalid": "rules/ARCH-OWNERSHIP-001/expected/invalid.json",
+      "exemption": "deferred-until-exemption-model",
+      "conflict": "not-applicable"
     }
   ]
 }

@@ -105,7 +105,7 @@ fn registered_architecture_evaluator_distinguishes_pass_and_failure() {
     let pass = SnapshotRuleEngine::builtin()
         .evaluate(&standard, &snapshot, &valid)
         .expect("valid evaluation completes");
-    assert_eq!(pass.passed_count(), 1);
+    assert_eq!(pass.passed_count(), 2);
     assert_eq!(pass.failed_count(), 0);
     assert!(pass.findings().is_empty());
 
@@ -118,8 +118,18 @@ fn registered_architecture_evaluator_distinguishes_pass_and_failure() {
     let failure = SnapshotRuleEngine::builtin()
         .evaluate(&standard, &snapshot, &invalid)
         .expect("invalid evaluation completes");
-    assert_eq!(failure.failed_count(), 1);
-    assert_eq!(failure.findings().len(), 1);
+    let dependency_execution = failure
+        .rules()
+        .iter()
+        .find(|execution| execution.rule_id() == "ARCH-DEPENDENCY-001")
+        .expect("dependency execution is reported");
+    assert_eq!(dependency_execution.state(), RuleExecutionState::Failed);
+    assert!(
+        failure
+            .findings()
+            .iter()
+            .any(|finding| finding.rule_id() == "ARCH-DEPENDENCY-001")
+    );
 }
 
 /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R04-003`

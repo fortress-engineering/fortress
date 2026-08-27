@@ -188,10 +188,13 @@
         "schemas/v1/snapshot-finding.schema.json",
         "crates/fortress-core/src/evaluation.rs",
         "crates/fortress-core/src/finding.rs",
+        "crates/fortress-core/src/ownership.rs",
         "crates/fortress-core/tests/snapshot_evaluation.rs",
+        "crates/fortress-core/tests/arch_ownership_001.rs",
         "crates/fortress-core/src/snapshot.rs",
         "crates/fortress-core/tests/repository_snapshot.rs",
         "docs/development/snapshot-evaluation.md",
+        "docs/development/file-ownership.md",
         "docs/development/snapshot-governance.md"
       ],
       "dependencies": [
@@ -235,6 +238,16 @@
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R04-001",
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R04-002",
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R04-003"
+          ]
+        },
+        {
+          "id": "AF-SNAPSHOT-GOVERNANCE-0001-R05",
+          "statement": "ARCH-OWNERSHIP-001 deterministically assigns every governed observed file to exactly one declared owner and reports orphan, overlap, or missing required declarations while respecting explicit observation exclusions and artifact classifications.",
+          "tests": [
+            "T-ARCH-OWNERSHIP-001-R01-001",
+            "T-ARCH-OWNERSHIP-001-R01-002",
+            "T-ARCH-OWNERSHIP-001-R01-003",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R05-001"
           ]
         }
       ]

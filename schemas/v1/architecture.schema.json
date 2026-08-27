@@ -24,6 +24,21 @@
           "depends_on": { "type": "array", "uniqueItems": true, "items": { "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id" } }
         }
       }
+    },
+    "repository_artifacts": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "owner", "classification", "required"],
+        "properties": {
+          "path": { "$ref": "urn:fortress:schema:v1:common#/$defs/relative-path" },
+          "owner": { "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id" },
+          "classification": { "enum": ["repository-metadata", "generated"] },
+          "required": { "type": "boolean" }
+        }
+      }
     }
   }
 }

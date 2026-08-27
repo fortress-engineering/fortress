@@ -1,0 +1,86 @@
+[
+  {
+    "finding_fingerprint": "sha256:33f4a6423ffb6e5aa8a85614800896ca07444bb5074437371b4dcffc0d4bcb76",
+    "rule_id": "ARCH-OWNERSHIP-001",
+    "integrity_tier": 1,
+    "category": "architecture",
+    "state": "FAIL",
+    "entities": ["AF-CORE-0001"],
+    "location": {
+      "path": "README.md",
+      "span": null,
+      "symbol": null
+    },
+    "message": "Required repository-metadata artifact `README.md` for `AF-CORE-0001` does not exist in the governed observation.",
+    "remediation": "Declare one canonical architectural owner for the governed path, remove incompatible overlapping declarations, or explicitly classify a legitimate repository-level or generated artifact under one declared owner.",
+    "evaluator": {
+      "id": "fortress-core/ownership",
+      "version": "0.1.0"
+    },
+    "standard_edition": "1.0.0-draft.1",
+    "exemption_reference": null
+  },
+  {
+    "finding_fingerprint": "sha256:d78f95bc41cd7a2f296094c2609f5e66de4c04960dea0157f9648bcddf16dc7f",
+    "rule_id": "ARCH-OWNERSHIP-001",
+    "integrity_tier": 1,
+    "category": "architecture",
+    "state": "FAIL",
+    "entities": ["AF-CORE-0001"],
+    "location": {
+      "path": "missing",
+      "span": null,
+      "symbol": null
+    },
+    "message": "Declared owned path `missing/` for `AF-CORE-0001` does not exist in the governed observation.",
+    "remediation": "Declare one canonical architectural owner for the governed path, remove incompatible overlapping declarations, or explicitly classify a legitimate repository-level or generated artifact under one declared owner.",
+    "evaluator": {
+      "id": "fortress-core/ownership",
+      "version": "0.1.0"
+    },
+    "standard_edition": "1.0.0-draft.1",
+    "exemption_reference": null
+  },
+  {
+    "finding_fingerprint": "sha256:3740df6aeaafc1db8d3896817a7ffd75e784d9d0de0b7282a94dd833c4220fec",
+    "rule_id": "ARCH-OWNERSHIP-001",
+    "integrity_tier": 1,
+    "category": "architecture",
+    "state": "FAIL",
+    "entities": [],
+    "location": {
+      "path": "orphan.txt",
+      "span": null,
+      "symbol": null
+    },
+    "message": "Governed repository file `orphan.txt` has no declared architectural owner.",
+    "remediation": "Declare one canonical architectural owner for the governed path, remove incompatible overlapping declarations, or explicitly classify a legitimate repository-level or generated artifact under one declared owner.",
+    "evaluator": {
+      "id": "fortress-core/ownership",
+      "version": "0.1.0"
+    },
+    "standard_edition": "1.0.0-draft.1",
+    "exemption_reference": null
+  },
+  {
+    "finding_fingerprint": "sha256:cfe5e7e149f9dbf9ddfe50b9be39d2c0bf04a2191d4d20439aa2600c0f306b04",
+    "rule_id": "ARCH-OWNERSHIP-001",
+    "integrity_tier": 1,
+    "category": "architecture",
+    "state": "FAIL",
+    "entities": ["AF-CORE-0001", "AF-SHARED-0001"],
+    "location": {
+      "path": "src/shared/value.rs",
+      "span": null,
+      "symbol": null
+    },
+    "message": "Governed repository file `src/shared/value.rs` matches incompatible declared owners: AF-CORE-0001, AF-SHARED-0001.",
+    "remediation": "Declare one canonical architectural owner for the governed path, remove incompatible overlapping declarations, or explicitly classify a legitimate repository-level or generated artifact under one declared owner.",
+    "evaluator": {
+      "id": "fortress-core/ownership",
+      "version": "0.1.0"
+    },
+    "standard_edition": "1.0.0-draft.1",
+    "exemption_reference": null
+  }
+]

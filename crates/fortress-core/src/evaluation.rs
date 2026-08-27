@@ -11,6 +11,7 @@ use serde::Serialize;
 
 use crate::architecture::{ARCH_DEPENDENCY_RULE_ID, ArchitectureManifest};
 use crate::finding::{CanonicalFinding, FindingError};
+use crate::ownership::{ARCH_OWNERSHIP_RULE_ID, evaluate_file_ownership};
 use crate::snapshot::RepositorySnapshot;
 use crate::standard::StandardBundle;
 
@@ -201,6 +202,29 @@ impl SnapshotRuleEngine {
                                 .into(),
                     });
                 }
+            } else if rule.id() == ARCH_OWNERSHIP_RULE_ID {
+                let paths: Vec<String> = snapshot
+                    .files()
+                    .iter()
+                    .map(|file| file.path().to_owned())
+                    .collect();
+                let result = evaluate_file_ownership(architecture, &paths, standard.edition())
+                    .map_err(EvaluationError::Finding)?;
+                let finding_count = result.findings().len();
+                findings.extend_from_slice(result.findings());
+                rules.push(RuleExecution {
+                    rule_id: rule.id().into(),
+                    state: if finding_count == 0 {
+                        RuleExecutionState::Passed
+                    } else {
+                        RuleExecutionState::Failed
+                    },
+                    applicable: true,
+                    findings: finding_count,
+                    detail: format!(
+                        "Evaluator ran and produced {finding_count} declared file ownership violation(s)."
+                    ),
+                });
             } else {
                 rules.push(RuleExecution {
                     rule_id: rule.id().into(),

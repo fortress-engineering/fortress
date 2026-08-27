@@ -1,0 +1,17 @@
+{
+  "architecture": {
+    "$schema": "schemas/v1/architecture.schema.json",
+    "schema_version": 1,
+    "zones": ["core"],
+    "components": [
+      {
+        "id": "AF-CORE-0001",
+        "title": "Minimum",
+        "zone": "core",
+        "paths": ["single.txt"],
+        "depends_on": []
+      }
+    ]
+  },
+  "observed_paths": ["single.txt"]
+}

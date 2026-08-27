@@ -12,6 +12,7 @@ pub mod evaluation;
 pub mod finding;
 pub mod identity;
 pub mod observation;
+pub mod ownership;
 pub mod project;
 pub mod snapshot;
 pub mod standard;
