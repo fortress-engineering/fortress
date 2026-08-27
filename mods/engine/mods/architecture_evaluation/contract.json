@@ -1,0 +1,20 @@
+{
+  "$schema": "urn:fortress:schema:v1:module-contract",
+  "schema_version": 1,
+  "id": "AF-ARCHITECTURE-EVALUATION-0001",
+  "display_name": "Architecture Evaluation",
+  "relationships": [
+    {
+      "target": "AF-PROJECT-MODEL-0001",
+      "types": [
+        "depends_on"
+      ]
+    },
+    {
+      "target": "AF-STANDARD-REGISTRY-0001",
+      "types": [
+        "depends_on"
+      ]
+    }
+  ]
+}

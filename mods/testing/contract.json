@@ -1,0 +1,26 @@
+{
+  "$schema": "urn:fortress:schema:v1:module-contract",
+  "schema_version": 1,
+  "id": "TEST-FORTRESS-0001",
+  "display_name": "Fortress Testing",
+  "relationships": [
+    {
+      "target": "AF-CORE-0001",
+      "types": [
+        "depends_on"
+      ]
+    },
+    {
+      "target": "PF-FORTRESS",
+      "types": [
+        "verifies"
+      ]
+    },
+    {
+      "target": "TF-CLI-0001",
+      "types": [
+        "depends_on"
+      ]
+    }
+  ]
+}

@@ -269,7 +269,9 @@ fn invalid_case(name: &str) -> BTreeMap<String, Vec<u8>> {
         "contract_relationship_missing_readme"
         | "readme_relationship_absent_contract"
         | "mismatched_relationship_type"
-        | "stale_renamed_module_relationship" => relational(&["depends_on"]),
+        | "stale_renamed_module_relationship"
+        | "duplicate_relationship_target"
+        | "dependency_cycle" => relational(&["depends_on"]),
         _ => atomic(),
     };
     match name {
@@ -449,6 +451,45 @@ fn invalid_case(name: &str) -> BTreeMap<String, Vec<u8>> {
             "AF-PROVIDER-0001",
             "AF-RENAMED-0001",
         ),
+        "self_relationship" => {
+            files.insert(
+                "contract.json".into(),
+                contract(
+                    "AF-ATOMIC-0001",
+                    "Atomic",
+                    &json!([{ "target": "AF-ATOMIC-0001", "types": ["depends_on"] }]),
+                ),
+            );
+        }
+        "duplicate_relationship_target" => {
+            files.insert(
+                "contract.json".into(),
+                contract(
+                    "AF-CONSUMER-0001",
+                    "Consumer",
+                    &json!([
+                        { "target": "AF-PROVIDER-0001", "types": ["depends_on"] },
+                        { "target": "AF-PROVIDER-0001", "types": ["verifies"] }
+                    ]),
+                ),
+            );
+        }
+        "dependency_cycle" => {
+            files.insert(
+                "mods/provider/contract.json".into(),
+                contract(
+                    "AF-PROVIDER-0001",
+                    "Provider",
+                    &json!([{ "target": "AF-CONSUMER-0001", "types": ["depends_on"] }]),
+                ),
+            );
+            replace(
+                &mut files,
+                "mods/provider/README.md",
+                "This Module declares no outbound architectural relationships.",
+                "### [Consumer](../../README.md)\n\n**Types:** `depends_on`\n\nRequires the consumer and creates a prohibited dependency cycle.",
+            );
+        }
         _ => panic!("unknown invalid fixture case: {name}"),
     }
     files

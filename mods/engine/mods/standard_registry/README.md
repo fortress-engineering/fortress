@@ -1,22 +1,27 @@
-# Standard Registry Module
+# Standard Registry
 
-This Module owns stable Fortress identity, the draft standard registry, common
-standard schemas, and the exact manifest that selects applicable draft rules.
-It defines normative meaning; implementation and conformance evidence do not.
+## Purpose
 
-The Fortress Engineering Standard composes universal rules, archetypes,
-capabilities, language/tool profiles, project extensions, and bounded
-exemptions. Mandatory rules are hard gates when applicable. Rule IDs remain
-stable while their meaning remains compatible, and released editions are
-immutable and digest-addressed. The current `1.0.0-draft.1` records remain
-mutable draft authority and do not support a stable certification claim.
+The Standard Registry exists so Fortress can identify and load one exact normative draft standard instead of deriving rule meaning from implementation or test output.
 
-Serialized Fortress IDs retain uppercase hyphenated normative syntax.
-Fortress-controlled filesystem names use one to three lowercase underscore
-words with an optional `_vN` identity suffix. Repository structure follows
-`REPO-MODULE-001`: every Module has `README.md`, direct attributes are flat, and
-architectural children recur only beneath `mods/`.
+## Responsibility
 
-Documentation and tests are governed contracts. Every implemented rule has
-valid, invalid, and boundary conformance evidence, while generated results are
-never treated as normative rule meaning.
+Validate stable Fortress identities and assemble the declared standard manifest, schema registry, and complete rule-document set as one coherent bundle.
+
+## Scope
+
+### Includes
+
+Stable entity and rule identity syntax, common schema vocabulary, standard and schema manifests, rule metadata, and the mutable 1.0.0-draft.1 authority.
+
+### Excludes
+
+Project declarations, repository facts, rule findings, certification evidence, and rule-specific semantics owned by other capability Modules.
+
+## Relationships
+
+This Module declares no outbound architectural relationships.
+
+## Guarantees
+
+Stable IDs remain canonical while meaning is compatible; manifests reject missing, extra, duplicate, or mismatched rules; released editions are expected to be immutable and content-addressed even though the current edition is draft.

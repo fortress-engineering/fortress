@@ -1,9 +1,23 @@
-# Engine Code
+# Code
 
-`lib.rs` is the provider-independent crate facade. Explicit Rust `path`
-attributes compose source files owned by child Modules without introducing an
-uncontrolled source taxonomy or hiding architectural decomposition beneath
-`code/`.
+## Role
 
-The crate forbids unsafe code and denies missing documentation, broken rustdoc
-links, and warnings.
+Compose child capabilities through one provider-independent library boundary.
+
+## Execution
+
+Cargo builds the explicit library target; the facade resolves child source paths at compile time and exposes their public contracts to callers.
+
+## State
+
+The facade owns no persistent state and delegates process-local evaluation state to the responsible child capability.
+
+## Failure Semantics
+
+Compile-time boundary violations fail the build; child runtime errors remain typed and propagate without presentation-specific conversion.
+
+## Files
+
+### [`lib.rs`](../code/lib.rs)
+
+Defines the warnings-denied provider-independent crate facade and composes child capability source through explicit target paths.

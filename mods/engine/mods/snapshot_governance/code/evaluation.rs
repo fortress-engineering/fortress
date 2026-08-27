@@ -10,6 +10,7 @@ use std::fmt::{self, Display, Formatter};
 use serde::Serialize;
 
 use crate::architecture::{ARCH_DEPENDENCY_RULE_ID, ArchitectureManifest};
+use crate::documentation::{DocumentationConformanceReport, REPO_DOCS_RULE_ID};
 use crate::feature::FeatureContract;
 use crate::finding::{CanonicalFinding, FindingError};
 use crate::ownership::{ARCH_OWNERSHIP_RULE_ID, evaluate_file_ownership};
@@ -170,7 +171,7 @@ impl SnapshotRuleEngine {
         snapshot: &RepositorySnapshot,
         architecture: &ArchitectureManifest,
     ) -> Result<SnapshotEvaluation, EvaluationError> {
-        Self::evaluate_internal(standard, snapshot, architecture, None)
+        Self::evaluate_internal(standard, snapshot, architecture, None, None)
     }
 
     /// Evaluates the bundle with complete declared feature and Rust test facts.
@@ -191,6 +192,30 @@ impl SnapshotRuleEngine {
             snapshot,
             architecture,
             Some((feature_contracts, rust_tests)),
+            None,
+        )
+    }
+
+    /// Evaluates the bundle with all currently supported snapshot-bound inputs.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`EvaluationError`] under the same conditions as [`Self::evaluate`].
+    pub fn evaluate_complete(
+        &self,
+        standard: &StandardBundle,
+        snapshot: &RepositorySnapshot,
+        architecture: &ArchitectureManifest,
+        feature_contracts: &[FeatureContract],
+        rust_tests: &[RustTestFact],
+        documentation: &DocumentationConformanceReport,
+    ) -> Result<SnapshotEvaluation, EvaluationError> {
+        Self::evaluate_internal(
+            standard,
+            snapshot,
+            architecture,
+            Some((feature_contracts, rust_tests)),
+            Some(documentation),
         )
     }
 
@@ -199,6 +224,7 @@ impl SnapshotRuleEngine {
         snapshot: &RepositorySnapshot,
         architecture: &ArchitectureManifest,
         traceability_inputs: Option<(&[FeatureContract], &[RustTestFact])>,
+        documentation: Option<&DocumentationConformanceReport>,
     ) -> Result<SnapshotEvaluation, EvaluationError> {
         if standard.edition() != snapshot.standard_edition() {
             return Err(EvaluationError::StandardEditionMismatch {
@@ -216,6 +242,16 @@ impl SnapshotRuleEngine {
                 ownership_execution(rule.id(), architecture, snapshot, standard.edition())?
             } else if rule.id() == REPO_MODULE_RULE_ID {
                 placement_execution(rule.id(), snapshot, standard.edition())?
+            } else if rule.id() == REPO_DOCS_RULE_ID {
+                documentation.map_or_else(
+                    || {
+                        Ok(unsupported_execution(
+                            rule.id(),
+                            "Documentation evaluation requires snapshot-bound repository bytes and canonical Module contracts.",
+                        ))
+                    },
+                    |report| Ok(documentation_execution(rule.id(), report)),
+                )?
             } else if rule.id() == TEST_TRACEABILITY_RULE_ID {
                 if let Some((contracts, rust_tests)) = traceability_inputs {
                     traceability_execution(rule.id(), contracts, rust_tests, standard.edition())?
@@ -326,6 +362,27 @@ fn placement_execution(
         ),
         findings,
     ))
+}
+
+fn documentation_execution(
+    rule_id: &str,
+    report: &DocumentationConformanceReport,
+) -> (RuleExecution, Vec<CanonicalFinding>) {
+    let findings = report.findings().to_vec();
+    (
+        RuleExecution {
+            rule_id: rule_id.into(),
+            state: if findings.is_empty() {
+                RuleExecutionState::Passed
+            } else {
+                RuleExecutionState::Failed
+            },
+            applicable: true,
+            findings: findings.len(),
+            detail: report.execution_detail(),
+        },
+        findings,
+    )
 }
 
 fn completed_execution(rule_id: &str, findings: usize, subject: &str) -> RuleExecution {

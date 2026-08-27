@@ -1,12 +1,31 @@
-# Project Model Module
+# Project Model
 
-This Module owns typed declarations for project identity, feature ownership,
-requirements, change records, and truthful certification scaffolds. It defines
-what engineering system is being evaluated, separately from standard meaning,
-repository observations, findings, and future certification evidence.
+## Purpose
 
-Feature ownership and requirement IDs survive implementation refactors.
-Active mandatory requirements must map to canonical automated evidence.
-Temporal records authorize meaning changes but do not turn ordinary audit
-results into certification. Project paths are canonical repository-relative
-identities and parent traversal is rejected.
+The Project Model exists so Fortress evaluates explicit project claims rather than inferring identity, standard applicability, feature ownership, or required evidence from incidental source layout.
+
+## Responsibility
+
+Load and validate typed project, feature, requirement, change, command-reference, and certification declarations with stable identities and canonical repository-relative paths.
+
+## Scope
+
+### Includes
+
+Project standard claims, model pointers, feature and requirement ownership, supported evidence references, observation exclusions, and schema contracts for current declaration families.
+
+### Excludes
+
+Normative standard meaning, observed repository facts, architecture rule findings, and generated certification evidence.
+
+## Relationships
+
+### [Standard Registry](../standard_registry/README.md)
+
+**Types:** `depends_on`
+
+Uses stable Fortress identity and standard-claim semantics when validating project declarations.
+
+## Guarantees
+
+Declarations reject invalid or duplicate identities, unsafe paths, inconsistent evidence references, and malformed standard claims before evaluation.

@@ -52,6 +52,7 @@ jobs:
           cargo +1.97.1 --config data/cargo_config.toml test --manifest-path data/Cargo.toml -p fortress-core --test arch_ownership_001
           cargo +1.97.1 --config data/cargo_config.toml test --manifest-path data/Cargo.toml -p fortress-core --test test_traceability_001
           cargo +1.97.1 --config data/cargo_config.toml test --manifest-path data/Cargo.toml -p fortress-core --test repo_module_001
+          cargo +1.97.1 --config data/cargo_config.toml test --manifest-path data/Cargo.toml -p fortress-core --test repo_docs_001
           cargo +1.97.1 --config data/cargo_config.toml test --manifest-path data/Cargo.toml -p fortress-core --test repository_grammar
 
       - name: Run Fortress self-audit

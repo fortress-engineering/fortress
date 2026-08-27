@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 use crate::architecture::{ArchitectureLoadError, ArchitectureManifest};
+use crate::documentation::{DocumentationEvaluationError, evaluate_repository_documentation};
 use crate::evaluation::{EvaluationError, RuleExecution, SnapshotRuleEngine};
 use crate::feature::{FeatureContract, FeatureLoadError};
 use crate::finding::CanonicalFinding;
@@ -246,8 +247,17 @@ pub fn audit_repository(root: impl AsRef<Path>) -> Result<AuditResult, AuditErro
     )?;
     let rust_tests =
         analyze_snapshot_rust_tests(root, &snapshot).map_err(AuditError::RustAnalyzer)?;
+    let documentation = evaluate_repository_documentation(root, &snapshot, standard.edition())
+        .map_err(AuditError::Documentation)?;
     let evaluation = SnapshotRuleEngine::builtin()
-        .evaluate_with_traceability(&standard, &snapshot, &architecture, &features, &rust_tests)
+        .evaluate_complete(
+            &standard,
+            &snapshot,
+            &architecture,
+            &features,
+            &rust_tests,
+            &documentation,
+        )
         .map_err(AuditError::Evaluation)?;
     Ok(result_from_evaluation(&project, &snapshot, &evaluation))
 }
@@ -371,6 +381,8 @@ pub enum AuditError {
     InputMismatch(Box<str>),
     /// Snapshot-bound Rust analysis failed.
     RustAnalyzer(RustAnalyzerError),
+    /// Snapshot-bound documentation and contract evaluation failed.
+    Documentation(DocumentationEvaluationError),
     /// Rule evaluation failed.
     Evaluation(EvaluationError),
 }
@@ -404,6 +416,9 @@ impl Display for AuditError {
                 "loaded input `{path}` does not match the stabilized snapshot"
             ),
             Self::RustAnalyzer(error) => write!(formatter, "Rust test analysis failed: {error}"),
+            Self::Documentation(error) => {
+                write!(formatter, "documentation evaluation failed: {error}")
+            }
             Self::Evaluation(error) => {
                 write!(formatter, "snapshot rule evaluation failed: {error}")
             }

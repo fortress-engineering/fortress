@@ -235,7 +235,7 @@
         },
         {
           "id": "AF-SNAPSHOT-GOVERNANCE-0001-R09",
-          "statement": "REPO-MODULE-001 defines and deterministically evaluates the canonical recursive Module grammar, including root surfaces, Module obligations, attribute flatness, documentation correspondence, and filesystem naming.",
+          "statement": "REPO-MODULE-001 defines and deterministically evaluates the canonical recursive Module grammar, including root surfaces, mandatory README.md and contract.json, code/mods obligations, attribute flatness, bidirectional code/data/info/mods documentation presence, and filesystem naming.",
           "tests": [
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R09-001",
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R09-002",
@@ -249,6 +249,7 @@
           "id": "AF-SNAPSHOT-GOVERNANCE-0001-R10",
           "statement": "REPO-DOCS-001 parses canonical Module Markdown structurally, validates typed Module contracts, and deterministically reconciles filesystem catalogs, child catalogs, relationship projections, and relative links without treating unsupported source-dependency inference as evaluated.",
           "tests": [
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R10-001",
             "T-REPO-DOCS-001-R01-001",
             "T-REPO-DOCS-001-R01-002",
             "T-REPO-DOCS-001-R01-003"

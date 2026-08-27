@@ -10,7 +10,7 @@ use crate::finding::{
 /// Stable identity of the recursive Fortress Module grammar.
 pub const REPO_MODULE_RULE_ID: &str = "REPO-MODULE-001";
 
-const REMEDIATION: &str = "Converge the path to the recursive Module grammar: keep direct elements in code/data/info/docs, place child Modules only beneath mods, add the Module README and bidirectional attribute documentation, and use canonical lowercase underscore names.";
+const REMEDIATION: &str = "Converge the path to the recursive Module grammar: keep README.md and contract.json at every Module root, keep direct elements in code/data/info/docs, place child Modules only beneath mods, add every bidirectional canonical documentation file including mods_docs.md, and use canonical lowercase underscore names.";
 const CANONICAL_DIRECTORIES: [&str; 5] = ["code", "data", "info", "docs", "mods"];
 const ATTRIBUTE_DIRECTORIES: [&str; 4] = ["code", "data", "info", "docs"];
 const ROOT_SPECIAL_FILES: [&str; 8] = [
@@ -153,14 +153,16 @@ fn evaluate_root_entries(
         )?);
     }
     for file in files.iter().filter(|path| !path.contains('/')) {
-        if file == "README.md" || ROOT_SPECIAL_FILES.contains(&file.as_str()) {
+        if matches!(file.as_str(), "README.md" | "contract.json")
+            || ROOT_SPECIAL_FILES.contains(&file.as_str())
+        {
             continue;
         }
         findings.push(path_finding(
             definition,
             evaluator,
             file,
-            format!("Root file `{file}` is not the Module README or a recognized GitHub repository surface."),
+            format!("Root file `{file}` is not README.md, contract.json, or a recognized GitHub repository surface."),
             standard_edition,
         )?);
     }
@@ -186,6 +188,19 @@ fn evaluate_module(
             &readme,
             format!(
                 "Module `{}` is missing its mandatory `README.md`.",
+                module_name(module)
+            ),
+            standard_edition,
+        )?);
+    }
+    let contract = child_path(module, "contract.json");
+    if !files.contains(&contract) {
+        findings.push(path_finding(
+            definition,
+            evaluator,
+            &contract,
+            format!(
+                "Module `{}` is missing its mandatory `contract.json`.",
                 module_name(module)
             ),
             standard_edition,
@@ -312,13 +327,13 @@ fn evaluate_direct_files(
             .filter(|file| parent_path(file) == module_parent(module))
         {
             let name = file.rsplit('/').next().unwrap_or(file);
-            if name != "README.md" {
+            if !matches!(name, "README.md" | "contract.json") {
                 findings.push(path_finding(
                     definition,
                     evaluator,
                     file,
                     format!(
-                        "Module `{}` contains loose file `{name}` outside code/data/info/docs.",
+                        "Module `{}` contains loose file `{name}` other than README.md or contract.json outside code/data/info/docs.",
                         module_name(module)
                     ),
                     standard_edition,
@@ -378,7 +393,7 @@ fn evaluate_attributes(
                     definition,
                     evaluator,
                     file,
-                    format!("Documentation file `{file}` is not one of code_docs.md, data_docs.md, or info_docs.md."),
+                    format!("Documentation file `{file}` is not one of code_docs.md, data_docs.md, info_docs.md, or mods_docs.md."),
                     standard_edition,
                 )?);
             }
@@ -389,6 +404,7 @@ fn evaluate_attributes(
         ("code", "code_docs.md"),
         ("data", "data_docs.md"),
         ("info", "info_docs.md"),
+        ("mods", "mods_docs.md"),
     ] {
         let attribute_path = child_path(module, attribute);
         let documentation_path = child_path(&child_path(module, "docs"), documentation);
@@ -469,7 +485,10 @@ fn evaluate_filenames(
 }
 
 fn is_allowed_docs_filename(name: &str) -> bool {
-    matches!(name, "code_docs.md" | "data_docs.md" | "info_docs.md")
+    matches!(
+        name,
+        "code_docs.md" | "data_docs.md" | "info_docs.md" | "mods_docs.md"
+    )
 }
 
 fn is_lexical_name(name: &str, allow_extension: bool) -> bool {

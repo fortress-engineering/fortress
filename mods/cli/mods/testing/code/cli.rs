@@ -26,6 +26,7 @@ struct AuditFixture {
 }
 
 impl AuditFixture {
+    #[allow(clippy::too_many_lines)]
     fn new() -> Self {
         let identity = NEXT_FIXTURE.fetch_add(1, Ordering::Relaxed);
         let root = std::env::temp_dir().join(format!(
@@ -34,30 +35,80 @@ impl AuditFixture {
         ));
         fs::create_dir_all(&root).expect("fixture root creates");
         let repository = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..");
-        fs::write(root.join("README.md"), "# Fixture\n").expect("root README writes");
+        fs::write(root.join("README.md"), module_readme("Fixture")).expect("root README writes");
+        fs::write(
+            root.join("contract.json"),
+            module_contract("PF-FIXTURE", "Fixture"),
+        )
+        .expect("root contract writes");
         fs::create_dir_all(root.join("data")).expect("root data creates");
         fs::create_dir_all(root.join("docs")).expect("root docs creates");
-        fs::write(root.join("docs/data_docs.md"), "# Fixture Data\n")
-            .expect("root data documentation writes");
+        fs::write(
+            root.join("docs/data_docs.md"),
+            data_docs(&["architecture.json", "features.json", "project.json"]),
+        )
+        .expect("root data documentation writes");
+        fs::write(
+            root.join("docs/mods_docs.md"),
+            modules_docs(&[("engine", "Fixture Engine")]),
+        )
+        .expect("root Module documentation writes");
         fs::create_dir_all(root.join("mods/engine/mods")).expect("engine Module creates");
-        fs::write(root.join("mods/engine/README.md"), "# Engine\n").expect("engine README writes");
-        for module in [
-            "standard_registry",
-            "architecture_evaluation",
-            "snapshot_governance",
+        fs::write(
+            root.join("mods/engine/README.md"),
+            module_readme("Fixture Engine"),
+        )
+        .expect("engine README writes");
+        fs::write(
+            root.join("mods/engine/contract.json"),
+            module_contract("AF-FIXTURE-ENGINE-0001", "Fixture Engine"),
+        )
+        .expect("engine contract writes");
+        fs::create_dir_all(root.join("mods/engine/docs")).expect("engine docs creates");
+        fs::write(
+            root.join("mods/engine/docs/mods_docs.md"),
+            modules_docs(&[
+                ("architecture_evaluation", "Architecture Evaluation"),
+                ("snapshot_governance", "Snapshot Governance"),
+                ("standard_registry", "Standard Registry"),
+            ]),
+        )
+        .expect("engine Module documentation writes");
+        for (module, identity, display) in [
+            (
+                "standard_registry",
+                "AF-FIXTURE-STANDARD-0001",
+                "Standard Registry",
+            ),
+            (
+                "architecture_evaluation",
+                "AF-FIXTURE-ARCHITECTURE-0001",
+                "Architecture Evaluation",
+            ),
+            (
+                "snapshot_governance",
+                "AF-FIXTURE-SNAPSHOT-0001",
+                "Snapshot Governance",
+            ),
         ] {
             let module_root = root.join("mods/engine/mods").join(module);
             fs::create_dir_all(module_root.join("code")).expect("Module code creates");
             fs::create_dir_all(module_root.join("data")).expect("Module data creates");
             fs::create_dir_all(module_root.join("docs")).expect("Module docs creates");
-            fs::write(module_root.join("README.md"), format!("# {module}\n"))
+            fs::write(module_root.join("README.md"), module_readme(display))
                 .expect("Module README writes");
+            fs::write(
+                module_root.join("contract.json"),
+                module_contract(identity, display),
+            )
+            .expect("Module contract writes");
             fs::write(module_root.join("code/marker.txt"), "fixture")
                 .expect("Module code marker writes");
-            fs::write(module_root.join("docs/code_docs.md"), "# Code\n")
-                .expect("Module code documentation writes");
-            fs::write(module_root.join("docs/data_docs.md"), "# Data\n")
-                .expect("Module data documentation writes");
+            fs::write(
+                module_root.join("docs/code_docs.md"),
+                code_docs(&["marker.txt"]),
+            )
+            .expect("Module code documentation writes");
         }
         for relative in [
             "mods/engine/mods/standard_registry/data/standard_manifest.json",
@@ -66,9 +117,30 @@ impl AuditFixture {
             "mods/engine/mods/snapshot_governance/data/ownership_rule.json",
             "mods/engine/mods/snapshot_governance/data/traceability_rule.json",
             "mods/engine/mods/snapshot_governance/data/module_rule.json",
+            "mods/engine/mods/snapshot_governance/data/documentation_rule.json",
         ] {
             fs::copy(repository.join(relative), root.join(relative)).expect("standard file copies");
         }
+        fs::write(
+            root.join("mods/engine/mods/standard_registry/docs/data_docs.md"),
+            data_docs(&["standard_manifest.json", "std_id_rule.json"]),
+        )
+        .expect("standard Data documentation writes");
+        fs::write(
+            root.join("mods/engine/mods/architecture_evaluation/docs/data_docs.md"),
+            data_docs(&["dependency_rule.json"]),
+        )
+        .expect("architecture Data documentation writes");
+        fs::write(
+            root.join("mods/engine/mods/snapshot_governance/docs/data_docs.md"),
+            data_docs(&[
+                "documentation_rule.json",
+                "module_rule.json",
+                "ownership_rule.json",
+                "traceability_rule.json",
+            ]),
+        )
+        .expect("snapshot Data documentation writes");
         fs::write(root.join("data/project.json"), project_json()).expect("project writes");
         fs::write(root.join("data/architecture.json"), architecture_json())
             .expect("architecture writes");
@@ -79,6 +151,68 @@ impl AuditFixture {
     fn argument(&self) -> String {
         self.root.to_string_lossy().into_owned()
     }
+}
+
+fn module_contract(identity: &str, display_name: &str) -> String {
+    serde_json::to_string_pretty(&serde_json::json!({
+        "$schema": "urn:fortress:schema:v1:module-contract",
+        "schema_version": 1,
+        "id": identity,
+        "display_name": display_name,
+        "relationships": []
+    }))
+    .expect("fixture contract serializes")
+}
+
+fn module_readme(display_name: &str) -> String {
+    format!(
+        "# {display_name}\n\n## Purpose\n\nProvide a controlled repository audit fixture responsibility.\n\n## Responsibility\n\nSupply coherent declarations and Module surfaces for process-level CLI verification.\n\n## Scope\n\n### Includes\n\nOnly the direct fixture elements required by the audit scenario.\n\n### Excludes\n\nProduction repository meaning and persisted runtime evidence.\n\n## Relationships\n\nThis Module declares no outbound architectural relationships.\n\n## Guarantees\n\nFixture content is deterministic and isolated to one process-level test.\n"
+    )
+}
+
+fn code_docs(files: &[&str]) -> String {
+    let entries = files
+        .iter()
+        .map(|file| {
+            format!(
+                "### [`{file}`](../code/{file})\n\nProvides directly owned executable fixture behavior.\n"
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    format!(
+        "# Code\n\n## Role\n\nRealize the fixture Module responsibility.\n\n## Execution\n\nThe audit observes this direct Code element during one controlled invocation.\n\n## State\n\nThe fixture Code is immutable for the lifetime of the audit process.\n\n## Failure Semantics\n\nMissing or changed fixture Code causes explicit audit failure.\n\n## Files\n\n{entries}"
+    )
+}
+
+fn data_docs(files: &[&str]) -> String {
+    let entries = files
+        .iter()
+        .map(|file| {
+            format!(
+                "### [`{file}`](../data/{file})\n\nProvides an authored declaration consumed by the fixture audit.\n"
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    format!(
+        "# Data\n\n## Role\n\nPersist authored fixture inputs.\n\n## Origin\n\nThe process-level test authors these controlled declarations.\n\n## Semantics\n\nEach file supplies exact input meaning to one repository audit.\n\n## Validity\n\nInputs must remain valid JSON with canonical identities and paths.\n\n## Lifecycle\n\nThe disposable fixture creates the Data before audit and removes it after the test.\n\n## Files\n\n{entries}"
+    )
+}
+
+fn modules_docs(children: &[(&str, &str)]) -> String {
+    let entries = children
+        .iter()
+        .map(|(directory, display)| {
+            format!(
+                "### [{display}](../mods/{directory}/README.md)\n\nContributes one governed responsibility to the fixture parent.\n"
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    format!(
+        "# Modules\n\n## Composition\n\nThe fixture separates independently audited responsibilities into immediate child Modules.\n\n## Modules\n\n{entries}\n## Coordination\n\nThe child Modules collectively provide the declarations and governed files required by the fixture audit.\n"
+    )
 }
 
 impl Drop for AuditFixture {
@@ -100,7 +234,7 @@ fn project_json() -> &'static str {
 fn architecture_json() -> &'static str {
     r#"{
       "$schema":"urn:fortress:schema:v1:architecture","schema_version":1,"zones":["core"],
-      "components":[{"id":"AF-MODEL-0001","title":"Model","zone":"core","paths":["README.md","data/","docs/","mods/"],"depends_on":[]}]
+      "components":[{"id":"AF-MODEL-0001","title":"Model","zone":"core","paths":["README.md","contract.json","data/","docs/","mods/"],"depends_on":[]}]
     }"#
 }
 
@@ -169,7 +303,7 @@ fn audit_success_renders_human_snapshot_report() {
         String::from_utf8_lossy(&output.stderr)
     );
     assert!(stdout.contains("Fortress Snapshot Audit"));
-    assert!(stdout.contains("PASS: 4"));
+    assert!(stdout.contains("PASS: 5"));
     assert!(stdout.contains("Unsupported: 1"));
     assert!(!stdout.contains("certification"));
 }

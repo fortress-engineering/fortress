@@ -142,7 +142,7 @@ fn missing_snapshot_evaluator_is_unsupported_not_passed() {
         .expect("STD-ID-001 execution is reported");
     assert_eq!(unsupported.state(), RuleExecutionState::Unsupported);
     assert_eq!(unsupported.finding_count(), 0);
-    assert_eq!(result.unsupported_count(), 2);
+    assert_eq!(result.unsupported_count(), 3);
 }
 
 /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R06-003`

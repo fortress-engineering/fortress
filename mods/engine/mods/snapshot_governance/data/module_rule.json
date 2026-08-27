@@ -4,13 +4,13 @@
   "id": "REPO-MODULE-001",
   "title": "Canonical recursive repository Module grammar",
   "status": "draft",
-  "statement": "Every governed repository MUST be a recursive tree of Modules. Each Module MUST contain README.md and at least one of code/ or mods/; atomic Modules MUST contain code/. Direct elements MUST be files beneath code/data/info/docs, child Modules MUST be immediate directories beneath mods/, attribute documentation MUST be bidirectionally complete, and Fortress-controlled filesystem names MUST follow the canonical lowercase underscore grammar.",
+  "statement": "Every governed repository MUST be a recursive tree of Modules. Each Module MUST contain README.md, contract.json, and at least one of code/ or mods/; atomic Modules MUST contain code/. Direct elements MUST be files beneath code/data/info/docs, child Modules MUST be immediate directories beneath mods/, code/data/info/mods documentation MUST be bidirectionally complete, and Fortress-controlled filesystem names MUST follow the canonical lowercase underscore grammar.",
   "rationale": "One recursive ownership grammar makes architectural containment physical, prevents hidden decomposition, distinguishes authored inputs from derived outputs, localizes verification with its subject, and removes arbitrary repository taxonomies.",
   "failure_prevented": "Unowned implementation islands, decomposition hidden under attribute folders, missing Module contracts, mixed authored and generated artifacts, detached test trees, arbitrary documentation taxonomies, stale ecosystem layouts, and entropy-producing path aliases.",
   "applicability": "Every governed repository snapshot using the Fortress recursive repository grammar. Formally recognized GitHub repository surfaces are evaluated as a closed root exception namespace rather than ordinary Modules.",
   "category": "repository",
   "integrity_tier": 1,
-  "evaluation": "The Fortress core infers directories and Modules from the stabilized observed-file inventory, recursively validates Module structure, checks README and code/mods obligations, enforces flat attribute folders and mods-only child placement, reconciles attribute documentation in both directions, and validates canonical filenames and Module names.",
+  "evaluation": "The Fortress core infers directories and Modules from the stabilized observed-file inventory, recursively validates Module structure, checks README.md, contract.json, and code/mods obligations, enforces flat attribute folders and mods-only child placement, reconciles code/data/info/mods documentation in both directions, and validates canonical filenames and Module names.",
   "required_capabilities": [
     "stabilized-repository-observation",
     "recursive-module-discovery",
@@ -21,12 +21,13 @@
     "message": "An observed path or inferred Module violates the canonical recursive repository grammar.",
     "location": "path-or-module"
   },
-  "remediation": "Converge the path to the recursive Module grammar: keep direct elements in code/data/info/docs, place child Modules only beneath mods, add the Module README and bidirectional attribute documentation, and use canonical lowercase underscore names.",
-  "valid_example": "A composite engine Module owns cross-capability facade code and places standard_registry and snapshot_governance as immediate Modules beneath mods/, each with README.md and matching attribute documentation.",
-  "invalid_example": "A crates/ island exists at the root, a test suite is detached under tests/, code/ hides architectural subdirectories, a Module lacks README.md, or data/ exists without docs/data_docs.md.",
+  "remediation": "Converge the path to the recursive Module grammar: keep README.md and contract.json at every Module root, keep direct elements in code/data/info/docs, place child Modules only beneath mods, add every bidirectional canonical documentation file including mods_docs.md, and use canonical lowercase underscore names.",
+  "valid_example": "A composite engine Module owns cross-capability facade code and places standard_registry and snapshot_governance as immediate Modules beneath mods/, each with README.md, contract.json, and matching code/data/info/mods documentation.",
+  "invalid_example": "A crates/ island exists at the root, a test suite is detached under tests/, code/ hides architectural subdirectories, a Module lacks README.md or contract.json, data/ exists without docs/data_docs.md, or mods/ exists without docs/mods_docs.md.",
   "exception_policy": "Only repository-level surfaces with independently verified GitHub semantics may be admitted to the closed root exception set. Ecosystem tools receive no general folder exemption; they must use supported explicit paths or surface an owner-level incompatibility.",
   "introduced": "1.0.0-draft.1",
   "history": [
-    "Introduced during CHG-REPOSITORY-GRAMMAR-0007 as the canonical replacement for the earlier project-declared placement model."
+    "Introduced during CHG-REPOSITORY-GRAMMAR-0007 as the canonical replacement for the earlier project-declared placement model.",
+    "Extended to require one Module contract and bidirectional mods_docs.md decomposition documentation."
   ]
 }

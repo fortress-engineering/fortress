@@ -5,7 +5,7 @@
   },
   {
     "path": "AGENTS.md",
-    "message": "Root file `AGENTS.md` is not the Module README or a recognized GitHub repository surface."
+    "message": "Root file `AGENTS.md` is not README.md, contract.json, or a recognized GitHub repository surface."
   },
   {
     "path": "Cargo.toml",
@@ -13,7 +13,7 @@
   },
   {
     "path": "Cargo.toml",
-    "message": "Root file `Cargo.toml` is not the Module README or a recognized GitHub repository surface."
+    "message": "Root file `Cargo.toml` is not README.md, contract.json, or a recognized GitHub repository surface."
   },
   {
     "path": "Code",
@@ -45,7 +45,7 @@
   },
   {
     "path": "mods/invalid_docs/docs/guide.md",
-    "message": "Documentation file `mods/invalid_docs/docs/guide.md` is not one of code_docs.md, data_docs.md, or info_docs.md."
+    "message": "Documentation file `mods/invalid_docs/docs/guide.md` is not one of code_docs.md, data_docs.md, info_docs.md, or mods_docs.md."
   },
   {
     "path": "mods/loose.txt",
@@ -66,6 +66,10 @@
   {
     "path": "mods/no_readme/code/Bad-Name.rs",
     "message": "Filename `Bad-Name.rs` violates the lowercase underscore filename grammar."
+  },
+  {
+    "path": "mods/no_readme/contract.json",
+    "message": "Module `mods/no_readme` is missing its mandatory `contract.json`."
   },
   {
     "path": "mods/no_readme/docs/code_docs.md",

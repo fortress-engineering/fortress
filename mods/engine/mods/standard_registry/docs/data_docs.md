@@ -1,10 +1,51 @@
-# Standard Registry Data
+# Data
 
-This Module's Data contains the common, rule, standard-manifest, and
-schema-manifest schemas; the schema registry; the draft standard manifest; and
-`STD-ID-001`. Other rule records live with the capability that owns their
-meaning and are referenced by repository-relative path from the manifest.
+## Role
 
-Schema version identity is encoded with `_v1` filenames and stable schema URNs.
-Draft standard edition identity remains inside the manifest rather than in an
-arbitrary version directory.
+Persist authored inputs and machine contracts directly consumed by this Module.
+
+## Origin
+
+Maintainers author these files under project, schema, standard, Cargo, or capability authority according to each element description.
+
+## Semantics
+
+The Data declares configuration, structure, identity, applicability, or normative input meaning used by the Module; it is not computational output.
+
+## Validity
+
+Consumers require valid UTF-8 where textual, correct schema or ecosystem syntax, canonical identities and paths, complete required fields, and compatible declared versions.
+
+## Lifecycle
+
+Maintainers update Data through reviewed semantic changes; schema versions change only when representation identity changes, while Git retains superseded history.
+
+## Files
+
+### [`common_schema_v1.json`](../data/common_schema_v1.json)
+
+Defines the version-one machine representation and validation boundary for common records owned by this Module.
+
+### [`rule_schema_v1.json`](../data/rule_schema_v1.json)
+
+Defines the version-one machine representation and validation boundary for rule records owned by this Module.
+
+### [`schema_manifest_schema_v1.json`](../data/schema_manifest_schema_v1.json)
+
+Defines the version-one machine representation and validation boundary for schema manifest records owned by this Module.
+
+### [`schema_manifest.json`](../data/schema_manifest.json)
+
+Indexes every active schema by its canonical repository-relative authority path.
+
+### [`standard_manifest_schema_v1.json`](../data/standard_manifest_schema_v1.json)
+
+Defines the version-one machine representation and validation boundary for standard manifest records owned by this Module.
+
+### [`standard_manifest.json`](../data/standard_manifest.json)
+
+Identifies the exact draft standard edition and complete applicable rule-document set.
+
+### [`std_id_rule.json`](../data/std_id_rule.json)
+
+Carries the draft normative rule record interpreted by the std id evaluator.

@@ -1,0 +1,14 @@
+{
+  "$schema": "urn:fortress:schema:v1:module-contract",
+  "schema_version": 1,
+  "id": "TEST-STANDARD-REGISTRY-0001",
+  "display_name": "Standard Registry Testing",
+  "relationships": [
+    {
+      "target": "AF-STANDARD-REGISTRY-0001",
+      "types": [
+        "verifies"
+      ]
+    }
+  ]
+}

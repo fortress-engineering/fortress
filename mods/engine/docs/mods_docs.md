@@ -1,0 +1,31 @@
+# Modules
+
+## Composition
+
+The Engine responsibility is decomposed where durable child boundaries have exclusive primary ownership and independent contracts; immediate children remain contained by this parent while cross-Module dependencies stay authoritative in contract.json.
+
+## Modules
+
+### [Architecture Evaluation](../mods/architecture_evaluation/README.md)
+
+Provides validated architectural declarations and relationship contracts to the evaluation pipeline.
+
+### [Project Model](../mods/project_model/README.md)
+
+Provides the declared engineering subject and evidence obligations consumed by observation and Snapshot Governance.
+
+### [Repository Observation](../mods/repository_observation/README.md)
+
+Supplies reproducible repository facts to the snapshot builder without asserting what those facts mean.
+
+### [Snapshot Governance](../mods/snapshot_governance/README.md)
+
+Turns exact declarations and repository facts into deterministic rule executions and normalized development evidence.
+
+### [Standard Registry](../mods/standard_registry/README.md)
+
+Provides the normative identity and registry foundation required by every capability that interprets Fortress declarations or findings.
+
+## Coordination
+
+The immediate children collectively fulfill the Engine responsibility through the parent boundary. Their conceptual contributions compose here without restating or replacing the typed relationship graph declared by their Module contracts.

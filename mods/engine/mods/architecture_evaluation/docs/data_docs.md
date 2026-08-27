@@ -1,5 +1,35 @@
-# Architecture Evaluation Data
+# Data
 
-The architecture schema defines the declared graph and repository artifact
-classifications. `dependency_rule.json` carries the normative draft meaning of
-`ARCH-DEPENDENCY-001`.
+## Role
+
+Persist authored inputs and machine contracts directly consumed by this Module.
+
+## Origin
+
+Maintainers author these files under project, schema, standard, Cargo, or capability authority according to each element description.
+
+## Semantics
+
+The Data declares configuration, structure, identity, applicability, or normative input meaning used by the Module; it is not computational output.
+
+## Validity
+
+Consumers require valid UTF-8 where textual, correct schema or ecosystem syntax, canonical identities and paths, complete required fields, and compatible declared versions.
+
+## Lifecycle
+
+Maintainers update Data through reviewed semantic changes; schema versions change only when representation identity changes, while Git retains superseded history.
+
+## Files
+
+### [`architecture_schema_v1.json`](../data/architecture_schema_v1.json)
+
+Defines the version-one machine representation and validation boundary for architecture records owned by this Module.
+
+### [`dependency_rule.json`](../data/dependency_rule.json)
+
+Carries the draft normative rule record interpreted by the dependency evaluator.
+
+### [`module_contract_schema_v1.json`](../data/module_contract_schema_v1.json)
+
+Defines the version-one machine representation and validation boundary for module contract records owned by this Module.

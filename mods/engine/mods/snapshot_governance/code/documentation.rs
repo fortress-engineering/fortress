@@ -148,6 +148,36 @@ impl DocumentationSummary {
         self.markdown_files_inspected
     }
 
+    /// Returns physical and documented direct Code element counts.
+    #[must_use]
+    pub const fn code_bijection(&self) -> (usize, usize) {
+        (self.physical_code_elements, self.documented_code_elements)
+    }
+
+    /// Returns physical and documented direct Data element counts.
+    #[must_use]
+    pub const fn data_bijection(&self) -> (usize, usize) {
+        (self.physical_data_elements, self.documented_data_elements)
+    }
+
+    /// Returns physical and documented direct Info element counts.
+    #[must_use]
+    pub const fn info_bijection(&self) -> (usize, usize) {
+        (self.physical_info_elements, self.documented_info_elements)
+    }
+
+    /// Returns physical and documented immediate child Module counts.
+    #[must_use]
+    pub const fn module_bijection(&self) -> (usize, usize) {
+        (self.physical_child_modules, self.documented_child_modules)
+    }
+
+    /// Returns authoritative and documented outbound relationship target counts.
+    #[must_use]
+    pub const fn relationship_bijection(&self) -> (usize, usize) {
+        (self.contract_relationships, self.documented_relationships)
+    }
+
     /// Returns broken or stale relative-link count.
     #[must_use]
     pub const fn broken_or_stale_links(&self) -> usize {
@@ -743,7 +773,15 @@ impl EvaluationContext<'_> {
             .iter()
             .filter(|heading| heading.level == 3 && heading.parent_h2.as_deref() == Some("Files"))
         {
-            documented.insert(heading.text.clone());
+            if !documented.insert(heading.text.clone()) {
+                self.markdown_finding(
+                    path,
+                    format!(
+                        "File entry `{}` is documented more than once.",
+                        heading.text
+                    ),
+                )?;
+            }
             if heading.links.len() != 1
                 || heading.codes.as_slice() != [heading.text.as_str()]
                 || resolve_relative(path, heading.links.first().map_or("", String::as_str))
@@ -834,7 +872,12 @@ impl EvaluationContext<'_> {
                 continue;
             };
             let child_name = child.rsplit('/').next().unwrap_or(&child).to_owned();
-            documented.insert(child_name);
+            if !documented.insert(child_name.clone()) {
+                self.markdown_finding(
+                    path,
+                    format!("Child Module `{child_name}` is documented more than once."),
+                )?;
+            }
             if heading.links.len() != 1 {
                 self.markdown_finding(
                     path,
@@ -958,6 +1001,15 @@ impl EvaluationContext<'_> {
                 format!("Canonical Markdown contains placeholder content `{placeholder}`."),
             )?;
         }
+        if document.empty_list_items > 0 {
+            self.markdown_finding(
+                path,
+                format!(
+                    "Canonical Markdown contains {} empty list item(s).",
+                    document.empty_list_items
+                ),
+            )?;
+        }
         Ok(())
     }
 
@@ -1011,19 +1063,23 @@ struct MarkdownDocument {
     headings: Vec<Heading>,
     paragraphs: Vec<Paragraph>,
     links: Vec<String>,
+    empty_list_items: usize,
 }
 
 impl MarkdownDocument {
+    #[allow(clippy::too_many_lines)]
     fn parse(source: &str) -> Self {
         let mut document = Self {
             headings: Vec::new(),
             paragraphs: Vec::new(),
             links: Vec::new(),
+            empty_list_items: 0,
         };
         let mut heading: Option<HeadingBuilder> = None;
         let mut paragraph: Option<ParagraphBuilder> = None;
         let mut current_h2: Option<String> = None;
         let mut current_h3: Option<usize> = None;
+        let mut list_items = Vec::new();
 
         for event in Parser::new_ext(source, Options::all()) {
             match event {
@@ -1080,6 +1136,12 @@ impl MarkdownDocument {
                         });
                     }
                 }
+                Event::Start(Tag::Item) => list_items.push(false),
+                Event::End(TagEnd::Item) => {
+                    if !list_items.pop().unwrap_or(false) {
+                        document.empty_list_items += 1;
+                    }
+                }
                 Event::Start(Tag::Link { dest_url, .. }) => {
                     let destination = dest_url.into_string();
                     document.links.push(destination.clone());
@@ -1088,6 +1150,9 @@ impl MarkdownDocument {
                     }
                 }
                 Event::Text(text) | Event::InlineHtml(text) => {
+                    if is_substantive(&text) {
+                        list_items.fill(true);
+                    }
                     if let Some(builder) = &mut heading {
                         builder.text.push_str(&text);
                     }
@@ -1096,6 +1161,9 @@ impl MarkdownDocument {
                     }
                 }
                 Event::Code(code) => {
+                    if is_substantive(&code) {
+                        list_items.fill(true);
+                    }
                     if let Some(builder) = &mut heading {
                         builder.text.push_str(&code);
                         builder.codes.push(code.to_string());
