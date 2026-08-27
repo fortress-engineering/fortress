@@ -1,0 +1,54 @@
+name: Bootstrap quality gates
+
+on:
+  push:
+    branches:
+      - dev
+  pull_request:
+    branches:
+      - dev
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bootstrap-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate current Fortress capabilities
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out exact revision
+        uses: actions/checkout@v4.3.1
+        with:
+          persist-credentials: false
+
+      - name: Install pinned Rust toolchain
+        run: rustup toolchain install 1.85.1 --profile minimal --component rustfmt,clippy
+
+      - name: Verify formatting
+        run: cargo +1.85.1 fmt --all --check
+
+      - name: Deny Rust and Clippy warnings
+        run: cargo +1.85.1 clippy --workspace --all-targets --all-features -- -D warnings
+
+      - name: Validate schema registry and draft standard
+        run: cargo +1.85.1 test -p fortress-core --test schema_registry
+
+      - name: Validate Fortress self-model
+        run: cargo +1.85.1 test -p fortress-core --test self_model
+
+      - name: Run implemented rule conformance
+        run: cargo +1.85.1 test -p fortress-core --test std_id_001
+
+      - name: Run workspace tests
+        run: cargo +1.85.1 test --workspace --all-targets --all-features
+
+      - name: Build documentation with warnings denied
+        env:
+          RUSTDOCFLAGS: -D warnings
+        run: cargo +1.85.1 doc --workspace --all-features --no-deps

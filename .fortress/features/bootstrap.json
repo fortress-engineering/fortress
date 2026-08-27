@@ -41,6 +41,14 @@
             "T-AF-STANDARD-REGISTRY-0001-R02-001",
             "T-AF-STANDARD-REGISTRY-0001-R02-002"
           ]
+        },
+        {
+          "id": "AF-STANDARD-REGISTRY-0001-R03",
+          "statement": "Every registered schema and draft standard record parses, has unique identity, and agrees with the implemented registry.",
+          "tests": [
+            "T-AF-STANDARD-REGISTRY-0001-R03-001",
+            "T-AF-STANDARD-REGISTRY-0001-R03-002"
+          ]
         }
       ]
     },
