@@ -8,7 +8,7 @@ The CLI responsibility is decomposed where durable child boundaries have exclusi
 
 ### [CLI Testing](../mods/testing/README.md)
 
-Provides focused executable evidence that the parent CLI preserves its public command and exit contracts.
+Verifies only Features introduced directly by CLI and does not claim requirements owned by ancestor, sibling, or descendant Modules.
 
 ## Coordination
 

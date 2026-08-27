@@ -2,21 +2,21 @@
 
 ## Purpose
 
-This verification Module exists for checks whose subject spans multiple root child Modules or the complete governed repository.
+This verification Module exists to prove only the bootstrap-governance Feature introduced directly by the Fortress root Module.
 
 ## Responsibility
 
-Validate root self-model references, command registry agreement, truthful non-certification state, complete ownership, recursive grammar, and canonical documentation conformance across the physical tree.
+Validate the root-owned self-model, command-declaration agreement, complete contract resolution, and truthful non-certification state without claiming evidence for descendant Features.
 
 ## Scope
 
 ### Includes
 
-Whole-repository Rust verification code that reads the checked-out root and invokes public Engine and CLI contracts.
+Rust verification code whose claims map exclusively to root-owned bootstrap-governance requirements while using descendant capabilities where execution requires them.
 
 ### Excludes
 
-Capability-local conformance, normative standard meaning, production implementation, and persisted runtime test artifacts.
+Requirements owned by Engine, CLI, or any deeper Module; normative standard meaning; production implementation; and persisted runtime test artifacts.
 
 ## Relationships
 

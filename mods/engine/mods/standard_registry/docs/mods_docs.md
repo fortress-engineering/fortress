@@ -8,7 +8,7 @@ The Standard Registry responsibility is decomposed where durable child boundarie
 
 ### [Standard Registry Testing](../mods/testing/README.md)
 
-Provides focused evidence that the parent Standard Registry rejects incoherent identities, schemas, and rule bundles.
+Verifies only Features introduced directly by Standard Registry and does not claim requirements owned by ancestor, sibling, or descendant Modules.
 
 ## Coordination
 

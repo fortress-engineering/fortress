@@ -8,7 +8,7 @@ The Repository Observation responsibility is decomposed where durable child boun
 
 ### [Repository Observation Testing](../mods/testing/README.md)
 
-Provides focused evidence that the parent observer produces stable facts and rejects unsafe inputs.
+Verifies only Features introduced directly by Repository Observation and does not claim requirements owned by ancestor, sibling, or descendant Modules.
 
 ## Coordination
 

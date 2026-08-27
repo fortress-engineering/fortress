@@ -2,21 +2,21 @@
 
 ## Purpose
 
-This verification Module exists to prove stable identity behavior and registry coherence against independently authored conformance inputs.
+This verification Module exists to prove only the Standard Registry Feature introduced directly by its immediate parent Module.
 
 ## Responsibility
 
-Exercise valid, invalid, and boundary stable IDs; validate schema identities and references; and prove exact agreement between the draft manifest and implemented registry.
+Exercise stable IDs, schemas, and draft registry metadata while mapping every result exclusively to parent-owned requirements.
 
 ## Scope
 
 ### Includes
 
-Rust verification targets and direct specification-authored identity fixtures and expected findings.
+Rust verification targets and direct specification-authored fixtures providing evidence for the immediate parent's local Feature.
 
 ### Excludes
 
-Normative rule meaning, production registry implementation, and whole-repository audit orchestration.
+Ancestor, sibling, or descendant Feature requirements; normative rule meaning; production registry implementation; and whole-repository audit orchestration.
 
 ## Relationships
 

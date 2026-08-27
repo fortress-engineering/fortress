@@ -2,21 +2,21 @@
 
 ## Purpose
 
-This verification Module exists to prove observation ordering, hashing, exclusions, repeatability, nested-path handling, and the fully excluded boundary.
+This verification Module exists to prove only the Repository Observation Feature introduced directly by its immediate parent Module.
 
 ## Responsibility
 
-Materialize direct fixture records in disposable repositories and compare observed content facts through the public observation boundary.
+Materialize direct fixture records in disposable repositories, compare observed content facts, and map each result exclusively to parent-owned requirements.
 
 ## Scope
 
 ### Includes
 
-Rust verification logic and direct JSON records describing temporary repository files and exclusions.
+Rust verification logic and direct JSON records providing evidence for the immediate parent's local Feature.
 
 ### Excludes
 
-Persisted runtime repositories, project ownership meaning, snapshot stabilization, and normative observation policy.
+Ancestor, sibling, or descendant Feature requirements; persisted runtime repositories; project ownership meaning; snapshot stabilization; and normative observation policy.
 
 ## Relationships
 

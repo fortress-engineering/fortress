@@ -2,21 +2,21 @@
 
 ## Purpose
 
-This verification Module exists to prove snapshot stabilization, audit orchestration, rule dispatch, findings, ownership, traceability, recursive Module grammar, and canonical documentation synchronization.
+This verification Module exists to prove only the Snapshot Governance Feature introduced directly by its immediate parent Module.
 
 ## Responsibility
 
-Exercise parent behavior using Rust tests and direct specification-authored valid, invalid, boundary, and expected conformance data.
+Exercise parent behavior using Rust tests and specification-authored fixtures, mapping every non-infrastructure result exclusively to a parent-owned requirement.
 
 ## Scope
 
 ### Includes
 
-Snapshot, audit, ownership, traceability, Module grammar, and documentation verification code together with flat direct fixture records.
+Snapshot, audit, ownership, traceability, Testing boundary, Module grammar, and documentation evidence for the immediate parent's local Feature.
 
 ### Excludes
 
-Normative rule meaning, production evaluators, whole-repository integration ownership, and generated certification evidence.
+Ancestor, sibling, or descendant Feature requirements; normative rule meaning; production evaluators; and generated certification evidence.
 
 ## Relationships
 

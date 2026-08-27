@@ -16,7 +16,7 @@ Combines all provider-independent Fortress capabilities into the callable core u
 
 ### [Fortress Testing](../mods/testing/README.md)
 
-Provides project-wide evidence that the composed Fortress repository remains coherent across Module boundaries.
+Verifies only the bootstrap-governance Feature introduced directly by the Fortress root and does not claim requirements owned by descendant Modules.
 
 ## Coordination
 

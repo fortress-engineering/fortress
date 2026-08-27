@@ -8,7 +8,7 @@ The Snapshot Governance responsibility is decomposed where durable child boundar
 
 ### [Snapshot Governance Testing](../mods/testing/README.md)
 
-Provides comprehensive focused evidence for every implemented Snapshot Governance responsibility.
+Verifies only Features introduced directly by Snapshot Governance and does not claim requirements owned by ancestor, sibling, or descendant Modules.
 
 ## Coordination
 

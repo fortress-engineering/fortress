@@ -2,21 +2,21 @@
 
 ## Purpose
 
-This verification Module exists to prove canonical Module Contract v2 resolution and derived dependency evaluation across valid, invalid, boundary, and composed ecosystem cases.
+This verification Module exists to prove only the Architecture Evaluation Feature introduced directly by its immediate parent Module.
 
 ## Responsibility
 
-Exercise local and repository-wide contract gates, resolve simple and complex ecosystems repeatedly, and compare cyclic dependency evaluation with its canonical normalized finding.
+Exercise local and repository-wide contract gates, resolve simple and complex ecosystems repeatedly, and map dependency findings exclusively to parent-owned requirements.
 
 ## Scope
 
 ### Includes
 
-Rust verification code, composed contract ecosystems, and direct valid, invalid, boundary, and expected dependency fixtures.
+Rust verification code, composed contract ecosystems, and direct fixtures providing evidence for the immediate parent's local Feature.
 
 ### Excludes
 
-README synchronization, source dependency extraction, final CCG construction, and whole-repository documentation evaluation.
+Ancestor, sibling, or descendant Feature requirements; README synchronization; source dependency extraction; final CCG construction; and documentation evaluation owned elsewhere.
 
 ## Relationships
 

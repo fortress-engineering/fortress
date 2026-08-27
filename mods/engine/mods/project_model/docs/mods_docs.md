@@ -8,7 +8,7 @@ The Project Model responsibility is decomposed where durable child boundaries ha
 
 ### [Project Model Testing](../mods/testing/README.md)
 
-Provides focused evidence that the parent Project Model enforces its declared input contract.
+Verifies only Features introduced directly by Project Model and does not claim requirements owned by ancestor, sibling, or descendant Modules.
 
 ## Coordination
 

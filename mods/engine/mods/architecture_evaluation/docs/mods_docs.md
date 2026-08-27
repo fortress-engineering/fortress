@@ -8,7 +8,7 @@ The Architecture Evaluation responsibility is decomposed where durable child bou
 
 ### [Architecture Evaluation Testing](../mods/testing/README.md)
 
-Provides focused evidence that the parent rejects declared cycles and accepts coherent graph boundaries.
+Verifies only Features introduced directly by Architecture Evaluation and does not claim requirements owned by ancestor, sibling, or descendant Modules.
 
 ## Coordination
 

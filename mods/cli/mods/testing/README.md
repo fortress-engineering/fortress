@@ -2,21 +2,21 @@
 
 ## Purpose
 
-This verification Module exists to prove process-level command discovery, version output, audit success and failure, malformed-state handling, deterministic JSON, and unsupported-input semantics.
+This verification Module exists to prove only the CLI Feature introduced directly by its immediate parent Module.
 
 ## Responsibility
 
-Invoke the built native binary against controlled arguments and disposable repositories, then verify exact output classes and process status.
+Invoke the built native binary against controlled arguments and disposable repositories, then map each result exclusively to a parent-owned CLI requirement.
 
 ## Scope
 
 ### Includes
 
-Rust process-level verification code and runtime-created repositories scoped to each test invocation.
+Rust process-level verification code and runtime-created repositories that provide evidence for the immediate parent's local Feature.
 
 ### Excludes
 
-Provider-independent rule meaning, production command implementation, persisted fixture trees, and certification execution.
+Ancestor, sibling, or descendant Feature requirements; provider-independent rule meaning; production command implementation; persisted fixture trees; and certification execution.
 
 ## Relationships
 

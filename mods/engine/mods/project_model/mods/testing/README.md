@@ -2,21 +2,21 @@
 
 ## Purpose
 
-This verification Module exists to prove the Project Model accepts coherent operational configuration and rejects duplicate or unsafe observation exclusions.
+This verification Module exists to prove only the Project Model Feature introduced directly by its immediate parent Module.
 
 ## Responsibility
 
-Load direct JSON fixtures through the public Project Model boundary and compare results at valid, invalid, and minimum boundaries.
+Load direct JSON fixtures through the public Project Model boundary and map each result exclusively to parent-owned requirements.
 
 ## Scope
 
 ### Includes
 
-Rust verification code plus direct valid, invalid, and boundary operational project configurations.
+Rust verification code plus direct operational configurations providing evidence for the immediate parent's local Feature.
 
 ### Excludes
 
-Production configuration parsing, Module-contract architectural intent, and cross-capability self-model checks.
+Ancestor, sibling, or descendant Feature requirements; production configuration parsing; Module-contract architectural intent; and cross-capability self-model checks.
 
 ## Relationships
 
