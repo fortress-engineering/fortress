@@ -185,6 +185,8 @@
       "zone": "core",
       "owned_paths": [
         "schemas/v1/repository-snapshot.schema.json",
+        "schemas/v1/snapshot-finding.schema.json",
+        "crates/fortress-core/src/finding.rs",
         "crates/fortress-core/src/snapshot.rs",
         "crates/fortress-core/tests/repository_snapshot.rs",
         "docs/development/snapshot-governance.md"
@@ -212,6 +214,15 @@
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R02-001",
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R02-002",
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R02-003"
+          ]
+        },
+        {
+          "id": "AF-SNAPSHOT-GOVERNANCE-0001-R03",
+          "statement": "Snapshot rule violations use one validated content-addressed finding contract and a deterministic global sort order.",
+          "tests": [
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R03-001",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R03-002",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R03-003"
           ]
         }
       ]

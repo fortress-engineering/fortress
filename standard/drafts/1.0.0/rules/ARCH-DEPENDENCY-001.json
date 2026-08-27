@@ -25,6 +25,7 @@
   "exception_policy": "A bounded transition or explicit exemption may describe a temporary cycle, its owner, scope, and retirement evidence; the affected scope remains not certified until the cycle is removed or the model is legitimately consolidated.",
   "introduced": "1.0.0-draft.1",
   "history": [
-    "Introduced during CHG-ARCHITECTURE-0004 after deterministic repository observation became available."
+    "Introduced during CHG-ARCHITECTURE-0004 after deterministic repository observation became available.",
+    "Finding evidence migrated to the shared content-addressed Snapshot Governance finding contract during CHG-SNAPSHOT-0006 without changing rule meaning."
   ]
 }

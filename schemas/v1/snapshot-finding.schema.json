@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:snapshot-finding",
+  "title": "Canonical Fortress Snapshot Governance finding",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "finding_fingerprint", "rule_id", "integrity_tier", "category", "state",
+    "entities", "location", "message", "remediation", "evaluator",
+    "standard_edition", "exemption_reference"
+  ],
+  "properties": {
+    "finding_fingerprint": { "$ref": "urn:fortress:schema:v1:common#/$defs/sha256" },
+    "rule_id": { "$ref": "urn:fortress:schema:v1:common#/$defs/rule-id" },
+    "integrity_tier": { "type": "integer", "minimum": 0, "maximum": 4 },
+    "category": {
+      "enum": [
+        "architecture", "dependency", "contract", "source", "documentation",
+        "testing", "certification", "pipeline", "change", "onboarding",
+        "security", "repository", "standard"
+      ]
+    },
+    "state": { "const": "FAIL" },
+    "entities": {
+      "type": "array",
+      "items": { "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id" }
+    },
+    "location": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "span", "symbol"],
+      "properties": {
+        "path": {
+          "oneOf": [
+            { "$ref": "urn:fortress:schema:v1:common#/$defs/relative-path" },
+            { "type": "null" }
+          ]
+        },
+        "span": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["start_line", "start_column", "end_line", "end_column"],
+              "properties": {
+                "start_line": { "type": "integer", "minimum": 1 },
+                "start_column": { "type": "integer", "minimum": 1 },
+                "end_line": { "type": "integer", "minimum": 1 },
+                "end_column": { "type": "integer", "minimum": 1 }
+              }
+            },
+            { "type": "null" }
+          ]
+        },
+        "symbol": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "message": { "$ref": "urn:fortress:schema:v1:common#/$defs/non-empty-string" },
+    "remediation": { "$ref": "urn:fortress:schema:v1:common#/$defs/non-empty-string" },
+    "evaluator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 }
+      }
+    },
+    "standard_edition": { "type": "string", "minLength": 1 },
+    "exemption_reference": {
+      "oneOf": [
+        { "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id" },
+        { "type": "null" }
+      ]
+    }
+  }
+}

@@ -470,7 +470,10 @@ fn standard_status_name(status: StandardStatus) -> &'static str {
 }
 
 fn is_canonical_relative_path(value: &str) -> bool {
+    let bytes = value.as_bytes();
+    let drive_path = bytes.len() >= 2 && bytes[0].is_ascii_alphabetic() && bytes[1] == b':';
     !value.is_empty()
+        && !drive_path
         && !value.contains('\\')
         && !value.starts_with('/')
         && !value.ends_with('/')

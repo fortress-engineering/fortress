@@ -8,6 +8,7 @@
 
 pub mod architecture;
 pub mod command;
+pub mod finding;
 pub mod identity;
 pub mod observation;
 pub mod project;

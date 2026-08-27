@@ -14,8 +14,10 @@ existence, then evaluates the component graph for directed cycles.
 
 Cycle traversal is deterministic: components and their dependencies are visited
 in stable identity order, and a back-edge produces a canonical ordered cycle
-whose first entity is repeated at the end. The finding carries the stable rule
-ID, `FAIL` state, affected entity sequence, and a reproducible message.
+whose first entity is repeated at the end. The evaluator now emits the shared
+Snapshot Governance finding contract: stable rule ID, tier/category, `FAIL`
+state, affected entity sequence, remediation, evaluator provenance, standard
+edition, exemption slot, deterministic message, and content identity.
 
 ## Evidence and boundary
 

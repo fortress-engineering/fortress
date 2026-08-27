@@ -120,5 +120,10 @@ fn declared_self_architecture_is_acyclic() {
         .unwrap_or_else(|error| panic!("failed to read {}: {error}", path.display()));
     let architecture =
         ArchitectureManifest::from_json_str(&source).expect("self architecture must validate");
-    assert!(architecture.evaluate_acyclic_dependencies().is_none());
+    assert!(
+        architecture
+            .evaluate_acyclic_dependencies("1.0.0-draft.1")
+            .expect("finding normalization must succeed")
+            .is_none()
+    );
 }

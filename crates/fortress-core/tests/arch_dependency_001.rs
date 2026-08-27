@@ -26,7 +26,12 @@ fn valid_declared_graph_passes() {
     let architecture =
         ArchitectureManifest::from_json_str(&read_fixture("valid/architecture.json"))
             .expect("positive architecture fixture must load");
-    assert!(architecture.evaluate_acyclic_dependencies().is_none());
+    assert!(
+        architecture
+            .evaluate_acyclic_dependencies("1.0.0-draft.1")
+            .expect("finding normalization must succeed")
+            .is_none()
+    );
 }
 
 /// `T-ARCH-DEPENDENCY-001-R01-002`
@@ -36,7 +41,8 @@ fn cycle_produces_the_expected_normalized_finding() {
         ArchitectureManifest::from_json_str(&read_fixture("invalid/architecture.json"))
             .expect("negative architecture fixture must be structurally valid");
     let actual = architecture
-        .evaluate_acyclic_dependencies()
+        .evaluate_acyclic_dependencies("1.0.0-draft.1")
+        .expect("finding normalization must succeed")
         .expect("negative architecture fixture must produce a finding");
     let actual = serde_json::to_value(actual).expect("finding must serialize");
     let expected: serde_json::Value = serde_json::from_str(&read_fixture("expected/invalid.json"))
@@ -50,5 +56,10 @@ fn one_component_no_edge_boundary_passes() {
     let architecture =
         ArchitectureManifest::from_json_str(&read_fixture("boundary/architecture.json"))
             .expect("boundary architecture fixture must load");
-    assert!(architecture.evaluate_acyclic_dependencies().is_none());
+    assert!(
+        architecture
+            .evaluate_acyclic_dependencies("1.0.0-draft.1")
+            .expect("finding normalization must succeed")
+            .is_none()
+    );
 }

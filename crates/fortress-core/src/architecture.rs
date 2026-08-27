@@ -8,8 +8,12 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
 
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
+use crate::finding::{
+    CanonicalFinding, EvaluatorProvenance, FindingCategory, FindingError, FindingLocation,
+    FindingOccurrence, RuleFindingDefinition,
+};
 use crate::identity::{StableId, StableIdError};
 
 /// Current supported architecture declaration schema family.
@@ -17,6 +21,8 @@ pub const ARCHITECTURE_SCHEMA_VERSION: u16 = 1;
 
 /// Stable identity of the declared dependency-cycle rule.
 pub const ARCH_DEPENDENCY_RULE_ID: &str = "ARCH-DEPENDENCY-001";
+
+const ARCH_DEPENDENCY_REMEDIATION: &str = "Separate responsibilities to restore one-way dependency flow or model a genuinely inseparable strongly connected cluster as one component. A temporary exception requires a governed transition or exemption.";
 
 /// A validated declared Fortress architecture model.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
@@ -137,8 +143,14 @@ impl ArchitectureManifest {
     ///
     /// Returns the first deterministic directed cycle, if one exists. A `None`
     /// result describes only the declared graph and is not a certification PASS.
-    #[must_use]
-    pub fn evaluate_acyclic_dependencies(&self) -> Option<ArchitectureFinding> {
+    ///
+    /// # Errors
+    ///
+    /// Returns [`FindingError`] if normalized finding construction fails.
+    pub fn evaluate_acyclic_dependencies(
+        &self,
+        standard_edition: &str,
+    ) -> Result<Option<CanonicalFinding>, FindingError> {
         let mut adjacency = BTreeMap::new();
         for component in &self.components {
             let mut dependencies: Vec<&str> =
@@ -189,7 +201,32 @@ impl ArchitectureManifest {
                                 .map(|identity| (*identity).to_owned())
                                 .collect();
                             entities.push(dependency.to_owned());
-                            return Some(ArchitectureFinding::cycle(entities));
+                            let route = entities.join(" -> ");
+                            let definition = RuleFindingDefinition::new(
+                                ARCH_DEPENDENCY_RULE_ID,
+                                1,
+                                FindingCategory::Architecture,
+                                ARCH_DEPENDENCY_REMEDIATION,
+                            )?;
+                            let occurrence = FindingOccurrence::new(
+                                entities,
+                                FindingLocation::none(),
+                                format!(
+                                    "Declared component dependency graph contains a cycle: {route}."
+                                ),
+                            )?;
+                            let evaluator = EvaluatorProvenance::new(
+                                "fortress-core/architecture",
+                                env!("CARGO_PKG_VERSION"),
+                            )?;
+                            return CanonicalFinding::failure(
+                                definition,
+                                occurrence,
+                                evaluator,
+                                standard_edition,
+                                None,
+                            )
+                            .map(Some);
                         }
                     }
                     VisitState::Complete => {}
@@ -197,7 +234,7 @@ impl ArchitectureManifest {
             }
         }
 
-        None
+        Ok(None)
     }
 }
 
@@ -240,59 +277,6 @@ impl ComponentDeclaration {
     #[must_use]
     pub fn dependencies(&self) -> &[String] {
         &self.depends_on
-    }
-}
-
-/// Normalized state of an architecture rule finding.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum FindingState {
-    /// The evaluated declaration violates the rule.
-    Fail,
-}
-
-/// Normalized deterministic result for a declared architecture violation.
-#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
-pub struct ArchitectureFinding {
-    rule_id: &'static str,
-    state: FindingState,
-    entities: Vec<String>,
-    message: String,
-}
-
-impl ArchitectureFinding {
-    fn cycle(entities: Vec<String>) -> Self {
-        let route = entities.join(" -> ");
-        Self {
-            rule_id: ARCH_DEPENDENCY_RULE_ID,
-            state: FindingState::Fail,
-            entities,
-            message: format!("Declared component dependency graph contains a cycle: {route}."),
-        }
-    }
-
-    /// Returns the stable governing rule identity.
-    #[must_use]
-    pub const fn rule_id(&self) -> &'static str {
-        self.rule_id
-    }
-
-    /// Returns the normalized finding state.
-    #[must_use]
-    pub const fn state(&self) -> FindingState {
-        self.state
-    }
-
-    /// Returns the ordered cycle, including its repeated closing identity.
-    #[must_use]
-    pub fn entities(&self) -> &[String] {
-        &self.entities
-    }
-
-    /// Returns the normalized finding message.
-    #[must_use]
-    pub fn message(&self) -> &str {
-        &self.message
     }
 }
 
