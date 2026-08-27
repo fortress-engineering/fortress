@@ -22,6 +22,10 @@ A violated assertion or fixture-loading failure fails the test target and surfac
 
 Verifies valid, cyclic, and minimum architecture graphs against ARCH-DEPENDENCY-001.
 
+### [`arch_realization_001.rs`](../code/arch_realization_001.rs)
+
+Verifies every reconciliation state, exact transitive-bypass paths, declared-unobserved truthfulness, invalid observation failure, unsupported coverage, and deterministic conclusions for ARCH-REALIZATION-001.
+
 ### [`self_architecture.rs`](../code/self_architecture.rs)
 
 Compiles Fortress's live CCG and verifies that the parent architecture projection remains acyclic.

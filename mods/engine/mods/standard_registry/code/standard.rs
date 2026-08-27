@@ -7,11 +7,42 @@ use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet, VecDeque};
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
-use crate::finding::FindingCategory;
 use crate::identity::{RuleId, RuleIdError, StableId, StableIdError};
+
+/// Rule category attached to normative metadata and normalized findings.
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum FindingCategory {
+    /// Architecture topology, ownership, or boundary integrity.
+    Architecture,
+    /// Declared or observed dependency integrity.
+    Dependency,
+    /// Project contract integrity.
+    Contract,
+    /// Hand-authored source integrity.
+    Source,
+    /// Documentation integrity.
+    Documentation,
+    /// Behavioral evidence and traceability integrity.
+    Testing,
+    /// Certification and evidence integrity.
+    Certification,
+    /// Pipeline contract integrity.
+    Pipeline,
+    /// Temporal change integrity.
+    Change,
+    /// Onboarding-only governance integrity.
+    Onboarding,
+    /// Security policy integrity.
+    Security,
+    /// Repository layout and artifact integrity.
+    Repository,
+    /// Standard bundle integrity.
+    Standard,
+}
 
 const DRAFT_RULES: &[RuleDescriptor] = &[
     RuleDescriptor {
@@ -23,6 +54,12 @@ const DRAFT_RULES: &[RuleDescriptor] = &[
     RuleDescriptor {
         id: "ARCH-DEPENDENCY-001",
         title: "Acyclic declared component dependencies",
+        status: RuleStatus::Draft,
+        integrity_tier: 1,
+    },
+    RuleDescriptor {
+        id: "ARCH-REALIZATION-001",
+        title: "Observed implementation conforms to declared architectural dependencies",
         status: RuleStatus::Draft,
         integrity_tier: 1,
     },
@@ -823,7 +860,7 @@ fn validate_rule_logic(rules: &[StandardRule]) -> Result<(), StandardLoadError> 
         .iter()
         .flat_map(|rule| {
             rule.logic.conflicts_with().iter().map(move |target| {
-                if rule.id() < target {
+                if rule.id() < target.as_str() {
                     (rule.id(), target.as_str())
                 } else {
                     (target.as_str(), rule.id())

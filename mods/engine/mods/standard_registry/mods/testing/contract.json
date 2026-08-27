@@ -6,6 +6,11 @@
   "provides": [],
   "requires": [
     {
+      "provider": "AF-CORE-0001",
+      "capability": "CAP-FORTRESS-ENGINE",
+      "version": "^0.1.0"
+    },
+    {
       "provider": "AF-STANDARD-REGISTRY-0001",
       "capability": "CAP-STANDARD-REGISTRY",
       "version": "^0.1.0"

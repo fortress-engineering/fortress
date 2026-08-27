@@ -6,17 +6,17 @@ Snapshot Governance exists to answer what is true and what violates the declared
 
 ## Responsibility
 
-Build stabilized content-addressed repository snapshots, analyze supported Rust test facts, execute implemented rules truthfully, normalize deterministic findings, and orchestrate machine-readable and human repository audits.
+Build stabilized content-addressed repository snapshots, coordinate one CCG and one independent Rust implementation observation, analyze supported Rust test facts, execute implemented rules truthfully, normalize deterministic findings, and orchestrate machine-readable and human repository audits.
 
 ## Scope
 
 ### Includes
 
-Snapshot and audit schemas; findings; contract coherency, ownership, traceability, recursive Module, and documentation synchronization rules; Markdown and Rust analyzers; two-pass stabilization; and exact rule execution reporting.
+Snapshot and audit schemas; audit orchestration; contract coherency, ownership, realization, traceability, recursive Module, and documentation synchronization rule dispatch; Markdown and Rust test analyzers; two-pass stabilization; and exact rule execution reporting.
 
 ### Excludes
 
-Certification or attestation, onboarding and migration state, persistent jobs, provider-hosted execution, release orchestration, unsupported language analyzers, inferred source dependency reconciliation, semantic satisfiability outside the formal CCG v1 rule language, and BFG construction or visualization.
+Certification or attestation, onboarding and migration state, persistent jobs, provider-hosted execution, release orchestration, implementation observation semantics owned by its sibling Module, architecture judgment owned by Architecture Evaluation, unsupported language analyzers, semantic satisfiability outside the formal CCG v1 rule language, and BFG construction or visualization.
 
 ## Relationships
 
@@ -31,6 +31,18 @@ Consumes CCG-backed architecture projections and shared dependency evaluation be
 **Types:** `depends_on`
 
 Consumes one immutable semantic graph containing resolved intent, derivations, logical coherency, provenance, and verification topology.
+
+### [Finding Model](../finding_model/README.md)
+
+**Types:** `depends_on`
+
+Supplies the shared content-addressed finding contract used to aggregate rule-family conclusions.
+
+### [Implementation Observation](../implementation_observation/README.md)
+
+**Types:** `depends_on`
+
+Supplies one snapshot-bound Rust observation result that audit passes to Architecture Evaluation without reparsing per rule.
 
 ### [Project Model](../project_model/README.md)
 
@@ -52,4 +64,4 @@ Consumes the exact applicable rule bundle and stable rule identities.
 
 ## Guarantees
 
-No wall-clock or absolute path enters snapshot or CCG identity; repository mutation is rejected when observed bytes diverge; the CCG is compiled once per complete audit; unimplemented rules remain UNSUPPORTED; findings never redefine rules; audit output never claims certification. Stabilization is an optimistic content protocol rather than a filesystem lock, so a malicious host or a transient mutation reverted to identical bytes remains outside its trust guarantee.
+No wall-clock or absolute path enters snapshot or CCG identity; repository mutation is rejected when observed bytes diverge; the CCG and observed implementation are each compiled once per complete audit; unimplemented rules remain UNSUPPORTED; findings never redefine rules; audit output never claims certification. Stabilization is an optimistic content protocol rather than a filesystem lock, so a malicious host or a transient mutation reverted to identical bytes remains outside its trust guarantee.

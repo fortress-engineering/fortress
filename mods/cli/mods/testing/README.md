@@ -20,6 +20,12 @@ Ancestor, sibling, or descendant Feature requirements; provider-independent rule
 
 ## Relationships
 
+### [Engine](../../../engine/README.md)
+
+**Types:** `depends_on`
+
+Supplies provider-independent contract and audit types directly used to build controlled CLI repository scenarios.
+
 ### [CLI](../../README.md)
 
 **Types:** `depends_on`, `verifies`

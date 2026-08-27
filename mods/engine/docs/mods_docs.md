@@ -14,6 +14,14 @@ Consumes the CCG dependency and containment semantics to provide architecture ru
 
 Compiles distributed contracts, containment, standard logic, and verification declarations into the deterministic semantic graph shared by downstream evaluators.
 
+### [Finding Model](../mods/finding_model/README.md)
+
+Provides the shared canonical finding representation used across rule-family boundaries without owning evaluator judgment.
+
+### [Implementation Observation](../mods/implementation_observation/README.md)
+
+Analyzes snapshot-bound Rust source independently and emits deterministic implementation dependency facts with provenance.
+
 ### [Project Model](../mods/project_model/README.md)
 
 Provides the declared engineering subject and evidence obligations consumed by observation and Snapshot Governance.

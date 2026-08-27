@@ -21,3 +21,7 @@ Invalid inputs and inability to fulfill the responsibility return explicit typed
 ### [`architecture.rs`](../code/architecture.rs)
 
 Derives physical Module ownership and component views from the canonical CCG, then evaluates its declared dependency graph without rebuilding semantic resolution.
+
+### [`realization.rs`](../code/realization.rs)
+
+Reconciles independent observed Module dependencies with exact direct CCG authorization, preserves all realization states, and normalizes hard architecture findings.

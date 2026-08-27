@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 use crate::architecture::ArchitectureManifest;
+use crate::architecture_realization::{ArchitectureRealization, reconcile_implementation};
 use crate::contract::evaluate_contract_coherency;
 use crate::contract_coherency::{
     CcgObservedTestFact, ContractCoherencyGraph, ContractStandardIndex,
@@ -20,6 +21,10 @@ use crate::evaluation::{
     CompleteEvaluationInputs, EvaluationError, RuleExecution, SnapshotRuleEngine,
 };
 use crate::finding::CanonicalFinding;
+use crate::implementation_observation::{
+    ImplementationObservationError, ImplementationObservationInput, ModuleTerritory,
+    SnapshotBoundFile, observe_rust_implementation,
+};
 use crate::observation::{ObservationError, ObservationPolicy, RepositoryObservation};
 use crate::project::{ProjectConfiguration, ProjectConfigurationLoadError};
 use crate::rust_test_analyzer::{RustAnalyzerError, analyze_observed_rust_tests};
@@ -173,15 +178,17 @@ impl AuditSummary {
 /// Returns [`AuditError`] for invalid/missing declarations, unstable or
 /// inconsistent snapshot inputs, analyzer failure, or rule-evaluation failure.
 pub fn audit_repository(root: impl AsRef<Path>) -> Result<AuditResult, AuditError> {
-    audit_repository_with_ccg(root.as_ref()).map(|(audit, _)| audit)
+    audit_repository_with_ccg(root.as_ref(), true).map(|(audit, _)| audit)
 }
 
 /// Compiles the canonical CCG for a stabilized repository input set.
 ///
 /// The same orchestration path used by [`audit_repository`] supplies standard,
-/// contract, containment, and observed Rust verification facts. Audit rules are
-/// evaluated as a consistency guard, but their result is not embedded in the
-/// graph.
+/// contract, containment, and observed Rust verification facts. Independent
+/// implementation observation is deliberately omitted because source
+/// realization is evidence compared with the CCG, never a CCG input. Other
+/// audit rules are evaluated as a consistency guard, but their result is not
+/// embedded in the graph.
 ///
 /// # Errors
 ///
@@ -189,11 +196,12 @@ pub fn audit_repository(root: impl AsRef<Path>) -> Result<AuditResult, AuditErro
 pub fn compile_repository_ccg(
     root: impl AsRef<Path>,
 ) -> Result<ContractCoherencyGraph, AuditError> {
-    audit_repository_with_ccg(root.as_ref()).map(|(_, ccg)| ccg)
+    audit_repository_with_ccg(root.as_ref(), false).map(|(_, ccg)| ccg)
 }
 
 fn audit_repository_with_ccg(
     root: &Path,
+    include_implementation_observation: bool,
 ) -> Result<(AuditResult, ContractCoherencyGraph), AuditError> {
     let project_document = read_document(root, "data/project.json")?;
     let project = ProjectConfiguration::from_json_str(project_document.source()?)
@@ -203,23 +211,11 @@ fn audit_repository_with_ccg(
     let initial_observation =
         observe_repository_stably(root, &policy).map_err(AuditError::Snapshot)?;
     let observed_files = read_observed_files(root, &initial_observation)?;
-    let standard_manifest_path = find_standard_manifest(&observed_files)?;
-    let standard_manifest = read_document(root, &standard_manifest_path)?;
-    let index: StandardManifestIndex = serde_json::from_str(standard_manifest.source()?)
-        .map_err(AuditError::StandardManifestIndex)?;
-    let rule_documents: Vec<LoadedDocument> = index
-        .rules
-        .iter()
-        .map(|relative| read_document(root, relative))
-        .collect::<Result<_, _>>()?;
-    let rule_sources: Vec<(&str, &str)> = rule_documents
-        .iter()
-        .zip(&index.rules)
-        .map(|(document, relative)| Ok((relative.as_str(), document.source()?)))
-        .collect::<Result<_, AuditError>>()?;
-    let standard = StandardBundle::from_json_documents(standard_manifest.source()?, &rule_sources)
-        .map_err(AuditError::Standard)?;
-    let standard_index = ContractStandardIndex::from_bundle(&standard);
+    let loaded_standard = load_standard(root, &observed_files)?;
+    let standard_manifest = &loaded_standard.manifest;
+    let rule_documents = &loaded_standard.rules;
+    let standard = &loaded_standard.bundle;
+    let standard_index = ContractStandardIndex::from_bundle(standard);
     let rust_tests = analyze_observed_rust_tests(
         observed_files
             .iter()
@@ -264,16 +260,23 @@ fn audit_repository_with_ccg(
             .iter()
             .map(|document| (document.path.as_str(), document.bytes.as_slice())),
     );
-    let snapshot = build_repository_snapshot(root, &policy, ccg, &standard, &documents)
+    let snapshot = build_repository_snapshot(root, &policy, ccg, standard, &documents)
         .map_err(AuditError::Snapshot)?;
     verify_loaded_inputs(
         &snapshot,
         std::iter::once(&project_document)
-            .chain(std::iter::once(&standard_manifest))
+            .chain(std::iter::once(standard_manifest))
             .chain(rule_documents.iter())
             .chain(contract_documents.iter()),
     )?;
     verify_observed_files(&snapshot, &observed_files)?;
+    let architecture_realization = reconcile_repository_implementation(
+        &snapshot,
+        ccg,
+        &observed_files,
+        standard.edition(),
+        include_implementation_observation,
+    )?;
     let documentation = evaluate_repository_documentation(root, &snapshot, ccg, standard.edition())
         .map_err(AuditError::Documentation)?;
     let contract_coherency =
@@ -284,12 +287,13 @@ fn audit_repository_with_ccg(
         AuditError::ContractState("CCG compilation did not produce a graph".into())
     })?;
     let evaluation = evaluate_snapshot_rules(
-        &standard,
+        standard,
         &snapshot,
         ccg,
         &rust_tests,
         &documentation,
         &contract_coherency,
+        &architecture_realization,
     )?;
     Ok((result_from_evaluation(&snapshot, &evaluation), ccg.clone()))
 }
@@ -301,6 +305,7 @@ fn evaluate_snapshot_rules(
     rust_tests: &[crate::rust_test_analyzer::RustTestFact],
     documentation: &crate::documentation::DocumentationConformanceReport,
     contract_coherency: &crate::contract::ContractCoherencyEvaluation,
+    architecture_realization: &ArchitectureRealization,
 ) -> Result<crate::evaluation::SnapshotEvaluation, AuditError> {
     let paths: Vec<String> = snapshot
         .files()
@@ -313,8 +318,73 @@ fn evaluate_snapshot_rules(
             standard,
             snapshot,
             &architecture,
-            CompleteEvaluationInputs::new(rust_tests, documentation, contract_coherency),
+            CompleteEvaluationInputs::new(
+                rust_tests,
+                documentation,
+                contract_coherency,
+                architecture_realization,
+            ),
         )
+        .map_err(AuditError::Evaluation)
+}
+
+fn implementation_input(
+    snapshot: &RepositorySnapshot,
+    ccg: &ContractCoherencyGraph,
+    files: &BTreeMap<String, Vec<u8>>,
+) -> Result<ImplementationObservationInput, AuditError> {
+    let by_path: BTreeMap<&str, &crate::observation::ObservedFile> = snapshot
+        .files()
+        .iter()
+        .map(|file| (file.path(), file))
+        .collect();
+    let snapshot_files = files
+        .iter()
+        .map(|(path, bytes)| {
+            let identity = by_path
+                .get(path.as_str())
+                .ok_or_else(|| AuditError::InputMismatch(path.clone().into()))?;
+            Ok(SnapshotBoundFile::new(
+                path,
+                identity.size(),
+                identity.sha256(),
+                bytes.clone(),
+            ))
+        })
+        .collect::<Result<Vec<_>, AuditError>>()?;
+    let modules = ccg
+        .modules()
+        .iter()
+        .map(|(id, module)| ModuleTerritory::new(id, module.path()))
+        .collect();
+    Ok(ImplementationObservationInput::new(
+        snapshot.snapshot_fingerprint(),
+        snapshot_files,
+        modules,
+    ))
+}
+
+fn reconcile_repository_implementation(
+    snapshot: &RepositorySnapshot,
+    ccg: &ContractCoherencyGraph,
+    files: &BTreeMap<String, Vec<u8>>,
+    standard_edition: &str,
+    include_observation: bool,
+) -> Result<ArchitectureRealization, AuditError> {
+    let observed = if include_observation {
+        let input = implementation_input(snapshot, ccg, files)?;
+        observe_rust_implementation(&input).map_err(AuditError::ImplementationObservation)?
+    } else {
+        crate::implementation_observation::ObservedImplementation::from_facts(
+            snapshot.snapshot_fingerprint(),
+            "fortress-ccg-intent-only",
+            env!("CARGO_PKG_VERSION"),
+            Vec::new(),
+            Vec::new(),
+        )
+    };
+    reconcile_implementation(ccg, &observed, standard_edition)
+        .map_err(EvaluationError::Finding)
         .map_err(AuditError::Evaluation)
 }
 
@@ -358,6 +428,12 @@ struct LoadedDocument {
     bytes: Vec<u8>,
 }
 
+struct LoadedStandard {
+    manifest: LoadedDocument,
+    rules: Vec<LoadedDocument>,
+    bundle: StandardBundle,
+}
+
 impl LoadedDocument {
     fn source(&self) -> Result<&str, AuditError> {
         std::str::from_utf8(&self.bytes).map_err(|_| AuditError::NonUtf8(self.path.clone().into()))
@@ -388,6 +464,33 @@ fn read_observed_files(
             Ok((document.path, document.bytes))
         })
         .collect()
+}
+
+fn load_standard(
+    root: &Path,
+    observed_files: &BTreeMap<String, Vec<u8>>,
+) -> Result<LoadedStandard, AuditError> {
+    let manifest_path = find_standard_manifest(observed_files)?;
+    let manifest = read_document(root, &manifest_path)?;
+    let index: StandardManifestIndex =
+        serde_json::from_str(manifest.source()?).map_err(AuditError::StandardManifestIndex)?;
+    let rules: Vec<LoadedDocument> = index
+        .rules
+        .iter()
+        .map(|relative| read_document(root, relative))
+        .collect::<Result<_, _>>()?;
+    let sources: Vec<(&str, &str)> = rules
+        .iter()
+        .zip(&index.rules)
+        .map(|(document, relative)| Ok((relative.as_str(), document.source()?)))
+        .collect::<Result<_, AuditError>>()?;
+    let bundle = StandardBundle::from_json_documents(manifest.source()?, &sources)
+        .map_err(AuditError::Standard)?;
+    Ok(LoadedStandard {
+        manifest,
+        rules,
+        bundle,
+    })
 }
 
 fn verify_observed_files(
@@ -485,6 +588,8 @@ pub enum AuditError {
     InputMismatch(Box<str>),
     /// Snapshot-bound Rust analysis failed.
     RustAnalyzer(RustAnalyzerError),
+    /// Snapshot-bound implementation observation failed.
+    ImplementationObservation(ImplementationObservationError),
     /// Snapshot-bound documentation and contract evaluation failed.
     Documentation(DocumentationEvaluationError),
     /// Rule evaluation failed.
@@ -516,6 +621,9 @@ impl Display for AuditError {
                 "loaded input `{path}` does not match the stabilized snapshot"
             ),
             Self::RustAnalyzer(error) => write!(formatter, "Rust test analysis failed: {error}"),
+            Self::ImplementationObservation(error) => {
+                write!(formatter, "implementation observation failed: {error}")
+            }
             Self::Documentation(error) => {
                 write!(formatter, "documentation evaluation failed: {error}")
             }

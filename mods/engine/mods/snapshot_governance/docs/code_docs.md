@@ -34,10 +34,6 @@ Parses canonical Markdown structurally and reconciles Module contracts, catalogs
 
 Dispatches only implemented applicable rules and distinguishes evaluated pass or failure from unsupported capability.
 
-### [`finding.rs`](../code/finding.rs)
-
-Defines validated content-addressed findings and their deterministic global ordering.
-
 ### [`ownership.rs`](../code/ownership.rs)
 
 Reconciles observed governed files with exact declared architectural ownership.

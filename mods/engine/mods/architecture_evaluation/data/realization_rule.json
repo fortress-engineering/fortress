@@ -1,0 +1,35 @@
+{
+  "$schema": "urn:fortress:schema:v1:rule",
+  "schema_version": 1,
+  "id": "ARCH-REALIZATION-001",
+  "title": "Observed implementation conforms to declared architectural dependencies",
+  "status": "draft",
+  "statement": "Every supported, resolved direct cross-Module implementation dependency MUST be authorized by a corresponding direct dependency in the Contract Coherency Graph.",
+  "rationale": "Contracts express intended architecture while source observation provides independent realization evidence. Direct source access must have direct authorization because transitive reachability does not export an intermediary's dependencies or permit boundary bypass.",
+  "failure_prevented": "Accidental cross-Module coupling, facade bypass, and architecture drift hidden by transitive dependency reachability.",
+  "applicability": "Every stabilized governed repository containing Rust source supported by Implementation Observation v1.",
+  "category": "architecture",
+  "integrity_tier": 1,
+  "evaluation": "Fortress compiles the CCG once, structurally observes snapshot-bound Rust dependencies independently, normalizes direct Module edges, and reconciles each observed edge with exact CCG direct requirements. Undeclared and transitive-bypass edges fail; declared-unobserved, external, unresolved, and unsupported coverage remain explicit without being treated as realization evidence.",
+  "required_capabilities": [
+    "architecture-realization-reconciliation-v1",
+    "contract-coherency-graph-v1",
+    "rust-implementation-observation-v1"
+  ],
+  "logic": {
+    "implies": [],
+    "conflicts_with": []
+  },
+  "finding": {
+    "message": "Observed direct implementation dependency lacks direct CCG authorization or bypasses a declared intermediary.",
+    "location": "span"
+  },
+  "remediation": "Authorize a genuine direct dependency through an exact provider capability or refactor the source to use the declared facade/intermediary. Do not use transitive reachability as direct access permission.",
+  "valid_example": "A contract requires CAP-B from Module B and snapshot-bound Rust owned by A references B through the authorized direct surface.",
+  "invalid_example": "A requires B and B requires C, but Rust source owned by A imports C directly without an A-to-C capability requirement.",
+  "exception_policy": "No implicit transitive authorization exists. A future governed exemption model may represent bounded exceptions; none is implemented in this edition.",
+  "introduced": "1.0.0-draft.1",
+  "history": [
+    "Introduced with deterministic Rust Implementation Observation and CCG reconciliation as the first implementation-realization rule."
+  ]
+}

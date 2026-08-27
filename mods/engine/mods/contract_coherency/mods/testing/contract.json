@@ -9,6 +9,21 @@
       "provider": "AF-CONTRACT-COHERENCY-0001",
       "capability": "CAP-CONTRACT-COHERENCY",
       "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-CORE-0001",
+      "capability": "CAP-FORTRESS-ENGINE",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-SNAPSHOT-GOVERNANCE-0001",
+      "capability": "CAP-SNAPSHOT-GOVERNANCE",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-STANDARD-REGISTRY-0001",
+      "capability": "CAP-STANDARD-REGISTRY",
+      "version": "^0.1.0"
     }
   ],
   "relationships": [

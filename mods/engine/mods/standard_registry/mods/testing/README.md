@@ -20,6 +20,12 @@ Ancestor, sibling, or descendant Feature requirements; normative rule meaning; p
 
 ## Relationships
 
+### [Engine](../../../../README.md)
+
+**Types:** `depends_on`
+
+Executes as a separate Rust test crate through the Engine package facade while proving the narrower parent-owned Feature.
+
 ### [Standard Registry](../../README.md)
 
 **Types:** `depends_on`, `verifies`

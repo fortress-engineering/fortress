@@ -26,6 +26,24 @@ Architecture Evaluation behavior, Snapshot Governance orchestration, source depe
 
 Consumes the parent compiler and verifies exactly the Contract Coherency Feature introduced at that boundary.
 
+### [Engine](../../../../README.md)
+
+**Types:** `depends_on`
+
+Executes as a separate Rust test crate through the Engine package facade while proving the narrower parent-owned Feature.
+
+### [Snapshot Governance](../../../snapshot_governance/README.md)
+
+**Types:** `depends_on`
+
+Supplies the live stabilized audit orchestration used to regenerate and compare Fortress's committed self-CCG.
+
+### [Standard Registry](../../../standard_registry/README.md)
+
+**Types:** `depends_on`
+
+Supplies exact standard bundle types and formal rule-logic validation used by compiler conformance fixtures.
+
 ## Guarantees
 
 Fixtures remain deterministic, assert precise violations, and never present declared support topology as executed proof.

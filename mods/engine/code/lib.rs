@@ -8,6 +8,8 @@
 
 #[path = "../mods/architecture_evaluation/code/architecture.rs"]
 pub mod architecture;
+#[path = "../mods/architecture_evaluation/code/realization.rs"]
+pub mod architecture_realization;
 #[path = "../mods/snapshot_governance/code/audit.rs"]
 pub mod audit;
 #[path = "../mods/snapshot_governance/code/contract.rs"]
@@ -18,10 +20,12 @@ pub mod contract_coherency;
 pub mod documentation;
 #[path = "../mods/snapshot_governance/code/evaluation.rs"]
 pub mod evaluation;
-#[path = "../mods/snapshot_governance/code/finding.rs"]
+#[path = "../mods/finding_model/code/finding.rs"]
 pub mod finding;
 #[path = "../mods/standard_registry/code/identity.rs"]
 pub mod identity;
+#[path = "../mods/implementation_observation/code/observation.rs"]
+pub mod implementation_observation;
 #[path = "../mods/repository_observation/code/observation.rs"]
 pub mod observation;
 #[path = "../mods/snapshot_governance/code/ownership.rs"]

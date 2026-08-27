@@ -347,6 +347,7 @@ fn exact_draft_standard_documents_load_as_one_validated_bundle() {
     let paths = [
         "mods/engine/mods/standard_registry/data/std_id_rule.json",
         "mods/engine/mods/architecture_evaluation/data/dependency_rule.json",
+        "mods/engine/mods/architecture_evaluation/data/realization_rule.json",
         "mods/engine/mods/snapshot_governance/data/ownership_rule.json",
         "mods/engine/mods/snapshot_governance/data/traceability_rule.json",
         "mods/engine/mods/snapshot_governance/data/test_boundary_rule.json",
@@ -366,7 +367,7 @@ fn exact_draft_standard_documents_load_as_one_validated_bundle() {
     let bundle = StandardBundle::from_json_documents(&manifest, &documents)
         .expect("draft bundle must validate");
     assert_eq!(bundle.edition(), "1.0.0-draft.1");
-    assert_eq!(bundle.rules().len(), 8);
+    assert_eq!(bundle.rules().len(), 9);
     assert!(matches!(
         StandardBundle::from_json_documents(&manifest, &[(paths[0], sources[0].as_str())]),
         Err(StandardLoadError::MissingRuleDocument(_))

@@ -25,3 +25,7 @@ Maintainers update Data through reviewed semantic changes; schema versions chang
 ### [`dependency_rule.json`](../data/dependency_rule.json)
 
 Carries the draft normative rule record interpreted by the dependency evaluator.
+
+### [`realization_rule.json`](../data/realization_rule.json)
+
+Defines ARCH-REALIZATION-001 and its direct-authorization, transitive-bypass, coverage-truthfulness, and remediation semantics.

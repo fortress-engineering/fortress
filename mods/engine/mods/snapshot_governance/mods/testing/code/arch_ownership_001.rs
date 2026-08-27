@@ -145,10 +145,12 @@ fn fortress_self_inventory_has_exactly_one_declared_owner() {
             [
                 "ARCH-DEPENDENCY-001",
                 "ARCH-OWNERSHIP-001",
+                "ARCH-REALIZATION-001",
                 "CONTRACT-COHERENCY-001",
                 "REPO-DOCS-001",
                 "REPO-MODULE-001",
                 "STD-ID-001",
+                "TEST-BOUNDARY-001",
                 "TEST-TRACEABILITY-001",
             ],
         ),

@@ -6,8 +6,38 @@
   "provides": [],
   "requires": [
     {
+      "provider": "AF-ARCHITECTURE-EVALUATION-0001",
+      "capability": "CAP-ARCHITECTURE-EVALUATION",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-CONTRACT-COHERENCY-0001",
+      "capability": "CAP-CONTRACT-COHERENCY",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-CORE-0001",
+      "capability": "CAP-FORTRESS-ENGINE",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-FINDING-MODEL-0001",
+      "capability": "CAP-FINDING-MODEL",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-REPOSITORY-OBSERVATION-0001",
+      "capability": "CAP-REPOSITORY-OBSERVATION",
+      "version": "^0.1.0"
+    },
+    {
       "provider": "AF-SNAPSHOT-GOVERNANCE-0001",
       "capability": "CAP-SNAPSHOT-GOVERNANCE",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-STANDARD-REGISTRY-0001",
+      "capability": "CAP-STANDARD-REGISTRY",
       "version": "^0.1.0"
     }
   ],

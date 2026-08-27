@@ -20,11 +20,47 @@ Ancestor, sibling, or descendant Feature requirements; normative rule meaning; p
 
 ## Relationships
 
+### [Architecture Evaluation](../../../architecture_evaluation/README.md)
+
+**Types:** `depends_on`
+
+Supplies architecture projections and component fixtures exercised by ownership and evaluation tests.
+
+### [Contract Coherency](../../../contract_coherency/README.md)
+
+**Types:** `depends_on`
+
+Supplies contract and CCG fixture types used by snapshot, documentation, traceability, and boundary tests.
+
+### [Engine](../../../../README.md)
+
+**Types:** `depends_on`
+
+Executes as a separate Rust test crate through the Engine package facade while proving the narrower parent-owned Feature.
+
+### [Finding Model](../../../finding_model/README.md)
+
+**Types:** `depends_on`
+
+Supplies canonical finding values inspected by rule conformance assertions.
+
+### [Repository Observation](../../../repository_observation/README.md)
+
+**Types:** `depends_on`
+
+Supplies deterministic file observation used by stabilization and ownership fixtures.
+
 ### [Snapshot Governance](../../README.md)
 
 **Types:** `depends_on`, `verifies`
 
 Exercises the parent snapshot, rule, finding, analyzer, and audit boundaries.
+
+### [Standard Registry](../../../standard_registry/README.md)
+
+**Types:** `depends_on`
+
+Supplies exact standard bundle and stable identity types used throughout snapshot rule fixtures.
 
 ## Guarantees
 

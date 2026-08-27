@@ -8,42 +8,12 @@ use std::cmp::Ordering;
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
 
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use sha2::{Digest, Sha256};
 
 use crate::identity::{RuleId, RuleIdError, StableId, StableIdError};
 
-/// Rule category attached to a canonical finding.
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
-#[serde(rename_all = "lowercase")]
-pub enum FindingCategory {
-    /// Architecture topology, ownership, or boundary integrity.
-    Architecture,
-    /// Declared or observed dependency integrity.
-    Dependency,
-    /// Project contract integrity.
-    Contract,
-    /// Hand-authored source integrity.
-    Source,
-    /// Documentation integrity.
-    Documentation,
-    /// Behavioral evidence and traceability integrity.
-    Testing,
-    /// Certification and evidence integrity.
-    Certification,
-    /// Pipeline contract integrity.
-    Pipeline,
-    /// Temporal change integrity.
-    Change,
-    /// Onboarding-only governance integrity.
-    Onboarding,
-    /// Security policy integrity.
-    Security,
-    /// Repository layout and artifact integrity.
-    Repository,
-    /// Standard bundle integrity.
-    Standard,
-}
+pub use crate::standard::FindingCategory;
 
 /// Implemented semantic state of a normalized snapshot finding.
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]

@@ -10,6 +10,7 @@ use std::fmt::{self, Display, Formatter};
 use serde::Serialize;
 
 use crate::architecture::{ARCH_DEPENDENCY_RULE_ID, ArchitectureManifest};
+use crate::architecture_realization::{ARCH_REALIZATION_RULE_ID, ArchitectureRealization};
 use crate::contract::{CONTRACT_COHERENCY_RULE_ID, ContractCoherencyEvaluation};
 use crate::documentation::{DocumentationConformanceReport, REPO_DOCS_RULE_ID};
 use crate::finding::{CanonicalFinding, FindingError};
@@ -161,6 +162,7 @@ pub struct CompleteEvaluationInputs<'a> {
     rust_tests: &'a [RustTestFact],
     documentation: &'a DocumentationConformanceReport,
     contract_coherency: &'a ContractCoherencyEvaluation,
+    architecture_realization: &'a ArchitectureRealization,
 }
 
 impl<'a> CompleteEvaluationInputs<'a> {
@@ -170,11 +172,13 @@ impl<'a> CompleteEvaluationInputs<'a> {
         rust_tests: &'a [RustTestFact],
         documentation: &'a DocumentationConformanceReport,
         contract_coherency: &'a ContractCoherencyEvaluation,
+        architecture_realization: &'a ArchitectureRealization,
     ) -> Self {
         Self {
             rust_tests,
             documentation,
             contract_coherency,
+            architecture_realization,
         }
     }
 }
@@ -202,7 +206,7 @@ impl SnapshotRuleEngine {
         snapshot: &RepositorySnapshot,
         architecture: &ArchitectureManifest,
     ) -> Result<SnapshotEvaluation, EvaluationError> {
-        Self::evaluate_internal(standard, snapshot, architecture, None, None, None)
+        Self::evaluate_internal(standard, snapshot, architecture, None, None, None, None)
     }
 
     /// Evaluates the bundle with all currently supported snapshot-bound inputs.
@@ -224,6 +228,7 @@ impl SnapshotRuleEngine {
             Some(inputs.rust_tests),
             Some(inputs.documentation),
             Some(inputs.contract_coherency),
+            Some(inputs.architecture_realization),
         )
     }
 
@@ -234,19 +239,25 @@ impl SnapshotRuleEngine {
         rust_tests: Option<&[RustTestFact]>,
         documentation: Option<&DocumentationConformanceReport>,
         contract_coherency: Option<&ContractCoherencyEvaluation>,
+        architecture_realization: Option<&ArchitectureRealization>,
     ) -> Result<SnapshotEvaluation, EvaluationError> {
-        if standard.edition() != snapshot.standard_edition() {
-            return Err(EvaluationError::StandardEditionMismatch {
-                bundle: standard.edition().into(),
-                snapshot: snapshot.standard_edition().into(),
-            });
-        }
+        validate_standard_edition(standard, snapshot)?;
 
         let mut rules = Vec::with_capacity(standard.rules().len());
         let mut findings = Vec::new();
         for rule in standard.rules() {
             let (execution, mut rule_findings) = if rule.id() == ARCH_DEPENDENCY_RULE_ID {
                 dependency_execution(rule.id(), architecture, standard.edition())?
+            } else if rule.id() == ARCH_REALIZATION_RULE_ID {
+                architecture_realization.map_or_else(
+                    || {
+                        Ok(unsupported_execution(
+                            rule.id(),
+                            "Architecture realization requires one snapshot-bound observed implementation and one compiled CCG reconciliation.",
+                        ))
+                    },
+                    |result| Ok(realization_execution(rule.id(), result)),
+                )?
             } else if rule.id() == ARCH_OWNERSHIP_RULE_ID {
                 ownership_execution(rule.id(), architecture, snapshot, standard.edition())?
             } else if rule.id() == REPO_MODULE_RULE_ID {
@@ -331,6 +342,51 @@ impl SnapshotRuleEngine {
             findings,
         })
     }
+}
+
+fn validate_standard_edition(
+    standard: &StandardBundle,
+    snapshot: &RepositorySnapshot,
+) -> Result<(), EvaluationError> {
+    if standard.edition() == snapshot.standard_edition() {
+        return Ok(());
+    }
+    Err(EvaluationError::StandardEditionMismatch {
+        bundle: standard.edition().into(),
+        snapshot: snapshot.standard_edition().into(),
+    })
+}
+
+fn realization_execution(
+    rule_id: &str,
+    result: &ArchitectureRealization,
+) -> (RuleExecution, Vec<CanonicalFinding>) {
+    let findings = result.findings().to_vec();
+    let summary = result.summary();
+    (
+        RuleExecution {
+            rule_id: rule_id.into(),
+            state: if findings.is_empty() {
+                RuleExecutionState::Passed
+            } else {
+                RuleExecutionState::Failed
+            },
+            applicable: true,
+            findings: findings.len(),
+            detail: format!(
+                "Rust realization reconciliation produced {} declared-and-observed, {} observed-undeclared, {} transitive-bypass, {} declared-unobserved, {} external, {} unresolved, {} unsupported, and {} invalid conclusion(s); capability realization remains unsupported.",
+                summary.declared_and_observed(),
+                summary.observed_undeclared(),
+                summary.observed_transitive_bypass(),
+                summary.declared_unobserved(),
+                summary.external(),
+                summary.unresolved(),
+                summary.unsupported(),
+                summary.invalid(),
+            ),
+        },
+        findings,
+    )
 }
 
 fn testing_boundary_execution(

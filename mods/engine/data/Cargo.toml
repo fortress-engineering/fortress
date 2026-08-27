@@ -17,8 +17,16 @@ name = "arch_dependency_001"
 path = "../mods/architecture_evaluation/mods/testing/code/arch_dependency_001.rs"
 
 [[test]]
+name = "arch_realization_001"
+path = "../mods/architecture_evaluation/mods/testing/code/arch_realization_001.rs"
+
+[[test]]
 name = "contract_coherency_graph"
 path = "../mods/contract_coherency/mods/testing/code/contract_coherency_graph.rs"
+
+[[test]]
+name = "implementation_observation"
+path = "../mods/implementation_observation/mods/testing/code/implementation_observation.rs"
 
 [[test]]
 name = "self_architecture"
@@ -86,11 +94,13 @@ path = "../mods/snapshot_governance/mods/testing/code/test_boundary_001.rs"
 
 [dependencies]
 pulldown-cmark = { version = "0.13", default-features = false }
+proc-macro2 = { version = "1.0", features = ["span-locations"] }
 semver = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 sha2 = "0.10"
 syn = { version = "2.0", features = ["full", "visit"] }
+toml = "0.9"
 
 [lints]
 workspace = true

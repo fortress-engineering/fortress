@@ -248,6 +248,15 @@ impl ContractCoherencyGraph {
         dependency_cycles(&self.direct_requirements)
     }
 
+    /// Returns the canonical shortest declared dependency path between Modules.
+    ///
+    /// Direct paths have two identities. A longer path proves reachability but
+    /// does not authorize a direct source dependency.
+    #[must_use]
+    pub fn canonical_dependency_path(&self, source: &str, target: &str) -> Option<Vec<String>> {
+        dependency_paths(&self.direct_requirements).remove(&(source.to_owned(), target.to_owned()))
+    }
+
     pub(super) fn analyze_coherency(&self) -> Vec<CcgViolation> {
         let mut findings = Vec::new();
         for cycle in self.dependency_cycles() {

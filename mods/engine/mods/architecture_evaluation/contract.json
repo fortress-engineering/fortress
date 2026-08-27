@@ -17,6 +17,16 @@
       "version": "^0.1.0"
     },
     {
+      "provider": "AF-FINDING-MODEL-0001",
+      "capability": "CAP-FINDING-MODEL",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-IMPLEMENTATION-OBSERVATION-0001",
+      "capability": "CAP-IMPLEMENTATION-OBSERVATION",
+      "version": "^0.1.0"
+    },
+    {
       "provider": "AF-PROJECT-MODEL-0001",
       "capability": "CAP-PROJECT-MODEL",
       "version": "^0.1.0"
@@ -50,6 +60,17 @@
             "T-ARCH-DEPENDENCY-001-R01-001",
             "T-ARCH-DEPENDENCY-001-R01-002",
             "T-ARCH-DEPENDENCY-001-R01-003"
+          ]
+        },
+        {
+          "id": "AF-ARCHITECTURE-EVALUATION-0001-R03",
+          "statement": "ARCH-REALIZATION-001 deterministically reconciles independently observed direct Rust Module dependencies with CCG direct authorization, hard-fails undeclared and transitive-bypass access, and keeps declared-unobserved, external, unresolved, unsupported, and capability-realization states truthful.",
+          "tests": [
+            "T-AF-ARCHITECTURE-EVALUATION-0001-R03-001",
+            "T-ARCH-REALIZATION-001-R01-001",
+            "T-ARCH-REALIZATION-001-R01-002",
+            "T-ARCH-REALIZATION-001-R01-003",
+            "T-ARCH-REALIZATION-001-R01-004"
           ]
         }
       ]

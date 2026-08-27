@@ -1,0 +1,54 @@
+{
+  "$schema": "urn:fortress:schema:v2:module-contract",
+  "schema_version": 2,
+  "id": "AF-IMPLEMENTATION-OBSERVATION-0001",
+  "display_name": "Implementation Observation",
+  "provides": [
+    {
+      "id": "CAP-IMPLEMENTATION-OBSERVATION",
+      "version": "0.1.0",
+      "visibility": "project"
+    }
+  ],
+  "requires": [],
+  "relationships": [],
+  "constraints": [],
+  "guarantees": [
+    {
+      "id": "GUA-IMPLEMENTATION-OBSERVATION-DETERMINISM",
+      "subject": {
+        "kind": "capability",
+        "id": "CAP-IMPLEMENTATION-OBSERVATION"
+      },
+      "requirements": [
+        "AF-IMPLEMENTATION-OBSERVATION-0001-R01",
+        "AF-IMPLEMENTATION-OBSERVATION-0001-R02"
+      ]
+    }
+  ],
+  "features": [
+    {
+      "id": "AF-IMPLEMENTATION-OBSERVATION-0001",
+      "version": "0.1.0",
+      "requirements": [
+        {
+          "id": "AF-IMPLEMENTATION-OBSERVATION-0001-R01",
+          "statement": "Implementation observation verifies exact snapshot-bound source bytes and deterministically emits language-neutral Rust dependency facts, explicit analyzer coverage, and normalized Module edges without consulting declared dependency intent.",
+          "tests": [
+            "T-AF-IMPLEMENTATION-OBSERVATION-0001-R01-001",
+            "T-AF-IMPLEMENTATION-OBSERVATION-0001-R01-002"
+          ]
+        },
+        {
+          "id": "AF-IMPLEMENTATION-OBSERVATION-0001-R02",
+          "statement": "Rust analyzer v1 structurally resolves Cargo targets, module declarations, use and qualified paths, same-crate ownership, workspace facades, and external or unresolved references with deterministic provenance while leaving capability realization unsupported.",
+          "tests": [
+            "T-AF-IMPLEMENTATION-OBSERVATION-0001-R02-001",
+            "T-AF-IMPLEMENTATION-OBSERVATION-0001-R02-002"
+          ]
+        }
+      ]
+    }
+  ],
+  "behavior": []
+}

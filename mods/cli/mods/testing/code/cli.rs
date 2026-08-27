@@ -115,6 +115,7 @@ impl AuditFixture {
             "mods/engine/mods/standard_registry/data/standard_manifest.json",
             "mods/engine/mods/standard_registry/data/std_id_rule.json",
             "mods/engine/mods/architecture_evaluation/data/dependency_rule.json",
+            "mods/engine/mods/architecture_evaluation/data/realization_rule.json",
             "mods/engine/mods/snapshot_governance/data/ownership_rule.json",
             "mods/engine/mods/snapshot_governance/data/traceability_rule.json",
             "mods/engine/mods/snapshot_governance/data/test_boundary_rule.json",
@@ -131,7 +132,7 @@ impl AuditFixture {
         .expect("standard Data documentation writes");
         fs::write(
             root.join("mods/engine/mods/architecture_evaluation/docs/data_docs.md"),
-            data_docs(&["dependency_rule.json"]),
+            data_docs(&["dependency_rule.json", "realization_rule.json"]),
         )
         .expect("architecture Data documentation writes");
         fs::write(
@@ -318,7 +319,7 @@ fn audit_success_renders_human_snapshot_report() {
         String::from_utf8_lossy(&output.stderr)
     );
     assert!(stdout.contains("Fortress Snapshot Audit"));
-    assert!(stdout.contains("PASS: 7"));
+    assert!(stdout.contains("PASS: 8"));
     assert!(stdout.contains("Unsupported: 1"));
     assert!(!stdout.contains("certification"));
 }

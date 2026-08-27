@@ -12,7 +12,7 @@ Compose the implemented core capabilities behind a stable Rust library facade wh
 
 ### Includes
 
-The crate facade, package contract, and integration of standard registry, contract coherency, project model, repository observation, architecture evaluation, and Snapshot Governance capabilities.
+The crate facade, package contract, and integration of standard registry, finding model, contract coherency, project model, repository observation, implementation observation, architecture evaluation, and Snapshot Governance capabilities.
 
 ### Excludes
 
@@ -31,6 +31,18 @@ Supplies CCG-backed architecture and dependency evaluation through the Engine fa
 **Types:** `depends_on`
 
 Supplies canonical Contract v2 compilation, semantic closure, contradiction analysis, provenance, and deterministic CCG serialization.
+
+### [Finding Model](mods/finding_model/README.md)
+
+**Types:** `depends_on`
+
+Supplies the shared validated, content-addressed evidence representation used by Engine evaluators.
+
+### [Implementation Observation](mods/implementation_observation/README.md)
+
+**Types:** `depends_on`
+
+Supplies independent snapshot-bound Rust source facts and normalized direct Module dependency evidence.
 
 ### [Project Model](mods/project_model/README.md)
 

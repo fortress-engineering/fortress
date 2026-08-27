@@ -1,0 +1,25 @@
+{
+  "$schema": "urn:fortress:schema:v2:module-contract",
+  "schema_version": 2,
+  "id": "AF-FINDING-MODEL-0001",
+  "display_name": "Finding Model",
+  "provides": [
+    {
+      "id": "CAP-FINDING-MODEL",
+      "version": "0.1.0",
+      "visibility": "project"
+    }
+  ],
+  "requires": [
+    {
+      "provider": "AF-STANDARD-REGISTRY-0001",
+      "capability": "CAP-STANDARD-REGISTRY",
+      "version": "^0.1.0"
+    }
+  ],
+  "relationships": [],
+  "constraints": [],
+  "guarantees": [],
+  "features": [],
+  "behavior": []
+}
