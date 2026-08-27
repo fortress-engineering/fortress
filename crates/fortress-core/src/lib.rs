@@ -14,6 +14,7 @@ pub mod finding;
 pub mod identity;
 pub mod observation;
 pub mod ownership;
+pub mod placement;
 pub mod project;
 pub mod rust_test_analyzer;
 pub mod snapshot;

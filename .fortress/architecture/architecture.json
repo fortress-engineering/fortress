@@ -142,5 +142,31 @@
       "classification": "repository-metadata",
       "required": true
     }
-  ]
+  ],
+  "repository_structure": {
+    "allowed_top_level": [
+      ".fortress",
+      ".github",
+      "conformance",
+      "crates",
+      "docs",
+      "schemas",
+      "standard",
+      "tests"
+    ],
+    "source_roots": [
+      "crates/",
+      "schemas/",
+      "standard/"
+    ],
+    "prohibited_artifact_classes_in_source": [
+      "generated",
+      "runtime-state"
+    ],
+    "canonical_paths": [
+      ".fortress/architecture/architecture.json",
+      ".fortress/project.json",
+      "standard/drafts/1.0.0/manifest.json"
+    ]
+  }
 }

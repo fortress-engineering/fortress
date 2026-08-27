@@ -190,15 +190,18 @@
         "crates/fortress-core/src/feature.rs",
         "crates/fortress-core/src/finding.rs",
         "crates/fortress-core/src/ownership.rs",
+        "crates/fortress-core/src/placement.rs",
         "crates/fortress-core/src/rust_test_analyzer.rs",
         "crates/fortress-core/src/traceability.rs",
         "crates/fortress-core/tests/snapshot_evaluation.rs",
         "crates/fortress-core/tests/arch_ownership_001.rs",
+        "crates/fortress-core/tests/repo_placement_001.rs",
         "crates/fortress-core/tests/test_traceability_001.rs",
         "crates/fortress-core/src/snapshot.rs",
         "crates/fortress-core/tests/repository_snapshot.rs",
         "docs/development/snapshot-evaluation.md",
         "docs/development/file-ownership.md",
+        "docs/development/repository-placement.md",
         "docs/development/test-traceability.md",
         "docs/development/snapshot-governance.md"
       ],
@@ -265,6 +268,16 @@
             "T-TEST-TRACEABILITY-001-R01-001",
             "T-TEST-TRACEABILITY-001-R01-002",
             "T-TEST-TRACEABILITY-001-R01-003"
+          ]
+        },
+        {
+          "id": "AF-SNAPSHOT-GOVERNANCE-0001-R07",
+          "statement": "REPO-PLACEMENT-001 deterministically enforces the project-declared top-level roots, structural ownership, prohibited source artifact classes, and canonical Fortress-controlled path spelling without imposing one universal ecosystem folder tree.",
+          "tests": [
+            "T-REPO-PLACEMENT-001-R01-001",
+            "T-REPO-PLACEMENT-001-R01-002",
+            "T-REPO-PLACEMENT-001-R01-003",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R07-001"
           ]
         }
       ]

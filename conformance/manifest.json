@@ -36,6 +36,15 @@
       "expected_invalid": "rules/TEST-TRACEABILITY-001/expected/invalid.json",
       "exemption": "not-applicable",
       "conflict": "not-applicable"
+    },
+    {
+      "rule_id": "REPO-PLACEMENT-001",
+      "valid": "rules/REPO-PLACEMENT-001/valid/input.json",
+      "invalid": "rules/REPO-PLACEMENT-001/invalid/input.json",
+      "boundary": "rules/REPO-PLACEMENT-001/boundary/input.json",
+      "expected_invalid": "rules/REPO-PLACEMENT-001/expected/invalid.json",
+      "exemption": "deferred-until-exemption-model",
+      "conflict": "not-applicable"
     }
   ]
 }

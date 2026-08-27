@@ -1,0 +1,31 @@
+{
+  "$schema": "../../../../schemas/v1/rule.schema.json",
+  "schema_version": 1,
+  "id": "REPO-PLACEMENT-001",
+  "title": "Declared repository structural placement",
+  "status": "draft",
+  "statement": "Observed governed paths MUST conform to the repository structure declared by the project: implementation paths MUST occupy allowed top-level and owned roots, prohibited generated/runtime artifacts MUST NOT occupy governed source roots, and declared Fortress-controlled canonical paths MUST use exact spelling.",
+  "rationale": "Project-declared placement reduces structural entropy while preserving ecosystem-required names and avoiding a universal cross-language folder tree.",
+  "failure_prevented": "Undeclared implementation islands, structurally unowned files, generated or runtime state mixed into source authority, and non-canonical Fortress-controlled path spelling.",
+  "applicability": "Every stabilized governed repository inventory whose architecture declares repository placement policy under the applicable archetype.",
+  "category": "repository",
+  "integrity_tier": 1,
+  "evaluation": "The Fortress core compares canonical observed paths with declared allowed top-level roots, component and artifact ownership, source roots, prohibited artifact classes, and exact canonical paths.",
+  "required_capabilities": [
+    "stabilized-repository-observation",
+    "declared-repository-structure",
+    "repository-placement-reconciliation"
+  ],
+  "finding": {
+    "message": "An observed path violates the project-declared repository placement policy.",
+    "location": "path"
+  },
+  "remediation": "Move the path into a declared top-level and owned structural root, declare a defensible project-specific placement, remove prohibited generated/runtime state from source, or restore the exact canonical Fortress-controlled path spelling.",
+  "valid_example": "A Rust workspace keeps Cargo.toml as explicitly owned repository metadata while implementation resides under the project's declared crates/ root.",
+  "invalid_example": "An undeclared tools/ implementation island appears, generated output is placed beneath a prohibited source root, or .Fortress/project.json replaces the declared .fortress/project.json path.",
+  "exception_policy": "Ecosystem-required names are modeled explicitly and are not violations. Future exemptions must not silently redefine the project's declared structure.",
+  "introduced": "1.0.0-draft.1",
+  "history": [
+    "Introduced during CHG-SNAPSHOT-0006 as a project-declared structural rule following the Fortress entropy doctrine."
+  ]
+}

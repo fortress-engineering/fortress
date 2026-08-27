@@ -13,6 +13,7 @@ use crate::architecture::{ARCH_DEPENDENCY_RULE_ID, ArchitectureManifest};
 use crate::feature::FeatureContract;
 use crate::finding::{CanonicalFinding, FindingError};
 use crate::ownership::{ARCH_OWNERSHIP_RULE_ID, evaluate_file_ownership};
+use crate::placement::{REPO_PLACEMENT_RULE_ID, evaluate_repository_placement};
 use crate::rust_test_analyzer::RustTestFact;
 use crate::snapshot::RepositorySnapshot;
 use crate::standard::StandardBundle;
@@ -213,6 +214,8 @@ impl SnapshotRuleEngine {
                 dependency_execution(rule.id(), architecture, standard.edition())?
             } else if rule.id() == ARCH_OWNERSHIP_RULE_ID {
                 ownership_execution(rule.id(), architecture, snapshot, standard.edition())?
+            } else if rule.id() == REPO_PLACEMENT_RULE_ID {
+                placement_execution(rule.id(), architecture, snapshot, standard.edition())?
             } else if rule.id() == TEST_TRACEABILITY_RULE_ID {
                 if let Some((contracts, rust_tests)) = traceability_inputs {
                     traceability_execution(rule.id(), contracts, rust_tests, standard.edition())?
@@ -300,6 +303,29 @@ fn traceability_execution(
             "requirement/test traceability violation(s)",
         ),
         result.findings().to_vec(),
+    ))
+}
+
+fn placement_execution(
+    rule_id: &str,
+    architecture: &ArchitectureManifest,
+    snapshot: &RepositorySnapshot,
+    standard_edition: &str,
+) -> Result<(RuleExecution, Vec<CanonicalFinding>), EvaluationError> {
+    let paths: Vec<String> = snapshot
+        .files()
+        .iter()
+        .map(|file| file.path().to_owned())
+        .collect();
+    let findings = evaluate_repository_placement(architecture, &paths, standard_edition)
+        .map_err(EvaluationError::Finding)?;
+    Ok((
+        completed_execution(
+            rule_id,
+            findings.len(),
+            "declared repository placement violation(s)",
+        ),
+        findings,
     ))
 }
 

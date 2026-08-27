@@ -35,8 +35,35 @@
         "properties": {
           "path": { "$ref": "urn:fortress:schema:v1:common#/$defs/relative-path" },
           "owner": { "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id" },
-          "classification": { "enum": ["repository-metadata", "generated"] },
+          "classification": { "enum": ["repository-metadata", "generated", "runtime-state"] },
           "required": { "type": "boolean" }
+        }
+      }
+    },
+    "repository_structure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allowed_top_level", "source_roots", "prohibited_artifact_classes_in_source", "canonical_paths"],
+      "properties": {
+        "allowed_top_level": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[A-Za-z0-9._-]+$" }
+        },
+        "source_roots": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "urn:fortress:schema:v1:common#/$defs/relative-path" }
+        },
+        "prohibited_artifact_classes_in_source": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "enum": ["repository-metadata", "generated", "runtime-state"] }
+        },
+        "canonical_paths": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "urn:fortress:schema:v1:common#/$defs/relative-path" }
         }
       }
     }

@@ -107,7 +107,7 @@ fn registered_architecture_evaluator_distinguishes_pass_and_failure() {
     let pass = SnapshotRuleEngine::builtin()
         .evaluate(&standard, &snapshot, &valid)
         .expect("valid evaluation completes");
-    assert_eq!(pass.passed_count(), 2);
+    assert_eq!(pass.passed_count(), 3);
     assert_eq!(pass.failed_count(), 0);
     assert!(pass.findings().is_empty());
 

@@ -1,0 +1,36 @@
+{
+  "architecture": {
+    "$schema": "schemas/v1/architecture.schema.json",
+    "schema_version": 1,
+    "zones": ["core"],
+    "components": [
+      {
+        "id": "AF-CORE-0001",
+        "title": "Core",
+        "zone": "core",
+        "paths": ["src/"],
+        "depends_on": []
+      }
+    ],
+    "repository_artifacts": [
+      {
+        "path": "src/generated.rs",
+        "owner": "AF-CORE-0001",
+        "classification": "generated",
+        "required": true
+      }
+    ],
+    "repository_structure": {
+      "allowed_top_level": ["src", ".fortress"],
+      "source_roots": ["src/"],
+      "prohibited_artifact_classes_in_source": ["generated", "runtime-state"],
+      "canonical_paths": [".fortress/project.json"]
+    }
+  },
+  "observed_paths": [
+    ".Fortress/project.json",
+    "island/lib.rs",
+    "src/generated.rs",
+    "src/lib.rs"
+  ]
+}

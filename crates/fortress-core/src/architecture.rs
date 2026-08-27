@@ -34,6 +34,8 @@ pub struct ArchitectureManifest {
     components: Vec<ComponentDeclaration>,
     #[serde(default)]
     repository_artifacts: Vec<RepositoryArtifactDeclaration>,
+    #[serde(default)]
+    repository_structure: Option<RepositoryStructureDeclaration>,
 }
 
 impl ArchitectureManifest {
@@ -141,6 +143,9 @@ impl ArchitectureManifest {
                 });
             }
         }
+        if let Some(structure) = &self.repository_structure {
+            validate_repository_structure(structure)?;
+        }
 
         for component in &self.components {
             for dependency in &component.depends_on {
@@ -172,6 +177,12 @@ impl ArchitectureManifest {
     #[must_use]
     pub fn repository_artifacts(&self) -> &[RepositoryArtifactDeclaration] {
         &self.repository_artifacts
+    }
+
+    /// Returns the declared repository placement policy when present.
+    #[must_use]
+    pub const fn repository_structure(&self) -> Option<&RepositoryStructureDeclaration> {
+        self.repository_structure.as_ref()
     }
 
     /// Evaluates draft rule `ARCH-DEPENDENCY-001` against declared edges.
@@ -309,13 +320,15 @@ impl RepositoryArtifactDeclaration {
 }
 
 /// Supported explicit non-source repository artifact classes.
-#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd)]
 #[serde(rename_all = "kebab-case")]
 pub enum RepositoryArtifactClassification {
     /// A repository-wide build, policy, automation, or descriptive record.
     RepositoryMetadata,
     /// A generated artifact retained under a declared authority.
     Generated,
+    /// Ephemeral execution state that must not occupy governed source roots.
+    RuntimeState,
 }
 
 impl RepositoryArtifactClassification {
@@ -325,7 +338,43 @@ impl RepositoryArtifactClassification {
         match self {
             Self::RepositoryMetadata => "repository-metadata",
             Self::Generated => "generated",
+            Self::RuntimeState => "runtime-state",
         }
+    }
+}
+
+/// Project-declared structural placement constraints.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+pub struct RepositoryStructureDeclaration {
+    allowed_top_level: Vec<String>,
+    source_roots: Vec<String>,
+    prohibited_artifact_classes_in_source: Vec<RepositoryArtifactClassification>,
+    canonical_paths: Vec<String>,
+}
+
+impl RepositoryStructureDeclaration {
+    /// Returns top-level directory names permitted by the project model.
+    #[must_use]
+    pub fn allowed_top_level(&self) -> &[String] {
+        &self.allowed_top_level
+    }
+
+    /// Returns declared governed source path prefixes.
+    #[must_use]
+    pub fn source_roots(&self) -> &[String] {
+        &self.source_roots
+    }
+
+    /// Returns artifact classes prohibited beneath governed source roots.
+    #[must_use]
+    pub fn prohibited_artifact_classes_in_source(&self) -> &[RepositoryArtifactClassification] {
+        &self.prohibited_artifact_classes_in_source
+    }
+
+    /// Returns exact Fortress-controlled paths required with canonical spelling.
+    #[must_use]
+    pub fn canonical_paths(&self) -> &[String] {
+        &self.canonical_paths
     }
 }
 
@@ -472,6 +521,20 @@ pub enum ArchitectureModelError {
         /// Missing component identity.
         owner: Box<str>,
     },
+    /// A repository-structure field contained an invalid path or top-level name.
+    InvalidRepositoryStructureValue {
+        /// Declared structure field.
+        field: &'static str,
+        /// Invalid value.
+        value: Box<str>,
+    },
+    /// A repository-structure field repeated a value.
+    DuplicateRepositoryStructureValue {
+        /// Declared structure field.
+        field: &'static str,
+        /// Repeated value.
+        value: Box<str>,
+    },
 }
 
 impl Display for ArchitectureModelError {
@@ -546,6 +609,14 @@ impl Display for ArchitectureModelError {
             Self::UnknownRepositoryArtifactOwner { path, owner } => write!(
                 formatter,
                 "repository artifact `{path}` references unknown owner `{owner}`"
+            ),
+            Self::InvalidRepositoryStructureValue { field, value } => write!(
+                formatter,
+                "repository structure field `{field}` contains invalid value `{value}`"
+            ),
+            Self::DuplicateRepositoryStructureValue { field, value } => write!(
+                formatter,
+                "repository structure field `{field}` repeats value `{value}`"
             ),
         }
     }
@@ -634,6 +705,63 @@ fn is_relative_path_or_prefix(value: &str) -> bool {
 
 fn is_exact_relative_path(value: &str) -> bool {
     is_relative_path_or_prefix(value) && !value.ends_with('/')
+}
+
+fn validate_repository_structure(
+    structure: &RepositoryStructureDeclaration,
+) -> Result<(), ArchitectureModelError> {
+    validate_unique_values(
+        "repository_structure.allowed_top_level",
+        &structure.allowed_top_level,
+        is_top_level_name,
+    )?;
+    validate_unique_values(
+        "repository_structure.source_roots",
+        &structure.source_roots,
+        is_relative_path_or_prefix,
+    )?;
+    validate_unique_values(
+        "repository_structure.canonical_paths",
+        &structure.canonical_paths,
+        is_exact_relative_path,
+    )?;
+    let mut classes = HashSet::new();
+    for class in &structure.prohibited_artifact_classes_in_source {
+        if !classes.insert(*class) {
+            return Err(ArchitectureModelError::DuplicateRepositoryStructureValue {
+                field: "repository_structure.prohibited_artifact_classes_in_source",
+                value: class.as_str().into(),
+            });
+        }
+    }
+    Ok(())
+}
+
+fn validate_unique_values(
+    field: &'static str,
+    values: &[String],
+    valid: impl Fn(&str) -> bool,
+) -> Result<(), ArchitectureModelError> {
+    let mut unique = HashSet::new();
+    for value in values {
+        if !valid(value) {
+            return Err(ArchitectureModelError::InvalidRepositoryStructureValue {
+                field,
+                value: value.clone().into(),
+            });
+        }
+        if !unique.insert(value.as_str()) {
+            return Err(ArchitectureModelError::DuplicateRepositoryStructureValue {
+                field,
+                value: value.clone().into(),
+            });
+        }
+    }
+    Ok(())
+}
+
+fn is_top_level_name(value: &str) -> bool {
+    is_exact_relative_path(value) && !value.contains('/')
 }
 
 #[cfg(test)]
