@@ -78,6 +78,25 @@ fn draft_manifest_agrees_with_implemented_registry() {
     }
 }
 
+/// `T-AF-STANDARD-REGISTRY-0001-R03-003`
+#[test]
+fn rule_schema_allows_declared_instance_schema_references() {
+    let schema = read_json("schemas/v1/rule.schema.json");
+    assert!(schema["properties"]["$schema"].is_object());
+
+    let manifest = read_json("standard/drafts/1.0.0/manifest.json");
+    for relative_path in manifest["rules"]
+        .as_array()
+        .expect("standard manifest must contain rules")
+    {
+        let relative_path = relative_path
+            .as_str()
+            .expect("standard rule path must be a string");
+        let rule = read_json(&format!("standard/drafts/1.0.0/{relative_path}"));
+        assert!(rule["$schema"].is_string());
+    }
+}
+
 /// `T-AF-PROJECT-MODEL-0001-R03-001`
 #[test]
 fn general_change_schema_does_not_require_bootstrap_provenance() {

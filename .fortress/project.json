@@ -17,6 +17,7 @@
     "AF-STANDARD-REGISTRY-0001",
     "AF-PROJECT-MODEL-0001",
     "AF-REPOSITORY-OBSERVATION-0001",
+    "AF-ARCHITECTURE-EVALUATION-0001",
     "AF-BOOTSTRAP-GOVERNANCE-0001",
     "TF-CLI-0001"
   ],
@@ -30,6 +31,8 @@
     ],
     "commands": ".fortress/commands/core.json",
     "certifications": ".fortress/certifications/bootstrap.json",
-    "active_changes": []
+    "active_changes": [
+      ".fortress/changes/active/CHG-ARCHITECTURE-0004.json"
+    ]
   }
 }

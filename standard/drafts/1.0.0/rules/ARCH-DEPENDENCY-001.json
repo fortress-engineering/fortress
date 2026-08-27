@@ -1,0 +1,30 @@
+{
+  "$schema": "../../../../schemas/v1/rule.schema.json",
+  "schema_version": 1,
+  "id": "ARCH-DEPENDENCY-001",
+  "title": "Acyclic declared component dependencies",
+  "status": "draft",
+  "statement": "The declared Fortress component dependency graph MUST NOT contain a directed cycle.",
+  "rationale": "A cycle prevents a stable dependency direction, obscures impact boundaries, and indicates that the participating responsibilities must be separated or deliberately modeled as one component.",
+  "failure_prevented": "Mutually dependent architectural components that cannot be ordered, independently reasoned about, or safely invalidated for downstream certification.",
+  "applicability": "Every declared component graph in a Fortress project architecture model.",
+  "category": "architecture",
+  "integrity_tier": 1,
+  "evaluation": "The Fortress core validates component and dependency identities, then performs deterministic graph traversal and emits a canonical finding when a back-edge closes a dependency cycle.",
+  "required_capabilities": [
+    "declared-architecture-loading",
+    "component-dependency-cycle-detection"
+  ],
+  "finding": {
+    "message": "Declared component dependency graph contains a cycle.",
+    "location": "entity"
+  },
+  "remediation": "Separate responsibilities to restore one-way dependency flow or model a genuinely inseparable strongly connected cluster as one component. A temporary exception requires a governed transition or exemption.",
+  "valid_example": "TF-CLI-0001 depends on AF-CORE-0001, while AF-CORE-0001 has no dependency on TF-CLI-0001.",
+  "invalid_example": "AF-A depends on AF-B and AF-B depends on AF-A.",
+  "exception_policy": "A bounded transition or explicit exemption may describe a temporary cycle, its owner, scope, and retirement evidence; the affected scope remains not certified until the cycle is removed or the model is legitimately consolidated.",
+  "introduced": "1.0.0-draft.1",
+  "history": [
+    "Introduced during CHG-ARCHITECTURE-0004 after deterministic repository observation became available."
+  ]
+}

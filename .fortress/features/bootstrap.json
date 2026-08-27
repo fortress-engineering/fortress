@@ -47,7 +47,8 @@
           "statement": "Every registered schema and draft standard record parses, has unique identity, and agrees with the implemented registry.",
           "tests": [
             "T-AF-STANDARD-REGISTRY-0001-R03-001",
-            "T-AF-STANDARD-REGISTRY-0001-R03-002"
+            "T-AF-STANDARD-REGISTRY-0001-R03-002",
+            "T-AF-STANDARD-REGISTRY-0001-R03-003"
           ]
         }
       ]
@@ -128,6 +129,48 @@
             "T-AF-REPOSITORY-OBSERVATION-0001-R02-001",
             "T-AF-REPOSITORY-OBSERVATION-0001-R02-002",
             "T-AF-REPOSITORY-OBSERVATION-0001-R02-003"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "AF-ARCHITECTURE-EVALUATION-0001",
+      "title": "Declared architecture dependency evaluation",
+      "status": "active",
+      "parent": null,
+      "owner": "AF-CORE-0001",
+      "zone": "core",
+      "owned_paths": [
+        "standard/drafts/1.0.0/rules/ARCH-DEPENDENCY-001.json",
+        "schemas/v1/architecture.schema.json",
+        "crates/fortress-core/src/architecture.rs",
+        "crates/fortress-core/tests/arch_dependency_001.rs",
+        "conformance/rules/ARCH-DEPENDENCY-001/",
+        "docs/development/architecture-evaluation.md"
+      ],
+      "dependencies": [
+        "AF-STANDARD-REGISTRY-0001",
+        "AF-PROJECT-MODEL-0001",
+        "AF-REPOSITORY-OBSERVATION-0001"
+      ],
+      "requirements": [
+        {
+          "id": "AF-ARCHITECTURE-EVALUATION-0001-R01",
+          "statement": "The core loads typed architecture declarations and rejects invalid identities, zones, paths, duplicates, and unknown dependency targets.",
+          "tests": [
+            "T-AF-ARCHITECTURE-EVALUATION-0001-R01-001",
+            "T-AF-ARCHITECTURE-EVALUATION-0001-R01-002",
+            "T-AF-ARCHITECTURE-EVALUATION-0001-R01-003"
+          ]
+        },
+        {
+          "id": "AF-ARCHITECTURE-EVALUATION-0001-R02",
+          "statement": "The ARCH-DEPENDENCY-001 evaluator deterministically reports declared component dependency cycles.",
+          "tests": [
+            "T-ARCH-DEPENDENCY-001-R01-001",
+            "T-ARCH-DEPENDENCY-001-R01-002",
+            "T-ARCH-DEPENDENCY-001-R01-003",
+            "T-AF-ARCHITECTURE-EVALUATION-0001-R02-001"
           ]
         }
       ]

@@ -1,0 +1,46 @@
+{
+  "$schema": "../../../schemas/v1/change.schema.json",
+  "schema_version": 1,
+  "id": "CHG-ARCHITECTURE-0004",
+  "status": "verifying",
+  "objective": "Implement typed declared architecture loading and deterministic enforcement of acyclic component dependencies under draft rule ARCH-DEPENDENCY-001.",
+  "baseline": {
+    "commit": "8b742d4911253c3b590e3e1793795d7b4750dbe0",
+    "branch": "dev"
+  },
+  "authority_refs": [
+    "docs/architecture/contracts.md",
+    "docs/architecture/system.md",
+    "docs/standard/rules.md",
+    "docs/standard/testing.md"
+  ],
+  "scope": [
+    "draft ARCH-DEPENDENCY-001 rule record",
+    "rule schema compatibility with instance-level $schema references",
+    "typed architecture declaration loader",
+    "deterministic component cycle evaluation",
+    "normalized architecture finding",
+    "positive, negative, and boundary conformance fixtures",
+    "Fortress architecture self-evaluation"
+  ],
+  "checks": [
+    { "command": "JSON Schema 2020-12 and structural validation", "status": "passed", "summary": "All versioned schemas passed metaschema checks; changed model instances and both draft rules validated against their declared schemas; all repository JSON parsed." },
+    { "command": "cargo fmt --all --check", "status": "passed", "summary": "The complete Rust workspace is canonically formatted." },
+    { "command": "cargo clippy --workspace --all-targets --all-features -- -D warnings", "status": "passed", "summary": "The complete Rust workspace passed warnings-denied Clippy analysis without exemptions." },
+    { "command": "cargo test --workspace --all-targets --all-features", "status": "passed", "summary": "All 43 unit, integration, conformance, boundary, and self-model tests passed." },
+    { "command": "RUSTDOCFLAGS=-D warnings cargo doc --workspace --all-features --no-deps", "status": "passed", "summary": "Workspace documentation built with warnings denied." }
+  ],
+  "decisions": [],
+  "deferred_capabilities": [
+    "observed import/reference dependency extraction",
+    "declared-versus-observed edge reconciliation",
+    "architecture zone direction rules beyond cycles",
+    "transition and exemption evaluation",
+    "persistent normalized finding reports and CLI exposure"
+  ],
+  "result": {
+    "certification_claim": "NOT CERTIFIED",
+    "commit": null,
+    "note": "Declared architecture loading and deterministic cycle evaluation passed local verification. This evaluates declarations only and does not create certification evidence or a PASS claim."
+  }
+}

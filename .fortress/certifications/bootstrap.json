@@ -52,6 +52,22 @@
       "evidence": null
     },
     {
+      "id": "CERT-ARCHITECTURE-DECLARED",
+      "description": "Typed declared architecture integrity and ARCH-DEPENDENCY-001 evaluation.",
+      "status": "MISSING",
+      "trust": "untrusted-local",
+      "inputs": [
+        "standard/drafts/1.0.0/rules/ARCH-DEPENDENCY-001.json",
+        "schemas/v1/architecture.schema.json",
+        ".fortress/architecture/architecture.json",
+        "crates/fortress-core/src/architecture.rs",
+        "conformance/rules/ARCH-DEPENDENCY-001/"
+      ],
+      "upstream": [],
+      "input_fingerprint": null,
+      "evidence": null
+    },
+    {
       "id": "CERT-OBSERVATION-INVENTORY",
       "description": "Deterministic universal repository file observation behavior.",
       "status": "MISSING",

@@ -6,6 +6,7 @@
 #![forbid(unsafe_code)]
 #![deny(missing_docs, rustdoc::broken_intra_doc_links, warnings)]
 
+pub mod architecture;
 pub mod command;
 pub mod identity;
 pub mod observation;

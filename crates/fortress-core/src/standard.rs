@@ -8,12 +8,20 @@ use std::fmt::{self, Display, Formatter};
 
 use crate::identity::{RuleId, RuleIdError};
 
-const DRAFT_RULES: &[RuleDescriptor] = &[RuleDescriptor {
-    id: "STD-ID-001",
-    title: "Stable serialized identity",
-    status: RuleStatus::Draft,
-    integrity_tier: 1,
-}];
+const DRAFT_RULES: &[RuleDescriptor] = &[
+    RuleDescriptor {
+        id: "STD-ID-001",
+        title: "Stable serialized identity",
+        status: RuleStatus::Draft,
+        integrity_tier: 1,
+    },
+    RuleDescriptor {
+        id: "ARCH-DEPENDENCY-001",
+        title: "Acyclic declared component dependencies",
+        status: RuleStatus::Draft,
+        integrity_tier: 1,
+    },
+];
 
 /// Release state of a rule exposed by a standard registry.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -194,7 +202,7 @@ mod tests {
     fn draft_registry_is_structurally_valid() {
         let registry = StandardRegistry::draft_1_0();
         assert_eq!(registry.status(), RuleStatus::Draft);
-        assert_eq!(registry.rules().len(), 1);
+        assert_eq!(registry.rules().len(), 2);
         assert!(registry.validate().is_ok());
     }
 

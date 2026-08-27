@@ -6,6 +6,7 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use fortress_core::architecture::ArchitectureManifest;
 use fortress_core::command::CommandRegistry;
 use fortress_core::project::ProjectManifest;
 use serde_json::Value;
@@ -109,4 +110,15 @@ fn recorded_packet_digests_are_canonical_sha256_identities() {
                 .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
         );
     }
+}
+
+/// `T-AF-ARCHITECTURE-EVALUATION-0001-R02-001`
+#[test]
+fn declared_self_architecture_is_acyclic() {
+    let path = repository_root().join(".fortress/architecture/architecture.json");
+    let source = fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("failed to read {}: {error}", path.display()));
+    let architecture =
+        ArchitectureManifest::from_json_str(&source).expect("self architecture must validate");
+    assert!(architecture.evaluate_acyclic_dependencies().is_none());
 }

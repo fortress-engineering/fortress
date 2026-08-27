@@ -1,0 +1,14 @@
+{
+  "$schema": "../../../../schemas/v1/architecture.schema.json",
+  "schema_version": 1,
+  "zones": ["core"],
+  "components": [
+    {
+      "id": "AF-ONLY",
+      "title": "Only component",
+      "zone": "core",
+      "paths": ["only/"],
+      "depends_on": []
+    }
+  ]
+}

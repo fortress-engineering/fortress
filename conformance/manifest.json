@@ -9,6 +9,15 @@
       "expected_invalid": "rules/STD-ID-001/expected/invalid.json",
       "exemption": "not-applicable",
       "conflict": "not-applicable"
+    },
+    {
+      "rule_id": "ARCH-DEPENDENCY-001",
+      "valid": "rules/ARCH-DEPENDENCY-001/valid/architecture.json",
+      "invalid": "rules/ARCH-DEPENDENCY-001/invalid/architecture.json",
+      "boundary": "rules/ARCH-DEPENDENCY-001/boundary/architecture.json",
+      "expected_invalid": "rules/ARCH-DEPENDENCY-001/expected/invalid.json",
+      "exemption": "deferred-until-transition-and-exemption-model",
+      "conflict": "not-applicable"
     }
   ]
 }

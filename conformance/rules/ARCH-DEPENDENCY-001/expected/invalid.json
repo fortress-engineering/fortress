@@ -1,0 +1,6 @@
+{
+  "rule_id": "ARCH-DEPENDENCY-001",
+  "state": "FAIL",
+  "entities": ["AF-A", "AF-B", "AF-A"],
+  "message": "Declared component dependency graph contains a cycle: AF-A -> AF-B -> AF-A."
+}

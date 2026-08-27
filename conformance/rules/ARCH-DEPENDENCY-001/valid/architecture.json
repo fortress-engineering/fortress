@@ -1,0 +1,21 @@
+{
+  "$schema": "../../../../schemas/v1/architecture.schema.json",
+  "schema_version": 1,
+  "zones": ["core", "presentation"],
+  "components": [
+    {
+      "id": "AF-CORE-0001",
+      "title": "Core",
+      "zone": "core",
+      "paths": ["core/"],
+      "depends_on": []
+    },
+    {
+      "id": "TF-CLI-0001",
+      "title": "CLI",
+      "zone": "presentation",
+      "paths": ["cli/"],
+      "depends_on": ["AF-CORE-0001"]
+    }
+  ]
+}
