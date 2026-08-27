@@ -1,0 +1,18 @@
+[package]
+name = "fortress-cli"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+description.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "fortress"
+path = "src/main.rs"
+
+[dependencies]
+fortress-core = { path = "../fortress-core" }
+
+[lints]
+workspace = true

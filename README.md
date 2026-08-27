@@ -49,6 +49,28 @@ Potential `analyzers/`, `adapters/`, and `examples/` roots remain reserved in th
 [repository architecture](docs/architecture/repository.md) until real content
 justifies creating them.
 
+## Current CLI
+
+The initial Rust implementation provides a real, deliberately narrow command
+surface:
+
+```text
+fortress --version
+fortress help
+fortress help <implemented-command>
+```
+
+Build and exercise it from the repository root:
+
+```text
+cargo build --workspace
+cargo run -p fortress-cli -- --version
+cargo run -p fortress-cli -- help
+```
+
+Unlisted commands are unsupported and return a non-success status. See the
+[CLI capability record](docs/development/cli.md).
+
 ## Organization surfaces
 
 - [Fortress Engineering organization](https://github.com/fortress-engineering)

@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/fortress-core"]
+members = ["crates/fortress-cli", "crates/fortress-core"]
 resolver = "2"
 
 [workspace.package]
