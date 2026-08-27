@@ -2,8 +2,9 @@
 
 The root Module owns declarations that describe Fortress as one governed
 repository: the Cargo workspace and toolchain inputs, project and architecture
-graphs, the complete feature/requirement registry, the truthful certification
-scaffold, and any active change record.
+graphs, the complete feature/requirement registry, and the truthful certification
+scaffold. An active change record is root Data only while work is in progress;
+completed change history remains recoverable from Git.
 
 `Cargo.toml` and `cargo_config.toml` are authored inputs. Cargo 1.97 or newer is
 required because stable `resolver.lockfile-path` support lets the generated
