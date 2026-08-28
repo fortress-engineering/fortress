@@ -9,7 +9,7 @@
     "id": "STD-FORTRESS-ENGINEERING",
     "edition": "1.0.0-draft.1",
     "status": "draft",
-    "bundle_digest": "sha256:4a8366b5aaaf451e156b812a17c93375ce85696a753d56061b88cceac05d1de1",
+    "bundle_digest": "sha256:dd2429d2f0195f3604c0a41eb83179dc80bac6999f09f42b2129e9a02923b49d",
     "rules": [
       {
         "id": "ARCH-DEPENDENCY-001",
@@ -58,6 +58,16 @@
         "conflicts_with": [],
         "provenance": {
           "path": "mods/engine/mods/snapshot_governance/data/contract_rule.json",
+          "pointer": "/logic"
+        }
+      },
+      {
+        "id": "PROGRAM-DOMAIN-001",
+        "source_digest": "sha256:73e608fd0dcf5b93eaf157c8b599c2ffd4701afcb575b2d1dacd0320bb8c0a90",
+        "implies": [],
+        "conflicts_with": [],
+        "provenance": {
+          "path": "mods/engine/mods/semantic_analysis/data/program_domain_rule.json",
           "pointer": "/logic"
         }
       },
@@ -190,11 +200,12 @@
         "AF-PROGRAM-SEMANTICS-0001",
         "AF-PROJECT-MODEL-0001",
         "AF-REPOSITORY-OBSERVATION-0001",
+        "AF-SEMANTIC-ANALYSIS-0001",
         "AF-SNAPSHOT-GOVERNANCE-0001",
         "AF-STANDARD-REGISTRY-0001"
       ],
       "contract_source": "mods/engine/contract.json",
-      "contract_digest": "sha256:2988925f0c714bbc1a33ba226ffdf153b35fa5771e805ef39cc9d8a1a2ea263d",
+      "contract_digest": "sha256:caebf4167047c59bbcd9e6f272e6813fd61842404c64522099f9d608067dd33d",
       "provenance": {
         "path": "mods/engine/contract.json",
         "pointer": "/"
@@ -240,7 +251,7 @@
         "TEST-PROGRAM-SEMANTICS-0001"
       ],
       "contract_source": "mods/engine/mods/program_semantics/contract.json",
-      "contract_digest": "sha256:5f92cfe14adb2050c1ea33316518299e0a496bb4387009bd1c2612ed246fa9bc",
+      "contract_digest": "sha256:03d78ce4cb04a90974868f3b6db09049060426018d7203579079cd6c3922211d",
       "provenance": {
         "path": "mods/engine/mods/program_semantics/contract.json",
         "pointer": "/"
@@ -280,6 +291,22 @@
       "containment_derivation": "containment:AF-REPOSITORY-OBSERVATION-0001"
     },
     {
+      "id": "AF-SEMANTIC-ANALYSIS-0001",
+      "display_name": "Semantic Analysis",
+      "path": "mods/engine/mods/semantic_analysis",
+      "parent": "AF-CORE-0001",
+      "children": [
+        "TEST-SEMANTIC-ANALYSIS-0001"
+      ],
+      "contract_source": "mods/engine/mods/semantic_analysis/contract.json",
+      "contract_digest": "sha256:43e30946b701df6fdb17f1abd4b83bed628ac62c577ceefb5abae342e5094842",
+      "provenance": {
+        "path": "mods/engine/mods/semantic_analysis/contract.json",
+        "pointer": "/"
+      },
+      "containment_derivation": "containment:AF-SEMANTIC-ANALYSIS-0001"
+    },
+    {
       "id": "AF-SNAPSHOT-GOVERNANCE-0001",
       "display_name": "Snapshot Governance",
       "path": "mods/engine/mods/snapshot_governance",
@@ -288,7 +315,7 @@
         "TEST-SNAPSHOT-GOVERNANCE-0001"
       ],
       "contract_source": "mods/engine/mods/snapshot_governance/contract.json",
-      "contract_digest": "sha256:df6cf669a3c6ae7d2a926d4595668fa9b5349817993c124bbb8a0dac8bd1c4c5",
+      "contract_digest": "sha256:fc212b2f6123c95b98427f4874fd3735cfe0a5dca6eeb45c7dbf49cdfab2ea4c",
       "provenance": {
         "path": "mods/engine/mods/snapshot_governance/contract.json",
         "pointer": "/"
@@ -322,7 +349,7 @@
         "TF-CLI-0001"
       ],
       "contract_source": "contract.json",
-      "contract_digest": "sha256:94ab6528d6687d5e7d6bf9486ad961a5eb883408afe1b6240831929f09be1a11",
+      "contract_digest": "sha256:2173c89de8d1853d372a3d4066082c6b5eb08559e46405a14fb4362e1a6d96bc",
       "provenance": {
         "path": "contract.json",
         "pointer": "/"
@@ -442,6 +469,20 @@
       "containment_derivation": "containment:TEST-REPOSITORY-OBSERVATION-0001"
     },
     {
+      "id": "TEST-SEMANTIC-ANALYSIS-0001",
+      "display_name": "Testing",
+      "path": "mods/engine/mods/semantic_analysis/mods/testing",
+      "parent": "AF-SEMANTIC-ANALYSIS-0001",
+      "children": [],
+      "contract_source": "mods/engine/mods/semantic_analysis/mods/testing/contract.json",
+      "contract_digest": "sha256:834436fff93931a972c98185cb36fb24319358bfbbb15d7960c36f7b6527a836",
+      "provenance": {
+        "path": "mods/engine/mods/semantic_analysis/mods/testing/contract.json",
+        "pointer": "/"
+      },
+      "containment_derivation": "containment:TEST-SEMANTIC-ANALYSIS-0001"
+    },
+    {
       "id": "TEST-SNAPSHOT-GOVERNANCE-0001",
       "display_name": "Snapshot Governance Testing",
       "path": "mods/engine/mods/snapshot_governance/mods/testing",
@@ -478,7 +519,7 @@
         "TEST-CLI-0001"
       ],
       "contract_source": "mods/cli/contract.json",
-      "contract_digest": "sha256:48597b6abe8855b3a02b9c7f9a17bc8aac5d778b4d4e17527a9dc842ad8bcaf4",
+      "contract_digest": "sha256:8f2fd61e56ed54c41bb33f79156e6b764c4ad15b60c65d07286057468def5ea6",
       "provenance": {
         "path": "mods/cli/contract.json",
         "pointer": "/"
@@ -513,6 +554,7 @@
         "TEST-PROGRAM-SEMANTICS-0001",
         "TEST-PROJECT-MODEL-0001",
         "TEST-REPOSITORY-OBSERVATION-0001",
+        "TEST-SEMANTIC-ANALYSIS-0001",
         "TEST-STANDARD-REGISTRY-0001",
         "TF-CLI-0001"
       ],
@@ -545,6 +587,7 @@
         "TEST-PROGRAM-SEMANTICS-0001",
         "TEST-PROJECT-MODEL-0001",
         "TEST-REPOSITORY-OBSERVATION-0001",
+        "TEST-SEMANTIC-ANALYSIS-0001",
         "TEST-SNAPSHOT-GOVERNANCE-0001",
         "TEST-STANDARD-REGISTRY-0001",
         "TF-CLI-0001"
@@ -582,12 +625,14 @@
         "requires:TEST-SNAPSHOT-GOVERNANCE-0001:CAP-CONTRACT-COHERENCY"
       ],
       "transitively_reachable_by": [
+        "AF-SEMANTIC-ANALYSIS-0001",
         "TEST-CLI-0001",
         "TEST-FORTRESS-0001",
         "TEST-IMPLEMENTATION-OBSERVATION-0001",
         "TEST-PROGRAM-SEMANTICS-0001",
         "TEST-PROJECT-MODEL-0001",
         "TEST-REPOSITORY-OBSERVATION-0001",
+        "TEST-SEMANTIC-ANALYSIS-0001",
         "TEST-STANDARD-REGISTRY-0001",
         "TF-CLI-0001"
       ],
@@ -605,6 +650,7 @@
         "AF-ARCHITECTURE-EVALUATION-0001",
         "AF-BEHAVIORAL-SEMANTICS-0001",
         "AF-CORE-0001",
+        "AF-SEMANTIC-ANALYSIS-0001",
         "AF-SNAPSHOT-GOVERNANCE-0001",
         "TEST-SNAPSHOT-GOVERNANCE-0001"
       ],
@@ -612,6 +658,7 @@
         "requires:AF-CORE-0001:CAP-FINDING-MODEL",
         "requires:AF-ARCHITECTURE-EVALUATION-0001:CAP-FINDING-MODEL",
         "requires:AF-BEHAVIORAL-SEMANTICS-0001:CAP-FINDING-MODEL",
+        "requires:AF-SEMANTIC-ANALYSIS-0001:CAP-FINDING-MODEL",
         "requires:AF-SNAPSHOT-GOVERNANCE-0001:CAP-FINDING-MODEL",
         "requires:TEST-SNAPSHOT-GOVERNANCE-0001:CAP-FINDING-MODEL"
       ],
@@ -625,6 +672,7 @@
         "TEST-PROGRAM-SEMANTICS-0001",
         "TEST-PROJECT-MODEL-0001",
         "TEST-REPOSITORY-OBSERVATION-0001",
+        "TEST-SEMANTIC-ANALYSIS-0001",
         "TEST-STANDARD-REGISTRY-0001",
         "TF-CLI-0001"
       ],
@@ -667,6 +715,7 @@
         "TEST-PROGRAM-SEMANTICS-0001",
         "TEST-PROJECT-MODEL-0001",
         "TEST-REPOSITORY-OBSERVATION-0001",
+        "TEST-SEMANTIC-ANALYSIS-0001",
         "TEST-SNAPSHOT-GOVERNANCE-0001",
         "TEST-STANDARD-REGISTRY-0001",
         "TF-CLI-0001"
@@ -681,6 +730,7 @@
         "requires:TEST-PROGRAM-SEMANTICS-0001:CAP-FORTRESS-ENGINE",
         "requires:TEST-PROJECT-MODEL-0001:CAP-FORTRESS-ENGINE",
         "requires:TEST-REPOSITORY-OBSERVATION-0001:CAP-FORTRESS-ENGINE",
+        "requires:TEST-SEMANTIC-ANALYSIS-0001:CAP-FORTRESS-ENGINE",
         "requires:TEST-SNAPSHOT-GOVERNANCE-0001:CAP-FORTRESS-ENGINE",
         "requires:TEST-STANDARD-REGISTRY-0001:CAP-FORTRESS-ENGINE",
         "requires:TEST-FORTRESS-0001:CAP-FORTRESS-ENGINE"
@@ -714,12 +764,14 @@
       ],
       "transitively_reachable_by": [
         "AF-CONTRACT-COHERENCY-TESTING-0001",
+        "AF-SEMANTIC-ANALYSIS-0001",
         "TEST-BEHAVIORAL-SEMANTICS-0001",
         "TEST-CLI-0001",
         "TEST-FORTRESS-0001",
         "TEST-PROGRAM-SEMANTICS-0001",
         "TEST-PROJECT-MODEL-0001",
         "TEST-REPOSITORY-OBSERVATION-0001",
+        "TEST-SEMANTIC-ANALYSIS-0001",
         "TEST-SNAPSHOT-GOVERNANCE-0001",
         "TEST-STANDARD-REGISTRY-0001",
         "TF-CLI-0001"
@@ -736,12 +788,14 @@
       "visibility": "project",
       "direct_consumers": [
         "AF-CORE-0001",
+        "AF-SEMANTIC-ANALYSIS-0001",
         "AF-SNAPSHOT-GOVERNANCE-0001",
         "TEST-PROGRAM-SEMANTICS-0001"
       ],
       "direct_requirements": [
         "requires:AF-CORE-0001:CAP-PROGRAM-SEMANTICS",
         "requires:TEST-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS",
+        "requires:AF-SEMANTIC-ANALYSIS-0001:CAP-PROGRAM-SEMANTICS",
         "requires:AF-SNAPSHOT-GOVERNANCE-0001:CAP-PROGRAM-SEMANTICS"
       ],
       "transitively_reachable_by": [
@@ -753,6 +807,7 @@
         "TEST-IMPLEMENTATION-OBSERVATION-0001",
         "TEST-PROJECT-MODEL-0001",
         "TEST-REPOSITORY-OBSERVATION-0001",
+        "TEST-SEMANTIC-ANALYSIS-0001",
         "TEST-SNAPSHOT-GOVERNANCE-0001",
         "TEST-STANDARD-REGISTRY-0001",
         "TF-CLI-0001"
@@ -790,6 +845,7 @@
         "TEST-IMPLEMENTATION-OBSERVATION-0001",
         "TEST-PROGRAM-SEMANTICS-0001",
         "TEST-REPOSITORY-OBSERVATION-0001",
+        "TEST-SEMANTIC-ANALYSIS-0001",
         "TEST-SNAPSHOT-GOVERNANCE-0001",
         "TEST-STANDARD-REGISTRY-0001",
         "TF-CLI-0001"
@@ -826,11 +882,46 @@
         "TEST-IMPLEMENTATION-OBSERVATION-0001",
         "TEST-PROGRAM-SEMANTICS-0001",
         "TEST-PROJECT-MODEL-0001",
+        "TEST-SEMANTIC-ANALYSIS-0001",
         "TEST-STANDARD-REGISTRY-0001",
         "TF-CLI-0001"
       ],
       "provenance": {
         "path": "mods/engine/mods/repository_observation/contract.json",
+        "pointer": "/provides/0"
+      }
+    },
+    {
+      "id": "CAP-SEMANTIC-ANALYSIS",
+      "provider": "AF-SEMANTIC-ANALYSIS-0001",
+      "version": "0.1.0",
+      "visibility": "project",
+      "direct_consumers": [
+        "AF-CORE-0001",
+        "AF-SNAPSHOT-GOVERNANCE-0001",
+        "TEST-SEMANTIC-ANALYSIS-0001"
+      ],
+      "direct_requirements": [
+        "requires:AF-CORE-0001:CAP-SEMANTIC-ANALYSIS",
+        "requires:TEST-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS",
+        "requires:AF-SNAPSHOT-GOVERNANCE-0001:CAP-SEMANTIC-ANALYSIS"
+      ],
+      "transitively_reachable_by": [
+        "AF-CONTRACT-COHERENCY-TESTING-0001",
+        "TEST-ARCHITECTURE-EVALUATION-0001",
+        "TEST-BEHAVIORAL-SEMANTICS-0001",
+        "TEST-CLI-0001",
+        "TEST-FORTRESS-0001",
+        "TEST-IMPLEMENTATION-OBSERVATION-0001",
+        "TEST-PROGRAM-SEMANTICS-0001",
+        "TEST-PROJECT-MODEL-0001",
+        "TEST-REPOSITORY-OBSERVATION-0001",
+        "TEST-SNAPSHOT-GOVERNANCE-0001",
+        "TEST-STANDARD-REGISTRY-0001",
+        "TF-CLI-0001"
+      ],
+      "provenance": {
+        "path": "mods/engine/mods/semantic_analysis/contract.json",
         "pointer": "/provides/0"
       }
     },
@@ -858,6 +949,7 @@
         "TEST-PROGRAM-SEMANTICS-0001",
         "TEST-PROJECT-MODEL-0001",
         "TEST-REPOSITORY-OBSERVATION-0001",
+        "TEST-SEMANTIC-ANALYSIS-0001",
         "TEST-STANDARD-REGISTRY-0001",
         "TF-CLI-0001"
       ],
@@ -897,6 +989,7 @@
         "AF-BEHAVIORAL-SEMANTICS-0001",
         "AF-PROGRAM-SEMANTICS-0001",
         "AF-REPOSITORY-OBSERVATION-0001",
+        "AF-SEMANTIC-ANALYSIS-0001",
         "TEST-ARCHITECTURE-EVALUATION-0001",
         "TEST-BEHAVIORAL-SEMANTICS-0001",
         "TEST-CLI-0001",
@@ -905,6 +998,7 @@
         "TEST-PROGRAM-SEMANTICS-0001",
         "TEST-PROJECT-MODEL-0001",
         "TEST-REPOSITORY-OBSERVATION-0001",
+        "TEST-SEMANTIC-ANALYSIS-0001",
         "TF-CLI-0001"
       ],
       "provenance": {
@@ -1001,7 +1095,8 @@
       "requirements": [
         "AF-PROGRAM-SEMANTICS-0001-R01",
         "AF-PROGRAM-SEMANTICS-0001-R02",
-        "AF-PROGRAM-SEMANTICS-0001-R03"
+        "AF-PROGRAM-SEMANTICS-0001-R03",
+        "AF-PROGRAM-SEMANTICS-0001-R04"
       ],
       "provenance": {
         "path": "mods/engine/mods/program_semantics/contract.json",
@@ -1031,6 +1126,21 @@
       ],
       "provenance": {
         "path": "mods/engine/mods/repository_observation/contract.json",
+        "pointer": "/features/0/id"
+      }
+    },
+    {
+      "id": "AF-SEMANTIC-ANALYSIS-0001",
+      "owner": "AF-SEMANTIC-ANALYSIS-0001",
+      "version": "0.1.0",
+      "requirements": [
+        "AF-SEMANTIC-ANALYSIS-0001-R01",
+        "AF-SEMANTIC-ANALYSIS-0001-R02",
+        "AF-SEMANTIC-ANALYSIS-0001-R03",
+        "AF-SEMANTIC-ANALYSIS-0001-R04"
+      ],
+      "provenance": {
+        "path": "mods/engine/mods/semantic_analysis/contract.json",
         "pointer": "/features/0/id"
       }
     },
@@ -1083,7 +1193,8 @@
         "TF-CLI-0001-R04",
         "TF-CLI-0001-R05",
         "TF-CLI-0001-R06",
-        "TF-CLI-0001-R07"
+        "TF-CLI-0001-R07",
+        "TF-CLI-0001-R08"
       ],
       "provenance": {
         "path": "mods/cli/contract.json",
@@ -1347,6 +1458,19 @@
       }
     },
     {
+      "id": "AF-PROGRAM-SEMANTICS-0001-R04",
+      "owner": "AF-PROGRAM-SEMANTICS-0001",
+      "feature": "AF-PROGRAM-SEMANTICS-0001",
+      "statement": "Program Semantics translates supported Rust bodies into deterministic language-neutral statement, expression, pattern, branch, loop, return, and exceptional facts so downstream semantic reasoning consumes the PSM rather than reparsing source.",
+      "declared_tests": [
+        "T-AF-PROGRAM-SEMANTICS-0001-R04-001"
+      ],
+      "provenance": {
+        "path": "mods/engine/mods/program_semantics/contract.json",
+        "pointer": "/features/0/requirements/3"
+      }
+    },
+    {
       "id": "AF-PROJECT-MODEL-0001-R01",
       "owner": "AF-PROJECT-MODEL-0001",
       "feature": "AF-PROJECT-MODEL-0001",
@@ -1404,6 +1528,67 @@
       "provenance": {
         "path": "mods/engine/mods/repository_observation/contract.json",
         "pointer": "/features/0/requirements/1"
+      }
+    },
+    {
+      "id": "AF-SEMANTIC-ANALYSIS-0001-R01",
+      "owner": "AF-SEMANTIC-ANALYSIS-0001",
+      "feature": "AF-SEMANTIC-ANALYSIS-0001",
+      "statement": "Semantic Analysis validates canonical distributed Function Contract v1 authority against exact PSM symbol ownership, static interfaces, and deterministic semantic value domains.",
+      "declared_tests": [
+        "T-AF-SEMANTIC-ANALYSIS-0001-R01-001",
+        "T-AF-SEMANTIC-ANALYSIS-0001-R01-002",
+        "T-AF-SEMANTIC-ANALYSIS-0001-R01-003"
+      ],
+      "provenance": {
+        "path": "mods/engine/mods/semantic_analysis/contract.json",
+        "pointer": "/features/0/requirements/0"
+      }
+    },
+    {
+      "id": "AF-SEMANTIC-ANALYSIS-0001-R02",
+      "owner": "AF-SEMANTIC-ANALYSIS-0001",
+      "feature": "AF-SEMANTIC-ANALYSIS-0001",
+      "statement": "Semantic Analysis conservatively refines supported control flow and propagates argument, parameter, return, assignment, wrapper, product, and recursive domains to a deterministic widened fixed point without narrowing a callee from current callers.",
+      "declared_tests": [
+        "T-AF-SEMANTIC-ANALYSIS-0001-R02-001",
+        "T-AF-SEMANTIC-ANALYSIS-0001-R02-002",
+        "T-AF-SEMANTIC-ANALYSIS-0001-R02-003",
+        "T-AF-SEMANTIC-ANALYSIS-0001-R02-004"
+      ],
+      "provenance": {
+        "path": "mods/engine/mods/semantic_analysis/contract.json",
+        "pointer": "/features/0/requirements/1"
+      }
+    },
+    {
+      "id": "AF-SEMANTIC-ANALYSIS-0001-R03",
+      "owner": "AF-SEMANTIC-ANALYSIS-0001",
+      "feature": "AF-SEMANTIC-ANALYSIS-0001",
+      "statement": "Semantic Analysis checks supported call preconditions, proves authored postconditions, detects understood partial-operation and impossible-state contradictions with abstract counter-domains, and preserves granular uncertainty rather than treating unsupported semantics as safe.",
+      "declared_tests": [
+        "T-AF-SEMANTIC-ANALYSIS-0001-R03-001",
+        "T-AF-SEMANTIC-ANALYSIS-0001-R03-002",
+        "T-AF-SEMANTIC-ANALYSIS-0001-R03-003",
+        "T-AF-SEMANTIC-ANALYSIS-0001-R03-004"
+      ],
+      "provenance": {
+        "path": "mods/engine/mods/semantic_analysis/contract.json",
+        "pointer": "/features/0/requirements/2"
+      }
+    },
+    {
+      "id": "AF-SEMANTIC-ANALYSIS-0001-R04",
+      "owner": "AF-SEMANTIC-ANALYSIS-0001",
+      "feature": "AF-SEMANTIC-ANALYSIS-0001",
+      "statement": "Semantic Analysis emits deterministic canonical summaries and derived Info bound to the PSM and Function Contract digests, and PROGRAM-DOMAIN-001 converts only supported contradictions into normalized findings.",
+      "declared_tests": [
+        "T-AF-SEMANTIC-ANALYSIS-0001-R04-001",
+        "T-AF-SEMANTIC-ANALYSIS-0001-R04-002"
+      ],
+      "provenance": {
+        "path": "mods/engine/mods/semantic_analysis/contract.json",
+        "pointer": "/features/0/requirements/3"
       }
     },
     {
@@ -1756,6 +1941,20 @@
         "path": "mods/cli/contract.json",
         "pointer": "/features/0/requirements/6"
       }
+    },
+    {
+      "id": "TF-CLI-0001-R08",
+      "owner": "TF-CLI-0001",
+      "feature": "TF-CLI-0001",
+      "statement": "The native fortress semantic command compiles PSM-backed Function Contract and abstract-domain analysis, emits deterministic canonical JSON to standard output or an explicit file, fails on supported contradictions or invalid state, and preserves uncertainty without implying total program safety or certification.",
+      "declared_tests": [
+        "T-TF-CLI-0001-R08-001",
+        "T-TF-CLI-0001-R08-002"
+      ],
+      "provenance": {
+        "path": "mods/cli/contract.json",
+        "pointer": "/features/0/requirements/7"
+      }
     }
   ],
   "guarantees": [
@@ -2024,7 +2223,7 @@
       },
       {
         "module": "PF-FORTRESS",
-        "rule": "REPO-DOCS-001",
+        "rule": "PROGRAM-DOMAIN-001",
         "scope": "subtree",
         "provenance": {
           "path": "contract.json",
@@ -2033,7 +2232,7 @@
       },
       {
         "module": "PF-FORTRESS",
-        "rule": "REPO-MODULE-001",
+        "rule": "REPO-DOCS-001",
         "scope": "subtree",
         "provenance": {
           "path": "contract.json",
@@ -2042,11 +2241,20 @@
       },
       {
         "module": "PF-FORTRESS",
-        "rule": "STD-ID-001",
+        "rule": "REPO-MODULE-001",
         "scope": "subtree",
         "provenance": {
           "path": "contract.json",
           "pointer": "/constraints/4"
+        }
+      },
+      {
+        "module": "PF-FORTRESS",
+        "rule": "STD-ID-001",
+        "scope": "subtree",
+        "provenance": {
+          "path": "contract.json",
+          "pointer": "/constraints/5"
         }
       }
     ],
@@ -2089,6 +2297,24 @@
       },
       {
         "module": "AF-ARCHITECTURE-EVALUATION-0001",
+        "rule": "PROGRAM-DOMAIN-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "PROGRAM-DOMAIN-001",
+            "rule_path": [
+              "PROGRAM-DOMAIN-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/2"
+            }
+          }
+        ]
+      },
+      {
+        "module": "AF-ARCHITECTURE-EVALUATION-0001",
         "rule": "REPO-DOCS-001",
         "origins": [
           {
@@ -2100,7 +2326,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/2"
+              "pointer": "/constraints/3"
             }
           }
         ]
@@ -2118,7 +2344,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/3"
+              "pointer": "/constraints/4"
             }
           }
         ]
@@ -2136,7 +2362,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/4"
+              "pointer": "/constraints/5"
             }
           }
         ]
@@ -2179,6 +2405,24 @@
       },
       {
         "module": "AF-BEHAVIORAL-SEMANTICS-0001",
+        "rule": "PROGRAM-DOMAIN-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "PROGRAM-DOMAIN-001",
+            "rule_path": [
+              "PROGRAM-DOMAIN-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/2"
+            }
+          }
+        ]
+      },
+      {
+        "module": "AF-BEHAVIORAL-SEMANTICS-0001",
         "rule": "REPO-DOCS-001",
         "origins": [
           {
@@ -2190,7 +2434,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/2"
+              "pointer": "/constraints/3"
             }
           }
         ]
@@ -2208,7 +2452,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/3"
+              "pointer": "/constraints/4"
             }
           }
         ]
@@ -2226,7 +2470,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/4"
+              "pointer": "/constraints/5"
             }
           }
         ]
@@ -2269,6 +2513,24 @@
       },
       {
         "module": "AF-CONTRACT-COHERENCY-0001",
+        "rule": "PROGRAM-DOMAIN-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "PROGRAM-DOMAIN-001",
+            "rule_path": [
+              "PROGRAM-DOMAIN-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/2"
+            }
+          }
+        ]
+      },
+      {
+        "module": "AF-CONTRACT-COHERENCY-0001",
         "rule": "REPO-DOCS-001",
         "origins": [
           {
@@ -2280,7 +2542,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/2"
+              "pointer": "/constraints/3"
             }
           }
         ]
@@ -2298,7 +2560,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/3"
+              "pointer": "/constraints/4"
             }
           }
         ]
@@ -2316,7 +2578,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/4"
+              "pointer": "/constraints/5"
             }
           }
         ]
@@ -2359,6 +2621,24 @@
       },
       {
         "module": "AF-CONTRACT-COHERENCY-TESTING-0001",
+        "rule": "PROGRAM-DOMAIN-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "PROGRAM-DOMAIN-001",
+            "rule_path": [
+              "PROGRAM-DOMAIN-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/2"
+            }
+          }
+        ]
+      },
+      {
+        "module": "AF-CONTRACT-COHERENCY-TESTING-0001",
         "rule": "REPO-DOCS-001",
         "origins": [
           {
@@ -2370,7 +2650,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/2"
+              "pointer": "/constraints/3"
             }
           }
         ]
@@ -2388,7 +2668,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/3"
+              "pointer": "/constraints/4"
             }
           }
         ]
@@ -2406,7 +2686,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/4"
+              "pointer": "/constraints/5"
             }
           }
         ]
@@ -2449,6 +2729,24 @@
       },
       {
         "module": "AF-CORE-0001",
+        "rule": "PROGRAM-DOMAIN-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "PROGRAM-DOMAIN-001",
+            "rule_path": [
+              "PROGRAM-DOMAIN-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/2"
+            }
+          }
+        ]
+      },
+      {
+        "module": "AF-CORE-0001",
         "rule": "REPO-DOCS-001",
         "origins": [
           {
@@ -2460,7 +2758,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/2"
+              "pointer": "/constraints/3"
             }
           }
         ]
@@ -2478,7 +2776,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/3"
+              "pointer": "/constraints/4"
             }
           }
         ]
@@ -2496,7 +2794,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/4"
+              "pointer": "/constraints/5"
             }
           }
         ]
@@ -2539,6 +2837,24 @@
       },
       {
         "module": "AF-FINDING-MODEL-0001",
+        "rule": "PROGRAM-DOMAIN-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "PROGRAM-DOMAIN-001",
+            "rule_path": [
+              "PROGRAM-DOMAIN-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/2"
+            }
+          }
+        ]
+      },
+      {
+        "module": "AF-FINDING-MODEL-0001",
         "rule": "REPO-DOCS-001",
         "origins": [
           {
@@ -2550,7 +2866,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/2"
+              "pointer": "/constraints/3"
             }
           }
         ]
@@ -2568,7 +2884,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/3"
+              "pointer": "/constraints/4"
             }
           }
         ]
@@ -2586,7 +2902,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/4"
+              "pointer": "/constraints/5"
             }
           }
         ]
@@ -2629,6 +2945,24 @@
       },
       {
         "module": "AF-IMPLEMENTATION-OBSERVATION-0001",
+        "rule": "PROGRAM-DOMAIN-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "PROGRAM-DOMAIN-001",
+            "rule_path": [
+              "PROGRAM-DOMAIN-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/2"
+            }
+          }
+        ]
+      },
+      {
+        "module": "AF-IMPLEMENTATION-OBSERVATION-0001",
         "rule": "REPO-DOCS-001",
         "origins": [
           {
@@ -2640,7 +2974,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/2"
+              "pointer": "/constraints/3"
             }
           }
         ]
@@ -2658,7 +2992,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/3"
+              "pointer": "/constraints/4"
             }
           }
         ]
@@ -2676,7 +3010,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/4"
+              "pointer": "/constraints/5"
             }
           }
         ]
@@ -2719,6 +3053,24 @@
       },
       {
         "module": "AF-PROGRAM-SEMANTICS-0001",
+        "rule": "PROGRAM-DOMAIN-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "PROGRAM-DOMAIN-001",
+            "rule_path": [
+              "PROGRAM-DOMAIN-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/2"
+            }
+          }
+        ]
+      },
+      {
+        "module": "AF-PROGRAM-SEMANTICS-0001",
         "rule": "REPO-DOCS-001",
         "origins": [
           {
@@ -2730,7 +3082,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/2"
+              "pointer": "/constraints/3"
             }
           }
         ]
@@ -2748,7 +3100,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/3"
+              "pointer": "/constraints/4"
             }
           }
         ]
@@ -2766,7 +3118,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/4"
+              "pointer": "/constraints/5"
             }
           }
         ]
@@ -2809,6 +3161,24 @@
       },
       {
         "module": "AF-PROJECT-MODEL-0001",
+        "rule": "PROGRAM-DOMAIN-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "PROGRAM-DOMAIN-001",
+            "rule_path": [
+              "PROGRAM-DOMAIN-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/2"
+            }
+          }
+        ]
+      },
+      {
+        "module": "AF-PROJECT-MODEL-0001",
         "rule": "REPO-DOCS-001",
         "origins": [
           {
@@ -2820,7 +3190,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/2"
+              "pointer": "/constraints/3"
             }
           }
         ]
@@ -2838,7 +3208,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/3"
+              "pointer": "/constraints/4"
             }
           }
         ]
@@ -2856,7 +3226,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/4"
+              "pointer": "/constraints/5"
             }
           }
         ]
@@ -2899,6 +3269,24 @@
       },
       {
         "module": "AF-REPOSITORY-OBSERVATION-0001",
+        "rule": "PROGRAM-DOMAIN-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "PROGRAM-DOMAIN-001",
+            "rule_path": [
+              "PROGRAM-DOMAIN-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/2"
+            }
+          }
+        ]
+      },
+      {
+        "module": "AF-REPOSITORY-OBSERVATION-0001",
         "rule": "REPO-DOCS-001",
         "origins": [
           {
@@ -2910,7 +3298,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/2"
+              "pointer": "/constraints/3"
             }
           }
         ]
@@ -2928,7 +3316,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/3"
+              "pointer": "/constraints/4"
             }
           }
         ]
@@ -2946,7 +3334,115 @@
             ],
             "provenance": {
               "path": "contract.json",
+              "pointer": "/constraints/5"
+            }
+          }
+        ]
+      },
+      {
+        "module": "AF-SEMANTIC-ANALYSIS-0001",
+        "rule": "BEHAVIOR-FLOW-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "BEHAVIOR-FLOW-001",
+            "rule_path": [
+              "BEHAVIOR-FLOW-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/0"
+            }
+          }
+        ]
+      },
+      {
+        "module": "AF-SEMANTIC-ANALYSIS-0001",
+        "rule": "CONTRACT-COHERENCY-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "CONTRACT-COHERENCY-001",
+            "rule_path": [
+              "CONTRACT-COHERENCY-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/1"
+            }
+          }
+        ]
+      },
+      {
+        "module": "AF-SEMANTIC-ANALYSIS-0001",
+        "rule": "PROGRAM-DOMAIN-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "PROGRAM-DOMAIN-001",
+            "rule_path": [
+              "PROGRAM-DOMAIN-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/2"
+            }
+          }
+        ]
+      },
+      {
+        "module": "AF-SEMANTIC-ANALYSIS-0001",
+        "rule": "REPO-DOCS-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "REPO-DOCS-001",
+            "rule_path": [
+              "REPO-DOCS-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/3"
+            }
+          }
+        ]
+      },
+      {
+        "module": "AF-SEMANTIC-ANALYSIS-0001",
+        "rule": "REPO-MODULE-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "REPO-MODULE-001",
+            "rule_path": [
+              "REPO-MODULE-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
               "pointer": "/constraints/4"
+            }
+          }
+        ]
+      },
+      {
+        "module": "AF-SEMANTIC-ANALYSIS-0001",
+        "rule": "STD-ID-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "STD-ID-001",
+            "rule_path": [
+              "STD-ID-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/5"
             }
           }
         ]
@@ -2989,6 +3485,24 @@
       },
       {
         "module": "AF-SNAPSHOT-GOVERNANCE-0001",
+        "rule": "PROGRAM-DOMAIN-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "PROGRAM-DOMAIN-001",
+            "rule_path": [
+              "PROGRAM-DOMAIN-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/2"
+            }
+          }
+        ]
+      },
+      {
+        "module": "AF-SNAPSHOT-GOVERNANCE-0001",
         "rule": "REPO-DOCS-001",
         "origins": [
           {
@@ -3000,7 +3514,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/2"
+              "pointer": "/constraints/3"
             }
           }
         ]
@@ -3018,7 +3532,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/3"
+              "pointer": "/constraints/4"
             }
           }
         ]
@@ -3036,7 +3550,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/4"
+              "pointer": "/constraints/5"
             }
           }
         ]
@@ -3079,6 +3593,24 @@
       },
       {
         "module": "AF-STANDARD-REGISTRY-0001",
+        "rule": "PROGRAM-DOMAIN-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "PROGRAM-DOMAIN-001",
+            "rule_path": [
+              "PROGRAM-DOMAIN-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/2"
+            }
+          }
+        ]
+      },
+      {
+        "module": "AF-STANDARD-REGISTRY-0001",
         "rule": "REPO-DOCS-001",
         "origins": [
           {
@@ -3090,7 +3622,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/2"
+              "pointer": "/constraints/3"
             }
           }
         ]
@@ -3108,7 +3640,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/3"
+              "pointer": "/constraints/4"
             }
           }
         ]
@@ -3126,7 +3658,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/4"
+              "pointer": "/constraints/5"
             }
           }
         ]
@@ -3169,6 +3701,24 @@
       },
       {
         "module": "PF-FORTRESS",
+        "rule": "PROGRAM-DOMAIN-001",
+        "origins": [
+          {
+            "kind": "explicit",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "PROGRAM-DOMAIN-001",
+            "rule_path": [
+              "PROGRAM-DOMAIN-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/2"
+            }
+          }
+        ]
+      },
+      {
+        "module": "PF-FORTRESS",
         "rule": "REPO-DOCS-001",
         "origins": [
           {
@@ -3180,7 +3730,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/2"
+              "pointer": "/constraints/3"
             }
           }
         ]
@@ -3198,7 +3748,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/3"
+              "pointer": "/constraints/4"
             }
           }
         ]
@@ -3216,7 +3766,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/4"
+              "pointer": "/constraints/5"
             }
           }
         ]
@@ -3259,6 +3809,24 @@
       },
       {
         "module": "TEST-ARCHITECTURE-EVALUATION-0001",
+        "rule": "PROGRAM-DOMAIN-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "PROGRAM-DOMAIN-001",
+            "rule_path": [
+              "PROGRAM-DOMAIN-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/2"
+            }
+          }
+        ]
+      },
+      {
+        "module": "TEST-ARCHITECTURE-EVALUATION-0001",
         "rule": "REPO-DOCS-001",
         "origins": [
           {
@@ -3270,7 +3838,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/2"
+              "pointer": "/constraints/3"
             }
           }
         ]
@@ -3288,7 +3856,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/3"
+              "pointer": "/constraints/4"
             }
           }
         ]
@@ -3306,7 +3874,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/4"
+              "pointer": "/constraints/5"
             }
           }
         ]
@@ -3349,6 +3917,24 @@
       },
       {
         "module": "TEST-BEHAVIORAL-SEMANTICS-0001",
+        "rule": "PROGRAM-DOMAIN-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "PROGRAM-DOMAIN-001",
+            "rule_path": [
+              "PROGRAM-DOMAIN-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/2"
+            }
+          }
+        ]
+      },
+      {
+        "module": "TEST-BEHAVIORAL-SEMANTICS-0001",
         "rule": "REPO-DOCS-001",
         "origins": [
           {
@@ -3360,7 +3946,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/2"
+              "pointer": "/constraints/3"
             }
           }
         ]
@@ -3378,7 +3964,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/3"
+              "pointer": "/constraints/4"
             }
           }
         ]
@@ -3396,7 +3982,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/4"
+              "pointer": "/constraints/5"
             }
           }
         ]
@@ -3439,6 +4025,24 @@
       },
       {
         "module": "TEST-CLI-0001",
+        "rule": "PROGRAM-DOMAIN-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "PROGRAM-DOMAIN-001",
+            "rule_path": [
+              "PROGRAM-DOMAIN-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/2"
+            }
+          }
+        ]
+      },
+      {
+        "module": "TEST-CLI-0001",
         "rule": "REPO-DOCS-001",
         "origins": [
           {
@@ -3450,7 +4054,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/2"
+              "pointer": "/constraints/3"
             }
           }
         ]
@@ -3468,7 +4072,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/3"
+              "pointer": "/constraints/4"
             }
           }
         ]
@@ -3486,7 +4090,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/4"
+              "pointer": "/constraints/5"
             }
           }
         ]
@@ -3529,6 +4133,24 @@
       },
       {
         "module": "TEST-FORTRESS-0001",
+        "rule": "PROGRAM-DOMAIN-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "PROGRAM-DOMAIN-001",
+            "rule_path": [
+              "PROGRAM-DOMAIN-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/2"
+            }
+          }
+        ]
+      },
+      {
+        "module": "TEST-FORTRESS-0001",
         "rule": "REPO-DOCS-001",
         "origins": [
           {
@@ -3540,7 +4162,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/2"
+              "pointer": "/constraints/3"
             }
           }
         ]
@@ -3558,7 +4180,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/3"
+              "pointer": "/constraints/4"
             }
           }
         ]
@@ -3576,7 +4198,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/4"
+              "pointer": "/constraints/5"
             }
           }
         ]
@@ -3619,6 +4241,24 @@
       },
       {
         "module": "TEST-IMPLEMENTATION-OBSERVATION-0001",
+        "rule": "PROGRAM-DOMAIN-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "PROGRAM-DOMAIN-001",
+            "rule_path": [
+              "PROGRAM-DOMAIN-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/2"
+            }
+          }
+        ]
+      },
+      {
+        "module": "TEST-IMPLEMENTATION-OBSERVATION-0001",
         "rule": "REPO-DOCS-001",
         "origins": [
           {
@@ -3630,7 +4270,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/2"
+              "pointer": "/constraints/3"
             }
           }
         ]
@@ -3648,7 +4288,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/3"
+              "pointer": "/constraints/4"
             }
           }
         ]
@@ -3666,7 +4306,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/4"
+              "pointer": "/constraints/5"
             }
           }
         ]
@@ -3709,6 +4349,24 @@
       },
       {
         "module": "TEST-PROGRAM-SEMANTICS-0001",
+        "rule": "PROGRAM-DOMAIN-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "PROGRAM-DOMAIN-001",
+            "rule_path": [
+              "PROGRAM-DOMAIN-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/2"
+            }
+          }
+        ]
+      },
+      {
+        "module": "TEST-PROGRAM-SEMANTICS-0001",
         "rule": "REPO-DOCS-001",
         "origins": [
           {
@@ -3720,7 +4378,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/2"
+              "pointer": "/constraints/3"
             }
           }
         ]
@@ -3738,7 +4396,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/3"
+              "pointer": "/constraints/4"
             }
           }
         ]
@@ -3756,7 +4414,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/4"
+              "pointer": "/constraints/5"
             }
           }
         ]
@@ -3799,6 +4457,24 @@
       },
       {
         "module": "TEST-PROJECT-MODEL-0001",
+        "rule": "PROGRAM-DOMAIN-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "PROGRAM-DOMAIN-001",
+            "rule_path": [
+              "PROGRAM-DOMAIN-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/2"
+            }
+          }
+        ]
+      },
+      {
+        "module": "TEST-PROJECT-MODEL-0001",
         "rule": "REPO-DOCS-001",
         "origins": [
           {
@@ -3810,7 +4486,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/2"
+              "pointer": "/constraints/3"
             }
           }
         ]
@@ -3828,7 +4504,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/3"
+              "pointer": "/constraints/4"
             }
           }
         ]
@@ -3846,7 +4522,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/4"
+              "pointer": "/constraints/5"
             }
           }
         ]
@@ -3889,6 +4565,24 @@
       },
       {
         "module": "TEST-REPOSITORY-OBSERVATION-0001",
+        "rule": "PROGRAM-DOMAIN-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "PROGRAM-DOMAIN-001",
+            "rule_path": [
+              "PROGRAM-DOMAIN-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/2"
+            }
+          }
+        ]
+      },
+      {
+        "module": "TEST-REPOSITORY-OBSERVATION-0001",
         "rule": "REPO-DOCS-001",
         "origins": [
           {
@@ -3900,7 +4594,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/2"
+              "pointer": "/constraints/3"
             }
           }
         ]
@@ -3918,7 +4612,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/3"
+              "pointer": "/constraints/4"
             }
           }
         ]
@@ -3936,7 +4630,115 @@
             ],
             "provenance": {
               "path": "contract.json",
+              "pointer": "/constraints/5"
+            }
+          }
+        ]
+      },
+      {
+        "module": "TEST-SEMANTIC-ANALYSIS-0001",
+        "rule": "BEHAVIOR-FLOW-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "BEHAVIOR-FLOW-001",
+            "rule_path": [
+              "BEHAVIOR-FLOW-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/0"
+            }
+          }
+        ]
+      },
+      {
+        "module": "TEST-SEMANTIC-ANALYSIS-0001",
+        "rule": "CONTRACT-COHERENCY-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "CONTRACT-COHERENCY-001",
+            "rule_path": [
+              "CONTRACT-COHERENCY-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/1"
+            }
+          }
+        ]
+      },
+      {
+        "module": "TEST-SEMANTIC-ANALYSIS-0001",
+        "rule": "PROGRAM-DOMAIN-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "PROGRAM-DOMAIN-001",
+            "rule_path": [
+              "PROGRAM-DOMAIN-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/2"
+            }
+          }
+        ]
+      },
+      {
+        "module": "TEST-SEMANTIC-ANALYSIS-0001",
+        "rule": "REPO-DOCS-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "REPO-DOCS-001",
+            "rule_path": [
+              "REPO-DOCS-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/3"
+            }
+          }
+        ]
+      },
+      {
+        "module": "TEST-SEMANTIC-ANALYSIS-0001",
+        "rule": "REPO-MODULE-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "REPO-MODULE-001",
+            "rule_path": [
+              "REPO-MODULE-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
               "pointer": "/constraints/4"
+            }
+          }
+        ]
+      },
+      {
+        "module": "TEST-SEMANTIC-ANALYSIS-0001",
+        "rule": "STD-ID-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "STD-ID-001",
+            "rule_path": [
+              "STD-ID-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/5"
             }
           }
         ]
@@ -3979,6 +4781,24 @@
       },
       {
         "module": "TEST-SNAPSHOT-GOVERNANCE-0001",
+        "rule": "PROGRAM-DOMAIN-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "PROGRAM-DOMAIN-001",
+            "rule_path": [
+              "PROGRAM-DOMAIN-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/2"
+            }
+          }
+        ]
+      },
+      {
+        "module": "TEST-SNAPSHOT-GOVERNANCE-0001",
         "rule": "REPO-DOCS-001",
         "origins": [
           {
@@ -3990,7 +4810,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/2"
+              "pointer": "/constraints/3"
             }
           }
         ]
@@ -4008,7 +4828,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/3"
+              "pointer": "/constraints/4"
             }
           }
         ]
@@ -4026,7 +4846,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/4"
+              "pointer": "/constraints/5"
             }
           }
         ]
@@ -4069,6 +4889,24 @@
       },
       {
         "module": "TEST-STANDARD-REGISTRY-0001",
+        "rule": "PROGRAM-DOMAIN-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "PROGRAM-DOMAIN-001",
+            "rule_path": [
+              "PROGRAM-DOMAIN-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/2"
+            }
+          }
+        ]
+      },
+      {
+        "module": "TEST-STANDARD-REGISTRY-0001",
         "rule": "REPO-DOCS-001",
         "origins": [
           {
@@ -4080,7 +4918,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/2"
+              "pointer": "/constraints/3"
             }
           }
         ]
@@ -4098,7 +4936,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/3"
+              "pointer": "/constraints/4"
             }
           }
         ]
@@ -4116,7 +4954,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/4"
+              "pointer": "/constraints/5"
             }
           }
         ]
@@ -4159,6 +4997,24 @@
       },
       {
         "module": "TF-CLI-0001",
+        "rule": "PROGRAM-DOMAIN-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "PROGRAM-DOMAIN-001",
+            "rule_path": [
+              "PROGRAM-DOMAIN-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/2"
+            }
+          }
+        ]
+      },
+      {
+        "module": "TF-CLI-0001",
         "rule": "REPO-DOCS-001",
         "origins": [
           {
@@ -4170,7 +5026,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/2"
+              "pointer": "/constraints/3"
             }
           }
         ]
@@ -4188,7 +5044,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/3"
+              "pointer": "/constraints/4"
             }
           }
         ]
@@ -4206,7 +5062,7 @@
             ],
             "provenance": {
               "path": "contract.json",
-              "pointer": "/constraints/4"
+              "pointer": "/constraints/5"
             }
           }
         ]
@@ -4327,12 +5183,22 @@
       },
       {
         "consumer": "AF-CORE-0001",
+        "provider": "AF-SEMANTIC-ANALYSIS-0001",
+        "capability": "CAP-SEMANTIC-ANALYSIS",
+        "version_requirement": "^0.1.0",
+        "provenance": {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/8"
+        }
+      },
+      {
+        "consumer": "AF-CORE-0001",
         "provider": "AF-SNAPSHOT-GOVERNANCE-0001",
         "capability": "CAP-SNAPSHOT-GOVERNANCE",
         "version_requirement": "^0.1.0",
         "provenance": {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/8"
+          "pointer": "/requires/9"
         }
       },
       {
@@ -4342,7 +5208,7 @@
         "version_requirement": "^0.1.0",
         "provenance": {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/9"
+          "pointer": "/requires/10"
         }
       },
       {
@@ -4676,6 +5542,46 @@
         }
       },
       {
+        "consumer": "AF-SEMANTIC-ANALYSIS-0001",
+        "provider": "AF-FINDING-MODEL-0001",
+        "capability": "CAP-FINDING-MODEL",
+        "version_requirement": "^0.1.0",
+        "provenance": {
+          "path": "mods/engine/mods/semantic_analysis/contract.json",
+          "pointer": "/requires/0"
+        }
+      },
+      {
+        "consumer": "AF-SEMANTIC-ANALYSIS-0001",
+        "provider": "AF-PROGRAM-SEMANTICS-0001",
+        "capability": "CAP-PROGRAM-SEMANTICS",
+        "version_requirement": "^0.1.0",
+        "provenance": {
+          "path": "mods/engine/mods/semantic_analysis/contract.json",
+          "pointer": "/requires/1"
+        }
+      },
+      {
+        "consumer": "TEST-SEMANTIC-ANALYSIS-0001",
+        "provider": "AF-CORE-0001",
+        "capability": "CAP-FORTRESS-ENGINE",
+        "version_requirement": "^0.1.0",
+        "provenance": {
+          "path": "mods/engine/mods/semantic_analysis/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        }
+      },
+      {
+        "consumer": "TEST-SEMANTIC-ANALYSIS-0001",
+        "provider": "AF-SEMANTIC-ANALYSIS-0001",
+        "capability": "CAP-SEMANTIC-ANALYSIS",
+        "version_requirement": "^0.1.0",
+        "provenance": {
+          "path": "mods/engine/mods/semantic_analysis/mods/testing/contract.json",
+          "pointer": "/requires/1"
+        }
+      },
+      {
         "consumer": "AF-SNAPSHOT-GOVERNANCE-0001",
         "provider": "AF-ARCHITECTURE-EVALUATION-0001",
         "capability": "CAP-ARCHITECTURE-EVALUATION",
@@ -4757,12 +5663,22 @@
       },
       {
         "consumer": "AF-SNAPSHOT-GOVERNANCE-0001",
+        "provider": "AF-SEMANTIC-ANALYSIS-0001",
+        "capability": "CAP-SEMANTIC-ANALYSIS",
+        "version_requirement": "^0.1.0",
+        "provenance": {
+          "path": "mods/engine/mods/snapshot_governance/contract.json",
+          "pointer": "/requires/8"
+        }
+      },
+      {
+        "consumer": "AF-SNAPSHOT-GOVERNANCE-0001",
         "provider": "AF-STANDARD-REGISTRY-0001",
         "capability": "CAP-STANDARD-REGISTRY",
         "version_requirement": "^0.1.0",
         "provenance": {
           "path": "mods/engine/mods/snapshot_governance/contract.json",
-          "pointer": "/requires/8"
+          "pointer": "/requires/9"
         }
       },
       {
@@ -4974,6 +5890,18 @@
         }
       },
       {
+        "source": "TEST-SEMANTIC-ANALYSIS-0001",
+        "relationship_type": "verifies",
+        "target": "AF-SEMANTIC-ANALYSIS-0001",
+        "subjects": [
+          "AF-SEMANTIC-ANALYSIS-0001"
+        ],
+        "provenance": {
+          "path": "mods/engine/mods/semantic_analysis/mods/testing/contract.json",
+          "pointer": "/relationships/0"
+        }
+      },
+      {
         "source": "TEST-SNAPSHOT-GOVERNANCE-0001",
         "relationship_type": "verifies",
         "target": "AF-SNAPSHOT-GOVERNANCE-0001",
@@ -5077,6 +6005,12 @@
         "consumer": "AF-CORE-0001",
         "capability": "CAP-REPOSITORY-OBSERVATION",
         "derivation": "inverse_consumer:AF-REPOSITORY-OBSERVATION-0001:AF-CORE-0001:CAP-REPOSITORY-OBSERVATION"
+      },
+      {
+        "provider": "AF-SEMANTIC-ANALYSIS-0001",
+        "consumer": "AF-CORE-0001",
+        "capability": "CAP-SEMANTIC-ANALYSIS",
+        "derivation": "inverse_consumer:AF-SEMANTIC-ANALYSIS-0001:AF-CORE-0001:CAP-SEMANTIC-ANALYSIS"
       },
       {
         "provider": "AF-SNAPSHOT-GOVERNANCE-0001",
@@ -5289,6 +6223,30 @@
         "derivation": "inverse_consumer:AF-REPOSITORY-OBSERVATION-0001:TEST-REPOSITORY-OBSERVATION-0001:CAP-REPOSITORY-OBSERVATION"
       },
       {
+        "provider": "AF-FINDING-MODEL-0001",
+        "consumer": "AF-SEMANTIC-ANALYSIS-0001",
+        "capability": "CAP-FINDING-MODEL",
+        "derivation": "inverse_consumer:AF-FINDING-MODEL-0001:AF-SEMANTIC-ANALYSIS-0001:CAP-FINDING-MODEL"
+      },
+      {
+        "provider": "AF-PROGRAM-SEMANTICS-0001",
+        "consumer": "AF-SEMANTIC-ANALYSIS-0001",
+        "capability": "CAP-PROGRAM-SEMANTICS",
+        "derivation": "inverse_consumer:AF-PROGRAM-SEMANTICS-0001:AF-SEMANTIC-ANALYSIS-0001:CAP-PROGRAM-SEMANTICS"
+      },
+      {
+        "provider": "AF-CORE-0001",
+        "consumer": "TEST-SEMANTIC-ANALYSIS-0001",
+        "capability": "CAP-FORTRESS-ENGINE",
+        "derivation": "inverse_consumer:AF-CORE-0001:TEST-SEMANTIC-ANALYSIS-0001:CAP-FORTRESS-ENGINE"
+      },
+      {
+        "provider": "AF-SEMANTIC-ANALYSIS-0001",
+        "consumer": "TEST-SEMANTIC-ANALYSIS-0001",
+        "capability": "CAP-SEMANTIC-ANALYSIS",
+        "derivation": "inverse_consumer:AF-SEMANTIC-ANALYSIS-0001:TEST-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS"
+      },
+      {
         "provider": "AF-ARCHITECTURE-EVALUATION-0001",
         "consumer": "AF-SNAPSHOT-GOVERNANCE-0001",
         "capability": "CAP-ARCHITECTURE-EVALUATION",
@@ -5335,6 +6293,12 @@
         "consumer": "AF-SNAPSHOT-GOVERNANCE-0001",
         "capability": "CAP-REPOSITORY-OBSERVATION",
         "derivation": "inverse_consumer:AF-REPOSITORY-OBSERVATION-0001:AF-SNAPSHOT-GOVERNANCE-0001:CAP-REPOSITORY-OBSERVATION"
+      },
+      {
+        "provider": "AF-SEMANTIC-ANALYSIS-0001",
+        "consumer": "AF-SNAPSHOT-GOVERNANCE-0001",
+        "capability": "CAP-SEMANTIC-ANALYSIS",
+        "derivation": "inverse_consumer:AF-SEMANTIC-ANALYSIS-0001:AF-SNAPSHOT-GOVERNANCE-0001:CAP-SEMANTIC-ANALYSIS"
       },
       {
         "provider": "AF-STANDARD-REGISTRY-0001",
@@ -5600,6 +6564,17 @@
       },
       {
         "source": "AF-CONTRACT-COHERENCY-TESTING-0001",
+        "target": "AF-SEMANTIC-ANALYSIS-0001",
+        "direct": false,
+        "path": [
+          "AF-CONTRACT-COHERENCY-TESTING-0001",
+          "AF-CORE-0001",
+          "AF-SEMANTIC-ANALYSIS-0001"
+        ],
+        "derivation": "dependency_reachability:AF-CONTRACT-COHERENCY-TESTING-0001:AF-SEMANTIC-ANALYSIS-0001"
+      },
+      {
+        "source": "AF-CONTRACT-COHERENCY-TESTING-0001",
         "target": "AF-SNAPSHOT-GOVERNANCE-0001",
         "direct": true,
         "path": [
@@ -5700,6 +6675,16 @@
       },
       {
         "source": "AF-CORE-0001",
+        "target": "AF-SEMANTIC-ANALYSIS-0001",
+        "direct": true,
+        "path": [
+          "AF-CORE-0001",
+          "AF-SEMANTIC-ANALYSIS-0001"
+        ],
+        "derivation": "dependency_reachability:AF-CORE-0001:AF-SEMANTIC-ANALYSIS-0001"
+      },
+      {
+        "source": "AF-CORE-0001",
         "target": "AF-SNAPSHOT-GOVERNANCE-0001",
         "direct": true,
         "path": [
@@ -5791,6 +6776,59 @@
         "derivation": "dependency_reachability:AF-REPOSITORY-OBSERVATION-0001:AF-STANDARD-REGISTRY-0001"
       },
       {
+        "source": "AF-SEMANTIC-ANALYSIS-0001",
+        "target": "AF-CONTRACT-COHERENCY-0001",
+        "direct": false,
+        "path": [
+          "AF-SEMANTIC-ANALYSIS-0001",
+          "AF-PROGRAM-SEMANTICS-0001",
+          "AF-CONTRACT-COHERENCY-0001"
+        ],
+        "derivation": "dependency_reachability:AF-SEMANTIC-ANALYSIS-0001:AF-CONTRACT-COHERENCY-0001"
+      },
+      {
+        "source": "AF-SEMANTIC-ANALYSIS-0001",
+        "target": "AF-FINDING-MODEL-0001",
+        "direct": true,
+        "path": [
+          "AF-SEMANTIC-ANALYSIS-0001",
+          "AF-FINDING-MODEL-0001"
+        ],
+        "derivation": "dependency_reachability:AF-SEMANTIC-ANALYSIS-0001:AF-FINDING-MODEL-0001"
+      },
+      {
+        "source": "AF-SEMANTIC-ANALYSIS-0001",
+        "target": "AF-IMPLEMENTATION-OBSERVATION-0001",
+        "direct": false,
+        "path": [
+          "AF-SEMANTIC-ANALYSIS-0001",
+          "AF-PROGRAM-SEMANTICS-0001",
+          "AF-IMPLEMENTATION-OBSERVATION-0001"
+        ],
+        "derivation": "dependency_reachability:AF-SEMANTIC-ANALYSIS-0001:AF-IMPLEMENTATION-OBSERVATION-0001"
+      },
+      {
+        "source": "AF-SEMANTIC-ANALYSIS-0001",
+        "target": "AF-PROGRAM-SEMANTICS-0001",
+        "direct": true,
+        "path": [
+          "AF-SEMANTIC-ANALYSIS-0001",
+          "AF-PROGRAM-SEMANTICS-0001"
+        ],
+        "derivation": "dependency_reachability:AF-SEMANTIC-ANALYSIS-0001:AF-PROGRAM-SEMANTICS-0001"
+      },
+      {
+        "source": "AF-SEMANTIC-ANALYSIS-0001",
+        "target": "AF-STANDARD-REGISTRY-0001",
+        "direct": false,
+        "path": [
+          "AF-SEMANTIC-ANALYSIS-0001",
+          "AF-FINDING-MODEL-0001",
+          "AF-STANDARD-REGISTRY-0001"
+        ],
+        "derivation": "dependency_reachability:AF-SEMANTIC-ANALYSIS-0001:AF-STANDARD-REGISTRY-0001"
+      },
+      {
         "source": "AF-SNAPSHOT-GOVERNANCE-0001",
         "target": "AF-ARCHITECTURE-EVALUATION-0001",
         "direct": true,
@@ -5869,6 +6907,16 @@
           "AF-REPOSITORY-OBSERVATION-0001"
         ],
         "derivation": "dependency_reachability:AF-SNAPSHOT-GOVERNANCE-0001:AF-REPOSITORY-OBSERVATION-0001"
+      },
+      {
+        "source": "AF-SNAPSHOT-GOVERNANCE-0001",
+        "target": "AF-SEMANTIC-ANALYSIS-0001",
+        "direct": true,
+        "path": [
+          "AF-SNAPSHOT-GOVERNANCE-0001",
+          "AF-SEMANTIC-ANALYSIS-0001"
+        ],
+        "derivation": "dependency_reachability:AF-SNAPSHOT-GOVERNANCE-0001:AF-SEMANTIC-ANALYSIS-0001"
       },
       {
         "source": "AF-SNAPSHOT-GOVERNANCE-0001",
@@ -5973,6 +7021,17 @@
           "AF-REPOSITORY-OBSERVATION-0001"
         ],
         "derivation": "dependency_reachability:TEST-ARCHITECTURE-EVALUATION-0001:AF-REPOSITORY-OBSERVATION-0001"
+      },
+      {
+        "source": "TEST-ARCHITECTURE-EVALUATION-0001",
+        "target": "AF-SEMANTIC-ANALYSIS-0001",
+        "direct": false,
+        "path": [
+          "TEST-ARCHITECTURE-EVALUATION-0001",
+          "AF-CORE-0001",
+          "AF-SEMANTIC-ANALYSIS-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-ARCHITECTURE-EVALUATION-0001:AF-SEMANTIC-ANALYSIS-0001"
       },
       {
         "source": "TEST-ARCHITECTURE-EVALUATION-0001",
@@ -6094,6 +7153,17 @@
       },
       {
         "source": "TEST-BEHAVIORAL-SEMANTICS-0001",
+        "target": "AF-SEMANTIC-ANALYSIS-0001",
+        "direct": false,
+        "path": [
+          "TEST-BEHAVIORAL-SEMANTICS-0001",
+          "AF-CORE-0001",
+          "AF-SEMANTIC-ANALYSIS-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-BEHAVIORAL-SEMANTICS-0001:AF-SEMANTIC-ANALYSIS-0001"
+      },
+      {
+        "source": "TEST-BEHAVIORAL-SEMANTICS-0001",
         "target": "AF-SNAPSHOT-GOVERNANCE-0001",
         "direct": false,
         "path": [
@@ -6211,6 +7281,17 @@
           "AF-REPOSITORY-OBSERVATION-0001"
         ],
         "derivation": "dependency_reachability:TEST-CLI-0001:AF-REPOSITORY-OBSERVATION-0001"
+      },
+      {
+        "source": "TEST-CLI-0001",
+        "target": "AF-SEMANTIC-ANALYSIS-0001",
+        "direct": false,
+        "path": [
+          "TEST-CLI-0001",
+          "AF-CORE-0001",
+          "AF-SEMANTIC-ANALYSIS-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-CLI-0001:AF-SEMANTIC-ANALYSIS-0001"
       },
       {
         "source": "TEST-CLI-0001",
@@ -6344,6 +7425,17 @@
       },
       {
         "source": "TEST-FORTRESS-0001",
+        "target": "AF-SEMANTIC-ANALYSIS-0001",
+        "direct": false,
+        "path": [
+          "TEST-FORTRESS-0001",
+          "AF-CORE-0001",
+          "AF-SEMANTIC-ANALYSIS-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-FORTRESS-0001:AF-SEMANTIC-ANALYSIS-0001"
+      },
+      {
+        "source": "TEST-FORTRESS-0001",
         "target": "AF-SNAPSHOT-GOVERNANCE-0001",
         "direct": false,
         "path": [
@@ -6473,6 +7565,17 @@
       },
       {
         "source": "TEST-IMPLEMENTATION-OBSERVATION-0001",
+        "target": "AF-SEMANTIC-ANALYSIS-0001",
+        "direct": false,
+        "path": [
+          "TEST-IMPLEMENTATION-OBSERVATION-0001",
+          "AF-CORE-0001",
+          "AF-SEMANTIC-ANALYSIS-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-IMPLEMENTATION-OBSERVATION-0001:AF-SEMANTIC-ANALYSIS-0001"
+      },
+      {
+        "source": "TEST-IMPLEMENTATION-OBSERVATION-0001",
         "target": "AF-SNAPSHOT-GOVERNANCE-0001",
         "direct": false,
         "path": [
@@ -6589,6 +7692,17 @@
           "AF-REPOSITORY-OBSERVATION-0001"
         ],
         "derivation": "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-REPOSITORY-OBSERVATION-0001"
+      },
+      {
+        "source": "TEST-PROGRAM-SEMANTICS-0001",
+        "target": "AF-SEMANTIC-ANALYSIS-0001",
+        "direct": false,
+        "path": [
+          "TEST-PROGRAM-SEMANTICS-0001",
+          "AF-CORE-0001",
+          "AF-SEMANTIC-ANALYSIS-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-SEMANTIC-ANALYSIS-0001"
       },
       {
         "source": "TEST-PROGRAM-SEMANTICS-0001",
@@ -6711,6 +7825,17 @@
       },
       {
         "source": "TEST-PROJECT-MODEL-0001",
+        "target": "AF-SEMANTIC-ANALYSIS-0001",
+        "direct": false,
+        "path": [
+          "TEST-PROJECT-MODEL-0001",
+          "AF-CORE-0001",
+          "AF-SEMANTIC-ANALYSIS-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-PROJECT-MODEL-0001:AF-SEMANTIC-ANALYSIS-0001"
+      },
+      {
+        "source": "TEST-PROJECT-MODEL-0001",
         "target": "AF-SNAPSHOT-GOVERNANCE-0001",
         "direct": false,
         "path": [
@@ -6830,6 +7955,17 @@
       },
       {
         "source": "TEST-REPOSITORY-OBSERVATION-0001",
+        "target": "AF-SEMANTIC-ANALYSIS-0001",
+        "direct": false,
+        "path": [
+          "TEST-REPOSITORY-OBSERVATION-0001",
+          "AF-CORE-0001",
+          "AF-SEMANTIC-ANALYSIS-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-REPOSITORY-OBSERVATION-0001:AF-SEMANTIC-ANALYSIS-0001"
+      },
+      {
+        "source": "TEST-REPOSITORY-OBSERVATION-0001",
         "target": "AF-SNAPSHOT-GOVERNANCE-0001",
         "direct": false,
         "path": [
@@ -6849,6 +7985,136 @@
           "AF-STANDARD-REGISTRY-0001"
         ],
         "derivation": "dependency_reachability:TEST-REPOSITORY-OBSERVATION-0001:AF-STANDARD-REGISTRY-0001"
+      },
+      {
+        "source": "TEST-SEMANTIC-ANALYSIS-0001",
+        "target": "AF-ARCHITECTURE-EVALUATION-0001",
+        "direct": false,
+        "path": [
+          "TEST-SEMANTIC-ANALYSIS-0001",
+          "AF-CORE-0001",
+          "AF-ARCHITECTURE-EVALUATION-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-ARCHITECTURE-EVALUATION-0001"
+      },
+      {
+        "source": "TEST-SEMANTIC-ANALYSIS-0001",
+        "target": "AF-BEHAVIORAL-SEMANTICS-0001",
+        "direct": false,
+        "path": [
+          "TEST-SEMANTIC-ANALYSIS-0001",
+          "AF-CORE-0001",
+          "AF-BEHAVIORAL-SEMANTICS-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-BEHAVIORAL-SEMANTICS-0001"
+      },
+      {
+        "source": "TEST-SEMANTIC-ANALYSIS-0001",
+        "target": "AF-CONTRACT-COHERENCY-0001",
+        "direct": false,
+        "path": [
+          "TEST-SEMANTIC-ANALYSIS-0001",
+          "AF-CORE-0001",
+          "AF-CONTRACT-COHERENCY-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-CONTRACT-COHERENCY-0001"
+      },
+      {
+        "source": "TEST-SEMANTIC-ANALYSIS-0001",
+        "target": "AF-CORE-0001",
+        "direct": true,
+        "path": [
+          "TEST-SEMANTIC-ANALYSIS-0001",
+          "AF-CORE-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-CORE-0001"
+      },
+      {
+        "source": "TEST-SEMANTIC-ANALYSIS-0001",
+        "target": "AF-FINDING-MODEL-0001",
+        "direct": false,
+        "path": [
+          "TEST-SEMANTIC-ANALYSIS-0001",
+          "AF-CORE-0001",
+          "AF-FINDING-MODEL-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-FINDING-MODEL-0001"
+      },
+      {
+        "source": "TEST-SEMANTIC-ANALYSIS-0001",
+        "target": "AF-IMPLEMENTATION-OBSERVATION-0001",
+        "direct": false,
+        "path": [
+          "TEST-SEMANTIC-ANALYSIS-0001",
+          "AF-CORE-0001",
+          "AF-IMPLEMENTATION-OBSERVATION-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-IMPLEMENTATION-OBSERVATION-0001"
+      },
+      {
+        "source": "TEST-SEMANTIC-ANALYSIS-0001",
+        "target": "AF-PROGRAM-SEMANTICS-0001",
+        "direct": false,
+        "path": [
+          "TEST-SEMANTIC-ANALYSIS-0001",
+          "AF-CORE-0001",
+          "AF-PROGRAM-SEMANTICS-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-PROGRAM-SEMANTICS-0001"
+      },
+      {
+        "source": "TEST-SEMANTIC-ANALYSIS-0001",
+        "target": "AF-PROJECT-MODEL-0001",
+        "direct": false,
+        "path": [
+          "TEST-SEMANTIC-ANALYSIS-0001",
+          "AF-CORE-0001",
+          "AF-PROJECT-MODEL-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-PROJECT-MODEL-0001"
+      },
+      {
+        "source": "TEST-SEMANTIC-ANALYSIS-0001",
+        "target": "AF-REPOSITORY-OBSERVATION-0001",
+        "direct": false,
+        "path": [
+          "TEST-SEMANTIC-ANALYSIS-0001",
+          "AF-CORE-0001",
+          "AF-REPOSITORY-OBSERVATION-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-REPOSITORY-OBSERVATION-0001"
+      },
+      {
+        "source": "TEST-SEMANTIC-ANALYSIS-0001",
+        "target": "AF-SEMANTIC-ANALYSIS-0001",
+        "direct": true,
+        "path": [
+          "TEST-SEMANTIC-ANALYSIS-0001",
+          "AF-SEMANTIC-ANALYSIS-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-SEMANTIC-ANALYSIS-0001"
+      },
+      {
+        "source": "TEST-SEMANTIC-ANALYSIS-0001",
+        "target": "AF-SNAPSHOT-GOVERNANCE-0001",
+        "direct": false,
+        "path": [
+          "TEST-SEMANTIC-ANALYSIS-0001",
+          "AF-CORE-0001",
+          "AF-SNAPSHOT-GOVERNANCE-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-SNAPSHOT-GOVERNANCE-0001"
+      },
+      {
+        "source": "TEST-SEMANTIC-ANALYSIS-0001",
+        "target": "AF-STANDARD-REGISTRY-0001",
+        "direct": false,
+        "path": [
+          "TEST-SEMANTIC-ANALYSIS-0001",
+          "AF-CORE-0001",
+          "AF-STANDARD-REGISTRY-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-STANDARD-REGISTRY-0001"
       },
       {
         "source": "TEST-SNAPSHOT-GOVERNANCE-0001",
@@ -6943,6 +8209,17 @@
           "AF-REPOSITORY-OBSERVATION-0001"
         ],
         "derivation": "dependency_reachability:TEST-SNAPSHOT-GOVERNANCE-0001:AF-REPOSITORY-OBSERVATION-0001"
+      },
+      {
+        "source": "TEST-SNAPSHOT-GOVERNANCE-0001",
+        "target": "AF-SEMANTIC-ANALYSIS-0001",
+        "direct": false,
+        "path": [
+          "TEST-SNAPSHOT-GOVERNANCE-0001",
+          "AF-CORE-0001",
+          "AF-SEMANTIC-ANALYSIS-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-SNAPSHOT-GOVERNANCE-0001:AF-SEMANTIC-ANALYSIS-0001"
       },
       {
         "source": "TEST-SNAPSHOT-GOVERNANCE-0001",
@@ -7064,6 +8341,17 @@
       },
       {
         "source": "TEST-STANDARD-REGISTRY-0001",
+        "target": "AF-SEMANTIC-ANALYSIS-0001",
+        "direct": false,
+        "path": [
+          "TEST-STANDARD-REGISTRY-0001",
+          "AF-CORE-0001",
+          "AF-SEMANTIC-ANALYSIS-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-STANDARD-REGISTRY-0001:AF-SEMANTIC-ANALYSIS-0001"
+      },
+      {
+        "source": "TEST-STANDARD-REGISTRY-0001",
         "target": "AF-SNAPSHOT-GOVERNANCE-0001",
         "direct": false,
         "path": [
@@ -7180,6 +8468,17 @@
           "AF-REPOSITORY-OBSERVATION-0001"
         ],
         "derivation": "dependency_reachability:TF-CLI-0001:AF-REPOSITORY-OBSERVATION-0001"
+      },
+      {
+        "source": "TF-CLI-0001",
+        "target": "AF-SEMANTIC-ANALYSIS-0001",
+        "direct": false,
+        "path": [
+          "TF-CLI-0001",
+          "AF-CORE-0001",
+          "AF-SEMANTIC-ANALYSIS-0001"
+        ],
+        "derivation": "dependency_reachability:TF-CLI-0001:AF-SEMANTIC-ANALYSIS-0001"
       },
       {
         "source": "TF-CLI-0001",
@@ -7413,6 +8712,18 @@
       },
       {
         "source": "AF-CONTRACT-COHERENCY-TESTING-0001",
+        "capability": "CAP-SEMANTIC-ANALYSIS",
+        "provider": "AF-SEMANTIC-ANALYSIS-0001",
+        "path": [
+          "AF-CONTRACT-COHERENCY-TESTING-0001",
+          "AF-CORE-0001",
+          "AF-SEMANTIC-ANALYSIS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:AF-CONTRACT-COHERENCY-TESTING-0001:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS"
+      },
+      {
+        "source": "AF-CONTRACT-COHERENCY-TESTING-0001",
         "capability": "CAP-SNAPSHOT-GOVERNANCE",
         "provider": "AF-SNAPSHOT-GOVERNANCE-0001",
         "path": [
@@ -7523,6 +8834,17 @@
       },
       {
         "source": "AF-CORE-0001",
+        "capability": "CAP-SEMANTIC-ANALYSIS",
+        "provider": "AF-SEMANTIC-ANALYSIS-0001",
+        "path": [
+          "AF-CORE-0001",
+          "AF-SEMANTIC-ANALYSIS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:AF-CORE-0001:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS"
+      },
+      {
+        "source": "AF-CORE-0001",
         "capability": "CAP-SNAPSHOT-GOVERNANCE",
         "provider": "AF-SNAPSHOT-GOVERNANCE-0001",
         "path": [
@@ -7623,6 +8945,64 @@
         "derivation": "capability_reachability:AF-REPOSITORY-OBSERVATION-0001:AF-STANDARD-REGISTRY-0001:CAP-STANDARD-REGISTRY"
       },
       {
+        "source": "AF-SEMANTIC-ANALYSIS-0001",
+        "capability": "CAP-CONTRACT-COHERENCY",
+        "provider": "AF-CONTRACT-COHERENCY-0001",
+        "path": [
+          "AF-SEMANTIC-ANALYSIS-0001",
+          "AF-PROGRAM-SEMANTICS-0001",
+          "AF-CONTRACT-COHERENCY-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:AF-SEMANTIC-ANALYSIS-0001:AF-CONTRACT-COHERENCY-0001:CAP-CONTRACT-COHERENCY"
+      },
+      {
+        "source": "AF-SEMANTIC-ANALYSIS-0001",
+        "capability": "CAP-FINDING-MODEL",
+        "provider": "AF-FINDING-MODEL-0001",
+        "path": [
+          "AF-SEMANTIC-ANALYSIS-0001",
+          "AF-FINDING-MODEL-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:AF-SEMANTIC-ANALYSIS-0001:AF-FINDING-MODEL-0001:CAP-FINDING-MODEL"
+      },
+      {
+        "source": "AF-SEMANTIC-ANALYSIS-0001",
+        "capability": "CAP-IMPLEMENTATION-OBSERVATION",
+        "provider": "AF-IMPLEMENTATION-OBSERVATION-0001",
+        "path": [
+          "AF-SEMANTIC-ANALYSIS-0001",
+          "AF-PROGRAM-SEMANTICS-0001",
+          "AF-IMPLEMENTATION-OBSERVATION-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:AF-SEMANTIC-ANALYSIS-0001:AF-IMPLEMENTATION-OBSERVATION-0001:CAP-IMPLEMENTATION-OBSERVATION"
+      },
+      {
+        "source": "AF-SEMANTIC-ANALYSIS-0001",
+        "capability": "CAP-PROGRAM-SEMANTICS",
+        "provider": "AF-PROGRAM-SEMANTICS-0001",
+        "path": [
+          "AF-SEMANTIC-ANALYSIS-0001",
+          "AF-PROGRAM-SEMANTICS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:AF-SEMANTIC-ANALYSIS-0001:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS"
+      },
+      {
+        "source": "AF-SEMANTIC-ANALYSIS-0001",
+        "capability": "CAP-STANDARD-REGISTRY",
+        "provider": "AF-STANDARD-REGISTRY-0001",
+        "path": [
+          "AF-SEMANTIC-ANALYSIS-0001",
+          "AF-FINDING-MODEL-0001",
+          "AF-STANDARD-REGISTRY-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:AF-SEMANTIC-ANALYSIS-0001:AF-STANDARD-REGISTRY-0001:CAP-STANDARD-REGISTRY"
+      },
+      {
         "source": "AF-SNAPSHOT-GOVERNANCE-0001",
         "capability": "CAP-ARCHITECTURE-EVALUATION",
         "provider": "AF-ARCHITECTURE-EVALUATION-0001",
@@ -7709,6 +9089,17 @@
         ],
         "reexported": false,
         "derivation": "capability_reachability:AF-SNAPSHOT-GOVERNANCE-0001:AF-REPOSITORY-OBSERVATION-0001:CAP-REPOSITORY-OBSERVATION"
+      },
+      {
+        "source": "AF-SNAPSHOT-GOVERNANCE-0001",
+        "capability": "CAP-SEMANTIC-ANALYSIS",
+        "provider": "AF-SEMANTIC-ANALYSIS-0001",
+        "path": [
+          "AF-SNAPSHOT-GOVERNANCE-0001",
+          "AF-SEMANTIC-ANALYSIS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:AF-SNAPSHOT-GOVERNANCE-0001:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS"
       },
       {
         "source": "AF-SNAPSHOT-GOVERNANCE-0001",
@@ -7823,6 +9214,18 @@
         ],
         "reexported": false,
         "derivation": "capability_reachability:TEST-ARCHITECTURE-EVALUATION-0001:AF-REPOSITORY-OBSERVATION-0001:CAP-REPOSITORY-OBSERVATION"
+      },
+      {
+        "source": "TEST-ARCHITECTURE-EVALUATION-0001",
+        "capability": "CAP-SEMANTIC-ANALYSIS",
+        "provider": "AF-SEMANTIC-ANALYSIS-0001",
+        "path": [
+          "TEST-ARCHITECTURE-EVALUATION-0001",
+          "AF-CORE-0001",
+          "AF-SEMANTIC-ANALYSIS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-ARCHITECTURE-EVALUATION-0001:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS"
       },
       {
         "source": "TEST-ARCHITECTURE-EVALUATION-0001",
@@ -7955,6 +9358,18 @@
       },
       {
         "source": "TEST-BEHAVIORAL-SEMANTICS-0001",
+        "capability": "CAP-SEMANTIC-ANALYSIS",
+        "provider": "AF-SEMANTIC-ANALYSIS-0001",
+        "path": [
+          "TEST-BEHAVIORAL-SEMANTICS-0001",
+          "AF-CORE-0001",
+          "AF-SEMANTIC-ANALYSIS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-BEHAVIORAL-SEMANTICS-0001:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS"
+      },
+      {
+        "source": "TEST-BEHAVIORAL-SEMANTICS-0001",
         "capability": "CAP-SNAPSHOT-GOVERNANCE",
         "provider": "AF-SNAPSHOT-GOVERNANCE-0001",
         "path": [
@@ -8083,6 +9498,18 @@
         ],
         "reexported": false,
         "derivation": "capability_reachability:TEST-CLI-0001:AF-REPOSITORY-OBSERVATION-0001:CAP-REPOSITORY-OBSERVATION"
+      },
+      {
+        "source": "TEST-CLI-0001",
+        "capability": "CAP-SEMANTIC-ANALYSIS",
+        "provider": "AF-SEMANTIC-ANALYSIS-0001",
+        "path": [
+          "TEST-CLI-0001",
+          "AF-CORE-0001",
+          "AF-SEMANTIC-ANALYSIS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-CLI-0001:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS"
       },
       {
         "source": "TEST-CLI-0001",
@@ -8228,6 +9655,18 @@
       },
       {
         "source": "TEST-FORTRESS-0001",
+        "capability": "CAP-SEMANTIC-ANALYSIS",
+        "provider": "AF-SEMANTIC-ANALYSIS-0001",
+        "path": [
+          "TEST-FORTRESS-0001",
+          "AF-CORE-0001",
+          "AF-SEMANTIC-ANALYSIS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-FORTRESS-0001:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS"
+      },
+      {
+        "source": "TEST-FORTRESS-0001",
         "capability": "CAP-SNAPSHOT-GOVERNANCE",
         "provider": "AF-SNAPSHOT-GOVERNANCE-0001",
         "path": [
@@ -8369,6 +9808,18 @@
       },
       {
         "source": "TEST-IMPLEMENTATION-OBSERVATION-0001",
+        "capability": "CAP-SEMANTIC-ANALYSIS",
+        "provider": "AF-SEMANTIC-ANALYSIS-0001",
+        "path": [
+          "TEST-IMPLEMENTATION-OBSERVATION-0001",
+          "AF-CORE-0001",
+          "AF-SEMANTIC-ANALYSIS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-IMPLEMENTATION-OBSERVATION-0001:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS"
+      },
+      {
+        "source": "TEST-IMPLEMENTATION-OBSERVATION-0001",
         "capability": "CAP-SNAPSHOT-GOVERNANCE",
         "provider": "AF-SNAPSHOT-GOVERNANCE-0001",
         "path": [
@@ -8496,6 +9947,18 @@
         ],
         "reexported": false,
         "derivation": "capability_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-REPOSITORY-OBSERVATION-0001:CAP-REPOSITORY-OBSERVATION"
+      },
+      {
+        "source": "TEST-PROGRAM-SEMANTICS-0001",
+        "capability": "CAP-SEMANTIC-ANALYSIS",
+        "provider": "AF-SEMANTIC-ANALYSIS-0001",
+        "path": [
+          "TEST-PROGRAM-SEMANTICS-0001",
+          "AF-CORE-0001",
+          "AF-SEMANTIC-ANALYSIS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS"
       },
       {
         "source": "TEST-PROGRAM-SEMANTICS-0001",
@@ -8629,6 +10092,18 @@
       },
       {
         "source": "TEST-PROJECT-MODEL-0001",
+        "capability": "CAP-SEMANTIC-ANALYSIS",
+        "provider": "AF-SEMANTIC-ANALYSIS-0001",
+        "path": [
+          "TEST-PROJECT-MODEL-0001",
+          "AF-CORE-0001",
+          "AF-SEMANTIC-ANALYSIS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-PROJECT-MODEL-0001:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS"
+      },
+      {
+        "source": "TEST-PROJECT-MODEL-0001",
         "capability": "CAP-SNAPSHOT-GOVERNANCE",
         "provider": "AF-SNAPSHOT-GOVERNANCE-0001",
         "path": [
@@ -8759,6 +10234,18 @@
       },
       {
         "source": "TEST-REPOSITORY-OBSERVATION-0001",
+        "capability": "CAP-SEMANTIC-ANALYSIS",
+        "provider": "AF-SEMANTIC-ANALYSIS-0001",
+        "path": [
+          "TEST-REPOSITORY-OBSERVATION-0001",
+          "AF-CORE-0001",
+          "AF-SEMANTIC-ANALYSIS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-REPOSITORY-OBSERVATION-0001:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS"
+      },
+      {
+        "source": "TEST-REPOSITORY-OBSERVATION-0001",
         "capability": "CAP-SNAPSHOT-GOVERNANCE",
         "provider": "AF-SNAPSHOT-GOVERNANCE-0001",
         "path": [
@@ -8780,6 +10267,148 @@
         ],
         "reexported": false,
         "derivation": "capability_reachability:TEST-REPOSITORY-OBSERVATION-0001:AF-STANDARD-REGISTRY-0001:CAP-STANDARD-REGISTRY"
+      },
+      {
+        "source": "TEST-SEMANTIC-ANALYSIS-0001",
+        "capability": "CAP-ARCHITECTURE-EVALUATION",
+        "provider": "AF-ARCHITECTURE-EVALUATION-0001",
+        "path": [
+          "TEST-SEMANTIC-ANALYSIS-0001",
+          "AF-CORE-0001",
+          "AF-ARCHITECTURE-EVALUATION-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-ARCHITECTURE-EVALUATION-0001:CAP-ARCHITECTURE-EVALUATION"
+      },
+      {
+        "source": "TEST-SEMANTIC-ANALYSIS-0001",
+        "capability": "CAP-BEHAVIORAL-SEMANTICS",
+        "provider": "AF-BEHAVIORAL-SEMANTICS-0001",
+        "path": [
+          "TEST-SEMANTIC-ANALYSIS-0001",
+          "AF-CORE-0001",
+          "AF-BEHAVIORAL-SEMANTICS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-BEHAVIORAL-SEMANTICS-0001:CAP-BEHAVIORAL-SEMANTICS"
+      },
+      {
+        "source": "TEST-SEMANTIC-ANALYSIS-0001",
+        "capability": "CAP-CONTRACT-COHERENCY",
+        "provider": "AF-CONTRACT-COHERENCY-0001",
+        "path": [
+          "TEST-SEMANTIC-ANALYSIS-0001",
+          "AF-CORE-0001",
+          "AF-CONTRACT-COHERENCY-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-CONTRACT-COHERENCY-0001:CAP-CONTRACT-COHERENCY"
+      },
+      {
+        "source": "TEST-SEMANTIC-ANALYSIS-0001",
+        "capability": "CAP-FORTRESS-ENGINE",
+        "provider": "AF-CORE-0001",
+        "path": [
+          "TEST-SEMANTIC-ANALYSIS-0001",
+          "AF-CORE-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-CORE-0001:CAP-FORTRESS-ENGINE"
+      },
+      {
+        "source": "TEST-SEMANTIC-ANALYSIS-0001",
+        "capability": "CAP-FINDING-MODEL",
+        "provider": "AF-FINDING-MODEL-0001",
+        "path": [
+          "TEST-SEMANTIC-ANALYSIS-0001",
+          "AF-CORE-0001",
+          "AF-FINDING-MODEL-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-FINDING-MODEL-0001:CAP-FINDING-MODEL"
+      },
+      {
+        "source": "TEST-SEMANTIC-ANALYSIS-0001",
+        "capability": "CAP-IMPLEMENTATION-OBSERVATION",
+        "provider": "AF-IMPLEMENTATION-OBSERVATION-0001",
+        "path": [
+          "TEST-SEMANTIC-ANALYSIS-0001",
+          "AF-CORE-0001",
+          "AF-IMPLEMENTATION-OBSERVATION-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-IMPLEMENTATION-OBSERVATION-0001:CAP-IMPLEMENTATION-OBSERVATION"
+      },
+      {
+        "source": "TEST-SEMANTIC-ANALYSIS-0001",
+        "capability": "CAP-PROGRAM-SEMANTICS",
+        "provider": "AF-PROGRAM-SEMANTICS-0001",
+        "path": [
+          "TEST-SEMANTIC-ANALYSIS-0001",
+          "AF-CORE-0001",
+          "AF-PROGRAM-SEMANTICS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS"
+      },
+      {
+        "source": "TEST-SEMANTIC-ANALYSIS-0001",
+        "capability": "CAP-PROJECT-MODEL",
+        "provider": "AF-PROJECT-MODEL-0001",
+        "path": [
+          "TEST-SEMANTIC-ANALYSIS-0001",
+          "AF-CORE-0001",
+          "AF-PROJECT-MODEL-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-PROJECT-MODEL-0001:CAP-PROJECT-MODEL"
+      },
+      {
+        "source": "TEST-SEMANTIC-ANALYSIS-0001",
+        "capability": "CAP-REPOSITORY-OBSERVATION",
+        "provider": "AF-REPOSITORY-OBSERVATION-0001",
+        "path": [
+          "TEST-SEMANTIC-ANALYSIS-0001",
+          "AF-CORE-0001",
+          "AF-REPOSITORY-OBSERVATION-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-REPOSITORY-OBSERVATION-0001:CAP-REPOSITORY-OBSERVATION"
+      },
+      {
+        "source": "TEST-SEMANTIC-ANALYSIS-0001",
+        "capability": "CAP-SEMANTIC-ANALYSIS",
+        "provider": "AF-SEMANTIC-ANALYSIS-0001",
+        "path": [
+          "TEST-SEMANTIC-ANALYSIS-0001",
+          "AF-SEMANTIC-ANALYSIS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS"
+      },
+      {
+        "source": "TEST-SEMANTIC-ANALYSIS-0001",
+        "capability": "CAP-SNAPSHOT-GOVERNANCE",
+        "provider": "AF-SNAPSHOT-GOVERNANCE-0001",
+        "path": [
+          "TEST-SEMANTIC-ANALYSIS-0001",
+          "AF-CORE-0001",
+          "AF-SNAPSHOT-GOVERNANCE-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-SNAPSHOT-GOVERNANCE-0001:CAP-SNAPSHOT-GOVERNANCE"
+      },
+      {
+        "source": "TEST-SEMANTIC-ANALYSIS-0001",
+        "capability": "CAP-STANDARD-REGISTRY",
+        "provider": "AF-STANDARD-REGISTRY-0001",
+        "path": [
+          "TEST-SEMANTIC-ANALYSIS-0001",
+          "AF-CORE-0001",
+          "AF-STANDARD-REGISTRY-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-STANDARD-REGISTRY-0001:CAP-STANDARD-REGISTRY"
       },
       {
         "source": "TEST-SNAPSHOT-GOVERNANCE-0001",
@@ -8883,6 +10512,18 @@
         ],
         "reexported": false,
         "derivation": "capability_reachability:TEST-SNAPSHOT-GOVERNANCE-0001:AF-REPOSITORY-OBSERVATION-0001:CAP-REPOSITORY-OBSERVATION"
+      },
+      {
+        "source": "TEST-SNAPSHOT-GOVERNANCE-0001",
+        "capability": "CAP-SEMANTIC-ANALYSIS",
+        "provider": "AF-SEMANTIC-ANALYSIS-0001",
+        "path": [
+          "TEST-SNAPSHOT-GOVERNANCE-0001",
+          "AF-CORE-0001",
+          "AF-SEMANTIC-ANALYSIS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-SNAPSHOT-GOVERNANCE-0001:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS"
       },
       {
         "source": "TEST-SNAPSHOT-GOVERNANCE-0001",
@@ -9012,6 +10653,18 @@
         ],
         "reexported": false,
         "derivation": "capability_reachability:TEST-STANDARD-REGISTRY-0001:AF-REPOSITORY-OBSERVATION-0001:CAP-REPOSITORY-OBSERVATION"
+      },
+      {
+        "source": "TEST-STANDARD-REGISTRY-0001",
+        "capability": "CAP-SEMANTIC-ANALYSIS",
+        "provider": "AF-SEMANTIC-ANALYSIS-0001",
+        "path": [
+          "TEST-STANDARD-REGISTRY-0001",
+          "AF-CORE-0001",
+          "AF-SEMANTIC-ANALYSIS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-STANDARD-REGISTRY-0001:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS"
       },
       {
         "source": "TEST-STANDARD-REGISTRY-0001",
@@ -9145,6 +10798,18 @@
       },
       {
         "source": "TF-CLI-0001",
+        "capability": "CAP-SEMANTIC-ANALYSIS",
+        "provider": "AF-SEMANTIC-ANALYSIS-0001",
+        "path": [
+          "TF-CLI-0001",
+          "AF-CORE-0001",
+          "AF-SEMANTIC-ANALYSIS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TF-CLI-0001:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS"
+      },
+      {
+        "source": "TF-CLI-0001",
         "capability": "CAP-SNAPSHOT-GOVERNANCE",
         "provider": "AF-SNAPSHOT-GOVERNANCE-0001",
         "path": [
@@ -9246,6 +10911,17 @@
         ],
         "provenance": {
           "path": "mods/engine/mods/repository_observation/mods/testing/contract.json",
+          "pointer": "/relationships/0"
+        }
+      },
+      {
+        "parent": "AF-SEMANTIC-ANALYSIS-0001",
+        "testing_module": "TEST-SEMANTIC-ANALYSIS-0001",
+        "verified_features": [
+          "AF-SEMANTIC-ANALYSIS-0001"
+        ],
+        "provenance": {
+          "path": "mods/engine/mods/semantic_analysis/mods/testing/contract.json",
           "pointer": "/relationships/0"
         }
       },
@@ -9601,6 +11277,20 @@
         "derivation": "verification_support:AF-PROGRAM-SEMANTICS-0001-R03"
       },
       {
+        "requirement": "AF-PROGRAM-SEMANTICS-0001-R04",
+        "owner": "AF-PROGRAM-SEMANTICS-0001",
+        "feature": "AF-PROGRAM-SEMANTICS-0001",
+        "testing_module": "TEST-PROGRAM-SEMANTICS-0001",
+        "declared_tests": [
+          "T-AF-PROGRAM-SEMANTICS-0001-R04-001"
+        ],
+        "observed_tests": [
+          "T-AF-PROGRAM-SEMANTICS-0001-R04-001"
+        ],
+        "complete_declared_support": true,
+        "derivation": "verification_support:AF-PROGRAM-SEMANTICS-0001-R04"
+      },
+      {
         "requirement": "AF-PROJECT-MODEL-0001-R01",
         "owner": "AF-PROJECT-MODEL-0001",
         "feature": "AF-PROJECT-MODEL-0001",
@@ -9671,6 +11361,80 @@
         ],
         "complete_declared_support": true,
         "derivation": "verification_support:AF-REPOSITORY-OBSERVATION-0001-R02"
+      },
+      {
+        "requirement": "AF-SEMANTIC-ANALYSIS-0001-R01",
+        "owner": "AF-SEMANTIC-ANALYSIS-0001",
+        "feature": "AF-SEMANTIC-ANALYSIS-0001",
+        "testing_module": "TEST-SEMANTIC-ANALYSIS-0001",
+        "declared_tests": [
+          "T-AF-SEMANTIC-ANALYSIS-0001-R01-001",
+          "T-AF-SEMANTIC-ANALYSIS-0001-R01-002",
+          "T-AF-SEMANTIC-ANALYSIS-0001-R01-003"
+        ],
+        "observed_tests": [
+          "T-AF-SEMANTIC-ANALYSIS-0001-R01-001",
+          "T-AF-SEMANTIC-ANALYSIS-0001-R01-002",
+          "T-AF-SEMANTIC-ANALYSIS-0001-R01-003"
+        ],
+        "complete_declared_support": true,
+        "derivation": "verification_support:AF-SEMANTIC-ANALYSIS-0001-R01"
+      },
+      {
+        "requirement": "AF-SEMANTIC-ANALYSIS-0001-R02",
+        "owner": "AF-SEMANTIC-ANALYSIS-0001",
+        "feature": "AF-SEMANTIC-ANALYSIS-0001",
+        "testing_module": "TEST-SEMANTIC-ANALYSIS-0001",
+        "declared_tests": [
+          "T-AF-SEMANTIC-ANALYSIS-0001-R02-001",
+          "T-AF-SEMANTIC-ANALYSIS-0001-R02-002",
+          "T-AF-SEMANTIC-ANALYSIS-0001-R02-003",
+          "T-AF-SEMANTIC-ANALYSIS-0001-R02-004"
+        ],
+        "observed_tests": [
+          "T-AF-SEMANTIC-ANALYSIS-0001-R02-001",
+          "T-AF-SEMANTIC-ANALYSIS-0001-R02-002",
+          "T-AF-SEMANTIC-ANALYSIS-0001-R02-003",
+          "T-AF-SEMANTIC-ANALYSIS-0001-R02-004"
+        ],
+        "complete_declared_support": true,
+        "derivation": "verification_support:AF-SEMANTIC-ANALYSIS-0001-R02"
+      },
+      {
+        "requirement": "AF-SEMANTIC-ANALYSIS-0001-R03",
+        "owner": "AF-SEMANTIC-ANALYSIS-0001",
+        "feature": "AF-SEMANTIC-ANALYSIS-0001",
+        "testing_module": "TEST-SEMANTIC-ANALYSIS-0001",
+        "declared_tests": [
+          "T-AF-SEMANTIC-ANALYSIS-0001-R03-001",
+          "T-AF-SEMANTIC-ANALYSIS-0001-R03-002",
+          "T-AF-SEMANTIC-ANALYSIS-0001-R03-003",
+          "T-AF-SEMANTIC-ANALYSIS-0001-R03-004"
+        ],
+        "observed_tests": [
+          "T-AF-SEMANTIC-ANALYSIS-0001-R03-001",
+          "T-AF-SEMANTIC-ANALYSIS-0001-R03-002",
+          "T-AF-SEMANTIC-ANALYSIS-0001-R03-003",
+          "T-AF-SEMANTIC-ANALYSIS-0001-R03-004"
+        ],
+        "complete_declared_support": true,
+        "derivation": "verification_support:AF-SEMANTIC-ANALYSIS-0001-R03"
+      },
+      {
+        "requirement": "AF-SEMANTIC-ANALYSIS-0001-R04",
+        "owner": "AF-SEMANTIC-ANALYSIS-0001",
+        "feature": "AF-SEMANTIC-ANALYSIS-0001",
+        "testing_module": "TEST-SEMANTIC-ANALYSIS-0001",
+        "declared_tests": [
+          "T-AF-SEMANTIC-ANALYSIS-0001-R04-001",
+          "T-AF-SEMANTIC-ANALYSIS-0001-R04-002"
+        ],
+        "observed_tests": [
+          "T-AF-SEMANTIC-ANALYSIS-0001-R04-001",
+          "T-AF-SEMANTIC-ANALYSIS-0001-R04-002"
+        ],
+        "complete_declared_support": true,
+        "derivation": "verification_support:AF-SEMANTIC-ANALYSIS-0001-R04"
       },
       {
         "requirement": "AF-SNAPSHOT-GOVERNANCE-0001-R01",
@@ -10097,6 +11861,22 @@
         ],
         "complete_declared_support": true,
         "derivation": "verification_support:TF-CLI-0001-R07"
+      },
+      {
+        "requirement": "TF-CLI-0001-R08",
+        "owner": "TF-CLI-0001",
+        "feature": "TF-CLI-0001",
+        "testing_module": "TEST-CLI-0001",
+        "declared_tests": [
+          "T-TF-CLI-0001-R08-001",
+          "T-TF-CLI-0001-R08-002"
+        ],
+        "observed_tests": [
+          "T-TF-CLI-0001-R08-001",
+          "T-TF-CLI-0001-R08-002"
+        ],
+        "complete_declared_support": true,
+        "derivation": "verification_support:TF-CLI-0001-R08"
       }
     ],
     "observed_tests": [
@@ -10581,6 +12361,18 @@
         }
       },
       {
+        "id": "T-AF-PROGRAM-SEMANTICS-0001-R04-001",
+        "testing_module": "TEST-PROGRAM-SEMANTICS-0001",
+        "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+        "symbol": "supported_rust_bodies_are_lowered_into_neutral_control_facts",
+        "classification": "behavioral",
+        "declared_requirement": "AF-PROGRAM-SEMANTICS-0001-R04",
+        "provenance": {
+          "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+          "pointer": "symbol:supported_rust_bodies_are_lowered_into_neutral_control_facts"
+        }
+      },
+      {
         "id": "T-AF-PROJECT-MODEL-0001-R01-001",
         "testing_module": "TEST-PROJECT-MODEL-0001",
         "path": "mods/engine/mods/project_model/mods/testing/code/project_model.rs",
@@ -10722,6 +12514,162 @@
         "provenance": {
           "path": "mods/engine/mods/repository_observation/mods/testing/code/repository_observation.rs",
           "pointer": "symbol:fortress_observes_itself_without_transient_roots"
+        }
+      },
+      {
+        "id": "T-AF-SEMANTIC-ANALYSIS-0001-R01-001",
+        "testing_module": "TEST-SEMANTIC-ANALYSIS-0001",
+        "path": "mods/engine/mods/semantic_analysis/mods/testing/code/semantic_analysis.rs",
+        "symbol": "boolean_integer_and_widening_lattice_is_conservative",
+        "classification": "behavioral",
+        "declared_requirement": "AF-SEMANTIC-ANALYSIS-0001-R01",
+        "provenance": {
+          "path": "mods/engine/mods/semantic_analysis/mods/testing/code/semantic_analysis.rs",
+          "pointer": "symbol:boolean_integer_and_widening_lattice_is_conservative"
+        }
+      },
+      {
+        "id": "T-AF-SEMANTIC-ANALYSIS-0001-R01-002",
+        "testing_module": "TEST-SEMANTIC-ANALYSIS-0001",
+        "path": "mods/engine/mods/semantic_analysis/mods/testing/code/semantic_analysis.rs",
+        "symbol": "option_result_enum_and_product_domains_preserve_state",
+        "classification": "behavioral",
+        "declared_requirement": "AF-SEMANTIC-ANALYSIS-0001-R01",
+        "provenance": {
+          "path": "mods/engine/mods/semantic_analysis/mods/testing/code/semantic_analysis.rs",
+          "pointer": "symbol:option_result_enum_and_product_domains_preserve_state"
+        }
+      },
+      {
+        "id": "T-AF-SEMANTIC-ANALYSIS-0001-R01-003",
+        "testing_module": "TEST-SEMANTIC-ANALYSIS-0001",
+        "path": "mods/engine/mods/semantic_analysis/mods/testing/code/semantic_analysis.rs",
+        "symbol": "function_contracts_reject_unknown_foreign_and_invalid_domains",
+        "classification": "behavioral",
+        "declared_requirement": "AF-SEMANTIC-ANALYSIS-0001-R01",
+        "provenance": {
+          "path": "mods/engine/mods/semantic_analysis/mods/testing/code/semantic_analysis.rs",
+          "pointer": "symbol:function_contracts_reject_unknown_foreign_and_invalid_domains"
+        }
+      },
+      {
+        "id": "T-AF-SEMANTIC-ANALYSIS-0001-R02-001",
+        "testing_module": "TEST-SEMANTIC-ANALYSIS-0001",
+        "path": "mods/engine/mods/semantic_analysis/mods/testing/code/semantic_analysis.rs",
+        "symbol": "option_result_and_boolean_branches_refine_path_domains",
+        "classification": "behavioral",
+        "declared_requirement": "AF-SEMANTIC-ANALYSIS-0001-R02",
+        "provenance": {
+          "path": "mods/engine/mods/semantic_analysis/mods/testing/code/semantic_analysis.rs",
+          "pointer": "symbol:option_result_and_boolean_branches_refine_path_domains"
+        }
+      },
+      {
+        "id": "T-AF-SEMANTIC-ANALYSIS-0001-R02-002",
+        "testing_module": "TEST-SEMANTIC-ANALYSIS-0001",
+        "path": "mods/engine/mods/semantic_analysis/mods/testing/code/semantic_analysis.rs",
+        "symbol": "call_and_return_domains_propagate_interprocedurally",
+        "classification": "behavioral",
+        "declared_requirement": "AF-SEMANTIC-ANALYSIS-0001-R02",
+        "provenance": {
+          "path": "mods/engine/mods/semantic_analysis/mods/testing/code/semantic_analysis.rs",
+          "pointer": "symbol:call_and_return_domains_propagate_interprocedurally"
+        }
+      },
+      {
+        "id": "T-AF-SEMANTIC-ANALYSIS-0001-R02-003",
+        "testing_module": "TEST-SEMANTIC-ANALYSIS-0001",
+        "path": "mods/engine/mods/semantic_analysis/mods/testing/code/semantic_analysis.rs",
+        "symbol": "current_safe_callers_never_narrow_a_callee_admitted_domain",
+        "classification": "behavioral",
+        "declared_requirement": "AF-SEMANTIC-ANALYSIS-0001-R02",
+        "provenance": {
+          "path": "mods/engine/mods/semantic_analysis/mods/testing/code/semantic_analysis.rs",
+          "pointer": "symbol:current_safe_callers_never_narrow_a_callee_admitted_domain"
+        }
+      },
+      {
+        "id": "T-AF-SEMANTIC-ANALYSIS-0001-R02-004",
+        "testing_module": "TEST-SEMANTIC-ANALYSIS-0001",
+        "path": "mods/engine/mods/semantic_analysis/mods/testing/code/semantic_analysis.rs",
+        "symbol": "recursion_and_while_let_converge_without_path_enumeration",
+        "classification": "behavioral",
+        "declared_requirement": "AF-SEMANTIC-ANALYSIS-0001-R02",
+        "provenance": {
+          "path": "mods/engine/mods/semantic_analysis/mods/testing/code/semantic_analysis.rs",
+          "pointer": "symbol:recursion_and_while_let_converge_without_path_enumeration"
+        }
+      },
+      {
+        "id": "T-AF-SEMANTIC-ANALYSIS-0001-R03-001",
+        "testing_module": "TEST-SEMANTIC-ANALYSIS-0001",
+        "path": "mods/engine/mods/semantic_analysis/mods/testing/code/semantic_analysis.rs",
+        "symbol": "every_call_site_must_satisfy_authored_preconditions",
+        "classification": "behavioral",
+        "declared_requirement": "AF-SEMANTIC-ANALYSIS-0001-R03",
+        "provenance": {
+          "path": "mods/engine/mods/semantic_analysis/mods/testing/code/semantic_analysis.rs",
+          "pointer": "symbol:every_call_site_must_satisfy_authored_preconditions"
+        }
+      },
+      {
+        "id": "T-AF-SEMANTIC-ANALYSIS-0001-R03-002",
+        "testing_module": "TEST-SEMANTIC-ANALYSIS-0001",
+        "path": "mods/engine/mods/semantic_analysis/mods/testing/code/semantic_analysis.rs",
+        "symbol": "postconditions_are_proved_and_exact_excess_is_reported",
+        "classification": "behavioral",
+        "declared_requirement": "AF-SEMANTIC-ANALYSIS-0001-R03",
+        "provenance": {
+          "path": "mods/engine/mods/semantic_analysis/mods/testing/code/semantic_analysis.rs",
+          "pointer": "symbol:postconditions_are_proved_and_exact_excess_is_reported"
+        }
+      },
+      {
+        "id": "T-AF-SEMANTIC-ANALYSIS-0001-R03-003",
+        "testing_module": "TEST-SEMANTIC-ANALYSIS-0001",
+        "path": "mods/engine/mods/semantic_analysis/mods/testing/code/semantic_analysis.rs",
+        "symbol": "partial_operations_and_impossible_state_assertions_are_checked",
+        "classification": "behavioral",
+        "declared_requirement": "AF-SEMANTIC-ANALYSIS-0001-R03",
+        "provenance": {
+          "path": "mods/engine/mods/semantic_analysis/mods/testing/code/semantic_analysis.rs",
+          "pointer": "symbol:partial_operations_and_impossible_state_assertions_are_checked"
+        }
+      },
+      {
+        "id": "T-AF-SEMANTIC-ANALYSIS-0001-R03-004",
+        "testing_module": "TEST-SEMANTIC-ANALYSIS-0001",
+        "path": "mods/engine/mods/semantic_analysis/mods/testing/code/semantic_analysis.rs",
+        "symbol": "defined_error_outcomes_and_uncertainty_are_not_false_failures",
+        "classification": "behavioral",
+        "declared_requirement": "AF-SEMANTIC-ANALYSIS-0001-R03",
+        "provenance": {
+          "path": "mods/engine/mods/semantic_analysis/mods/testing/code/semantic_analysis.rs",
+          "pointer": "symbol:defined_error_outcomes_and_uncertainty_are_not_false_failures"
+        }
+      },
+      {
+        "id": "T-AF-SEMANTIC-ANALYSIS-0001-R04-001",
+        "testing_module": "TEST-SEMANTIC-ANALYSIS-0001",
+        "path": "mods/engine/mods/semantic_analysis/mods/testing/code/semantic_analysis.rs",
+        "symbol": "canonical_semantic_analysis_is_byte_and_digest_deterministic",
+        "classification": "behavioral",
+        "declared_requirement": "AF-SEMANTIC-ANALYSIS-0001-R04",
+        "provenance": {
+          "path": "mods/engine/mods/semantic_analysis/mods/testing/code/semantic_analysis.rs",
+          "pointer": "symbol:canonical_semantic_analysis_is_byte_and_digest_deterministic"
+        }
+      },
+      {
+        "id": "T-AF-SEMANTIC-ANALYSIS-0001-R04-002",
+        "testing_module": "TEST-SEMANTIC-ANALYSIS-0001",
+        "path": "mods/engine/mods/semantic_analysis/mods/testing/code/semantic_analysis.rs",
+        "symbol": "live_fortress_semantic_analysis_is_fresh_and_contradiction_free",
+        "classification": "behavioral",
+        "declared_requirement": "AF-SEMANTIC-ANALYSIS-0001-R04",
+        "provenance": {
+          "path": "mods/engine/mods/semantic_analysis/mods/testing/code/semantic_analysis.rs",
+          "pointer": "symbol:live_fortress_semantic_analysis_is_fresh_and_contradiction_free"
         }
       },
       {
@@ -11743,6 +13691,30 @@
           "path": "mods/cli/mods/testing/code/cli.rs",
           "pointer": "symbol:psm_rejects_unsupported_formats"
         }
+      },
+      {
+        "id": "T-TF-CLI-0001-R08-001",
+        "testing_module": "TEST-CLI-0001",
+        "path": "mods/cli/mods/testing/code/cli.rs",
+        "symbol": "semantic_json_is_schema_versioned_and_repeatable",
+        "classification": "behavioral",
+        "declared_requirement": "TF-CLI-0001-R08",
+        "provenance": {
+          "path": "mods/cli/mods/testing/code/cli.rs",
+          "pointer": "symbol:semantic_json_is_schema_versioned_and_repeatable"
+        }
+      },
+      {
+        "id": "T-TF-CLI-0001-R08-002",
+        "testing_module": "TEST-CLI-0001",
+        "path": "mods/cli/mods/testing/code/cli.rs",
+        "symbol": "semantic_rejects_unsupported_formats",
+        "classification": "behavioral",
+        "declared_requirement": "TF-CLI-0001-R08",
+        "provenance": {
+          "path": "mods/cli/mods/testing/code/cli.rs",
+          "pointer": "symbol:semantic_rejects_unsupported_formats"
+        }
       }
     ]
   },
@@ -12264,6 +14236,26 @@
       ]
     },
     {
+      "id": "capability_reachability:AF-CONTRACT-COHERENCY-TESTING-0001:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:AF-CONTRACT-COHERENCY-TESTING-0001:CAP-SEMANTIC-ANALYSIS",
+      "input_facts": [
+        "dependency_reachability:AF-CONTRACT-COHERENCY-TESTING-0001:AF-SEMANTIC-ANALYSIS-0001",
+        "provides:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS"
+      ],
+      "explanation_path": [
+        "AF-CONTRACT-COHERENCY-TESTING-0001",
+        "AF-CORE-0001",
+        "AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/semantic_analysis/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
       "id": "capability_reachability:AF-CONTRACT-COHERENCY-TESTING-0001:AF-SNAPSHOT-GOVERNANCE-0001:CAP-SNAPSHOT-GOVERNANCE",
       "kind": "capability_reachability",
       "fact": "reachable_capability:AF-CONTRACT-COHERENCY-TESTING-0001:CAP-SNAPSHOT-GOVERNANCE",
@@ -12454,6 +14446,25 @@
       ]
     },
     {
+      "id": "capability_reachability:AF-CORE-0001:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:AF-CORE-0001:CAP-SEMANTIC-ANALYSIS",
+      "input_facts": [
+        "dependency_reachability:AF-CORE-0001:AF-SEMANTIC-ANALYSIS-0001",
+        "provides:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS"
+      ],
+      "explanation_path": [
+        "AF-CORE-0001",
+        "AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/semantic_analysis/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
       "id": "capability_reachability:AF-CORE-0001:AF-SNAPSHOT-GOVERNANCE-0001:CAP-SNAPSHOT-GOVERNANCE",
       "kind": "capability_reachability",
       "fact": "reachable_capability:AF-CORE-0001:CAP-SNAPSHOT-GOVERNANCE",
@@ -12627,6 +14638,104 @@
       ]
     },
     {
+      "id": "capability_reachability:AF-SEMANTIC-ANALYSIS-0001:AF-CONTRACT-COHERENCY-0001:CAP-CONTRACT-COHERENCY",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:AF-SEMANTIC-ANALYSIS-0001:CAP-CONTRACT-COHERENCY",
+      "input_facts": [
+        "dependency_reachability:AF-SEMANTIC-ANALYSIS-0001:AF-CONTRACT-COHERENCY-0001",
+        "provides:AF-CONTRACT-COHERENCY-0001:CAP-CONTRACT-COHERENCY"
+      ],
+      "explanation_path": [
+        "AF-SEMANTIC-ANALYSIS-0001",
+        "AF-PROGRAM-SEMANTICS-0001",
+        "AF-CONTRACT-COHERENCY-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/contract_coherency/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:AF-SEMANTIC-ANALYSIS-0001:AF-FINDING-MODEL-0001:CAP-FINDING-MODEL",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:AF-SEMANTIC-ANALYSIS-0001:CAP-FINDING-MODEL",
+      "input_facts": [
+        "dependency_reachability:AF-SEMANTIC-ANALYSIS-0001:AF-FINDING-MODEL-0001",
+        "provides:AF-FINDING-MODEL-0001:CAP-FINDING-MODEL"
+      ],
+      "explanation_path": [
+        "AF-SEMANTIC-ANALYSIS-0001",
+        "AF-FINDING-MODEL-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/finding_model/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:AF-SEMANTIC-ANALYSIS-0001:AF-IMPLEMENTATION-OBSERVATION-0001:CAP-IMPLEMENTATION-OBSERVATION",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:AF-SEMANTIC-ANALYSIS-0001:CAP-IMPLEMENTATION-OBSERVATION",
+      "input_facts": [
+        "dependency_reachability:AF-SEMANTIC-ANALYSIS-0001:AF-IMPLEMENTATION-OBSERVATION-0001",
+        "provides:AF-IMPLEMENTATION-OBSERVATION-0001:CAP-IMPLEMENTATION-OBSERVATION"
+      ],
+      "explanation_path": [
+        "AF-SEMANTIC-ANALYSIS-0001",
+        "AF-PROGRAM-SEMANTICS-0001",
+        "AF-IMPLEMENTATION-OBSERVATION-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/implementation_observation/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:AF-SEMANTIC-ANALYSIS-0001:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:AF-SEMANTIC-ANALYSIS-0001:CAP-PROGRAM-SEMANTICS",
+      "input_facts": [
+        "dependency_reachability:AF-SEMANTIC-ANALYSIS-0001:AF-PROGRAM-SEMANTICS-0001",
+        "provides:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS"
+      ],
+      "explanation_path": [
+        "AF-SEMANTIC-ANALYSIS-0001",
+        "AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:AF-SEMANTIC-ANALYSIS-0001:AF-STANDARD-REGISTRY-0001:CAP-STANDARD-REGISTRY",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:AF-SEMANTIC-ANALYSIS-0001:CAP-STANDARD-REGISTRY",
+      "input_facts": [
+        "dependency_reachability:AF-SEMANTIC-ANALYSIS-0001:AF-STANDARD-REGISTRY-0001",
+        "provides:AF-STANDARD-REGISTRY-0001:CAP-STANDARD-REGISTRY"
+      ],
+      "explanation_path": [
+        "AF-SEMANTIC-ANALYSIS-0001",
+        "AF-FINDING-MODEL-0001",
+        "AF-STANDARD-REGISTRY-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/standard_registry/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
       "id": "capability_reachability:AF-SNAPSHOT-GOVERNANCE-0001:AF-ARCHITECTURE-EVALUATION-0001:CAP-ARCHITECTURE-EVALUATION",
       "kind": "capability_reachability",
       "fact": "reachable_capability:AF-SNAPSHOT-GOVERNANCE-0001:CAP-ARCHITECTURE-EVALUATION",
@@ -12774,6 +14883,25 @@
       "provenance_closure": [
         {
           "path": "mods/engine/mods/repository_observation/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:AF-SNAPSHOT-GOVERNANCE-0001:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:AF-SNAPSHOT-GOVERNANCE-0001:CAP-SEMANTIC-ANALYSIS",
+      "input_facts": [
+        "dependency_reachability:AF-SNAPSHOT-GOVERNANCE-0001:AF-SEMANTIC-ANALYSIS-0001",
+        "provides:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS"
+      ],
+      "explanation_path": [
+        "AF-SNAPSHOT-GOVERNANCE-0001",
+        "AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/semantic_analysis/contract.json",
           "pointer": "/provides/0"
         }
       ]
@@ -12968,6 +15096,26 @@
       "provenance_closure": [
         {
           "path": "mods/engine/mods/repository_observation/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-ARCHITECTURE-EVALUATION-0001:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-ARCHITECTURE-EVALUATION-0001:CAP-SEMANTIC-ANALYSIS",
+      "input_facts": [
+        "dependency_reachability:TEST-ARCHITECTURE-EVALUATION-0001:AF-SEMANTIC-ANALYSIS-0001",
+        "provides:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS"
+      ],
+      "explanation_path": [
+        "TEST-ARCHITECTURE-EVALUATION-0001",
+        "AF-CORE-0001",
+        "AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/semantic_analysis/contract.json",
           "pointer": "/provides/0"
         }
       ]
@@ -13190,6 +15338,26 @@
       ]
     },
     {
+      "id": "capability_reachability:TEST-BEHAVIORAL-SEMANTICS-0001:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-BEHAVIORAL-SEMANTICS-0001:CAP-SEMANTIC-ANALYSIS",
+      "input_facts": [
+        "dependency_reachability:TEST-BEHAVIORAL-SEMANTICS-0001:AF-SEMANTIC-ANALYSIS-0001",
+        "provides:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS"
+      ],
+      "explanation_path": [
+        "TEST-BEHAVIORAL-SEMANTICS-0001",
+        "AF-CORE-0001",
+        "AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/semantic_analysis/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
       "id": "capability_reachability:TEST-BEHAVIORAL-SEMANTICS-0001:AF-SNAPSHOT-GOVERNANCE-0001:CAP-SNAPSHOT-GOVERNANCE",
       "kind": "capability_reachability",
       "fact": "reachable_capability:TEST-BEHAVIORAL-SEMANTICS-0001:CAP-SNAPSHOT-GOVERNANCE",
@@ -13404,6 +15572,26 @@
       "provenance_closure": [
         {
           "path": "mods/engine/mods/repository_observation/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-CLI-0001:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-CLI-0001:CAP-SEMANTIC-ANALYSIS",
+      "input_facts": [
+        "dependency_reachability:TEST-CLI-0001:AF-SEMANTIC-ANALYSIS-0001",
+        "provides:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS"
+      ],
+      "explanation_path": [
+        "TEST-CLI-0001",
+        "AF-CORE-0001",
+        "AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/semantic_analysis/contract.json",
           "pointer": "/provides/0"
         }
       ]
@@ -13647,6 +15835,26 @@
       ]
     },
     {
+      "id": "capability_reachability:TEST-FORTRESS-0001:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-FORTRESS-0001:CAP-SEMANTIC-ANALYSIS",
+      "input_facts": [
+        "dependency_reachability:TEST-FORTRESS-0001:AF-SEMANTIC-ANALYSIS-0001",
+        "provides:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS"
+      ],
+      "explanation_path": [
+        "TEST-FORTRESS-0001",
+        "AF-CORE-0001",
+        "AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/semantic_analysis/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
       "id": "capability_reachability:TEST-FORTRESS-0001:AF-SNAPSHOT-GOVERNANCE-0001:CAP-SNAPSHOT-GOVERNANCE",
       "kind": "capability_reachability",
       "fact": "reachable_capability:TEST-FORTRESS-0001:CAP-SNAPSHOT-GOVERNANCE",
@@ -13884,6 +16092,26 @@
       ]
     },
     {
+      "id": "capability_reachability:TEST-IMPLEMENTATION-OBSERVATION-0001:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-IMPLEMENTATION-OBSERVATION-0001:CAP-SEMANTIC-ANALYSIS",
+      "input_facts": [
+        "dependency_reachability:TEST-IMPLEMENTATION-OBSERVATION-0001:AF-SEMANTIC-ANALYSIS-0001",
+        "provides:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS"
+      ],
+      "explanation_path": [
+        "TEST-IMPLEMENTATION-OBSERVATION-0001",
+        "AF-CORE-0001",
+        "AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/semantic_analysis/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
       "id": "capability_reachability:TEST-IMPLEMENTATION-OBSERVATION-0001:AF-SNAPSHOT-GOVERNANCE-0001:CAP-SNAPSHOT-GOVERNANCE",
       "kind": "capability_reachability",
       "fact": "reachable_capability:TEST-IMPLEMENTATION-OBSERVATION-0001:CAP-SNAPSHOT-GOVERNANCE",
@@ -14097,6 +16325,26 @@
       "provenance_closure": [
         {
           "path": "mods/engine/mods/repository_observation/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-PROGRAM-SEMANTICS-0001:CAP-SEMANTIC-ANALYSIS",
+      "input_facts": [
+        "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-SEMANTIC-ANALYSIS-0001",
+        "provides:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS"
+      ],
+      "explanation_path": [
+        "TEST-PROGRAM-SEMANTICS-0001",
+        "AF-CORE-0001",
+        "AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/semantic_analysis/contract.json",
           "pointer": "/provides/0"
         }
       ]
@@ -14320,6 +16568,26 @@
       ]
     },
     {
+      "id": "capability_reachability:TEST-PROJECT-MODEL-0001:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-PROJECT-MODEL-0001:CAP-SEMANTIC-ANALYSIS",
+      "input_facts": [
+        "dependency_reachability:TEST-PROJECT-MODEL-0001:AF-SEMANTIC-ANALYSIS-0001",
+        "provides:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS"
+      ],
+      "explanation_path": [
+        "TEST-PROJECT-MODEL-0001",
+        "AF-CORE-0001",
+        "AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/semantic_analysis/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
       "id": "capability_reachability:TEST-PROJECT-MODEL-0001:AF-SNAPSHOT-GOVERNANCE-0001:CAP-SNAPSHOT-GOVERNANCE",
       "kind": "capability_reachability",
       "fact": "reachable_capability:TEST-PROJECT-MODEL-0001:CAP-SNAPSHOT-GOVERNANCE",
@@ -14538,6 +16806,26 @@
       ]
     },
     {
+      "id": "capability_reachability:TEST-REPOSITORY-OBSERVATION-0001:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-REPOSITORY-OBSERVATION-0001:CAP-SEMANTIC-ANALYSIS",
+      "input_facts": [
+        "dependency_reachability:TEST-REPOSITORY-OBSERVATION-0001:AF-SEMANTIC-ANALYSIS-0001",
+        "provides:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS"
+      ],
+      "explanation_path": [
+        "TEST-REPOSITORY-OBSERVATION-0001",
+        "AF-CORE-0001",
+        "AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/semantic_analysis/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
       "id": "capability_reachability:TEST-REPOSITORY-OBSERVATION-0001:AF-SNAPSHOT-GOVERNANCE-0001:CAP-SNAPSHOT-GOVERNANCE",
       "kind": "capability_reachability",
       "fact": "reachable_capability:TEST-REPOSITORY-OBSERVATION-0001:CAP-SNAPSHOT-GOVERNANCE",
@@ -14567,6 +16855,244 @@
       ],
       "explanation_path": [
         "TEST-REPOSITORY-OBSERVATION-0001",
+        "AF-CORE-0001",
+        "AF-STANDARD-REGISTRY-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/standard_registry/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-ARCHITECTURE-EVALUATION-0001:CAP-ARCHITECTURE-EVALUATION",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-SEMANTIC-ANALYSIS-0001:CAP-ARCHITECTURE-EVALUATION",
+      "input_facts": [
+        "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-ARCHITECTURE-EVALUATION-0001",
+        "provides:AF-ARCHITECTURE-EVALUATION-0001:CAP-ARCHITECTURE-EVALUATION"
+      ],
+      "explanation_path": [
+        "TEST-SEMANTIC-ANALYSIS-0001",
+        "AF-CORE-0001",
+        "AF-ARCHITECTURE-EVALUATION-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/architecture_evaluation/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-BEHAVIORAL-SEMANTICS-0001:CAP-BEHAVIORAL-SEMANTICS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-SEMANTIC-ANALYSIS-0001:CAP-BEHAVIORAL-SEMANTICS",
+      "input_facts": [
+        "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-BEHAVIORAL-SEMANTICS-0001",
+        "provides:AF-BEHAVIORAL-SEMANTICS-0001:CAP-BEHAVIORAL-SEMANTICS"
+      ],
+      "explanation_path": [
+        "TEST-SEMANTIC-ANALYSIS-0001",
+        "AF-CORE-0001",
+        "AF-BEHAVIORAL-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/behavioral_semantics/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-CONTRACT-COHERENCY-0001:CAP-CONTRACT-COHERENCY",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-SEMANTIC-ANALYSIS-0001:CAP-CONTRACT-COHERENCY",
+      "input_facts": [
+        "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-CONTRACT-COHERENCY-0001",
+        "provides:AF-CONTRACT-COHERENCY-0001:CAP-CONTRACT-COHERENCY"
+      ],
+      "explanation_path": [
+        "TEST-SEMANTIC-ANALYSIS-0001",
+        "AF-CORE-0001",
+        "AF-CONTRACT-COHERENCY-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/contract_coherency/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-CORE-0001:CAP-FORTRESS-ENGINE",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-SEMANTIC-ANALYSIS-0001:CAP-FORTRESS-ENGINE",
+      "input_facts": [
+        "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-CORE-0001",
+        "provides:AF-CORE-0001:CAP-FORTRESS-ENGINE"
+      ],
+      "explanation_path": [
+        "TEST-SEMANTIC-ANALYSIS-0001",
+        "AF-CORE-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-FINDING-MODEL-0001:CAP-FINDING-MODEL",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-SEMANTIC-ANALYSIS-0001:CAP-FINDING-MODEL",
+      "input_facts": [
+        "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-FINDING-MODEL-0001",
+        "provides:AF-FINDING-MODEL-0001:CAP-FINDING-MODEL"
+      ],
+      "explanation_path": [
+        "TEST-SEMANTIC-ANALYSIS-0001",
+        "AF-CORE-0001",
+        "AF-FINDING-MODEL-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/finding_model/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-IMPLEMENTATION-OBSERVATION-0001:CAP-IMPLEMENTATION-OBSERVATION",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-SEMANTIC-ANALYSIS-0001:CAP-IMPLEMENTATION-OBSERVATION",
+      "input_facts": [
+        "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-IMPLEMENTATION-OBSERVATION-0001",
+        "provides:AF-IMPLEMENTATION-OBSERVATION-0001:CAP-IMPLEMENTATION-OBSERVATION"
+      ],
+      "explanation_path": [
+        "TEST-SEMANTIC-ANALYSIS-0001",
+        "AF-CORE-0001",
+        "AF-IMPLEMENTATION-OBSERVATION-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/implementation_observation/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-SEMANTIC-ANALYSIS-0001:CAP-PROGRAM-SEMANTICS",
+      "input_facts": [
+        "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-PROGRAM-SEMANTICS-0001",
+        "provides:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS"
+      ],
+      "explanation_path": [
+        "TEST-SEMANTIC-ANALYSIS-0001",
+        "AF-CORE-0001",
+        "AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-PROJECT-MODEL-0001:CAP-PROJECT-MODEL",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-SEMANTIC-ANALYSIS-0001:CAP-PROJECT-MODEL",
+      "input_facts": [
+        "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-PROJECT-MODEL-0001",
+        "provides:AF-PROJECT-MODEL-0001:CAP-PROJECT-MODEL"
+      ],
+      "explanation_path": [
+        "TEST-SEMANTIC-ANALYSIS-0001",
+        "AF-CORE-0001",
+        "AF-PROJECT-MODEL-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/project_model/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-REPOSITORY-OBSERVATION-0001:CAP-REPOSITORY-OBSERVATION",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-SEMANTIC-ANALYSIS-0001:CAP-REPOSITORY-OBSERVATION",
+      "input_facts": [
+        "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-REPOSITORY-OBSERVATION-0001",
+        "provides:AF-REPOSITORY-OBSERVATION-0001:CAP-REPOSITORY-OBSERVATION"
+      ],
+      "explanation_path": [
+        "TEST-SEMANTIC-ANALYSIS-0001",
+        "AF-CORE-0001",
+        "AF-REPOSITORY-OBSERVATION-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/repository_observation/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS",
+      "input_facts": [
+        "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-SEMANTIC-ANALYSIS-0001",
+        "provides:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS"
+      ],
+      "explanation_path": [
+        "TEST-SEMANTIC-ANALYSIS-0001",
+        "AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/semantic_analysis/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-SNAPSHOT-GOVERNANCE-0001:CAP-SNAPSHOT-GOVERNANCE",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-SEMANTIC-ANALYSIS-0001:CAP-SNAPSHOT-GOVERNANCE",
+      "input_facts": [
+        "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-SNAPSHOT-GOVERNANCE-0001",
+        "provides:AF-SNAPSHOT-GOVERNANCE-0001:CAP-SNAPSHOT-GOVERNANCE"
+      ],
+      "explanation_path": [
+        "TEST-SEMANTIC-ANALYSIS-0001",
+        "AF-CORE-0001",
+        "AF-SNAPSHOT-GOVERNANCE-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/snapshot_governance/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-STANDARD-REGISTRY-0001:CAP-STANDARD-REGISTRY",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-SEMANTIC-ANALYSIS-0001:CAP-STANDARD-REGISTRY",
+      "input_facts": [
+        "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-STANDARD-REGISTRY-0001",
+        "provides:AF-STANDARD-REGISTRY-0001:CAP-STANDARD-REGISTRY"
+      ],
+      "explanation_path": [
+        "TEST-SEMANTIC-ANALYSIS-0001",
         "AF-CORE-0001",
         "AF-STANDARD-REGISTRY-0001"
       ],
@@ -14748,6 +17274,26 @@
       "provenance_closure": [
         {
           "path": "mods/engine/mods/repository_observation/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-SNAPSHOT-GOVERNANCE-0001:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-SNAPSHOT-GOVERNANCE-0001:CAP-SEMANTIC-ANALYSIS",
+      "input_facts": [
+        "dependency_reachability:TEST-SNAPSHOT-GOVERNANCE-0001:AF-SEMANTIC-ANALYSIS-0001",
+        "provides:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS"
+      ],
+      "explanation_path": [
+        "TEST-SNAPSHOT-GOVERNANCE-0001",
+        "AF-CORE-0001",
+        "AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/semantic_analysis/contract.json",
           "pointer": "/provides/0"
         }
       ]
@@ -14970,6 +17516,26 @@
       ]
     },
     {
+      "id": "capability_reachability:TEST-STANDARD-REGISTRY-0001:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-STANDARD-REGISTRY-0001:CAP-SEMANTIC-ANALYSIS",
+      "input_facts": [
+        "dependency_reachability:TEST-STANDARD-REGISTRY-0001:AF-SEMANTIC-ANALYSIS-0001",
+        "provides:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS"
+      ],
+      "explanation_path": [
+        "TEST-STANDARD-REGISTRY-0001",
+        "AF-CORE-0001",
+        "AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/semantic_analysis/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
       "id": "capability_reachability:TEST-STANDARD-REGISTRY-0001:AF-SNAPSHOT-GOVERNANCE-0001:CAP-SNAPSHOT-GOVERNANCE",
       "kind": "capability_reachability",
       "fact": "reachable_capability:TEST-STANDARD-REGISTRY-0001:CAP-SNAPSHOT-GOVERNANCE",
@@ -15183,6 +17749,26 @@
       "provenance_closure": [
         {
           "path": "mods/engine/mods/repository_observation/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TF-CLI-0001:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TF-CLI-0001:CAP-SEMANTIC-ANALYSIS",
+      "input_facts": [
+        "dependency_reachability:TF-CLI-0001:AF-SEMANTIC-ANALYSIS-0001",
+        "provides:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS"
+      ],
+      "explanation_path": [
+        "TF-CLI-0001",
+        "AF-CORE-0001",
+        "AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/semantic_analysis/contract.json",
           "pointer": "/provides/0"
         }
       ]
@@ -15408,6 +17994,24 @@
       ]
     },
     {
+      "id": "containment:AF-SEMANTIC-ANALYSIS-0001",
+      "kind": "physical_containment",
+      "fact": "module_parent:AF-SEMANTIC-ANALYSIS-0001",
+      "input_facts": [
+        "contract:AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "explanation_path": [
+        "AF-CORE-0001",
+        "AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/semantic_analysis/contract.json",
+          "pointer": "/id"
+        }
+      ]
+    },
+    {
       "id": "containment:AF-SNAPSHOT-GOVERNANCE-0001",
       "kind": "physical_containment",
       "fact": "module_parent:AF-SNAPSHOT-GOVERNANCE-0001",
@@ -15600,6 +18204,24 @@
       "provenance_closure": [
         {
           "path": "mods/engine/mods/repository_observation/mods/testing/contract.json",
+          "pointer": "/id"
+        }
+      ]
+    },
+    {
+      "id": "containment:TEST-SEMANTIC-ANALYSIS-0001",
+      "kind": "physical_containment",
+      "fact": "module_parent:TEST-SEMANTIC-ANALYSIS-0001",
+      "input_facts": [
+        "contract:TEST-SEMANTIC-ANALYSIS-0001"
+      ],
+      "explanation_path": [
+        "AF-SEMANTIC-ANALYSIS-0001",
+        "TEST-SEMANTIC-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/semantic_analysis/mods/testing/contract.json",
           "pointer": "/id"
         }
       ]
@@ -16031,6 +18653,30 @@
       ]
     },
     {
+      "id": "dependency_reachability:AF-CONTRACT-COHERENCY-TESTING-0001:AF-SEMANTIC-ANALYSIS-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:AF-CONTRACT-COHERENCY-TESTING-0001:AF-SEMANTIC-ANALYSIS-0001",
+      "input_facts": [
+        "dependency:AF-CONTRACT-COHERENCY-TESTING-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "explanation_path": [
+        "AF-CONTRACT-COHERENCY-TESTING-0001",
+        "AF-CORE-0001",
+        "AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/contract_coherency/mods/testing/contract.json",
+          "pointer": "/requires/1"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/8"
+        }
+      ]
+    },
+    {
       "id": "dependency_reachability:AF-CONTRACT-COHERENCY-TESTING-0001:AF-SNAPSHOT-GOVERNANCE-0001",
       "kind": "direct_dependency",
       "fact": "dependency_reachability:AF-CONTRACT-COHERENCY-TESTING-0001:AF-SNAPSHOT-GOVERNANCE-0001",
@@ -16211,6 +18857,24 @@
       ]
     },
     {
+      "id": "dependency_reachability:AF-CORE-0001:AF-SEMANTIC-ANALYSIS-0001",
+      "kind": "direct_dependency",
+      "fact": "dependency_reachability:AF-CORE-0001:AF-SEMANTIC-ANALYSIS-0001",
+      "input_facts": [
+        "dependency:AF-CORE-0001:AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "explanation_path": [
+        "AF-CORE-0001",
+        "AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/8"
+        }
+      ]
+    },
+    {
       "id": "dependency_reachability:AF-CORE-0001:AF-SNAPSHOT-GOVERNANCE-0001",
       "kind": "direct_dependency",
       "fact": "dependency_reachability:AF-CORE-0001:AF-SNAPSHOT-GOVERNANCE-0001",
@@ -16224,7 +18888,7 @@
       "provenance_closure": [
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/8"
+          "pointer": "/requires/9"
         }
       ]
     },
@@ -16242,7 +18906,7 @@
       "provenance_closure": [
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/9"
+          "pointer": "/requires/10"
         }
       ]
     },
@@ -16380,6 +19044,114 @@
         },
         {
           "path": "mods/engine/mods/project_model/contract.json",
+          "pointer": "/requires/0"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:AF-SEMANTIC-ANALYSIS-0001:AF-CONTRACT-COHERENCY-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:AF-SEMANTIC-ANALYSIS-0001:AF-CONTRACT-COHERENCY-0001",
+      "input_facts": [
+        "dependency:AF-SEMANTIC-ANALYSIS-0001:AF-PROGRAM-SEMANTICS-0001",
+        "dependency:AF-PROGRAM-SEMANTICS-0001:AF-CONTRACT-COHERENCY-0001"
+      ],
+      "explanation_path": [
+        "AF-SEMANTIC-ANALYSIS-0001",
+        "AF-PROGRAM-SEMANTICS-0001",
+        "AF-CONTRACT-COHERENCY-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/semantic_analysis/contract.json",
+          "pointer": "/requires/1"
+        },
+        {
+          "path": "mods/engine/mods/program_semantics/contract.json",
+          "pointer": "/requires/0"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:AF-SEMANTIC-ANALYSIS-0001:AF-FINDING-MODEL-0001",
+      "kind": "direct_dependency",
+      "fact": "dependency_reachability:AF-SEMANTIC-ANALYSIS-0001:AF-FINDING-MODEL-0001",
+      "input_facts": [
+        "dependency:AF-SEMANTIC-ANALYSIS-0001:AF-FINDING-MODEL-0001"
+      ],
+      "explanation_path": [
+        "AF-SEMANTIC-ANALYSIS-0001",
+        "AF-FINDING-MODEL-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/semantic_analysis/contract.json",
+          "pointer": "/requires/0"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:AF-SEMANTIC-ANALYSIS-0001:AF-IMPLEMENTATION-OBSERVATION-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:AF-SEMANTIC-ANALYSIS-0001:AF-IMPLEMENTATION-OBSERVATION-0001",
+      "input_facts": [
+        "dependency:AF-SEMANTIC-ANALYSIS-0001:AF-PROGRAM-SEMANTICS-0001",
+        "dependency:AF-PROGRAM-SEMANTICS-0001:AF-IMPLEMENTATION-OBSERVATION-0001"
+      ],
+      "explanation_path": [
+        "AF-SEMANTIC-ANALYSIS-0001",
+        "AF-PROGRAM-SEMANTICS-0001",
+        "AF-IMPLEMENTATION-OBSERVATION-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/semantic_analysis/contract.json",
+          "pointer": "/requires/1"
+        },
+        {
+          "path": "mods/engine/mods/program_semantics/contract.json",
+          "pointer": "/requires/1"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:AF-SEMANTIC-ANALYSIS-0001:AF-PROGRAM-SEMANTICS-0001",
+      "kind": "direct_dependency",
+      "fact": "dependency_reachability:AF-SEMANTIC-ANALYSIS-0001:AF-PROGRAM-SEMANTICS-0001",
+      "input_facts": [
+        "dependency:AF-SEMANTIC-ANALYSIS-0001:AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "explanation_path": [
+        "AF-SEMANTIC-ANALYSIS-0001",
+        "AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/semantic_analysis/contract.json",
+          "pointer": "/requires/1"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:AF-SEMANTIC-ANALYSIS-0001:AF-STANDARD-REGISTRY-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:AF-SEMANTIC-ANALYSIS-0001:AF-STANDARD-REGISTRY-0001",
+      "input_facts": [
+        "dependency:AF-SEMANTIC-ANALYSIS-0001:AF-FINDING-MODEL-0001",
+        "dependency:AF-FINDING-MODEL-0001:AF-STANDARD-REGISTRY-0001"
+      ],
+      "explanation_path": [
+        "AF-SEMANTIC-ANALYSIS-0001",
+        "AF-FINDING-MODEL-0001",
+        "AF-STANDARD-REGISTRY-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/semantic_analysis/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/mods/finding_model/contract.json",
           "pointer": "/requires/0"
         }
       ]
@@ -16529,6 +19301,24 @@
       ]
     },
     {
+      "id": "dependency_reachability:AF-SNAPSHOT-GOVERNANCE-0001:AF-SEMANTIC-ANALYSIS-0001",
+      "kind": "direct_dependency",
+      "fact": "dependency_reachability:AF-SNAPSHOT-GOVERNANCE-0001:AF-SEMANTIC-ANALYSIS-0001",
+      "input_facts": [
+        "dependency:AF-SNAPSHOT-GOVERNANCE-0001:AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "explanation_path": [
+        "AF-SNAPSHOT-GOVERNANCE-0001",
+        "AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/snapshot_governance/contract.json",
+          "pointer": "/requires/8"
+        }
+      ]
+    },
+    {
       "id": "dependency_reachability:AF-SNAPSHOT-GOVERNANCE-0001:AF-STANDARD-REGISTRY-0001",
       "kind": "direct_dependency",
       "fact": "dependency_reachability:AF-SNAPSHOT-GOVERNANCE-0001:AF-STANDARD-REGISTRY-0001",
@@ -16542,7 +19332,7 @@
       "provenance_closure": [
         {
           "path": "mods/engine/mods/snapshot_governance/contract.json",
-          "pointer": "/requires/8"
+          "pointer": "/requires/9"
         }
       ]
     },
@@ -16733,6 +19523,30 @@
       ]
     },
     {
+      "id": "dependency_reachability:TEST-ARCHITECTURE-EVALUATION-0001:AF-SEMANTIC-ANALYSIS-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-ARCHITECTURE-EVALUATION-0001:AF-SEMANTIC-ANALYSIS-0001",
+      "input_facts": [
+        "dependency:TEST-ARCHITECTURE-EVALUATION-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "explanation_path": [
+        "TEST-ARCHITECTURE-EVALUATION-0001",
+        "AF-CORE-0001",
+        "AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/architecture_evaluation/mods/testing/contract.json",
+          "pointer": "/requires/2"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/8"
+        }
+      ]
+    },
+    {
       "id": "dependency_reachability:TEST-ARCHITECTURE-EVALUATION-0001:AF-SNAPSHOT-GOVERNANCE-0001",
       "kind": "transitive_dependency",
       "fact": "dependency_reachability:TEST-ARCHITECTURE-EVALUATION-0001:AF-SNAPSHOT-GOVERNANCE-0001",
@@ -16752,7 +19566,7 @@
         },
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/8"
+          "pointer": "/requires/9"
         }
       ]
     },
@@ -16979,6 +19793,30 @@
       ]
     },
     {
+      "id": "dependency_reachability:TEST-BEHAVIORAL-SEMANTICS-0001:AF-SEMANTIC-ANALYSIS-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-BEHAVIORAL-SEMANTICS-0001:AF-SEMANTIC-ANALYSIS-0001",
+      "input_facts": [
+        "dependency:TEST-BEHAVIORAL-SEMANTICS-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "explanation_path": [
+        "TEST-BEHAVIORAL-SEMANTICS-0001",
+        "AF-CORE-0001",
+        "AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/behavioral_semantics/mods/testing/contract.json",
+          "pointer": "/requires/2"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/8"
+        }
+      ]
+    },
+    {
       "id": "dependency_reachability:TEST-BEHAVIORAL-SEMANTICS-0001:AF-SNAPSHOT-GOVERNANCE-0001",
       "kind": "transitive_dependency",
       "fact": "dependency_reachability:TEST-BEHAVIORAL-SEMANTICS-0001:AF-SNAPSHOT-GOVERNANCE-0001",
@@ -16998,7 +19836,7 @@
         },
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/8"
+          "pointer": "/requires/9"
         }
       ]
     },
@@ -17237,6 +20075,30 @@
       ]
     },
     {
+      "id": "dependency_reachability:TEST-CLI-0001:AF-SEMANTIC-ANALYSIS-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-CLI-0001:AF-SEMANTIC-ANALYSIS-0001",
+      "input_facts": [
+        "dependency:TEST-CLI-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "explanation_path": [
+        "TEST-CLI-0001",
+        "AF-CORE-0001",
+        "AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/cli/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/8"
+        }
+      ]
+    },
+    {
       "id": "dependency_reachability:TEST-CLI-0001:AF-SNAPSHOT-GOVERNANCE-0001",
       "kind": "transitive_dependency",
       "fact": "dependency_reachability:TEST-CLI-0001:AF-SNAPSHOT-GOVERNANCE-0001",
@@ -17256,7 +20118,7 @@
         },
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/8"
+          "pointer": "/requires/9"
         }
       ]
     },
@@ -17280,7 +20142,7 @@
         },
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/9"
+          "pointer": "/requires/10"
         }
       ]
     },
@@ -17513,6 +20375,30 @@
       ]
     },
     {
+      "id": "dependency_reachability:TEST-FORTRESS-0001:AF-SEMANTIC-ANALYSIS-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-FORTRESS-0001:AF-SEMANTIC-ANALYSIS-0001",
+      "input_facts": [
+        "dependency:TEST-FORTRESS-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "explanation_path": [
+        "TEST-FORTRESS-0001",
+        "AF-CORE-0001",
+        "AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/8"
+        }
+      ]
+    },
+    {
       "id": "dependency_reachability:TEST-FORTRESS-0001:AF-SNAPSHOT-GOVERNANCE-0001",
       "kind": "transitive_dependency",
       "fact": "dependency_reachability:TEST-FORTRESS-0001:AF-SNAPSHOT-GOVERNANCE-0001",
@@ -17532,7 +20418,7 @@
         },
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/8"
+          "pointer": "/requires/9"
         }
       ]
     },
@@ -17556,7 +20442,7 @@
         },
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/9"
+          "pointer": "/requires/10"
         }
       ]
     },
@@ -17783,6 +20669,30 @@
       ]
     },
     {
+      "id": "dependency_reachability:TEST-IMPLEMENTATION-OBSERVATION-0001:AF-SEMANTIC-ANALYSIS-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-IMPLEMENTATION-OBSERVATION-0001:AF-SEMANTIC-ANALYSIS-0001",
+      "input_facts": [
+        "dependency:TEST-IMPLEMENTATION-OBSERVATION-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "explanation_path": [
+        "TEST-IMPLEMENTATION-OBSERVATION-0001",
+        "AF-CORE-0001",
+        "AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/implementation_observation/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/8"
+        }
+      ]
+    },
+    {
       "id": "dependency_reachability:TEST-IMPLEMENTATION-OBSERVATION-0001:AF-SNAPSHOT-GOVERNANCE-0001",
       "kind": "transitive_dependency",
       "fact": "dependency_reachability:TEST-IMPLEMENTATION-OBSERVATION-0001:AF-SNAPSHOT-GOVERNANCE-0001",
@@ -17802,7 +20712,7 @@
         },
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/8"
+          "pointer": "/requires/9"
         }
       ]
     },
@@ -17826,7 +20736,7 @@
         },
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/9"
+          "pointer": "/requires/10"
         }
       ]
     },
@@ -18035,6 +20945,30 @@
       ]
     },
     {
+      "id": "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-SEMANTIC-ANALYSIS-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-SEMANTIC-ANALYSIS-0001",
+      "input_facts": [
+        "dependency:TEST-PROGRAM-SEMANTICS-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "explanation_path": [
+        "TEST-PROGRAM-SEMANTICS-0001",
+        "AF-CORE-0001",
+        "AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/8"
+        }
+      ]
+    },
+    {
       "id": "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-SNAPSHOT-GOVERNANCE-0001",
       "kind": "transitive_dependency",
       "fact": "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-SNAPSHOT-GOVERNANCE-0001",
@@ -18054,7 +20988,7 @@
         },
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/8"
+          "pointer": "/requires/9"
         }
       ]
     },
@@ -18078,7 +21012,7 @@
         },
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/9"
+          "pointer": "/requires/10"
         }
       ]
     },
@@ -18287,6 +21221,30 @@
       ]
     },
     {
+      "id": "dependency_reachability:TEST-PROJECT-MODEL-0001:AF-SEMANTIC-ANALYSIS-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-PROJECT-MODEL-0001:AF-SEMANTIC-ANALYSIS-0001",
+      "input_facts": [
+        "dependency:TEST-PROJECT-MODEL-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "explanation_path": [
+        "TEST-PROJECT-MODEL-0001",
+        "AF-CORE-0001",
+        "AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/project_model/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/8"
+        }
+      ]
+    },
+    {
       "id": "dependency_reachability:TEST-PROJECT-MODEL-0001:AF-SNAPSHOT-GOVERNANCE-0001",
       "kind": "transitive_dependency",
       "fact": "dependency_reachability:TEST-PROJECT-MODEL-0001:AF-SNAPSHOT-GOVERNANCE-0001",
@@ -18306,7 +21264,7 @@
         },
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/8"
+          "pointer": "/requires/9"
         }
       ]
     },
@@ -18330,7 +21288,7 @@
         },
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/9"
+          "pointer": "/requires/10"
         }
       ]
     },
@@ -18539,6 +21497,30 @@
       ]
     },
     {
+      "id": "dependency_reachability:TEST-REPOSITORY-OBSERVATION-0001:AF-SEMANTIC-ANALYSIS-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-REPOSITORY-OBSERVATION-0001:AF-SEMANTIC-ANALYSIS-0001",
+      "input_facts": [
+        "dependency:TEST-REPOSITORY-OBSERVATION-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "explanation_path": [
+        "TEST-REPOSITORY-OBSERVATION-0001",
+        "AF-CORE-0001",
+        "AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/repository_observation/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/8"
+        }
+      ]
+    },
+    {
       "id": "dependency_reachability:TEST-REPOSITORY-OBSERVATION-0001:AF-SNAPSHOT-GOVERNANCE-0001",
       "kind": "transitive_dependency",
       "fact": "dependency_reachability:TEST-REPOSITORY-OBSERVATION-0001:AF-SNAPSHOT-GOVERNANCE-0001",
@@ -18558,7 +21540,7 @@
         },
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/8"
+          "pointer": "/requires/9"
         }
       ]
     },
@@ -18582,7 +21564,283 @@
         },
         {
           "path": "mods/engine/contract.json",
+          "pointer": "/requires/10"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-ARCHITECTURE-EVALUATION-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-ARCHITECTURE-EVALUATION-0001",
+      "input_facts": [
+        "dependency:TEST-SEMANTIC-ANALYSIS-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-ARCHITECTURE-EVALUATION-0001"
+      ],
+      "explanation_path": [
+        "TEST-SEMANTIC-ANALYSIS-0001",
+        "AF-CORE-0001",
+        "AF-ARCHITECTURE-EVALUATION-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/semantic_analysis/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/0"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-BEHAVIORAL-SEMANTICS-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-BEHAVIORAL-SEMANTICS-0001",
+      "input_facts": [
+        "dependency:TEST-SEMANTIC-ANALYSIS-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-BEHAVIORAL-SEMANTICS-0001"
+      ],
+      "explanation_path": [
+        "TEST-SEMANTIC-ANALYSIS-0001",
+        "AF-CORE-0001",
+        "AF-BEHAVIORAL-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/semantic_analysis/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/1"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-CONTRACT-COHERENCY-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-CONTRACT-COHERENCY-0001",
+      "input_facts": [
+        "dependency:TEST-SEMANTIC-ANALYSIS-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-CONTRACT-COHERENCY-0001"
+      ],
+      "explanation_path": [
+        "TEST-SEMANTIC-ANALYSIS-0001",
+        "AF-CORE-0001",
+        "AF-CONTRACT-COHERENCY-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/semantic_analysis/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/2"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-CORE-0001",
+      "kind": "direct_dependency",
+      "fact": "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-CORE-0001",
+      "input_facts": [
+        "dependency:TEST-SEMANTIC-ANALYSIS-0001:AF-CORE-0001"
+      ],
+      "explanation_path": [
+        "TEST-SEMANTIC-ANALYSIS-0001",
+        "AF-CORE-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/semantic_analysis/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-FINDING-MODEL-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-FINDING-MODEL-0001",
+      "input_facts": [
+        "dependency:TEST-SEMANTIC-ANALYSIS-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-FINDING-MODEL-0001"
+      ],
+      "explanation_path": [
+        "TEST-SEMANTIC-ANALYSIS-0001",
+        "AF-CORE-0001",
+        "AF-FINDING-MODEL-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/semantic_analysis/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/3"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-IMPLEMENTATION-OBSERVATION-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-IMPLEMENTATION-OBSERVATION-0001",
+      "input_facts": [
+        "dependency:TEST-SEMANTIC-ANALYSIS-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-IMPLEMENTATION-OBSERVATION-0001"
+      ],
+      "explanation_path": [
+        "TEST-SEMANTIC-ANALYSIS-0001",
+        "AF-CORE-0001",
+        "AF-IMPLEMENTATION-OBSERVATION-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/semantic_analysis/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/4"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-PROGRAM-SEMANTICS-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-PROGRAM-SEMANTICS-0001",
+      "input_facts": [
+        "dependency:TEST-SEMANTIC-ANALYSIS-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "explanation_path": [
+        "TEST-SEMANTIC-ANALYSIS-0001",
+        "AF-CORE-0001",
+        "AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/semantic_analysis/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/5"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-PROJECT-MODEL-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-PROJECT-MODEL-0001",
+      "input_facts": [
+        "dependency:TEST-SEMANTIC-ANALYSIS-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-PROJECT-MODEL-0001"
+      ],
+      "explanation_path": [
+        "TEST-SEMANTIC-ANALYSIS-0001",
+        "AF-CORE-0001",
+        "AF-PROJECT-MODEL-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/semantic_analysis/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/6"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-REPOSITORY-OBSERVATION-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-REPOSITORY-OBSERVATION-0001",
+      "input_facts": [
+        "dependency:TEST-SEMANTIC-ANALYSIS-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-REPOSITORY-OBSERVATION-0001"
+      ],
+      "explanation_path": [
+        "TEST-SEMANTIC-ANALYSIS-0001",
+        "AF-CORE-0001",
+        "AF-REPOSITORY-OBSERVATION-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/semantic_analysis/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/7"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-SEMANTIC-ANALYSIS-0001",
+      "kind": "direct_dependency",
+      "fact": "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-SEMANTIC-ANALYSIS-0001",
+      "input_facts": [
+        "dependency:TEST-SEMANTIC-ANALYSIS-0001:AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "explanation_path": [
+        "TEST-SEMANTIC-ANALYSIS-0001",
+        "AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/semantic_analysis/mods/testing/contract.json",
+          "pointer": "/requires/1"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-SNAPSHOT-GOVERNANCE-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-SNAPSHOT-GOVERNANCE-0001",
+      "input_facts": [
+        "dependency:TEST-SEMANTIC-ANALYSIS-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-SNAPSHOT-GOVERNANCE-0001"
+      ],
+      "explanation_path": [
+        "TEST-SEMANTIC-ANALYSIS-0001",
+        "AF-CORE-0001",
+        "AF-SNAPSHOT-GOVERNANCE-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/semantic_analysis/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
           "pointer": "/requires/9"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-STANDARD-REGISTRY-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-STANDARD-REGISTRY-0001",
+      "input_facts": [
+        "dependency:TEST-SEMANTIC-ANALYSIS-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-STANDARD-REGISTRY-0001"
+      ],
+      "explanation_path": [
+        "TEST-SEMANTIC-ANALYSIS-0001",
+        "AF-CORE-0001",
+        "AF-STANDARD-REGISTRY-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/semantic_analysis/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/10"
         }
       ]
     },
@@ -18769,6 +22027,30 @@
         {
           "path": "mods/engine/mods/snapshot_governance/mods/testing/contract.json",
           "pointer": "/requires/4"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:TEST-SNAPSHOT-GOVERNANCE-0001:AF-SEMANTIC-ANALYSIS-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-SNAPSHOT-GOVERNANCE-0001:AF-SEMANTIC-ANALYSIS-0001",
+      "input_facts": [
+        "dependency:TEST-SNAPSHOT-GOVERNANCE-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "explanation_path": [
+        "TEST-SNAPSHOT-GOVERNANCE-0001",
+        "AF-CORE-0001",
+        "AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/snapshot_governance/mods/testing/contract.json",
+          "pointer": "/requires/2"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/8"
         }
       ]
     },
@@ -19019,6 +22301,30 @@
       ]
     },
     {
+      "id": "dependency_reachability:TEST-STANDARD-REGISTRY-0001:AF-SEMANTIC-ANALYSIS-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-STANDARD-REGISTRY-0001:AF-SEMANTIC-ANALYSIS-0001",
+      "input_facts": [
+        "dependency:TEST-STANDARD-REGISTRY-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "explanation_path": [
+        "TEST-STANDARD-REGISTRY-0001",
+        "AF-CORE-0001",
+        "AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/standard_registry/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/8"
+        }
+      ]
+    },
+    {
       "id": "dependency_reachability:TEST-STANDARD-REGISTRY-0001:AF-SNAPSHOT-GOVERNANCE-0001",
       "kind": "transitive_dependency",
       "fact": "dependency_reachability:TEST-STANDARD-REGISTRY-0001:AF-SNAPSHOT-GOVERNANCE-0001",
@@ -19038,7 +22344,7 @@
         },
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/8"
+          "pointer": "/requires/9"
         }
       ]
     },
@@ -19271,6 +22577,30 @@
       ]
     },
     {
+      "id": "dependency_reachability:TF-CLI-0001:AF-SEMANTIC-ANALYSIS-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TF-CLI-0001:AF-SEMANTIC-ANALYSIS-0001",
+      "input_facts": [
+        "dependency:TF-CLI-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "explanation_path": [
+        "TF-CLI-0001",
+        "AF-CORE-0001",
+        "AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/cli/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/8"
+        }
+      ]
+    },
+    {
       "id": "dependency_reachability:TF-CLI-0001:AF-SNAPSHOT-GOVERNANCE-0001",
       "kind": "transitive_dependency",
       "fact": "dependency_reachability:TF-CLI-0001:AF-SNAPSHOT-GOVERNANCE-0001",
@@ -19290,7 +22620,7 @@
         },
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/8"
+          "pointer": "/requires/9"
         }
       ]
     },
@@ -19314,7 +22644,7 @@
         },
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/9"
+          "pointer": "/requires/10"
         }
       ]
     },
@@ -20119,6 +23449,24 @@
       ]
     },
     {
+      "id": "inverse_consumer:AF-CORE-0001:TEST-SEMANTIC-ANALYSIS-0001:CAP-FORTRESS-ENGINE",
+      "kind": "inverse_consumer",
+      "fact": "consumer:AF-CORE-0001:TEST-SEMANTIC-ANALYSIS-0001:CAP-FORTRESS-ENGINE",
+      "input_facts": [
+        "requires:TEST-SEMANTIC-ANALYSIS-0001:CAP-FORTRESS-ENGINE"
+      ],
+      "explanation_path": [
+        "TEST-SEMANTIC-ANALYSIS-0001",
+        "AF-CORE-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/semantic_analysis/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        }
+      ]
+    },
+    {
       "id": "inverse_consumer:AF-CORE-0001:TEST-SNAPSHOT-GOVERNANCE-0001:CAP-FORTRESS-ENGINE",
       "kind": "inverse_consumer",
       "fact": "consumer:AF-CORE-0001:TEST-SNAPSHOT-GOVERNANCE-0001:CAP-FORTRESS-ENGINE",
@@ -20223,6 +23571,24 @@
         {
           "path": "mods/engine/contract.json",
           "pointer": "/requires/3"
+        }
+      ]
+    },
+    {
+      "id": "inverse_consumer:AF-FINDING-MODEL-0001:AF-SEMANTIC-ANALYSIS-0001:CAP-FINDING-MODEL",
+      "kind": "inverse_consumer",
+      "fact": "consumer:AF-FINDING-MODEL-0001:AF-SEMANTIC-ANALYSIS-0001:CAP-FINDING-MODEL",
+      "input_facts": [
+        "requires:AF-SEMANTIC-ANALYSIS-0001:CAP-FINDING-MODEL"
+      ],
+      "explanation_path": [
+        "AF-SEMANTIC-ANALYSIS-0001",
+        "AF-FINDING-MODEL-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/semantic_analysis/contract.json",
+          "pointer": "/requires/0"
         }
       ]
     },
@@ -20385,6 +23751,24 @@
         {
           "path": "mods/engine/contract.json",
           "pointer": "/requires/5"
+        }
+      ]
+    },
+    {
+      "id": "inverse_consumer:AF-PROGRAM-SEMANTICS-0001:AF-SEMANTIC-ANALYSIS-0001:CAP-PROGRAM-SEMANTICS",
+      "kind": "inverse_consumer",
+      "fact": "consumer:AF-PROGRAM-SEMANTICS-0001:AF-SEMANTIC-ANALYSIS-0001:CAP-PROGRAM-SEMANTICS",
+      "input_facts": [
+        "requires:AF-SEMANTIC-ANALYSIS-0001:CAP-PROGRAM-SEMANTICS"
+      ],
+      "explanation_path": [
+        "AF-SEMANTIC-ANALYSIS-0001",
+        "AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/semantic_analysis/contract.json",
+          "pointer": "/requires/1"
         }
       ]
     },
@@ -20605,6 +23989,60 @@
       ]
     },
     {
+      "id": "inverse_consumer:AF-SEMANTIC-ANALYSIS-0001:AF-CORE-0001:CAP-SEMANTIC-ANALYSIS",
+      "kind": "inverse_consumer",
+      "fact": "consumer:AF-SEMANTIC-ANALYSIS-0001:AF-CORE-0001:CAP-SEMANTIC-ANALYSIS",
+      "input_facts": [
+        "requires:AF-CORE-0001:CAP-SEMANTIC-ANALYSIS"
+      ],
+      "explanation_path": [
+        "AF-CORE-0001",
+        "AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/8"
+        }
+      ]
+    },
+    {
+      "id": "inverse_consumer:AF-SEMANTIC-ANALYSIS-0001:AF-SNAPSHOT-GOVERNANCE-0001:CAP-SEMANTIC-ANALYSIS",
+      "kind": "inverse_consumer",
+      "fact": "consumer:AF-SEMANTIC-ANALYSIS-0001:AF-SNAPSHOT-GOVERNANCE-0001:CAP-SEMANTIC-ANALYSIS",
+      "input_facts": [
+        "requires:AF-SNAPSHOT-GOVERNANCE-0001:CAP-SEMANTIC-ANALYSIS"
+      ],
+      "explanation_path": [
+        "AF-SNAPSHOT-GOVERNANCE-0001",
+        "AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/snapshot_governance/contract.json",
+          "pointer": "/requires/8"
+        }
+      ]
+    },
+    {
+      "id": "inverse_consumer:AF-SEMANTIC-ANALYSIS-0001:TEST-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS",
+      "kind": "inverse_consumer",
+      "fact": "consumer:AF-SEMANTIC-ANALYSIS-0001:TEST-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS",
+      "input_facts": [
+        "requires:TEST-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS"
+      ],
+      "explanation_path": [
+        "TEST-SEMANTIC-ANALYSIS-0001",
+        "AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/semantic_analysis/mods/testing/contract.json",
+          "pointer": "/requires/1"
+        }
+      ]
+    },
+    {
       "id": "inverse_consumer:AF-SNAPSHOT-GOVERNANCE-0001:AF-CONTRACT-COHERENCY-TESTING-0001:CAP-SNAPSHOT-GOVERNANCE",
       "kind": "inverse_consumer",
       "fact": "consumer:AF-SNAPSHOT-GOVERNANCE-0001:AF-CONTRACT-COHERENCY-TESTING-0001:CAP-SNAPSHOT-GOVERNANCE",
@@ -20636,7 +24074,7 @@
       "provenance_closure": [
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/8"
+          "pointer": "/requires/9"
         }
       ]
     },
@@ -20726,7 +24164,7 @@
       "provenance_closure": [
         {
           "path": "mods/engine/contract.json",
-          "pointer": "/requires/9"
+          "pointer": "/requires/10"
         }
       ]
     },
@@ -20780,7 +24218,7 @@
       "provenance_closure": [
         {
           "path": "mods/engine/mods/snapshot_governance/contract.json",
-          "pointer": "/requires/8"
+          "pointer": "/requires/9"
         }
       ]
     },
@@ -20985,6 +24423,25 @@
       "provenance_closure": [
         {
           "path": "mods/engine/mods/repository_observation/mods/testing/contract.json",
+          "pointer": "/relationships/0"
+        }
+      ]
+    },
+    {
+      "id": "verification_boundary:AF-SEMANTIC-ANALYSIS-0001:TEST-SEMANTIC-ANALYSIS-0001",
+      "kind": "verification_boundary",
+      "fact": "testing_boundary:AF-SEMANTIC-ANALYSIS-0001",
+      "input_facts": [
+        "containment:TEST-SEMANTIC-ANALYSIS-0001",
+        "verifies:TEST-SEMANTIC-ANALYSIS-0001:AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "explanation_path": [
+        "AF-SEMANTIC-ANALYSIS-0001",
+        "TEST-SEMANTIC-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/semantic_analysis/mods/testing/contract.json",
           "pointer": "/relationships/0"
         }
       ]
@@ -21456,6 +24913,27 @@
       ]
     },
     {
+      "id": "verification_support:AF-PROGRAM-SEMANTICS-0001-R04",
+      "kind": "verification_support",
+      "fact": "requirement_support:AF-PROGRAM-SEMANTICS-0001-R04",
+      "input_facts": [
+        "requirement:AF-PROGRAM-SEMANTICS-0001-R04",
+        "testing_boundary:AF-PROGRAM-SEMANTICS-0001:TEST-PROGRAM-SEMANTICS-0001",
+        "declared_test:AF-PROGRAM-SEMANTICS-0001-R04:T-AF-PROGRAM-SEMANTICS-0001-R04-001"
+      ],
+      "explanation_path": [
+        "AF-PROGRAM-SEMANTICS-0001",
+        "AF-PROGRAM-SEMANTICS-0001-R04",
+        "TEST-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/contract.json",
+          "pointer": "/features/0/requirements/3"
+        }
+      ]
+    },
+    {
       "id": "verification_support:AF-PROJECT-MODEL-0001-R01",
       "kind": "verification_support",
       "fact": "requirement_support:AF-PROJECT-MODEL-0001-R01",
@@ -21544,6 +25022,99 @@
         {
           "path": "mods/engine/mods/repository_observation/contract.json",
           "pointer": "/features/0/requirements/1"
+        }
+      ]
+    },
+    {
+      "id": "verification_support:AF-SEMANTIC-ANALYSIS-0001-R01",
+      "kind": "verification_support",
+      "fact": "requirement_support:AF-SEMANTIC-ANALYSIS-0001-R01",
+      "input_facts": [
+        "requirement:AF-SEMANTIC-ANALYSIS-0001-R01",
+        "testing_boundary:AF-SEMANTIC-ANALYSIS-0001:TEST-SEMANTIC-ANALYSIS-0001",
+        "declared_test:AF-SEMANTIC-ANALYSIS-0001-R01:T-AF-SEMANTIC-ANALYSIS-0001-R01-001",
+        "declared_test:AF-SEMANTIC-ANALYSIS-0001-R01:T-AF-SEMANTIC-ANALYSIS-0001-R01-002",
+        "declared_test:AF-SEMANTIC-ANALYSIS-0001-R01:T-AF-SEMANTIC-ANALYSIS-0001-R01-003"
+      ],
+      "explanation_path": [
+        "AF-SEMANTIC-ANALYSIS-0001",
+        "AF-SEMANTIC-ANALYSIS-0001-R01",
+        "TEST-SEMANTIC-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/semantic_analysis/contract.json",
+          "pointer": "/features/0/requirements/0"
+        }
+      ]
+    },
+    {
+      "id": "verification_support:AF-SEMANTIC-ANALYSIS-0001-R02",
+      "kind": "verification_support",
+      "fact": "requirement_support:AF-SEMANTIC-ANALYSIS-0001-R02",
+      "input_facts": [
+        "requirement:AF-SEMANTIC-ANALYSIS-0001-R02",
+        "testing_boundary:AF-SEMANTIC-ANALYSIS-0001:TEST-SEMANTIC-ANALYSIS-0001",
+        "declared_test:AF-SEMANTIC-ANALYSIS-0001-R02:T-AF-SEMANTIC-ANALYSIS-0001-R02-001",
+        "declared_test:AF-SEMANTIC-ANALYSIS-0001-R02:T-AF-SEMANTIC-ANALYSIS-0001-R02-002",
+        "declared_test:AF-SEMANTIC-ANALYSIS-0001-R02:T-AF-SEMANTIC-ANALYSIS-0001-R02-003",
+        "declared_test:AF-SEMANTIC-ANALYSIS-0001-R02:T-AF-SEMANTIC-ANALYSIS-0001-R02-004"
+      ],
+      "explanation_path": [
+        "AF-SEMANTIC-ANALYSIS-0001",
+        "AF-SEMANTIC-ANALYSIS-0001-R02",
+        "TEST-SEMANTIC-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/semantic_analysis/contract.json",
+          "pointer": "/features/0/requirements/1"
+        }
+      ]
+    },
+    {
+      "id": "verification_support:AF-SEMANTIC-ANALYSIS-0001-R03",
+      "kind": "verification_support",
+      "fact": "requirement_support:AF-SEMANTIC-ANALYSIS-0001-R03",
+      "input_facts": [
+        "requirement:AF-SEMANTIC-ANALYSIS-0001-R03",
+        "testing_boundary:AF-SEMANTIC-ANALYSIS-0001:TEST-SEMANTIC-ANALYSIS-0001",
+        "declared_test:AF-SEMANTIC-ANALYSIS-0001-R03:T-AF-SEMANTIC-ANALYSIS-0001-R03-001",
+        "declared_test:AF-SEMANTIC-ANALYSIS-0001-R03:T-AF-SEMANTIC-ANALYSIS-0001-R03-002",
+        "declared_test:AF-SEMANTIC-ANALYSIS-0001-R03:T-AF-SEMANTIC-ANALYSIS-0001-R03-003",
+        "declared_test:AF-SEMANTIC-ANALYSIS-0001-R03:T-AF-SEMANTIC-ANALYSIS-0001-R03-004"
+      ],
+      "explanation_path": [
+        "AF-SEMANTIC-ANALYSIS-0001",
+        "AF-SEMANTIC-ANALYSIS-0001-R03",
+        "TEST-SEMANTIC-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/semantic_analysis/contract.json",
+          "pointer": "/features/0/requirements/2"
+        }
+      ]
+    },
+    {
+      "id": "verification_support:AF-SEMANTIC-ANALYSIS-0001-R04",
+      "kind": "verification_support",
+      "fact": "requirement_support:AF-SEMANTIC-ANALYSIS-0001-R04",
+      "input_facts": [
+        "requirement:AF-SEMANTIC-ANALYSIS-0001-R04",
+        "testing_boundary:AF-SEMANTIC-ANALYSIS-0001:TEST-SEMANTIC-ANALYSIS-0001",
+        "declared_test:AF-SEMANTIC-ANALYSIS-0001-R04:T-AF-SEMANTIC-ANALYSIS-0001-R04-001",
+        "declared_test:AF-SEMANTIC-ANALYSIS-0001-R04:T-AF-SEMANTIC-ANALYSIS-0001-R04-002"
+      ],
+      "explanation_path": [
+        "AF-SEMANTIC-ANALYSIS-0001",
+        "AF-SEMANTIC-ANALYSIS-0001-R04",
+        "TEST-SEMANTIC-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/semantic_analysis/contract.json",
+          "pointer": "/features/0/requirements/3"
         }
       ]
     },
@@ -22081,6 +25652,28 @@
           "pointer": "/features/0/requirements/6"
         }
       ]
+    },
+    {
+      "id": "verification_support:TF-CLI-0001-R08",
+      "kind": "verification_support",
+      "fact": "requirement_support:TF-CLI-0001-R08",
+      "input_facts": [
+        "requirement:TF-CLI-0001-R08",
+        "testing_boundary:TF-CLI-0001:TEST-CLI-0001",
+        "declared_test:TF-CLI-0001-R08:T-TF-CLI-0001-R08-001",
+        "declared_test:TF-CLI-0001-R08:T-TF-CLI-0001-R08-002"
+      ],
+      "explanation_path": [
+        "TF-CLI-0001",
+        "TF-CLI-0001-R08",
+        "TEST-CLI-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/cli/contract.json",
+          "pointer": "/features/0/requirements/7"
+        }
+      ]
     }
   ],
   "provenance": [
@@ -22151,6 +25744,14 @@
     {
       "path": "mods/cli/mods/testing/code/cli.rs",
       "pointer": "symbol:psm_rejects_unsupported_formats"
+    },
+    {
+      "path": "mods/cli/mods/testing/code/cli.rs",
+      "pointer": "symbol:semantic_json_is_schema_versioned_and_repeatable"
+    },
+    {
+      "path": "mods/cli/mods/testing/code/cli.rs",
+      "pointer": "symbol:semantic_rejects_unsupported_formats"
     },
     {
       "path": "mods/cli/mods/testing/code/cli.rs",
@@ -22406,6 +26007,10 @@
     },
     {
       "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+      "pointer": "symbol:supported_rust_bodies_are_lowered_into_neutral_control_facts"
+    },
+    {
+      "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
       "pointer": "symbol:symbols_and_recursive_types_preserve_declared_rust_interfaces"
     },
     {
@@ -22474,6 +26079,70 @@
     },
     {
       "path": "mods/engine/mods/repository_observation/mods/testing/contract.json",
+      "pointer": "/"
+    },
+    {
+      "path": "mods/engine/mods/semantic_analysis/contract.json",
+      "pointer": "/"
+    },
+    {
+      "path": "mods/engine/mods/semantic_analysis/data/program_domain_rule.json",
+      "pointer": "/logic"
+    },
+    {
+      "path": "mods/engine/mods/semantic_analysis/mods/testing/code/semantic_analysis.rs",
+      "pointer": "symbol:boolean_integer_and_widening_lattice_is_conservative"
+    },
+    {
+      "path": "mods/engine/mods/semantic_analysis/mods/testing/code/semantic_analysis.rs",
+      "pointer": "symbol:call_and_return_domains_propagate_interprocedurally"
+    },
+    {
+      "path": "mods/engine/mods/semantic_analysis/mods/testing/code/semantic_analysis.rs",
+      "pointer": "symbol:canonical_semantic_analysis_is_byte_and_digest_deterministic"
+    },
+    {
+      "path": "mods/engine/mods/semantic_analysis/mods/testing/code/semantic_analysis.rs",
+      "pointer": "symbol:current_safe_callers_never_narrow_a_callee_admitted_domain"
+    },
+    {
+      "path": "mods/engine/mods/semantic_analysis/mods/testing/code/semantic_analysis.rs",
+      "pointer": "symbol:defined_error_outcomes_and_uncertainty_are_not_false_failures"
+    },
+    {
+      "path": "mods/engine/mods/semantic_analysis/mods/testing/code/semantic_analysis.rs",
+      "pointer": "symbol:every_call_site_must_satisfy_authored_preconditions"
+    },
+    {
+      "path": "mods/engine/mods/semantic_analysis/mods/testing/code/semantic_analysis.rs",
+      "pointer": "symbol:function_contracts_reject_unknown_foreign_and_invalid_domains"
+    },
+    {
+      "path": "mods/engine/mods/semantic_analysis/mods/testing/code/semantic_analysis.rs",
+      "pointer": "symbol:live_fortress_semantic_analysis_is_fresh_and_contradiction_free"
+    },
+    {
+      "path": "mods/engine/mods/semantic_analysis/mods/testing/code/semantic_analysis.rs",
+      "pointer": "symbol:option_result_and_boolean_branches_refine_path_domains"
+    },
+    {
+      "path": "mods/engine/mods/semantic_analysis/mods/testing/code/semantic_analysis.rs",
+      "pointer": "symbol:option_result_enum_and_product_domains_preserve_state"
+    },
+    {
+      "path": "mods/engine/mods/semantic_analysis/mods/testing/code/semantic_analysis.rs",
+      "pointer": "symbol:partial_operations_and_impossible_state_assertions_are_checked"
+    },
+    {
+      "path": "mods/engine/mods/semantic_analysis/mods/testing/code/semantic_analysis.rs",
+      "pointer": "symbol:postconditions_are_proved_and_exact_excess_is_reported"
+    },
+    {
+      "path": "mods/engine/mods/semantic_analysis/mods/testing/code/semantic_analysis.rs",
+      "pointer": "symbol:recursion_and_while_let_converge_without_path_enumeration"
+    },
+    {
+      "path": "mods/engine/mods/semantic_analysis/mods/testing/contract.json",
       "pointer": "/"
     },
     {

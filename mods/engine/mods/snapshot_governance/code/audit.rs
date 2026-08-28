@@ -38,6 +38,10 @@ use crate::program_semantics::{
 };
 use crate::project::{ProjectConfiguration, ProjectConfigurationLoadError};
 use crate::rust_test_analyzer::{RustAnalyzerError, analyze_observed_rust_tests};
+use crate::semantic_analysis::{
+    FunctionContractError, FunctionContractSource, SemanticAnalysisError,
+    SemanticAnalysisEvaluation, analyze_program_domains, load_function_contracts,
+};
 use crate::snapshot::{
     RepositorySnapshot, SnapshotDocuments, SnapshotError, build_repository_snapshot,
     observe_repository_stably,
@@ -282,6 +286,15 @@ pub fn compile_repository_psm(root: impl AsRef<Path>) -> Result<ProgramSemanticM
         implementation_input(&prepared.snapshot, ccg, &prepared.observed_files)?;
     let observed = observe_rust_implementation(&observation_input)
         .map_err(AuditError::ImplementationObservation)?;
+    compile_psm_from_observed(&prepared, ccg, observation_input, &observed)
+}
+
+fn compile_psm_from_observed(
+    prepared: &PreparedAudit,
+    ccg: &ContractCoherencyGraph,
+    observation_input: ImplementationObservationInput,
+    observed: &ObservedImplementation,
+) -> Result<ProgramSemanticModel, AuditError> {
     let testing_modules = ccg
         .modules()
         .iter()
@@ -302,6 +315,78 @@ pub fn compile_repository_psm(root: impl AsRef<Path>) -> Result<ProgramSemanticM
         observed_dependencies,
     ))
     .map_err(AuditError::ProgramSemantics)
+}
+
+/// Compiles distributed Function Contracts and the snapshot-bound PSM into
+/// canonical Semantic Analysis v1 derived information.
+///
+/// # Errors
+///
+/// Returns [`AuditError`] for malformed repository authority, unstable source,
+/// invalid Function Contracts, PSM failure, or semantic result construction.
+pub fn compile_repository_semantic_analysis(
+    root: impl AsRef<Path>,
+) -> Result<SemanticAnalysisEvaluation, AuditError> {
+    let prepared = prepare_audit(root.as_ref())?;
+    let ccg = prepared
+        .ccg_compilation
+        .graph()
+        .ok_or_else(|| AuditError::ContractState("prepared audit did not contain a CCG".into()))?;
+    compile_semantic_analysis(&prepared, ccg)
+}
+
+fn compile_semantic_analysis(
+    prepared: &PreparedAudit,
+    ccg: &ContractCoherencyGraph,
+) -> Result<SemanticAnalysisEvaluation, AuditError> {
+    let observation_input =
+        implementation_input(&prepared.snapshot, ccg, &prepared.observed_files)?;
+    let observed = observe_rust_implementation(&observation_input)
+        .map_err(AuditError::ImplementationObservation)?;
+    compile_semantic_analysis_from_observed(prepared, ccg, observation_input, &observed)
+}
+
+fn compile_semantic_analysis_from_observed(
+    prepared: &PreparedAudit,
+    ccg: &ContractCoherencyGraph,
+    observation_input: ImplementationObservationInput,
+    observed: &ObservedImplementation,
+) -> Result<SemanticAnalysisEvaluation, AuditError> {
+    let psm = compile_psm_from_observed(prepared, ccg, observation_input, observed)?;
+    let sources = function_contract_sources(ccg, &prepared.observed_files)?;
+    let contracts =
+        load_function_contracts(&psm, sources).map_err(AuditError::FunctionContracts)?;
+    analyze_program_domains(&psm, &contracts, prepared.standard.bundle.edition())
+        .map_err(AuditError::SemanticAnalysis)
+}
+
+fn function_contract_sources(
+    ccg: &ContractCoherencyGraph,
+    files: &BTreeMap<String, Vec<u8>>,
+) -> Result<Vec<FunctionContractSource>, AuditError> {
+    files
+        .iter()
+        .filter(|(path, _)| {
+            path.as_str() == "data/function_contracts.json"
+                || path.ends_with("/data/function_contracts.json")
+        })
+        .map(|(path, bytes)| {
+            let owner = ccg
+                .module_paths()
+                .iter()
+                .filter(|(_, module_path)| {
+                    module_path.is_empty() || path.starts_with(&format!("{module_path}/"))
+                })
+                .max_by_key(|(_, module_path)| module_path.len())
+                .map(|(id, _)| id.clone())
+                .ok_or_else(|| {
+                    AuditError::ContractState(format!("no Module owns `{path}`").into())
+                })?;
+            let source =
+                std::str::from_utf8(bytes).map_err(|_| AuditError::NonUtf8(path.clone().into()))?;
+            Ok(FunctionContractSource::new(owner, path, source))
+        })
+        .collect()
 }
 
 fn audit_repository_with_models(
@@ -328,6 +413,18 @@ fn audit_repository_with_models(
         standard.edition(),
         include_implementation_observation,
     )?;
+    let semantic_analysis = if include_implementation_observation {
+        let observation_input =
+            implementation_input(&prepared.snapshot, ccg, &prepared.observed_files)?;
+        Some(compile_semantic_analysis_from_observed(
+            &prepared,
+            ccg,
+            observation_input,
+            &observed_implementation,
+        )?)
+    } else {
+        None
+    };
     let documentation =
         evaluate_repository_documentation(root, &prepared.snapshot, ccg, standard.edition())
             .map_err(AuditError::Documentation)?;
@@ -349,6 +446,7 @@ fn audit_repository_with_models(
         &contract_coherency,
         &architecture_realization,
         &behavioral_semantics,
+        semantic_analysis.as_ref(),
     );
     let evaluation = evaluate_snapshot_rules(standard, &prepared.snapshot, ccg, evaluation_inputs)?;
     let mut unsupported_analysis = architecture_diagnostics.unsupported_analysis().to_vec();
@@ -359,6 +457,15 @@ fn audit_repository_with_models(
             .iter()
             .map(|value| format!("intended_bfg:{value}")),
     );
+    if let Some(semantic_analysis) = &semantic_analysis {
+        unsupported_analysis.extend(
+            semantic_analysis
+                .model()
+                .unsupported_semantics()
+                .iter()
+                .map(|value| format!("semantic_analysis:{value}")),
+        );
+    }
     unsupported_analysis.sort();
     unsupported_analysis.dedup();
     Ok((
@@ -743,6 +850,10 @@ pub enum AuditError {
     ImplementationObservation(ImplementationObservationError),
     /// Snapshot-bound Program Semantic Model compilation failed.
     ProgramSemantics(ProgramSemanticError),
+    /// Distributed Function Contract authority was invalid.
+    FunctionContracts(FunctionContractError),
+    /// Semantic Analysis result construction failed.
+    SemanticAnalysis(SemanticAnalysisError),
     /// Architecture diagnostic derivation failed.
     ArchitectureDiagnostics(ArchitectureDiagnosticError),
     /// Intended behavioral semantics could not compile or normalize.
@@ -783,6 +894,12 @@ impl Display for AuditError {
             }
             Self::ProgramSemantics(error) => {
                 write!(formatter, "program semantics failed: {error}")
+            }
+            Self::FunctionContracts(error) => {
+                write!(formatter, "function contracts failed: {error}")
+            }
+            Self::SemanticAnalysis(error) => {
+                write!(formatter, "semantic analysis failed: {error}")
             }
             Self::ArchitectureDiagnostics(error) => {
                 write!(

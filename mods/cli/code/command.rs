@@ -51,6 +51,13 @@ const BUILTIN_COMMANDS: &[CommandDescriptor] = &[
         description: "Compile and render the deterministic Program Semantic Model.",
         usage: "fortress psm [path] [--format json] [--output path]",
     },
+    CommandDescriptor {
+        id: "CMD-SEMANTIC-ANALYSIS",
+        name: "semantic",
+        aliases: &[],
+        description: "Compile and render deterministic function-domain analysis.",
+        usage: "fortress semantic [path] [--format json] [--output path]",
+    },
 ];
 
 /// Discoverable metadata for one registered Fortress command.

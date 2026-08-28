@@ -1,0 +1,21 @@
+{
+  "$schema": "urn:fortress:schema:v1:function-contracts",
+  "schema_version": 1,
+  "functions": [
+    {
+      "symbol": "rust_symbol:sha256:788236588065217c32164ff5d9c868fb101613e21d4a96deb1eb24beb25a6630",
+      "requires": [],
+      "ensures": [
+        {
+          "return": true,
+          "domain": {
+            "kind": "integer_interval",
+            "min": 32,
+            "max": 32,
+            "exclude": []
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -57,6 +57,13 @@
             "T-AF-PROGRAM-SEMANTICS-0001-R03-003",
             "T-AF-PROGRAM-SEMANTICS-0001-R03-004"
           ]
+        },
+        {
+          "id": "AF-PROGRAM-SEMANTICS-0001-R04",
+          "statement": "Program Semantics translates supported Rust bodies into deterministic language-neutral statement, expression, pattern, branch, loop, return, and exceptional facts so downstream semantic reasoning consumes the PSM rather than reparsing source.",
+          "tests": [
+            "T-AF-PROGRAM-SEMANTICS-0001-R04-001"
+          ]
         }
       ]
     }

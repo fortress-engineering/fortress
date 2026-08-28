@@ -12,11 +12,11 @@ Analyze exact snapshot-bound source into deterministic language-neutral facts ab
 
 ### Includes
 
-Stable Cargo package and target interpretation, structural Rust syntax analysis, canonical executable identities, recursive type normalization, conservative static call resolution, call coverage states, call-graph derivations, initial value-transfer topology, Testing classification, analyzer coherency, provenance, canonical serialization, and deterministic digesting.
+Stable Cargo package and target interpretation, structural Rust syntax analysis, canonical executable identities, recursive type normalization, conservative static call resolution, call coverage states, call-graph derivations, initial value-transfer topology, neutral body/control structure for downstream reasoning, Testing classification, analyzer coherency, provenance, canonical serialization, and deterministic digesting.
 
 ### Excludes
 
-Behavioral checkpoint realization, capability-to-symbol mapping, function correctness, general value domains, effects, alias/heap flow, symbolic execution, dynamic-dispatch proof, security flow proof, and automatic contract generation.
+Behavioral checkpoint realization, capability-to-symbol mapping, Function Contract interpretation, value-domain reasoning, function correctness, general effects, alias/heap flow, symbolic execution, dynamic-dispatch proof, security flow proof, and automatic contract generation.
 
 ## Relationships
 

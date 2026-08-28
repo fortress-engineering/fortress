@@ -20,4 +20,4 @@ Compile-time boundary violations fail the build; child runtime errors remain typ
 
 ### [`lib.rs`](../code/lib.rs)
 
-Defines the warnings-denied provider-independent crate facade and composes child capability source through explicit target paths.
+Defines the warnings-denied provider-independent crate facade and composes child capability source, including Semantic Analysis, through explicit target paths.

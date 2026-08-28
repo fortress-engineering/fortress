@@ -86,6 +86,14 @@
             "T-TF-CLI-0001-R07-001",
             "T-TF-CLI-0001-R07-002"
           ]
+        },
+        {
+          "id": "TF-CLI-0001-R08",
+          "statement": "The native fortress semantic command compiles PSM-backed Function Contract and abstract-domain analysis, emits deterministic canonical JSON to standard output or an explicit file, fails on supported contradictions or invalid state, and preserves uncertainty without implying total program safety or certification.",
+          "tests": [
+            "T-TF-CLI-0001-R08-001",
+            "T-TF-CLI-0001-R08-002"
+          ]
         }
       ]
     }

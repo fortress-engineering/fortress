@@ -71,6 +71,7 @@ impl AuditFixture {
             modules_docs(&[
                 ("architecture_evaluation", "Architecture Evaluation"),
                 ("behavioral_semantics", "Behavioral Semantics"),
+                ("semantic_analysis", "Semantic Analysis"),
                 ("snapshot_governance", "Snapshot Governance"),
                 ("standard_registry", "Standard Registry"),
             ]),
@@ -96,6 +97,11 @@ impl AuditFixture {
                 "snapshot_governance",
                 "AF-FIXTURE-SNAPSHOT-0001",
                 "Snapshot Governance",
+            ),
+            (
+                "semantic_analysis",
+                "AF-FIXTURE-SEMANTIC-0001",
+                "Semantic Analysis",
             ),
         ] {
             let module_root = root.join("mods/engine/mods").join(module);
@@ -123,6 +129,7 @@ impl AuditFixture {
             "mods/engine/mods/architecture_evaluation/data/dependency_rule.json",
             "mods/engine/mods/architecture_evaluation/data/realization_rule.json",
             "mods/engine/mods/behavioral_semantics/data/behavior_flow_rule.json",
+            "mods/engine/mods/semantic_analysis/data/program_domain_rule.json",
             "mods/engine/mods/snapshot_governance/data/ownership_rule.json",
             "mods/engine/mods/snapshot_governance/data/traceability_rule.json",
             "mods/engine/mods/snapshot_governance/data/test_boundary_rule.json",
@@ -147,6 +154,11 @@ impl AuditFixture {
             data_docs(&["behavior_flow_rule.json"]),
         )
         .expect("behavior Data documentation writes");
+        fs::write(
+            root.join("mods/engine/mods/semantic_analysis/docs/data_docs.md"),
+            data_docs(&["program_domain_rule.json"]),
+        )
+        .expect("semantic Data documentation writes");
         fs::write(
             root.join("mods/engine/mods/snapshot_governance/docs/data_docs.md"),
             data_docs(&[
@@ -331,7 +343,7 @@ fn audit_success_renders_human_snapshot_report() {
         String::from_utf8_lossy(&output.stderr)
     );
     assert!(stdout.contains("Fortress Snapshot Audit"));
-    assert!(stdout.contains("PASS: 8"));
+    assert!(stdout.contains("PASS: 9"));
     assert!(stdout.contains("Unsupported: 1"));
     assert!(stdout.contains("Architecture diagnostics:"));
     assert!(stdout.contains("Unsupported analysis:"));
@@ -484,6 +496,40 @@ fn psm_json_is_observed_schema_versioned_and_repeatable() {
 #[test]
 fn psm_rejects_unsupported_formats() {
     let output = run(&["psm", "--format", "dot"]);
+    assert_eq!(output.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("--format json"));
+}
+
+/// `T-TF-CLI-0001-R08-001`
+/// Fortress requirement: TF-CLI-0001-R08
+#[test]
+fn semantic_json_is_schema_versioned_and_repeatable() {
+    let fixture = AuditFixture::new();
+    let arguments = [
+        "semantic".into(),
+        fixture.argument(),
+        "--format=json".into(),
+    ];
+    let first = run_owned(&arguments);
+    let second = run_owned(&arguments);
+    assert!(
+        first.status.success(),
+        "{}",
+        String::from_utf8_lossy(&first.stderr)
+    );
+    assert_eq!(first.stdout, second.stdout);
+    let value: serde_json::Value =
+        serde_json::from_slice(&first.stdout).expect("semantic output is JSON");
+    assert_eq!(value["$schema"], "urn:fortress:schema:v1:semantic-analysis");
+    assert_eq!(value["schema_version"], 1);
+    assert_eq!(value["coverage"]["violations"], 0);
+}
+
+/// `T-TF-CLI-0001-R08-002`
+/// Fortress requirement: TF-CLI-0001-R08
+#[test]
+fn semantic_rejects_unsupported_formats() {
+    let output = run(&["semantic", "--format", "dot"]);
     assert_eq!(output.status.code(), Some(2));
     assert!(String::from_utf8_lossy(&output.stderr).contains("--format json"));
 }

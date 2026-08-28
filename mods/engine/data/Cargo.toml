@@ -57,6 +57,10 @@ name = "program_semantics"
 path = "../mods/program_semantics/mods/testing/code/program_semantics.rs"
 
 [[test]]
+name = "semantic_analysis"
+path = "../mods/semantic_analysis/mods/testing/code/semantic_analysis.rs"
+
+[[test]]
 name = "repo_module_001"
 path = "../mods/snapshot_governance/mods/testing/code/repo_module_001.rs"
 

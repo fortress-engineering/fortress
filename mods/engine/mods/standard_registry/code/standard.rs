@@ -72,6 +72,12 @@ const DRAFT_RULES: &[RuleDescriptor] = &[
         integrity_tier: 1,
     },
     RuleDescriptor {
+        id: "PROGRAM-DOMAIN-001",
+        title: "Supported interprocedural value domains satisfy declared function contracts",
+        status: RuleStatus::Draft,
+        integrity_tier: 3,
+    },
+    RuleDescriptor {
         id: "ARCH-OWNERSHIP-001",
         title: "Exact declared repository file ownership",
         status: RuleStatus::Draft,

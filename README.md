@@ -12,7 +12,7 @@ The root Module governs Fortress as one repository: its contract selects the pro
 
 ### Includes
 
-Root ecosystem interpretation, toolchain and workspace inputs; the generated dependency lock, persisted self-CCG, persisted Intended self-BFG, and persisted self-PSM; distributed Module contracts, capabilities, Features, requirements, behavioral checkpoints, rule logic, guarantees, and constraints; the recursive Module system; GitHub-recognized integration surfaces; complete audit and Snapshot Governance development behavior; and the authority doctrine prioritizing engineering strategy, entropy reduction, and low-friction conventions.
+Root ecosystem interpretation, toolchain and workspace inputs; the generated dependency lock, persisted self-CCG, persisted Intended self-BFG, persisted self-PSM, and persisted self semantic analysis; distributed Module contracts, Function Contracts, capabilities, Features, requirements, behavioral checkpoints, rule logic, guarantees, and constraints; the recursive Module system; GitHub-recognized integration surfaces; complete audit and Snapshot Governance development behavior; and the authority doctrine prioritizing engineering strategy, entropy reduction, and low-friction conventions.
 
 ### Excludes
 
@@ -24,4 +24,4 @@ This Module declares no outbound architectural relationships.
 
 ## Guarantees
 
-The repository keeps authored machine authority, observed facts, human explanation, derived CCG architecture, derived Intended BFG behavior, derived PSM executable semantics, and future executed evidence distinguishable; audits, CCG compilation, BFG compilation, and PSM compilation are deterministic and never labeled certification, behavior realization, or program correctness; CI rejects stale self-CCG, self-BFG, and self-PSM output; build output remains outside the governed tree; development changes stay on dev while main remains owner-controlled.
+The repository keeps authored machine authority, observed facts, human explanation, derived CCG architecture, derived Intended BFG behavior, derived PSM executable semantics, derived function-domain consequences, and future executed evidence distinguishable; audits and every derived model are deterministic and never labeled certification, behavior realization, total program safety, or program correctness; CI rejects stale self-CCG, self-BFG, self-PSM, and semantic-analysis output; build output remains outside the governed tree; development changes stay on dev while main remains owner-controlled.

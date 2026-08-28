@@ -24,11 +24,11 @@ pub const PROGRAM_SEMANTIC_MODEL_SCHEMA: &str = "urn:fortress:schema:v1:program-
 /// Canonical PSM document schema version.
 pub const PROGRAM_SEMANTIC_MODEL_SCHEMA_VERSION: u16 = 1;
 /// Semantic version of the language-neutral PSM compiler.
-pub const PROGRAM_SEMANTIC_MODEL_VERSION: &str = "1.0.0";
+pub const PROGRAM_SEMANTIC_MODEL_VERSION: &str = "1.1.0";
 /// Stable Rust analyzer identity.
 pub const RUST_PROGRAM_ANALYZER_ID: &str = "fortress-rust-program-semantics";
 /// Semantic version of supported Rust program analysis.
-pub const RUST_PROGRAM_ANALYZER_VERSION: &str = "1.0.0";
+pub const RUST_PROGRAM_ANALYZER_VERSION: &str = "1.1.0";
 
 const UNSUPPORTED_SEMANTICS: &[&str] = &[
     "arbitrary_dynamic_dispatch_resolution",
@@ -243,6 +243,263 @@ impl ProgramSourceLocation {
     }
 }
 
+/// Language-neutral pattern used by observed control-flow structure.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum ProgramPattern {
+    /// Pattern accepts every value.
+    Wildcard,
+    /// Pattern binds the matched value.
+    Binding {
+        /// Bound local identity.
+        name: String,
+    },
+    /// Pattern selects one nominal or wrapper variant.
+    Variant {
+        /// Canonical source variant path.
+        name: String,
+        /// Nested payload patterns.
+        fields: Vec<ProgramPattern>,
+    },
+    /// Ordered product pattern.
+    Tuple {
+        /// Nested component patterns.
+        elements: Vec<ProgramPattern>,
+    },
+    /// Pattern semantics are not represented by PSM v1.
+    Unsupported {
+        /// Exact Rust pattern spelling.
+        rust_spelling: String,
+    },
+}
+
+/// Language-neutral expression structure required by later semantic consumers.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum ProgramExpression {
+    /// Local binding reference.
+    Binding {
+        /// Binding identity.
+        name: String,
+    },
+    /// Boolean literal.
+    Boolean {
+        /// Literal value.
+        value: bool,
+    },
+    /// Integer literal retained without host-integer truncation.
+    Integer {
+        /// Canonical Rust literal spelling.
+        value: String,
+    },
+    /// Unit value.
+    Unit,
+    /// Nominal variant or constant path.
+    Variant {
+        /// Canonical source path.
+        name: String,
+    },
+    /// Ordered product expression.
+    Tuple {
+        /// Component expressions.
+        elements: Vec<ProgramExpression>,
+    },
+    /// Wrapper or nominal construction.
+    Construction {
+        /// Constructor path.
+        constructor: String,
+        /// Constructed payloads.
+        arguments: Vec<ProgramExpression>,
+    },
+    /// Pattern-directed predicate such as Rust `if let`.
+    PatternTest {
+        /// Admission pattern.
+        pattern: ProgramPattern,
+        /// Value tested by the pattern.
+        value: Box<ProgramExpression>,
+    },
+    /// Function or associated-function invocation.
+    Call {
+        /// Source reference used for PSM call-site correlation.
+        reference: String,
+        /// Ordered argument expressions.
+        arguments: Vec<ProgramExpression>,
+    },
+    /// Receiver-style method invocation.
+    MethodCall {
+        /// Receiver expression.
+        receiver: Box<ProgramExpression>,
+        /// Method name.
+        method: String,
+        /// Ordered explicit arguments.
+        arguments: Vec<ProgramExpression>,
+    },
+    /// Binary operation.
+    Binary {
+        /// Canonical operator spelling.
+        operator: String,
+        /// Left operand.
+        left: Box<ProgramExpression>,
+        /// Right operand.
+        right: Box<ProgramExpression>,
+    },
+    /// Unary operation.
+    Unary {
+        /// Canonical operator spelling.
+        operator: String,
+        /// Operand.
+        value: Box<ProgramExpression>,
+    },
+    /// Rust `?` propagation.
+    Try {
+        /// Propagated expression.
+        value: Box<ProgramExpression>,
+    },
+    /// Shared or mutable reference construction.
+    Reference {
+        /// Whether mutation is permitted.
+        mutable: bool,
+        /// Referenced expression.
+        value: Box<ProgramExpression>,
+    },
+    /// A recognized exceptional macro site.
+    Exceptional {
+        /// Stable exceptional operation identity.
+        operation: String,
+    },
+    /// Expression semantics are not represented by PSM v1.
+    Unsupported {
+        /// Exact Rust expression spelling.
+        rust_spelling: String,
+    },
+}
+
+/// One observed branch of a Rust match expression.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct ProgramMatchArm {
+    pattern: ProgramPattern,
+    guard: Option<ProgramExpression>,
+    body: Vec<ProgramStatement>,
+    provenance: ProgramProvenance,
+}
+
+impl ProgramMatchArm {
+    /// Returns the arm admission pattern.
+    #[must_use]
+    pub const fn pattern(&self) -> &ProgramPattern {
+        &self.pattern
+    }
+
+    /// Returns the optional guard expression.
+    #[must_use]
+    pub const fn guard(&self) -> Option<&ProgramExpression> {
+        self.guard.as_ref()
+    }
+
+    /// Returns the arm statements.
+    #[must_use]
+    pub fn body(&self) -> &[ProgramStatement] {
+        &self.body
+    }
+
+    /// Returns source provenance for the arm.
+    #[must_use]
+    pub const fn provenance(&self) -> &ProgramProvenance {
+        &self.provenance
+    }
+}
+
+/// Language-neutral statement/control structure emitted by the PSM analyzer.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum ProgramStatement {
+    /// Local binding initialization.
+    Let {
+        /// Bound pattern.
+        pattern: ProgramPattern,
+        /// Initial value when present.
+        value: Option<ProgramExpression>,
+        /// Exact source provenance.
+        provenance: ProgramProvenance,
+    },
+    /// Assignment to one supported place expression.
+    Assign {
+        /// Target spelling.
+        target: String,
+        /// Assigned value.
+        value: ProgramExpression,
+        /// Exact source provenance.
+        provenance: ProgramProvenance,
+    },
+    /// Standalone expression.
+    Expression {
+        /// Expression structure.
+        value: ProgramExpression,
+        /// Exact source provenance.
+        provenance: ProgramProvenance,
+    },
+    /// Function return contribution.
+    Return {
+        /// Returned expression; absent for unit return.
+        value: Option<ProgramExpression>,
+        /// Exact source provenance.
+        provenance: ProgramProvenance,
+    },
+    /// Conditional control-flow split.
+    If {
+        /// Branch predicate.
+        condition: ProgramExpression,
+        /// Statements evaluated when true.
+        then_branch: Vec<ProgramStatement>,
+        /// Statements evaluated when false.
+        else_branch: Vec<ProgramStatement>,
+        /// Exact source provenance.
+        provenance: ProgramProvenance,
+    },
+    /// Pattern-directed control-flow split.
+    Match {
+        /// Matched value.
+        value: ProgramExpression,
+        /// Ordered source arms.
+        arms: Vec<ProgramMatchArm>,
+        /// Exact source provenance.
+        provenance: ProgramProvenance,
+    },
+    /// Pattern-directed loop.
+    WhileLet {
+        /// Loop admission pattern.
+        pattern: ProgramPattern,
+        /// Re-evaluated source expression.
+        value: ProgramExpression,
+        /// Loop body.
+        body: Vec<ProgramStatement>,
+        /// Exact source provenance.
+        provenance: ProgramProvenance,
+    },
+}
+
+/// One executable body represented as observed control/value structure.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct ProgramBody {
+    symbol: String,
+    statements: Vec<ProgramStatement>,
+    provenance: ProgramProvenance,
+}
+
+impl ProgramBody {
+    /// Returns the owning executable symbol identity.
+    #[must_use]
+    pub fn symbol(&self) -> &str {
+        &self.symbol
+    }
+
+    /// Returns canonical observed statements.
+    #[must_use]
+    pub fn statements(&self) -> &[ProgramStatement] {
+        &self.statements
+    }
+}
+
 /// Exact source provenance for a PSM source fact.
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct ProgramProvenance {
@@ -272,6 +529,12 @@ impl ProgramProvenance {
     #[must_use]
     pub fn path(&self) -> &str {
         &self.path
+    }
+
+    /// Returns the stable source location.
+    #[must_use]
+    pub const fn location(&self) -> &ProgramSourceLocation {
+        &self.location
     }
 }
 
@@ -476,6 +739,12 @@ impl ProgramParameter {
     pub const fn parameter_type(&self) -> &InterfaceType {
         &self.parameter_type
     }
+
+    /// Returns the source parameter identity.
+    #[must_use]
+    pub fn name(&self) -> &str {
+        &self.name
+    }
 }
 
 /// Optional Rust receiver semantics for one method.
@@ -576,6 +845,12 @@ impl ExecutableSymbol {
     #[must_use]
     pub fn fortress_module(&self) -> &str {
         &self.fortress_module
+    }
+
+    /// Returns the canonical source file path.
+    #[must_use]
+    pub fn source_path(&self) -> &str {
+        &self.source_path
     }
 
     /// Returns the production or Testing classification.
@@ -697,6 +972,20 @@ impl ProgramCall {
     }
 }
 
+impl CallSiteEvidence {
+    /// Returns the source reference spelling.
+    #[must_use]
+    pub fn reference(&self) -> &str {
+        &self.reference
+    }
+
+    /// Returns exact call-site provenance.
+    #[must_use]
+    pub const fn provenance(&self) -> &ProgramProvenance {
+        &self.provenance
+    }
+}
+
 /// Initial value-transfer category supported by PSM v1.
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "snake_case")]
@@ -752,6 +1041,30 @@ impl ValueEndpoint {
             static_type,
         }
     }
+
+    /// Returns the endpoint's executable symbol.
+    #[must_use]
+    pub fn symbol(&self) -> &str {
+        &self.symbol
+    }
+
+    /// Returns the endpoint semantic role.
+    #[must_use]
+    pub fn role(&self) -> &str {
+        &self.role
+    }
+
+    /// Returns the endpoint-local identity or source expression.
+    #[must_use]
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    /// Returns the PSM static type identity when known.
+    #[must_use]
+    pub fn static_type(&self) -> Option<&str> {
+        self.static_type.as_deref()
+    }
 }
 
 /// One bounded source-level value transfer.
@@ -763,6 +1076,32 @@ pub struct ValueTransfer {
     consumer: ValueEndpoint,
     resolution: TransferResolutionState,
     provenance: ProgramProvenance,
+}
+
+impl ValueTransfer {
+    /// Returns the transfer category.
+    #[must_use]
+    pub const fn kind(&self) -> ValueTransferKind {
+        self.kind
+    }
+
+    /// Returns the producing endpoint.
+    #[must_use]
+    pub const fn producer(&self) -> &ValueEndpoint {
+        &self.producer
+    }
+
+    /// Returns the consuming endpoint.
+    #[must_use]
+    pub const fn consumer(&self) -> &ValueEndpoint {
+        &self.consumer
+    }
+
+    /// Returns exact transfer provenance.
+    #[must_use]
+    pub const fn provenance(&self) -> &ProgramProvenance {
+        &self.provenance
+    }
 }
 
 /// Explicit type/value transformation category retained for later domain analysis.
@@ -836,6 +1175,14 @@ impl CallTopology {
     #[must_use]
     pub fn strongly_connected_components(&self) -> &[CallComponent] {
         &self.strongly_connected_components
+    }
+}
+
+impl CallComponent {
+    /// Returns whether this component represents direct or mutual recursion.
+    #[must_use]
+    pub const fn is_recursive(&self) -> bool {
+        self.recursive
     }
 }
 
@@ -932,6 +1279,7 @@ pub struct ProgramSemanticModel {
     symbols: Vec<ExecutableSymbol>,
     types: Vec<ProgramType>,
     calls: Vec<ProgramCall>,
+    bodies: Vec<ProgramBody>,
     value_transfers: Vec<ValueTransfer>,
     transformations: Vec<TypeTransformation>,
     module_boundaries: Vec<CrossModuleCall>,
@@ -943,6 +1291,12 @@ pub struct ProgramSemanticModel {
 }
 
 impl ProgramSemanticModel {
+    /// Returns the governed project identity.
+    #[must_use]
+    pub fn project_id(&self) -> &str {
+        &self.project_id
+    }
+
     /// Returns the exact semantic input identity.
     #[must_use]
     pub fn source_identity(&self) -> &str {
@@ -961,6 +1315,18 @@ impl ProgramSemanticModel {
         &self.calls
     }
 
+    /// Returns observed executable body structure.
+    #[must_use]
+    pub fn bodies(&self) -> &[ProgramBody] {
+        &self.bodies
+    }
+
+    /// Returns normalized static types.
+    #[must_use]
+    pub fn types(&self) -> &[ProgramType] {
+        &self.types
+    }
+
     /// Returns bounded value-transfer facts.
     #[must_use]
     pub fn value_transfers(&self) -> &[ValueTransfer] {
@@ -971,6 +1337,12 @@ impl ProgramSemanticModel {
     #[must_use]
     pub fn module_boundaries(&self) -> &[CrossModuleCall] {
         &self.module_boundaries
+    }
+
+    /// Returns deterministic call-graph derivations.
+    #[must_use]
+    pub const fn call_topology(&self) -> &CallTopology {
+        &self.call_topology
     }
 
     /// Returns aggregate coverage counts.
@@ -1023,6 +1395,7 @@ pub(crate) struct RustProgramFacts {
     symbols: Vec<ExecutableSymbol>,
     types: Vec<ProgramType>,
     calls: Vec<ProgramCall>,
+    bodies: Vec<ProgramBody>,
     value_transfers: Vec<ValueTransfer>,
     transformations: Vec<TypeTransformation>,
 }
@@ -1042,6 +1415,7 @@ pub fn compile_program_semantic_model(
     facts.symbols.sort();
     facts.types.sort();
     facts.calls.sort();
+    facts.bodies.sort();
     facts.value_transfers.sort();
     facts.transformations.sort();
     let topology = graph::derive_call_topology(&facts.symbols, &facts.calls);
@@ -1097,6 +1471,7 @@ pub fn compile_program_semantic_model(
         symbols: facts.symbols,
         types: facts.types,
         calls: facts.calls,
+        bodies: facts.bodies,
         value_transfers: facts.value_transfers,
         transformations: facts.transformations,
         module_boundaries,

@@ -1,0 +1,177 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:semantic-analysis",
+  "title": "Fortress Semantic Analysis v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "semantic_version",
+    "project_id",
+    "psm_digest",
+    "function_contract_digest",
+    "summaries",
+    "checks",
+    "violations",
+    "coverage",
+    "unsupported_semantics",
+    "provenance"
+  ],
+  "properties": {
+    "$schema": { "const": "urn:fortress:schema:v1:semantic-analysis" },
+    "schema_version": { "const": 1 },
+    "semantic_version": { "$ref": "#/$defs/semver" },
+    "project_id": { "$ref": "#/$defs/stable_id" },
+    "psm_digest": { "$ref": "#/$defs/digest" },
+    "function_contract_digest": { "$ref": "#/$defs/digest" },
+    "summaries": { "type": "array", "items": { "$ref": "#/$defs/summary" } },
+    "checks": { "type": "array", "items": { "$ref": "#/$defs/check" } },
+    "violations": { "type": "array", "items": { "$ref": "#/$defs/violation" } },
+    "coverage": { "$ref": "#/$defs/coverage" },
+    "unsupported_semantics": { "$ref": "#/$defs/strings" },
+    "provenance": { "$ref": "#/$defs/model_provenance" }
+  },
+  "$defs": {
+    "semver": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "stable_id": { "type": "string", "pattern": "^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)+$" },
+    "digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "symbol": { "type": "string", "pattern": "^rust_symbol:sha256:[0-9a-f]{64}$" },
+    "strings": { "type": "array", "items": { "type": "string" } },
+    "coverage_state": { "enum": ["PROVEN", "PARTIAL", "UNKNOWN", "UNSUPPORTED"] },
+    "domain": {
+      "type": "object",
+      "required": ["kind", "type_id"],
+      "properties": {
+        "kind": { "enum": ["bottom", "top", "boolean", "integer", "option", "result", "enum", "tuple", "opaque"] },
+        "type_id": { "type": "string", "minLength": 1 },
+        "values": { "type": "array", "items": { "type": "boolean" } },
+        "intervals": { "type": "array", "items": { "$ref": "#/$defs/interval" } },
+        "excluded": { "type": "array", "items": { "type": "integer" } },
+        "none": { "type": "boolean" },
+        "some": { "$ref": "#/$defs/domain" },
+        "ok": { "$ref": "#/$defs/domain" },
+        "err": { "$ref": "#/$defs/domain" },
+        "variants": { "type": "object" },
+        "elements": { "type": "array", "items": { "$ref": "#/$defs/domain" } },
+        "top": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "interval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["min", "max"],
+      "properties": {
+        "min": { "type": "integer" },
+        "max": { "type": "integer" }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "line", "column", "symbol", "derivation", "inputs"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "line": { "type": "integer", "minimum": 1 },
+        "column": { "type": "integer", "minimum": 1 },
+        "symbol": { "type": "string", "minLength": 1 },
+        "derivation": { "type": "string", "minLength": 1 },
+        "inputs": { "$ref": "#/$defs/strings" }
+      }
+    },
+    "function_coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["precondition_compatibility", "postcondition", "partial_operations", "heap_alias_effects", "concurrency"],
+      "properties": {
+        "precondition_compatibility": { "$ref": "#/$defs/coverage_state" },
+        "postcondition": { "$ref": "#/$defs/coverage_state" },
+        "partial_operations": { "$ref": "#/$defs/coverage_state" },
+        "heap_alias_effects": { "$ref": "#/$defs/coverage_state" },
+        "concurrency": { "$ref": "#/$defs/coverage_state" }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["symbol", "input_domains", "authored_preconditions", "inferred_output_domain", "authored_postcondition", "postcondition_proven", "exceptional_outcomes", "callees", "unsupported_semantics", "coverage", "provenance"],
+      "properties": {
+        "symbol": { "$ref": "#/$defs/symbol" },
+        "input_domains": { "type": "object", "additionalProperties": { "$ref": "#/$defs/domain" } },
+        "authored_preconditions": { "$ref": "#/$defs/strings" },
+        "inferred_output_domain": { "$ref": "#/$defs/domain" },
+        "authored_postcondition": { "oneOf": [{ "$ref": "#/$defs/domain" }, { "type": "null" }] },
+        "postcondition_proven": { "type": "boolean" },
+        "exceptional_outcomes": { "$ref": "#/$defs/strings" },
+        "callees": { "$ref": "#/$defs/strings" },
+        "unsupported_semantics": { "$ref": "#/$defs/strings" },
+        "coverage": { "$ref": "#/$defs/function_coverage" },
+        "provenance": { "type": "array", "items": { "$ref": "#/$defs/provenance" } }
+      }
+    },
+    "check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "producer_symbol", "consumer_symbol", "possible_domain", "required_domain", "state", "provenance"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "kind": { "enum": ["call_precondition", "function_postcondition", "partial_operation", "impossible_state_assertion"] },
+        "producer_symbol": { "type": "string", "minLength": 1 },
+        "consumer_symbol": { "type": "string", "minLength": 1 },
+        "possible_domain": { "$ref": "#/$defs/domain" },
+        "required_domain": { "$ref": "#/$defs/domain" },
+        "state": { "$ref": "#/$defs/coverage_state" },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+    "violation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fingerprint", "kind", "producer_symbol", "consumer_symbol", "producer_domain", "required_domain", "counter_domain", "flow", "message", "provenance"],
+      "properties": {
+        "fingerprint": { "type": "string", "minLength": 1 },
+        "kind": { "enum": ["call_precondition", "function_postcondition", "partial_operation", "impossible_state_assertion"] },
+        "producer_symbol": { "type": "string", "minLength": 1 },
+        "consumer_symbol": { "type": "string", "minLength": 1 },
+        "producer_domain": { "$ref": "#/$defs/domain" },
+        "required_domain": { "$ref": "#/$defs/domain" },
+        "counter_domain": { "oneOf": [{ "$ref": "#/$defs/domain" }, { "type": "null" }] },
+        "flow": { "$ref": "#/$defs/strings" },
+        "message": { "type": "string", "minLength": 1 },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["functions_analyzed", "function_contracts", "function_summaries", "interprocedural_transfers", "fixed_point_iterations", "recursive_components", "precondition_checks", "postcondition_proofs", "partial_operation_checks", "proven_properties", "partial_properties", "unknown_properties", "unsupported_properties", "violations"],
+      "properties": {
+        "functions_analyzed": { "type": "integer", "minimum": 0 },
+        "function_contracts": { "type": "integer", "minimum": 0 },
+        "function_summaries": { "type": "integer", "minimum": 0 },
+        "interprocedural_transfers": { "type": "integer", "minimum": 0 },
+        "fixed_point_iterations": { "type": "integer", "minimum": 0 },
+        "recursive_components": { "type": "integer", "minimum": 0 },
+        "precondition_checks": { "type": "integer", "minimum": 0 },
+        "postcondition_proofs": { "type": "integer", "minimum": 0 },
+        "partial_operation_checks": { "type": "integer", "minimum": 0 },
+        "proven_properties": { "type": "integer", "minimum": 0 },
+        "partial_properties": { "type": "integer", "minimum": 0 },
+        "unknown_properties": { "type": "integer", "minimum": 0 },
+        "unsupported_properties": { "type": "integer", "minimum": 0 },
+        "violations": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "model_provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["psm_authority", "function_contract_authority", "interpretation"],
+      "properties": {
+        "psm_authority": { "const": "canonical_program_semantic_model_v1" },
+        "function_contract_authority": { "const": "distributed_function_contract_v1" },
+        "interpretation": { "const": "deterministic_abstract_interpretation_fixed_point" }
+      }
+    }
+  }
+}

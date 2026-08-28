@@ -67,6 +67,17 @@
       "duration": "short",
       "resumability": "restartable",
       "certification_implications": "Renders observed executable structure only; it is not behavioral realization, function correctness, or certification evidence."
+    },
+    {
+      "id": "CMD-SEMANTIC-ANALYSIS",
+      "name": "semantic",
+      "aliases": [],
+      "description": "Compile and render deterministic function-domain analysis.",
+      "owner": "TF-CLI-0001",
+      "executor": "builtin-sync",
+      "duration": "short",
+      "resumability": "restartable",
+      "certification_implications": "Renders supported abstract-domain consequences and explicit uncertainty only; it is not total program safety or certification evidence."
     }
   ]
 }

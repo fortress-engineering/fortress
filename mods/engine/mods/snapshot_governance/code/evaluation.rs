@@ -18,6 +18,7 @@ use crate::finding::{CanonicalFinding, FindingError};
 use crate::ownership::{ARCH_OWNERSHIP_RULE_ID, evaluate_file_ownership};
 use crate::placement::{REPO_MODULE_RULE_ID, evaluate_module_grammar};
 use crate::rust_test_analyzer::RustTestFact;
+use crate::semantic_analysis::{PROGRAM_DOMAIN_RULE_ID, SemanticAnalysisEvaluation};
 use crate::snapshot::RepositorySnapshot;
 use crate::standard::StandardBundle;
 use crate::testing_boundary::{TEST_BOUNDARY_RULE_ID, evaluate_testing_boundaries};
@@ -170,6 +171,7 @@ pub struct CompleteEvaluationInputs<'a> {
     contract_coherency: &'a ContractCoherencyEvaluation,
     architecture_realization: &'a ArchitectureRealization,
     behavioral_semantics: &'a BehavioralSemanticsEvaluation,
+    semantic_analysis: Option<&'a SemanticAnalysisEvaluation>,
 }
 
 impl<'a> CompleteEvaluationInputs<'a> {
@@ -181,6 +183,7 @@ impl<'a> CompleteEvaluationInputs<'a> {
         contract_coherency: &'a ContractCoherencyEvaluation,
         architecture_realization: &'a ArchitectureRealization,
         behavioral_semantics: &'a BehavioralSemanticsEvaluation,
+        semantic_analysis: Option<&'a SemanticAnalysisEvaluation>,
     ) -> Self {
         Self {
             rust_tests,
@@ -188,6 +191,7 @@ impl<'a> CompleteEvaluationInputs<'a> {
             contract_coherency,
             architecture_realization,
             behavioral_semantics,
+            semantic_analysis,
         }
     }
 }
@@ -199,6 +203,7 @@ struct EvaluationInputs<'a> {
     contract_coherency: Option<&'a ContractCoherencyEvaluation>,
     architecture_realization: Option<&'a ArchitectureRealization>,
     behavioral_semantics: Option<&'a BehavioralSemanticsEvaluation>,
+    semantic_analysis: Option<&'a SemanticAnalysisEvaluation>,
 }
 
 impl<'a> From<CompleteEvaluationInputs<'a>> for EvaluationInputs<'a> {
@@ -209,6 +214,7 @@ impl<'a> From<CompleteEvaluationInputs<'a>> for EvaluationInputs<'a> {
             contract_coherency: Some(inputs.contract_coherency),
             architecture_realization: Some(inputs.architecture_realization),
             behavioral_semantics: Some(inputs.behavioral_semantics),
+            semantic_analysis: inputs.semantic_analysis,
         }
     }
 }
@@ -309,6 +315,10 @@ fn evaluate_rule(
             || unsupported_execution(rule_id, "Behavioral-flow evaluation requires one Intended BFG compiled from the audit CCG."),
             |result| behavior_execution(rule_id, result),
         )),
+        PROGRAM_DOMAIN_RULE_ID => Ok(inputs.semantic_analysis.map_or_else(
+            || unsupported_execution(rule_id, "Program-domain evaluation requires one snapshot-bound PSM and its distributed Function Contract v1 set."),
+            |result| semantic_execution(rule_id, result),
+        )),
         ARCH_OWNERSHIP_RULE_ID => ownership_execution(rule_id, architecture, snapshot, edition),
         REPO_MODULE_RULE_ID => placement_execution(rule_id, snapshot, edition),
         REPO_DOCS_RULE_ID => Ok(inputs.documentation.map_or_else(
@@ -401,6 +411,33 @@ fn behavior_execution(
                 summary.unmodeled_features(),
                 "UNMODELED",
                 findings.len(),
+            ),
+        },
+        findings,
+    )
+}
+
+fn semantic_execution(
+    rule_id: &str,
+    result: &SemanticAnalysisEvaluation,
+) -> (RuleExecution, Vec<CanonicalFinding>) {
+    let findings = result.findings().to_vec();
+    let coverage = result.model().coverage();
+    (
+        RuleExecution {
+            rule_id: rule_id.into(),
+            state: if findings.is_empty() {
+                RuleExecutionState::Passed
+            } else {
+                RuleExecutionState::Failed
+            },
+            applicable: true,
+            findings: findings.len(),
+            detail: format!(
+                "Semantic Analysis v1 evaluated {} function summary(ies), {} distributed Function Contract(s), and produced {} supported program-domain contradiction(s); unsupported semantics remain explicit.",
+                coverage.functions_analyzed(),
+                coverage.function_contracts(),
+                coverage.violations(),
             ),
         },
         findings,

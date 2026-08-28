@@ -1,0 +1,35 @@
+{
+  "$schema": "urn:fortress:schema:v1:rule",
+  "schema_version": 1,
+  "id": "PROGRAM-DOMAIN-001",
+  "title": "Supported interprocedural value domains satisfy declared function contracts",
+  "status": "draft",
+  "statement": "Every supported program value flow MUST remain within the semantic domain required by its consumer; supported function implementations MUST satisfy authored return guarantees, and understood partial operations or impossible-state assertions MUST be unreachable for their failure domains.",
+  "rationale": "Nominal static types often admit states that a downstream function or partial operation cannot accept. Conservative whole-program domain propagation exposes those latent contradictions without waiting for current callers or tests to exercise them.",
+  "failure_prevented": "Upstream values reaching a narrower precondition, false output promises, reachable wrapper extraction failures, divide-by-zero states, or reachable impossible-state assertions being treated as coherent merely because Rust nominal types compile.",
+  "applicability": "Supported PSM executable semantics and any canonical distributed Function Contract v1 declarations. Unsupported, unknown, dynamically dispatched, or widened semantics remain explicit uncertainty and do not fail this draft rule solely because they are incomplete.",
+  "category": "source",
+  "integrity_tier": 3,
+  "evaluation": "Fortress initializes each function from its authored requires domains or the full static type domain, interprets supported PSM control/value facts to a deterministic widened fixed point, and checks producer-domain subset inclusion at call preconditions, return postconditions, understood partial operations, and impossible-state assertions.",
+  "required_capabilities": [
+    "function-contract-v1",
+    "program-semantic-model-v1",
+    "semantic-analysis-v1"
+  ],
+  "logic": {
+    "implies": [],
+    "conflicts_with": []
+  },
+  "finding": {
+    "message": "A supported program value domain exceeds the domain required by its consumer.",
+    "location": "span"
+  },
+  "remediation": "Narrow the producer domain through supported control flow, strengthen the caller contract, make the consumer total, or correct an invalid Function Contract without suppressing unsupported analysis.",
+  "valid_example": "A caller proves an Option is Some before unwrap, or passes an integer interval wholly contained by the callee's declared parameter interval.",
+  "invalid_example": "A function admitting None or Some forwards its full Option domain to unwrap, or a producer interval includes values excluded by a callee precondition.",
+  "exception_policy": "Unsupported semantic classes remain explicit and non-passing. No exemption exists for a contradiction Fortress proves within the currently supported domain semantics.",
+  "introduced": "1.0.0-draft.1",
+  "history": [
+    "Introduced with Function Contract v1 and interprocedural Semantic Value Domain analysis."
+  ]
+}

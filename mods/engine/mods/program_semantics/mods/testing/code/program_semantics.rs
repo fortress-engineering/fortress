@@ -384,6 +384,25 @@ fn live_fortress_psm_is_coherent_deterministic_and_invalid_free() {
     );
 }
 
+/// `T-AF-PROGRAM-SEMANTICS-0001-R04-001`
+/// Fortress requirement: AF-PROGRAM-SEMANTICS-0001-R04
+#[test]
+fn supported_rust_bodies_are_lowered_into_neutral_control_facts() {
+    let model = compile_program_semantic_model(&one_package(
+        "fn flow(value: Option<i32>, flag: bool) -> i32 { if flag { return value.unwrap(); } match value { Some(next) => next, None => 0 } }\n",
+    ))
+    .expect("body fixture compiles");
+    let value: serde_json::Value =
+        serde_json::from_str(&model.to_canonical_json().expect("model serializes"))
+            .expect("model parses");
+    let bodies = value["bodies"].as_array().expect("body facts exist");
+    assert_eq!(bodies.len(), 1);
+    assert!(contains_kind(&value["bodies"], "if"));
+    assert!(contains_kind(&value["bodies"], "match"));
+    assert!(contains_kind(&value["bodies"], "return"));
+    assert!(contains_kind(&value["bodies"], "method_call"));
+}
+
 fn model_type_is_structural(
     model: &fortress_core::program_semantics::ProgramSemanticModel,
     type_id: &str,

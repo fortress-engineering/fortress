@@ -12,7 +12,7 @@ Compose the implemented core capabilities behind a stable Rust library facade wh
 
 ### Includes
 
-The crate facade, package contract, and integration of standard registry, finding model, contract coherency, Behavioral Semantics, project model, repository observation, implementation observation, Program Semantics, architecture evaluation, and Snapshot Governance capabilities.
+The crate facade, package contract, and integration of standard registry, finding model, contract coherency, Behavioral Semantics, project model, repository observation, implementation observation, Program Semantics, Semantic Analysis, architecture evaluation, and Snapshot Governance capabilities.
 
 ### Excludes
 
@@ -67,6 +67,12 @@ Supplies typed project, feature, requirement, and evidence declarations composed
 **Types:** `depends_on`
 
 Supplies deterministic repository file facts and explicit exclusion behavior.
+
+### [Semantic Analysis](mods/semantic_analysis/README.md)
+
+**Types:** `depends_on`
+
+Supplies distributed Function Contract interpretation, conservative semantic value-domain propagation, function summaries, and supported program-domain contradiction evidence.
 
 ### [Snapshot Governance](mods/snapshot_governance/README.md)
 

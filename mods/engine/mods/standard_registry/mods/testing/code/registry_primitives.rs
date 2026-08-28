@@ -33,7 +33,7 @@ fn rule_identity_rejects_entity_only_namespace() {
 fn draft_registry_is_structurally_valid() {
     let registry = StandardRegistry::draft_1_0();
     assert_eq!(registry.status(), RuleStatus::Draft);
-    assert_eq!(registry.rules().len(), 10);
+    assert_eq!(registry.rules().len(), 11);
     assert!(registry.validate().is_ok());
 }
 

@@ -10,7 +10,7 @@ The schema is specification-authored as part of the current Fortress draft imple
 
 ## Semantics
 
-It defines the language-neutral, observed-implementation representation for symbols, types, calls, initial transfers, Module boundaries, graph derivations, coverage, unsupported semantics, and provenance.
+It defines the language-neutral, observed-implementation representation for symbols, types, calls, neutral body/control structure, initial transfers, Module boundaries, graph derivations, coverage, unsupported semantics, and provenance.
 
 ## Validity
 

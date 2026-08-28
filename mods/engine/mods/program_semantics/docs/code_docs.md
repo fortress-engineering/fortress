@@ -2,7 +2,7 @@
 
 ## Role
 
-The Code defines the language-neutral PSM and the Rust-specific translator that emits executable, interface, call, transfer, derivation, coverage, coherency, and provenance facts.
+The Code defines the language-neutral PSM and the Rust-specific translator that emits executable, interface, call, neutral body/control, transfer, derivation, coverage, coherency, and provenance facts.
 
 ## Execution
 

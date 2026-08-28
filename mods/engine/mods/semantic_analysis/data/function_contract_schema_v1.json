@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:function-contracts",
+  "title": "Fortress Function Contracts v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "schema_version", "functions"],
+  "properties": {
+    "$schema": { "const": "urn:fortress:schema:v1:function-contracts" },
+    "schema_version": { "const": 1 },
+    "functions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/function" }
+    }
+  },
+  "$defs": {
+    "symbol": { "type": "string", "pattern": "^rust_symbol:sha256:[0-9a-f]{64}$" },
+    "domain": {
+      "oneOf": [
+        { "$ref": "#/$defs/top" },
+        { "$ref": "#/$defs/bottom" },
+        { "$ref": "#/$defs/boolean" },
+        { "$ref": "#/$defs/integer_interval" },
+        { "$ref": "#/$defs/option_states" },
+        { "$ref": "#/$defs/result_states" },
+        { "$ref": "#/$defs/enum_variants" },
+        { "$ref": "#/$defs/tuple" }
+      ]
+    },
+    "top": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": { "kind": { "const": "top" } }
+    },
+    "bottom": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": { "kind": { "const": "bottom" } }
+    },
+    "boolean": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "include"],
+      "properties": {
+        "kind": { "const": "boolean" },
+        "include": { "type": "array", "uniqueItems": true, "items": { "type": "boolean" } }
+      }
+    },
+    "integer_interval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "min", "max", "exclude"],
+      "properties": {
+        "kind": { "const": "integer_interval" },
+        "min": { "type": "integer" },
+        "max": { "type": "integer" },
+        "exclude": { "type": "array", "uniqueItems": true, "items": { "type": "integer" } }
+      }
+    },
+    "option_states": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "include", "some"],
+      "properties": {
+        "kind": { "const": "option_states" },
+        "include": { "type": "array", "uniqueItems": true, "items": { "enum": ["none", "some"] } },
+        "some": { "oneOf": [{ "$ref": "#/$defs/domain" }, { "type": "null" }] }
+      }
+    },
+    "result_states": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "include", "ok", "err"],
+      "properties": {
+        "kind": { "const": "result_states" },
+        "include": { "type": "array", "uniqueItems": true, "items": { "enum": ["err", "ok"] } },
+        "ok": { "oneOf": [{ "$ref": "#/$defs/domain" }, { "type": "null" }] },
+        "err": { "oneOf": [{ "$ref": "#/$defs/domain" }, { "type": "null" }] }
+      }
+    },
+    "enum_variants": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "include"],
+      "properties": {
+        "kind": { "const": "enum_variants" },
+        "include": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "tuple": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "elements"],
+      "properties": {
+        "kind": { "const": "tuple" },
+        "elements": { "type": "array", "items": { "$ref": "#/$defs/domain" } }
+      }
+    },
+    "requirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["parameter", "domain"],
+      "properties": {
+        "parameter": { "type": "string", "minLength": 1 },
+        "domain": { "$ref": "#/$defs/domain" }
+      }
+    },
+    "guarantee": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["return", "domain"],
+      "properties": {
+        "return": { "const": true },
+        "domain": { "$ref": "#/$defs/domain" }
+      }
+    },
+    "function": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["symbol", "requires", "ensures"],
+      "properties": {
+        "symbol": { "$ref": "#/$defs/symbol" },
+        "requires": { "type": "array", "items": { "$ref": "#/$defs/requirement" } },
+        "ensures": { "type": "array", "maxItems": 1, "items": { "$ref": "#/$defs/guarantee" } }
+      }
+    }
+  }
+}

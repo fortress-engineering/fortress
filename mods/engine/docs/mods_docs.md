@@ -38,6 +38,10 @@ Provides the declared engineering subject and evidence obligations consumed by o
 
 Supplies reproducible repository facts to the snapshot builder without asserting what those facts mean.
 
+### [Semantic Analysis](../mods/semantic_analysis/README.md)
+
+Consumes the PSM and distributed Function Contracts to derive conservative value-domain summaries and supported contradictions.
+
 ### [Snapshot Governance](../mods/snapshot_governance/README.md)
 
 Turns exact declarations and repository facts into deterministic rule executions and normalized development evidence.

@@ -42,6 +42,8 @@ pub mod program_semantics;
 pub mod project;
 #[path = "../mods/snapshot_governance/code/rust_test_analyzer.rs"]
 pub mod rust_test_analyzer;
+#[path = "../mods/semantic_analysis/code/semantic.rs"]
+pub mod semantic_analysis;
 #[path = "../mods/snapshot_governance/code/snapshot.rs"]
 pub mod snapshot;
 #[path = "../mods/standard_registry/code/standard.rs"]

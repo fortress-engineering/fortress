@@ -16,6 +16,7 @@
     "symbols",
     "types",
     "calls",
+    "bodies",
     "value_transfers",
     "transformations",
     "module_boundaries",
@@ -37,6 +38,7 @@
     "symbols": { "type": "array", "items": { "$ref": "#/$defs/symbol" } },
     "types": { "type": "array", "items": { "$ref": "#/$defs/type_fact" } },
     "calls": { "type": "array", "items": { "$ref": "#/$defs/call" } },
+    "bodies": { "type": "array", "items": { "$ref": "#/$defs/body" } },
     "value_transfers": { "type": "array", "items": { "$ref": "#/$defs/transfer" } },
     "transformations": { "type": "array", "items": { "$ref": "#/$defs/transformation" } },
     "module_boundaries": { "type": "array", "items": { "$ref": "#/$defs/module_boundary" } },
@@ -257,6 +259,67 @@
         "external_target": { "$ref": "#/$defs/nullable_string" },
         "candidate_callees": { "$ref": "#/$defs/string_array" },
         "evidence": { "type": "array", "items": { "$ref": "#/$defs/call_evidence" } }
+      }
+    },
+    "pattern": {
+      "oneOf": [
+        { "type": "object", "additionalProperties": false, "required": ["kind"], "properties": { "kind": { "const": "wildcard" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "name"], "properties": { "kind": { "const": "binding" }, "name": { "type": "string" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "name", "fields"], "properties": { "kind": { "const": "variant" }, "name": { "type": "string" }, "fields": { "type": "array", "items": { "$ref": "#/$defs/pattern" } } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "elements"], "properties": { "kind": { "const": "tuple" }, "elements": { "type": "array", "items": { "$ref": "#/$defs/pattern" } } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "rust_spelling"], "properties": { "kind": { "const": "unsupported" }, "rust_spelling": { "type": "string" } } }
+      ]
+    },
+    "expression": {
+      "oneOf": [
+        { "type": "object", "additionalProperties": false, "required": ["kind", "name"], "properties": { "kind": { "const": "binding" }, "name": { "type": "string" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "value"], "properties": { "kind": { "const": "boolean" }, "value": { "type": "boolean" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "value"], "properties": { "kind": { "const": "integer" }, "value": { "type": "string" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind"], "properties": { "kind": { "const": "unit" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "name"], "properties": { "kind": { "const": "variant" }, "name": { "type": "string" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "elements"], "properties": { "kind": { "const": "tuple" }, "elements": { "type": "array", "items": { "$ref": "#/$defs/expression" } } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "constructor", "arguments"], "properties": { "kind": { "const": "construction" }, "constructor": { "type": "string" }, "arguments": { "type": "array", "items": { "$ref": "#/$defs/expression" } } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "pattern", "value"], "properties": { "kind": { "const": "pattern_test" }, "pattern": { "$ref": "#/$defs/pattern" }, "value": { "$ref": "#/$defs/expression" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "reference", "arguments"], "properties": { "kind": { "const": "call" }, "reference": { "type": "string" }, "arguments": { "type": "array", "items": { "$ref": "#/$defs/expression" } } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "receiver", "method", "arguments"], "properties": { "kind": { "const": "method_call" }, "receiver": { "$ref": "#/$defs/expression" }, "method": { "type": "string" }, "arguments": { "type": "array", "items": { "$ref": "#/$defs/expression" } } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "operator", "left", "right"], "properties": { "kind": { "const": "binary" }, "operator": { "type": "string" }, "left": { "$ref": "#/$defs/expression" }, "right": { "$ref": "#/$defs/expression" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "operator", "value"], "properties": { "kind": { "const": "unary" }, "operator": { "type": "string" }, "value": { "$ref": "#/$defs/expression" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "value"], "properties": { "kind": { "const": "try" }, "value": { "$ref": "#/$defs/expression" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "mutable", "value"], "properties": { "kind": { "const": "reference" }, "mutable": { "type": "boolean" }, "value": { "$ref": "#/$defs/expression" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "operation"], "properties": { "kind": { "const": "exceptional" }, "operation": { "enum": ["panic", "unreachable"] } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "rust_spelling"], "properties": { "kind": { "const": "unsupported" }, "rust_spelling": { "type": "string" } } }
+      ]
+    },
+    "match_arm": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pattern", "guard", "body", "provenance"],
+      "properties": {
+        "pattern": { "$ref": "#/$defs/pattern" },
+        "guard": { "oneOf": [{ "$ref": "#/$defs/expression" }, { "type": "null" }] },
+        "body": { "type": "array", "items": { "$ref": "#/$defs/statement" } },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+    "statement": {
+      "oneOf": [
+        { "type": "object", "additionalProperties": false, "required": ["kind", "pattern", "value", "provenance"], "properties": { "kind": { "const": "let" }, "pattern": { "$ref": "#/$defs/pattern" }, "value": { "oneOf": [{ "$ref": "#/$defs/expression" }, { "type": "null" }] }, "provenance": { "$ref": "#/$defs/provenance" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "target", "value", "provenance"], "properties": { "kind": { "const": "assign" }, "target": { "type": "string" }, "value": { "$ref": "#/$defs/expression" }, "provenance": { "$ref": "#/$defs/provenance" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "value", "provenance"], "properties": { "kind": { "const": "expression" }, "value": { "$ref": "#/$defs/expression" }, "provenance": { "$ref": "#/$defs/provenance" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "value", "provenance"], "properties": { "kind": { "const": "return" }, "value": { "oneOf": [{ "$ref": "#/$defs/expression" }, { "type": "null" }] }, "provenance": { "$ref": "#/$defs/provenance" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "condition", "then_branch", "else_branch", "provenance"], "properties": { "kind": { "const": "if" }, "condition": { "$ref": "#/$defs/expression" }, "then_branch": { "type": "array", "items": { "$ref": "#/$defs/statement" } }, "else_branch": { "type": "array", "items": { "$ref": "#/$defs/statement" } }, "provenance": { "$ref": "#/$defs/provenance" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "value", "arms", "provenance"], "properties": { "kind": { "const": "match" }, "value": { "$ref": "#/$defs/expression" }, "arms": { "type": "array", "items": { "$ref": "#/$defs/match_arm" } }, "provenance": { "$ref": "#/$defs/provenance" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "pattern", "value", "body", "provenance"], "properties": { "kind": { "const": "while_let" }, "pattern": { "$ref": "#/$defs/pattern" }, "value": { "$ref": "#/$defs/expression" }, "body": { "type": "array", "items": { "$ref": "#/$defs/statement" } }, "provenance": { "$ref": "#/$defs/provenance" } } }
+      ]
+    },
+    "body": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["symbol", "statements", "provenance"],
+      "properties": {
+        "symbol": { "type": "string", "pattern": "^rust_symbol:sha256:[0-9a-f]{64}$" },
+        "statements": { "type": "array", "items": { "$ref": "#/$defs/statement" } },
+        "provenance": { "$ref": "#/$defs/provenance" }
       }
     },
     "endpoint": {

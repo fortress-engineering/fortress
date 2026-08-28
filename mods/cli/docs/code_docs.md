@@ -24,7 +24,7 @@ Defines the stable built-in command registry and rejects duplicate or unimplemen
 
 ### [`lib.rs`](../code/lib.rs)
 
-Dispatches supported arguments, invokes Engine audit, CCG, Intended BFG, and PSM behavior, renders output, and assigns process status.
+Dispatches supported arguments, invokes Engine audit, CCG, Intended BFG, PSM, and semantic-domain behavior, renders output, and assigns process status.
 
 ### [`main.rs`](../code/main.rs)
 

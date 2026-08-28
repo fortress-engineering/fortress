@@ -19,12 +19,13 @@ use crate::implementation_observation::ModuleTerritory;
 
 use super::{
     CallResolutionState, CallSiteEvidence, ExecutableSymbol, ExecutableSymbolKind, InterfaceType,
-    ProgramCall, ProgramPackage, ProgramParameter, ProgramProvenance, ProgramReceiver,
-    ProgramSemanticError, ProgramSemanticInput, ProgramSourceInput, ProgramSourceLocation,
-    ProgramTarget, ProgramType, RUST_PROGRAM_ANALYZER_ID, ResolutionAuthority, RustProgramFacts,
-    SemanticType, SymbolBodyState, SymbolClassification, SymbolQualifiers, SymbolVisibility,
-    TransferResolutionState, TransformationKind, TypeResolution, TypeTransformation, ValueEndpoint,
-    ValueTransfer, ValueTransferKind, canonical_fact_id,
+    ProgramBody, ProgramCall, ProgramExpression, ProgramMatchArm, ProgramPackage, ProgramParameter,
+    ProgramPattern, ProgramProvenance, ProgramReceiver, ProgramSemanticError, ProgramSemanticInput,
+    ProgramSourceInput, ProgramSourceLocation, ProgramStatement, ProgramTarget, ProgramType,
+    RUST_PROGRAM_ANALYZER_ID, ResolutionAuthority, RustProgramFacts, SemanticType, SymbolBodyState,
+    SymbolClassification, SymbolQualifiers, SymbolVisibility, TransferResolutionState,
+    TransformationKind, TypeResolution, TypeTransformation, ValueEndpoint, ValueTransfer,
+    ValueTransferKind, canonical_fact_id,
 };
 
 #[derive(Deserialize)]
@@ -237,7 +238,9 @@ pub(super) fn analyze(
     let mut raw_calls = Vec::new();
     let mut value_transfers = parameter_transfers;
     let mut transformations = Vec::new();
+    let mut program_bodies = Vec::new();
     for body in &bodies {
+        program_bodies.push(lower_program_body(body));
         BodyAnalyzer::new(
             body,
             &mut registry,
@@ -260,9 +263,282 @@ pub(super) fn analyze(
         symbols,
         types: registry.finish(),
         calls,
+        bodies: program_bodies,
         value_transfers,
         transformations,
     })
+}
+
+fn lower_program_body(body: &BodyFact) -> ProgramBody {
+    ProgramBody {
+        symbol: body.symbol.clone(),
+        statements: lower_block(body, &body.block),
+        provenance: provenance(
+            &body.source_path,
+            body.block.span(),
+            Some(body.symbol.clone()),
+        ),
+    }
+}
+
+fn lower_block(body: &BodyFact, block: &Block) -> Vec<ProgramStatement> {
+    block
+        .stmts
+        .iter()
+        .enumerate()
+        .flat_map(|(index, statement)| {
+            let is_tail = index + 1 == block.stmts.len();
+            lower_statement(body, statement, is_tail)
+        })
+        .collect()
+}
+
+fn lower_statement(body: &BodyFact, statement: &syn::Stmt, is_tail: bool) -> Vec<ProgramStatement> {
+    match statement {
+        syn::Stmt::Local(local) => vec![ProgramStatement::Let {
+            pattern: lower_pattern(&local.pat),
+            value: local
+                .init
+                .as_ref()
+                .map(|initializer| lower_expression(&initializer.expr)),
+            provenance: body_provenance(body, local.span()),
+        }],
+        syn::Stmt::Item(_) => Vec::new(),
+        syn::Stmt::Macro(statement) => vec![ProgramStatement::Expression {
+            value: lower_macro(&statement.mac.path.to_token_stream().to_string()),
+            provenance: body_provenance(body, statement.span()),
+        }],
+        syn::Stmt::Expr(expression, semi) => {
+            if is_tail
+                && semi.is_none()
+                && !matches!(expression, Expr::If(_) | Expr::Match(_) | Expr::Return(_))
+            {
+                return vec![ProgramStatement::Return {
+                    value: Some(lower_expression(expression)),
+                    provenance: body_provenance(body, expression.span()),
+                }];
+            }
+            lower_expression_statement(body, expression)
+        }
+    }
+}
+
+fn lower_expression_statement(body: &BodyFact, expression: &Expr) -> Vec<ProgramStatement> {
+    match expression {
+        Expr::Assign(value) => vec![ProgramStatement::Assign {
+            target: value.left.to_token_stream().to_string(),
+            value: lower_expression(&value.right),
+            provenance: body_provenance(body, value.span()),
+        }],
+        Expr::Return(value) => vec![ProgramStatement::Return {
+            value: value.expr.as_deref().map(lower_expression),
+            provenance: body_provenance(body, value.span()),
+        }],
+        Expr::If(value) => {
+            let else_branch = value.else_branch.as_ref().map_or_else(
+                Vec::new,
+                |(_, expression)| match expression.as_ref() {
+                    Expr::Block(block) => lower_block(body, &block.block),
+                    nested => lower_expression_statement(body, nested),
+                },
+            );
+            vec![ProgramStatement::If {
+                condition: lower_expression(&value.cond),
+                then_branch: lower_block(body, &value.then_branch),
+                else_branch,
+                provenance: body_provenance(body, value.span()),
+            }]
+        }
+        Expr::Match(value) => vec![ProgramStatement::Match {
+            value: lower_expression(&value.expr),
+            arms: value
+                .arms
+                .iter()
+                .map(|arm| ProgramMatchArm {
+                    pattern: lower_pattern(&arm.pat),
+                    guard: arm.guard.as_ref().map(|(_, guard)| lower_expression(guard)),
+                    body: match arm.body.as_ref() {
+                        Expr::Block(block) => lower_block(body, &block.block),
+                        Expr::Return(value) => vec![ProgramStatement::Return {
+                            value: value.expr.as_deref().map(lower_expression),
+                            provenance: body_provenance(body, value.span()),
+                        }],
+                        expression => vec![ProgramStatement::Return {
+                            value: Some(lower_expression(expression)),
+                            provenance: body_provenance(body, expression.span()),
+                        }],
+                    },
+                    provenance: body_provenance(body, arm.span()),
+                })
+                .collect(),
+            provenance: body_provenance(body, value.span()),
+        }],
+        Expr::While(value) => {
+            let Expr::Let(predicate) = value.cond.as_ref() else {
+                return vec![ProgramStatement::Expression {
+                    value: ProgramExpression::Unsupported {
+                        rust_spelling: expression.to_token_stream().to_string(),
+                    },
+                    provenance: body_provenance(body, expression.span()),
+                }];
+            };
+            vec![ProgramStatement::WhileLet {
+                pattern: lower_pattern(&predicate.pat),
+                value: lower_expression(&predicate.expr),
+                body: lower_block(body, &value.body),
+                provenance: body_provenance(body, value.span()),
+            }]
+        }
+        _ => vec![ProgramStatement::Expression {
+            value: lower_expression(expression),
+            provenance: body_provenance(body, expression.span()),
+        }],
+    }
+}
+
+fn lower_expression(expression: &Expr) -> ProgramExpression {
+    match expression {
+        Expr::Paren(value) => lower_expression(&value.expr),
+        Expr::Group(value) => lower_expression(&value.expr),
+        Expr::Path(value) => {
+            let name = value.path.to_token_stream().to_string();
+            if value.path.segments.len() == 1
+                && value
+                    .path
+                    .segments
+                    .first()
+                    .is_some_and(|segment| starts_lowercase(&segment.ident.to_string()))
+            {
+                ProgramExpression::Binding { name }
+            } else {
+                ProgramExpression::Variant { name }
+            }
+        }
+        Expr::Lit(value) => match &value.lit {
+            syn::Lit::Bool(value) => ProgramExpression::Boolean { value: value.value },
+            syn::Lit::Int(value) => ProgramExpression::Integer {
+                value: value.to_token_stream().to_string(),
+            },
+            _ => ProgramExpression::Unsupported {
+                rust_spelling: expression.to_token_stream().to_string(),
+            },
+        },
+        Expr::Tuple(value) if value.elems.is_empty() => ProgramExpression::Unit,
+        Expr::Tuple(value) => ProgramExpression::Tuple {
+            elements: value.elems.iter().map(lower_expression).collect(),
+        },
+        Expr::Call(value) => {
+            let reference = value.func.to_token_stream().to_string();
+            let arguments = value.args.iter().map(lower_expression).collect();
+            if matches!(reference.rsplit("::").next(), Some("Some" | "Ok" | "Err")) {
+                ProgramExpression::Construction {
+                    constructor: reference,
+                    arguments,
+                }
+            } else {
+                ProgramExpression::Call {
+                    reference,
+                    arguments,
+                }
+            }
+        }
+        Expr::Let(value) => ProgramExpression::PatternTest {
+            pattern: lower_pattern(&value.pat),
+            value: Box::new(lower_expression(&value.expr)),
+        },
+        Expr::MethodCall(value) => ProgramExpression::MethodCall {
+            receiver: Box::new(lower_expression(&value.receiver)),
+            method: value.method.to_string(),
+            arguments: value.args.iter().map(lower_expression).collect(),
+        },
+        Expr::Binary(value) => ProgramExpression::Binary {
+            operator: value.op.to_token_stream().to_string(),
+            left: Box::new(lower_expression(&value.left)),
+            right: Box::new(lower_expression(&value.right)),
+        },
+        Expr::Unary(value) => ProgramExpression::Unary {
+            operator: value.op.to_token_stream().to_string(),
+            value: Box::new(lower_expression(&value.expr)),
+        },
+        Expr::Try(value) => ProgramExpression::Try {
+            value: Box::new(lower_expression(&value.expr)),
+        },
+        Expr::Reference(value) => ProgramExpression::Reference {
+            mutable: value.mutability.is_some(),
+            value: Box::new(lower_expression(&value.expr)),
+        },
+        Expr::Macro(value) => lower_macro(&value.mac.path.to_token_stream().to_string()),
+        Expr::Block(value) => value
+            .block
+            .stmts
+            .last()
+            .and_then(|statement| match statement {
+                syn::Stmt::Expr(value, _) => Some(lower_expression(value)),
+                _ => None,
+            })
+            .unwrap_or(ProgramExpression::Unit),
+        _ => ProgramExpression::Unsupported {
+            rust_spelling: expression.to_token_stream().to_string(),
+        },
+    }
+}
+
+fn lower_pattern(pattern: &Pat) -> ProgramPattern {
+    match pattern {
+        Pat::Wild(_) => ProgramPattern::Wildcard,
+        Pat::Ident(value) => ProgramPattern::Binding {
+            name: value.ident.to_string(),
+        },
+        Pat::Path(value) => ProgramPattern::Variant {
+            name: value.path.to_token_stream().to_string(),
+            fields: Vec::new(),
+        },
+        Pat::Tuple(value) => ProgramPattern::Tuple {
+            elements: value.elems.iter().map(lower_pattern).collect(),
+        },
+        Pat::TupleStruct(value) => ProgramPattern::Variant {
+            name: value.path.to_token_stream().to_string(),
+            fields: value.elems.iter().map(lower_pattern).collect(),
+        },
+        Pat::Struct(value) => ProgramPattern::Variant {
+            name: value.path.to_token_stream().to_string(),
+            fields: value
+                .fields
+                .iter()
+                .map(|field| lower_pattern(&field.pat))
+                .collect(),
+        },
+        Pat::Type(value) => lower_pattern(&value.pat),
+        _ => ProgramPattern::Unsupported {
+            rust_spelling: pattern.to_token_stream().to_string(),
+        },
+    }
+}
+
+fn lower_macro(path: &str) -> ProgramExpression {
+    let operation = match path {
+        "unreachable" => "unreachable",
+        "panic" => "panic",
+        _ => {
+            return ProgramExpression::Unsupported {
+                rust_spelling: format!("{path}!(...)"),
+            };
+        }
+    };
+    ProgramExpression::Exceptional {
+        operation: operation.into(),
+    }
+}
+
+fn body_provenance(body: &BodyFact, span: Span) -> ProgramProvenance {
+    provenance(&body.source_path, span, Some(body.symbol.clone()))
+}
+
+fn starts_lowercase(value: &str) -> bool {
+    value
+        .chars()
+        .next()
+        .is_some_and(|character| character.is_ascii_lowercase() || character == '_')
 }
 
 fn verified_files(

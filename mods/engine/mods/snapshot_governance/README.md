@@ -6,17 +6,17 @@ Snapshot Governance exists to answer what is true and what violates the declared
 
 ## Responsibility
 
-Build stabilized content-addressed repository snapshots, coordinate one CCG, one Intended BFG, one independent Rust implementation observation, and one Program Semantic Model, analyze supported Rust test facts, execute implemented rules truthfully, normalize deterministic findings, retain Architecture Evaluation diagnostics as a separate non-normative projection, and orchestrate machine-readable and human repository audits.
+Build stabilized content-addressed repository snapshots, coordinate one CCG, one Intended BFG, one independent Rust implementation observation, one Program Semantic Model, and one function-domain analysis, analyze supported Rust test facts, execute implemented rules truthfully, normalize deterministic findings, retain Architecture Evaluation diagnostics as a separate non-normative projection, and orchestrate machine-readable and human repository audits.
 
 ## Scope
 
 ### Includes
 
-Snapshot and audit schemas; audit orchestration; separate findings, architecture diagnostics, and unsupported-analysis reporting; contract coherency, intended behavioral-flow, ownership, realization, traceability, recursive Module, and documentation synchronization rule dispatch; Markdown and Rust test analyzers; two-pass stabilization; and exact rule execution reporting.
+Snapshot and audit schemas; audit orchestration; separate findings, architecture diagnostics, and unsupported-analysis reporting; contract coherency, intended behavioral-flow, program-domain, ownership, realization, traceability, recursive Module, and documentation synchronization rule dispatch; Markdown and Rust test analyzers; two-pass stabilization; and exact rule execution reporting.
 
 ### Excludes
 
-Certification or attestation, onboarding and migration state, persistent jobs, provider-hosted execution, release orchestration, implementation observation and program semantics owned by sibling Modules, architecture judgment owned by Architecture Evaluation, Behavioral Semantics owned by its sibling Module, unsupported language analyzers, general behavioral satisfiability, realized BFGs, and BFG visualization.
+Certification or attestation, onboarding and migration state, persistent jobs, provider-hosted execution, release orchestration, implementation observation, program semantics, and semantic-domain reasoning owned by sibling Modules, architecture judgment owned by Architecture Evaluation, Behavioral Semantics owned by its sibling Module, unsupported language analyzers, general behavioral satisfiability, realized BFGs, and BFG visualization.
 
 ## Relationships
 
@@ -68,6 +68,12 @@ Consumes only operational project configuration; project identity, Features, and
 
 Consumes deterministic repository file facts to construct and verify snapshots.
 
+### [Semantic Analysis](../semantic_analysis/README.md)
+
+**Types:** `depends_on`
+
+Consumes one deterministic PSM-backed function-domain evaluation so PROGRAM-DOMAIN-001 reports supported contradictions without reparsing source or treating uncertainty as passing proof.
+
 ### [Standard Registry](../standard_registry/README.md)
 
 **Types:** `depends_on`
@@ -76,4 +82,4 @@ Consumes the exact applicable rule bundle and stable rule identities.
 
 ## Guarantees
 
-No wall-clock or absolute path enters snapshot, CCG, Intended BFG, or PSM identity; repository mutation is rejected when observed bytes diverge; the CCG, Intended BFG, observed implementation, and requested PSM are each compiled once from one exact snapshot; unimplemented rules remain UNSUPPORTED; unmodeled behavior is not reported as passing modeled flow; findings never redefine rules; diagnostics never alter PASS or FAIL; audit output never claims certification. Stabilization is an optimistic content protocol rather than a filesystem lock, so a malicious host or a transient mutation reverted to identical bytes remains outside its trust guarantee.
+No wall-clock or absolute path enters snapshot, CCG, Intended BFG, PSM, or semantic-analysis identity; repository mutation is rejected when observed bytes diverge; the CCG, Intended BFG, observed implementation, requested PSM, and semantic analysis are each compiled once from one exact snapshot; unimplemented rules remain UNSUPPORTED; unmodeled behavior and unknown program semantics are not reported as passing proof; findings never redefine rules; diagnostics never alter PASS or FAIL; audit output never claims certification. Stabilization is an optimistic content protocol rather than a filesystem lock, so a malicious host or a transient mutation reverted to identical bytes remains outside its trust guarantee.
