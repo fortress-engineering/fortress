@@ -22,6 +22,8 @@ pub mod contract;
 pub mod contract_coherency;
 #[path = "../mods/snapshot_governance/code/documentation.rs"]
 pub mod documentation;
+#[path = "../mods/environmental_semantics/code/environmental.rs"]
+pub mod environmental_semantics;
 #[path = "../mods/snapshot_governance/code/evaluation.rs"]
 pub mod evaluation;
 #[path = "../mods/finding_model/code/finding.rs"]

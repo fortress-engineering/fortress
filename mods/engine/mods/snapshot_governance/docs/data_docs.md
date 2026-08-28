@@ -22,6 +22,10 @@ Maintainers update Data through reviewed semantic changes; schema versions chang
 
 ## Files
 
+### [`environment_contracts.json`](../data/environment_contracts.json)
+
+Declares the live filesystem document-read boundary and its truthful success/failure outcome space for shared environmental handling analysis.
+
 ### [`contract_rule.json`](../data/contract_rule.json)
 
 Carries the draft normative rule governing canonical CCG compilation and currently supported logical coherency.

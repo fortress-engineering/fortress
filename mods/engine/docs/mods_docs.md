@@ -18,6 +18,10 @@ Compiles CCG-preserved distributed checkpoints into deterministic intended Featu
 
 Compiles distributed contracts, containment, standard logic, and verification declarations into the deterministic semantic graph shared by downstream evaluators.
 
+### [Environmental Semantics](../mods/environmental_semantics/README.md)
+
+Composes declared nondeterministic external outcomes with the canonical program semantic stack and checks handling, retry, duplicate-delivery, and bounded recovery obligations.
+
 ### [Finding Model](../mods/finding_model/README.md)
 
 Provides the shared canonical finding representation used across rule-family boundaries without owning evaluator judgment.

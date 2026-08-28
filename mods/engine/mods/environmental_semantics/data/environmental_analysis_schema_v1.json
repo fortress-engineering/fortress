@@ -1,0 +1,151 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:environmental-analysis",
+  "title": "Fortress Environmental Analysis v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "schema_version", "semantic_version", "project_id", "psm_digest", "semantic_analysis_digest", "state_effect_digest", "information_flow_digest", "environment_contract_digest", "function_contract_digest", "operations", "failure_test_obligations", "violations", "coverage", "unsupported_semantics"],
+  "properties": {
+    "$schema": { "const": "urn:fortress:schema:v1:environmental-analysis" },
+    "schema_version": { "const": 1 },
+    "semantic_version": { "const": "1.0.0" },
+    "project_id": { "type": "string", "minLength": 1 },
+    "psm_digest": { "$ref": "#/$defs/digest" },
+    "semantic_analysis_digest": { "$ref": "#/$defs/digest" },
+    "state_effect_digest": { "$ref": "#/$defs/digest" },
+    "information_flow_digest": { "$ref": "#/$defs/digest" },
+    "environment_contract_digest": { "$ref": "#/$defs/digest" },
+    "function_contract_digest": { "$ref": "#/$defs/digest" },
+    "operations": { "type": "array", "items": { "$ref": "#/$defs/operation" } },
+    "failure_test_obligations": { "type": "array", "items": { "$ref": "#/$defs/obligation" } },
+    "violations": { "type": "array", "items": { "$ref": "#/$defs/violation" } },
+    "coverage": { "$ref": "#/$defs/coverage" },
+    "unsupported_semantics": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } }
+  },
+  "$defs": {
+    "digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "coverage_state": { "enum": ["PROVEN", "PARTIAL", "UNKNOWN", "UNSUPPORTED"] },
+    "effect": { "enum": ["receiver_state_read", "receiver_state_write", "owned_state_read", "owned_state_write", "external_interaction", "may_panic", "unsafe_execution"] },
+    "flow_label": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["facet", "level"],
+      "properties": {
+        "facet": { "type": "string", "minLength": 1 },
+        "level": { "type": "string", "minLength": 1 }
+      }
+    },
+    "outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "completion", "response", "timing", "result", "local_result_domain", "information_flow", "resulting_state", "forbidden_effects", "resource", "handling", "continuation", "terminal", "retries", "retry_safety", "duplicate_safety", "timing_handling", "provenance"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "completion": { "enum": ["COMPLETED", "NOT_COMPLETED", "UNKNOWN_COMPLETION"] },
+        "response": { "enum": ["NO_RESPONSE", "ONE_RESPONSE", "MULTIPLE_RESPONSES"] },
+        "timing": { "enum": ["WITHIN_DEADLINE", "AFTER_DEADLINE", "UNBOUNDED"] },
+        "result": { "enum": ["SUCCESS", "REJECTED", "FAILURE", "MALFORMED", "RESOURCE_UNAVAILABLE"] },
+        "local_result_domain": { "type": ["object", "null"] },
+        "information_flow": { "type": "array", "items": { "$ref": "#/$defs/flow_label" } },
+        "resulting_state": { "type": ["string", "null"] },
+        "forbidden_effects": { "type": "array", "items": { "$ref": "#/$defs/effect" } },
+        "resource": { "type": ["string", "null"] },
+        "handling": { "enum": ["HANDLED", "PARTIALLY_HANDLED", "UNHANDLED", "UNKNOWN", "UNSUPPORTED"] },
+        "continuation": { "type": ["string", "null"] },
+        "terminal": { "type": "boolean" },
+        "retries": { "type": "boolean" },
+        "retry_safety": { "$ref": "#/$defs/coverage_state" },
+        "duplicate_safety": { "$ref": "#/$defs/coverage_state" },
+        "timing_handling": { "$ref": "#/$defs/coverage_state" },
+        "provenance": { "type": "string", "minLength": 1 }
+      }
+    },
+    "operation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["operation", "actor", "boundary", "boundary_module", "external_call_sites", "retry_policy", "idempotency", "delivery", "atomicity", "interruption_sensitive", "direct_effects", "transitive_effects", "outcomes", "contract_binding", "outcome_enumeration", "handling_totality", "retry_safety", "duplicate_safety", "completion_certainty", "timing_handling", "recovery_consistency", "information_flow", "provenance"],
+      "properties": {
+        "operation": { "type": "string", "minLength": 1 },
+        "actor": { "type": "string", "minLength": 1 },
+        "boundary": { "type": "string", "minLength": 1 },
+        "boundary_module": { "type": "string", "minLength": 1 },
+        "external_call_sites": { "type": "integer", "minimum": 0 },
+        "retry_policy": { "enum": ["NEVER", "SAFE", "CONDITIONAL", "UNKNOWN"] },
+        "idempotency": { "enum": ["IDEMPOTENT", "IDEMPOTENT_WITH_KEY", "NON_IDEMPOTENT", "UNKNOWN"] },
+        "delivery": { "enum": ["AT_MOST_ONCE", "AT_LEAST_ONCE", "MAY_DUPLICATE"] },
+        "atomicity": { "enum": ["ATOMIC", "NON_ATOMIC", "UNKNOWN"] },
+        "interruption_sensitive": { "type": "boolean" },
+        "direct_effects": { "type": "array", "items": { "$ref": "#/$defs/effect" } },
+        "transitive_effects": { "type": "array", "items": { "$ref": "#/$defs/effect" } },
+        "outcomes": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/outcome" } },
+        "contract_binding": { "$ref": "#/$defs/coverage_state" },
+        "outcome_enumeration": { "$ref": "#/$defs/coverage_state" },
+        "handling_totality": { "$ref": "#/$defs/coverage_state" },
+        "retry_safety": { "$ref": "#/$defs/coverage_state" },
+        "duplicate_safety": { "$ref": "#/$defs/coverage_state" },
+        "completion_certainty": { "$ref": "#/$defs/coverage_state" },
+        "timing_handling": { "$ref": "#/$defs/coverage_state" },
+        "recovery_consistency": { "$ref": "#/$defs/coverage_state" },
+        "information_flow": { "$ref": "#/$defs/coverage_state" },
+        "provenance": { "type": "string", "minLength": 1 }
+      }
+    },
+    "obligation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "operation", "outcome", "injection", "expected_continuation", "expected_state", "contract_provenance"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "operation": { "type": "string", "minLength": 1 },
+        "outcome": { "type": "string", "minLength": 1 },
+        "injection": { "type": "string", "minLength": 1 },
+        "expected_continuation": { "type": ["string", "null"] },
+        "expected_state": { "type": ["string", "null"] },
+        "contract_provenance": { "type": "string", "minLength": 1 }
+      }
+    },
+    "violation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "rule_id", "kind", "operation", "outcome", "boundary", "scenario", "message", "path", "line", "column"],
+      "properties": {
+        "id": { "$ref": "#/$defs/digest" },
+        "rule_id": { "enum": ["PROGRAM-ENVIRONMENT-001", "PROGRAM-RETRY-001", "PROGRAM-RECOVERY-001"] },
+        "kind": { "enum": ["unhandled_outcome", "forbidden_effect", "retry_forbidden", "unknown_completion_retry", "unproven_idempotency_key", "duplicate_unsafe", "missing_recovery", "unsafe_recovery_retry", "forbidden_recovery_state"] },
+        "operation": { "type": "string", "minLength": 1 },
+        "outcome": { "type": ["string", "null"] },
+        "boundary": { "type": "string", "minLength": 1 },
+        "scenario": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "message": { "type": "string", "minLength": 1 },
+        "path": { "type": "string", "minLength": 1 },
+        "line": { "type": "integer", "minimum": 1 },
+        "column": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["operations", "outcomes", "handled", "partially_handled", "unhandled", "unknown", "retries", "retry_checks", "idempotency_checks", "unknown_completion_paths", "duplicate_delivery_checks", "interruption_checks", "recovery_checks", "atomic_groups", "non_atomic_groups", "unknown_atomicity_groups", "failure_test_obligations", "violations"],
+      "properties": {
+        "operations": { "type": "integer", "minimum": 0 },
+        "outcomes": { "type": "integer", "minimum": 0 },
+        "handled": { "type": "integer", "minimum": 0 },
+        "partially_handled": { "type": "integer", "minimum": 0 },
+        "unhandled": { "type": "integer", "minimum": 0 },
+        "unknown": { "type": "integer", "minimum": 0 },
+        "retries": { "type": "integer", "minimum": 0 },
+        "retry_checks": { "type": "integer", "minimum": 0 },
+        "idempotency_checks": { "type": "integer", "minimum": 0 },
+        "unknown_completion_paths": { "type": "integer", "minimum": 0 },
+        "duplicate_delivery_checks": { "type": "integer", "minimum": 0 },
+        "interruption_checks": { "type": "integer", "minimum": 0 },
+        "recovery_checks": { "type": "integer", "minimum": 0 },
+        "atomic_groups": { "type": "integer", "minimum": 0 },
+        "non_atomic_groups": { "type": "integer", "minimum": 0 },
+        "unknown_atomicity_groups": { "type": "integer", "minimum": 0 },
+        "failure_test_obligations": { "type": "integer", "minimum": 0 },
+        "violations": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

@@ -23,6 +23,10 @@ use crate::contract_coherency::{
     compile_contract_coherency_graph,
 };
 use crate::documentation::{DocumentationEvaluationError, evaluate_repository_documentation};
+use crate::environmental_semantics::{
+    EnvironmentContractError, EnvironmentContractSource, EnvironmentalAnalysisError,
+    EnvironmentalAnalysisEvaluation, analyze_environmental_semantics, load_environment_contracts,
+};
 use crate::evaluation::{
     CompleteEvaluationInputs, EvaluationError, ProgramEvaluationInputs, RuleExecution,
     SnapshotRuleEngine,
@@ -379,10 +383,28 @@ pub fn compile_repository_information_flow_analysis(
     compile_analysis_models(&prepared, ccg).map(|models| models.information_flow)
 }
 
+/// Compiles the repository's canonical Environmental Analysis v1 result.
+///
+/// # Errors
+///
+/// Returns [`AuditError`] for invalid stabilized inputs, semantic substrate,
+/// distributed Environment Contracts, or environmental result construction.
+pub fn compile_repository_environmental_analysis(
+    root: impl AsRef<Path>,
+) -> Result<EnvironmentalAnalysisEvaluation, AuditError> {
+    let prepared = prepare_audit(root.as_ref())?;
+    let ccg = prepared
+        .ccg_compilation
+        .graph()
+        .ok_or_else(|| AuditError::ContractState("prepared audit did not contain a CCG".into()))?;
+    compile_analysis_models(&prepared, ccg).map(|models| models.environmental)
+}
+
 struct AnalysisModels {
     semantic: SemanticAnalysisEvaluation,
     state_effect: StateEffectAnalysisEvaluation,
     information_flow: InformationFlowEvaluation,
+    environmental: EnvironmentalAnalysisEvaluation,
 }
 
 fn compile_analysis_models(
@@ -431,11 +453,55 @@ fn compile_analysis_models_from_observed(
         prepared.standard.bundle.edition(),
     )
     .map_err(AuditError::InformationFlowAnalysis)?;
+    let environment_sources = environment_contract_sources(ccg, &prepared.observed_files)?;
+    let environment_contracts =
+        load_environment_contracts(&psm, &state_contracts, &policy, environment_sources)
+            .map_err(AuditError::EnvironmentContracts)?;
+    let environmental = analyze_environmental_semantics(
+        &psm,
+        &semantic,
+        &state_effect,
+        &information_flow,
+        &environment_contracts,
+        &contracts,
+        prepared.standard.bundle.edition(),
+    )
+    .map_err(AuditError::EnvironmentalAnalysis)?;
     Ok(AnalysisModels {
         semantic,
         state_effect,
         information_flow,
+        environmental,
     })
+}
+
+fn environment_contract_sources(
+    ccg: &ContractCoherencyGraph,
+    files: &BTreeMap<String, Vec<u8>>,
+) -> Result<Vec<EnvironmentContractSource>, AuditError> {
+    files
+        .iter()
+        .filter(|(path, _)| {
+            path.as_str() == "data/environment_contracts.json"
+                || path.ends_with("/data/environment_contracts.json")
+        })
+        .map(|(path, bytes)| {
+            let owner = ccg
+                .module_paths()
+                .iter()
+                .filter(|(_, module_path)| {
+                    module_path.is_empty() || path.starts_with(&format!("{module_path}/"))
+                })
+                .max_by_key(|(_, module_path)| module_path.len())
+                .map(|(id, _)| id.clone())
+                .ok_or_else(|| {
+                    AuditError::ContractState(format!("no Module owns `{path}`").into())
+                })?;
+            let source =
+                std::str::from_utf8(bytes).map_err(|_| AuditError::NonUtf8(path.clone().into()))?;
+            Ok(EnvironmentContractSource::new(owner, path, source))
+        })
+        .collect()
 }
 
 fn information_flow_policy_sources(
@@ -510,6 +576,7 @@ fn state_contract_sources(
         .collect()
 }
 
+#[allow(clippy::too_many_lines)]
 fn audit_repository_with_models(
     root: &Path,
     include_implementation_observation: bool,
@@ -572,6 +639,7 @@ fn audit_repository_with_models(
             analyses.map(|models| &models.semantic),
             analyses.map(|models| &models.state_effect),
             analyses.map(|models| &models.information_flow),
+            analyses.map(|models| &models.environmental),
         ),
     );
     let evaluation = evaluate_snapshot_rules(standard, &prepared.snapshot, ccg, evaluation_inputs)?;
@@ -607,6 +675,14 @@ fn audit_repository_with_models(
                 .unsupported_semantics()
                 .iter()
                 .map(|value| format!("information_flow_analysis:{value}")),
+        );
+        unsupported_analysis.extend(
+            models
+                .environmental
+                .model()
+                .unsupported_semantics()
+                .iter()
+                .map(|value| format!("environmental_analysis:{value}")),
         );
     }
     unsupported_analysis.sort();
@@ -1005,6 +1081,10 @@ pub enum AuditError {
     InformationFlowPolicy(InformationFlowPolicyError),
     /// Information Flow Analysis result construction failed.
     InformationFlowAnalysis(InformationFlowAnalysisError),
+    /// Distributed Environment Contract authority was invalid.
+    EnvironmentContracts(EnvironmentContractError),
+    /// Environmental Analysis result construction failed.
+    EnvironmentalAnalysis(EnvironmentalAnalysisError),
     /// Architecture diagnostic derivation failed.
     ArchitectureDiagnostics(ArchitectureDiagnosticError),
     /// Intended behavioral semantics could not compile or normalize.
@@ -1063,6 +1143,12 @@ impl Display for AuditError {
             }
             Self::InformationFlowAnalysis(error) => {
                 write!(formatter, "information-flow analysis failed: {error}")
+            }
+            Self::EnvironmentContracts(error) => {
+                write!(formatter, "environment contracts failed: {error}")
+            }
+            Self::EnvironmentalAnalysis(error) => {
+                write!(formatter, "environmental analysis failed: {error}")
             }
             Self::ArchitectureDiagnostics(error) => {
                 write!(

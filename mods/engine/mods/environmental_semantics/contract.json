@@ -1,0 +1,113 @@
+{
+  "$schema": "urn:fortress:schema:v2:module-contract",
+  "schema_version": 2,
+  "id": "AF-ENVIRONMENTAL-SEMANTICS-0001",
+  "display_name": "Environmental Semantics",
+  "provides": [
+    {
+      "id": "CAP-ENVIRONMENTAL-SEMANTICS",
+      "version": "0.1.0",
+      "visibility": "project"
+    }
+  ],
+  "requires": [
+    {
+      "provider": "AF-FINDING-MODEL-0001",
+      "capability": "CAP-FINDING-MODEL",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-INFORMATION-FLOW-0001",
+      "capability": "CAP-INFORMATION-FLOW",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-PROGRAM-SEMANTICS-0001",
+      "capability": "CAP-PROGRAM-SEMANTICS",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-SEMANTIC-ANALYSIS-0001",
+      "capability": "CAP-SEMANTIC-ANALYSIS",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-STANDARD-REGISTRY-0001",
+      "capability": "CAP-STANDARD-REGISTRY",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-STATE-EFFECT-ANALYSIS-0001",
+      "capability": "CAP-STATE-EFFECT-ANALYSIS",
+      "version": "^0.1.0"
+    }
+  ],
+  "relationships": [],
+  "constraints": [],
+  "guarantees": [],
+  "features": [
+    {
+      "id": "AF-ENVIRONMENTAL-SEMANTICS-0001",
+      "version": "0.1.0",
+      "requirements": [
+        {
+          "id": "AF-ENVIRONMENTAL-SEMANTICS-0001-R01",
+          "statement": "Environmental Semantics validates canonical Module-local Environment Contracts, exact governed boundary symbols, generic nondeterministic outcome dimensions, existing value/state/flow vocabularies, and complete provenance without provider-specific inference.",
+          "tests": [
+            "T-AF-ENVIRONMENTAL-SEMANTICS-0001-R01-001",
+            "T-AF-ENVIRONMENTAL-SEMANTICS-0001-R01-002",
+            "T-AF-ENVIRONMENTAL-SEMANTICS-0001-R01-003",
+            "T-AF-ENVIRONMENTAL-SEMANTICS-0001-R01-004",
+            "T-AF-ENVIRONMENTAL-SEMANTICS-0001-R01-005",
+            "T-AF-ENVIRONMENTAL-SEMANTICS-0001-R01-006",
+            "T-AF-ENVIRONMENTAL-SEMANTICS-0001-R01-007",
+            "T-AF-ENVIRONMENTAL-SEMANTICS-0001-R01-008"
+          ]
+        },
+        {
+          "id": "AF-ENVIRONMENTAL-SEMANTICS-0001-R02",
+          "statement": "Environmental Semantics evaluates every admissible outcome independently, proves supported continuations, preserves completion uncertainty, and rejects incompatible retries, unstable idempotency identities, or duplicate-unsafe delivery.",
+          "tests": [
+            "T-AF-ENVIRONMENTAL-SEMANTICS-0001-R02-001",
+            "T-AF-ENVIRONMENTAL-SEMANTICS-0001-R02-002",
+            "T-AF-ENVIRONMENTAL-SEMANTICS-0001-R02-003",
+            "T-AF-ENVIRONMENTAL-SEMANTICS-0001-R02-004",
+            "T-AF-ENVIRONMENTAL-SEMANTICS-0001-R02-005",
+            "T-AF-ENVIRONMENTAL-SEMANTICS-0001-R02-006",
+            "T-AF-ENVIRONMENTAL-SEMANTICS-0001-R02-007",
+            "T-AF-ENVIRONMENTAL-SEMANTICS-0001-R02-008",
+            "T-AF-ENVIRONMENTAL-SEMANTICS-0001-R02-009",
+            "T-AF-ENVIRONMENTAL-SEMANTICS-0001-R02-010"
+          ]
+        },
+        {
+          "id": "AF-ENVIRONMENTAL-SEMANTICS-0001-R03",
+          "statement": "Environmental Semantics checks bounded interruption and recovery obligations at declared durable effect steps, distinguishes trusted atomicity from proved internal facts, and derives deterministic failure-test obligations for every modeled outcome.",
+          "tests": [
+            "T-AF-ENVIRONMENTAL-SEMANTICS-0001-R03-001",
+            "T-AF-ENVIRONMENTAL-SEMANTICS-0001-R03-002",
+            "T-AF-ENVIRONMENTAL-SEMANTICS-0001-R03-003",
+            "T-AF-ENVIRONMENTAL-SEMANTICS-0001-R03-004",
+            "T-AF-ENVIRONMENTAL-SEMANTICS-0001-R03-005",
+            "T-AF-ENVIRONMENTAL-SEMANTICS-0001-R03-006",
+            "T-AF-ENVIRONMENTAL-SEMANTICS-0001-R03-007",
+            "T-AF-ENVIRONMENTAL-SEMANTICS-0001-R03-008",
+            "T-AF-ENVIRONMENTAL-SEMANTICS-0001-R03-009",
+            "T-AF-ENVIRONMENTAL-SEMANTICS-0001-R03-010"
+          ]
+        },
+        {
+          "id": "AF-ENVIRONMENTAL-SEMANTICS-0001-R04",
+          "statement": "Environmental Semantics emits deterministic summaries, normalized rule findings, explicit property coverage, canonical derived information, and fault scenarios bound to all upstream semantic identities.",
+          "tests": [
+            "T-AF-ENVIRONMENTAL-SEMANTICS-0001-R04-001",
+            "T-AF-ENVIRONMENTAL-SEMANTICS-0001-R04-002",
+            "T-AF-ENVIRONMENTAL-SEMANTICS-0001-R04-003",
+            "T-AF-ENVIRONMENTAL-SEMANTICS-0001-R04-004"
+          ]
+        }
+      ]
+    }
+  ],
+  "behavior": []
+}

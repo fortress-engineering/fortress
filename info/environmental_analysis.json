@@ -1,0 +1,135 @@
+{
+  "$schema": "urn:fortress:schema:v1:environmental-analysis",
+  "schema_version": 1,
+  "semantic_version": "1.0.0",
+  "project_id": "PF-FORTRESS",
+  "psm_digest": "sha256:3fa5a638e69783f52db8d4b924e0e54df33b8a030273a0c3fd99d27a372bcee6",
+  "semantic_analysis_digest": "sha256:be5fd169dbc35647ef67d3a11bb2df8f38ed8b69b2aa0c8d8d0dbd39de6deaf7",
+  "state_effect_digest": "sha256:9f968f9b7051a583b1d0839ae7ecd09c8d386871107310853574a73923fe6224",
+  "information_flow_digest": "sha256:8a45b2f9d60c0f49cb6700e25ab4247aa3d0089df4fa5df2e4bcd1ec06d6663d",
+  "environment_contract_digest": "sha256:1830ce3648eb80379809b99f599aa73c6b889aa79616dee2207aa405285374fd",
+  "function_contract_digest": "sha256:4cec037c542c897fc195b0c9b615bca32f14ac3834db97e20579f074251794b3",
+  "operations": [
+    {
+      "operation": "EX-FILESYSTEM-READ-DOCUMENT",
+      "actor": "ENV-LOCAL-FILESYSTEM",
+      "boundary": "rust_symbol:sha256:0e6c3d87d3e6a233e30245fa55003d5ec735de5a9ad2385290d1109a7d47dddb",
+      "boundary_module": "AF-SNAPSHOT-GOVERNANCE-0001",
+      "external_call_sites": 3,
+      "retry_policy": "NEVER",
+      "idempotency": "IDEMPOTENT",
+      "delivery": "AT_MOST_ONCE",
+      "atomicity": "UNKNOWN",
+      "interruption_sensitive": false,
+      "direct_effects": [
+        "external_interaction"
+      ],
+      "transitive_effects": [
+        "external_interaction"
+      ],
+      "outcomes": [
+        {
+          "id": "EX-OUT-FILESYSTEM-READ-FAILURE",
+          "completion": "COMPLETED",
+          "response": "NO_RESPONSE",
+          "timing": "UNBOUNDED",
+          "result": "FAILURE",
+          "local_result_domain": null,
+          "information_flow": [],
+          "resulting_state": null,
+          "forbidden_effects": [],
+          "resource": null,
+          "handling": "HANDLED",
+          "continuation": "rust_symbol:sha256:0e6c3d87d3e6a233e30245fa55003d5ec735de5a9ad2385290d1109a7d47dddb",
+          "terminal": true,
+          "retries": false,
+          "retry_safety": "PROVEN",
+          "duplicate_safety": "PROVEN",
+          "timing_handling": "PROVEN",
+          "provenance": "mods/engine/mods/snapshot_governance/data/environment_contracts.json#/operations/0/outcomes/0"
+        },
+        {
+          "id": "EX-OUT-FILESYSTEM-READ-SUCCESS",
+          "completion": "COMPLETED",
+          "response": "ONE_RESPONSE",
+          "timing": "UNBOUNDED",
+          "result": "SUCCESS",
+          "local_result_domain": null,
+          "information_flow": [],
+          "resulting_state": null,
+          "forbidden_effects": [],
+          "resource": null,
+          "handling": "HANDLED",
+          "continuation": "rust_symbol:sha256:0e6c3d87d3e6a233e30245fa55003d5ec735de5a9ad2385290d1109a7d47dddb",
+          "terminal": true,
+          "retries": false,
+          "retry_safety": "PROVEN",
+          "duplicate_safety": "PROVEN",
+          "timing_handling": "PROVEN",
+          "provenance": "mods/engine/mods/snapshot_governance/data/environment_contracts.json#/operations/0/outcomes/1"
+        }
+      ],
+      "contract_binding": "PROVEN",
+      "outcome_enumeration": "PROVEN",
+      "handling_totality": "PROVEN",
+      "retry_safety": "PROVEN",
+      "duplicate_safety": "PROVEN",
+      "completion_certainty": "PROVEN",
+      "timing_handling": "PROVEN",
+      "recovery_consistency": "PROVEN",
+      "information_flow": "UNKNOWN",
+      "provenance": "mods/engine/mods/snapshot_governance/data/environment_contracts.json#/operations/0"
+    }
+  ],
+  "failure_test_obligations": [
+    {
+      "id": "SCN-5A016EDD618E626E",
+      "operation": "EX-FILESYSTEM-READ-DOCUMENT",
+      "outcome": "EX-OUT-FILESYSTEM-READ-SUCCESS",
+      "injection": "inject:Completed:OneResponse:Unbounded:Success",
+      "expected_continuation": "rust_symbol:sha256:0e6c3d87d3e6a233e30245fa55003d5ec735de5a9ad2385290d1109a7d47dddb",
+      "expected_state": null,
+      "contract_provenance": "mods/engine/mods/snapshot_governance/data/environment_contracts.json#outcome=EX-OUT-FILESYSTEM-READ-SUCCESS"
+    },
+    {
+      "id": "SCN-E881A0DBF2A76CE4",
+      "operation": "EX-FILESYSTEM-READ-DOCUMENT",
+      "outcome": "EX-OUT-FILESYSTEM-READ-FAILURE",
+      "injection": "inject:Completed:NoResponse:Unbounded:Failure",
+      "expected_continuation": "rust_symbol:sha256:0e6c3d87d3e6a233e30245fa55003d5ec735de5a9ad2385290d1109a7d47dddb",
+      "expected_state": null,
+      "contract_provenance": "mods/engine/mods/snapshot_governance/data/environment_contracts.json#outcome=EX-OUT-FILESYSTEM-READ-FAILURE"
+    }
+  ],
+  "violations": [],
+  "coverage": {
+    "operations": 1,
+    "outcomes": 2,
+    "handled": 2,
+    "partially_handled": 0,
+    "unhandled": 0,
+    "unknown": 0,
+    "retries": 0,
+    "retry_checks": 0,
+    "idempotency_checks": 0,
+    "unknown_completion_paths": 0,
+    "duplicate_delivery_checks": 0,
+    "interruption_checks": 0,
+    "recovery_checks": 0,
+    "atomic_groups": 0,
+    "non_atomic_groups": 0,
+    "unknown_atomicity_groups": 1,
+    "failure_test_obligations": 2,
+    "violations": 0
+  },
+  "unsupported_semantics": [
+    "arbitrary_os_and_hardware_failure_modeling",
+    "byzantine_external_actors",
+    "complete_database_transaction_semantics",
+    "concurrency_interleaving_theorem_proving",
+    "distributed_consensus_model_checking",
+    "numeric_real_time_verification",
+    "probabilistic_failure_analysis",
+    "provider_specific_external_api_semantics"
+  ]
+}

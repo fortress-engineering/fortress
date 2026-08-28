@@ -1,0 +1,35 @@
+{
+  "$schema": "urn:fortress:schema:v1:rule",
+  "schema_version": 1,
+  "id": "PROGRAM-RECOVERY-001",
+  "title": "Modeled interruption preserves recovery-state obligations",
+  "status": "draft",
+  "statement": "Every interruption-sensitive modeled operation MUST preserve its declared recovery-state obligations across supported independently durable effect boundaries and MUST NOT restart non-idempotent work unsafely.",
+  "rationale": "Process interruption can expose intermediate durable state even when normal execution reaches a coherent final state, and recovery can duplicate effects when it blindly reruns uncertain work.",
+  "failure_prevented": "Forbidden intermediate durable states, absent recovery continuations, false atomicity assumptions, or unsafe restart of non-idempotent external work.",
+  "applicability": "Environment Contract v1 operations explicitly marked interruption-sensitive with ATOMIC, NON_ATOMIC, or UNKNOWN effect-group semantics. Unmodeled durability and concurrency remain uncertainty.",
+  "category": "environment",
+  "integrity_tier": 3,
+  "evaluation": "Fortress introduces PROCESS_INTERRUPTED only between declared semantic effect steps, checks reachable recovery continuations and permitted/forbidden states, and reconciles restart behavior with operation idempotency.",
+  "required_capabilities": [
+    "environment-contract-v1",
+    "environmental-analysis-v1",
+    "state-effect-analysis-v1"
+  ],
+  "logic": {
+    "implies": [],
+    "conflicts_with": []
+  },
+  "finding": {
+    "message": "A modeled interruption or restart path violates declared recovery-state obligations.",
+    "location": "span"
+  },
+  "remediation": "Add a reachable recovery continuation, preserve only permitted durable states, or establish truthful atomicity/idempotency without hiding interruption uncertainty.",
+  "valid_example": "Interruption between non-atomic durable steps reaches a recovery handler that returns the object to an explicitly permitted prior or completed state.",
+  "invalid_example": "Multiple durable steps have no recovery path, or restart repeats a non-idempotent operation after uncertain completion.",
+  "exception_policy": "Fortress does not infer durability, transactions, or atomicity from names. Unsupported storage and concurrency semantics remain explicit non-evidence.",
+  "introduced": "1.0.0-draft.1",
+  "history": [
+    "Introduced with bounded semantic interruption points, recovery obligations, and trusted environmental atomicity."
+  ]
+}

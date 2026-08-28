@@ -1,0 +1,35 @@
+{
+  "$schema": "urn:fortress:schema:v1:rule",
+  "schema_version": 1,
+  "id": "PROGRAM-RETRY-001",
+  "title": "External retries preserve completion and idempotency semantics",
+  "status": "draft",
+  "statement": "Every supported retry or duplicate-delivery continuation for a modeled external operation MUST respect its retry policy, completion certainty, idempotency, and required stable identity.",
+  "rationale": "A response can be lost after an external side effect completes, so treating unknown completion as definite failure can duplicate non-idempotent effects even when every ordinary type and branch is valid.",
+  "failure_prevented": "Forbidden retries, repeated non-idempotent effects after unknown completion, unstable idempotency keys, or duplicate delivery without modeled idempotent handling or deduplication.",
+  "applicability": "Environment Contract v1 operations whose supported outcome continuations retry or whose delivery/cardinality admits duplicates. UNKNOWN retry or idempotency remains uncertainty.",
+  "category": "environment",
+  "integrity_tier": 3,
+  "evaluation": "Fortress compares retrying continuations with NEVER/SAFE/CONDITIONAL/UNKNOWN policy, preserves UNKNOWN_COMPLETION, checks idempotency classes, and proves key identity by exact boundary parameter identity.",
+  "required_capabilities": [
+    "environment-contract-v1",
+    "environmental-analysis-v1",
+    "program-semantic-model-v3"
+  ],
+  "logic": {
+    "implies": [],
+    "conflicts_with": []
+  },
+  "finding": {
+    "message": "A modeled retry or duplicate-delivery path violates completion or idempotency semantics.",
+    "location": "span"
+  },
+  "remediation": "Stop the retry, declare and implement truthful idempotency, or preserve one proven stable idempotency/deduplication key across attempts.",
+  "valid_example": "An idempotent-with-key operation retries after timeout using the same exact boundary key parameter.",
+  "invalid_example": "A non-idempotent operation retries after UNKNOWN_COMPLETION or duplicate delivery invokes a non-deduplicating handler.",
+  "exception_policy": "HTTP verbs, function names, and provider conventions do not establish retry safety. Unknown identity remains non-evidence rather than authorization.",
+  "introduced": "1.0.0-draft.1",
+  "history": [
+    "Introduced with explicit retry, idempotency, completion certainty, and duplicate-delivery semantics."
+  ]
+}

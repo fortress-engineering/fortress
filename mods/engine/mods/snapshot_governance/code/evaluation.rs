@@ -14,6 +14,10 @@ use crate::architecture_realization::{ARCH_REALIZATION_RULE_ID, ArchitectureReal
 use crate::behavioral_semantics::{BEHAVIOR_FLOW_RULE_ID, BehavioralSemanticsEvaluation};
 use crate::contract::{CONTRACT_COHERENCY_RULE_ID, ContractCoherencyEvaluation};
 use crate::documentation::{DocumentationConformanceReport, REPO_DOCS_RULE_ID};
+use crate::environmental_semantics::{
+    EnvironmentalAnalysisEvaluation, PROGRAM_ENVIRONMENT_RULE_ID, PROGRAM_RECOVERY_RULE_ID,
+    PROGRAM_RETRY_RULE_ID,
+};
 use crate::finding::{CanonicalFinding, FindingError};
 use crate::information_flow::{InformationFlowEvaluation, PROGRAM_INFOFLOW_RULE_ID};
 use crate::ownership::{ARCH_OWNERSHIP_RULE_ID, evaluate_file_ownership};
@@ -178,6 +182,7 @@ pub struct CompleteEvaluationInputs<'a> {
     semantic_analysis: Option<&'a SemanticAnalysisEvaluation>,
     state_effect_analysis: Option<&'a StateEffectAnalysisEvaluation>,
     information_flow_analysis: Option<&'a InformationFlowEvaluation>,
+    environmental_analysis: Option<&'a EnvironmentalAnalysisEvaluation>,
 }
 
 /// Program-analysis evidence grouped as one semantic layer for rule evaluation.
@@ -186,6 +191,7 @@ pub struct ProgramEvaluationInputs<'a> {
     semantic: Option<&'a SemanticAnalysisEvaluation>,
     state_effect: Option<&'a StateEffectAnalysisEvaluation>,
     information_flow: Option<&'a InformationFlowEvaluation>,
+    environmental: Option<&'a EnvironmentalAnalysisEvaluation>,
 }
 
 impl<'a> ProgramEvaluationInputs<'a> {
@@ -195,11 +201,13 @@ impl<'a> ProgramEvaluationInputs<'a> {
         semantic_analysis: Option<&'a SemanticAnalysisEvaluation>,
         state_effect_analysis: Option<&'a StateEffectAnalysisEvaluation>,
         information_flow_analysis: Option<&'a InformationFlowEvaluation>,
+        environmental_analysis: Option<&'a EnvironmentalAnalysisEvaluation>,
     ) -> Self {
         Self {
             semantic: semantic_analysis,
             state_effect: state_effect_analysis,
             information_flow: information_flow_analysis,
+            environmental: environmental_analysis,
         }
     }
 }
@@ -224,6 +232,7 @@ impl<'a> CompleteEvaluationInputs<'a> {
             semantic_analysis: program_analysis.semantic,
             state_effect_analysis: program_analysis.state_effect,
             information_flow_analysis: program_analysis.information_flow,
+            environmental_analysis: program_analysis.environmental,
         }
     }
 }
@@ -238,6 +247,7 @@ struct EvaluationInputs<'a> {
     semantic_analysis: Option<&'a SemanticAnalysisEvaluation>,
     state_effect_analysis: Option<&'a StateEffectAnalysisEvaluation>,
     information_flow_analysis: Option<&'a InformationFlowEvaluation>,
+    environmental_analysis: Option<&'a EnvironmentalAnalysisEvaluation>,
 }
 
 impl<'a> From<CompleteEvaluationInputs<'a>> for EvaluationInputs<'a> {
@@ -251,6 +261,7 @@ impl<'a> From<CompleteEvaluationInputs<'a>> for EvaluationInputs<'a> {
             semantic_analysis: inputs.semantic_analysis,
             state_effect_analysis: inputs.state_effect_analysis,
             information_flow_analysis: inputs.information_flow_analysis,
+            environmental_analysis: inputs.environmental_analysis,
         }
     }
 }
@@ -367,6 +378,12 @@ fn evaluate_rule(
             || unsupported_execution(rule_id, "Program information-flow evaluation requires one snapshot-bound PSM, Semantic Analysis result, State/Effect result, policy, and Function Contract v3 set."),
             |result| information_flow_execution(rule_id, result),
         )),
+        PROGRAM_ENVIRONMENT_RULE_ID | PROGRAM_RETRY_RULE_ID | PROGRAM_RECOVERY_RULE_ID => {
+            Ok(inputs.environmental_analysis.map_or_else(
+                || unsupported_execution(rule_id, "Environmental evaluation requires one snapshot-bound PSM and the canonical value, state/effect, information-flow, Function Contract, and Environment Contract models."),
+                |result| environmental_execution(rule_id, result),
+            ))
+        }
         ARCH_OWNERSHIP_RULE_ID => ownership_execution(rule_id, architecture, snapshot, edition),
         REPO_MODULE_RULE_ID => placement_execution(rule_id, snapshot, edition),
         REPO_DOCS_RULE_ID => Ok(inputs.documentation.map_or_else(
@@ -542,6 +559,37 @@ fn information_flow_execution(
             detail: format!(
                 "Information Flow Analysis v1 evaluated project-defined ordered facets and produced {} supported information-flow contradiction(s); unknown and unsupported flow remains explicit.",
                 coverage.violations(),
+            ),
+        },
+        findings,
+    )
+}
+
+fn environmental_execution(
+    rule_id: &str,
+    result: &EnvironmentalAnalysisEvaluation,
+) -> (RuleExecution, Vec<CanonicalFinding>) {
+    let findings = match rule_id {
+        PROGRAM_ENVIRONMENT_RULE_ID => result.environment_findings().to_vec(),
+        PROGRAM_RETRY_RULE_ID => result.retry_findings().to_vec(),
+        PROGRAM_RECOVERY_RULE_ID => result.recovery_findings().to_vec(),
+        _ => Vec::new(),
+    };
+    let coverage = result.model().coverage();
+    (
+        RuleExecution {
+            rule_id: rule_id.into(),
+            state: if findings.is_empty() {
+                RuleExecutionState::Passed
+            } else {
+                RuleExecutionState::Failed
+            },
+            applicable: coverage.operations() > 0,
+            findings: findings.len(),
+            detail: format!(
+                "Environmental Analysis v1 evaluated {} modeled external operation(s) and produced {} supported contradiction(s) for this rule; unknown and unsupported environment behavior remains explicit.",
+                coverage.operations(),
+                findings.len(),
             ),
         },
         findings,

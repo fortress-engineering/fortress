@@ -110,6 +110,14 @@
             "T-TF-CLI-0001-R10-001",
             "T-TF-CLI-0001-R10-002"
           ]
+        },
+        {
+          "id": "TF-CLI-0001-R11",
+          "statement": "The native fortress environmental command compiles one PSM-, value-, state/effect-, and information-flow-backed environmental model, emits deterministic canonical JSON to standard output or a file, fails on supported environment/retry/recovery contradictions or invalid authority, and preserves uncertainty without implying comprehensive fault-tolerance proof or certification.",
+          "tests": [
+            "T-TF-CLI-0001-R11-001",
+            "T-TF-CLI-0001-R11-002"
+          ]
         }
       ]
     }

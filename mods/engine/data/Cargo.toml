@@ -41,6 +41,10 @@ name = "information_flow"
 path = "../mods/information_flow/mods/testing/code/information_flow.rs"
 
 [[test]]
+name = "environmental_semantics"
+path = "../mods/environmental_semantics/mods/testing/code/environmental_semantics.rs"
+
+[[test]]
 name = "self_architecture"
 path = "../mods/architecture_evaluation/mods/testing/code/self_architecture.rs"
 

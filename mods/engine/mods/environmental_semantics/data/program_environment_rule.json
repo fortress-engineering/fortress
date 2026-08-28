@@ -1,0 +1,37 @@
+{
+  "$schema": "urn:fortress:schema:v1:rule",
+  "schema_version": 1,
+  "id": "PROGRAM-ENVIRONMENT-001",
+  "title": "Modeled environmental outcomes have defined coherent handling",
+  "status": "draft",
+  "statement": "Every admissible outcome declared for a governed external or environmental operation MUST have a supported defined continuation consistent with applicable value, state, effect, and information-flow obligations.",
+  "rationale": "A happy path cannot establish environmental coherence when rejection, missing or malformed responses, deadline outcomes, duplicate delivery, resource unavailability, or uncertain completion remain legally possible.",
+  "failure_prevented": "A declared environmental outcome being silently treated as impossible or reaching an undefined or explicitly forbidden supported program state/effect.",
+  "applicability": "Canonical Environment Contract v1 operations bound to exact PSM v3 symbols and composed with Semantic, State/Effect, and Information Flow Analysis v1. Unknown realization remains explicit rather than PASS.",
+  "category": "environment",
+  "integrity_tier": 3,
+  "evaluation": "Fortress enumerates every declared outcome independently, resolves its exact continuation through supported PSM call topology, checks supported effects and states, and derives deterministic fault-injection obligations before joining outcomes.",
+  "required_capabilities": [
+    "environment-contract-v1",
+    "environmental-analysis-v1",
+    "information-flow-analysis-v1",
+    "program-semantic-model-v3",
+    "state-effect-analysis-v1"
+  ],
+  "logic": {
+    "implies": [],
+    "conflicts_with": []
+  },
+  "finding": {
+    "message": "A modeled admissible environmental outcome lacks defined coherent handling.",
+    "location": "span"
+  },
+  "remediation": "Add a supported defined continuation for the outcome or correct the truthful environment authority without deleting possible failure behavior.",
+  "valid_example": "Success, rejection, timeout, and malformed response each reach an explicit return or recovery continuation.",
+  "invalid_example": "The contract admits timeout but the boundary has no supported timeout continuation.",
+  "exception_policy": "Unknown external and implementation semantics remain explicit non-evidence. No happy-path frequency, API convention, or provider reputation makes an unhandled declared outcome impossible.",
+  "introduced": "1.0.0-draft.1",
+  "history": [
+    "Introduced with Environment Contract v1 and deterministic outcome-totality analysis."
+  ]
+}

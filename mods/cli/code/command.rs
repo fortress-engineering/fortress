@@ -72,6 +72,13 @@ const BUILTIN_COMMANDS: &[CommandDescriptor] = &[
         description: "Compile and render deterministic information-flow analysis.",
         usage: "fortress information-flow [path] [--format json] [--output path]",
     },
+    CommandDescriptor {
+        id: "CMD-ENVIRONMENTAL-ANALYSIS",
+        name: "environmental",
+        aliases: &[],
+        description: "Compile and render deterministic environmental analysis.",
+        usage: "fortress environmental [path] [--format json] [--output path]",
+    },
 ];
 
 /// Discoverable metadata for one registered Fortress command.

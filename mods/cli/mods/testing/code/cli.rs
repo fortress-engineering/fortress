@@ -71,6 +71,7 @@ impl AuditFixture {
             modules_docs(&[
                 ("architecture_evaluation", "Architecture Evaluation"),
                 ("behavioral_semantics", "Behavioral Semantics"),
+                ("environmental_semantics", "Environmental Semantics"),
                 ("information_flow", "Information Flow"),
                 ("semantic_analysis", "Semantic Analysis"),
                 ("state_effect_analysis", "State and Effect Analysis"),
@@ -99,6 +100,11 @@ impl AuditFixture {
                 "information_flow",
                 "AF-FIXTURE-INFORMATION-FLOW-0001",
                 "Information Flow",
+            ),
+            (
+                "environmental_semantics",
+                "AF-FIXTURE-ENVIRONMENTAL-0001",
+                "Environmental Semantics",
             ),
             (
                 "snapshot_governance",
@@ -145,6 +151,9 @@ impl AuditFixture {
             "mods/engine/mods/state_effect_analysis/data/program_state_rule.json",
             "mods/engine/mods/state_effect_analysis/data/program_effect_rule.json",
             "mods/engine/mods/information_flow/data/program_infoflow_rule.json",
+            "mods/engine/mods/environmental_semantics/data/program_environment_rule.json",
+            "mods/engine/mods/environmental_semantics/data/program_retry_rule.json",
+            "mods/engine/mods/environmental_semantics/data/program_recovery_rule.json",
             "mods/engine/mods/snapshot_governance/data/ownership_rule.json",
             "mods/engine/mods/snapshot_governance/data/traceability_rule.json",
             "mods/engine/mods/snapshot_governance/data/test_boundary_rule.json",
@@ -184,6 +193,15 @@ impl AuditFixture {
             data_docs(&["program_infoflow_rule.json"]),
         )
         .expect("information-flow Data documentation writes");
+        fs::write(
+            root.join("mods/engine/mods/environmental_semantics/docs/data_docs.md"),
+            data_docs(&[
+                "program_environment_rule.json",
+                "program_recovery_rule.json",
+                "program_retry_rule.json",
+            ]),
+        )
+        .expect("environmental Data documentation writes");
         fs::write(
             root.join("mods/engine/mods/snapshot_governance/docs/data_docs.md"),
             data_docs(&[
@@ -629,6 +647,43 @@ fn information_flow_json_is_schema_versioned_and_repeatable() {
 #[test]
 fn information_flow_rejects_unsupported_formats() {
     let output = run(&["information-flow", "--format", "dot"]);
+    assert_eq!(output.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("--format json"));
+}
+
+/// `T-TF-CLI-0001-R11-001`
+/// Fortress requirement: TF-CLI-0001-R11
+#[test]
+fn environmental_json_is_schema_versioned_and_repeatable() {
+    let fixture = AuditFixture::new();
+    let arguments = [
+        "environmental".into(),
+        fixture.argument(),
+        "--format=json".into(),
+    ];
+    let first = run_owned(&arguments);
+    let second = run_owned(&arguments);
+    assert!(
+        first.status.success(),
+        "{}",
+        String::from_utf8_lossy(&first.stderr)
+    );
+    assert_eq!(first.stdout, second.stdout);
+    let value: serde_json::Value =
+        serde_json::from_slice(&first.stdout).expect("environmental output is JSON");
+    assert_eq!(
+        value["$schema"],
+        "urn:fortress:schema:v1:environmental-analysis"
+    );
+    assert_eq!(value["schema_version"], 1);
+    assert_eq!(value["coverage"]["violations"], 0);
+}
+
+/// `T-TF-CLI-0001-R11-002`
+/// Fortress requirement: TF-CLI-0001-R11
+#[test]
+fn environmental_rejects_unsupported_formats() {
+    let output = run(&["environmental", "--format", "dot"]);
     assert_eq!(output.status.code(), Some(2));
     assert!(String::from_utf8_lossy(&output.stderr).contains("--format json"));
 }

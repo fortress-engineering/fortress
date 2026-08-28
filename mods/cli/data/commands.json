@@ -100,6 +100,17 @@
       "duration": "short",
       "resumability": "restartable",
       "certification_implications": "Renders supported trust/confidentiality propagation, sink contradictions, trusted transitions, and explicit uncertainty only; it is not comprehensive security proof or certification evidence."
+    },
+    {
+      "id": "CMD-ENVIRONMENTAL-ANALYSIS",
+      "name": "environmental",
+      "aliases": [],
+      "description": "Compile and render deterministic environmental analysis.",
+      "owner": "TF-CLI-0001",
+      "executor": "builtin-sync",
+      "duration": "short",
+      "resumability": "restartable",
+      "certification_implications": "Renders modeled external outcomes, handling totality, retry/idempotency, and bounded recovery consequences plus explicit uncertainty only; it is not comprehensive fault-tolerance proof or certification evidence."
     }
   ]
 }

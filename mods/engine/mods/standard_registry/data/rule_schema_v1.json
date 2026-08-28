@@ -20,7 +20,7 @@
     "rationale": { "$ref": "urn:fortress:schema:v1:common#/$defs/non-empty-string" },
     "failure_prevented": { "$ref": "urn:fortress:schema:v1:common#/$defs/non-empty-string" },
     "applicability": { "$ref": "urn:fortress:schema:v1:common#/$defs/non-empty-string" },
-    "category": { "enum": ["architecture", "behavior", "dependency", "contract", "source", "documentation", "testing", "certification", "pipeline", "change", "onboarding", "security", "repository", "standard"] },
+    "category": { "enum": ["architecture", "behavior", "dependency", "contract", "source", "documentation", "testing", "certification", "pipeline", "change", "onboarding", "security", "environment", "repository", "standard"] },
     "integrity_tier": { "type": "integer", "minimum": 0, "maximum": 4 },
     "evaluation": { "$ref": "urn:fortress:schema:v1:common#/$defs/non-empty-string" },
     "required_capabilities": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },

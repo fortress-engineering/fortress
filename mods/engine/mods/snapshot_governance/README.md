@@ -6,13 +6,13 @@ Snapshot Governance exists to answer what is true and what violates the declared
 
 ## Responsibility
 
-Build stabilized content-addressed repository snapshots, coordinate one CCG, one Intended BFG, one independent Rust implementation observation, one Program Semantic Model, and one shared sequence of value-domain, state/effect, and information-flow analyses, analyze supported Rust test facts, execute implemented rules truthfully, normalize deterministic findings, retain Architecture Evaluation diagnostics as a separate non-normative projection, and orchestrate machine-readable and human repository audits.
+Build stabilized content-addressed repository snapshots, coordinate one CCG, one Intended BFG, one independent Rust implementation observation, one Program Semantic Model, and one shared sequence of value-domain, state/effect, information-flow, and environmental analyses, analyze supported Rust test facts, execute implemented rules truthfully, normalize deterministic findings, retain Architecture Evaluation diagnostics as a separate non-normative projection, and orchestrate machine-readable and human repository audits.
 
 ## Scope
 
 ### Includes
 
-Snapshot and audit schemas; audit orchestration; separate findings, architecture diagnostics, and unsupported-analysis reporting; contract coherency, intended behavioral-flow, program-domain, program-state, program-effect, program-information-flow, ownership, realization, traceability, recursive Module, and documentation synchronization rule dispatch; Markdown and Rust test analyzers; two-pass stabilization; and exact rule execution reporting.
+Snapshot and audit schemas; audit orchestration; separate findings, architecture diagnostics, and unsupported-analysis reporting; contract coherency, intended behavioral-flow, program-domain, program-state, program-effect, program-information-flow, program-environment, program-retry, program-recovery, ownership, realization, traceability, recursive Module, and documentation synchronization rule dispatch; Markdown and Rust test analyzers; two-pass stabilization; and exact rule execution reporting.
 
 ### Excludes
 
@@ -37,6 +37,12 @@ Compiles the CCG's authored checkpoint declarations once into the Intended BFG a
 **Types:** `depends_on`
 
 Consumes one immutable semantic graph containing resolved intent, derivations, logical coherency, provenance, and verification topology.
+
+### [Environmental Semantics](../environmental_semantics/README.md)
+
+**Types:** `depends_on`
+
+Consumes one shared semantic stack and distributed Environment Contract set so environmental rules evaluate nondeterministic outcomes, retries, duplicate delivery, and bounded recovery without reparsing source.
 
 ### [Finding Model](../finding_model/README.md)
 
@@ -94,4 +100,4 @@ Consumes the exact applicable rule bundle and stable rule identities.
 
 ## Guarantees
 
-No wall-clock or absolute path enters snapshot, CCG, Intended BFG, PSM, semantic-analysis, state/effect, or information-flow identity; repository mutation is rejected when observed bytes diverge; the CCG, Intended BFG, observed implementation, PSM, Semantic Analysis, State/Effect Analysis, and Information Flow Analysis are each compiled once from one exact snapshot; unimplemented rules remain UNSUPPORTED; unmodeled behavior and unknown program or information-flow semantics are not reported as passing proof; findings never redefine rules; diagnostics never alter PASS or FAIL; audit output never claims certification. Stabilization is an optimistic content protocol rather than a filesystem lock, so a malicious host or a transient mutation reverted to identical bytes remains outside its trust guarantee.
+No wall-clock or absolute path enters snapshot, CCG, Intended BFG, PSM, semantic-analysis, state/effect, information-flow, or environmental identity; repository mutation is rejected when observed bytes diverge; the CCG, Intended BFG, observed implementation, PSM, Semantic Analysis, State/Effect Analysis, Information Flow Analysis, and Environmental Analysis are each compiled once from one exact snapshot; unimplemented rules remain UNSUPPORTED; unmodeled behavior and unknown program, information-flow, or environmental semantics are not reported as passing proof; findings never redefine rules; diagnostics never alter PASS or FAIL; audit output never claims certification. Stabilization is an optimistic content protocol rather than a filesystem lock, so a malicious host or a transient mutation reverted to identical bytes remains outside its trust guarantee.

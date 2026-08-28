@@ -40,6 +40,8 @@ pub enum FindingCategory {
     Onboarding,
     /// Security policy integrity.
     Security,
+    /// External/environmental outcome and recovery integrity.
+    Environment,
     /// Repository layout and artifact integrity.
     Repository,
     /// Standard bundle integrity.
@@ -92,6 +94,24 @@ const DRAFT_RULES: &[RuleDescriptor] = &[
     RuleDescriptor {
         id: "PROGRAM-INFOFLOW-001",
         title: "Supported information flows satisfy declared trust and confidentiality constraints",
+        status: RuleStatus::Draft,
+        integrity_tier: 3,
+    },
+    RuleDescriptor {
+        id: "PROGRAM-ENVIRONMENT-001",
+        title: "Modeled environmental outcomes have defined coherent handling",
+        status: RuleStatus::Draft,
+        integrity_tier: 3,
+    },
+    RuleDescriptor {
+        id: "PROGRAM-RETRY-001",
+        title: "External retries preserve completion and idempotency semantics",
+        status: RuleStatus::Draft,
+        integrity_tier: 3,
+    },
+    RuleDescriptor {
+        id: "PROGRAM-RECOVERY-001",
+        title: "Modeled interruption preserves recovery-state obligations",
         status: RuleStatus::Draft,
         integrity_tier: 3,
     },
