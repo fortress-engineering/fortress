@@ -1,0 +1,126 @@
+{
+  "$schema": "urn:fortress:schema:v2:module-contract",
+  "schema_version": 2,
+  "id": "AF-BEHAVIORAL-REALIZATION-0001",
+  "display_name": "Behavioral Realization",
+  "provides": [
+    {
+      "id": "CAP-BEHAVIORAL-REALIZATION",
+      "version": "0.1.0",
+      "visibility": "project"
+    }
+  ],
+  "requires": [
+    {
+      "provider": "AF-BEHAVIORAL-SEMANTICS-0001",
+      "capability": "CAP-BEHAVIORAL-SEMANTICS",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-CONTRACT-COHERENCY-0001",
+      "capability": "CAP-CONTRACT-COHERENCY",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-ENVIRONMENTAL-SEMANTICS-0001",
+      "capability": "CAP-ENVIRONMENTAL-SEMANTICS",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-FINDING-MODEL-0001",
+      "capability": "CAP-FINDING-MODEL",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-INFORMATION-FLOW-0001",
+      "capability": "CAP-INFORMATION-FLOW",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-PROGRAM-SEMANTICS-0001",
+      "capability": "CAP-PROGRAM-SEMANTICS",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-SEMANTIC-ANALYSIS-0001",
+      "capability": "CAP-SEMANTIC-ANALYSIS",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-STANDARD-REGISTRY-0001",
+      "capability": "CAP-STANDARD-REGISTRY",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-STATE-EFFECT-ANALYSIS-0001",
+      "capability": "CAP-STATE-EFFECT-ANALYSIS",
+      "version": "^0.1.0"
+    }
+  ],
+  "relationships": [],
+  "constraints": [],
+  "guarantees": [],
+  "features": [
+    {
+      "id": "AF-BEHAVIORAL-REALIZATION-0001",
+      "version": "0.1.0",
+      "requirements": [
+        {
+          "id": "AF-BEHAVIORAL-REALIZATION-0001-R01",
+          "statement": "Behavioral Realization validates canonical distributed opt-in authority that completely binds every Intended BFG checkpoint to exact alternative symbol, state, effect, information-flow, or environmental semantic anchors owned within the Feature scope.",
+          "tests": [
+            "T-AF-BEHAVIORAL-REALIZATION-0001-R01-001",
+            "T-AF-BEHAVIORAL-REALIZATION-0001-R01-002",
+            "T-AF-BEHAVIORAL-REALIZATION-0001-R01-003",
+            "T-AF-BEHAVIORAL-REALIZATION-0001-R01-004",
+            "T-AF-BEHAVIORAL-REALIZATION-0001-R01-005",
+            "T-AF-BEHAVIORAL-REALIZATION-0001-R01-006",
+            "T-AF-BEHAVIORAL-REALIZATION-0001-R01-007",
+            "T-AF-BEHAVIORAL-REALIZATION-0001-R01-008"
+          ]
+        },
+        {
+          "id": "AF-BEHAVIORAL-REALIZATION-0001-R02",
+          "statement": "Behavioral Realization derives a deterministic language-neutral implementation-event model and coverage-aware checkpoint reachability exclusively from canonical program, value, state/effect, information-flow, and environmental semantics without reparsing source.",
+          "tests": [
+            "T-AF-BEHAVIORAL-REALIZATION-0001-R02-001",
+            "T-AF-BEHAVIORAL-REALIZATION-0001-R02-002",
+            "T-AF-BEHAVIORAL-REALIZATION-0001-R02-003",
+            "T-AF-BEHAVIORAL-REALIZATION-0001-R02-004",
+            "T-AF-BEHAVIORAL-REALIZATION-0001-R02-005",
+            "T-AF-BEHAVIORAL-REALIZATION-0001-R02-006",
+            "T-AF-BEHAVIORAL-REALIZATION-0001-R02-007"
+          ]
+        },
+        {
+          "id": "AF-BEHAVIORAL-REALIZATION-0001-R03",
+          "statement": "Behavioral Realization projects next semantic checkpoint transitions, reconciles intended edges, decisions and terminals, and rejects only supported undeclared transitions, impossible intent, or exact Intended BFG dominator bypasses while preserving uncertainty.",
+          "tests": [
+            "T-AF-BEHAVIORAL-REALIZATION-0001-R03-001",
+            "T-AF-BEHAVIORAL-REALIZATION-0001-R03-002",
+            "T-AF-BEHAVIORAL-REALIZATION-0001-R03-003",
+            "T-AF-BEHAVIORAL-REALIZATION-0001-R03-004",
+            "T-AF-BEHAVIORAL-REALIZATION-0001-R03-005",
+            "T-AF-BEHAVIORAL-REALIZATION-0001-R03-006",
+            "T-AF-BEHAVIORAL-REALIZATION-0001-R03-007",
+            "T-AF-BEHAVIORAL-REALIZATION-0001-R03-008",
+            "T-AF-BEHAVIORAL-REALIZATION-0001-R03-009"
+          ]
+        },
+        {
+          "id": "AF-BEHAVIORAL-REALIZATION-0001-R04",
+          "statement": "Behavioral Realization emits canonical Realized BFG v1 derived information with complete upstream digests, derivation evidence, explicit coverage and unsupported semantics, plus deterministic verification obligations that never imply executed evidence.",
+          "tests": [
+            "T-AF-BEHAVIORAL-REALIZATION-0001-R04-001",
+            "T-AF-BEHAVIORAL-REALIZATION-0001-R04-002",
+            "T-AF-BEHAVIORAL-REALIZATION-0001-R04-003",
+            "T-AF-BEHAVIORAL-REALIZATION-0001-R04-004",
+            "T-AF-BEHAVIORAL-REALIZATION-0001-R04-005",
+            "T-AF-BEHAVIORAL-REALIZATION-0001-R04-006"
+          ]
+        }
+      ]
+    }
+  ],
+  "behavior": []
+}

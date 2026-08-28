@@ -15,7 +15,7 @@ use std::path::PathBuf;
 use fortress_core::audit::{
     audit_repository, compile_repository_bfg, compile_repository_ccg,
     compile_repository_environmental_analysis, compile_repository_information_flow_analysis,
-    compile_repository_psm, compile_repository_semantic_analysis,
+    compile_repository_psm, compile_repository_realized_bfg, compile_repository_semantic_analysis,
     compile_repository_state_effect_analysis,
 };
 use fortress_core::contract_coherency::CcgCoherencyStatus;
@@ -66,6 +66,7 @@ where
         "CMD-SNAPSHOT-AUDIT" => run_audit(&arguments[1..], output, error),
         "CMD-CONTRACT-CCG" => run_ccg(&arguments[1..], output, error),
         "CMD-BEHAVIOR-BFG" => run_bfg(&arguments[1..], output, error),
+        "CMD-BEHAVIOR-REALIZED-BFG" => run_realized_bfg(&arguments[1..], output, error),
         "CMD-PROGRAM-PSM" => run_psm(&arguments[1..], output, error),
         "CMD-SEMANTIC-ANALYSIS" => run_semantic(&arguments[1..], output, error),
         "CMD-STATE-EFFECT-ANALYSIS" => run_state_effect(&arguments[1..], output, error),
@@ -80,6 +81,81 @@ where
             Ok(EXIT_USAGE)
         }
     }
+}
+
+fn run_realized_bfg<O: Write, E: Write>(
+    arguments: &[String],
+    output: &mut O,
+    error: &mut E,
+) -> io::Result<u8> {
+    let (root, destination) = match parse_derived_json_arguments(
+        arguments,
+        "usage: fortress realized-bfg [path] [--format json] [--output path]",
+        "Realized BFG format must be json",
+    ) {
+        Ok(parsed) => parsed,
+        Err(message) => {
+            writeln!(error, "{message}")?;
+            return Ok(EXIT_USAGE);
+        }
+    };
+    let graph = match compile_repository_realized_bfg(&root) {
+        Ok(graph) => graph,
+        Err(graph_error) => {
+            writeln!(error, "Realized BFG compilation failed: {graph_error}")?;
+            return Ok(EXIT_USAGE);
+        }
+    };
+    let document = graph.to_canonical_json().map_err(io::Error::other)?;
+    if let Some(destination) = destination {
+        fs::write(destination, document)?;
+    } else {
+        write!(output, "{document}")?;
+    }
+    Ok(
+        if graph.summary().realization_violations() == 0 && graph.summary().proven_bypasses() == 0 {
+            EXIT_SUCCESS
+        } else {
+            EXIT_VIOLATION
+        },
+    )
+}
+
+fn parse_derived_json_arguments(
+    arguments: &[String],
+    usage: &'static str,
+    format_error: &'static str,
+) -> Result<(PathBuf, Option<PathBuf>), &'static str> {
+    let mut root = None;
+    let mut destination = None;
+    let mut index = 0;
+    while index < arguments.len() {
+        let argument = &arguments[index];
+        if argument == "--format" {
+            index += 1;
+            if arguments.get(index).map(String::as_str) != Some("json") {
+                return Err(usage);
+            }
+        } else if let Some(value) = argument.strip_prefix("--format=") {
+            if value != "json" {
+                return Err(format_error);
+            }
+        } else if argument == "--output" {
+            index += 1;
+            let Some(value) = arguments.get(index) else {
+                return Err(usage);
+            };
+            if destination.replace(PathBuf::from(value)).is_some() {
+                return Err(usage);
+            }
+        } else if argument.starts_with('-') || root.is_some() {
+            return Err(usage);
+        } else {
+            root = Some(PathBuf::from(argument));
+        }
+        index += 1;
+    }
+    Ok((root.unwrap_or_else(|| PathBuf::from(".")), destination))
 }
 
 fn run_environmental<O: Write, E: Write>(
@@ -592,7 +668,7 @@ fn run_audit<O: Write, E: Write>(
             return Ok(EXIT_USAGE);
         }
     };
-    let result = match audit_repository(&root) {
+    let result: fortress_core::audit::AuditResult = match audit_repository(&root) {
         Ok(result) => result,
         Err(audit_error) => {
             writeln!(error, "audit failed: {audit_error}")?;

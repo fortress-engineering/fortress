@@ -10,6 +10,10 @@ The Engine responsibility is decomposed where durable child boundaries have excl
 
 Consumes the CCG dependency and containment semantics to provide architecture rule evaluation and physical ownership views.
 
+### [Behavioral Realization](../mods/behavioral_realization/README.md)
+
+Reconciles explicit checkpoint anchors with the canonical implementation-semantic stack, derives meaningful realized transitions, and checks supported dominator bypasses.
+
 ### [Behavioral Semantics](../mods/behavioral_semantics/README.md)
 
 Compiles CCG-preserved distributed checkpoints into deterministic intended Feature flows and evaluates their graph-level coherence.

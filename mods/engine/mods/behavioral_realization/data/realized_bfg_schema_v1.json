@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:realized-behavioral-flow-graph",
+  "title": "Fortress Realized Behavioral Flow Graph v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "semantic_version",
+    "project_id",
+    "view",
+    "intended_bfg_digest",
+    "psm_digest",
+    "semantic_analysis_digest",
+    "state_effect_digest",
+    "information_flow_digest",
+    "environmental_analysis_digest",
+    "realization_contract_digest",
+    "summary",
+    "feature_states",
+    "implementation_events",
+    "flows",
+    "verification_obligations",
+    "unsupported_semantics"
+  ],
+  "properties": {
+    "$schema": { "const": "urn:fortress:schema:v1:realized-behavioral-flow-graph" },
+    "schema_version": { "const": 1 },
+    "semantic_version": { "const": "1.0.0" },
+    "project_id": { "$ref": "#/$defs/stable_id" },
+    "view": { "const": "realized" },
+    "intended_bfg_digest": { "$ref": "#/$defs/digest" },
+    "psm_digest": { "$ref": "#/$defs/digest" },
+    "semantic_analysis_digest": { "$ref": "#/$defs/digest" },
+    "state_effect_digest": { "$ref": "#/$defs/digest" },
+    "information_flow_digest": { "$ref": "#/$defs/digest" },
+    "environmental_analysis_digest": { "$ref": "#/$defs/digest" },
+    "realization_contract_digest": { "$ref": "#/$defs/digest" },
+    "summary": { "type": "object" },
+    "feature_states": { "type": "array" },
+    "implementation_events": {
+      "type": "object",
+      "required": ["semantic_version", "events", "edges", "unsupported_semantics"],
+      "properties": {
+        "semantic_version": { "const": "1.0.0" },
+        "events": { "type": "array" },
+        "edges": { "type": "array" },
+        "unsupported_semantics": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "flows": { "type": "array" },
+    "verification_obligations": { "type": "array" },
+    "unsupported_semantics": { "type": "array", "uniqueItems": true, "items": { "type": "string" } }
+  },
+  "$defs": {
+    "stable_id": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)+$"
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    }
+  }
+}

@@ -70,6 +70,7 @@ impl AuditFixture {
             root.join("mods/engine/docs/mods_docs.md"),
             modules_docs(&[
                 ("architecture_evaluation", "Architecture Evaluation"),
+                ("behavioral_realization", "Behavioral Realization"),
                 ("behavioral_semantics", "Behavioral Semantics"),
                 ("environmental_semantics", "Environmental Semantics"),
                 ("information_flow", "Information Flow"),
@@ -90,6 +91,11 @@ impl AuditFixture {
                 "architecture_evaluation",
                 "AF-FIXTURE-ARCHITECTURE-0001",
                 "Architecture Evaluation",
+            ),
+            (
+                "behavioral_realization",
+                "AF-FIXTURE-BEHAVIORAL-REALIZATION-0001",
+                "Behavioral Realization",
             ),
             (
                 "behavioral_semantics",
@@ -147,6 +153,8 @@ impl AuditFixture {
             "mods/engine/mods/architecture_evaluation/data/dependency_rule.json",
             "mods/engine/mods/architecture_evaluation/data/realization_rule.json",
             "mods/engine/mods/behavioral_semantics/data/behavior_flow_rule.json",
+            "mods/engine/mods/behavioral_realization/data/behavior_bypass_rule.json",
+            "mods/engine/mods/behavioral_realization/data/behavior_realization_rule.json",
             "mods/engine/mods/semantic_analysis/data/program_domain_rule.json",
             "mods/engine/mods/state_effect_analysis/data/program_state_rule.json",
             "mods/engine/mods/state_effect_analysis/data/program_effect_rule.json",
@@ -173,6 +181,14 @@ impl AuditFixture {
             data_docs(&["dependency_rule.json", "realization_rule.json"]),
         )
         .expect("architecture Data documentation writes");
+        fs::write(
+            root.join("mods/engine/mods/behavioral_realization/docs/data_docs.md"),
+            data_docs(&[
+                "behavior_bypass_rule.json",
+                "behavior_realization_rule.json",
+            ]),
+        )
+        .expect("behavioral realization Data documentation writes");
         fs::write(
             root.join("mods/engine/mods/behavioral_semantics/docs/data_docs.md"),
             data_docs(&["behavior_flow_rule.json"]),
@@ -684,6 +700,43 @@ fn environmental_json_is_schema_versioned_and_repeatable() {
 #[test]
 fn environmental_rejects_unsupported_formats() {
     let output = run(&["environmental", "--format", "dot"]);
+    assert_eq!(output.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("--format json"));
+}
+
+/// `T-TF-CLI-0001-R12-001`
+/// Fortress requirement: TF-CLI-0001-R12
+#[test]
+fn realized_bfg_json_is_schema_versioned_and_repeatable() {
+    let fixture = AuditFixture::new();
+    let arguments = [
+        "realized-bfg".into(),
+        fixture.argument(),
+        "--format=json".into(),
+    ];
+    let first = run_owned(&arguments);
+    let second = run_owned(&arguments);
+    assert!(
+        first.status.success(),
+        "{}",
+        String::from_utf8_lossy(&first.stderr)
+    );
+    assert_eq!(first.stdout, second.stdout);
+    let value: serde_json::Value =
+        serde_json::from_slice(&first.stdout).expect("Realized BFG output is JSON");
+    assert_eq!(
+        value["$schema"],
+        "urn:fortress:schema:v1:realized-behavioral-flow-graph"
+    );
+    assert_eq!(value["schema_version"], 1);
+    assert_eq!(value["summary"]["proven_bypasses"], 0);
+}
+
+/// `T-TF-CLI-0001-R12-002`
+/// Fortress requirement: TF-CLI-0001-R12
+#[test]
+fn realized_bfg_rejects_unsupported_formats() {
+    let output = run(&["realized-bfg", "--format", "dot"]);
     assert_eq!(output.status.code(), Some(2));
     assert!(String::from_utf8_lossy(&output.stderr).contains("--format json"));
 }

@@ -14,6 +14,8 @@ pub mod architecture_diagnostics;
 pub mod architecture_realization;
 #[path = "../mods/snapshot_governance/code/audit.rs"]
 pub mod audit;
+#[path = "../mods/behavioral_realization/code/realization.rs"]
+pub mod behavioral_realization;
 #[path = "../mods/behavioral_semantics/code/behavior.rs"]
 pub mod behavioral_semantics;
 #[path = "../mods/snapshot_governance/code/contract.rs"]

@@ -2258,10 +2258,27 @@ impl SymbolLookup {
     }
 
     fn resolve_method(&self, package: &str, owner: &str, method: &str) -> CallOutcome {
-        let key = (package.into(), simple_type_name(owner), method.into());
-        let candidates = self.methods.get(&key).cloned().unwrap_or_default();
+        let simple_owner = simple_type_name(owner);
+        let key = (package.into(), simple_owner.clone(), method.into());
+        let mut candidates = self.methods.get(&key).cloned().unwrap_or_default();
+        let mut boundary_target_module = None;
+        if candidates.is_empty()
+            && let Some(crate_name) = owner.split("::").next()
+            && let Some(DependencyResolution::WorkspacePackage(target_package)) = self
+                .packages
+                .get(package)
+                .and_then(|current| current.dependencies.get(crate_name))
+            && let Some(target) = self.packages.get(target_package)
+        {
+            candidates = self
+                .methods
+                .get(&(target_package.clone(), simple_owner, method.into()))
+                .cloned()
+                .unwrap_or_default();
+            boundary_target_module.clone_from(&target.facade_owner);
+        }
         match candidates.as_slice() {
-            [callee] => CallOutcome::resolved(callee.clone(), None),
+            [callee] => CallOutcome::resolved(callee.clone(), boundary_target_module),
             [] => CallOutcome::unresolved(),
             _ => CallOutcome::ambiguous(candidates),
         }

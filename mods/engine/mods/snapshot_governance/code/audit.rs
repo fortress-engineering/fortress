@@ -14,6 +14,11 @@ use crate::architecture_diagnostics::{
     ArchitectureDiagnostic, ArchitectureDiagnosticError, derive_architecture_diagnostics,
 };
 use crate::architecture_realization::{ArchitectureRealization, reconcile_implementation};
+use crate::behavioral_realization::{
+    BehaviorRealizationContractError, BehaviorRealizationContractSource,
+    BehavioralRealizationError, BehavioralRealizationEvaluation, RealizedBehavioralFlowGraph,
+    evaluate_behavioral_realization, load_behavior_realization_contracts,
+};
 use crate::behavioral_semantics::{
     BehavioralSemanticsError, IntendedBehavioralFlowGraph, evaluate_behavioral_semantics,
 };
@@ -400,7 +405,52 @@ pub fn compile_repository_environmental_analysis(
     compile_analysis_models(&prepared, ccg).map(|models| models.environmental)
 }
 
+/// Compiles the repository's canonical Realized BFG v1.
+///
+/// # Errors
+///
+/// Returns an audit error for invalid stabilized input, any failed semantic
+/// substrate, invalid distributed realization authority, or serialization.
+pub fn compile_repository_realized_bfg(
+    root: impl AsRef<Path>,
+) -> Result<RealizedBehavioralFlowGraph, AuditError> {
+    let prepared = prepare_audit(root.as_ref())?;
+    let ccg = prepared
+        .ccg_compilation
+        .graph()
+        .ok_or_else(|| AuditError::ContractState("prepared audit did not contain a CCG".into()))?;
+    let behavioral_semantics =
+        evaluate_behavioral_semantics(ccg, prepared.standard.bundle.edition())
+            .map_err(AuditError::BehavioralSemantics)?;
+    let models = compile_analysis_models(&prepared, ccg)?;
+    let sources = behavior_realization_contract_sources(ccg, &prepared.observed_files)?;
+    let contracts = load_behavior_realization_contracts(
+        ccg,
+        behavioral_semantics.graph(),
+        &models.psm,
+        models.state_effect.model(),
+        models.information_flow.model(),
+        models.environmental.model(),
+        sources,
+    )
+    .map_err(AuditError::BehaviorRealizationContracts)?;
+    evaluate_behavioral_realization(
+        ccg,
+        behavioral_semantics.graph(),
+        &models.psm,
+        models.semantic.model(),
+        models.state_effect.model(),
+        models.information_flow.model(),
+        models.environmental.model(),
+        &contracts,
+        prepared.standard.bundle.edition(),
+    )
+    .map(|evaluation| evaluation.graph().clone())
+    .map_err(AuditError::BehavioralRealization)
+}
+
 struct AnalysisModels {
+    psm: ProgramSemanticModel,
     semantic: SemanticAnalysisEvaluation,
     state_effect: StateEffectAnalysisEvaluation,
     information_flow: InformationFlowEvaluation,
@@ -468,11 +518,41 @@ fn compile_analysis_models_from_observed(
     )
     .map_err(AuditError::EnvironmentalAnalysis)?;
     Ok(AnalysisModels {
+        psm,
         semantic,
         state_effect,
         information_flow,
         environmental,
     })
+}
+
+fn behavior_realization_contract_sources(
+    ccg: &ContractCoherencyGraph,
+    files: &BTreeMap<String, Vec<u8>>,
+) -> Result<Vec<BehaviorRealizationContractSource>, AuditError> {
+    files
+        .iter()
+        .filter(|(path, _)| {
+            path.as_str() == "data/behavior_realization_contracts.json"
+                || path.ends_with("/data/behavior_realization_contracts.json")
+        })
+        .map(|(path, bytes)| {
+            let owner = ccg
+                .module_paths()
+                .iter()
+                .filter(|(_, module_path)| {
+                    module_path.is_empty() || path.starts_with(&format!("{module_path}/"))
+                })
+                .max_by_key(|(_, module_path)| module_path.len())
+                .map(|(id, _)| id.clone())
+                .ok_or_else(|| {
+                    AuditError::ContractState(format!("no Module owns '{path}'").into())
+                })?;
+            let source =
+                std::str::from_utf8(bytes).map_err(|_| AuditError::NonUtf8(path.clone().into()))?;
+            Ok(BehaviorRealizationContractSource::new(owner, path, source))
+        })
+        .collect()
 }
 
 fn environment_contract_sources(
@@ -625,6 +705,36 @@ fn audit_repository_with_models(
     })?;
     let behavioral_semantics = evaluate_behavioral_semantics(ccg, standard.edition())
         .map_err(AuditError::BehavioralSemantics)?;
+    let behavioral_realization: Option<BehavioralRealizationEvaluation> =
+        if let Some(models) = &analysis_models {
+            let sources = behavior_realization_contract_sources(ccg, &prepared.observed_files)?;
+            let contracts = load_behavior_realization_contracts(
+                ccg,
+                behavioral_semantics.graph(),
+                &models.psm,
+                models.state_effect.model(),
+                models.information_flow.model(),
+                models.environmental.model(),
+                sources,
+            )
+            .map_err(AuditError::BehaviorRealizationContracts)?;
+            Some(
+                evaluate_behavioral_realization(
+                    ccg,
+                    behavioral_semantics.graph(),
+                    &models.psm,
+                    models.semantic.model(),
+                    models.state_effect.model(),
+                    models.information_flow.model(),
+                    models.environmental.model(),
+                    &contracts,
+                    standard.edition(),
+                )
+                .map_err(AuditError::BehavioralRealization)?,
+            )
+        } else {
+            None
+        };
     let architecture_diagnostics =
         derive_architecture_diagnostics(ccg, &observed_implementation, &architecture_realization)
             .map_err(AuditError::ArchitectureDiagnostics)?;
@@ -635,6 +745,7 @@ fn audit_repository_with_models(
         &contract_coherency,
         &architecture_realization,
         &behavioral_semantics,
+        behavioral_realization.as_ref(),
         ProgramEvaluationInputs::new(
             analyses.map(|models| &models.semantic),
             analyses.map(|models| &models.state_effect),
@@ -683,6 +794,15 @@ fn audit_repository_with_models(
                 .unsupported_semantics()
                 .iter()
                 .map(|value| format!("environmental_analysis:{value}")),
+        );
+    }
+    if let Some(realization) = &behavioral_realization {
+        unsupported_analysis.extend(
+            realization
+                .graph()
+                .unsupported_semantics()
+                .iter()
+                .map(|value| format!("behavioral_realization:{value}")),
         );
     }
     unsupported_analysis.sort();
@@ -1085,6 +1205,10 @@ pub enum AuditError {
     EnvironmentContracts(EnvironmentContractError),
     /// Environmental Analysis result construction failed.
     EnvironmentalAnalysis(EnvironmentalAnalysisError),
+    /// Distributed Behavior Realization Contract authority was invalid.
+    BehaviorRealizationContracts(BehaviorRealizationContractError),
+    /// Realized BFG construction or finding normalization failed.
+    BehavioralRealization(BehavioralRealizationError),
     /// Architecture diagnostic derivation failed.
     ArchitectureDiagnostics(ArchitectureDiagnosticError),
     /// Intended behavioral semantics could not compile or normalize.
@@ -1149,6 +1273,12 @@ impl Display for AuditError {
             }
             Self::EnvironmentalAnalysis(error) => {
                 write!(formatter, "environmental analysis failed: {error}")
+            }
+            Self::BehaviorRealizationContracts(error) => {
+                write!(formatter, "behavior realization contracts failed: {error}")
+            }
+            Self::BehavioralRealization(error) => {
+                write!(formatter, "behavioral realization failed: {error}")
             }
             Self::ArchitectureDiagnostics(error) => {
                 write!(

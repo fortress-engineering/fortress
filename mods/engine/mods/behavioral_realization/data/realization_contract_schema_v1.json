@@ -1,0 +1,145 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:behavior-realization-contracts",
+  "title": "Fortress Behavior Realization Contracts v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "schema_version", "features"],
+  "properties": {
+    "$schema": { "const": "urn:fortress:schema:v1:behavior-realization-contracts" },
+    "schema_version": { "const": 1 },
+    "features": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/feature" }
+    }
+  },
+  "$defs": {
+    "stable_id": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)+$"
+    },
+    "symbol": {
+      "type": "string",
+      "pattern": "^rust_symbol:sha256:[0-9a-f]{64}$"
+    },
+    "feature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["feature", "checkpoints"],
+      "properties": {
+        "feature": { "$ref": "#/$defs/stable_id" },
+        "checkpoints": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/checkpoint" }
+        }
+      }
+    },
+    "checkpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["checkpoint", "anchors"],
+      "properties": {
+        "checkpoint": { "$ref": "#/$defs/stable_id" },
+        "anchors": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/anchor" }
+        }
+      }
+    },
+    "anchor": {
+      "oneOf": [
+        { "$ref": "#/$defs/symbol_entry" },
+        { "$ref": "#/$defs/symbol_return" },
+        { "$ref": "#/$defs/state_transition" },
+        { "$ref": "#/$defs/effect" },
+        { "$ref": "#/$defs/information_transition" },
+        { "$ref": "#/$defs/environment_outcome" }
+      ]
+    },
+    "symbol_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "symbol"],
+      "properties": {
+        "kind": { "const": "symbol_entry" },
+        "symbol": { "$ref": "#/$defs/symbol" }
+      }
+    },
+    "symbol_return": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "symbol"],
+      "properties": {
+        "kind": { "const": "symbol_return" },
+        "symbol": { "$ref": "#/$defs/symbol" },
+        "boolean": { "type": "boolean" }
+      }
+    },
+    "state_transition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "nominal_type", "symbol", "from_states", "to_states"],
+      "properties": {
+        "kind": { "const": "state_transition" },
+        "nominal_type": { "type": "string", "minLength": 1 },
+        "symbol": { "$ref": "#/$defs/symbol" },
+        "from_states": { "$ref": "#/$defs/stable_ids" },
+        "to_states": { "$ref": "#/$defs/stable_ids" }
+      }
+    },
+    "effect": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "effect", "symbol"],
+      "properties": {
+        "kind": { "const": "effect" },
+        "effect": {
+          "enum": [
+            "receiver_state_read",
+            "receiver_state_write",
+            "owned_state_read",
+            "owned_state_write",
+            "external_interaction",
+            "may_panic",
+            "unsafe_execution"
+          ]
+        },
+        "symbol": { "$ref": "#/$defs/symbol" }
+      }
+    },
+    "information_transition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "transition", "symbol", "facet", "from", "to"],
+      "properties": {
+        "kind": { "const": "information_transition" },
+        "transition": { "enum": ["endorsement", "declassification"] },
+        "symbol": { "$ref": "#/$defs/symbol" },
+        "facet": { "$ref": "#/$defs/stable_id" },
+        "from": { "type": "string", "minLength": 1 },
+        "to": { "type": "string", "minLength": 1 }
+      }
+    },
+    "environment_outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "operation", "outcome"],
+      "properties": {
+        "kind": { "const": "environment_outcome" },
+        "operation": { "$ref": "#/$defs/stable_id" },
+        "outcome": { "$ref": "#/$defs/stable_id" }
+      }
+    },
+    "stable_ids": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/stable_id" }
+    }
+  }
+}

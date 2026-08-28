@@ -142,6 +142,44 @@ impl StateEffectSummary {
     pub const fn output_receiver_state(&self) -> Option<&TypestateClassification> {
         self.output_receiver_state.as_ref()
     }
+
+    /// Returns the admitted receiver state classification.
+    #[must_use]
+    pub const fn input_receiver_state(&self) -> Option<&TypestateClassification> {
+        self.input_receiver_state.as_ref()
+    }
+
+    /// Returns the state-postcondition coverage for the transition.
+    #[must_use]
+    pub const fn state_postcondition_coverage(&self) -> StateEffectCoverage {
+        self.state_postconditions
+    }
+
+    /// Returns exact direct and transitive effect evidence.
+    #[must_use]
+    pub fn effect_evidence(&self) -> &[EffectEvidence] {
+        &self.effect_evidence
+    }
+}
+
+impl EffectEvidence {
+    /// Returns the effect supported by this evidence.
+    #[must_use]
+    pub const fn effect(&self) -> FunctionEffect {
+        self.effect
+    }
+
+    /// Returns the executable where the effect originates.
+    #[must_use]
+    pub fn source_symbol(&self) -> &str {
+        &self.source_symbol
+    }
+
+    /// Returns canonical repository-relative provenance.
+    #[must_use]
+    pub fn path(&self) -> &str {
+        &self.path
+    }
 }
 
 /// Supported state/effect contradiction category.

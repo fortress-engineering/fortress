@@ -45,6 +45,13 @@ const BUILTIN_COMMANDS: &[CommandDescriptor] = &[
         usage: "fortress bfg [path] [--format json] [--output path]",
     },
     CommandDescriptor {
+        id: "CMD-BEHAVIOR-REALIZED-BFG",
+        name: "realized-bfg",
+        aliases: &[],
+        description: "Compile and render the deterministic Realized Behavioral Flow Graph.",
+        usage: "fortress realized-bfg [path] [--format json] [--output path]",
+    },
+    CommandDescriptor {
         id: "CMD-PROGRAM-PSM",
         name: "psm",
         aliases: &[],

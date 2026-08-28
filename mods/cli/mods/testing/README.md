@@ -12,7 +12,7 @@ Invoke the built native binary against controlled arguments and disposable repos
 
 ### Includes
 
-Rust process-level verification code and runtime-created repositories that provide evidence for the immediate parent's local Feature.
+Rust process-level verification code and runtime-created repositories that provide evidence for the immediate parent's local Feature, including deterministic Realized BFG inspection and unsupported-format rejection.
 
 ### Excludes
 

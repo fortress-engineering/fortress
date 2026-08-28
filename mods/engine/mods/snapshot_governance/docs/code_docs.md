@@ -20,7 +20,7 @@ Invalid inputs and inability to fulfill the responsibility return explicit typed
 
 ### [`audit.rs`](../code/audit.rs)
 
-Orchestrates declaration loading, stabilized snapshot construction, shared CCG, Intended BFG, implementation, PSM, semantic-domain analysis, and state/effect analysis, rule execution, and deterministic audit v2 rendering with normative findings, non-normative architecture diagnostics, and unsupported analysis kept distinct.
+Orchestrates declaration loading, stabilized snapshot construction, shared CCG, Intended BFG, implementation observation, PSM, semantic-domain, state/effect, information-flow, environmental, and Behavioral Realization analysis, rule execution, and deterministic audit v2 rendering with normative findings, non-normative architecture diagnostics, and unsupported analysis kept distinct.
 
 ### [`contract.rs`](../code/contract.rs)
 
@@ -32,7 +32,7 @@ Parses canonical Markdown structurally and reconciles Module contracts, catalogs
 
 ### [`evaluation.rs`](../code/evaluation.rs)
 
-Dispatches only implemented applicable rules, including PROGRAM-DOMAIN-001, PROGRAM-STATE-001, PROGRAM-EFFECT-001, and PROGRAM-INFOFLOW-001 from shared semantic results, and distinguishes evaluated pass or failure from unsupported capability.
+Dispatches only implemented applicable rules, including BEHAVIOR-REALIZATION-001, BEHAVIOR-BYPASS-001, PROGRAM-DOMAIN-001, PROGRAM-STATE-001, PROGRAM-EFFECT-001, and PROGRAM-INFOFLOW-001 from shared semantic results, and distinguishes evaluated pass or failure from unsupported capability.
 
 ### [`ownership.rs`](../code/ownership.rs)
 

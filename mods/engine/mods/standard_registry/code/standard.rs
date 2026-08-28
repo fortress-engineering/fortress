@@ -74,6 +74,18 @@ const DRAFT_RULES: &[RuleDescriptor] = &[
         integrity_tier: 1,
     },
     RuleDescriptor {
+        id: "BEHAVIOR-REALIZATION-001",
+        title: "Opted-in modeled behavior is realized consistently",
+        status: RuleStatus::Draft,
+        integrity_tier: 1,
+    },
+    RuleDescriptor {
+        id: "BEHAVIOR-BYPASS-001",
+        title: "Supported realized behavior preserves intended mandatory passage",
+        status: RuleStatus::Draft,
+        integrity_tier: 1,
+    },
+    RuleDescriptor {
         id: "PROGRAM-DOMAIN-001",
         title: "Supported interprocedural value domains satisfy declared function contracts",
         status: RuleStatus::Draft,

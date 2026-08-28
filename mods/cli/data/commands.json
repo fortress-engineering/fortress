@@ -58,6 +58,17 @@
       "certification_implications": "Renders intended Feature behavior only; it is not implementation realization or certification evidence."
     },
     {
+      "id": "CMD-BEHAVIOR-REALIZED-BFG",
+      "name": "realized-bfg",
+      "aliases": [],
+      "description": "Compile and render the deterministic Realized Behavioral Flow Graph.",
+      "owner": "TF-CLI-0001",
+      "executor": "builtin-sync",
+      "duration": "short",
+      "resumability": "restartable",
+      "certification_implications": "Renders coverage-aware intended-to-implementation reconciliation only; it is not a runtime trace, Verified BFG, or certification evidence."
+    },
+    {
       "id": "CMD-PROGRAM-PSM",
       "name": "psm",
       "aliases": [],

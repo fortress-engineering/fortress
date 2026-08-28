@@ -118,6 +118,14 @@
             "T-TF-CLI-0001-R11-001",
             "T-TF-CLI-0001-R11-002"
           ]
+        },
+        {
+          "id": "TF-CLI-0001-R12",
+          "statement": "The native fortress realized-bfg command compiles one Intended-BFG- and implementation-semantics-backed Realized BFG, emits deterministic canonical JSON to standard output or a file, fails on supported realization or bypass contradictions or invalid authority, and preserves coverage uncertainty without implying runtime trace evidence or certification.",
+          "tests": [
+            "T-TF-CLI-0001-R12-001",
+            "T-TF-CLI-0001-R12-002"
+          ]
         }
       ]
     }

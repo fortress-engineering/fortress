@@ -29,6 +29,10 @@ name = "behavioral_flow"
 path = "../mods/behavioral_semantics/mods/testing/code/behavioral_flow.rs"
 
 [[test]]
+name = "behavioral_realization"
+path = "../mods/behavioral_realization/mods/testing/code/behavioral_realization.rs"
+
+[[test]]
 name = "contract_coherency_graph"
 path = "../mods/contract_coherency/mods/testing/code/contract_coherency_graph.rs"
 

@@ -11,6 +11,9 @@ use serde::Serialize;
 
 use crate::architecture::{ARCH_DEPENDENCY_RULE_ID, ArchitectureManifest};
 use crate::architecture_realization::{ARCH_REALIZATION_RULE_ID, ArchitectureRealization};
+use crate::behavioral_realization::{
+    BEHAVIOR_BYPASS_RULE_ID, BEHAVIOR_REALIZATION_RULE_ID, BehavioralRealizationEvaluation,
+};
 use crate::behavioral_semantics::{BEHAVIOR_FLOW_RULE_ID, BehavioralSemanticsEvaluation};
 use crate::contract::{CONTRACT_COHERENCY_RULE_ID, ContractCoherencyEvaluation};
 use crate::documentation::{DocumentationConformanceReport, REPO_DOCS_RULE_ID};
@@ -179,6 +182,7 @@ pub struct CompleteEvaluationInputs<'a> {
     contract_coherency: &'a ContractCoherencyEvaluation,
     architecture_realization: &'a ArchitectureRealization,
     behavioral_semantics: &'a BehavioralSemanticsEvaluation,
+    behavioral_realization: Option<&'a BehavioralRealizationEvaluation>,
     semantic_analysis: Option<&'a SemanticAnalysisEvaluation>,
     state_effect_analysis: Option<&'a StateEffectAnalysisEvaluation>,
     information_flow_analysis: Option<&'a InformationFlowEvaluation>,
@@ -221,6 +225,7 @@ impl<'a> CompleteEvaluationInputs<'a> {
         contract_coherency: &'a ContractCoherencyEvaluation,
         architecture_realization: &'a ArchitectureRealization,
         behavioral_semantics: &'a BehavioralSemanticsEvaluation,
+        behavioral_realization: Option<&'a BehavioralRealizationEvaluation>,
         program_analysis: ProgramEvaluationInputs<'a>,
     ) -> Self {
         Self {
@@ -229,6 +234,7 @@ impl<'a> CompleteEvaluationInputs<'a> {
             contract_coherency,
             architecture_realization,
             behavioral_semantics,
+            behavioral_realization,
             semantic_analysis: program_analysis.semantic,
             state_effect_analysis: program_analysis.state_effect,
             information_flow_analysis: program_analysis.information_flow,
@@ -244,6 +250,7 @@ struct EvaluationInputs<'a> {
     contract_coherency: Option<&'a ContractCoherencyEvaluation>,
     architecture_realization: Option<&'a ArchitectureRealization>,
     behavioral_semantics: Option<&'a BehavioralSemanticsEvaluation>,
+    behavioral_realization: Option<&'a BehavioralRealizationEvaluation>,
     semantic_analysis: Option<&'a SemanticAnalysisEvaluation>,
     state_effect_analysis: Option<&'a StateEffectAnalysisEvaluation>,
     information_flow_analysis: Option<&'a InformationFlowEvaluation>,
@@ -258,6 +265,7 @@ impl<'a> From<CompleteEvaluationInputs<'a>> for EvaluationInputs<'a> {
             contract_coherency: Some(inputs.contract_coherency),
             architecture_realization: Some(inputs.architecture_realization),
             behavioral_semantics: Some(inputs.behavioral_semantics),
+            behavioral_realization: inputs.behavioral_realization,
             semantic_analysis: inputs.semantic_analysis,
             state_effect_analysis: inputs.state_effect_analysis,
             information_flow_analysis: inputs.information_flow_analysis,
@@ -362,6 +370,12 @@ fn evaluate_rule(
             || unsupported_execution(rule_id, "Behavioral-flow evaluation requires one Intended BFG compiled from the audit CCG."),
             |result| behavior_execution(rule_id, result),
         )),
+        BEHAVIOR_REALIZATION_RULE_ID | BEHAVIOR_BYPASS_RULE_ID => {
+            Ok(inputs.behavioral_realization.map_or_else(
+                || unsupported_execution(rule_id, "Behavioral realization requires one Intended BFG, the canonical program/value/state/information/environment semantic stack, and validated distributed realization authority."),
+                |result| behavioral_realization_execution(rule_id, result),
+            ))
+        }
         PROGRAM_DOMAIN_RULE_ID => Ok(inputs.semantic_analysis.map_or_else(
             || unsupported_execution(rule_id, "Program-domain evaluation requires one snapshot-bound PSM and its distributed Function Contract v3 set."),
             |result| semantic_execution(rule_id, result),
@@ -475,6 +489,38 @@ fn behavior_execution(
                 summary.incoherent_features(),
                 summary.unmodeled_features(),
                 "UNMODELED",
+                findings.len(),
+            ),
+        },
+        findings,
+    )
+}
+
+fn behavioral_realization_execution(
+    rule_id: &str,
+    result: &BehavioralRealizationEvaluation,
+) -> (RuleExecution, Vec<CanonicalFinding>) {
+    let findings = if rule_id == BEHAVIOR_BYPASS_RULE_ID {
+        result.bypass_findings().to_vec()
+    } else {
+        result.realization_findings().to_vec()
+    };
+    let summary = result.graph().summary();
+    (
+        RuleExecution {
+            rule_id: rule_id.into(),
+            state: if findings.is_empty() {
+                RuleExecutionState::Passed
+            } else {
+                RuleExecutionState::Failed
+            },
+            applicable: summary.opted_in_features() > 0,
+            findings: findings.len(),
+            detail: format!(
+                "Realized BFG v1 reconciled {} opted-in Feature(s), with {} realization contradiction(s), {} proven dominator bypass(es), and {} finding(s) for this rule; incomplete semantic coverage remains explicit.",
+                summary.opted_in_features(),
+                summary.realization_violations(),
+                summary.proven_bypasses(),
                 findings.len(),
             ),
         },

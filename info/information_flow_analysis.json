@@ -3,9 +3,9 @@
   "schema_version": 1,
   "semantic_version": "1.0.0",
   "project_id": "PF-FORTRESS",
-  "psm_digest": "sha256:3fa5a638e69783f52db8d4b924e0e54df33b8a030273a0c3fd99d27a372bcee6",
-  "semantic_analysis_digest": "sha256:be5fd169dbc35647ef67d3a11bb2df8f38ed8b69b2aa0c8d8d0dbd39de6deaf7",
-  "state_effect_digest": "sha256:9f968f9b7051a583b1d0839ae7ecd09c8d386871107310853574a73923fe6224",
+  "psm_digest": "sha256:91f7484c2f9a7a91afec34494f6a358e780f39bc0e57f644322bf6ecd40d0557",
+  "semantic_analysis_digest": "sha256:531b869659b0fbcd2acb9c6d47a9a01ebe8e7f95ef3ebc780cd4f4b499dbd22a",
+  "state_effect_digest": "sha256:fbb3a753d175eaf719e068beae8753247f76e50e3ece9f4066c0a1153ba230ca",
   "information_flow_policy_digest": "sha256:925574bd6fb4830a70b80f6c0e250bac22654bdcd3c1624e278c3b79f9ccd8dc",
   "function_contract_digest": "sha256:4cec037c542c897fc195b0c9b615bca32f14ac3834db97e20579f074251794b3",
   "facets": [
@@ -144,6 +144,21 @@
       "return_labels": [],
       "field_flows": [
         "id"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:011ae6e593c457b4ec2b2cc3af8f26bb38fe19d394e6c4a227009d8f1cfc999e",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "outcome"
       ],
       "trusted_transitions": [],
       "uncertainty": [],
@@ -431,6 +446,19 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:036bea455fb1ceebde7cc2d8e06d2f5adb0bb0455d5569cb4d121eb986a51350",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:039351b07ac8ba24a6a9d9a483448515f429213245c49b57bc4ad4f0223b2527",
       "sources": [],
       "sinks": [],
@@ -458,6 +486,19 @@
       "explicit_value_propagation": "PROVEN",
       "field_propagation": "UNKNOWN",
       "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:03e54cb10f1eee6b57ab32f2cac0d02415dac86c3836268d093d96cf498f9887",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PROVEN",
       "sink_verification": "UNKNOWN"
     },
     {
@@ -991,7 +1032,10 @@
       "sinks": [],
       "return_labels": [],
       "field_flows": [
-        "methods"
+        "dependencies",
+        "facade_owner",
+        "methods",
+        "packages"
       ],
       "trusted_transitions": [],
       "uncertainty": [
@@ -1221,6 +1265,19 @@
       "explicit_value_propagation": "PROVEN",
       "field_propagation": "UNKNOWN",
       "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:08d94f63dcb67d6f86f38a5cda0563035f6d0a7d5c58dd6965d35572fd960f4b",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PROVEN",
       "sink_verification": "UNKNOWN"
     },
     {
@@ -1600,6 +1657,19 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:0aea0a09f6e1be3132454b54f10f106913809870aa60382f225a6f88af0c9dd6",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:0b217e82527e3358e565956cf32f246dca91f869a397cdb9ed5fa9a45f442fee",
       "sources": [],
       "sinks": [],
@@ -1722,6 +1792,21 @@
       "explicit_value_propagation": "PROVEN",
       "field_propagation": "PARTIAL",
       "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:0c1cb4dda504414d4898f729000d37c5444b24d498e939001f8ebc74aff5afbd",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PARTIAL",
       "sink_verification": "UNKNOWN"
     },
     {
@@ -2072,6 +2157,21 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:0fa4ffbea7f7315bf5ef64feb0c9bec98d7a621abbbbdf25b6314bd1806846dd",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "facet"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:0fbdb4d8adf7f433dac809117233e25275166bb8b13bb5bac971442e3a0ece0d",
       "sources": [],
       "sinks": [],
@@ -2159,6 +2259,21 @@
       "explicit_value_propagation": "PROVEN",
       "field_propagation": "UNKNOWN",
       "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:106caebc1a81dc29c09e74916138319cffd301e4d81dafb6095138725ab1dc77",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "to"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
       "sink_verification": "UNKNOWN"
     },
     {
@@ -2338,6 +2453,21 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:11ef0abe1b4add9bbe883a69bdf960e21f16e7aa759e2942acd9bddc5ad23c9f",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "target"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:11ef3110c446a9d8d1a0d56addc09aa08f21fdbf8f47884fc9ebafd452bdfc11",
       "sources": [],
       "sinks": [],
@@ -2476,6 +2606,21 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:13df458f084bd1c9ab70df1fd3f3c0cba2e1a57c2ba37abe26223a20e304fa84",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:13f9206dfbe354eb732a3441d9a4186f6f540bc516cbad66898cd77779782076",
       "sources": [],
       "sinks": [],
@@ -2609,6 +2754,21 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:14f6cd4a4baebb4bae8c436caba63bbb3e1d4d3ee3ee6990fcb2c8be5d2b92d3",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "module"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:1566e019e1ee3b73781598347b538c463287303add046d835a0e5537e253cea8",
       "sources": [],
       "sinks": [],
@@ -2666,6 +2826,21 @@
     },
     {
       "symbol": "rust_symbol:sha256:15d92cc3e5ab1fd869934e8e488ee579f1b1d80c23a35e399b2803312279d8a3",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:15ebd95043b2658914e963690f1632c9f9de9e481e05f8689ef2281ec1f57ab2",
       "sources": [],
       "sinks": [],
       "return_labels": [],
@@ -2838,6 +3013,21 @@
       "explicit_value_propagation": "PROVEN",
       "field_propagation": "PARTIAL",
       "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:17261d7b4b9d0ac2f0c8bbe0cae154ea7ef1784df2b47993d760b5e296282e7d",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "target"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
       "sink_verification": "UNKNOWN"
     },
     {
@@ -3171,6 +3361,21 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:19385b4c849d1b4f37a1a63d5bbdfde51e899fccc889c6457fa230a7de2b09ff",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "checkpoint"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:19731edee5531512f938c5e964cca4f09dc0078efd9c9513ffd766d341b9b75c",
       "sources": [],
       "sinks": [],
@@ -3315,6 +3520,19 @@
       "uncertainty": [],
       "explicit_value_propagation": "PROVEN",
       "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:1a5531ebf40e7f0f79e122e587a117af8168c171fd8262f093eb3ccf58530d00",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
       "interprocedural_propagation": "PROVEN",
       "sink_verification": "UNKNOWN"
     },
@@ -3860,6 +4078,21 @@
       "uncertainty": [],
       "explicit_value_propagation": "PROVEN",
       "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:1f2bc3adc0e08c28049632f639f4d064b013783dedf3d5a42d10ce7723c693c0",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "transitions"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
       "interprocedural_propagation": "PROVEN",
       "sink_verification": "UNKNOWN"
     },
@@ -4428,6 +4661,21 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:22eaf3a18facc31a8a1900a935a9f47c9a550117302fad61e9eaea1f1566a490",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "flows"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:23172f2fdb9eb8020746971bf566dbd425c1c989dbe314253889eb74a9dde531",
       "sources": [],
       "sinks": [],
@@ -4618,6 +4866,19 @@
       "explicit_value_propagation": "PROVEN",
       "field_propagation": "UNKNOWN",
       "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:257c5454532ad5943d88a7027641489d881f97a70e109366557778d1fe19a255",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PROVEN",
       "sink_verification": "UNKNOWN"
     },
     {
@@ -5812,6 +6073,19 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:2f4599ee73ac8826487adec8414701cd4471961f7af7f275bc95054a6177bf51",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:2f5eeaa2aad82c5e1f8aefd83a220e2d2623af5f03aca1b279a13a4fc95b6ae7",
       "sources": [],
       "sinks": [],
@@ -5848,6 +6122,21 @@
       "return_labels": [],
       "field_flows": [
         "id"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:2f8143611340c18f006b5b0482973204bc6bc44df2c063a6d3de57402304240d",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "opted_in_features"
       ],
       "trusted_transitions": [],
       "uncertainty": [],
@@ -6419,6 +6708,24 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:32a2f441c497d2a06a907f96f5d0dcd964ce65d28d3bbbda600badaac3c51d28",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "environmental",
+        "information_flow",
+        "semantic",
+        "state_effect"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:32b085249a3fe6bcecb030cc749ef645a314172be331eb8bb6b8a2f8570a7650",
       "sources": [],
       "sinks": [],
@@ -6533,6 +6840,21 @@
     },
     {
       "symbol": "rust_symbol:sha256:334d06aa321a49c40316774d4eb70b9d15c00dcce31790f74bb6ca1ff5645fb9",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:334e2f77041005b3a58ab66812b0155692fef97663fc58c3760410632e931b17",
       "sources": [],
       "sinks": [],
       "return_labels": [],
@@ -7043,6 +7365,19 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:37abf11b9555361e32514e50b6ea54a83687763c5645004efef5e71a3810e9f4",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:37d64f9b24af748a4a755afc0b4af633ba60394bbad737c35bf1211eb8486286",
       "sources": [],
       "sinks": [],
@@ -7270,6 +7605,21 @@
       "explicit_value_propagation": "PROVEN",
       "field_propagation": "PARTIAL",
       "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:39cce77ebdcfbdbcc3afbaa154a5fdc5f245a537d80719d3c6ae327889247be2",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PARTIAL",
       "sink_verification": "UNKNOWN"
     },
     {
@@ -7621,6 +7971,21 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:3d340ba61d8f8edebfa6156d20172ae2ecb316f49d9b2729d7a561906ae62536",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:3d3a7cfe97524ff0cf61b3d43c464974898778b5f2daf99fa5798001d051e205",
       "sources": [],
       "sinks": [],
@@ -7663,6 +8028,31 @@
       "explicit_value_propagation": "PROVEN",
       "field_propagation": "PARTIAL",
       "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:3d64bb84daf49752f5ca38ceb1af533a1b543ca3e5a65e54022d1220bc763649",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "bundle",
+        "ccg_compilation",
+        "environmental",
+        "information_flow",
+        "observed_files",
+        "psm",
+        "semantic",
+        "standard",
+        "state_effect"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PARTIAL",
       "sink_verification": "UNKNOWN"
     },
     {
@@ -7762,12 +8152,40 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:3e52425f79c57bd9f7d6993810f2933c5be8edbb925450a2d4e4fb6fec8b27e4",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:3e5b5bb0df18f95e53e1633eb8ed09497584569922bfd683842bbe8dd1657e6d",
       "sources": [],
       "sinks": [],
       "return_labels": [],
       "field_flows": [
         "components"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:3ef656b38bed56ea2d2e095f85d723a3f542a0ce4c44a79d6165e2b05884a9cc",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "declaring_module"
       ],
       "trusted_transitions": [],
       "uncertainty": [],
@@ -7822,6 +8240,47 @@
       ],
       "explicit_value_propagation": "PROVEN",
       "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:3f63d6262fa4ecf3c45d3a8b1179da4216dfc4b3a7af77134565e0082c037d70",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "call_cursors",
+        "call_sites",
+        "reference"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:3f7a05753074cc5535899413549bf82970f4e227cb59ec7cdcd8af7af6f25367",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "bypasses",
+        "checkpoints",
+        "decision_reconciliations",
+        "state",
+        "terminal_reconciliations",
+        "transitions"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
       "interprocedural_propagation": "PARTIAL",
       "sink_verification": "UNKNOWN"
     },
@@ -7881,6 +8340,21 @@
       "explicit_value_propagation": "PROVEN",
       "field_propagation": "UNKNOWN",
       "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:40565cd0eec486dd89153a36a1a644e686365bcfad70c707de0712d42ca64b5f",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "proven_bypasses"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
       "sink_verification": "UNKNOWN"
     },
     {
@@ -8360,6 +8834,19 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:437915794083152384b853b44a33541e009e90b5c27705c0fd2133b75d0abb68",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:43bd24ee57662e099b379d9ea6f9563a5ab32edf9b953dd61644058dfb7522b6",
       "sources": [],
       "sinks": [],
@@ -8430,6 +8917,19 @@
     },
     {
       "symbol": "rust_symbol:sha256:440210bc7bced3051eef544f66e4b88dc69c52c17bd3513ee6ae8b66a8bd21af",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:4409a2a733616f6cf383b12fa1179353815902ec2ac3db472f6711c1793c9477",
       "sources": [],
       "sinks": [],
       "return_labels": [],
@@ -8876,6 +9376,36 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:473912e84101cc0444069d2c027786060f1113aa79848da8b5f87e74b8f351c5",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "edges"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:474bac4f58ecb099264a12726748224dad8d38e35339ad9409b1bba7f1039d4f",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "decision"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:477a3e93ac4977e9a18eaf22c7f9b515bf8935709e4625042f5db5706b98372e",
       "sources": [],
       "sinks": [],
@@ -8944,6 +9474,7 @@
         "environmental",
         "information_flow",
         "observed_files",
+        "psm",
         "rust_tests",
         "semantic",
         "snapshot",
@@ -9066,6 +9597,21 @@
       "return_labels": [],
       "field_flows": [
         "markdown_files_inspected"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:48e1e872924a95849697c3f687cb9ed3dc36237691a0356ee8212b15608bc0ce",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "id"
       ],
       "trusted_transitions": [],
       "uncertainty": [],
@@ -9345,6 +9891,34 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:4a6fadda618ec905b93bdce03ae154b3abdd0135567c2071169e7903dfb3c095",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "provenance"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:4ab18294d8901fe89f7653b1bb37036d7d12dc0dcc8708c5e2b9266519178493",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:4ab3cf6952078a5fe066762c5a02a0e7a930866de016c8cc97c395e8b08439fa",
       "sources": [],
       "sinks": [],
@@ -9424,6 +9998,19 @@
       "explicit_value_propagation": "PROVEN",
       "field_propagation": "UNKNOWN",
       "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:4b8716d2c20f4702622e7abc1774b80481fa71d3c3adccab5bf0188882ccd109",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PROVEN",
       "sink_verification": "UNKNOWN"
     },
     {
@@ -9562,6 +10149,21 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:4d1b3a15dd059f6fbaea8eaf00b57877cc8a51861b11f8ea3a5dbe508d3fa383",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:4d2976bb573f78c0ca5c3b844d445a6f7f896d2984b4c071589697af815e01ec",
       "sources": [],
       "sinks": [],
@@ -9681,6 +10283,21 @@
       "explicit_value_propagation": "PROVEN",
       "field_propagation": "UNKNOWN",
       "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:4ee6e56866a241651d426fc3a108076a7c6101adfd7de5146770d8d9c938bef8",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "state"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
       "sink_verification": "UNKNOWN"
     },
     {
@@ -10135,6 +10752,21 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:5251523ee5bab442deadb82328c15d8390f8085f5645773d851b71b38ed851a4",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "features"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:5258a630c8bf62ba5f83007a8d148f4a81a40aee0efa818a2aeb0546b53412ae",
       "sources": [],
       "sinks": [],
@@ -10228,6 +10860,21 @@
       "explicit_value_propagation": "PROVEN",
       "field_propagation": "PARTIAL",
       "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:5348cc38bdc126e470df812be6aaafdc5cb9a9842535354e1c2f4415c6790209",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "source_path"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
       "sink_verification": "UNKNOWN"
     },
     {
@@ -10510,6 +11157,21 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:55abfe85ffe5e02f8c09ade4ed01dcffd389f0a1df3e3668fda05b52e251f5ed",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "summary"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:55c8ba74cd7d4fb0a960f6299e040a56875c3cf42ca0cf5d2d4fe62ac3381355",
       "sources": [],
       "sinks": [],
@@ -10646,6 +11308,19 @@
       "explicit_value_propagation": "PROVEN",
       "field_propagation": "UNKNOWN",
       "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:56e262bd490668792ee9e6d940bd076a4b8439b36bb9afba38ea80ac4f843526",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PROVEN",
       "sink_verification": "UNKNOWN"
     },
     {
@@ -10916,6 +11591,23 @@
       "explicit_value_propagation": "PROVEN",
       "field_propagation": "PARTIAL",
       "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:59f1eebe92b59e8ca18d1b385ca9c664e219a7e9bd6cf9ce17dde74a86d13f96",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "input_receiver_state"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PARTIAL",
       "sink_verification": "UNKNOWN"
     },
     {
@@ -11213,6 +11905,21 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:5daf6efd198599f614530b1c0b3a160cc7feb984feb5e6f303e49afcbf94f7f2",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:5dbf089cda162311dafe6ff22e5a7e55433f0a967c73a154fba726ea312e01bc",
       "sources": [],
       "sinks": [],
@@ -11227,6 +11934,36 @@
       ],
       "explicit_value_propagation": "PROVEN",
       "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:5de5556131c432a83ef72ad4da48fb4d11976f6d2ff4c920e69d7ee18cf92c50",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "id"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:5e1bb26531589f45d4164e8429de80b844882f439ead1088829a4a046345432f",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
       "interprocedural_propagation": "PARTIAL",
       "sink_verification": "UNKNOWN"
     },
@@ -11317,6 +12054,19 @@
       "uncertainty": [],
       "explicit_value_propagation": "PROVEN",
       "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:5ea8370ee43143312474778ace2bea12644243d5d7089bf2e37d23f6d6e34110",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
       "interprocedural_propagation": "PROVEN",
       "sink_verification": "UNKNOWN"
     },
@@ -11740,6 +12490,19 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:626982d076cecd4036f9001f64aad73102029b08367d90a66e0675d78333469a",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:627c0064cc34985635dc0c909d4b2844beead25344a2397d23bfd4f0ee81116b",
       "sources": [],
       "sinks": [],
@@ -11840,6 +12603,21 @@
       ],
       "explicit_value_propagation": "PROVEN",
       "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:632c0588e3fb2f0f2000f54d9505009bc9735bf46b9177bcf7dd70bc87ff97c2",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
       "interprocedural_propagation": "PARTIAL",
       "sink_verification": "UNKNOWN"
     },
@@ -12169,6 +12947,21 @@
       "explicit_value_propagation": "PROVEN",
       "field_propagation": "PARTIAL",
       "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:65f30de941c7850f4ad1b51b141ee0c2b0e9ffb9433759f9b2c21eb50fb6fd1d",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PARTIAL",
       "sink_verification": "UNKNOWN"
     },
     {
@@ -12589,6 +13382,21 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:69d24ca6798c5170a369420bcf17ac527e8898202776fca46b4154e851bcee66",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:69fbedfc2b4918ce42e2b9ddc8b57c6b50591d0b7f55bcedb6452c10586c7a4d",
       "sources": [],
       "sinks": [],
@@ -12749,6 +13557,19 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:6b5258435a355158226d85bf569681453d95bbdc53e15a6a4abcb5c2e14e21ee",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:6b5b9381296644b758485f1051ad22cfda19b570ccc031808189f48cb6c8bc49",
       "sources": [],
       "sinks": [],
@@ -12898,6 +13719,21 @@
       "explicit_value_propagation": "PROVEN",
       "field_propagation": "PARTIAL",
       "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:6d490e540dca4617f0002f117bdf98057f09214b321a01bf2b9cb972a44f4d11",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PARTIAL",
       "sink_verification": "UNKNOWN"
     },
     {
@@ -13210,6 +14046,21 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:705b4c685296bb053c3266299fb5ad75a3454281aaae6792912d8aa7350a6a8b",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "bypass_findings"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:709712a3aa78c11b2225230850e12a6a4c6ff27fe45ec6584bd956652403fdea",
       "sources": [],
       "sinks": [],
@@ -13222,6 +14073,38 @@
       "explicit_value_propagation": "PROVEN",
       "field_propagation": "UNKNOWN",
       "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:70aa536195b157f74e995e14ec8df547631fa3fe44541951904208829cda5065",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "edges"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:710990a6803a4a72b2c9ddc03a31c254f407809c04927886abce199b4bf2cb14",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "anchors"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
       "sink_verification": "UNKNOWN"
     },
     {
@@ -13393,6 +14276,7 @@
       "return_labels": [],
       "field_flows": [
         "architecture_realization",
+        "behavioral_realization",
         "behavioral_semantics",
         "contract_coherency",
         "documentation",
@@ -13555,6 +14439,21 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:72c8aa58a187038d946950c791ee12ce199eb7e2baa36e75d6c1fb982cb2f959",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:72dc45d117f3892835786d84a45eaad34db1bf3e274a947138cf3dbc4910921b",
       "sources": [],
       "sinks": [],
@@ -13630,6 +14529,21 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:73801ac35622bab2a08ac2fae43d9700dfb2c222a7f16708a3a0b04de9aafb5f",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "feature"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:7438595bff4c38a614f92e7d1a947d6673d06949d8f52fcd72da2dd60ed3c803",
       "sources": [],
       "sinks": [],
@@ -13646,6 +14560,21 @@
     },
     {
       "symbol": "rust_symbol:sha256:743dbfbdf7a43fc091a34366e753464e6baa1e87c25bc064cc615a89e5afd09b",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:74687ae0d35f2b106d5cd47bb808e6151f9ebd670d3d71f4d7e72985472e3579",
       "sources": [],
       "sinks": [],
       "return_labels": [],
@@ -13822,6 +14751,39 @@
       "explicit_value_propagation": "PROVEN",
       "field_propagation": "PARTIAL",
       "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:757f5d86bea15ebb0711e4946b62223d99d9c2ab647f4f480fd7117475d02c58",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "callee",
+        "state"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:75936f503d9052d00d16bc7875a536c3eca229ae3beae8e767c5d40f489bbb18",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PARTIAL",
       "sink_verification": "UNKNOWN"
     },
     {
@@ -14136,6 +15098,21 @@
       ],
       "explicit_value_propagation": "PROVEN",
       "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:7906b972cada848a062bad134832f8f9b7400fa71a6f6d18d675200eec82ccf1",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
       "interprocedural_propagation": "PARTIAL",
       "sink_verification": "UNKNOWN"
     },
@@ -14490,6 +15467,21 @@
     },
     {
       "symbol": "rust_symbol:sha256:7b936020d2902084c6779ba186148273c05c7d4f123f4825a413a777395eb206",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:7bbf81ad5fce76ddab63680083df7f34d1dead678745c924341e99353bee58fd",
       "sources": [],
       "sinks": [],
       "return_labels": [],
@@ -15104,6 +16096,21 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:81072c601a9823da236cedd29daa486e3ab92f8b5da0ee48cd8a80085ea0d784",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:8151840752d315c39d4345ce3c28ca6c319cfb23f9e525146c05b721c86d9cdb",
       "sources": [],
       "sinks": [],
@@ -15313,6 +16320,21 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:82f1609fabb9f7607983505f0b4d918c7a9a3a58882673abca65b06ca75788cb",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "verification_obligations"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:831f443406b48ff4d06971aeb35b684f9208190f37ed95b602e9c23ab4dc27f9",
       "sources": [],
       "sinks": [],
@@ -15363,6 +16385,21 @@
     },
     {
       "symbol": "rust_symbol:sha256:836bf7adebc90e0409bd4e482b15db6e9481fada59b32119d6ca27d0987ea78e",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:83c69d2b579748f7419de29627dd7a061b3a1bb13c37dea3eed1acb269fd0845",
       "sources": [],
       "sinks": [],
       "return_labels": [],
@@ -15467,6 +16504,21 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:84e624fdde23fb7fdfed62aa876af87f0b22a5a14aa8405130b5ed66439af9d9",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "source_symbol"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:84fb1c6c193e08d56e5645a63c007d1a7d48bbf7c099ccd90821b947cfaa8b7a",
       "sources": [],
       "sinks": [],
@@ -15514,6 +16566,19 @@
       "explicit_value_propagation": "PROVEN",
       "field_propagation": "UNKNOWN",
       "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:85d2bc0ce93d9f85573a5a4d43bebb30069436aec2027f3fb7d6b9d0c9fc57cb",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PROVEN",
       "sink_verification": "UNKNOWN"
     },
     {
@@ -16054,6 +17119,21 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:89316a5de301682cb085a934e7351b73bfa9c6ed02736eb0ddab0c0233c49008",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "terminal"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:895b147b329db0486224e46f7a76ae2b1cd59bb549d06363cbe1db3a3edb956f",
       "sources": [],
       "sinks": [],
@@ -16101,6 +17181,21 @@
       "explicit_value_propagation": "PROVEN",
       "field_propagation": "PARTIAL",
       "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:897f6096485978487407df9ff41357c04bca8213e1da0b937c760415e3cd353e",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "effect_evidence"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
       "sink_verification": "UNKNOWN"
     },
     {
@@ -16454,6 +17549,21 @@
       "explicit_value_propagation": "PROVEN",
       "field_propagation": "UNKNOWN",
       "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:8d5e0b6a7971096f65d7d5cb406273684b209cf3e1c836e45b37d2ebd4e75e01",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "path"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
       "sink_verification": "UNKNOWN"
     },
     {
@@ -17025,6 +18135,19 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:91e5ba49ca8df71c2730450e7e9c7ae6a10ac8fa094c291c96483485bc607653",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:91ef3f0c44d41421ca6f11356dad358625ad654efa8a2a3d99d529dfc24d6d7c",
       "sources": [],
       "sinks": [],
@@ -17443,6 +18566,21 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:955904dfca6fafd2bcc8a795b7fa161eac886c2307a36e1e71e27b5274203864",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "operation"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:956fa9748779cb6851168123ed6fcf80d38be0de608e4e99eb3d3ee39398dad0",
       "sources": [],
       "sinks": [],
@@ -17500,24 +18638,6 @@
       "explicit_value_propagation": "PROVEN",
       "field_propagation": "UNKNOWN",
       "interprocedural_propagation": "PARTIAL",
-      "sink_verification": "UNKNOWN"
-    },
-    {
-      "symbol": "rust_symbol:sha256:95a3deac1be22fd82836ff8f4d7142daa2cd23f6877a4b2fd039fca4150ac2dd",
-      "sources": [],
-      "sinks": [],
-      "return_labels": [],
-      "field_flows": [
-        "environmental",
-        "information_flow",
-        "semantic",
-        "state_effect"
-      ],
-      "trusted_transitions": [],
-      "uncertainty": [],
-      "explicit_value_propagation": "PROVEN",
-      "field_propagation": "PARTIAL",
-      "interprocedural_propagation": "PROVEN",
       "sink_verification": "UNKNOWN"
     },
     {
@@ -17612,6 +18732,21 @@
       "explicit_value_propagation": "PROVEN",
       "field_propagation": "UNKNOWN",
       "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:96623ffdfe944cdc275ad4d3f525557c2787daed51dc0c74ba4e04eb864471ec",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "graph"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
       "sink_verification": "UNKNOWN"
     },
     {
@@ -17838,6 +18973,21 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:97a56b686f3b306eb90312cc098a500ced85210251f636f323d3478103c122e7",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "source"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:97ca5c5a598f47919b32edefb24aa5828b54d0feebfeffae0964df2070a60a77",
       "sources": [],
       "sinks": [],
@@ -17906,7 +19056,35 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:987a8cfd4c25ca6a9d2fb6d8c690e033fe9c6edfa1396fd2dbb4d5ea90efda89",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:98b0f7ba78efbb290efa0bf21968adc2ff5e97860aa000cfb0a4fb8abcbdef76",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:98b859b058eae3d9a354d9f39f541d4e6c6de5e540da6b34c2506f1650954eff",
       "sources": [],
       "sinks": [],
       "return_labels": [],
@@ -18110,6 +19288,21 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:9a9afd5d4d8e4e8a9b366caf6510e6310c4dc5d5100fd1765f8815a9afe7bc05",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "handling"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:9ab528df7485291a10f5756b3bedce64e866b9440269932f7eaa3c2303c91841",
       "sources": [],
       "sinks": [],
@@ -18201,6 +19394,21 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:9bb7e6f1bc0f42aa50a9a0bf1723bb2615c0b1e35f84b1e62f761ce5426edea4",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:9bb84f524c385a3ebbc980b30980a19b92e7cf12cb51d0fc848ea754ab90b127",
       "sources": [],
       "sinks": [],
@@ -18254,6 +19462,36 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:9c16d1f25622c31cca129a0545b4ef3421536b4736ef6cc763157528f46d9743",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "realization_findings"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:9c29f317208338b40b7b32b130621b271ea08249e950d61e9d8207c051ef2e43",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:9c4fd02d79ec6ecf3e5d79d6e6e2dd9d888dd10004d020301c2a818d72d93aa9",
       "sources": [],
       "sinks": [],
@@ -18269,7 +19507,50 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:9c609ca506d7a58eef41df1043cbad3e5e4c81f8c8327675cf31c953106f3af4",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:9c871fbb2193aaa7d767ae43f41d69f712585698c7517227f44a5e6be04e14c8",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:9c8bdf7cd9f1813476ac8de103b8de483fdcaba89e1b9e373656db14633d1b2f",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "symbol"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:9c92db6c0b18f9d76410057ea41babf41700c003cfb5c30bb19e93e02bd2ee2a",
       "sources": [],
       "sinks": [],
       "return_labels": [],
@@ -18626,6 +19907,25 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:a029f47244b426fdac99e7adcff5b6e1157b8ef5d6797551b03543c3cb975af0",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "coverage",
+        "source",
+        "target"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:a03fde0ee136dba21d6585c57da18621f153cfbc0d995f5a216d222b0d9adf86",
       "sources": [],
       "sinks": [],
@@ -18729,6 +20029,19 @@
       "uncertainty": [],
       "explicit_value_propagation": "PROVEN",
       "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:a0d23f3cea157180b6ab937d39953478454a6d8ba946631fdf7dc1cf51c84173",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
       "interprocedural_propagation": "PROVEN",
       "sink_verification": "UNKNOWN"
     },
@@ -19223,6 +20536,21 @@
       "explicit_value_propagation": "PROVEN",
       "field_propagation": "PARTIAL",
       "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:a41225165be0292a5f7b7eba7451a96301a0ac43ce3f247997021b582eda605b",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PARTIAL",
       "sink_verification": "UNKNOWN"
     },
     {
@@ -19902,6 +21230,21 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:aa4560e9e7af3fad417e9df61dbff0c1057b4ea570ac94d316c49ddd653b28b6",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "boundary_module"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:aa5f7f8e180343e852a5b0a0c891684435da61ad4c90496af6830ffa3be7fbfe",
       "sources": [],
       "sinks": [],
@@ -20101,6 +21444,21 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:ac62bf1ff0ceb7b788bd51e7a4932016883a6a7b62443e36a70ab160819a4284",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "feature"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:ac791efc06a8ea984870806677ec65ff147ab3a9f9e639db263bf38f165ec51e",
       "sources": [],
       "sinks": [],
@@ -20160,6 +21518,19 @@
       "explicit_value_propagation": "PROVEN",
       "field_propagation": "UNKNOWN",
       "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:ac99b86e30b0a6d4c780f1bd8a8b85f94ffc93ecfa86890445c3a0086bccf1dc",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PROVEN",
       "sink_verification": "UNKNOWN"
     },
     {
@@ -21381,6 +22752,34 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:b6d46a7eecb0baf63da9a5a7444d0ba49b88158553a99b0eedf289b4d52b70c9",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:b6f9b1ab42ee782d67d4295d4a6b12242e0408e682683a89a1f700690ba70162",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "boundary"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:b709145bdcb46621144f60de6947a97a41e4cb5fa8165b78e1e941d92a3a4640",
       "sources": [],
       "sinks": [],
@@ -21551,6 +22950,21 @@
       "explicit_value_propagation": "PROVEN",
       "field_propagation": "UNKNOWN",
       "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:b92172a585b50abcd377a266ea4d0e0ff13899c8780739ab419072a62ae7b3ed",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "bypasses"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
       "sink_verification": "UNKNOWN"
     },
     {
@@ -21901,6 +23315,21 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:bba2425447474ddecd11057174e886d93f1edbdcbb72159b020870b8d031fb4b",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "provenance"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:bba68304e252fff920a9db124d4a7565fa0e4af29daf87d4724e44604fac336f",
       "sources": [],
       "sinks": [],
@@ -21926,6 +23355,26 @@
       "explicit_value_propagation": "PROVEN",
       "field_propagation": "UNKNOWN",
       "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:bbf0bb751fa6c319bd3253a2ea46e3df7722fb3220318cf265c1f7798d1ef42a",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "checkpoint",
+        "source",
+        "state",
+        "target"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PARTIAL",
       "sink_verification": "UNKNOWN"
     },
     {
@@ -21956,6 +23405,21 @@
       "explicit_value_propagation": "PROVEN",
       "field_propagation": "PARTIAL",
       "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:bc685ef7a3b5ba7cd010878c985daa7b29ba22e0ecb3f17adb4fb191e12d0b9b",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PARTIAL",
       "sink_verification": "UNKNOWN"
     },
     {
@@ -22018,6 +23482,23 @@
         "rule_id",
         "standard_edition",
         "state"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:bd66f6734fe8d4b0842295a52e593c2539b9ff47247973f9ac5e23ac019407f2",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "adjacency"
       ],
       "trusted_transitions": [],
       "uncertainty": [
@@ -22352,6 +23833,36 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:c0b6783412055d04ad2e8fb2d5e6f85a76c41ca1869245895028eb99cd36a934",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "unsupported_semantics"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:c0db7d597c613dc605de9a4ff10e503ac2086c5ed09690dda232b733c7cde2f5",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "kind"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:c10ddcf6621728fe7ca05a9d4a0db97605da7059e31ddd0fe54955d53bb7d1c4",
       "sources": [],
       "sinks": [],
@@ -22554,6 +24065,38 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:c234a53531b7ca51ffe152df3063412888e058977daf55af7cb1a62d58ad150a",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:c2437ade4796a7603d379177d9f8fa1b9bae1fea1a7926ae4dac811ed7cd2611",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "events"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:c2446c440be950a88d4c5e7b8b263839185c0bb7d84b198a69e31faecee02347",
       "sources": [],
       "sinks": [],
@@ -22667,6 +24210,21 @@
       "explicit_value_propagation": "PROVEN",
       "field_propagation": "PARTIAL",
       "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:c355aa5d3e5ab38b226f800c9a2c284d997b902af969e9c62c4ecc2dc19c919f",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "events"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
       "sink_verification": "UNKNOWN"
     },
     {
@@ -23048,6 +24606,21 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:c732887c614f49e62a249a05f59327efccba6837672e990996124ddbe59cebd8",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "digest"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:c756601f8d5cafd39dad559d1800c9cdcda49088169f558f8b71f70aba126bc9",
       "sources": [],
       "sinks": [],
@@ -23116,6 +24689,22 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:c77c86033af9b7d1f12f50575952b0d0f60ef8a41dd3d2c3965794a458bccff5",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "intended_proven_impossible_edges",
+        "realized_undeclared_edges"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:c78c713712dac0a69cf15ab4fffe285f6430e08a883e825812ed27a458f39fb4",
       "sources": [],
       "sinks": [],
@@ -23131,12 +24720,40 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:c7b0d742b020c9bbe6150fc3f78b4634032dfff8c94b3ec0c2dedbfae51b789e",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:c7b900ae3cc93614e4910dc351f35ada453b218f6c9e5460ec9a9bf0807adfcc",
       "sources": [],
       "sinks": [],
       "return_labels": [],
       "field_flows": [
         "source_module"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:c7c67d94ba14bf7c09717ea2cf3bccf248483298f2752a796bb9895113dd76a0",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "from"
       ],
       "trusted_transitions": [],
       "uncertainty": [],
@@ -23209,6 +24826,19 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:c8f991ff14b5b17a7074d08bea5764023e7dcc331d0d28635803863286665cc3",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:c90725672e8a4bc5381e0968200c4e82407ad2ed0fc63b1d2022f6ac99fe098f",
       "sources": [],
       "sinks": [],
@@ -23265,6 +24895,21 @@
       "uncertainty": [],
       "explicit_value_propagation": "PROVEN",
       "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:c96da7b24059d749c518d423c86dad4d26811f9ea6b3ae1cba293fa17a3a159d",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "state_postconditions"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
       "interprocedural_propagation": "PROVEN",
       "sink_verification": "UNKNOWN"
     },
@@ -23365,6 +25010,39 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:ca4b0e63ab090e90ba9b4614af8bc143fd74f325b89fd899f4f4e8c0caeb1d14",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "feature",
+        "state"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:ca4c1d2b5bc2b04495cb2e1271af49b92ad659e630e2021a6c333d4121b52139",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "state"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:ca66bb8d5644a66d47dbbe2a60b443ffc4e39f3eb970d317f9094f93be0f12b4",
       "sources": [],
       "sinks": [],
@@ -23428,6 +25106,21 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:cae209e509319de2be1897e3fec1d7528c9266b97f236efcdf9779bf38fb1429",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "checkpoints"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:cb17c5e162ea71a51b7b5841d5b49faf8ba3f94e17daaa6d1fc0654fee2b194b",
       "sources": [],
       "sinks": [],
@@ -23439,6 +25132,45 @@
       ],
       "explicit_value_propagation": "PROVEN",
       "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:cb1d4b58f053f72c724c9dc71e64e8928d9884082ba73170f4205fdf2d49a220",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:cb271bd4cf0a7a9a879e2465d522b81d3b3a7209c867e0f2cb31fdea9ab4b661",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "anchors",
+        "checkpoint",
+        "checkpoints",
+        "feature",
+        "features",
+        "module_id",
+        "path",
+        "schema",
+        "schema_version",
+        "source"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
       "interprocedural_propagation": "PARTIAL",
       "sink_verification": "UNKNOWN"
     },
@@ -23920,6 +25652,21 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:ceefeffd1c96dcc1ed5a084adf9b18ef4b3897aa689a86087f9ab4f81cfa33c7",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "pointer"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:cf254d63846b6e8f1c5c62061862526870985fcf4fe6f115411539c9030c0ace",
       "sources": [],
       "sinks": [],
@@ -24102,6 +25849,21 @@
       "explicit_value_propagation": "PROVEN",
       "field_propagation": "PARTIAL",
       "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:d039cad60eefa16f0df350fa337fa7ca2048149633a82dfcf11af7bf95537a5a",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "can_reach_terminal"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
       "sink_verification": "UNKNOWN"
     },
     {
@@ -24894,6 +26656,25 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:d59a80f179b4b627af2b556ca9f293f83aaa87b6fab121a02275a660190684ab",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "module_id",
+        "path",
+        "source"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:d5afaeeae0a8a5eda3319a18ae21292650d5fc9d49c575a3b1c8f9320c54df96",
       "sources": [],
       "sinks": [],
@@ -24921,6 +26702,19 @@
       "explicit_value_propagation": "PROVEN",
       "field_propagation": "UNKNOWN",
       "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:d5db04d5edb0d3949fb57aec271af49f93ba2d42b4b294b3d6d54d1e0e3f7dd1",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PROVEN",
       "sink_verification": "UNKNOWN"
     },
     {
@@ -25384,6 +27178,19 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:d925bbbd774aea7977bd34d4e771eb455b5a64a3568330e6830b450a767c968c",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:d9547d7ae01521ba08c4a167b8b4d89902dd2ae38fc425dabd45526b407fb0a0",
       "sources": [],
       "sinks": [],
@@ -25471,6 +27278,21 @@
     },
     {
       "symbol": "rust_symbol:sha256:da2e86d6efd014585ba114186ae0f7b41edc391afe096d547ab747cc116489de",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:da4f9bee87b86960512bbf4e1e2cc989dc8c448ee8560e5bcf249c15b6a11a1d",
       "sources": [],
       "sinks": [],
       "return_labels": [],
@@ -25588,6 +27410,45 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:db6571b56860bc76cf4e1432e5c27d33ef11478374e05dcf67541ab939f48357",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:db893aa0be2d8941d0507b5ab41fac2dc32a8b93e9abf0a95e6710751f30fdb2",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "call_sites",
+        "callee",
+        "column",
+        "edges",
+        "events",
+        "line",
+        "path",
+        "sequence"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:dbc505ba16ea413777f8e1fbc72c7636da122cda70bfe30bc9a84e20f885af1b",
       "sources": [],
       "sinks": [],
@@ -25603,6 +27464,21 @@
       "explicit_value_propagation": "PROVEN",
       "field_propagation": "PARTIAL",
       "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:dbd89265c0190affdef9553e39bee078c71ff6ba01e1cb2b2a2ea2087a36f64a",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "outcomes"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
       "sink_verification": "UNKNOWN"
     },
     {
@@ -25683,6 +27559,19 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:dc92e7eaa1b9decfa8ea551d30bb8fc794087beeef70349ad1d491f461d98dd1",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:dcb53ffad563026907499996f7e3e86c1f3abb05f59f38291e306e6b426250fa",
       "sources": [],
       "sinks": [],
@@ -25694,6 +27583,19 @@
       "uncertainty": [],
       "explicit_value_propagation": "PROVEN",
       "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:dce6a33f1cd0acc7a19e5f66dffee80950cb396dda8340aeba83708de605b9a1",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
       "interprocedural_propagation": "PROVEN",
       "sink_verification": "UNKNOWN"
     },
@@ -26061,6 +27963,21 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:e10dee12702917da08db91c98e8d0623b54135662b139efd4c61d6695036115b",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "effect"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:e14116d828d41965ed7bd11fb52a212497e4a36c6e8eecff6053de50d95cdd57",
       "sources": [],
       "sinks": [],
@@ -26180,6 +28097,23 @@
         "schema_version",
         "source",
         "state"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:e20749b43a5a6e1c6dc8cd4d8d73761c2212b4be92c8e7c6c68788179a4f1d45",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "responsible_symbol"
       ],
       "trusted_transitions": [],
       "uncertainty": [
@@ -26678,12 +28612,26 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:e60d085bcf1603ed5e3128e0367ab1998539c8ad678ec3d416a4e1dde00672bf",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:e61f0bc5cf65d1f0e13dcdff9e5e50b85df6a2bda2182ef5ab26bde02f79d1f2",
       "sources": [],
       "sinks": [],
       "return_labels": [],
       "field_flows": [
         "architecture_realization",
+        "behavioral_realization",
         "behavioral_semantics",
         "contract_coherency",
         "documentation",
@@ -27005,6 +28953,21 @@
       ],
       "explicit_value_propagation": "PROVEN",
       "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:e8e92a6799af44166c15e47bc2ca728035cf24249a40fdf9dc1b16226614b78c",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
       "interprocedural_propagation": "PARTIAL",
       "sink_verification": "UNKNOWN"
     },
@@ -27479,6 +29442,19 @@
       "explicit_value_propagation": "PROVEN",
       "field_propagation": "UNKNOWN",
       "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:eb80e70671242983f6b89e224b565866dfba0459876057143d4e208470abab49",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PROVEN",
       "sink_verification": "UNKNOWN"
     },
     {
@@ -28051,6 +30027,21 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:f0cac5a83f98ecd92e950bfb40f5dae9796ff05b98efc7597389c4b4ee4951f2",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:f0cde481e0e4d9d728f34bc494618eed39cda2867797a13e1785b3995bd93143",
       "sources": [],
       "sinks": [],
@@ -28240,6 +30231,21 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:f211bb5168bb062142274e8301fa6ca3473d44984084fd1009b95e527eabcd2f",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "contract_provenance"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:f2131aac768a81dc86f4cab3c8e50da66ab5945d8117b1eff842a76d20f9fdbb",
       "sources": [],
       "sinks": [],
@@ -28424,6 +30430,21 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:f29cc7b57a7b2762d1f9e66b0a5c9036d7e2fae519d50fd58fffd20da7d1a4cb",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:f2a1f492280dbd5f09528e79a9f6a124796e5e75ea084a20649726cd3f554c70",
       "sources": [],
       "sinks": [],
@@ -28493,6 +30514,19 @@
     },
     {
       "symbol": "rust_symbol:sha256:f33010796d8a05418d8ab058e0076b5a25b075f7214194ba3e1299b6ed8e8f3a",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PROVEN",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:f343f667270fc5d24a1efbdb538c6c5ae371052e470f74d8e26411ccaab4adf9",
       "sources": [],
       "sinks": [],
       "return_labels": [],
@@ -28938,6 +30972,21 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:f7433aafb2701bf4e8c50b7f1f4d1cd813cc64740b94f7447df8132a2efe57e9",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:f759ac795bfc61ce74e562d60bc47711ce53894e400c8f54ec27712356256ef8",
       "sources": [],
       "sinks": [],
@@ -29138,6 +31187,23 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:fa0e812cead66c38a371a420f55684cb10db90298e1e5171c49c6f94c89aa7ac",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "continuation"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:fa4fe3f06a69a5c523b24c0399e4c16be24fa88a7e4968459e8a5de651bf5ef2",
       "sources": [],
       "sinks": [],
@@ -29256,6 +31322,23 @@
       "field_flows": [
         "path_to_symbols",
         "reexports"
+      ],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "PARTIAL",
+      "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
+      "symbol": "rust_symbol:sha256:fbf5309084ca323be1d0126c97e0d0b6ea5df725928b47f293041680e137baa5",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [
+        "stdout"
       ],
       "trusted_transitions": [],
       "uncertainty": [
@@ -29521,6 +31604,21 @@
       "sink_verification": "UNKNOWN"
     },
     {
+      "symbol": "rust_symbol:sha256:fe2350cc3d6960ca3056bb6297cf790a1ed603cfc96582dd4f83b5fdb3981c22",
+      "sources": [],
+      "sinks": [],
+      "return_labels": [],
+      "field_flows": [],
+      "trusted_transitions": [],
+      "uncertainty": [
+        "opaque_or_unresolved_call_flow"
+      ],
+      "explicit_value_propagation": "PROVEN",
+      "field_propagation": "UNKNOWN",
+      "interprocedural_propagation": "PARTIAL",
+      "sink_verification": "UNKNOWN"
+    },
+    {
       "symbol": "rust_symbol:sha256:fe45a3480863a1538d11e37f30719ff1eb8128402ebe5335ca7e7b1c0153f5b8",
       "sources": [],
       "sinks": [],
@@ -29754,13 +31852,13 @@
   "violations": [],
   "trusted_transition_diagnostics": [],
   "coverage": {
-    "functions": 1866,
+    "functions": 2005,
     "classified_sources": 0,
     "declared_sinks": 0,
     "sink_checks": 0,
     "sink_violations": 0,
     "interprocedural_flow_facts": 0,
-    "field_flow_facts": 1857,
+    "field_flow_facts": 1946,
     "endorsements": 0,
     "declassifications": 0,
     "unknown_sinks": 0,

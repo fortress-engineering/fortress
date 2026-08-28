@@ -162,6 +162,38 @@ pub struct EnvironmentalOutcomeSummary {
     provenance: String,
 }
 
+impl EnvironmentalOutcomeSummary {
+    /// Returns the project-defined outcome identity.
+    #[must_use]
+    pub fn id(&self) -> &str {
+        &self.id
+    }
+
+    /// Returns the exact continuation symbol, when one is declared.
+    #[must_use]
+    pub fn continuation(&self) -> Option<&str> {
+        self.continuation.as_deref()
+    }
+
+    /// Returns whether the outcome is a declared terminal continuation.
+    #[must_use]
+    pub const fn terminal(&self) -> bool {
+        self.terminal
+    }
+
+    /// Returns the normalized handling conclusion.
+    #[must_use]
+    pub const fn handling(&self) -> HandlingStatus {
+        self.handling
+    }
+
+    /// Returns exact Environment Contract provenance.
+    #[must_use]
+    pub fn provenance(&self) -> &str {
+        &self.provenance
+    }
+}
+
 /// One external boundary's deterministic environmental summary.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct EnvironmentalOperationSummary {
@@ -188,6 +220,38 @@ pub struct EnvironmentalOperationSummary {
     recovery_consistency: EnvironmentalCoverage,
     information_flow: EnvironmentalCoverage,
     provenance: String,
+}
+
+impl EnvironmentalOperationSummary {
+    /// Returns the external operation identity.
+    #[must_use]
+    pub fn operation(&self) -> &str {
+        &self.operation
+    }
+
+    /// Returns the governed integration-boundary symbol.
+    #[must_use]
+    pub fn boundary(&self) -> &str {
+        &self.boundary
+    }
+
+    /// Returns the Module owning the integration boundary.
+    #[must_use]
+    pub fn boundary_module(&self) -> &str {
+        &self.boundary_module
+    }
+
+    /// Returns all admissible outcome summaries.
+    #[must_use]
+    pub fn outcomes(&self) -> &[EnvironmentalOutcomeSummary] {
+        &self.outcomes
+    }
+
+    /// Returns exact Environment Contract provenance.
+    #[must_use]
+    pub fn provenance(&self) -> &str {
+        &self.provenance
+    }
 }
 
 /// Aggregate deterministic environmental counts.

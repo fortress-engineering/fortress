@@ -144,6 +144,36 @@ impl TrustedTransitionDiagnostic {
     pub const fn kind(&self) -> InformationFlowTransformKind {
         self.kind
     }
+
+    /// Returns the executable symbol containing the trusted transition.
+    #[must_use]
+    pub fn symbol(&self) -> &str {
+        &self.symbol
+    }
+
+    /// Returns the project-defined information facet.
+    #[must_use]
+    pub fn facet(&self) -> &str {
+        &self.facet
+    }
+
+    /// Returns the declared source level.
+    #[must_use]
+    pub fn from(&self) -> &str {
+        &self.from
+    }
+
+    /// Returns the declared target level.
+    #[must_use]
+    pub fn to(&self) -> &str {
+        &self.to
+    }
+
+    /// Returns exact Function Contract provenance.
+    #[must_use]
+    pub fn contract_provenance(&self) -> &str {
+        &self.contract_provenance
+    }
 }
 
 /// One supported source-to-sink information-flow contradiction.

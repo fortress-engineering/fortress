@@ -1,0 +1,34 @@
+{
+  "$schema": "urn:fortress:schema:v1:rule",
+  "schema_version": 1,
+  "id": "BEHAVIOR-BYPASS-001",
+  "title": "Supported realized behavior preserves intended mandatory passage",
+  "status": "draft",
+  "statement": "Supported realized behavior MUST NOT reach a checkpoint while bypassing a checkpoint that dominates it in the Intended BFG.",
+  "rationale": "Intended dominators encode semantic gates that every meaningful route must traverse. A supported implementation path around such a gate is a behavioral contradiction even when individual functions and architectural dependencies are otherwise valid.",
+  "failure_prevented": "Protected operations, accepted-only processing, or other meaningful checkpoints being reachable through supported implementation semantics without their required behavioral gate.",
+  "applicability": "Every opted-in modeled Feature whose Intended BFG contains a dominator relation and whose relevant implementation region has sufficient supported semantic coverage.",
+  "category": "behavior",
+  "integrity_tier": 1,
+  "evaluation": "Fortress compares Intended BFG dominators with exact implementation-event reachability and emits a finding only for an actual supported route that reaches the dominated checkpoint while excluding every anchor of the required dominator.",
+  "required_capabilities": [
+    "intended-bfg-dominator-semantics",
+    "realized-behavioral-flow-graph-v1"
+  ],
+  "logic": {
+    "implies": [],
+    "conflicts_with": []
+  },
+  "finding": {
+    "message": "Supported implementation behavior bypasses an Intended BFG dominator.",
+    "location": "path"
+  },
+  "remediation": "Correct implementation control and semantic flow so every route to the reached checkpoint passes the required dominator, or correct inaccurate behavioral intent.",
+  "valid_example": "Every supported route reaching a protected-operation checkpoint first passes an authentication checkpoint that dominates it in the Intended BFG.",
+  "invalid_example": "A supported request-to-operation implementation path reaches the protected operation without any authentication anchor.",
+  "exception_policy": "Incomplete coverage remains PARTIAL or UNKNOWN and does not prove bypass freedom. Proven bypasses have no implicit exemption.",
+  "introduced": "1.0.0-draft.1",
+  "history": [
+    "Introduced with coverage-aware Intended BFG dominator enforcement."
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "$schema": "urn:fortress:schema:v1:rule",
+  "schema_version": 1,
+  "id": "BEHAVIOR-REALIZATION-001",
+  "title": "Opted-in modeled behavior is realized consistently",
+  "status": "draft",
+  "statement": "Every opted-in modeled Feature checkpoint and transition MUST be bound to exact supported semantic anchors and realized consistently with the Intended BFG.",
+  "rationale": "Behavioral intent and executable semantics remain different authorities until explicit checkpoint anchors make reconciliation possible. Complete opt-in prevents selective omission from masquerading as behavioral realization.",
+  "failure_prevented": "Impossible intended behavior, undeclared supported checkpoint transitions, undeclared terminals, or incomplete realization authority being treated as agreement between behavior and implementation.",
+  "applicability": "Every modeled Feature with at least one distributed Behavior Realization Contract declaration. Unopted modeled Features remain MODELED_UNREALIZED and non-failing.",
+  "category": "behavior",
+  "integrity_tier": 1,
+  "evaluation": "Fortress validates complete checkpoint bindings, derives implementation events from the canonical semantic stack once, projects next semantic checkpoint transitions, and compares those transitions with Intended BFG edges. Unknown implementation coverage remains explicit and non-passing.",
+  "required_capabilities": [
+    "behavior-realization-contract-v1",
+    "realized-behavioral-flow-graph-v1"
+  ],
+  "logic": {
+    "implies": [],
+    "conflicts_with": []
+  },
+  "finding": {
+    "message": "Supported implementation semantics contradict opted-in Intended BFG realization.",
+    "location": "path"
+  },
+  "remediation": "Correct the realization contract, implementation, or authored Intended BFG so complete exact anchors and supported semantic transitions agree.",
+  "valid_example": "Every checkpoint has an exact semantic anchor and each supported next-checkpoint transition is an Intended BFG edge.",
+  "invalid_example": "A supported implementation-semantic route moves directly between two checkpoints without an authored Intended BFG edge.",
+  "exception_policy": "Unopted Features remain explicitly unrealized. No exemption exists for supported contradictions inside an opted-in Feature.",
+  "introduced": "1.0.0-draft.1",
+  "history": [
+    "Introduced with Behavioral Realization and Realized BFG v1."
+  ]
+}

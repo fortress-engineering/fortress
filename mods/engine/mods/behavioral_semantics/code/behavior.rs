@@ -327,6 +327,32 @@ pub struct DecisionBranch {
     derivation: String,
 }
 
+impl DecisionBranch {
+    /// Returns the decision checkpoint.
+    #[must_use]
+    pub fn decision(&self) -> &str {
+        &self.decision
+    }
+
+    /// Returns the authored branch outcome.
+    #[must_use]
+    pub fn outcome(&self) -> &str {
+        &self.outcome
+    }
+
+    /// Returns the branch target checkpoint.
+    #[must_use]
+    pub fn target(&self) -> &str {
+        &self.target
+    }
+
+    /// Returns whether the authored branch can reach an intended terminal.
+    #[must_use]
+    pub const fn can_reach_terminal(&self) -> bool {
+        self.can_reach_terminal
+    }
+}
+
 /// One strongly connected component and loop interpretation.
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct StronglyConnectedComponent {

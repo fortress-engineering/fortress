@@ -6,7 +6,7 @@ Persist root-owned operational and build inputs that cannot be derived from Modu
 
 ## Origin
 
-Maintainers author the observation configuration, project information-flow facet vocabulary, workspace manifest, Cargo configuration, and toolchain pin. The certification scaffold is also authored because it states the current absence of certification evidence rather than recording a generated audit result.
+Maintainers author the observation configuration, project information-flow facet vocabulary, root audit-Feature realization bindings, workspace manifest, Cargo configuration, and toolchain pin. The certification scaffold is also authored because it states the current absence of certification evidence rather than recording a generated audit result.
 
 ## Semantics
 
@@ -23,6 +23,10 @@ Consumers require valid UTF-8 where textual, correct schema or ecosystem syntax,
 Maintainers update Data through reviewed semantic changes; schema versions change only when representation identity changes, while Git retains superseded history.
 
 ## Files
+
+### [`behavior_realization_contracts.json`](../data/behavior_realization_contracts.json)
+
+Binds every checkpoint of the root Fortress audit Feature to exact supported program-semantic anchors without authoring reachability, realized transitions, bypasses, or verification evidence.
 
 ### [`cargo_config.toml`](../data/cargo_config.toml)
 

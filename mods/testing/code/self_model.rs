@@ -127,7 +127,9 @@ fn live_contract_v2_ecosystem_resolves_completely() {
                 "ARCH-DEPENDENCY-001",
                 "ARCH-OWNERSHIP-001",
                 "ARCH-REALIZATION-001",
+                "BEHAVIOR-BYPASS-001",
                 "BEHAVIOR-FLOW-001",
+                "BEHAVIOR-REALIZATION-001",
                 "CONTRACT-COHERENCY-001",
                 "PROGRAM-DOMAIN-001",
                 "PROGRAM-EFFECT-001",
@@ -153,14 +155,14 @@ fn live_contract_v2_ecosystem_resolves_completely() {
         "live CCG must be coherent: {:#?}",
         resolution.violations()
     );
-    assert_eq!(resolved.modules().len(), 32);
-    assert_eq!(resolved.capabilities().len(), 16);
-    assert_eq!(resolved.features().len(), 16);
-    assert_eq!(resolved.requirements().len(), 68);
+    assert_eq!(resolved.modules().len(), 34);
+    assert_eq!(resolved.capabilities().len(), 17);
+    assert_eq!(resolved.features().len(), 17);
+    assert_eq!(resolved.requirements().len(), 73);
     assert_eq!(resolved.guarantees().len(), 5);
     assert_eq!(resolved.checkpoints().len(), 10);
-    assert_eq!(resolved.direct_requirements().len(), 97);
-    assert_eq!(resolved.relationships().len(), 15);
+    assert_eq!(resolved.direct_requirements().len(), 110);
+    assert_eq!(resolved.relationships().len(), 16);
     assert!(
         resolved
             .modules()
