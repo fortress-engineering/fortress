@@ -20,7 +20,7 @@ jobs:
   validate:
     name: Validate current Fortress capabilities
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 90
     steps:
       - name: Check out exact revision
         uses: actions/checkout@v4.3.1
