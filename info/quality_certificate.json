@@ -1,0 +1,143 @@
+{
+  "$schema": "urn:fortress:derived:v1:local-quality-certificate",
+  "schema_version": 1,
+  "semantic_version": "quality-certificate-v1",
+  "project": "PF-FORTRESS",
+  "profile": "fortress-complete-local-v1",
+  "claim": "LOCAL_QUALITY_GATES_PASS",
+  "trust": {
+    "level": "untrusted-local",
+    "tamper_evidence": "SHA-256",
+    "authenticity": "UNVERIFIED",
+    "limitation": "Digest stamps detect mutation and staleness but are not signatures; authenticated antiforgery requires an external trusted signing identity."
+  },
+  "source": {
+    "fingerprint": "sha256:7dfa6f59afa0121d148af02fbddf9bc41f3bb09f599d8247da61a8401a690e57",
+    "file_count": 323,
+    "excluded_self": "info/quality_certificate.json"
+  },
+  "toolchain": {
+    "rust": "1.97.1",
+    "cargo_config": "data/cargo_config.toml",
+    "resolver_lockfile": "info/Cargo.lock",
+    "build_artifacts": "external-temporary-directory"
+  },
+  "gates": [
+    {
+      "id": "ARTIFACT_BFG",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config data/cargo_config.toml run --quiet --manifest-path data/Cargo.toml -p fortress-cli -- bfg . --format json --output"
+    },
+    {
+      "id": "ARTIFACT_CCG",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config data/cargo_config.toml run --quiet --manifest-path data/Cargo.toml -p fortress-cli -- ccg . --format json --output"
+    },
+    {
+      "id": "ARTIFACT_ENVIRONMENTAL",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config data/cargo_config.toml run --quiet --manifest-path data/Cargo.toml -p fortress-cli -- environmental . --format json --output"
+    },
+    {
+      "id": "ARTIFACT_INFORMATION_FLOW",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config data/cargo_config.toml run --quiet --manifest-path data/Cargo.toml -p fortress-cli -- information-flow . --format json --output"
+    },
+    {
+      "id": "ARTIFACT_PSM",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config data/cargo_config.toml run --quiet --manifest-path data/Cargo.toml -p fortress-cli -- psm . --format json --output"
+    },
+    {
+      "id": "ARTIFACT_REALIZED_BFG",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config data/cargo_config.toml run --quiet --manifest-path data/Cargo.toml -p fortress-cli -- realized-bfg . --format json --output"
+    },
+    {
+      "id": "ARTIFACT_SEMANTIC",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config data/cargo_config.toml run --quiet --manifest-path data/Cargo.toml -p fortress-cli -- semantic . --format json --output"
+    },
+    {
+      "id": "ARTIFACT_STATE_EFFECT",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config data/cargo_config.toml run --quiet --manifest-path data/Cargo.toml -p fortress-cli -- state-effect . --format json --output"
+    },
+    {
+      "id": "AUDIT_JSON_DETERMINISM",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config data/cargo_config.toml run --quiet --manifest-path data/Cargo.toml -p fortress-cli -- audit . --format json"
+    },
+    {
+      "id": "CLIPPY",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config data/cargo_config.toml clippy --manifest-path data/Cargo.toml --workspace --all-targets --all-features -- -D warnings"
+    },
+    {
+      "id": "FORMAT",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config data/cargo_config.toml fmt --manifest-path data/Cargo.toml --all --check"
+    },
+    {
+      "id": "RUSTDOC",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config data/cargo_config.toml doc --manifest-path data/Cargo.toml --workspace --all-features --no-deps"
+    },
+    {
+      "id": "SCHEMA_AND_STANDARD",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config data/cargo_config.toml test --manifest-path data/Cargo.toml --all-features --test schema_registry"
+    },
+    {
+      "id": "SELF_AUDIT",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config data/cargo_config.toml run --quiet --manifest-path data/Cargo.toml -p fortress-cli -- audit ."
+    },
+    {
+      "id": "SELF_MODEL",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config data/cargo_config.toml test --manifest-path data/Cargo.toml --all-features --test self_model"
+    },
+    {
+      "id": "WORKSPACE_TESTS",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config data/cargo_config.toml test --manifest-path data/Cargo.toml --workspace --all-targets --all-features"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "info/behavioral_flow_graph.json",
+      "digest": "sha256:f7cf2853ca79a37819196657661d56fd40f9b62c708763286e6db476e848d3eb"
+    },
+    {
+      "path": "info/contract_coherency_graph.json",
+      "digest": "sha256:6ca8fbef6b906d8e5071cbe7411f194f5012faaee9c9e6ae3565aeed867ce4fd"
+    },
+    {
+      "path": "info/environmental_analysis.json",
+      "digest": "sha256:341a3b0494a74a68f0dc64ad67ccb5bdfcc6e684553bc8a7d8f9cd28541956eb"
+    },
+    {
+      "path": "info/information_flow_analysis.json",
+      "digest": "sha256:ae34815c62823f324f0fabf7f1443935e15b29361711b3ba1eca717e429fa2c0"
+    },
+    {
+      "path": "info/program_semantic_model.json",
+      "digest": "sha256:91f7484c2f9a7a91afec34494f6a358e780f39bc0e57f644322bf6ecd40d0557"
+    },
+    {
+      "path": "info/realized_behavioral_flow_graph.json",
+      "digest": "sha256:153b77f90db20f7a89e39bf22bb613e34a6f45f4b3af73a7371ed06223b55283"
+    },
+    {
+      "path": "info/semantic_analysis.json",
+      "digest": "sha256:531b869659b0fbcd2acb9c6d47a9a01ebe8e7f95ef3ebc780cd4f4b499dbd22a"
+    },
+    {
+      "path": "info/state_effect_analysis.json",
+      "digest": "sha256:fbb3a753d175eaf719e068beae8753247f76e50e3ece9f4066c0a1153ba230ca"
+    }
+  ],
+  "audit_json_digest": "sha256:8dbab8563e159fd1f3ee067f685368a42adc457684f0bc07d6bbbfaa3fc95a0c",
+  "certificate_stamp": "sha256:7e5c147e5ad1c90fbd24bd7abf16b67c6422230a907d59e3c9390fecf318f930"
+}

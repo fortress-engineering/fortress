@@ -42,6 +42,10 @@ Reconciles observed governed files with exact declared architectural ownership.
 
 Evaluates the recursive Module grammar, canonical surfaces, flat attributes, companion docs, and path naming.
 
+### [`quality_certificate.py`](../code/quality_certificate.py)
+
+Executes the complete pinned local quality-gate profile, issues deterministic repository and artifact fingerprints after every gate passes, and performs lightweight PASS, freshness, digest, and tamper-stamp verification for hosted CI while explicitly retaining UNVERIFIED issuer authenticity.
+
 ### [`rust_test_analyzer.rs`](../code/rust_test_analyzer.rs)
 
 Uses structured Rust syntax parsing to emit deterministic snapshot-bound behavioral test facts.
