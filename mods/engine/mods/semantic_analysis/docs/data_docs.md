@@ -10,7 +10,7 @@ Both schemas are specification-authored for the current draft. Optional function
 
 ## Semantics
 
-Function Contracts narrow admitted parameters and state output promises without duplicating static signatures. Semantic Analysis documents contain derived summaries, checks, violations, coverage, unsupported classes, and authority digests.
+Function Contracts narrow admitted parameters and state output promises while carrying state/effect obligations for the responsible downstream analyzer without duplicating static signatures. Semantic Analysis documents contain derived value-domain summaries, checks, violations, coverage, unsupported classes, and authority digests.
 
 ## Validity
 
@@ -26,9 +26,9 @@ Authored contracts change with intentional function semantics. Schemas change on
 
 Narrows and proves the exact iteration-bound contract of the Semantic Analysis fixed-point engine without deriving intent from its callers.
 
-### [`function_contract_schema_v1.json`](../data/function_contract_schema_v1.json)
+### [`function_contract_schema_v2.json`](../data/function_contract_schema_v2.json)
 
-Defines strict distributed Function Contract v1 documents and supported authored domain forms.
+Defines strict distributed Function Contract v2 documents, supported authored domain forms, state obligations, and effect policies.
 
 ### [`program_domain_rule.json`](../data/program_domain_rule.json)
 

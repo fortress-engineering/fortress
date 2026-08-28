@@ -1,0 +1,35 @@
+{
+  "$schema": "urn:fortress:schema:v1:rule",
+  "schema_version": 1,
+  "id": "PROGRAM-EFFECT-001",
+  "title": "Supported function effects remain within authored effect policy",
+  "status": "draft",
+  "statement": "When a Function Contract authors an effect policy, every supported direct and transitive function effect MUST belong to that policy's allowed effect set.",
+  "rationale": "A function can preserve nominal and value-domain correctness while unexpectedly mutating receiver state, interacting externally, panicking, or reaching unsafe execution through a resolved callee.",
+  "failure_prevented": "Supported direct or transitive mutation and effect behavior escaping the function-level policy that downstream engineering intent relies upon.",
+  "applicability": "Functions with an authored Function Contract v2 effect policy. Functions without a policy have observed effect summaries but no additional purity restriction; unknown effects prevent proof completeness rather than becoming findings.",
+  "category": "source",
+  "integrity_tier": 3,
+  "evaluation": "Fortress derives direct effects from structured PSM reads, mutations, external calls, reachable exceptional sites, and unsafe declarations, then computes deterministic call-graph fixed-point closure and checks the supported set against the authored policy.",
+  "required_capabilities": [
+    "function-contract-v2",
+    "program-semantic-model-v3",
+    "state-effect-analysis-v1"
+  ],
+  "logic": {
+    "implies": [],
+    "conflicts_with": []
+  },
+  "finding": {
+    "message": "A supported direct or transitive function effect is forbidden by its authored policy.",
+    "location": "span"
+  },
+  "remediation": "Remove or isolate the effect, route it through an explicitly effectful boundary, or correct the authored policy when the effect is genuinely part of the function responsibility.",
+  "valid_example": "A read-only query policy admits receiver_state_read and its supported call closure contains no other effect.",
+  "invalid_example": "A function allowing only receiver_state_read directly or transitively mutates the receiver or performs an external interaction.",
+  "exception_policy": "Opaque and unsupported effects remain uncertainty and do not become PASS. No exemption exists for a forbidden effect Fortress proves within the supported closed vocabulary.",
+  "introduced": "1.0.0-draft.1",
+  "history": [
+    "Introduced with Function Contract v2 and deterministic transitive effect summaries."
+  ]
+}

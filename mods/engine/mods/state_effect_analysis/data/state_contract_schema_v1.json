@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:state-contracts",
+  "title": "Fortress State Contracts v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "schema_version", "types"],
+  "properties": {
+    "$schema": { "const": "urn:fortress:schema:v1:state-contracts" },
+    "schema_version": { "const": 1 },
+    "types": { "type": "array", "items": { "$ref": "#/$defs/state_type" } }
+  },
+  "$defs": {
+    "nominal": { "type": "string", "pattern": "^rust_nominal:sha256:[0-9a-f]{64}$" },
+    "state": { "type": "string", "pattern": "^STATE-[A-Z0-9]+(?:-[A-Z0-9]+)*$" },
+    "domain": {
+      "oneOf": [
+        { "type": "object", "additionalProperties": false, "required": ["kind"], "properties": { "kind": { "const": "top" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind"], "properties": { "kind": { "const": "bottom" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "include"], "properties": { "kind": { "const": "boolean" }, "include": { "type": "array", "uniqueItems": true, "items": { "type": "boolean" } } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "min", "max", "exclude"], "properties": { "kind": { "const": "integer_interval" }, "min": { "type": "integer" }, "max": { "type": "integer" }, "exclude": { "type": "array", "uniqueItems": true, "items": { "type": "integer" } } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "include", "some"], "properties": { "kind": { "const": "option_states" }, "include": { "type": "array", "uniqueItems": true, "items": { "enum": ["none", "some"] } }, "some": { "oneOf": [{ "$ref": "#/$defs/domain" }, { "type": "null" }] } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "include", "ok", "err"], "properties": { "kind": { "const": "result_states" }, "include": { "type": "array", "uniqueItems": true, "items": { "enum": ["err", "ok"] } }, "ok": { "oneOf": [{ "$ref": "#/$defs/domain" }, { "type": "null" }] }, "err": { "oneOf": [{ "$ref": "#/$defs/domain" }, { "type": "null" }] } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "include"], "properties": { "kind": { "const": "enum_variants" }, "include": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "elements"], "properties": { "kind": { "const": "tuple" }, "elements": { "type": "array", "items": { "$ref": "#/$defs/domain" } } } }
+      ]
+    },
+    "predicate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["field", "domain"],
+      "properties": { "field": { "type": "string", "minLength": 1 }, "domain": { "$ref": "#/$defs/domain" } }
+    },
+    "state_definition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "when"],
+      "properties": { "id": { "$ref": "#/$defs/state" }, "when": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/predicate" } } }
+    },
+    "state_type": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "states"],
+      "properties": { "type": { "$ref": "#/$defs/nominal" }, "states": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/state_definition" } } }
+    }
+  }
+}

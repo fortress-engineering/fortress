@@ -24,7 +24,7 @@ Derives deterministic call adjacency, reachability, strongly connected component
 
 ### [`program.rs`](../code/program.rs)
 
-Defines canonical language-neutral PSM v2 types, nominal and impl facts, input/output boundaries, canonical serialization, digests, resolution/coverage summaries, and analyzer coherency.
+Defines canonical language-neutral PSM v3 types, nominal and impl facts, structured places and mutations, input/output boundaries, canonical serialization, digests, resolution/coverage summaries, and analyzer coherency.
 
 ### [`rust.rs`](../code/rust.rs)
 

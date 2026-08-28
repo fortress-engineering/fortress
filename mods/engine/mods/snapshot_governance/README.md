@@ -74,6 +74,12 @@ Consumes deterministic repository file facts to construct and verify snapshots.
 
 Consumes one deterministic PSM-backed function-domain evaluation so PROGRAM-DOMAIN-001 reports supported contradictions without reparsing source or treating uncertainty as passing proof.
 
+### [State and Effect Analysis](../state_effect_analysis/README.md)
+
+**Types:** `depends_on`
+
+Consumes one PSM- and Semantic-Analysis-backed typestate/effect evaluation so PROGRAM-STATE-001 and PROGRAM-EFFECT-001 report supported contradictions without duplicating source or domain analysis.
+
 ### [Standard Registry](../standard_registry/README.md)
 
 **Types:** `depends_on`
@@ -82,4 +88,4 @@ Consumes the exact applicable rule bundle and stable rule identities.
 
 ## Guarantees
 
-No wall-clock or absolute path enters snapshot, CCG, Intended BFG, PSM, or semantic-analysis identity; repository mutation is rejected when observed bytes diverge; the CCG, Intended BFG, observed implementation, requested PSM, and semantic analysis are each compiled once from one exact snapshot; unimplemented rules remain UNSUPPORTED; unmodeled behavior and unknown program semantics are not reported as passing proof; findings never redefine rules; diagnostics never alter PASS or FAIL; audit output never claims certification. Stabilization is an optimistic content protocol rather than a filesystem lock, so a malicious host or a transient mutation reverted to identical bytes remains outside its trust guarantee.
+No wall-clock or absolute path enters snapshot, CCG, Intended BFG, PSM, semantic-analysis, or state/effect identity; repository mutation is rejected when observed bytes diverge; the CCG, Intended BFG, observed implementation, PSM, Semantic Analysis, and State/Effect Analysis are each compiled once from one exact snapshot; unimplemented rules remain UNSUPPORTED; unmodeled behavior and unknown program semantics are not reported as passing proof; findings never redefine rules; diagnostics never alter PASS or FAIL; audit output never claims certification. Stabilization is an optimistic content protocol rather than a filesystem lock, so a malicious host or a transient mutation reverted to identical bytes remains outside its trust guarantee.

@@ -12,11 +12,11 @@ Validate, normalize, deterministically order, and content-address canonical find
 
 ### Includes
 
-Finding definitions, occurrences, source spans and locations, evaluator provenance, failure state, deterministic ordering, content fingerprints, and typed construction errors.
+Finding definitions, occurrences, source spans and locations, evaluator provenance, failure state, deterministic ordering, content fingerprints, typed construction errors, and the authored finite span-presence state/effect intent of FindingLocation.
 
 ### Excludes
 
-Normative rule meaning, repository observation, architecture analysis, rule execution, certification, exemptions, and the decision that a particular violation exists.
+Normative rule meaning, repository observation, architecture analysis, general heap-state reasoning, rule execution, certification, exemptions, and the decision that a particular violation exists.
 
 ## Relationships
 

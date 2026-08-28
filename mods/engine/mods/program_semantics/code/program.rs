@@ -19,16 +19,16 @@ use crate::implementation_observation::{
     ImplementationObservationError, ImplementationObservationInput,
 };
 
-/// Registered PSM v2 schema identity.
-pub const PROGRAM_SEMANTIC_MODEL_SCHEMA: &str = "urn:fortress:schema:v2:program-semantic-model";
+/// Registered PSM v3 schema identity.
+pub const PROGRAM_SEMANTIC_MODEL_SCHEMA: &str = "urn:fortress:schema:v3:program-semantic-model";
 /// Canonical PSM document schema version.
-pub const PROGRAM_SEMANTIC_MODEL_SCHEMA_VERSION: u16 = 2;
+pub const PROGRAM_SEMANTIC_MODEL_SCHEMA_VERSION: u16 = 3;
 /// Semantic version of the language-neutral PSM compiler.
-pub const PROGRAM_SEMANTIC_MODEL_VERSION: &str = "2.0.0";
+pub const PROGRAM_SEMANTIC_MODEL_VERSION: &str = "3.0.0";
 /// Stable Rust analyzer identity.
 pub const RUST_PROGRAM_ANALYZER_ID: &str = "fortress-rust-program-semantics";
 /// Semantic version of supported Rust program analysis.
-pub const RUST_PROGRAM_ANALYZER_VERSION: &str = "2.0.0";
+pub const RUST_PROGRAM_ANALYZER_VERSION: &str = "3.0.0";
 
 const UNSUPPORTED_SEMANTICS: &[&str] = &[
     "arbitrary_dynamic_dispatch_resolution",
@@ -266,7 +266,7 @@ pub enum ProgramPattern {
         /// Nested component patterns.
         elements: Vec<ProgramPattern>,
     },
-    /// Pattern semantics are not represented by PSM v2.
+    /// Pattern semantics are not represented by PSM v3.
     Unsupported {
         /// Exact Rust pattern spelling.
         rust_spelling: String,
@@ -303,6 +303,13 @@ pub enum ProgramExpression {
     Tuple {
         /// Component expressions.
         elements: Vec<ProgramExpression>,
+    },
+    /// Direct field or tuple-field access with structured ownership.
+    Field {
+        /// Base value whose field is accessed.
+        base: Box<ProgramExpression>,
+        /// Named field or canonical tuple position.
+        field: String,
     },
     /// Wrapper or nominal construction.
     Construction {
@@ -367,11 +374,216 @@ pub enum ProgramExpression {
         /// Stable exceptional operation identity.
         operation: String,
     },
-    /// Expression semantics are not represented by PSM v2.
+    /// Expression semantics are not represented by PSM v3.
     Unsupported {
         /// Exact Rust expression spelling.
         rust_spelling: String,
     },
+}
+
+/// Structured assignable/readable program location.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum ProgramPlace {
+    /// Local binding, including the canonical `self` receiver binding.
+    Binding {
+        /// Binding identity.
+        name: String,
+        /// Static type identity when established.
+        static_type: Option<String>,
+    },
+    /// Direct named field of a supported place.
+    Field {
+        /// Structured base place.
+        base: Box<ProgramPlace>,
+        /// Resolved local nominal owner identity when known.
+        nominal_owner: Option<String>,
+        /// Source field identity.
+        field: String,
+        /// Static field type identity when established.
+        static_type: Option<String>,
+    },
+    /// Direct positional field of a supported place.
+    TupleField {
+        /// Structured base place.
+        base: Box<ProgramPlace>,
+        /// Zero-based tuple field position.
+        position: usize,
+        /// Static field type identity when established.
+        static_type: Option<String>,
+    },
+    /// Explicit dereference whose alias identity is not necessarily proven.
+    Dereference {
+        /// Referenced place.
+        base: Box<ProgramPlace>,
+        /// Static dereferenced type identity when established.
+        static_type: Option<String>,
+    },
+    /// Place syntax outside the structured v3 boundary.
+    Unsupported {
+        /// Exact Rust spelling retained for coverage explanation.
+        rust_spelling: String,
+    },
+}
+
+impl ProgramPlace {
+    /// Returns whether this place is rooted in the current receiver.
+    #[must_use]
+    pub fn is_receiver(&self) -> bool {
+        match self {
+            Self::Binding { name, .. } => name == "self",
+            Self::Field { base, .. }
+            | Self::TupleField { base, .. }
+            | Self::Dereference { base, .. } => base.is_receiver(),
+            Self::Unsupported { .. } => false,
+        }
+    }
+
+    /// Returns the direct field identity when this is a field place.
+    #[must_use]
+    pub fn field_name(&self) -> Option<&str> {
+        match self {
+            Self::Field { field, .. } => Some(field),
+            Self::TupleField { .. }
+            | Self::Binding { .. }
+            | Self::Dereference { .. }
+            | Self::Unsupported { .. } => None,
+        }
+    }
+
+    /// Returns the root binding identity when structurally available.
+    #[must_use]
+    pub fn root_binding(&self) -> Option<&str> {
+        match self {
+            Self::Binding { name, .. } => Some(name),
+            Self::Field { base, .. }
+            | Self::TupleField { base, .. }
+            | Self::Dereference { base, .. } => base.root_binding(),
+            Self::Unsupported { .. } => None,
+        }
+    }
+
+    /// Returns the exact static type identity when attached to this place.
+    #[must_use]
+    pub fn static_type(&self) -> Option<&str> {
+        match self {
+            Self::Binding { static_type, .. }
+            | Self::Field { static_type, .. }
+            | Self::TupleField { static_type, .. }
+            | Self::Dereference { static_type, .. } => static_type.as_deref(),
+            Self::Unsupported { .. } => None,
+        }
+    }
+
+    /// Returns the local nominal field-owner identity when resolved.
+    #[must_use]
+    pub fn nominal_owner(&self) -> Option<&str> {
+        match self {
+            Self::Field { nominal_owner, .. } => nominal_owner.as_deref(),
+            _ => None,
+        }
+    }
+}
+
+/// Supported mutation category emitted without safety interpretation.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum MutationKind {
+    /// Direct assignment with `=`.
+    Assignment,
+    /// Compound assignment such as `+=`.
+    CompoundAssignment,
+    /// Direct update of a mutable named or tuple field.
+    MutableFieldUpdate,
+}
+
+/// Confidence of one structured state-access or mutation fact.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum PlaceResolutionState {
+    /// Binding and field identity are structurally exact.
+    ResolvedExact,
+    /// The place is supported but its nominal/static type is incomplete.
+    TypeUnknown,
+    /// Alias or dereference semantics prevent exact identity.
+    AliasUnknown,
+    /// Place syntax is outside the implemented boundary.
+    Unsupported,
+}
+
+/// One structured state read observed in an executable body.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct StateRead {
+    id: String,
+    symbol: String,
+    place: ProgramPlace,
+    resolution: PlaceResolutionState,
+    provenance: ProgramProvenance,
+}
+
+impl StateRead {
+    /// Returns the executable containing the read.
+    #[must_use]
+    pub fn symbol(&self) -> &str {
+        &self.symbol
+    }
+
+    /// Returns the structured read place.
+    #[must_use]
+    pub const fn place(&self) -> &ProgramPlace {
+        &self.place
+    }
+
+    /// Returns exact source provenance.
+    #[must_use]
+    pub const fn provenance(&self) -> &ProgramProvenance {
+        &self.provenance
+    }
+}
+
+/// One structured mutation observed in an executable body.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct ProgramMutation {
+    id: String,
+    symbol: String,
+    target: ProgramPlace,
+    mutation_kind: MutationKind,
+    value: ProgramExpression,
+    value_type: Option<String>,
+    resolution: PlaceResolutionState,
+    provenance: ProgramProvenance,
+}
+
+impl ProgramMutation {
+    /// Returns the executable containing the mutation.
+    #[must_use]
+    pub fn symbol(&self) -> &str {
+        &self.symbol
+    }
+
+    /// Returns the structured target place.
+    #[must_use]
+    pub const fn target(&self) -> &ProgramPlace {
+        &self.target
+    }
+
+    /// Returns the assigned value expression.
+    #[must_use]
+    pub const fn value(&self) -> &ProgramExpression {
+        &self.value
+    }
+
+    /// Returns the mutation category.
+    #[must_use]
+    pub const fn mutation_kind(&self) -> MutationKind {
+        self.mutation_kind
+    }
+
+    /// Returns source provenance.
+    #[must_use]
+    pub const fn provenance(&self) -> &ProgramProvenance {
+        &self.provenance
+    }
 }
 
 /// One observed branch of a Rust match expression.
@@ -424,7 +636,7 @@ pub enum ProgramStatement {
     },
     /// Assignment to one supported place expression.
     Assign {
-        /// Target spelling.
+        /// Exact target spelling retained for the value-domain interpreter.
         target: String,
         /// Assigned value.
         value: ProgramExpression,
@@ -693,6 +905,20 @@ pub struct NominalField {
     provenance: ProgramProvenance,
 }
 
+impl NominalField {
+    /// Returns the declared field identity.
+    #[must_use]
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    /// Returns the field's normalized static type.
+    #[must_use]
+    pub const fn field_type(&self) -> &InterfaceType {
+        &self.field_type
+    }
+}
+
 /// One enum variant and its supported payload fields.
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct NominalVariant {
@@ -738,6 +964,18 @@ impl NominalType {
     #[must_use]
     pub const fn kind(&self) -> NominalTypeKind {
         self.kind
+    }
+
+    /// Returns the physical Fortress Module owner.
+    #[must_use]
+    pub fn fortress_module(&self) -> &str {
+        &self.fortress_module
+    }
+
+    /// Returns direct nominal fields.
+    #[must_use]
+    pub fn fields(&self) -> &[NominalField] {
+        &self.fields
     }
 }
 
@@ -877,6 +1115,18 @@ impl ProgramReceiver {
             explicit_type,
         }
     }
+
+    /// Returns whether the receiver permits mutation.
+    #[must_use]
+    pub const fn is_mutable(&self) -> bool {
+        self.mutable
+    }
+
+    /// Returns whether the receiver is borrowed.
+    #[must_use]
+    pub const fn is_by_reference(&self) -> bool {
+        self.by_reference
+    }
 }
 
 /// Rust declaration qualifiers retained independently from the neutral symbol kind.
@@ -894,6 +1144,12 @@ impl SymbolQualifiers {
             is_unsafe,
             is_const,
         }
+    }
+
+    /// Returns whether the declaration is unsafe.
+    #[must_use]
+    pub const fn is_unsafe(self) -> bool {
+        self.is_unsafe
     }
 }
 
@@ -986,6 +1242,24 @@ impl ExecutableSymbol {
     pub const fn return_type(&self) -> &InterfaceType {
         &self.return_type
     }
+
+    /// Returns optional receiver semantics.
+    #[must_use]
+    pub const fn receiver(&self) -> Option<&ProgramReceiver> {
+        self.receiver.as_ref()
+    }
+
+    /// Returns the source owner type spelling for a method.
+    #[must_use]
+    pub fn owner_type(&self) -> Option<&str> {
+        self.owner_type.as_deref()
+    }
+
+    /// Returns retained declaration qualifiers.
+    #[must_use]
+    pub const fn qualifiers(&self) -> SymbolQualifiers {
+        self.qualifiers
+    }
 }
 
 /// Resolution state assigned to every relevant call expression.
@@ -1000,7 +1274,7 @@ pub enum CallResolutionState {
     DynamicDispatch,
     /// Supported syntax did not resolve confidently.
     Unresolved,
-    /// Required semantics are outside PSM v2.
+    /// Required semantics are outside PSM v3.
     Unsupported,
     /// Source or model violated a supported analyzer invariant.
     Invalid,
@@ -1063,6 +1337,7 @@ pub enum ResolutionAuthority {
 pub struct CallSiteEvidence {
     reference: String,
     argument_count: usize,
+    receiver: Option<ProgramPlace>,
     provenance: ProgramProvenance,
 }
 
@@ -1075,8 +1350,14 @@ impl CallSiteEvidence {
         Self {
             reference,
             argument_count,
+            receiver: None,
             provenance,
         }
+    }
+
+    pub(crate) fn with_receiver(mut self, receiver: ProgramPlace) -> Self {
+        self.receiver = Some(receiver);
+        self
     }
 }
 
@@ -1139,9 +1420,15 @@ impl CallSiteEvidence {
     pub const fn provenance(&self) -> &ProgramProvenance {
         &self.provenance
     }
+
+    /// Returns the structured receiver place for a method call.
+    #[must_use]
+    pub const fn receiver(&self) -> Option<&ProgramPlace> {
+        self.receiver.as_ref()
+    }
 }
 
-/// Initial value-transfer category supported by PSM v2.
+/// Initial value-transfer category supported by PSM v3.
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ValueTransferKind {
@@ -1169,7 +1456,7 @@ pub enum TransferResolutionState {
     ResolvedStaticCall,
     /// Transfer exists but its exact static type is unknown.
     TypeUnknown,
-    /// Required transfer semantics are outside PSM v2.
+    /// Required transfer semantics are outside PSM v3.
     Unsupported,
 }
 
@@ -1389,6 +1676,10 @@ pub struct ProgramCoverage {
     recursive_components: usize,
     value_transfers: usize,
     transformations: usize,
+    state_reads: usize,
+    mutations: usize,
+    resolved_mutations: usize,
+    uncertain_mutations: usize,
 }
 
 /// Aggregate call-resolution states and stable residual reasons.
@@ -1440,7 +1731,7 @@ pub struct ProgramModelProvenance {
     testing_authority: String,
 }
 
-/// Canonical Program Semantic Model v2 document.
+/// Canonical Program Semantic Model v3 document.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct ProgramSemanticModel {
     #[serde(rename = "$schema")]
@@ -1460,6 +1751,8 @@ pub struct ProgramSemanticModel {
     bodies: Vec<ProgramBody>,
     value_transfers: Vec<ValueTransfer>,
     transformations: Vec<TypeTransformation>,
+    state_reads: Vec<StateRead>,
+    mutations: Vec<ProgramMutation>,
     module_boundaries: Vec<CrossModuleCall>,
     call_topology: CallTopology,
     resolution_summary: ResolutionSummary,
@@ -1522,6 +1815,18 @@ impl ProgramSemanticModel {
     #[must_use]
     pub fn value_transfers(&self) -> &[ValueTransfer] {
         &self.value_transfers
+    }
+
+    /// Returns structured field/state reads.
+    #[must_use]
+    pub fn state_reads(&self) -> &[StateRead] {
+        &self.state_reads
+    }
+
+    /// Returns structured mutations.
+    #[must_use]
+    pub fn mutations(&self) -> &[ProgramMutation] {
+        &self.mutations
     }
 
     /// Returns cross-Module static calls.
@@ -1591,6 +1896,8 @@ pub(crate) struct RustProgramFacts {
     bodies: Vec<ProgramBody>,
     value_transfers: Vec<ValueTransfer>,
     transformations: Vec<TypeTransformation>,
+    state_reads: Vec<StateRead>,
+    mutations: Vec<ProgramMutation>,
     fixed_point_iterations: usize,
 }
 
@@ -1614,6 +1921,8 @@ pub fn compile_program_semantic_model(
     facts.bodies.sort();
     facts.value_transfers.sort();
     facts.transformations.sort();
+    facts.state_reads.sort();
+    facts.mutations.sort();
     let topology = graph::derive_call_topology(&facts.symbols, &facts.calls);
     let module_boundaries = graph::derive_module_boundaries(&facts.symbols, &facts.calls);
     let missing = module_boundaries
@@ -1654,6 +1963,8 @@ pub fn compile_program_semantic_model(
         &facts.calls,
         &facts.value_transfers,
         &facts.transformations,
+        &facts.state_reads,
+        &facts.mutations,
         &module_boundaries,
         &topology,
     );
@@ -1675,6 +1986,8 @@ pub fn compile_program_semantic_model(
         bodies: facts.bodies,
         value_transfers: facts.value_transfers,
         transformations: facts.transformations,
+        state_reads: facts.state_reads,
+        mutations: facts.mutations,
         module_boundaries,
         call_topology: topology,
         resolution_summary,
@@ -1703,6 +2016,8 @@ fn coverage(
     calls: &[ProgramCall],
     transfers: &[ValueTransfer],
     transformations: &[TypeTransformation],
+    state_reads: &[StateRead],
+    mutations: &[ProgramMutation],
     module_boundaries: &[CrossModuleCall],
     topology: &CallTopology,
 ) -> ProgramCoverage {
@@ -1775,6 +2090,16 @@ fn coverage(
             .count(),
         value_transfers: transfers.len(),
         transformations: transformations.len(),
+        state_reads: state_reads.len(),
+        mutations: mutations.len(),
+        resolved_mutations: mutations
+            .iter()
+            .filter(|item| item.resolution == PlaceResolutionState::ResolvedExact)
+            .count(),
+        uncertain_mutations: mutations
+            .iter()
+            .filter(|item| item.resolution != PlaceResolutionState::ResolvedExact)
+            .count(),
     }
 }
 

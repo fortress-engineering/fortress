@@ -48,6 +48,8 @@ pub mod semantic_analysis;
 pub mod snapshot;
 #[path = "../mods/standard_registry/code/standard.rs"]
 pub mod standard;
+#[path = "../mods/state_effect_analysis/code/state_effect.rs"]
+pub mod state_effect_analysis;
 #[path = "../mods/snapshot_governance/code/testing_boundary.rs"]
 pub mod testing_boundary;
 #[path = "../mods/snapshot_governance/code/traceability.rs"]

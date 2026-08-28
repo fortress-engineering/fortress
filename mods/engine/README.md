@@ -80,6 +80,12 @@ Supplies distributed Function Contract interpretation, conservative semantic val
 
 Supplies snapshot construction, rule execution, findings, and repository audit orchestration.
 
+### [State and Effect Analysis](mods/state_effect_analysis/README.md)
+
+**Types:** `depends_on`
+
+Supplies conservative typestate transitions, transitive effect summaries, and supported state/effect contract contradiction evidence.
+
 ### [Standard Registry](mods/standard_registry/README.md)
 
 **Types:** `depends_on`

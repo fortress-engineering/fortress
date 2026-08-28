@@ -20,7 +20,7 @@ jobs:
   validate:
     name: Validate current Fortress capabilities
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - name: Check out exact revision
         uses: actions/checkout@v4.3.1
@@ -94,6 +94,17 @@ jobs:
           cargo +1.97.1 --config data/cargo_config.toml run --quiet --manifest-path data/Cargo.toml -p fortress-cli -- semantic . --format json --output "$second"
           cmp "$first" "$second"
           cmp "$first" info/semantic_analysis.json
+
+      - name: Verify deterministic committed state and effect analysis
+        shell: bash
+        run: |
+          first="$(mktemp)"
+          second="$(mktemp)"
+          trap 'rm -f "$first" "$second"' EXIT
+          cargo +1.97.1 --config data/cargo_config.toml run --quiet --manifest-path data/Cargo.toml -p fortress-cli -- state-effect . --format json --output "$first"
+          cargo +1.97.1 --config data/cargo_config.toml run --quiet --manifest-path data/Cargo.toml -p fortress-cli -- state-effect . --format json --output "$second"
+          cmp "$first" "$second"
+          cmp "$first" info/state_effect_analysis.json
 
       - name: Run Fortress self-audit
         run: cargo +1.97.1 --config data/cargo_config.toml run --quiet --manifest-path data/Cargo.toml -p fortress-cli -- audit .

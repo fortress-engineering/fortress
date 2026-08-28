@@ -56,8 +56,8 @@ fn symbol_id(psm: &fortress_core::program_semantics::ProgramSemanticModel, suffi
 fn contract_source(module: &str, mut functions: Vec<Value>) -> FunctionContractSource {
     functions.sort_by(|left, right| left["symbol"].as_str().cmp(&right["symbol"].as_str()));
     let mut source = serde_json::to_string_pretty(&json!({
-        "$schema": "urn:fortress:schema:v1:function-contracts",
-        "schema_version": 1,
+        "$schema": "urn:fortress:schema:v2:function-contracts",
+        "schema_version": 2,
         "functions": functions
     }))
     .expect("contract fixture serializes");
@@ -74,7 +74,10 @@ fn function_contract(symbol: &str, requires: Vec<Value>, ensures: Vec<Value>) ->
     json!({
         "symbol": symbol,
         "requires": requires,
-        "ensures": ensures
+        "ensures": ensures,
+        "state_requires": [],
+        "state_ensures": [],
+        "effects": null
     })
 }
 

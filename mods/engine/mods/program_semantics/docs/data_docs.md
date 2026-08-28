@@ -10,7 +10,7 @@ The schema is specification-authored as part of the current Fortress draft imple
 
 ## Semantics
 
-It defines the language-neutral, observed-implementation representation for nominal types, impl blocks, symbols, static and residual call resolution, neutral body/control structure, initial transfers, Module boundaries, graph derivations, coverage, unsupported semantics, and provenance.
+It defines the language-neutral, observed-implementation representation for nominal types, impl blocks, symbols, static and residual call resolution, neutral body/control structure, structured places, state reads, mutations, initial transfers, Module boundaries, graph derivations, coverage, unsupported semantics, and provenance.
 
 ## Validity
 
@@ -22,6 +22,6 @@ The schema changes only when the supported PSM document contract changes; incomp
 
 ## Files
 
-### [`program_model_schema_v2.json`](../data/program_model_schema_v2.json)
+### [`program_model_schema_v3.json`](../data/program_model_schema_v3.json)
 
-Defines the canonical PSM v2 serialized structure and its closed object grammar.
+Defines the canonical PSM v3 serialized structure and its closed object grammar.

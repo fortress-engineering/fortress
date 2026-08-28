@@ -81,6 +81,14 @@
             "T-AF-PROGRAM-SEMANTICS-0001-R06-002",
             "T-AF-PROGRAM-SEMANTICS-0001-R06-003"
           ]
+        },
+        {
+          "id": "AF-PROGRAM-SEMANTICS-0001-R07",
+          "statement": "Program Semantics v3 emits deterministic structured binding, field, tuple-field, and dereference places plus direct state-read and mutation facts with exact resolution and provenance, without interpreting mutation safety.",
+          "tests": [
+            "T-AF-PROGRAM-SEMANTICS-0001-R07-001",
+            "T-AF-PROGRAM-SEMANTICS-0001-R07-002"
+          ]
         }
       ]
     }

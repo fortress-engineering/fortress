@@ -46,6 +46,10 @@ Consumes the PSM and distributed Function Contracts to derive conservative value
 
 Turns exact declarations and repository facts into deterministic rule executions and normalized development evidence.
 
+### [State and Effect Analysis](../mods/state_effect_analysis/README.md)
+
+Consumes PSM mutation facts and Semantic Analysis domains to derive conservative typestate transitions, transitive effects, and supported policy contradictions.
+
 ### [Standard Registry](../mods/standard_registry/README.md)
 
 Provides the normative identity and registry foundation required by every capability that interprets Fortress declarations or findings.

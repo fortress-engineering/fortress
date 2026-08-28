@@ -72,6 +72,7 @@ impl AuditFixture {
                 ("architecture_evaluation", "Architecture Evaluation"),
                 ("behavioral_semantics", "Behavioral Semantics"),
                 ("semantic_analysis", "Semantic Analysis"),
+                ("state_effect_analysis", "State and Effect Analysis"),
                 ("snapshot_governance", "Snapshot Governance"),
                 ("standard_registry", "Standard Registry"),
             ]),
@@ -103,6 +104,11 @@ impl AuditFixture {
                 "AF-FIXTURE-SEMANTIC-0001",
                 "Semantic Analysis",
             ),
+            (
+                "state_effect_analysis",
+                "AF-FIXTURE-STATE-EFFECT-0001",
+                "State and Effect Analysis",
+            ),
         ] {
             let module_root = root.join("mods/engine/mods").join(module);
             fs::create_dir_all(module_root.join("code")).expect("Module code creates");
@@ -130,6 +136,8 @@ impl AuditFixture {
             "mods/engine/mods/architecture_evaluation/data/realization_rule.json",
             "mods/engine/mods/behavioral_semantics/data/behavior_flow_rule.json",
             "mods/engine/mods/semantic_analysis/data/program_domain_rule.json",
+            "mods/engine/mods/state_effect_analysis/data/program_state_rule.json",
+            "mods/engine/mods/state_effect_analysis/data/program_effect_rule.json",
             "mods/engine/mods/snapshot_governance/data/ownership_rule.json",
             "mods/engine/mods/snapshot_governance/data/traceability_rule.json",
             "mods/engine/mods/snapshot_governance/data/test_boundary_rule.json",
@@ -159,6 +167,11 @@ impl AuditFixture {
             data_docs(&["program_domain_rule.json"]),
         )
         .expect("semantic Data documentation writes");
+        fs::write(
+            root.join("mods/engine/mods/state_effect_analysis/docs/data_docs.md"),
+            data_docs(&["program_effect_rule.json", "program_state_rule.json"]),
+        )
+        .expect("state/effect Data documentation writes");
         fs::write(
             root.join("mods/engine/mods/snapshot_governance/docs/data_docs.md"),
             data_docs(&[
@@ -343,7 +356,7 @@ fn audit_success_renders_human_snapshot_report() {
         String::from_utf8_lossy(&output.stderr)
     );
     assert!(stdout.contains("Fortress Snapshot Audit"));
-    assert!(stdout.contains("PASS: 9"));
+    assert!(stdout.contains("PASS: 11"));
     assert!(stdout.contains("Unsupported: 1"));
     assert!(stdout.contains("Architecture diagnostics:"));
     assert!(stdout.contains("Unsupported analysis:"));
@@ -485,9 +498,9 @@ fn psm_json_is_observed_schema_versioned_and_repeatable() {
         serde_json::from_slice(&first.stdout).expect("PSM output is JSON");
     assert_eq!(
         value["$schema"],
-        "urn:fortress:schema:v2:program-semantic-model"
+        "urn:fortress:schema:v3:program-semantic-model"
     );
-    assert_eq!(value["schema_version"], 2);
+    assert_eq!(value["schema_version"], 3);
     assert_eq!(value["analyzer_coherency"]["status"], "coherent");
 }
 
@@ -530,6 +543,43 @@ fn semantic_json_is_schema_versioned_and_repeatable() {
 #[test]
 fn semantic_rejects_unsupported_formats() {
     let output = run(&["semantic", "--format", "dot"]);
+    assert_eq!(output.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("--format json"));
+}
+
+/// `T-TF-CLI-0001-R09-001`
+/// Fortress requirement: TF-CLI-0001-R09
+#[test]
+fn state_effect_json_is_schema_versioned_and_repeatable() {
+    let fixture = AuditFixture::new();
+    let arguments = [
+        "state-effect".into(),
+        fixture.argument(),
+        "--format=json".into(),
+    ];
+    let first = run_owned(&arguments);
+    let second = run_owned(&arguments);
+    assert!(
+        first.status.success(),
+        "{}",
+        String::from_utf8_lossy(&first.stderr)
+    );
+    assert_eq!(first.stdout, second.stdout);
+    let value: serde_json::Value =
+        serde_json::from_slice(&first.stdout).expect("state/effect output is JSON");
+    assert_eq!(
+        value["$schema"],
+        "urn:fortress:schema:v1:state-effect-analysis"
+    );
+    assert_eq!(value["schema_version"], 1);
+    assert_eq!(value["coverage"]["violations"], 0);
+}
+
+/// `T-TF-CLI-0001-R09-002`
+/// Fortress requirement: TF-CLI-0001-R09
+#[test]
+fn state_effect_rejects_unsupported_formats() {
+    let output = run(&["state-effect", "--format", "dot"]);
     assert_eq!(output.status.code(), Some(2));
     assert!(String::from_utf8_lossy(&output.stderr).contains("--format json"));
 }

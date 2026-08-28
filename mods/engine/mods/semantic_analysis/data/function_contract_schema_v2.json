@@ -1,13 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:fortress:schema:v1:function-contracts",
-  "title": "Fortress Function Contracts v1",
+  "$id": "urn:fortress:schema:v2:function-contracts",
+  "title": "Fortress Function Contracts v2",
   "type": "object",
   "additionalProperties": false,
   "required": ["$schema", "schema_version", "functions"],
   "properties": {
-    "$schema": { "const": "urn:fortress:schema:v1:function-contracts" },
-    "schema_version": { "const": 1 },
+    "$schema": { "const": "urn:fortress:schema:v2:function-contracts" },
+    "schema_version": { "const": 2 },
     "functions": {
       "type": "array",
       "items": { "$ref": "#/$defs/function" }
@@ -116,14 +116,38 @@
         "domain": { "$ref": "#/$defs/domain" }
       }
     },
+    "state_obligation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target", "state"],
+      "properties": {
+        "target": { "type": "string", "minLength": 1 },
+        "state": { "type": "string", "pattern": "^STATE-[A-Z0-9]+(?:-[A-Z0-9]+)*$" }
+      }
+    },
+    "effect_policy": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["allowed"],
+      "properties": {
+        "allowed": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "enum": ["receiver_state_read", "receiver_state_write", "owned_state_read", "owned_state_write", "external_interaction", "may_panic", "unsafe_execution"] }
+        }
+      }
+    },
     "function": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["symbol", "requires", "ensures"],
+      "required": ["symbol", "requires", "ensures", "state_requires", "state_ensures", "effects"],
       "properties": {
         "symbol": { "$ref": "#/$defs/symbol" },
         "requires": { "type": "array", "items": { "$ref": "#/$defs/requirement" } },
-        "ensures": { "type": "array", "maxItems": 1, "items": { "$ref": "#/$defs/guarantee" } }
+        "ensures": { "type": "array", "maxItems": 1, "items": { "$ref": "#/$defs/guarantee" } },
+        "state_requires": { "type": "array", "items": { "$ref": "#/$defs/state_obligation" } },
+        "state_ensures": { "type": "array", "items": { "$ref": "#/$defs/state_obligation" } },
+        "effects": { "$ref": "#/$defs/effect_policy" }
       }
     }
   }

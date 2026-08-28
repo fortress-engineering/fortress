@@ -1,0 +1,41 @@
+{
+  "$schema": "urn:fortress:schema:v1:state-contracts",
+  "schema_version": 1,
+  "types": [
+    {
+      "type": "rust_nominal:sha256:c401446e22bfe4eaf505259d6bd8db8ef3c51b18dd7307d74fba412e86b78c19",
+      "states": [
+        {
+          "id": "STATE-FINDING-LOCATION-SPANNED",
+          "when": [
+            {
+              "field": "span",
+              "domain": {
+                "kind": "option_states",
+                "include": [
+                  "some"
+                ],
+                "some": null
+              }
+            }
+          ]
+        },
+        {
+          "id": "STATE-FINDING-LOCATION-UNSPANNED",
+          "when": [
+            {
+              "field": "span",
+              "domain": {
+                "kind": "option_states",
+                "include": [
+                  "none"
+                ],
+                "some": null
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

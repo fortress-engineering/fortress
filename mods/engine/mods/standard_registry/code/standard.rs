@@ -78,6 +78,18 @@ const DRAFT_RULES: &[RuleDescriptor] = &[
         integrity_tier: 3,
     },
     RuleDescriptor {
+        id: "PROGRAM-STATE-001",
+        title: "Supported object-state transitions satisfy declared typestate obligations",
+        status: RuleStatus::Draft,
+        integrity_tier: 3,
+    },
+    RuleDescriptor {
+        id: "PROGRAM-EFFECT-001",
+        title: "Supported function effects remain within authored effect policy",
+        status: RuleStatus::Draft,
+        integrity_tier: 3,
+    },
+    RuleDescriptor {
         id: "ARCH-OWNERSHIP-001",
         title: "Exact declared repository file ownership",
         status: RuleStatus::Draft,

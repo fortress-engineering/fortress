@@ -9,7 +9,7 @@
     "id": "STD-FORTRESS-ENGINEERING",
     "edition": "1.0.0-draft.1",
     "status": "draft",
-    "bundle_digest": "sha256:dd2429d2f0195f3604c0a41eb83179dc80bac6999f09f42b2129e9a02923b49d",
+    "bundle_digest": "sha256:0fb66bb2b7441ddb78cfc8be3cc3610ac3bb959cb9790c24a39c0e76e1c53782",
     "rules": [
       {
         "id": "ARCH-DEPENDENCY-001",
@@ -63,11 +63,31 @@
       },
       {
         "id": "PROGRAM-DOMAIN-001",
-        "source_digest": "sha256:73e608fd0dcf5b93eaf157c8b599c2ffd4701afcb575b2d1dacd0320bb8c0a90",
+        "source_digest": "sha256:40e0d0103baddf1a586f31a3d94e9b50444395e8a572a4e97e4521b531f2e8c4",
         "implies": [],
         "conflicts_with": [],
         "provenance": {
           "path": "mods/engine/mods/semantic_analysis/data/program_domain_rule.json",
+          "pointer": "/logic"
+        }
+      },
+      {
+        "id": "PROGRAM-EFFECT-001",
+        "source_digest": "sha256:6885d5ac5b3b1a803e1230c5f83f9a3176b209a4a2315e902b2f33041dadd266",
+        "implies": [],
+        "conflicts_with": [],
+        "provenance": {
+          "path": "mods/engine/mods/state_effect_analysis/data/program_effect_rule.json",
+          "pointer": "/logic"
+        }
+      },
+      {
+        "id": "PROGRAM-STATE-001",
+        "source_digest": "sha256:ba9c267c8cc0f5ed278091f8ef2456dd125cd43877f5c8bc783c9cf0a9eb4562",
+        "implies": [],
+        "conflicts_with": [],
+        "provenance": {
+          "path": "mods/engine/mods/state_effect_analysis/data/program_state_rule.json",
           "pointer": "/logic"
         }
       },
@@ -202,10 +222,11 @@
         "AF-REPOSITORY-OBSERVATION-0001",
         "AF-SEMANTIC-ANALYSIS-0001",
         "AF-SNAPSHOT-GOVERNANCE-0001",
-        "AF-STANDARD-REGISTRY-0001"
+        "AF-STANDARD-REGISTRY-0001",
+        "AF-STATE-EFFECT-ANALYSIS-0001"
       ],
       "contract_source": "mods/engine/contract.json",
-      "contract_digest": "sha256:caebf4167047c59bbcd9e6f272e6813fd61842404c64522099f9d608067dd33d",
+      "contract_digest": "sha256:c7a7e15614b895507c67cfc778e28faeaa3576bd6b6cb0205322d7f7a6a40486",
       "provenance": {
         "path": "mods/engine/contract.json",
         "pointer": "/"
@@ -251,7 +272,7 @@
         "TEST-PROGRAM-SEMANTICS-0001"
       ],
       "contract_source": "mods/engine/mods/program_semantics/contract.json",
-      "contract_digest": "sha256:e3316252f21d7c9749d3f4051c9a16d46c04bb32026268a55d3ba27d4a0cda3c",
+      "contract_digest": "sha256:71135f9c67dc713f2fe7d000908ede11c4aa6087dbffd7f9c4b1540623fdbf7f",
       "provenance": {
         "path": "mods/engine/mods/program_semantics/contract.json",
         "pointer": "/"
@@ -299,7 +320,7 @@
         "TEST-SEMANTIC-ANALYSIS-0001"
       ],
       "contract_source": "mods/engine/mods/semantic_analysis/contract.json",
-      "contract_digest": "sha256:43e30946b701df6fdb17f1abd4b83bed628ac62c577ceefb5abae342e5094842",
+      "contract_digest": "sha256:93dc1eef01754927737664895d8857280b11f533af3397481ceec13fe2974b04",
       "provenance": {
         "path": "mods/engine/mods/semantic_analysis/contract.json",
         "pointer": "/"
@@ -315,7 +336,7 @@
         "TEST-SNAPSHOT-GOVERNANCE-0001"
       ],
       "contract_source": "mods/engine/mods/snapshot_governance/contract.json",
-      "contract_digest": "sha256:fc212b2f6123c95b98427f4874fd3735cfe0a5dca6eeb45c7dbf49cdfab2ea4c",
+      "contract_digest": "sha256:c03afb742ebbae69ad66218dfc80075b4d8820d875c547ded72a5913df153232",
       "provenance": {
         "path": "mods/engine/mods/snapshot_governance/contract.json",
         "pointer": "/"
@@ -337,6 +358,22 @@
         "pointer": "/"
       },
       "containment_derivation": "containment:AF-STANDARD-REGISTRY-0001"
+    },
+    {
+      "id": "AF-STATE-EFFECT-ANALYSIS-0001",
+      "display_name": "State and Effect Analysis",
+      "path": "mods/engine/mods/state_effect_analysis",
+      "parent": "AF-CORE-0001",
+      "children": [
+        "TEST-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "contract_source": "mods/engine/mods/state_effect_analysis/contract.json",
+      "contract_digest": "sha256:aaadbd6e71e0ccf3d49d6565be7ec8142f6f7fab2ebe1bd4b6740d0c4e22d65d",
+      "provenance": {
+        "path": "mods/engine/mods/state_effect_analysis/contract.json",
+        "pointer": "/"
+      },
+      "containment_derivation": "containment:AF-STATE-EFFECT-ANALYSIS-0001"
     },
     {
       "id": "PF-FORTRESS",
@@ -511,6 +548,20 @@
       "containment_derivation": "containment:TEST-STANDARD-REGISTRY-0001"
     },
     {
+      "id": "TEST-STATE-EFFECT-ANALYSIS-0001",
+      "display_name": "Testing",
+      "path": "mods/engine/mods/state_effect_analysis/mods/testing",
+      "parent": "AF-STATE-EFFECT-ANALYSIS-0001",
+      "children": [],
+      "contract_source": "mods/engine/mods/state_effect_analysis/mods/testing/contract.json",
+      "contract_digest": "sha256:65ae4d57824a003cf7b9446ba20f3ac4d6a9d4ab50f0d3c7a3b3e21c3da93587",
+      "provenance": {
+        "path": "mods/engine/mods/state_effect_analysis/mods/testing/contract.json",
+        "pointer": "/"
+      },
+      "containment_derivation": "containment:TEST-STATE-EFFECT-ANALYSIS-0001"
+    },
+    {
       "id": "TF-CLI-0001",
       "display_name": "CLI",
       "path": "mods/cli",
@@ -519,7 +570,7 @@
         "TEST-CLI-0001"
       ],
       "contract_source": "mods/cli/contract.json",
-      "contract_digest": "sha256:7aff83f3b19b73c7c382f156ba8e003f9781e2791a784da2c6aabac092b76e1a",
+      "contract_digest": "sha256:e64b2538f0638a61526b32fa301c038346fa4fa9fb77c8a0a0046a58d0610011",
       "provenance": {
         "path": "mods/cli/contract.json",
         "pointer": "/"
@@ -556,6 +607,7 @@
         "TEST-REPOSITORY-OBSERVATION-0001",
         "TEST-SEMANTIC-ANALYSIS-0001",
         "TEST-STANDARD-REGISTRY-0001",
+        "TEST-STATE-EFFECT-ANALYSIS-0001",
         "TF-CLI-0001"
       ],
       "provenance": {
@@ -590,6 +642,7 @@
         "TEST-SEMANTIC-ANALYSIS-0001",
         "TEST-SNAPSHOT-GOVERNANCE-0001",
         "TEST-STANDARD-REGISTRY-0001",
+        "TEST-STATE-EFFECT-ANALYSIS-0001",
         "TF-CLI-0001"
       ],
       "provenance": {
@@ -626,6 +679,7 @@
       ],
       "transitively_reachable_by": [
         "AF-SEMANTIC-ANALYSIS-0001",
+        "AF-STATE-EFFECT-ANALYSIS-0001",
         "TEST-CLI-0001",
         "TEST-FORTRESS-0001",
         "TEST-IMPLEMENTATION-OBSERVATION-0001",
@@ -634,6 +688,7 @@
         "TEST-REPOSITORY-OBSERVATION-0001",
         "TEST-SEMANTIC-ANALYSIS-0001",
         "TEST-STANDARD-REGISTRY-0001",
+        "TEST-STATE-EFFECT-ANALYSIS-0001",
         "TF-CLI-0001"
       ],
       "provenance": {
@@ -652,6 +707,7 @@
         "AF-CORE-0001",
         "AF-SEMANTIC-ANALYSIS-0001",
         "AF-SNAPSHOT-GOVERNANCE-0001",
+        "AF-STATE-EFFECT-ANALYSIS-0001",
         "TEST-SNAPSHOT-GOVERNANCE-0001"
       ],
       "direct_requirements": [
@@ -660,7 +716,8 @@
         "requires:AF-BEHAVIORAL-SEMANTICS-0001:CAP-FINDING-MODEL",
         "requires:AF-SEMANTIC-ANALYSIS-0001:CAP-FINDING-MODEL",
         "requires:AF-SNAPSHOT-GOVERNANCE-0001:CAP-FINDING-MODEL",
-        "requires:TEST-SNAPSHOT-GOVERNANCE-0001:CAP-FINDING-MODEL"
+        "requires:TEST-SNAPSHOT-GOVERNANCE-0001:CAP-FINDING-MODEL",
+        "requires:AF-STATE-EFFECT-ANALYSIS-0001:CAP-FINDING-MODEL"
       ],
       "transitively_reachable_by": [
         "AF-CONTRACT-COHERENCY-TESTING-0001",
@@ -674,6 +731,7 @@
         "TEST-REPOSITORY-OBSERVATION-0001",
         "TEST-SEMANTIC-ANALYSIS-0001",
         "TEST-STANDARD-REGISTRY-0001",
+        "TEST-STATE-EFFECT-ANALYSIS-0001",
         "TF-CLI-0001"
       ],
       "provenance": {
@@ -718,6 +776,7 @@
         "TEST-SEMANTIC-ANALYSIS-0001",
         "TEST-SNAPSHOT-GOVERNANCE-0001",
         "TEST-STANDARD-REGISTRY-0001",
+        "TEST-STATE-EFFECT-ANALYSIS-0001",
         "TF-CLI-0001"
       ],
       "direct_requirements": [
@@ -733,6 +792,7 @@
         "requires:TEST-SEMANTIC-ANALYSIS-0001:CAP-FORTRESS-ENGINE",
         "requires:TEST-SNAPSHOT-GOVERNANCE-0001:CAP-FORTRESS-ENGINE",
         "requires:TEST-STANDARD-REGISTRY-0001:CAP-FORTRESS-ENGINE",
+        "requires:TEST-STATE-EFFECT-ANALYSIS-0001:CAP-FORTRESS-ENGINE",
         "requires:TEST-FORTRESS-0001:CAP-FORTRESS-ENGINE"
       ],
       "transitively_reachable_by": [],
@@ -765,6 +825,7 @@
       "transitively_reachable_by": [
         "AF-CONTRACT-COHERENCY-TESTING-0001",
         "AF-SEMANTIC-ANALYSIS-0001",
+        "AF-STATE-EFFECT-ANALYSIS-0001",
         "TEST-BEHAVIORAL-SEMANTICS-0001",
         "TEST-CLI-0001",
         "TEST-FORTRESS-0001",
@@ -774,6 +835,7 @@
         "TEST-SEMANTIC-ANALYSIS-0001",
         "TEST-SNAPSHOT-GOVERNANCE-0001",
         "TEST-STANDARD-REGISTRY-0001",
+        "TEST-STATE-EFFECT-ANALYSIS-0001",
         "TF-CLI-0001"
       ],
       "provenance": {
@@ -790,13 +852,15 @@
         "AF-CORE-0001",
         "AF-SEMANTIC-ANALYSIS-0001",
         "AF-SNAPSHOT-GOVERNANCE-0001",
+        "AF-STATE-EFFECT-ANALYSIS-0001",
         "TEST-PROGRAM-SEMANTICS-0001"
       ],
       "direct_requirements": [
         "requires:AF-CORE-0001:CAP-PROGRAM-SEMANTICS",
         "requires:TEST-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS",
         "requires:AF-SEMANTIC-ANALYSIS-0001:CAP-PROGRAM-SEMANTICS",
-        "requires:AF-SNAPSHOT-GOVERNANCE-0001:CAP-PROGRAM-SEMANTICS"
+        "requires:AF-SNAPSHOT-GOVERNANCE-0001:CAP-PROGRAM-SEMANTICS",
+        "requires:AF-STATE-EFFECT-ANALYSIS-0001:CAP-PROGRAM-SEMANTICS"
       ],
       "transitively_reachable_by": [
         "AF-CONTRACT-COHERENCY-TESTING-0001",
@@ -810,6 +874,7 @@
         "TEST-SEMANTIC-ANALYSIS-0001",
         "TEST-SNAPSHOT-GOVERNANCE-0001",
         "TEST-STANDARD-REGISTRY-0001",
+        "TEST-STATE-EFFECT-ANALYSIS-0001",
         "TF-CLI-0001"
       ],
       "provenance": {
@@ -848,6 +913,7 @@
         "TEST-SEMANTIC-ANALYSIS-0001",
         "TEST-SNAPSHOT-GOVERNANCE-0001",
         "TEST-STANDARD-REGISTRY-0001",
+        "TEST-STATE-EFFECT-ANALYSIS-0001",
         "TF-CLI-0001"
       ],
       "provenance": {
@@ -884,6 +950,7 @@
         "TEST-PROJECT-MODEL-0001",
         "TEST-SEMANTIC-ANALYSIS-0001",
         "TEST-STANDARD-REGISTRY-0001",
+        "TEST-STATE-EFFECT-ANALYSIS-0001",
         "TF-CLI-0001"
       ],
       "provenance": {
@@ -899,12 +966,14 @@
       "direct_consumers": [
         "AF-CORE-0001",
         "AF-SNAPSHOT-GOVERNANCE-0001",
+        "AF-STATE-EFFECT-ANALYSIS-0001",
         "TEST-SEMANTIC-ANALYSIS-0001"
       ],
       "direct_requirements": [
         "requires:AF-CORE-0001:CAP-SEMANTIC-ANALYSIS",
         "requires:TEST-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS",
-        "requires:AF-SNAPSHOT-GOVERNANCE-0001:CAP-SEMANTIC-ANALYSIS"
+        "requires:AF-SNAPSHOT-GOVERNANCE-0001:CAP-SEMANTIC-ANALYSIS",
+        "requires:AF-STATE-EFFECT-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS"
       ],
       "transitively_reachable_by": [
         "AF-CONTRACT-COHERENCY-TESTING-0001",
@@ -918,6 +987,7 @@
         "TEST-REPOSITORY-OBSERVATION-0001",
         "TEST-SNAPSHOT-GOVERNANCE-0001",
         "TEST-STANDARD-REGISTRY-0001",
+        "TEST-STATE-EFFECT-ANALYSIS-0001",
         "TF-CLI-0001"
       ],
       "provenance": {
@@ -951,6 +1021,7 @@
         "TEST-REPOSITORY-OBSERVATION-0001",
         "TEST-SEMANTIC-ANALYSIS-0001",
         "TEST-STANDARD-REGISTRY-0001",
+        "TEST-STATE-EFFECT-ANALYSIS-0001",
         "TF-CLI-0001"
       ],
       "provenance": {
@@ -990,6 +1061,7 @@
         "AF-PROGRAM-SEMANTICS-0001",
         "AF-REPOSITORY-OBSERVATION-0001",
         "AF-SEMANTIC-ANALYSIS-0001",
+        "AF-STATE-EFFECT-ANALYSIS-0001",
         "TEST-ARCHITECTURE-EVALUATION-0001",
         "TEST-BEHAVIORAL-SEMANTICS-0001",
         "TEST-CLI-0001",
@@ -999,10 +1071,46 @@
         "TEST-PROJECT-MODEL-0001",
         "TEST-REPOSITORY-OBSERVATION-0001",
         "TEST-SEMANTIC-ANALYSIS-0001",
+        "TEST-STATE-EFFECT-ANALYSIS-0001",
         "TF-CLI-0001"
       ],
       "provenance": {
         "path": "mods/engine/mods/standard_registry/contract.json",
+        "pointer": "/provides/0"
+      }
+    },
+    {
+      "id": "CAP-STATE-EFFECT-ANALYSIS",
+      "provider": "AF-STATE-EFFECT-ANALYSIS-0001",
+      "version": "0.1.0",
+      "visibility": "project",
+      "direct_consumers": [
+        "AF-CORE-0001",
+        "AF-SNAPSHOT-GOVERNANCE-0001",
+        "TEST-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "direct_requirements": [
+        "requires:AF-CORE-0001:CAP-STATE-EFFECT-ANALYSIS",
+        "requires:AF-SNAPSHOT-GOVERNANCE-0001:CAP-STATE-EFFECT-ANALYSIS",
+        "requires:TEST-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS"
+      ],
+      "transitively_reachable_by": [
+        "AF-CONTRACT-COHERENCY-TESTING-0001",
+        "TEST-ARCHITECTURE-EVALUATION-0001",
+        "TEST-BEHAVIORAL-SEMANTICS-0001",
+        "TEST-CLI-0001",
+        "TEST-FORTRESS-0001",
+        "TEST-IMPLEMENTATION-OBSERVATION-0001",
+        "TEST-PROGRAM-SEMANTICS-0001",
+        "TEST-PROJECT-MODEL-0001",
+        "TEST-REPOSITORY-OBSERVATION-0001",
+        "TEST-SEMANTIC-ANALYSIS-0001",
+        "TEST-SNAPSHOT-GOVERNANCE-0001",
+        "TEST-STANDARD-REGISTRY-0001",
+        "TF-CLI-0001"
+      ],
+      "provenance": {
+        "path": "mods/engine/mods/state_effect_analysis/contract.json",
         "pointer": "/provides/0"
       }
     }
@@ -1098,7 +1206,8 @@
         "AF-PROGRAM-SEMANTICS-0001-R03",
         "AF-PROGRAM-SEMANTICS-0001-R04",
         "AF-PROGRAM-SEMANTICS-0001-R05",
-        "AF-PROGRAM-SEMANTICS-0001-R06"
+        "AF-PROGRAM-SEMANTICS-0001-R06",
+        "AF-PROGRAM-SEMANTICS-0001-R07"
       ],
       "provenance": {
         "path": "mods/engine/mods/program_semantics/contract.json",
@@ -1185,6 +1294,21 @@
       }
     },
     {
+      "id": "AF-STATE-EFFECT-ANALYSIS-0001",
+      "owner": "AF-STATE-EFFECT-ANALYSIS-0001",
+      "version": "0.1.0",
+      "requirements": [
+        "AF-STATE-EFFECT-ANALYSIS-0001-R01",
+        "AF-STATE-EFFECT-ANALYSIS-0001-R02",
+        "AF-STATE-EFFECT-ANALYSIS-0001-R03",
+        "AF-STATE-EFFECT-ANALYSIS-0001-R04"
+      ],
+      "provenance": {
+        "path": "mods/engine/mods/state_effect_analysis/contract.json",
+        "pointer": "/features/0/id"
+      }
+    },
+    {
       "id": "TF-CLI-0001",
       "owner": "TF-CLI-0001",
       "version": "0.1.0",
@@ -1196,7 +1320,8 @@
         "TF-CLI-0001-R05",
         "TF-CLI-0001-R06",
         "TF-CLI-0001-R07",
-        "TF-CLI-0001-R08"
+        "TF-CLI-0001-R08",
+        "TF-CLI-0001-R09"
       ],
       "provenance": {
         "path": "mods/cli/contract.json",
@@ -1502,6 +1627,20 @@
       }
     },
     {
+      "id": "AF-PROGRAM-SEMANTICS-0001-R07",
+      "owner": "AF-PROGRAM-SEMANTICS-0001",
+      "feature": "AF-PROGRAM-SEMANTICS-0001",
+      "statement": "Program Semantics v3 emits deterministic structured binding, field, tuple-field, and dereference places plus direct state-read and mutation facts with exact resolution and provenance, without interpreting mutation safety.",
+      "declared_tests": [
+        "T-AF-PROGRAM-SEMANTICS-0001-R07-001",
+        "T-AF-PROGRAM-SEMANTICS-0001-R07-002"
+      ],
+      "provenance": {
+        "path": "mods/engine/mods/program_semantics/contract.json",
+        "pointer": "/features/0/requirements/6"
+      }
+    },
+    {
       "id": "AF-PROJECT-MODEL-0001-R01",
       "owner": "AF-PROJECT-MODEL-0001",
       "feature": "AF-PROJECT-MODEL-0001",
@@ -1565,7 +1704,7 @@
       "id": "AF-SEMANTIC-ANALYSIS-0001-R01",
       "owner": "AF-SEMANTIC-ANALYSIS-0001",
       "feature": "AF-SEMANTIC-ANALYSIS-0001",
-      "statement": "Semantic Analysis validates canonical distributed Function Contract v1 authority against exact PSM symbol ownership, static interfaces, and deterministic semantic value domains.",
+      "statement": "Semantic Analysis validates canonical distributed Function Contract v2 value-domain authority against exact PSM symbol ownership, static interfaces, and deterministic semantic value domains while leaving state/effect obligations to their owning analyzer.",
       "declared_tests": [
         "T-AF-SEMANTIC-ANALYSIS-0001-R01-001",
         "T-AF-SEMANTIC-ANALYSIS-0001-R01-002",
@@ -1870,6 +2009,76 @@
       }
     },
     {
+      "id": "AF-STATE-EFFECT-ANALYSIS-0001-R01",
+      "owner": "AF-STATE-EFFECT-ANALYSIS-0001",
+      "feature": "AF-STATE-EFFECT-ANALYSIS-0001",
+      "statement": "State and Effect Analysis validates canonical distributed State Contract v1 and Function Contract v2 state/effect authority against PSM nominal ownership, fields, symbols, and Semantic Analysis domains.",
+      "declared_tests": [
+        "T-AF-STATE-EFFECT-ANALYSIS-0001-R01-001",
+        "T-AF-STATE-EFFECT-ANALYSIS-0001-R01-002",
+        "T-AF-STATE-EFFECT-ANALYSIS-0001-R01-003",
+        "T-AF-STATE-EFFECT-ANALYSIS-0001-R01-004",
+        "T-AF-STATE-EFFECT-ANALYSIS-0001-R01-005",
+        "T-AF-STATE-EFFECT-ANALYSIS-0001-R01-006"
+      ],
+      "provenance": {
+        "path": "mods/engine/mods/state_effect_analysis/contract.json",
+        "pointer": "/features/0/requirements/0"
+      }
+    },
+    {
+      "id": "AF-STATE-EFFECT-ANALYSIS-0001-R02",
+      "owner": "AF-STATE-EFFECT-ANALYSIS-0001",
+      "feature": "AF-STATE-EFFECT-ANALYSIS-0001",
+      "statement": "State and Effect Analysis conservatively classifies exact, possible, unclassified, and unknown typestates and composes supported receiver transitions through resolved calls without treating opaque aliases as unchanged.",
+      "declared_tests": [
+        "T-AF-STATE-EFFECT-ANALYSIS-0001-R02-001",
+        "T-AF-STATE-EFFECT-ANALYSIS-0001-R02-002",
+        "T-AF-STATE-EFFECT-ANALYSIS-0001-R02-003",
+        "T-AF-STATE-EFFECT-ANALYSIS-0001-R02-004",
+        "T-AF-STATE-EFFECT-ANALYSIS-0001-R02-005",
+        "T-AF-STATE-EFFECT-ANALYSIS-0001-R02-006"
+      ],
+      "provenance": {
+        "path": "mods/engine/mods/state_effect_analysis/contract.json",
+        "pointer": "/features/0/requirements/1"
+      }
+    },
+    {
+      "id": "AF-STATE-EFFECT-ANALYSIS-0001-R03",
+      "owner": "AF-STATE-EFFECT-ANALYSIS-0001",
+      "feature": "AF-STATE-EFFECT-ANALYSIS-0001",
+      "statement": "State and Effect Analysis derives direct and SCC-aware transitive effects with causal provenance and rejects only supported state precondition, state postcondition, and authored effect-policy contradictions.",
+      "declared_tests": [
+        "T-AF-STATE-EFFECT-ANALYSIS-0001-R03-001",
+        "T-AF-STATE-EFFECT-ANALYSIS-0001-R03-002",
+        "T-AF-STATE-EFFECT-ANALYSIS-0001-R03-003",
+        "T-AF-STATE-EFFECT-ANALYSIS-0001-R03-004",
+        "T-AF-STATE-EFFECT-ANALYSIS-0001-R03-005",
+        "T-AF-STATE-EFFECT-ANALYSIS-0001-R03-006",
+        "T-AF-STATE-EFFECT-ANALYSIS-0001-R03-007"
+      ],
+      "provenance": {
+        "path": "mods/engine/mods/state_effect_analysis/contract.json",
+        "pointer": "/features/0/requirements/2"
+      }
+    },
+    {
+      "id": "AF-STATE-EFFECT-ANALYSIS-0001-R04",
+      "owner": "AF-STATE-EFFECT-ANALYSIS-0001",
+      "feature": "AF-STATE-EFFECT-ANALYSIS-0001",
+      "statement": "State and Effect Analysis emits deterministic canonical derived Info and PROGRAM-STATE-001 and PROGRAM-EFFECT-001 findings while preserving property-specific coverage and unsupported semantics.",
+      "declared_tests": [
+        "T-AF-STATE-EFFECT-ANALYSIS-0001-R04-001",
+        "T-AF-STATE-EFFECT-ANALYSIS-0001-R04-002",
+        "T-AF-STATE-EFFECT-ANALYSIS-0001-R04-003"
+      ],
+      "provenance": {
+        "path": "mods/engine/mods/state_effect_analysis/contract.json",
+        "pointer": "/features/0/requirements/3"
+      }
+    },
+    {
       "id": "TF-CLI-0001-R01",
       "owner": "TF-CLI-0001",
       "feature": "TF-CLI-0001",
@@ -1963,7 +2172,7 @@
       "id": "TF-CLI-0001-R07",
       "owner": "TF-CLI-0001",
       "feature": "TF-CLI-0001",
-      "statement": "The native fortress psm command compiles snapshot-bound Program Semantic Model v2, emits canonical deterministic JSON to standard output or an explicit file, returns non-success for invalid or analyzer-incoherent state, and never implies behavioral realization or certification.",
+      "statement": "The native fortress psm command compiles snapshot-bound Program Semantic Model v3, emits canonical deterministic JSON to standard output or an explicit file, returns non-success for invalid or analyzer-incoherent state, and never implies behavioral realization or certification.",
       "declared_tests": [
         "T-TF-CLI-0001-R07-001",
         "T-TF-CLI-0001-R07-002"
@@ -1985,6 +2194,20 @@
       "provenance": {
         "path": "mods/cli/contract.json",
         "pointer": "/features/0/requirements/7"
+      }
+    },
+    {
+      "id": "TF-CLI-0001-R09",
+      "owner": "TF-CLI-0001",
+      "feature": "TF-CLI-0001",
+      "statement": "The native fortress state-effect command compiles PSM- and Semantic-Analysis-backed typestate and effect analysis, emits deterministic canonical JSON to standard output or a file, fails on supported contradictions or invalid authority, and preserves uncertainty without implying total program safety or certification.",
+      "declared_tests": [
+        "T-TF-CLI-0001-R09-001",
+        "T-TF-CLI-0001-R09-002"
+      ],
+      "provenance": {
+        "path": "mods/cli/contract.json",
+        "pointer": "/features/0/requirements/8"
       }
     }
   ],
@@ -3695,6 +3918,114 @@
         ]
       },
       {
+        "module": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "rule": "BEHAVIOR-FLOW-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "BEHAVIOR-FLOW-001",
+            "rule_path": [
+              "BEHAVIOR-FLOW-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/0"
+            }
+          }
+        ]
+      },
+      {
+        "module": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "rule": "CONTRACT-COHERENCY-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "CONTRACT-COHERENCY-001",
+            "rule_path": [
+              "CONTRACT-COHERENCY-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/1"
+            }
+          }
+        ]
+      },
+      {
+        "module": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "rule": "PROGRAM-DOMAIN-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "PROGRAM-DOMAIN-001",
+            "rule_path": [
+              "PROGRAM-DOMAIN-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/2"
+            }
+          }
+        ]
+      },
+      {
+        "module": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "rule": "REPO-DOCS-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "REPO-DOCS-001",
+            "rule_path": [
+              "REPO-DOCS-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/3"
+            }
+          }
+        ]
+      },
+      {
+        "module": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "rule": "REPO-MODULE-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "REPO-MODULE-001",
+            "rule_path": [
+              "REPO-MODULE-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/4"
+            }
+          }
+        ]
+      },
+      {
+        "module": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "rule": "STD-ID-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "STD-ID-001",
+            "rule_path": [
+              "STD-ID-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/5"
+            }
+          }
+        ]
+      },
+      {
         "module": "PF-FORTRESS",
         "rule": "BEHAVIOR-FLOW-001",
         "origins": [
@@ -4974,6 +5305,114 @@
       },
       {
         "module": "TEST-STANDARD-REGISTRY-0001",
+        "rule": "STD-ID-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "STD-ID-001",
+            "rule_path": [
+              "STD-ID-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/5"
+            }
+          }
+        ]
+      },
+      {
+        "module": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "rule": "BEHAVIOR-FLOW-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "BEHAVIOR-FLOW-001",
+            "rule_path": [
+              "BEHAVIOR-FLOW-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/0"
+            }
+          }
+        ]
+      },
+      {
+        "module": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "rule": "CONTRACT-COHERENCY-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "CONTRACT-COHERENCY-001",
+            "rule_path": [
+              "CONTRACT-COHERENCY-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/1"
+            }
+          }
+        ]
+      },
+      {
+        "module": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "rule": "PROGRAM-DOMAIN-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "PROGRAM-DOMAIN-001",
+            "rule_path": [
+              "PROGRAM-DOMAIN-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/2"
+            }
+          }
+        ]
+      },
+      {
+        "module": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "rule": "REPO-DOCS-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "REPO-DOCS-001",
+            "rule_path": [
+              "REPO-DOCS-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/3"
+            }
+          }
+        ]
+      },
+      {
+        "module": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "rule": "REPO-MODULE-001",
+        "origins": [
+          {
+            "kind": "inherited",
+            "declared_by": "PF-FORTRESS",
+            "declared_rule": "REPO-MODULE-001",
+            "rule_path": [
+              "REPO-MODULE-001"
+            ],
+            "provenance": {
+              "path": "contract.json",
+              "pointer": "/constraints/4"
+            }
+          }
+        ]
+      },
+      {
+        "module": "TEST-STATE-EFFECT-ANALYSIS-0001",
         "rule": "STD-ID-001",
         "origins": [
           {
@@ -5240,6 +5679,16 @@
         "provenance": {
           "path": "mods/engine/contract.json",
           "pointer": "/requires/10"
+        }
+      },
+      {
+        "consumer": "AF-CORE-0001",
+        "provider": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "capability": "CAP-STATE-EFFECT-ANALYSIS",
+        "version_requirement": "^0.1.0",
+        "provenance": {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/11"
         }
       },
       {
@@ -5713,6 +6162,16 @@
         }
       },
       {
+        "consumer": "AF-SNAPSHOT-GOVERNANCE-0001",
+        "provider": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "capability": "CAP-STATE-EFFECT-ANALYSIS",
+        "version_requirement": "^0.1.0",
+        "provenance": {
+          "path": "mods/engine/mods/snapshot_governance/contract.json",
+          "pointer": "/requires/10"
+        }
+      },
+      {
         "consumer": "TEST-SNAPSHOT-GOVERNANCE-0001",
         "provider": "AF-ARCHITECTURE-EVALUATION-0001",
         "capability": "CAP-ARCHITECTURE-EVALUATION",
@@ -5799,6 +6258,56 @@
         "version_requirement": "^0.1.0",
         "provenance": {
           "path": "mods/engine/mods/standard_registry/mods/testing/contract.json",
+          "pointer": "/requires/1"
+        }
+      },
+      {
+        "consumer": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "provider": "AF-FINDING-MODEL-0001",
+        "capability": "CAP-FINDING-MODEL",
+        "version_requirement": "^0.1.0",
+        "provenance": {
+          "path": "mods/engine/mods/state_effect_analysis/contract.json",
+          "pointer": "/requires/0"
+        }
+      },
+      {
+        "consumer": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "provider": "AF-PROGRAM-SEMANTICS-0001",
+        "capability": "CAP-PROGRAM-SEMANTICS",
+        "version_requirement": "^0.1.0",
+        "provenance": {
+          "path": "mods/engine/mods/state_effect_analysis/contract.json",
+          "pointer": "/requires/1"
+        }
+      },
+      {
+        "consumer": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "provider": "AF-SEMANTIC-ANALYSIS-0001",
+        "capability": "CAP-SEMANTIC-ANALYSIS",
+        "version_requirement": "^0.1.0",
+        "provenance": {
+          "path": "mods/engine/mods/state_effect_analysis/contract.json",
+          "pointer": "/requires/2"
+        }
+      },
+      {
+        "consumer": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "provider": "AF-CORE-0001",
+        "capability": "CAP-FORTRESS-ENGINE",
+        "version_requirement": "^0.1.0",
+        "provenance": {
+          "path": "mods/engine/mods/state_effect_analysis/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        }
+      },
+      {
+        "consumer": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "provider": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "capability": "CAP-STATE-EFFECT-ANALYSIS",
+        "version_requirement": "^0.1.0",
+        "provenance": {
+          "path": "mods/engine/mods/state_effect_analysis/mods/testing/contract.json",
           "pointer": "/requires/1"
         }
       },
@@ -5957,6 +6466,18 @@
         }
       },
       {
+        "source": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "relationship_type": "verifies",
+        "target": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "subjects": [
+          "AF-STATE-EFFECT-ANALYSIS-0001"
+        ],
+        "provenance": {
+          "path": "mods/engine/mods/state_effect_analysis/mods/testing/contract.json",
+          "pointer": "/relationships/0"
+        }
+      },
+      {
         "source": "TEST-FORTRESS-0001",
         "relationship_type": "verifies",
         "target": "PF-FORTRESS",
@@ -6054,6 +6575,12 @@
         "consumer": "AF-CORE-0001",
         "capability": "CAP-STANDARD-REGISTRY",
         "derivation": "inverse_consumer:AF-STANDARD-REGISTRY-0001:AF-CORE-0001:CAP-STANDARD-REGISTRY"
+      },
+      {
+        "provider": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "consumer": "AF-CORE-0001",
+        "capability": "CAP-STATE-EFFECT-ANALYSIS",
+        "derivation": "inverse_consumer:AF-STATE-EFFECT-ANALYSIS-0001:AF-CORE-0001:CAP-STATE-EFFECT-ANALYSIS"
       },
       {
         "provider": "AF-CONTRACT-COHERENCY-0001",
@@ -6338,6 +6865,12 @@
         "derivation": "inverse_consumer:AF-STANDARD-REGISTRY-0001:AF-SNAPSHOT-GOVERNANCE-0001:CAP-STANDARD-REGISTRY"
       },
       {
+        "provider": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "consumer": "AF-SNAPSHOT-GOVERNANCE-0001",
+        "capability": "CAP-STATE-EFFECT-ANALYSIS",
+        "derivation": "inverse_consumer:AF-STATE-EFFECT-ANALYSIS-0001:AF-SNAPSHOT-GOVERNANCE-0001:CAP-STATE-EFFECT-ANALYSIS"
+      },
+      {
         "provider": "AF-ARCHITECTURE-EVALUATION-0001",
         "consumer": "TEST-SNAPSHOT-GOVERNANCE-0001",
         "capability": "CAP-ARCHITECTURE-EVALUATION",
@@ -6390,6 +6923,36 @@
         "consumer": "TEST-STANDARD-REGISTRY-0001",
         "capability": "CAP-STANDARD-REGISTRY",
         "derivation": "inverse_consumer:AF-STANDARD-REGISTRY-0001:TEST-STANDARD-REGISTRY-0001:CAP-STANDARD-REGISTRY"
+      },
+      {
+        "provider": "AF-FINDING-MODEL-0001",
+        "consumer": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "capability": "CAP-FINDING-MODEL",
+        "derivation": "inverse_consumer:AF-FINDING-MODEL-0001:AF-STATE-EFFECT-ANALYSIS-0001:CAP-FINDING-MODEL"
+      },
+      {
+        "provider": "AF-PROGRAM-SEMANTICS-0001",
+        "consumer": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "capability": "CAP-PROGRAM-SEMANTICS",
+        "derivation": "inverse_consumer:AF-PROGRAM-SEMANTICS-0001:AF-STATE-EFFECT-ANALYSIS-0001:CAP-PROGRAM-SEMANTICS"
+      },
+      {
+        "provider": "AF-SEMANTIC-ANALYSIS-0001",
+        "consumer": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "capability": "CAP-SEMANTIC-ANALYSIS",
+        "derivation": "inverse_consumer:AF-SEMANTIC-ANALYSIS-0001:AF-STATE-EFFECT-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS"
+      },
+      {
+        "provider": "AF-CORE-0001",
+        "consumer": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "capability": "CAP-FORTRESS-ENGINE",
+        "derivation": "inverse_consumer:AF-CORE-0001:TEST-STATE-EFFECT-ANALYSIS-0001:CAP-FORTRESS-ENGINE"
+      },
+      {
+        "provider": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "consumer": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "capability": "CAP-STATE-EFFECT-ANALYSIS",
+        "derivation": "inverse_consumer:AF-STATE-EFFECT-ANALYSIS-0001:TEST-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS"
       },
       {
         "provider": "AF-CORE-0001",
@@ -6625,6 +7188,17 @@
         "derivation": "dependency_reachability:AF-CONTRACT-COHERENCY-TESTING-0001:AF-STANDARD-REGISTRY-0001"
       },
       {
+        "source": "AF-CONTRACT-COHERENCY-TESTING-0001",
+        "target": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "direct": false,
+        "path": [
+          "AF-CONTRACT-COHERENCY-TESTING-0001",
+          "AF-CORE-0001",
+          "AF-STATE-EFFECT-ANALYSIS-0001"
+        ],
+        "derivation": "dependency_reachability:AF-CONTRACT-COHERENCY-TESTING-0001:AF-STATE-EFFECT-ANALYSIS-0001"
+      },
+      {
         "source": "AF-CORE-0001",
         "target": "AF-ARCHITECTURE-EVALUATION-0001",
         "direct": true,
@@ -6733,6 +7307,16 @@
           "AF-STANDARD-REGISTRY-0001"
         ],
         "derivation": "dependency_reachability:AF-CORE-0001:AF-STANDARD-REGISTRY-0001"
+      },
+      {
+        "source": "AF-CORE-0001",
+        "target": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "direct": true,
+        "path": [
+          "AF-CORE-0001",
+          "AF-STATE-EFFECT-ANALYSIS-0001"
+        ],
+        "derivation": "dependency_reachability:AF-CORE-0001:AF-STATE-EFFECT-ANALYSIS-0001"
       },
       {
         "source": "AF-FINDING-MODEL-0001",
@@ -6960,6 +7544,79 @@
         "derivation": "dependency_reachability:AF-SNAPSHOT-GOVERNANCE-0001:AF-STANDARD-REGISTRY-0001"
       },
       {
+        "source": "AF-SNAPSHOT-GOVERNANCE-0001",
+        "target": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "direct": true,
+        "path": [
+          "AF-SNAPSHOT-GOVERNANCE-0001",
+          "AF-STATE-EFFECT-ANALYSIS-0001"
+        ],
+        "derivation": "dependency_reachability:AF-SNAPSHOT-GOVERNANCE-0001:AF-STATE-EFFECT-ANALYSIS-0001"
+      },
+      {
+        "source": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "target": "AF-CONTRACT-COHERENCY-0001",
+        "direct": false,
+        "path": [
+          "AF-STATE-EFFECT-ANALYSIS-0001",
+          "AF-PROGRAM-SEMANTICS-0001",
+          "AF-CONTRACT-COHERENCY-0001"
+        ],
+        "derivation": "dependency_reachability:AF-STATE-EFFECT-ANALYSIS-0001:AF-CONTRACT-COHERENCY-0001"
+      },
+      {
+        "source": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "target": "AF-FINDING-MODEL-0001",
+        "direct": true,
+        "path": [
+          "AF-STATE-EFFECT-ANALYSIS-0001",
+          "AF-FINDING-MODEL-0001"
+        ],
+        "derivation": "dependency_reachability:AF-STATE-EFFECT-ANALYSIS-0001:AF-FINDING-MODEL-0001"
+      },
+      {
+        "source": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "target": "AF-IMPLEMENTATION-OBSERVATION-0001",
+        "direct": false,
+        "path": [
+          "AF-STATE-EFFECT-ANALYSIS-0001",
+          "AF-PROGRAM-SEMANTICS-0001",
+          "AF-IMPLEMENTATION-OBSERVATION-0001"
+        ],
+        "derivation": "dependency_reachability:AF-STATE-EFFECT-ANALYSIS-0001:AF-IMPLEMENTATION-OBSERVATION-0001"
+      },
+      {
+        "source": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "target": "AF-PROGRAM-SEMANTICS-0001",
+        "direct": true,
+        "path": [
+          "AF-STATE-EFFECT-ANALYSIS-0001",
+          "AF-PROGRAM-SEMANTICS-0001"
+        ],
+        "derivation": "dependency_reachability:AF-STATE-EFFECT-ANALYSIS-0001:AF-PROGRAM-SEMANTICS-0001"
+      },
+      {
+        "source": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "target": "AF-SEMANTIC-ANALYSIS-0001",
+        "direct": true,
+        "path": [
+          "AF-STATE-EFFECT-ANALYSIS-0001",
+          "AF-SEMANTIC-ANALYSIS-0001"
+        ],
+        "derivation": "dependency_reachability:AF-STATE-EFFECT-ANALYSIS-0001:AF-SEMANTIC-ANALYSIS-0001"
+      },
+      {
+        "source": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "target": "AF-STANDARD-REGISTRY-0001",
+        "direct": false,
+        "path": [
+          "AF-STATE-EFFECT-ANALYSIS-0001",
+          "AF-FINDING-MODEL-0001",
+          "AF-STANDARD-REGISTRY-0001"
+        ],
+        "derivation": "dependency_reachability:AF-STATE-EFFECT-ANALYSIS-0001:AF-STANDARD-REGISTRY-0001"
+      },
+      {
         "source": "TEST-ARCHITECTURE-EVALUATION-0001",
         "target": "AF-ARCHITECTURE-EVALUATION-0001",
         "direct": true,
@@ -7085,6 +7742,17 @@
           "AF-STANDARD-REGISTRY-0001"
         ],
         "derivation": "dependency_reachability:TEST-ARCHITECTURE-EVALUATION-0001:AF-STANDARD-REGISTRY-0001"
+      },
+      {
+        "source": "TEST-ARCHITECTURE-EVALUATION-0001",
+        "target": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "direct": false,
+        "path": [
+          "TEST-ARCHITECTURE-EVALUATION-0001",
+          "AF-CORE-0001",
+          "AF-STATE-EFFECT-ANALYSIS-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-ARCHITECTURE-EVALUATION-0001:AF-STATE-EFFECT-ANALYSIS-0001"
       },
       {
         "source": "TEST-BEHAVIORAL-SEMANTICS-0001",
@@ -7216,6 +7884,17 @@
         "derivation": "dependency_reachability:TEST-BEHAVIORAL-SEMANTICS-0001:AF-STANDARD-REGISTRY-0001"
       },
       {
+        "source": "TEST-BEHAVIORAL-SEMANTICS-0001",
+        "target": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "direct": false,
+        "path": [
+          "TEST-BEHAVIORAL-SEMANTICS-0001",
+          "AF-CORE-0001",
+          "AF-STATE-EFFECT-ANALYSIS-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-BEHAVIORAL-SEMANTICS-0001:AF-STATE-EFFECT-ANALYSIS-0001"
+      },
+      {
         "source": "TEST-CLI-0001",
         "target": "AF-ARCHITECTURE-EVALUATION-0001",
         "direct": false,
@@ -7345,6 +8024,17 @@
           "AF-STANDARD-REGISTRY-0001"
         ],
         "derivation": "dependency_reachability:TEST-CLI-0001:AF-STANDARD-REGISTRY-0001"
+      },
+      {
+        "source": "TEST-CLI-0001",
+        "target": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "direct": false,
+        "path": [
+          "TEST-CLI-0001",
+          "AF-CORE-0001",
+          "AF-STATE-EFFECT-ANALYSIS-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-CLI-0001:AF-STATE-EFFECT-ANALYSIS-0001"
       },
       {
         "source": "TEST-CLI-0001",
@@ -7489,6 +8179,17 @@
       },
       {
         "source": "TEST-FORTRESS-0001",
+        "target": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "direct": false,
+        "path": [
+          "TEST-FORTRESS-0001",
+          "AF-CORE-0001",
+          "AF-STATE-EFFECT-ANALYSIS-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-FORTRESS-0001:AF-STATE-EFFECT-ANALYSIS-0001"
+      },
+      {
+        "source": "TEST-FORTRESS-0001",
         "target": "TF-CLI-0001",
         "direct": true,
         "path": [
@@ -7628,6 +8329,17 @@
         "derivation": "dependency_reachability:TEST-IMPLEMENTATION-OBSERVATION-0001:AF-STANDARD-REGISTRY-0001"
       },
       {
+        "source": "TEST-IMPLEMENTATION-OBSERVATION-0001",
+        "target": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "direct": false,
+        "path": [
+          "TEST-IMPLEMENTATION-OBSERVATION-0001",
+          "AF-CORE-0001",
+          "AF-STATE-EFFECT-ANALYSIS-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-IMPLEMENTATION-OBSERVATION-0001:AF-STATE-EFFECT-ANALYSIS-0001"
+      },
+      {
         "source": "TEST-PROGRAM-SEMANTICS-0001",
         "target": "AF-ARCHITECTURE-EVALUATION-0001",
         "direct": false,
@@ -7756,6 +8468,17 @@
           "AF-STANDARD-REGISTRY-0001"
         ],
         "derivation": "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-STANDARD-REGISTRY-0001"
+      },
+      {
+        "source": "TEST-PROGRAM-SEMANTICS-0001",
+        "target": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "direct": false,
+        "path": [
+          "TEST-PROGRAM-SEMANTICS-0001",
+          "AF-CORE-0001",
+          "AF-STATE-EFFECT-ANALYSIS-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-STATE-EFFECT-ANALYSIS-0001"
       },
       {
         "source": "TEST-PROJECT-MODEL-0001",
@@ -7888,6 +8611,17 @@
         "derivation": "dependency_reachability:TEST-PROJECT-MODEL-0001:AF-STANDARD-REGISTRY-0001"
       },
       {
+        "source": "TEST-PROJECT-MODEL-0001",
+        "target": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "direct": false,
+        "path": [
+          "TEST-PROJECT-MODEL-0001",
+          "AF-CORE-0001",
+          "AF-STATE-EFFECT-ANALYSIS-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-PROJECT-MODEL-0001:AF-STATE-EFFECT-ANALYSIS-0001"
+      },
+      {
         "source": "TEST-REPOSITORY-OBSERVATION-0001",
         "target": "AF-ARCHITECTURE-EVALUATION-0001",
         "direct": false,
@@ -8016,6 +8750,17 @@
           "AF-STANDARD-REGISTRY-0001"
         ],
         "derivation": "dependency_reachability:TEST-REPOSITORY-OBSERVATION-0001:AF-STANDARD-REGISTRY-0001"
+      },
+      {
+        "source": "TEST-REPOSITORY-OBSERVATION-0001",
+        "target": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "direct": false,
+        "path": [
+          "TEST-REPOSITORY-OBSERVATION-0001",
+          "AF-CORE-0001",
+          "AF-STATE-EFFECT-ANALYSIS-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-REPOSITORY-OBSERVATION-0001:AF-STATE-EFFECT-ANALYSIS-0001"
       },
       {
         "source": "TEST-SEMANTIC-ANALYSIS-0001",
@@ -8148,6 +8893,17 @@
         "derivation": "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-STANDARD-REGISTRY-0001"
       },
       {
+        "source": "TEST-SEMANTIC-ANALYSIS-0001",
+        "target": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "direct": false,
+        "path": [
+          "TEST-SEMANTIC-ANALYSIS-0001",
+          "AF-CORE-0001",
+          "AF-STATE-EFFECT-ANALYSIS-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-STATE-EFFECT-ANALYSIS-0001"
+      },
+      {
         "source": "TEST-SNAPSHOT-GOVERNANCE-0001",
         "target": "AF-ARCHITECTURE-EVALUATION-0001",
         "direct": true,
@@ -8271,6 +9027,17 @@
           "AF-STANDARD-REGISTRY-0001"
         ],
         "derivation": "dependency_reachability:TEST-SNAPSHOT-GOVERNANCE-0001:AF-STANDARD-REGISTRY-0001"
+      },
+      {
+        "source": "TEST-SNAPSHOT-GOVERNANCE-0001",
+        "target": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "direct": false,
+        "path": [
+          "TEST-SNAPSHOT-GOVERNANCE-0001",
+          "AF-CORE-0001",
+          "AF-STATE-EFFECT-ANALYSIS-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-SNAPSHOT-GOVERNANCE-0001:AF-STATE-EFFECT-ANALYSIS-0001"
       },
       {
         "source": "TEST-STANDARD-REGISTRY-0001",
@@ -8403,6 +9170,158 @@
         "derivation": "dependency_reachability:TEST-STANDARD-REGISTRY-0001:AF-STANDARD-REGISTRY-0001"
       },
       {
+        "source": "TEST-STANDARD-REGISTRY-0001",
+        "target": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "direct": false,
+        "path": [
+          "TEST-STANDARD-REGISTRY-0001",
+          "AF-CORE-0001",
+          "AF-STATE-EFFECT-ANALYSIS-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-STANDARD-REGISTRY-0001:AF-STATE-EFFECT-ANALYSIS-0001"
+      },
+      {
+        "source": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "target": "AF-ARCHITECTURE-EVALUATION-0001",
+        "direct": false,
+        "path": [
+          "TEST-STATE-EFFECT-ANALYSIS-0001",
+          "AF-CORE-0001",
+          "AF-ARCHITECTURE-EVALUATION-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-ARCHITECTURE-EVALUATION-0001"
+      },
+      {
+        "source": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "target": "AF-BEHAVIORAL-SEMANTICS-0001",
+        "direct": false,
+        "path": [
+          "TEST-STATE-EFFECT-ANALYSIS-0001",
+          "AF-CORE-0001",
+          "AF-BEHAVIORAL-SEMANTICS-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-BEHAVIORAL-SEMANTICS-0001"
+      },
+      {
+        "source": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "target": "AF-CONTRACT-COHERENCY-0001",
+        "direct": false,
+        "path": [
+          "TEST-STATE-EFFECT-ANALYSIS-0001",
+          "AF-CORE-0001",
+          "AF-CONTRACT-COHERENCY-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-CONTRACT-COHERENCY-0001"
+      },
+      {
+        "source": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "target": "AF-CORE-0001",
+        "direct": true,
+        "path": [
+          "TEST-STATE-EFFECT-ANALYSIS-0001",
+          "AF-CORE-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-CORE-0001"
+      },
+      {
+        "source": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "target": "AF-FINDING-MODEL-0001",
+        "direct": false,
+        "path": [
+          "TEST-STATE-EFFECT-ANALYSIS-0001",
+          "AF-CORE-0001",
+          "AF-FINDING-MODEL-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-FINDING-MODEL-0001"
+      },
+      {
+        "source": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "target": "AF-IMPLEMENTATION-OBSERVATION-0001",
+        "direct": false,
+        "path": [
+          "TEST-STATE-EFFECT-ANALYSIS-0001",
+          "AF-CORE-0001",
+          "AF-IMPLEMENTATION-OBSERVATION-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-IMPLEMENTATION-OBSERVATION-0001"
+      },
+      {
+        "source": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "target": "AF-PROGRAM-SEMANTICS-0001",
+        "direct": false,
+        "path": [
+          "TEST-STATE-EFFECT-ANALYSIS-0001",
+          "AF-CORE-0001",
+          "AF-PROGRAM-SEMANTICS-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-PROGRAM-SEMANTICS-0001"
+      },
+      {
+        "source": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "target": "AF-PROJECT-MODEL-0001",
+        "direct": false,
+        "path": [
+          "TEST-STATE-EFFECT-ANALYSIS-0001",
+          "AF-CORE-0001",
+          "AF-PROJECT-MODEL-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-PROJECT-MODEL-0001"
+      },
+      {
+        "source": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "target": "AF-REPOSITORY-OBSERVATION-0001",
+        "direct": false,
+        "path": [
+          "TEST-STATE-EFFECT-ANALYSIS-0001",
+          "AF-CORE-0001",
+          "AF-REPOSITORY-OBSERVATION-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-REPOSITORY-OBSERVATION-0001"
+      },
+      {
+        "source": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "target": "AF-SEMANTIC-ANALYSIS-0001",
+        "direct": false,
+        "path": [
+          "TEST-STATE-EFFECT-ANALYSIS-0001",
+          "AF-CORE-0001",
+          "AF-SEMANTIC-ANALYSIS-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-SEMANTIC-ANALYSIS-0001"
+      },
+      {
+        "source": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "target": "AF-SNAPSHOT-GOVERNANCE-0001",
+        "direct": false,
+        "path": [
+          "TEST-STATE-EFFECT-ANALYSIS-0001",
+          "AF-CORE-0001",
+          "AF-SNAPSHOT-GOVERNANCE-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-SNAPSHOT-GOVERNANCE-0001"
+      },
+      {
+        "source": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "target": "AF-STANDARD-REGISTRY-0001",
+        "direct": false,
+        "path": [
+          "TEST-STATE-EFFECT-ANALYSIS-0001",
+          "AF-CORE-0001",
+          "AF-STANDARD-REGISTRY-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-STANDARD-REGISTRY-0001"
+      },
+      {
+        "source": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "target": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "direct": true,
+        "path": [
+          "TEST-STATE-EFFECT-ANALYSIS-0001",
+          "AF-STATE-EFFECT-ANALYSIS-0001"
+        ],
+        "derivation": "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-STATE-EFFECT-ANALYSIS-0001"
+      },
+      {
         "source": "TF-CLI-0001",
         "target": "AF-ARCHITECTURE-EVALUATION-0001",
         "direct": false,
@@ -8532,6 +9451,17 @@
           "AF-STANDARD-REGISTRY-0001"
         ],
         "derivation": "dependency_reachability:TF-CLI-0001:AF-STANDARD-REGISTRY-0001"
+      },
+      {
+        "source": "TF-CLI-0001",
+        "target": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "direct": false,
+        "path": [
+          "TF-CLI-0001",
+          "AF-CORE-0001",
+          "AF-STATE-EFFECT-ANALYSIS-0001"
+        ],
+        "derivation": "dependency_reachability:TF-CLI-0001:AF-STATE-EFFECT-ANALYSIS-0001"
       }
     ],
     "reachable_capabilities": [
@@ -8776,6 +9706,18 @@
         "derivation": "capability_reachability:AF-CONTRACT-COHERENCY-TESTING-0001:AF-STANDARD-REGISTRY-0001:CAP-STANDARD-REGISTRY"
       },
       {
+        "source": "AF-CONTRACT-COHERENCY-TESTING-0001",
+        "capability": "CAP-STATE-EFFECT-ANALYSIS",
+        "provider": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "path": [
+          "AF-CONTRACT-COHERENCY-TESTING-0001",
+          "AF-CORE-0001",
+          "AF-STATE-EFFECT-ANALYSIS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:AF-CONTRACT-COHERENCY-TESTING-0001:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS"
+      },
+      {
         "source": "AF-CORE-0001",
         "capability": "CAP-ARCHITECTURE-EVALUATION",
         "provider": "AF-ARCHITECTURE-EVALUATION-0001",
@@ -8895,6 +9837,17 @@
         ],
         "reexported": false,
         "derivation": "capability_reachability:AF-CORE-0001:AF-STANDARD-REGISTRY-0001:CAP-STANDARD-REGISTRY"
+      },
+      {
+        "source": "AF-CORE-0001",
+        "capability": "CAP-STATE-EFFECT-ANALYSIS",
+        "provider": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "path": [
+          "AF-CORE-0001",
+          "AF-STATE-EFFECT-ANALYSIS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:AF-CORE-0001:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS"
       },
       {
         "source": "AF-FINDING-MODEL-0001",
@@ -9144,6 +10097,86 @@
         "derivation": "capability_reachability:AF-SNAPSHOT-GOVERNANCE-0001:AF-STANDARD-REGISTRY-0001:CAP-STANDARD-REGISTRY"
       },
       {
+        "source": "AF-SNAPSHOT-GOVERNANCE-0001",
+        "capability": "CAP-STATE-EFFECT-ANALYSIS",
+        "provider": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "path": [
+          "AF-SNAPSHOT-GOVERNANCE-0001",
+          "AF-STATE-EFFECT-ANALYSIS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:AF-SNAPSHOT-GOVERNANCE-0001:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS"
+      },
+      {
+        "source": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "capability": "CAP-CONTRACT-COHERENCY",
+        "provider": "AF-CONTRACT-COHERENCY-0001",
+        "path": [
+          "AF-STATE-EFFECT-ANALYSIS-0001",
+          "AF-PROGRAM-SEMANTICS-0001",
+          "AF-CONTRACT-COHERENCY-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:AF-STATE-EFFECT-ANALYSIS-0001:AF-CONTRACT-COHERENCY-0001:CAP-CONTRACT-COHERENCY"
+      },
+      {
+        "source": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "capability": "CAP-FINDING-MODEL",
+        "provider": "AF-FINDING-MODEL-0001",
+        "path": [
+          "AF-STATE-EFFECT-ANALYSIS-0001",
+          "AF-FINDING-MODEL-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:AF-STATE-EFFECT-ANALYSIS-0001:AF-FINDING-MODEL-0001:CAP-FINDING-MODEL"
+      },
+      {
+        "source": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "capability": "CAP-IMPLEMENTATION-OBSERVATION",
+        "provider": "AF-IMPLEMENTATION-OBSERVATION-0001",
+        "path": [
+          "AF-STATE-EFFECT-ANALYSIS-0001",
+          "AF-PROGRAM-SEMANTICS-0001",
+          "AF-IMPLEMENTATION-OBSERVATION-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:AF-STATE-EFFECT-ANALYSIS-0001:AF-IMPLEMENTATION-OBSERVATION-0001:CAP-IMPLEMENTATION-OBSERVATION"
+      },
+      {
+        "source": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "capability": "CAP-PROGRAM-SEMANTICS",
+        "provider": "AF-PROGRAM-SEMANTICS-0001",
+        "path": [
+          "AF-STATE-EFFECT-ANALYSIS-0001",
+          "AF-PROGRAM-SEMANTICS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:AF-STATE-EFFECT-ANALYSIS-0001:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS"
+      },
+      {
+        "source": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "capability": "CAP-SEMANTIC-ANALYSIS",
+        "provider": "AF-SEMANTIC-ANALYSIS-0001",
+        "path": [
+          "AF-STATE-EFFECT-ANALYSIS-0001",
+          "AF-SEMANTIC-ANALYSIS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:AF-STATE-EFFECT-ANALYSIS-0001:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS"
+      },
+      {
+        "source": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "capability": "CAP-STANDARD-REGISTRY",
+        "provider": "AF-STANDARD-REGISTRY-0001",
+        "path": [
+          "AF-STATE-EFFECT-ANALYSIS-0001",
+          "AF-FINDING-MODEL-0001",
+          "AF-STANDARD-REGISTRY-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:AF-STATE-EFFECT-ANALYSIS-0001:AF-STANDARD-REGISTRY-0001:CAP-STANDARD-REGISTRY"
+      },
+      {
         "source": "TEST-ARCHITECTURE-EVALUATION-0001",
         "capability": "CAP-ARCHITECTURE-EVALUATION",
         "provider": "AF-ARCHITECTURE-EVALUATION-0001",
@@ -9281,6 +10314,18 @@
         ],
         "reexported": false,
         "derivation": "capability_reachability:TEST-ARCHITECTURE-EVALUATION-0001:AF-STANDARD-REGISTRY-0001:CAP-STANDARD-REGISTRY"
+      },
+      {
+        "source": "TEST-ARCHITECTURE-EVALUATION-0001",
+        "capability": "CAP-STATE-EFFECT-ANALYSIS",
+        "provider": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "path": [
+          "TEST-ARCHITECTURE-EVALUATION-0001",
+          "AF-CORE-0001",
+          "AF-STATE-EFFECT-ANALYSIS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-ARCHITECTURE-EVALUATION-0001:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS"
       },
       {
         "source": "TEST-BEHAVIORAL-SEMANTICS-0001",
@@ -9424,6 +10469,18 @@
         "derivation": "capability_reachability:TEST-BEHAVIORAL-SEMANTICS-0001:AF-STANDARD-REGISTRY-0001:CAP-STANDARD-REGISTRY"
       },
       {
+        "source": "TEST-BEHAVIORAL-SEMANTICS-0001",
+        "capability": "CAP-STATE-EFFECT-ANALYSIS",
+        "provider": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "path": [
+          "TEST-BEHAVIORAL-SEMANTICS-0001",
+          "AF-CORE-0001",
+          "AF-STATE-EFFECT-ANALYSIS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-BEHAVIORAL-SEMANTICS-0001:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS"
+      },
+      {
         "source": "TEST-CLI-0001",
         "capability": "CAP-ARCHITECTURE-EVALUATION",
         "provider": "AF-ARCHITECTURE-EVALUATION-0001",
@@ -9565,6 +10622,18 @@
         ],
         "reexported": false,
         "derivation": "capability_reachability:TEST-CLI-0001:AF-STANDARD-REGISTRY-0001:CAP-STANDARD-REGISTRY"
+      },
+      {
+        "source": "TEST-CLI-0001",
+        "capability": "CAP-STATE-EFFECT-ANALYSIS",
+        "provider": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "path": [
+          "TEST-CLI-0001",
+          "AF-CORE-0001",
+          "AF-STATE-EFFECT-ANALYSIS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-CLI-0001:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS"
       },
       {
         "source": "TEST-CLI-0001",
@@ -9722,6 +10791,18 @@
       },
       {
         "source": "TEST-FORTRESS-0001",
+        "capability": "CAP-STATE-EFFECT-ANALYSIS",
+        "provider": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "path": [
+          "TEST-FORTRESS-0001",
+          "AF-CORE-0001",
+          "AF-STATE-EFFECT-ANALYSIS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-FORTRESS-0001:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS"
+      },
+      {
+        "source": "TEST-FORTRESS-0001",
         "capability": "CAP-FORTRESS-CLI",
         "provider": "TF-CLI-0001",
         "path": [
@@ -9874,6 +10955,18 @@
         "derivation": "capability_reachability:TEST-IMPLEMENTATION-OBSERVATION-0001:AF-STANDARD-REGISTRY-0001:CAP-STANDARD-REGISTRY"
       },
       {
+        "source": "TEST-IMPLEMENTATION-OBSERVATION-0001",
+        "capability": "CAP-STATE-EFFECT-ANALYSIS",
+        "provider": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "path": [
+          "TEST-IMPLEMENTATION-OBSERVATION-0001",
+          "AF-CORE-0001",
+          "AF-STATE-EFFECT-ANALYSIS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-IMPLEMENTATION-OBSERVATION-0001:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS"
+      },
+      {
         "source": "TEST-PROGRAM-SEMANTICS-0001",
         "capability": "CAP-ARCHITECTURE-EVALUATION",
         "provider": "AF-ARCHITECTURE-EVALUATION-0001",
@@ -10014,6 +11107,18 @@
         ],
         "reexported": false,
         "derivation": "capability_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-STANDARD-REGISTRY-0001:CAP-STANDARD-REGISTRY"
+      },
+      {
+        "source": "TEST-PROGRAM-SEMANTICS-0001",
+        "capability": "CAP-STATE-EFFECT-ANALYSIS",
+        "provider": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "path": [
+          "TEST-PROGRAM-SEMANTICS-0001",
+          "AF-CORE-0001",
+          "AF-STATE-EFFECT-ANALYSIS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS"
       },
       {
         "source": "TEST-PROJECT-MODEL-0001",
@@ -10158,6 +11263,18 @@
         "derivation": "capability_reachability:TEST-PROJECT-MODEL-0001:AF-STANDARD-REGISTRY-0001:CAP-STANDARD-REGISTRY"
       },
       {
+        "source": "TEST-PROJECT-MODEL-0001",
+        "capability": "CAP-STATE-EFFECT-ANALYSIS",
+        "provider": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "path": [
+          "TEST-PROJECT-MODEL-0001",
+          "AF-CORE-0001",
+          "AF-STATE-EFFECT-ANALYSIS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-PROJECT-MODEL-0001:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS"
+      },
+      {
         "source": "TEST-REPOSITORY-OBSERVATION-0001",
         "capability": "CAP-ARCHITECTURE-EVALUATION",
         "provider": "AF-ARCHITECTURE-EVALUATION-0001",
@@ -10298,6 +11415,18 @@
         ],
         "reexported": false,
         "derivation": "capability_reachability:TEST-REPOSITORY-OBSERVATION-0001:AF-STANDARD-REGISTRY-0001:CAP-STANDARD-REGISTRY"
+      },
+      {
+        "source": "TEST-REPOSITORY-OBSERVATION-0001",
+        "capability": "CAP-STATE-EFFECT-ANALYSIS",
+        "provider": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "path": [
+          "TEST-REPOSITORY-OBSERVATION-0001",
+          "AF-CORE-0001",
+          "AF-STATE-EFFECT-ANALYSIS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-REPOSITORY-OBSERVATION-0001:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS"
       },
       {
         "source": "TEST-SEMANTIC-ANALYSIS-0001",
@@ -10442,6 +11571,18 @@
         "derivation": "capability_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-STANDARD-REGISTRY-0001:CAP-STANDARD-REGISTRY"
       },
       {
+        "source": "TEST-SEMANTIC-ANALYSIS-0001",
+        "capability": "CAP-STATE-EFFECT-ANALYSIS",
+        "provider": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "path": [
+          "TEST-SEMANTIC-ANALYSIS-0001",
+          "AF-CORE-0001",
+          "AF-STATE-EFFECT-ANALYSIS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS"
+      },
+      {
         "source": "TEST-SNAPSHOT-GOVERNANCE-0001",
         "capability": "CAP-ARCHITECTURE-EVALUATION",
         "provider": "AF-ARCHITECTURE-EVALUATION-0001",
@@ -10577,6 +11718,18 @@
         ],
         "reexported": false,
         "derivation": "capability_reachability:TEST-SNAPSHOT-GOVERNANCE-0001:AF-STANDARD-REGISTRY-0001:CAP-STANDARD-REGISTRY"
+      },
+      {
+        "source": "TEST-SNAPSHOT-GOVERNANCE-0001",
+        "capability": "CAP-STATE-EFFECT-ANALYSIS",
+        "provider": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "path": [
+          "TEST-SNAPSHOT-GOVERNANCE-0001",
+          "AF-CORE-0001",
+          "AF-STATE-EFFECT-ANALYSIS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-SNAPSHOT-GOVERNANCE-0001:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS"
       },
       {
         "source": "TEST-STANDARD-REGISTRY-0001",
@@ -10721,6 +11874,172 @@
         "derivation": "capability_reachability:TEST-STANDARD-REGISTRY-0001:AF-STANDARD-REGISTRY-0001:CAP-STANDARD-REGISTRY"
       },
       {
+        "source": "TEST-STANDARD-REGISTRY-0001",
+        "capability": "CAP-STATE-EFFECT-ANALYSIS",
+        "provider": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "path": [
+          "TEST-STANDARD-REGISTRY-0001",
+          "AF-CORE-0001",
+          "AF-STATE-EFFECT-ANALYSIS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-STANDARD-REGISTRY-0001:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS"
+      },
+      {
+        "source": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "capability": "CAP-ARCHITECTURE-EVALUATION",
+        "provider": "AF-ARCHITECTURE-EVALUATION-0001",
+        "path": [
+          "TEST-STATE-EFFECT-ANALYSIS-0001",
+          "AF-CORE-0001",
+          "AF-ARCHITECTURE-EVALUATION-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-ARCHITECTURE-EVALUATION-0001:CAP-ARCHITECTURE-EVALUATION"
+      },
+      {
+        "source": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "capability": "CAP-BEHAVIORAL-SEMANTICS",
+        "provider": "AF-BEHAVIORAL-SEMANTICS-0001",
+        "path": [
+          "TEST-STATE-EFFECT-ANALYSIS-0001",
+          "AF-CORE-0001",
+          "AF-BEHAVIORAL-SEMANTICS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-BEHAVIORAL-SEMANTICS-0001:CAP-BEHAVIORAL-SEMANTICS"
+      },
+      {
+        "source": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "capability": "CAP-CONTRACT-COHERENCY",
+        "provider": "AF-CONTRACT-COHERENCY-0001",
+        "path": [
+          "TEST-STATE-EFFECT-ANALYSIS-0001",
+          "AF-CORE-0001",
+          "AF-CONTRACT-COHERENCY-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-CONTRACT-COHERENCY-0001:CAP-CONTRACT-COHERENCY"
+      },
+      {
+        "source": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "capability": "CAP-FORTRESS-ENGINE",
+        "provider": "AF-CORE-0001",
+        "path": [
+          "TEST-STATE-EFFECT-ANALYSIS-0001",
+          "AF-CORE-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-CORE-0001:CAP-FORTRESS-ENGINE"
+      },
+      {
+        "source": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "capability": "CAP-FINDING-MODEL",
+        "provider": "AF-FINDING-MODEL-0001",
+        "path": [
+          "TEST-STATE-EFFECT-ANALYSIS-0001",
+          "AF-CORE-0001",
+          "AF-FINDING-MODEL-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-FINDING-MODEL-0001:CAP-FINDING-MODEL"
+      },
+      {
+        "source": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "capability": "CAP-IMPLEMENTATION-OBSERVATION",
+        "provider": "AF-IMPLEMENTATION-OBSERVATION-0001",
+        "path": [
+          "TEST-STATE-EFFECT-ANALYSIS-0001",
+          "AF-CORE-0001",
+          "AF-IMPLEMENTATION-OBSERVATION-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-IMPLEMENTATION-OBSERVATION-0001:CAP-IMPLEMENTATION-OBSERVATION"
+      },
+      {
+        "source": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "capability": "CAP-PROGRAM-SEMANTICS",
+        "provider": "AF-PROGRAM-SEMANTICS-0001",
+        "path": [
+          "TEST-STATE-EFFECT-ANALYSIS-0001",
+          "AF-CORE-0001",
+          "AF-PROGRAM-SEMANTICS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS"
+      },
+      {
+        "source": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "capability": "CAP-PROJECT-MODEL",
+        "provider": "AF-PROJECT-MODEL-0001",
+        "path": [
+          "TEST-STATE-EFFECT-ANALYSIS-0001",
+          "AF-CORE-0001",
+          "AF-PROJECT-MODEL-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-PROJECT-MODEL-0001:CAP-PROJECT-MODEL"
+      },
+      {
+        "source": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "capability": "CAP-REPOSITORY-OBSERVATION",
+        "provider": "AF-REPOSITORY-OBSERVATION-0001",
+        "path": [
+          "TEST-STATE-EFFECT-ANALYSIS-0001",
+          "AF-CORE-0001",
+          "AF-REPOSITORY-OBSERVATION-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-REPOSITORY-OBSERVATION-0001:CAP-REPOSITORY-OBSERVATION"
+      },
+      {
+        "source": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "capability": "CAP-SEMANTIC-ANALYSIS",
+        "provider": "AF-SEMANTIC-ANALYSIS-0001",
+        "path": [
+          "TEST-STATE-EFFECT-ANALYSIS-0001",
+          "AF-CORE-0001",
+          "AF-SEMANTIC-ANALYSIS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS"
+      },
+      {
+        "source": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "capability": "CAP-SNAPSHOT-GOVERNANCE",
+        "provider": "AF-SNAPSHOT-GOVERNANCE-0001",
+        "path": [
+          "TEST-STATE-EFFECT-ANALYSIS-0001",
+          "AF-CORE-0001",
+          "AF-SNAPSHOT-GOVERNANCE-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-SNAPSHOT-GOVERNANCE-0001:CAP-SNAPSHOT-GOVERNANCE"
+      },
+      {
+        "source": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "capability": "CAP-STANDARD-REGISTRY",
+        "provider": "AF-STANDARD-REGISTRY-0001",
+        "path": [
+          "TEST-STATE-EFFECT-ANALYSIS-0001",
+          "AF-CORE-0001",
+          "AF-STANDARD-REGISTRY-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-STANDARD-REGISTRY-0001:CAP-STANDARD-REGISTRY"
+      },
+      {
+        "source": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "capability": "CAP-STATE-EFFECT-ANALYSIS",
+        "provider": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "path": [
+          "TEST-STATE-EFFECT-ANALYSIS-0001",
+          "AF-STATE-EFFECT-ANALYSIS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS"
+      },
+      {
         "source": "TF-CLI-0001",
         "capability": "CAP-ARCHITECTURE-EVALUATION",
         "provider": "AF-ARCHITECTURE-EVALUATION-0001",
@@ -10862,6 +12181,18 @@
         ],
         "reexported": false,
         "derivation": "capability_reachability:TF-CLI-0001:AF-STANDARD-REGISTRY-0001:CAP-STANDARD-REGISTRY"
+      },
+      {
+        "source": "TF-CLI-0001",
+        "capability": "CAP-STATE-EFFECT-ANALYSIS",
+        "provider": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "path": [
+          "TF-CLI-0001",
+          "AF-CORE-0001",
+          "AF-STATE-EFFECT-ANALYSIS-0001"
+        ],
+        "reexported": false,
+        "derivation": "capability_reachability:TF-CLI-0001:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS"
       }
     ]
   },
@@ -10975,6 +12306,17 @@
         ],
         "provenance": {
           "path": "mods/engine/mods/standard_registry/mods/testing/contract.json",
+          "pointer": "/relationships/0"
+        }
+      },
+      {
+        "parent": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "testing_module": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "verified_features": [
+          "AF-STATE-EFFECT-ANALYSIS-0001"
+        ],
+        "provenance": {
+          "path": "mods/engine/mods/state_effect_analysis/mods/testing/contract.json",
           "pointer": "/relationships/0"
         }
       },
@@ -11354,6 +12696,22 @@
         ],
         "complete_declared_support": true,
         "derivation": "verification_support:AF-PROGRAM-SEMANTICS-0001-R06"
+      },
+      {
+        "requirement": "AF-PROGRAM-SEMANTICS-0001-R07",
+        "owner": "AF-PROGRAM-SEMANTICS-0001",
+        "feature": "AF-PROGRAM-SEMANTICS-0001",
+        "testing_module": "TEST-PROGRAM-SEMANTICS-0001",
+        "declared_tests": [
+          "T-AF-PROGRAM-SEMANTICS-0001-R07-001",
+          "T-AF-PROGRAM-SEMANTICS-0001-R07-002"
+        ],
+        "observed_tests": [
+          "T-AF-PROGRAM-SEMANTICS-0001-R07-001",
+          "T-AF-PROGRAM-SEMANTICS-0001-R07-002"
+        ],
+        "complete_declared_support": true,
+        "derivation": "verification_support:AF-PROGRAM-SEMANTICS-0001-R07"
       },
       {
         "requirement": "AF-PROJECT-MODEL-0001-R01",
@@ -11804,6 +13162,98 @@
         "derivation": "verification_support:AF-STANDARD-REGISTRY-0001-R04"
       },
       {
+        "requirement": "AF-STATE-EFFECT-ANALYSIS-0001-R01",
+        "owner": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "feature": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "testing_module": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "declared_tests": [
+          "T-AF-STATE-EFFECT-ANALYSIS-0001-R01-001",
+          "T-AF-STATE-EFFECT-ANALYSIS-0001-R01-002",
+          "T-AF-STATE-EFFECT-ANALYSIS-0001-R01-003",
+          "T-AF-STATE-EFFECT-ANALYSIS-0001-R01-004",
+          "T-AF-STATE-EFFECT-ANALYSIS-0001-R01-005",
+          "T-AF-STATE-EFFECT-ANALYSIS-0001-R01-006"
+        ],
+        "observed_tests": [
+          "T-AF-STATE-EFFECT-ANALYSIS-0001-R01-001",
+          "T-AF-STATE-EFFECT-ANALYSIS-0001-R01-002",
+          "T-AF-STATE-EFFECT-ANALYSIS-0001-R01-003",
+          "T-AF-STATE-EFFECT-ANALYSIS-0001-R01-004",
+          "T-AF-STATE-EFFECT-ANALYSIS-0001-R01-005",
+          "T-AF-STATE-EFFECT-ANALYSIS-0001-R01-006"
+        ],
+        "complete_declared_support": true,
+        "derivation": "verification_support:AF-STATE-EFFECT-ANALYSIS-0001-R01"
+      },
+      {
+        "requirement": "AF-STATE-EFFECT-ANALYSIS-0001-R02",
+        "owner": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "feature": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "testing_module": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "declared_tests": [
+          "T-AF-STATE-EFFECT-ANALYSIS-0001-R02-001",
+          "T-AF-STATE-EFFECT-ANALYSIS-0001-R02-002",
+          "T-AF-STATE-EFFECT-ANALYSIS-0001-R02-003",
+          "T-AF-STATE-EFFECT-ANALYSIS-0001-R02-004",
+          "T-AF-STATE-EFFECT-ANALYSIS-0001-R02-005",
+          "T-AF-STATE-EFFECT-ANALYSIS-0001-R02-006"
+        ],
+        "observed_tests": [
+          "T-AF-STATE-EFFECT-ANALYSIS-0001-R02-001",
+          "T-AF-STATE-EFFECT-ANALYSIS-0001-R02-002",
+          "T-AF-STATE-EFFECT-ANALYSIS-0001-R02-003",
+          "T-AF-STATE-EFFECT-ANALYSIS-0001-R02-004",
+          "T-AF-STATE-EFFECT-ANALYSIS-0001-R02-005",
+          "T-AF-STATE-EFFECT-ANALYSIS-0001-R02-006"
+        ],
+        "complete_declared_support": true,
+        "derivation": "verification_support:AF-STATE-EFFECT-ANALYSIS-0001-R02"
+      },
+      {
+        "requirement": "AF-STATE-EFFECT-ANALYSIS-0001-R03",
+        "owner": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "feature": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "testing_module": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "declared_tests": [
+          "T-AF-STATE-EFFECT-ANALYSIS-0001-R03-001",
+          "T-AF-STATE-EFFECT-ANALYSIS-0001-R03-002",
+          "T-AF-STATE-EFFECT-ANALYSIS-0001-R03-003",
+          "T-AF-STATE-EFFECT-ANALYSIS-0001-R03-004",
+          "T-AF-STATE-EFFECT-ANALYSIS-0001-R03-005",
+          "T-AF-STATE-EFFECT-ANALYSIS-0001-R03-006",
+          "T-AF-STATE-EFFECT-ANALYSIS-0001-R03-007"
+        ],
+        "observed_tests": [
+          "T-AF-STATE-EFFECT-ANALYSIS-0001-R03-001",
+          "T-AF-STATE-EFFECT-ANALYSIS-0001-R03-002",
+          "T-AF-STATE-EFFECT-ANALYSIS-0001-R03-003",
+          "T-AF-STATE-EFFECT-ANALYSIS-0001-R03-004",
+          "T-AF-STATE-EFFECT-ANALYSIS-0001-R03-005",
+          "T-AF-STATE-EFFECT-ANALYSIS-0001-R03-006",
+          "T-AF-STATE-EFFECT-ANALYSIS-0001-R03-007"
+        ],
+        "complete_declared_support": true,
+        "derivation": "verification_support:AF-STATE-EFFECT-ANALYSIS-0001-R03"
+      },
+      {
+        "requirement": "AF-STATE-EFFECT-ANALYSIS-0001-R04",
+        "owner": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "feature": "AF-STATE-EFFECT-ANALYSIS-0001",
+        "testing_module": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "declared_tests": [
+          "T-AF-STATE-EFFECT-ANALYSIS-0001-R04-001",
+          "T-AF-STATE-EFFECT-ANALYSIS-0001-R04-002",
+          "T-AF-STATE-EFFECT-ANALYSIS-0001-R04-003"
+        ],
+        "observed_tests": [
+          "T-AF-STATE-EFFECT-ANALYSIS-0001-R04-001",
+          "T-AF-STATE-EFFECT-ANALYSIS-0001-R04-002",
+          "T-AF-STATE-EFFECT-ANALYSIS-0001-R04-003"
+        ],
+        "complete_declared_support": true,
+        "derivation": "verification_support:AF-STATE-EFFECT-ANALYSIS-0001-R04"
+      },
+      {
         "requirement": "TF-CLI-0001-R01",
         "owner": "TF-CLI-0001",
         "feature": "TF-CLI-0001",
@@ -11942,6 +13392,22 @@
         ],
         "complete_declared_support": true,
         "derivation": "verification_support:TF-CLI-0001-R08"
+      },
+      {
+        "requirement": "TF-CLI-0001-R09",
+        "owner": "TF-CLI-0001",
+        "feature": "TF-CLI-0001",
+        "testing_module": "TEST-CLI-0001",
+        "declared_tests": [
+          "T-TF-CLI-0001-R09-001",
+          "T-TF-CLI-0001-R09-002"
+        ],
+        "observed_tests": [
+          "T-TF-CLI-0001-R09-001",
+          "T-TF-CLI-0001-R09-002"
+        ],
+        "complete_declared_support": true,
+        "derivation": "verification_support:TF-CLI-0001-R09"
       }
     ],
     "observed_tests": [
@@ -12495,6 +13961,30 @@
         "provenance": {
           "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
           "pointer": "symbol:ambiguity_and_user_defined_dereference_remain_explicit_without_guessing"
+        }
+      },
+      {
+        "id": "T-AF-PROGRAM-SEMANTICS-0001-R07-001",
+        "testing_module": "TEST-PROGRAM-SEMANTICS-0001",
+        "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+        "symbol": "structured_places_distinguish_receiver_reads_and_writes",
+        "classification": "behavioral",
+        "declared_requirement": "AF-PROGRAM-SEMANTICS-0001-R07",
+        "provenance": {
+          "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+          "pointer": "symbol:structured_places_distinguish_receiver_reads_and_writes"
+        }
+      },
+      {
+        "id": "T-AF-PROGRAM-SEMANTICS-0001-R07-002",
+        "testing_module": "TEST-PROGRAM-SEMANTICS-0001",
+        "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+        "symbol": "mutation_facts_are_canonical_and_carry_exact_provenance",
+        "classification": "behavioral",
+        "declared_requirement": "AF-PROGRAM-SEMANTICS-0001-R07",
+        "provenance": {
+          "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+          "pointer": "symbol:mutation_facts_are_canonical_and_carry_exact_provenance"
         }
       },
       {
@@ -13242,6 +14732,270 @@
         }
       },
       {
+        "id": "T-AF-STATE-EFFECT-ANALYSIS-0001-R01-001",
+        "testing_module": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+        "symbol": "state_contract_validates_owned_boolean_typestate",
+        "classification": "behavioral",
+        "declared_requirement": "AF-STATE-EFFECT-ANALYSIS-0001-R01",
+        "provenance": {
+          "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+          "pointer": "symbol:state_contract_validates_owned_boolean_typestate"
+        }
+      },
+      {
+        "id": "T-AF-STATE-EFFECT-ANALYSIS-0001-R01-002",
+        "testing_module": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+        "symbol": "foreign_state_authority_and_unknown_fields_fail_exactly",
+        "classification": "behavioral",
+        "declared_requirement": "AF-STATE-EFFECT-ANALYSIS-0001-R01",
+        "provenance": {
+          "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+          "pointer": "symbol:foreign_state_authority_and_unknown_fields_fail_exactly"
+        }
+      },
+      {
+        "id": "T-AF-STATE-EFFECT-ANALYSIS-0001-R01-003",
+        "testing_module": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+        "symbol": "function_contract_v2_accepts_state_and_effect_obligations",
+        "classification": "behavioral",
+        "declared_requirement": "AF-STATE-EFFECT-ANALYSIS-0001-R01",
+        "provenance": {
+          "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+          "pointer": "symbol:function_contract_v2_accepts_state_and_effect_obligations"
+        }
+      },
+      {
+        "id": "T-AF-STATE-EFFECT-ANALYSIS-0001-R01-004",
+        "testing_module": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+        "symbol": "enum_and_option_fields_support_owned_state_authority",
+        "classification": "behavioral",
+        "declared_requirement": "AF-STATE-EFFECT-ANALYSIS-0001-R01",
+        "provenance": {
+          "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+          "pointer": "symbol:enum_and_option_fields_support_owned_state_authority"
+        }
+      },
+      {
+        "id": "T-AF-STATE-EFFECT-ANALYSIS-0001-R01-005",
+        "testing_module": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+        "symbol": "provably_overlapping_states_are_rejected",
+        "classification": "behavioral",
+        "declared_requirement": "AF-STATE-EFFECT-ANALYSIS-0001-R01",
+        "provenance": {
+          "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+          "pointer": "symbol:provably_overlapping_states_are_rejected"
+        }
+      },
+      {
+        "id": "T-AF-STATE-EFFECT-ANALYSIS-0001-R01-006",
+        "testing_module": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+        "symbol": "unknown_function_state_obligation_is_invalid",
+        "classification": "behavioral",
+        "declared_requirement": "AF-STATE-EFFECT-ANALYSIS-0001-R01",
+        "provenance": {
+          "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+          "pointer": "symbol:unknown_function_state_obligation_is_invalid"
+        }
+      },
+      {
+        "id": "T-AF-STATE-EFFECT-ANALYSIS-0001-R02-001",
+        "testing_module": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+        "symbol": "exact_possible_and_unclassified_states_are_distinct",
+        "classification": "behavioral",
+        "declared_requirement": "AF-STATE-EFFECT-ANALYSIS-0001-R02",
+        "provenance": {
+          "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+          "pointer": "symbol:exact_possible_and_unclassified_states_are_distinct"
+        }
+      },
+      {
+        "id": "T-AF-STATE-EFFECT-ANALYSIS-0001-R02-002",
+        "testing_module": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+        "symbol": "direct_receiver_mutation_proves_state_transition",
+        "classification": "behavioral",
+        "declared_requirement": "AF-STATE-EFFECT-ANALYSIS-0001-R02",
+        "provenance": {
+          "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+          "pointer": "symbol:direct_receiver_mutation_proves_state_transition"
+        }
+      },
+      {
+        "id": "T-AF-STATE-EFFECT-ANALYSIS-0001-R02-003",
+        "testing_module": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+        "symbol": "opaque_external_mutation_preserves_uncertainty",
+        "classification": "behavioral",
+        "declared_requirement": "AF-STATE-EFFECT-ANALYSIS-0001-R02",
+        "provenance": {
+          "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+          "pointer": "symbol:opaque_external_mutation_preserves_uncertainty"
+        }
+      },
+      {
+        "id": "T-AF-STATE-EFFECT-ANALYSIS-0001-R02-004",
+        "testing_module": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+        "symbol": "concrete_domain_outside_partial_state_set_is_unclassified",
+        "classification": "behavioral",
+        "declared_requirement": "AF-STATE-EFFECT-ANALYSIS-0001-R02",
+        "provenance": {
+          "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+          "pointer": "symbol:concrete_domain_outside_partial_state_set_is_unclassified"
+        }
+      },
+      {
+        "id": "T-AF-STATE-EFFECT-ANALYSIS-0001-R02-005",
+        "testing_module": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+        "symbol": "nonreceiver_field_reads_and_writes_are_owned_effects",
+        "classification": "behavioral",
+        "declared_requirement": "AF-STATE-EFFECT-ANALYSIS-0001-R02",
+        "provenance": {
+          "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+          "pointer": "symbol:nonreceiver_field_reads_and_writes_are_owned_effects"
+        }
+      },
+      {
+        "id": "T-AF-STATE-EFFECT-ANALYSIS-0001-R02-006",
+        "testing_module": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+        "symbol": "unresolved_receiver_call_invalidates_precise_state",
+        "classification": "behavioral",
+        "declared_requirement": "AF-STATE-EFFECT-ANALYSIS-0001-R02",
+        "provenance": {
+          "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+          "pointer": "symbol:unresolved_receiver_call_invalidates_precise_state"
+        }
+      },
+      {
+        "id": "T-AF-STATE-EFFECT-ANALYSIS-0001-R03-001",
+        "testing_module": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+        "symbol": "closed_receiver_cannot_call_open_only_method_after_transition",
+        "classification": "behavioral",
+        "declared_requirement": "AF-STATE-EFFECT-ANALYSIS-0001-R03",
+        "provenance": {
+          "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+          "pointer": "symbol:closed_receiver_cannot_call_open_only_method_after_transition"
+        }
+      },
+      {
+        "id": "T-AF-STATE-EFFECT-ANALYSIS-0001-R03-002",
+        "testing_module": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+        "symbol": "forbidden_direct_and_transitive_effects_are_reported",
+        "classification": "behavioral",
+        "declared_requirement": "AF-STATE-EFFECT-ANALYSIS-0001-R03",
+        "provenance": {
+          "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+          "pointer": "symbol:forbidden_direct_and_transitive_effects_are_reported"
+        }
+      },
+      {
+        "id": "T-AF-STATE-EFFECT-ANALYSIS-0001-R03-003",
+        "testing_module": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+        "symbol": "external_panic_and_recursive_effect_coverage_remain_explicit",
+        "classification": "behavioral",
+        "declared_requirement": "AF-STATE-EFFECT-ANALYSIS-0001-R03",
+        "provenance": {
+          "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+          "pointer": "symbol:external_panic_and_recursive_effect_coverage_remain_explicit"
+        }
+      },
+      {
+        "id": "T-AF-STATE-EFFECT-ANALYSIS-0001-R03-004",
+        "testing_module": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+        "symbol": "contradictory_state_postcondition_is_rejected",
+        "classification": "behavioral",
+        "declared_requirement": "AF-STATE-EFFECT-ANALYSIS-0001-R03",
+        "provenance": {
+          "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+          "pointer": "symbol:contradictory_state_postcondition_is_rejected"
+        }
+      },
+      {
+        "id": "T-AF-STATE-EFFECT-ANALYSIS-0001-R03-005",
+        "testing_module": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+        "symbol": "direct_effect_policies_distinguish_allowed_forbidden_and_pure",
+        "classification": "behavioral",
+        "declared_requirement": "AF-STATE-EFFECT-ANALYSIS-0001-R03",
+        "provenance": {
+          "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+          "pointer": "symbol:direct_effect_policies_distinguish_allowed_forbidden_and_pure"
+        }
+      },
+      {
+        "id": "T-AF-STATE-EFFECT-ANALYSIS-0001-R03-006",
+        "testing_module": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+        "symbol": "safe_current_caller_does_not_narrow_uncontracted_callee_state",
+        "classification": "behavioral",
+        "declared_requirement": "AF-STATE-EFFECT-ANALYSIS-0001-R03",
+        "provenance": {
+          "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+          "pointer": "symbol:safe_current_caller_does_not_narrow_uncontracted_callee_state"
+        }
+      },
+      {
+        "id": "T-AF-STATE-EFFECT-ANALYSIS-0001-R03-007",
+        "testing_module": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+        "symbol": "unsafe_execution_is_explicit_and_policy_checked",
+        "classification": "behavioral",
+        "declared_requirement": "AF-STATE-EFFECT-ANALYSIS-0001-R03",
+        "provenance": {
+          "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+          "pointer": "symbol:unsafe_execution_is_explicit_and_policy_checked"
+        }
+      },
+      {
+        "id": "T-AF-STATE-EFFECT-ANALYSIS-0001-R04-001",
+        "testing_module": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+        "symbol": "state_effect_artifact_and_digest_are_deterministic",
+        "classification": "behavioral",
+        "declared_requirement": "AF-STATE-EFFECT-ANALYSIS-0001-R04",
+        "provenance": {
+          "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+          "pointer": "symbol:state_effect_artifact_and_digest_are_deterministic"
+        }
+      },
+      {
+        "id": "T-AF-STATE-EFFECT-ANALYSIS-0001-R04-002",
+        "testing_module": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+        "symbol": "absent_state_semantics_do_not_change_value_domain_findings",
+        "classification": "behavioral",
+        "declared_requirement": "AF-STATE-EFFECT-ANALYSIS-0001-R04",
+        "provenance": {
+          "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+          "pointer": "symbol:absent_state_semantics_do_not_change_value_domain_findings"
+        }
+      },
+      {
+        "id": "T-AF-STATE-EFFECT-ANALYSIS-0001-R04-003",
+        "testing_module": "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+        "symbol": "live_fortress_state_effect_analysis_executes_without_supported_contradictions",
+        "classification": "behavioral",
+        "declared_requirement": "AF-STATE-EFFECT-ANALYSIS-0001-R04",
+        "provenance": {
+          "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+          "pointer": "symbol:live_fortress_state_effect_analysis_executes_without_supported_contradictions"
+        }
+      },
+      {
         "id": "T-ARCH-DEPENDENCY-001-R01-001",
         "testing_module": "TEST-ARCHITECTURE-EVALUATION-0001",
         "path": "mods/engine/mods/architecture_evaluation/mods/testing/code/arch_dependency_001.rs",
@@ -13840,6 +15594,30 @@
           "path": "mods/cli/mods/testing/code/cli.rs",
           "pointer": "symbol:semantic_rejects_unsupported_formats"
         }
+      },
+      {
+        "id": "T-TF-CLI-0001-R09-001",
+        "testing_module": "TEST-CLI-0001",
+        "path": "mods/cli/mods/testing/code/cli.rs",
+        "symbol": "state_effect_json_is_schema_versioned_and_repeatable",
+        "classification": "behavioral",
+        "declared_requirement": "TF-CLI-0001-R09",
+        "provenance": {
+          "path": "mods/cli/mods/testing/code/cli.rs",
+          "pointer": "symbol:state_effect_json_is_schema_versioned_and_repeatable"
+        }
+      },
+      {
+        "id": "T-TF-CLI-0001-R09-002",
+        "testing_module": "TEST-CLI-0001",
+        "path": "mods/cli/mods/testing/code/cli.rs",
+        "symbol": "state_effect_rejects_unsupported_formats",
+        "classification": "behavioral",
+        "declared_requirement": "TF-CLI-0001-R09",
+        "provenance": {
+          "path": "mods/cli/mods/testing/code/cli.rs",
+          "pointer": "symbol:state_effect_rejects_unsupported_formats"
+        }
       }
     ]
   },
@@ -14419,6 +16197,26 @@
       ]
     },
     {
+      "id": "capability_reachability:AF-CONTRACT-COHERENCY-TESTING-0001:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:AF-CONTRACT-COHERENCY-TESTING-0001:CAP-STATE-EFFECT-ANALYSIS",
+      "input_facts": [
+        "dependency_reachability:AF-CONTRACT-COHERENCY-TESTING-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+        "provides:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS"
+      ],
+      "explanation_path": [
+        "AF-CONTRACT-COHERENCY-TESTING-0001",
+        "AF-CORE-0001",
+        "AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/state_effect_analysis/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
       "id": "capability_reachability:AF-CORE-0001:AF-ARCHITECTURE-EVALUATION-0001:CAP-ARCHITECTURE-EVALUATION",
       "kind": "capability_reachability",
       "fact": "reachable_capability:AF-CORE-0001:CAP-ARCHITECTURE-EVALUATION",
@@ -14623,6 +16421,25 @@
       "provenance_closure": [
         {
           "path": "mods/engine/mods/standard_registry/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:AF-CORE-0001:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:AF-CORE-0001:CAP-STATE-EFFECT-ANALYSIS",
+      "input_facts": [
+        "dependency_reachability:AF-CORE-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+        "provides:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS"
+      ],
+      "explanation_path": [
+        "AF-CORE-0001",
+        "AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/state_effect_analysis/contract.json",
           "pointer": "/provides/0"
         }
       ]
@@ -15051,6 +16868,142 @@
       ]
     },
     {
+      "id": "capability_reachability:AF-SNAPSHOT-GOVERNANCE-0001:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:AF-SNAPSHOT-GOVERNANCE-0001:CAP-STATE-EFFECT-ANALYSIS",
+      "input_facts": [
+        "dependency_reachability:AF-SNAPSHOT-GOVERNANCE-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+        "provides:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS"
+      ],
+      "explanation_path": [
+        "AF-SNAPSHOT-GOVERNANCE-0001",
+        "AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/state_effect_analysis/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:AF-STATE-EFFECT-ANALYSIS-0001:AF-CONTRACT-COHERENCY-0001:CAP-CONTRACT-COHERENCY",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:AF-STATE-EFFECT-ANALYSIS-0001:CAP-CONTRACT-COHERENCY",
+      "input_facts": [
+        "dependency_reachability:AF-STATE-EFFECT-ANALYSIS-0001:AF-CONTRACT-COHERENCY-0001",
+        "provides:AF-CONTRACT-COHERENCY-0001:CAP-CONTRACT-COHERENCY"
+      ],
+      "explanation_path": [
+        "AF-STATE-EFFECT-ANALYSIS-0001",
+        "AF-PROGRAM-SEMANTICS-0001",
+        "AF-CONTRACT-COHERENCY-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/contract_coherency/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:AF-STATE-EFFECT-ANALYSIS-0001:AF-FINDING-MODEL-0001:CAP-FINDING-MODEL",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:AF-STATE-EFFECT-ANALYSIS-0001:CAP-FINDING-MODEL",
+      "input_facts": [
+        "dependency_reachability:AF-STATE-EFFECT-ANALYSIS-0001:AF-FINDING-MODEL-0001",
+        "provides:AF-FINDING-MODEL-0001:CAP-FINDING-MODEL"
+      ],
+      "explanation_path": [
+        "AF-STATE-EFFECT-ANALYSIS-0001",
+        "AF-FINDING-MODEL-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/finding_model/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:AF-STATE-EFFECT-ANALYSIS-0001:AF-IMPLEMENTATION-OBSERVATION-0001:CAP-IMPLEMENTATION-OBSERVATION",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:AF-STATE-EFFECT-ANALYSIS-0001:CAP-IMPLEMENTATION-OBSERVATION",
+      "input_facts": [
+        "dependency_reachability:AF-STATE-EFFECT-ANALYSIS-0001:AF-IMPLEMENTATION-OBSERVATION-0001",
+        "provides:AF-IMPLEMENTATION-OBSERVATION-0001:CAP-IMPLEMENTATION-OBSERVATION"
+      ],
+      "explanation_path": [
+        "AF-STATE-EFFECT-ANALYSIS-0001",
+        "AF-PROGRAM-SEMANTICS-0001",
+        "AF-IMPLEMENTATION-OBSERVATION-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/implementation_observation/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:AF-STATE-EFFECT-ANALYSIS-0001:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:AF-STATE-EFFECT-ANALYSIS-0001:CAP-PROGRAM-SEMANTICS",
+      "input_facts": [
+        "dependency_reachability:AF-STATE-EFFECT-ANALYSIS-0001:AF-PROGRAM-SEMANTICS-0001",
+        "provides:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS"
+      ],
+      "explanation_path": [
+        "AF-STATE-EFFECT-ANALYSIS-0001",
+        "AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:AF-STATE-EFFECT-ANALYSIS-0001:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:AF-STATE-EFFECT-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS",
+      "input_facts": [
+        "dependency_reachability:AF-STATE-EFFECT-ANALYSIS-0001:AF-SEMANTIC-ANALYSIS-0001",
+        "provides:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS"
+      ],
+      "explanation_path": [
+        "AF-STATE-EFFECT-ANALYSIS-0001",
+        "AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/semantic_analysis/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:AF-STATE-EFFECT-ANALYSIS-0001:AF-STANDARD-REGISTRY-0001:CAP-STANDARD-REGISTRY",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STANDARD-REGISTRY",
+      "input_facts": [
+        "dependency_reachability:AF-STATE-EFFECT-ANALYSIS-0001:AF-STANDARD-REGISTRY-0001",
+        "provides:AF-STANDARD-REGISTRY-0001:CAP-STANDARD-REGISTRY"
+      ],
+      "explanation_path": [
+        "AF-STATE-EFFECT-ANALYSIS-0001",
+        "AF-FINDING-MODEL-0001",
+        "AF-STANDARD-REGISTRY-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/standard_registry/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
       "id": "capability_reachability:TEST-ARCHITECTURE-EVALUATION-0001:AF-ARCHITECTURE-EVALUATION-0001:CAP-ARCHITECTURE-EVALUATION",
       "kind": "capability_reachability",
       "fact": "reachable_capability:TEST-ARCHITECTURE-EVALUATION-0001:CAP-ARCHITECTURE-EVALUATION",
@@ -15281,6 +17234,26 @@
       "provenance_closure": [
         {
           "path": "mods/engine/mods/standard_registry/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-ARCHITECTURE-EVALUATION-0001:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-ARCHITECTURE-EVALUATION-0001:CAP-STATE-EFFECT-ANALYSIS",
+      "input_facts": [
+        "dependency_reachability:TEST-ARCHITECTURE-EVALUATION-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+        "provides:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS"
+      ],
+      "explanation_path": [
+        "TEST-ARCHITECTURE-EVALUATION-0001",
+        "AF-CORE-0001",
+        "AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/state_effect_analysis/contract.json",
           "pointer": "/provides/0"
         }
       ]
@@ -15523,6 +17496,26 @@
       ]
     },
     {
+      "id": "capability_reachability:TEST-BEHAVIORAL-SEMANTICS-0001:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-BEHAVIORAL-SEMANTICS-0001:CAP-STATE-EFFECT-ANALYSIS",
+      "input_facts": [
+        "dependency_reachability:TEST-BEHAVIORAL-SEMANTICS-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+        "provides:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS"
+      ],
+      "explanation_path": [
+        "TEST-BEHAVIORAL-SEMANTICS-0001",
+        "AF-CORE-0001",
+        "AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/state_effect_analysis/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
       "id": "capability_reachability:TEST-CLI-0001:AF-ARCHITECTURE-EVALUATION-0001:CAP-ARCHITECTURE-EVALUATION",
       "kind": "capability_reachability",
       "fact": "reachable_capability:TEST-CLI-0001:CAP-ARCHITECTURE-EVALUATION",
@@ -15757,6 +17750,26 @@
       "provenance_closure": [
         {
           "path": "mods/engine/mods/standard_registry/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-CLI-0001:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-CLI-0001:CAP-STATE-EFFECT-ANALYSIS",
+      "input_facts": [
+        "dependency_reachability:TEST-CLI-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+        "provides:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS"
+      ],
+      "explanation_path": [
+        "TEST-CLI-0001",
+        "AF-CORE-0001",
+        "AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/state_effect_analysis/contract.json",
           "pointer": "/provides/0"
         }
       ]
@@ -16020,6 +18033,26 @@
       ]
     },
     {
+      "id": "capability_reachability:TEST-FORTRESS-0001:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-FORTRESS-0001:CAP-STATE-EFFECT-ANALYSIS",
+      "input_facts": [
+        "dependency_reachability:TEST-FORTRESS-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+        "provides:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS"
+      ],
+      "explanation_path": [
+        "TEST-FORTRESS-0001",
+        "AF-CORE-0001",
+        "AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/state_effect_analysis/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
       "id": "capability_reachability:TEST-FORTRESS-0001:TF-CLI-0001:CAP-FORTRESS-CLI",
       "kind": "capability_reachability",
       "fact": "reachable_capability:TEST-FORTRESS-0001:CAP-FORTRESS-CLI",
@@ -16277,6 +18310,26 @@
       ]
     },
     {
+      "id": "capability_reachability:TEST-IMPLEMENTATION-OBSERVATION-0001:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-IMPLEMENTATION-OBSERVATION-0001:CAP-STATE-EFFECT-ANALYSIS",
+      "input_facts": [
+        "dependency_reachability:TEST-IMPLEMENTATION-OBSERVATION-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+        "provides:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS"
+      ],
+      "explanation_path": [
+        "TEST-IMPLEMENTATION-OBSERVATION-0001",
+        "AF-CORE-0001",
+        "AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/state_effect_analysis/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
       "id": "capability_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-ARCHITECTURE-EVALUATION-0001:CAP-ARCHITECTURE-EVALUATION",
       "kind": "capability_reachability",
       "fact": "reachable_capability:TEST-PROGRAM-SEMANTICS-0001:CAP-ARCHITECTURE-EVALUATION",
@@ -16510,6 +18563,26 @@
       "provenance_closure": [
         {
           "path": "mods/engine/mods/standard_registry/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-PROGRAM-SEMANTICS-0001:CAP-STATE-EFFECT-ANALYSIS",
+      "input_facts": [
+        "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+        "provides:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS"
+      ],
+      "explanation_path": [
+        "TEST-PROGRAM-SEMANTICS-0001",
+        "AF-CORE-0001",
+        "AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/state_effect_analysis/contract.json",
           "pointer": "/provides/0"
         }
       ]
@@ -16753,6 +18826,26 @@
       ]
     },
     {
+      "id": "capability_reachability:TEST-PROJECT-MODEL-0001:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-PROJECT-MODEL-0001:CAP-STATE-EFFECT-ANALYSIS",
+      "input_facts": [
+        "dependency_reachability:TEST-PROJECT-MODEL-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+        "provides:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS"
+      ],
+      "explanation_path": [
+        "TEST-PROJECT-MODEL-0001",
+        "AF-CORE-0001",
+        "AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/state_effect_analysis/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
       "id": "capability_reachability:TEST-REPOSITORY-OBSERVATION-0001:AF-ARCHITECTURE-EVALUATION-0001:CAP-ARCHITECTURE-EVALUATION",
       "kind": "capability_reachability",
       "fact": "reachable_capability:TEST-REPOSITORY-OBSERVATION-0001:CAP-ARCHITECTURE-EVALUATION",
@@ -16986,6 +19079,26 @@
       "provenance_closure": [
         {
           "path": "mods/engine/mods/standard_registry/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-REPOSITORY-OBSERVATION-0001:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-REPOSITORY-OBSERVATION-0001:CAP-STATE-EFFECT-ANALYSIS",
+      "input_facts": [
+        "dependency_reachability:TEST-REPOSITORY-OBSERVATION-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+        "provides:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS"
+      ],
+      "explanation_path": [
+        "TEST-REPOSITORY-OBSERVATION-0001",
+        "AF-CORE-0001",
+        "AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/state_effect_analysis/contract.json",
           "pointer": "/provides/0"
         }
       ]
@@ -17229,6 +19342,26 @@
       ]
     },
     {
+      "id": "capability_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-SEMANTIC-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS",
+      "input_facts": [
+        "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+        "provides:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS"
+      ],
+      "explanation_path": [
+        "TEST-SEMANTIC-ANALYSIS-0001",
+        "AF-CORE-0001",
+        "AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/state_effect_analysis/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
       "id": "capability_reachability:TEST-SNAPSHOT-GOVERNANCE-0001:AF-ARCHITECTURE-EVALUATION-0001:CAP-ARCHITECTURE-EVALUATION",
       "kind": "capability_reachability",
       "fact": "reachable_capability:TEST-SNAPSHOT-GOVERNANCE-0001:CAP-ARCHITECTURE-EVALUATION",
@@ -17457,6 +19590,26 @@
       "provenance_closure": [
         {
           "path": "mods/engine/mods/standard_registry/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-SNAPSHOT-GOVERNANCE-0001:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-SNAPSHOT-GOVERNANCE-0001:CAP-STATE-EFFECT-ANALYSIS",
+      "input_facts": [
+        "dependency_reachability:TEST-SNAPSHOT-GOVERNANCE-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+        "provides:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS"
+      ],
+      "explanation_path": [
+        "TEST-SNAPSHOT-GOVERNANCE-0001",
+        "AF-CORE-0001",
+        "AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/state_effect_analysis/contract.json",
           "pointer": "/provides/0"
         }
       ]
@@ -17695,6 +19848,284 @@
       "provenance_closure": [
         {
           "path": "mods/engine/mods/standard_registry/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-STANDARD-REGISTRY-0001:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-STANDARD-REGISTRY-0001:CAP-STATE-EFFECT-ANALYSIS",
+      "input_facts": [
+        "dependency_reachability:TEST-STANDARD-REGISTRY-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+        "provides:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS"
+      ],
+      "explanation_path": [
+        "TEST-STANDARD-REGISTRY-0001",
+        "AF-CORE-0001",
+        "AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/state_effect_analysis/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-ARCHITECTURE-EVALUATION-0001:CAP-ARCHITECTURE-EVALUATION",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-STATE-EFFECT-ANALYSIS-0001:CAP-ARCHITECTURE-EVALUATION",
+      "input_facts": [
+        "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-ARCHITECTURE-EVALUATION-0001",
+        "provides:AF-ARCHITECTURE-EVALUATION-0001:CAP-ARCHITECTURE-EVALUATION"
+      ],
+      "explanation_path": [
+        "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "AF-CORE-0001",
+        "AF-ARCHITECTURE-EVALUATION-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/architecture_evaluation/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-BEHAVIORAL-SEMANTICS-0001:CAP-BEHAVIORAL-SEMANTICS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-STATE-EFFECT-ANALYSIS-0001:CAP-BEHAVIORAL-SEMANTICS",
+      "input_facts": [
+        "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-BEHAVIORAL-SEMANTICS-0001",
+        "provides:AF-BEHAVIORAL-SEMANTICS-0001:CAP-BEHAVIORAL-SEMANTICS"
+      ],
+      "explanation_path": [
+        "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "AF-CORE-0001",
+        "AF-BEHAVIORAL-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/behavioral_semantics/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-CONTRACT-COHERENCY-0001:CAP-CONTRACT-COHERENCY",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-STATE-EFFECT-ANALYSIS-0001:CAP-CONTRACT-COHERENCY",
+      "input_facts": [
+        "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-CONTRACT-COHERENCY-0001",
+        "provides:AF-CONTRACT-COHERENCY-0001:CAP-CONTRACT-COHERENCY"
+      ],
+      "explanation_path": [
+        "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "AF-CORE-0001",
+        "AF-CONTRACT-COHERENCY-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/contract_coherency/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-CORE-0001:CAP-FORTRESS-ENGINE",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-STATE-EFFECT-ANALYSIS-0001:CAP-FORTRESS-ENGINE",
+      "input_facts": [
+        "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-CORE-0001",
+        "provides:AF-CORE-0001:CAP-FORTRESS-ENGINE"
+      ],
+      "explanation_path": [
+        "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "AF-CORE-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-FINDING-MODEL-0001:CAP-FINDING-MODEL",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-STATE-EFFECT-ANALYSIS-0001:CAP-FINDING-MODEL",
+      "input_facts": [
+        "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-FINDING-MODEL-0001",
+        "provides:AF-FINDING-MODEL-0001:CAP-FINDING-MODEL"
+      ],
+      "explanation_path": [
+        "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "AF-CORE-0001",
+        "AF-FINDING-MODEL-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/finding_model/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-IMPLEMENTATION-OBSERVATION-0001:CAP-IMPLEMENTATION-OBSERVATION",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-STATE-EFFECT-ANALYSIS-0001:CAP-IMPLEMENTATION-OBSERVATION",
+      "input_facts": [
+        "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-IMPLEMENTATION-OBSERVATION-0001",
+        "provides:AF-IMPLEMENTATION-OBSERVATION-0001:CAP-IMPLEMENTATION-OBSERVATION"
+      ],
+      "explanation_path": [
+        "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "AF-CORE-0001",
+        "AF-IMPLEMENTATION-OBSERVATION-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/implementation_observation/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-STATE-EFFECT-ANALYSIS-0001:CAP-PROGRAM-SEMANTICS",
+      "input_facts": [
+        "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-PROGRAM-SEMANTICS-0001",
+        "provides:AF-PROGRAM-SEMANTICS-0001:CAP-PROGRAM-SEMANTICS"
+      ],
+      "explanation_path": [
+        "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "AF-CORE-0001",
+        "AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-PROJECT-MODEL-0001:CAP-PROJECT-MODEL",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-STATE-EFFECT-ANALYSIS-0001:CAP-PROJECT-MODEL",
+      "input_facts": [
+        "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-PROJECT-MODEL-0001",
+        "provides:AF-PROJECT-MODEL-0001:CAP-PROJECT-MODEL"
+      ],
+      "explanation_path": [
+        "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "AF-CORE-0001",
+        "AF-PROJECT-MODEL-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/project_model/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-REPOSITORY-OBSERVATION-0001:CAP-REPOSITORY-OBSERVATION",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-STATE-EFFECT-ANALYSIS-0001:CAP-REPOSITORY-OBSERVATION",
+      "input_facts": [
+        "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-REPOSITORY-OBSERVATION-0001",
+        "provides:AF-REPOSITORY-OBSERVATION-0001:CAP-REPOSITORY-OBSERVATION"
+      ],
+      "explanation_path": [
+        "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "AF-CORE-0001",
+        "AF-REPOSITORY-OBSERVATION-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/repository_observation/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-STATE-EFFECT-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS",
+      "input_facts": [
+        "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-SEMANTIC-ANALYSIS-0001",
+        "provides:AF-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS"
+      ],
+      "explanation_path": [
+        "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "AF-CORE-0001",
+        "AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/semantic_analysis/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-SNAPSHOT-GOVERNANCE-0001:CAP-SNAPSHOT-GOVERNANCE",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-STATE-EFFECT-ANALYSIS-0001:CAP-SNAPSHOT-GOVERNANCE",
+      "input_facts": [
+        "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-SNAPSHOT-GOVERNANCE-0001",
+        "provides:AF-SNAPSHOT-GOVERNANCE-0001:CAP-SNAPSHOT-GOVERNANCE"
+      ],
+      "explanation_path": [
+        "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "AF-CORE-0001",
+        "AF-SNAPSHOT-GOVERNANCE-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/snapshot_governance/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-STANDARD-REGISTRY-0001:CAP-STANDARD-REGISTRY",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-STATE-EFFECT-ANALYSIS-0001:CAP-STANDARD-REGISTRY",
+      "input_facts": [
+        "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-STANDARD-REGISTRY-0001",
+        "provides:AF-STANDARD-REGISTRY-0001:CAP-STANDARD-REGISTRY"
+      ],
+      "explanation_path": [
+        "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "AF-CORE-0001",
+        "AF-STANDARD-REGISTRY-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/standard_registry/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
+      "id": "capability_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TEST-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS",
+      "input_facts": [
+        "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+        "provides:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS"
+      ],
+      "explanation_path": [
+        "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/state_effect_analysis/contract.json",
           "pointer": "/provides/0"
         }
       ]
@@ -17939,6 +20370,26 @@
       ]
     },
     {
+      "id": "capability_reachability:TF-CLI-0001:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS",
+      "kind": "capability_reachability",
+      "fact": "reachable_capability:TF-CLI-0001:CAP-STATE-EFFECT-ANALYSIS",
+      "input_facts": [
+        "dependency_reachability:TF-CLI-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+        "provides:AF-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS"
+      ],
+      "explanation_path": [
+        "TF-CLI-0001",
+        "AF-CORE-0001",
+        "AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/state_effect_analysis/contract.json",
+          "pointer": "/provides/0"
+        }
+      ]
+    },
+    {
       "id": "containment:AF-ARCHITECTURE-EVALUATION-0001",
       "kind": "physical_containment",
       "fact": "module_parent:AF-ARCHITECTURE-EVALUATION-0001",
@@ -18173,6 +20624,24 @@
       ]
     },
     {
+      "id": "containment:AF-STATE-EFFECT-ANALYSIS-0001",
+      "kind": "physical_containment",
+      "fact": "module_parent:AF-STATE-EFFECT-ANALYSIS-0001",
+      "input_facts": [
+        "contract:AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "explanation_path": [
+        "AF-CORE-0001",
+        "AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/state_effect_analysis/contract.json",
+          "pointer": "/id"
+        }
+      ]
+    },
+    {
       "id": "containment:PF-FORTRESS",
       "kind": "physical_containment",
       "fact": "module_parent:PF-FORTRESS",
@@ -18383,6 +20852,24 @@
       "provenance_closure": [
         {
           "path": "mods/engine/mods/standard_registry/mods/testing/contract.json",
+          "pointer": "/id"
+        }
+      ]
+    },
+    {
+      "id": "containment:TEST-STATE-EFFECT-ANALYSIS-0001",
+      "kind": "physical_containment",
+      "fact": "module_parent:TEST-STATE-EFFECT-ANALYSIS-0001",
+      "input_facts": [
+        "contract:TEST-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "explanation_path": [
+        "AF-STATE-EFFECT-ANALYSIS-0001",
+        "TEST-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/state_effect_analysis/mods/testing/contract.json",
           "pointer": "/id"
         }
       ]
@@ -18838,6 +21325,30 @@
       ]
     },
     {
+      "id": "dependency_reachability:AF-CONTRACT-COHERENCY-TESTING-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:AF-CONTRACT-COHERENCY-TESTING-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+      "input_facts": [
+        "dependency:AF-CONTRACT-COHERENCY-TESTING-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "explanation_path": [
+        "AF-CONTRACT-COHERENCY-TESTING-0001",
+        "AF-CORE-0001",
+        "AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/contract_coherency/mods/testing/contract.json",
+          "pointer": "/requires/1"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/11"
+        }
+      ]
+    },
+    {
       "id": "dependency_reachability:AF-CORE-0001:AF-ARCHITECTURE-EVALUATION-0001",
       "kind": "direct_dependency",
       "fact": "dependency_reachability:AF-CORE-0001:AF-ARCHITECTURE-EVALUATION-0001",
@@ -19032,6 +21543,24 @@
         {
           "path": "mods/engine/contract.json",
           "pointer": "/requires/10"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:AF-CORE-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+      "kind": "direct_dependency",
+      "fact": "dependency_reachability:AF-CORE-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+      "input_facts": [
+        "dependency:AF-CORE-0001:AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "explanation_path": [
+        "AF-CORE-0001",
+        "AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/11"
         }
       ]
     },
@@ -19462,6 +21991,150 @@
       ]
     },
     {
+      "id": "dependency_reachability:AF-SNAPSHOT-GOVERNANCE-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+      "kind": "direct_dependency",
+      "fact": "dependency_reachability:AF-SNAPSHOT-GOVERNANCE-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+      "input_facts": [
+        "dependency:AF-SNAPSHOT-GOVERNANCE-0001:AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "explanation_path": [
+        "AF-SNAPSHOT-GOVERNANCE-0001",
+        "AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/snapshot_governance/contract.json",
+          "pointer": "/requires/10"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:AF-STATE-EFFECT-ANALYSIS-0001:AF-CONTRACT-COHERENCY-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:AF-STATE-EFFECT-ANALYSIS-0001:AF-CONTRACT-COHERENCY-0001",
+      "input_facts": [
+        "dependency:AF-STATE-EFFECT-ANALYSIS-0001:AF-PROGRAM-SEMANTICS-0001",
+        "dependency:AF-PROGRAM-SEMANTICS-0001:AF-CONTRACT-COHERENCY-0001"
+      ],
+      "explanation_path": [
+        "AF-STATE-EFFECT-ANALYSIS-0001",
+        "AF-PROGRAM-SEMANTICS-0001",
+        "AF-CONTRACT-COHERENCY-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/state_effect_analysis/contract.json",
+          "pointer": "/requires/1"
+        },
+        {
+          "path": "mods/engine/mods/program_semantics/contract.json",
+          "pointer": "/requires/0"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:AF-STATE-EFFECT-ANALYSIS-0001:AF-FINDING-MODEL-0001",
+      "kind": "direct_dependency",
+      "fact": "dependency_reachability:AF-STATE-EFFECT-ANALYSIS-0001:AF-FINDING-MODEL-0001",
+      "input_facts": [
+        "dependency:AF-STATE-EFFECT-ANALYSIS-0001:AF-FINDING-MODEL-0001"
+      ],
+      "explanation_path": [
+        "AF-STATE-EFFECT-ANALYSIS-0001",
+        "AF-FINDING-MODEL-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/state_effect_analysis/contract.json",
+          "pointer": "/requires/0"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:AF-STATE-EFFECT-ANALYSIS-0001:AF-IMPLEMENTATION-OBSERVATION-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:AF-STATE-EFFECT-ANALYSIS-0001:AF-IMPLEMENTATION-OBSERVATION-0001",
+      "input_facts": [
+        "dependency:AF-STATE-EFFECT-ANALYSIS-0001:AF-PROGRAM-SEMANTICS-0001",
+        "dependency:AF-PROGRAM-SEMANTICS-0001:AF-IMPLEMENTATION-OBSERVATION-0001"
+      ],
+      "explanation_path": [
+        "AF-STATE-EFFECT-ANALYSIS-0001",
+        "AF-PROGRAM-SEMANTICS-0001",
+        "AF-IMPLEMENTATION-OBSERVATION-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/state_effect_analysis/contract.json",
+          "pointer": "/requires/1"
+        },
+        {
+          "path": "mods/engine/mods/program_semantics/contract.json",
+          "pointer": "/requires/1"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:AF-STATE-EFFECT-ANALYSIS-0001:AF-PROGRAM-SEMANTICS-0001",
+      "kind": "direct_dependency",
+      "fact": "dependency_reachability:AF-STATE-EFFECT-ANALYSIS-0001:AF-PROGRAM-SEMANTICS-0001",
+      "input_facts": [
+        "dependency:AF-STATE-EFFECT-ANALYSIS-0001:AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "explanation_path": [
+        "AF-STATE-EFFECT-ANALYSIS-0001",
+        "AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/state_effect_analysis/contract.json",
+          "pointer": "/requires/1"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:AF-STATE-EFFECT-ANALYSIS-0001:AF-SEMANTIC-ANALYSIS-0001",
+      "kind": "direct_dependency",
+      "fact": "dependency_reachability:AF-STATE-EFFECT-ANALYSIS-0001:AF-SEMANTIC-ANALYSIS-0001",
+      "input_facts": [
+        "dependency:AF-STATE-EFFECT-ANALYSIS-0001:AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "explanation_path": [
+        "AF-STATE-EFFECT-ANALYSIS-0001",
+        "AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/state_effect_analysis/contract.json",
+          "pointer": "/requires/2"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:AF-STATE-EFFECT-ANALYSIS-0001:AF-STANDARD-REGISTRY-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:AF-STATE-EFFECT-ANALYSIS-0001:AF-STANDARD-REGISTRY-0001",
+      "input_facts": [
+        "dependency:AF-STATE-EFFECT-ANALYSIS-0001:AF-FINDING-MODEL-0001",
+        "dependency:AF-FINDING-MODEL-0001:AF-STANDARD-REGISTRY-0001"
+      ],
+      "explanation_path": [
+        "AF-STATE-EFFECT-ANALYSIS-0001",
+        "AF-FINDING-MODEL-0001",
+        "AF-STANDARD-REGISTRY-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/state_effect_analysis/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/mods/finding_model/contract.json",
+          "pointer": "/requires/0"
+        }
+      ]
+    },
+    {
       "id": "dependency_reachability:TEST-ARCHITECTURE-EVALUATION-0001:AF-ARCHITECTURE-EVALUATION-0001",
       "kind": "direct_dependency",
       "fact": "dependency_reachability:TEST-ARCHITECTURE-EVALUATION-0001:AF-ARCHITECTURE-EVALUATION-0001",
@@ -19716,6 +22389,30 @@
         {
           "path": "mods/engine/mods/architecture_evaluation/contract.json",
           "pointer": "/requires/4"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:TEST-ARCHITECTURE-EVALUATION-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-ARCHITECTURE-EVALUATION-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+      "input_facts": [
+        "dependency:TEST-ARCHITECTURE-EVALUATION-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "explanation_path": [
+        "TEST-ARCHITECTURE-EVALUATION-0001",
+        "AF-CORE-0001",
+        "AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/architecture_evaluation/mods/testing/contract.json",
+          "pointer": "/requires/2"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/11"
         }
       ]
     },
@@ -19986,6 +22683,30 @@
         {
           "path": "mods/engine/mods/contract_coherency/contract.json",
           "pointer": "/requires/0"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:TEST-BEHAVIORAL-SEMANTICS-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-BEHAVIORAL-SEMANTICS-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+      "input_facts": [
+        "dependency:TEST-BEHAVIORAL-SEMANTICS-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "explanation_path": [
+        "TEST-BEHAVIORAL-SEMANTICS-0001",
+        "AF-CORE-0001",
+        "AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/behavioral_semantics/mods/testing/contract.json",
+          "pointer": "/requires/2"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/11"
         }
       ]
     },
@@ -20268,6 +22989,30 @@
         {
           "path": "mods/engine/contract.json",
           "pointer": "/requires/10"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:TEST-CLI-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-CLI-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+      "input_facts": [
+        "dependency:TEST-CLI-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "explanation_path": [
+        "TEST-CLI-0001",
+        "AF-CORE-0001",
+        "AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/cli/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/11"
         }
       ]
     },
@@ -20572,6 +23317,30 @@
       ]
     },
     {
+      "id": "dependency_reachability:TEST-FORTRESS-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-FORTRESS-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+      "input_facts": [
+        "dependency:TEST-FORTRESS-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "explanation_path": [
+        "TEST-FORTRESS-0001",
+        "AF-CORE-0001",
+        "AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/11"
+        }
+      ]
+    },
+    {
       "id": "dependency_reachability:TEST-FORTRESS-0001:TF-CLI-0001",
       "kind": "direct_dependency",
       "fact": "dependency_reachability:TEST-FORTRESS-0001:TF-CLI-0001",
@@ -20866,6 +23635,30 @@
       ]
     },
     {
+      "id": "dependency_reachability:TEST-IMPLEMENTATION-OBSERVATION-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-IMPLEMENTATION-OBSERVATION-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+      "input_facts": [
+        "dependency:TEST-IMPLEMENTATION-OBSERVATION-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "explanation_path": [
+        "TEST-IMPLEMENTATION-OBSERVATION-0001",
+        "AF-CORE-0001",
+        "AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/implementation_observation/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/11"
+        }
+      ]
+    },
+    {
       "id": "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-ARCHITECTURE-EVALUATION-0001",
       "kind": "transitive_dependency",
       "fact": "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-ARCHITECTURE-EVALUATION-0001",
@@ -21138,6 +23931,30 @@
         {
           "path": "mods/engine/contract.json",
           "pointer": "/requires/10"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-PROGRAM-SEMANTICS-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+      "input_facts": [
+        "dependency:TEST-PROGRAM-SEMANTICS-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "explanation_path": [
+        "TEST-PROGRAM-SEMANTICS-0001",
+        "AF-CORE-0001",
+        "AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/11"
         }
       ]
     },
@@ -21418,6 +24235,30 @@
       ]
     },
     {
+      "id": "dependency_reachability:TEST-PROJECT-MODEL-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-PROJECT-MODEL-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+      "input_facts": [
+        "dependency:TEST-PROJECT-MODEL-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "explanation_path": [
+        "TEST-PROJECT-MODEL-0001",
+        "AF-CORE-0001",
+        "AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/project_model/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/11"
+        }
+      ]
+    },
+    {
       "id": "dependency_reachability:TEST-REPOSITORY-OBSERVATION-0001:AF-ARCHITECTURE-EVALUATION-0001",
       "kind": "transitive_dependency",
       "fact": "dependency_reachability:TEST-REPOSITORY-OBSERVATION-0001:AF-ARCHITECTURE-EVALUATION-0001",
@@ -21690,6 +24531,30 @@
         {
           "path": "mods/engine/contract.json",
           "pointer": "/requires/10"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:TEST-REPOSITORY-OBSERVATION-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-REPOSITORY-OBSERVATION-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+      "input_facts": [
+        "dependency:TEST-REPOSITORY-OBSERVATION-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "explanation_path": [
+        "TEST-REPOSITORY-OBSERVATION-0001",
+        "AF-CORE-0001",
+        "AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/repository_observation/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/11"
         }
       ]
     },
@@ -21970,6 +24835,30 @@
       ]
     },
     {
+      "id": "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-SEMANTIC-ANALYSIS-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+      "input_facts": [
+        "dependency:TEST-SEMANTIC-ANALYSIS-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "explanation_path": [
+        "TEST-SEMANTIC-ANALYSIS-0001",
+        "AF-CORE-0001",
+        "AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/semantic_analysis/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/11"
+        }
+      ]
+    },
+    {
       "id": "dependency_reachability:TEST-SNAPSHOT-GOVERNANCE-0001:AF-ARCHITECTURE-EVALUATION-0001",
       "kind": "direct_dependency",
       "fact": "dependency_reachability:TEST-SNAPSHOT-GOVERNANCE-0001:AF-ARCHITECTURE-EVALUATION-0001",
@@ -22212,6 +25101,30 @@
         {
           "path": "mods/engine/mods/snapshot_governance/mods/testing/contract.json",
           "pointer": "/requires/6"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:TEST-SNAPSHOT-GOVERNANCE-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-SNAPSHOT-GOVERNANCE-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+      "input_facts": [
+        "dependency:TEST-SNAPSHOT-GOVERNANCE-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "explanation_path": [
+        "TEST-SNAPSHOT-GOVERNANCE-0001",
+        "AF-CORE-0001",
+        "AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/snapshot_governance/mods/testing/contract.json",
+          "pointer": "/requires/2"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/11"
         }
       ]
     },
@@ -22487,6 +25400,330 @@
       "provenance_closure": [
         {
           "path": "mods/engine/mods/standard_registry/mods/testing/contract.json",
+          "pointer": "/requires/1"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:TEST-STANDARD-REGISTRY-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-STANDARD-REGISTRY-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+      "input_facts": [
+        "dependency:TEST-STANDARD-REGISTRY-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "explanation_path": [
+        "TEST-STANDARD-REGISTRY-0001",
+        "AF-CORE-0001",
+        "AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/standard_registry/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/11"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-ARCHITECTURE-EVALUATION-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-ARCHITECTURE-EVALUATION-0001",
+      "input_facts": [
+        "dependency:TEST-STATE-EFFECT-ANALYSIS-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-ARCHITECTURE-EVALUATION-0001"
+      ],
+      "explanation_path": [
+        "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "AF-CORE-0001",
+        "AF-ARCHITECTURE-EVALUATION-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/state_effect_analysis/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/0"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-BEHAVIORAL-SEMANTICS-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-BEHAVIORAL-SEMANTICS-0001",
+      "input_facts": [
+        "dependency:TEST-STATE-EFFECT-ANALYSIS-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-BEHAVIORAL-SEMANTICS-0001"
+      ],
+      "explanation_path": [
+        "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "AF-CORE-0001",
+        "AF-BEHAVIORAL-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/state_effect_analysis/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/1"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-CONTRACT-COHERENCY-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-CONTRACT-COHERENCY-0001",
+      "input_facts": [
+        "dependency:TEST-STATE-EFFECT-ANALYSIS-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-CONTRACT-COHERENCY-0001"
+      ],
+      "explanation_path": [
+        "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "AF-CORE-0001",
+        "AF-CONTRACT-COHERENCY-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/state_effect_analysis/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/2"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-CORE-0001",
+      "kind": "direct_dependency",
+      "fact": "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-CORE-0001",
+      "input_facts": [
+        "dependency:TEST-STATE-EFFECT-ANALYSIS-0001:AF-CORE-0001"
+      ],
+      "explanation_path": [
+        "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "AF-CORE-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/state_effect_analysis/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-FINDING-MODEL-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-FINDING-MODEL-0001",
+      "input_facts": [
+        "dependency:TEST-STATE-EFFECT-ANALYSIS-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-FINDING-MODEL-0001"
+      ],
+      "explanation_path": [
+        "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "AF-CORE-0001",
+        "AF-FINDING-MODEL-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/state_effect_analysis/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/3"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-IMPLEMENTATION-OBSERVATION-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-IMPLEMENTATION-OBSERVATION-0001",
+      "input_facts": [
+        "dependency:TEST-STATE-EFFECT-ANALYSIS-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-IMPLEMENTATION-OBSERVATION-0001"
+      ],
+      "explanation_path": [
+        "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "AF-CORE-0001",
+        "AF-IMPLEMENTATION-OBSERVATION-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/state_effect_analysis/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/4"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-PROGRAM-SEMANTICS-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-PROGRAM-SEMANTICS-0001",
+      "input_facts": [
+        "dependency:TEST-STATE-EFFECT-ANALYSIS-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "explanation_path": [
+        "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "AF-CORE-0001",
+        "AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/state_effect_analysis/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/5"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-PROJECT-MODEL-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-PROJECT-MODEL-0001",
+      "input_facts": [
+        "dependency:TEST-STATE-EFFECT-ANALYSIS-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-PROJECT-MODEL-0001"
+      ],
+      "explanation_path": [
+        "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "AF-CORE-0001",
+        "AF-PROJECT-MODEL-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/state_effect_analysis/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/6"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-REPOSITORY-OBSERVATION-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-REPOSITORY-OBSERVATION-0001",
+      "input_facts": [
+        "dependency:TEST-STATE-EFFECT-ANALYSIS-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-REPOSITORY-OBSERVATION-0001"
+      ],
+      "explanation_path": [
+        "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "AF-CORE-0001",
+        "AF-REPOSITORY-OBSERVATION-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/state_effect_analysis/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/7"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-SEMANTIC-ANALYSIS-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-SEMANTIC-ANALYSIS-0001",
+      "input_facts": [
+        "dependency:TEST-STATE-EFFECT-ANALYSIS-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "explanation_path": [
+        "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "AF-CORE-0001",
+        "AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/state_effect_analysis/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/8"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-SNAPSHOT-GOVERNANCE-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-SNAPSHOT-GOVERNANCE-0001",
+      "input_facts": [
+        "dependency:TEST-STATE-EFFECT-ANALYSIS-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-SNAPSHOT-GOVERNANCE-0001"
+      ],
+      "explanation_path": [
+        "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "AF-CORE-0001",
+        "AF-SNAPSHOT-GOVERNANCE-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/state_effect_analysis/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/9"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-STANDARD-REGISTRY-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-STANDARD-REGISTRY-0001",
+      "input_facts": [
+        "dependency:TEST-STATE-EFFECT-ANALYSIS-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-STANDARD-REGISTRY-0001"
+      ],
+      "explanation_path": [
+        "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "AF-CORE-0001",
+        "AF-STANDARD-REGISTRY-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/state_effect_analysis/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/10"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+      "kind": "direct_dependency",
+      "fact": "dependency_reachability:TEST-STATE-EFFECT-ANALYSIS-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+      "input_facts": [
+        "dependency:TEST-STATE-EFFECT-ANALYSIS-0001:AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "explanation_path": [
+        "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/state_effect_analysis/mods/testing/contract.json",
           "pointer": "/requires/1"
         }
       ]
@@ -22770,6 +26007,30 @@
         {
           "path": "mods/engine/contract.json",
           "pointer": "/requires/10"
+        }
+      ]
+    },
+    {
+      "id": "dependency_reachability:TF-CLI-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+      "kind": "transitive_dependency",
+      "fact": "dependency_reachability:TF-CLI-0001:AF-STATE-EFFECT-ANALYSIS-0001",
+      "input_facts": [
+        "dependency:TF-CLI-0001:AF-CORE-0001",
+        "dependency:AF-CORE-0001:AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "explanation_path": [
+        "TF-CLI-0001",
+        "AF-CORE-0001",
+        "AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/cli/contract.json",
+          "pointer": "/requires/0"
+        },
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/11"
         }
       ]
     },
@@ -23628,6 +26889,24 @@
       ]
     },
     {
+      "id": "inverse_consumer:AF-CORE-0001:TEST-STATE-EFFECT-ANALYSIS-0001:CAP-FORTRESS-ENGINE",
+      "kind": "inverse_consumer",
+      "fact": "consumer:AF-CORE-0001:TEST-STATE-EFFECT-ANALYSIS-0001:CAP-FORTRESS-ENGINE",
+      "input_facts": [
+        "requires:TEST-STATE-EFFECT-ANALYSIS-0001:CAP-FORTRESS-ENGINE"
+      ],
+      "explanation_path": [
+        "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "AF-CORE-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/state_effect_analysis/mods/testing/contract.json",
+          "pointer": "/requires/0"
+        }
+      ]
+    },
+    {
       "id": "inverse_consumer:AF-CORE-0001:TF-CLI-0001:CAP-FORTRESS-ENGINE",
       "kind": "inverse_consumer",
       "fact": "consumer:AF-CORE-0001:TF-CLI-0001:CAP-FORTRESS-ENGINE",
@@ -23732,6 +27011,24 @@
         {
           "path": "mods/engine/mods/snapshot_governance/contract.json",
           "pointer": "/requires/3"
+        }
+      ]
+    },
+    {
+      "id": "inverse_consumer:AF-FINDING-MODEL-0001:AF-STATE-EFFECT-ANALYSIS-0001:CAP-FINDING-MODEL",
+      "kind": "inverse_consumer",
+      "fact": "consumer:AF-FINDING-MODEL-0001:AF-STATE-EFFECT-ANALYSIS-0001:CAP-FINDING-MODEL",
+      "input_facts": [
+        "requires:AF-STATE-EFFECT-ANALYSIS-0001:CAP-FINDING-MODEL"
+      ],
+      "explanation_path": [
+        "AF-STATE-EFFECT-ANALYSIS-0001",
+        "AF-FINDING-MODEL-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/state_effect_analysis/contract.json",
+          "pointer": "/requires/0"
         }
       ]
     },
@@ -23912,6 +27209,24 @@
         {
           "path": "mods/engine/mods/snapshot_governance/contract.json",
           "pointer": "/requires/5"
+        }
+      ]
+    },
+    {
+      "id": "inverse_consumer:AF-PROGRAM-SEMANTICS-0001:AF-STATE-EFFECT-ANALYSIS-0001:CAP-PROGRAM-SEMANTICS",
+      "kind": "inverse_consumer",
+      "fact": "consumer:AF-PROGRAM-SEMANTICS-0001:AF-STATE-EFFECT-ANALYSIS-0001:CAP-PROGRAM-SEMANTICS",
+      "input_facts": [
+        "requires:AF-STATE-EFFECT-ANALYSIS-0001:CAP-PROGRAM-SEMANTICS"
+      ],
+      "explanation_path": [
+        "AF-STATE-EFFECT-ANALYSIS-0001",
+        "AF-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/state_effect_analysis/contract.json",
+          "pointer": "/requires/1"
         }
       ]
     },
@@ -24150,6 +27465,24 @@
       ]
     },
     {
+      "id": "inverse_consumer:AF-SEMANTIC-ANALYSIS-0001:AF-STATE-EFFECT-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS",
+      "kind": "inverse_consumer",
+      "fact": "consumer:AF-SEMANTIC-ANALYSIS-0001:AF-STATE-EFFECT-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS",
+      "input_facts": [
+        "requires:AF-STATE-EFFECT-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS"
+      ],
+      "explanation_path": [
+        "AF-STATE-EFFECT-ANALYSIS-0001",
+        "AF-SEMANTIC-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/state_effect_analysis/contract.json",
+          "pointer": "/requires/2"
+        }
+      ]
+    },
+    {
       "id": "inverse_consumer:AF-SEMANTIC-ANALYSIS-0001:TEST-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS",
       "kind": "inverse_consumer",
       "fact": "consumer:AF-SEMANTIC-ANALYSIS-0001:TEST-SEMANTIC-ANALYSIS-0001:CAP-SEMANTIC-ANALYSIS",
@@ -24384,6 +27717,60 @@
       ]
     },
     {
+      "id": "inverse_consumer:AF-STATE-EFFECT-ANALYSIS-0001:AF-CORE-0001:CAP-STATE-EFFECT-ANALYSIS",
+      "kind": "inverse_consumer",
+      "fact": "consumer:AF-STATE-EFFECT-ANALYSIS-0001:AF-CORE-0001:CAP-STATE-EFFECT-ANALYSIS",
+      "input_facts": [
+        "requires:AF-CORE-0001:CAP-STATE-EFFECT-ANALYSIS"
+      ],
+      "explanation_path": [
+        "AF-CORE-0001",
+        "AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/contract.json",
+          "pointer": "/requires/11"
+        }
+      ]
+    },
+    {
+      "id": "inverse_consumer:AF-STATE-EFFECT-ANALYSIS-0001:AF-SNAPSHOT-GOVERNANCE-0001:CAP-STATE-EFFECT-ANALYSIS",
+      "kind": "inverse_consumer",
+      "fact": "consumer:AF-STATE-EFFECT-ANALYSIS-0001:AF-SNAPSHOT-GOVERNANCE-0001:CAP-STATE-EFFECT-ANALYSIS",
+      "input_facts": [
+        "requires:AF-SNAPSHOT-GOVERNANCE-0001:CAP-STATE-EFFECT-ANALYSIS"
+      ],
+      "explanation_path": [
+        "AF-SNAPSHOT-GOVERNANCE-0001",
+        "AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/snapshot_governance/contract.json",
+          "pointer": "/requires/10"
+        }
+      ]
+    },
+    {
+      "id": "inverse_consumer:AF-STATE-EFFECT-ANALYSIS-0001:TEST-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS",
+      "kind": "inverse_consumer",
+      "fact": "consumer:AF-STATE-EFFECT-ANALYSIS-0001:TEST-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS",
+      "input_facts": [
+        "requires:TEST-STATE-EFFECT-ANALYSIS-0001:CAP-STATE-EFFECT-ANALYSIS"
+      ],
+      "explanation_path": [
+        "TEST-STATE-EFFECT-ANALYSIS-0001",
+        "AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/state_effect_analysis/mods/testing/contract.json",
+          "pointer": "/requires/1"
+        }
+      ]
+    },
+    {
       "id": "inverse_consumer:TF-CLI-0001:TEST-CLI-0001:CAP-FORTRESS-CLI",
       "kind": "inverse_consumer",
       "fact": "consumer:TF-CLI-0001:TEST-CLI-0001:CAP-FORTRESS-CLI",
@@ -24605,6 +27992,25 @@
       "provenance_closure": [
         {
           "path": "mods/engine/mods/standard_registry/mods/testing/contract.json",
+          "pointer": "/relationships/0"
+        }
+      ]
+    },
+    {
+      "id": "verification_boundary:AF-STATE-EFFECT-ANALYSIS-0001:TEST-STATE-EFFECT-ANALYSIS-0001",
+      "kind": "verification_boundary",
+      "fact": "testing_boundary:AF-STATE-EFFECT-ANALYSIS-0001",
+      "input_facts": [
+        "containment:TEST-STATE-EFFECT-ANALYSIS-0001",
+        "verifies:TEST-STATE-EFFECT-ANALYSIS-0001:AF-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "explanation_path": [
+        "AF-STATE-EFFECT-ANALYSIS-0001",
+        "TEST-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/state_effect_analysis/mods/testing/contract.json",
           "pointer": "/relationships/0"
         }
       ]
@@ -25100,6 +28506,28 @@
         {
           "path": "mods/engine/mods/program_semantics/contract.json",
           "pointer": "/features/0/requirements/5"
+        }
+      ]
+    },
+    {
+      "id": "verification_support:AF-PROGRAM-SEMANTICS-0001-R07",
+      "kind": "verification_support",
+      "fact": "requirement_support:AF-PROGRAM-SEMANTICS-0001-R07",
+      "input_facts": [
+        "requirement:AF-PROGRAM-SEMANTICS-0001-R07",
+        "testing_boundary:AF-PROGRAM-SEMANTICS-0001:TEST-PROGRAM-SEMANTICS-0001",
+        "declared_test:AF-PROGRAM-SEMANTICS-0001-R07:T-AF-PROGRAM-SEMANTICS-0001-R07-001",
+        "declared_test:AF-PROGRAM-SEMANTICS-0001-R07:T-AF-PROGRAM-SEMANTICS-0001-R07-002"
+      ],
+      "explanation_path": [
+        "AF-PROGRAM-SEMANTICS-0001",
+        "AF-PROGRAM-SEMANTICS-0001-R07",
+        "TEST-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/contract.json",
+          "pointer": "/features/0/requirements/6"
         }
       ]
     },
@@ -25664,6 +29092,108 @@
       ]
     },
     {
+      "id": "verification_support:AF-STATE-EFFECT-ANALYSIS-0001-R01",
+      "kind": "verification_support",
+      "fact": "requirement_support:AF-STATE-EFFECT-ANALYSIS-0001-R01",
+      "input_facts": [
+        "requirement:AF-STATE-EFFECT-ANALYSIS-0001-R01",
+        "testing_boundary:AF-STATE-EFFECT-ANALYSIS-0001:TEST-STATE-EFFECT-ANALYSIS-0001",
+        "declared_test:AF-STATE-EFFECT-ANALYSIS-0001-R01:T-AF-STATE-EFFECT-ANALYSIS-0001-R01-001",
+        "declared_test:AF-STATE-EFFECT-ANALYSIS-0001-R01:T-AF-STATE-EFFECT-ANALYSIS-0001-R01-002",
+        "declared_test:AF-STATE-EFFECT-ANALYSIS-0001-R01:T-AF-STATE-EFFECT-ANALYSIS-0001-R01-003",
+        "declared_test:AF-STATE-EFFECT-ANALYSIS-0001-R01:T-AF-STATE-EFFECT-ANALYSIS-0001-R01-004",
+        "declared_test:AF-STATE-EFFECT-ANALYSIS-0001-R01:T-AF-STATE-EFFECT-ANALYSIS-0001-R01-005",
+        "declared_test:AF-STATE-EFFECT-ANALYSIS-0001-R01:T-AF-STATE-EFFECT-ANALYSIS-0001-R01-006"
+      ],
+      "explanation_path": [
+        "AF-STATE-EFFECT-ANALYSIS-0001",
+        "AF-STATE-EFFECT-ANALYSIS-0001-R01",
+        "TEST-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/state_effect_analysis/contract.json",
+          "pointer": "/features/0/requirements/0"
+        }
+      ]
+    },
+    {
+      "id": "verification_support:AF-STATE-EFFECT-ANALYSIS-0001-R02",
+      "kind": "verification_support",
+      "fact": "requirement_support:AF-STATE-EFFECT-ANALYSIS-0001-R02",
+      "input_facts": [
+        "requirement:AF-STATE-EFFECT-ANALYSIS-0001-R02",
+        "testing_boundary:AF-STATE-EFFECT-ANALYSIS-0001:TEST-STATE-EFFECT-ANALYSIS-0001",
+        "declared_test:AF-STATE-EFFECT-ANALYSIS-0001-R02:T-AF-STATE-EFFECT-ANALYSIS-0001-R02-001",
+        "declared_test:AF-STATE-EFFECT-ANALYSIS-0001-R02:T-AF-STATE-EFFECT-ANALYSIS-0001-R02-002",
+        "declared_test:AF-STATE-EFFECT-ANALYSIS-0001-R02:T-AF-STATE-EFFECT-ANALYSIS-0001-R02-003",
+        "declared_test:AF-STATE-EFFECT-ANALYSIS-0001-R02:T-AF-STATE-EFFECT-ANALYSIS-0001-R02-004",
+        "declared_test:AF-STATE-EFFECT-ANALYSIS-0001-R02:T-AF-STATE-EFFECT-ANALYSIS-0001-R02-005",
+        "declared_test:AF-STATE-EFFECT-ANALYSIS-0001-R02:T-AF-STATE-EFFECT-ANALYSIS-0001-R02-006"
+      ],
+      "explanation_path": [
+        "AF-STATE-EFFECT-ANALYSIS-0001",
+        "AF-STATE-EFFECT-ANALYSIS-0001-R02",
+        "TEST-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/state_effect_analysis/contract.json",
+          "pointer": "/features/0/requirements/1"
+        }
+      ]
+    },
+    {
+      "id": "verification_support:AF-STATE-EFFECT-ANALYSIS-0001-R03",
+      "kind": "verification_support",
+      "fact": "requirement_support:AF-STATE-EFFECT-ANALYSIS-0001-R03",
+      "input_facts": [
+        "requirement:AF-STATE-EFFECT-ANALYSIS-0001-R03",
+        "testing_boundary:AF-STATE-EFFECT-ANALYSIS-0001:TEST-STATE-EFFECT-ANALYSIS-0001",
+        "declared_test:AF-STATE-EFFECT-ANALYSIS-0001-R03:T-AF-STATE-EFFECT-ANALYSIS-0001-R03-001",
+        "declared_test:AF-STATE-EFFECT-ANALYSIS-0001-R03:T-AF-STATE-EFFECT-ANALYSIS-0001-R03-002",
+        "declared_test:AF-STATE-EFFECT-ANALYSIS-0001-R03:T-AF-STATE-EFFECT-ANALYSIS-0001-R03-003",
+        "declared_test:AF-STATE-EFFECT-ANALYSIS-0001-R03:T-AF-STATE-EFFECT-ANALYSIS-0001-R03-004",
+        "declared_test:AF-STATE-EFFECT-ANALYSIS-0001-R03:T-AF-STATE-EFFECT-ANALYSIS-0001-R03-005",
+        "declared_test:AF-STATE-EFFECT-ANALYSIS-0001-R03:T-AF-STATE-EFFECT-ANALYSIS-0001-R03-006",
+        "declared_test:AF-STATE-EFFECT-ANALYSIS-0001-R03:T-AF-STATE-EFFECT-ANALYSIS-0001-R03-007"
+      ],
+      "explanation_path": [
+        "AF-STATE-EFFECT-ANALYSIS-0001",
+        "AF-STATE-EFFECT-ANALYSIS-0001-R03",
+        "TEST-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/state_effect_analysis/contract.json",
+          "pointer": "/features/0/requirements/2"
+        }
+      ]
+    },
+    {
+      "id": "verification_support:AF-STATE-EFFECT-ANALYSIS-0001-R04",
+      "kind": "verification_support",
+      "fact": "requirement_support:AF-STATE-EFFECT-ANALYSIS-0001-R04",
+      "input_facts": [
+        "requirement:AF-STATE-EFFECT-ANALYSIS-0001-R04",
+        "testing_boundary:AF-STATE-EFFECT-ANALYSIS-0001:TEST-STATE-EFFECT-ANALYSIS-0001",
+        "declared_test:AF-STATE-EFFECT-ANALYSIS-0001-R04:T-AF-STATE-EFFECT-ANALYSIS-0001-R04-001",
+        "declared_test:AF-STATE-EFFECT-ANALYSIS-0001-R04:T-AF-STATE-EFFECT-ANALYSIS-0001-R04-002",
+        "declared_test:AF-STATE-EFFECT-ANALYSIS-0001-R04:T-AF-STATE-EFFECT-ANALYSIS-0001-R04-003"
+      ],
+      "explanation_path": [
+        "AF-STATE-EFFECT-ANALYSIS-0001",
+        "AF-STATE-EFFECT-ANALYSIS-0001-R04",
+        "TEST-STATE-EFFECT-ANALYSIS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/state_effect_analysis/contract.json",
+          "pointer": "/features/0/requirements/3"
+        }
+      ]
+    },
+    {
       "id": "verification_support:TF-CLI-0001-R01",
       "kind": "verification_support",
       "fact": "requirement_support:TF-CLI-0001-R01",
@@ -25844,6 +29374,28 @@
           "pointer": "/features/0/requirements/7"
         }
       ]
+    },
+    {
+      "id": "verification_support:TF-CLI-0001-R09",
+      "kind": "verification_support",
+      "fact": "requirement_support:TF-CLI-0001-R09",
+      "input_facts": [
+        "requirement:TF-CLI-0001-R09",
+        "testing_boundary:TF-CLI-0001:TEST-CLI-0001",
+        "declared_test:TF-CLI-0001-R09:T-TF-CLI-0001-R09-001",
+        "declared_test:TF-CLI-0001-R09:T-TF-CLI-0001-R09-002"
+      ],
+      "explanation_path": [
+        "TF-CLI-0001",
+        "TF-CLI-0001-R09",
+        "TEST-CLI-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/cli/contract.json",
+          "pointer": "/features/0/requirements/8"
+        }
+      ]
     }
   ],
   "provenance": [
@@ -25922,6 +29474,14 @@
     {
       "path": "mods/cli/mods/testing/code/cli.rs",
       "pointer": "symbol:semantic_rejects_unsupported_formats"
+    },
+    {
+      "path": "mods/cli/mods/testing/code/cli.rs",
+      "pointer": "symbol:state_effect_json_is_schema_versioned_and_repeatable"
+    },
+    {
+      "path": "mods/cli/mods/testing/code/cli.rs",
+      "pointer": "symbol:state_effect_rejects_unsupported_formats"
     },
     {
       "path": "mods/cli/mods/testing/code/cli.rs",
@@ -26177,6 +29737,10 @@
     },
     {
       "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+      "pointer": "symbol:mutation_facts_are_canonical_and_carry_exact_provenance"
+    },
+    {
+      "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
       "pointer": "symbol:nominal_struct_enum_trait_alias_fields_variants_and_impls_are_indexed"
     },
     {
@@ -26194,6 +29758,10 @@
     {
       "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
       "pointer": "symbol:static_external_dynamic_unresolved_and_collapsed_call_states_are_explicit"
+    },
+    {
+      "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+      "pointer": "symbol:structured_places_distinguish_receiver_reads_and_writes"
     },
     {
       "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
@@ -26597,6 +30165,110 @@
     },
     {
       "path": "mods/engine/mods/standard_registry/mods/testing/contract.json",
+      "pointer": "/"
+    },
+    {
+      "path": "mods/engine/mods/state_effect_analysis/contract.json",
+      "pointer": "/"
+    },
+    {
+      "path": "mods/engine/mods/state_effect_analysis/data/program_effect_rule.json",
+      "pointer": "/logic"
+    },
+    {
+      "path": "mods/engine/mods/state_effect_analysis/data/program_state_rule.json",
+      "pointer": "/logic"
+    },
+    {
+      "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+      "pointer": "symbol:absent_state_semantics_do_not_change_value_domain_findings"
+    },
+    {
+      "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+      "pointer": "symbol:closed_receiver_cannot_call_open_only_method_after_transition"
+    },
+    {
+      "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+      "pointer": "symbol:concrete_domain_outside_partial_state_set_is_unclassified"
+    },
+    {
+      "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+      "pointer": "symbol:contradictory_state_postcondition_is_rejected"
+    },
+    {
+      "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+      "pointer": "symbol:direct_effect_policies_distinguish_allowed_forbidden_and_pure"
+    },
+    {
+      "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+      "pointer": "symbol:direct_receiver_mutation_proves_state_transition"
+    },
+    {
+      "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+      "pointer": "symbol:enum_and_option_fields_support_owned_state_authority"
+    },
+    {
+      "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+      "pointer": "symbol:exact_possible_and_unclassified_states_are_distinct"
+    },
+    {
+      "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+      "pointer": "symbol:external_panic_and_recursive_effect_coverage_remain_explicit"
+    },
+    {
+      "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+      "pointer": "symbol:forbidden_direct_and_transitive_effects_are_reported"
+    },
+    {
+      "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+      "pointer": "symbol:foreign_state_authority_and_unknown_fields_fail_exactly"
+    },
+    {
+      "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+      "pointer": "symbol:function_contract_v2_accepts_state_and_effect_obligations"
+    },
+    {
+      "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+      "pointer": "symbol:live_fortress_state_effect_analysis_executes_without_supported_contradictions"
+    },
+    {
+      "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+      "pointer": "symbol:nonreceiver_field_reads_and_writes_are_owned_effects"
+    },
+    {
+      "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+      "pointer": "symbol:opaque_external_mutation_preserves_uncertainty"
+    },
+    {
+      "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+      "pointer": "symbol:provably_overlapping_states_are_rejected"
+    },
+    {
+      "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+      "pointer": "symbol:safe_current_caller_does_not_narrow_uncontracted_callee_state"
+    },
+    {
+      "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+      "pointer": "symbol:state_contract_validates_owned_boolean_typestate"
+    },
+    {
+      "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+      "pointer": "symbol:state_effect_artifact_and_digest_are_deterministic"
+    },
+    {
+      "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+      "pointer": "symbol:unknown_function_state_obligation_is_invalid"
+    },
+    {
+      "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+      "pointer": "symbol:unresolved_receiver_call_invalidates_precise_state"
+    },
+    {
+      "path": "mods/engine/mods/state_effect_analysis/mods/testing/code/state_effect_analysis.rs",
+      "pointer": "symbol:unsafe_execution_is_explicit_and_policy_checked"
+    },
+    {
+      "path": "mods/engine/mods/state_effect_analysis/mods/testing/contract.json",
       "pointer": "/"
     },
     {

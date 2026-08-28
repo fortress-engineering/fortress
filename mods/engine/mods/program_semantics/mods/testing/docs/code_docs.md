@@ -20,4 +20,4 @@ Any mismatch in exact identities, normalized types, coverage states, topology, t
 
 ### [`program_semantics.rs`](../code/program_semantics.rs)
 
-Contains the complete parent-local PSM v2 conformance and self-application suite.
+Contains the complete parent-local PSM v3 conformance and self-application suite.

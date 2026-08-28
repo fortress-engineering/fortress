@@ -78,6 +78,17 @@
       "duration": "short",
       "resumability": "restartable",
       "certification_implications": "Renders supported abstract-domain consequences and explicit uncertainty only; it is not total program safety or certification evidence."
+    },
+    {
+      "id": "CMD-STATE-EFFECT-ANALYSIS",
+      "name": "state-effect",
+      "aliases": [],
+      "description": "Compile and render deterministic state and effect analysis.",
+      "owner": "TF-CLI-0001",
+      "executor": "builtin-sync",
+      "duration": "short",
+      "resumability": "restartable",
+      "certification_implications": "Renders supported typestate and effect consequences plus explicit uncertainty only; it is not total heap safety, external-system proof, or certification evidence."
     }
   ]
 }

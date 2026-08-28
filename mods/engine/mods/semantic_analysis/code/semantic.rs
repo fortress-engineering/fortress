@@ -1,6 +1,6 @@
 //! Function Contract and interprocedural semantic-domain analysis.
 //!
-//! This Module consumes PSM facts and authored Function Contract v1 sources.
+//! This Module consumes PSM facts and authored Function Contract v2 sources.
 //! It does not parse Rust, modify the CCG, or map functions to BFG checkpoints.
 
 #[path = "domain.rs"]
@@ -15,8 +15,9 @@ use std::fmt::{self, Display, Formatter};
 pub use domain::{IntegerInterval, SemanticDomain};
 pub use function_contract::{
     DomainSpecification, FUNCTION_CONTRACT_SCHEMA, FUNCTION_CONTRACT_SCHEMA_VERSION,
-    FunctionContractError, FunctionContractSource, ResolvedFunctionContracts,
-    canonicalize_function_contract_json, load_function_contracts,
+    FunctionContract, FunctionContractError, FunctionContractSource, FunctionEffect,
+    FunctionEffectPolicy, FunctionStateObligation, ResolvedFunctionContracts,
+    canonicalize_function_contract_json, load_function_contracts, resolve_domain,
 };
 use serde::Serialize;
 use sha2::{Digest, Sha256};
@@ -1032,6 +1033,18 @@ impl<'a> AnalysisContext<'a> {
                         .collect(),
                 }
             }
+            ProgramExpression::Field { base, .. } => {
+                let _ = self.evaluate_expression(
+                    symbol,
+                    base,
+                    None,
+                    environment,
+                    outputs,
+                    state,
+                    provenance,
+                );
+                self.static_domain(fallback_type)
+            }
             ProgramExpression::Construction {
                 constructor,
                 arguments,
@@ -1652,6 +1665,7 @@ fn expression_domain_coverage(
         | ProgramExpression::Tuple { .. }
         | ProgramExpression::Construction { .. } => AnalysisCoverageState::Proven,
         ProgramExpression::Call { .. }
+        | ProgramExpression::Field { .. }
         | ProgramExpression::MethodCall { .. }
         | ProgramExpression::Binding { .. }
         | ProgramExpression::PatternTest { .. }

@@ -1,4 +1,4 @@
-//! Parent-local Program Semantic Model v2 conformance.
+//! Parent-local Program Semantic Model v3 conformance.
 
 use std::path::{Path, PathBuf};
 
@@ -555,6 +555,47 @@ fn ambiguity_and_user_defined_dereference_remain_explicit_without_guessing() {
         call.state() == CallResolutionState::Unresolved
             && call.reason() == Some(CallResolutionReason::UnsupportedDeref)
     }));
+}
+
+/// `T-AF-PROGRAM-SEMANTICS-0001-R07-001`
+/// Fortress requirement: AF-PROGRAM-SEMANTICS-0001-R07
+#[test]
+fn structured_places_distinguish_receiver_reads_and_writes() {
+    let model = compile_program_semantic_model(&one_package(
+        "struct Item { ready: bool, count: u32 } impl Item { fn update(&mut self) { if self.ready { self.count = 1; } self.count += 1; } }\n",
+    ))
+    .expect("state-place fixture compiles");
+    assert!(
+        model.state_reads().iter().any(|read| {
+            read.place().is_receiver() && read.place().field_name() == Some("ready")
+        })
+    );
+    assert!(model.mutations().iter().any(|mutation| {
+        mutation.target().is_receiver() && mutation.target().field_name() == Some("count")
+    }));
+}
+
+/// `T-AF-PROGRAM-SEMANTICS-0001-R07-002`
+/// Fortress requirement: AF-PROGRAM-SEMANTICS-0001-R07
+#[test]
+fn mutation_facts_are_canonical_and_carry_exact_provenance() {
+    let first = compile_program_semantic_model(&one_package(
+        "struct Item(bool); fn update(mut item: Item) { item.0 = true; }\n",
+    ))
+    .expect("tuple-field fixture compiles");
+    let second = compile_program_semantic_model(&one_package(
+        "struct Item(bool); fn update(mut item: Item) { item.0 = true; }\n",
+    ))
+    .expect("repeated tuple-field fixture compiles");
+    assert_eq!(
+        first.to_canonical_json().expect("first serializes"),
+        second.to_canonical_json().expect("second serializes")
+    );
+    assert_eq!(first.mutations().len(), 1);
+    assert_eq!(
+        first.mutations()[0].provenance().path(),
+        "mods/sample/code/lib.rs"
+    );
 }
 
 fn model_type_is_structural(

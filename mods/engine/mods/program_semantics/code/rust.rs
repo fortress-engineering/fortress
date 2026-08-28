@@ -19,12 +19,13 @@ use crate::implementation_observation::ModuleTerritory;
 
 use super::{
     CallResolutionReason, CallResolutionState, CallSiteEvidence, ExecutableSymbol,
-    ExecutableSymbolKind, ImplResolutionState, InterfaceType, NominalField, NominalType,
-    NominalTypeKind, NominalVariant, ProgramBody, ProgramCall, ProgramExpression, ProgramImpl,
-    ProgramImplKind, ProgramMatchArm, ProgramPackage, ProgramParameter, ProgramPattern,
-    ProgramProvenance, ProgramReceiver, ProgramSemanticError, ProgramSemanticInput,
-    ProgramSourceInput, ProgramSourceLocation, ProgramStatement, ProgramTarget, ProgramType,
-    RUST_PROGRAM_ANALYZER_ID, ResolutionAuthority, RustProgramFacts, SemanticType, SymbolBodyState,
+    ExecutableSymbolKind, ImplResolutionState, InterfaceType, MutationKind, NominalField,
+    NominalType, NominalTypeKind, NominalVariant, PlaceResolutionState, ProgramBody, ProgramCall,
+    ProgramExpression, ProgramImpl, ProgramImplKind, ProgramMatchArm, ProgramMutation,
+    ProgramPackage, ProgramParameter, ProgramPattern, ProgramPlace, ProgramProvenance,
+    ProgramReceiver, ProgramSemanticError, ProgramSemanticInput, ProgramSourceInput,
+    ProgramSourceLocation, ProgramStatement, ProgramTarget, ProgramType, RUST_PROGRAM_ANALYZER_ID,
+    ResolutionAuthority, RustProgramFacts, SemanticType, StateRead, SymbolBodyState,
     SymbolClassification, SymbolQualifiers, SymbolVisibility, TransferResolutionState,
     TransformationKind, TypeResolution, TypeTransformation, ValueEndpoint, ValueTransfer,
     ValueTransferKind, canonical_fact_id,
@@ -195,6 +196,7 @@ impl TypeRegistry {
     }
 }
 
+#[allow(clippy::too_many_lines)]
 pub(super) fn analyze(
     input: &ProgramSemanticInput,
 ) -> Result<RustProgramFacts, ProgramSemanticError> {
@@ -260,6 +262,8 @@ pub(super) fn analyze(
     let mut raw_calls = Vec::new();
     let mut value_transfers = parameter_transfers;
     let mut transformations = Vec::new();
+    let mut state_reads = Vec::new();
+    let mut mutations = Vec::new();
     let mut program_bodies = Vec::new();
     for body in &bodies {
         program_bodies.push(lower_program_body(body));
@@ -270,6 +274,8 @@ pub(super) fn analyze(
             &mut raw_calls,
             &mut value_transfers,
             &mut transformations,
+            &mut state_reads,
+            &mut mutations,
         )
         .analyze();
     }
@@ -278,6 +284,10 @@ pub(super) fn analyze(
     value_transfers.dedup();
     transformations.sort();
     transformations.dedup();
+    state_reads.sort();
+    state_reads.dedup();
+    mutations.sort();
+    mutations.dedup();
     Ok(RustProgramFacts {
         source_identity,
         source_inputs,
@@ -291,6 +301,8 @@ pub(super) fn analyze(
         bodies: program_bodies,
         value_transfers,
         transformations,
+        state_reads,
+        mutations,
         fixed_point_iterations: 1,
     })
 }
@@ -511,6 +523,10 @@ fn lower_expression(expression: &Expr) -> ProgramExpression {
         Expr::Tuple(value) if value.elems.is_empty() => ProgramExpression::Unit,
         Expr::Tuple(value) => ProgramExpression::Tuple {
             elements: value.elems.iter().map(lower_expression).collect(),
+        },
+        Expr::Field(value) => ProgramExpression::Field {
+            base: Box::new(lower_expression(&value.base)),
+            field: value.member.to_token_stream().to_string(),
         },
         Expr::Call(value) => {
             let reference = value.func.to_token_stream().to_string();
@@ -1958,6 +1974,7 @@ struct SymbolLookup {
     reexports: BTreeMap<ReexportKey, Vec<String>>,
     nominal_fields: BTreeMap<(String, String, String), InterfaceType>,
     local_nominals: BTreeSet<(String, String)>,
+    nominal_ids: BTreeMap<(String, String), String>,
     nominal_aliases: BTreeMap<(String, String), InterfaceType>,
 }
 
@@ -2026,10 +2043,15 @@ impl SymbolLookup {
             .collect();
         let mut nominal_fields = BTreeMap::new();
         let mut local_nominals = BTreeSet::new();
+        let mut nominal_ids = BTreeMap::new();
         let mut nominal_aliases = BTreeMap::new();
         for nominal in nominal_types {
             let simple = simple_type_name(&nominal.qualified_name);
             local_nominals.insert((nominal.package.clone(), simple.clone()));
+            nominal_ids.insert(
+                (nominal.package.clone(), simple.clone()),
+                nominal.id.clone(),
+            );
             for field in &nominal.fields {
                 nominal_fields.insert(
                     (nominal.package.clone(), simple.clone(), field.name.clone()),
@@ -2053,6 +2075,7 @@ impl SymbolLookup {
             reexports,
             nominal_fields,
             local_nominals,
+            nominal_ids,
             nominal_aliases,
         }
     }
@@ -2070,6 +2093,12 @@ impl SymbolLookup {
     fn is_local_nominal(&self, package: &str, owner: &str) -> bool {
         self.local_nominals
             .contains(&(package.into(), simple_type_name(owner)))
+    }
+
+    fn nominal_id(&self, package: &str, owner: &str) -> Option<&str> {
+        self.nominal_ids
+            .get(&(package.into(), simple_type_name(owner)))
+            .map(String::as_str)
     }
 
     fn alias_target(&self, package: &str, owner: &str) -> Option<InterfaceType> {
@@ -2449,8 +2478,11 @@ struct BodyAnalyzer<'a> {
     raw_calls: &'a mut Vec<RawCall>,
     transfers: &'a mut Vec<ValueTransfer>,
     transformations: &'a mut Vec<TypeTransformation>,
+    state_reads: &'a mut Vec<StateRead>,
+    mutations: &'a mut Vec<ProgramMutation>,
     local_types: BTreeMap<String, InterfaceType>,
     direct_consumer: Option<(SpanKey, ValueEndpoint)>,
+    write_target: bool,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
@@ -2470,6 +2502,7 @@ impl SpanKey {
 }
 
 impl<'a> BodyAnalyzer<'a> {
+    #[allow(clippy::too_many_arguments)]
     fn new(
         body: &'a BodyFact,
         lookup: &'a SymbolLookup,
@@ -2477,7 +2510,20 @@ impl<'a> BodyAnalyzer<'a> {
         raw_calls: &'a mut Vec<RawCall>,
         transfers: &'a mut Vec<ValueTransfer>,
         transformations: &'a mut Vec<TypeTransformation>,
+        state_reads: &'a mut Vec<StateRead>,
+        mutations: &'a mut Vec<ProgramMutation>,
     ) -> Self {
+        let mut local_types = body.parameter_types.clone();
+        if let Some(owner) = &body.owner_type {
+            let interface = registry.register_semantic(
+                SemanticType::Named {
+                    name: owner.clone(),
+                    arguments: Vec::new(),
+                },
+                owner.clone(),
+            );
+            local_types.insert("self".into(), interface);
+        }
         Self {
             body,
             lookup,
@@ -2485,8 +2531,11 @@ impl<'a> BodyAnalyzer<'a> {
             raw_calls,
             transfers,
             transformations,
-            local_types: body.parameter_types.clone(),
+            state_reads,
+            mutations,
+            local_types,
             direct_consumer: None,
+            write_target: false,
         }
     }
 
@@ -2938,6 +2987,139 @@ impl<'a> BodyAnalyzer<'a> {
             _ => {}
         }
     }
+
+    fn structured_place(&mut self, expression: &Expr) -> (ProgramPlace, PlaceResolutionState) {
+        match expression {
+            Expr::Paren(value) => self.structured_place(&value.expr),
+            Expr::Group(value) => self.structured_place(&value.expr),
+            Expr::Path(value) if value.path.segments.len() == 1 => {
+                let name = value.path.segments[0].ident.to_string();
+                let static_type = self
+                    .expression_type(expression)
+                    .map(|interface| interface.type_id);
+                let resolution = if static_type.is_some() {
+                    PlaceResolutionState::ResolvedExact
+                } else {
+                    PlaceResolutionState::TypeUnknown
+                };
+                (ProgramPlace::Binding { name, static_type }, resolution)
+            }
+            Expr::Field(value) => {
+                let (base, base_resolution) = self.structured_place(&value.base);
+                let base_interface = self.expression_type(&value.base);
+                let owner = base_interface
+                    .as_ref()
+                    .and_then(|interface| self.type_spelling(interface));
+                let field_type = self.expression_type(expression).map(|value| value.type_id);
+                match &value.member {
+                    syn::Member::Named(name) => {
+                        let nominal_owner = owner.as_ref().and_then(|name| {
+                            self.lookup
+                                .nominal_id(self.package_name(), name)
+                                .map(str::to_owned)
+                        });
+                        let resolution = if nominal_owner.is_some() && field_type.is_some() {
+                            PlaceResolutionState::ResolvedExact
+                        } else if base_resolution == PlaceResolutionState::Unsupported {
+                            PlaceResolutionState::Unsupported
+                        } else {
+                            PlaceResolutionState::TypeUnknown
+                        };
+                        (
+                            ProgramPlace::Field {
+                                base: Box::new(base),
+                                nominal_owner,
+                                field: name.to_string(),
+                                static_type: field_type,
+                            },
+                            resolution,
+                        )
+                    }
+                    syn::Member::Unnamed(index) => {
+                        let resolution = if field_type.is_some() {
+                            PlaceResolutionState::ResolvedExact
+                        } else {
+                            PlaceResolutionState::TypeUnknown
+                        };
+                        (
+                            ProgramPlace::TupleField {
+                                base: Box::new(base),
+                                position: usize::try_from(index.index).unwrap_or(usize::MAX),
+                                static_type: field_type,
+                            },
+                            resolution,
+                        )
+                    }
+                }
+            }
+            Expr::Unary(value) if matches!(value.op, syn::UnOp::Deref(_)) => {
+                let (base, _) = self.structured_place(&value.expr);
+                (
+                    ProgramPlace::Dereference {
+                        base: Box::new(base),
+                        static_type: self.expression_type(expression).map(|value| value.type_id),
+                    },
+                    PlaceResolutionState::AliasUnknown,
+                )
+            }
+            _ => (
+                ProgramPlace::Unsupported {
+                    rust_spelling: expression.to_token_stream().to_string(),
+                },
+                PlaceResolutionState::Unsupported,
+            ),
+        }
+    }
+
+    fn add_mutation(&mut self, target: &Expr, value: &Expr, kind: MutationKind, span: Span) {
+        let (target, resolution) = self.structured_place(target);
+        let provenance = provenance(&self.body.source_path, span, Some(self.body.symbol.clone()));
+        let value_type = self
+            .expression_type(value)
+            .map(|interface| interface.type_id);
+        let mutation_kind = if matches!(
+            target,
+            ProgramPlace::Field { .. } | ProgramPlace::TupleField { .. }
+        ) {
+            MutationKind::MutableFieldUpdate
+        } else {
+            kind
+        };
+        let id = canonical_fact_id(
+            "mutation",
+            &MutationIdentity {
+                symbol: &self.body.symbol,
+                target: &target,
+                mutation_kind,
+                provenance: &provenance,
+            },
+        );
+        self.mutations.push(ProgramMutation {
+            id,
+            symbol: self.body.symbol.clone(),
+            target,
+            mutation_kind,
+            value: lower_expression(value),
+            value_type,
+            resolution,
+            provenance,
+        });
+    }
+}
+
+#[derive(Serialize)]
+struct MutationIdentity<'a> {
+    symbol: &'a str,
+    target: &'a ProgramPlace,
+    mutation_kind: MutationKind,
+    provenance: &'a ProgramProvenance,
+}
+
+#[derive(Serialize)]
+struct StateReadIdentity<'a> {
+    symbol: &'a str,
+    place: &'a ProgramPlace,
+    provenance: &'a ProgramProvenance,
 }
 
 impl<'ast> Visit<'ast> for BodyAnalyzer<'_> {
@@ -3004,6 +3186,12 @@ impl<'ast> Visit<'ast> for BodyAnalyzer<'_> {
     }
 
     fn visit_expr_assign(&mut self, assignment: &'ast syn::ExprAssign) {
+        self.add_mutation(
+            &assignment.left,
+            &assignment.right,
+            MutationKind::Assignment,
+            assignment.span(),
+        );
         let inferred_assignment = self.expression_type(&assignment.right);
         if let Expr::Path(path) = assignment.left.as_ref()
             && path.path.segments.len() == 1
@@ -3031,10 +3219,63 @@ impl<'ast> Visit<'ast> for BodyAnalyzer<'_> {
                 Some(self.body.symbol.clone()),
             ),
         ));
+        self.write_target = true;
         self.visit_expr(&assignment.left);
+        self.write_target = false;
         self.direct_consumer = Some((SpanKey::from_span(assignment.right.span()), consumer));
         self.visit_expr(&assignment.right);
         self.direct_consumer = None;
+    }
+
+    fn visit_expr_binary(&mut self, expression: &'ast syn::ExprBinary) {
+        if matches!(
+            expression.op,
+            syn::BinOp::AddAssign(_)
+                | syn::BinOp::SubAssign(_)
+                | syn::BinOp::MulAssign(_)
+                | syn::BinOp::DivAssign(_)
+                | syn::BinOp::RemAssign(_)
+                | syn::BinOp::BitXorAssign(_)
+                | syn::BinOp::BitAndAssign(_)
+                | syn::BinOp::BitOrAssign(_)
+                | syn::BinOp::ShlAssign(_)
+                | syn::BinOp::ShrAssign(_)
+        ) {
+            self.add_mutation(
+                &expression.left,
+                &expression.right,
+                MutationKind::CompoundAssignment,
+                expression.span(),
+            );
+        }
+        visit::visit_expr_binary(self, expression);
+    }
+
+    fn visit_expr_field(&mut self, expression: &'ast syn::ExprField) {
+        if !self.write_target {
+            let (place, resolution) = self.structured_place(&Expr::Field(expression.clone()));
+            let provenance = provenance(
+                &self.body.source_path,
+                expression.span(),
+                Some(self.body.symbol.clone()),
+            );
+            let id = canonical_fact_id(
+                "state_read",
+                &StateReadIdentity {
+                    symbol: &self.body.symbol,
+                    place: &place,
+                    provenance: &provenance,
+                },
+            );
+            self.state_reads.push(StateRead {
+                id,
+                symbol: self.body.symbol.clone(),
+                place,
+                resolution,
+                provenance,
+            });
+        }
+        visit::visit_expr_field(self, expression);
     }
 
     fn visit_expr_return(&mut self, expression: &'ast syn::ExprReturn) {
@@ -3073,52 +3314,65 @@ impl<'ast> Visit<'ast> for BodyAnalyzer<'_> {
             }
             _ => RawCallTarget::Dynamic,
         };
-        if let RawCallTarget::Path { segments, .. } = &target
+        let semantic_constructor = if let RawCallTarget::Path { segments, .. } = &target
             && let Some(last) = segments.last()
         {
             match last.as_str() {
-                "Some" => self.add_transformation(
-                    TransformationKind::OptionTransition,
-                    call.span(),
-                    None,
-                    None,
-                ),
-                "Ok" | "Err" => self.add_transformation(
-                    TransformationKind::ResultTransition,
-                    call.span(),
-                    None,
-                    None,
-                ),
-                "from" => self.add_transformation(
-                    TransformationKind::ConversionCall,
-                    call.span(),
-                    None,
-                    None,
-                ),
-                _ => {}
+                "Some" => {
+                    self.add_transformation(
+                        TransformationKind::OptionTransition,
+                        call.span(),
+                        None,
+                        None,
+                    );
+                    true
+                }
+                "Ok" | "Err" => {
+                    self.add_transformation(
+                        TransformationKind::ResultTransition,
+                        call.span(),
+                        None,
+                        None,
+                    );
+                    true
+                }
+                "from" => {
+                    self.add_transformation(
+                        TransformationKind::ConversionCall,
+                        call.span(),
+                        None,
+                        None,
+                    );
+                    false
+                }
+                _ => false,
             }
-        }
+        } else {
+            false
+        };
         let arguments = self.raw_arguments(call.args.iter());
-        self.raw_calls.push(RawCall {
-            caller: self.body.symbol.clone(),
-            package: self.package_name().into(),
-            crate_name: self.body.context.crate_name.clone(),
-            namespace: self.body.context.namespace.clone(),
-            owner_type: self.body.owner_type.clone(),
-            target,
-            reference: reference.clone(),
-            arguments,
-            consumer: self.direct_consumer(call.span()),
-            evidence: CallSiteEvidence::new(
-                reference,
-                call.args.len(),
-                provenance(
-                    &self.body.source_path,
-                    call.span(),
-                    Some(self.body.symbol.clone()),
+        if !semantic_constructor {
+            self.raw_calls.push(RawCall {
+                caller: self.body.symbol.clone(),
+                package: self.package_name().into(),
+                crate_name: self.body.context.crate_name.clone(),
+                namespace: self.body.context.namespace.clone(),
+                owner_type: self.body.owner_type.clone(),
+                target,
+                reference: reference.clone(),
+                arguments,
+                consumer: self.direct_consumer(call.span()),
+                evidence: CallSiteEvidence::new(
+                    reference,
+                    call.args.len(),
+                    provenance(
+                        &self.body.source_path,
+                        call.span(),
+                        Some(self.body.symbol.clone()),
+                    ),
                 ),
-            ),
-        });
+            });
+        }
         visit::visit_expr_call(self, call);
     }
 
@@ -3150,6 +3404,7 @@ impl<'ast> Visit<'ast> for BodyAnalyzer<'_> {
         }
         let reference = call.to_token_stream().to_string();
         let arguments = self.raw_arguments(call.args.iter());
+        let receiver_place = self.structured_place(&call.receiver).0;
         self.raw_calls.push(RawCall {
             caller: self.body.symbol.clone(),
             package: self.package_name().into(),
@@ -3173,7 +3428,8 @@ impl<'ast> Visit<'ast> for BodyAnalyzer<'_> {
                     call.span(),
                     Some(self.body.symbol.clone()),
                 ),
-            ),
+            )
+            .with_receiver(receiver_place),
         });
         visit::visit_expr_method_call(self, call);
     }

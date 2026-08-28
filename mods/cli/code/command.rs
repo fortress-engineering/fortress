@@ -58,6 +58,13 @@ const BUILTIN_COMMANDS: &[CommandDescriptor] = &[
         description: "Compile and render deterministic function-domain analysis.",
         usage: "fortress semantic [path] [--format json] [--output path]",
     },
+    CommandDescriptor {
+        id: "CMD-STATE-EFFECT-ANALYSIS",
+        name: "state-effect",
+        aliases: &[],
+        description: "Compile and render deterministic state and effect analysis.",
+        usage: "fortress state-effect [path] [--format json] [--output path]",
+    },
 ];
 
 /// Discoverable metadata for one registered Fortress command.

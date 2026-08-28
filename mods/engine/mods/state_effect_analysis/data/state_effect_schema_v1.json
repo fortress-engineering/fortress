@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:state-effect-analysis",
+  "title": "Fortress State and Effect Analysis v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "schema_version", "semantic_version", "project_id", "psm_digest", "semantic_analysis_digest", "state_contract_digest", "function_contract_digest", "summaries", "violations", "direct_effect_counts", "transitive_effect_counts", "coverage", "unsupported_semantics"],
+  "properties": {
+    "$schema": { "const": "urn:fortress:schema:v1:state-effect-analysis" },
+    "schema_version": { "const": 1 },
+    "semantic_version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "project_id": { "type": "string", "minLength": 1 },
+    "psm_digest": { "$ref": "#/$defs/digest" },
+    "semantic_analysis_digest": { "$ref": "#/$defs/digest" },
+    "state_contract_digest": { "$ref": "#/$defs/digest" },
+    "function_contract_digest": { "$ref": "#/$defs/digest" },
+    "summaries": { "type": "array", "items": { "type": "object" } },
+    "violations": { "type": "array", "items": { "type": "object" } },
+    "direct_effect_counts": { "$ref": "#/$defs/count_map" },
+    "transitive_effect_counts": { "$ref": "#/$defs/count_map" },
+    "coverage": { "type": "object" },
+    "unsupported_semantics": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+  },
+  "$defs": {
+    "digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "count_map": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 } }
+  }
+}

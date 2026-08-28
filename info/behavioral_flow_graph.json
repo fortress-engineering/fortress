@@ -7,12 +7,12 @@
     "id": "STD-FORTRESS-ENGINEERING",
     "edition": "1.0.0-draft.1"
   },
-  "source_ccg_digest": "sha256:709864f0a90e8256b60045d46ab97bcbde4e1607b140f29be9170256f5d6acc3",
+  "source_ccg_digest": "sha256:75e48e55581f9213e674527b8c26dd03d7d801eba3490067cec28e21b2d46267",
   "view": "intended",
   "summary": {
-    "total_features": 13,
+    "total_features": 14,
     "modeled_features": 1,
-    "unmodeled_features": 12,
+    "unmodeled_features": 13,
     "coherent_features": 1,
     "incoherent_features": 0,
     "checkpoints": 10,
@@ -82,6 +82,11 @@
     {
       "feature": "AF-STANDARD-REGISTRY-0001",
       "owner": "AF-STANDARD-REGISTRY-0001",
+      "state": "UNMODELED"
+    },
+    {
+      "feature": "AF-STATE-EFFECT-ANALYSIS-0001",
+      "owner": "AF-STATE-EFFECT-ANALYSIS-0001",
       "state": "UNMODELED"
     },
     {

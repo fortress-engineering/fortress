@@ -1,4 +1,4 @@
-//! Distributed Function Contract v1 loading and validation.
+//! Distributed Function Contract v2 loading and validation.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
@@ -11,10 +11,10 @@ use crate::program_semantics::{ExecutableSymbol, ProgramSemanticModel, ProgramTy
 
 use super::domain::{IntegerInterval, SemanticDomain};
 
-/// Canonical Function Contract v1 schema identity.
-pub const FUNCTION_CONTRACT_SCHEMA: &str = "urn:fortress:schema:v1:function-contracts";
+/// Canonical Function Contract v2 schema identity.
+pub const FUNCTION_CONTRACT_SCHEMA: &str = "urn:fortress:schema:v2:function-contracts";
 /// Canonical Function Contract schema version.
-pub const FUNCTION_CONTRACT_SCHEMA_VERSION: u16 = 1;
+pub const FUNCTION_CONTRACT_SCHEMA_VERSION: u16 = 2;
 
 /// One snapshot-bound authored Function Contract source.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -114,6 +114,63 @@ pub struct FunctionGuarantee {
     domain: DomainSpecification,
 }
 
+/// One function-level typestate obligation.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct FunctionStateObligation {
+    target: String,
+    state: String,
+}
+
+impl FunctionStateObligation {
+    /// Returns `self`, `return`, or a mutable parameter identity.
+    #[must_use]
+    pub fn target(&self) -> &str {
+        &self.target
+    }
+
+    /// Returns the stable authored state identity.
+    #[must_use]
+    pub fn state(&self) -> &str {
+        &self.state
+    }
+}
+
+/// Closed v1 effect vocabulary used by Function Contract v2.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Deserialize, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum FunctionEffect {
+    /// Read state through the current receiver.
+    ReceiverStateRead,
+    /// Mutate state through the current receiver.
+    ReceiverStateWrite,
+    /// Read a directly owned non-receiver nominal value.
+    OwnedStateRead,
+    /// Mutate a directly owned non-receiver nominal value.
+    OwnedStateWrite,
+    /// Invoke an opaque target outside the governed executable model.
+    ExternalInteraction,
+    /// Reach a supported panic operation.
+    MayPanic,
+    /// Execute an unsafe function/body region.
+    UnsafeExecution,
+}
+
+/// Optional authored restriction over supported direct and transitive effects.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct FunctionEffectPolicy {
+    allowed: Vec<FunctionEffect>,
+}
+
+impl FunctionEffectPolicy {
+    /// Returns the sorted allowed effect set.
+    #[must_use]
+    pub fn allowed(&self) -> &[FunctionEffect] {
+        &self.allowed
+    }
+}
+
 /// One executable symbol's authored semantic intent.
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -121,6 +178,12 @@ pub struct FunctionContract {
     symbol: String,
     requires: Vec<FunctionRequirement>,
     ensures: Vec<FunctionGuarantee>,
+    #[serde(default)]
+    state_requires: Vec<FunctionStateObligation>,
+    #[serde(default)]
+    state_ensures: Vec<FunctionStateObligation>,
+    #[serde(default)]
+    effects: Option<FunctionEffectPolicy>,
 }
 
 impl FunctionContract {
@@ -140,6 +203,24 @@ impl FunctionContract {
     #[must_use]
     pub fn return_guarantee(&self) -> Option<&FunctionGuarantee> {
         self.ensures.first()
+    }
+
+    /// Returns authored state preconditions.
+    #[must_use]
+    pub fn state_requires(&self) -> &[FunctionStateObligation] {
+        &self.state_requires
+    }
+
+    /// Returns authored state postconditions.
+    #[must_use]
+    pub fn state_ensures(&self) -> &[FunctionStateObligation] {
+        &self.state_ensures
+    }
+
+    /// Returns the optional authored effect restriction.
+    #[must_use]
+    pub const fn effects(&self) -> Option<&FunctionEffectPolicy> {
+        self.effects.as_ref()
     }
 }
 
@@ -213,7 +294,7 @@ impl ResolvedFunctionContracts {
     }
 }
 
-/// Loads and resolves distributed Function Contract v1 sources against a PSM.
+/// Loads and resolves distributed Function Contract v2 sources against a PSM.
 ///
 /// # Errors
 ///
@@ -295,7 +376,7 @@ pub fn load_function_contracts(
 /// # Errors
 ///
 /// Returns [`FunctionContractError`] when `source` is not a Function Contract
-/// v1 JSON document or canonical serialization fails.
+/// v2 JSON document or canonical serialization fails.
 pub fn canonicalize_function_contract_json(
     path: &str,
     source: &str,
@@ -459,6 +540,7 @@ fn resolve_domain_for_semantic(
     Ok(domain)
 }
 
+#[allow(clippy::too_many_lines)]
 fn validate_contract_domains(
     contract: &FunctionContract,
     symbol: &ExecutableSymbol,
@@ -514,6 +596,60 @@ fn validate_contract_domains(
             }
         })?;
     }
+    for obligation in contract
+        .state_requires
+        .iter()
+        .chain(&contract.state_ensures)
+    {
+        if !obligation.state.starts_with("STATE-") || obligation.state.len() <= "STATE-".len() {
+            return Err(FunctionContractError::InvalidStateTarget {
+                path: path.into(),
+                symbol: contract.symbol.clone(),
+                target: obligation.target.clone(),
+                detail: "state identity must use the stable STATE-* vocabulary".into(),
+            });
+        }
+        match obligation.target.as_str() {
+            "self" if symbol.receiver().is_some() => {}
+            "return" => {
+                let return_fact = types
+                    .get(symbol.return_type().type_id())
+                    .ok_or_else(|| FunctionContractError::MissingType(path.into()))?;
+                if !matches!(return_fact.semantic(), SemanticType::Named { .. }) {
+                    return Err(FunctionContractError::InvalidStateTarget {
+                        path: path.into(),
+                        symbol: contract.symbol.clone(),
+                        target: obligation.target.clone(),
+                        detail: "return state requires a nominal return type".into(),
+                    });
+                }
+            }
+            parameter => {
+                let Some(parameter) = parameters.get(parameter) else {
+                    return Err(FunctionContractError::InvalidStateTarget {
+                        path: path.into(),
+                        symbol: contract.symbol.clone(),
+                        target: obligation.target.clone(),
+                        detail: "state target is neither self, return, nor a parameter".into(),
+                    });
+                };
+                let type_fact = types
+                    .get(parameter.parameter_type().type_id())
+                    .ok_or_else(|| FunctionContractError::MissingType(path.into()))?;
+                if !matches!(
+                    type_fact.semantic(),
+                    SemanticType::Reference { mutable: true, .. }
+                ) {
+                    return Err(FunctionContractError::InvalidStateTarget {
+                        path: path.into(),
+                        symbol: contract.symbol.clone(),
+                        target: obligation.target.clone(),
+                        detail: "parameter state targets require an exact mutable reference".into(),
+                    });
+                }
+            }
+        }
+    }
     Ok(())
 }
 
@@ -533,6 +669,21 @@ fn validate_sorted_unique_contracts(
             .requires
             .windows(2)
             .all(|pair| pair[0].parameter < pair[1].parameter)
+        {
+            return Err(FunctionContractError::NonCanonicalOrder(path.into()));
+        }
+        if !contract
+            .state_requires
+            .windows(2)
+            .all(|pair| pair[0] < pair[1])
+            || !contract
+                .state_ensures
+                .windows(2)
+                .all(|pair| pair[0] < pair[1])
+            || contract
+                .effects
+                .as_ref()
+                .is_some_and(|policy| !policy.allowed.windows(2).all(|pair| pair[0] < pair[1]))
         {
             return Err(FunctionContractError::NonCanonicalOrder(path.into()));
         }
@@ -642,6 +793,17 @@ pub enum FunctionContractError {
     },
     /// Ensures did not name exactly one return target.
     InvalidReturnTarget(String),
+    /// A state target or state identity is invalid for the executable interface.
+    InvalidStateTarget {
+        /// Source path.
+        path: String,
+        /// Targeted PSM symbol.
+        symbol: String,
+        /// Authored state target.
+        target: String,
+        /// Precise rejection reason.
+        detail: String,
+    },
     /// Canonical serialization failed.
     Serialization(String),
 }
@@ -728,6 +890,15 @@ impl Display for FunctionContractError {
                     "Function Contract `{path}` has invalid return guarantees"
                 )
             }
+            Self::InvalidStateTarget {
+                path,
+                symbol,
+                target,
+                detail,
+            } => write!(
+                formatter,
+                "Function Contract `{path}` has invalid state target `{target}` for `{symbol}`: {detail}"
+            ),
             Self::Serialization(detail) => {
                 write!(
                     formatter,

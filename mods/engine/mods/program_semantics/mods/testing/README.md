@@ -16,7 +16,7 @@ Free functions, associated functions, inherent and trait methods, typed interfac
 
 ### Excludes
 
-Verification of authored architecture, intended behavior, function correctness, refinement domains, effects, realized behavior, and semantic classes deliberately unsupported by PSM v2.
+Verification of authored architecture, intended behavior, function correctness, refinement domains, effects, realized behavior, and semantic classes deliberately unsupported by PSM v3.
 
 ## Relationships
 

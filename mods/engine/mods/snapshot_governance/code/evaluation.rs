@@ -21,6 +21,9 @@ use crate::rust_test_analyzer::RustTestFact;
 use crate::semantic_analysis::{PROGRAM_DOMAIN_RULE_ID, SemanticAnalysisEvaluation};
 use crate::snapshot::RepositorySnapshot;
 use crate::standard::StandardBundle;
+use crate::state_effect_analysis::{
+    PROGRAM_EFFECT_RULE_ID, PROGRAM_STATE_RULE_ID, StateEffectAnalysisEvaluation,
+};
 use crate::testing_boundary::{TEST_BOUNDARY_RULE_ID, evaluate_testing_boundaries};
 use crate::traceability::{TEST_TRACEABILITY_RULE_ID, evaluate_ccg_test_traceability};
 
@@ -172,6 +175,7 @@ pub struct CompleteEvaluationInputs<'a> {
     architecture_realization: &'a ArchitectureRealization,
     behavioral_semantics: &'a BehavioralSemanticsEvaluation,
     semantic_analysis: Option<&'a SemanticAnalysisEvaluation>,
+    state_effect_analysis: Option<&'a StateEffectAnalysisEvaluation>,
 }
 
 impl<'a> CompleteEvaluationInputs<'a> {
@@ -184,6 +188,7 @@ impl<'a> CompleteEvaluationInputs<'a> {
         architecture_realization: &'a ArchitectureRealization,
         behavioral_semantics: &'a BehavioralSemanticsEvaluation,
         semantic_analysis: Option<&'a SemanticAnalysisEvaluation>,
+        state_effect_analysis: Option<&'a StateEffectAnalysisEvaluation>,
     ) -> Self {
         Self {
             rust_tests,
@@ -192,6 +197,7 @@ impl<'a> CompleteEvaluationInputs<'a> {
             architecture_realization,
             behavioral_semantics,
             semantic_analysis,
+            state_effect_analysis,
         }
     }
 }
@@ -204,6 +210,7 @@ struct EvaluationInputs<'a> {
     architecture_realization: Option<&'a ArchitectureRealization>,
     behavioral_semantics: Option<&'a BehavioralSemanticsEvaluation>,
     semantic_analysis: Option<&'a SemanticAnalysisEvaluation>,
+    state_effect_analysis: Option<&'a StateEffectAnalysisEvaluation>,
 }
 
 impl<'a> From<CompleteEvaluationInputs<'a>> for EvaluationInputs<'a> {
@@ -215,6 +222,7 @@ impl<'a> From<CompleteEvaluationInputs<'a>> for EvaluationInputs<'a> {
             architecture_realization: Some(inputs.architecture_realization),
             behavioral_semantics: Some(inputs.behavioral_semantics),
             semantic_analysis: inputs.semantic_analysis,
+            state_effect_analysis: inputs.state_effect_analysis,
         }
     }
 }
@@ -316,8 +324,16 @@ fn evaluate_rule(
             |result| behavior_execution(rule_id, result),
         )),
         PROGRAM_DOMAIN_RULE_ID => Ok(inputs.semantic_analysis.map_or_else(
-            || unsupported_execution(rule_id, "Program-domain evaluation requires one snapshot-bound PSM and its distributed Function Contract v1 set."),
+            || unsupported_execution(rule_id, "Program-domain evaluation requires one snapshot-bound PSM and its distributed Function Contract v2 set."),
             |result| semantic_execution(rule_id, result),
+        )),
+        PROGRAM_STATE_RULE_ID => Ok(inputs.state_effect_analysis.map_or_else(
+            || unsupported_execution(rule_id, "Program-state evaluation requires one snapshot-bound PSM, Semantic Analysis result, State Contract set, and Function Contract v2 set."),
+            |result| state_effect_execution(rule_id, result, true),
+        )),
+        PROGRAM_EFFECT_RULE_ID => Ok(inputs.state_effect_analysis.map_or_else(
+            || unsupported_execution(rule_id, "Program-effect evaluation requires one snapshot-bound PSM and State/Effect Analysis result."),
+            |result| state_effect_execution(rule_id, result, false),
         )),
         ARCH_OWNERSHIP_RULE_ID => ownership_execution(rule_id, architecture, snapshot, edition),
         REPO_MODULE_RULE_ID => placement_execution(rule_id, snapshot, edition),
@@ -438,6 +454,37 @@ fn semantic_execution(
                 coverage.functions_analyzed(),
                 coverage.function_contracts(),
                 coverage.violations(),
+            ),
+        },
+        findings,
+    )
+}
+
+fn state_effect_execution(
+    rule_id: &str,
+    result: &StateEffectAnalysisEvaluation,
+    state_rule: bool,
+) -> (RuleExecution, Vec<CanonicalFinding>) {
+    let findings = if state_rule {
+        result.state_findings().to_vec()
+    } else {
+        result.effect_findings().to_vec()
+    };
+    let coverage = result.model().coverage();
+    (
+        RuleExecution {
+            rule_id: rule_id.into(),
+            state: if findings.is_empty() {
+                RuleExecutionState::Passed
+            } else {
+                RuleExecutionState::Failed
+            },
+            applicable: true,
+            findings: findings.len(),
+            detail: format!(
+                "State and Effect Analysis v1 evaluated {} function summary(ies) and produced {} supported contradiction(s) for this rule; unknown and unclassified semantics remain explicit.",
+                coverage.functions(),
+                findings.len(),
             ),
         },
         findings,
