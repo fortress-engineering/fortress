@@ -84,6 +84,17 @@ jobs:
           cmp "$first" "$second"
           cmp "$first" info/program_semantic_model.json
 
+      - name: Verify deterministic committed semantic analysis
+        shell: bash
+        run: |
+          first="$(mktemp)"
+          second="$(mktemp)"
+          trap 'rm -f "$first" "$second"' EXIT
+          cargo +1.97.1 --config data/cargo_config.toml run --quiet --manifest-path data/Cargo.toml -p fortress-cli -- semantic . --format json --output "$first"
+          cargo +1.97.1 --config data/cargo_config.toml run --quiet --manifest-path data/Cargo.toml -p fortress-cli -- semantic . --format json --output "$second"
+          cmp "$first" "$second"
+          cmp "$first" info/semantic_analysis.json
+
       - name: Run Fortress self-audit
         run: cargo +1.97.1 --config data/cargo_config.toml run --quiet --manifest-path data/Cargo.toml -p fortress-cli -- audit .
 
