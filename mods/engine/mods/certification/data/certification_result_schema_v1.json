@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:certification-result",
+  "title": "Fortress Snapshot Certification v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "schema_version", "profile", "subject", "status", "certification_digest", "evidence_graph_digest", "obligations", "summary", "trusted_assertion_dependencies"],
+  "properties": {
+    "$schema": { "const": "urn:fortress:schema:v1:certification-result" },
+    "schema_version": { "const": 1 },
+    "profile": { "type": "object" },
+    "subject": { "$ref": "#/$defs/digest" },
+    "status": { "enum": ["PASS", "FAIL", "MISSING", "STALE", "INVALID"] },
+    "certification_digest": { "$ref": "#/$defs/digest" },
+    "evidence_graph_digest": { "$ref": "#/$defs/digest" },
+    "obligations": { "type": "array", "items": { "type": "object" } },
+    "summary": { "type": "object" },
+    "trusted_assertion_dependencies": { "type": "array", "items": { "type": "string" }, "uniqueItems": true }
+  },
+  "$defs": { "digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" } }
+}

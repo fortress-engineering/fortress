@@ -1,0 +1,10 @@
+{
+  "$schema": "urn:fortress:schema:v1:certification-profile",
+  "schema_version": 1,
+  "id": "CERT-FULL-SNAPSHOT-V1",
+  "require_all_applicable_rules": true,
+  "require_all_requirement_tests": true,
+  "require_behavioral_realization": true,
+  "require_generated_verification": true,
+  "require_current_artifacts": true
+}

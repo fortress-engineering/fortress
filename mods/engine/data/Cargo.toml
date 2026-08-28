@@ -33,6 +33,10 @@ name = "behavioral_realization"
 path = "../mods/behavioral_realization/mods/testing/code/behavioral_realization.rs"
 
 [[test]]
+name = "certification"
+path = "../mods/certification/mods/testing/code/certification.rs"
+
+[[test]]
 name = "contract_coherency_graph"
 path = "../mods/contract_coherency/mods/testing/code/contract_coherency_graph.rs"
 

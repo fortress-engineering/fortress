@@ -364,7 +364,7 @@ fn help_discovers_only_implemented_commands() {
             .any(|line| line.trim_start().starts_with("audit "))
     );
     assert!(
-        !stdout
+        stdout
             .lines()
             .any(|line| line.trim_start().starts_with("certify "))
     );
@@ -373,11 +373,11 @@ fn help_discovers_only_implemented_commands() {
 /// `T-TF-CLI-0001-R03-003`
 /// Fortress requirement: TF-CLI-0001-R03
 #[test]
-fn unsupported_certification_command_fails() {
-    let output = run(&["certify"]);
+fn malformed_certification_invocation_fails_before_execution() {
+    let output = run(&["certify", "--format", "yaml"]);
     assert_eq!(output.status.code(), Some(2));
     assert!(output.stdout.is_empty());
-    assert!(String::from_utf8_lossy(&output.stderr).contains("unsupported command `certify`"));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("usage: fortress certify"));
 }
 
 /// `T-TF-CLI-0001-R03-004`
@@ -402,8 +402,8 @@ fn audit_success_renders_human_snapshot_report() {
         String::from_utf8_lossy(&output.stderr)
     );
     assert!(stdout.contains("Fortress Snapshot Audit"));
-    assert!(stdout.contains("PASS: 12"));
-    assert!(stdout.contains("Unsupported: 1"));
+    assert!(stdout.contains("PASS: 13"), "{stdout}");
+    assert!(stdout.contains("Unsupported: 0"), "{stdout}");
     assert!(stdout.contains("Architecture diagnostics:"));
     assert!(stdout.contains("Unsupported analysis:"));
     assert!(!stdout.contains("certification"));
@@ -763,7 +763,7 @@ fn aliases_resolve_to_registered_descriptors() {
 /// Fortress requirement: TF-CLI-0001-R01
 #[test]
 fn unimplemented_operation_is_absent() {
-    assert!(CommandRegistry::builtin().find("certify").is_none());
+    assert!(CommandRegistry::builtin().find("publish").is_none());
 }
 
 /// `T-TF-CLI-0001-R02-001`
@@ -785,8 +785,41 @@ fn no_arguments_render_help() {
 fn unknown_command_is_non_success() {
     let mut output = Vec::new();
     let mut error = Vec::new();
-    let status = fortress_cli::run(["certify"], &mut output, &mut error).expect("write succeeds");
+    let status = fortress_cli::run(["publish"], &mut output, &mut error).expect("write succeeds");
     assert_eq!(status, EXIT_USAGE);
     assert!(output.is_empty());
-    assert!(String::from_utf8_lossy(&error).contains("unsupported command `certify`"));
+    assert!(String::from_utf8_lossy(&error).contains("unsupported command `publish`"));
+}
+
+/// `T-TF-CLI-0001-R13-001`
+/// Fortress requirement: TF-CLI-0001-R13
+#[test]
+fn certification_command_is_registered_with_exact_profile_surface() {
+    let registry = CommandRegistry::builtin();
+    let descriptor = registry.find("certify").expect("certify registered");
+    assert_eq!(descriptor.id(), "CMD-CERTIFICATION-FULL-SNAPSHOT");
+    assert!(descriptor.usage().contains("--evidence-output"));
+    assert!(descriptor.usage().contains("--verified-bfg-output"));
+}
+
+/// `T-TF-CLI-0001-R13-002`
+/// Fortress requirement: TF-CLI-0001-R13
+#[test]
+fn certification_rejects_ambiguous_output_arguments_without_running_tests() {
+    let mut output = Vec::new();
+    let mut error = Vec::new();
+    let status = fortress_cli::run(
+        [
+            "certify",
+            "--evidence-output",
+            "one",
+            "--evidence-output",
+            "two",
+        ],
+        &mut output,
+        &mut error,
+    )
+    .expect("write succeeds");
+    assert_eq!(status, EXIT_USAGE);
+    assert!(String::from_utf8_lossy(&error).contains("usage: fortress certify"));
 }

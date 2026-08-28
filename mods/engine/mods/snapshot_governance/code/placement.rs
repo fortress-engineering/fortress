@@ -24,10 +24,11 @@ const ROOT_SPECIAL_FILES: [&str; 9] = [
     "LICENSE",
     "LICENSE.md",
 ];
-const ECOSYSTEM_FILENAMES: [&str; 3] = [
+const ECOSYSTEM_FILENAMES: [&str; 4] = [
     "Cargo.toml",
     "Cargo.lock",
     "realized_behavioral_flow_graph.json",
+    "verified_behavioral_flow_graph.json",
 ];
 
 /// Evaluates observed repository paths against the recursive Module grammar.

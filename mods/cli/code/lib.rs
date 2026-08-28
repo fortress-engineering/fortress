@@ -11,13 +11,16 @@
 use std::fs;
 use std::io::{self, Write};
 use std::path::PathBuf;
+use std::process::Command;
 
 use fortress_core::audit::{
     audit_repository, compile_repository_bfg, compile_repository_ccg,
-    compile_repository_environmental_analysis, compile_repository_information_flow_analysis,
-    compile_repository_psm, compile_repository_realized_bfg, compile_repository_semantic_analysis,
-    compile_repository_state_effect_analysis,
+    compile_repository_certification, compile_repository_environmental_analysis,
+    compile_repository_information_flow_analysis, compile_repository_psm,
+    compile_repository_realized_bfg, compile_repository_semantic_analysis,
+    compile_repository_state_effect_analysis, prepare_repository_certification_source,
 };
+use fortress_core::certification::{CertificationStatus, RustSuiteExecution};
 use fortress_core::contract_coherency::CcgCoherencyStatus;
 pub mod command;
 
@@ -72,6 +75,7 @@ where
         "CMD-STATE-EFFECT-ANALYSIS" => run_state_effect(&arguments[1..], output, error),
         "CMD-INFORMATION-FLOW" => run_information_flow(&arguments[1..], output, error),
         "CMD-ENVIRONMENTAL-ANALYSIS" => run_environmental(&arguments[1..], output, error),
+        "CMD-CERTIFICATION-FULL-SNAPSHOT" => run_certify(&arguments[1..], output, error),
         _ => {
             writeln!(
                 error,
@@ -81,6 +85,221 @@ where
             Ok(EXIT_USAGE)
         }
     }
+}
+
+#[derive(Clone, Copy)]
+enum CertificationOutputFormat {
+    Human,
+    Json,
+}
+
+struct CertificationArguments {
+    root: PathBuf,
+    format: CertificationOutputFormat,
+    evidence_output: Option<PathBuf>,
+    certification_output: Option<PathBuf>,
+    verified_bfg_output: Option<PathBuf>,
+}
+
+#[allow(clippy::too_many_lines)]
+fn run_certify<O: Write, E: Write>(
+    arguments: &[String],
+    output: &mut O,
+    error: &mut E,
+) -> io::Result<u8> {
+    let request = match parse_certification_arguments(arguments) {
+        Ok(value) => value,
+        Err(message) => {
+            writeln!(error, "{message}")?;
+            return Ok(EXIT_USAGE);
+        }
+    };
+    let before = match prepare_repository_certification_source(&request.root) {
+        Ok(value) => value,
+        Err(source_error) => {
+            writeln!(
+                error,
+                "certification source preparation failed: {source_error}"
+            )?;
+            return Ok(EXIT_USAGE);
+        }
+    };
+    let suite_passed = execute_canonical_rust_suite(&request.root, error)?;
+    let after = match prepare_repository_certification_source(&request.root) {
+        Ok(value) => value,
+        Err(source_error) => {
+            writeln!(
+                error,
+                "post-execution certification source preparation failed: {source_error}"
+            )?;
+            return Ok(EXIT_USAGE);
+        }
+    };
+    if before != after {
+        writeln!(
+            error,
+            "certification source or test inventory changed during local execution"
+        )?;
+        return Ok(EXIT_USAGE);
+    }
+    let products = match compile_repository_certification(
+        &request.root,
+        RustSuiteExecution {
+            executor: "fortress-local-rust-executor".into(),
+            executor_version: env!("CARGO_PKG_VERSION").into(),
+            toolchain: "1.97.1".into(),
+            certification_source_digest: before.digest,
+            test_inventory_digest: before.test_inventory_digest,
+            canonical_unfiltered: true,
+            passed: suite_passed,
+            eligible_test_ids: before.eligible_test_ids,
+            ignored_test_ids: before.ignored_test_ids,
+        },
+    ) {
+        Ok(value) => value,
+        Err(certification_error) => {
+            writeln!(
+                error,
+                "certification compilation failed: {certification_error}"
+            )?;
+            return Ok(EXIT_USAGE);
+        }
+    };
+    let evidence = products
+        .evidence_graph
+        .to_json_pretty()
+        .map_err(io::Error::other)?;
+    let certification = products
+        .certification
+        .to_json_pretty()
+        .map_err(io::Error::other)?;
+    let verified = products
+        .verified_bfg
+        .to_json_pretty()
+        .map_err(io::Error::other)?;
+    if let Some(path) = request.evidence_output {
+        fs::write(path, evidence)?;
+    }
+    if let Some(path) = request.certification_output {
+        fs::write(path, &certification)?;
+    }
+    if let Some(path) = request.verified_bfg_output {
+        fs::write(path, verified)?;
+    }
+    match request.format {
+        CertificationOutputFormat::Json => write!(output, "{certification}")?,
+        CertificationOutputFormat::Human => {
+            writeln!(output, "Fortress Snapshot Certification")?;
+            writeln!(output, "Profile: CERT-FULL-SNAPSHOT-V1")?;
+            writeln!(output, "Status: {:?}", products.certification.status())?;
+            writeln!(
+                output,
+                "Digest: {}",
+                products.certification.certification_digest()
+            )?;
+            writeln!(
+                output,
+                "Obligations: {}",
+                products.certification.summary().obligations
+            )?;
+        }
+    }
+    Ok(
+        if products.certification.status() == CertificationStatus::Pass {
+            EXIT_SUCCESS
+        } else {
+            EXIT_VIOLATION
+        },
+    )
+}
+
+fn execute_canonical_rust_suite<E: Write>(root: &PathBuf, error: &mut E) -> io::Result<bool> {
+    let cargo = std::env::var_os("CARGO")
+        .map(PathBuf::from)
+        .or_else(|| {
+            std::env::var_os("USERPROFILE")
+                .map(PathBuf::from)
+                .map(|home| home.join(".cargo/bin/cargo.exe"))
+                .filter(|path| path.is_file())
+        })
+        .unwrap_or_else(|| PathBuf::from("cargo"));
+    writeln!(
+        error,
+        "[fortress-certify] executing canonical local Rust suite"
+    )?;
+    let status = Command::new(cargo)
+        .current_dir(root)
+        .env("RUSTUP_TOOLCHAIN", "1.97.1")
+        .arg("--config")
+        .arg("data/cargo_config.toml")
+        .arg("test")
+        .arg("--manifest-path")
+        .arg("data/Cargo.toml")
+        .arg("--workspace")
+        .arg("--all-targets")
+        .arg("--all-features")
+        .status()?;
+    Ok(status.success())
+}
+
+fn parse_certification_arguments(
+    arguments: &[String],
+) -> Result<CertificationArguments, &'static str> {
+    const USAGE: &str = "usage: fortress certify [path] [--format human|json] [--evidence-output path] [--certification-output path] [--verified-bfg-output path]";
+    let mut root = None;
+    let mut format = CertificationOutputFormat::Human;
+    let mut evidence_output = None;
+    let mut certification_output = None;
+    let mut verified_bfg_output = None;
+    let mut index = 0;
+    while index < arguments.len() {
+        let argument = &arguments[index];
+        if argument == "--format" {
+            index += 1;
+            format = match arguments.get(index).map(String::as_str) {
+                Some("human") => CertificationOutputFormat::Human,
+                Some("json") => CertificationOutputFormat::Json,
+                _ => return Err(USAGE),
+            };
+        } else if let Some(value) = argument.strip_prefix("--format=") {
+            format = match value {
+                "human" => CertificationOutputFormat::Human,
+                "json" => CertificationOutputFormat::Json,
+                _ => return Err(USAGE),
+            };
+        } else if [
+            "--evidence-output",
+            "--certification-output",
+            "--verified-bfg-output",
+        ]
+        .contains(&argument.as_str())
+        {
+            index += 1;
+            let Some(path) = arguments.get(index).map(PathBuf::from) else {
+                return Err(USAGE);
+            };
+            let slot = match argument.as_str() {
+                "--evidence-output" => &mut evidence_output,
+                "--certification-output" => &mut certification_output,
+                _ => &mut verified_bfg_output,
+            };
+            if slot.replace(path).is_some() {
+                return Err(USAGE);
+            }
+        } else if argument.starts_with('-') || root.is_some() {
+            return Err(USAGE);
+        } else {
+            root = Some(PathBuf::from(argument));
+        }
+        index += 1;
+    }
+    Ok(CertificationArguments {
+        root: root.unwrap_or_else(|| PathBuf::from(".")),
+        format,
+        evidence_output,
+        certification_output,
+        verified_bfg_output,
+    })
 }
 
 fn run_realized_bfg<O: Write, E: Write>(

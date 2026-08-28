@@ -1,0 +1,132 @@
+{
+  "$schema": "urn:fortress:schema:v2:module-contract",
+  "schema_version": 2,
+  "id": "AF-CERTIFICATION-0001",
+  "display_name": "Certification",
+  "provides": [
+    {
+      "id": "CAP-CERTIFICATION",
+      "version": "0.1.0",
+      "visibility": "project"
+    }
+  ],
+  "requires": [
+    {
+      "provider": "AF-BEHAVIORAL-REALIZATION-0001",
+      "capability": "CAP-BEHAVIORAL-REALIZATION",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-BEHAVIORAL-SEMANTICS-0001",
+      "capability": "CAP-BEHAVIORAL-SEMANTICS",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-CONTRACT-COHERENCY-0001",
+      "capability": "CAP-CONTRACT-COHERENCY",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-ENVIRONMENTAL-SEMANTICS-0001",
+      "capability": "CAP-ENVIRONMENTAL-SEMANTICS",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-FINDING-MODEL-0001",
+      "capability": "CAP-FINDING-MODEL",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-INFORMATION-FLOW-0001",
+      "capability": "CAP-INFORMATION-FLOW",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-PROGRAM-SEMANTICS-0001",
+      "capability": "CAP-PROGRAM-SEMANTICS",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-REPOSITORY-OBSERVATION-0001",
+      "capability": "CAP-REPOSITORY-OBSERVATION",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-SEMANTIC-ANALYSIS-0001",
+      "capability": "CAP-SEMANTIC-ANALYSIS",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-STANDARD-REGISTRY-0001",
+      "capability": "CAP-STANDARD-REGISTRY",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-STATE-EFFECT-ANALYSIS-0001",
+      "capability": "CAP-STATE-EFFECT-ANALYSIS",
+      "version": "^0.1.0"
+    }
+  ],
+  "relationships": [],
+  "constraints": [],
+  "guarantees": [
+    {
+      "id": "GUA-CERTIFICATION-EVIDENCE-INTEGRITY",
+      "subject": {
+        "kind": "capability",
+        "id": "CAP-CERTIFICATION"
+      },
+      "requirements": [
+        "AF-CERTIFICATION-0001-R01",
+        "AF-CERTIFICATION-0001-R02",
+        "AF-CERTIFICATION-0001-R03",
+        "AF-CERTIFICATION-0001-R04"
+      ]
+    }
+  ],
+  "features": [
+    {
+      "id": "AF-CERTIFICATION-0001",
+      "version": "0.1.0",
+      "requirements": [
+        {
+          "id": "AF-CERTIFICATION-0001-R01",
+          "statement": "Certification constructs and validates an immutable deterministic content-addressed Evidence DAG whose node identities exclude their own IDs, whose dependencies are complete and acyclic, and whose affected closure preserves unrelated evidence.",
+          "tests": [
+            "T-AF-CERTIFICATION-0001-R01-001",
+            "T-AF-CERTIFICATION-0001-R01-002",
+            "T-AF-CERTIFICATION-0001-R01-003"
+          ]
+        },
+        {
+          "id": "AF-CERTIFICATION-0001-R02",
+          "statement": "Certification evaluates the canonical full-snapshot profile with exact INVALID, FAIL, STALE, MISSING, and PASS precedence while unsupported mandatory rule semantics remain missing rather than passing.",
+          "tests": [
+            "T-AF-CERTIFICATION-0001-R02-001",
+            "T-AF-CERTIFICATION-0001-R02-002",
+            "T-AF-CERTIFICATION-0001-R02-003"
+          ]
+        },
+        {
+          "id": "AF-CERTIFICATION-0001-R03",
+          "statement": "Certification derives Requirement and generated-scenario evidence only from a successful current canonical unfiltered eligible Rust suite, validates distributed Testing-boundary bindings, and preserves trusted assertions as a distinct evidence class.",
+          "tests": [
+            "T-AF-CERTIFICATION-0001-R03-001",
+            "T-AF-CERTIFICATION-0001-R03-002",
+            "T-AF-CERTIFICATION-0001-R03-003"
+          ]
+        },
+        {
+          "id": "AF-CERTIFICATION-0001-R04",
+          "statement": "Certification derives a recursion-free source identity from one registered generated-projection exclusion set and deterministically projects Intended and Realized behavior into evidence-aware Verified BFG states without attributing Feature tests to exact edges absent a binding.",
+          "tests": [
+            "T-AF-CERTIFICATION-0001-R04-001",
+            "T-AF-CERTIFICATION-0001-R04-002",
+            "T-AF-CERTIFICATION-0001-R04-003"
+          ]
+        }
+      ]
+    }
+  ],
+  "behavior": []
+}

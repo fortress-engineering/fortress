@@ -26,6 +26,16 @@ pub enum RustTestClassification {
     Infrastructure,
 }
 
+/// Canonical execution eligibility of a source-observed Rust test.
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum RustTestEligibility {
+    /// The test belongs to an unfiltered canonical suite execution.
+    Enabled,
+    /// Rust's `#[ignore]` excludes the test from ordinary suite execution.
+    Ignored,
+}
+
 impl RustTestClassification {
     /// Returns the canonical serialized classification spelling.
     #[must_use]
@@ -45,6 +55,7 @@ pub struct RustTestFact {
     path: String,
     symbol: String,
     classification: RustTestClassification,
+    eligibility: RustTestEligibility,
     declared_requirement: Option<String>,
 }
 
@@ -60,6 +71,29 @@ impl RustTestFact {
         path: impl Into<String>,
         symbol: impl Into<String>,
         classification: RustTestClassification,
+        declared_requirement: Option<String>,
+    ) -> Result<Self, RustAnalyzerError> {
+        Self::new_with_eligibility(
+            id,
+            path,
+            symbol,
+            classification,
+            RustTestEligibility::Enabled,
+            declared_requirement,
+        )
+    }
+
+    /// Creates a validated analyzer fact with explicit execution eligibility.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`RustAnalyzerError`] under the same conditions as [`Self::new`].
+    pub fn new_with_eligibility(
+        id: impl Into<String>,
+        path: impl Into<String>,
+        symbol: impl Into<String>,
+        classification: RustTestClassification,
+        eligibility: RustTestEligibility,
         declared_requirement: Option<String>,
     ) -> Result<Self, RustAnalyzerError> {
         let id = id.into();
@@ -85,6 +119,7 @@ impl RustTestFact {
             path,
             symbol,
             classification,
+            eligibility,
             declared_requirement,
         })
     }
@@ -111,6 +146,12 @@ impl RustTestFact {
     #[must_use]
     pub const fn classification(&self) -> RustTestClassification {
         self.classification
+    }
+
+    /// Returns whether the source-observed test executes in the canonical suite.
+    #[must_use]
+    pub const fn eligibility(&self) -> RustTestEligibility {
+        self.eligibility
     }
 
     /// Returns an explicit source-declared requirement when present.
@@ -253,7 +294,22 @@ impl<'ast> Visit<'ast> for TestVisitor<'_> {
             let symbol = function.sig.ident.to_string();
             match metadata_from_attributes(&function.attrs, &symbol).and_then(
                 |(id, classification, requirement)| {
-                    RustTestFact::new(id, self.path, symbol, classification, requirement)
+                    RustTestFact::new_with_eligibility(
+                        id,
+                        self.path,
+                        symbol,
+                        classification,
+                        if function
+                            .attrs
+                            .iter()
+                            .any(|attribute| attribute.path().is_ident("ignore"))
+                        {
+                            RustTestEligibility::Ignored
+                        } else {
+                            RustTestEligibility::Enabled
+                        },
+                        requirement,
+                    )
                 },
             ) {
                 Ok(fact) => self.facts.push(fact),

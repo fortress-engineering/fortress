@@ -31,7 +31,7 @@ SEMANTIC_VERSION = "quality-certificate-v1"
 PROFILE_ID = "fortress-complete-local-v1"
 TOOLCHAIN = "1.97.1"
 
-ARTIFACTS = (
+SEMANTIC_ARTIFACTS = (
     ("ccg", "info/contract_coherency_graph.json"),
     ("bfg", "info/behavioral_flow_graph.json"),
     ("psm", "info/program_semantic_model.json"),
@@ -42,18 +42,30 @@ ARTIFACTS = (
     ("realized-bfg", "info/realized_behavioral_flow_graph.json"),
 )
 
+CERTIFICATION_ARTIFACTS = (
+    ("evidence-graph", "info/evidence_graph.json"),
+    ("certification", "info/certification.json"),
+    ("verified-bfg", "info/verified_behavioral_flow_graph.json"),
+)
+
+ARTIFACTS = SEMANTIC_ARTIFACTS + CERTIFICATION_ARTIFACTS
+
 REQUIRED_GATE_IDS = (
     "ARTIFACT_BFG",
     "ARTIFACT_CCG",
+    "ARTIFACT_CERTIFICATION",
     "ARTIFACT_ENVIRONMENTAL",
+    "ARTIFACT_EVIDENCE_GRAPH",
     "ARTIFACT_INFORMATION_FLOW",
     "ARTIFACT_PSM",
     "ARTIFACT_REALIZED_BFG",
     "ARTIFACT_SEMANTIC",
     "ARTIFACT_STATE_EFFECT",
+    "ARTIFACT_VERIFIED_BFG",
     "AUDIT_JSON_DETERMINISM",
     "CLIPPY",
     "FORMAT",
+    "FULL_PROFILE_CERTIFICATION",
     "RUSTDOC",
     "SCHEMA_AND_STANDARD",
     "SELF_AUDIT",
@@ -132,6 +144,18 @@ def cargo_base() -> list[str]:
         "--config",
         "data/cargo_config.toml",
     ]
+
+
+def remove_transient_cargo_lock(root: Path) -> None:
+    """Remove Cargo's noncanonical Clippy lock projection on Windows."""
+    transient = root / "data" / "Cargo.lock"
+    canonical = root / "info" / "Cargo.lock"
+    if transient.exists():
+        if not canonical.is_file():
+            raise CertificateError(
+                "refusing to remove transient Cargo.lock without canonical info/Cargo.lock"
+            )
+        transient.unlink()
 
 
 def command_text(parts: Iterable[str]) -> str:
@@ -248,6 +272,7 @@ def issue(root: Path) -> dict[str, Any]:
             "warnings",
         ]
         run_command(root, clippy, environment)
+        remove_transient_cargo_lock(root)
         pass_gate(gates, "CLIPPY", clippy)
 
         schema = base + [
@@ -284,7 +309,7 @@ def issue(root: Path) -> dict[str, Any]:
         pass_gate(gates, "WORKSPACE_TESTS", tests)
 
         artifact_records: list[dict[str, str]] = []
-        for command_name, committed_relative in ARTIFACTS:
+        for command_name, committed_relative in SEMANTIC_ARTIFACTS:
             first = temporary / f"{command_name}-first.json"
             second = temporary / f"{command_name}-second.json"
             generator = base + [
@@ -316,6 +341,68 @@ def issue(root: Path) -> dict[str, Any]:
                     "digest": sha256_bytes(first_bytes),
                 }
             )
+
+        certification_outputs: list[dict[str, Path]] = []
+        for run_name in ("first", "second"):
+            outputs = {
+                "evidence-graph": temporary / f"evidence-graph-{run_name}.json",
+                "certification": temporary / f"certification-{run_name}.json",
+                "verified-bfg": temporary / f"verified-bfg-{run_name}.json",
+            }
+            certify = base + [
+                "run",
+                "--quiet",
+                "--manifest-path",
+                "data/Cargo.toml",
+                "-p",
+                "fortress-cli",
+                "--",
+                "certify",
+                ".",
+                "--format",
+                "json",
+                "--evidence-output",
+                str(outputs["evidence-graph"]),
+                "--certification-output",
+                str(outputs["certification"]),
+                "--verified-bfg-output",
+                str(outputs["verified-bfg"]),
+            ]
+            run_command(root, certify, environment, capture=True)
+            certification_outputs.append(outputs)
+
+        for command_name, committed_relative in CERTIFICATION_ARTIFACTS:
+            first_bytes = certification_outputs[0][command_name].read_bytes()
+            second_bytes = certification_outputs[1][command_name].read_bytes()
+            if first_bytes != second_bytes:
+                raise CertificateError(
+                    f"nondeterministic certification artifact: {command_name}"
+                )
+            committed = root / committed_relative
+            if first_bytes != committed.read_bytes():
+                raise CertificateError(f"stale committed artifact: {committed_relative}")
+            pass_gate(
+                gates,
+                f"ARTIFACT_{command_name.upper().replace('-', '_')}",
+                certify,
+            )
+            artifact_records.append(
+                {
+                    "path": committed_relative,
+                    "digest": sha256_bytes(first_bytes),
+                }
+            )
+
+        certification_document = json.loads(
+            certification_outputs[0]["certification"].read_text(encoding="utf-8")
+        )
+        if (
+            certification_document.get("status") != "PASS"
+            or certification_document.get("profile", {}).get("id")
+            != "CERT-FULL-SNAPSHOT-V1"
+        ):
+            raise CertificateError("full-snapshot Certification is not PASS")
+        pass_gate(gates, "FULL_PROFILE_CERTIFICATION", certify)
 
         audit = base + [
             "run",

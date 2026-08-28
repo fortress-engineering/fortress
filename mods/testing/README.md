@@ -6,7 +6,7 @@ This verification Module exists to prove only the bootstrap-governance and compl
 
 ## Responsibility
 
-Validate the root-owned self-model, command-declaration agreement, complete contract resolution, truthful non-certification state, and cross-subsystem repository audit lifecycle without claiming evidence for descendant Features.
+Validate the root-owned self-model, command-declaration agreement, complete contract resolution, derived-certification authority boundary, and cross-subsystem repository audit lifecycle without claiming evidence for descendant Features.
 
 ## Scope
 
@@ -30,7 +30,7 @@ Uses provider-independent loaders and evaluators while checking the complete sel
 
 **Types:** `verifies`
 
-Verifies root declarations, physical Module structure, ownership, truthful certification state, and the intended audit behavior introduced at the CLI/Engine lowest common Module scope.
+Verifies root declarations, physical Module structure, ownership, derived certification placement, and the intended audit behavior introduced at the CLI/Engine lowest common Module scope.
 
 ### [CLI](../cli/README.md)
 
@@ -40,4 +40,4 @@ Uses the CLI registry contract when checking project-wide command declaration ag
 
 ## Guarantees
 
-Self-verification is deterministic, operates on the declared repository root, and never upgrades development evidence into certification.
+Self-verification is deterministic, operates on the declared repository root, and authors only explicit obligation bindings; Certification alone reconciles those bindings with current execution evidence.

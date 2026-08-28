@@ -22,10 +22,6 @@ Maintainers update Data through reviewed semantic changes; schema versions chang
 
 ## Files
 
-### [`certification_schema_v1.json`](../data/certification_schema_v1.json)
-
-Defines the version-one machine representation and validation boundary for certification records owned by this Module.
-
 ### [`change_schema_v1.json`](../data/change_schema_v1.json)
 
 Defines the version-one machine representation and validation boundary for change records owned by this Module.

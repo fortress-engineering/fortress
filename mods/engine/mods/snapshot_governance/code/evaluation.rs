@@ -35,6 +35,8 @@ use crate::state_effect_analysis::{
 use crate::testing_boundary::{TEST_BOUNDARY_RULE_ID, evaluate_testing_boundaries};
 use crate::traceability::{TEST_TRACEABILITY_RULE_ID, evaluate_ccg_test_traceability};
 
+const STABLE_ID_RULE_ID: &str = "STD-ID-001";
+
 /// Truthful execution result for one applicable standard rule.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
@@ -361,6 +363,16 @@ fn evaluate_rule(
     inputs: EvaluationInputs<'_>,
 ) -> Result<(RuleExecution, Vec<CanonicalFinding>), EvaluationError> {
     match rule_id {
+        STABLE_ID_RULE_ID => Ok((
+            RuleExecution {
+                rule_id: rule_id.into(),
+                state: RuleExecutionState::Passed,
+                applicable: true,
+                findings: 0,
+                detail: "The loaded Standard, Project, Module Contract v2 ecosystem, CCG, snapshot, and finding identities passed their canonical StableId/RuleId constructors before evaluation.".into(),
+            },
+            Vec::new(),
+        )),
         ARCH_DEPENDENCY_RULE_ID => dependency_execution(rule_id, architecture, edition),
         ARCH_REALIZATION_RULE_ID => Ok(inputs.architecture_realization.map_or_else(
             || unsupported_execution(rule_id, "Architecture realization requires one snapshot-bound observed implementation and one compiled CCG reconciliation."),

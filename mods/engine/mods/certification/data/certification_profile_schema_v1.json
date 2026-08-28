@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:certification-profile",
+  "title": "Fortress Certification Profile v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "schema_version", "id", "require_all_applicable_rules", "require_all_requirement_tests", "require_behavioral_realization", "require_generated_verification", "require_current_artifacts"],
+  "properties": {
+    "$schema": { "const": "urn:fortress:schema:v1:certification-profile" },
+    "schema_version": { "const": 1 },
+    "id": { "type": "string", "pattern": "^CERT-[A-Z0-9-]+$" },
+    "require_all_applicable_rules": { "type": "boolean" },
+    "require_all_requirement_tests": { "type": "boolean" },
+    "require_behavioral_realization": { "type": "boolean" },
+    "require_generated_verification": { "type": "boolean" },
+    "require_current_artifacts": { "type": "boolean" }
+  }
+}

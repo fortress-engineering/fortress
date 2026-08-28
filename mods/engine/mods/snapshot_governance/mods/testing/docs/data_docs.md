@@ -93,3 +93,7 @@ Defines a multi-level ecosystem where atomic, compositional, and root Features a
 ### [`testing_simple.json`](../data/testing_simple.json)
 
 Defines a compact provider, CLI, and root utility ecosystem with exact recursive Testing ownership and legitimate unmapped infrastructure evidence.
+
+### [`verification_bindings.json`](../data/verification_bindings.json)
+
+Binds current Snapshot Governance environmental verification obligations to exact parent-local Test IDs without claiming those tests executed.

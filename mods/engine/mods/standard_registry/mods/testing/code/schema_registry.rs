@@ -35,7 +35,7 @@ fn registered_schemas_are_unique_json_schema_documents() {
         .expect("schema manifest must contain a schemas array");
     let mut identities = HashSet::with_capacity(paths.len());
 
-    assert_eq!(paths.len(), 26);
+    assert_eq!(paths.len(), 30);
     for path in paths {
         let relative = path.as_str().expect("schema path must be a string");
         let schema = read_json(relative);
@@ -49,6 +49,26 @@ fn registered_schemas_are_unique_json_schema_documents() {
         assert!(
             identities.insert(identity.to_owned()),
             "schema identity `{identity}` is duplicated"
+        );
+    }
+}
+
+/// `T-AF-STANDARD-REGISTRY-0001-R05-001`
+/// Fortress requirement: AF-STANDARD-REGISTRY-0001-R05
+#[test]
+fn full_snapshot_certification_profile_cannot_hide_mandatory_evidence() {
+    let profile = read_json("mods/engine/mods/standard_registry/data/cert_full_snapshot_v1.json");
+    assert_eq!(profile["id"], "CERT-FULL-SNAPSHOT-V1");
+    for property in [
+        "require_all_applicable_rules",
+        "require_all_requirement_tests",
+        "require_behavioral_realization",
+        "require_generated_verification",
+        "require_current_artifacts",
+    ] {
+        assert_eq!(
+            profile[property], true,
+            "full profile weakened `{property}`"
         );
     }
 }

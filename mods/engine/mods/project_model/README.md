@@ -6,17 +6,17 @@ The Project Model exists to hold operational project configuration that is neith
 
 ## Responsibility
 
-Load and validate root operational configuration plus the remaining change and certification record schemas owned by the project-model boundary.
+Load and validate root operational configuration plus the remaining change-record schema owned by the project-model boundary.
 
 ## Scope
 
 ### Includes
 
-Observation exclusions and schema contracts for operational project, change, and certification record families.
+Observation exclusions and schema contracts for operational project and change record families.
 
 ### Excludes
 
-Module identity, standard selection, capability and Feature authority, physical containment, observed repository facts, and generated certification evidence.
+Module identity, standard selection, capability and Feature authority, physical containment, observed repository facts, and generated certification evidence owned by Certification.
 
 ## Relationships
 

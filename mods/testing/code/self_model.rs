@@ -1,13 +1,13 @@
 //! Repository-level evidence for Fortress's initial self-governance model.
 //!
 //! These tests prove structural agreement among current declarations and code.
-//! They do not create content-addressed certification evidence or a PASS claim.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 
 use fortress_cli::command::CommandRegistry;
+use fortress_core::certification::GENERATED_CERTIFICATION_PROJECTIONS;
 use fortress_core::contract_coherency::{
     CcgObservedTestFact, ContractStandardIndex, compile_contract_coherency_graph,
 };
@@ -77,14 +77,9 @@ fn declared_commands_match_the_implemented_registry() {
 /// `T-AF-BOOTSTRAP-GOVERNANCE-0001-R01-003`
 /// Fortress requirement: AF-BOOTSTRAP-GOVERNANCE-0001-R01
 #[test]
-fn certification_scaffold_makes_no_false_pass_claim() {
-    let certification = read_json("data/certification.json");
-    assert_eq!(certification["claim"], "NOT CERTIFIED");
-    assert!(
-        array_member(&certification, "units")
-            .iter()
-            .all(|unit| unit["status"] == "MISSING" && unit["evidence"].is_null())
-    );
+fn generated_certification_is_not_authored_project_data() {
+    assert!(!repository_root().join("data/certification.json").exists());
+    assert!(GENERATED_CERTIFICATION_PROJECTIONS.contains(&"info/certification.json"));
 }
 
 /// `T-AF-BOOTSTRAP-GOVERNANCE-0001-R02-001`
@@ -155,14 +150,14 @@ fn live_contract_v2_ecosystem_resolves_completely() {
         "live CCG must be coherent: {:#?}",
         resolution.violations()
     );
-    assert_eq!(resolved.modules().len(), 34);
-    assert_eq!(resolved.capabilities().len(), 17);
-    assert_eq!(resolved.features().len(), 17);
-    assert_eq!(resolved.requirements().len(), 73);
-    assert_eq!(resolved.guarantees().len(), 5);
+    assert_eq!(resolved.modules().len(), 36);
+    assert_eq!(resolved.capabilities().len(), 18);
+    assert_eq!(resolved.features().len(), 18);
+    assert_eq!(resolved.requirements().len(), 80);
+    assert_eq!(resolved.guarantees().len(), 6);
     assert_eq!(resolved.checkpoints().len(), 10);
-    assert_eq!(resolved.direct_requirements().len(), 110);
-    assert_eq!(resolved.relationships().len(), 16);
+    assert_eq!(resolved.direct_requirements().len(), 126);
+    assert_eq!(resolved.relationships().len(), 17);
     assert!(
         resolved
             .modules()

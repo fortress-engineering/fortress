@@ -2,11 +2,11 @@
 
 ## Purpose
 
-Fortress exists to make declared engineering coherence executable against an exact repository state while keeping standard meaning, project claims, observations, findings, and future certification evidence distinct.
+Fortress exists to make declared engineering coherence executable against an exact repository state while keeping standard meaning, project claims, observations, findings, proof, execution evidence, and certification distinct.
 
 ## Responsibility
 
-The root Module governs Fortress as one repository: its contract selects the project identity and standard interpretation, owns the complete multi-Module repository audit Feature, owns root operational Data and reproducibility Info, composes the provider-independent Engine, native CLI, and whole-repository verification, and states development authority without turning audit success into certification.
+The root Module governs Fortress as one repository: its contract selects the project identity and standard interpretation, owns the complete multi-Module repository audit Feature, owns root operational Data and reproducibility Info, and composes the provider-independent Engine, native CLI, and whole-repository verification. Certification remains a separate exact-profile conclusion backed by current content-addressed proof and execution evidence.
 
 ## Scope
 
@@ -16,7 +16,7 @@ Root ecosystem interpretation, toolchain and workspace inputs; the generated dep
 
 ### Excludes
 
-License selection, stable 1.0 certification, onboarding and temporal workflow execution, provider-hosted jobs, deployment or release orchestration, persistent runtime services, standard-upgrade planning, and cryptographic attestation remain outside the implemented repository responsibility.
+License selection, stable 1.0 release certification, onboarding and temporal workflow execution, provider-hosted jobs, deployment or release orchestration, persistent runtime services, standard-upgrade planning, cryptographic signing, and public attestation remain outside the implemented repository responsibility.
 
 ## Relationships
 
@@ -24,4 +24,4 @@ This Module declares no outbound architectural relationships.
 
 ## Guarantees
 
-The repository keeps authored machine authority, observed facts, human explanation, derived CCG architecture, derived Intended BFG behavior, derived PSM executable semantics, derived value/state/effect/information-flow/environmental consequences, coverage-aware Realized BFG reconciliation, local quality-gate evidence, and future release certification distinguishable; audits and every derived model are deterministic and never labeled runtime trace evidence, verified behavior, release certification, total program safety, comprehensive fault-tolerance proof, or program correctness; long semantic gates issue a content-addressed local certificate, hosted CI verifies its PASS claims and freshness stamps without rerunning them, and the certificate explicitly admits that digest stamping alone is not authenticated antiforgery; build output remains outside the governed tree; development changes stay on dev while main remains owner-controlled.
+The repository keeps authored machine authority, observed facts, human explanation, derived CCG architecture, Intended BFG behavior, PSM executable semantics, value/state/effect/information-flow/environmental consequences, Realized BFG reconciliation, content-addressed evidence, exact-snapshot Certification, Verified BFG projection, and local quality-gate evidence distinguishable. Long semantic gates execute and certify locally; hosted CI verifies PASS claims, source/artifact freshness fingerprints, and digest stamps without rerunning them. Digest stamping is tamper-evident but not an authenticated cryptographic signature. Build output remains outside the governed tree; development changes stay on dev while main remains owner-controlled.

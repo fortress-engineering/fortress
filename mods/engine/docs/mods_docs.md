@@ -22,6 +22,10 @@ Compiles CCG-preserved distributed checkpoints into deterministic intended Featu
 
 Compiles distributed contracts, containment, standard logic, and verification declarations into the deterministic semantic graph shared by downstream evaluators.
 
+### [Certification](../mods/certification/README.md)
+
+Constructs immutable content-addressed evidence, evaluates exact-snapshot certification profiles, and projects intended and realized behavior into evidence-aware Verified BFG states.
+
 ### [Environmental Semantics](../mods/environmental_semantics/README.md)
 
 Composes declared nondeterministic external outcomes with the canonical program semantic stack and checks handling, retry, duplicate-delivery, and bounded recovery obligations.

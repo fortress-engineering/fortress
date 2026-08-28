@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:evidence-graph",
+  "title": "Fortress Evidence Graph v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "schema_version", "subject", "standard", "profile", "nodes", "root_obligations", "coverage", "provenance"],
+  "properties": {
+    "$schema": { "const": "urn:fortress:schema:v1:evidence-graph" },
+    "schema_version": { "const": 1 },
+    "subject": { "$ref": "#/$defs/digest" },
+    "standard": { "type": "object", "required": ["id", "edition"], "properties": { "id": { "type": "string" }, "edition": { "type": "string" } } },
+    "profile": { "type": "object", "required": ["id", "version"], "properties": { "id": { "type": "string" }, "version": { "const": 1 } } },
+    "nodes": { "type": "array", "items": { "$ref": "#/$defs/node" } },
+    "root_obligations": { "type": "array", "items": { "$ref": "#/$defs/digest" }, "uniqueItems": true },
+    "coverage": { "type": "object" },
+    "provenance": { "type": "array", "items": { "type": "string" } }
+  },
+  "$defs": {
+    "digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "node": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "subject", "result", "inputs", "producer", "producer_semantic_version", "evidence_class", "payload"],
+      "properties": {
+        "id": { "$ref": "#/$defs/digest" },
+        "kind": { "type": "string", "minLength": 1 },
+        "subject": { "type": "string", "minLength": 1 },
+        "result": { "enum": ["PASS", "FAIL", "UNSUPPORTED", "INVALID", "OBSERVED", "ASSERTED"] },
+        "inputs": { "type": "array", "items": { "$ref": "#/$defs/digest" }, "uniqueItems": true },
+        "producer": { "type": "string", "minLength": 1 },
+        "producer_semantic_version": { "type": "string", "minLength": 1 },
+        "evidence_class": { "enum": ["AUTHORITY", "OBSERVATION", "STATIC_PROOF", "EXECUTED_TEST", "EXECUTED_SCENARIO", "TRUSTED_ASSERTION", "AGGREGATE"] },
+        "payload": {}
+      }
+    }
+  }
+}

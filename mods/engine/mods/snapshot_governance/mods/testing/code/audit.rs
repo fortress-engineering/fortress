@@ -2,7 +2,7 @@
 
 use std::path::{Path, PathBuf};
 
-use fortress_core::audit::audit_repository;
+use fortress_core::audit::{audit_repository, compile_repository_environmental_analysis};
 
 fn repository_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..")
@@ -14,10 +14,10 @@ fn repository_root() -> PathBuf {
 fn fortress_self_audit_passes_every_implemented_rule() {
     let result = audit_repository(repository_root()).expect("Fortress self-audit completes");
     assert!(result.is_success());
-    assert_eq!(result.summary().rules_evaluated(), 18);
-    assert_eq!(result.summary().passed(), 18);
+    assert_eq!(result.summary().rules_evaluated(), 19);
+    assert_eq!(result.summary().passed(), 19);
     assert_eq!(result.summary().failed(), 0);
-    assert_eq!(result.summary().unsupported(), 1);
+    assert_eq!(result.summary().unsupported(), 0);
     assert!(result.findings().is_empty());
     assert!(
         result
@@ -25,6 +25,27 @@ fn fortress_self_audit_passes_every_implemented_rule() {
             .contains(&"capability_to_symbol_realization".to_owned())
     );
     assert_eq!(result.is_success(), result.findings().is_empty());
+}
+
+/// `T-AF-SNAPSHOT-GOVERNANCE-0001-R14-001`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R14
+#[test]
+fn filesystem_boundary_success_and_failure_scenarios_are_current() {
+    let evaluation = compile_repository_environmental_analysis(repository_root())
+        .expect("self environmental analysis compiles");
+    let ids = evaluation
+        .model()
+        .failure_test_obligations()
+        .iter()
+        .map(|obligation| {
+            serde_json::to_value(obligation).expect("obligation serializes")["id"]
+                .as_str()
+                .expect("obligation ID")
+                .to_owned()
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(ids, ["SCN-5A016EDD618E626E", "SCN-E881A0DBF2A76CE4"]);
+    assert!(evaluation.environment_findings().is_empty());
 }
 
 /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R13-001`

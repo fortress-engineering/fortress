@@ -12,6 +12,11 @@
   ],
   "requires": [
     {
+      "provider": "AF-CERTIFICATION-0001",
+      "capability": "CAP-CERTIFICATION",
+      "version": "^0.1.0"
+    },
+    {
       "provider": "AF-CORE-0001",
       "capability": "CAP-FORTRESS-ENGINE",
       "version": "^0.1.0"
@@ -125,6 +130,14 @@
           "tests": [
             "T-TF-CLI-0001-R12-001",
             "T-TF-CLI-0001-R12-002"
+          ]
+        },
+        {
+          "id": "TF-CLI-0001-R13",
+          "statement": "The native fortress certify command brackets and executes the exact unfiltered Rust workspace/all-target/all-feature suite, rejects source mutation, compiles each semantic model once, and emits deterministic Evidence Graph, Certification, and Verified BFG products without remote evidence or signatures.",
+          "tests": [
+            "T-TF-CLI-0001-R13-001",
+            "T-TF-CLI-0001-R13-002"
           ]
         }
       ]

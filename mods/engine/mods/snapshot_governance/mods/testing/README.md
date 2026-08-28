@@ -16,7 +16,7 @@ Snapshot, audit, ownership, traceability, Testing boundary, Module grammar, and 
 
 ### Excludes
 
-Ancestor, sibling, or descendant Feature requirements; normative rule meaning; production evaluators; and generated certification evidence.
+Ancestor, sibling, or descendant Feature requirements; normative rule meaning; production evaluators; and generated certification conclusions.
 
 ## Relationships
 

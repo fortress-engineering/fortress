@@ -38,6 +38,12 @@ Compiles the CCG's authored checkpoint declarations once into the Intended BFG a
 
 Consumes the Intended BFG and already-compiled implementation-semantic stack once so BEHAVIOR-REALIZATION-001 and BEHAVIOR-BYPASS-001 evaluate meaningful checkpoint realization without reparsing source.
 
+### [Certification](../certification/README.md)
+
+**Types:** `depends_on`
+
+Constructs exact-subject evidence and certification products from the already-compiled audit semantic stack and current local suite evidence without changing rule conclusions.
+
 ### [Contract Coherency](../contract_coherency/README.md)
 
 **Types:** `depends_on`

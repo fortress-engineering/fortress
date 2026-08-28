@@ -86,6 +86,13 @@ const BUILTIN_COMMANDS: &[CommandDescriptor] = &[
         description: "Compile and render deterministic environmental analysis.",
         usage: "fortress environmental [path] [--format json] [--output path]",
     },
+    CommandDescriptor {
+        id: "CMD-CERTIFICATION-FULL-SNAPSHOT",
+        name: "certify",
+        aliases: &[],
+        description: "Execute local verification and certify the exact source snapshot.",
+        usage: "fortress certify [path] [--format human|json] [--evidence-output path] [--certification-output path] [--verified-bfg-output path]",
+    },
 ];
 
 /// Discoverable metadata for one registered Fortress command.

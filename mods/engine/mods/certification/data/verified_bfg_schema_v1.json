@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:verified-behavioral-flow-graph",
+  "title": "Fortress Verified Behavioral Flow Graph v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "schema_version", "project_id", "certification_source_digest", "certification_digest", "view", "features", "summary", "provenance"],
+  "properties": {
+    "$schema": { "const": "urn:fortress:schema:v1:verified-behavioral-flow-graph" },
+    "schema_version": { "const": 1 },
+    "project_id": { "type": "string" },
+    "certification_source_digest": { "$ref": "#/$defs/digest" },
+    "certification_digest": { "oneOf": [{ "$ref": "#/$defs/digest" }, { "const": "" }] },
+    "view": { "const": "verified" },
+    "features": { "type": "array", "items": { "type": "object" } },
+    "summary": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 } },
+    "provenance": { "type": "array", "items": { "type": "string" } }
+  },
+  "$defs": { "digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" } }
+}

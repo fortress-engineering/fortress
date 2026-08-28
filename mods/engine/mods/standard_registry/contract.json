@@ -24,7 +24,8 @@
         "AF-STANDARD-REGISTRY-0001-R01",
         "AF-STANDARD-REGISTRY-0001-R02",
         "AF-STANDARD-REGISTRY-0001-R03",
-        "AF-STANDARD-REGISTRY-0001-R04"
+        "AF-STANDARD-REGISTRY-0001-R04",
+        "AF-STANDARD-REGISTRY-0001-R05"
       ]
     }
   ],
@@ -70,6 +71,13 @@
             "T-AF-STANDARD-REGISTRY-0001-R04-001",
             "T-AF-STANDARD-REGISTRY-0001-R04-002",
             "T-AF-STANDARD-REGISTRY-0001-R04-003"
+          ]
+        },
+        {
+          "id": "AF-STANDARD-REGISTRY-0001-R05",
+          "statement": "The Standard Registry owns a canonical full-snapshot certification profile that requires current passing evidence for every applicable rule, declared Requirement test, opted-in realization, generated verification obligation, and mandatory semantic artifact without project-specific exclusions.",
+          "tests": [
+            "T-AF-STANDARD-REGISTRY-0001-R05-001"
           ]
         }
       ]

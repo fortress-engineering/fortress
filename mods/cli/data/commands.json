@@ -122,6 +122,17 @@
       "duration": "short",
       "resumability": "restartable",
       "certification_implications": "Renders modeled external outcomes, handling totality, retry/idempotency, and bounded recovery consequences plus explicit uncertainty only; it is not comprehensive fault-tolerance proof or certification evidence."
+    },
+    {
+      "id": "CMD-CERTIFICATION-FULL-SNAPSHOT",
+      "name": "certify",
+      "aliases": [],
+      "description": "Execute local verification and certify the exact source snapshot.",
+      "owner": "TF-CLI-0001",
+      "executor": "builtin-sync",
+      "duration": "long",
+      "resumability": "restartable",
+      "certification_implications": "Executes the canonical local Rust suite, constructs the content-addressed Evidence DAG, and emits deterministic Certification and Verified BFG artifacts for the exact recursion-free source identity."
     }
   ]
 }

@@ -2,7 +2,9 @@
 
 use std::path::{Path, PathBuf};
 
-use fortress_core::audit::{audit_repository, compile_repository_bfg};
+use fortress_core::audit::{
+    audit_repository, compile_repository_bfg, compile_repository_realized_bfg,
+};
 
 fn repository_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..")
@@ -41,4 +43,14 @@ fn fortress_audit_evaluates_the_modeled_flow_without_certification_claims() {
     assert_eq!(behavior.finding_count(), 0);
     assert!(behavior.detail().contains("1 coherent"));
     assert!(result.is_success());
+    let realized =
+        compile_repository_realized_bfg(repository_root()).expect("self Realized BFG compiles");
+    let flow = realized
+        .flows()
+        .iter()
+        .find(|flow| flow.feature() == "AF-FORTRESS-AUDIT-0001")
+        .expect("audit realization exists");
+    assert_eq!(realized.verification_obligations().len(), 18);
+    assert_eq!(flow.transitions().len(), 9);
+    assert!(flow.bypasses().is_empty());
 }

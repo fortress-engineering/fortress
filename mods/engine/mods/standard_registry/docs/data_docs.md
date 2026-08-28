@@ -22,6 +22,10 @@ Maintainers update Data through reviewed semantic changes; schema versions chang
 
 ## Files
 
+### [`cert_full_snapshot_v1.json`](../data/cert_full_snapshot_v1.json)
+
+Defines the canonical mandatory `CERT-FULL-SNAPSHOT-V1` profile without project exclusions or grades.
+
 ### [`common_schema_v1.json`](../data/common_schema_v1.json)
 
 Defines the version-one machine representation and validation boundary for common records owned by this Module.

@@ -27,6 +27,11 @@
       "version": "^0.1.0"
     },
     {
+      "provider": "AF-CERTIFICATION-0001",
+      "capability": "CAP-CERTIFICATION",
+      "version": "^0.1.0"
+    },
+    {
       "provider": "AF-CONTRACT-COHERENCY-0001",
       "capability": "CAP-CONTRACT-COHERENCY",
       "version": "^0.1.0"
@@ -213,6 +218,13 @@
           "statement": "A complete snapshot audit compiles Intended BFG semantics once from the same immutable CCG, evaluates BEHAVIOR-FLOW-001 without rebuilding graphs per rule, and leaves unmodeled Features explicit and non-failing.",
           "tests": [
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R13-001"
+          ]
+        },
+        {
+          "id": "AF-SNAPSHOT-GOVERNANCE-0001-R14",
+          "statement": "Snapshot Governance Testing executes the current generated success and failure scenarios for its filesystem document-read environmental boundary and establishes their exact deterministic obligation identities.",
+          "tests": [
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R14-001"
           ]
         }
       ]

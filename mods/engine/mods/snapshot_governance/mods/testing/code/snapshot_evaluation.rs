@@ -66,16 +66,16 @@ fn registered_architecture_evaluator_distinguishes_pass_and_failure() {
 /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R04-003`
 /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R04
 #[test]
-fn missing_snapshot_evaluator_is_unsupported_not_passed() {
+fn stable_identity_rule_uses_loaded_canonical_identity_evidence() {
     let audit = audit_repository(repository_root()).expect("self audit completes");
-    let unsupported = audit
+    let execution = audit
         .rules()
         .iter()
         .find(|execution| execution.rule_id() == "STD-ID-001")
         .expect("STD-ID-001 execution is reported");
-    assert_eq!(unsupported.state(), RuleExecutionState::Unsupported);
-    assert_eq!(unsupported.finding_count(), 0);
-    assert_eq!(audit.summary().unsupported(), 1);
+    assert_eq!(execution.state(), RuleExecutionState::Passed);
+    assert_eq!(execution.finding_count(), 0);
+    assert_eq!(audit.summary().unsupported(), 0);
 }
 
 /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R06-003`

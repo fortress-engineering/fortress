@@ -7,6 +7,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use sha2::{Digest, Sha256};
 
 use crate::architecture::ArchitectureManifest;
@@ -21,6 +22,14 @@ use crate::behavioral_realization::{
 };
 use crate::behavioral_semantics::{
     BehavioralSemanticsError, IntendedBehavioralFlowGraph, evaluate_behavioral_semantics,
+};
+use crate::certification::{
+    ArtifactEvidenceInput, BehavioralProjectionInput, BehavioralRealizationEvidenceInput,
+    CertificationError, CertificationInput, CertificationProducts, CertificationProfile,
+    CertificationSourceIdentity, EvidenceClass, EvidenceResult, GeneratedVerificationInput,
+    GeneratedVerificationKind, RequirementEvidenceInput, RuleEvidenceInput, RustSuiteExecution,
+    StandardIdentity, VerificationBinding, certification_source_digest, compile_certification,
+    test_inventory_digest,
 };
 use crate::contract::evaluate_contract_coherency;
 use crate::contract_coherency::{
@@ -51,7 +60,9 @@ use crate::program_semantics::{
     compile_program_semantic_model,
 };
 use crate::project::{ProjectConfiguration, ProjectConfigurationLoadError};
-use crate::rust_test_analyzer::{RustAnalyzerError, analyze_observed_rust_tests};
+use crate::rust_test_analyzer::{
+    RustAnalyzerError, RustTestEligibility, analyze_observed_rust_tests,
+};
 use crate::semantic_analysis::{
     FunctionContractError, FunctionContractSource, ResolvedFunctionContracts,
     SemanticAnalysisError, SemanticAnalysisEvaluation, analyze_program_domains,
@@ -447,6 +458,742 @@ pub fn compile_repository_realized_bfg(
     )
     .map(|evaluation| evaluation.graph().clone())
     .map_err(AuditError::BehavioralRealization)
+}
+
+/// Prepares the recursion-free certification subject and exact Rust test inventory.
+///
+/// This operation does not execute tests and therefore is not execution evidence.
+/// It is intended to bracket the canonical local suite so callers can reject a
+/// source mutation between preparation and evidence construction.
+///
+/// # Errors
+///
+/// Returns an audit error for unstable repository bytes or invalid test metadata.
+pub fn prepare_repository_certification_source(
+    root: impl AsRef<Path>,
+) -> Result<CertificationSourceIdentity, AuditError> {
+    let prepared = prepare_audit(root.as_ref())?;
+    let digest = certification_source_digest(&prepared.observed_files);
+    let mut eligible_test_ids = prepared
+        .rust_tests
+        .iter()
+        .filter(|test| test.eligibility() == RustTestEligibility::Enabled)
+        .map(|test| test.id().to_owned())
+        .collect::<Vec<_>>();
+    let mut ignored_test_ids = prepared
+        .rust_tests
+        .iter()
+        .filter(|test| test.eligibility() == RustTestEligibility::Ignored)
+        .map(|test| test.id().to_owned())
+        .collect::<Vec<_>>();
+    eligible_test_ids.sort();
+    eligible_test_ids.dedup();
+    ignored_test_ids.sort();
+    ignored_test_ids.dedup();
+    Ok(CertificationSourceIdentity {
+        test_inventory_digest: test_inventory_digest(&eligible_test_ids, &ignored_test_ids),
+        digest,
+        eligible_test_ids,
+        ignored_test_ids,
+    })
+}
+
+/// Compiles all semantic models once and constructs current certification products.
+///
+/// The supplied Rust suite execution must have been obtained by the external
+/// execution boundary using the exact source identity returned by
+/// [`prepare_repository_certification_source`]. Certification itself remains a
+/// provider-independent consumer and never launches a shell.
+///
+/// # Errors
+///
+/// Returns an audit error for invalid/stale repository semantics, invalid
+/// distributed bindings, or Evidence DAG construction failure.
+pub fn compile_repository_certification(
+    root: impl AsRef<Path>,
+    suite_execution: RustSuiteExecution,
+) -> Result<CertificationProducts, AuditError> {
+    let stack = compile_certification_semantic_stack(root.as_ref())?;
+    let source_digest = certification_source_digest(&stack.observed_files);
+    let artifacts = certification_artifacts(&stack)?;
+    let rules = stack
+        .evaluation
+        .rules()
+        .iter()
+        .map(|execution| {
+            let result = match execution.state() {
+                crate::evaluation::RuleExecutionState::Passed => EvidenceResult::Pass,
+                crate::evaluation::RuleExecutionState::Failed => EvidenceResult::Fail,
+                crate::evaluation::RuleExecutionState::Unsupported => EvidenceResult::Unsupported,
+            };
+            let mut finding_fingerprints = stack
+                .evaluation
+                .findings()
+                .iter()
+                .filter(|finding| finding.rule_id() == execution.rule_id())
+                .map(|finding| finding.finding_fingerprint().to_owned())
+                .collect::<Vec<_>>();
+            finding_fingerprints.sort();
+            RuleEvidenceInput {
+                rule_id: execution.rule_id().to_owned(),
+                result,
+                current: true,
+                finding_fingerprints,
+                input_refs: Vec::new(),
+            }
+        })
+        .collect();
+    let requirements = stack
+        .ccg
+        .requirements()
+        .iter()
+        .map(|(id, requirement)| RequirementEvidenceInput {
+            feature_id: requirement.feature().to_owned(),
+            requirement_id: id.clone(),
+            test_ids: requirement.tests().to_vec(),
+        })
+        .collect();
+    let (generated_verification, behavioral_projection, behavioral_realizations) =
+        certification_behavior_inputs(&stack)?;
+    let verification_bindings =
+        certification_verification_bindings(&stack.ccg, &stack.observed_files, &stack.rust_tests)?;
+    let trusted_assertions = certification_trusted_assertions(&stack)?;
+    let profile: CertificationProfile = serde_json::from_slice(
+        stack
+            .observed_files
+            .get("mods/engine/mods/standard_registry/data/cert_full_snapshot_v1.json")
+            .ok_or_else(|| {
+                AuditError::ContractState("missing CERT-FULL-SNAPSHOT-V1 authority".into())
+            })?,
+    )
+    .map_err(CertificationError::Json)
+    .map_err(AuditError::Certification)?;
+    let mut applicable_rules = stack
+        .standard
+        .rules()
+        .iter()
+        .map(|rule| rule.id().to_owned())
+        .collect::<Vec<_>>();
+    applicable_rules.sort();
+    compile_certification(&CertificationInput {
+        project_id: stack.snapshot.project_id().to_owned(),
+        source_digest,
+        standard: StandardIdentity {
+            id: stack.standard.id().to_owned(),
+            edition: stack.standard.edition().to_owned(),
+        },
+        profile,
+        artifacts,
+        applicable_rules,
+        rules,
+        requirements,
+        suite_execution,
+        behavioral_realizations,
+        generated_verification,
+        verification_bindings,
+        trusted_assertions,
+        behavioral_projection,
+    })
+    .map_err(AuditError::Certification)
+}
+
+struct CertificationSemanticStack {
+    observed_files: BTreeMap<String, Vec<u8>>,
+    rust_tests: Vec<crate::rust_test_analyzer::RustTestFact>,
+    standard: StandardBundle,
+    snapshot: RepositorySnapshot,
+    ccg: ContractCoherencyGraph,
+    intended_bfg: IntendedBehavioralFlowGraph,
+    models: AnalysisModels,
+    realized: BehavioralRealizationEvaluation,
+    evaluation: crate::evaluation::SnapshotEvaluation,
+}
+
+fn compile_certification_semantic_stack(
+    root: &Path,
+) -> Result<CertificationSemanticStack, AuditError> {
+    let prepared = prepare_audit(root)?;
+    let initial_ccg = prepared
+        .ccg_compilation
+        .graph()
+        .ok_or_else(|| AuditError::ContractState("prepared audit did not contain a CCG".into()))?;
+    let observation_input =
+        implementation_input(&prepared.snapshot, initial_ccg, &prepared.observed_files)?;
+    let observed = observe_rust_implementation(&observation_input)
+        .map_err(AuditError::ImplementationObservation)?;
+    let architecture_realization =
+        reconcile_implementation(initial_ccg, &observed, prepared.standard.bundle.edition())
+            .map_err(EvaluationError::Finding)
+            .map_err(AuditError::Evaluation)?;
+    let models = compile_analysis_models_from_observed(
+        &prepared,
+        initial_ccg,
+        observation_input,
+        &observed,
+    )?;
+    let documentation = evaluate_repository_documentation(
+        root,
+        &prepared.snapshot,
+        initial_ccg,
+        prepared.standard.bundle.edition(),
+    )
+    .map_err(AuditError::Documentation)?;
+    let contract_coherency = evaluate_contract_coherency(
+        prepared.ccg_compilation.clone(),
+        &documentation,
+        prepared.standard.bundle.edition(),
+    )
+    .map_err(EvaluationError::Finding)
+    .map_err(AuditError::Evaluation)?;
+    let ccg = contract_coherency
+        .graph()
+        .ok_or_else(|| AuditError::ContractState("CCG compilation did not produce a graph".into()))?
+        .clone();
+    let behavioral_semantics =
+        evaluate_behavioral_semantics(&ccg, prepared.standard.bundle.edition())
+            .map_err(AuditError::BehavioralSemantics)?;
+    let sources = behavior_realization_contract_sources(&ccg, &prepared.observed_files)?;
+    let contracts = load_behavior_realization_contracts(
+        &ccg,
+        behavioral_semantics.graph(),
+        &models.psm,
+        models.state_effect.model(),
+        models.information_flow.model(),
+        models.environmental.model(),
+        sources,
+    )
+    .map_err(AuditError::BehaviorRealizationContracts)?;
+    let realized = evaluate_behavioral_realization(
+        &ccg,
+        behavioral_semantics.graph(),
+        &models.psm,
+        models.semantic.model(),
+        models.state_effect.model(),
+        models.information_flow.model(),
+        models.environmental.model(),
+        &contracts,
+        prepared.standard.bundle.edition(),
+    )
+    .map_err(AuditError::BehavioralRealization)?;
+    let evaluation_inputs = CompleteEvaluationInputs::new(
+        &prepared.rust_tests,
+        &documentation,
+        &contract_coherency,
+        &architecture_realization,
+        &behavioral_semantics,
+        Some(&realized),
+        ProgramEvaluationInputs::new(
+            Some(&models.semantic),
+            Some(&models.state_effect),
+            Some(&models.information_flow),
+            Some(&models.environmental),
+        ),
+    );
+    let evaluation = evaluate_snapshot_rules(
+        &prepared.standard.bundle,
+        &prepared.snapshot,
+        &ccg,
+        evaluation_inputs,
+    )?;
+    Ok(CertificationSemanticStack {
+        observed_files: prepared.observed_files,
+        rust_tests: prepared.rust_tests,
+        standard: prepared.standard.bundle,
+        snapshot: prepared.snapshot,
+        ccg,
+        intended_bfg: behavioral_semantics.graph().clone(),
+        models,
+        realized,
+        evaluation,
+    })
+}
+
+#[allow(clippy::too_many_lines)]
+fn certification_artifacts(
+    stack: &CertificationSemanticStack,
+) -> Result<Vec<ArtifactEvidenceInput>, AuditError> {
+    let entries = [
+        (
+            "ccg",
+            "urn:fortress:schema:v1:contract-coherency-graph",
+            "info/contract_coherency_graph.json",
+            stack
+                .ccg
+                .to_canonical_json()
+                .map_err(CertificationError::Json)?,
+            EvidenceClass::Authority,
+            Vec::new(),
+            stack
+                .ccg
+                .unsupported_semantics()
+                .iter()
+                .map(|value| (*value).to_owned())
+                .collect(),
+        ),
+        (
+            "intended_bfg",
+            "urn:fortress:schema:v1:behavioral-flow-graph",
+            "info/behavioral_flow_graph.json",
+            stack
+                .intended_bfg
+                .to_canonical_json()
+                .map_err(CertificationError::Json)?,
+            EvidenceClass::Authority,
+            vec!["ccg".to_owned()],
+            stack
+                .intended_bfg
+                .unsupported_semantics()
+                .iter()
+                .map(|value| (*value).to_owned())
+                .collect(),
+        ),
+        (
+            "psm",
+            "urn:fortress:schema:v3:program-semantic-model",
+            "info/program_semantic_model.json",
+            stack
+                .models
+                .psm
+                .to_canonical_json()
+                .map_err(CertificationError::Json)?,
+            EvidenceClass::Observation,
+            vec!["ccg".to_owned()],
+            Vec::new(),
+        ),
+        (
+            "semantic_analysis",
+            "urn:fortress:schema:v1:semantic-analysis",
+            "info/semantic_analysis.json",
+            stack
+                .models
+                .semantic
+                .model()
+                .to_canonical_json()
+                .map_err(CertificationError::Json)?,
+            EvidenceClass::StaticProof,
+            vec!["psm".to_owned()],
+            stack
+                .models
+                .semantic
+                .model()
+                .unsupported_semantics()
+                .to_vec(),
+        ),
+        (
+            "state_effect",
+            "urn:fortress:schema:v1:state-effect-analysis",
+            "info/state_effect_analysis.json",
+            stack
+                .models
+                .state_effect
+                .model()
+                .to_canonical_json()
+                .map_err(CertificationError::Json)?,
+            EvidenceClass::StaticProof,
+            vec!["psm".to_owned(), "semantic_analysis".to_owned()],
+            stack
+                .models
+                .state_effect
+                .model()
+                .unsupported_semantics()
+                .to_vec(),
+        ),
+        (
+            "information_flow",
+            "urn:fortress:schema:v1:information-flow-analysis",
+            "info/information_flow_analysis.json",
+            stack
+                .models
+                .information_flow
+                .model()
+                .to_canonical_json()
+                .map_err(CertificationError::Json)?,
+            EvidenceClass::StaticProof,
+            vec![
+                "psm".to_owned(),
+                "semantic_analysis".to_owned(),
+                "state_effect".to_owned(),
+            ],
+            stack
+                .models
+                .information_flow
+                .model()
+                .unsupported_semantics()
+                .to_vec(),
+        ),
+        (
+            "environmental_analysis",
+            "urn:fortress:schema:v1:environmental-analysis",
+            "info/environmental_analysis.json",
+            stack
+                .models
+                .environmental
+                .model()
+                .to_canonical_json()
+                .map_err(CertificationError::Json)?,
+            EvidenceClass::StaticProof,
+            vec![
+                "psm".to_owned(),
+                "semantic_analysis".to_owned(),
+                "state_effect".to_owned(),
+                "information_flow".to_owned(),
+            ],
+            stack
+                .models
+                .environmental
+                .model()
+                .unsupported_semantics()
+                .to_vec(),
+        ),
+        (
+            "realized_bfg",
+            "urn:fortress:schema:v1:realized-behavioral-flow-graph",
+            "info/realized_behavioral_flow_graph.json",
+            stack
+                .realized
+                .graph()
+                .to_canonical_json()
+                .map_err(CertificationError::Json)?,
+            EvidenceClass::StaticProof,
+            vec![
+                "intended_bfg".to_owned(),
+                "psm".to_owned(),
+                "semantic_analysis".to_owned(),
+                "state_effect".to_owned(),
+                "information_flow".to_owned(),
+                "environmental_analysis".to_owned(),
+            ],
+            stack.realized.graph().unsupported_semantics().to_vec(),
+        ),
+    ];
+    entries
+        .into_iter()
+        .map(
+            |(kind, schema, path, canonical, evidence_class, input_refs, unsupported)| {
+                Ok(ArtifactEvidenceInput {
+                    kind: kind.into(),
+                    digest: format!("sha256:{:x}", Sha256::digest(canonical.as_bytes())),
+                    schema: schema.into(),
+                    current: stack
+                        .observed_files
+                        .get(path)
+                        .is_some_and(|bytes| bytes.as_slice() == canonical.as_bytes()),
+                    input_refs,
+                    evidence_class,
+                    unsupported,
+                })
+            },
+        )
+        .collect()
+}
+
+type CertificationBehaviorInputs = (
+    Vec<GeneratedVerificationInput>,
+    Vec<BehavioralProjectionInput>,
+    Vec<BehavioralRealizationEvidenceInput>,
+);
+
+#[allow(clippy::too_many_lines)]
+fn certification_behavior_inputs(
+    stack: &CertificationSemanticStack,
+) -> Result<CertificationBehaviorInputs, AuditError> {
+    let realized_value = serde_json::to_value(stack.realized.graph())
+        .map_err(CertificationError::Json)
+        .map_err(AuditError::Certification)?;
+    let mut generated = Vec::new();
+    for obligation in realized_value["verification_obligations"]
+        .as_array()
+        .into_iter()
+        .flatten()
+    {
+        let id = required_string(obligation, "id")?;
+        let feature = required_string(obligation, "feature")?;
+        let owner = stack
+            .ccg
+            .features()
+            .get(&feature)
+            .ok_or_else(|| {
+                AuditError::ContractState(
+                    format!("unknown verification Feature `{feature}`").into(),
+                )
+            })?
+            .owner();
+        let testing_module = testing_module_for_owner(&stack.ccg, owner)?;
+        let checkpoints = string_array(&obligation["checkpoints"])?;
+        let mut targets = checkpoints.clone();
+        if checkpoints.len() == 2 {
+            targets.push(format!("{}->{}", checkpoints[0], checkpoints[1]));
+        }
+        targets.sort();
+        targets.dedup();
+        generated.push(GeneratedVerificationInput {
+            id,
+            testing_module,
+            kind: GeneratedVerificationKind::Behavioral,
+            targets,
+        });
+    }
+    let environmental_value = serde_json::to_value(stack.models.environmental.model())
+        .map_err(CertificationError::Json)
+        .map_err(AuditError::Certification)?;
+    for obligation in environmental_value["failure_test_obligations"]
+        .as_array()
+        .into_iter()
+        .flatten()
+    {
+        let id = required_string(obligation, "id")?;
+        let provenance = required_string(obligation, "contract_provenance")?;
+        let path = provenance.split('#').next().unwrap_or(&provenance);
+        let owner = owner_for_path(&stack.ccg, path)?;
+        generated.push(GeneratedVerificationInput {
+            id: id.clone(),
+            testing_module: testing_module_for_owner(&stack.ccg, &owner)?,
+            kind: GeneratedVerificationKind::Environmental,
+            targets: vec![id],
+        });
+    }
+    generated.sort_by(|left, right| left.id.cmp(&right.id));
+
+    let realized_flows: BTreeMap<String, &Value> = realized_value["flows"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(|flow| {
+            flow["feature"]
+                .as_str()
+                .map(|feature| (feature.to_owned(), flow))
+        })
+        .collect();
+    let mut projection = Vec::new();
+    let mut realizations = Vec::new();
+    for intended in stack.intended_bfg.flows() {
+        let realized = realized_flows.get(intended.feature()).copied();
+        let realized_checkpoints = realized
+            .and_then(|flow| flow["checkpoints"].as_array())
+            .into_iter()
+            .flatten()
+            .filter_map(|checkpoint| checkpoint["checkpoint"].as_str().map(str::to_owned))
+            .collect::<Vec<_>>();
+        let realized_edges = realized
+            .and_then(|flow| flow["transitions"].as_array())
+            .into_iter()
+            .flatten()
+            .filter_map(|edge| {
+                Some((
+                    edge["source"].as_str()?.to_owned(),
+                    edge["target"].as_str()?.to_owned(),
+                ))
+            })
+            .collect::<Vec<_>>();
+        let contradicted = realized
+            .and_then(|flow| flow["state"].as_str())
+            .is_some_and(|state| state == "REALIZED_CONTRADICTED");
+        if let Some(flow) = realized {
+            realizations.push(BehavioralRealizationEvidenceInput {
+                feature: intended.feature().to_owned(),
+                coherent: flow["state"] == "REALIZED_COHERENT",
+                evidence_ref: String::new(),
+            });
+        }
+        projection.push(BehavioralProjectionInput {
+            feature: intended.feature().to_owned(),
+            checkpoints: intended
+                .nodes()
+                .iter()
+                .map(|node| node.checkpoint().to_owned())
+                .collect(),
+            intended_edges: intended
+                .edges()
+                .iter()
+                .map(|edge| (edge.source().to_owned(), edge.target().to_owned()))
+                .collect(),
+            realized_checkpoints,
+            realized_edges,
+            contradicted,
+        });
+    }
+    Ok((generated, projection, realizations))
+}
+
+#[derive(Deserialize)]
+struct VerificationBindingDocument {
+    bindings: Vec<VerificationBindingRecord>,
+}
+
+#[derive(Deserialize)]
+struct VerificationBindingRecord {
+    obligation: String,
+    tests: Vec<String>,
+}
+
+fn certification_verification_bindings(
+    ccg: &ContractCoherencyGraph,
+    files: &BTreeMap<String, Vec<u8>>,
+    rust_tests: &[crate::rust_test_analyzer::RustTestFact],
+) -> Result<Vec<VerificationBinding>, AuditError> {
+    let mut bindings = Vec::new();
+    for (path, bytes) in files.iter().filter(|(path, _)| {
+        path.as_str() == "data/verification_bindings.json"
+            || path.ends_with("/data/verification_bindings.json")
+    }) {
+        let testing_module = owner_for_path(ccg, path)?;
+        let testing_path = ccg
+            .modules()
+            .get(&testing_module)
+            .map(super::contract_coherency::ResolvedModule::path)
+            .ok_or_else(|| {
+                AuditError::ContractState(
+                    format!("unknown binding owner `{testing_module}`").into(),
+                )
+            })?;
+        if testing_path != "mods/testing" && !testing_path.ends_with("/mods/testing") {
+            return Err(AuditError::ContractState(
+                format!("verification binding `{path}` is not owned by a canonical Testing Module")
+                    .into(),
+            ));
+        }
+        let document: VerificationBindingDocument = serde_json::from_slice(bytes)
+            .map_err(CertificationError::Json)
+            .map_err(AuditError::Certification)?;
+        for record in document.bindings {
+            for test in &record.tests {
+                let fact = rust_tests
+                    .iter()
+                    .find(|fact| fact.id() == test)
+                    .ok_or_else(|| {
+                        AuditError::ContractState(
+                            format!(
+                                "verification binding `{}` references unknown Test `{test}`",
+                                record.obligation
+                            )
+                            .into(),
+                        )
+                    })?;
+                let test_owner = owner_for_path(ccg, fact.path())?;
+                if test_owner != testing_module {
+                    return Err(AuditError::ContractState(
+                        format!("verification binding `{}` Test `{test}` belongs to `{test_owner}`, not `{testing_module}`", record.obligation).into(),
+                    ));
+                }
+            }
+            bindings.push(VerificationBinding {
+                testing_module: testing_module.clone(),
+                obligation: record.obligation,
+                tests: record.tests,
+            });
+        }
+    }
+    bindings.sort_by(|left, right| left.obligation.cmp(&right.obligation));
+    Ok(bindings)
+}
+
+fn certification_trusted_assertions(
+    stack: &CertificationSemanticStack,
+) -> Result<Vec<crate::certification::TrustedAssertionInput>, AuditError> {
+    let information = serde_json::to_value(stack.models.information_flow.model())
+        .map_err(CertificationError::Json)
+        .map_err(AuditError::Certification)?;
+    let mut assertions = information["trusted_transition_diagnostics"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .enumerate()
+        .map(
+            |(index, value)| crate::certification::TrustedAssertionInput {
+                subject: value["symbol"]
+                    .as_str()
+                    .map_or_else(|| format!("trusted-transition-{index}"), str::to_owned),
+                kind: value["kind"]
+                    .as_str()
+                    .unwrap_or("trusted_information_transition")
+                    .to_owned(),
+                provenance: value["provenance"]
+                    .as_str()
+                    .unwrap_or("distributed Function Contract")
+                    .to_owned(),
+            },
+        )
+        .collect::<Vec<_>>();
+    let environmental = serde_json::to_value(stack.models.environmental.model())
+        .map_err(CertificationError::Json)
+        .map_err(AuditError::Certification)?;
+    for operation in environmental["operations"].as_array().into_iter().flatten() {
+        if operation["atomicity"] == "ATOMIC" {
+            assertions.push(crate::certification::TrustedAssertionInput {
+                subject: required_string(operation, "id")?,
+                kind: "external_atomicity".into(),
+                provenance: operation["contract_provenance"]
+                    .as_str()
+                    .unwrap_or("distributed Environment Contract")
+                    .into(),
+            });
+        }
+    }
+    assertions.sort_by(|left, right| left.subject.cmp(&right.subject));
+    Ok(assertions)
+}
+
+fn owner_for_path(ccg: &ContractCoherencyGraph, path: &str) -> Result<String, AuditError> {
+    ccg.module_paths()
+        .iter()
+        .filter(|(_, module_path)| {
+            module_path.is_empty() || path.starts_with(&format!("{module_path}/"))
+        })
+        .max_by_key(|(_, module_path)| module_path.len())
+        .map(|(id, _)| id.clone())
+        .ok_or_else(|| AuditError::ContractState(format!("no Module owns `{path}`").into()))
+}
+
+fn testing_module_for_owner(
+    ccg: &ContractCoherencyGraph,
+    owner: &str,
+) -> Result<String, AuditError> {
+    let owner_path = ccg
+        .module_paths()
+        .get(owner)
+        .ok_or_else(|| AuditError::ContractState(format!("unknown Module `{owner}`").into()))?;
+    let expected = if owner_path.is_empty() {
+        "mods/testing".to_owned()
+    } else {
+        format!("{owner_path}/mods/testing")
+    };
+    ccg.module_paths()
+        .iter()
+        .find(|(_, path)| **path == expected)
+        .map(|(id, _)| id.clone())
+        .ok_or_else(|| {
+            AuditError::ContractState(
+                format!(
+                    "Module `{owner}` has no canonical Testing child for certification binding"
+                )
+                .into(),
+            )
+        })
+}
+
+fn required_string(value: &Value, field: &str) -> Result<String, AuditError> {
+    value[field].as_str().map(str::to_owned).ok_or_else(|| {
+        AuditError::ContractState(
+            format!("certification semantic input lacks string `{field}`").into(),
+        )
+    })
+}
+
+fn string_array(value: &Value) -> Result<Vec<String>, AuditError> {
+    value
+        .as_array()
+        .ok_or_else(|| {
+            AuditError::ContractState("certification semantic input expected a string array".into())
+        })?
+        .iter()
+        .map(|item| {
+            item.as_str().map(str::to_owned).ok_or_else(|| {
+                AuditError::ContractState(
+                    "certification semantic input contains a non-string array member".into(),
+                )
+            })
+        })
+        .collect()
 }
 
 struct AnalysisModels {
@@ -1217,6 +1964,8 @@ pub enum AuditError {
     Documentation(DocumentationEvaluationError),
     /// Rule evaluation failed.
     Evaluation(EvaluationError),
+    /// Certification evidence or profile construction failed.
+    Certification(CertificationError),
 }
 
 impl Display for AuditError {
@@ -1295,8 +2044,17 @@ impl Display for AuditError {
             Self::Evaluation(error) => {
                 write!(formatter, "snapshot rule evaluation failed: {error}")
             }
+            Self::Certification(error) => {
+                write!(formatter, "snapshot certification failed: {error}")
+            }
         }
     }
 }
 
 impl Error for AuditError {}
+
+impl From<CertificationError> for AuditError {
+    fn from(value: CertificationError) -> Self {
+        Self::Certification(value)
+    }
+}
