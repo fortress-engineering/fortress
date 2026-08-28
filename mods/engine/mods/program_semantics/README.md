@@ -6,17 +6,17 @@ Provide a trustworthy implementation-semantic substrate beneath architectural Mo
 
 ## Responsibility
 
-Analyze exact snapshot-bound source into deterministic language-neutral facts about executable symbols, typed interfaces, calls, initial value transfers, and supported cross-Module execution boundaries without treating implementation facts as authored intent.
+Analyze exact snapshot-bound source into deterministic language-neutral facts about nominal declarations, implementation blocks, executable symbols, typed interfaces and local expressions, calls, initial value transfers, and supported cross-Module execution boundaries without treating implementation facts as authored intent.
 
 ## Scope
 
 ### Includes
 
-Stable Cargo package and target interpretation, structural Rust syntax analysis, canonical executable identities, recursive type normalization, conservative static call resolution, call coverage states, call-graph derivations, initial value-transfer topology, neutral body/control structure for downstream reasoning, Testing classification, analyzer coherency, provenance, canonical serialization, and deterministic digesting.
+Stable Cargo package and target interpretation, structural Rust syntax analysis, canonical executable identities, nominal structs/enums/traits/aliases and impls, recursive type normalization, local expression-type propagation, type-directed inherent and concrete trait method resolution, stable residual-resolution reasons, call-graph derivations, initial value-transfer topology, neutral body/control structure for downstream reasoning, Testing classification, analyzer coherency, provenance, canonical serialization, and deterministic digesting.
 
 ### Excludes
 
-Behavioral checkpoint realization, capability-to-symbol mapping, Function Contract interpretation, value-domain reasoning, function correctness, general effects, alias/heap flow, symbolic execution, dynamic-dispatch proof, security flow proof, and automatic contract generation.
+Behavioral checkpoint realization, capability-to-symbol mapping, Function Contract interpretation, value-domain reasoning, function correctness, complete Rust trait solving, user-defined dereference chains, macro expansion, general effects, alias/heap flow, symbolic execution, dynamic-dispatch proof, security flow proof, and automatic contract generation.
 
 ## Relationships
 

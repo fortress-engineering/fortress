@@ -64,6 +64,23 @@
           "tests": [
             "T-AF-PROGRAM-SEMANTICS-0001-R04-001"
           ]
+        },
+        {
+          "id": "AF-PROGRAM-SEMANTICS-0001-R05",
+          "statement": "Program Semantics deterministically indexes locally governed Rust structs, enums, traits, type aliases, fields, variants, and inherent or trait implementation blocks without changing executable symbol identities merely because the PSM schema evolves.",
+          "tests": [
+            "T-AF-PROGRAM-SEMANTICS-0001-R05-001",
+            "T-AF-PROGRAM-SEMANTICS-0001-R05-002"
+          ]
+        },
+        {
+          "id": "AF-PROGRAM-SEMANTICS-0001-R06",
+          "statement": "Program Semantics propagates supported local static expression types to resolve inherent and concrete trait method calls conservatively, emits canonical interprocedural transfers for newly resolved calls, and assigns stable semantic reasons to every residual non-static call.",
+          "tests": [
+            "T-AF-PROGRAM-SEMANTICS-0001-R06-001",
+            "T-AF-PROGRAM-SEMANTICS-0001-R06-002",
+            "T-AF-PROGRAM-SEMANTICS-0001-R06-003"
+          ]
         }
       ]
     }

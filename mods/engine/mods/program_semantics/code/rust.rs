@@ -18,9 +18,11 @@ use syn::{
 use crate::implementation_observation::ModuleTerritory;
 
 use super::{
-    CallResolutionState, CallSiteEvidence, ExecutableSymbol, ExecutableSymbolKind, InterfaceType,
-    ProgramBody, ProgramCall, ProgramExpression, ProgramMatchArm, ProgramPackage, ProgramParameter,
-    ProgramPattern, ProgramProvenance, ProgramReceiver, ProgramSemanticError, ProgramSemanticInput,
+    CallResolutionReason, CallResolutionState, CallSiteEvidence, ExecutableSymbol,
+    ExecutableSymbolKind, ImplResolutionState, InterfaceType, NominalField, NominalType,
+    NominalTypeKind, NominalVariant, ProgramBody, ProgramCall, ProgramExpression, ProgramImpl,
+    ProgramImplKind, ProgramMatchArm, ProgramPackage, ProgramParameter, ProgramPattern,
+    ProgramProvenance, ProgramReceiver, ProgramSemanticError, ProgramSemanticInput,
     ProgramSourceInput, ProgramSourceLocation, ProgramStatement, ProgramTarget, ProgramType,
     RUST_PROGRAM_ANALYZER_ID, ResolutionAuthority, RustProgramFacts, SemanticType, SymbolBodyState,
     SymbolClassification, SymbolQualifiers, SymbolVisibility, TransferResolutionState,
@@ -152,6 +154,17 @@ impl TypeRegistry {
         self.register_semantic(semantic, spelling)
     }
 
+    fn register_with_aliases(
+        &mut self,
+        syntax: &Type,
+        generics: &BTreeSet<String>,
+        aliases: &BTreeMap<String, Vec<String>>,
+    ) -> InterfaceType {
+        let spelling = syntax.to_token_stream().to_string();
+        let semantic = resolve_semantic_aliases(normalize_type(syntax, generics), aliases);
+        self.register_semantic(semantic, spelling)
+    }
+
     fn register_semantic(
         &mut self,
         semantic: SemanticType,
@@ -192,13 +205,14 @@ pub(super) fn analyze(
     resolve_dependencies(&mut packages);
     let source_owners = source_owners(input.observation().modules(), files.keys())?;
     let source_contexts = build_source_contexts(&packages, &files)?;
-    let source_files = source_contexts.len();
     let package_by_manifest: BTreeMap<&str, &CargoPackage> = packages
         .iter()
         .map(|package| (package.manifest_path.as_str(), package))
         .collect();
     let mut registry = TypeRegistry::default();
     let mut symbols = Vec::new();
+    let mut nominal_types = Vec::new();
+    let mut impls = Vec::new();
     let mut bodies = Vec::new();
     let mut parameter_transfers = Vec::new();
     let mut reexports = BTreeMap::new();
@@ -223,6 +237,8 @@ pub(super) fn analyze(
                 source_path: path,
                 registry: &mut registry,
                 symbols: &mut symbols,
+                nominal_types: &mut nominal_types,
+                impls: &mut impls,
                 bodies: &mut bodies,
                 transfers: &mut parameter_transfers,
                 reexports: &mut reexports,
@@ -230,11 +246,17 @@ pub(super) fn analyze(
             collection.collect_items(&syntax.items, &context.namespace, &BTreeMap::new());
         }
     }
-    symbols.sort();
-    symbols.dedup();
+    canonicalize_declarations(&mut symbols, &mut nominal_types, &mut impls);
+    resolve_impl_states(&mut impls, &nominal_types, &registry);
     bodies.sort_by(|left, right| left.symbol.cmp(&right.symbol));
     bodies.dedup_by(|left, right| left.symbol == right.symbol);
-    let lookup = SymbolLookup::new(&symbols, &packages, &source_owners, reexports);
+    let lookup = SymbolLookup::new(
+        &symbols,
+        &nominal_types,
+        &packages,
+        &source_owners,
+        reexports,
+    );
     let mut raw_calls = Vec::new();
     let mut value_transfers = parameter_transfers;
     let mut transformations = Vec::new();
@@ -243,6 +265,7 @@ pub(super) fn analyze(
         program_bodies.push(lower_program_body(body));
         BodyAnalyzer::new(
             body,
+            &lookup,
             &mut registry,
             &mut raw_calls,
             &mut value_transfers,
@@ -258,15 +281,31 @@ pub(super) fn analyze(
     Ok(RustProgramFacts {
         source_identity,
         source_inputs,
-        source_files,
+        source_files: source_contexts.len(),
         packages: package_facts(&packages),
+        nominal_types,
+        impls,
         symbols,
         types: registry.finish(),
         calls,
         bodies: program_bodies,
         value_transfers,
         transformations,
+        fixed_point_iterations: 1,
     })
+}
+
+fn canonicalize_declarations(
+    symbols: &mut Vec<ExecutableSymbol>,
+    nominal_types: &mut Vec<NominalType>,
+    impls: &mut Vec<ProgramImpl>,
+) {
+    symbols.sort();
+    symbols.dedup();
+    nominal_types.sort();
+    nominal_types.dedup();
+    impls.sort();
+    impls.dedup();
 }
 
 fn lower_program_body(body: &BodyFact) -> ProgramBody {
@@ -278,6 +317,52 @@ fn lower_program_body(body: &BodyFact) -> ProgramBody {
             body.block.span(),
             Some(body.symbol.clone()),
         ),
+    }
+}
+
+fn resolve_impl_states(
+    impls: &mut [ProgramImpl],
+    nominal_types: &[NominalType],
+    registry: &TypeRegistry,
+) {
+    let local = nominal_types
+        .iter()
+        .map(|nominal| {
+            (
+                nominal.package.as_str(),
+                simple_type_name(&nominal.qualified_name),
+            )
+        })
+        .collect::<BTreeSet<_>>();
+    for implementation in impls {
+        let self_semantic = registry
+            .types
+            .get(&implementation.self_type.type_id)
+            .map(|value| &value.0);
+        let self_local = self_semantic
+            .and_then(semantic_type_name)
+            .is_some_and(|name| {
+                local.contains(&(implementation.package.as_str(), simple_type_name(&name)))
+            });
+        let trait_local = implementation.trait_type.as_ref().is_none_or(|interface| {
+            registry
+                .types
+                .get(&interface.type_id)
+                .map(|value| &value.0)
+                .and_then(semantic_type_name)
+                .is_some_and(|name| {
+                    local.contains(&(implementation.package.as_str(), simple_type_name(&name)))
+                })
+        });
+        implementation.resolution = if self_semantic
+            .is_some_and(|semantic| matches!(semantic, SemanticType::Unknown { .. }))
+        {
+            ImplResolutionState::Unresolved
+        } else if self_local && trait_local {
+            ImplResolutionState::ResolvedLocal
+        } else {
+            ImplResolutionState::ExternalOrGeneric
+        };
     }
 }
 
@@ -949,6 +1034,8 @@ struct SymbolCollection<'a> {
     source_path: &'a str,
     registry: &'a mut TypeRegistry,
     symbols: &'a mut Vec<ExecutableSymbol>,
+    nominal_types: &'a mut Vec<NominalType>,
+    impls: &'a mut Vec<ProgramImpl>,
     bodies: &'a mut Vec<BodyFact>,
     transfers: &'a mut Vec<ValueTransfer>,
     reexports: &'a mut BTreeMap<ReexportKey, Vec<String>>,
@@ -969,30 +1056,52 @@ impl SymbolCollection<'_> {
         namespace: &[String],
         inherited_aliases: &BTreeMap<String, Vec<String>>,
     ) {
-        let mut aliases = inherited_aliases.clone();
+        let aliases = self.collect_aliases(items, namespace, inherited_aliases);
         for item in items {
-            if let Item::Use(item_use) = item {
-                let mut expanded = Vec::new();
-                expand_use_tree(Vec::new(), &item_use.tree, &mut expanded);
-                for (path, alias) in expanded {
-                    aliases.insert(alias.clone(), path.clone());
-                    if matches!(item_use.vis, Visibility::Public(_)) {
-                        self.reexports.insert(
-                            ReexportKey {
-                                package: self.package.name.clone(),
-                                crate_name: self.context.crate_name.clone(),
-                                namespace: namespace.to_vec(),
-                                alias,
-                            },
-                            path,
-                        );
-                    }
+            self.collect_item(item, namespace, &aliases);
+        }
+    }
+
+    fn collect_aliases(
+        &mut self,
+        items: &[Item],
+        namespace: &[String],
+        inherited: &BTreeMap<String, Vec<String>>,
+    ) -> BTreeMap<String, Vec<String>> {
+        let mut aliases = inherited.clone();
+        for item_use in items.iter().filter_map(|item| match item {
+            Item::Use(value) => Some(value),
+            _ => None,
+        }) {
+            let mut expanded = Vec::new();
+            expand_use_tree(Vec::new(), &item_use.tree, &mut expanded);
+            for (path, alias) in expanded {
+                aliases.insert(alias.clone(), path.clone());
+                if matches!(item_use.vis, Visibility::Public(_)) {
+                    self.reexports.insert(
+                        ReexportKey {
+                            package: self.package.name.clone(),
+                            crate_name: self.context.crate_name.clone(),
+                            namespace: namespace.to_vec(),
+                            alias,
+                        },
+                        path,
+                    );
                 }
             }
         }
-        for item in items {
-            match item {
-                Item::Fn(function) => self.add_function(
+        aliases
+    }
+
+    fn collect_item(
+        &mut self,
+        item: &Item,
+        namespace: &[String],
+        aliases: &BTreeMap<String, Vec<String>>,
+    ) {
+        match item {
+            Item::Fn(function) => {
+                self.add_function(
                     namespace,
                     &function.sig,
                     &function.vis,
@@ -1000,70 +1109,242 @@ impl SymbolCollection<'_> {
                     None,
                     None,
                     Some(function.block.as_ref().clone()),
-                    &aliases,
+                    aliases,
                     &BTreeSet::new(),
-                ),
-                Item::Impl(item_impl) => {
-                    let owner_type = item_impl.self_ty.to_token_stream().to_string();
-                    let owner_trait = item_impl
-                        .trait_
-                        .as_ref()
-                        .map(|(_, path, _)| path.to_token_stream().to_string());
-                    let impl_generics = generic_names(&item_impl.generics.params);
-                    for impl_item in &item_impl.items {
-                        let ImplItem::Fn(function) = impl_item else {
-                            continue;
-                        };
-                        let kind = if owner_trait.is_some() {
-                            ExecutableSymbolKind::TraitMethodImplementation
-                        } else if function.sig.receiver().is_some() {
-                            ExecutableSymbolKind::InherentMethod
-                        } else {
-                            ExecutableSymbolKind::AssociatedFunction
-                        };
-                        self.add_function(
-                            namespace,
-                            &function.sig,
-                            &function.vis,
-                            kind,
-                            Some(owner_type.clone()),
-                            owner_trait.clone(),
-                            Some(function.block.clone()),
-                            &aliases,
-                            &impl_generics,
-                        );
-                    }
-                }
-                Item::Trait(item_trait) => {
-                    let owner_trait = item_trait.ident.to_string();
-                    let trait_generics = generic_names(&item_trait.generics.params);
-                    for trait_item in &item_trait.items {
-                        let TraitItem::Fn(function) = trait_item else {
-                            continue;
-                        };
-                        self.add_function(
-                            namespace,
-                            &function.sig,
-                            &Visibility::Public(syn::token::Pub::default()),
-                            ExecutableSymbolKind::TraitMethodDeclaration,
-                            None,
-                            Some(owner_trait.clone()),
-                            function.default.clone(),
-                            &aliases,
-                            &trait_generics,
-                        );
-                    }
-                }
-                Item::Mod(module) => {
-                    if let Some((_, child_items)) = &module.content {
-                        let mut child_namespace = namespace.to_vec();
-                        child_namespace.push(module.ident.to_string());
-                        self.collect_items(child_items, &child_namespace, &BTreeMap::new());
-                    }
-                }
-                _ => {}
+                );
             }
+            Item::Struct(value) => self.collect_struct(value, namespace, aliases),
+            Item::Enum(value) => self.collect_enum(value, namespace, aliases),
+            Item::Type(value) => self.collect_type_alias(value, namespace, aliases),
+            Item::Impl(value) => self.collect_impl(value, namespace, aliases),
+            Item::Trait(value) => self.collect_trait(value, namespace, aliases),
+            Item::Mod(module) => {
+                if let Some((_, child_items)) = &module.content {
+                    let mut child_namespace = namespace.to_vec();
+                    child_namespace.push(module.ident.to_string());
+                    self.collect_items(child_items, &child_namespace, &BTreeMap::new());
+                }
+            }
+            _ => {}
         }
+    }
+
+    fn collect_struct(
+        &mut self,
+        value: &syn::ItemStruct,
+        namespace: &[String],
+        aliases: &BTreeMap<String, Vec<String>>,
+    ) {
+        let generics = generic_names(&value.generics.params);
+        let fields = self.nominal_fields(&value.fields, &generics, aliases);
+        self.add_nominal(
+            namespace,
+            &value.ident.to_string(),
+            NominalTypeKind::Struct,
+            generics,
+            fields,
+            Vec::new(),
+            Vec::new(),
+            None,
+            value.ident.span(),
+        );
+    }
+
+    fn collect_enum(
+        &mut self,
+        value: &syn::ItemEnum,
+        namespace: &[String],
+        aliases: &BTreeMap<String, Vec<String>>,
+    ) {
+        let generics = generic_names(&value.generics.params);
+        let variants = value
+            .variants
+            .iter()
+            .map(|variant| NominalVariant {
+                name: variant.ident.to_string(),
+                fields: self.nominal_fields(&variant.fields, &generics, aliases),
+                provenance: provenance(
+                    self.source_path,
+                    variant.ident.span(),
+                    Some(variant.ident.to_string()),
+                ),
+            })
+            .collect();
+        self.add_nominal(
+            namespace,
+            &value.ident.to_string(),
+            NominalTypeKind::Enum,
+            generics,
+            Vec::new(),
+            variants,
+            Vec::new(),
+            None,
+            value.ident.span(),
+        );
+    }
+
+    fn collect_type_alias(
+        &mut self,
+        value: &syn::ItemType,
+        namespace: &[String],
+        aliases: &BTreeMap<String, Vec<String>>,
+    ) {
+        let generics = generic_names(&value.generics.params);
+        let target = self
+            .registry
+            .register_with_aliases(&value.ty, &generics, aliases);
+        self.add_nominal(
+            namespace,
+            &value.ident.to_string(),
+            NominalTypeKind::TypeAlias,
+            generics,
+            Vec::new(),
+            Vec::new(),
+            Vec::new(),
+            Some(target),
+            value.ident.span(),
+        );
+    }
+
+    fn collect_impl(
+        &mut self,
+        value: &syn::ItemImpl,
+        namespace: &[String],
+        aliases: &BTreeMap<String, Vec<String>>,
+    ) {
+        let owner_type = value.self_ty.to_token_stream().to_string();
+        let owner_trait = value
+            .trait_
+            .as_ref()
+            .map(|(_, path, _)| path.to_token_stream().to_string());
+        let impl_generics = generic_names(&value.generics.params);
+        let mut method_ids = value
+            .items
+            .iter()
+            .filter_map(|item| match item {
+                ImplItem::Fn(function) => Some(self.add_impl_method(
+                    function,
+                    namespace,
+                    aliases,
+                    &impl_generics,
+                    &owner_type,
+                    owner_trait.as_deref(),
+                )),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        method_ids.sort();
+        let self_type =
+            self.registry
+                .register_with_aliases(&value.self_ty, &impl_generics, aliases);
+        let trait_type = value.trait_.as_ref().map(|(_, path, _)| {
+            self.registry.register_with_aliases(
+                &Type::Path(syn::TypePath {
+                    qself: None,
+                    path: path.clone(),
+                }),
+                &impl_generics,
+                aliases,
+            )
+        });
+        let kind = if trait_type.is_some() {
+            ProgramImplKind::Trait
+        } else {
+            ProgramImplKind::Inherent
+        };
+        self.impls.push(ProgramImpl {
+            id: canonical_fact_id(
+                "rust_impl",
+                &(
+                    &self.package.name,
+                    &self.context.crate_name,
+                    namespace,
+                    &owner_type,
+                    &owner_trait,
+                    &method_ids,
+                ),
+            ),
+            package: self.package.name.clone(),
+            crate_name: self.context.crate_name.clone(),
+            rust_module: namespace.join("::"),
+            fortress_module: self.owner.into(),
+            kind,
+            self_type,
+            trait_type,
+            generic_parameters: impl_generics.into_iter().collect(),
+            methods: method_ids,
+            resolution: ImplResolutionState::Unresolved,
+            provenance: provenance(self.source_path, value.impl_token.span(), Some(owner_type)),
+        });
+    }
+
+    fn add_impl_method(
+        &mut self,
+        function: &syn::ImplItemFn,
+        namespace: &[String],
+        aliases: &BTreeMap<String, Vec<String>>,
+        impl_generics: &BTreeSet<String>,
+        owner_type: &str,
+        owner_trait: Option<&str>,
+    ) -> String {
+        let kind = if owner_trait.is_some() {
+            ExecutableSymbolKind::TraitMethodImplementation
+        } else if function.sig.receiver().is_some() {
+            ExecutableSymbolKind::InherentMethod
+        } else {
+            ExecutableSymbolKind::AssociatedFunction
+        };
+        self.add_function(
+            namespace,
+            &function.sig,
+            &function.vis,
+            kind,
+            Some(owner_type.into()),
+            owner_trait.map(str::to_owned),
+            Some(function.block.clone()),
+            aliases,
+            impl_generics,
+        )
+    }
+
+    fn collect_trait(
+        &mut self,
+        value: &syn::ItemTrait,
+        namespace: &[String],
+        aliases: &BTreeMap<String, Vec<String>>,
+    ) {
+        let owner_trait = value.ident.to_string();
+        let trait_generics = generic_names(&value.generics.params);
+        let mut method_ids = value
+            .items
+            .iter()
+            .filter_map(|item| match item {
+                TraitItem::Fn(function) => Some(self.add_function(
+                    namespace,
+                    &function.sig,
+                    &Visibility::Public(syn::token::Pub::default()),
+                    ExecutableSymbolKind::TraitMethodDeclaration,
+                    None,
+                    Some(owner_trait.clone()),
+                    function.default.clone(),
+                    aliases,
+                    &trait_generics,
+                )),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        method_ids.sort();
+        self.add_nominal(
+            namespace,
+            &owner_trait,
+            NominalTypeKind::Trait,
+            trait_generics,
+            Vec::new(),
+            Vec::new(),
+            method_ids,
+            None,
+            value.ident.span(),
+        );
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -1078,7 +1359,7 @@ impl SymbolCollection<'_> {
         block: Option<Block>,
         aliases: &BTreeMap<String, Vec<String>>,
         surrounding_generics: &BTreeSet<String>,
-    ) {
+    ) -> String {
         let FunctionInterface {
             parameters,
             parameter_types,
@@ -1086,7 +1367,7 @@ impl SymbolCollection<'_> {
             receiver,
             generic_parameters,
             lifetimes,
-        } = self.function_interface(signature, surrounding_generics);
+        } = self.function_interface(signature, surrounding_generics, aliases);
         let qualified_name = qualified_name(
             &self.context.crate_name,
             namespace,
@@ -1145,7 +1426,7 @@ impl SymbolCollection<'_> {
         };
         if let Some(block) = block {
             self.bodies.push(BodyFact {
-                symbol: id,
+                symbol: id.clone(),
                 source_path: self.source_path.into(),
                 context: SourceContext {
                     namespace: namespace.to_vec(),
@@ -1159,12 +1440,83 @@ impl SymbolCollection<'_> {
             });
         }
         self.symbols.push(symbol);
+        id
+    }
+
+    fn nominal_fields(
+        &mut self,
+        fields: &syn::Fields,
+        generics: &BTreeSet<String>,
+        aliases: &BTreeMap<String, Vec<String>>,
+    ) -> Vec<NominalField> {
+        fields
+            .iter()
+            .enumerate()
+            .map(|(position, field)| NominalField {
+                name: field
+                    .ident
+                    .as_ref()
+                    .map_or_else(|| position.to_string(), ToString::to_string),
+                position,
+                field_type: self
+                    .registry
+                    .register_with_aliases(&field.ty, generics, aliases),
+                provenance: provenance(
+                    self.source_path,
+                    field.span(),
+                    field.ident.as_ref().map(ToString::to_string),
+                ),
+            })
+            .collect()
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn add_nominal(
+        &mut self,
+        namespace: &[String],
+        name: &str,
+        kind: NominalTypeKind,
+        generic_parameters: BTreeSet<String>,
+        fields: Vec<NominalField>,
+        variants: Vec<NominalVariant>,
+        trait_methods: Vec<String>,
+        alias_target: Option<InterfaceType>,
+        span: Span,
+    ) {
+        let qualified_name = qualified_name(&self.context.crate_name, namespace, None, name);
+        self.nominal_types.push(NominalType {
+            id: canonical_fact_id(
+                "rust_nominal",
+                &(
+                    &self.package.name,
+                    &self.context.crate_name,
+                    namespace,
+                    name,
+                    kind,
+                ),
+            ),
+            qualified_name: qualified_name.clone(),
+            language: "rust".into(),
+            package: self.package.name.clone(),
+            crate_name: self.context.crate_name.clone(),
+            rust_module: namespace.join("::"),
+            fortress_module: self.owner.into(),
+            kind,
+            generic_parameters: generic_parameters.into_iter().collect(),
+            fields,
+            variants,
+            trait_methods,
+            alias_transparent: alias_target.is_some(),
+            alias_target,
+            provenance: provenance(self.source_path, span, Some(qualified_name)),
+        });
     }
 
     fn function_interface(
         &mut self,
         signature: &Signature,
         surrounding_generics: &BTreeSet<String>,
+        aliases: &BTreeMap<String, Vec<String>>,
     ) -> FunctionInterface {
         let mut generics = surrounding_generics.clone();
         generics.extend(generic_names(&signature.generics.params));
@@ -1184,10 +1536,10 @@ impl SymbolCollection<'_> {
         for input in &signature.inputs {
             match input {
                 FnArg::Receiver(value) => {
-                    let explicit_type = value
-                        .colon_token
-                        .is_some()
-                        .then(|| self.registry.register(&value.ty, &generics));
+                    let explicit_type = value.colon_token.is_some().then(|| {
+                        self.registry
+                            .register_with_aliases(&value.ty, &generics, aliases)
+                    });
                     receiver = Some(ProgramReceiver::new(
                         value.mutability.is_some(),
                         value.reference.is_some(),
@@ -1197,7 +1549,9 @@ impl SymbolCollection<'_> {
                 FnArg::Typed(value) => {
                     let position = parameters.len();
                     let name = pattern_name(&value.pat);
-                    let parameter_type = self.registry.register(&value.ty, &generics);
+                    let parameter_type = self
+                        .registry
+                        .register_with_aliases(&value.ty, &generics, aliases);
                     let source = provenance(
                         self.source_path,
                         value.pat.span(),
@@ -1217,7 +1571,9 @@ impl SymbolCollection<'_> {
         }
         let return_type = match &signature.output {
             ReturnType::Default => self.registry.register_semantic(SemanticType::Unit, "()"),
-            ReturnType::Type(_, output) => self.registry.register(output, &generics),
+            ReturnType::Type(_, output) => self
+                .registry
+                .register_with_aliases(output, &generics, aliases),
         };
         FunctionInterface {
             parameters,
@@ -1399,6 +1755,72 @@ fn normalize_type(syntax: &Type, generics: &BTreeSet<String>) -> SemanticType {
     }
 }
 
+fn resolve_semantic_aliases(
+    semantic: SemanticType,
+    aliases: &BTreeMap<String, Vec<String>>,
+) -> SemanticType {
+    match semantic {
+        SemanticType::Named { name, arguments } => {
+            let mut segments = name.split("::").map(str::to_owned).collect::<Vec<_>>();
+            if let Some(prefix) = segments.first().and_then(|first| aliases.get(first)) {
+                segments = prefix
+                    .iter()
+                    .cloned()
+                    .chain(segments.into_iter().skip(1))
+                    .collect();
+            }
+            SemanticType::Named {
+                name: segments.join("::"),
+                arguments: arguments
+                    .into_iter()
+                    .map(|value| resolve_semantic_aliases(value, aliases))
+                    .collect(),
+            }
+        }
+        SemanticType::Tuple { elements } => SemanticType::Tuple {
+            elements: elements
+                .into_iter()
+                .map(|value| resolve_semantic_aliases(value, aliases))
+                .collect(),
+        },
+        SemanticType::Array { element, length } => SemanticType::Array {
+            element: Box::new(resolve_semantic_aliases(*element, aliases)),
+            length,
+        },
+        SemanticType::Slice { element } => SemanticType::Slice {
+            element: Box::new(resolve_semantic_aliases(*element, aliases)),
+        },
+        SemanticType::Reference {
+            mutable,
+            lifetime,
+            target,
+        } => SemanticType::Reference {
+            mutable,
+            lifetime,
+            target: Box::new(resolve_semantic_aliases(*target, aliases)),
+        },
+        SemanticType::Pointer { mutable, target } => SemanticType::Pointer {
+            mutable,
+            target: Box::new(resolve_semantic_aliases(*target, aliases)),
+        },
+        SemanticType::Option { value } => SemanticType::Option {
+            value: Box::new(resolve_semantic_aliases(*value, aliases)),
+        },
+        SemanticType::Result { success, error } => SemanticType::Result {
+            success: Box::new(resolve_semantic_aliases(*success, aliases)),
+            error: Box::new(resolve_semantic_aliases(*error, aliases)),
+        },
+        SemanticType::Function { parameters, result } => SemanticType::Function {
+            parameters: parameters
+                .into_iter()
+                .map(|value| resolve_semantic_aliases(value, aliases))
+                .collect(),
+            result: Box::new(resolve_semantic_aliases(*result, aliases)),
+        },
+        value => value,
+    }
+}
+
 fn normalize_path_type(path: &syn::Path, generics: &BTreeSet<String>) -> SemanticType {
     let spelling = path.to_token_stream().to_string();
     let Some(last) = path.segments.last() else {
@@ -1534,11 +1956,15 @@ struct SymbolLookup {
     symbols: BTreeMap<String, ExecutableSymbol>,
     packages: BTreeMap<String, PackageLookup>,
     reexports: BTreeMap<ReexportKey, Vec<String>>,
+    nominal_fields: BTreeMap<(String, String, String), InterfaceType>,
+    local_nominals: BTreeSet<(String, String)>,
+    nominal_aliases: BTreeMap<(String, String), InterfaceType>,
 }
 
 impl SymbolLookup {
     fn new(
         symbols: &[ExecutableSymbol],
+        nominal_types: &[NominalType],
         packages: &[CargoPackage],
         source_owners: &BTreeMap<String, String>,
         reexports: BTreeMap<ReexportKey, Vec<String>>,
@@ -1598,6 +2024,24 @@ impl SymbolLookup {
                 )
             })
             .collect();
+        let mut nominal_fields = BTreeMap::new();
+        let mut local_nominals = BTreeSet::new();
+        let mut nominal_aliases = BTreeMap::new();
+        for nominal in nominal_types {
+            let simple = simple_type_name(&nominal.qualified_name);
+            local_nominals.insert((nominal.package.clone(), simple.clone()));
+            for field in &nominal.fields {
+                nominal_fields.insert(
+                    (nominal.package.clone(), simple.clone(), field.name.clone()),
+                    field.field_type.clone(),
+                );
+            }
+            if nominal.kind == NominalTypeKind::TypeAlias
+                && let Some(target) = &nominal.alias_target
+            {
+                nominal_aliases.insert((nominal.package.clone(), simple.clone()), target.clone());
+            }
+        }
         Self {
             path_to_symbols,
             methods,
@@ -1607,11 +2051,31 @@ impl SymbolLookup {
                 .collect(),
             packages: package_lookup,
             reexports,
+            nominal_fields,
+            local_nominals,
+            nominal_aliases,
         }
     }
 
     fn symbol(&self, id: &str) -> Option<&ExecutableSymbol> {
         self.symbols.get(id)
+    }
+
+    fn field_type(&self, package: &str, owner: &str, field: &str) -> Option<InterfaceType> {
+        self.nominal_fields
+            .get(&(package.into(), simple_type_name(owner), field.into()))
+            .cloned()
+    }
+
+    fn is_local_nominal(&self, package: &str, owner: &str) -> bool {
+        self.local_nominals
+            .contains(&(package.into(), simple_type_name(owner)))
+    }
+
+    fn alias_target(&self, package: &str, owner: &str) -> Option<InterfaceType> {
+        self.nominal_aliases
+            .get(&(package.into(), simple_type_name(owner)))
+            .cloned()
     }
 
     fn resolve_path(
@@ -1725,7 +2189,7 @@ impl SymbolLookup {
         candidates.dedup();
         match candidates.len().cmp(&1) {
             Ordering::Equal => CallOutcome::resolved(candidates.remove(0), boundary_target_module),
-            Ordering::Greater => CallOutcome::dynamic(candidates),
+            Ordering::Greater => CallOutcome::ambiguous(candidates),
             Ordering::Less => CallOutcome::unresolved(),
         }
     }
@@ -1770,7 +2234,7 @@ impl SymbolLookup {
         match candidates.as_slice() {
             [callee] => CallOutcome::resolved(callee.clone(), None),
             [] => CallOutcome::unresolved(),
-            _ => CallOutcome::dynamic(candidates),
+            _ => CallOutcome::ambiguous(candidates),
         }
     }
 }
@@ -1792,6 +2256,7 @@ enum RawCallTarget {
         method: String,
         receiver_type: Option<String>,
         receiver_display: String,
+        receiver_reason: Option<CallResolutionReason>,
     },
     Dynamic,
     Macro,
@@ -1815,6 +2280,7 @@ struct RawCall {
 struct CallOutcome {
     state: CallResolutionState,
     authority: ResolutionAuthority,
+    reason: Option<CallResolutionReason>,
     callee: Option<String>,
     boundary_target_module: Option<String>,
     external_target: Option<String>,
@@ -1826,6 +2292,7 @@ impl CallOutcome {
         Self {
             state: CallResolutionState::ResolvedStatic,
             authority: ResolutionAuthority::StructuralExact,
+            reason: None,
             callee: Some(callee),
             boundary_target_module,
             external_target: None,
@@ -1836,7 +2303,8 @@ impl CallOutcome {
     fn external(target: String) -> Self {
         Self {
             state: CallResolutionState::External,
-            authority: ResolutionAuthority::CargoManifest,
+            authority: ResolutionAuthority::ExactExternalOwner,
+            reason: Some(CallResolutionReason::ExternalReceiver),
             callee: None,
             boundary_target_module: None,
             external_target: Some(target),
@@ -1847,7 +2315,8 @@ impl CallOutcome {
     fn dynamic(candidates: Vec<String>) -> Self {
         Self {
             state: CallResolutionState::DynamicDispatch,
-            authority: ResolutionAuthority::Conservative,
+            authority: ResolutionAuthority::ConservativeCandidateSet,
+            reason: Some(CallResolutionReason::UnresolvedTraitSelection),
             callee: None,
             boundary_target_module: None,
             external_target: None,
@@ -1858,7 +2327,8 @@ impl CallOutcome {
     fn unresolved() -> Self {
         Self {
             state: CallResolutionState::Unresolved,
-            authority: ResolutionAuthority::Conservative,
+            authority: ResolutionAuthority::InsufficientTypeInformation,
+            reason: Some(CallResolutionReason::UnknownPath),
             callee: None,
             boundary_target_module: None,
             external_target: None,
@@ -1870,11 +2340,29 @@ impl CallOutcome {
         Self {
             state: CallResolutionState::Unsupported,
             authority: ResolutionAuthority::Unsupported,
+            reason: Some(CallResolutionReason::UnsupportedSyntax),
             callee: None,
             boundary_target_module: None,
             external_target: None,
             candidates: Vec::new(),
         }
+    }
+
+    fn ambiguous(candidates: Vec<String>) -> Self {
+        Self {
+            state: CallResolutionState::Unresolved,
+            authority: ResolutionAuthority::InsufficientTypeInformation,
+            reason: Some(CallResolutionReason::AmbiguousLocalMethod),
+            callee: None,
+            boundary_target_module: None,
+            external_target: None,
+            candidates,
+        }
+    }
+
+    fn with_reason(mut self, reason: CallResolutionReason) -> Self {
+        self.reason = Some(reason);
+        self
     }
 }
 
@@ -1894,6 +2382,21 @@ fn simple_type_name(value: &str) -> String {
         .unwrap_or(without_arguments)
         .trim_matches(|character: char| !character.is_ascii_alphanumeric() && character != '_')
         .into()
+}
+
+fn semantic_type_name(value: &SemanticType) -> Option<String> {
+    match value {
+        SemanticType::Named { name, .. } | SemanticType::GenericParameter { name } => {
+            Some(name.clone())
+        }
+        SemanticType::Option { .. } => Some("Option".into()),
+        SemanticType::Result { .. } => Some("Result".into()),
+        SemanticType::String { representation } if representation == "owned" => {
+            Some("String".into())
+        }
+        SemanticType::String { representation } => Some(representation.clone()),
+        _ => None,
+    }
 }
 
 fn starts_type_name(value: &str) -> bool {
@@ -1941,6 +2444,7 @@ fn normalize_relative_path(namespace: &[String], path: &[String]) -> Vec<String>
 
 struct BodyAnalyzer<'a> {
     body: &'a BodyFact,
+    lookup: &'a SymbolLookup,
     registry: &'a mut TypeRegistry,
     raw_calls: &'a mut Vec<RawCall>,
     transfers: &'a mut Vec<ValueTransfer>,
@@ -1968,6 +2472,7 @@ impl SpanKey {
 impl<'a> BodyAnalyzer<'a> {
     fn new(
         body: &'a BodyFact,
+        lookup: &'a SymbolLookup,
         registry: &'a mut TypeRegistry,
         raw_calls: &'a mut Vec<RawCall>,
         transfers: &'a mut Vec<ValueTransfer>,
@@ -1975,6 +2480,7 @@ impl<'a> BodyAnalyzer<'a> {
     ) -> Self {
         Self {
             body,
+            lookup,
             registry,
             raw_calls,
             transfers,
@@ -2009,67 +2515,318 @@ impl<'a> BodyAnalyzer<'a> {
 
     fn expression_type(&mut self, expression: &Expr) -> Option<InterfaceType> {
         match expression {
-            Expr::Path(path) if path.path.segments.len() == 1 => self
-                .local_types
-                .get(&path.path.segments[0].ident.to_string())
-                .cloned(),
-            Expr::Lit(literal) => match &literal.lit {
-                syn::Lit::Bool(_) => {
-                    Some(self.registry.register_semantic(SemanticType::Bool, "bool"))
-                }
-                syn::Lit::Char(_) => {
-                    Some(self.registry.register_semantic(SemanticType::Char, "char"))
-                }
-                syn::Lit::Str(_) => Some(self.registry.register_semantic(
-                    SemanticType::Reference {
-                        mutable: false,
-                        lifetime: Some("'static".into()),
-                        target: Box::new(SemanticType::String {
-                            representation: "str".into(),
-                        }),
-                    },
-                    "&'static str",
-                )),
-                syn::Lit::Int(value) => Some(self.registry.register_semantic(
-                    SemanticType::Integer {
-                        family: if value.suffix().is_empty() {
-                            "inferred_integer".into()
-                        } else {
-                            value.suffix().into()
-                        },
-                    },
-                    value.to_token_stream().to_string(),
-                )),
-                syn::Lit::Float(value) => Some(self.registry.register_semantic(
-                    SemanticType::Float {
-                        family: if value.suffix().is_empty() {
-                            "inferred_float".into()
-                        } else {
-                            value.suffix().into()
-                        },
-                    },
-                    value.to_token_stream().to_string(),
-                )),
-                _ => None,
-            },
-            Expr::Reference(reference) => {
-                let target = self.expression_type(&reference.expr)?;
-                let semantic = self
-                    .registry
-                    .types
-                    .get(&target.type_id)
-                    .map(|(semantic, _)| semantic.clone())?;
-                Some(self.registry.register_semantic(
-                    SemanticType::Reference {
-                        mutable: reference.mutability.is_some(),
-                        lifetime: None,
-                        target: Box::new(semantic),
-                    },
-                    reference.to_token_stream().to_string(),
-                ))
+            Expr::Paren(value) => self.expression_type(&value.expr),
+            Expr::Group(value) => self.expression_type(&value.expr),
+            Expr::Path(value) => self.path_expression_type(value),
+            Expr::Lit(value) => self.literal_type(&value.lit),
+            Expr::Reference(value) => self.reference_type(value),
+            Expr::Unary(value) if matches!(value.op, syn::UnOp::Deref(_)) => {
+                self.dereference_type(value)
             }
+            Expr::Tuple(value) => self.tuple_expression_type(value),
+            Expr::Struct(value) => Some(self.struct_expression_type(value)),
+            Expr::Field(value) => self.field_expression_type(value),
+            Expr::Call(call) => self.call_return_type(call),
+            Expr::MethodCall(call) => self.method_return_type(call),
+            Expr::Try(value) => self.try_expression_type(value),
+            Expr::If(value) => self.if_expression_type(value),
+            Expr::Match(value) => self.match_expression_type(value),
             _ => None,
         }
+    }
+
+    fn path_expression_type(&mut self, value: &syn::ExprPath) -> Option<InterfaceType> {
+        if value.path.segments.len() == 1
+            && let Some(local) = self
+                .local_types
+                .get(&value.path.segments[0].ident.to_string())
+        {
+            return Some(local.clone());
+        }
+        let segments = self.expand_alias(
+            &value
+                .path
+                .segments
+                .iter()
+                .map(|segment| segment.ident.to_string())
+                .collect::<Vec<_>>(),
+        );
+        let spelling = segments.join("::");
+        segments
+            .last()
+            .is_some_and(|segment| starts_type_name(segment))
+            .then(|| {
+                self.registry.register_semantic(
+                    SemanticType::Named {
+                        name: spelling.clone(),
+                        arguments: Vec::new(),
+                    },
+                    spelling,
+                )
+            })
+    }
+
+    fn literal_type(&mut self, value: &syn::Lit) -> Option<InterfaceType> {
+        let semantic = match value {
+            syn::Lit::Bool(_) => SemanticType::Bool,
+            syn::Lit::Char(_) => SemanticType::Char,
+            syn::Lit::Str(_) => SemanticType::Reference {
+                mutable: false,
+                lifetime: Some("'static".into()),
+                target: Box::new(SemanticType::String {
+                    representation: "str".into(),
+                }),
+            },
+            syn::Lit::Int(value) => SemanticType::Integer {
+                family: if value.suffix().is_empty() {
+                    "inferred_integer".into()
+                } else {
+                    value.suffix().into()
+                },
+            },
+            syn::Lit::Float(value) => SemanticType::Float {
+                family: if value.suffix().is_empty() {
+                    "inferred_float".into()
+                } else {
+                    value.suffix().into()
+                },
+            },
+            _ => return None,
+        };
+        Some(
+            self.registry
+                .register_semantic(semantic, value.to_token_stream().to_string()),
+        )
+    }
+
+    fn reference_type(&mut self, value: &syn::ExprReference) -> Option<InterfaceType> {
+        let target = self.expression_type(&value.expr)?;
+        let semantic = self.registry.types.get(&target.type_id)?.0.clone();
+        Some(self.registry.register_semantic(
+            SemanticType::Reference {
+                mutable: value.mutability.is_some(),
+                lifetime: None,
+                target: Box::new(semantic),
+            },
+            value.to_token_stream().to_string(),
+        ))
+    }
+
+    fn dereference_type(&mut self, value: &syn::ExprUnary) -> Option<InterfaceType> {
+        let source = self.expression_type(&value.expr)?;
+        let semantic = self.registry.types.get(&source.type_id)?.0.clone();
+        match semantic {
+            SemanticType::Reference { target, .. } | SemanticType::Pointer { target, .. } => Some(
+                self.registry
+                    .register_semantic(*target, value.to_token_stream().to_string()),
+            ),
+            _ => None,
+        }
+    }
+
+    fn tuple_expression_type(&mut self, value: &syn::ExprTuple) -> Option<InterfaceType> {
+        let mut elements = Vec::new();
+        for element in &value.elems {
+            let interface = self.expression_type(element)?;
+            elements.push(self.registry.types.get(&interface.type_id)?.0.clone());
+        }
+        Some(self.registry.register_semantic(
+            SemanticType::Tuple { elements },
+            value.to_token_stream().to_string(),
+        ))
+    }
+
+    fn struct_expression_type(&mut self, value: &syn::ExprStruct) -> InterfaceType {
+        let name = self
+            .expand_alias(
+                &value
+                    .path
+                    .segments
+                    .iter()
+                    .map(|segment| segment.ident.to_string())
+                    .collect::<Vec<_>>(),
+            )
+            .join("::");
+        self.registry.register_semantic(
+            SemanticType::Named {
+                name: name.clone(),
+                arguments: Vec::new(),
+            },
+            name,
+        )
+    }
+
+    fn field_expression_type(&mut self, value: &syn::ExprField) -> Option<InterfaceType> {
+        let receiver = self.expression_type(&value.base)?;
+        let owner = self.type_spelling(&receiver)?;
+        self.lookup.field_type(
+            self.package_name(),
+            &owner,
+            &value.member.to_token_stream().to_string(),
+        )
+    }
+
+    fn try_expression_type(&mut self, value: &syn::ExprTry) -> Option<InterfaceType> {
+        let source = self.expression_type(&value.expr)?;
+        let semantic = match self.registry.types.get(&source.type_id)?.0.clone() {
+            SemanticType::Result { success, .. } => *success,
+            SemanticType::Option { value, .. } => *value,
+            _ => return None,
+        };
+        Some(
+            self.registry
+                .register_semantic(semantic, value.to_token_stream().to_string()),
+        )
+    }
+
+    fn if_expression_type(&mut self, value: &syn::ExprIf) -> Option<InterfaceType> {
+        let then_type = value
+            .then_branch
+            .stmts
+            .last()
+            .and_then(|statement| match statement {
+                syn::Stmt::Expr(expression, None) => self.expression_type(expression),
+                _ => None,
+            });
+        let else_type = value
+            .else_branch
+            .as_ref()
+            .and_then(|(_, expression)| self.expression_type(expression));
+        (then_type == else_type).then_some(then_type).flatten()
+    }
+
+    fn match_expression_type(&mut self, value: &syn::ExprMatch) -> Option<InterfaceType> {
+        let mut resolved = None;
+        for arm in &value.arms {
+            let current = self.expression_type(&arm.body)?;
+            if resolved.as_ref().is_some_and(|known| known != &current) {
+                return None;
+            }
+            resolved = Some(current);
+        }
+        resolved
+    }
+
+    fn type_spelling(&self, interface: &InterfaceType) -> Option<String> {
+        self.type_spelling_depth(interface, 0)
+    }
+
+    fn receiver_type_reason(&self, interface: &InterfaceType) -> Option<CallResolutionReason> {
+        let mut semantic = &self.registry.types.get(&interface.type_id)?.0;
+        if let SemanticType::Reference { target, .. } | SemanticType::Pointer { target, .. } =
+            semantic
+        {
+            semantic = target;
+        }
+        matches!(semantic, SemanticType::GenericParameter { .. })
+            .then_some(CallResolutionReason::GenericReceiver)
+    }
+
+    fn type_spelling_depth(&self, interface: &InterfaceType, depth: usize) -> Option<String> {
+        if depth > 8 {
+            return None;
+        }
+        if interface.rust_spelling.contains("dyn ") {
+            return Some(interface.rust_spelling.clone());
+        }
+        let semantic = &self.registry.types.get(&interface.type_id)?.0;
+        let owner = match semantic {
+            SemanticType::Reference { target, .. } | SemanticType::Pointer { target, .. } => {
+                semantic_type_name(target)?
+            }
+            value => semantic_type_name(value)?,
+        };
+        if let Some(target) = self.lookup.alias_target(self.package_name(), &owner) {
+            return self.type_spelling_depth(&target, depth + 1);
+        }
+        Some(owner)
+    }
+
+    fn call_return_type(&mut self, call: &syn::ExprCall) -> Option<InterfaceType> {
+        let Expr::Path(path) = call.func.as_ref() else {
+            return None;
+        };
+        let segments = self.expand_alias(
+            &path
+                .path
+                .segments
+                .iter()
+                .map(|segment| segment.ident.to_string())
+                .collect::<Vec<_>>(),
+        );
+        if let Some(last) = segments.last() {
+            if last == "Some" {
+                let value = self.expression_type(call.args.first()?)?;
+                let semantic = self.registry.types.get(&value.type_id)?.0.clone();
+                return Some(self.registry.register_semantic(
+                    SemanticType::Option {
+                        value: Box::new(semantic),
+                    },
+                    call.to_token_stream().to_string(),
+                ));
+            }
+            if matches!(last.as_str(), "Ok" | "Err") {
+                return None;
+            }
+        }
+        let outcome = self.lookup.resolve_path(
+            self.package_name(),
+            &self.body.context.crate_name,
+            &self.body.context.namespace,
+            self.body.owner_type.as_deref(),
+            &segments,
+            path.qself.is_some(),
+        );
+        let callee = self.lookup.symbol(outcome.callee.as_deref()?)?;
+        self.substitute_return(callee, call.args.iter())
+    }
+
+    fn method_return_type(&mut self, call: &syn::ExprMethodCall) -> Option<InterfaceType> {
+        let receiver = self.expression_type(&call.receiver)?;
+        let owner = self.type_spelling(&receiver)?;
+        let outcome =
+            self.lookup
+                .resolve_method(self.package_name(), &owner, &call.method.to_string());
+        let callee = self.lookup.symbol(outcome.callee.as_deref()?)?;
+        Some(callee.return_type.clone())
+    }
+
+    fn substitute_return<'b>(
+        &mut self,
+        callee: &ExecutableSymbol,
+        arguments: impl IntoIterator<Item = &'b Expr>,
+    ) -> Option<InterfaceType> {
+        let return_semantic = self
+            .registry
+            .types
+            .get(&callee.return_type.type_id)?
+            .0
+            .clone();
+        if matches!(&return_semantic, SemanticType::Named { name, .. } if name == "Self")
+            && let Some(owner) = &callee.owner_type
+        {
+            return Some(self.registry.register_semantic(
+                SemanticType::Named {
+                    name: owner.clone(),
+                    arguments: Vec::new(),
+                },
+                owner.clone(),
+            ));
+        }
+        if let SemanticType::GenericParameter { name } = &return_semantic {
+            for (argument, parameter) in arguments.into_iter().zip(&callee.parameters) {
+                let parameter_semantic = self
+                    .registry
+                    .types
+                    .get(&parameter.parameter_type.type_id)?
+                    .0
+                    .clone();
+                if parameter_semantic == (SemanticType::GenericParameter { name: name.clone() }) {
+                    return self.expression_type(argument);
+                }
+            }
+        }
+        Some(callee.return_type.clone())
     }
 
     fn endpoint_for_expression(&mut self, expression: &Expr) -> ValueEndpoint {
@@ -2154,13 +2911,44 @@ impl<'a> BodyAnalyzer<'a> {
             .filter(|(key, _)| *key == SpanKey::from_span(span))
             .map(|(_, endpoint)| endpoint.clone())
     }
+
+    fn bind_pattern_type(&mut self, pattern: &Pat, interface: &InterfaceType) {
+        match pattern {
+            Pat::Ident(value) => {
+                self.local_types
+                    .insert(value.ident.to_string(), interface.clone());
+            }
+            Pat::Type(value) => self.bind_pattern_type(&value.pat, interface),
+            Pat::Tuple(value) => {
+                let Some(SemanticType::Tuple { elements }) = self
+                    .registry
+                    .types
+                    .get(&interface.type_id)
+                    .map(|value| value.0.clone())
+                else {
+                    return;
+                };
+                for (pattern, semantic) in value.elems.iter().zip(elements) {
+                    let component = self
+                        .registry
+                        .register_semantic(semantic, pattern.to_token_stream().to_string());
+                    self.bind_pattern_type(pattern, &component);
+                }
+            }
+            _ => {}
+        }
+    }
 }
 
 impl<'ast> Visit<'ast> for BodyAnalyzer<'_> {
     fn visit_local(&mut self, local: &'ast syn::Local) {
         let name = pattern_name(&local.pat);
         let declared_type = match &local.pat {
-            Pat::Type(value) => Some(self.registry.register(&value.ty, &BTreeSet::new())),
+            Pat::Type(value) => Some(self.registry.register_with_aliases(
+                &value.ty,
+                &BTreeSet::new(),
+                &self.body.aliases,
+            )),
             _ => None,
         };
         if let Some(binding) = simple_pattern_name(&local.pat)
@@ -2182,6 +2970,9 @@ impl<'ast> Visit<'ast> for BodyAnalyzer<'_> {
                 && let Some(value) = &inferred
             {
                 self.local_types.insert(binding, value.clone());
+            }
+            if let Some(value) = &inferred {
+                self.bind_pattern_type(&local.pat, value);
             }
             let consumer = ValueEndpoint::new(
                 self.body.symbol.clone(),
@@ -2213,6 +3004,14 @@ impl<'ast> Visit<'ast> for BodyAnalyzer<'_> {
     }
 
     fn visit_expr_assign(&mut self, assignment: &'ast syn::ExprAssign) {
+        let inferred_assignment = self.expression_type(&assignment.right);
+        if let Expr::Path(path) = assignment.left.as_ref()
+            && path.path.segments.len() == 1
+            && let Some(value) = &inferred_assignment
+        {
+            self.local_types
+                .insert(path.path.segments[0].ident.to_string(), value.clone());
+        }
         let consumer = ValueEndpoint::new(
             self.body.symbol.clone(),
             "place",
@@ -2324,13 +3123,26 @@ impl<'ast> Visit<'ast> for BodyAnalyzer<'_> {
     }
 
     fn visit_expr_method_call(&mut self, call: &'ast syn::ExprMethodCall) {
-        let receiver_type = self
-            .expression_type(&call.receiver)
-            .map(|value| value.rust_spelling)
+        let receiver_interface = self.expression_type(&call.receiver);
+        let receiver_type = receiver_interface
+            .as_ref()
+            .and_then(|value| self.type_spelling(value))
             .or_else(|| {
                 matches!(call.receiver.as_ref(), Expr::Path(path) if path.path.is_ident("self"))
                     .then(|| self.body.owner_type.clone())
                     .flatten()
+            });
+        let receiver_reason = receiver_interface
+            .as_ref()
+            .and_then(|value| self.receiver_type_reason(value))
+            .or_else(|| {
+                receiver_type
+                    .is_none()
+                    .then_some(if is_deref_expression(&call.receiver) {
+                        CallResolutionReason::UnsupportedDeref
+                    } else {
+                        CallResolutionReason::UnknownReceiverType
+                    })
             });
         let method = call.method.to_string();
         if matches!(method.as_str(), "into" | "try_into" | "from") {
@@ -2348,6 +3160,7 @@ impl<'ast> Visit<'ast> for BodyAnalyzer<'_> {
                 method,
                 receiver_type,
                 receiver_display: call.receiver.to_token_stream().to_string(),
+                receiver_reason,
             },
             reference: reference.clone(),
             arguments,
@@ -2439,11 +3252,21 @@ impl BodyAnalyzer<'_> {
     }
 }
 
+fn is_deref_expression(expression: &Expr) -> bool {
+    match expression {
+        Expr::Paren(value) => is_deref_expression(&value.expr),
+        Expr::Group(value) => is_deref_expression(&value.expr),
+        Expr::Unary(value) => matches!(value.op, syn::UnOp::Deref(_)),
+        _ => false,
+    }
+}
+
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 struct CallGroupKey {
     caller: String,
     state: CallResolutionState,
     authority: ResolutionAuthority,
+    reason: Option<CallResolutionReason>,
     callee: Option<String>,
     boundary_target_module: Option<String>,
     external_target: Option<String>,
@@ -2480,6 +3303,7 @@ fn resolve_calls(
                 caller: call.caller,
                 state: outcome.state,
                 authority: outcome.authority,
+                reason: outcome.reason,
                 callee: outcome.callee,
                 boundary_target_module: outcome.boundary_target_module,
                 external_target: outcome.external_target,
@@ -2499,6 +3323,7 @@ fn resolve_calls(
                 caller: key.caller,
                 state: key.state,
                 authority: key.authority,
+                reason: key.reason,
                 callee: key.callee,
                 boundary_target_module: key.boundary_target_module,
                 external_target: key.external_target,
@@ -2526,7 +3351,12 @@ fn resolve_call(call: &RawCall, lookup: &SymbolLookup) -> CallOutcome {
             method,
             receiver_type,
             receiver_display,
+            receiver_reason,
         } => {
+            if *receiver_reason == Some(CallResolutionReason::GenericReceiver) {
+                return CallOutcome::unresolved()
+                    .with_reason(CallResolutionReason::GenericReceiver);
+            }
             let owner = receiver_type.as_deref().or_else(|| {
                 (receiver_display == "self")
                     .then_some(call.owner_type.as_deref())
@@ -2534,24 +3364,42 @@ fn resolve_call(call: &RawCall, lookup: &SymbolLookup) -> CallOutcome {
             });
             if owner.is_some_and(|value| value.contains("dyn ")) {
                 CallOutcome::dynamic(Vec::new())
+                    .with_reason(CallResolutionReason::TraitObjectDispatch)
             } else if let Some(owner) = owner {
-                let outcome = lookup.resolve_method(&call.package, owner, method);
+                let mut outcome = lookup.resolve_method(&call.package, owner, method);
                 if outcome.state == CallResolutionState::ResolvedStatic {
+                    outcome.authority = ResolutionAuthority::TypeDirectedExact;
                     outcome
-                } else if is_standard_type(owner) {
+                } else if outcome.reason == Some(CallResolutionReason::AmbiguousLocalMethod) {
+                    outcome
+                } else if is_standard_type(owner)
+                    || (!lookup.is_local_nominal(&call.package, owner)
+                        && starts_type_name(owner)
+                        && simple_type_name(owner).len() > 1)
+                {
                     CallOutcome::external(format!(
                         "rust_method::{}::{method}",
                         simple_type_name(owner)
                     ))
                 } else {
-                    CallOutcome::unresolved()
+                    CallOutcome::unresolved().with_reason(if simple_type_name(owner).len() <= 2 {
+                        CallResolutionReason::GenericReceiver
+                    } else {
+                        CallResolutionReason::UnresolvedTraitSelection
+                    })
                 }
             } else {
-                CallOutcome::unresolved()
+                CallOutcome::unresolved().with_reason(
+                    receiver_reason.unwrap_or(CallResolutionReason::UnknownReceiverType),
+                )
             }
         }
-        RawCallTarget::Dynamic => CallOutcome::dynamic(Vec::new()),
-        RawCallTarget::Macro => CallOutcome::unsupported(),
+        RawCallTarget::Dynamic => {
+            CallOutcome::dynamic(Vec::new()).with_reason(CallResolutionReason::FunctionPointer)
+        }
+        RawCallTarget::Macro => {
+            CallOutcome::unsupported().with_reason(CallResolutionReason::MacroGenerated)
+        }
     };
     if outcome.state == CallResolutionState::ResolvedStatic
         && let Some(callee) = outcome

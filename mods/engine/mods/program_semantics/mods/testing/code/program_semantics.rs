@@ -1,4 +1,4 @@
-//! Parent-local Program Semantic Model v1 conformance.
+//! Parent-local Program Semantic Model v2 conformance.
 
 use std::path::{Path, PathBuf};
 
@@ -7,8 +7,9 @@ use fortress_core::implementation_observation::{
     ImplementationObservationInput, ModuleTerritory, SnapshotBoundFile,
 };
 use fortress_core::program_semantics::{
-    CallResolutionState, ExecutableSymbol, ExecutableSymbolKind, ProgramSemanticError,
-    ProgramSemanticInput, SymbolClassification, compile_program_semantic_model,
+    CallResolutionReason, CallResolutionState, ExecutableSymbol, ExecutableSymbolKind, NominalType,
+    NominalTypeKind, ProgramCall, ProgramSemanticError, ProgramSemanticInput, SymbolClassification,
+    compile_program_semantic_model,
 };
 
 fn repository_root() -> PathBuf {
@@ -401,6 +402,159 @@ fn supported_rust_bodies_are_lowered_into_neutral_control_facts() {
     assert!(contains_kind(&value["bodies"], "match"));
     assert!(contains_kind(&value["bodies"], "return"));
     assert!(contains_kind(&value["bodies"], "method_call"));
+}
+
+/// `T-AF-PROGRAM-SEMANTICS-0001-R05-001`
+/// Fortress requirement: AF-PROGRAM-SEMANTICS-0001-R05
+#[test]
+fn nominal_struct_enum_trait_alias_fields_variants_and_impls_are_indexed() {
+    let model = compile_program_semantic_model(&one_package(
+        "pub struct Record { pub value: u32 }\npub struct Pair(pub u8, pub bool);\npub enum Choice { Empty, Value(u32), Named { flag: bool } }\npub trait Inspect { fn inspect(&self) -> bool; }\npub type RecordAlias = Record;\nimpl Record { pub fn value(&self) -> u32 { self.value } }\nimpl Inspect for Record { fn inspect(&self) -> bool { true } }\nfn exercise(record: &Record) { let _ = record.inspect(); }\n",
+    ))
+    .expect("nominal fixture compiles");
+    let kinds = model
+        .nominal_types()
+        .iter()
+        .map(NominalType::kind)
+        .collect::<Vec<_>>();
+    assert_eq!(
+        kinds
+            .iter()
+            .filter(|kind| **kind == NominalTypeKind::Struct)
+            .count(),
+        2
+    );
+    assert!(kinds.contains(&NominalTypeKind::Enum));
+    assert!(kinds.contains(&NominalTypeKind::Trait));
+    assert!(kinds.contains(&NominalTypeKind::TypeAlias));
+    assert_eq!(model.impls().len(), 2);
+    assert!(
+        model
+            .calls()
+            .iter()
+            .filter_map(|call| call.callee())
+            .filter_map(|id| model.symbols().iter().find(|symbol| symbol.id() == id))
+            .any(|symbol| symbol.qualified_name().ends_with("Record::inspect"))
+    );
+    let value: serde_json::Value =
+        serde_json::from_str(&model.to_canonical_json().expect("model serializes"))
+            .expect("model parses");
+    assert_eq!(value["coverage"]["nominal_variants"], 3);
+    assert_eq!(value["coverage"]["nominal_fields"], 5);
+}
+
+/// `T-AF-PROGRAM-SEMANTICS-0001-R05-002`
+/// Fortress requirement: AF-PROGRAM-SEMANTICS-0001-R05
+#[test]
+fn imported_aliases_and_field_access_retain_canonical_static_types() {
+    let model = compile_program_semantic_model(&one_package(
+        "mod model { pub struct Project { pub count: u32 } }\nuse crate::model::Project as P;\nfn count(project: P) -> u32 { let value = project.count; value }\n",
+    ))
+    .expect("alias and field fixture compiles");
+    let value: serde_json::Value =
+        serde_json::from_str(&model.to_canonical_json().expect("model serializes"))
+            .expect("model parses");
+    let parameter_type = &value["symbols"]
+        .as_array()
+        .expect("symbols")
+        .iter()
+        .find(|symbol| symbol["qualified_name"] == "sample::count")
+        .expect("count symbol")["parameters"][0]["parameter_type"]["type_id"];
+    let semantic = value["types"]
+        .as_array()
+        .expect("types")
+        .iter()
+        .find(|candidate| candidate["id"] == *parameter_type)
+        .expect("parameter semantic");
+    assert_eq!(semantic["semantic"]["name"], "crate::model::Project");
+    assert!(
+        value["value_transfers"]
+            .as_array()
+            .expect("transfers")
+            .iter()
+            .any(|transfer| transfer["producer"]["name"] == "project . count"
+                && !transfer["producer"]["static_type"].is_null())
+    );
+}
+
+/// `T-AF-PROGRAM-SEMANTICS-0001-R06-001`
+/// Fortress requirement: AF-PROGRAM-SEMANTICS-0001-R06
+#[test]
+fn receiver_types_resolve_inherent_methods_references_collisions_and_chains() {
+    let model = compile_program_semantic_model(&one_package(
+        "struct Builder; struct Checked; struct Other;\nimpl Builder { fn build() -> Self { Builder } fn validate(&self) -> Checked { Checked } }\nimpl Checked { fn finish(&mut self) -> u32 { 1 } }\nimpl Other { fn validate(&self) -> bool { true } }\nfn identity<T>(value: T) -> T { value }\nfn run(value: &Builder, checked: &mut Checked) -> u32 { let _ = value.validate(); let _ = checked.finish(); let _ = identity(Checked).finish(); let mut next = Builder::build().validate(); next.finish() }\n",
+    ))
+    .expect("type-directed fixture compiles");
+    let resolved_names = model
+        .calls()
+        .iter()
+        .filter(|call| call.state() == CallResolutionState::ResolvedStatic)
+        .filter_map(|call| call.callee())
+        .filter_map(|id| model.symbols().iter().find(|symbol| symbol.id() == id))
+        .map(ExecutableSymbol::qualified_name)
+        .collect::<Vec<_>>();
+    assert!(
+        resolved_names
+            .iter()
+            .any(|name| name.ends_with("Builder::validate"))
+    );
+    assert!(
+        resolved_names
+            .iter()
+            .any(|name| name.ends_with("Checked::finish"))
+    );
+    assert!(
+        !resolved_names
+            .iter()
+            .any(|name| name.ends_with("Other::validate"))
+    );
+    assert!(model.calls().iter().any(|call| {
+        call.callee()
+            .and_then(|id| model.symbols().iter().find(|symbol| symbol.id() == id))
+            .is_some_and(|symbol| symbol.qualified_name().ends_with("Builder::validate"))
+            && call
+                .evidence()
+                .iter()
+                .any(|evidence| evidence.reference().contains("Builder :: build"))
+    }));
+    assert!(model.value_transfers().len() > 4);
+}
+
+/// `T-AF-PROGRAM-SEMANTICS-0001-R06-002`
+/// Fortress requirement: AF-PROGRAM-SEMANTICS-0001-R06
+#[test]
+fn residual_calls_distinguish_trait_objects_generics_external_and_unknown_receivers() {
+    let model = compile_program_semantic_model(&one_package(
+        "trait Work { fn work(&self); }\nfn dynamic(value: &dyn Work) { value.work(); }\nfn generic<T>(value: T) { value.work(); }\nfn external(value: &String) { value.len(); }\nfn unknown() { missing().work(); }\n",
+    ))
+    .expect("residual-resolution fixture compiles");
+    let reasons = model
+        .calls()
+        .iter()
+        .filter_map(ProgramCall::reason)
+        .collect::<std::collections::BTreeSet<_>>();
+    assert!(reasons.contains(&CallResolutionReason::TraitObjectDispatch));
+    assert!(reasons.contains(&CallResolutionReason::GenericReceiver));
+    assert!(reasons.contains(&CallResolutionReason::ExternalReceiver));
+    assert!(reasons.contains(&CallResolutionReason::UnknownReceiverType));
+}
+
+/// `T-AF-PROGRAM-SEMANTICS-0001-R06-003`
+/// Fortress requirement: AF-PROGRAM-SEMANTICS-0001-R06
+#[test]
+fn ambiguity_and_user_defined_dereference_remain_explicit_without_guessing() {
+    let model = compile_program_semantic_model(&one_package(
+        "trait Left { fn run(&self); } trait Right { fn run(&self); } struct Item; impl Left for Item { fn run(&self) {} } impl Right for Item { fn run(&self) {} } struct Wrapper(Item); fn ambiguous(value: &Item) { value.run(); } fn deref(value: Wrapper) { (*value).run(); }\n",
+    ))
+    .expect("ambiguous fixture compiles structurally");
+    assert!(model.calls().iter().any(|call| {
+        call.state() == CallResolutionState::Unresolved
+            && call.reason() == Some(CallResolutionReason::AmbiguousLocalMethod)
+    }));
+    assert!(model.calls().iter().any(|call| {
+        call.state() == CallResolutionState::Unresolved
+            && call.reason() == Some(CallResolutionReason::UnsupportedDeref)
+    }));
 }
 
 fn model_type_is_structural(

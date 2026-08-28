@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:fortress:schema:v1:program-semantic-model",
-  "title": "Fortress Program Semantic Model v1",
+  "$id": "urn:fortress:schema:v2:program-semantic-model",
+  "title": "Fortress Program Semantic Model v2",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -13,6 +13,8 @@
     "analyzers",
     "languages",
     "packages",
+    "nominal_types",
+    "impls",
     "symbols",
     "types",
     "calls",
@@ -21,20 +23,23 @@
     "transformations",
     "module_boundaries",
     "call_topology",
+    "resolution_summary",
     "coverage",
     "analyzer_coherency",
     "unsupported_semantics",
     "provenance"
   ],
   "properties": {
-    "$schema": { "const": "urn:fortress:schema:v1:program-semantic-model" },
-    "schema_version": { "const": 1 },
+    "$schema": { "const": "urn:fortress:schema:v2:program-semantic-model" },
+    "schema_version": { "const": 2 },
     "semantic_version": { "$ref": "#/$defs/semver" },
     "project_id": { "$ref": "#/$defs/stable_id" },
     "source_identity": { "$ref": "#/$defs/digest" },
     "analyzers": { "type": "array", "items": { "$ref": "#/$defs/analyzer" } },
     "languages": { "type": "array", "items": { "type": "string", "minLength": 1 } },
     "packages": { "type": "array", "items": { "$ref": "#/$defs/package" } },
+    "nominal_types": { "type": "array", "items": { "$ref": "#/$defs/nominal_type" } },
+    "impls": { "type": "array", "items": { "$ref": "#/$defs/impl" } },
     "symbols": { "type": "array", "items": { "$ref": "#/$defs/symbol" } },
     "types": { "type": "array", "items": { "$ref": "#/$defs/type_fact" } },
     "calls": { "type": "array", "items": { "$ref": "#/$defs/call" } },
@@ -43,6 +48,7 @@
     "transformations": { "type": "array", "items": { "$ref": "#/$defs/transformation" } },
     "module_boundaries": { "type": "array", "items": { "$ref": "#/$defs/module_boundary" } },
     "call_topology": { "$ref": "#/$defs/call_topology" },
+    "resolution_summary": { "$ref": "#/$defs/resolution_summary" },
     "coverage": { "$ref": "#/$defs/coverage" },
     "analyzer_coherency": { "$ref": "#/$defs/analyzer_coherency" },
     "unsupported_semantics": { "type": "array", "items": { "type": "string", "minLength": 1 } },
@@ -198,6 +204,68 @@
         { "type": "object", "additionalProperties": false, "required": ["restricted"], "properties": { "restricted": { "type": "string" } } }
       ]
     },
+    "nominal_field": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "position", "field_type", "provenance"],
+      "properties": {
+        "name": { "type": "string" },
+        "position": { "type": "integer", "minimum": 0 },
+        "field_type": { "$ref": "#/$defs/interface_type" },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+    "nominal_variant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "fields", "provenance"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "fields": { "type": "array", "items": { "$ref": "#/$defs/nominal_field" } },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+    "nominal_type": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "qualified_name", "language", "package", "crate_name", "rust_module", "fortress_module", "kind", "generic_parameters", "fields", "variants", "trait_methods", "alias_target", "alias_transparent", "provenance"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^rust_nominal:sha256:[0-9a-f]{64}$" },
+        "qualified_name": { "type": "string", "minLength": 1 },
+        "language": { "const": "rust" },
+        "package": { "type": "string", "minLength": 1 },
+        "crate_name": { "type": "string", "minLength": 1 },
+        "rust_module": { "type": "string" },
+        "fortress_module": { "$ref": "#/$defs/stable_id" },
+        "kind": { "enum": ["struct", "enum", "trait", "type_alias"] },
+        "generic_parameters": { "$ref": "#/$defs/string_array" },
+        "fields": { "type": "array", "items": { "$ref": "#/$defs/nominal_field" } },
+        "variants": { "type": "array", "items": { "$ref": "#/$defs/nominal_variant" } },
+        "trait_methods": { "$ref": "#/$defs/string_array" },
+        "alias_target": { "oneOf": [{ "$ref": "#/$defs/interface_type" }, { "type": "null" }] },
+        "alias_transparent": { "type": "boolean" },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+    "impl": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "package", "crate_name", "rust_module", "fortress_module", "kind", "self_type", "trait_type", "generic_parameters", "methods", "resolution", "provenance"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^rust_impl:sha256:[0-9a-f]{64}$" },
+        "package": { "type": "string", "minLength": 1 },
+        "crate_name": { "type": "string", "minLength": 1 },
+        "rust_module": { "type": "string" },
+        "fortress_module": { "$ref": "#/$defs/stable_id" },
+        "kind": { "enum": ["inherent", "trait"] },
+        "self_type": { "$ref": "#/$defs/interface_type" },
+        "trait_type": { "oneOf": [{ "$ref": "#/$defs/interface_type" }, { "type": "null" }] },
+        "generic_parameters": { "$ref": "#/$defs/string_array" },
+        "methods": { "$ref": "#/$defs/string_array" },
+        "resolution": { "enum": ["RESOLVED_LOCAL", "EXTERNAL_OR_GENERIC", "UNRESOLVED"] },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
     "symbol": {
       "type": "object",
       "additionalProperties": false,
@@ -248,12 +316,13 @@
     "call": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "caller", "state", "authority", "callee", "boundary_target_module", "external_target", "candidate_callees", "evidence"],
+      "required": ["id", "caller", "state", "authority", "reason", "callee", "boundary_target_module", "external_target", "candidate_callees", "evidence"],
       "properties": {
         "id": { "type": "string", "pattern": "^call:sha256:[0-9a-f]{64}$" },
         "caller": { "type": "string" },
         "state": { "enum": ["RESOLVED_STATIC", "EXTERNAL", "DYNAMIC_DISPATCH", "UNRESOLVED", "UNSUPPORTED", "INVALID"] },
-        "authority": { "enum": ["cargo_manifest", "structural_exact", "conservative", "unsupported"] },
+        "authority": { "enum": ["cargo_manifest", "structural_exact", "type_directed_exact", "exact_external_owner", "conservative_candidate_set", "insufficient_type_information", "conservative", "unsupported"] },
+        "reason": { "oneOf": [{ "enum": ["UNKNOWN_RECEIVER_TYPE", "AMBIGUOUS_LOCAL_METHOD", "GENERIC_RECEIVER", "TRAIT_OBJECT_DISPATCH", "UNRESOLVED_TRAIT_SELECTION", "EXTERNAL_RECEIVER", "UNSUPPORTED_DEREF", "MACRO_GENERATED", "FUNCTION_POINTER", "CLOSURE_TARGET", "UNSUPPORTED_SYNTAX", "UNKNOWN_PATH"] }, { "type": "null" }] },
         "callee": { "$ref": "#/$defs/nullable_string" },
         "boundary_target_module": { "$ref": "#/$defs/nullable_string" },
         "external_target": { "$ref": "#/$defs/nullable_string" },
@@ -405,11 +474,19 @@
     "coverage": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["source_files", "packages", "executable_symbols", "production_symbols", "testing_symbols", "free_functions", "associated_functions", "inherent_methods", "trait_method_declarations", "trait_method_implementations", "resolved_static_calls", "external_calls", "dynamic_dispatch_calls", "unresolved_calls", "unsupported_calls", "invalid_calls", "cross_module_calls", "cross_package_calls", "recursive_components", "value_transfers", "transformations"],
+      "required": ["source_files", "packages", "executable_symbols", "nominal_types", "nominal_structs", "nominal_enums", "nominal_traits", "nominal_type_aliases", "nominal_fields", "nominal_variants", "impls", "production_symbols", "testing_symbols", "free_functions", "associated_functions", "inherent_methods", "trait_method_declarations", "trait_method_implementations", "resolved_static_calls", "external_calls", "dynamic_dispatch_calls", "unresolved_calls", "unsupported_calls", "invalid_calls", "cross_module_calls", "cross_package_calls", "recursive_components", "value_transfers", "transformations"],
       "properties": {
         "source_files": { "type": "integer", "minimum": 0 },
         "packages": { "type": "integer", "minimum": 0 },
         "executable_symbols": { "type": "integer", "minimum": 0 },
+        "nominal_types": { "type": "integer", "minimum": 0 },
+        "nominal_structs": { "type": "integer", "minimum": 0 },
+        "nominal_enums": { "type": "integer", "minimum": 0 },
+        "nominal_traits": { "type": "integer", "minimum": 0 },
+        "nominal_type_aliases": { "type": "integer", "minimum": 0 },
+        "nominal_fields": { "type": "integer", "minimum": 0 },
+        "nominal_variants": { "type": "integer", "minimum": 0 },
+        "impls": { "type": "integer", "minimum": 0 },
         "production_symbols": { "type": "integer", "minimum": 0 },
         "testing_symbols": { "type": "integer", "minimum": 0 },
         "free_functions": { "type": "integer", "minimum": 0 },
@@ -428,6 +505,21 @@
         "recursive_components": { "type": "integer", "minimum": 0 },
         "value_transfers": { "type": "integer", "minimum": 0 },
         "transformations": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "resolution_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["resolved_static", "external", "dynamic_dispatch", "unresolved", "unsupported", "invalid", "reasons", "fixed_point_iterations"],
+      "properties": {
+        "resolved_static": { "type": "integer", "minimum": 0 },
+        "external": { "type": "integer", "minimum": 0 },
+        "dynamic_dispatch": { "type": "integer", "minimum": 0 },
+        "unresolved": { "type": "integer", "minimum": 0 },
+        "unsupported": { "type": "integer", "minimum": 0 },
+        "invalid": { "type": "integer", "minimum": 0 },
+        "reasons": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 } },
+        "fixed_point_iterations": { "type": "integer", "minimum": 1 }
       }
     },
     "analyzer_coherency": {

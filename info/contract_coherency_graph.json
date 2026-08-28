@@ -251,7 +251,7 @@
         "TEST-PROGRAM-SEMANTICS-0001"
       ],
       "contract_source": "mods/engine/mods/program_semantics/contract.json",
-      "contract_digest": "sha256:03d78ce4cb04a90974868f3b6db09049060426018d7203579079cd6c3922211d",
+      "contract_digest": "sha256:e3316252f21d7c9749d3f4051c9a16d46c04bb32026268a55d3ba27d4a0cda3c",
       "provenance": {
         "path": "mods/engine/mods/program_semantics/contract.json",
         "pointer": "/"
@@ -519,7 +519,7 @@
         "TEST-CLI-0001"
       ],
       "contract_source": "mods/cli/contract.json",
-      "contract_digest": "sha256:8f2fd61e56ed54c41bb33f79156e6b764c4ad15b60c65d07286057468def5ea6",
+      "contract_digest": "sha256:7aff83f3b19b73c7c382f156ba8e003f9781e2791a784da2c6aabac092b76e1a",
       "provenance": {
         "path": "mods/cli/contract.json",
         "pointer": "/"
@@ -1096,7 +1096,9 @@
         "AF-PROGRAM-SEMANTICS-0001-R01",
         "AF-PROGRAM-SEMANTICS-0001-R02",
         "AF-PROGRAM-SEMANTICS-0001-R03",
-        "AF-PROGRAM-SEMANTICS-0001-R04"
+        "AF-PROGRAM-SEMANTICS-0001-R04",
+        "AF-PROGRAM-SEMANTICS-0001-R05",
+        "AF-PROGRAM-SEMANTICS-0001-R06"
       ],
       "provenance": {
         "path": "mods/engine/mods/program_semantics/contract.json",
@@ -1468,6 +1470,35 @@
       "provenance": {
         "path": "mods/engine/mods/program_semantics/contract.json",
         "pointer": "/features/0/requirements/3"
+      }
+    },
+    {
+      "id": "AF-PROGRAM-SEMANTICS-0001-R05",
+      "owner": "AF-PROGRAM-SEMANTICS-0001",
+      "feature": "AF-PROGRAM-SEMANTICS-0001",
+      "statement": "Program Semantics deterministically indexes locally governed Rust structs, enums, traits, type aliases, fields, variants, and inherent or trait implementation blocks without changing executable symbol identities merely because the PSM schema evolves.",
+      "declared_tests": [
+        "T-AF-PROGRAM-SEMANTICS-0001-R05-001",
+        "T-AF-PROGRAM-SEMANTICS-0001-R05-002"
+      ],
+      "provenance": {
+        "path": "mods/engine/mods/program_semantics/contract.json",
+        "pointer": "/features/0/requirements/4"
+      }
+    },
+    {
+      "id": "AF-PROGRAM-SEMANTICS-0001-R06",
+      "owner": "AF-PROGRAM-SEMANTICS-0001",
+      "feature": "AF-PROGRAM-SEMANTICS-0001",
+      "statement": "Program Semantics propagates supported local static expression types to resolve inherent and concrete trait method calls conservatively, emits canonical interprocedural transfers for newly resolved calls, and assigns stable semantic reasons to every residual non-static call.",
+      "declared_tests": [
+        "T-AF-PROGRAM-SEMANTICS-0001-R06-001",
+        "T-AF-PROGRAM-SEMANTICS-0001-R06-002",
+        "T-AF-PROGRAM-SEMANTICS-0001-R06-003"
+      ],
+      "provenance": {
+        "path": "mods/engine/mods/program_semantics/contract.json",
+        "pointer": "/features/0/requirements/5"
       }
     },
     {
@@ -1932,7 +1963,7 @@
       "id": "TF-CLI-0001-R07",
       "owner": "TF-CLI-0001",
       "feature": "TF-CLI-0001",
-      "statement": "The native fortress psm command compiles snapshot-bound Program Semantic Model v1, emits canonical deterministic JSON to standard output or an explicit file, returns non-success for invalid or analyzer-incoherent state, and never implies behavioral realization or certification.",
+      "statement": "The native fortress psm command compiles snapshot-bound Program Semantic Model v2, emits canonical deterministic JSON to standard output or an explicit file, returns non-success for invalid or analyzer-incoherent state, and never implies behavioral realization or certification.",
       "declared_tests": [
         "T-TF-CLI-0001-R07-001",
         "T-TF-CLI-0001-R07-002"
@@ -11291,6 +11322,40 @@
         "derivation": "verification_support:AF-PROGRAM-SEMANTICS-0001-R04"
       },
       {
+        "requirement": "AF-PROGRAM-SEMANTICS-0001-R05",
+        "owner": "AF-PROGRAM-SEMANTICS-0001",
+        "feature": "AF-PROGRAM-SEMANTICS-0001",
+        "testing_module": "TEST-PROGRAM-SEMANTICS-0001",
+        "declared_tests": [
+          "T-AF-PROGRAM-SEMANTICS-0001-R05-001",
+          "T-AF-PROGRAM-SEMANTICS-0001-R05-002"
+        ],
+        "observed_tests": [
+          "T-AF-PROGRAM-SEMANTICS-0001-R05-001",
+          "T-AF-PROGRAM-SEMANTICS-0001-R05-002"
+        ],
+        "complete_declared_support": true,
+        "derivation": "verification_support:AF-PROGRAM-SEMANTICS-0001-R05"
+      },
+      {
+        "requirement": "AF-PROGRAM-SEMANTICS-0001-R06",
+        "owner": "AF-PROGRAM-SEMANTICS-0001",
+        "feature": "AF-PROGRAM-SEMANTICS-0001",
+        "testing_module": "TEST-PROGRAM-SEMANTICS-0001",
+        "declared_tests": [
+          "T-AF-PROGRAM-SEMANTICS-0001-R06-001",
+          "T-AF-PROGRAM-SEMANTICS-0001-R06-002",
+          "T-AF-PROGRAM-SEMANTICS-0001-R06-003"
+        ],
+        "observed_tests": [
+          "T-AF-PROGRAM-SEMANTICS-0001-R06-001",
+          "T-AF-PROGRAM-SEMANTICS-0001-R06-002",
+          "T-AF-PROGRAM-SEMANTICS-0001-R06-003"
+        ],
+        "complete_declared_support": true,
+        "derivation": "verification_support:AF-PROGRAM-SEMANTICS-0001-R06"
+      },
+      {
         "requirement": "AF-PROJECT-MODEL-0001-R01",
         "owner": "AF-PROJECT-MODEL-0001",
         "feature": "AF-PROJECT-MODEL-0001",
@@ -12370,6 +12435,66 @@
         "provenance": {
           "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
           "pointer": "symbol:supported_rust_bodies_are_lowered_into_neutral_control_facts"
+        }
+      },
+      {
+        "id": "T-AF-PROGRAM-SEMANTICS-0001-R05-001",
+        "testing_module": "TEST-PROGRAM-SEMANTICS-0001",
+        "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+        "symbol": "nominal_struct_enum_trait_alias_fields_variants_and_impls_are_indexed",
+        "classification": "behavioral",
+        "declared_requirement": "AF-PROGRAM-SEMANTICS-0001-R05",
+        "provenance": {
+          "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+          "pointer": "symbol:nominal_struct_enum_trait_alias_fields_variants_and_impls_are_indexed"
+        }
+      },
+      {
+        "id": "T-AF-PROGRAM-SEMANTICS-0001-R05-002",
+        "testing_module": "TEST-PROGRAM-SEMANTICS-0001",
+        "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+        "symbol": "imported_aliases_and_field_access_retain_canonical_static_types",
+        "classification": "behavioral",
+        "declared_requirement": "AF-PROGRAM-SEMANTICS-0001-R05",
+        "provenance": {
+          "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+          "pointer": "symbol:imported_aliases_and_field_access_retain_canonical_static_types"
+        }
+      },
+      {
+        "id": "T-AF-PROGRAM-SEMANTICS-0001-R06-001",
+        "testing_module": "TEST-PROGRAM-SEMANTICS-0001",
+        "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+        "symbol": "receiver_types_resolve_inherent_methods_references_collisions_and_chains",
+        "classification": "behavioral",
+        "declared_requirement": "AF-PROGRAM-SEMANTICS-0001-R06",
+        "provenance": {
+          "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+          "pointer": "symbol:receiver_types_resolve_inherent_methods_references_collisions_and_chains"
+        }
+      },
+      {
+        "id": "T-AF-PROGRAM-SEMANTICS-0001-R06-002",
+        "testing_module": "TEST-PROGRAM-SEMANTICS-0001",
+        "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+        "symbol": "residual_calls_distinguish_trait_objects_generics_external_and_unknown_receivers",
+        "classification": "behavioral",
+        "declared_requirement": "AF-PROGRAM-SEMANTICS-0001-R06",
+        "provenance": {
+          "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+          "pointer": "symbol:residual_calls_distinguish_trait_objects_generics_external_and_unknown_receivers"
+        }
+      },
+      {
+        "id": "T-AF-PROGRAM-SEMANTICS-0001-R06-003",
+        "testing_module": "TEST-PROGRAM-SEMANTICS-0001",
+        "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+        "symbol": "ambiguity_and_user_defined_dereference_remain_explicit_without_guessing",
+        "classification": "behavioral",
+        "declared_requirement": "AF-PROGRAM-SEMANTICS-0001-R06",
+        "provenance": {
+          "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+          "pointer": "symbol:ambiguity_and_user_defined_dereference_remain_explicit_without_guessing"
         }
       },
       {
@@ -24934,6 +25059,51 @@
       ]
     },
     {
+      "id": "verification_support:AF-PROGRAM-SEMANTICS-0001-R05",
+      "kind": "verification_support",
+      "fact": "requirement_support:AF-PROGRAM-SEMANTICS-0001-R05",
+      "input_facts": [
+        "requirement:AF-PROGRAM-SEMANTICS-0001-R05",
+        "testing_boundary:AF-PROGRAM-SEMANTICS-0001:TEST-PROGRAM-SEMANTICS-0001",
+        "declared_test:AF-PROGRAM-SEMANTICS-0001-R05:T-AF-PROGRAM-SEMANTICS-0001-R05-001",
+        "declared_test:AF-PROGRAM-SEMANTICS-0001-R05:T-AF-PROGRAM-SEMANTICS-0001-R05-002"
+      ],
+      "explanation_path": [
+        "AF-PROGRAM-SEMANTICS-0001",
+        "AF-PROGRAM-SEMANTICS-0001-R05",
+        "TEST-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/contract.json",
+          "pointer": "/features/0/requirements/4"
+        }
+      ]
+    },
+    {
+      "id": "verification_support:AF-PROGRAM-SEMANTICS-0001-R06",
+      "kind": "verification_support",
+      "fact": "requirement_support:AF-PROGRAM-SEMANTICS-0001-R06",
+      "input_facts": [
+        "requirement:AF-PROGRAM-SEMANTICS-0001-R06",
+        "testing_boundary:AF-PROGRAM-SEMANTICS-0001:TEST-PROGRAM-SEMANTICS-0001",
+        "declared_test:AF-PROGRAM-SEMANTICS-0001-R06:T-AF-PROGRAM-SEMANTICS-0001-R06-001",
+        "declared_test:AF-PROGRAM-SEMANTICS-0001-R06:T-AF-PROGRAM-SEMANTICS-0001-R06-002",
+        "declared_test:AF-PROGRAM-SEMANTICS-0001-R06:T-AF-PROGRAM-SEMANTICS-0001-R06-003"
+      ],
+      "explanation_path": [
+        "AF-PROGRAM-SEMANTICS-0001",
+        "AF-PROGRAM-SEMANTICS-0001-R06",
+        "TEST-PROGRAM-SEMANTICS-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/program_semantics/contract.json",
+          "pointer": "/features/0/requirements/5"
+        }
+      ]
+    },
+    {
       "id": "verification_support:AF-PROJECT-MODEL-0001-R01",
       "kind": "verification_support",
       "fact": "requirement_support:AF-PROJECT-MODEL-0001-R01",
@@ -25971,6 +26141,10 @@
     },
     {
       "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+      "pointer": "symbol:ambiguity_and_user_defined_dereference_remain_explicit_without_guessing"
+    },
+    {
+      "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
       "pointer": "symbol:analyzer_disagreement_is_a_hard_coherency_failure"
     },
     {
@@ -25991,11 +26165,27 @@
     },
     {
       "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+      "pointer": "symbol:imported_aliases_and_field_access_retain_canonical_static_types"
+    },
+    {
+      "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
       "pointer": "symbol:live_fortress_psm_is_coherent_deterministic_and_invalid_free"
     },
     {
       "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
       "pointer": "symbol:methods_associated_functions_and_traits_receive_distinct_identities"
+    },
+    {
+      "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+      "pointer": "symbol:nominal_struct_enum_trait_alias_fields_variants_and_impls_are_indexed"
+    },
+    {
+      "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+      "pointer": "symbol:receiver_types_resolve_inherent_methods_references_collisions_and_chains"
+    },
+    {
+      "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",
+      "pointer": "symbol:residual_calls_distinguish_trait_objects_generics_external_and_unknown_receivers"
     },
     {
       "path": "mods/engine/mods/program_semantics/mods/testing/code/program_semantics.rs",

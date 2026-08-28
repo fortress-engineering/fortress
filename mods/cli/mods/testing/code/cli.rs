@@ -485,9 +485,9 @@ fn psm_json_is_observed_schema_versioned_and_repeatable() {
         serde_json::from_slice(&first.stdout).expect("PSM output is JSON");
     assert_eq!(
         value["$schema"],
-        "urn:fortress:schema:v1:program-semantic-model"
+        "urn:fortress:schema:v2:program-semantic-model"
     );
-    assert_eq!(value["schema_version"], 1);
+    assert_eq!(value["schema_version"], 2);
     assert_eq!(value["analyzer_coherency"]["status"], "coherent");
 }
 

@@ -19,16 +19,16 @@ use crate::implementation_observation::{
     ImplementationObservationError, ImplementationObservationInput,
 };
 
-/// Registered PSM v1 schema identity.
-pub const PROGRAM_SEMANTIC_MODEL_SCHEMA: &str = "urn:fortress:schema:v1:program-semantic-model";
+/// Registered PSM v2 schema identity.
+pub const PROGRAM_SEMANTIC_MODEL_SCHEMA: &str = "urn:fortress:schema:v2:program-semantic-model";
 /// Canonical PSM document schema version.
-pub const PROGRAM_SEMANTIC_MODEL_SCHEMA_VERSION: u16 = 1;
+pub const PROGRAM_SEMANTIC_MODEL_SCHEMA_VERSION: u16 = 2;
 /// Semantic version of the language-neutral PSM compiler.
-pub const PROGRAM_SEMANTIC_MODEL_VERSION: &str = "1.1.0";
+pub const PROGRAM_SEMANTIC_MODEL_VERSION: &str = "2.0.0";
 /// Stable Rust analyzer identity.
 pub const RUST_PROGRAM_ANALYZER_ID: &str = "fortress-rust-program-semantics";
 /// Semantic version of supported Rust program analysis.
-pub const RUST_PROGRAM_ANALYZER_VERSION: &str = "1.1.0";
+pub const RUST_PROGRAM_ANALYZER_VERSION: &str = "2.0.0";
 
 const UNSUPPORTED_SEMANTICS: &[&str] = &[
     "arbitrary_dynamic_dispatch_resolution",
@@ -113,7 +113,7 @@ impl AnalyzerDescriptor {
             language: "rust".into(),
             package_authority: "snapshot_bound_cargo_manifests".into(),
             declaration_authority: "structural_ast".into(),
-            call_resolution_authority: "conservative_structural".into(),
+            call_resolution_authority: "type_directed_structural".into(),
         }
     }
 }
@@ -266,7 +266,7 @@ pub enum ProgramPattern {
         /// Nested component patterns.
         elements: Vec<ProgramPattern>,
     },
-    /// Pattern semantics are not represented by PSM v1.
+    /// Pattern semantics are not represented by PSM v2.
     Unsupported {
         /// Exact Rust pattern spelling.
         rust_spelling: String,
@@ -367,7 +367,7 @@ pub enum ProgramExpression {
         /// Stable exceptional operation identity.
         operation: String,
     },
-    /// Expression semantics are not represented by PSM v1.
+    /// Expression semantics are not represented by PSM v2.
     Unsupported {
         /// Exact Rust expression spelling.
         rust_spelling: String,
@@ -670,6 +670,116 @@ impl ProgramType {
     }
 }
 
+/// Kind of a locally governed nominal type declaration.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum NominalTypeKind {
+    /// A Rust record or tuple structure.
+    Struct,
+    /// A Rust sum type.
+    Enum,
+    /// A Rust trait declaration.
+    Trait,
+    /// A Rust type alias.
+    TypeAlias,
+}
+
+/// One named or positional field owned by a nominal declaration.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct NominalField {
+    name: String,
+    position: usize,
+    field_type: InterfaceType,
+    provenance: ProgramProvenance,
+}
+
+/// One enum variant and its supported payload fields.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct NominalVariant {
+    name: String,
+    fields: Vec<NominalField>,
+    provenance: ProgramProvenance,
+}
+
+/// One source-authored local nominal type declaration.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct NominalType {
+    id: String,
+    qualified_name: String,
+    language: String,
+    package: String,
+    crate_name: String,
+    rust_module: String,
+    fortress_module: String,
+    kind: NominalTypeKind,
+    generic_parameters: Vec<String>,
+    fields: Vec<NominalField>,
+    variants: Vec<NominalVariant>,
+    trait_methods: Vec<String>,
+    alias_target: Option<InterfaceType>,
+    alias_transparent: bool,
+    provenance: ProgramProvenance,
+}
+
+impl NominalType {
+    /// Returns the stable derived nominal identity.
+    #[must_use]
+    pub fn id(&self) -> &str {
+        &self.id
+    }
+
+    /// Returns the source-qualified nominal name.
+    #[must_use]
+    pub fn qualified_name(&self) -> &str {
+        &self.qualified_name
+    }
+
+    /// Returns the declaration kind.
+    #[must_use]
+    pub const fn kind(&self) -> NominalTypeKind {
+        self.kind
+    }
+}
+
+/// Kind of a Rust implementation block.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ProgramImplKind {
+    /// Methods implemented directly for one type.
+    Inherent,
+    /// Methods implementing one trait for one type.
+    Trait,
+}
+
+/// Resolution state of one implementation block's type identities.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum ImplResolutionState {
+    /// Self and optional trait identities resolve to local declarations.
+    ResolvedLocal,
+    /// At least one identity is external or generic.
+    ExternalOrGeneric,
+    /// Supported syntax could not establish one exact identity.
+    Unresolved,
+}
+
+/// One source-authored Rust implementation block.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct ProgramImpl {
+    id: String,
+    package: String,
+    crate_name: String,
+    rust_module: String,
+    fortress_module: String,
+    kind: ProgramImplKind,
+    self_type: InterfaceType,
+    trait_type: Option<InterfaceType>,
+    generic_parameters: Vec<String>,
+    methods: Vec<String>,
+    resolution: ImplResolutionState,
+    provenance: ProgramProvenance,
+}
+
 /// One type use at an executable interface.
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct InterfaceType {
@@ -890,10 +1000,40 @@ pub enum CallResolutionState {
     DynamicDispatch,
     /// Supported syntax did not resolve confidently.
     Unresolved,
-    /// Required semantics are outside PSM v1.
+    /// Required semantics are outside PSM v2.
     Unsupported,
     /// Source or model violated a supported analyzer invariant.
     Invalid,
+}
+
+/// Stable semantic explanation for a non-static call classification.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum CallResolutionReason {
+    /// The receiver's exact static type was not established.
+    UnknownReceiverType,
+    /// More than one local method remained applicable.
+    AmbiguousLocalMethod,
+    /// The receiver remains a generic parameter.
+    GenericReceiver,
+    /// A trait-object call requires runtime dispatch.
+    TraitObjectDispatch,
+    /// Trait selection was not uniquely provable.
+    UnresolvedTraitSelection,
+    /// The receiver is known to be owned outside the governed workspace.
+    ExternalReceiver,
+    /// User-defined dereference semantics are outside v2.
+    UnsupportedDeref,
+    /// Executable semantics originate from a macro invocation.
+    MacroGenerated,
+    /// The target is a function-valued expression.
+    FunctionPointer,
+    /// The target is a closure without a stable executable identity.
+    ClosureTarget,
+    /// The syntax belongs to an unimplemented v2 semantic class.
+    UnsupportedSyntax,
+    /// A supported path did not resolve to a known target.
+    UnknownPath,
 }
 
 /// Semantic authority used for a call classification.
@@ -904,6 +1044,14 @@ pub enum ResolutionAuthority {
     CargoManifest,
     /// Exact target followed a unique structural declaration path.
     StructuralExact,
+    /// Exact target followed receiver-type and implementation-index semantics.
+    TypeDirectedExact,
+    /// Exact external ownership was established without analyzing its body.
+    ExactExternalOwner,
+    /// Runtime selection is represented by a sound candidate set.
+    ConservativeCandidateSet,
+    /// Supported syntax lacked sufficient static type information.
+    InsufficientTypeInformation,
     /// A sound conservative class was established without one exact target.
     Conservative,
     /// No implemented semantic authority covers the construct.
@@ -939,6 +1087,7 @@ pub struct ProgramCall {
     caller: String,
     state: CallResolutionState,
     authority: ResolutionAuthority,
+    reason: Option<CallResolutionReason>,
     callee: Option<String>,
     boundary_target_module: Option<String>,
     external_target: Option<String>,
@@ -965,6 +1114,12 @@ impl ProgramCall {
         self.state
     }
 
+    /// Returns the stable residual-resolution reason, when applicable.
+    #[must_use]
+    pub const fn reason(&self) -> Option<CallResolutionReason> {
+        self.reason
+    }
+
     /// Returns supporting call sites.
     #[must_use]
     pub fn evidence(&self) -> &[CallSiteEvidence] {
@@ -986,7 +1141,7 @@ impl CallSiteEvidence {
     }
 }
 
-/// Initial value-transfer category supported by PSM v1.
+/// Initial value-transfer category supported by PSM v2.
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ValueTransferKind {
@@ -1014,7 +1169,7 @@ pub enum TransferResolutionState {
     ResolvedStaticCall,
     /// Transfer exists but its exact static type is unknown.
     TypeUnknown,
-    /// Required transfer semantics are outside PSM v1.
+    /// Required transfer semantics are outside PSM v2.
     Unsupported,
 }
 
@@ -1208,6 +1363,14 @@ pub struct ProgramCoverage {
     source_files: usize,
     packages: usize,
     executable_symbols: usize,
+    nominal_types: usize,
+    nominal_structs: usize,
+    nominal_enums: usize,
+    nominal_traits: usize,
+    nominal_type_aliases: usize,
+    nominal_fields: usize,
+    nominal_variants: usize,
+    impls: usize,
     production_symbols: usize,
     testing_symbols: usize,
     free_functions: usize,
@@ -1226,6 +1389,19 @@ pub struct ProgramCoverage {
     recursive_components: usize,
     value_transfers: usize,
     transformations: usize,
+}
+
+/// Aggregate call-resolution states and stable residual reasons.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+pub struct ResolutionSummary {
+    resolved_static: usize,
+    external: usize,
+    dynamic_dispatch: usize,
+    unresolved: usize,
+    unsupported: usize,
+    invalid: usize,
+    reasons: BTreeMap<String, usize>,
+    fixed_point_iterations: usize,
 }
 
 impl ProgramCoverage {
@@ -1264,7 +1440,7 @@ pub struct ProgramModelProvenance {
     testing_authority: String,
 }
 
-/// Canonical Program Semantic Model v1 document.
+/// Canonical Program Semantic Model v2 document.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct ProgramSemanticModel {
     #[serde(rename = "$schema")]
@@ -1276,6 +1452,8 @@ pub struct ProgramSemanticModel {
     analyzers: Vec<AnalyzerDescriptor>,
     languages: Vec<String>,
     packages: Vec<ProgramPackage>,
+    nominal_types: Vec<NominalType>,
+    impls: Vec<ProgramImpl>,
     symbols: Vec<ExecutableSymbol>,
     types: Vec<ProgramType>,
     calls: Vec<ProgramCall>,
@@ -1284,6 +1462,7 @@ pub struct ProgramSemanticModel {
     transformations: Vec<TypeTransformation>,
     module_boundaries: Vec<CrossModuleCall>,
     call_topology: CallTopology,
+    resolution_summary: ResolutionSummary,
     coverage: ProgramCoverage,
     analyzer_coherency: AnalyzerCoherency,
     unsupported_semantics: Vec<String>,
@@ -1307,6 +1486,18 @@ impl ProgramSemanticModel {
     #[must_use]
     pub fn symbols(&self) -> &[ExecutableSymbol] {
         &self.symbols
+    }
+
+    /// Returns locally governed nominal declarations.
+    #[must_use]
+    pub fn nominal_types(&self) -> &[NominalType] {
+        &self.nominal_types
+    }
+
+    /// Returns source implementation blocks.
+    #[must_use]
+    pub fn impls(&self) -> &[ProgramImpl] {
+        &self.impls
     }
 
     /// Returns all normalized calls and explicit coverage states.
@@ -1392,12 +1583,15 @@ pub(crate) struct RustProgramFacts {
     source_inputs: Vec<ProgramSourceInput>,
     source_files: usize,
     packages: Vec<ProgramPackage>,
+    nominal_types: Vec<NominalType>,
+    impls: Vec<ProgramImpl>,
     symbols: Vec<ExecutableSymbol>,
     types: Vec<ProgramType>,
     calls: Vec<ProgramCall>,
     bodies: Vec<ProgramBody>,
     value_transfers: Vec<ValueTransfer>,
     transformations: Vec<TypeTransformation>,
+    fixed_point_iterations: usize,
 }
 
 /// Compiles one deterministic Rust-backed Program Semantic Model.
@@ -1412,6 +1606,8 @@ pub fn compile_program_semantic_model(
 ) -> Result<ProgramSemanticModel, ProgramSemanticError> {
     let mut facts = rust::analyze(input)?;
     facts.packages.sort();
+    facts.nominal_types.sort();
+    facts.impls.sort();
     facts.symbols.sort();
     facts.types.sort();
     facts.calls.sort();
@@ -1452,6 +1648,8 @@ pub fn compile_program_semantic_model(
     let coverage = coverage(
         facts.source_files,
         &facts.packages,
+        &facts.nominal_types,
+        &facts.impls,
         &facts.symbols,
         &facts.calls,
         &facts.value_transfers,
@@ -1459,6 +1657,7 @@ pub fn compile_program_semantic_model(
         &module_boundaries,
         &topology,
     );
+    let resolution_summary = resolution_summary(&facts.calls, facts.fixed_point_iterations);
     Ok(ProgramSemanticModel {
         schema: PROGRAM_SEMANTIC_MODEL_SCHEMA.into(),
         schema_version: PROGRAM_SEMANTIC_MODEL_SCHEMA_VERSION,
@@ -1468,6 +1667,8 @@ pub fn compile_program_semantic_model(
         analyzers: vec![AnalyzerDescriptor::rust()],
         languages: vec!["rust".into()],
         packages: facts.packages,
+        nominal_types: facts.nominal_types,
+        impls: facts.impls,
         symbols: facts.symbols,
         types: facts.types,
         calls: facts.calls,
@@ -1476,6 +1677,7 @@ pub fn compile_program_semantic_model(
         transformations: facts.transformations,
         module_boundaries,
         call_topology: topology,
+        resolution_summary,
         coverage,
         analyzer_coherency,
         unsupported_semantics: UNSUPPORTED_SEMANTICS
@@ -1495,6 +1697,8 @@ pub fn compile_program_semantic_model(
 fn coverage(
     source_files: usize,
     packages: &[ProgramPackage],
+    nominal_types: &[NominalType],
+    impls: &[ProgramImpl],
     symbols: &[ExecutableSymbol],
     calls: &[ProgramCall],
     transfers: &[ValueTransfer],
@@ -1507,6 +1711,36 @@ fn coverage(
         source_files,
         packages: packages.len(),
         executable_symbols: symbols.len(),
+        nominal_types: nominal_types.len(),
+        nominal_structs: nominal_types
+            .iter()
+            .filter(|item| item.kind == NominalTypeKind::Struct)
+            .count(),
+        nominal_enums: nominal_types
+            .iter()
+            .filter(|item| item.kind == NominalTypeKind::Enum)
+            .count(),
+        nominal_traits: nominal_types
+            .iter()
+            .filter(|item| item.kind == NominalTypeKind::Trait)
+            .count(),
+        nominal_type_aliases: nominal_types
+            .iter()
+            .filter(|item| item.kind == NominalTypeKind::TypeAlias)
+            .count(),
+        nominal_fields: nominal_types
+            .iter()
+            .map(|item| {
+                item.fields.len()
+                    + item
+                        .variants
+                        .iter()
+                        .map(|variant| variant.fields.len())
+                        .sum::<usize>()
+            })
+            .sum(),
+        nominal_variants: nominal_types.iter().map(|item| item.variants.len()).sum(),
+        impls: impls.len(),
         production_symbols: symbols
             .iter()
             .filter(|symbol| symbol.classification == SymbolClassification::Production)
@@ -1541,6 +1775,31 @@ fn coverage(
             .count(),
         value_transfers: transfers.len(),
         transformations: transformations.len(),
+    }
+}
+
+fn resolution_summary(calls: &[ProgramCall], fixed_point_iterations: usize) -> ResolutionSummary {
+    let count = |state| calls.iter().filter(|call| call.state == state).count();
+    let mut reasons = BTreeMap::new();
+    for call in calls {
+        if let Some(reason) = call.reason {
+            let key = serde_json::to_value(reason)
+                .expect("resolution reason serializes")
+                .as_str()
+                .expect("resolution reason is a string")
+                .to_owned();
+            *reasons.entry(key).or_insert(0) += 1;
+        }
+    }
+    ResolutionSummary {
+        resolved_static: count(CallResolutionState::ResolvedStatic),
+        external: count(CallResolutionState::External),
+        dynamic_dispatch: count(CallResolutionState::DynamicDispatch),
+        unresolved: count(CallResolutionState::Unresolved),
+        unsupported: count(CallResolutionState::Unsupported),
+        invalid: count(CallResolutionState::Invalid),
+        reasons,
+        fixed_point_iterations,
     }
 }
 

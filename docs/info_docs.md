@@ -10,7 +10,7 @@ Cargo produces the resolver lock record from package constraints. The Contract C
 
 ## Semantics
 
-The lock record identifies one exact dependency resolution. The CCG records the deterministic derived semantic ecosystem, its provenance, effective obligations, relationships, support topology, and supported coherency result. The Intended BFG records meaningful Feature-flow intent, Module lanes, boundary crossings, branches, loops, dominators, post-dominators, provenance, and explicit unsupported semantics. The PSM records observed executable symbols, typed interfaces, supported calls, bounded value transfers, call topology, coverage states, and analyzer coherency. Semantic Analysis records conservative value domains, fixed-point summaries, contract proof checks, abstract counter-domains, and property-specific uncertainty without becoming authored authority, realized behavior, total safety, or certification evidence.
+The lock record identifies one exact dependency resolution. The CCG records the deterministic derived semantic ecosystem, its provenance, effective obligations, relationships, support topology, and supported coherency result. The Intended BFG records meaningful Feature-flow intent, Module lanes, boundary crossings, branches, loops, dominators, post-dominators, provenance, and explicit unsupported semantics. The PSM records observed nominal Rust declarations and impls, executable symbols, typed interfaces and supported local expressions, type-directed and residual calls, bounded value transfers, call topology, coverage states, and analyzer coherency. Semantic Analysis records conservative value domains, fixed-point summaries, contract proof checks, abstract counter-domains, and property-specific uncertainty without becoming authored authority, realized behavior, total safety, or certification evidence.
 
 ## Lifecycle
 
@@ -32,7 +32,7 @@ Persists Fortress's canonical derived self-CCG so local and hosted gates can com
 
 ### [`program_semantic_model.json`](../info/program_semantic_model.json)
 
-Persists Fortress's canonical derived self-PSM v1 so local and hosted gates can compare snapshot-bound executable semantics byte for byte without claiming full data flow, function correctness, capability realization, or behavioral realization.
+Persists Fortress's canonical derived self-PSM v2 so local and hosted gates can compare nominal, type-directed, snapshot-bound executable semantics byte for byte without claiming full data flow, function correctness, capability realization, or behavioral realization.
 
 ### [`semantic_analysis.json`](../info/semantic_analysis.json)
 
