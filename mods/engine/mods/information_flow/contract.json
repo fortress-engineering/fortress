@@ -1,0 +1,94 @@
+{
+  "$schema": "urn:fortress:schema:v2:module-contract",
+  "schema_version": 2,
+  "id": "AF-INFORMATION-FLOW-0001",
+  "display_name": "Information Flow",
+  "provides": [
+    {
+      "id": "CAP-INFORMATION-FLOW",
+      "version": "0.1.0",
+      "visibility": "project"
+    }
+  ],
+  "requires": [
+    {
+      "provider": "AF-FINDING-MODEL-0001",
+      "capability": "CAP-FINDING-MODEL",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-PROGRAM-SEMANTICS-0001",
+      "capability": "CAP-PROGRAM-SEMANTICS",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-SEMANTIC-ANALYSIS-0001",
+      "capability": "CAP-SEMANTIC-ANALYSIS",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-STATE-EFFECT-ANALYSIS-0001",
+      "capability": "CAP-STATE-EFFECT-ANALYSIS",
+      "version": "^0.1.0"
+    }
+  ],
+  "relationships": [],
+  "constraints": [],
+  "guarantees": [],
+  "features": [
+    {
+      "id": "AF-INFORMATION-FLOW-0001",
+      "version": "0.1.0",
+      "requirements": [
+        {
+          "id": "AF-INFORMATION-FLOW-0001-R01",
+          "statement": "Information Flow validates one canonical project-defined finite facet policy and resolves every Function Contract flow declaration against it without hard-coded project labels.",
+          "tests": [
+            "T-AF-INFORMATION-FLOW-0001-R01-001",
+            "T-AF-INFORMATION-FLOW-0001-R01-002",
+            "T-AF-INFORMATION-FLOW-0001-R01-003",
+            "T-AF-INFORMATION-FLOW-0001-R01-004",
+            "T-AF-INFORMATION-FLOW-0001-R01-005"
+          ]
+        },
+        {
+          "id": "AF-INFORMATION-FLOW-0001-R02",
+          "statement": "Information Flow conservatively propagates classifications through supported PSM value, call, wrapper, product, field, and mutation topology while preserving source and derivation provenance.",
+          "tests": [
+            "T-AF-INFORMATION-FLOW-0001-R02-001",
+            "T-AF-INFORMATION-FLOW-0001-R02-002",
+            "T-AF-INFORMATION-FLOW-0001-R02-003",
+            "T-AF-INFORMATION-FLOW-0001-R02-004",
+            "T-AF-INFORMATION-FLOW-0001-R02-005",
+            "T-AF-INFORMATION-FLOW-0001-R02-006",
+            "T-AF-INFORMATION-FLOW-0001-R02-007",
+            "T-AF-INFORMATION-FLOW-0001-R02-008"
+          ]
+        },
+        {
+          "id": "AF-INFORMATION-FLOW-0001-R03",
+          "statement": "Information Flow rejects supported source-to-sink contradictions, never changes classification implicitly, and exposes every explicit endorsement or declassification as a provenance-preserving trusted boundary.",
+          "tests": [
+            "T-AF-INFORMATION-FLOW-0001-R03-001",
+            "T-AF-INFORMATION-FLOW-0001-R03-002",
+            "T-AF-INFORMATION-FLOW-0001-R03-003",
+            "T-AF-INFORMATION-FLOW-0001-R03-004",
+            "T-AF-INFORMATION-FLOW-0001-R03-005",
+            "T-AF-INFORMATION-FLOW-0001-R03-006",
+            "T-AF-INFORMATION-FLOW-0001-R03-007"
+          ]
+        },
+        {
+          "id": "AF-INFORMATION-FLOW-0001-R04",
+          "statement": "Information Flow emits deterministic summaries, findings, trusted-transition diagnostics, explicit coverage states, and a canonical derived artifact bound to all semantic inputs.",
+          "tests": [
+            "T-AF-INFORMATION-FLOW-0001-R04-001",
+            "T-AF-INFORMATION-FLOW-0001-R04-002",
+            "T-AF-INFORMATION-FLOW-0001-R04-003"
+          ]
+        }
+      ]
+    }
+  ],
+  "behavior": []
+}

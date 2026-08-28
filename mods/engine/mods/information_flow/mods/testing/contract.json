@@ -1,0 +1,32 @@
+{
+  "$schema": "urn:fortress:schema:v2:module-contract",
+  "schema_version": 2,
+  "id": "TEST-INFORMATION-FLOW-0001",
+  "display_name": "Testing",
+  "provides": [],
+  "requires": [
+    {
+      "provider": "AF-CORE-0001",
+      "capability": "CAP-FORTRESS-ENGINE",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-INFORMATION-FLOW-0001",
+      "capability": "CAP-INFORMATION-FLOW",
+      "version": "^0.1.0"
+    }
+  ],
+  "relationships": [
+    {
+      "type": "verifies",
+      "target": "AF-INFORMATION-FLOW-0001",
+      "subjects": [
+        "AF-INFORMATION-FLOW-0001"
+      ]
+    }
+  ],
+  "constraints": [],
+  "guarantees": [],
+  "features": [],
+  "behavior": []
+}

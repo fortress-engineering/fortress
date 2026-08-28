@@ -71,6 +71,7 @@ impl AuditFixture {
             modules_docs(&[
                 ("architecture_evaluation", "Architecture Evaluation"),
                 ("behavioral_semantics", "Behavioral Semantics"),
+                ("information_flow", "Information Flow"),
                 ("semantic_analysis", "Semantic Analysis"),
                 ("state_effect_analysis", "State and Effect Analysis"),
                 ("snapshot_governance", "Snapshot Governance"),
@@ -93,6 +94,11 @@ impl AuditFixture {
                 "behavioral_semantics",
                 "AF-FIXTURE-BEHAVIOR-0001",
                 "Behavioral Semantics",
+            ),
+            (
+                "information_flow",
+                "AF-FIXTURE-INFORMATION-FLOW-0001",
+                "Information Flow",
             ),
             (
                 "snapshot_governance",
@@ -138,6 +144,7 @@ impl AuditFixture {
             "mods/engine/mods/semantic_analysis/data/program_domain_rule.json",
             "mods/engine/mods/state_effect_analysis/data/program_state_rule.json",
             "mods/engine/mods/state_effect_analysis/data/program_effect_rule.json",
+            "mods/engine/mods/information_flow/data/program_infoflow_rule.json",
             "mods/engine/mods/snapshot_governance/data/ownership_rule.json",
             "mods/engine/mods/snapshot_governance/data/traceability_rule.json",
             "mods/engine/mods/snapshot_governance/data/test_boundary_rule.json",
@@ -172,6 +179,11 @@ impl AuditFixture {
             data_docs(&["program_effect_rule.json", "program_state_rule.json"]),
         )
         .expect("state/effect Data documentation writes");
+        fs::write(
+            root.join("mods/engine/mods/information_flow/docs/data_docs.md"),
+            data_docs(&["program_infoflow_rule.json"]),
+        )
+        .expect("information-flow Data documentation writes");
         fs::write(
             root.join("mods/engine/mods/snapshot_governance/docs/data_docs.md"),
             data_docs(&[
@@ -356,7 +368,7 @@ fn audit_success_renders_human_snapshot_report() {
         String::from_utf8_lossy(&output.stderr)
     );
     assert!(stdout.contains("Fortress Snapshot Audit"));
-    assert!(stdout.contains("PASS: 11"));
+    assert!(stdout.contains("PASS: 12"));
     assert!(stdout.contains("Unsupported: 1"));
     assert!(stdout.contains("Architecture diagnostics:"));
     assert!(stdout.contains("Unsupported analysis:"));
@@ -580,6 +592,43 @@ fn state_effect_json_is_schema_versioned_and_repeatable() {
 #[test]
 fn state_effect_rejects_unsupported_formats() {
     let output = run(&["state-effect", "--format", "dot"]);
+    assert_eq!(output.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("--format json"));
+}
+
+/// `T-TF-CLI-0001-R10-001`
+/// Fortress requirement: TF-CLI-0001-R10
+#[test]
+fn information_flow_json_is_schema_versioned_and_repeatable() {
+    let fixture = AuditFixture::new();
+    let arguments = [
+        "information-flow".into(),
+        fixture.argument(),
+        "--format=json".into(),
+    ];
+    let first = run_owned(&arguments);
+    let second = run_owned(&arguments);
+    assert!(
+        first.status.success(),
+        "{}",
+        String::from_utf8_lossy(&first.stderr)
+    );
+    assert_eq!(first.stdout, second.stdout);
+    let value: serde_json::Value =
+        serde_json::from_slice(&first.stdout).expect("information-flow output is JSON");
+    assert_eq!(
+        value["$schema"],
+        "urn:fortress:schema:v1:information-flow-analysis"
+    );
+    assert_eq!(value["schema_version"], 1);
+    assert_eq!(value["coverage"]["sink_violations"], 0);
+}
+
+/// `T-TF-CLI-0001-R10-002`
+/// Fortress requirement: TF-CLI-0001-R10
+#[test]
+fn information_flow_rejects_unsupported_formats() {
+    let output = run(&["information-flow", "--format", "dot"]);
     assert_eq!(output.status.code(), Some(2));
     assert!(String::from_utf8_lossy(&output.stderr).contains("--format json"));
 }

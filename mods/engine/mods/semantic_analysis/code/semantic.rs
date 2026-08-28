@@ -1,6 +1,6 @@
 //! Function Contract and interprocedural semantic-domain analysis.
 //!
-//! This Module consumes PSM facts and authored Function Contract v2 sources.
+//! This Module consumes PSM facts and authored Function Contract v3 sources.
 //! It does not parse Rust, modify the CCG, or map functions to BFG checkpoints.
 
 #[path = "domain.rs"]
@@ -16,7 +16,9 @@ pub use domain::{IntegerInterval, SemanticDomain};
 pub use function_contract::{
     DomainSpecification, FUNCTION_CONTRACT_SCHEMA, FUNCTION_CONTRACT_SCHEMA_VERSION,
     FunctionContract, FunctionContractError, FunctionContractSource, FunctionEffect,
-    FunctionEffectPolicy, FunctionStateObligation, ResolvedFunctionContracts,
+    FunctionEffectPolicy, FunctionInformationFlow, FunctionStateObligation, InformationFlowEnsure,
+    InformationFlowRequirement, InformationFlowSource, InformationFlowTarget,
+    InformationFlowTransform, InformationFlowTransformKind, ResolvedFunctionContracts,
     canonicalize_function_contract_json, load_function_contracts, resolve_domain,
 };
 use serde::Serialize;

@@ -6,7 +6,7 @@ Establish whether supported program objects move through permitted modeled state
 
 ## Responsibility
 
-Consume the canonical Program Semantic Model, Semantic Analysis value domains, distributed State Contracts, and Function Contract v2 obligations to derive conservative typestate transitions and transitive effect summaries with explicit uncertainty and provenance.
+Consume the canonical Program Semantic Model, Semantic Analysis value domains, distributed State Contracts, and Function Contract v3 state/effect obligations to derive conservative typestate transitions and transitive effect summaries with explicit uncertainty and provenance.
 
 ## Scope
 

@@ -7,7 +7,7 @@
   "statement": "Every supported call to a state-constrained operation MUST admit only receiver states permitted by its State and Function Contracts, and every supported normal return MUST satisfy its authored state postcondition.",
   "rationale": "Nominal type correctness does not prevent an operation from executing in the wrong lifecycle state or leaving an object outside its promised state. Conservative field-domain reasoning can prove these contradictions without claiming complete heap semantics.",
   "failure_prevented": "Operations executing in forbidden modeled states, false state-transition promises, or invalid distributed State Contracts being treated as coherent.",
-  "applicability": "Canonical State Contract v1 and Function Contract v2 declarations interpreted over supported PSM v3 direct-field and resolved-call semantics. UNKNOWN and UNCLASSIFIED states remain explicit and non-passing evidence rather than automatic findings.",
+  "applicability": "Canonical State Contract v1 and Function Contract v3 declarations interpreted over supported PSM v3 direct-field and resolved-call semantics. UNKNOWN and UNCLASSIFIED states remain explicit and non-passing evidence rather than automatic findings.",
   "category": "source",
   "integrity_tier": 3,
   "evaluation": "Fortress validates owned nominal state declarations, classifies conservative field domains, composes exact receiver transitions through supported calls, and checks state preconditions and postconditions without assuming opaque mutation is safe.",
@@ -31,6 +31,6 @@
   "exception_policy": "Unknown aliases, opaque calls, unclassified states, and unsupported semantic classes remain explicit uncertainty. No exemption exists for a contradiction proved within supported semantics.",
   "introduced": "1.0.0-draft.1",
   "history": [
-    "Introduced with State Contract v1, Function Contract v2, and conservative receiver typestate analysis."
+    "Introduced with State Contract v1, Function Contract v3, and conservative receiver typestate analysis."
   ]
 }

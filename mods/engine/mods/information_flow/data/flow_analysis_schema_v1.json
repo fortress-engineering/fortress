@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:information-flow-analysis",
+  "title": "Fortress Information Flow Analysis v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "schema_version", "semantic_version", "project_id", "psm_digest", "semantic_analysis_digest", "state_effect_digest", "information_flow_policy_digest", "function_contract_digest", "facets", "summaries", "violations", "trusted_transition_diagnostics", "coverage", "unsupported_semantics"],
+  "properties": {
+    "$schema": { "const": "urn:fortress:schema:v1:information-flow-analysis" },
+    "schema_version": { "const": 1 },
+    "semantic_version": { "type": "string" },
+    "project_id": { "type": "string" },
+    "psm_digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "semantic_analysis_digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "state_effect_digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "information_flow_policy_digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "function_contract_digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "facets": { "type": "array", "items": { "type": "object" } },
+    "summaries": { "type": "array", "items": { "type": "object" } },
+    "violations": { "type": "array", "items": { "type": "object" } },
+    "trusted_transition_diagnostics": { "type": "array", "items": { "type": "object" } },
+    "coverage": { "type": "object" },
+    "unsupported_semantics": { "type": "array", "uniqueItems": true, "items": { "type": "string" } }
+  }
+}

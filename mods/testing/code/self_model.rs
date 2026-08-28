@@ -131,6 +131,7 @@ fn live_contract_v2_ecosystem_resolves_completely() {
                 "CONTRACT-COHERENCY-001",
                 "PROGRAM-DOMAIN-001",
                 "PROGRAM-EFFECT-001",
+                "PROGRAM-INFOFLOW-001",
                 "PROGRAM-STATE-001",
                 "REPO-DOCS-001",
                 "REPO-MODULE-001",
@@ -149,14 +150,14 @@ fn live_contract_v2_ecosystem_resolves_completely() {
         "live CCG must be coherent: {:#?}",
         resolution.violations()
     );
-    assert_eq!(resolved.modules().len(), 28);
-    assert_eq!(resolved.capabilities().len(), 14);
-    assert_eq!(resolved.features().len(), 14);
-    assert_eq!(resolved.requirements().len(), 58);
+    assert_eq!(resolved.modules().len(), 30);
+    assert_eq!(resolved.capabilities().len(), 15);
+    assert_eq!(resolved.features().len(), 15);
+    assert_eq!(resolved.requirements().len(), 63);
     assert_eq!(resolved.guarantees().len(), 5);
     assert_eq!(resolved.checkpoints().len(), 10);
-    assert_eq!(resolved.direct_requirements().len(), 79);
-    assert_eq!(resolved.relationships().len(), 13);
+    assert_eq!(resolved.direct_requirements().len(), 87);
+    assert_eq!(resolved.relationships().len(), 14);
     assert!(
         resolved
             .modules()

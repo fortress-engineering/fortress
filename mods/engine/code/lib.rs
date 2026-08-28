@@ -30,6 +30,8 @@ pub mod finding;
 pub mod identity;
 #[path = "../mods/implementation_observation/code/observation.rs"]
 pub mod implementation_observation;
+#[path = "../mods/information_flow/code/information_flow.rs"]
+pub mod information_flow;
 #[path = "../mods/repository_observation/code/observation.rs"]
 pub mod observation;
 #[path = "../mods/snapshot_governance/code/ownership.rs"]

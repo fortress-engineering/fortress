@@ -10,11 +10,11 @@ The declarations are project-authored from the stable Finding Model responsibili
 
 ## Semantics
 
-The State Contract classifies FindingLocation as spanned or unspanned from its direct Option field; Function Contract v2 promises that with_span returns the spanned state and permits only the supported receiver-state write needed to establish it.
+The State Contract classifies FindingLocation as spanned or unspanned from its direct Option field; Function Contract v3 promises that with_span returns the spanned state and permits only the supported receiver-state write needed to establish it.
 
 ## Validity
 
-Contracts must be canonical JSON, target Finding Model-owned PSM identities, use valid Semantic Value Domains, resolve direct fields and state identities, and remain synchronized with Function Contract v2 and State Contract v1 schemas.
+Contracts must be canonical JSON, target Finding Model-owned PSM identities, use valid Semantic Value Domains, resolve direct fields and state identities, and remain synchronized with Function Contract v3 and State Contract v1 schemas.
 
 ## Lifecycle
 

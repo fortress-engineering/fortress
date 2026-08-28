@@ -1093,6 +1093,12 @@ impl ProgramParameter {
     pub fn name(&self) -> &str {
         &self.name
     }
+
+    /// Returns exact parameter declaration provenance.
+    #[must_use]
+    pub const fn provenance(&self) -> &ProgramProvenance {
+        &self.provenance
+    }
 }
 
 /// Optional Rust receiver semantics for one method.
@@ -1217,6 +1223,12 @@ impl ExecutableSymbol {
     #[must_use]
     pub fn source_path(&self) -> &str {
         &self.source_path
+    }
+
+    /// Returns exact declaration provenance for this executable symbol.
+    #[must_use]
+    pub const fn provenance(&self) -> &ProgramProvenance {
+        &self.provenance
     }
 
     /// Returns the production or Testing classification.

@@ -89,6 +89,17 @@
       "duration": "short",
       "resumability": "restartable",
       "certification_implications": "Renders supported typestate and effect consequences plus explicit uncertainty only; it is not total heap safety, external-system proof, or certification evidence."
+    },
+    {
+      "id": "CMD-INFORMATION-FLOW",
+      "name": "information-flow",
+      "aliases": [],
+      "description": "Compile and render deterministic information-flow analysis.",
+      "owner": "TF-CLI-0001",
+      "executor": "builtin-sync",
+      "duration": "short",
+      "resumability": "restartable",
+      "certification_implications": "Renders supported trust/confidentiality propagation, sink contradictions, trusted transitions, and explicit uncertainty only; it is not comprehensive security proof or certification evidence."
     }
   ]
 }

@@ -1,0 +1,25 @@
+{
+  "$schema": "urn:fortress:schema:v1:information-flow-policy",
+  "schema_version": 1,
+  "facets": [
+    {
+      "id": "FLOW-CONFIDENTIALITY",
+      "direction": "higher_is_more_restricted",
+      "levels": [
+        "PUBLIC",
+        "INTERNAL",
+        "SENSITIVE",
+        "SECRET"
+      ]
+    },
+    {
+      "id": "FLOW-INTEGRITY",
+      "direction": "higher_is_stronger",
+      "levels": [
+        "UNTRUSTED",
+        "VALIDATED",
+        "TRUSTED"
+      ]
+    }
+  ]
+}

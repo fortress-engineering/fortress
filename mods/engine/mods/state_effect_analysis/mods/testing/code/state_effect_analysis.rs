@@ -123,8 +123,8 @@ fn function_sources(
         .collect::<Vec<_>>();
     functions.sort_by(|left, right| left["symbol"].as_str().cmp(&right["symbol"].as_str()));
     let raw = serde_json::json!({
-        "$schema": "urn:fortress:schema:v2:function-contracts",
-        "schema_version": 2,
+        "$schema": "urn:fortress:schema:v3:function-contracts",
+        "schema_version": 3,
         "functions": functions
     })
     .to_string();
@@ -206,7 +206,7 @@ fn foreign_state_authority_and_unknown_fields_fail_exactly() {
 /// `T-AF-STATE-EFFECT-ANALYSIS-0001-R01-003`
 /// Fortress requirement: AF-STATE-EFFECT-ANALYSIS-0001-R01
 #[test]
-fn function_contract_v2_accepts_state_and_effect_obligations() {
+fn function_contract_v3_retains_state_and_effect_obligations() {
     let model = connection_model("fn close(mut self) -> Self { self.closed = true; self }");
     let sources = function_sources(
         &model,
@@ -218,7 +218,7 @@ fn function_contract_v2_accepts_state_and_effect_obligations() {
         )],
     );
     let contracts =
-        load_function_contracts(&model, sources).expect("Function Contract v2 resolves");
+        load_function_contracts(&model, sources).expect("Function Contract v3 resolves");
     let contract = contracts
         .get(&symbol_id(&model, "Connection::close"))
         .expect("contract exists");

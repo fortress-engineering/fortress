@@ -1,4 +1,4 @@
-//! Distributed Function Contract v2 loading and validation.
+//! Distributed Function Contract v3 loading and validation.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
@@ -11,10 +11,10 @@ use crate::program_semantics::{ExecutableSymbol, ProgramSemanticModel, ProgramTy
 
 use super::domain::{IntegerInterval, SemanticDomain};
 
-/// Canonical Function Contract v2 schema identity.
-pub const FUNCTION_CONTRACT_SCHEMA: &str = "urn:fortress:schema:v2:function-contracts";
+/// Canonical Function Contract v3 schema identity.
+pub const FUNCTION_CONTRACT_SCHEMA: &str = "urn:fortress:schema:v3:function-contracts";
 /// Canonical Function Contract schema version.
-pub const FUNCTION_CONTRACT_SCHEMA_VERSION: u16 = 2;
+pub const FUNCTION_CONTRACT_SCHEMA_VERSION: u16 = 3;
 
 /// One snapshot-bound authored Function Contract source.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -136,7 +136,7 @@ impl FunctionStateObligation {
     }
 }
 
-/// Closed v1 effect vocabulary used by Function Contract v2.
+/// Closed v1 effect vocabulary retained by Function Contract v3.
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum FunctionEffect {
@@ -163,6 +163,234 @@ pub struct FunctionEffectPolicy {
     allowed: Vec<FunctionEffect>,
 }
 
+/// Exact executable interface target for one information-flow declaration.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Deserialize, Serialize)]
+#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+pub enum InformationFlowTarget {
+    /// One named function parameter.
+    Parameter {
+        /// Stable source parameter identity.
+        name: String,
+    },
+    /// The function receiver.
+    Receiver,
+    /// The function result.
+    Return,
+}
+
+impl InformationFlowTarget {
+    /// Returns a deterministic interface-local identity.
+    #[must_use]
+    pub fn identity(&self) -> String {
+        match self {
+            Self::Parameter { name } => format!("parameter:{name}"),
+            Self::Receiver => "receiver:self".into(),
+            Self::Return => "return:return".into(),
+        }
+    }
+
+    /// Returns the parameter name when this target is a parameter.
+    #[must_use]
+    pub fn parameter(&self) -> Option<&str> {
+        match self {
+            Self::Parameter { name } => Some(name),
+            Self::Receiver | Self::Return => None,
+        }
+    }
+}
+
+/// One authoritative classification introduced at a function boundary.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct InformationFlowSource {
+    target: InformationFlowTarget,
+    facet: String,
+    level: String,
+}
+
+impl InformationFlowSource {
+    /// Returns the classified interface target.
+    #[must_use]
+    pub const fn target(&self) -> &InformationFlowTarget {
+        &self.target
+    }
+
+    /// Returns the project-defined facet identity.
+    #[must_use]
+    pub fn facet(&self) -> &str {
+        &self.facet
+    }
+
+    /// Returns the project-defined level identity.
+    #[must_use]
+    pub fn level(&self) -> &str {
+        &self.level
+    }
+}
+
+/// One information-flow constraint imposed on an interface target.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct InformationFlowRequirement {
+    target: InformationFlowTarget,
+    facet: String,
+    #[serde(default)]
+    minimum: Option<String>,
+    #[serde(default)]
+    maximum: Option<String>,
+}
+
+impl InformationFlowRequirement {
+    /// Returns the constrained interface target.
+    #[must_use]
+    pub const fn target(&self) -> &InformationFlowTarget {
+        &self.target
+    }
+
+    /// Returns the project-defined facet identity.
+    #[must_use]
+    pub fn facet(&self) -> &str {
+        &self.facet
+    }
+
+    /// Returns the inclusive lower bound when authored.
+    #[must_use]
+    pub fn minimum(&self) -> Option<&str> {
+        self.minimum.as_deref()
+    }
+
+    /// Returns the inclusive upper bound when authored.
+    #[must_use]
+    pub fn maximum(&self) -> Option<&str> {
+        self.maximum.as_deref()
+    }
+}
+
+/// One explicit output classification promise.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct InformationFlowEnsure {
+    target: InformationFlowTarget,
+    facet: String,
+    level: String,
+}
+
+impl InformationFlowEnsure {
+    /// Returns the promised target.
+    #[must_use]
+    pub const fn target(&self) -> &InformationFlowTarget {
+        &self.target
+    }
+
+    /// Returns the facet identity.
+    #[must_use]
+    pub fn facet(&self) -> &str {
+        &self.facet
+    }
+
+    /// Returns the promised level.
+    #[must_use]
+    pub fn level(&self) -> &str {
+        &self.level
+    }
+}
+
+/// Security-sensitive explicit label transition authority.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Deserialize, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum InformationFlowTransformKind {
+    /// Explicitly increases integrity/trust.
+    Endorsement,
+    /// Explicitly decreases confidentiality restriction.
+    Declassification,
+}
+
+/// One explicit trusted information-flow transition.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct InformationFlowTransform {
+    kind: InformationFlowTransformKind,
+    input: InformationFlowTarget,
+    output: InformationFlowTarget,
+    facet: String,
+    from: String,
+    to: String,
+}
+
+impl InformationFlowTransform {
+    /// Returns the trusted-transition class.
+    #[must_use]
+    pub const fn kind(&self) -> InformationFlowTransformKind {
+        self.kind
+    }
+
+    /// Returns the transition input target.
+    #[must_use]
+    pub const fn input(&self) -> &InformationFlowTarget {
+        &self.input
+    }
+
+    /// Returns the transition output target.
+    #[must_use]
+    pub const fn output(&self) -> &InformationFlowTarget {
+        &self.output
+    }
+
+    /// Returns the facet identity.
+    #[must_use]
+    pub fn facet(&self) -> &str {
+        &self.facet
+    }
+
+    /// Returns the admitted input level.
+    #[must_use]
+    pub fn from(&self) -> &str {
+        &self.from
+    }
+
+    /// Returns the asserted output level.
+    #[must_use]
+    pub fn to(&self) -> &str {
+        &self.to
+    }
+}
+
+/// Optional information-flow intent attached to one executable symbol.
+#[derive(Clone, Debug, Default, Eq, Ord, PartialEq, PartialOrd, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct FunctionInformationFlow {
+    sources: Vec<InformationFlowSource>,
+    requires: Vec<InformationFlowRequirement>,
+    ensures: Vec<InformationFlowEnsure>,
+    transforms: Vec<InformationFlowTransform>,
+}
+
+impl FunctionInformationFlow {
+    /// Returns authoritative source classifications.
+    #[must_use]
+    pub fn sources(&self) -> &[InformationFlowSource] {
+        &self.sources
+    }
+
+    /// Returns interface sink constraints.
+    #[must_use]
+    pub fn requires(&self) -> &[InformationFlowRequirement] {
+        &self.requires
+    }
+
+    /// Returns output classification promises.
+    #[must_use]
+    pub fn ensures(&self) -> &[InformationFlowEnsure] {
+        &self.ensures
+    }
+
+    /// Returns explicit trusted transitions.
+    #[must_use]
+    pub fn transforms(&self) -> &[InformationFlowTransform] {
+        &self.transforms
+    }
+}
+
 impl FunctionEffectPolicy {
     /// Returns the sorted allowed effect set.
     #[must_use]
@@ -184,6 +412,8 @@ pub struct FunctionContract {
     state_ensures: Vec<FunctionStateObligation>,
     #[serde(default)]
     effects: Option<FunctionEffectPolicy>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    information_flow: Option<FunctionInformationFlow>,
 }
 
 impl FunctionContract {
@@ -221,6 +451,12 @@ impl FunctionContract {
     #[must_use]
     pub const fn effects(&self) -> Option<&FunctionEffectPolicy> {
         self.effects.as_ref()
+    }
+
+    /// Returns optional authored information-flow intent.
+    #[must_use]
+    pub const fn information_flow(&self) -> Option<&FunctionInformationFlow> {
+        self.information_flow.as_ref()
     }
 }
 
@@ -294,7 +530,7 @@ impl ResolvedFunctionContracts {
     }
 }
 
-/// Loads and resolves distributed Function Contract v2 sources against a PSM.
+/// Loads and resolves distributed Function Contract v3 sources against a PSM.
 ///
 /// # Errors
 ///
@@ -376,7 +612,7 @@ pub fn load_function_contracts(
 /// # Errors
 ///
 /// Returns [`FunctionContractError`] when `source` is not a Function Contract
-/// v2 JSON document or canonical serialization fails.
+/// v3 JSON document or canonical serialization fails.
 pub fn canonicalize_function_contract_json(
     path: &str,
     source: &str,
@@ -650,7 +886,60 @@ fn validate_contract_domains(
             }
         }
     }
+    if let Some(flow) = &contract.information_flow {
+        for target in flow
+            .sources
+            .iter()
+            .map(|item| &item.target)
+            .chain(flow.requires.iter().map(|item| &item.target))
+            .chain(flow.ensures.iter().map(|item| &item.target))
+            .chain(
+                flow.transforms
+                    .iter()
+                    .flat_map(|item| [&item.input, &item.output]),
+            )
+        {
+            validate_information_flow_target(target, symbol, &parameters, path)?;
+        }
+        for requirement in &flow.requires {
+            if requirement.minimum.is_some() == requirement.maximum.is_some() {
+                return Err(FunctionContractError::InvalidInformationFlow {
+                    path: path.into(),
+                    symbol: contract.symbol.clone(),
+                    detail: "each flow requirement must declare exactly one of minimum or maximum"
+                        .into(),
+                });
+            }
+        }
+    }
     Ok(())
+}
+
+fn validate_information_flow_target(
+    target: &InformationFlowTarget,
+    symbol: &ExecutableSymbol,
+    parameters: &BTreeMap<&str, &crate::program_semantics::ProgramParameter>,
+    path: &str,
+) -> Result<(), FunctionContractError> {
+    match target {
+        InformationFlowTarget::Parameter { name } if parameters.contains_key(name.as_str()) => {
+            Ok(())
+        }
+        InformationFlowTarget::Parameter { name } => {
+            Err(FunctionContractError::InvalidInformationFlow {
+                path: path.into(),
+                symbol: symbol.id().into(),
+                detail: format!("unknown information-flow parameter `{name}`"),
+            })
+        }
+        InformationFlowTarget::Receiver if symbol.receiver().is_some() => Ok(()),
+        InformationFlowTarget::Receiver => Err(FunctionContractError::InvalidInformationFlow {
+            path: path.into(),
+            symbol: symbol.id().into(),
+            detail: "receiver target requires a method receiver".into(),
+        }),
+        InformationFlowTarget::Return => Ok(()),
+    }
 }
 
 fn validate_sorted_unique_contracts(
@@ -684,6 +973,14 @@ fn validate_sorted_unique_contracts(
                 .effects
                 .as_ref()
                 .is_some_and(|policy| !policy.allowed.windows(2).all(|pair| pair[0] < pair[1]))
+        {
+            return Err(FunctionContractError::NonCanonicalOrder(path.into()));
+        }
+        if let Some(flow) = &contract.information_flow
+            && (!strictly_sorted_unique(&flow.sources)
+                || !strictly_sorted_unique(&flow.requires)
+                || !strictly_sorted_unique(&flow.ensures)
+                || !strictly_sorted_unique(&flow.transforms))
         {
             return Err(FunctionContractError::NonCanonicalOrder(path.into()));
         }
@@ -804,6 +1101,15 @@ pub enum FunctionContractError {
         /// Precise rejection reason.
         detail: String,
     },
+    /// Information-flow declaration does not match the executable interface.
+    InvalidInformationFlow {
+        /// Source path.
+        path: String,
+        /// Targeted PSM symbol.
+        symbol: String,
+        /// Precise rejection reason.
+        detail: String,
+    },
     /// Canonical serialization failed.
     Serialization(String),
 }
@@ -811,30 +1117,22 @@ pub enum FunctionContractError {
 impl Display for FunctionContractError {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Self::InvalidJson { path, detail } => {
-                write!(
-                    formatter,
-                    "invalid Function Contract JSON `{path}`: {detail}"
-                )
-            }
-            Self::UnsupportedSchema(path) => {
-                write!(
-                    formatter,
-                    "unsupported Function Contract schema in `{path}`"
-                )
-            }
-            Self::NonCanonical(path) => {
-                write!(
-                    formatter,
-                    "Function Contract `{path}` is not canonical JSON"
-                )
-            }
-            Self::NonCanonicalOrder(path) => {
-                write!(
-                    formatter,
-                    "Function Contract arrays are not canonical in `{path}`"
-                )
-            }
+            Self::InvalidJson { path, detail } => write!(
+                formatter,
+                "invalid Function Contract JSON `{path}`: {detail}"
+            ),
+            Self::UnsupportedSchema(path) => write!(
+                formatter,
+                "unsupported Function Contract schema in `{path}`"
+            ),
+            Self::NonCanonical(path) => write!(
+                formatter,
+                "Function Contract `{path}` is not canonical JSON"
+            ),
+            Self::NonCanonicalOrder(path) => write!(
+                formatter,
+                "Function Contract arrays are not canonical in `{path}`"
+            ),
             Self::UnknownSymbol { path, symbol } => {
                 write!(
                     formatter,
@@ -898,6 +1196,14 @@ impl Display for FunctionContractError {
             } => write!(
                 formatter,
                 "Function Contract `{path}` has invalid state target `{target}` for `{symbol}`: {detail}"
+            ),
+            Self::InvalidInformationFlow {
+                path,
+                symbol,
+                detail,
+            } => write!(
+                formatter,
+                "Function Contract `{path}` has invalid information flow for `{symbol}`: {detail}"
             ),
             Self::Serialization(detail) => {
                 write!(

@@ -24,12 +24,17 @@ use crate::contract_coherency::{
 };
 use crate::documentation::{DocumentationEvaluationError, evaluate_repository_documentation};
 use crate::evaluation::{
-    CompleteEvaluationInputs, EvaluationError, RuleExecution, SnapshotRuleEngine,
+    CompleteEvaluationInputs, EvaluationError, ProgramEvaluationInputs, RuleExecution,
+    SnapshotRuleEngine,
 };
 use crate::finding::CanonicalFinding;
 use crate::implementation_observation::{
     ImplementationObservationError, ImplementationObservationInput, ModuleTerritory,
     ObservedImplementation, SnapshotBoundFile, observe_rust_implementation,
+};
+use crate::information_flow::{
+    InformationFlowAnalysisError, InformationFlowEvaluation, InformationFlowPolicyError,
+    InformationFlowPolicySource, analyze_information_flow, load_information_flow_policy,
 };
 use crate::observation::{ObservationError, ObservationPolicy, RepositoryObservation};
 use crate::program_semantics::{
@@ -357,9 +362,27 @@ pub fn compile_repository_state_effect_analysis(
     compile_analysis_models(&prepared, ccg).map(|models| models.state_effect)
 }
 
+/// Compiles the repository's canonical Information Flow Analysis v1 result.
+///
+/// # Errors
+///
+/// Returns [`AuditError`] for any invalid stabilized input, semantic substrate,
+/// information-flow policy, Function Contract flow declaration, or result.
+pub fn compile_repository_information_flow_analysis(
+    root: impl AsRef<Path>,
+) -> Result<InformationFlowEvaluation, AuditError> {
+    let prepared = prepare_audit(root.as_ref())?;
+    let ccg = prepared
+        .ccg_compilation
+        .graph()
+        .ok_or_else(|| AuditError::ContractState("prepared audit did not contain a CCG".into()))?;
+    compile_analysis_models(&prepared, ccg).map(|models| models.information_flow)
+}
+
 struct AnalysisModels {
     semantic: SemanticAnalysisEvaluation,
     state_effect: StateEffectAnalysisEvaluation,
+    information_flow: InformationFlowEvaluation,
 }
 
 fn compile_analysis_models(
@@ -396,10 +419,37 @@ fn compile_analysis_models_from_observed(
         prepared.standard.bundle.edition(),
     )
     .map_err(AuditError::StateEffectAnalysis)?;
+    let policy =
+        load_information_flow_policy(information_flow_policy_sources(&prepared.observed_files)?)
+            .map_err(AuditError::InformationFlowPolicy)?;
+    let information_flow = analyze_information_flow(
+        &psm,
+        &semantic,
+        &state_effect,
+        &policy,
+        &contracts,
+        prepared.standard.bundle.edition(),
+    )
+    .map_err(AuditError::InformationFlowAnalysis)?;
     Ok(AnalysisModels {
         semantic,
         state_effect,
+        information_flow,
     })
+}
+
+fn information_flow_policy_sources(
+    files: &BTreeMap<String, Vec<u8>>,
+) -> Result<Vec<InformationFlowPolicySource>, AuditError> {
+    files
+        .iter()
+        .filter(|(path, _)| path.as_str() == "data/information_flow_policy.json")
+        .map(|(path, bytes)| {
+            let source =
+                std::str::from_utf8(bytes).map_err(|_| AuditError::NonUtf8(path.clone().into()))?;
+            Ok(InformationFlowPolicySource::new(path, source))
+        })
+        .collect()
 }
 
 fn function_contract_sources(
@@ -511,14 +561,18 @@ fn audit_repository_with_models(
     let architecture_diagnostics =
         derive_architecture_diagnostics(ccg, &observed_implementation, &architecture_realization)
             .map_err(AuditError::ArchitectureDiagnostics)?;
+    let analyses = analysis_models.as_ref();
     let evaluation_inputs = CompleteEvaluationInputs::new(
         &prepared.rust_tests,
         &documentation,
         &contract_coherency,
         &architecture_realization,
         &behavioral_semantics,
-        analysis_models.as_ref().map(|models| &models.semantic),
-        analysis_models.as_ref().map(|models| &models.state_effect),
+        ProgramEvaluationInputs::new(
+            analyses.map(|models| &models.semantic),
+            analyses.map(|models| &models.state_effect),
+            analyses.map(|models| &models.information_flow),
+        ),
     );
     let evaluation = evaluate_snapshot_rules(standard, &prepared.snapshot, ccg, evaluation_inputs)?;
     let mut unsupported_analysis = architecture_diagnostics.unsupported_analysis().to_vec();
@@ -545,6 +599,14 @@ fn audit_repository_with_models(
                 .unsupported_semantics()
                 .iter()
                 .map(|value| format!("state_effect_analysis:{value}")),
+        );
+        unsupported_analysis.extend(
+            models
+                .information_flow
+                .model()
+                .unsupported_semantics()
+                .iter()
+                .map(|value| format!("information_flow_analysis:{value}")),
         );
     }
     unsupported_analysis.sort();
@@ -939,6 +1001,10 @@ pub enum AuditError {
     StateContracts(StateContractError),
     /// State and Effect Analysis result construction failed.
     StateEffectAnalysis(StateEffectAnalysisError),
+    /// Project information-flow policy authority was invalid.
+    InformationFlowPolicy(InformationFlowPolicyError),
+    /// Information Flow Analysis result construction failed.
+    InformationFlowAnalysis(InformationFlowAnalysisError),
     /// Architecture diagnostic derivation failed.
     ArchitectureDiagnostics(ArchitectureDiagnosticError),
     /// Intended behavioral semantics could not compile or normalize.
@@ -991,6 +1057,12 @@ impl Display for AuditError {
             }
             Self::StateEffectAnalysis(error) => {
                 write!(formatter, "state and effect analysis failed: {error}")
+            }
+            Self::InformationFlowPolicy(error) => {
+                write!(formatter, "information-flow policy failed: {error}")
+            }
+            Self::InformationFlowAnalysis(error) => {
+                write!(formatter, "information-flow analysis failed: {error}")
             }
             Self::ArchitectureDiagnostics(error) => {
                 write!(

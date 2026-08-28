@@ -37,6 +37,10 @@ name = "implementation_observation"
 path = "../mods/implementation_observation/mods/testing/code/implementation_observation.rs"
 
 [[test]]
+name = "information_flow"
+path = "../mods/information_flow/mods/testing/code/information_flow.rs"
+
+[[test]]
 name = "self_architecture"
 path = "../mods/architecture_evaluation/mods/testing/code/self_architecture.rs"
 

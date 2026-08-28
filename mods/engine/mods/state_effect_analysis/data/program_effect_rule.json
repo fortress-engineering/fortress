@@ -7,7 +7,7 @@
   "statement": "When a Function Contract authors an effect policy, every supported direct and transitive function effect MUST belong to that policy's allowed effect set.",
   "rationale": "A function can preserve nominal and value-domain correctness while unexpectedly mutating receiver state, interacting externally, panicking, or reaching unsafe execution through a resolved callee.",
   "failure_prevented": "Supported direct or transitive mutation and effect behavior escaping the function-level policy that downstream engineering intent relies upon.",
-  "applicability": "Functions with an authored Function Contract v2 effect policy. Functions without a policy have observed effect summaries but no additional purity restriction; unknown effects prevent proof completeness rather than becoming findings.",
+  "applicability": "Functions with an authored Function Contract v3 effect policy. Functions without a policy have observed effect summaries but no additional purity restriction; unknown effects prevent proof completeness rather than becoming findings.",
   "category": "source",
   "integrity_tier": 3,
   "evaluation": "Fortress derives direct effects from structured PSM reads, mutations, external calls, reachable exceptional sites, and unsafe declarations, then computes deterministic call-graph fixed-point closure and checks the supported set against the authored policy.",
@@ -30,6 +30,6 @@
   "exception_policy": "Opaque and unsupported effects remain uncertainty and do not become PASS. No exemption exists for a forbidden effect Fortress proves within the supported closed vocabulary.",
   "introduced": "1.0.0-draft.1",
   "history": [
-    "Introduced with Function Contract v2 and deterministic transitive effect summaries."
+    "Introduced with Function Contract v3 and deterministic transitive effect summaries."
   ]
 }

@@ -1,0 +1,36 @@
+{
+  "$schema": "urn:fortress:schema:v1:rule",
+  "schema_version": 1,
+  "id": "PROGRAM-INFOFLOW-001",
+  "title": "Supported information flows satisfy declared trust and confidentiality constraints",
+  "status": "draft",
+  "statement": "Every supported explicit information flow MUST satisfy project-defined Function Contract source, sink, endorsement, and declassification semantics, while unknown and unsupported flow MUST remain explicit non-evidence.",
+  "rationale": "Nominal, value-domain, typestate, and effect correctness do not prevent insufficiently trusted or overly confidential information from reaching a consumer that forbids it.",
+  "failure_prevented": "Supported information carrying a prohibited integrity or confidentiality classification reaching a declared consumer boundary, or a security classification changing without explicit trusted-transition authority.",
+  "applicability": "Canonical project Information-Flow Policy v1 facets and Function Contract v3 flow declarations interpreted over supported PSM v3 value and field transfers. Unknown external, alias, and implicit-control flow remains explicit and non-passing evidence rather than automatic findings.",
+  "category": "security",
+  "integrity_tier": 3,
+  "evaluation": "Fortress validates one finite ordered project facet algebra, propagates classifications through existing PSM value and supported field flow to deterministic fixed point, checks declared sink bounds, and records endorsement and declassification as explicit trusted assertions with provenance.",
+  "required_capabilities": [
+    "function-contract-v3",
+    "information-flow-analysis-v1",
+    "program-semantic-model-v3",
+    "state-effect-analysis-v1"
+  ],
+  "logic": {
+    "implies": [],
+    "conflicts_with": []
+  },
+  "finding": {
+    "message": "A supported information flow violates its consumer's declared integrity or confidentiality constraint.",
+    "location": "span"
+  },
+  "remediation": "Preserve the incoming classification, satisfy the consumer boundary, or declare and review a truthful explicit endorsement or declassification where that trust boundary is intended.",
+  "valid_example": "A value classified VALIDATED reaches a parameter requiring integrity at least VALIDATED, or an explicit reviewed endorsement transforms UNTRUSTED input to VALIDATED output.",
+  "invalid_example": "UNTRUSTED input reaches a sink requiring VALIDATED data, or SECRET data reaches a sink permitting at most INTERNAL data without explicit declassification.",
+  "exception_policy": "Unknown and unsupported flow never becomes proof. No naming convention, sanitizer heuristic, or transitive call merely authorizes an integrity increase or confidentiality decrease.",
+  "introduced": "1.0.0-draft.1",
+  "history": [
+    "Introduced with project-defined ordered facets, Function Contract v3 flow declarations, conservative explicit propagation, and trusted-transition diagnostics."
+  ]
+}

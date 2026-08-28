@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:information-flow-policy",
+  "title": "Fortress Information-Flow Policy v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "schema_version", "facets"],
+  "properties": {
+    "$schema": { "const": "urn:fortress:schema:v1:information-flow-policy" },
+    "schema_version": { "const": 1 },
+    "facets": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "direction", "levels"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^FLOW-[A-Z0-9]+(?:-[A-Z0-9]+)*$" },
+          "direction": { "enum": ["higher_is_stronger", "higher_is_more_restricted"] },
+          "levels": {
+            "type": "array",
+            "minItems": 2,
+            "uniqueItems": true,
+            "items": { "type": "string", "pattern": "^[A-Z0-9]+(?:_[A-Z0-9]+)*$" }
+          }
+        }
+      }
+    }
+  }
+}

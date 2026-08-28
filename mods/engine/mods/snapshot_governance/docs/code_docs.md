@@ -32,7 +32,7 @@ Parses canonical Markdown structurally and reconciles Module contracts, catalogs
 
 ### [`evaluation.rs`](../code/evaluation.rs)
 
-Dispatches only implemented applicable rules, including PROGRAM-DOMAIN-001, PROGRAM-STATE-001, and PROGRAM-EFFECT-001 from shared semantic results, and distinguishes evaluated pass or failure from unsupported capability.
+Dispatches only implemented applicable rules, including PROGRAM-DOMAIN-001, PROGRAM-STATE-001, PROGRAM-EFFECT-001, and PROGRAM-INFOFLOW-001 from shared semantic results, and distinguishes evaluated pass or failure from unsupported capability.
 
 ### [`ownership.rs`](../code/ownership.rs)
 

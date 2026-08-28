@@ -6,7 +6,7 @@ Persist root-owned operational and build inputs that cannot be derived from Modu
 
 ## Origin
 
-Maintainers author the observation configuration, workspace manifest, Cargo configuration, and toolchain pin. The certification scaffold is also authored because it states the current absence of certification evidence rather than recording a generated audit result.
+Maintainers author the observation configuration, project information-flow facet vocabulary, workspace manifest, Cargo configuration, and toolchain pin. The certification scaffold is also authored because it states the current absence of certification evidence rather than recording a generated audit result.
 
 ## Semantics
 
@@ -35,6 +35,10 @@ Declares the Cargo workspace members, common package metadata, Rust edition, and
 ### [`certification.json`](../data/certification.json)
 
 Records the truthful NOT CERTIFIED scaffold without fabricated evidence or upgraded claims.
+
+### [`information_flow_policy.json`](../data/information_flow_policy.json)
+
+Declares the project-wide ordered integrity and confidentiality facet vocabulary without assigning classifications to undeclared sources or sinks.
 
 ### [`project.json`](../data/project.json)
 

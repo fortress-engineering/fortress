@@ -15,6 +15,7 @@ use crate::behavioral_semantics::{BEHAVIOR_FLOW_RULE_ID, BehavioralSemanticsEval
 use crate::contract::{CONTRACT_COHERENCY_RULE_ID, ContractCoherencyEvaluation};
 use crate::documentation::{DocumentationConformanceReport, REPO_DOCS_RULE_ID};
 use crate::finding::{CanonicalFinding, FindingError};
+use crate::information_flow::{InformationFlowEvaluation, PROGRAM_INFOFLOW_RULE_ID};
 use crate::ownership::{ARCH_OWNERSHIP_RULE_ID, evaluate_file_ownership};
 use crate::placement::{REPO_MODULE_RULE_ID, evaluate_module_grammar};
 use crate::rust_test_analyzer::RustTestFact;
@@ -176,6 +177,31 @@ pub struct CompleteEvaluationInputs<'a> {
     behavioral_semantics: &'a BehavioralSemanticsEvaluation,
     semantic_analysis: Option<&'a SemanticAnalysisEvaluation>,
     state_effect_analysis: Option<&'a StateEffectAnalysisEvaluation>,
+    information_flow_analysis: Option<&'a InformationFlowEvaluation>,
+}
+
+/// Program-analysis evidence grouped as one semantic layer for rule evaluation.
+#[derive(Clone, Copy, Debug)]
+pub struct ProgramEvaluationInputs<'a> {
+    semantic: Option<&'a SemanticAnalysisEvaluation>,
+    state_effect: Option<&'a StateEffectAnalysisEvaluation>,
+    information_flow: Option<&'a InformationFlowEvaluation>,
+}
+
+impl<'a> ProgramEvaluationInputs<'a> {
+    /// Groups the progressively derived program-analysis models.
+    #[must_use]
+    pub const fn new(
+        semantic_analysis: Option<&'a SemanticAnalysisEvaluation>,
+        state_effect_analysis: Option<&'a StateEffectAnalysisEvaluation>,
+        information_flow_analysis: Option<&'a InformationFlowEvaluation>,
+    ) -> Self {
+        Self {
+            semantic: semantic_analysis,
+            state_effect: state_effect_analysis,
+            information_flow: information_flow_analysis,
+        }
+    }
 }
 
 impl<'a> CompleteEvaluationInputs<'a> {
@@ -187,8 +213,7 @@ impl<'a> CompleteEvaluationInputs<'a> {
         contract_coherency: &'a ContractCoherencyEvaluation,
         architecture_realization: &'a ArchitectureRealization,
         behavioral_semantics: &'a BehavioralSemanticsEvaluation,
-        semantic_analysis: Option<&'a SemanticAnalysisEvaluation>,
-        state_effect_analysis: Option<&'a StateEffectAnalysisEvaluation>,
+        program_analysis: ProgramEvaluationInputs<'a>,
     ) -> Self {
         Self {
             rust_tests,
@@ -196,8 +221,9 @@ impl<'a> CompleteEvaluationInputs<'a> {
             contract_coherency,
             architecture_realization,
             behavioral_semantics,
-            semantic_analysis,
-            state_effect_analysis,
+            semantic_analysis: program_analysis.semantic,
+            state_effect_analysis: program_analysis.state_effect,
+            information_flow_analysis: program_analysis.information_flow,
         }
     }
 }
@@ -211,6 +237,7 @@ struct EvaluationInputs<'a> {
     behavioral_semantics: Option<&'a BehavioralSemanticsEvaluation>,
     semantic_analysis: Option<&'a SemanticAnalysisEvaluation>,
     state_effect_analysis: Option<&'a StateEffectAnalysisEvaluation>,
+    information_flow_analysis: Option<&'a InformationFlowEvaluation>,
 }
 
 impl<'a> From<CompleteEvaluationInputs<'a>> for EvaluationInputs<'a> {
@@ -223,6 +250,7 @@ impl<'a> From<CompleteEvaluationInputs<'a>> for EvaluationInputs<'a> {
             behavioral_semantics: Some(inputs.behavioral_semantics),
             semantic_analysis: inputs.semantic_analysis,
             state_effect_analysis: inputs.state_effect_analysis,
+            information_flow_analysis: inputs.information_flow_analysis,
         }
     }
 }
@@ -324,16 +352,20 @@ fn evaluate_rule(
             |result| behavior_execution(rule_id, result),
         )),
         PROGRAM_DOMAIN_RULE_ID => Ok(inputs.semantic_analysis.map_or_else(
-            || unsupported_execution(rule_id, "Program-domain evaluation requires one snapshot-bound PSM and its distributed Function Contract v2 set."),
+            || unsupported_execution(rule_id, "Program-domain evaluation requires one snapshot-bound PSM and its distributed Function Contract v3 set."),
             |result| semantic_execution(rule_id, result),
         )),
         PROGRAM_STATE_RULE_ID => Ok(inputs.state_effect_analysis.map_or_else(
-            || unsupported_execution(rule_id, "Program-state evaluation requires one snapshot-bound PSM, Semantic Analysis result, State Contract set, and Function Contract v2 set."),
+            || unsupported_execution(rule_id, "Program-state evaluation requires one snapshot-bound PSM, Semantic Analysis result, State Contract set, and Function Contract v3 set."),
             |result| state_effect_execution(rule_id, result, true),
         )),
         PROGRAM_EFFECT_RULE_ID => Ok(inputs.state_effect_analysis.map_or_else(
             || unsupported_execution(rule_id, "Program-effect evaluation requires one snapshot-bound PSM and State/Effect Analysis result."),
             |result| state_effect_execution(rule_id, result, false),
+        )),
+        PROGRAM_INFOFLOW_RULE_ID => Ok(inputs.information_flow_analysis.map_or_else(
+            || unsupported_execution(rule_id, "Program information-flow evaluation requires one snapshot-bound PSM, Semantic Analysis result, State/Effect result, policy, and Function Contract v3 set."),
+            |result| information_flow_execution(rule_id, result),
         )),
         ARCH_OWNERSHIP_RULE_ID => ownership_execution(rule_id, architecture, snapshot, edition),
         REPO_MODULE_RULE_ID => placement_execution(rule_id, snapshot, edition),
@@ -485,6 +517,31 @@ fn state_effect_execution(
                 "State and Effect Analysis v1 evaluated {} function summary(ies) and produced {} supported contradiction(s) for this rule; unknown and unclassified semantics remain explicit.",
                 coverage.functions(),
                 findings.len(),
+            ),
+        },
+        findings,
+    )
+}
+
+fn information_flow_execution(
+    rule_id: &str,
+    result: &InformationFlowEvaluation,
+) -> (RuleExecution, Vec<CanonicalFinding>) {
+    let findings = result.findings().to_vec();
+    let coverage = result.model().coverage();
+    (
+        RuleExecution {
+            rule_id: rule_id.into(),
+            state: if findings.is_empty() {
+                RuleExecutionState::Passed
+            } else {
+                RuleExecutionState::Failed
+            },
+            applicable: true,
+            findings: findings.len(),
+            detail: format!(
+                "Information Flow Analysis v1 evaluated project-defined ordered facets and produced {} supported information-flow contradiction(s); unknown and unsupported flow remains explicit.",
+                coverage.violations(),
             ),
         },
         findings,

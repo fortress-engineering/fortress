@@ -1,13 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:fortress:schema:v2:function-contracts",
-  "title": "Fortress Function Contracts v2",
+  "$id": "urn:fortress:schema:v3:function-contracts",
+  "title": "Fortress Function Contracts v3",
   "type": "object",
   "additionalProperties": false,
   "required": ["$schema", "schema_version", "functions"],
   "properties": {
-    "$schema": { "const": "urn:fortress:schema:v2:function-contracts" },
-    "schema_version": { "const": 2 },
+    "$schema": { "const": "urn:fortress:schema:v3:function-contracts" },
+    "schema_version": { "const": 3 },
     "functions": {
       "type": "array",
       "items": { "$ref": "#/$defs/function" }
@@ -137,6 +137,84 @@
         }
       }
     },
+    "flow_target": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "name"],
+          "properties": {
+            "kind": { "const": "parameter" },
+            "name": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": { "kind": { "enum": ["receiver", "return"] } }
+        }
+      ]
+    },
+    "flow_source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target", "facet", "level"],
+      "properties": {
+        "target": { "$ref": "#/$defs/flow_target" },
+        "facet": { "type": "string", "minLength": 1 },
+        "level": { "type": "string", "minLength": 1 }
+      }
+    },
+    "flow_requirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target", "facet"],
+      "properties": {
+        "target": { "$ref": "#/$defs/flow_target" },
+        "facet": { "type": "string", "minLength": 1 },
+        "minimum": { "type": "string", "minLength": 1 },
+        "maximum": { "type": "string", "minLength": 1 }
+      },
+      "oneOf": [
+        { "required": ["minimum"], "not": { "required": ["maximum"] } },
+        { "required": ["maximum"], "not": { "required": ["minimum"] } }
+      ]
+    },
+    "flow_ensure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target", "facet", "level"],
+      "properties": {
+        "target": { "$ref": "#/$defs/flow_target" },
+        "facet": { "type": "string", "minLength": 1 },
+        "level": { "type": "string", "minLength": 1 }
+      }
+    },
+    "flow_transform": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "input", "output", "facet", "from", "to"],
+      "properties": {
+        "kind": { "enum": ["endorsement", "declassification"] },
+        "input": { "$ref": "#/$defs/flow_target" },
+        "output": { "$ref": "#/$defs/flow_target" },
+        "facet": { "type": "string", "minLength": 1 },
+        "from": { "type": "string", "minLength": 1 },
+        "to": { "type": "string", "minLength": 1 }
+      }
+    },
+    "information_flow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sources", "requires", "ensures", "transforms"],
+      "properties": {
+        "sources": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/flow_source" } },
+        "requires": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/flow_requirement" } },
+        "ensures": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/flow_ensure" } },
+        "transforms": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/flow_transform" } }
+      }
+    },
     "function": {
       "type": "object",
       "additionalProperties": false,
@@ -147,7 +225,8 @@
         "ensures": { "type": "array", "maxItems": 1, "items": { "$ref": "#/$defs/guarantee" } },
         "state_requires": { "type": "array", "items": { "$ref": "#/$defs/state_obligation" } },
         "state_ensures": { "type": "array", "items": { "$ref": "#/$defs/state_obligation" } },
-        "effects": { "$ref": "#/$defs/effect_policy" }
+        "effects": { "$ref": "#/$defs/effect_policy" },
+        "information_flow": { "$ref": "#/$defs/information_flow" }
       }
     }
   }

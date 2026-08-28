@@ -20,7 +20,7 @@ Invalid or foreign contracts fail loading. Supported domain contradictions becom
 
 ### [`function_contract.rs`](../code/function_contract.rs)
 
-Loads canonical distributed Function Contract v2 sources, enforces symbol ownership and static-type compatibility for value domains, preserves state/effect obligations for the downstream owner, and computes their input digest.
+Loads canonical distributed Function Contract v3 sources, enforces symbol ownership and static-type compatibility for value domains, preserves state/effect and information-flow obligations for downstream owners, and computes their input digest.
 
 ### [`domain.rs`](../code/domain.rs)
 

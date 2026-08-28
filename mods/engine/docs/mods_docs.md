@@ -26,6 +26,10 @@ Provides the shared canonical finding representation used across rule-family bou
 
 Analyzes snapshot-bound Rust source independently and emits deterministic implementation dependency facts with provenance.
 
+### [Information Flow](../mods/information_flow/README.md)
+
+Propagates project-defined trust and confidentiality facets across canonical program, value, and state flow while exposing sink contradictions and trusted transitions.
+
 ### [Program Semantics](../mods/program_semantics/README.md)
 
 Analyzes snapshot-bound source into deterministic executable symbols, typed interfaces, calls, bounded value transfers, and cross-Module program facts.

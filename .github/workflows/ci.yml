@@ -106,6 +106,17 @@ jobs:
           cmp "$first" "$second"
           cmp "$first" info/state_effect_analysis.json
 
+      - name: Verify deterministic committed information-flow analysis
+        shell: bash
+        run: |
+          first="$(mktemp)"
+          second="$(mktemp)"
+          trap 'rm -f "$first" "$second"' EXIT
+          cargo +1.97.1 --config data/cargo_config.toml run --quiet --manifest-path data/Cargo.toml -p fortress-cli -- information-flow . --format json --output "$first"
+          cargo +1.97.1 --config data/cargo_config.toml run --quiet --manifest-path data/Cargo.toml -p fortress-cli -- information-flow . --format json --output "$second"
+          cmp "$first" "$second"
+          cmp "$first" info/information_flow_analysis.json
+
       - name: Run Fortress self-audit
         run: cargo +1.97.1 --config data/cargo_config.toml run --quiet --manifest-path data/Cargo.toml -p fortress-cli -- audit .
 

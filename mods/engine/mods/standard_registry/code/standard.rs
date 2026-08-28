@@ -90,6 +90,12 @@ const DRAFT_RULES: &[RuleDescriptor] = &[
         integrity_tier: 3,
     },
     RuleDescriptor {
+        id: "PROGRAM-INFOFLOW-001",
+        title: "Supported information flows satisfy declared trust and confidentiality constraints",
+        status: RuleStatus::Draft,
+        integrity_tier: 3,
+    },
+    RuleDescriptor {
         id: "ARCH-OWNERSHIP-001",
         title: "Exact declared repository file ownership",
         status: RuleStatus::Draft,
