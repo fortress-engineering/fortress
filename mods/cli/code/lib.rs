@@ -18,8 +18,8 @@ use fortress_core::audit::{
     compile_repository_certification, compile_repository_environmental_analysis,
     compile_repository_information_flow_analysis, compile_repository_psm,
     compile_repository_realized_bfg, compile_repository_reference_resolution,
-    compile_repository_semantic_analysis, compile_repository_state_effect_analysis,
-    prepare_repository_certification_source,
+    compile_repository_semantic_analysis, compile_repository_source_artifact_model,
+    compile_repository_state_effect_analysis, prepare_repository_certification_source,
 };
 use fortress_core::certification::{CertificationStatus, RustSuiteExecution};
 use fortress_core::contract_coherency::CcgCoherencyStatus;
@@ -77,6 +77,7 @@ where
         "CMD-INFORMATION-FLOW" => run_information_flow(&arguments[1..], output, error),
         "CMD-ENVIRONMENTAL-ANALYSIS" => run_environmental(&arguments[1..], output, error),
         "CMD-REFERENCE-RESOLUTION" => run_references(&arguments[1..], output, error),
+        "CMD-SOURCE-ARTIFACT-MODEL" => run_source_artifacts(&arguments[1..], output, error),
         "CMD-CERTIFICATION-FULL-SNAPSHOT" => run_certify(&arguments[1..], output, error),
         _ => {
             writeln!(
@@ -87,6 +88,43 @@ where
             Ok(EXIT_USAGE)
         }
     }
+}
+
+fn run_source_artifacts<O: Write, E: Write>(
+    arguments: &[String],
+    output: &mut O,
+    error: &mut E,
+) -> io::Result<u8> {
+    const USAGE: &str = "usage: fortress source-artifacts [path] [--format json] [--output path]";
+    let (root, destination) = match parse_derived_json_arguments(
+        arguments,
+        USAGE,
+        "source-artifacts format must be `json`",
+    ) {
+        Ok(value) => value,
+        Err(message) => {
+            writeln!(error, "{message}")?;
+            return Ok(EXIT_USAGE);
+        }
+    };
+    let model = match compile_repository_source_artifact_model(&root) {
+        Ok(value) => value,
+        Err(model_error) => {
+            writeln!(error, "source artifact compilation failed: {model_error}")?;
+            return Ok(EXIT_USAGE);
+        }
+    };
+    let document = model.to_canonical_json().map_err(io::Error::other)?;
+    if let Some(destination) = destination {
+        fs::write(destination, document)?;
+    } else {
+        write!(output, "{document}")?;
+    }
+    Ok(if model.summary().findings() == 0 {
+        EXIT_SUCCESS
+    } else {
+        EXIT_VIOLATION
+    })
 }
 
 struct ReferenceArguments {

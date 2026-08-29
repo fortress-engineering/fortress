@@ -94,6 +94,13 @@ const BUILTIN_COMMANDS: &[CommandDescriptor] = &[
         usage: "fortress references [path] [--format json] [--output path] [--move Module-ID --to Parent-Module-ID]",
     },
     CommandDescriptor {
+        id: "CMD-SOURCE-ARTIFACT-MODEL",
+        name: "source-artifacts",
+        aliases: &[],
+        description: "Compile and render the language-neutral Source Artifact Model.",
+        usage: "fortress source-artifacts [path] [--format json] [--output path]",
+    },
+    CommandDescriptor {
         id: "CMD-CERTIFICATION-FULL-SNAPSHOT",
         name: "certify",
         aliases: &[],

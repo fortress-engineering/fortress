@@ -1,0 +1,105 @@
+{
+  "$schema": "urn:fortress:schema:v2:module-contract",
+  "schema_version": 2,
+  "id": "AF-SOURCE-ARCHITECTURE-0001",
+  "display_name": "Source Architecture",
+  "provides": [
+    {
+      "id": "CAP-SOURCE-ARCHITECTURE",
+      "version": "0.1.0",
+      "visibility": "project"
+    }
+  ],
+  "requires": [
+    {
+      "provider": "AF-CONTRACT-COHERENCY-0001",
+      "capability": "CAP-CONTRACT-COHERENCY",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-FINDING-MODEL-0001",
+      "capability": "CAP-FINDING-MODEL",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-IMPLEMENTATION-OBSERVATION-0001",
+      "capability": "CAP-IMPLEMENTATION-OBSERVATION",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-PROGRAM-SEMANTICS-0001",
+      "capability": "CAP-PROGRAM-SEMANTICS",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-PROJECT-MODEL-0001",
+      "capability": "CAP-PROJECT-MODEL",
+      "version": "^0.1.0"
+    }
+  ],
+  "relationships": [],
+  "constraints": [],
+  "guarantees": [
+    {
+      "id": "GUA-SOURCE-ARTIFACT-COHERENCE",
+      "subject": {
+        "kind": "capability",
+        "id": "CAP-SOURCE-ARCHITECTURE"
+      },
+      "requirements": [
+        "AF-SOURCE-ARCHITECTURE-0001-R01",
+        "AF-SOURCE-ARCHITECTURE-0001-R02",
+        "AF-SOURCE-ARCHITECTURE-0001-R03",
+        "AF-SOURCE-ARCHITECTURE-0001-R04"
+      ]
+    }
+  ],
+  "features": [
+    {
+      "id": "AF-SOURCE-ARCHITECTURE-0001",
+      "version": "0.1.0",
+      "requirements": [
+        {
+          "id": "AF-SOURCE-ARCHITECTURE-0001-R01",
+          "statement": "Source Architecture deterministically compiles every governed Code file from Project Filing ownership, stable Module identity, exact source bytes, and the canonical code_docs.md responsibility projection without creating another source inventory or Markdown parser.",
+          "tests": [
+            "T-AF-SOURCE-ARCHITECTURE-0001-R01-001",
+            "T-AF-SOURCE-ARCHITECTURE-0001-R01-002",
+            "T-AF-SOURCE-ARCHITECTURE-0001-R01-003"
+          ]
+        },
+        {
+          "id": "AF-SOURCE-ARCHITECTURE-0001-R02",
+          "statement": "The universal Source Profile and archetype framework maps language-native observations into closed semantic concerns with explicit OBSERVED, ABSENT, UNSUPPORTED, and NOT_APPLICABLE coverage without imposing syntax, ordering, or one-X-per-file rules.",
+          "tests": [
+            "T-AF-SOURCE-ARCHITECTURE-0001-R02-001",
+            "T-AF-SOURCE-ARCHITECTURE-0001-R02-002",
+            "T-AF-SOURCE-ARCHITECTURE-0001-R02-003",
+            "T-SOURCE-PROFILE-001-R01-001"
+          ]
+        },
+        {
+          "id": "AF-SOURCE-ARCHITECTURE-0001-R03",
+          "statement": "Source Architecture preserves authored intent separately from observed mechanics, reuses lightweight PSM and verification identities without graph duplication, and evaluates only profile-declared structural composition and generated-source provenance.",
+          "tests": [
+            "T-AF-SOURCE-ARCHITECTURE-0001-R03-001",
+            "T-AF-SOURCE-ARCHITECTURE-0001-R03-002",
+            "T-AF-SOURCE-ARCHITECTURE-0001-R03-003",
+            "T-SOURCE-ARTIFACT-001-R01-001"
+          ]
+        },
+        {
+          "id": "AF-SOURCE-ARCHITECTURE-0001-R04",
+          "statement": "Source Artifact Model v1 remains byte-deterministic, content-addressed, relocation-stable at semantic identity, complete for live governed source inventory, truthful about absent Rust profile coverage, and near-linear for at least ten thousand mixed source artifacts.",
+          "tests": [
+            "T-AF-SOURCE-ARCHITECTURE-0001-R04-001",
+            "T-AF-SOURCE-ARCHITECTURE-0001-R04-002",
+            "T-AF-SOURCE-ARCHITECTURE-0001-R04-003",
+            "T-AF-SOURCE-ARCHITECTURE-0001-R04-004"
+          ]
+        }
+      ]
+    }
+  ],
+  "behavior": []
+}

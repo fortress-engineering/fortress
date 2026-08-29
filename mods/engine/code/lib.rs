@@ -58,6 +58,8 @@ pub mod rust_test_analyzer;
 pub mod semantic_analysis;
 #[path = "../mods/snapshot_governance/code/snapshot.rs"]
 pub mod snapshot;
+#[path = "../mods/source_architecture/code/source.rs"]
+pub mod source_architecture;
 #[path = "../mods/standard_registry/code/standard.rs"]
 pub mod standard;
 #[path = "../mods/state_effect_analysis/code/state_effect.rs"]

@@ -105,6 +105,7 @@ impl AuditFixture {
                 ("information_flow", "Information Flow"),
                 ("reference_resolution", "Reference Resolution"),
                 ("semantic_analysis", "Semantic Analysis"),
+                ("source_architecture", "Source Architecture"),
                 ("state_effect_analysis", "State and Effect Analysis"),
                 ("snapshot_governance", "Snapshot Governance"),
                 ("standard_registry", "Standard Registry"),
@@ -158,6 +159,11 @@ impl AuditFixture {
                 "Semantic Analysis",
             ),
             (
+                "source_architecture",
+                "AF-FIXTURE-SOURCE-ARCHITECTURE-0001",
+                "Source Architecture",
+            ),
+            (
                 "state_effect_analysis",
                 "AF-FIXTURE-STATE-EFFECT-0001",
                 "State and Effect Analysis",
@@ -191,6 +197,8 @@ impl AuditFixture {
             "mods/engine/mods/behavioral_realization/data/behavior_bypass_rule.json",
             "mods/engine/mods/behavioral_realization/data/behavior_realization_rule.json",
             "mods/engine/mods/semantic_analysis/data/program_domain_rule.json",
+            "mods/engine/mods/source_architecture/data/source_artifact_rule.json",
+            "mods/engine/mods/source_architecture/data/source_profile_rule.json",
             "mods/engine/mods/state_effect_analysis/data/program_state_rule.json",
             "mods/engine/mods/state_effect_analysis/data/program_effect_rule.json",
             "mods/engine/mods/information_flow/data/program_infoflow_rule.json",
@@ -235,6 +243,11 @@ impl AuditFixture {
             data_docs(&["program_domain_rule.json"]),
         )
         .expect("semantic Data documentation writes");
+        fs::write(
+            root.join("mods/engine/mods/source_architecture/docs/data_docs.md"),
+            data_docs(&["source_artifact_rule.json", "source_profile_rule.json"]),
+        )
+        .expect("source-architecture Data documentation writes");
         fs::write(
             root.join("mods/engine/mods/state_effect_analysis/docs/data_docs.md"),
             data_docs(&["program_effect_rule.json", "program_state_rule.json"]),
@@ -443,7 +456,7 @@ fn audit_success_renders_human_snapshot_report() {
         String::from_utf8_lossy(&output.stderr)
     );
     assert!(stdout.contains("Fortress Snapshot Audit"));
-    assert!(stdout.contains("PASS: 14"), "{stdout}");
+    assert!(stdout.contains("PASS: 16"), "{stdout}");
     assert!(stdout.contains("Unsupported: 0"), "{stdout}");
     assert!(stdout.contains("Architecture diagnostics:"));
     assert!(stdout.contains("Unsupported analysis:"));

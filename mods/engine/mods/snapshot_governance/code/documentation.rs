@@ -21,6 +21,7 @@ use crate::finding::{
     FindingOccurrence, RuleFindingDefinition,
 };
 use crate::snapshot::RepositorySnapshot;
+use crate::source_architecture::CodeFileResponsibility;
 
 /// Stable identity of canonical Module documentation synchronization.
 pub const REPO_DOCS_RULE_ID: &str = "REPO-DOCS-001";
@@ -41,6 +42,56 @@ const PLACEHOLDERS: [&str; 7] = [
     "to be decided",
     "placeholder",
 ];
+
+/// Extracts the canonical direct-Code-file responsibility catalog using the
+/// same structural `CommonMark` model as documentation conformance.
+///
+/// Source Architecture consumes this projection instead of parsing Markdown or
+/// introducing another responsibility manifest. Repository documentation
+/// conformance remains responsible for the catalog/filesystem bijection.
+///
+/// # Errors
+///
+/// Returns the offending documentation path when canonical Markdown is not
+/// UTF-8. Structural invalidity is reported by [`evaluate_repository_documentation`].
+pub fn code_file_responsibilities(
+    files: &BTreeMap<String, Vec<u8>>,
+    ccg: &ContractCoherencyGraph,
+) -> Result<Vec<CodeFileResponsibility>, String> {
+    let mut entries = Vec::new();
+    for (module_id, module) in ccg.modules() {
+        let module_path = module.path();
+        let documentation_path = child_path(&child_path(module_path, "docs"), "code_docs.md");
+        let Some(bytes) = files.get(&documentation_path) else {
+            continue;
+        };
+        let source = std::str::from_utf8(bytes)
+            .map_err(|_| format!("canonical Markdown `{documentation_path}` is not UTF-8"))?;
+        let document = MarkdownDocument::parse(source);
+        for heading in document
+            .headings
+            .iter()
+            .filter(|heading| heading.level == 3 && heading.parent_h2.as_deref() == Some("Files"))
+        {
+            let responsibility = document
+                .paragraphs_for_h3(heading.index)
+                .iter()
+                .map(|paragraph| paragraph.text.trim())
+                .filter(|text| is_substantive(text))
+                .collect::<Vec<_>>()
+                .join("\n\n");
+            entries.push(CodeFileResponsibility::new(
+                child_path(&child_path(module_path, "code"), &heading.text),
+                module_id,
+                &documentation_path,
+                responsibility,
+            ));
+        }
+    }
+    entries.sort();
+    entries.dedup();
+    Ok(entries)
+}
 
 /// Deterministic machine-readable documentation-conformance report.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]

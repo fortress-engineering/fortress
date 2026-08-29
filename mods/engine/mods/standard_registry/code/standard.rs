@@ -164,6 +164,18 @@ const DRAFT_RULES: &[RuleDescriptor] = &[
         integrity_tier: 1,
     },
     RuleDescriptor {
+        id: "SOURCE-PROFILE-001",
+        title: "Universal Source Profile contract conformance",
+        status: RuleStatus::Draft,
+        integrity_tier: 1,
+    },
+    RuleDescriptor {
+        id: "SOURCE-ARTIFACT-001",
+        title: "Governed source artifact structural coherence",
+        status: RuleStatus::Draft,
+        integrity_tier: 1,
+    },
+    RuleDescriptor {
         id: "CONTRACT-COHERENCY-001",
         title: "Contract Coherency Graph compilation and supported logical coherency",
         status: RuleStatus::Draft,

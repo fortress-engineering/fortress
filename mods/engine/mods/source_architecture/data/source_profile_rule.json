@@ -1,0 +1,26 @@
+{
+  "$schema": "urn:fortress:schema:v1:rule",
+  "schema_version": 1,
+  "id": "SOURCE-PROFILE-001",
+  "title": "Universal Source Profile contract conformance",
+  "status": "draft",
+  "statement": "Registered source profiles MUST conform to the universal Source Profile contract and declare truthful observation coverage.",
+  "rationale": "Language-native file idioms can safely realize one universal engineering architecture only when their adapter authority, archetypes, semantic-region mapping, and limitations are explicit.",
+  "failure_prevented": "Language-specific assumptions leaking into universal architecture, ambiguous profile selection, hidden analyzer gaps, and source files receiving favorable classifications from unsupported observations.",
+  "applicability": "Every registered Source Profile; repositories with no applicable profile remain explicitly not applicable.",
+  "category": "source",
+  "integrity_tier": 1,
+  "evaluation": "Source Architecture validates Source Profile v1 identity, adapter, extension, archetype, semantic-region, visibility, responsibility, and limitation declarations before applying any profile.",
+  "required_capabilities": ["source-profile-registry", "source-artifact-model"],
+  "logic": { "implies": [], "conflicts_with": [] },
+  "finding": {
+    "message": "A registered Source Profile is structurally invalid or requires unavailable observation authority.",
+    "location": "path"
+  },
+  "remediation": "Correct the registered language profile so its identity, adapter, extensions, semantic-region mapping, archetypes, composition constraints, and coverage limitations conform to Source Profile v1.",
+  "valid_example": "A functional-language profile declares its own module archetype, maps native declarations into universal regions, and exposes unsupported effect observation.",
+  "invalid_example": "A profile assumes every language has classes or silently treats an unavailable adapter as proof that a region is absent.",
+  "exception_policy": "No local exception may redefine the universal profile schema; an intentionally unregistered language remains PROFILE_NOT_REGISTERED rather than failing this rule.",
+  "introduced": "1.0.0-draft.1",
+  "history": ["Introduced with language-neutral Source Artifact Architecture v1."]
+}

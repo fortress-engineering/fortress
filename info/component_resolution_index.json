@@ -3,7 +3,7 @@
   "schema_version": 1,
   "resolver_semantic_version": "1.0.0",
   "project_id": "PF-FORTRESS",
-  "source_ccg_digest": "sha256:2ce3ec7f7d7ea1f7e488bcb468fb40e9a3c4734fe78690943a70aad6d64726e9",
+  "source_ccg_digest": "sha256:2852ad53f7ae89e5e803439a0f53ab12413b40016d1a3cc107d6ee021c4ab75f",
   "modules": [
     {
       "module_id": "AF-ARCHITECTURE-EVALUATION-0001",
@@ -207,6 +207,18 @@
       ]
     },
     {
+      "module_id": "AF-SOURCE-ARCHITECTURE-0001",
+      "module_path": "mods/engine/mods/source_architecture",
+      "contract_path": "mods/engine/mods/source_architecture/contract.json",
+      "readme_path": "mods/engine/mods/source_architecture/README.md",
+      "parent_module": "AF-CORE-0001",
+      "element_roots": [
+        "mods/engine/mods/source_architecture/code",
+        "mods/engine/mods/source_architecture/data",
+        "mods/engine/mods/source_architecture/mods"
+      ]
+    },
+    {
       "module_id": "AF-STANDARD-REGISTRY-0001",
       "module_path": "mods/engine/mods/standard_registry",
       "contract_path": "mods/engine/mods/standard_registry/contract.json",
@@ -395,6 +407,16 @@
       "element_roots": [
         "mods/engine/mods/snapshot_governance/mods/testing/code",
         "mods/engine/mods/snapshot_governance/mods/testing/data"
+      ]
+    },
+    {
+      "module_id": "TEST-SOURCE-ARCHITECTURE-0001",
+      "module_path": "mods/engine/mods/source_architecture/mods/testing",
+      "contract_path": "mods/engine/mods/source_architecture/mods/testing/contract.json",
+      "readme_path": "mods/engine/mods/source_architecture/mods/testing/README.md",
+      "parent_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "element_roots": [
+        "mods/engine/mods/source_architecture/mods/testing/code"
       ]
     },
     {
@@ -1466,6 +1488,70 @@
     },
     {
       "class": "LOCAL",
+      "source_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "target_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "authority": "repository-relative-local",
+      "projection": "../code/source.rs",
+      "provenance": "mods/engine/mods/source_architecture/docs/code_docs.md"
+    },
+    {
+      "class": "LOCAL",
+      "source_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "target_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "authority": "repository-relative-local",
+      "projection": "../data/source_artifact_rule.json",
+      "provenance": "mods/engine/mods/source_architecture/docs/data_docs.md"
+    },
+    {
+      "class": "LOCAL",
+      "source_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "target_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "authority": "repository-relative-local",
+      "projection": "../data/source_model_schema_v1.json",
+      "provenance": "mods/engine/mods/source_architecture/docs/data_docs.md"
+    },
+    {
+      "class": "LOCAL",
+      "source_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "target_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "authority": "repository-relative-local",
+      "projection": "../data/source_profile_rule.json",
+      "provenance": "mods/engine/mods/source_architecture/docs/data_docs.md"
+    },
+    {
+      "class": "LOCAL",
+      "source_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "target_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "authority": "repository-relative-local",
+      "projection": "../data/source_profile_schema_v1.json",
+      "provenance": "mods/engine/mods/source_architecture/docs/data_docs.md"
+    },
+    {
+      "class": "LOCAL",
+      "source_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "target_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "authority": "repository-relative-local",
+      "projection": "../data/source_profiles.json",
+      "provenance": "mods/engine/mods/source_architecture/docs/data_docs.md"
+    },
+    {
+      "class": "LOCAL",
+      "source_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "target_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "authority": "rust-crate-module",
+      "projection": null,
+      "provenance": "mods/engine/mods/source_architecture/code/source.rs"
+    },
+    {
+      "class": "LOCAL",
+      "source_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "target_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "authority": "rust-local-path",
+      "projection": "../data/source_profiles.json",
+      "provenance": "mods/engine/mods/source_architecture/code/source.rs"
+    },
+    {
+      "class": "LOCAL",
       "source_module": "AF-STANDARD-REGISTRY-0001",
       "target_module": "AF-STANDARD-REGISTRY-0001",
       "authority": "repository-relative-local",
@@ -1766,6 +1852,14 @@
       "target_module": "PF-FORTRESS",
       "authority": "repository-relative-local",
       "projection": "../info/semantic_analysis.json",
+      "provenance": "docs/info_docs.md"
+    },
+    {
+      "class": "LOCAL",
+      "source_module": "PF-FORTRESS",
+      "target_module": "PF-FORTRESS",
+      "authority": "repository-relative-local",
+      "projection": "../info/source_artifact_model.json",
       "provenance": "docs/info_docs.md"
     },
     {
@@ -2239,6 +2333,14 @@
       "authority": "repository-relative-local",
       "projection": "../data/verification_bindings.json",
       "provenance": "mods/engine/mods/snapshot_governance/mods/testing/docs/data_docs.md"
+    },
+    {
+      "class": "LOCAL",
+      "source_module": "TEST-SOURCE-ARCHITECTURE-0001",
+      "target_module": "TEST-SOURCE-ARCHITECTURE-0001",
+      "authority": "repository-relative-local",
+      "projection": "../code/source_architecture.rs",
+      "provenance": "mods/engine/mods/source_architecture/mods/testing/docs/code_docs.md"
     },
     {
       "class": "LOCAL",
@@ -2747,10 +2849,18 @@
     {
       "class": "SEMANTIC",
       "source_module": "AF-CORE-0001",
+      "target_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "authority": "CAP-SOURCE-ARCHITECTURE",
+      "projection": null,
+      "provenance": "mods/engine/contract.json#/requires/15"
+    },
+    {
+      "class": "SEMANTIC",
+      "source_module": "AF-CORE-0001",
       "target_module": "AF-STANDARD-REGISTRY-0001",
       "authority": "CAP-STANDARD-REGISTRY",
       "projection": null,
-      "provenance": "mods/engine/contract.json#/requires/15"
+      "provenance": "mods/engine/contract.json#/requires/16"
     },
     {
       "class": "SEMANTIC",
@@ -2758,7 +2868,7 @@
       "target_module": "AF-STATE-EFFECT-ANALYSIS-0001",
       "authority": "CAP-STATE-EFFECT-ANALYSIS",
       "projection": null,
-      "provenance": "mods/engine/contract.json#/requires/16"
+      "provenance": "mods/engine/contract.json#/requires/17"
     },
     {
       "class": "SEMANTIC",
@@ -3035,10 +3145,18 @@
     {
       "class": "SEMANTIC",
       "source_module": "AF-SNAPSHOT-GOVERNANCE-0001",
+      "target_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "authority": "CAP-SOURCE-ARCHITECTURE",
+      "projection": null,
+      "provenance": "mods/engine/mods/snapshot_governance/contract.json#/requires/14"
+    },
+    {
+      "class": "SEMANTIC",
+      "source_module": "AF-SNAPSHOT-GOVERNANCE-0001",
       "target_module": "AF-STANDARD-REGISTRY-0001",
       "authority": "CAP-STANDARD-REGISTRY",
       "projection": null,
-      "provenance": "mods/engine/mods/snapshot_governance/contract.json#/requires/14"
+      "provenance": "mods/engine/mods/snapshot_governance/contract.json#/requires/15"
     },
     {
       "class": "SEMANTIC",
@@ -3046,7 +3164,47 @@
       "target_module": "AF-STATE-EFFECT-ANALYSIS-0001",
       "authority": "CAP-STATE-EFFECT-ANALYSIS",
       "projection": null,
-      "provenance": "mods/engine/mods/snapshot_governance/contract.json#/requires/15"
+      "provenance": "mods/engine/mods/snapshot_governance/contract.json#/requires/16"
+    },
+    {
+      "class": "SEMANTIC",
+      "source_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "target_module": "AF-CONTRACT-COHERENCY-0001",
+      "authority": "CAP-CONTRACT-COHERENCY",
+      "projection": null,
+      "provenance": "mods/engine/mods/source_architecture/contract.json#/requires/0"
+    },
+    {
+      "class": "SEMANTIC",
+      "source_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "target_module": "AF-FINDING-MODEL-0001",
+      "authority": "CAP-FINDING-MODEL",
+      "projection": null,
+      "provenance": "mods/engine/mods/source_architecture/contract.json#/requires/1"
+    },
+    {
+      "class": "SEMANTIC",
+      "source_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "target_module": "AF-IMPLEMENTATION-OBSERVATION-0001",
+      "authority": "CAP-IMPLEMENTATION-OBSERVATION",
+      "projection": null,
+      "provenance": "mods/engine/mods/source_architecture/contract.json#/requires/2"
+    },
+    {
+      "class": "SEMANTIC",
+      "source_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "target_module": "AF-PROGRAM-SEMANTICS-0001",
+      "authority": "CAP-PROGRAM-SEMANTICS",
+      "projection": null,
+      "provenance": "mods/engine/mods/source_architecture/contract.json#/requires/3"
+    },
+    {
+      "class": "SEMANTIC",
+      "source_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "target_module": "AF-PROJECT-MODEL-0001",
+      "authority": "CAP-PROJECT-MODEL",
+      "projection": null,
+      "provenance": "mods/engine/mods/source_architecture/contract.json#/requires/4"
     },
     {
       "class": "SEMANTIC",
@@ -3503,6 +3661,30 @@
       "authority": "CAP-STANDARD-REGISTRY",
       "projection": null,
       "provenance": "mods/engine/mods/snapshot_governance/mods/testing/contract.json#/requires/6"
+    },
+    {
+      "class": "SEMANTIC",
+      "source_module": "TEST-SOURCE-ARCHITECTURE-0001",
+      "target_module": "AF-CORE-0001",
+      "authority": "CAP-FORTRESS-ENGINE",
+      "projection": null,
+      "provenance": "mods/engine/mods/source_architecture/mods/testing/contract.json#/requires/0"
+    },
+    {
+      "class": "SEMANTIC",
+      "source_module": "TEST-SOURCE-ARCHITECTURE-0001",
+      "target_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "authority": "AF-SOURCE-ARCHITECTURE-0001",
+      "projection": null,
+      "provenance": "mods/engine/mods/source_architecture/mods/testing/contract.json#/relationships/0"
+    },
+    {
+      "class": "SEMANTIC",
+      "source_module": "TEST-SOURCE-ARCHITECTURE-0001",
+      "target_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "authority": "CAP-SOURCE-ARCHITECTURE",
+      "projection": null,
+      "provenance": "mods/engine/mods/source_architecture/mods/testing/contract.json#/requires/1"
     },
     {
       "class": "SEMANTIC",
@@ -4115,6 +4297,22 @@
     {
       "class": "PHYSICAL_PROJECTION",
       "source_module": "AF-CORE-0001",
+      "target_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "authority": "AF-SOURCE-ARCHITECTURE-0001",
+      "projection": "mods/source_architecture/README.md",
+      "provenance": "mods/engine/README.md"
+    },
+    {
+      "class": "PHYSICAL_PROJECTION",
+      "source_module": "AF-CORE-0001",
+      "target_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "authority": "containment:AF-SOURCE-ARCHITECTURE-0001",
+      "projection": "../mods/source_architecture/README.md",
+      "provenance": "mods/engine/docs/mods_docs.md"
+    },
+    {
+      "class": "PHYSICAL_PROJECTION",
+      "source_module": "AF-CORE-0001",
       "target_module": "AF-STANDARD-REGISTRY-0001",
       "authority": "AF-STANDARD-REGISTRY-0001",
       "projection": "mods/standard_registry/README.md",
@@ -4483,6 +4681,14 @@
     {
       "class": "PHYSICAL_PROJECTION",
       "source_module": "AF-SNAPSHOT-GOVERNANCE-0001",
+      "target_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "authority": "AF-SOURCE-ARCHITECTURE-0001",
+      "projection": "../source_architecture/README.md",
+      "provenance": "mods/engine/mods/snapshot_governance/README.md"
+    },
+    {
+      "class": "PHYSICAL_PROJECTION",
+      "source_module": "AF-SNAPSHOT-GOVERNANCE-0001",
       "target_module": "AF-STANDARD-REGISTRY-0001",
       "authority": "AF-STANDARD-REGISTRY-0001",
       "projection": "../standard_registry/README.md",
@@ -4503,6 +4709,54 @@
       "authority": "containment:TEST-SNAPSHOT-GOVERNANCE-0001",
       "projection": "../mods/testing/README.md",
       "provenance": "mods/engine/mods/snapshot_governance/docs/mods_docs.md"
+    },
+    {
+      "class": "PHYSICAL_PROJECTION",
+      "source_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "target_module": "AF-CONTRACT-COHERENCY-0001",
+      "authority": "AF-CONTRACT-COHERENCY-0001",
+      "projection": "../contract_coherency/README.md",
+      "provenance": "mods/engine/mods/source_architecture/README.md"
+    },
+    {
+      "class": "PHYSICAL_PROJECTION",
+      "source_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "target_module": "AF-FINDING-MODEL-0001",
+      "authority": "AF-FINDING-MODEL-0001",
+      "projection": "../finding_model/README.md",
+      "provenance": "mods/engine/mods/source_architecture/README.md"
+    },
+    {
+      "class": "PHYSICAL_PROJECTION",
+      "source_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "target_module": "AF-IMPLEMENTATION-OBSERVATION-0001",
+      "authority": "AF-IMPLEMENTATION-OBSERVATION-0001",
+      "projection": "../implementation_observation/README.md",
+      "provenance": "mods/engine/mods/source_architecture/README.md"
+    },
+    {
+      "class": "PHYSICAL_PROJECTION",
+      "source_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "target_module": "AF-PROGRAM-SEMANTICS-0001",
+      "authority": "AF-PROGRAM-SEMANTICS-0001",
+      "projection": "../program_semantics/README.md",
+      "provenance": "mods/engine/mods/source_architecture/README.md"
+    },
+    {
+      "class": "PHYSICAL_PROJECTION",
+      "source_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "target_module": "AF-PROJECT-MODEL-0001",
+      "authority": "AF-PROJECT-MODEL-0001",
+      "projection": "../project_model/README.md",
+      "provenance": "mods/engine/mods/source_architecture/README.md"
+    },
+    {
+      "class": "PHYSICAL_PROJECTION",
+      "source_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "target_module": "TEST-SOURCE-ARCHITECTURE-0001",
+      "authority": "containment:TEST-SOURCE-ARCHITECTURE-0001",
+      "projection": "../mods/testing/README.md",
+      "provenance": "mods/engine/mods/source_architecture/docs/mods_docs.md"
     },
     {
       "class": "PHYSICAL_PROJECTION",
@@ -4887,6 +5141,22 @@
       "authority": "AF-STANDARD-REGISTRY-0001",
       "projection": "../../../standard_registry/README.md",
       "provenance": "mods/engine/mods/snapshot_governance/mods/testing/README.md"
+    },
+    {
+      "class": "PHYSICAL_PROJECTION",
+      "source_module": "TEST-SOURCE-ARCHITECTURE-0001",
+      "target_module": "AF-CORE-0001",
+      "authority": "AF-CORE-0001",
+      "projection": "../../../../README.md",
+      "provenance": "mods/engine/mods/source_architecture/mods/testing/README.md"
+    },
+    {
+      "class": "PHYSICAL_PROJECTION",
+      "source_module": "TEST-SOURCE-ARCHITECTURE-0001",
+      "target_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "authority": "AF-SOURCE-ARCHITECTURE-0001",
+      "projection": "../../README.md",
+      "provenance": "mods/engine/mods/source_architecture/mods/testing/README.md"
     },
     {
       "class": "PHYSICAL_PROJECTION",
@@ -5770,6 +6040,30 @@
     },
     {
       "class": "EXTERNAL",
+      "source_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "target_module": null,
+      "authority": "serde",
+      "projection": null,
+      "provenance": "mods/engine/mods/source_architecture/code/source.rs"
+    },
+    {
+      "class": "EXTERNAL",
+      "source_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "target_module": null,
+      "authority": "sha2",
+      "projection": null,
+      "provenance": "mods/engine/mods/source_architecture/code/source.rs"
+    },
+    {
+      "class": "EXTERNAL",
+      "source_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "target_module": null,
+      "authority": "std",
+      "projection": null,
+      "provenance": "mods/engine/mods/source_architecture/code/source.rs"
+    },
+    {
+      "class": "EXTERNAL",
       "source_module": "AF-STANDARD-REGISTRY-0001",
       "target_module": null,
       "authority": "serde",
@@ -6450,6 +6744,30 @@
     },
     {
       "class": "EXTERNAL",
+      "source_module": "TEST-SOURCE-ARCHITECTURE-0001",
+      "target_module": null,
+      "authority": "serde_json",
+      "projection": null,
+      "provenance": "mods/engine/mods/source_architecture/mods/testing/code/source_architecture.rs"
+    },
+    {
+      "class": "EXTERNAL",
+      "source_module": "TEST-SOURCE-ARCHITECTURE-0001",
+      "target_module": null,
+      "authority": "std",
+      "projection": null,
+      "provenance": "mods/engine/mods/source_architecture/mods/testing/code/source_architecture.rs"
+    },
+    {
+      "class": "EXTERNAL",
+      "source_module": "TEST-SOURCE-ARCHITECTURE-0001",
+      "target_module": "AF-CORE-0001",
+      "authority": "fortress-core",
+      "projection": null,
+      "provenance": "mods/engine/mods/source_architecture/mods/testing/code/source_architecture.rs"
+    },
+    {
+      "class": "EXTERNAL",
       "source_module": "TEST-STANDARD-REGISTRY-0001",
       "target_module": null,
       "authority": "serde_json",
@@ -6829,8 +7147,8 @@
       "path": "mods/engine/data/Cargo.toml",
       "pointer": "test[28].path",
       "source_module": "AF-CORE-0001",
-      "target_module": "TEST-STANDARD-REGISTRY-0001",
-      "resolved_target": "mods/engine/mods/standard_registry/mods/testing/code/std_id_001.rs"
+      "target_module": "TEST-SOURCE-ARCHITECTURE-0001",
+      "resolved_target": "mods/engine/mods/source_architecture/mods/testing/code/source_architecture.rs"
     },
     {
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
@@ -6838,8 +7156,8 @@
       "path": "mods/engine/data/Cargo.toml",
       "pointer": "test[29].path",
       "source_module": "AF-CORE-0001",
-      "target_module": "TEST-SNAPSHOT-GOVERNANCE-0001",
-      "resolved_target": "mods/engine/mods/snapshot_governance/mods/testing/code/test_traceability_001.rs"
+      "target_module": "TEST-STANDARD-REGISTRY-0001",
+      "resolved_target": "mods/engine/mods/standard_registry/mods/testing/code/std_id_001.rs"
     },
     {
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
@@ -6855,6 +7173,15 @@
       "format": "cargo",
       "path": "mods/engine/data/Cargo.toml",
       "pointer": "test[30].path",
+      "source_module": "AF-CORE-0001",
+      "target_module": "TEST-SNAPSHOT-GOVERNANCE-0001",
+      "resolved_target": "mods/engine/mods/snapshot_governance/mods/testing/code/test_traceability_001.rs"
+    },
+    {
+      "class": "AUTHORED_RESOLUTION_BOUNDARY",
+      "format": "cargo",
+      "path": "mods/engine/data/Cargo.toml",
+      "pointer": "test[31].path",
       "source_module": "AF-CORE-0001",
       "target_module": "TEST-SNAPSHOT-GOVERNANCE-0001",
       "resolved_target": "mods/engine/mods/snapshot_governance/mods/testing/code/test_boundary_001.rs"
@@ -7169,6 +7496,15 @@
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
       "format": "rust-module",
       "path": "mods/engine/code/lib.rs",
+      "pointer": "../mods/source_architecture/code/source.rs",
+      "source_module": "AF-CORE-0001",
+      "target_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "resolved_target": "mods/engine/mods/source_architecture/code/source.rs"
+    },
+    {
+      "class": "AUTHORED_RESOLUTION_BOUNDARY",
+      "format": "rust-module",
+      "path": "mods/engine/code/lib.rs",
       "pointer": "../mods/standard_registry/code/identity.rs",
       "source_module": "AF-CORE-0001",
       "target_module": "AF-STANDARD-REGISTRY-0001",
@@ -7360,8 +7696,8 @@
       "path": "mods/engine/mods/standard_registry/data/schema_manifest.json",
       "pointer": "/schemas/25",
       "source_module": "AF-STANDARD-REGISTRY-0001",
-      "target_module": "AF-CERTIFICATION-0001",
-      "resolved_target": "mods/engine/mods/certification/data/evidence_graph_schema_v1.json"
+      "target_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "resolved_target": "mods/engine/mods/source_architecture/data/source_profile_schema_v1.json"
     },
     {
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
@@ -7369,8 +7705,8 @@
       "path": "mods/engine/mods/standard_registry/data/schema_manifest.json",
       "pointer": "/schemas/26",
       "source_module": "AF-STANDARD-REGISTRY-0001",
-      "target_module": "AF-CERTIFICATION-0001",
-      "resolved_target": "mods/engine/mods/certification/data/certification_profile_schema_v1.json"
+      "target_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "resolved_target": "mods/engine/mods/source_architecture/data/source_model_schema_v1.json"
     },
     {
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
@@ -7379,7 +7715,7 @@
       "pointer": "/schemas/27",
       "source_module": "AF-STANDARD-REGISTRY-0001",
       "target_module": "AF-CERTIFICATION-0001",
-      "resolved_target": "mods/engine/mods/certification/data/certification_result_schema_v1.json"
+      "resolved_target": "mods/engine/mods/certification/data/evidence_graph_schema_v1.json"
     },
     {
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
@@ -7388,7 +7724,7 @@
       "pointer": "/schemas/28",
       "source_module": "AF-STANDARD-REGISTRY-0001",
       "target_module": "AF-CERTIFICATION-0001",
-      "resolved_target": "mods/engine/mods/certification/data/verification_binding_schema_v1.json"
+      "resolved_target": "mods/engine/mods/certification/data/certification_profile_schema_v1.json"
     },
     {
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
@@ -7397,7 +7733,7 @@
       "pointer": "/schemas/29",
       "source_module": "AF-STANDARD-REGISTRY-0001",
       "target_module": "AF-CERTIFICATION-0001",
-      "resolved_target": "mods/engine/mods/certification/data/verified_bfg_schema_v1.json"
+      "resolved_target": "mods/engine/mods/certification/data/certification_result_schema_v1.json"
     },
     {
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
@@ -7414,6 +7750,24 @@
       "path": "mods/engine/mods/standard_registry/data/schema_manifest.json",
       "pointer": "/schemas/30",
       "source_module": "AF-STANDARD-REGISTRY-0001",
+      "target_module": "AF-CERTIFICATION-0001",
+      "resolved_target": "mods/engine/mods/certification/data/verification_binding_schema_v1.json"
+    },
+    {
+      "class": "AUTHORED_RESOLUTION_BOUNDARY",
+      "format": "schema-registry",
+      "path": "mods/engine/mods/standard_registry/data/schema_manifest.json",
+      "pointer": "/schemas/31",
+      "source_module": "AF-STANDARD-REGISTRY-0001",
+      "target_module": "AF-CERTIFICATION-0001",
+      "resolved_target": "mods/engine/mods/certification/data/verified_bfg_schema_v1.json"
+    },
+    {
+      "class": "AUTHORED_RESOLUTION_BOUNDARY",
+      "format": "schema-registry",
+      "path": "mods/engine/mods/standard_registry/data/schema_manifest.json",
+      "pointer": "/schemas/32",
+      "source_module": "AF-STANDARD-REGISTRY-0001",
       "target_module": "TF-CLI-0001",
       "resolved_target": "mods/cli/data/command_schema_v1.json"
     },
@@ -7421,7 +7775,7 @@
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
       "format": "schema-registry",
       "path": "mods/engine/mods/standard_registry/data/schema_manifest.json",
-      "pointer": "/schemas/31",
+      "pointer": "/schemas/33",
       "source_module": "AF-STANDARD-REGISTRY-0001",
       "target_module": "AF-PROJECT-MODEL-0001",
       "resolved_target": "mods/engine/mods/project_model/data/change_schema_v1.json"
@@ -7585,8 +7939,8 @@
       "path": "mods/engine/mods/standard_registry/data/standard_manifest.json",
       "pointer": "/rules/19",
       "source_module": "AF-STANDARD-REGISTRY-0001",
-      "target_module": "AF-SNAPSHOT-GOVERNANCE-0001",
-      "resolved_target": "mods/engine/mods/snapshot_governance/data/contract_rule.json"
+      "target_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "resolved_target": "mods/engine/mods/source_architecture/data/source_profile_rule.json"
     },
     {
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
@@ -7596,6 +7950,24 @@
       "source_module": "AF-STANDARD-REGISTRY-0001",
       "target_module": "AF-ARCHITECTURE-EVALUATION-0001",
       "resolved_target": "mods/engine/mods/architecture_evaluation/data/realization_rule.json"
+    },
+    {
+      "class": "AUTHORED_RESOLUTION_BOUNDARY",
+      "format": "standard-registry",
+      "path": "mods/engine/mods/standard_registry/data/standard_manifest.json",
+      "pointer": "/rules/20",
+      "source_module": "AF-STANDARD-REGISTRY-0001",
+      "target_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "resolved_target": "mods/engine/mods/source_architecture/data/source_artifact_rule.json"
+    },
+    {
+      "class": "AUTHORED_RESOLUTION_BOUNDARY",
+      "format": "standard-registry",
+      "path": "mods/engine/mods/standard_registry/data/standard_manifest.json",
+      "pointer": "/rules/21",
+      "source_module": "AF-STANDARD-REGISTRY-0001",
+      "target_module": "AF-SNAPSHOT-GOVERNANCE-0001",
+      "resolved_target": "mods/engine/mods/snapshot_governance/data/contract_rule.json"
     },
     {
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
@@ -7871,6 +8243,15 @@
       "class": "GENERATED_PROJECTION",
       "format": "markdown",
       "path": "mods/engine/README.md",
+      "pointer": "mods/source_architecture/README.md",
+      "source_module": "AF-CORE-0001",
+      "target_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "resolved_target": "mods/engine/mods/source_architecture/README.md"
+    },
+    {
+      "class": "GENERATED_PROJECTION",
+      "format": "markdown",
+      "path": "mods/engine/README.md",
       "pointer": "mods/standard_registry/README.md",
       "source_module": "AF-CORE-0001",
       "target_module": "AF-STANDARD-REGISTRY-0001",
@@ -8019,6 +8400,15 @@
       "source_module": "AF-CORE-0001",
       "target_module": "AF-SNAPSHOT-GOVERNANCE-0001",
       "resolved_target": "mods/engine/mods/snapshot_governance/README.md"
+    },
+    {
+      "class": "GENERATED_PROJECTION",
+      "format": "markdown",
+      "path": "mods/engine/docs/mods_docs.md",
+      "pointer": "../mods/source_architecture/README.md",
+      "source_module": "AF-CORE-0001",
+      "target_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "resolved_target": "mods/engine/mods/source_architecture/README.md"
     },
     {
       "class": "GENERATED_PROJECTION",
@@ -9014,6 +9404,15 @@
       "class": "GENERATED_PROJECTION",
       "format": "markdown",
       "path": "mods/engine/mods/snapshot_governance/README.md",
+      "pointer": "../source_architecture/README.md",
+      "source_module": "AF-SNAPSHOT-GOVERNANCE-0001",
+      "target_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "resolved_target": "mods/engine/mods/source_architecture/README.md"
+    },
+    {
+      "class": "GENERATED_PROJECTION",
+      "format": "markdown",
+      "path": "mods/engine/mods/snapshot_governance/README.md",
       "pointer": "../standard_registry/README.md",
       "source_module": "AF-SNAPSHOT-GOVERNANCE-0001",
       "target_module": "AF-STANDARD-REGISTRY-0001",
@@ -9099,6 +9498,78 @@
       "source_module": "TEST-SNAPSHOT-GOVERNANCE-0001",
       "target_module": "AF-SNAPSHOT-GOVERNANCE-0001",
       "resolved_target": "mods/engine/mods/snapshot_governance/README.md"
+    },
+    {
+      "class": "GENERATED_PROJECTION",
+      "format": "markdown",
+      "path": "mods/engine/mods/source_architecture/README.md",
+      "pointer": "../contract_coherency/README.md",
+      "source_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "target_module": "AF-CONTRACT-COHERENCY-0001",
+      "resolved_target": "mods/engine/mods/contract_coherency/README.md"
+    },
+    {
+      "class": "GENERATED_PROJECTION",
+      "format": "markdown",
+      "path": "mods/engine/mods/source_architecture/README.md",
+      "pointer": "../finding_model/README.md",
+      "source_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "target_module": "AF-FINDING-MODEL-0001",
+      "resolved_target": "mods/engine/mods/finding_model/README.md"
+    },
+    {
+      "class": "GENERATED_PROJECTION",
+      "format": "markdown",
+      "path": "mods/engine/mods/source_architecture/README.md",
+      "pointer": "../implementation_observation/README.md",
+      "source_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "target_module": "AF-IMPLEMENTATION-OBSERVATION-0001",
+      "resolved_target": "mods/engine/mods/implementation_observation/README.md"
+    },
+    {
+      "class": "GENERATED_PROJECTION",
+      "format": "markdown",
+      "path": "mods/engine/mods/source_architecture/README.md",
+      "pointer": "../program_semantics/README.md",
+      "source_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "target_module": "AF-PROGRAM-SEMANTICS-0001",
+      "resolved_target": "mods/engine/mods/program_semantics/README.md"
+    },
+    {
+      "class": "GENERATED_PROJECTION",
+      "format": "markdown",
+      "path": "mods/engine/mods/source_architecture/README.md",
+      "pointer": "../project_model/README.md",
+      "source_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "target_module": "AF-PROJECT-MODEL-0001",
+      "resolved_target": "mods/engine/mods/project_model/README.md"
+    },
+    {
+      "class": "GENERATED_PROJECTION",
+      "format": "markdown",
+      "path": "mods/engine/mods/source_architecture/docs/mods_docs.md",
+      "pointer": "../mods/testing/README.md",
+      "source_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "target_module": "TEST-SOURCE-ARCHITECTURE-0001",
+      "resolved_target": "mods/engine/mods/source_architecture/mods/testing/README.md"
+    },
+    {
+      "class": "GENERATED_PROJECTION",
+      "format": "markdown",
+      "path": "mods/engine/mods/source_architecture/mods/testing/README.md",
+      "pointer": "../../../../README.md",
+      "source_module": "TEST-SOURCE-ARCHITECTURE-0001",
+      "target_module": "AF-CORE-0001",
+      "resolved_target": "mods/engine/README.md"
+    },
+    {
+      "class": "GENERATED_PROJECTION",
+      "format": "markdown",
+      "path": "mods/engine/mods/source_architecture/mods/testing/README.md",
+      "pointer": "../../README.md",
+      "source_module": "TEST-SOURCE-ARCHITECTURE-0001",
+      "target_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "resolved_target": "mods/engine/mods/source_architecture/README.md"
     },
     {
       "class": "GENERATED_PROJECTION",
@@ -9210,13 +9681,13 @@
     }
   ],
   "summary": {
-    "modules": 38,
-    "semantic_references": 152,
-    "local_references": 240,
-    "physical_projections": 172,
-    "external_references": 202,
-    "authored_resolution_boundaries": 122,
-    "generated_projections": 172,
+    "modules": 40,
+    "semantic_references": 162,
+    "local_references": 250,
+    "physical_projections": 183,
+    "external_references": 208,
+    "authored_resolution_boundaries": 128,
+    "generated_projections": 183,
     "findings": 0
   }
 }

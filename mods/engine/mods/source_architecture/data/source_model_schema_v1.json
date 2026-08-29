@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:source-artifact-model",
+  "title": "Fortress Source Artifact Model v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "semantic_version",
+    "project_id",
+    "source_identity",
+    "universal_regions",
+    "registered_profiles",
+    "artifacts",
+    "summary",
+    "unsupported_semantics",
+    "provenance"
+  ],
+  "properties": {
+    "$schema": { "const": "urn:fortress:schema:v1:source-artifact-model" },
+    "schema_version": { "const": 1 },
+    "semantic_version": { "type": "string", "minLength": 1 },
+    "project_id": { "type": "string", "minLength": 1 },
+    "source_identity": { "type": "string", "minLength": 1 },
+    "universal_regions": { "type": "array", "items": { "type": "string" } },
+    "registered_profiles": { "type": "array", "items": { "type": "string" } },
+    "artifacts": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/artifact" }
+    },
+    "summary": { "type": "object" },
+    "unsupported_semantics": { "type": "array", "items": { "type": "string" } },
+    "provenance": { "type": "object" }
+  },
+  "$defs": {
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "path",
+        "module_id",
+        "module_relative_path",
+        "content_digest",
+        "provenance",
+        "authored_responsibility",
+        "language",
+        "language_authority",
+        "profile",
+        "semantic_regions",
+        "structural_observations",
+        "verification_relationships",
+        "conclusions"
+      ],
+      "properties": {
+        "id": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "path": { "type": "string", "minLength": 1 },
+        "module_id": { "type": "string", "minLength": 1 },
+        "module_relative_path": { "type": "string", "minLength": 1 },
+        "content_digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "provenance": { "type": "object" },
+        "authored_responsibility": { "type": ["object", "null"] },
+        "language": { "type": ["string", "null"] },
+        "language_authority": { "type": ["string", "null"] },
+        "profile": { "type": "object" },
+        "semantic_regions": { "type": "array", "items": { "type": "object" } },
+        "structural_observations": { "type": "array", "items": { "type": "string" } },
+        "verification_relationships": { "type": "array", "items": { "type": "object" } },
+        "conclusions": { "type": "array", "items": { "type": "object" } }
+      }
+    }
+  }
+}

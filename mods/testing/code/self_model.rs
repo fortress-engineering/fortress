@@ -136,6 +136,8 @@ fn live_contract_v2_ecosystem_resolves_completely() {
                 "REPO-DOCS-001",
                 "REPO-MODULE-001",
                 "REPO-REFERENCE-001",
+                "SOURCE-ARTIFACT-001",
+                "SOURCE-PROFILE-001",
                 "STD-ID-001",
                 "TEST-BOUNDARY-001",
                 "TEST-TRACEABILITY-001",
@@ -151,14 +153,14 @@ fn live_contract_v2_ecosystem_resolves_completely() {
         "live CCG must be coherent: {:#?}",
         resolution.violations()
     );
-    assert_eq!(resolved.modules().len(), 38);
-    assert_eq!(resolved.capabilities().len(), 19);
-    assert_eq!(resolved.features().len(), 19);
-    assert_eq!(resolved.requirements().len(), 86);
-    assert_eq!(resolved.guarantees().len(), 8);
+    assert_eq!(resolved.modules().len(), 40);
+    assert_eq!(resolved.capabilities().len(), 20);
+    assert_eq!(resolved.features().len(), 20);
+    assert_eq!(resolved.requirements().len(), 90);
+    assert_eq!(resolved.guarantees().len(), 9);
     assert_eq!(resolved.checkpoints().len(), 10);
-    assert_eq!(resolved.direct_requirements().len(), 134);
-    assert_eq!(resolved.relationships().len(), 18);
+    assert_eq!(resolved.direct_requirements().len(), 143);
+    assert_eq!(resolved.relationships().len(), 19);
     assert!(
         resolved
             .modules()
@@ -169,6 +171,6 @@ fn live_contract_v2_ecosystem_resolves_completely() {
         resolved
             .effective_constraints()
             .values()
-            .all(|values| values.len() == 7)
+            .all(|values| values.len() == 9)
     );
 }

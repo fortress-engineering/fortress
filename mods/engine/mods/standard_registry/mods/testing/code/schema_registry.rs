@@ -35,7 +35,7 @@ fn registered_schemas_are_unique_json_schema_documents() {
         .expect("schema manifest must contain a schemas array");
     let mut identities = HashSet::with_capacity(paths.len());
 
-    assert_eq!(paths.len(), 32);
+    assert_eq!(paths.len(), 34);
     for path in paths {
         let relative = path.as_str().expect("schema path must be a string");
         let schema = read_json(relative);

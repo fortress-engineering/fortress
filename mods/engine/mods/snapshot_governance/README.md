@@ -104,6 +104,12 @@ Consumes deterministic repository file facts to construct and verify snapshots.
 
 Consumes one deterministic PSM-backed function-domain evaluation so PROGRAM-DOMAIN-001 reports supported contradictions without reparsing source or treating uncertainty as passing proof.
 
+### [Source Architecture](../source_architecture/README.md)
+
+**Types:** `depends_on`
+
+Compiles the canonical code documentation catalog, Project Filing ownership, and existing implementation observations into one deterministic language-neutral Source Artifact Model.
+
 ### [State and Effect Analysis](../state_effect_analysis/README.md)
 
 **Types:** `depends_on`

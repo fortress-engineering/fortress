@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:source-profiles",
+  "title": "Fortress Source Profile Registry v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "schema_version", "profiles"],
+  "properties": {
+    "$schema": { "const": "urn:fortress:schema:v1:source-profiles" },
+    "schema_version": { "const": 1 },
+    "profiles": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/profile" }
+    }
+  },
+  "$defs": {
+    "region": {
+      "enum": [
+        "IDENTITY_RESPONSIBILITY",
+        "DEPENDENCIES",
+        "DECLARATIONS",
+        "STATE",
+        "INITIALIZATION",
+        "PUBLIC_INTERFACE",
+        "IMPLEMENTATION",
+        "FAILURE_SEMANTICS",
+        "EFFECTS",
+        "DOCUMENTATION_INTENT",
+        "VERIFICATION_RELATIONSHIPS"
+      ]
+    },
+    "profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "language",
+        "version",
+        "extensions",
+        "generated_source_recognition",
+        "observation_adapter",
+        "archetypes",
+        "semantic_region_mapping",
+        "visibility_mapping",
+        "responsibility_required",
+        "coverage_limitations"
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "language": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "extensions": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "generated_source_recognition": { "type": "string", "minLength": 1 },
+        "observation_adapter": { "type": "string", "minLength": 1 },
+        "archetypes": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/archetype" }
+        },
+        "semantic_region_mapping": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["fact", "region"],
+            "properties": {
+              "fact": { "type": "string", "minLength": 1 },
+              "region": { "$ref": "#/$defs/region" }
+            }
+          }
+        },
+        "visibility_mapping": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["native", "public"],
+            "properties": {
+              "native": { "type": "string", "minLength": 1 },
+              "public": { "type": "boolean" }
+            }
+          }
+        },
+        "responsibility_required": { "type": "boolean" },
+        "coverage_limitations": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "archetype": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "required_regions", "allowed_regions", "forbidden_regions"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "required_regions": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/region" }
+        },
+        "allowed_regions": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/region" }
+        },
+        "forbidden_regions": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/region" }
+        }
+      }
+    }
+  }
+}

@@ -29,6 +29,9 @@ use crate::reference_resolution::{REPO_REFERENCE_RULE_ID, ReferenceResolutionEva
 use crate::rust_test_analyzer::RustTestFact;
 use crate::semantic_analysis::{PROGRAM_DOMAIN_RULE_ID, SemanticAnalysisEvaluation};
 use crate::snapshot::RepositorySnapshot;
+use crate::source_architecture::{
+    SOURCE_ARTIFACT_RULE_ID, SOURCE_PROFILE_RULE_ID, SourceArchitectureEvaluation,
+};
 use crate::standard::StandardBundle;
 use crate::state_effect_analysis::{
     PROGRAM_EFFECT_RULE_ID, PROGRAM_STATE_RULE_ID, StateEffectAnalysisEvaluation,
@@ -191,6 +194,7 @@ pub struct CompleteEvaluationInputs<'a> {
     information_flow_analysis: Option<&'a InformationFlowEvaluation>,
     environmental_analysis: Option<&'a EnvironmentalAnalysisEvaluation>,
     reference_resolution: &'a ReferenceResolutionEvaluation,
+    source_architecture: &'a SourceArchitectureEvaluation,
 }
 
 /// Program-analysis evidence grouped as one semantic layer for rule evaluation.
@@ -211,6 +215,7 @@ pub struct RepositoryEvaluationInputs<'a> {
     behavioral_semantics: &'a BehavioralSemanticsEvaluation,
     behavioral_realization: Option<&'a BehavioralRealizationEvaluation>,
     reference_resolution: &'a ReferenceResolutionEvaluation,
+    source_architecture: &'a SourceArchitectureEvaluation,
 }
 
 impl<'a> RepositoryEvaluationInputs<'a> {
@@ -223,6 +228,7 @@ impl<'a> RepositoryEvaluationInputs<'a> {
         behavioral_semantics: &'a BehavioralSemanticsEvaluation,
         behavioral_realization: Option<&'a BehavioralRealizationEvaluation>,
         reference_resolution: &'a ReferenceResolutionEvaluation,
+        source_architecture: &'a SourceArchitectureEvaluation,
     ) -> Self {
         Self {
             documentation,
@@ -231,6 +237,7 @@ impl<'a> RepositoryEvaluationInputs<'a> {
             behavioral_semantics,
             behavioral_realization,
             reference_resolution,
+            source_architecture,
         }
     }
 }
@@ -273,6 +280,7 @@ impl<'a> CompleteEvaluationInputs<'a> {
             information_flow_analysis: program_analysis.information_flow,
             environmental_analysis: program_analysis.environmental,
             reference_resolution: repository.reference_resolution,
+            source_architecture: repository.source_architecture,
         }
     }
 }
@@ -290,6 +298,7 @@ struct EvaluationInputs<'a> {
     information_flow_analysis: Option<&'a InformationFlowEvaluation>,
     environmental_analysis: Option<&'a EnvironmentalAnalysisEvaluation>,
     reference_resolution: Option<&'a ReferenceResolutionEvaluation>,
+    source_architecture: Option<&'a SourceArchitectureEvaluation>,
 }
 
 impl<'a> From<CompleteEvaluationInputs<'a>> for EvaluationInputs<'a> {
@@ -306,6 +315,7 @@ impl<'a> From<CompleteEvaluationInputs<'a>> for EvaluationInputs<'a> {
             information_flow_analysis: inputs.information_flow_analysis,
             environmental_analysis: inputs.environmental_analysis,
             reference_resolution: Some(inputs.reference_resolution),
+            source_architecture: Some(inputs.source_architecture),
         }
     }
 }
@@ -454,6 +464,12 @@ fn evaluate_rule(
             || unsupported_execution(rule_id, "Reference evaluation requires one CCG-bound resolution index compiled from exact snapshot bytes."),
             |result| reference_execution(rule_id, result),
         )),
+        SOURCE_PROFILE_RULE_ID | SOURCE_ARTIFACT_RULE_ID => {
+            Ok(inputs.source_architecture.map_or_else(
+                || unsupported_execution(rule_id, "Source Architecture evaluation requires Project Filing ownership, canonical code_docs.md responsibility projection, exact source bytes, and the validated Source Profile registry."),
+                |result| source_architecture_execution(rule_id, result),
+            ))
+        }
         CONTRACT_COHERENCY_RULE_ID => Ok(inputs.contract_coherency.map_or_else(
             || unsupported_execution(rule_id, "Contract coherency requires canonical Module Contract v2 repository bytes, observed test evidence, and parsed README relationship projections."),
             |result| contract_execution(rule_id, result),
@@ -490,6 +506,39 @@ fn reference_execution(
                 summary.local_references(),
                 summary.physical_projections(),
                 summary.authored_resolution_boundaries(),
+                findings.len(),
+            ),
+        },
+        findings,
+    )
+}
+
+fn source_architecture_execution(
+    rule_id: &str,
+    result: &SourceArchitectureEvaluation,
+) -> (RuleExecution, Vec<CanonicalFinding>) {
+    let findings = result
+        .findings()
+        .iter()
+        .filter(|finding| finding.rule_id() == rule_id)
+        .cloned()
+        .collect::<Vec<_>>();
+    let summary = result.model().summary();
+    (
+        RuleExecution {
+            rule_id: rule_id.into(),
+            state: if findings.is_empty() {
+                RuleExecutionState::Passed
+            } else {
+                RuleExecutionState::Failed
+            },
+            applicable: true,
+            findings: findings.len(),
+            detail: format!(
+                "Source Architecture v1 inventoried {} governed artifact(s), synchronized {} authored responsibility record(s), retained {} PROFILE_NOT_REGISTERED language result(s), and produced {} finding(s) for this rule.",
+                summary.artifacts(),
+                summary.documented_responsibilities(),
+                summary.profile_not_registered(),
                 findings.len(),
             ),
         },

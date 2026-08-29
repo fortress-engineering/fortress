@@ -135,6 +135,17 @@
       "certification_implications": "Executes the canonical local Rust suite, constructs the content-addressed Evidence DAG, and emits deterministic Certification and Verified BFG artifacts for the exact recursion-free source identity."
     },
     {
+      "id": "CMD-SOURCE-ARTIFACT-MODEL",
+      "name": "source-artifacts",
+      "aliases": [],
+      "description": "Compile and render the language-neutral Source Artifact Model.",
+      "owner": "TF-CLI-0001",
+      "executor": "builtin-sync",
+      "duration": "short",
+      "resumability": "restartable",
+      "certification_implications": "Renders derived file responsibility, profile/archetype coverage, lightweight semantic references, and structural findings; it does not provide a separate certificate or a language-specific Rust profile."
+    },
+    {
       "id": "CMD-REFERENCE-RESOLUTION",
       "name": "references",
       "aliases": ["resolve"],

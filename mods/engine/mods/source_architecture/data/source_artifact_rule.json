@@ -1,0 +1,26 @@
+{
+  "$schema": "urn:fortress:schema:v1:rule",
+  "schema_version": 1,
+  "id": "SOURCE-ARTIFACT-001",
+  "title": "Governed source artifact structural coherence",
+  "status": "draft",
+  "statement": "Governed source artifacts to which a registered profile applies MUST have one authoritative responsibility, one resolvable permitted archetype, and profile-coherent structural composition.",
+  "rationale": "File-level cohesion is meaningful only when authored responsibility and observed language-native composition remain distinct, traceable, and reconciled without universal syntax rules.",
+  "failure_prevented": "Undocumented source responsibility, ambiguous file roles, forbidden stateful implementation in interface-only artifacts, hidden generated provenance, and unsupported analysis reported as absence.",
+  "applicability": "Every governed Code artifact; archetype composition is applicable only where a validated Source Profile is registered for its language.",
+  "category": "source",
+  "integrity_tier": 1,
+  "evaluation": "Source Architecture composes Project Filing ownership, canonical code_docs.md responsibility, adapter observations, and stable semantic references into Source Artifact Model v1 and evaluates only profile-declared structural composition.",
+  "required_capabilities": ["source-artifact-model", "canonical-documentation-catalog", "project-filing-system"],
+  "logic": { "implies": [], "conflicts_with": [] },
+  "finding": {
+    "message": "A governed source artifact lacks authoritative responsibility or violates an applicable profile's archetype and semantic-region composition.",
+    "location": "path"
+  },
+  "remediation": "Document the file's single architectural responsibility in canonical code_docs.md, register or correct the applicable language profile, and align observed composition with exactly one permitted archetype without suppressing unsupported coverage.",
+  "valid_example": "A functional module has one documented responsibility and a profile-permitted group of related declarations without any universal one-function-per-file constraint.",
+  "invalid_example": "An interface-only archetype contains profile-forbidden mutable implementation, or generated source has no generator provenance.",
+  "exception_policy": "No language-independent ordering or one-X-per-file exemption exists because those are not universal rules; profile absence remains explicitly not applicable until that language profile is delivered.",
+  "introduced": "1.0.0-draft.1",
+  "history": ["Introduced with deterministic Source Artifact Model v1."]
+}

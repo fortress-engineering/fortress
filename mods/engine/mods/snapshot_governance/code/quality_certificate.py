@@ -41,6 +41,7 @@ SEMANTIC_ARTIFACTS = (
     ("environmental", "info/environmental_analysis.json"),
     ("realized-bfg", "info/realized_behavioral_flow_graph.json"),
     ("references", "info/component_resolution_index.json"),
+    ("source-artifacts", "info/source_artifact_model.json"),
 )
 
 CERTIFICATION_ARTIFACTS = (
@@ -62,6 +63,7 @@ REQUIRED_GATE_IDS = (
     "ARTIFACT_REALIZED_BFG",
     "ARTIFACT_REFERENCES",
     "ARTIFACT_SEMANTIC",
+    "ARTIFACT_SOURCE_ARTIFACTS",
     "ARTIFACT_STATE_EFFECT",
     "ARTIFACT_VERIFIED_BFG",
     "AUDIT_JSON_DETERMINISM",
@@ -73,6 +75,7 @@ REQUIRED_GATE_IDS = (
     "SCHEMA_AND_STANDARD",
     "SELF_AUDIT",
     "SELF_MODEL",
+    "SOURCE_ARCHITECTURE",
     "WORKSPACE_TESTS",
 )
 
@@ -306,6 +309,17 @@ def issue(root: Path) -> dict[str, Any]:
         ]
         run_command(root, filing_system, environment)
         pass_gate(gates, "PROJECT_FILING_SYSTEM", filing_system)
+
+        source_architecture = base + [
+            "test",
+            "--manifest-path",
+            "data/Cargo.toml",
+            "--all-features",
+            "--test",
+            "source_architecture",
+        ]
+        run_command(root, source_architecture, environment)
+        pass_gate(gates, "SOURCE_ARCHITECTURE", source_architecture)
 
         self_model = base + [
             "test",

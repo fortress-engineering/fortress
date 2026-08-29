@@ -977,6 +977,12 @@ impl NominalType {
     pub fn fields(&self) -> &[NominalField] {
         &self.fields
     }
+
+    /// Returns exact declaration provenance for this nominal type.
+    #[must_use]
+    pub const fn provenance(&self) -> &ProgramProvenance {
+        &self.provenance
+    }
 }
 
 /// Kind of a Rust implementation block.
@@ -1271,6 +1277,12 @@ impl ExecutableSymbol {
     #[must_use]
     pub const fn qualifiers(&self) -> SymbolQualifiers {
         self.qualifiers
+    }
+
+    /// Returns the observed language-neutral visibility.
+    #[must_use]
+    pub const fn visibility(&self) -> &SymbolVisibility {
+        &self.visibility
     }
 }
 

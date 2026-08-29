@@ -66,6 +66,10 @@ Consumes the PSM and distributed Function Contracts to derive conservative value
 
 Turns exact declarations and repository facts into deterministic rule executions and normalized development evidence.
 
+### [Source Architecture](../mods/source_architecture/README.md)
+
+Compiles canonical file responsibility and observed source facts into language-neutral Source Artifact Model v1 without imposing language-specific syntax or archetypes.
+
 ### [State and Effect Analysis](../mods/state_effect_analysis/README.md)
 
 Consumes PSM mutation facts and Semantic Analysis domains to derive conservative typestate transitions, transitive effects, and supported policy contradictions.

@@ -110,6 +110,12 @@ Supplies distributed Function Contract interpretation, conservative semantic val
 
 Supplies snapshot construction, rule execution, findings, and repository audit orchestration.
 
+### [Source Architecture](mods/source_architecture/README.md)
+
+**Types:** `depends_on`
+
+Supplies language-neutral Source Artifact Model v1 compilation, universal profile/archetype semantics, lightweight PSM reference projection, and file-level structural coherence evaluation.
+
 ### [State and Effect Analysis](mods/state_effect_analysis/README.md)
 
 **Types:** `depends_on`

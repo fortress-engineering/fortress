@@ -519,6 +519,18 @@ impl FilingInventoryEntry {
     pub fn path(&self) -> &str {
         &self.path
     }
+
+    /// Returns the repository-relative owning Module path; `.` denotes root.
+    #[must_use]
+    pub fn module(&self) -> &str {
+        &self.module
+    }
+
+    /// Returns the canonical Module Element containing the file.
+    #[must_use]
+    pub fn element(&self) -> &str {
+        &self.element
+    }
 }
 
 /// Stable normalized filing-system diagnostic kinds.

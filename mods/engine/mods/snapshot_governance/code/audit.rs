@@ -36,7 +36,9 @@ use crate::contract_coherency::{
     CcgCompilation, CcgObservedTestFact, ContractCoherencyGraph, ContractStandardIndex,
     compile_contract_coherency_graph,
 };
-use crate::documentation::{DocumentationEvaluationError, evaluate_repository_documentation};
+use crate::documentation::{
+    DocumentationEvaluationError, code_file_responsibilities, evaluate_repository_documentation,
+};
 use crate::environmental_semantics::{
     EnvironmentContractError, EnvironmentContractSource, EnvironmentalAnalysisError,
     EnvironmentalAnalysisEvaluation, analyze_environmental_semantics, load_environment_contracts,
@@ -45,7 +47,8 @@ use crate::evaluation::{
     CompleteEvaluationInputs, EvaluationError, ProgramEvaluationInputs, RepositoryEvaluationInputs,
     RuleExecution, SnapshotRuleEngine,
 };
-use crate::finding::CanonicalFinding;
+use crate::filing::{FilingSystemProfiles, analyze_project_filing_system};
+use crate::finding::{CanonicalFinding, FindingError};
 use crate::implementation_observation::{
     ImplementationObservationError, ImplementationObservationInput, ModuleTerritory,
     ObservedImplementation, SnapshotBoundFile, observe_rust_implementation,
@@ -74,6 +77,11 @@ use crate::semantic_analysis::{
 use crate::snapshot::{
     RepositorySnapshot, SnapshotDocuments, SnapshotError, build_repository_snapshot,
     observe_repository_stably,
+};
+use crate::source_architecture::{
+    LanguageAssignment, SourceArchitectureEvaluation, SourceArchitectureInput, SourceArtifactModel,
+    SourceProfileRegistry, SourceVerificationRelationship, evaluate_source_architecture,
+    observations_from_psm,
 };
 use crate::standard::{StandardBundle, StandardLoadError};
 use crate::state_effect_analysis::{
@@ -344,6 +352,100 @@ pub fn compile_repository_psm(root: impl AsRef<Path>) -> Result<ProgramSemanticM
     let observed = observe_rust_implementation(&observation_input)
         .map_err(AuditError::ImplementationObservation)?;
     compile_psm_from_observed(&prepared, ccg, observation_input, &observed)
+}
+
+/// Compiles the canonical language-neutral Source Artifact Model v1.
+///
+/// The compiler reuses Project Filing membership, Snapshot Governance's
+/// canonical `code_docs.md` projection, and stable PSM references. It does not
+/// parse Rust or Markdown and leaves Rust archetype status explicitly
+/// `PROFILE_NOT_REGISTERED` until the Rust File Content Profile exists.
+///
+/// # Errors
+///
+/// Returns [`AuditError`] for invalid or unstable repository authority,
+/// semantic-substrate failure, responsibility projection failure, or finding
+/// normalization failure.
+pub fn compile_repository_source_artifact_model(
+    root: impl AsRef<Path>,
+) -> Result<SourceArtifactModel, AuditError> {
+    let prepared = prepare_audit(root.as_ref())?;
+    let ccg = prepared
+        .ccg_compilation
+        .graph()
+        .ok_or_else(|| AuditError::ContractState("prepared audit did not contain a CCG".into()))?;
+    let observation_input =
+        implementation_input(&prepared.snapshot, ccg, &prepared.observed_files)?;
+    let observed = observe_rust_implementation(&observation_input)
+        .map_err(AuditError::ImplementationObservation)?;
+    let psm = compile_psm_from_observed(&prepared, ccg, observation_input, &observed)?;
+    compile_source_architecture_from(&prepared, ccg, Some(&psm)).map(|value| value.model().clone())
+}
+
+fn compile_source_architecture_from(
+    prepared: &PreparedAudit,
+    ccg: &ContractCoherencyGraph,
+    psm: Option<&ProgramSemanticModel>,
+) -> Result<SourceArchitectureEvaluation, AuditError> {
+    let observed_paths = prepared.observed_files.keys().cloned().collect::<Vec<_>>();
+    let filing = analyze_project_filing_system(&observed_paths, &FilingSystemProfiles::standard());
+    let responsibilities = code_file_responsibilities(&prepared.observed_files, ccg)
+        .map_err(|error| AuditError::ContractState(error.into()))?;
+    let observations = psm.map_or_else(Vec::new, observations_from_psm);
+    let languages = [
+        LanguageAssignment::new("rs", "rust", "fortress-core/program-semantics-v3"),
+        LanguageAssignment::new(
+            "py",
+            "python",
+            "fortress-core/source-extension-observation-v1",
+        ),
+    ];
+    let verification_relationships = prepared
+        .rust_tests
+        .iter()
+        .filter_map(|test| {
+            let requirement_id = test.declared_requirement()?;
+            let requirement = ccg.requirements().get(requirement_id)?;
+            Some(SourceVerificationRelationship::new(
+                test.path(),
+                requirement.feature(),
+                requirement_id,
+                test.id(),
+            ))
+        })
+        .collect::<Vec<_>>();
+    let available_adapters = ["fortress-core/program-semantics-v3".to_owned()]
+        .into_iter()
+        .collect();
+    let psm_json = psm
+        .map(ProgramSemanticModel::to_canonical_json)
+        .transpose()
+        .map_err(|error| AuditError::ContractState(error.to_string().into()))?;
+    let psm_digest = psm_json
+        .as_deref()
+        .map(|value| format!("sha256:{:x}", Sha256::digest(value.as_bytes())));
+    // Source Architecture is a derived projection. Bind it to the canonical
+    // certification source rather than Snapshot Governance's raw observation
+    // fingerprint so generated semantic projections cannot influence their
+    // own input identity.
+    let source_identity = certification_source_digest(&prepared.observed_files);
+    evaluate_source_architecture(&SourceArchitectureInput {
+        project_id: prepared.snapshot.project_id(),
+        source_identity: &source_identity,
+        filing: &filing,
+        ccg,
+        files: &prepared.observed_files,
+        responsibilities: &responsibilities,
+        profiles: &SourceProfileRegistry::standard(),
+        languages: &languages,
+        observations: &observations,
+        generated_sources: &[],
+        verification_relationships: &verification_relationships,
+        available_adapters: &available_adapters,
+        psm_digest: psm_digest.as_deref(),
+        standard_edition: prepared.standard.bundle.edition(),
+    })
+    .map_err(AuditError::SourceArchitecture)
 }
 
 fn compile_psm_from_observed(
@@ -634,6 +736,7 @@ struct CertificationSemanticStack {
     models: AnalysisModels,
     realized: BehavioralRealizationEvaluation,
     reference_resolution: ReferenceResolutionEvaluation,
+    source_architecture: SourceArchitectureEvaluation,
     evaluation: crate::evaluation::SnapshotEvaluation,
 }
 
@@ -694,6 +797,7 @@ fn compile_certification_semantic_stack(
         prepared.standard.bundle.edition(),
     )
     .map_err(AuditError::ReferenceResolution)?;
+    let source_architecture = compile_source_architecture_from(&prepared, &ccg, Some(&models.psm))?;
     let evaluation_inputs = CompleteEvaluationInputs::new(
         &prepared.rust_tests,
         RepositoryEvaluationInputs::new(
@@ -703,6 +807,7 @@ fn compile_certification_semantic_stack(
             &behavioral_semantics,
             Some(&realized),
             &reference_resolution,
+            &source_architecture,
         ),
         ProgramEvaluationInputs::new(
             Some(&models.semantic),
@@ -727,6 +832,7 @@ fn compile_certification_semantic_stack(
         models,
         realized,
         reference_resolution,
+        source_architecture,
         evaluation,
     })
 }
@@ -942,6 +1048,23 @@ fn certification_artifacts(
             EvidenceClass::StaticProof,
             vec!["ccg".to_owned()],
             Vec::new(),
+        ),
+        (
+            "source_artifact_model",
+            "urn:fortress:schema:v1:source-artifact-model",
+            "info/source_artifact_model.json",
+            stack
+                .source_architecture
+                .model()
+                .to_canonical_json()
+                .map_err(CertificationError::Json)?,
+            EvidenceClass::StaticProof,
+            vec!["ccg".to_owned(), "psm".to_owned()],
+            stack
+                .source_architecture
+                .model()
+                .unsupported_semantics()
+                .to_vec(),
         ),
     ];
     entries
@@ -1521,10 +1644,13 @@ fn audit_repository_with_models(
     let documentation =
         evaluate_repository_documentation(root, &prepared.snapshot, ccg, standard.edition())
             .map_err(AuditError::Documentation)?;
-    let contract_coherency =
-        evaluate_contract_coherency(prepared.ccg_compilation, &documentation, standard.edition())
-            .map_err(EvaluationError::Finding)
-            .map_err(AuditError::Evaluation)?;
+    let contract_coherency = evaluate_contract_coherency(
+        prepared.ccg_compilation.clone(),
+        &documentation,
+        standard.edition(),
+    )
+    .map_err(EvaluationError::Finding)
+    .map_err(AuditError::Evaluation)?;
     let ccg = contract_coherency.graph().ok_or_else(|| {
         AuditError::ContractState("CCG compilation did not produce a graph".into())
     })?;
@@ -1533,6 +1659,11 @@ fn audit_repository_with_models(
     let reference_resolution =
         evaluate_reference_resolution(ccg, &prepared.observed_files, standard.edition())
             .map_err(AuditError::ReferenceResolution)?;
+    let source_architecture = compile_source_architecture_from(
+        &prepared,
+        ccg,
+        analysis_models.as_ref().map(|models| &models.psm),
+    )?;
     let behavioral_realization: Option<BehavioralRealizationEvaluation> =
         if let Some(models) = &analysis_models {
             let sources = behavior_realization_contract_sources(ccg, &prepared.observed_files)?;
@@ -1576,6 +1707,7 @@ fn audit_repository_with_models(
             &behavioral_semantics,
             behavioral_realization.as_ref(),
             &reference_resolution,
+            &source_architecture,
         ),
         ProgramEvaluationInputs::new(
             analyses.map(|models| &models.semantic),
@@ -1636,6 +1768,13 @@ fn audit_repository_with_models(
                 .map(|value| format!("behavioral_realization:{value}")),
         );
     }
+    unsupported_analysis.extend(
+        source_architecture
+            .model()
+            .unsupported_semantics()
+            .iter()
+            .map(|value| format!("source_architecture:{value}")),
+    );
     unsupported_analysis.sort();
     unsupported_analysis.dedup();
     Ok((
@@ -2048,6 +2187,8 @@ pub enum AuditError {
     Documentation(DocumentationEvaluationError),
     /// CCG-backed reference resolution failed.
     ReferenceResolution(ReferenceResolutionError),
+    /// Source Artifact Model evaluation could not normalize a finding.
+    SourceArchitecture(FindingError),
     /// Rule evaluation failed.
     Evaluation(EvaluationError),
     /// Certification evidence or profile construction failed.
@@ -2129,6 +2270,9 @@ impl Display for AuditError {
             }
             Self::ReferenceResolution(error) => {
                 write!(formatter, "reference resolution failed: {error}")
+            }
+            Self::SourceArchitecture(error) => {
+                write!(formatter, "source architecture failed: {error}")
             }
             Self::Evaluation(error) => {
                 write!(formatter, "snapshot rule evaluation failed: {error}")
