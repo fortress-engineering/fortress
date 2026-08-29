@@ -6,13 +6,13 @@ This verification Module exists to prove only the Project Model Feature introduc
 
 ## Responsibility
 
-Load direct JSON fixtures through the public Project Model boundary and map each result exclusively to parent-owned requirements.
+Load direct JSON fixtures and synthetic repository path inventories through the public Project Model boundary and map each result exclusively to parent-owned requirements.
 
 ## Scope
 
 ### Includes
 
-Rust verification code plus direct operational configurations providing evidence for the immediate parent's local Feature.
+Rust verification code, direct operational configurations, recursive filing fixtures, a trivial utility, deterministic relocation cases, and a 300-Module/2,000-partition scale model providing evidence for the immediate parent's local Feature.
 
 ### Excludes
 
@@ -30,8 +30,8 @@ Executes as a separate Rust test crate through the Engine package facade while p
 
 **Types:** `depends_on`, `verifies`
 
-Exercises the parent loader and its uniqueness and path-boundary invariants.
+Exercises the parent configuration loader plus its canonical filing, profile, inventory, naming, depth, partition, relocation, and scale invariants.
 
 ## Guarantees
 
-Fixtures remain deterministic and verification never converts malformed operational project state into successful configuration.
+Fixtures remain deterministic and verification never converts malformed operational configuration or filesystem entropy into a valid Project Model.

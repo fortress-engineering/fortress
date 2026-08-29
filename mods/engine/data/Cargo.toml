@@ -69,6 +69,10 @@ name = "project_model"
 path = "../mods/project_model/mods/testing/code/project_model.rs"
 
 [[test]]
+name = "filing_system"
+path = "../mods/project_model/mods/testing/code/filing_system.rs"
+
+[[test]]
 name = "program_semantics"
 path = "../mods/program_semantics/mods/testing/code/program_semantics.rs"
 

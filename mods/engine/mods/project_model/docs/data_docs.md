@@ -26,6 +26,14 @@ Maintainers update Data through reviewed semantic changes; schema versions chang
 
 Defines the version-one machine representation and validation boundary for change records owned by this Module.
 
+### [`filing_profile_schema_v1.json`](../data/filing_profile_schema_v1.json)
+
+Defines the version-one closed registry shape for root entries classified as ecosystem-required or generated-allowed, ecosystem-owned Data/Info filenames, and mechanically required Code namespace structures.
+
+### [`filing_system_profiles.json`](../data/filing_system_profiles.json)
+
+Registers the Git, GitHub, Cargo, and Fortress-derived physical surfaces currently admitted without hard-coding those ecosystem exceptions into the universal filing engine.
+
 ### [`project_schema_v2.json`](../data/project_schema_v2.json)
 
 Defines the closed version-two operational project configuration after architectural intent moved to distributed Module contracts.

@@ -9,7 +9,7 @@
     "id": "STD-FORTRESS-ENGINEERING",
     "edition": "1.0.0-draft.1",
     "status": "draft",
-    "bundle_digest": "sha256:6a0a56f62d425ed12116f5a18d557a345179cb61219a2a65b1a78d70db1e6cd0",
+    "bundle_digest": "sha256:c4d19ca1606d4ee5925a38a12d23a6c43cdc5d51cb8028ec0e5cc47d250ef1d1",
     "rules": [
       {
         "id": "ARCH-DEPENDENCY-001",
@@ -153,7 +153,7 @@
       },
       {
         "id": "REPO-DOCS-001",
-        "source_digest": "sha256:d962112c50b789e9d32076c18356b430954ec6b8eb23bab7a8eeb873c78b08a9",
+        "source_digest": "sha256:4dc22f6f35446ffbc53fcf4b08177a6abc99b3beedcc934fd6efe6f81554599a",
         "implies": [],
         "conflicts_with": [],
         "provenance": {
@@ -163,7 +163,7 @@
       },
       {
         "id": "REPO-MODULE-001",
-        "source_digest": "sha256:7a710475de732710af346bb4b1c525db80d1d48e405d0d085353a5ba37ab05e4",
+        "source_digest": "sha256:e56383db7a7c69e5a16a8abca585744d538bba1d8bb1093be4420b1ba881c71f",
         "implies": [],
         "conflicts_with": [],
         "provenance": {
@@ -427,7 +427,7 @@
         "TEST-PROJECT-MODEL-0001"
       ],
       "contract_source": "mods/engine/mods/project_model/contract.json",
-      "contract_digest": "sha256:49918e283c5c3f5c49f8e2da219aa9f6ecd69691839e6f5e43a4b2c98349d108",
+      "contract_digest": "sha256:ac951f11d59c56485c6647a77b0a9929c88c1fd50dc1d98e33a58f212d48f82a",
       "provenance": {
         "path": "mods/engine/mods/project_model/contract.json",
         "pointer": "/"
@@ -491,7 +491,7 @@
         "TEST-SNAPSHOT-GOVERNANCE-0001"
       ],
       "contract_source": "mods/engine/mods/snapshot_governance/contract.json",
-      "contract_digest": "sha256:347e8ebde9bd36c61ea6bcbc837a7f1049804bf9fd3b4eeee93f039159b673e0",
+      "contract_digest": "sha256:1d07e31ef33c6f1205df77e4e02165f5e2a2e8bb62b0489d81ceaa2aeba5ad4a",
       "provenance": {
         "path": "mods/engine/mods/snapshot_governance/contract.json",
         "pointer": "/"
@@ -1853,7 +1853,8 @@
       "version": "0.1.0",
       "requirements": [
         "AF-PROJECT-MODEL-0001-R01",
-        "AF-PROJECT-MODEL-0001-R03"
+        "AF-PROJECT-MODEL-0001-R03",
+        "AF-PROJECT-MODEL-0001-R04"
       ],
       "provenance": {
         "path": "mods/engine/mods/project_model/contract.json",
@@ -2615,6 +2616,30 @@
       }
     },
     {
+      "id": "AF-PROJECT-MODEL-0001-R04",
+      "owner": "AF-PROJECT-MODEL-0001",
+      "feature": "AF-PROJECT-MODEL-0001",
+      "statement": "The Project Model deterministically represents every recursive Module, present canonical Element, bounded Data/Info role and collection, mechanical partition, registered ecosystem structure, and complete leaf-file inventory while rejecting filesystem levels without recognized structural meaning and keeping leaf inventory out of the CCG.",
+      "declared_tests": [
+        "T-AF-PROJECT-MODEL-0001-R04-001",
+        "T-AF-PROJECT-MODEL-0001-R04-002",
+        "T-AF-PROJECT-MODEL-0001-R04-003",
+        "T-AF-PROJECT-MODEL-0001-R04-004",
+        "T-AF-PROJECT-MODEL-0001-R04-005",
+        "T-AF-PROJECT-MODEL-0001-R04-006",
+        "T-AF-PROJECT-MODEL-0001-R04-007",
+        "T-AF-PROJECT-MODEL-0001-R04-008",
+        "T-AF-PROJECT-MODEL-0001-R04-009",
+        "T-AF-PROJECT-MODEL-0001-R04-010",
+        "T-AF-PROJECT-MODEL-0001-R04-011",
+        "T-AF-PROJECT-MODEL-0001-R04-012"
+      ],
+      "provenance": {
+        "path": "mods/engine/mods/project_model/contract.json",
+        "pointer": "/features/0/requirements/2"
+      }
+    },
+    {
       "id": "AF-REFERENCE-RESOLUTION-0001-R01",
       "owner": "AF-REFERENCE-RESOLUTION-0001",
       "feature": "AF-REFERENCE-RESOLUTION-0001",
@@ -2883,14 +2908,15 @@
       "id": "AF-SNAPSHOT-GOVERNANCE-0001-R09",
       "owner": "AF-SNAPSHOT-GOVERNANCE-0001",
       "feature": "AF-SNAPSHOT-GOVERNANCE-0001",
-      "statement": "REPO-MODULE-001 defines and deterministically evaluates the canonical recursive Module grammar, including root surfaces, mandatory README.md and contract.json, code/mods obligations, attribute flatness, bidirectional code/data/info/mods documentation presence, and filesystem naming.",
+      "statement": "REPO-MODULE-001 defines and deterministically evaluates the canonical recursive Project Filing System grammar, including registered ecosystem root surfaces, mandatory README.md and contract.json, code/mods obligations, flat or mechanically registered Code, the closed Docs set, bounded Data/Info role-collection-partition structure, bidirectional companion documentation presence, minimum necessary depth, canonical versioning, and complete machine inventory.",
       "declared_tests": [
         "T-AF-SNAPSHOT-GOVERNANCE-0001-R09-001",
         "T-AF-SNAPSHOT-GOVERNANCE-0001-R09-002",
         "T-AF-SNAPSHOT-GOVERNANCE-0001-R09-003",
         "T-REPO-MODULE-001-R01-001",
         "T-REPO-MODULE-001-R01-002",
-        "T-REPO-MODULE-001-R01-003"
+        "T-REPO-MODULE-001-R01-003",
+        "T-REPO-MODULE-001-R01-004"
       ],
       "provenance": {
         "path": "mods/engine/mods/snapshot_governance/contract.json",
@@ -2901,12 +2927,13 @@
       "id": "AF-SNAPSHOT-GOVERNANCE-0001-R10",
       "owner": "AF-SNAPSHOT-GOVERNANCE-0001",
       "feature": "AF-SNAPSHOT-GOVERNANCE-0001",
-      "statement": "REPO-DOCS-001 parses canonical Module Markdown structurally, validates typed Module contracts, and deterministically reconciles filesystem catalogs, child catalogs, relationship projections, and relative links without treating unsupported source-dependency inference as evaluated.",
+      "statement": "REPO-DOCS-001 parses canonical Module Markdown structurally, validates typed Module contracts, and deterministically reconciles flat file catalogs or structured Data/Info role-collection catalogs, child catalogs, relationship projections, and relative links without requiring human enumeration of partition leaf files or treating unsupported source-dependency inference as evaluated.",
       "declared_tests": [
         "T-AF-SNAPSHOT-GOVERNANCE-0001-R10-001",
         "T-REPO-DOCS-001-R01-001",
         "T-REPO-DOCS-001-R01-002",
-        "T-REPO-DOCS-001-R01-003"
+        "T-REPO-DOCS-001-R01-003",
+        "T-REPO-DOCS-001-R01-004"
       ],
       "provenance": {
         "path": "mods/engine/mods/snapshot_governance/contract.json",
@@ -3463,6 +3490,42 @@
       "complete_declared_verification_obligations": true,
       "provenance": {
         "path": "mods/engine/mods/implementation_observation/contract.json",
+        "pointer": "/guarantees/0/id"
+      }
+    },
+    {
+      "id": "GUA-PROJECT-FILING-SYSTEM",
+      "owner": "AF-PROJECT-MODEL-0001",
+      "subject_kind": "capability",
+      "subject_id": "CAP-PROJECT-MODEL",
+      "backing_requirements": [
+        "AF-PROJECT-MODEL-0001-R04"
+      ],
+      "support_topology": [
+        {
+          "requirement": "AF-PROJECT-MODEL-0001-R04",
+          "feature": "AF-PROJECT-MODEL-0001",
+          "testing_module": "TEST-PROJECT-MODEL-0001",
+          "declared_tests": [
+            "T-AF-PROJECT-MODEL-0001-R04-001",
+            "T-AF-PROJECT-MODEL-0001-R04-002",
+            "T-AF-PROJECT-MODEL-0001-R04-003",
+            "T-AF-PROJECT-MODEL-0001-R04-004",
+            "T-AF-PROJECT-MODEL-0001-R04-005",
+            "T-AF-PROJECT-MODEL-0001-R04-006",
+            "T-AF-PROJECT-MODEL-0001-R04-007",
+            "T-AF-PROJECT-MODEL-0001-R04-008",
+            "T-AF-PROJECT-MODEL-0001-R04-009",
+            "T-AF-PROJECT-MODEL-0001-R04-010",
+            "T-AF-PROJECT-MODEL-0001-R04-011",
+            "T-AF-PROJECT-MODEL-0001-R04-012"
+          ],
+          "derivation": "guarantee_support:GUA-PROJECT-FILING-SYSTEM:AF-PROJECT-MODEL-0001-R04"
+        }
+      ],
+      "complete_declared_verification_obligations": true,
+      "provenance": {
+        "path": "mods/engine/mods/project_model/contract.json",
         "pointer": "/guarantees/0/id"
       }
     },
@@ -21941,6 +22004,42 @@
         "derivation": "verification_support:AF-PROJECT-MODEL-0001-R03"
       },
       {
+        "requirement": "AF-PROJECT-MODEL-0001-R04",
+        "owner": "AF-PROJECT-MODEL-0001",
+        "feature": "AF-PROJECT-MODEL-0001",
+        "testing_module": "TEST-PROJECT-MODEL-0001",
+        "declared_tests": [
+          "T-AF-PROJECT-MODEL-0001-R04-001",
+          "T-AF-PROJECT-MODEL-0001-R04-002",
+          "T-AF-PROJECT-MODEL-0001-R04-003",
+          "T-AF-PROJECT-MODEL-0001-R04-004",
+          "T-AF-PROJECT-MODEL-0001-R04-005",
+          "T-AF-PROJECT-MODEL-0001-R04-006",
+          "T-AF-PROJECT-MODEL-0001-R04-007",
+          "T-AF-PROJECT-MODEL-0001-R04-008",
+          "T-AF-PROJECT-MODEL-0001-R04-009",
+          "T-AF-PROJECT-MODEL-0001-R04-010",
+          "T-AF-PROJECT-MODEL-0001-R04-011",
+          "T-AF-PROJECT-MODEL-0001-R04-012"
+        ],
+        "observed_tests": [
+          "T-AF-PROJECT-MODEL-0001-R04-001",
+          "T-AF-PROJECT-MODEL-0001-R04-002",
+          "T-AF-PROJECT-MODEL-0001-R04-003",
+          "T-AF-PROJECT-MODEL-0001-R04-004",
+          "T-AF-PROJECT-MODEL-0001-R04-005",
+          "T-AF-PROJECT-MODEL-0001-R04-006",
+          "T-AF-PROJECT-MODEL-0001-R04-007",
+          "T-AF-PROJECT-MODEL-0001-R04-008",
+          "T-AF-PROJECT-MODEL-0001-R04-009",
+          "T-AF-PROJECT-MODEL-0001-R04-010",
+          "T-AF-PROJECT-MODEL-0001-R04-011",
+          "T-AF-PROJECT-MODEL-0001-R04-012"
+        ],
+        "complete_declared_support": true,
+        "derivation": "verification_support:AF-PROJECT-MODEL-0001-R04"
+      },
+      {
         "requirement": "AF-REFERENCE-RESOLUTION-0001-R01",
         "owner": "AF-REFERENCE-RESOLUTION-0001",
         "feature": "AF-REFERENCE-RESOLUTION-0001",
@@ -22277,7 +22376,8 @@
           "T-AF-SNAPSHOT-GOVERNANCE-0001-R09-003",
           "T-REPO-MODULE-001-R01-001",
           "T-REPO-MODULE-001-R01-002",
-          "T-REPO-MODULE-001-R01-003"
+          "T-REPO-MODULE-001-R01-003",
+          "T-REPO-MODULE-001-R01-004"
         ],
         "observed_tests": [
           "T-AF-SNAPSHOT-GOVERNANCE-0001-R09-001",
@@ -22285,7 +22385,8 @@
           "T-AF-SNAPSHOT-GOVERNANCE-0001-R09-003",
           "T-REPO-MODULE-001-R01-001",
           "T-REPO-MODULE-001-R01-002",
-          "T-REPO-MODULE-001-R01-003"
+          "T-REPO-MODULE-001-R01-003",
+          "T-REPO-MODULE-001-R01-004"
         ],
         "complete_declared_support": true,
         "derivation": "verification_support:AF-SNAPSHOT-GOVERNANCE-0001-R09"
@@ -22299,13 +22400,15 @@
           "T-AF-SNAPSHOT-GOVERNANCE-0001-R10-001",
           "T-REPO-DOCS-001-R01-001",
           "T-REPO-DOCS-001-R01-002",
-          "T-REPO-DOCS-001-R01-003"
+          "T-REPO-DOCS-001-R01-003",
+          "T-REPO-DOCS-001-R01-004"
         ],
         "observed_tests": [
           "T-AF-SNAPSHOT-GOVERNANCE-0001-R10-001",
           "T-REPO-DOCS-001-R01-001",
           "T-REPO-DOCS-001-R01-002",
-          "T-REPO-DOCS-001-R01-003"
+          "T-REPO-DOCS-001-R01-003",
+          "T-REPO-DOCS-001-R01-004"
         ],
         "complete_declared_support": true,
         "derivation": "verification_support:AF-SNAPSHOT-GOVERNANCE-0001-R10"
@@ -24607,6 +24710,150 @@
         }
       },
       {
+        "id": "T-AF-PROJECT-MODEL-0001-R04-001",
+        "testing_module": "TEST-PROJECT-MODEL-0001",
+        "path": "mods/engine/mods/project_model/mods/testing/code/filing_system.rs",
+        "symbol": "atomic_composite_and_pure_composite_modules_follow_one_recursive_law",
+        "classification": "behavioral",
+        "declared_requirement": "AF-PROJECT-MODEL-0001-R04",
+        "provenance": {
+          "path": "mods/engine/mods/project_model/mods/testing/code/filing_system.rs",
+          "pointer": "symbol:atomic_composite_and_pure_composite_modules_follow_one_recursive_law"
+        }
+      },
+      {
+        "id": "T-AF-PROJECT-MODEL-0001-R04-002",
+        "testing_module": "TEST-PROJECT-MODEL-0001",
+        "path": "mods/engine/mods/project_model/mods/testing/code/filing_system.rs",
+        "symbol": "root_and_module_surfaces_are_closed_and_ecosystem_entries_are_registered",
+        "classification": "behavioral",
+        "declared_requirement": "AF-PROJECT-MODEL-0001-R04",
+        "provenance": {
+          "path": "mods/engine/mods/project_model/mods/testing/code/filing_system.rs",
+          "pointer": "symbol:root_and_module_surfaces_are_closed_and_ecosystem_entries_are_registered"
+        }
+      },
+      {
+        "id": "T-AF-PROJECT-MODEL-0001-R04-003",
+        "testing_module": "TEST-PROJECT-MODEL-0001",
+        "path": "mods/engine/mods/project_model/mods/testing/code/filing_system.rs",
+        "symbol": "code_is_flat_except_for_registered_mechanical_namespace_structure",
+        "classification": "behavioral",
+        "declared_requirement": "AF-PROJECT-MODEL-0001-R04",
+        "provenance": {
+          "path": "mods/engine/mods/project_model/mods/testing/code/filing_system.rs",
+          "pointer": "symbol:code_is_flat_except_for_registered_mechanical_namespace_structure"
+        }
+      },
+      {
+        "id": "T-AF-PROJECT-MODEL-0001-R04-004",
+        "testing_module": "TEST-PROJECT-MODEL-0001",
+        "path": "mods/engine/mods/project_model/mods/testing/code/filing_system.rs",
+        "symbol": "documentation_is_a_closed_applicable_companion_set",
+        "classification": "behavioral",
+        "declared_requirement": "AF-PROJECT-MODEL-0001-R04",
+        "provenance": {
+          "path": "mods/engine/mods/project_model/mods/testing/code/filing_system.rs",
+          "pointer": "symbol:documentation_is_a_closed_applicable_companion_set"
+        }
+      },
+      {
+        "id": "T-AF-PROJECT-MODEL-0001-R04-005",
+        "testing_module": "TEST-PROJECT-MODEL-0001",
+        "path": "mods/engine/mods/project_model/mods/testing/code/filing_system.rs",
+        "symbol": "data_supports_flat_role_collection_and_one_partition_forms",
+        "classification": "behavioral",
+        "declared_requirement": "AF-PROJECT-MODEL-0001-R04",
+        "provenance": {
+          "path": "mods/engine/mods/project_model/mods/testing/code/filing_system.rs",
+          "pointer": "symbol:data_supports_flat_role_collection_and_one_partition_forms"
+        }
+      },
+      {
+        "id": "T-AF-PROJECT-MODEL-0001-R04-006",
+        "testing_module": "TEST-PROJECT-MODEL-0001",
+        "path": "mods/engine/mods/project_model/mods/testing/code/filing_system.rs",
+        "symbol": "info_uses_the_same_bounded_grammar_with_its_own_frozen_roles",
+        "classification": "behavioral",
+        "declared_requirement": "AF-PROJECT-MODEL-0001-R04",
+        "provenance": {
+          "path": "mods/engine/mods/project_model/mods/testing/code/filing_system.rs",
+          "pointer": "symbol:info_uses_the_same_bounded_grammar_with_its_own_frozen_roles"
+        }
+      },
+      {
+        "id": "T-AF-PROJECT-MODEL-0001-R04-007",
+        "testing_module": "TEST-PROJECT-MODEL-0001",
+        "path": "mods/engine/mods/project_model/mods/testing/code/filing_system.rs",
+        "symbol": "versions_collections_partitions_and_minimum_depth_are_canonical",
+        "classification": "behavioral",
+        "declared_requirement": "AF-PROJECT-MODEL-0001-R04",
+        "provenance": {
+          "path": "mods/engine/mods/project_model/mods/testing/code/filing_system.rs",
+          "pointer": "symbol:versions_collections_partitions_and_minimum_depth_are_canonical"
+        }
+      },
+      {
+        "id": "T-AF-PROJECT-MODEL-0001-R04-008",
+        "testing_module": "TEST-PROJECT-MODEL-0001",
+        "path": "mods/engine/mods/project_model/mods/testing/code/filing_system.rs",
+        "symbol": "flat_and_structured_elements_never_mix",
+        "classification": "behavioral",
+        "declared_requirement": "AF-PROJECT-MODEL-0001-R04",
+        "provenance": {
+          "path": "mods/engine/mods/project_model/mods/testing/code/filing_system.rs",
+          "pointer": "symbol:flat_and_structured_elements_never_mix"
+        }
+      },
+      {
+        "id": "T-AF-PROJECT-MODEL-0001-R04-009",
+        "testing_module": "TEST-PROJECT-MODEL-0001",
+        "path": "mods/engine/mods/project_model/mods/testing/code/filing_system.rs",
+        "symbol": "machine_inventory_is_complete_deterministic_and_catalogs_collections_not_leaves",
+        "classification": "behavioral",
+        "declared_requirement": "AF-PROJECT-MODEL-0001-R04",
+        "provenance": {
+          "path": "mods/engine/mods/project_model/mods/testing/code/filing_system.rs",
+          "pointer": "symbol:machine_inventory_is_complete_deterministic_and_catalogs_collections_not_leaves"
+        }
+      },
+      {
+        "id": "T-AF-PROJECT-MODEL-0001-R04-010",
+        "testing_module": "TEST-PROJECT-MODEL-0001",
+        "path": "mods/engine/mods/project_model/mods/testing/code/filing_system.rs",
+        "symbol": "massive_repository_remains_linear_without_module_proliferation_for_volume",
+        "classification": "behavioral",
+        "declared_requirement": "AF-PROJECT-MODEL-0001-R04",
+        "provenance": {
+          "path": "mods/engine/mods/project_model/mods/testing/code/filing_system.rs",
+          "pointer": "symbol:massive_repository_remains_linear_without_module_proliferation_for_volume"
+        }
+      },
+      {
+        "id": "T-AF-PROJECT-MODEL-0001-R04-011",
+        "testing_module": "TEST-PROJECT-MODEL-0001",
+        "path": "mods/engine/mods/project_model/mods/testing/code/filing_system.rs",
+        "symbol": "physical_module_relocation_preserves_internal_filing_validity",
+        "classification": "behavioral",
+        "declared_requirement": "AF-PROJECT-MODEL-0001-R04",
+        "provenance": {
+          "path": "mods/engine/mods/project_model/mods/testing/code/filing_system.rs",
+          "pointer": "symbol:physical_module_relocation_preserves_internal_filing_validity"
+        }
+      },
+      {
+        "id": "T-AF-PROJECT-MODEL-0001-R04-012",
+        "testing_module": "TEST-PROJECT-MODEL-0001",
+        "path": "mods/engine/mods/project_model/mods/testing/code/filing_system.rs",
+        "symbol": "live_fortress_filing_model_is_valid_and_deterministic",
+        "classification": "behavioral",
+        "declared_requirement": "AF-PROJECT-MODEL-0001-R04",
+        "provenance": {
+          "path": "mods/engine/mods/project_model/mods/testing/code/filing_system.rs",
+          "pointer": "symbol:live_fortress_filing_model_is_valid_and_deterministic"
+        }
+      },
+      {
         "id": "T-AF-REFERENCE-RESOLUTION-0001-R01-001",
         "testing_module": "TEST-REFERENCE-RESOLUTION-0001",
         "path": "mods/engine/mods/reference_resolution/mods/testing/code/reference_resolution.rs",
@@ -25939,6 +26186,18 @@
         }
       },
       {
+        "id": "T-REPO-DOCS-001-R01-004",
+        "testing_module": "TEST-SNAPSHOT-GOVERNANCE-0001",
+        "path": "mods/engine/mods/snapshot_governance/mods/testing/code/repo_docs_001.rs",
+        "symbol": "structured_data_catalog_documents_collection_without_leaf_explosion",
+        "classification": "conformance",
+        "declared_requirement": "AF-SNAPSHOT-GOVERNANCE-0001-R10",
+        "provenance": {
+          "path": "mods/engine/mods/snapshot_governance/mods/testing/code/repo_docs_001.rs",
+          "pointer": "symbol:structured_data_catalog_documents_collection_without_leaf_explosion"
+        }
+      },
+      {
         "id": "T-REPO-MODULE-001-R01-001",
         "testing_module": "TEST-SNAPSHOT-GOVERNANCE-0001",
         "path": "mods/engine/mods/snapshot_governance/mods/testing/code/repo_module_001.rs",
@@ -25972,6 +26231,18 @@
         "provenance": {
           "path": "mods/engine/mods/snapshot_governance/mods/testing/code/repo_module_001.rs",
           "pointer": "symbol:one_atomic_child_is_the_minimum_recursive_boundary"
+        }
+      },
+      {
+        "id": "T-REPO-MODULE-001-R01-004",
+        "testing_module": "TEST-SNAPSHOT-GOVERNANCE-0001",
+        "path": "mods/engine/mods/snapshot_governance/mods/testing/code/repo_module_001.rs",
+        "symbol": "bounded_data_info_failures_are_exact_and_deterministic",
+        "classification": "conformance",
+        "declared_requirement": "AF-SNAPSHOT-GOVERNANCE-0001-R09",
+        "provenance": {
+          "path": "mods/engine/mods/snapshot_governance/mods/testing/code/repo_module_001.rs",
+          "pointer": "symbol:bounded_data_info_failures_are_exact_and_deterministic"
         }
       },
       {
@@ -46334,6 +46605,31 @@
       ]
     },
     {
+      "id": "guarantee_support:GUA-PROJECT-FILING-SYSTEM:AF-PROJECT-MODEL-0001-R04",
+      "kind": "guarantee_support",
+      "fact": "guarantee_requirement_support:GUA-PROJECT-FILING-SYSTEM:AF-PROJECT-MODEL-0001-R04",
+      "input_facts": [
+        "guarantee:GUA-PROJECT-FILING-SYSTEM",
+        "requirement_support:AF-PROJECT-MODEL-0001-R04"
+      ],
+      "explanation_path": [
+        "GUA-PROJECT-FILING-SYSTEM",
+        "AF-PROJECT-MODEL-0001-R04",
+        "AF-PROJECT-MODEL-0001",
+        "TEST-PROJECT-MODEL-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/project_model/contract.json",
+          "pointer": "/guarantees/0/id"
+        },
+        {
+          "path": "mods/engine/mods/project_model/contract.json",
+          "pointer": "/features/0/requirements/2"
+        }
+      ]
+    },
+    {
       "id": "guarantee_support:GUA-REFERENCE-RELOCATION-TRANSPARENCY:AF-REFERENCE-RESOLUTION-0001-R01",
       "kind": "guarantee_support",
       "fact": "guarantee_requirement_support:GUA-REFERENCE-RELOCATION-TRANSPARENCY:AF-REFERENCE-RESOLUTION-0001-R01",
@@ -50379,6 +50675,38 @@
       ]
     },
     {
+      "id": "verification_support:AF-PROJECT-MODEL-0001-R04",
+      "kind": "verification_support",
+      "fact": "requirement_support:AF-PROJECT-MODEL-0001-R04",
+      "input_facts": [
+        "requirement:AF-PROJECT-MODEL-0001-R04",
+        "testing_boundary:AF-PROJECT-MODEL-0001:TEST-PROJECT-MODEL-0001",
+        "declared_test:AF-PROJECT-MODEL-0001-R04:T-AF-PROJECT-MODEL-0001-R04-001",
+        "declared_test:AF-PROJECT-MODEL-0001-R04:T-AF-PROJECT-MODEL-0001-R04-002",
+        "declared_test:AF-PROJECT-MODEL-0001-R04:T-AF-PROJECT-MODEL-0001-R04-003",
+        "declared_test:AF-PROJECT-MODEL-0001-R04:T-AF-PROJECT-MODEL-0001-R04-004",
+        "declared_test:AF-PROJECT-MODEL-0001-R04:T-AF-PROJECT-MODEL-0001-R04-005",
+        "declared_test:AF-PROJECT-MODEL-0001-R04:T-AF-PROJECT-MODEL-0001-R04-006",
+        "declared_test:AF-PROJECT-MODEL-0001-R04:T-AF-PROJECT-MODEL-0001-R04-007",
+        "declared_test:AF-PROJECT-MODEL-0001-R04:T-AF-PROJECT-MODEL-0001-R04-008",
+        "declared_test:AF-PROJECT-MODEL-0001-R04:T-AF-PROJECT-MODEL-0001-R04-009",
+        "declared_test:AF-PROJECT-MODEL-0001-R04:T-AF-PROJECT-MODEL-0001-R04-010",
+        "declared_test:AF-PROJECT-MODEL-0001-R04:T-AF-PROJECT-MODEL-0001-R04-011",
+        "declared_test:AF-PROJECT-MODEL-0001-R04:T-AF-PROJECT-MODEL-0001-R04-012"
+      ],
+      "explanation_path": [
+        "AF-PROJECT-MODEL-0001",
+        "AF-PROJECT-MODEL-0001-R04",
+        "TEST-PROJECT-MODEL-0001"
+      ],
+      "provenance_closure": [
+        {
+          "path": "mods/engine/mods/project_model/contract.json",
+          "pointer": "/features/0/requirements/2"
+        }
+      ]
+    },
+    {
       "id": "verification_support:AF-REFERENCE-RESOLUTION-0001-R01",
       "kind": "verification_support",
       "fact": "requirement_support:AF-REFERENCE-RESOLUTION-0001-R01",
@@ -50791,7 +51119,8 @@
         "declared_test:AF-SNAPSHOT-GOVERNANCE-0001-R09:T-AF-SNAPSHOT-GOVERNANCE-0001-R09-003",
         "declared_test:AF-SNAPSHOT-GOVERNANCE-0001-R09:T-REPO-MODULE-001-R01-001",
         "declared_test:AF-SNAPSHOT-GOVERNANCE-0001-R09:T-REPO-MODULE-001-R01-002",
-        "declared_test:AF-SNAPSHOT-GOVERNANCE-0001-R09:T-REPO-MODULE-001-R01-003"
+        "declared_test:AF-SNAPSHOT-GOVERNANCE-0001-R09:T-REPO-MODULE-001-R01-003",
+        "declared_test:AF-SNAPSHOT-GOVERNANCE-0001-R09:T-REPO-MODULE-001-R01-004"
       ],
       "explanation_path": [
         "AF-SNAPSHOT-GOVERNANCE-0001",
@@ -50815,7 +51144,8 @@
         "declared_test:AF-SNAPSHOT-GOVERNANCE-0001-R10:T-AF-SNAPSHOT-GOVERNANCE-0001-R10-001",
         "declared_test:AF-SNAPSHOT-GOVERNANCE-0001-R10:T-REPO-DOCS-001-R01-001",
         "declared_test:AF-SNAPSHOT-GOVERNANCE-0001-R10:T-REPO-DOCS-001-R01-002",
-        "declared_test:AF-SNAPSHOT-GOVERNANCE-0001-R10:T-REPO-DOCS-001-R01-003"
+        "declared_test:AF-SNAPSHOT-GOVERNANCE-0001-R10:T-REPO-DOCS-001-R01-003",
+        "declared_test:AF-SNAPSHOT-GOVERNANCE-0001-R10:T-REPO-DOCS-001-R01-004"
       ],
       "explanation_path": [
         "AF-SNAPSHOT-GOVERNANCE-0001",
@@ -52315,6 +52645,54 @@
       "pointer": "/"
     },
     {
+      "path": "mods/engine/mods/project_model/mods/testing/code/filing_system.rs",
+      "pointer": "symbol:atomic_composite_and_pure_composite_modules_follow_one_recursive_law"
+    },
+    {
+      "path": "mods/engine/mods/project_model/mods/testing/code/filing_system.rs",
+      "pointer": "symbol:code_is_flat_except_for_registered_mechanical_namespace_structure"
+    },
+    {
+      "path": "mods/engine/mods/project_model/mods/testing/code/filing_system.rs",
+      "pointer": "symbol:data_supports_flat_role_collection_and_one_partition_forms"
+    },
+    {
+      "path": "mods/engine/mods/project_model/mods/testing/code/filing_system.rs",
+      "pointer": "symbol:documentation_is_a_closed_applicable_companion_set"
+    },
+    {
+      "path": "mods/engine/mods/project_model/mods/testing/code/filing_system.rs",
+      "pointer": "symbol:flat_and_structured_elements_never_mix"
+    },
+    {
+      "path": "mods/engine/mods/project_model/mods/testing/code/filing_system.rs",
+      "pointer": "symbol:info_uses_the_same_bounded_grammar_with_its_own_frozen_roles"
+    },
+    {
+      "path": "mods/engine/mods/project_model/mods/testing/code/filing_system.rs",
+      "pointer": "symbol:live_fortress_filing_model_is_valid_and_deterministic"
+    },
+    {
+      "path": "mods/engine/mods/project_model/mods/testing/code/filing_system.rs",
+      "pointer": "symbol:machine_inventory_is_complete_deterministic_and_catalogs_collections_not_leaves"
+    },
+    {
+      "path": "mods/engine/mods/project_model/mods/testing/code/filing_system.rs",
+      "pointer": "symbol:massive_repository_remains_linear_without_module_proliferation_for_volume"
+    },
+    {
+      "path": "mods/engine/mods/project_model/mods/testing/code/filing_system.rs",
+      "pointer": "symbol:physical_module_relocation_preserves_internal_filing_validity"
+    },
+    {
+      "path": "mods/engine/mods/project_model/mods/testing/code/filing_system.rs",
+      "pointer": "symbol:root_and_module_surfaces_are_closed_and_ecosystem_entries_are_registered"
+    },
+    {
+      "path": "mods/engine/mods/project_model/mods/testing/code/filing_system.rs",
+      "pointer": "symbol:versions_collections_partitions_and_minimum_depth_are_canonical"
+    },
+    {
       "path": "mods/engine/mods/project_model/mods/testing/code/project_model.rs",
       "pointer": "symbol:duplicate_exclusion_is_rejected"
     },
@@ -52588,7 +52966,15 @@
     },
     {
       "path": "mods/engine/mods/snapshot_governance/mods/testing/code/repo_docs_001.rs",
+      "pointer": "symbol:structured_data_catalog_documents_collection_without_leaf_explosion"
+    },
+    {
+      "path": "mods/engine/mods/snapshot_governance/mods/testing/code/repo_docs_001.rs",
       "pointer": "symbol:valid_documentation_fixtures_pass"
+    },
+    {
+      "path": "mods/engine/mods/snapshot_governance/mods/testing/code/repo_module_001.rs",
+      "pointer": "symbol:bounded_data_info_failures_are_exact_and_deterministic"
     },
     {
       "path": "mods/engine/mods/snapshot_governance/mods/testing/code/repo_module_001.rs",

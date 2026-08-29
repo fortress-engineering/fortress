@@ -32,11 +32,11 @@ Carries the draft normative rule governing canonical CCG compilation and current
 
 ### [`documentation_rule.json`](../data/documentation_rule.json)
 
-Carries the draft normative rule record interpreted by the documentation evaluator.
+Carries the draft normative rule for the closed companion-document grammar, flat-file catalogs, scalable structured Data/Info collection catalogs, Module relationships, and link synchronization.
 
 ### [`module_rule.json`](../data/module_rule.json)
 
-Carries the draft normative rule record interpreted by the module evaluator.
+Carries the draft normative rule for the complete recursive Project Filing System grammar and its Project Model evaluator.
 
 ### [`ownership_rule.json`](../data/ownership_rule.json)
 

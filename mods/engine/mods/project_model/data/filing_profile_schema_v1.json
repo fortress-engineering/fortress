@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:filing-system-profiles",
+  "title": "Fortress filing-system ecosystem profiles",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "schema_version", "profiles"],
+  "properties": {
+    "$schema": { "const": "urn:fortress:schema:v1:filing-system-profiles" },
+    "schema_version": { "const": 1 },
+    "profiles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "root_entries", "element_files", "mechanical_code_structures"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "root_entries": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["path", "kind", "classification"],
+              "properties": {
+                "path": { "type": "string", "minLength": 1 },
+                "kind": { "enum": ["FILE", "DIRECTORY"] },
+                "classification": { "enum": ["ECOSYSTEM_REQUIRED", "GENERATED_ALLOWED"] }
+              }
+            }
+          },
+          "element_files": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["element", "filename"],
+              "properties": {
+                "element": { "enum": ["data", "info"] },
+                "filename": { "type": "string", "minLength": 1 }
+              }
+            }
+          },
+          "mechanical_code_structures": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["path", "allow_descendants"],
+              "properties": {
+                "path": { "type": "string", "minLength": 1 },
+                "allow_descendants": { "type": "boolean" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

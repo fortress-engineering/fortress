@@ -1,78 +1,19 @@
 [
-  {
-    "path": "AGENTS.md",
-    "message": "Filename `AGENTS.md` violates the lowercase underscore filename grammar."
-  },
-  {
-    "path": "AGENTS.md",
-    "message": "Root file `AGENTS.md` is not README.md, contract.json, or a recognized GitHub repository surface."
-  },
-  {
-    "path": "Cargo.toml",
-    "message": "Ecosystem file `Cargo.toml` is derived or consumed as `data/` and must be placed there."
-  },
-  {
-    "path": "Cargo.toml",
-    "message": "Root file `Cargo.toml` is not README.md, contract.json, or a recognized GitHub repository surface."
-  },
-  {
-    "path": "Code",
-    "message": "Directory `Code` must use canonical spelling `code`."
-  },
-  {
-    "path": "README.md",
-    "message": "Module `.` is missing its mandatory `README.md`."
-  },
-  {
-    "path": "crates",
-    "message": "Root directory `crates` is not a canonical Module directory or the GitHub integration namespace."
-  },
-  {
-    "path": "mods/bad-name",
-    "message": "Module name `bad-name` violates the lowercase underscore filename grammar."
-  },
-  {
-    "path": "mods/bad-name/README.md",
-    "message": "Module `mods/bad-name` has neither directly owned `code/` nor child Modules beneath `mods/`."
-  },
-  {
-    "path": "mods/bad_version/code/schema_v01.json",
-    "message": "Filename `schema_v01.json` violates the lowercase underscore filename grammar."
-  },
-  {
-    "path": "mods/excess/docs/data_docs.md",
-    "message": "Module `mods/excess` has `docs/data_docs.md` without the corresponding `data/` directory."
-  },
-  {
-    "path": "mods/invalid_docs/docs/guide.md",
-    "message": "Documentation file `mods/invalid_docs/docs/guide.md` is not one of code_docs.md, data_docs.md, info_docs.md, or mods_docs.md."
-  },
-  {
-    "path": "mods/loose.txt",
-    "message": "File `mods/loose.txt` is loose beneath `mods/`; `mods/` may contain Module directories only."
-  },
-  {
-    "path": "mods/missing_data/docs/data_docs.md",
-    "message": "Module `mods/missing_data` has `data/` but is missing `docs/data_docs.md`."
-  },
-  {
-    "path": "mods/nested/code/internal",
-    "message": "Attribute directory `mods/nested/code/` contains nested directory `mods/nested/code/internal`; attribute elements must be direct files."
-  },
-  {
-    "path": "mods/no_readme/README.md",
-    "message": "Module `mods/no_readme` is missing its mandatory `README.md`."
-  },
-  {
-    "path": "mods/no_readme/code/Bad-Name.rs",
-    "message": "Filename `Bad-Name.rs` violates the lowercase underscore filename grammar."
-  },
-  {
-    "path": "mods/no_readme/contract.json",
-    "message": "Module `mods/no_readme` is missing its mandatory `contract.json`."
-  },
-  {
-    "path": "mods/no_readme/docs/code_docs.md",
-    "message": "Module `mods/no_readme` has `code/` but is missing `docs/code_docs.md`."
-  }
+  { "path": "AGENTS.md", "message": "UNKNOWN_MODULE_ROOT_ENTRY: Module `.` Element `module` path `AGENTS.md` violates the closed root Module grammar; expected README.md, contract.json, or a registered ecosystem root file." },
+  { "path": "Cargo.toml", "message": "UNKNOWN_MODULE_ROOT_ENTRY: Module `.` Element `module` path `Cargo.toml` violates the closed root Module grammar; expected README.md, contract.json, or a registered ecosystem root file." },
+  { "path": "Code", "message": "UNKNOWN_MODULE_ROOT_ENTRY: Module `.` Element `module` path `Code` violates the closed root Module grammar; expected a canonical Module Element or registered ecosystem root directory." },
+  { "path": "README.md", "message": "MISSING_MODULE_REQUIREMENT: Module `.` Element `module` path `README.md` violates every Module contains README.md and contract.json; expected README.md." },
+  { "path": "crates", "message": "UNKNOWN_MODULE_ROOT_ENTRY: Module `.` Element `module` path `crates` violates the closed root Module grammar; expected a canonical Module Element or registered ecosystem root directory." },
+  { "path": "mods/bad-name", "message": "INVALID_FILENAME: Module `mods/bad-name` Element `module` path `mods/bad-name` violates canonical Module naming; expected one to three lowercase ASCII words separated by single underscores." },
+  { "path": "mods/bad-name/README.md", "message": "MISSING_MODULE_REQUIREMENT: Module `mods/bad-name` Element `module` path `mods/bad-name/README.md` violates every Module owns code or child Modules; expected code/ for an atomic Module or at least one child beneath mods/." },
+  { "path": "mods/bad_version/code/schema_v01.json", "message": "INVALID_FILENAME: Module `mods/bad_version` Element `code` path `mods/bad_version/code/schema_v01.json` violates canonical source filename grammar; expected one to three lowercase ASCII words with optional extension and canonical _vN suffix." },
+  { "path": "mods/excess/docs/data_docs.md", "message": "UNRECOGNIZED_DOC_FILE: Module `mods/excess` Element `docs` path `mods/excess/docs/data_docs.md` violates companion documents exist only for present Elements; expected remove docs/data_docs.md or add data/." },
+  { "path": "mods/invalid_docs/docs/guide.md", "message": "UNRECOGNIZED_DOC_FILE: Module `mods/invalid_docs` Element `docs` path `mods/invalid_docs/docs/guide.md` violates docs admits only canonical companion files; expected code_docs.md, data_docs.md, info_docs.md, or mods_docs.md." },
+  { "path": "mods/loose.txt", "message": "LOOSE_MODS_ENTRY: Module `.` Element `mods` path `mods/loose.txt` violates mods contains Module directories only; expected an immediate child Module directory." },
+  { "path": "mods/missing_data/docs/data_docs.md", "message": "MISSING_REQUIRED_ELEMENT_DOC: Module `mods/missing_data` Element `docs` path `mods/missing_data/docs/data_docs.md` violates every present Element has its canonical companion document; expected docs/data_docs.md." },
+  { "path": "mods/nested/code/internal", "message": "CODE_SEMANTIC_SUBDIRECTORY: Module `mods/nested` Element `code` path `mods/nested/code/internal` violates code is a flat project-owned source surface unless an ecosystem profile owns the mechanical namespace; expected a direct source file or registered mechanical code structure." },
+  { "path": "mods/no_readme/README.md", "message": "MISSING_MODULE_REQUIREMENT: Module `mods/no_readme` Element `module` path `mods/no_readme/README.md` violates every Module contains README.md and contract.json; expected README.md." },
+  { "path": "mods/no_readme/code/Bad-Name.rs", "message": "INVALID_FILENAME: Module `mods/no_readme` Element `code` path `mods/no_readme/code/Bad-Name.rs` violates canonical source filename grammar; expected one to three lowercase ASCII words with optional extension and canonical _vN suffix." },
+  { "path": "mods/no_readme/contract.json", "message": "MISSING_MODULE_REQUIREMENT: Module `mods/no_readme` Element `module` path `mods/no_readme/contract.json` violates every Module contains README.md and contract.json; expected contract.json." },
+  { "path": "mods/no_readme/docs/code_docs.md", "message": "MISSING_REQUIRED_ELEMENT_DOC: Module `mods/no_readme` Element `docs` path `mods/no_readme/docs/code_docs.md` violates every present Element has its canonical companion document; expected docs/code_docs.md." }
 ]

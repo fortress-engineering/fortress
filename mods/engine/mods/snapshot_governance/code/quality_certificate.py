@@ -68,6 +68,7 @@ REQUIRED_GATE_IDS = (
     "CLIPPY",
     "FORMAT",
     "FULL_PROFILE_CERTIFICATION",
+    "PROJECT_FILING_SYSTEM",
     "RUSTDOC",
     "SCHEMA_AND_STANDARD",
     "SELF_AUDIT",
@@ -290,6 +291,21 @@ def issue(root: Path) -> dict[str, Any]:
         ]
         run_command(root, schema, environment)
         pass_gate(gates, "SCHEMA_AND_STANDARD", schema)
+
+        filing_system = base + [
+            "test",
+            "--manifest-path",
+            "data/Cargo.toml",
+            "--all-features",
+            "--test",
+            "filing_system",
+            "--test",
+            "repo_module_001",
+            "--test",
+            "repo_docs_001",
+        ]
+        run_command(root, filing_system, environment)
+        pass_gate(gates, "PROJECT_FILING_SYSTEM", filing_system)
 
         self_model = base + [
             "test",

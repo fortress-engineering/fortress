@@ -77,3 +77,35 @@ fn one_atomic_child_is_the_minimum_recursive_boundary() {
     let findings = evaluate_module_grammar(&paths, "1.0.0-draft.1").expect("evaluation completes");
     assert!(findings.is_empty());
 }
+
+/// `T-REPO-MODULE-001-R01-004`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R09
+#[test]
+fn bounded_data_info_failures_are_exact_and_deterministic() {
+    let paths = [
+        "README.md",
+        "contract.json",
+        "code/main.rs",
+        "data/config.json",
+        "data/schema/request.json",
+        "docs/code_docs.md",
+        "docs/data_docs.md",
+        "docs/info_docs.md",
+        "info/cache/item.json",
+    ]
+    .map(str::to_owned);
+    let findings = evaluate_module_grammar(&paths, "1.0.0-draft.1").expect("evaluation completes");
+    assert_eq!(
+        projection(&findings),
+        json!([
+          {
+            "path": "data",
+            "message": "MIXED_FLAT_AND_STRUCTURED_ELEMENT: Module `.` Element `data` path `data` violates an Element is either flat or role-structured; expected all direct files or all canonical role directories."
+          },
+          {
+            "path": "info/cache",
+            "message": "UNKNOWN_INFO_ROLE: Module `.` Element `info` path `info/cache` violates structured Elements begin with a frozen canonical role; expected report/snapshot/graph/index/manifest/evidence/metric/log."
+          }
+        ])
+    );
+}

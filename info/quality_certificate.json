@@ -12,8 +12,8 @@
     "limitation": "Digest stamps detect mutation and staleness but are not signatures; authenticated antiforgery requires an external trusted signing identity."
   },
   "source": {
-    "fingerprint": "sha256:99f1072bfee6508f7bbaec3166d3f934d178a23cc3e8b6bc838a37703ac83214",
-    "file_count": 356,
+    "fingerprint": "sha256:6d8cbcd196ea359296246cdba378f1ba849cee4c257b2075a39a2e05b72d0b69",
+    "file_count": 360,
     "excluded_self": "info/quality_certificate.json"
   },
   "toolchain": {
@@ -104,6 +104,11 @@
       "command": "cargo +1.97.1 --config data/cargo_config.toml run --quiet --manifest-path data/Cargo.toml -p fortress-cli -- certify . --format json --evidence-output <machine-local-path> --certification-output <machine-local-path> --verified-bfg-output <machine-local-path>"
     },
     {
+      "id": "PROJECT_FILING_SYSTEM",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config data/cargo_config.toml test --manifest-path data/Cargo.toml --all-features --test filing_system --test repo_module_001 --test repo_docs_001"
+    },
+    {
       "id": "RUSTDOC",
       "status": "PASS",
       "command": "cargo +1.97.1 --config data/cargo_config.toml doc --manifest-path data/Cargo.toml --workspace --all-features --no-deps"
@@ -132,53 +137,53 @@
   "artifacts": [
     {
       "path": "info/behavioral_flow_graph.json",
-      "digest": "sha256:24f224db92bde5f71c21393413b36df23256326b91446c0a8e8745513d5814d8"
+      "digest": "sha256:e96b9f1384174904b097118361d3526ce91de892fbba01ad08cc404b80a32626"
     },
     {
       "path": "info/certification.json",
-      "digest": "sha256:c860aa1e0a70af51a2b71981e25fd796f617b4714875034ae279f1ef1d850e23"
+      "digest": "sha256:23c47fcd88cf30d66fe817cedfc68b7d7c84e1b9d7b0624242dce0c1bcaae205"
     },
     {
       "path": "info/component_resolution_index.json",
-      "digest": "sha256:84e580df97a2c68d6592624bd0cd7a74a9e1928ecfa8e1c41a6fe861a1b4bcc3"
+      "digest": "sha256:4313ccfa34707741b1b1ddb429cb400aeabb5bf523762d1523b1e741c2dd1a41"
     },
     {
       "path": "info/contract_coherency_graph.json",
-      "digest": "sha256:dccb66cc6915391555ae36a5d4a952d5ac6d016b2247143424f0bf3e43642bd6"
+      "digest": "sha256:2ce3ec7f7d7ea1f7e488bcb468fb40e9a3c4734fe78690943a70aad6d64726e9"
     },
     {
       "path": "info/environmental_analysis.json",
-      "digest": "sha256:2c16d59981ef32e9a430bee74d0e910da0e65ac7304eb5e975ce63b7b4b23b97"
+      "digest": "sha256:767d845416e55516e1c528aae05c88b7e4201326e665ca1c04566d267ef687aa"
     },
     {
       "path": "info/evidence_graph.json",
-      "digest": "sha256:a26db0443bbf11a523a816bb6cb96f07dccc5471f1e8d5e910f7593d8fac623b"
+      "digest": "sha256:fd41d02b0a68a3df5d9ad0c909792cb3a38635985bd0429061eb31e323522c03"
     },
     {
       "path": "info/information_flow_analysis.json",
-      "digest": "sha256:96f839c25666f1116cec1a1a5a1d60441962813619fbaa6115d98ee319a6afa2"
+      "digest": "sha256:353b2c18ed82c484da899f2c8502f9bceb924fa1013842db12648e172c889714"
     },
     {
       "path": "info/program_semantic_model.json",
-      "digest": "sha256:598c2356d51c8d3097acc9cb858d1d690a8e56c76ce2ec7abbc69ff777166429"
+      "digest": "sha256:dd1e306a525a97b0a3d2e5a5e6671c5d86c6bd3bbc9c7a67d0bf7321f8caef94"
     },
     {
       "path": "info/realized_behavioral_flow_graph.json",
-      "digest": "sha256:c2fd853b3fea885c11f7b1203ca030d27e0632bb3b6b625ef19a6a0d77294280"
+      "digest": "sha256:eb6f2641f9034982e9e2521b7e10d434cf56fdb2b7b0c294c55ced34a83412e6"
     },
     {
       "path": "info/semantic_analysis.json",
-      "digest": "sha256:ebb9798b460800862b07451cf4ffc06ae3f1082c1eec60e1c3405c0676a364d7"
+      "digest": "sha256:8c9b0f47cb26aeba24630119e5017d87ff7b3d0e034db430f8e823fb573a6966"
     },
     {
       "path": "info/state_effect_analysis.json",
-      "digest": "sha256:61406e79f5f617d146a7e5f73d96b0e6124febcb8bb4f5592cc384660d1e727c"
+      "digest": "sha256:c7e6f2de6d46ce0b94ffcf92fdc482f51e085d0f86b33332901c240ce1628008"
     },
     {
       "path": "info/verified_behavioral_flow_graph.json",
-      "digest": "sha256:bc7e12a6b23d17d20a5427bfdcf4f1b255a626635ebd0976aac6e424d6a85811"
+      "digest": "sha256:c05735ef95c758b100f814bc7e07aded52525114e1eb897dea87eefa14e93159"
     }
   ],
-  "audit_json_digest": "sha256:052b33587316a8a8d3bd8bd13358b15765f88889ff9f7675527d6263e06001a5",
-  "certificate_stamp": "sha256:8519e089cc2f2210a4a54cbc39104bbc827b6333b0b0e53e3e039ab9ce092230"
+  "audit_json_digest": "sha256:ffa611abae68b4e4dfd092de859313f8fd95a6938cbc53adaca223fcb1203ab5",
+  "certificate_stamp": "sha256:537616dc20ac6fcbbdf75c984f33ac0be0f8ca47436f2695ff9e57aaf0e74d48"
 }

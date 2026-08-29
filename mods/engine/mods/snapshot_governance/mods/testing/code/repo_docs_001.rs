@@ -138,6 +138,21 @@ fn data_docs(files: &[&str]) -> Vec<u8> {
     ))
 }
 
+fn structured_data_docs(scopes: &[&str]) -> Vec<u8> {
+    let entries = scopes
+        .iter()
+        .map(|scope| {
+            format!(
+                "### `{scope}`\n\nDescribes the governed collection as a whole while the machine inventory retains every leaf file.\n"
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    bytes(format!(
+        "# Data\n\n## Role\n\nProvide persisted computational inputs directly owned by the Module.\n\n## Origin\n\nThese inputs are project-authored under the Module contract.\n\n## Semantics\n\nEach collection supplies validated declarative meaning consumed by the Module.\n\n## Validity\n\nData is consumable only when its structure, identity, and references satisfy the applicable schema.\n\n## Lifecycle\n\nMaintainers update the Data when its governed meaning changes and review it with its consumers.\n\n## Files\n\n{entries}"
+    ))
+}
+
 fn info_docs(files: &[&str]) -> Vec<u8> {
     let entries = files
         .iter()
@@ -592,4 +607,27 @@ fn boundary_fixture_groups_multiple_relationship_types_by_target() {
     let report =
         evaluate_documentation_files(&files, EDITION).expect("documentation evaluation completes");
     assert!(report.is_success(), "{:#?}", report.findings());
+}
+
+/// `T-REPO-DOCS-001-R01-004`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R10
+#[test]
+fn structured_data_catalog_documents_collection_without_leaf_explosion() {
+    let mut files = atomic();
+    files.insert(
+        "data/dataset/historical_events_v3/part_000001/a.json".into(),
+        bytes("{}\n"),
+    );
+    files.insert(
+        "data/dataset/historical_events_v3/part_000002/b.json".into(),
+        bytes("{}\n"),
+    );
+    files.insert(
+        "docs/data_docs.md".into(),
+        structured_data_docs(&["dataset/historical_events_v3/"]),
+    );
+    let report =
+        evaluate_documentation_files(&files, EDITION).expect("documentation evaluation completes");
+    assert!(report.is_success(), "{:#?}", report.findings());
+    assert_eq!(report.summary().data_bijection(), (1, 1));
 }

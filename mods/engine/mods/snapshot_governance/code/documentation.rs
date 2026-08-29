@@ -807,7 +807,8 @@ impl EvaluationContext<'_> {
                 )?;
             }
         }
-        let physical = direct_files(self.paths, &child_path(module, attribute));
+        let physical =
+            element_catalog_entries(self.paths, &child_path(module, attribute), attribute);
         let mut documented = BTreeSet::new();
         for heading in document
             .headings
@@ -823,12 +824,22 @@ impl EvaluationContext<'_> {
                     ),
                 )?;
             }
-            if heading.links.len() != 1
-                || heading.codes.as_slice() != [heading.text.as_str()]
-                || resolve_relative(path, heading.links.first().map_or("", String::as_str))
-                    != Some(child_path(&child_path(module, attribute), &heading.text))
-            {
-                self.markdown_finding(path, format!("File entry `{}` must link its code-formatted filename to the direct `{attribute}/` element.", heading.text))?;
+            let structured_catalog =
+                matches!(attribute, "data" | "info") && heading.text.ends_with('/');
+            let valid_projection = if structured_catalog {
+                heading.links.is_empty() && heading.codes.as_slice() == [heading.text.as_str()]
+            } else {
+                heading.links.len() == 1
+                    && heading.codes.as_slice() == [heading.text.as_str()]
+                    && resolve_relative(path, heading.links.first().map_or("", String::as_str))
+                        == Some(child_path(&child_path(module, attribute), &heading.text))
+            };
+            if !valid_projection {
+                self.markdown_finding(path, if structured_catalog {
+                    format!("Structured `{attribute}` catalog entry `{}` must be one code-formatted role/ or role/collection/ scope without a leaf-file link.", heading.text)
+                } else {
+                    format!("File entry `{}` must link its code-formatted filename to the direct `{attribute}/` element.", heading.text)
+                })?;
             }
             if document
                 .paragraphs_for_h3(heading.index)
@@ -1334,6 +1345,30 @@ fn direct_files(paths: &BTreeSet<String>, directory: &str) -> BTreeSet<String> {
         .iter()
         .filter(|path| parent_path(path) == Some(directory))
         .map(|path| file_name(path).to_owned())
+        .collect()
+}
+
+fn element_catalog_entries(
+    paths: &BTreeSet<String>,
+    directory: &str,
+    attribute: &str,
+) -> BTreeSet<String> {
+    if !matches!(attribute, "data" | "info") {
+        return direct_files(paths, directory);
+    }
+    let prefix = format!("{directory}/");
+    paths
+        .iter()
+        .filter_map(|path| {
+            let relative = path.strip_prefix(&prefix)?;
+            let segments: Vec<&str> = relative.split('/').collect();
+            match segments.as_slice() {
+                [file] => Some((*file).to_owned()),
+                [role, _file] => Some(format!("{role}/")),
+                [role, collection, ..] => Some(format!("{role}/{collection}/")),
+                [] => None,
+            }
+        })
         .collect()
 }
 

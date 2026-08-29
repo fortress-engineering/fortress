@@ -84,7 +84,7 @@ Supplies deterministic executable symbols, typed interfaces, supported static ca
 
 **Types:** `depends_on`
 
-Supplies typed project, feature, requirement, and evidence declarations composed by the Engine.
+Supplies operational project configuration and the deterministic Project Filing System model of recursive Modules, Elements, bounded Data/Info collections, registered ecosystem mechanics, and complete leaf inventory.
 
 ### [Reference Resolution](mods/reference_resolution/README.md)
 

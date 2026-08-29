@@ -40,7 +40,7 @@ Reconciles observed governed files with exact declared architectural ownership.
 
 ### [`placement.rs`](../code/placement.rs)
 
-Evaluates the recursive Module grammar, canonical surfaces, flat attributes, companion docs, and path naming.
+Projects the canonical Project Model filing analysis into REPO-MODULE-001 findings covering recursive Modules, closed Elements, Code flatness/mechanical exceptions, bounded Data/Info structure, companion docs, and path naming.
 
 ### [`quality_certificate.py`](../code/quality_certificate.py)
 

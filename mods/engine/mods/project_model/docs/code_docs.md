@@ -18,6 +18,10 @@ Invalid inputs and inability to fulfill the responsibility return explicit typed
 
 ## Files
 
+### [`filing.rs`](../code/filing.rs)
+
+Compiles the canonical recursive Project Filing System, validates Standard-owned ecosystem registrations and bounded Data/Info grammar, and retains complete deterministic leaf inventory outside the CCG.
+
 ### [`project.rs`](../code/project.rs)
 
 Loads the root operational project configuration and validates canonical observation exclusions.

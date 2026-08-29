@@ -30,6 +30,8 @@ pub mod documentation;
 pub mod environmental_semantics;
 #[path = "../mods/snapshot_governance/code/evaluation.rs"]
 pub mod evaluation;
+#[path = "../mods/project_model/code/filing.rs"]
+pub mod filing;
 #[path = "../mods/finding_model/code/finding.rs"]
 pub mod finding;
 #[path = "../mods/standard_registry/code/identity.rs"]

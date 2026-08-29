@@ -18,6 +18,10 @@ A violated assertion or fixture-loading failure fails the test target and surfac
 
 ## Files
 
+### [`filing_system.rs`](../code/filing_system.rs)
+
+Exercises atomic and composite Modules, root profiles, Code flatness, the closed Docs set, bounded Data/Info roles and partitions, canonical versioning, complete inventory, relocation, small-project behavior, and a 300-Module/2,000-partition scale fixture.
+
 ### [`project_model.rs`](../code/project_model.rs)
 
-Verifies complete project loading and rejects duplicate languages and unsafe parent-relative paths.
+Verifies operational project configuration loading and rejects duplicate or unsafe observation exclusions and unsupported schema identities.

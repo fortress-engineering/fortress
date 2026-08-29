@@ -12,7 +12,7 @@ Build stabilized content-addressed repository snapshots, coordinate one CCG, one
 
 ### Includes
 
-Snapshot and audit schemas; audit orchestration; separate findings, architecture diagnostics, and unsupported-analysis reporting; contract coherency, intended behavioral-flow, behavioral realization, behavioral bypass, program-domain, program-state, program-effect, program-information-flow, program-environment, program-retry, program-recovery, ownership, architecture realization, traceability, recursive Module, and documentation synchronization rule dispatch; Markdown and Rust test analyzers; two-pass stabilization; exact rule execution reporting; complete local gate issuance; and lightweight certificate PASS, freshness, artifact-digest, and tamper-stamp verification.
+Snapshot and audit schemas; audit orchestration; separate findings, architecture diagnostics, and unsupported-analysis reporting; contract coherency, intended behavioral-flow, behavioral realization, behavioral bypass, program-domain, program-state, program-effect, program-information-flow, program-environment, program-retry, program-recovery, ownership, architecture realization, traceability, canonical Project Filing System, and documentation synchronization rule dispatch; Markdown and Rust test analyzers; two-pass stabilization; exact rule execution reporting; complete local gate issuance; and lightweight certificate PASS, freshness, artifact-digest, and tamper-stamp verification.
 
 ### Excludes
 
@@ -84,7 +84,7 @@ Supplies the snapshot-bound executable, interface, call, transfer, and analyzer-
 
 **Types:** `depends_on`
 
-Consumes only operational project configuration; project identity, Features, and requirements arrive through resolved Module contracts.
+Consumes operational configuration plus one deterministic Project Filing System model of Modules, Elements, registered ecosystem structures, Data/Info collections, partitions, and complete leaf inventory; project identity, Features, and requirements still arrive through resolved Module contracts.
 
 ### [Reference Resolution](../reference_resolution/README.md)
 

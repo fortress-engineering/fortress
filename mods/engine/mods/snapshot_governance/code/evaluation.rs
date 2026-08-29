@@ -889,7 +889,7 @@ fn placement_execution(
         completed_execution(
             rule_id,
             findings.len(),
-            "recursive repository grammar violation(s)",
+            "canonical Project Filing System violation(s)",
         ),
         findings,
     ))

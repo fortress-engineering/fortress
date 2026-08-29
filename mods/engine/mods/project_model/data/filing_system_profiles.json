@@ -1,0 +1,100 @@
+{
+  "$schema": "urn:fortress:schema:v1:filing-system-profiles",
+  "schema_version": 1,
+  "profiles": [
+    {
+      "id": "ECOSYSTEM-GIT-0001",
+      "root_entries": [
+        {
+          "path": ".gitattributes",
+          "kind": "FILE",
+          "classification": "ECOSYSTEM_REQUIRED"
+        },
+        {
+          "path": ".gitignore",
+          "kind": "FILE",
+          "classification": "ECOSYSTEM_REQUIRED"
+        }
+      ],
+      "element_files": [],
+      "mechanical_code_structures": []
+    },
+    {
+      "id": "ECOSYSTEM-GITHUB-0001",
+      "root_entries": [
+        {
+          "path": ".github",
+          "kind": "DIRECTORY",
+          "classification": "ECOSYSTEM_REQUIRED"
+        },
+        {
+          "path": "CODE_OF_CONDUCT.md",
+          "kind": "FILE",
+          "classification": "ECOSYSTEM_REQUIRED"
+        },
+        {
+          "path": "CONTRIBUTING.md",
+          "kind": "FILE",
+          "classification": "ECOSYSTEM_REQUIRED"
+        },
+        {
+          "path": "GOVERNANCE.md",
+          "kind": "FILE",
+          "classification": "ECOSYSTEM_REQUIRED"
+        },
+        {
+          "path": "LICENSE",
+          "kind": "FILE",
+          "classification": "ECOSYSTEM_REQUIRED"
+        },
+        {
+          "path": "LICENSE.md",
+          "kind": "FILE",
+          "classification": "ECOSYSTEM_REQUIRED"
+        },
+        {
+          "path": "SECURITY.md",
+          "kind": "FILE",
+          "classification": "ECOSYSTEM_REQUIRED"
+        },
+        {
+          "path": "SUPPORT.md",
+          "kind": "FILE",
+          "classification": "ECOSYSTEM_REQUIRED"
+        }
+      ],
+      "element_files": [],
+      "mechanical_code_structures": []
+    },
+    {
+      "id": "ECOSYSTEM-RUST-CARGO-0001",
+      "root_entries": [],
+      "element_files": [
+        {
+          "element": "data",
+          "filename": "Cargo.toml"
+        },
+        {
+          "element": "info",
+          "filename": "Cargo.lock"
+        }
+      ],
+      "mechanical_code_structures": []
+    },
+    {
+      "id": "FORTRESS-DERIVED-PROJECTION-0001",
+      "root_entries": [],
+      "element_files": [
+        {
+          "element": "info",
+          "filename": "realized_behavioral_flow_graph.json"
+        },
+        {
+          "element": "info",
+          "filename": "verified_behavioral_flow_graph.json"
+        }
+      ],
+      "mechanical_code_structures": []
+    }
+  ]
+}

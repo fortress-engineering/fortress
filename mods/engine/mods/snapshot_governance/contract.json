@@ -181,24 +181,26 @@
         },
         {
           "id": "AF-SNAPSHOT-GOVERNANCE-0001-R09",
-          "statement": "REPO-MODULE-001 defines and deterministically evaluates the canonical recursive Module grammar, including root surfaces, mandatory README.md and contract.json, code/mods obligations, attribute flatness, bidirectional code/data/info/mods documentation presence, and filesystem naming.",
+          "statement": "REPO-MODULE-001 defines and deterministically evaluates the canonical recursive Project Filing System grammar, including registered ecosystem root surfaces, mandatory README.md and contract.json, code/mods obligations, flat or mechanically registered Code, the closed Docs set, bounded Data/Info role-collection-partition structure, bidirectional companion documentation presence, minimum necessary depth, canonical versioning, and complete machine inventory.",
           "tests": [
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R09-001",
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R09-002",
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R09-003",
             "T-REPO-MODULE-001-R01-001",
             "T-REPO-MODULE-001-R01-002",
-            "T-REPO-MODULE-001-R01-003"
+            "T-REPO-MODULE-001-R01-003",
+            "T-REPO-MODULE-001-R01-004"
           ]
         },
         {
           "id": "AF-SNAPSHOT-GOVERNANCE-0001-R10",
-          "statement": "REPO-DOCS-001 parses canonical Module Markdown structurally, validates typed Module contracts, and deterministically reconciles filesystem catalogs, child catalogs, relationship projections, and relative links without treating unsupported source-dependency inference as evaluated.",
+          "statement": "REPO-DOCS-001 parses canonical Module Markdown structurally, validates typed Module contracts, and deterministically reconciles flat file catalogs or structured Data/Info role-collection catalogs, child catalogs, relationship projections, and relative links without requiring human enumeration of partition leaf files or treating unsupported source-dependency inference as evaluated.",
           "tests": [
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R10-001",
             "T-REPO-DOCS-001-R01-001",
             "T-REPO-DOCS-001-R01-002",
-            "T-REPO-DOCS-001-R01-003"
+            "T-REPO-DOCS-001-R01-003",
+            "T-REPO-DOCS-001-R01-004"
           ]
         },
         {
