@@ -20,7 +20,7 @@ Invalid inputs and inability to fulfill the responsibility return explicit typed
 
 ### [`audit.rs`](../code/audit.rs)
 
-Orchestrates declaration loading, stabilized snapshot construction, shared CCG, Intended BFG, implementation observation, PSM, semantic-domain, state/effect, information-flow, environmental, and Behavioral Realization analysis, rule execution, and deterministic audit v2 rendering with normative findings, non-normative architecture diagnostics, and unsupported analysis kept distinct.
+Orchestrates declaration loading, stabilized snapshot construction, shared CCG, Intended BFG, implementation observation, PSM, semantic-domain, state/effect, information-flow, environmental, Behavioral Realization, and Reference Resolution analysis, rule execution, and deterministic audit v2 rendering with normative findings, non-normative architecture diagnostics, and unsupported analysis kept distinct.
 
 ### [`contract.rs`](../code/contract.rs)
 
@@ -32,7 +32,7 @@ Parses canonical Markdown structurally and reconciles Module contracts, catalogs
 
 ### [`evaluation.rs`](../code/evaluation.rs)
 
-Dispatches only implemented applicable rules, including BEHAVIOR-REALIZATION-001, BEHAVIOR-BYPASS-001, PROGRAM-DOMAIN-001, PROGRAM-STATE-001, PROGRAM-EFFECT-001, and PROGRAM-INFOFLOW-001 from shared semantic results, and distinguishes evaluated pass or failure from unsupported capability.
+Dispatches only implemented applicable rules, including behavioral, program-domain/state/effect/information/environment, and REPO-REFERENCE-001 evaluators from shared results, and distinguishes evaluated pass or failure from unsupported capability.
 
 ### [`ownership.rs`](../code/ownership.rs)
 
@@ -44,7 +44,7 @@ Evaluates the recursive Module grammar, canonical surfaces, flat attributes, com
 
 ### [`quality_certificate.py`](../code/quality_certificate.py)
 
-Executes the complete pinned local quality-gate profile, issues deterministic repository and artifact fingerprints after every gate passes, and performs lightweight PASS, freshness, digest, and tamper-stamp verification for hosted CI while explicitly retaining UNVERIFIED issuer authenticity.
+Executes the complete pinned local quality-gate profile, including the relocation-reference projection, issues deterministic repository and artifact fingerprints after every gate passes, and performs lightweight PASS, freshness, digest, and tamper-stamp verification for hosted CI while explicitly retaining UNVERIFIED issuer authenticity.
 
 ### [`rust_test_analyzer.rs`](../code/rust_test_analyzer.rs)
 

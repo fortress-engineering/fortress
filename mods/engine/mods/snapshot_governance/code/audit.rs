@@ -42,8 +42,8 @@ use crate::environmental_semantics::{
     EnvironmentalAnalysisEvaluation, analyze_environmental_semantics, load_environment_contracts,
 };
 use crate::evaluation::{
-    CompleteEvaluationInputs, EvaluationError, ProgramEvaluationInputs, RuleExecution,
-    SnapshotRuleEngine,
+    CompleteEvaluationInputs, EvaluationError, ProgramEvaluationInputs, RepositoryEvaluationInputs,
+    RuleExecution, SnapshotRuleEngine,
 };
 use crate::finding::CanonicalFinding;
 use crate::implementation_observation::{
@@ -60,6 +60,9 @@ use crate::program_semantics::{
     compile_program_semantic_model,
 };
 use crate::project::{ProjectConfiguration, ProjectConfigurationLoadError};
+use crate::reference_resolution::{
+    ReferenceResolutionError, ReferenceResolutionEvaluation, evaluate_reference_resolution,
+};
 use crate::rust_test_analyzer::{
     RustAnalyzerError, RustTestEligibility, analyze_observed_rust_tests,
 };
@@ -293,6 +296,30 @@ pub fn compile_repository_bfg(
     root: impl AsRef<Path>,
 ) -> Result<IntendedBehavioralFlowGraph, AuditError> {
     audit_repository_with_models(root.as_ref(), false).map(|(_, _, bfg)| bfg)
+}
+
+/// Compiles the canonical CCG-bound component reference resolution projection.
+///
+/// The projection maps stable identities to current repository locations and
+/// evaluates only understood Markdown, Cargo, and Rust physical reference forms.
+///
+/// # Errors
+///
+/// Returns [`AuditError`] for malformed, unstable, or unresolvable repository state.
+pub fn compile_repository_reference_resolution(
+    root: impl AsRef<Path>,
+) -> Result<ReferenceResolutionEvaluation, AuditError> {
+    let prepared = prepare_audit(root.as_ref())?;
+    let ccg = prepared
+        .ccg_compilation
+        .graph()
+        .ok_or_else(|| AuditError::ContractState("prepared audit did not contain a CCG".into()))?;
+    evaluate_reference_resolution(
+        ccg,
+        &prepared.observed_files,
+        prepared.standard.bundle.edition(),
+    )
+    .map_err(AuditError::ReferenceResolution)
 }
 
 /// Compiles the canonical snapshot-bound Rust Program Semantic Model.
@@ -606,6 +633,7 @@ struct CertificationSemanticStack {
     intended_bfg: IntendedBehavioralFlowGraph,
     models: AnalysisModels,
     realized: BehavioralRealizationEvaluation,
+    reference_resolution: ReferenceResolutionEvaluation,
     evaluation: crate::evaluation::SnapshotEvaluation,
 }
 
@@ -652,36 +680,30 @@ fn compile_certification_semantic_stack(
     let behavioral_semantics =
         evaluate_behavioral_semantics(&ccg, prepared.standard.bundle.edition())
             .map_err(AuditError::BehavioralSemantics)?;
-    let sources = behavior_realization_contract_sources(&ccg, &prepared.observed_files)?;
-    let contracts = load_behavior_realization_contracts(
+    let realized = compile_certification_realization(
         &ccg,
         behavioral_semantics.graph(),
         &models.psm,
-        models.state_effect.model(),
-        models.information_flow.model(),
-        models.environmental.model(),
-        sources,
-    )
-    .map_err(AuditError::BehaviorRealizationContracts)?;
-    let realized = evaluate_behavioral_realization(
+        &models,
+        &prepared.observed_files,
+        prepared.standard.bundle.edition(),
+    )?;
+    let reference_resolution = evaluate_reference_resolution(
         &ccg,
-        behavioral_semantics.graph(),
-        &models.psm,
-        models.semantic.model(),
-        models.state_effect.model(),
-        models.information_flow.model(),
-        models.environmental.model(),
-        &contracts,
+        &prepared.observed_files,
         prepared.standard.bundle.edition(),
     )
-    .map_err(AuditError::BehavioralRealization)?;
+    .map_err(AuditError::ReferenceResolution)?;
     let evaluation_inputs = CompleteEvaluationInputs::new(
         &prepared.rust_tests,
-        &documentation,
-        &contract_coherency,
-        &architecture_realization,
-        &behavioral_semantics,
-        Some(&realized),
+        RepositoryEvaluationInputs::new(
+            &documentation,
+            &contract_coherency,
+            &architecture_realization,
+            &behavioral_semantics,
+            Some(&realized),
+            &reference_resolution,
+        ),
         ProgramEvaluationInputs::new(
             Some(&models.semantic),
             Some(&models.state_effect),
@@ -689,7 +711,7 @@ fn compile_certification_semantic_stack(
             Some(&models.environmental),
         ),
     );
-    let evaluation = evaluate_snapshot_rules(
+    let evaluation = evaluate_certification_rules(
         &prepared.standard.bundle,
         &prepared.snapshot,
         &ccg,
@@ -704,8 +726,51 @@ fn compile_certification_semantic_stack(
         intended_bfg: behavioral_semantics.graph().clone(),
         models,
         realized,
+        reference_resolution,
         evaluation,
     })
+}
+
+fn compile_certification_realization(
+    ccg: &ContractCoherencyGraph,
+    intended: &IntendedBehavioralFlowGraph,
+    psm: &ProgramSemanticModel,
+    models: &AnalysisModels,
+    observed_files: &BTreeMap<String, Vec<u8>>,
+    edition: &str,
+) -> Result<BehavioralRealizationEvaluation, AuditError> {
+    let sources = behavior_realization_contract_sources(ccg, observed_files)?;
+    let contracts = load_behavior_realization_contracts(
+        ccg,
+        intended,
+        psm,
+        models.state_effect.model(),
+        models.information_flow.model(),
+        models.environmental.model(),
+        sources,
+    )
+    .map_err(AuditError::BehaviorRealizationContracts)?;
+    evaluate_behavioral_realization(
+        ccg,
+        intended,
+        psm,
+        models.semantic.model(),
+        models.state_effect.model(),
+        models.information_flow.model(),
+        models.environmental.model(),
+        &contracts,
+        edition,
+    )
+    .map_err(AuditError::BehavioralRealization)
+}
+
+fn evaluate_certification_rules(
+    standard: &StandardBundle,
+    snapshot: &RepositorySnapshot,
+    ccg: &ContractCoherencyGraph,
+    inputs: CompleteEvaluationInputs<'_>,
+) -> Result<crate::evaluation::SnapshotEvaluation, AuditError> {
+    evaluate_snapshot_rules(standard, snapshot, ccg, inputs)
 }
 
 #[allow(clippy::too_many_lines)]
@@ -864,6 +929,19 @@ fn certification_artifacts(
                 "environmental_analysis".to_owned(),
             ],
             stack.realized.graph().unsupported_semantics().to_vec(),
+        ),
+        (
+            "reference_resolution",
+            "urn:fortress:schema:v1:component-resolution-index",
+            "info/component_resolution_index.json",
+            stack
+                .reference_resolution
+                .index()
+                .to_canonical_json()
+                .map_err(CertificationError::Json)?,
+            EvidenceClass::StaticProof,
+            vec!["ccg".to_owned()],
+            Vec::new(),
         ),
     ];
     entries
@@ -1452,6 +1530,9 @@ fn audit_repository_with_models(
     })?;
     let behavioral_semantics = evaluate_behavioral_semantics(ccg, standard.edition())
         .map_err(AuditError::BehavioralSemantics)?;
+    let reference_resolution =
+        evaluate_reference_resolution(ccg, &prepared.observed_files, standard.edition())
+            .map_err(AuditError::ReferenceResolution)?;
     let behavioral_realization: Option<BehavioralRealizationEvaluation> =
         if let Some(models) = &analysis_models {
             let sources = behavior_realization_contract_sources(ccg, &prepared.observed_files)?;
@@ -1488,11 +1569,14 @@ fn audit_repository_with_models(
     let analyses = analysis_models.as_ref();
     let evaluation_inputs = CompleteEvaluationInputs::new(
         &prepared.rust_tests,
-        &documentation,
-        &contract_coherency,
-        &architecture_realization,
-        &behavioral_semantics,
-        behavioral_realization.as_ref(),
+        RepositoryEvaluationInputs::new(
+            &documentation,
+            &contract_coherency,
+            &architecture_realization,
+            &behavioral_semantics,
+            behavioral_realization.as_ref(),
+            &reference_resolution,
+        ),
         ProgramEvaluationInputs::new(
             analyses.map(|models| &models.semantic),
             analyses.map(|models| &models.state_effect),
@@ -1962,6 +2046,8 @@ pub enum AuditError {
     BehavioralSemantics(BehavioralSemanticsError),
     /// Snapshot-bound documentation and contract evaluation failed.
     Documentation(DocumentationEvaluationError),
+    /// CCG-backed reference resolution failed.
+    ReferenceResolution(ReferenceResolutionError),
     /// Rule evaluation failed.
     Evaluation(EvaluationError),
     /// Certification evidence or profile construction failed.
@@ -2040,6 +2126,9 @@ impl Display for AuditError {
             }
             Self::Documentation(error) => {
                 write!(formatter, "documentation evaluation failed: {error}")
+            }
+            Self::ReferenceResolution(error) => {
+                write!(formatter, "reference resolution failed: {error}")
             }
             Self::Evaluation(error) => {
                 write!(formatter, "snapshot rule evaluation failed: {error}")

@@ -17,8 +17,9 @@ use fortress_core::audit::{
     audit_repository, compile_repository_bfg, compile_repository_ccg,
     compile_repository_certification, compile_repository_environmental_analysis,
     compile_repository_information_flow_analysis, compile_repository_psm,
-    compile_repository_realized_bfg, compile_repository_semantic_analysis,
-    compile_repository_state_effect_analysis, prepare_repository_certification_source,
+    compile_repository_realized_bfg, compile_repository_reference_resolution,
+    compile_repository_semantic_analysis, compile_repository_state_effect_analysis,
+    prepare_repository_certification_source,
 };
 use fortress_core::certification::{CertificationStatus, RustSuiteExecution};
 use fortress_core::contract_coherency::CcgCoherencyStatus;
@@ -75,6 +76,7 @@ where
         "CMD-STATE-EFFECT-ANALYSIS" => run_state_effect(&arguments[1..], output, error),
         "CMD-INFORMATION-FLOW" => run_information_flow(&arguments[1..], output, error),
         "CMD-ENVIRONMENTAL-ANALYSIS" => run_environmental(&arguments[1..], output, error),
+        "CMD-REFERENCE-RESOLUTION" => run_references(&arguments[1..], output, error),
         "CMD-CERTIFICATION-FULL-SNAPSHOT" => run_certify(&arguments[1..], output, error),
         _ => {
             writeln!(
@@ -85,6 +87,110 @@ where
             Ok(EXIT_USAGE)
         }
     }
+}
+
+struct ReferenceArguments {
+    root: PathBuf,
+    destination: Option<PathBuf>,
+    move_module: Option<String>,
+    move_parent: Option<String>,
+}
+
+fn run_references<O: Write, E: Write>(
+    arguments: &[String],
+    output: &mut O,
+    error: &mut E,
+) -> io::Result<u8> {
+    let request = match parse_reference_arguments(arguments) {
+        Ok(value) => value,
+        Err(message) => {
+            writeln!(error, "{message}")?;
+            return Ok(EXIT_USAGE);
+        }
+    };
+    let evaluation = match compile_repository_reference_resolution(&request.root) {
+        Ok(value) => value,
+        Err(resolution_error) => {
+            writeln!(error, "reference resolution failed: {resolution_error}")?;
+            return Ok(EXIT_USAGE);
+        }
+    };
+    let document = if let (Some(module), Some(parent)) = (
+        request.move_module.as_deref(),
+        request.move_parent.as_deref(),
+    ) {
+        match evaluation.index().preview_move(module, parent) {
+            Ok(preview) => preview.to_canonical_json().map_err(io::Error::other)?,
+            Err(move_error) => {
+                writeln!(error, "relocation preview failed: {move_error}")?;
+                return Ok(EXIT_USAGE);
+            }
+        }
+    } else {
+        evaluation
+            .index()
+            .to_canonical_json()
+            .map_err(io::Error::other)?
+    };
+    if let Some(destination) = request.destination {
+        fs::write(destination, document)?;
+    } else {
+        write!(output, "{document}")?;
+    }
+    Ok(if evaluation.findings().is_empty() {
+        EXIT_SUCCESS
+    } else {
+        EXIT_VIOLATION
+    })
+}
+
+fn parse_reference_arguments(arguments: &[String]) -> Result<ReferenceArguments, &'static str> {
+    const USAGE: &str = "usage: fortress references [path] [--format json] [--output path] [--move Module-ID --to Parent-Module-ID]";
+    let mut root = None;
+    let mut destination = None;
+    let mut move_module = None;
+    let mut move_parent = None;
+    let mut index = 0;
+    while index < arguments.len() {
+        let argument = &arguments[index];
+        if argument == "--format" {
+            index += 1;
+            if arguments.get(index).map(String::as_str) != Some("json") {
+                return Err(USAGE);
+            }
+        } else if let Some(value) = argument.strip_prefix("--format=") {
+            if value != "json" {
+                return Err(USAGE);
+            }
+        } else if ["--output", "--move", "--to"].contains(&argument.as_str()) {
+            index += 1;
+            let Some(value) = arguments.get(index) else {
+                return Err(USAGE);
+            };
+            let replaced = match argument.as_str() {
+                "--output" => destination.replace(PathBuf::from(value)).is_some(),
+                "--move" => move_module.replace(value.clone()).is_some(),
+                _ => move_parent.replace(value.clone()).is_some(),
+            };
+            if replaced {
+                return Err(USAGE);
+            }
+        } else if argument.starts_with('-') || root.is_some() {
+            return Err(USAGE);
+        } else {
+            root = Some(PathBuf::from(argument));
+        }
+        index += 1;
+    }
+    if move_module.is_some() != move_parent.is_some() {
+        return Err(USAGE);
+    }
+    Ok(ReferenceArguments {
+        root: root.unwrap_or_else(|| PathBuf::from(".")),
+        destination,
+        move_module,
+        move_parent,
+    })
 }
 
 #[derive(Clone, Copy)]
@@ -223,13 +329,25 @@ fn execute_canonical_rust_suite<E: Write>(root: &PathBuf, error: &mut E) -> io::
                 .filter(|path| path.is_file())
         })
         .unwrap_or_else(|| PathBuf::from("cargo"));
+    let target = std::env::var_os("CARGO_TARGET_DIR").map_or_else(
+        || std::env::temp_dir().join("fortress-certification-target"),
+        PathBuf::from,
+    );
+    let canonical_root = fs::canonicalize(root)?;
+    if !target.is_absolute() || target.starts_with(&canonical_root) {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "certification Cargo target must be absolute and outside the governed repository",
+        ));
+    }
     writeln!(
         error,
-        "[fortress-certify] executing canonical local Rust suite"
+        "[fortress-certify] executing canonical local Rust suite with external build target"
     )?;
     let status = Command::new(cargo)
         .current_dir(root)
         .env("RUSTUP_TOOLCHAIN", "1.97.1")
+        .env("CARGO_TARGET_DIR", target)
         .arg("--config")
         .arg("data/cargo_config.toml")
         .arg("test")

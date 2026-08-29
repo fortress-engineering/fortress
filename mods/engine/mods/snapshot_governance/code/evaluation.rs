@@ -25,6 +25,7 @@ use crate::finding::{CanonicalFinding, FindingError};
 use crate::information_flow::{InformationFlowEvaluation, PROGRAM_INFOFLOW_RULE_ID};
 use crate::ownership::{ARCH_OWNERSHIP_RULE_ID, evaluate_file_ownership};
 use crate::placement::{REPO_MODULE_RULE_ID, evaluate_module_grammar};
+use crate::reference_resolution::{REPO_REFERENCE_RULE_ID, ReferenceResolutionEvaluation};
 use crate::rust_test_analyzer::RustTestFact;
 use crate::semantic_analysis::{PROGRAM_DOMAIN_RULE_ID, SemanticAnalysisEvaluation};
 use crate::snapshot::RepositorySnapshot;
@@ -189,6 +190,7 @@ pub struct CompleteEvaluationInputs<'a> {
     state_effect_analysis: Option<&'a StateEffectAnalysisEvaluation>,
     information_flow_analysis: Option<&'a InformationFlowEvaluation>,
     environmental_analysis: Option<&'a EnvironmentalAnalysisEvaluation>,
+    reference_resolution: &'a ReferenceResolutionEvaluation,
 }
 
 /// Program-analysis evidence grouped as one semantic layer for rule evaluation.
@@ -198,6 +200,39 @@ pub struct ProgramEvaluationInputs<'a> {
     state_effect: Option<&'a StateEffectAnalysisEvaluation>,
     information_flow: Option<&'a InformationFlowEvaluation>,
     environmental: Option<&'a EnvironmentalAnalysisEvaluation>,
+}
+
+/// Repository- and architecture-level evidence grouped for rule evaluation.
+#[derive(Clone, Copy, Debug)]
+pub struct RepositoryEvaluationInputs<'a> {
+    documentation: &'a DocumentationConformanceReport,
+    contract_coherency: &'a ContractCoherencyEvaluation,
+    architecture_realization: &'a ArchitectureRealization,
+    behavioral_semantics: &'a BehavioralSemanticsEvaluation,
+    behavioral_realization: Option<&'a BehavioralRealizationEvaluation>,
+    reference_resolution: &'a ReferenceResolutionEvaluation,
+}
+
+impl<'a> RepositoryEvaluationInputs<'a> {
+    /// Groups repository, architecture, and behavioral evaluator inputs.
+    #[must_use]
+    pub const fn new(
+        documentation: &'a DocumentationConformanceReport,
+        contract_coherency: &'a ContractCoherencyEvaluation,
+        architecture_realization: &'a ArchitectureRealization,
+        behavioral_semantics: &'a BehavioralSemanticsEvaluation,
+        behavioral_realization: Option<&'a BehavioralRealizationEvaluation>,
+        reference_resolution: &'a ReferenceResolutionEvaluation,
+    ) -> Self {
+        Self {
+            documentation,
+            contract_coherency,
+            architecture_realization,
+            behavioral_semantics,
+            behavioral_realization,
+            reference_resolution,
+        }
+    }
 }
 
 impl<'a> ProgramEvaluationInputs<'a> {
@@ -223,24 +258,21 @@ impl<'a> CompleteEvaluationInputs<'a> {
     #[must_use]
     pub const fn new(
         rust_tests: &'a [RustTestFact],
-        documentation: &'a DocumentationConformanceReport,
-        contract_coherency: &'a ContractCoherencyEvaluation,
-        architecture_realization: &'a ArchitectureRealization,
-        behavioral_semantics: &'a BehavioralSemanticsEvaluation,
-        behavioral_realization: Option<&'a BehavioralRealizationEvaluation>,
+        repository: RepositoryEvaluationInputs<'a>,
         program_analysis: ProgramEvaluationInputs<'a>,
     ) -> Self {
         Self {
             rust_tests,
-            documentation,
-            contract_coherency,
-            architecture_realization,
-            behavioral_semantics,
-            behavioral_realization,
+            documentation: repository.documentation,
+            contract_coherency: repository.contract_coherency,
+            architecture_realization: repository.architecture_realization,
+            behavioral_semantics: repository.behavioral_semantics,
+            behavioral_realization: repository.behavioral_realization,
             semantic_analysis: program_analysis.semantic,
             state_effect_analysis: program_analysis.state_effect,
             information_flow_analysis: program_analysis.information_flow,
             environmental_analysis: program_analysis.environmental,
+            reference_resolution: repository.reference_resolution,
         }
     }
 }
@@ -257,6 +289,7 @@ struct EvaluationInputs<'a> {
     state_effect_analysis: Option<&'a StateEffectAnalysisEvaluation>,
     information_flow_analysis: Option<&'a InformationFlowEvaluation>,
     environmental_analysis: Option<&'a EnvironmentalAnalysisEvaluation>,
+    reference_resolution: Option<&'a ReferenceResolutionEvaluation>,
 }
 
 impl<'a> From<CompleteEvaluationInputs<'a>> for EvaluationInputs<'a> {
@@ -272,6 +305,7 @@ impl<'a> From<CompleteEvaluationInputs<'a>> for EvaluationInputs<'a> {
             state_effect_analysis: inputs.state_effect_analysis,
             information_flow_analysis: inputs.information_flow_analysis,
             environmental_analysis: inputs.environmental_analysis,
+            reference_resolution: Some(inputs.reference_resolution),
         }
     }
 }
@@ -416,6 +450,10 @@ fn evaluate_rule(
             || unsupported_execution(rule_id, "Documentation evaluation requires snapshot-bound repository bytes and canonical Module contracts."),
             |report| documentation_execution(rule_id, report),
         )),
+        REPO_REFERENCE_RULE_ID => Ok(inputs.reference_resolution.map_or_else(
+            || unsupported_execution(rule_id, "Reference evaluation requires one CCG-bound resolution index compiled from exact snapshot bytes."),
+            |result| reference_execution(rule_id, result),
+        )),
         CONTRACT_COHERENCY_RULE_ID => Ok(inputs.contract_coherency.map_or_else(
             || unsupported_execution(rule_id, "Contract coherency requires canonical Module Contract v2 repository bytes, observed test evidence, and parsed README relationship projections."),
             |result| contract_execution(rule_id, result),
@@ -427,6 +465,36 @@ fn evaluate_rule(
             "No Snapshot Governance evaluator is registered for this rule.",
         )),
     }
+}
+
+fn reference_execution(
+    rule_id: &str,
+    result: &ReferenceResolutionEvaluation,
+) -> (RuleExecution, Vec<CanonicalFinding>) {
+    let findings = result.findings().to_vec();
+    let summary = result.index().summary();
+    (
+        RuleExecution {
+            rule_id: rule_id.into(),
+            state: if findings.is_empty() {
+                RuleExecutionState::Passed
+            } else {
+                RuleExecutionState::Failed
+            },
+            applicable: true,
+            findings: findings.len(),
+            detail: format!(
+                "Reference Resolution v1 resolved {} Module(s), {} semantic reference(s), {} same-boundary relative reference(s), {} path projection(s), and {} authored resolution boundary location(s), with {} finding(s).",
+                summary.modules(),
+                summary.semantic_references(),
+                summary.local_references(),
+                summary.physical_projections(),
+                summary.authored_resolution_boundaries(),
+                findings.len(),
+            ),
+        },
+        findings,
+    )
 }
 
 fn traceability_from_inputs(

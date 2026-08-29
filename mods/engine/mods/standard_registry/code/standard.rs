@@ -158,6 +158,12 @@ const DRAFT_RULES: &[RuleDescriptor] = &[
         integrity_tier: 1,
     },
     RuleDescriptor {
+        id: "REPO-REFERENCE-001",
+        title: "Relocation-transparent cross-Module references",
+        status: RuleStatus::Draft,
+        integrity_tier: 1,
+    },
+    RuleDescriptor {
         id: "CONTRACT-COHERENCY-001",
         title: "Contract Coherency Graph compilation and supported logical coherency",
         status: RuleStatus::Draft,

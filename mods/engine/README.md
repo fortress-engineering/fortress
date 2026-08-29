@@ -86,6 +86,12 @@ Supplies deterministic executable symbols, typed interfaces, supported static ca
 
 Supplies typed project, feature, requirement, and evidence declarations composed by the Engine.
 
+### [Reference Resolution](mods/reference_resolution/README.md)
+
+**Types:** `depends_on`
+
+Supplies stable identity-to-location resolution, path-boundary inventory, relocation previews, and REPO-REFERENCE-001 evaluation through the Engine facade.
+
 ### [Repository Observation](mods/repository_observation/README.md)
 
 **Types:** `depends_on`

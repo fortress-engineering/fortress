@@ -101,6 +101,10 @@ name = "repository_grammar"
 path = "../mods/snapshot_governance/mods/testing/code/repository_grammar.rs"
 
 [[test]]
+name = "reference_resolution"
+path = "../mods/reference_resolution/mods/testing/code/reference_resolution.rs"
+
+[[test]]
 name = "registry_primitives"
 path = "../mods/standard_registry/mods/testing/code/registry_primitives.rs"
 

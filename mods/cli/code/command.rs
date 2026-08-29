@@ -87,6 +87,13 @@ const BUILTIN_COMMANDS: &[CommandDescriptor] = &[
         usage: "fortress environmental [path] [--format json] [--output path]",
     },
     CommandDescriptor {
+        id: "CMD-REFERENCE-RESOLUTION",
+        name: "references",
+        aliases: &["resolve"],
+        description: "Resolve stable Module identities and preview relocation-transparent path churn.",
+        usage: "fortress references [path] [--format json] [--output path] [--move Module-ID --to Parent-Module-ID]",
+    },
+    CommandDescriptor {
         id: "CMD-CERTIFICATION-FULL-SNAPSHOT",
         name: "certify",
         aliases: &[],

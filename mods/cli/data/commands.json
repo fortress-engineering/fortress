@@ -133,6 +133,17 @@
       "duration": "long",
       "resumability": "restartable",
       "certification_implications": "Executes the canonical local Rust suite, constructs the content-addressed Evidence DAG, and emits deterministic Certification and Verified BFG artifacts for the exact recursion-free source identity."
+    },
+    {
+      "id": "CMD-REFERENCE-RESOLUTION",
+      "name": "references",
+      "aliases": ["resolve"],
+      "description": "Resolve stable Module identities and preview relocation-transparent path churn.",
+      "owner": "TF-CLI-0001",
+      "executor": "builtin-sync",
+      "duration": "short",
+      "resumability": "restartable",
+      "certification_implications": "Renders current physical projections and non-mutating relocation impact; certification separately proves artifact freshness."
     }
   ]
 }

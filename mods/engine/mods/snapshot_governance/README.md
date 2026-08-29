@@ -86,6 +86,12 @@ Supplies the snapshot-bound executable, interface, call, transfer, and analyzer-
 
 Consumes only operational project configuration; project identity, Features, and requirements arrive through resolved Module contracts.
 
+### [Reference Resolution](../reference_resolution/README.md)
+
+**Types:** `depends_on`
+
+Compiles one exact CCG-bound reference projection for REPO-REFERENCE-001 and certification freshness without reparsing paths in individual rules.
+
 ### [Repository Observation](../repository_observation/README.md)
 
 **Types:** `depends_on`

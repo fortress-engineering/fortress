@@ -50,6 +50,10 @@ Analyzes snapshot-bound source into deterministic executable symbols, typed inte
 
 Provides the declared engineering subject and evidence obligations consumed by observation and Snapshot Governance.
 
+### [Reference Resolution](../mods/reference_resolution/README.md)
+
+Resolves stable governed identities into current portable repository locations, validates explicit physical resolution boundaries, and simulates low-churn Module relocation.
+
 ### [Repository Observation](../mods/repository_observation/README.md)
 
 Supplies reproducible repository facts to the snapshot builder without asserting what those facts mean.

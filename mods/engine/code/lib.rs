@@ -48,6 +48,8 @@ pub mod placement;
 pub mod program_semantics;
 #[path = "../mods/project_model/code/project.rs"]
 pub mod project;
+#[path = "../mods/reference_resolution/code/reference.rs"]
+pub mod reference_resolution;
 #[path = "../mods/snapshot_governance/code/rust_test_analyzer.rs"]
 pub mod rust_test_analyzer;
 #[path = "../mods/semantic_analysis/code/semantic.rs"]

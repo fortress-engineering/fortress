@@ -40,6 +40,7 @@ SEMANTIC_ARTIFACTS = (
     ("information-flow", "info/information_flow_analysis.json"),
     ("environmental", "info/environmental_analysis.json"),
     ("realized-bfg", "info/realized_behavioral_flow_graph.json"),
+    ("references", "info/component_resolution_index.json"),
 )
 
 CERTIFICATION_ARTIFACTS = (
@@ -59,6 +60,7 @@ REQUIRED_GATE_IDS = (
     "ARTIFACT_INFORMATION_FLOW",
     "ARTIFACT_PSM",
     "ARTIFACT_REALIZED_BFG",
+    "ARTIFACT_REFERENCES",
     "ARTIFACT_SEMANTIC",
     "ARTIFACT_STATE_EFFECT",
     "ARTIFACT_VERIFIED_BFG",
@@ -162,6 +164,9 @@ def command_text(parts: Iterable[str]) -> str:
     displayed = list(parts)
     if displayed and Path(displayed[0]).name.lower() in {"cargo", "cargo.exe"}:
         displayed[0] = "cargo"
+    for index, part in enumerate(displayed[1:], start=1):
+        if Path(part).is_absolute():
+            displayed[index] = "<machine-local-path>"
     return " ".join(displayed)
 
 

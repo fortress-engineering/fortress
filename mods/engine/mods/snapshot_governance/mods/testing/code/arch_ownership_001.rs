@@ -151,6 +151,7 @@ fn fortress_self_inventory_has_exactly_one_declared_owner() {
                 "PROGRAM-DOMAIN-001",
                 "REPO-DOCS-001",
                 "REPO-MODULE-001",
+                "REPO-REFERENCE-001",
                 "STD-ID-001",
                 "TEST-BOUNDARY-001",
                 "TEST-TRACEABILITY-001",

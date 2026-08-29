@@ -134,10 +134,18 @@
         },
         {
           "id": "TF-CLI-0001-R13",
-          "statement": "The native fortress certify command brackets and executes the exact unfiltered Rust workspace/all-target/all-feature suite, rejects source mutation, compiles each semantic model once, and emits deterministic Evidence Graph, Certification, and Verified BFG products without remote evidence or signatures.",
+          "statement": "The native fortress certify command brackets and executes the exact unfiltered Rust workspace/all-target/all-feature suite with an absolute build target outside the governed repository, rejects source mutation, compiles each semantic model once, and emits deterministic Evidence Graph, Certification, and Verified BFG products without remote evidence or signatures.",
           "tests": [
             "T-TF-CLI-0001-R13-001",
             "T-TF-CLI-0001-R13-002"
+          ]
+        },
+        {
+          "id": "TF-CLI-0001-R14",
+          "statement": "The native fortress references command renders the deterministic CCG-bound component resolution projection or a non-mutating stable-identity relocation preview and rejects incomplete or invalid move requests without changing repository files.",
+          "tests": [
+            "T-TF-CLI-0001-R14-001",
+            "T-TF-CLI-0001-R14-002"
           ]
         }
       ]

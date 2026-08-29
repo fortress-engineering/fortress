@@ -62,6 +62,12 @@ Provides information-flow proof coverage and explicit trusted endorsement or dec
 
 Provides the observed executable semantic artifact and source-bound coverage identity.
 
+### [Reference Resolution](../reference_resolution/README.md)
+
+**Types:** `depends_on`
+
+Supplies the content-addressed stable identity-to-location projection whose current freshness is mandatory for full-snapshot certification.
+
 ### [Repository Observation](../repository_observation/README.md)
 
 **Types:** `depends_on`

@@ -18,6 +18,35 @@ fn run(arguments: &[&str]) -> Output {
         .expect("Fortress CLI process must start")
 }
 
+/// `T-TF-CLI-0001-R14-001`
+/// Fortress requirement: TF-CLI-0001-R14
+#[test]
+fn reference_resolution_command_is_registered_with_stable_alias() {
+    let registry = CommandRegistry::builtin();
+    let descriptor = registry.find("references").expect("references registered");
+    assert_eq!(descriptor.id(), "CMD-REFERENCE-RESOLUTION");
+    assert_eq!(
+        registry.find("resolve").map(CommandDescriptor::id),
+        Some("CMD-REFERENCE-RESOLUTION")
+    );
+}
+
+/// `T-TF-CLI-0001-R14-002`
+/// Fortress requirement: TF-CLI-0001-R14
+#[test]
+fn reference_resolution_command_rejects_incomplete_move_preview() {
+    let mut output = Vec::new();
+    let mut error = Vec::new();
+    let status = fortress_cli::run(
+        ["references", ".", "--move", "AF-X-0001"],
+        &mut output,
+        &mut error,
+    )
+    .expect("dispatch writes");
+    assert_eq!(status, fortress_cli::EXIT_USAGE);
+    assert!(String::from_utf8_lossy(&error).contains("usage: fortress references"));
+}
+
 fn run_owned(arguments: &[String]) -> Output {
     Command::new(env!("CARGO_BIN_EXE_fortress"))
         .args(arguments)
@@ -74,6 +103,7 @@ impl AuditFixture {
                 ("behavioral_semantics", "Behavioral Semantics"),
                 ("environmental_semantics", "Environmental Semantics"),
                 ("information_flow", "Information Flow"),
+                ("reference_resolution", "Reference Resolution"),
                 ("semantic_analysis", "Semantic Analysis"),
                 ("state_effect_analysis", "State and Effect Analysis"),
                 ("snapshot_governance", "Snapshot Governance"),
@@ -106,6 +136,11 @@ impl AuditFixture {
                 "information_flow",
                 "AF-FIXTURE-INFORMATION-FLOW-0001",
                 "Information Flow",
+            ),
+            (
+                "reference_resolution",
+                "AF-FIXTURE-REFERENCE-0001",
+                "Reference Resolution",
             ),
             (
                 "environmental_semantics",
@@ -159,6 +194,7 @@ impl AuditFixture {
             "mods/engine/mods/state_effect_analysis/data/program_state_rule.json",
             "mods/engine/mods/state_effect_analysis/data/program_effect_rule.json",
             "mods/engine/mods/information_flow/data/program_infoflow_rule.json",
+            "mods/engine/mods/reference_resolution/data/reference_rule.json",
             "mods/engine/mods/environmental_semantics/data/program_environment_rule.json",
             "mods/engine/mods/environmental_semantics/data/program_retry_rule.json",
             "mods/engine/mods/environmental_semantics/data/program_recovery_rule.json",
@@ -209,6 +245,11 @@ impl AuditFixture {
             data_docs(&["program_infoflow_rule.json"]),
         )
         .expect("information-flow Data documentation writes");
+        fs::write(
+            root.join("mods/engine/mods/reference_resolution/docs/data_docs.md"),
+            data_docs(&["reference_rule.json"]),
+        )
+        .expect("reference-resolution Data documentation writes");
         fs::write(
             root.join("mods/engine/mods/environmental_semantics/docs/data_docs.md"),
             data_docs(&[
@@ -402,7 +443,7 @@ fn audit_success_renders_human_snapshot_report() {
         String::from_utf8_lossy(&output.stderr)
     );
     assert!(stdout.contains("Fortress Snapshot Audit"));
-    assert!(stdout.contains("PASS: 13"), "{stdout}");
+    assert!(stdout.contains("PASS: 14"), "{stdout}");
     assert!(stdout.contains("Unsupported: 0"), "{stdout}");
     assert!(stdout.contains("Architecture diagnostics:"));
     assert!(stdout.contains("Unsupported analysis:"));

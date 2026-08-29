@@ -34,13 +34,15 @@ Defines the version-one machine representation and validation boundary for commo
 
 Defines the version-one machine representation and validation boundary for rule records, including formal implication and conflict logic, owned by this Module.
 
+The Standard manifest also registers `REPO-REFERENCE-001` from Reference Resolution as the normative relocation-transparency rule; the rule remains owned beside its evaluator rather than duplicated here.
+
 ### [`schema_manifest_schema_v1.json`](../data/schema_manifest_schema_v1.json)
 
 Defines the version-one machine representation and validation boundary for schema manifest records owned by this Module.
 
 ### [`schema_manifest.json`](../data/schema_manifest.json)
 
-Indexes every active schema by its canonical repository-relative authority path.
+Indexes every active schema by its canonical repository-relative authority path, including the component resolution index v1.
 
 ### [`standard_manifest_schema_v1.json`](../data/standard_manifest_schema_v1.json)
 

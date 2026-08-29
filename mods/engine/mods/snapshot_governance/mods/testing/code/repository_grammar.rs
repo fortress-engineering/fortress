@@ -38,8 +38,8 @@ fn fortress_documentation_is_complete_synchronized_and_deterministic() {
         first.findings()
     );
     assert_eq!(first, second);
-    assert_eq!(first.summary().modules_inspected(), 36);
-    assert_eq!(first.summary().markdown_files_inspected(), 115);
+    assert_eq!(first.summary().modules_inspected(), 38);
+    assert_eq!(first.summary().markdown_files_inspected(), 121);
     assert_eq!(
         first.summary().code_bijection().0,
         first.summary().code_bijection().1

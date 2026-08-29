@@ -12,8 +12,8 @@
     "limitation": "Digest stamps detect mutation and staleness but are not signatures; authenticated antiforgery requires an external trusted signing identity."
   },
   "source": {
-    "fingerprint": "sha256:797401aa70b92b435bc26240946f7352e0ff386c3ab0e0df92e10090805f6bb7",
-    "file_count": 343,
+    "fingerprint": "sha256:99f1072bfee6508f7bbaec3166d3f934d178a23cc3e8b6bc838a37703ac83214",
+    "file_count": 356,
     "excluded_self": "info/quality_certificate.json"
   },
   "toolchain": {
@@ -36,7 +36,7 @@
     {
       "id": "ARTIFACT_CERTIFICATION",
       "status": "PASS",
-      "command": "cargo +1.97.1 --config data/cargo_config.toml run --quiet --manifest-path data/Cargo.toml -p fortress-cli -- certify . --format json --evidence-output C:\\Users\\timdi\\AppData\\Local\\Temp\\fortress-quality-certificate\\evidence-graph-second.json --certification-output C:\\Users\\timdi\\AppData\\Local\\Temp\\fortress-quality-certificate\\certification-second.json --verified-bfg-output C:\\Users\\timdi\\AppData\\Local\\Temp\\fortress-quality-certificate\\verified-bfg-second.json"
+      "command": "cargo +1.97.1 --config data/cargo_config.toml run --quiet --manifest-path data/Cargo.toml -p fortress-cli -- certify . --format json --evidence-output <machine-local-path> --certification-output <machine-local-path> --verified-bfg-output <machine-local-path>"
     },
     {
       "id": "ARTIFACT_ENVIRONMENTAL",
@@ -46,7 +46,7 @@
     {
       "id": "ARTIFACT_EVIDENCE_GRAPH",
       "status": "PASS",
-      "command": "cargo +1.97.1 --config data/cargo_config.toml run --quiet --manifest-path data/Cargo.toml -p fortress-cli -- certify . --format json --evidence-output C:\\Users\\timdi\\AppData\\Local\\Temp\\fortress-quality-certificate\\evidence-graph-second.json --certification-output C:\\Users\\timdi\\AppData\\Local\\Temp\\fortress-quality-certificate\\certification-second.json --verified-bfg-output C:\\Users\\timdi\\AppData\\Local\\Temp\\fortress-quality-certificate\\verified-bfg-second.json"
+      "command": "cargo +1.97.1 --config data/cargo_config.toml run --quiet --manifest-path data/Cargo.toml -p fortress-cli -- certify . --format json --evidence-output <machine-local-path> --certification-output <machine-local-path> --verified-bfg-output <machine-local-path>"
     },
     {
       "id": "ARTIFACT_INFORMATION_FLOW",
@@ -64,6 +64,11 @@
       "command": "cargo +1.97.1 --config data/cargo_config.toml run --quiet --manifest-path data/Cargo.toml -p fortress-cli -- realized-bfg . --format json --output"
     },
     {
+      "id": "ARTIFACT_REFERENCES",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config data/cargo_config.toml run --quiet --manifest-path data/Cargo.toml -p fortress-cli -- references . --format json --output"
+    },
+    {
       "id": "ARTIFACT_SEMANTIC",
       "status": "PASS",
       "command": "cargo +1.97.1 --config data/cargo_config.toml run --quiet --manifest-path data/Cargo.toml -p fortress-cli -- semantic . --format json --output"
@@ -76,7 +81,7 @@
     {
       "id": "ARTIFACT_VERIFIED_BFG",
       "status": "PASS",
-      "command": "cargo +1.97.1 --config data/cargo_config.toml run --quiet --manifest-path data/Cargo.toml -p fortress-cli -- certify . --format json --evidence-output C:\\Users\\timdi\\AppData\\Local\\Temp\\fortress-quality-certificate\\evidence-graph-second.json --certification-output C:\\Users\\timdi\\AppData\\Local\\Temp\\fortress-quality-certificate\\certification-second.json --verified-bfg-output C:\\Users\\timdi\\AppData\\Local\\Temp\\fortress-quality-certificate\\verified-bfg-second.json"
+      "command": "cargo +1.97.1 --config data/cargo_config.toml run --quiet --manifest-path data/Cargo.toml -p fortress-cli -- certify . --format json --evidence-output <machine-local-path> --certification-output <machine-local-path> --verified-bfg-output <machine-local-path>"
     },
     {
       "id": "AUDIT_JSON_DETERMINISM",
@@ -96,7 +101,7 @@
     {
       "id": "FULL_PROFILE_CERTIFICATION",
       "status": "PASS",
-      "command": "cargo +1.97.1 --config data/cargo_config.toml run --quiet --manifest-path data/Cargo.toml -p fortress-cli -- certify . --format json --evidence-output C:\\Users\\timdi\\AppData\\Local\\Temp\\fortress-quality-certificate\\evidence-graph-second.json --certification-output C:\\Users\\timdi\\AppData\\Local\\Temp\\fortress-quality-certificate\\certification-second.json --verified-bfg-output C:\\Users\\timdi\\AppData\\Local\\Temp\\fortress-quality-certificate\\verified-bfg-second.json"
+      "command": "cargo +1.97.1 --config data/cargo_config.toml run --quiet --manifest-path data/Cargo.toml -p fortress-cli -- certify . --format json --evidence-output <machine-local-path> --certification-output <machine-local-path> --verified-bfg-output <machine-local-path>"
     },
     {
       "id": "RUSTDOC",
@@ -127,49 +132,53 @@
   "artifacts": [
     {
       "path": "info/behavioral_flow_graph.json",
-      "digest": "sha256:53a7c609f471a3689cd605485855799c8d430efb7d301ddf517e3bbff7920559"
+      "digest": "sha256:24f224db92bde5f71c21393413b36df23256326b91446c0a8e8745513d5814d8"
     },
     {
       "path": "info/certification.json",
-      "digest": "sha256:824ce6a19fdd77c27e00feb42f02ae08b11512c0d0d4ee4f5f451105b397b239"
+      "digest": "sha256:c860aa1e0a70af51a2b71981e25fd796f617b4714875034ae279f1ef1d850e23"
+    },
+    {
+      "path": "info/component_resolution_index.json",
+      "digest": "sha256:84e580df97a2c68d6592624bd0cd7a74a9e1928ecfa8e1c41a6fe861a1b4bcc3"
     },
     {
       "path": "info/contract_coherency_graph.json",
-      "digest": "sha256:fe141456907a5fe3b9abe619167287beae69cf4862d054be9256c62d7ec49719"
+      "digest": "sha256:dccb66cc6915391555ae36a5d4a952d5ac6d016b2247143424f0bf3e43642bd6"
     },
     {
       "path": "info/environmental_analysis.json",
-      "digest": "sha256:b4f3b3f35a8cc4798c051d3c3d6f252b97cda19aae6bd4b83532bac6397528cc"
+      "digest": "sha256:2c16d59981ef32e9a430bee74d0e910da0e65ac7304eb5e975ce63b7b4b23b97"
     },
     {
       "path": "info/evidence_graph.json",
-      "digest": "sha256:a62578ff2800b16dfcab8676f8b647b3991e1eddedd68b1ae20ba4de9ebe195f"
+      "digest": "sha256:a26db0443bbf11a523a816bb6cb96f07dccc5471f1e8d5e910f7593d8fac623b"
     },
     {
       "path": "info/information_flow_analysis.json",
-      "digest": "sha256:a1a1eac7c047b54448c99f09896395a8f27db5c65ccc152e5f7c7559479396c9"
+      "digest": "sha256:96f839c25666f1116cec1a1a5a1d60441962813619fbaa6115d98ee319a6afa2"
     },
     {
       "path": "info/program_semantic_model.json",
-      "digest": "sha256:6566cb81b235becb8681a6a882ce4d7d28a120378e49d657a3ec37d1a81eb106"
+      "digest": "sha256:598c2356d51c8d3097acc9cb858d1d690a8e56c76ce2ec7abbc69ff777166429"
     },
     {
       "path": "info/realized_behavioral_flow_graph.json",
-      "digest": "sha256:28ecd41b90a70373ca1e88f89c8981e76ab8000fea283de0a06935cb329ac364"
+      "digest": "sha256:c2fd853b3fea885c11f7b1203ca030d27e0632bb3b6b625ef19a6a0d77294280"
     },
     {
       "path": "info/semantic_analysis.json",
-      "digest": "sha256:795d0de664bda7947a1bd36f84be2d56cac727b084bf3a3dd312f9ba4ca13a28"
+      "digest": "sha256:ebb9798b460800862b07451cf4ffc06ae3f1082c1eec60e1c3405c0676a364d7"
     },
     {
       "path": "info/state_effect_analysis.json",
-      "digest": "sha256:8e4e5bb14cd96caeb572e2c6fdd3f5ad9259a030fe8fa037ca3e60cae9f0d9c1"
+      "digest": "sha256:61406e79f5f617d146a7e5f73d96b0e6124febcb8bb4f5592cc384660d1e727c"
     },
     {
       "path": "info/verified_behavioral_flow_graph.json",
-      "digest": "sha256:d4b0c516c56ed6e0403d3b863dbe46360853122c454d3d4b9efdacf4900b26bd"
+      "digest": "sha256:bc7e12a6b23d17d20a5427bfdcf4f1b255a626635ebd0976aac6e424d6a85811"
     }
   ],
-  "audit_json_digest": "sha256:dd1dbd78649a0d0b2ac41f6376ad16a76b2bf7572e34cee3e545891f6ed5a462",
-  "certificate_stamp": "sha256:51ed5dc2b8f8b34c50345ea2a81c177019600c503c05353565f3fc97481bdf8b"
+  "audit_json_digest": "sha256:052b33587316a8a8d3bd8bd13358b15765f88889ff9f7675527d6263e06001a5",
+  "certificate_stamp": "sha256:8519e089cc2f2210a4a54cbc39104bbc827b6333b0b0e53e3e039ab9ce092230"
 }

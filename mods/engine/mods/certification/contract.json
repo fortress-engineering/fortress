@@ -47,6 +47,11 @@
       "version": "^0.1.0"
     },
     {
+      "provider": "AF-REFERENCE-RESOLUTION-0001",
+      "capability": "CAP-REFERENCE-RESOLUTION",
+      "version": "^0.1.0"
+    },
+    {
       "provider": "AF-REPOSITORY-OBSERVATION-0001",
       "capability": "CAP-REPOSITORY-OBSERVATION",
       "version": "^0.1.0"
@@ -118,7 +123,7 @@
         },
         {
           "id": "AF-CERTIFICATION-0001-R04",
-          "statement": "Certification derives a recursion-free source identity from one registered generated-projection exclusion set and deterministically projects Intended and Realized behavior into evidence-aware Verified BFG states without attributing Feature tests to exact edges absent a binding.",
+          "statement": "Certification derives a recursion-free source identity from one registered generated-projection exclusion set, requires current CCG-bound Reference Resolution evidence, and deterministically projects Intended and Realized behavior into evidence-aware Verified BFG states without attributing Feature tests to exact edges absent a binding.",
           "tests": [
             "T-AF-CERTIFICATION-0001-R04-001",
             "T-AF-CERTIFICATION-0001-R04-002",

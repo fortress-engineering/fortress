@@ -1,0 +1,35 @@
+{
+  "$schema": "urn:fortress:schema:v1:rule",
+  "schema_version": 1,
+  "id": "REPO-REFERENCE-001",
+  "title": "Relocation-transparent cross-Module references",
+  "status": "draft",
+  "statement": "Cross-Module semantic references MUST be relocation-transparent and MUST NOT encode provider physical location where a supported stable identity or native package surface exists.",
+  "rationale": "Stable identities preserve architectural meaning through physical restructuring while an explicit resolution boundary concentrates the unavoidable mapping from meaning to current repository location.",
+  "failure_prevented": "Repository-wide path churn, stale navigation, machine-specific authority, direct source traversal across Module boundaries, and accidental conversion of a physical move into semantic delete-and-recreate work.",
+  "applicability": "Every understood reference-bearing governed artifact in a repository using recursive Fortress Modules.",
+  "category": "repository",
+  "integrity_tier": 1,
+  "evaluation": "Reference Resolution consumes the canonical CCG and exact snapshot bytes, resolves stable Module identities to canonical repository-relative paths, structurally inventories Cargo and Rust path boundaries, reconciles Markdown projections, and rejects understood machine-local or unregistered cross-Module physical coupling.",
+  "required_capabilities": [
+    "canonical-contract-coherency-graph",
+    "reference-resolution-index",
+    "stabilized-repository-observation"
+  ],
+  "logic": {
+    "implies": [],
+    "conflicts_with": []
+  },
+  "finding": {
+    "message": "An understood governed reference persists machine-local location, crosses a Module through unregistered physical traversal, or disagrees with its stable identity's current CCG projection.",
+    "location": "path"
+  },
+  "remediation": "Replace cross-Module physical coupling with the target's stable Fortress identity or native package surface, keep unavoidable paths inside a registered resolution boundary, and regenerate derived navigation from the current CCG.",
+  "valid_example": "A contract requires CAP-FOO from AF-FOO-0001, Rust imports the stable crate surface, Cargo alone maps that crate to its current path, and README navigation is regenerated from AF-FOO-0001 after a move.",
+  "invalid_example": "A contract or ordinary source file names ../../../mods/foo, a README relationship points to the old Module path, or a governed reference persists C:\\Users\\name\\repo\\mods\\foo.",
+  "exception_policy": "Same-Module relative references and registered path-only resolution boundaries remain valid; cross-Module physical coupling outside those exact semantics has no local exemption.",
+  "introduced": "1.0.0-draft.1",
+  "history": [
+    "Introduced to make stable Module identity authoritative across physical relocation and to bound unavoidable path churn."
+  ]
+}

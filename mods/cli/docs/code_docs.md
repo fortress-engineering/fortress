@@ -6,7 +6,7 @@ Turn implemented Engine behavior into validated native command execution and det
 
 ## Execution
 
-The native entrypoint delegates arguments to the CLI library, which resolves the command registry, validates options, invokes Engine behavior, renders the selected format, and returns a process status.
+The native entrypoint delegates arguments to the CLI library, which resolves the command registry, validates options, invokes Engine behavior, renders the selected format, and returns a process status. Local certification runs the unfiltered Rust suite with an absolute Cargo target outside the governed repository, then emits content-addressed evidence for lightweight hosted freshness/stamp verification.
 
 ## State
 
@@ -24,7 +24,7 @@ Defines the stable built-in command registry and rejects duplicate or unimplemen
 
 ### [`lib.rs`](../code/lib.rs)
 
-Dispatches supported arguments, invokes Engine audit, CCG, Intended BFG, PSM, semantic-domain, state/effect, information-flow, environmental, Realized BFG, and local full-snapshot certification behavior, renders output, and assigns process status.
+Dispatches supported arguments, invokes Engine audit, CCG, Intended BFG, PSM, semantic-domain, state/effect, information-flow, environmental, Realized BFG, reference-resolution/relocation-preview, and local full-snapshot certification behavior, renders output, and assigns process status.
 
 ### [`main.rs`](../code/main.rs)
 

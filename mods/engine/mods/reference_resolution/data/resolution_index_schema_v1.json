@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:component-resolution-index",
+  "title": "Fortress component resolution index v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "resolver_semantic_version",
+    "project_id",
+    "source_ccg_digest",
+    "modules",
+    "references",
+    "resolution_boundaries",
+    "summary"
+  ],
+  "properties": {
+    "$schema": { "const": "urn:fortress:schema:v1:component-resolution-index" },
+    "schema_version": { "const": 1 },
+    "resolver_semantic_version": { "type": "string", "minLength": 1 },
+    "project_id": { "type": "string", "minLength": 1 },
+    "source_ccg_digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "modules": { "type": "array", "items": { "$ref": "#/$defs/module" } },
+    "references": { "type": "array", "items": { "$ref": "#/$defs/reference" } },
+    "resolution_boundaries": { "type": "array", "items": { "$ref": "#/$defs/boundary" } },
+    "summary": { "type": "object" }
+  },
+  "$defs": {
+    "module": {
+      "type": "object",
+      "required": ["module_id", "module_path", "contract_path", "readme_path", "parent_module", "element_roots"],
+      "properties": {
+        "module_id": { "type": "string", "minLength": 1 },
+        "module_path": { "type": "string" },
+        "contract_path": { "type": "string", "minLength": 1 },
+        "readme_path": { "type": "string", "minLength": 1 },
+        "parent_module": { "type": ["string", "null"] },
+        "element_roots": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "reference": {
+      "type": "object",
+      "required": ["class", "source_module", "target_module", "authority", "projection", "provenance"],
+      "properties": {
+        "class": { "enum": ["LOCAL", "SEMANTIC", "PHYSICAL_PROJECTION", "EXTERNAL", "MACHINE_LOCAL"] },
+        "source_module": { "type": "string", "minLength": 1 },
+        "target_module": { "type": ["string", "null"] },
+        "authority": { "type": "string", "minLength": 1 },
+        "projection": { "type": ["string", "null"] },
+        "provenance": { "type": "string", "minLength": 1 }
+      }
+    },
+    "boundary": {
+      "type": "object",
+      "required": ["class", "format", "path", "pointer", "source_module", "target_module", "resolved_target"],
+      "properties": {
+        "class": { "enum": ["AUTHORED_RESOLUTION_BOUNDARY", "GENERATED_PROJECTION"] },
+        "format": { "type": "string", "minLength": 1 },
+        "path": { "type": "string", "minLength": 1 },
+        "pointer": { "type": "string", "minLength": 1 },
+        "source_module": { "type": "string", "minLength": 1 },
+        "target_module": { "type": ["string", "null"] },
+        "resolved_target": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}
