@@ -1,5 +1,9 @@
 //! Conservative typestate and transitive effect analysis over canonical PSM facts.
 
+pub(crate) const PROGRAM_STATE_RULE_SOURCE: &str = include_str!("../data/program_state_rule.json");
+pub(crate) const PROGRAM_EFFECT_RULE_SOURCE: &str =
+    include_str!("../data/program_effect_rule.json");
+
 #[path = "state_contract.rs"]
 mod state_contract;
 
@@ -251,7 +255,7 @@ pub struct StateEffectAnalysisModel {
     schema: String,
     schema_version: u16,
     semantic_version: String,
-    project_id: String,
+    project_id: Option<String>,
     psm_digest: String,
     semantic_analysis_digest: String,
     state_contract_digest: String,
@@ -505,7 +509,7 @@ pub fn analyze_state_effects(
         schema: STATE_EFFECT_ANALYSIS_SCHEMA.into(),
         schema_version: STATE_EFFECT_ANALYSIS_SCHEMA_VERSION,
         semantic_version: STATE_EFFECT_ANALYSIS_VERSION.into(),
-        project_id: psm.project_id().into(),
+        project_id: psm.project_id().map(str::to_owned),
         psm_digest: psm.digest()?,
         semantic_analysis_digest: semantic.model().digest()?,
         state_contract_digest: state_contracts.digest().into(),

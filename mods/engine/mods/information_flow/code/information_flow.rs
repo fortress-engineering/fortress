@@ -1,5 +1,8 @@
 //! Deterministic interprocedural information-flow analysis over canonical PSM facts.
 
+pub(crate) const PROGRAM_INFOFLOW_RULE_SOURCE: &str =
+    include_str!("../data/program_infoflow_rule.json");
+
 #[path = "policy.rs"]
 mod policy;
 
@@ -255,7 +258,7 @@ pub struct InformationFlowAnalysisModel {
     schema: String,
     schema_version: u16,
     semantic_version: String,
-    project_id: String,
+    project_id: Option<String>,
     psm_digest: String,
     semantic_analysis_digest: String,
     state_effect_digest: String,
@@ -485,7 +488,7 @@ pub fn analyze_information_flow(
         schema: INFORMATION_FLOW_ANALYSIS_SCHEMA.into(),
         schema_version: INFORMATION_FLOW_ANALYSIS_SCHEMA_VERSION,
         semantic_version: INFORMATION_FLOW_ANALYSIS_VERSION.into(),
-        project_id: psm.project_id().into(),
+        project_id: psm.project_id().map(str::to_owned),
         psm_digest: psm.digest()?,
         semantic_analysis_digest: semantic.model().digest()?,
         state_effect_digest: state_effect.model().digest()?,

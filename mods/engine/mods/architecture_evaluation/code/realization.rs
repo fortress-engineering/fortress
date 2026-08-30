@@ -1,5 +1,7 @@
 //! Reconciliation of observed implementation dependencies with CCG intent.
 
+pub(crate) const REALIZATION_RULE_SOURCE: &str = include_str!("../data/realization_rule.json");
+
 use std::collections::{BTreeMap, BTreeSet};
 
 use serde::Serialize;
@@ -340,7 +342,7 @@ fn coverage_records(observed: &ObservedImplementation) -> Vec<ReconciliationReco
                     .or_default()
                     .push(observation.provenance().clone());
             }
-            TargetClassification::GovernedModule => {}
+            TargetClassification::GovernedModule | TargetClassification::AnalysisTerritory => {}
         }
     }
     let mut records: Vec<ReconciliationRecord> = external

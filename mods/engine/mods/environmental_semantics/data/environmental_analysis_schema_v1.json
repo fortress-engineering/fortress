@@ -9,7 +9,7 @@
     "$schema": { "const": "urn:fortress:schema:v1:environmental-analysis" },
     "schema_version": { "const": 1 },
     "semantic_version": { "const": "1.0.0" },
-    "project_id": { "type": "string", "minLength": 1 },
+    "project_id": { "type": ["string", "null"], "minLength": 1 },
     "psm_digest": { "$ref": "#/$defs/digest" },
     "semantic_analysis_digest": { "$ref": "#/$defs/digest" },
     "state_effect_digest": { "$ref": "#/$defs/digest" },

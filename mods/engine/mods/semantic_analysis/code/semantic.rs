@@ -3,6 +3,9 @@
 //! This Module consumes PSM facts and authored Function Contract v3 sources.
 //! It does not parse Rust, modify the CCG, or map functions to BFG checkpoints.
 
+pub(crate) const PROGRAM_DOMAIN_RULE_SOURCE: &str =
+    include_str!("../data/program_domain_rule.json");
+
 #[path = "domain.rs"]
 mod domain;
 #[path = "function_contract.rs"]
@@ -280,7 +283,7 @@ pub struct SemanticAnalysisModel {
     schema: String,
     schema_version: u16,
     semantic_version: String,
-    project_id: String,
+    project_id: Option<String>,
     psm_digest: String,
     function_contract_digest: String,
     summaries: Vec<FunctionSemanticSummary>,
@@ -423,7 +426,7 @@ pub fn analyze_program_domains(
         schema: SEMANTIC_ANALYSIS_SCHEMA.into(),
         schema_version: SEMANTIC_ANALYSIS_SCHEMA_VERSION,
         semantic_version: SEMANTIC_ANALYSIS_VERSION.into(),
-        project_id: psm.project_id().into(),
+        project_id: psm.project_id().map(str::to_owned),
         psm_digest: psm.digest().map_err(SemanticAnalysisError::Serialization)?,
         function_contract_digest: contracts.digest().into(),
         summaries,

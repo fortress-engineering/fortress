@@ -172,6 +172,7 @@
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R06-001",
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R06-002",
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R06-003",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R06-004",
             "T-TEST-TRACEABILITY-001-R01-001",
             "T-TEST-TRACEABILITY-001-R01-002",
             "T-TEST-TRACEABILITY-001-R01-003"
@@ -181,7 +182,8 @@
           "id": "AF-SNAPSHOT-GOVERNANCE-0001-R08",
           "statement": "A repository audit loads the exact declared inputs, builds a stabilized content-addressed snapshot, requires loaded declaration bytes to match it, analyzes supported Rust test facts, and deterministically evaluates every implemented applicable snapshot rule without claiming certification.",
           "tests": [
-            "T-AF-SNAPSHOT-GOVERNANCE-0001-R08-001"
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R08-001",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R08-002"
           ]
         },
         {

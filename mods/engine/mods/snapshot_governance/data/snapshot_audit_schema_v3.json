@@ -1,13 +1,31 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:fortress:schema:v2:snapshot-audit",
+  "$id": "urn:fortress:schema:v3:snapshot-audit",
   "title": "Fortress deterministic snapshot audit result",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "project_id", "standard", "snapshot_fingerprint", "repository_content_fingerprint", "outcome", "summary", "rules", "findings", "diagnostics", "unsupported_analysis"],
+  "required": ["schema_version", "project_id", "governance", "standard", "snapshot_fingerprint", "repository_content_fingerprint", "outcome", "summary", "rules", "findings", "diagnostics", "unsupported_analysis", "observation"],
   "properties": {
-    "schema_version": { "const": 2 },
-    "project_id": { "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id" },
+    "schema_version": { "const": 3 },
+    "project_id": {
+      "oneOf": [
+        { "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id" },
+        { "type": "null" }
+      ]
+    },
+    "governance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["project_authority", "standard_authority", "declared_source_owners", "analysis_source_owners", "observed_tests", "tests_missing_stable_id"],
+      "properties": {
+        "project_authority": { "enum": ["DECLARED", "ABSENT", "INVALID"] },
+        "standard_authority": { "enum": ["PROJECT_BOUND", "INSTALLED_UNBOUND"] },
+        "declared_source_owners": { "type": "integer", "minimum": 0 },
+        "analysis_source_owners": { "type": "integer", "minimum": 0 },
+        "observed_tests": { "type": "integer", "minimum": 0 },
+        "tests_missing_stable_id": { "type": "integer", "minimum": 0 }
+      }
+    },
     "standard": {
       "type": "object",
       "additionalProperties": false,
@@ -19,7 +37,7 @@
     },
     "snapshot_fingerprint": { "$ref": "urn:fortress:schema:v1:common#/$defs/sha256" },
     "repository_content_fingerprint": { "$ref": "urn:fortress:schema:v1:common#/$defs/sha256" },
-    "outcome": { "enum": ["PASS", "FAIL"] },
+    "outcome": { "enum": ["PASS", "FAIL", "MISSING"] },
     "summary": {
       "type": "object",
       "additionalProperties": false,
@@ -58,6 +76,23 @@
       "type": "array",
       "items": { "type": "string", "minLength": 1 },
       "uniqueItems": true
+    },
+    "observation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["files", "rust_sources", "psm_symbols", "source_artifacts", "state_effect_functions"],
+          "properties": {
+            "files": { "type": "integer", "minimum": 0 },
+            "rust_sources": { "type": "integer", "minimum": 0 },
+            "psm_symbols": { "type": "integer", "minimum": 0 },
+            "source_artifacts": { "type": "integer", "minimum": 0 },
+            "state_effect_functions": { "type": "integer", "minimum": 0 }
+          }
+        },
+        { "type": "null" }
+      ]
     }
   },
   "$defs": {

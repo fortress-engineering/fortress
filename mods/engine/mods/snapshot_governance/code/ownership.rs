@@ -4,6 +4,8 @@
 //! path facts. It does not add ecosystem-specific filename exceptions or
 //! redefine the governing standard rule.
 
+pub(crate) const OWNERSHIP_RULE_SOURCE: &str = include_str!("../data/ownership_rule.json");
+
 use std::collections::BTreeSet;
 
 use crate::architecture::ArchitectureManifest;

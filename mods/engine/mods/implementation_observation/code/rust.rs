@@ -10,9 +10,9 @@ use syn::{Attribute, ItemUse, Path, UseTree};
 
 use super::{
     Conditionality, ImplementationObservation, ImplementationObservationError,
-    ImplementationObservationInput, ModuleTerritory, ObservationIssue, ObservationIssueKind,
-    ObservationProvenance, ObservedImplementation, RUST_LANGUAGE_ID, ResolutionStatus,
-    SourceLocation, TargetClassification,
+    ImplementationObservationInput, ObservationIssue, ObservationIssueKind, ObservationProvenance,
+    ObservedImplementation, RUST_LANGUAGE_ID, ResolutionStatus, SourceLocation, SourceOwnership,
+    SourceOwnershipAuthority, TargetClassification,
 };
 
 #[derive(Deserialize)]
@@ -123,7 +123,15 @@ pub fn observe_rust_implementation(
     let mut issues = Vec::new();
     let mut packages = parse_packages(&files)?;
     resolve_dependencies(&mut packages);
-    let source_owners = source_owners(input.modules(), files.keys(), &mut issues);
+    let source_owners = source_owners(input.ownerships());
+    let analysis_owners = input
+        .ownerships()
+        .iter()
+        .filter(|ownership| {
+            ownership.authority() == SourceOwnershipAuthority::CargoAnalysisTerritory
+        })
+        .map(|ownership| ownership.owner().to_owned())
+        .collect::<std::collections::BTreeSet<_>>();
     let (namespaces, source_contexts) =
         build_namespaces(&packages, &files, &source_owners, &mut issues)?;
     let package_by_manifest: BTreeMap<&str, &CargoPackage> = packages
@@ -165,7 +173,11 @@ pub fn observe_rust_implementation(
                     &source_owners,
                 );
                 observations.push(observation_from_resolution(
-                    &path, owner, reference, resolved,
+                    &path,
+                    owner,
+                    reference,
+                    resolved,
+                    &analysis_owners,
                 ));
             }
         }
@@ -219,7 +231,7 @@ fn parse_packages(
             },
             |target| {
                 let path = target.path.as_deref().unwrap_or("src/lib.rs");
-                Some(join_path(&manifest_dir, path))
+                Some(resolve_cargo_target_path(&manifest_dir, path, files))
             },
         );
         let mut targets = Vec::new();
@@ -231,13 +243,13 @@ fn parse_packages(
         }
         targets.extend(document.bin.iter().filter_map(|target| {
             target.path.as_ref().map(|path| CargoTarget {
-                root: join_path(&manifest_dir, path),
+                root: resolve_cargo_target_path(&manifest_dir, path, files),
                 kind: TargetKind::Other,
             })
         }));
         targets.extend(document.test.iter().filter_map(|target| {
             target.path.as_ref().map(|path| CargoTarget {
-                root: join_path(&manifest_dir, path),
+                root: resolve_cargo_target_path(&manifest_dir, path, files),
                 kind: TargetKind::Other,
             })
         }));
@@ -289,6 +301,22 @@ fn parse_packages(
     Ok(packages)
 }
 
+fn resolve_cargo_target_path(
+    manifest_dir: &str,
+    declared_path: &str,
+    files: &BTreeMap<String, &[u8]>,
+) -> String {
+    let direct = join_path(manifest_dir, declared_path);
+    [
+        direct.clone(),
+        format!("{direct}.rs"),
+        format!("{direct}/mod.rs"),
+    ]
+    .into_iter()
+    .find_map(|candidate| resolve_observed_path(&candidate, files))
+    .unwrap_or(direct)
+}
+
 fn resolve_dependencies(packages: &mut [CargoPackage]) {
     let known: BTreeMap<String, String> = packages
         .iter()
@@ -307,49 +335,16 @@ fn resolve_dependencies(packages: &mut [CargoPackage]) {
     }
 }
 
-fn source_owners<'a>(
-    modules: &'a [ModuleTerritory],
-    paths: impl Iterator<Item = &'a String>,
-    issues: &mut Vec<ObservationIssue>,
-) -> BTreeMap<String, String> {
-    let mut owners = BTreeMap::new();
-    for path in paths.filter(|path| {
-        std::path::Path::new(path.as_str())
-            .extension()
-            .is_some_and(|extension| extension == "rs")
-    }) {
-        let owner = modules
-            .iter()
-            .filter(|module| contains_path(module.path(), path))
-            .max_by_key(|module| module.path().len());
-        let Some(owner) = owner else {
-            issues.push(ObservationIssue::new(
-                ObservationIssueKind::Invalid,
-                path,
-                "governed Rust source has no physical Fortress Module owner",
-            ));
-            continue;
-        };
-        let relative = if owner.path().is_empty() {
-            path.as_str()
-        } else {
-            path.strip_prefix(&format!("{}/", owner.path()))
-                .unwrap_or(path)
-        };
-        if !relative.starts_with("code/") || relative["code/".len()..].contains('/') {
-            issues.push(ObservationIssue::new(
-                ObservationIssueKind::Invalid,
-                path,
-                format!(
-                    "Rust source is not a direct Code element of its narrowest owner `{}`",
-                    owner.id()
-                ),
-            ));
-            continue;
-        }
-        owners.insert(path.clone(), owner.id().to_owned());
-    }
-    owners
+fn source_owners(ownerships: &[SourceOwnership]) -> BTreeMap<String, String> {
+    ownerships
+        .iter()
+        .map(|ownership| {
+            (
+                ownership.source_path().to_owned(),
+                ownership.owner().to_owned(),
+            )
+        })
+        .collect()
 }
 
 type NamespaceBuild = (
@@ -455,7 +450,13 @@ fn discover_module_tree(
         }
     })?;
     let mut queue = VecDeque::new();
-    collect_modules(&syntax.items, path, namespace, &mut queue);
+    collect_modules(
+        &syntax.items,
+        path,
+        path == target.root,
+        namespace,
+        &mut queue,
+    );
     while let Some(module) = queue.pop_front() {
         match module {
             DiscoveredModule::Inline { namespace, items } => {
@@ -466,7 +467,7 @@ fn discover_module_tree(
                         owner: owner.clone(),
                     },
                 );
-                collect_modules(&items, path, &namespace, &mut queue);
+                collect_modules(&items, path, path == target.root, &namespace, &mut queue);
             }
             DiscoveredModule::External {
                 namespace,
@@ -517,6 +518,7 @@ enum DiscoveredModule {
 fn collect_modules(
     items: &[syn::Item],
     source_path: &str,
+    crate_root: bool,
     namespace: &[String],
     queue: &mut VecDeque<DiscoveredModule>,
 ) {
@@ -532,8 +534,9 @@ fn collect_modules(
                 items: items.clone(),
             });
         } else {
-            let declared_path = module_path_attribute(&module.attrs)
-                .unwrap_or_else(|| default_module_path(source_path, &module.ident.to_string()));
+            let declared_path = module_path_attribute(&module.attrs).unwrap_or_else(|| {
+                default_module_path(source_path, &module.ident.to_string(), crate_root)
+            });
             queue.push_back(DiscoveredModule::External {
                 namespace: child,
                 declared_path,
@@ -545,7 +548,18 @@ fn collect_modules(
 
 fn module_path_attribute(attributes: &[Attribute]) -> Option<String> {
     attributes.iter().find_map(|attribute| {
-        if !attribute.path().is_ident("path") {
+        if attribute.path().is_ident("cfg_attr") {
+            let mut configured_path = None;
+            let parsed = attribute.parse_nested_meta(|meta| {
+                if meta.path.is_ident("path") {
+                    configured_path = Some(meta.value()?.parse::<syn::LitStr>()?.value());
+                }
+                Ok(())
+            });
+            if parsed.is_ok() && configured_path.is_some() {
+                return configured_path;
+            }
+        } else if !attribute.path().is_ident("path") {
             return None;
         }
         let syn::Meta::NameValue(value) = &attribute.meta else {
@@ -561,14 +575,13 @@ fn module_path_attribute(attributes: &[Attribute]) -> Option<String> {
     })
 }
 
-fn default_module_path(source_path: &str, module: &str) -> String {
-    let directory = parent_path(source_path);
+fn default_module_path(source_path: &str, module: &str, crate_root: bool) -> String {
     let filename = source_path.rsplit('/').next().unwrap_or(source_path);
-    if matches!(filename, "lib.rs" | "main.rs" | "mod.rs") {
-        join_path(&directory, &format!("{module}.rs"))
+    if crate_root || matches!(filename, "lib.rs" | "main.rs" | "mod.rs") {
+        module.into()
     } else {
         let stem = filename.strip_suffix(".rs").unwrap_or(filename);
-        join_path(&directory, &format!("{stem}/{module}.rs"))
+        format!("{stem}/{module}")
     }
 }
 
@@ -580,23 +593,46 @@ fn resolve_module_file(
     if files.contains_key(declared_path) {
         return Some(declared_path.into());
     }
-    let has_rust_extension = std::path::Path::new(declared_path)
-        .extension()
-        .is_some_and(|extension| extension == "rs");
-    let direct = if declared_path.contains('/') || has_rust_extension {
-        join_path(&parent_path(source_path), declared_path)
-    } else {
-        declared_path.into()
-    };
-    if files.contains_key(&direct) {
-        return Some(direct);
+    let direct = join_path(&parent_path(source_path), declared_path);
+    [
+        direct.clone(),
+        format!("{direct}.rs"),
+        format!("{direct}/mod.rs"),
+    ]
+    .into_iter()
+    .find_map(|candidate| resolve_observed_path(&candidate, files))
+}
+
+fn resolve_observed_path(candidate: &str, files: &BTreeMap<String, &[u8]>) -> Option<String> {
+    if files.contains_key(candidate) {
+        return Some(candidate.into());
     }
-    let module_file = format!("{direct}.rs");
-    if files.contains_key(&module_file) {
-        return Some(module_file);
+    let segments = candidate.split('/').collect::<Vec<_>>();
+    for boundary in (1..segments.len()).rev() {
+        let prefix = segments[..boundary].join("/");
+        let Some(bytes) = files.get(&prefix) else {
+            continue;
+        };
+        let Ok(target) = std::str::from_utf8(bytes) else {
+            continue;
+        };
+        let target = target.trim();
+        let drive_path = target.as_bytes().get(1) == Some(&b':');
+        if target.is_empty()
+            || target.contains(char::is_whitespace)
+            || target.starts_with('/')
+            || target.contains('\\')
+            || drive_path
+        {
+            continue;
+        }
+        let alias_root = join_path(&parent_path(&prefix), target);
+        let resolved = join_path(&alias_root, &segments[boundary..].join("/"));
+        if files.contains_key(&resolved) {
+            return Some(resolved);
+        }
     }
-    let module_root = format!("{direct}/mod.rs");
-    files.contains_key(&module_root).then_some(module_root)
+    None
 }
 
 #[derive(Default)]
@@ -844,10 +880,15 @@ fn observation_from_resolution(
     source_owner: &str,
     reference: &CollectedReference,
     resolved: ResolvedReference,
+    analysis_owners: &std::collections::BTreeSet<String>,
 ) -> ImplementationObservation {
     let (classification, target_module, external_target, status, resolved_target) = match resolved {
         ResolvedReference::Governed(target) => (
-            TargetClassification::GovernedModule,
+            if analysis_owners.contains(&target) {
+                TargetClassification::AnalysisTerritory
+            } else {
+                TargetClassification::GovernedModule
+            },
             Some(target.clone()),
             None,
             ResolutionStatus::Resolved,
@@ -898,10 +939,6 @@ fn source_location(span: Span) -> SourceLocation {
         u32::try_from(start.line).unwrap_or(u32::MAX),
         u32::try_from(start.column + 1).unwrap_or(u32::MAX),
     )
-}
-
-fn contains_path(module_path: &str, path: &str) -> bool {
-    module_path.is_empty() || path == module_path || path.starts_with(&format!("{module_path}/"))
 }
 
 fn rust_crate_name(name: &str) -> String {

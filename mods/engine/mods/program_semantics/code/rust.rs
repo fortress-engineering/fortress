@@ -15,7 +15,7 @@ use syn::{
     PathArguments, ReturnType, Signature, TraitItem, Type, UseTree, Visibility,
 };
 
-use crate::implementation_observation::ModuleTerritory;
+use crate::implementation_observation::SourceOwnership;
 
 use super::{
     CallResolutionReason, CallResolutionState, CallSiteEvidence, ExecutableSymbol,
@@ -205,7 +205,7 @@ pub(super) fn analyze(
     let source_identity = semantic_source_identity(&source_inputs);
     let mut packages = parse_packages(&files)?;
     resolve_dependencies(&mut packages);
-    let source_owners = source_owners(input.observation().modules(), files.keys())?;
+    let source_owners = source_owners(input.observation().ownerships());
     let source_contexts = build_source_contexts(&packages, &files)?;
     let package_by_manifest: BTreeMap<&str, &CargoPackage> = packages
         .iter()
@@ -745,9 +745,10 @@ fn package_from_document(
             files.contains_key(&default).then_some(default)
         },
         |target| {
-            Some(join_path(
+            Some(resolve_cargo_target_path(
                 &manifest_dir,
                 target.path.as_deref().unwrap_or("src/lib.rs"),
+                files,
             ))
         },
     );
@@ -762,14 +763,14 @@ fn package_from_document(
     targets.extend(document.bin.iter().filter_map(|target| {
         target.path.as_ref().map(|path| CargoTarget {
             crate_name: rust_crate_name(target.name.as_deref().unwrap_or(&package.name)),
-            root: join_path(&manifest_dir, path),
+            root: resolve_cargo_target_path(&manifest_dir, path, files),
             kind: "binary".into(),
         })
     }));
     targets.extend(document.test.iter().filter_map(|target| {
         target.path.as_ref().map(|path| CargoTarget {
             crate_name: rust_crate_name(target.name.as_deref().unwrap_or("test")),
-            root: join_path(&manifest_dir, path),
+            root: resolve_cargo_target_path(&manifest_dir, path, files),
             kind: "test".into(),
         })
     }));
@@ -817,6 +818,22 @@ fn package_from_document(
         targets,
         dependencies,
     }
+}
+
+fn resolve_cargo_target_path(
+    manifest_dir: &str,
+    declared_path: &str,
+    files: &BTreeMap<String, &[u8]>,
+) -> String {
+    let direct = join_path(manifest_dir, declared_path);
+    [
+        direct.clone(),
+        format!("{direct}.rs"),
+        format!("{direct}/mod.rs"),
+    ]
+    .into_iter()
+    .find_map(|candidate| resolve_observed_path(&candidate, files))
+    .unwrap_or(direct)
 }
 
 fn resolve_dependencies(packages: &mut [CargoPackage]) {
@@ -871,29 +888,16 @@ fn package_facts(packages: &[CargoPackage]) -> Vec<ProgramPackage> {
         .collect()
 }
 
-fn source_owners<'a>(
-    modules: &'a [ModuleTerritory],
-    paths: impl Iterator<Item = &'a String>,
-) -> Result<BTreeMap<String, String>, ProgramSemanticError> {
-    let mut owners = BTreeMap::new();
-    for path in paths.filter(|path| is_rust_path(path)) {
-        let owner = modules
-            .iter()
-            .filter(|module| contains_path(module.path(), path))
-            .max_by_key(|module| module.path().len())
-            .ok_or_else(|| ProgramSemanticError::MissingSourceOwner(path.clone()))?;
-        let relative = if owner.path().is_empty() {
-            path.as_str()
-        } else {
-            path.strip_prefix(&format!("{}/", owner.path()))
-                .unwrap_or(path)
-        };
-        if !relative.starts_with("code/") || relative["code/".len()..].contains('/') {
-            return Err(ProgramSemanticError::MissingSourceOwner(path.clone()));
-        }
-        owners.insert(path.clone(), owner.id().into());
-    }
-    Ok(owners)
+fn source_owners(ownerships: &[SourceOwnership]) -> BTreeMap<String, String> {
+    ownerships
+        .iter()
+        .map(|ownership| {
+            (
+                ownership.source_path().to_owned(),
+                ownership.owner().to_owned(),
+            )
+        })
+        .collect()
 }
 
 fn build_source_contexts(
@@ -938,11 +942,17 @@ fn discover_module_tree(
         });
     let syntax = parse_rust(path, rust_source(path, files[path])?)?;
     let mut queue = VecDeque::new();
-    collect_modules(&syntax.items, path, namespace, &mut queue);
+    collect_modules(
+        &syntax.items,
+        path,
+        path == target.root,
+        namespace,
+        &mut queue,
+    );
     while let Some(module) = queue.pop_front() {
         match module {
             DiscoveredModule::Inline { namespace, items } => {
-                collect_modules(&items, path, &namespace, &mut queue);
+                collect_modules(&items, path, path == target.root, &namespace, &mut queue);
             }
             DiscoveredModule::External {
                 namespace,
@@ -971,6 +981,7 @@ enum DiscoveredModule {
 fn collect_modules(
     items: &[Item],
     source_path: &str,
+    crate_root: bool,
     namespace: &[String],
     queue: &mut VecDeque<DiscoveredModule>,
 ) {
@@ -988,8 +999,9 @@ fn collect_modules(
         } else {
             queue.push_back(DiscoveredModule::External {
                 namespace: child,
-                declared_path: module_path_attribute(&module.attrs)
-                    .unwrap_or_else(|| default_module_path(source_path, &module.ident.to_string())),
+                declared_path: module_path_attribute(&module.attrs).unwrap_or_else(|| {
+                    default_module_path(source_path, &module.ident.to_string(), crate_root)
+                }),
             });
         }
     }
@@ -997,7 +1009,18 @@ fn collect_modules(
 
 fn module_path_attribute(attributes: &[Attribute]) -> Option<String> {
     attributes.iter().find_map(|attribute| {
-        if !attribute.path().is_ident("path") {
+        if attribute.path().is_ident("cfg_attr") {
+            let mut configured_path = None;
+            let parsed = attribute.parse_nested_meta(|meta| {
+                if meta.path.is_ident("path") {
+                    configured_path = Some(meta.value()?.parse::<syn::LitStr>()?.value());
+                }
+                Ok(())
+            });
+            if parsed.is_ok() && configured_path.is_some() {
+                return configured_path;
+            }
+        } else if !attribute.path().is_ident("path") {
             return None;
         }
         let syn::Meta::NameValue(value) = &attribute.meta else {
@@ -1013,14 +1036,13 @@ fn module_path_attribute(attributes: &[Attribute]) -> Option<String> {
     })
 }
 
-fn default_module_path(source_path: &str, module: &str) -> String {
-    let directory = parent_path(source_path);
+fn default_module_path(source_path: &str, module: &str, crate_root: bool) -> String {
     let filename = source_path.rsplit('/').next().unwrap_or(source_path);
-    if matches!(filename, "lib.rs" | "main.rs" | "mod.rs") {
-        join_path(&directory, &format!("{module}.rs"))
+    if crate_root || matches!(filename, "lib.rs" | "main.rs" | "mod.rs") {
+        module.into()
     } else {
         let stem = filename.strip_suffix(".rs").unwrap_or(filename);
-        join_path(&directory, &format!("{stem}/{module}.rs"))
+        format!("{stem}/{module}")
     }
 }
 
@@ -1039,7 +1061,39 @@ fn resolve_module_file(
         format!("{direct}/mod.rs"),
     ]
     .into_iter()
-    .find(|candidate| files.contains_key(candidate))
+    .find_map(|candidate| resolve_observed_path(&candidate, files))
+}
+
+fn resolve_observed_path(candidate: &str, files: &BTreeMap<String, &[u8]>) -> Option<String> {
+    if files.contains_key(candidate) {
+        return Some(candidate.into());
+    }
+    let segments = candidate.split('/').collect::<Vec<_>>();
+    for boundary in (1..segments.len()).rev() {
+        let prefix = segments[..boundary].join("/");
+        let Some(bytes) = files.get(&prefix) else {
+            continue;
+        };
+        let Ok(target) = std::str::from_utf8(bytes) else {
+            continue;
+        };
+        let target = target.trim();
+        let drive_path = target.as_bytes().get(1) == Some(&b':');
+        if target.is_empty()
+            || target.contains(char::is_whitespace)
+            || target.starts_with('/')
+            || target.contains('\\')
+            || drive_path
+        {
+            continue;
+        }
+        let alias_root = join_path(&parent_path(&prefix), target);
+        let resolved = join_path(&alias_root, &segments[boundary..].join("/"));
+        if files.contains_key(&resolved) {
+            return Some(resolved);
+        }
+    }
+    None
 }
 
 struct SymbolCollection<'a> {
@@ -1949,14 +2003,6 @@ fn join_path(base: &str, value: &str) -> String {
         }
     }
     segments.join("/")
-}
-
-fn contains_path(module_path: &str, path: &str) -> bool {
-    module_path.is_empty()
-        || path == module_path
-        || path
-            .strip_prefix(module_path)
-            .is_some_and(|suffix| suffix.starts_with('/'))
 }
 
 #[derive(Clone)]

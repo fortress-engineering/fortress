@@ -11,9 +11,9 @@ use fortress_core::documentation::code_file_responsibilities;
 use fortress_core::filing::{FilingSystemProfiles, analyze_project_filing_system};
 use fortress_core::source_architecture::{
     ArchetypeResolution, GeneratedSource, LanguageAssignment, RegionCoverage, SEMANTIC_REGIONS,
-    SOURCE_ARTIFACT_MODEL_SCHEMA, SemanticRegion, SourceArchitectureInput, SourceFindingKind,
-    SourceObservation, SourceProfileRegistry, SourceProvenanceKind, SourceVerificationRelationship,
-    evaluate_source_architecture,
+    SOURCE_ARTIFACT_MODEL_SCHEMA, SemanticRegion, SourceArchitectureInput, SourceArtifactInput,
+    SourceFindingKind, SourceObservation, SourceProfileRegistry, SourceProvenanceKind,
+    SourceVerificationRelationship, evaluate_source_architecture,
 };
 use serde_json::{Value, json};
 
@@ -128,6 +128,34 @@ fn archetype(id: &str, required: &[&str], allowed: &[&str], forbidden: &[&str]) 
     })
 }
 
+fn artifact_inputs(
+    files: &BTreeMap<String, Vec<u8>>,
+    ccg: &ContractCoherencyGraph,
+) -> Vec<SourceArtifactInput> {
+    let paths = files.keys().cloned().collect::<Vec<_>>();
+    let filing = analyze_project_filing_system(&paths, &FilingSystemProfiles::standard());
+    filing
+        .inventory()
+        .entries()
+        .iter()
+        .filter(|entry| entry.element() == "code")
+        .map(|entry| {
+            let owner = ccg
+                .module_paths()
+                .iter()
+                .find(|(_, path)| {
+                    (path.is_empty() && entry.module() == ".") || path.as_str() == entry.module()
+                })
+                .map_or("UNKNOWN-MODULE", |(id, _)| id.as_str());
+            let relative = entry.path().rsplit_once("/code/").map_or_else(
+                || entry.path().strip_prefix("code/").unwrap_or(entry.path()),
+                |(_, value)| value,
+            );
+            SourceArtifactInput::new(entry.path(), owner, relative)
+        })
+        .collect()
+}
+
 #[allow(clippy::too_many_arguments)]
 fn evaluate(
     files: &BTreeMap<String, Vec<u8>>,
@@ -141,8 +169,7 @@ fn evaluate(
     adapters: &[&str],
 ) -> fortress_core::source_architecture::SourceArchitectureEvaluation {
     let ccg = fixture_ccg(files);
-    let paths = files.keys().cloned().collect::<Vec<_>>();
-    let filing = analyze_project_filing_system(&paths, &FilingSystemProfiles::standard());
+    let artifacts = artifact_inputs(files, &ccg);
     let responsibilities = if responsibility {
         code_file_responsibilities(files, &ccg).expect("canonical responsibility projection")
     } else {
@@ -158,10 +185,10 @@ fn evaluate(
         .map(|value| (*value).to_owned())
         .collect::<BTreeSet<_>>();
     evaluate_source_architecture(&SourceArchitectureInput {
-        project_id: "PF-SOURCE-FIXTURE",
+        project_id: Some("PF-SOURCE-FIXTURE"),
         source_identity: "sha256:fixture-source",
-        filing: &filing,
-        ccg: &ccg,
+        artifacts: &artifacts,
+        project_model_authority: "fixture-project-model",
         files,
         responsibilities: &responsibilities,
         profiles,
@@ -282,10 +309,7 @@ fn relocation_preserves_artifact_and_cross_module_semantic_identity() {
         files: &BTreeMap<String, Vec<u8>>,
     ) -> fortress_core::source_architecture::SourceArchitectureEvaluation {
         let ccg = fixture_ccg(files);
-        let filing = analyze_project_filing_system(
-            &files.keys().cloned().collect::<Vec<_>>(),
-            &FilingSystemProfiles::standard(),
-        );
+        let artifacts = artifact_inputs(files, &ccg);
         let responsibilities = code_file_responsibilities(files, &ccg).expect("catalog");
         let language = [LanguageAssignment::new("nom", "nominal", "fixture")];
         let source_path = files
@@ -301,10 +325,10 @@ fn relocation_preserves_artifact_and_cross_module_semantic_identity() {
             None,
         )];
         evaluate_source_architecture(&SourceArchitectureInput {
-            project_id: "PF-MOVE",
+            project_id: Some("PF-MOVE"),
             source_identity: "fixture",
-            filing: &filing,
-            ccg: &ccg,
+            artifacts: &artifacts,
+            project_model_authority: "fixture-project-model",
             files,
             responsibilities: &responsibilities,
             profiles: &SourceProfileRegistry::standard(),
@@ -896,17 +920,14 @@ fn ten_thousand_artifacts_remain_deterministic_and_lightweight() {
         );
     }
     let ccg = fixture_ccg(&files);
-    let filing = analyze_project_filing_system(
-        &files.keys().cloned().collect::<Vec<_>>(),
-        &FilingSystemProfiles::standard(),
-    );
+    let artifacts = artifact_inputs(&files, &ccg);
     let languages = [LanguageAssignment::new("mix", "mixed", "scale-adapter")];
     let compile = || {
         evaluate_source_architecture(&SourceArchitectureInput {
-            project_id: "PF-SCALE",
+            project_id: Some("PF-SCALE"),
             source_identity: "sha256:scale",
-            filing: &filing,
-            ccg: &ccg,
+            artifacts: &artifacts,
+            project_model_authority: "fixture-project-model",
             files: &files,
             responsibilities: &[],
             profiles: &SourceProfileRegistry::standard(),

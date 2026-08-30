@@ -1,5 +1,7 @@
 //! Requirement-to-test reconciliation projected from the canonical CCG.
 
+pub(crate) const TRACEABILITY_RULE_SOURCE: &str = include_str!("../data/traceability_rule.json");
+
 use std::collections::BTreeSet;
 
 use crate::contract_coherency::ContractCoherencyGraph;

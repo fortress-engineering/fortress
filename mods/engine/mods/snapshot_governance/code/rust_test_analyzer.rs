@@ -59,6 +59,66 @@ pub struct RustTestFact {
     declared_requirement: Option<String>,
 }
 
+/// One observed Rust test whose Fortress governance identity may be absent.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct RustTestObservation {
+    id: Option<String>,
+    path: String,
+    symbol: String,
+    classification: Option<RustTestClassification>,
+    eligibility: RustTestEligibility,
+    declared_requirement: Option<String>,
+}
+
+impl RustTestObservation {
+    /// Returns the stable test ID when the source declares one.
+    #[must_use]
+    pub fn id(&self) -> Option<&str> {
+        self.id.as_deref()
+    }
+
+    /// Returns the repository-relative source path.
+    #[must_use]
+    pub fn path(&self) -> &str {
+        &self.path
+    }
+
+    /// Returns the observed Rust symbol.
+    #[must_use]
+    pub fn symbol(&self) -> &str {
+        &self.symbol
+    }
+
+    /// Returns whether stable Fortress test governance is present and valid.
+    #[must_use]
+    pub fn is_governed(&self) -> bool {
+        self.clone().into_fact().is_ok()
+    }
+
+    /// Projects a valid governed fact without inventing missing authority.
+    #[must_use]
+    pub fn governed_fact(&self) -> Option<RustTestFact> {
+        self.clone().into_fact().ok()
+    }
+
+    fn into_fact(self) -> Result<RustTestFact, RustAnalyzerError> {
+        let id = self
+            .id
+            .ok_or_else(|| RustAnalyzerError::MissingTestId(self.symbol.clone().into()))?;
+        let classification = self
+            .classification
+            .ok_or_else(|| RustAnalyzerError::MissingTestId(self.symbol.clone().into()))?;
+        RustTestFact::new_with_eligibility(
+            id,
+            self.path,
+            self.symbol,
+            classification,
+            self.eligibility,
+            self.declared_requirement,
+        )
+    }
+}
+
 impl RustTestFact {
     /// Creates a validated analyzer fact, also used by rule conformance fixtures.
     ///
@@ -230,6 +290,24 @@ pub fn analyze_snapshot_rust_tests(
 pub fn analyze_observed_rust_tests<'a>(
     files: impl IntoIterator<Item = (&'a str, &'a [u8])>,
 ) -> Result<Vec<RustTestFact>, RustAnalyzerError> {
+    observe_observed_rust_tests(files)?
+        .into_iter()
+        .map(RustTestObservation::into_fact)
+        .collect()
+}
+
+/// Observes Rust tests without requiring Fortress test-governance metadata.
+///
+/// Missing stable IDs remain explicit on each observation. Invalid UTF-8 or
+/// Rust syntax still fails because no trustworthy source fact can be produced.
+///
+/// # Errors
+///
+/// Returns [`RustAnalyzerError`] for invalid paths, non-UTF-8 input, invalid
+/// Rust syntax, or internally contradictory governance markers.
+pub fn observe_observed_rust_tests<'a>(
+    files: impl IntoIterator<Item = (&'a str, &'a [u8])>,
+) -> Result<Vec<RustTestObservation>, RustAnalyzerError> {
     let mut facts = Vec::new();
     for (path, bytes) in files {
         if !Path::new(path)
@@ -240,7 +318,7 @@ pub fn analyze_observed_rust_tests<'a>(
         }
         let source = std::str::from_utf8(bytes)
             .map_err(|_| RustAnalyzerError::NonUtf8(path.to_owned().into()))?;
-        facts.extend(analyze_rust_source(path, source)?);
+        facts.extend(observe_rust_source(path, source)?);
     }
     facts.sort();
     Ok(facts)
@@ -255,6 +333,16 @@ pub fn analyze_rust_source(
     path: &str,
     source: &str,
 ) -> Result<Vec<RustTestFact>, RustAnalyzerError> {
+    observe_rust_source(path, source)?
+        .into_iter()
+        .map(RustTestObservation::into_fact)
+        .collect()
+}
+
+fn observe_rust_source(
+    path: &str,
+    source: &str,
+) -> Result<Vec<RustTestObservation>, RustAnalyzerError> {
     if !is_canonical_relative_path(path) {
         return Err(RustAnalyzerError::InvalidPath(path.into()));
     }
@@ -277,7 +365,7 @@ pub fn analyze_rust_source(
 
 struct TestVisitor<'a> {
     path: &'a str,
-    facts: Vec<RustTestFact>,
+    facts: Vec<RustTestObservation>,
     error: Option<RustAnalyzerError>,
 }
 
@@ -292,24 +380,22 @@ impl<'ast> Visit<'ast> for TestVisitor<'_> {
             .any(|attribute| attribute.path().is_ident("test"))
         {
             let symbol = function.sig.ident.to_string();
-            match metadata_from_attributes(&function.attrs, &symbol).and_then(
-                |(id, classification, requirement)| {
-                    RustTestFact::new_with_eligibility(
-                        id,
-                        self.path,
-                        symbol,
-                        classification,
-                        if function
-                            .attrs
-                            .iter()
-                            .any(|attribute| attribute.path().is_ident("ignore"))
-                        {
-                            RustTestEligibility::Ignored
-                        } else {
-                            RustTestEligibility::Enabled
-                        },
-                        requirement,
-                    )
+            match metadata_from_attributes(&function.attrs, &symbol).map(
+                |(id, classification, requirement)| RustTestObservation {
+                    id,
+                    path: self.path.into(),
+                    symbol,
+                    classification,
+                    eligibility: if function
+                        .attrs
+                        .iter()
+                        .any(|attribute| attribute.path().is_ident("ignore"))
+                    {
+                        RustTestEligibility::Ignored
+                    } else {
+                        RustTestEligibility::Enabled
+                    },
+                    declared_requirement: requirement,
                 },
             ) {
                 Ok(fact) => self.facts.push(fact),
@@ -320,10 +406,16 @@ impl<'ast> Visit<'ast> for TestVisitor<'_> {
     }
 }
 
+type RustTestMetadata = (
+    Option<String>,
+    Option<RustTestClassification>,
+    Option<String>,
+);
+
 fn metadata_from_attributes(
     attributes: &[Attribute],
     symbol: &str,
-) -> Result<(String, RustTestClassification, Option<String>), RustAnalyzerError> {
+) -> Result<RustTestMetadata, RustAnalyzerError> {
     let docs: Vec<String> = attributes.iter().filter_map(doc_attribute).collect();
     let mut ids: Vec<String> = docs
         .iter()
@@ -333,25 +425,28 @@ fn metadata_from_attributes(
     ids.sort();
     ids.dedup();
     let id = match ids.as_slice() {
-        [] => return Err(RustAnalyzerError::MissingTestId(symbol.into())),
-        [id] => id.clone(),
+        [] => None,
+        [id] => Some(id.clone()),
         _ => return Err(RustAnalyzerError::MultipleTestIds(symbol.into())),
     };
     let classification = if docs
         .iter()
         .any(|line| line.trim() == "Fortress classification: infrastructure")
     {
-        RustTestClassification::Infrastructure
-    } else if id.starts_with("T-ARCH-")
-        || id.starts_with("T-DEP-")
-        || id.starts_with("T-CONTRACT-")
-        || id.starts_with("T-REPO-")
-        || id.starts_with("T-STD-")
-        || id.starts_with("T-TEST-")
-    {
-        RustTestClassification::Conformance
+        Some(RustTestClassification::Infrastructure)
+    } else if id.as_deref().is_some_and(|id| {
+        id.starts_with("T-ARCH-")
+            || id.starts_with("T-DEP-")
+            || id.starts_with("T-CONTRACT-")
+            || id.starts_with("T-REPO-")
+            || id.starts_with("T-STD-")
+            || id.starts_with("T-TEST-")
+    }) {
+        Some(RustTestClassification::Conformance)
+    } else if id.is_some() {
+        Some(RustTestClassification::Behavioral)
     } else {
-        RustTestClassification::Behavioral
+        None
     };
     let requirements: Vec<String> = docs
         .iter()

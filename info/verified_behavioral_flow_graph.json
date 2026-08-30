@@ -2,15 +2,15 @@
   "$schema": "urn:fortress:schema:v1:verified-behavioral-flow-graph",
   "schema_version": 1,
   "project_id": "PF-FORTRESS",
-  "certification_source_digest": "sha256:43fb18aef63661bd56e2bdc79fbae28677e7d9f6913c3c4761d4cc57079784c3",
-  "certification_digest": "sha256:fdb72d5217d89dcffcab32f5497948136de74361618e986f390df5119c9c1e7d",
+  "certification_source_digest": "sha256:3dfdaf9461455203142cc14c2a2c3dc1de8ce25c02616b75f3e1ec998a6ae0ef",
+  "certification_digest": "sha256:891b3558ca4de995bc2a48c5b62a9c18a4744e48e76fee8265e1adb02c4c174a",
   "view": "verified",
   "features": [
     {
       "feature": "AF-FORTRESS-AUDIT-0001",
       "feature_requirement_evidence": [
-        "sha256:9a24350557253c2d69fe1ec04a831007b28147f23db69984b8fb290b07933cea",
-        "sha256:dab6a81179c6db58a54315248fd974e54878b909fce985df2f7c6bebe1723444"
+        "sha256:61c03e0fe8c9cd5eebd10f85f52180979a59742993d3b64e037dc59997950cb5",
+        "sha256:72a2f0128a52551c10d763cfc6e538f55fd49b66548a58963a43e6b3f6d4db95"
       ],
       "checkpoints": [
         {
@@ -19,7 +19,7 @@
           "realized": true,
           "verification": "VERIFIED_STATIC_AND_EXECUTED",
           "evidence_refs": [
-            "sha256:dab6a81179c6db58a54315248fd974e54878b909fce985df2f7c6bebe1723444"
+            "sha256:61c03e0fe8c9cd5eebd10f85f52180979a59742993d3b64e037dc59997950cb5"
           ]
         },
         {
@@ -28,7 +28,7 @@
           "realized": true,
           "verification": "VERIFIED_STATIC_AND_EXECUTED",
           "evidence_refs": [
-            "sha256:dab6a81179c6db58a54315248fd974e54878b909fce985df2f7c6bebe1723444"
+            "sha256:61c03e0fe8c9cd5eebd10f85f52180979a59742993d3b64e037dc59997950cb5"
           ]
         },
         {
@@ -37,7 +37,7 @@
           "realized": true,
           "verification": "VERIFIED_STATIC_AND_EXECUTED",
           "evidence_refs": [
-            "sha256:dab6a81179c6db58a54315248fd974e54878b909fce985df2f7c6bebe1723444"
+            "sha256:61c03e0fe8c9cd5eebd10f85f52180979a59742993d3b64e037dc59997950cb5"
           ]
         },
         {
@@ -46,7 +46,7 @@
           "realized": true,
           "verification": "VERIFIED_STATIC_AND_EXECUTED",
           "evidence_refs": [
-            "sha256:dab6a81179c6db58a54315248fd974e54878b909fce985df2f7c6bebe1723444"
+            "sha256:61c03e0fe8c9cd5eebd10f85f52180979a59742993d3b64e037dc59997950cb5"
           ]
         },
         {
@@ -55,7 +55,7 @@
           "realized": true,
           "verification": "VERIFIED_STATIC_AND_EXECUTED",
           "evidence_refs": [
-            "sha256:dab6a81179c6db58a54315248fd974e54878b909fce985df2f7c6bebe1723444"
+            "sha256:61c03e0fe8c9cd5eebd10f85f52180979a59742993d3b64e037dc59997950cb5"
           ]
         },
         {
@@ -64,7 +64,7 @@
           "realized": true,
           "verification": "VERIFIED_STATIC_AND_EXECUTED",
           "evidence_refs": [
-            "sha256:dab6a81179c6db58a54315248fd974e54878b909fce985df2f7c6bebe1723444"
+            "sha256:61c03e0fe8c9cd5eebd10f85f52180979a59742993d3b64e037dc59997950cb5"
           ]
         },
         {
@@ -73,7 +73,7 @@
           "realized": true,
           "verification": "VERIFIED_STATIC_AND_EXECUTED",
           "evidence_refs": [
-            "sha256:dab6a81179c6db58a54315248fd974e54878b909fce985df2f7c6bebe1723444"
+            "sha256:61c03e0fe8c9cd5eebd10f85f52180979a59742993d3b64e037dc59997950cb5"
           ]
         },
         {
@@ -82,7 +82,7 @@
           "realized": true,
           "verification": "VERIFIED_STATIC_AND_EXECUTED",
           "evidence_refs": [
-            "sha256:dab6a81179c6db58a54315248fd974e54878b909fce985df2f7c6bebe1723444"
+            "sha256:61c03e0fe8c9cd5eebd10f85f52180979a59742993d3b64e037dc59997950cb5"
           ]
         },
         {
@@ -91,7 +91,7 @@
           "realized": true,
           "verification": "VERIFIED_STATIC_AND_EXECUTED",
           "evidence_refs": [
-            "sha256:dab6a81179c6db58a54315248fd974e54878b909fce985df2f7c6bebe1723444"
+            "sha256:61c03e0fe8c9cd5eebd10f85f52180979a59742993d3b64e037dc59997950cb5"
           ]
         },
         {
@@ -100,7 +100,7 @@
           "realized": true,
           "verification": "VERIFIED_STATIC_AND_EXECUTED",
           "evidence_refs": [
-            "sha256:dab6a81179c6db58a54315248fd974e54878b909fce985df2f7c6bebe1723444"
+            "sha256:61c03e0fe8c9cd5eebd10f85f52180979a59742993d3b64e037dc59997950cb5"
           ]
         }
       ],
@@ -111,7 +111,7 @@
           "realized": true,
           "verification": "VERIFIED_STATIC_AND_EXECUTED",
           "evidence_refs": [
-            "sha256:dab6a81179c6db58a54315248fd974e54878b909fce985df2f7c6bebe1723444"
+            "sha256:61c03e0fe8c9cd5eebd10f85f52180979a59742993d3b64e037dc59997950cb5"
           ]
         },
         {
@@ -120,7 +120,7 @@
           "realized": true,
           "verification": "VERIFIED_STATIC_AND_EXECUTED",
           "evidence_refs": [
-            "sha256:dab6a81179c6db58a54315248fd974e54878b909fce985df2f7c6bebe1723444"
+            "sha256:61c03e0fe8c9cd5eebd10f85f52180979a59742993d3b64e037dc59997950cb5"
           ]
         },
         {
@@ -129,7 +129,7 @@
           "realized": true,
           "verification": "VERIFIED_STATIC_AND_EXECUTED",
           "evidence_refs": [
-            "sha256:dab6a81179c6db58a54315248fd974e54878b909fce985df2f7c6bebe1723444"
+            "sha256:61c03e0fe8c9cd5eebd10f85f52180979a59742993d3b64e037dc59997950cb5"
           ]
         },
         {
@@ -138,7 +138,7 @@
           "realized": true,
           "verification": "VERIFIED_STATIC_AND_EXECUTED",
           "evidence_refs": [
-            "sha256:dab6a81179c6db58a54315248fd974e54878b909fce985df2f7c6bebe1723444"
+            "sha256:61c03e0fe8c9cd5eebd10f85f52180979a59742993d3b64e037dc59997950cb5"
           ]
         },
         {
@@ -147,7 +147,7 @@
           "realized": true,
           "verification": "VERIFIED_STATIC_AND_EXECUTED",
           "evidence_refs": [
-            "sha256:dab6a81179c6db58a54315248fd974e54878b909fce985df2f7c6bebe1723444"
+            "sha256:61c03e0fe8c9cd5eebd10f85f52180979a59742993d3b64e037dc59997950cb5"
           ]
         },
         {
@@ -156,7 +156,7 @@
           "realized": true,
           "verification": "VERIFIED_STATIC_AND_EXECUTED",
           "evidence_refs": [
-            "sha256:dab6a81179c6db58a54315248fd974e54878b909fce985df2f7c6bebe1723444"
+            "sha256:61c03e0fe8c9cd5eebd10f85f52180979a59742993d3b64e037dc59997950cb5"
           ]
         },
         {
@@ -165,7 +165,7 @@
           "realized": true,
           "verification": "VERIFIED_STATIC_AND_EXECUTED",
           "evidence_refs": [
-            "sha256:dab6a81179c6db58a54315248fd974e54878b909fce985df2f7c6bebe1723444"
+            "sha256:61c03e0fe8c9cd5eebd10f85f52180979a59742993d3b64e037dc59997950cb5"
           ]
         },
         {
@@ -174,7 +174,7 @@
           "realized": true,
           "verification": "VERIFIED_STATIC_AND_EXECUTED",
           "evidence_refs": [
-            "sha256:dab6a81179c6db58a54315248fd974e54878b909fce985df2f7c6bebe1723444"
+            "sha256:61c03e0fe8c9cd5eebd10f85f52180979a59742993d3b64e037dc59997950cb5"
           ]
         },
         {
@@ -183,7 +183,7 @@
           "realized": true,
           "verification": "VERIFIED_STATIC_AND_EXECUTED",
           "evidence_refs": [
-            "sha256:dab6a81179c6db58a54315248fd974e54878b909fce985df2f7c6bebe1723444"
+            "sha256:61c03e0fe8c9cd5eebd10f85f52180979a59742993d3b64e037dc59997950cb5"
           ]
         }
       ]

@@ -15,7 +15,7 @@ use fortress_core::finding::{
 use fortress_core::observation::ObservationPolicy;
 use fortress_core::placement::is_lexical_name;
 use fortress_core::rust_test_analyzer::{
-    RustAnalyzerError, RustTestClassification, analyze_rust_source,
+    RustAnalyzerError, RustTestClassification, analyze_rust_source, observe_observed_rust_tests,
 };
 use fortress_core::snapshot::{
     SnapshotDocuments, SnapshotError, build_repository_snapshot, observe_repository_stably_with,
@@ -309,6 +309,20 @@ fn structured_analyzer_rejects_unidentified_behavior_test() {
     )
     .expect_err("missing identity must fail");
     assert!(matches!(error, RustAnalyzerError::MissingTestId(_)));
+}
+
+/// `T-AF-SNAPSHOT-GOVERNANCE-0001-R06-004`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R06
+#[test]
+fn unidentified_rust_test_remains_observable_without_governance_identity() {
+    let source = b"#[test]\nfn ordinary_upstream_test() {}\n";
+    let observations = observe_observed_rust_tests([("tests/ordinary.rs", &source[..])])
+        .expect("ordinary Rust test remains observable");
+    assert_eq!(observations.len(), 1);
+    assert_eq!(observations[0].id(), None);
+    assert_eq!(observations[0].symbol(), "ordinary_upstream_test");
+    assert!(!observations[0].is_governed());
+    assert!(observations[0].governed_fact().is_none());
 }
 
 /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R09-001`

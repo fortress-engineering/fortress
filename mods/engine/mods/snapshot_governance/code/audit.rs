@@ -51,7 +51,8 @@ use crate::filing::{FilingSystemProfiles, analyze_project_filing_system};
 use crate::finding::{CanonicalFinding, FindingError};
 use crate::implementation_observation::{
     ImplementationObservationError, ImplementationObservationInput, ModuleTerritory,
-    ObservedImplementation, SnapshotBoundFile, observe_rust_implementation,
+    ObservedImplementation, SnapshotBoundFile, SourceOwnership, SourceOwnershipAuthority,
+    observe_rust_implementation, resolve_source_ownership,
 };
 use crate::information_flow::{
     InformationFlowAnalysisError, InformationFlowEvaluation, InformationFlowPolicyError,
@@ -67,7 +68,8 @@ use crate::reference_resolution::{
     ReferenceResolutionError, ReferenceResolutionEvaluation, evaluate_reference_resolution,
 };
 use crate::rust_test_analyzer::{
-    RustAnalyzerError, RustTestEligibility, analyze_observed_rust_tests,
+    RustAnalyzerError, RustTestEligibility, RustTestObservation, analyze_observed_rust_tests,
+    observe_observed_rust_tests,
 };
 use crate::semantic_analysis::{
     FunctionContractError, FunctionContractSource, ResolvedFunctionContracts,
@@ -79,24 +81,25 @@ use crate::snapshot::{
     observe_repository_stably,
 };
 use crate::source_architecture::{
-    LanguageAssignment, SourceArchitectureEvaluation, SourceArchitectureInput, SourceArtifactModel,
-    SourceProfileRegistry, SourceVerificationRelationship, evaluate_source_architecture,
-    observations_from_psm,
+    LanguageAssignment, SourceArchitectureEvaluation, SourceArchitectureInput, SourceArtifactInput,
+    SourceArtifactModel, SourceProfileRegistry, SourceVerificationRelationship,
+    evaluate_source_architecture, observations_from_psm,
 };
-use crate::standard::{StandardBundle, StandardLoadError};
+use crate::standard::{StandardBundle, StandardLoadError, installed_standard_manifest};
 use crate::state_effect_analysis::{
     StateContractError, StateContractSource, StateEffectAnalysisError,
     StateEffectAnalysisEvaluation, analyze_state_effects, load_state_contracts,
 };
 
 /// Current stable machine-readable snapshot audit schema family.
-pub const AUDIT_RESULT_SCHEMA_VERSION: u16 = 2;
+pub const AUDIT_RESULT_SCHEMA_VERSION: u16 = 3;
 
 /// Deterministic repository audit result; this is not certification evidence.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct AuditResult {
     schema_version: u16,
-    project_id: String,
+    project_id: Option<String>,
+    governance: AuditGovernance,
     standard: AuditStandard,
     snapshot_fingerprint: String,
     repository_content_fingerprint: String,
@@ -106,6 +109,7 @@ pub struct AuditResult {
     findings: Vec<CanonicalFinding>,
     diagnostics: Vec<ArchitectureDiagnostic>,
     unsupported_analysis: Vec<String>,
+    observation: Option<AuditObservationSummary>,
 }
 
 impl AuditResult {
@@ -164,7 +168,8 @@ impl AuditResult {
     #[must_use]
     pub fn to_human(&self) -> String {
         let mut output = format!(
-            "Fortress Snapshot Audit\nStandard: {}\nSnapshot: {}\n\nRules evaluated: {}\nPASS: {}\nFAIL: {}\nUnsupported: {}\n\nFindings:\n",
+            "Fortress Snapshot Audit\nGovernance: {:?}\nStandard: {}\nSnapshot: {}\n\nRules evaluated: {}\nPASS: {}\nFAIL: {}\nUnsupported: {}\n\nFindings:\n",
+            self.governance.project_authority,
             self.standard.edition,
             self.snapshot_fingerprint,
             self.summary.rules_evaluated,
@@ -221,12 +226,32 @@ struct AuditStandard {
     status: String,
 }
 
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+struct AuditGovernance {
+    project_authority: ProjectGovernanceState,
+    standard_authority: String,
+    declared_source_owners: usize,
+    analysis_source_owners: usize,
+    observed_tests: usize,
+    tests_missing_stable_id: usize,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+struct AuditObservationSummary {
+    files: usize,
+    rust_sources: usize,
+    psm_symbols: usize,
+    source_artifacts: usize,
+    state_effect_functions: usize,
+}
+
 /// Overall evaluated-rule outcome, excluding explicitly unsupported rules.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 enum AuditOutcome {
     Pass,
     Fail,
+    Missing,
 }
 
 /// Stable audit rule counts.
@@ -271,7 +296,13 @@ impl AuditSummary {
 /// Returns [`AuditError`] for invalid/missing declarations, unstable or
 /// inconsistent snapshot inputs, analyzer failure, or rule-evaluation failure.
 pub fn audit_repository(root: impl AsRef<Path>) -> Result<AuditResult, AuditError> {
-    audit_repository_with_models(root.as_ref(), true).map(|(audit, _, _)| audit)
+    let root = root.as_ref();
+    let prepared = prepare_analysis(root)?;
+    if prepared.project_state == ProjectGovernanceState::Declared && prepared.ccg().is_some() {
+        let prepared = prepare_audit_from_analysis(root, prepared)?;
+        return audit_repository_with_prepared(root, &prepared, true).map(|(audit, _, _)| audit);
+    }
+    observation_only_audit(&prepared)
 }
 
 /// Compiles the canonical CCG for a stabilized repository input set.
@@ -342,44 +373,29 @@ pub fn compile_repository_reference_resolution(
 /// Returns [`AuditError`] for malformed or unstable repository state, source
 /// analysis failure, or disagreement between supported source analyzers.
 pub fn compile_repository_psm(root: impl AsRef<Path>) -> Result<ProgramSemanticModel, AuditError> {
-    let prepared = prepare_audit(root.as_ref())?;
-    let ccg = prepared
-        .ccg_compilation
-        .graph()
-        .ok_or_else(|| AuditError::ContractState("prepared audit did not contain a CCG".into()))?;
-    let observation_input =
-        implementation_input(&prepared.snapshot, ccg, &prepared.observed_files)?;
+    let prepared = prepare_analysis(root.as_ref())?;
+    let observation_input = analysis_implementation_input(&prepared);
     let observed = observe_rust_implementation(&observation_input)
         .map_err(AuditError::ImplementationObservation)?;
-    compile_psm_from_observed(&prepared, ccg, observation_input, &observed)
+    compile_analysis_psm(&prepared, observation_input, &observed)
 }
 
 /// Compiles the canonical language-neutral Source Artifact Model v1.
 ///
-/// The compiler reuses Project Filing membership, Snapshot Governance's
-/// canonical `code_docs.md` projection, and stable PSM references. It does not
-/// parse Rust or Markdown and leaves Rust archetype status explicitly
+/// The compiler reuses Snapshot Governance's canonical source ownership and
+/// `code_docs.md` projection. Basic source-artifact observation does not depend
+/// on a complete PSM; Rust archetype status remains explicitly
 /// `PROFILE_NOT_REGISTERED` until the Rust File Content Profile exists.
 ///
 /// # Errors
 ///
-/// Returns [`AuditError`] for invalid or unstable repository authority,
-/// semantic-substrate failure, responsibility projection failure, or finding
-/// normalization failure.
+/// Returns [`AuditError`] for invalid or unstable repository observation,
+/// responsibility projection failure, or finding normalization failure.
 pub fn compile_repository_source_artifact_model(
     root: impl AsRef<Path>,
 ) -> Result<SourceArtifactModel, AuditError> {
-    let prepared = prepare_audit(root.as_ref())?;
-    let ccg = prepared
-        .ccg_compilation
-        .graph()
-        .ok_or_else(|| AuditError::ContractState("prepared audit did not contain a CCG".into()))?;
-    let observation_input =
-        implementation_input(&prepared.snapshot, ccg, &prepared.observed_files)?;
-    let observed = observe_rust_implementation(&observation_input)
-        .map_err(AuditError::ImplementationObservation)?;
-    let psm = compile_psm_from_observed(&prepared, ccg, observation_input, &observed)?;
-    compile_source_architecture_from(&prepared, ccg, Some(&psm)).map(|value| value.model().clone())
+    let prepared = prepare_analysis(root.as_ref())?;
+    compile_analysis_source_architecture(&prepared, None).map(|value| value.model().clone())
 }
 
 fn compile_source_architecture_from(
@@ -391,6 +407,31 @@ fn compile_source_architecture_from(
     let filing = analyze_project_filing_system(&observed_paths, &FilingSystemProfiles::standard());
     let responsibilities = code_file_responsibilities(&prepared.observed_files, ccg)
         .map_err(|error| AuditError::ContractState(error.into()))?;
+    let module_paths = ccg
+        .module_paths()
+        .iter()
+        .map(|(id, path)| (if path.is_empty() { "." } else { path }, id))
+        .collect::<BTreeMap<_, _>>();
+    let artifacts = filing
+        .inventory()
+        .entries()
+        .iter()
+        .filter(|entry| entry.element() == "code")
+        .map(|entry| {
+            let module_id = module_paths
+                .get(entry.module())
+                .map_or("UNKNOWN-MODULE", |id| id.as_str());
+            let relative = if entry.module() == "." {
+                entry.path().strip_prefix("code/").unwrap_or(entry.path())
+            } else {
+                entry
+                    .path()
+                    .strip_prefix(&format!("{}/code/", entry.module()))
+                    .unwrap_or(entry.path())
+            };
+            SourceArtifactInput::new(entry.path(), module_id, relative)
+        })
+        .collect::<Vec<_>>();
     let observations = psm.map_or_else(Vec::new, observations_from_psm);
     let languages = [
         LanguageAssignment::new("rs", "rust", "fortress-core/program-semantics-v3"),
@@ -430,10 +471,10 @@ fn compile_source_architecture_from(
     // own input identity.
     let source_identity = certification_source_digest(&prepared.observed_files);
     evaluate_source_architecture(&SourceArchitectureInput {
-        project_id: prepared.snapshot.project_id(),
+        project_id: Some(prepared.snapshot.project_id()),
         source_identity: &source_identity,
-        filing: &filing,
-        ccg,
+        artifacts: &artifacts,
+        project_model_authority: "project-model/project-filing-system-v1",
         files: &prepared.observed_files,
         responsibilities: &responsibilities,
         profiles: &SourceProfileRegistry::standard(),
@@ -476,6 +517,315 @@ fn compile_psm_from_observed(
     .map_err(AuditError::ProgramSemantics)
 }
 
+fn analysis_implementation_input(prepared: &PreparedAnalysis) -> ImplementationObservationInput {
+    let files = prepared
+        .observed_files
+        .iter()
+        .map(|(path, bytes)| SnapshotBoundFile::from_bytes(path, bytes.clone()))
+        .collect();
+    ImplementationObservationInput::new_with_ownership(
+        &prepared.source_identity,
+        files,
+        prepared.ownerships.clone(),
+    )
+}
+
+fn compile_analysis_psm(
+    prepared: &PreparedAnalysis,
+    observation_input: ImplementationObservationInput,
+    observed: &ObservedImplementation,
+) -> Result<ProgramSemanticModel, AuditError> {
+    let testing_modules = prepared.ccg().into_iter().flat_map(|ccg| {
+        ccg.modules()
+            .iter()
+            .filter(|(_, module)| {
+                module.path() == "mods/testing" || module.path().ends_with("/mods/testing")
+            })
+            .map(|(id, _)| id.clone())
+    });
+    let observed_dependencies = observed.module_dependencies().iter().map(|dependency| {
+        (
+            dependency.source_module().to_owned(),
+            dependency.target_module().to_owned(),
+        )
+    });
+    let input = if let Some(project_id) = prepared.project_id() {
+        ProgramSemanticInput::new(
+            project_id,
+            observation_input,
+            testing_modules,
+            observed_dependencies,
+        )
+    } else {
+        ProgramSemanticInput::observed(observation_input, testing_modules, observed_dependencies)
+    };
+    compile_program_semantic_model(&input).map_err(AuditError::ProgramSemantics)
+}
+
+fn compile_observation_state_effect(
+    prepared: &PreparedAnalysis,
+) -> Result<StateEffectAnalysisEvaluation, AuditError> {
+    let observation_input = analysis_implementation_input(prepared);
+    let observed = observe_rust_implementation(&observation_input)
+        .map_err(AuditError::ImplementationObservation)?;
+    let psm = compile_analysis_psm(prepared, observation_input, &observed)?;
+    analyze_observation_state_effect(prepared, &psm)
+}
+
+fn analyze_observation_state_effect(
+    prepared: &PreparedAnalysis,
+    psm: &ProgramSemanticModel,
+) -> Result<StateEffectAnalysisEvaluation, AuditError> {
+    let function_sources = prepared
+        .ccg()
+        .map(|ccg| function_contract_sources(ccg, &prepared.observed_files))
+        .transpose()?
+        .unwrap_or_default();
+    let contracts =
+        load_function_contracts(psm, function_sources).map_err(AuditError::FunctionContracts)?;
+    let semantic = analyze_program_domains(psm, &contracts, prepared.standard.bundle.edition())
+        .map_err(AuditError::SemanticAnalysis)?;
+    let state_sources = prepared
+        .ccg()
+        .map(|ccg| state_contract_sources(ccg, &prepared.observed_files))
+        .transpose()?
+        .unwrap_or_default();
+    let state_contracts =
+        load_state_contracts(psm, state_sources).map_err(AuditError::StateContracts)?;
+    analyze_state_effects(
+        psm,
+        &semantic,
+        &state_contracts,
+        &contracts,
+        prepared.standard.bundle.edition(),
+    )
+    .map_err(AuditError::StateEffectAnalysis)
+}
+
+#[allow(clippy::too_many_lines)]
+fn observation_only_audit(prepared: &PreparedAnalysis) -> Result<AuditResult, AuditError> {
+    let source = compile_analysis_source_architecture(prepared, None)?;
+    let observation_input = analysis_implementation_input(prepared);
+    let (psm, psm_failure) = match observe_rust_implementation(&observation_input) {
+        Ok(observed) => match compile_analysis_psm(prepared, observation_input, &observed) {
+            Ok(psm) => (Some(psm), None),
+            Err(error) => (None, Some(format!("program_semantics:{error}"))),
+        },
+        Err(error) => (None, Some(format!("implementation_observation:{error}"))),
+    };
+    let (state_effect, state_effect_failure) = psm.as_ref().map_or_else(
+        || (None, None),
+        |psm| match analyze_observation_state_effect(prepared, psm) {
+            Ok(analysis) => (Some(analysis), None),
+            Err(error) => (None, Some(format!("state_effect:{error}"))),
+        },
+    );
+    let declared_source_owners = prepared
+        .ownerships
+        .iter()
+        .filter(|ownership| ownership.authority() == SourceOwnershipAuthority::DeclaredModule)
+        .count();
+    let analysis_source_owners = prepared.ownerships.len() - declared_source_owners;
+    let tests_missing_stable_id = prepared
+        .rust_tests
+        .iter()
+        .filter(|test| !test.is_governed())
+        .count();
+    let mut unsupported_analysis = source
+        .model()
+        .unsupported_semantics()
+        .iter()
+        .map(|value| format!("source_architecture:{value}"))
+        .collect::<Vec<_>>();
+    if let Some(psm) = &psm {
+        unsupported_analysis.extend(
+            psm.unsupported_semantics()
+                .iter()
+                .map(|value| format!("program_semantics:{value}")),
+        );
+    }
+    if let Some(state_effect) = &state_effect {
+        unsupported_analysis.extend(
+            state_effect
+                .model()
+                .unsupported_semantics()
+                .iter()
+                .map(|value| format!("state_effect:{value}")),
+        );
+    }
+    unsupported_analysis.extend(psm_failure);
+    unsupported_analysis.extend(state_effect_failure);
+    unsupported_analysis.push(format!(
+        "governance:{}",
+        prepared
+            .project_detail
+            .as_deref()
+            .unwrap_or("authored project conformance is unavailable")
+    ));
+    if tests_missing_stable_id > 0 {
+        unsupported_analysis.push(format!(
+            "test_governance:{tests_missing_stable_id} observed Rust tests lack stable Fortress IDs"
+        ));
+    }
+    unsupported_analysis.sort();
+    unsupported_analysis.dedup();
+    Ok(AuditResult {
+        schema_version: AUDIT_RESULT_SCHEMA_VERSION,
+        project_id: prepared.project_id().map(str::to_owned),
+        governance: AuditGovernance {
+            project_authority: prepared.project_state,
+            standard_authority: "INSTALLED_UNBOUND".into(),
+            declared_source_owners,
+            analysis_source_owners,
+            observed_tests: prepared.rust_tests.len(),
+            tests_missing_stable_id,
+        },
+        standard: AuditStandard {
+            edition: prepared.standard.bundle.edition().into(),
+            status: prepared.standard.bundle.status().into(),
+        },
+        snapshot_fingerprint: prepared.source_identity.clone(),
+        repository_content_fingerprint: prepared.source_identity.clone(),
+        outcome: AuditOutcome::Missing,
+        summary: AuditSummary {
+            rules_evaluated: 0,
+            passed: 0,
+            failed: 0,
+            unsupported: 0,
+        },
+        rules: Vec::new(),
+        findings: Vec::new(),
+        diagnostics: Vec::new(),
+        unsupported_analysis,
+        observation: Some(AuditObservationSummary {
+            files: prepared.observed_files.len(),
+            rust_sources: prepared
+                .observed_files
+                .keys()
+                .filter(|path| {
+                    Path::new(path)
+                        .extension()
+                        .is_some_and(|extension| extension.eq_ignore_ascii_case("rs"))
+                })
+                .count(),
+            psm_symbols: psm.as_ref().map_or(0, |psm| psm.symbols().len()),
+            source_artifacts: source.model().artifacts().len(),
+            state_effect_functions: state_effect
+                .as_ref()
+                .map_or(0, |analysis| analysis.model().coverage().functions()),
+        }),
+    })
+}
+
+#[allow(clippy::too_many_lines)]
+fn compile_analysis_source_architecture(
+    prepared: &PreparedAnalysis,
+    psm: Option<&ProgramSemanticModel>,
+) -> Result<SourceArchitectureEvaluation, AuditError> {
+    let governed = prepared.project_id().is_some();
+    let observed_paths = prepared.observed_files.keys().cloned().collect::<Vec<_>>();
+    let filing = analyze_project_filing_system(&observed_paths, &FilingSystemProfiles::standard());
+    let responsibilities = prepared
+        .ccg()
+        .map(|ccg| code_file_responsibilities(&prepared.observed_files, ccg))
+        .transpose()
+        .map_err(|error| AuditError::ContractState(error.into()))?
+        .unwrap_or_default();
+    let artifacts = if governed {
+        let module_paths = prepared
+            .ccg()
+            .expect("governed analysis has a CCG")
+            .module_paths()
+            .iter()
+            .map(|(id, path)| (if path.is_empty() { "." } else { path }, id.as_str()))
+            .collect::<BTreeMap<_, _>>();
+        filing
+            .inventory()
+            .entries()
+            .iter()
+            .filter(|entry| entry.element() == "code")
+            .filter_map(|entry| {
+                let owner = module_paths.get(entry.module())?;
+                let prefix = if entry.module() == "." {
+                    "code/".into()
+                } else {
+                    format!("{}/code/", entry.module())
+                };
+                let relative = entry.path().strip_prefix(&prefix).unwrap_or(entry.path());
+                Some(SourceArtifactInput::new(entry.path(), *owner, relative))
+            })
+            .collect::<Vec<_>>()
+    } else {
+        prepared
+            .ownerships
+            .iter()
+            .map(|ownership| {
+                let relative = ownership
+                    .source_path()
+                    .strip_prefix(ownership.territory_path())
+                    .unwrap_or(ownership.source_path())
+                    .trim_start_matches('/');
+                SourceArtifactInput::new(ownership.source_path(), ownership.owner(), relative)
+            })
+            .collect()
+    };
+    let observations = psm.map_or_else(Vec::new, observations_from_psm);
+    let languages = [
+        LanguageAssignment::new("rs", "rust", "fortress-core/program-semantics-v3"),
+        LanguageAssignment::new(
+            "py",
+            "python",
+            "fortress-core/source-extension-observation-v1",
+        ),
+    ];
+    let verification_relationships = prepared
+        .rust_tests
+        .iter()
+        .filter_map(RustTestObservation::governed_fact)
+        .filter_map(|test| {
+            let requirement_id = test.declared_requirement()?;
+            let requirement = prepared.ccg()?.requirements().get(requirement_id)?;
+            Some(SourceVerificationRelationship::new(
+                test.path(),
+                requirement.feature(),
+                requirement_id,
+                test.id(),
+            ))
+        })
+        .collect::<Vec<_>>();
+    let available_adapters = ["fortress-core/program-semantics-v3".to_owned()]
+        .into_iter()
+        .collect();
+    let psm_json = psm
+        .map(ProgramSemanticModel::to_canonical_json)
+        .transpose()
+        .map_err(|error| AuditError::ContractState(error.to_string().into()))?;
+    let psm_digest = psm_json
+        .as_deref()
+        .map(|value| format!("sha256:{:x}", Sha256::digest(value.as_bytes())));
+    evaluate_source_architecture(&SourceArchitectureInput {
+        project_id: prepared.project_id(),
+        source_identity: &prepared.source_identity,
+        artifacts: &artifacts,
+        project_model_authority: if governed {
+            "project-model/project-filing-system-v1"
+        } else {
+            "repository-observation/cargo-analysis-territories-v1"
+        },
+        files: &prepared.observed_files,
+        responsibilities: &responsibilities,
+        profiles: &SourceProfileRegistry::standard(),
+        languages: &languages,
+        observations: &observations,
+        generated_sources: &[],
+        verification_relationships: &verification_relationships,
+        available_adapters: &available_adapters,
+        psm_digest: psm_digest.as_deref(),
+        standard_edition: prepared.standard.bundle.edition(),
+    })
+    .map_err(AuditError::SourceArchitecture)
+}
+
 /// Compiles distributed Function Contracts and the snapshot-bound PSM into
 /// canonical Semantic Analysis v1 derived information.
 ///
@@ -503,12 +853,8 @@ pub fn compile_repository_semantic_analysis(
 pub fn compile_repository_state_effect_analysis(
     root: impl AsRef<Path>,
 ) -> Result<StateEffectAnalysisEvaluation, AuditError> {
-    let prepared = prepare_audit(root.as_ref())?;
-    let ccg = prepared
-        .ccg_compilation
-        .graph()
-        .ok_or_else(|| AuditError::ContractState("prepared audit did not contain a CCG".into()))?;
-    compile_analysis_models(&prepared, ccg).map(|models| models.state_effect)
+    let prepared = prepare_analysis(root.as_ref())?;
+    compile_observation_state_effect(&prepared)
 }
 
 /// Compiles the repository's canonical Information Flow Analysis v1 result.
@@ -1614,6 +1960,22 @@ fn audit_repository_with_models(
     AuditError,
 > {
     let prepared = prepare_audit(root)?;
+    audit_repository_with_prepared(root, &prepared, include_implementation_observation)
+}
+
+#[allow(clippy::too_many_lines)]
+fn audit_repository_with_prepared(
+    root: &Path,
+    prepared: &PreparedAudit,
+    include_implementation_observation: bool,
+) -> Result<
+    (
+        AuditResult,
+        ContractCoherencyGraph,
+        IntendedBehavioralFlowGraph,
+    ),
+    AuditError,
+> {
     let standard = &prepared.standard.bundle;
     let ccg = prepared
         .ccg_compilation
@@ -1630,7 +1992,7 @@ fn audit_repository_with_models(
         let observation_input =
             implementation_input(&prepared.snapshot, ccg, &prepared.observed_files)?;
         Some(compile_analysis_models_from_observed(
-            &prepared,
+            prepared,
             ccg,
             observation_input,
             &observed_implementation,
@@ -1657,7 +2019,7 @@ fn audit_repository_with_models(
         evaluate_reference_resolution(ccg, &prepared.observed_files, standard.edition())
             .map_err(AuditError::ReferenceResolution)?;
     let source_architecture = compile_source_architecture_from(
-        &prepared,
+        prepared,
         ccg,
         analysis_models.as_ref().map(|models| &models.psm),
     )?;
@@ -1780,6 +2142,7 @@ fn audit_repository_with_models(
             &evaluation,
             &architecture_diagnostics,
             unsupported_analysis,
+            prepared.rust_tests.len(),
         ),
         ccg.clone(),
         behavioral_semantics.graph().clone(),
@@ -1794,15 +2157,147 @@ struct PreparedAudit {
     snapshot: RepositorySnapshot,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+enum ProjectGovernanceState {
+    Declared,
+    Absent,
+    Invalid,
+}
+
+struct PreparedAnalysis {
+    observed_files: BTreeMap<String, Vec<u8>>,
+    source_identity: String,
+    project_state: ProjectGovernanceState,
+    project_detail: Option<String>,
+    project_document: Option<LoadedDocument>,
+    standard: LoadedStandard,
+    rust_tests: Vec<RustTestObservation>,
+    ccg_compilation: CcgCompilation,
+    ownerships: Vec<SourceOwnership>,
+}
+
+impl PreparedAnalysis {
+    fn ccg(&self) -> Option<&ContractCoherencyGraph> {
+        self.ccg_compilation.graph()
+    }
+
+    fn project_id(&self) -> Option<&str> {
+        (self.project_state == ProjectGovernanceState::Declared)
+            .then(|| self.ccg()?.root().map(|module| module.contract().id()))
+            .flatten()
+    }
+}
+
+fn prepare_analysis(root: &Path) -> Result<PreparedAnalysis, AuditError> {
+    let project_path = root.join("data/project.json");
+    let (project_state, project_detail, project_document, policy) = match fs::read(&project_path) {
+        Ok(bytes) => {
+            let document = LoadedDocument {
+                path: "data/project.json".into(),
+                bytes,
+            };
+            match document
+                .source()
+                .map_err(|error| error.to_string())
+                .and_then(|source| {
+                    ProjectConfiguration::from_json_str(source).map_err(|error| error.to_string())
+                }) {
+                Ok(project) => (
+                    ProjectGovernanceState::Declared,
+                    None,
+                    Some(document),
+                    ObservationPolicy::new(project.observation_exclusions().iter().cloned())
+                        .map_err(AuditError::ObservationPolicy)?,
+                ),
+                Err(detail) => (
+                    ProjectGovernanceState::Invalid,
+                    Some(detail),
+                    Some(document),
+                    ObservationPolicy::new([".git"]).map_err(AuditError::ObservationPolicy)?,
+                ),
+            }
+        }
+        Err(source) if source.kind() == std::io::ErrorKind::NotFound => (
+            ProjectGovernanceState::Absent,
+            Some("data/project.json is absent".into()),
+            None,
+            ObservationPolicy::new([".git"]).map_err(AuditError::ObservationPolicy)?,
+        ),
+        Err(source) => {
+            return Err(AuditError::Io {
+                path: project_path,
+                source,
+            });
+        }
+    };
+    let observation = observe_repository_stably(root, &policy).map_err(AuditError::Snapshot)?;
+    let observed_files = read_observed_files(root, &observation)?;
+    let standard = load_standard(
+        root,
+        &observed_files,
+        project_state == ProjectGovernanceState::Declared,
+    )?;
+    let rust_tests = observe_observed_rust_tests(
+        observed_files
+            .iter()
+            .map(|(path, bytes)| (path.as_str(), bytes.as_slice())),
+    )
+    .map_err(AuditError::RustAnalyzer)?;
+    let observed_test_facts = rust_tests
+        .iter()
+        .filter_map(RustTestObservation::governed_fact)
+        .map(|fact| CcgObservedTestFact::from(&fact))
+        .collect::<Vec<_>>();
+    let ccg_compilation = compile_contract_coherency_graph(
+        &observed_files,
+        &ContractStandardIndex::from_bundle(&standard.bundle),
+        Some(&observed_test_facts),
+    );
+    let modules = ccg_compilation.graph().map_or_else(Vec::new, |ccg| {
+        ccg.modules()
+            .iter()
+            .map(|(id, module)| ModuleTerritory::new(id, module.path()))
+            .collect()
+    });
+    let ownerships = resolve_source_ownership(observed_files.keys().map(String::as_str), &modules);
+    let source_identity = certification_source_digest(&observed_files);
+    Ok(PreparedAnalysis {
+        observed_files,
+        source_identity,
+        project_state,
+        project_detail,
+        project_document,
+        standard,
+        rust_tests,
+        ccg_compilation,
+        ownerships,
+    })
+}
+
 fn prepare_audit(root: &Path) -> Result<PreparedAudit, AuditError> {
-    let project_document = read_document(root, "data/project.json")?;
+    let analysis = prepare_analysis(root)?;
+    prepare_audit_from_analysis(root, analysis)
+}
+
+fn prepare_audit_from_analysis(
+    root: &Path,
+    analysis: PreparedAnalysis,
+) -> Result<PreparedAudit, AuditError> {
+    let project_document = analysis.project_document.ok_or_else(|| {
+        AuditError::ProjectAuthority(
+            analysis
+                .project_detail
+                .unwrap_or_else(|| "project authority is absent".into())
+                .into(),
+        )
+    })?;
     let project = ProjectConfiguration::from_json_str(project_document.source()?)
         .map_err(AuditError::Project)?;
     let policy = ObservationPolicy::new(project.observation_exclusions().iter().cloned())
         .map_err(AuditError::ObservationPolicy)?;
-    let observation = observe_repository_stably(root, &policy).map_err(AuditError::Snapshot)?;
-    let observed_files = read_observed_files(root, &observation)?;
-    let standard = load_standard(root, &observed_files)?;
+    let observed_files = analysis.observed_files;
+    let standard = analysis.standard;
     let rust_tests = analyze_observed_rust_tests(
         observed_files
             .iter()
@@ -1844,11 +2339,14 @@ fn prepare_audit(root: &Path) -> Result<PreparedAudit, AuditError> {
         .map_err(AuditError::Snapshot)?;
     verify_loaded_inputs(
         &snapshot,
-        std::iter::once(&project_document)
-            .chain(std::iter::once(&standard.manifest))
-            .chain(standard.rules.iter())
-            .chain(contract_documents.iter()),
+        std::iter::once(&project_document).chain(contract_documents.iter()),
     )?;
+    if standard.subject_bound {
+        verify_loaded_inputs(
+            &snapshot,
+            std::iter::once(&standard.manifest).chain(standard.rules.iter()),
+        )?;
+    }
     verify_observed_files(&snapshot, &observed_files)?;
     Ok(PreparedAudit {
         observed_files,
@@ -1953,6 +2451,7 @@ fn result_from_evaluation(
     evaluation: &crate::evaluation::SnapshotEvaluation,
     architecture_diagnostics: &crate::architecture_diagnostics::ArchitectureDiagnostics,
     unsupported_analysis: Vec<String>,
+    observed_tests: usize,
 ) -> AuditResult {
     let summary = AuditSummary {
         rules_evaluated: evaluation.evaluated_count(),
@@ -1962,7 +2461,23 @@ fn result_from_evaluation(
     };
     AuditResult {
         schema_version: AUDIT_RESULT_SCHEMA_VERSION,
-        project_id: snapshot.project_id().into(),
+        project_id: Some(snapshot.project_id().into()),
+        governance: AuditGovernance {
+            project_authority: ProjectGovernanceState::Declared,
+            standard_authority: "PROJECT_BOUND".into(),
+            declared_source_owners: snapshot
+                .files()
+                .iter()
+                .filter(|file| {
+                    Path::new(file.path())
+                        .extension()
+                        .is_some_and(|extension| extension.eq_ignore_ascii_case("rs"))
+                })
+                .count(),
+            analysis_source_owners: 0,
+            observed_tests,
+            tests_missing_stable_id: 0,
+        },
         standard: AuditStandard {
             edition: snapshot.standard_edition().into(),
             status: snapshot.standard_status().into(),
@@ -1979,6 +2494,7 @@ fn result_from_evaluation(
         findings: evaluation.findings().to_vec(),
         diagnostics: architecture_diagnostics.diagnostics().to_vec(),
         unsupported_analysis,
+        observation: None,
     }
 }
 
@@ -1996,6 +2512,7 @@ struct LoadedStandard {
     manifest: LoadedDocument,
     rules: Vec<LoadedDocument>,
     bundle: StandardBundle,
+    subject_bound: bool,
 }
 
 impl LoadedDocument {
@@ -2030,11 +2547,129 @@ fn read_observed_files(
         .collect()
 }
 
+const INSTALLED_STANDARD_RULE_SOURCES: &[(&str, &str)] = &[
+    (
+        "mods/engine/mods/standard_registry/data/std_id_rule.json",
+        crate::standard::STD_ID_RULE_SOURCE,
+    ),
+    (
+        "mods/engine/mods/architecture_evaluation/data/dependency_rule.json",
+        crate::architecture::DEPENDENCY_RULE_SOURCE,
+    ),
+    (
+        "mods/engine/mods/architecture_evaluation/data/realization_rule.json",
+        crate::architecture_realization::REALIZATION_RULE_SOURCE,
+    ),
+    (
+        "mods/engine/mods/behavioral_semantics/data/behavior_flow_rule.json",
+        crate::behavioral_semantics::BEHAVIOR_FLOW_RULE_SOURCE,
+    ),
+    (
+        "mods/engine/mods/behavioral_realization/data/behavior_realization_rule.json",
+        crate::behavioral_realization::BEHAVIOR_REALIZATION_RULE_SOURCE,
+    ),
+    (
+        "mods/engine/mods/behavioral_realization/data/behavior_bypass_rule.json",
+        crate::behavioral_realization::BEHAVIOR_BYPASS_RULE_SOURCE,
+    ),
+    (
+        "mods/engine/mods/semantic_analysis/data/program_domain_rule.json",
+        crate::semantic_analysis::PROGRAM_DOMAIN_RULE_SOURCE,
+    ),
+    (
+        "mods/engine/mods/state_effect_analysis/data/program_state_rule.json",
+        crate::state_effect_analysis::PROGRAM_STATE_RULE_SOURCE,
+    ),
+    (
+        "mods/engine/mods/state_effect_analysis/data/program_effect_rule.json",
+        crate::state_effect_analysis::PROGRAM_EFFECT_RULE_SOURCE,
+    ),
+    (
+        "mods/engine/mods/information_flow/data/program_infoflow_rule.json",
+        crate::information_flow::PROGRAM_INFOFLOW_RULE_SOURCE,
+    ),
+    (
+        "mods/engine/mods/environmental_semantics/data/program_environment_rule.json",
+        crate::environmental_semantics::PROGRAM_ENVIRONMENT_RULE_SOURCE,
+    ),
+    (
+        "mods/engine/mods/environmental_semantics/data/program_retry_rule.json",
+        crate::environmental_semantics::PROGRAM_RETRY_RULE_SOURCE,
+    ),
+    (
+        "mods/engine/mods/environmental_semantics/data/program_recovery_rule.json",
+        crate::environmental_semantics::PROGRAM_RECOVERY_RULE_SOURCE,
+    ),
+    (
+        "mods/engine/mods/snapshot_governance/data/ownership_rule.json",
+        crate::ownership::OWNERSHIP_RULE_SOURCE,
+    ),
+    (
+        "mods/engine/mods/snapshot_governance/data/traceability_rule.json",
+        crate::traceability::TRACEABILITY_RULE_SOURCE,
+    ),
+    (
+        "mods/engine/mods/snapshot_governance/data/test_boundary_rule.json",
+        crate::testing_boundary::TEST_BOUNDARY_RULE_SOURCE,
+    ),
+    (
+        "mods/engine/mods/snapshot_governance/data/module_rule.json",
+        crate::placement::MODULE_RULE_SOURCE,
+    ),
+    (
+        "mods/engine/mods/snapshot_governance/data/documentation_rule.json",
+        crate::documentation::DOCUMENTATION_RULE_SOURCE,
+    ),
+    (
+        "mods/engine/mods/reference_resolution/data/reference_rule.json",
+        crate::reference_resolution::REFERENCE_RULE_SOURCE,
+    ),
+    (
+        "mods/engine/mods/source_architecture/data/source_profile_rule.json",
+        crate::source_architecture::SOURCE_PROFILE_RULE_SOURCE,
+    ),
+    (
+        "mods/engine/mods/source_architecture/data/source_artifact_rule.json",
+        crate::source_architecture::SOURCE_ARTIFACT_RULE_SOURCE,
+    ),
+    (
+        "mods/engine/mods/snapshot_governance/data/contract_rule.json",
+        crate::contract::CONTRACT_RULE_SOURCE,
+    ),
+];
+
 fn load_standard(
     root: &Path,
     observed_files: &BTreeMap<String, Vec<u8>>,
+    subject_authority_enabled: bool,
 ) -> Result<LoadedStandard, AuditError> {
-    let manifest_path = find_standard_manifest(observed_files)?;
+    let manifest_path = subject_authority_enabled
+        .then(|| find_standard_manifest(observed_files))
+        .transpose()?
+        .flatten();
+    let Some(manifest_path) = manifest_path else {
+        let manifest_source = installed_standard_manifest();
+        let manifest = LoadedDocument {
+            path: "mods/engine/mods/standard_registry/data/standard_manifest.json".into(),
+            bytes: manifest_source.as_bytes().to_vec(),
+        };
+        let rules = INSTALLED_STANDARD_RULE_SOURCES
+            .iter()
+            .map(|(path, source)| LoadedDocument {
+                path: (*path).into(),
+                bytes: source.as_bytes().to_vec(),
+            })
+            .collect::<Vec<_>>();
+        let bundle =
+            StandardBundle::from_json_documents(manifest_source, INSTALLED_STANDARD_RULE_SOURCES)
+                .map_err(AuditError::Standard)?;
+        return Ok(LoadedStandard {
+            manifest,
+            rules,
+            bundle,
+            subject_bound: false,
+        });
+    };
     let manifest = read_document(root, &manifest_path)?;
     let index: StandardManifestIndex =
         serde_json::from_str(manifest.source()?).map_err(AuditError::StandardManifestIndex)?;
@@ -2054,6 +2689,7 @@ fn load_standard(
         manifest,
         rules,
         bundle,
+        subject_bound: true,
     })
 }
 
@@ -2081,7 +2717,7 @@ fn verify_observed_files(
     Ok(())
 }
 
-fn find_standard_manifest(files: &BTreeMap<String, Vec<u8>>) -> Result<String, AuditError> {
+fn find_standard_manifest(files: &BTreeMap<String, Vec<u8>>) -> Result<Option<String>, AuditError> {
     let candidates: Vec<String> = files
         .keys()
         .filter(|path| {
@@ -2090,10 +2726,8 @@ fn find_standard_manifest(files: &BTreeMap<String, Vec<u8>>) -> Result<String, A
         .cloned()
         .collect();
     match candidates.as_slice() {
-        [path] => Ok(path.clone()),
-        [] => Err(AuditError::StandardManifestDiscovery(
-            "no standard_manifest.json exists in the stabilized repository".into(),
-        )),
+        [path] => Ok(Some(path.clone())),
+        [] => Ok(None),
         _ => Err(AuditError::StandardManifestDiscovery(
             format!(
                 "multiple standard_manifest.json candidates exist: {}",
@@ -2136,6 +2770,8 @@ pub enum AuditError {
     NonUtf8(Box<str>),
     /// Operational project configuration was invalid.
     Project(ProjectConfigurationLoadError),
+    /// Required authored project authority was absent for governed evaluation.
+    ProjectAuthority(Box<str>),
     /// The applicable standard manifest could not be discovered unambiguously.
     StandardManifestDiscovery(Box<str>),
     /// Standard manifest rule index was invalid JSON.
@@ -2200,6 +2836,9 @@ impl Display for AuditError {
             }
             Self::NonUtf8(path) => write!(formatter, "audit input `{path}` is not UTF-8"),
             Self::Project(error) => write!(formatter, "invalid project state: {error}"),
+            Self::ProjectAuthority(error) => {
+                write!(formatter, "project authority is unavailable: {error}")
+            }
             Self::StandardManifestDiscovery(error) => {
                 write!(formatter, "standard manifest discovery failed: {error}")
             }

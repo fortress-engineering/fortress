@@ -1,5 +1,11 @@
 //! Deterministic external outcome, retry, and bounded recovery semantics.
 
+pub(crate) const PROGRAM_ENVIRONMENT_RULE_SOURCE: &str =
+    include_str!("../data/program_environment_rule.json");
+pub(crate) const PROGRAM_RETRY_RULE_SOURCE: &str = include_str!("../data/program_retry_rule.json");
+pub(crate) const PROGRAM_RECOVERY_RULE_SOURCE: &str =
+    include_str!("../data/program_recovery_rule.json");
+
 #[path = "environment_contract.rs"]
 mod environment_contract;
 
@@ -298,7 +304,7 @@ pub struct EnvironmentalAnalysisModel {
     schema: String,
     schema_version: u16,
     semantic_version: String,
-    project_id: String,
+    project_id: Option<String>,
     psm_digest: String,
     semantic_analysis_digest: String,
     state_effect_digest: String,
@@ -727,7 +733,7 @@ pub fn analyze_environmental_semantics(
         schema: ENVIRONMENTAL_ANALYSIS_SCHEMA.into(),
         schema_version: ENVIRONMENTAL_ANALYSIS_SCHEMA_VERSION,
         semantic_version: ENVIRONMENTAL_ANALYSIS_VERSION.into(),
-        project_id: psm.project_id().into(),
+        project_id: psm.project_id().map(str::to_owned),
         psm_digest: psm.digest()?,
         semantic_analysis_digest: semantic.model().digest()?,
         state_effect_digest: state_effect.model().digest()?,

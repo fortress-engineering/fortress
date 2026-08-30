@@ -21,7 +21,7 @@
     "$schema": { "const": "urn:fortress:schema:v1:source-artifact-model" },
     "schema_version": { "const": 1 },
     "semantic_version": { "type": "string", "minLength": 1 },
-    "project_id": { "type": "string", "minLength": 1 },
+    "project_id": { "type": ["string", "null"], "minLength": 1 },
     "source_identity": { "type": "string", "minLength": 1 },
     "universal_regions": { "type": "array", "items": { "type": "string" } },
     "registered_profiles": { "type": "array", "items": { "type": "string" } },

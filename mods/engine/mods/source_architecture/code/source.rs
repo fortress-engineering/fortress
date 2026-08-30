@@ -5,6 +5,11 @@
 //! references to richer program semantics. It does not parse source syntax and
 //! does not define language-specific file idioms.
 
+pub(crate) const SOURCE_PROFILE_RULE_SOURCE: &str =
+    include_str!("../data/source_profile_rule.json");
+pub(crate) const SOURCE_ARTIFACT_RULE_SOURCE: &str =
+    include_str!("../data/source_artifact_rule.json");
+
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
@@ -12,8 +17,6 @@ use std::fmt::{self, Display, Formatter};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
-use crate::contract_coherency::ContractCoherencyGraph;
-use crate::filing::ProjectFilingModel;
 use crate::finding::{
     CanonicalFinding, EvaluatorProvenance, FindingCategory, FindingError, FindingLocation,
     FindingOccurrence, RuleFindingDefinition,
@@ -771,7 +774,7 @@ pub struct SourceArtifactModel {
     schema: String,
     schema_version: u16,
     semantic_version: String,
-    project_id: String,
+    project_id: Option<String>,
     source_identity: String,
     universal_regions: Vec<SemanticRegion>,
     registered_profiles: Vec<String>,
@@ -779,6 +782,30 @@ pub struct SourceArtifactModel {
     summary: SourceArtifactSummary,
     unsupported_semantics: Vec<String>,
     provenance: SourceModelProvenance,
+}
+
+/// One source artifact admitted by the shared observation/ownership boundary.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub struct SourceArtifactInput {
+    path: String,
+    owner: String,
+    owner_relative_path: String,
+}
+
+impl SourceArtifactInput {
+    /// Creates one explicit source-artifact membership relation.
+    #[must_use]
+    pub fn new(
+        path: impl Into<String>,
+        owner: impl Into<String>,
+        owner_relative_path: impl Into<String>,
+    ) -> Self {
+        Self {
+            path: path.into(),
+            owner: owner.into(),
+            owner_relative_path: owner_relative_path.into(),
+        }
+    }
 }
 
 impl SourceArtifactModel {
@@ -842,14 +869,14 @@ impl SourceArchitectureEvaluation {
 
 /// Complete language-neutral compilation input.
 pub struct SourceArchitectureInput<'a> {
-    /// Stable project identity.
-    pub project_id: &'a str,
+    /// Stable project identity when authored authority exists.
+    pub project_id: Option<&'a str>,
     /// Snapshot/content identity of exact input bytes.
     pub source_identity: &'a str,
-    /// Canonical Project Filing System model.
-    pub filing: &'a ProjectFilingModel,
-    /// Canonical CCG for stable Module identity and current location.
-    pub ccg: &'a ContractCoherencyGraph,
+    /// Source files admitted by the shared observation/ownership relation.
+    pub artifacts: &'a [SourceArtifactInput],
+    /// Authority used to resolve source membership and ownership.
+    pub project_model_authority: &'a str,
     /// Exact repository file bytes.
     pub files: &'a BTreeMap<String, Vec<u8>>,
     /// Canonical `code_docs.md` responsibility projection.
@@ -900,39 +927,15 @@ pub fn evaluate_source_architecture(
         .iter()
         .map(|entry| (entry.extension.as_str(), entry))
         .collect::<BTreeMap<_, _>>();
-    let path_to_module = input
-        .ccg
-        .module_paths()
-        .iter()
-        .map(|(id, path)| {
-            (
-                if path.is_empty() { "." } else { path.as_str() },
-                id.as_str(),
-            )
-        })
-        .collect::<BTreeMap<_, _>>();
-
     let mut artifacts = Vec::new();
     let mut conclusions = Vec::new();
-    for entry in input
-        .filing
-        .inventory()
-        .entries()
-        .iter()
-        .filter(|entry| entry.element() == "code")
-    {
-        let path = entry.path();
-        let module_path = entry.module();
-        let module_id = path_to_module
-            .get(module_path)
-            .copied()
-            .unwrap_or("UNKNOWN-MODULE");
-        let module_relative_path = if module_path == "." {
-            path.strip_prefix("code/").unwrap_or(path)
-        } else {
-            path.strip_prefix(&format!("{module_path}/code/"))
-                .unwrap_or(path)
-        };
+    let mut source_inputs = input.artifacts.to_vec();
+    source_inputs.sort();
+    source_inputs.dedup();
+    for entry in &source_inputs {
+        let path = entry.path.as_str();
+        let module_id = entry.owner.as_str();
+        let module_relative_path = entry.owner_relative_path.as_str();
         let artifact_id = artifact_identity(module_id, module_relative_path);
         let bytes = input.files.get(path).map_or(&[][..], Vec::as_slice);
         let authored_responsibility =
@@ -1039,7 +1042,7 @@ pub fn evaluate_source_architecture(
             schema: SOURCE_ARTIFACT_MODEL_SCHEMA.into(),
             schema_version: SOURCE_ARTIFACT_MODEL_SCHEMA_VERSION,
             semantic_version: SOURCE_ARCHITECTURE_SEMANTIC_VERSION.into(),
-            project_id: input.project_id.into(),
+            project_id: input.project_id.map(str::to_owned),
             source_identity: input.source_identity.into(),
             universal_regions: SEMANTIC_REGIONS.to_vec(),
             registered_profiles,
@@ -1054,7 +1057,7 @@ pub fn evaluate_source_architecture(
             ],
             provenance: SourceModelProvenance {
                 responsibility_authority: "snapshot-governance/canonical-code-docs-v1".into(),
-                project_model_authority: "project-model/project-filing-system-v1".into(),
+                project_model_authority: input.project_model_authority.into(),
                 observation_authorities,
                 psm_digest: input.psm_digest.map(str::to_owned),
             },

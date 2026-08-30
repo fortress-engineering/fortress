@@ -5,6 +5,8 @@
 //! whose path semantics Fortress understands, and simulates physical moves
 //! without changing architectural meaning.
 
+pub(crate) const REFERENCE_RULE_SOURCE: &str = include_str!("../data/reference_rule.json");
+
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
 use std::fmt::{self, Display, Formatter, Write};

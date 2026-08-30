@@ -5,6 +5,8 @@
 //! physical territory from canonical Module containment. It introduces no
 //! writable architecture manifest authority.
 
+pub(crate) const DEPENDENCY_RULE_SOURCE: &str = include_str!("../data/dependency_rule.json");
+
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 use crate::contract_coherency::ContractCoherencyGraph;

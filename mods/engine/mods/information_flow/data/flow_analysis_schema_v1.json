@@ -9,7 +9,7 @@
     "$schema": { "const": "urn:fortress:schema:v1:information-flow-analysis" },
     "schema_version": { "const": 1 },
     "semantic_version": { "type": "string" },
-    "project_id": { "type": "string" },
+    "project_id": { "type": ["string", "null"] },
     "psm_digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
     "semantic_analysis_digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
     "state_effect_digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },

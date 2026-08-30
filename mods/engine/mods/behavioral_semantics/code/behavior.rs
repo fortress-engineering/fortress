@@ -1,5 +1,7 @@
 //! Deterministic compilation of Contract v2 behavior into intended BFG v1.
 
+pub(crate) const BEHAVIOR_FLOW_RULE_SOURCE: &str = include_str!("../data/behavior_flow_rule.json");
+
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};

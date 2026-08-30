@@ -3,7 +3,7 @@
   "schema_version": 1,
   "resolver_semantic_version": "1.0.0",
   "project_id": "PF-FORTRESS",
-  "source_ccg_digest": "sha256:2852ad53f7ae89e5e803439a0f53ab12413b40016d1a3cc107d6ee021c4ab75f",
+  "source_ccg_digest": "sha256:df824c8b63ee778adc36cfd4fa44b88c4286b8136f18ac0085c473da2db14c13",
   "modules": [
     {
       "module_id": "AF-ARCHITECTURE-EVALUATION-0001",
@@ -520,6 +520,22 @@
     },
     {
       "class": "LOCAL",
+      "source_module": "AF-ARCHITECTURE-EVALUATION-0001",
+      "target_module": "AF-ARCHITECTURE-EVALUATION-0001",
+      "authority": "rust-local-path",
+      "projection": "../data/dependency_rule.json",
+      "provenance": "mods/engine/mods/architecture_evaluation/code/architecture.rs"
+    },
+    {
+      "class": "LOCAL",
+      "source_module": "AF-ARCHITECTURE-EVALUATION-0001",
+      "target_module": "AF-ARCHITECTURE-EVALUATION-0001",
+      "authority": "rust-local-path",
+      "projection": "../data/realization_rule.json",
+      "provenance": "mods/engine/mods/architecture_evaluation/code/realization.rs"
+    },
+    {
+      "class": "LOCAL",
       "source_module": "AF-BEHAVIORAL-REALIZATION-0001",
       "target_module": "AF-BEHAVIORAL-REALIZATION-0001",
       "authority": "repository-relative-local",
@@ -587,6 +603,22 @@
       "source_module": "AF-BEHAVIORAL-REALIZATION-0001",
       "target_module": "AF-BEHAVIORAL-REALIZATION-0001",
       "authority": "rust-local-path",
+      "projection": "../data/behavior_bypass_rule.json",
+      "provenance": "mods/engine/mods/behavioral_realization/code/realization.rs"
+    },
+    {
+      "class": "LOCAL",
+      "source_module": "AF-BEHAVIORAL-REALIZATION-0001",
+      "target_module": "AF-BEHAVIORAL-REALIZATION-0001",
+      "authority": "rust-local-path",
+      "projection": "../data/behavior_realization_rule.json",
+      "provenance": "mods/engine/mods/behavioral_realization/code/realization.rs"
+    },
+    {
+      "class": "LOCAL",
+      "source_module": "AF-BEHAVIORAL-REALIZATION-0001",
+      "target_module": "AF-BEHAVIORAL-REALIZATION-0001",
+      "authority": "rust-local-path",
       "projection": "realization_contract.rs",
       "provenance": "mods/engine/mods/behavioral_realization/code/realization.rs"
     },
@@ -620,6 +652,14 @@
       "target_module": "AF-BEHAVIORAL-SEMANTICS-0001",
       "authority": "rust-crate-module",
       "projection": null,
+      "provenance": "mods/engine/mods/behavioral_semantics/code/behavior.rs"
+    },
+    {
+      "class": "LOCAL",
+      "source_module": "AF-BEHAVIORAL-SEMANTICS-0001",
+      "target_module": "AF-BEHAVIORAL-SEMANTICS-0001",
+      "authority": "rust-local-path",
+      "projection": "../data/behavior_flow_rule.json",
       "provenance": "mods/engine/mods/behavioral_semantics/code/behavior.rs"
     },
     {
@@ -843,6 +883,30 @@
       "source_module": "AF-ENVIRONMENTAL-SEMANTICS-0001",
       "target_module": "AF-ENVIRONMENTAL-SEMANTICS-0001",
       "authority": "rust-local-path",
+      "projection": "../data/program_environment_rule.json",
+      "provenance": "mods/engine/mods/environmental_semantics/code/environmental.rs"
+    },
+    {
+      "class": "LOCAL",
+      "source_module": "AF-ENVIRONMENTAL-SEMANTICS-0001",
+      "target_module": "AF-ENVIRONMENTAL-SEMANTICS-0001",
+      "authority": "rust-local-path",
+      "projection": "../data/program_recovery_rule.json",
+      "provenance": "mods/engine/mods/environmental_semantics/code/environmental.rs"
+    },
+    {
+      "class": "LOCAL",
+      "source_module": "AF-ENVIRONMENTAL-SEMANTICS-0001",
+      "target_module": "AF-ENVIRONMENTAL-SEMANTICS-0001",
+      "authority": "rust-local-path",
+      "projection": "../data/program_retry_rule.json",
+      "provenance": "mods/engine/mods/environmental_semantics/code/environmental.rs"
+    },
+    {
+      "class": "LOCAL",
+      "source_module": "AF-ENVIRONMENTAL-SEMANTICS-0001",
+      "target_module": "AF-ENVIRONMENTAL-SEMANTICS-0001",
+      "authority": "rust-local-path",
       "projection": "environment_contract.rs",
       "provenance": "mods/engine/mods/environmental_semantics/code/environmental.rs"
     },
@@ -956,6 +1020,14 @@
       "target_module": "AF-INFORMATION-FLOW-0001",
       "authority": "rust-crate-module",
       "projection": null,
+      "provenance": "mods/engine/mods/information_flow/code/information_flow.rs"
+    },
+    {
+      "class": "LOCAL",
+      "source_module": "AF-INFORMATION-FLOW-0001",
+      "target_module": "AF-INFORMATION-FLOW-0001",
+      "authority": "rust-local-path",
+      "projection": "../data/program_infoflow_rule.json",
       "provenance": "mods/engine/mods/information_flow/code/information_flow.rs"
     },
     {
@@ -1128,6 +1200,14 @@
     },
     {
       "class": "LOCAL",
+      "source_module": "AF-REFERENCE-RESOLUTION-0001",
+      "target_module": "AF-REFERENCE-RESOLUTION-0001",
+      "authority": "rust-local-path",
+      "projection": "../data/reference_rule.json",
+      "provenance": "mods/engine/mods/reference_resolution/code/reference.rs"
+    },
+    {
+      "class": "LOCAL",
       "source_module": "AF-REPOSITORY-OBSERVATION-0001",
       "target_module": "AF-REPOSITORY-OBSERVATION-0001",
       "authority": "repository-relative-local",
@@ -1220,6 +1300,14 @@
       "target_module": "AF-SEMANTIC-ANALYSIS-0001",
       "authority": "rust-crate-module",
       "projection": null,
+      "provenance": "mods/engine/mods/semantic_analysis/code/semantic.rs"
+    },
+    {
+      "class": "LOCAL",
+      "source_module": "AF-SEMANTIC-ANALYSIS-0001",
+      "target_module": "AF-SEMANTIC-ANALYSIS-0001",
+      "authority": "rust-local-path",
+      "projection": "../data/program_domain_rule.json",
       "provenance": "mods/engine/mods/semantic_analysis/code/semantic.rs"
     },
     {
@@ -1379,7 +1467,7 @@
       "source_module": "AF-SNAPSHOT-GOVERNANCE-0001",
       "target_module": "AF-SNAPSHOT-GOVERNANCE-0001",
       "authority": "repository-relative-local",
-      "projection": "../data/snapshot_audit_schema_v2.json",
+      "projection": "../data/snapshot_audit_schema_v3.json",
       "provenance": "mods/engine/mods/snapshot_governance/docs/data_docs.md"
     },
     {
@@ -1488,6 +1576,54 @@
     },
     {
       "class": "LOCAL",
+      "source_module": "AF-SNAPSHOT-GOVERNANCE-0001",
+      "target_module": "AF-SNAPSHOT-GOVERNANCE-0001",
+      "authority": "rust-local-path",
+      "projection": "../data/contract_rule.json",
+      "provenance": "mods/engine/mods/snapshot_governance/code/contract.rs"
+    },
+    {
+      "class": "LOCAL",
+      "source_module": "AF-SNAPSHOT-GOVERNANCE-0001",
+      "target_module": "AF-SNAPSHOT-GOVERNANCE-0001",
+      "authority": "rust-local-path",
+      "projection": "../data/documentation_rule.json",
+      "provenance": "mods/engine/mods/snapshot_governance/code/documentation.rs"
+    },
+    {
+      "class": "LOCAL",
+      "source_module": "AF-SNAPSHOT-GOVERNANCE-0001",
+      "target_module": "AF-SNAPSHOT-GOVERNANCE-0001",
+      "authority": "rust-local-path",
+      "projection": "../data/module_rule.json",
+      "provenance": "mods/engine/mods/snapshot_governance/code/placement.rs"
+    },
+    {
+      "class": "LOCAL",
+      "source_module": "AF-SNAPSHOT-GOVERNANCE-0001",
+      "target_module": "AF-SNAPSHOT-GOVERNANCE-0001",
+      "authority": "rust-local-path",
+      "projection": "../data/ownership_rule.json",
+      "provenance": "mods/engine/mods/snapshot_governance/code/ownership.rs"
+    },
+    {
+      "class": "LOCAL",
+      "source_module": "AF-SNAPSHOT-GOVERNANCE-0001",
+      "target_module": "AF-SNAPSHOT-GOVERNANCE-0001",
+      "authority": "rust-local-path",
+      "projection": "../data/test_boundary_rule.json",
+      "provenance": "mods/engine/mods/snapshot_governance/code/testing_boundary.rs"
+    },
+    {
+      "class": "LOCAL",
+      "source_module": "AF-SNAPSHOT-GOVERNANCE-0001",
+      "target_module": "AF-SNAPSHOT-GOVERNANCE-0001",
+      "authority": "rust-local-path",
+      "projection": "../data/traceability_rule.json",
+      "provenance": "mods/engine/mods/snapshot_governance/code/traceability.rs"
+    },
+    {
+      "class": "LOCAL",
       "source_module": "AF-SOURCE-ARCHITECTURE-0001",
       "target_module": "AF-SOURCE-ARCHITECTURE-0001",
       "authority": "repository-relative-local",
@@ -1540,6 +1676,22 @@
       "target_module": "AF-SOURCE-ARCHITECTURE-0001",
       "authority": "rust-crate-module",
       "projection": null,
+      "provenance": "mods/engine/mods/source_architecture/code/source.rs"
+    },
+    {
+      "class": "LOCAL",
+      "source_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "target_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "authority": "rust-local-path",
+      "projection": "../data/source_artifact_rule.json",
+      "provenance": "mods/engine/mods/source_architecture/code/source.rs"
+    },
+    {
+      "class": "LOCAL",
+      "source_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "target_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "authority": "rust-local-path",
+      "projection": "../data/source_profile_rule.json",
       "provenance": "mods/engine/mods/source_architecture/code/source.rs"
     },
     {
@@ -1640,6 +1792,22 @@
     },
     {
       "class": "LOCAL",
+      "source_module": "AF-STANDARD-REGISTRY-0001",
+      "target_module": "AF-STANDARD-REGISTRY-0001",
+      "authority": "rust-local-path",
+      "projection": "../data/standard_manifest.json",
+      "provenance": "mods/engine/mods/standard_registry/code/standard.rs"
+    },
+    {
+      "class": "LOCAL",
+      "source_module": "AF-STANDARD-REGISTRY-0001",
+      "target_module": "AF-STANDARD-REGISTRY-0001",
+      "authority": "rust-local-path",
+      "projection": "../data/std_id_rule.json",
+      "provenance": "mods/engine/mods/standard_registry/code/standard.rs"
+    },
+    {
+      "class": "LOCAL",
       "source_module": "AF-STATE-EFFECT-ANALYSIS-0001",
       "target_module": "AF-STATE-EFFECT-ANALYSIS-0001",
       "authority": "repository-relative-local",
@@ -1700,6 +1868,22 @@
       "target_module": "AF-STATE-EFFECT-ANALYSIS-0001",
       "authority": "rust-crate-module",
       "projection": null,
+      "provenance": "mods/engine/mods/state_effect_analysis/code/state_effect.rs"
+    },
+    {
+      "class": "LOCAL",
+      "source_module": "AF-STATE-EFFECT-ANALYSIS-0001",
+      "target_module": "AF-STATE-EFFECT-ANALYSIS-0001",
+      "authority": "rust-local-path",
+      "projection": "../data/program_effect_rule.json",
+      "provenance": "mods/engine/mods/state_effect_analysis/code/state_effect.rs"
+    },
+    {
+      "class": "LOCAL",
+      "source_module": "AF-STATE-EFFECT-ANALYSIS-0001",
+      "target_module": "AF-STATE-EFFECT-ANALYSIS-0001",
+      "authority": "rust-local-path",
+      "projection": "../data/program_state_rule.json",
       "provenance": "mods/engine/mods/state_effect_analysis/code/state_effect.rs"
     },
     {
@@ -7784,7 +7968,7 @@
       "pointer": "/schemas/9",
       "source_module": "AF-STANDARD-REGISTRY-0001",
       "target_module": "AF-SNAPSHOT-GOVERNANCE-0001",
-      "resolved_target": "mods/engine/mods/snapshot_governance/data/snapshot_audit_schema_v2.json"
+      "resolved_target": "mods/engine/mods/snapshot_governance/data/snapshot_audit_schema_v3.json"
     },
     {
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
@@ -9635,7 +9819,7 @@
   "summary": {
     "modules": 40,
     "semantic_references": 162,
-    "local_references": 244,
+    "local_references": 267,
     "physical_projections": 183,
     "external_references": 208,
     "authored_resolution_boundaries": 128,

@@ -58,6 +58,50 @@ struct AuditFixture {
     root: PathBuf,
 }
 
+struct ObservationFixture {
+    root: PathBuf,
+}
+
+impl ObservationFixture {
+    fn new() -> Self {
+        let identity = NEXT_FIXTURE.fetch_add(1, Ordering::Relaxed);
+        let root = std::env::temp_dir().join(format!(
+            "fortress-cli-observation-{}-{identity}",
+            std::process::id()
+        ));
+        fs::create_dir_all(root.join("src/runtime")).expect("source directories create");
+        fs::create_dir_all(root.join("tests")).expect("test directory creates");
+        fs::write(
+            root.join("Cargo.toml"),
+            "[package]\nname='ordinary'\nversion='0.1.0'\nedition='2021'\n[lib]\npath='src/lib.rs'\n",
+        )
+        .expect("manifest writes");
+        fs::write(
+            root.join("src/lib.rs"),
+            "pub mod runtime;\npub fn run(value: bool) -> bool { runtime::flip(value) }\n",
+        )
+        .expect("library writes");
+        fs::write(
+            root.join("src/runtime/mod.rs"),
+            "pub fn flip(value: bool) -> bool { !value }\n",
+        )
+        .expect("nested module writes");
+        fs::write(root.join("tests/plain.rs"), "#[test]\nfn ordinary() {}\n")
+            .expect("ordinary test writes");
+        Self { root }
+    }
+
+    fn argument(&self) -> String {
+        self.root.to_string_lossy().into_owned()
+    }
+}
+
+impl Drop for ObservationFixture {
+    fn drop(&mut self) {
+        fs::remove_dir_all(&self.root).expect("observation fixture removes");
+    }
+}
+
 impl AuditFixture {
     #[allow(clippy::too_many_lines)]
     fn new() -> Self {
@@ -482,8 +526,10 @@ fn audit_malformed_project_state_is_non_success() {
     let fixture = AuditFixture::new();
     fs::write(fixture.root.join("data/project.json"), "{").expect("project corrupts");
     let output = run_owned(&["audit".into(), fixture.argument()]);
-    assert_eq!(output.status.code(), Some(2));
-    assert!(String::from_utf8_lossy(&output.stderr).contains("invalid project state"));
+    assert_eq!(output.status.code(), Some(1));
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Governance: Invalid"));
+    assert!(stdout.contains("Unsupported analysis:"));
 }
 
 /// `T-TF-CLI-0001-R04-004`
@@ -498,7 +544,7 @@ fn audit_json_is_valid_and_repeatable() {
     assert_eq!(first.stdout, second.stdout);
     let value: serde_json::Value =
         serde_json::from_slice(&first.stdout).expect("audit output is JSON");
-    assert_eq!(value["schema_version"], 2);
+    assert_eq!(value["schema_version"], 3);
     assert_eq!(value["outcome"], "PASS");
     assert!(value["diagnostics"].is_array());
     assert!(value["unsupported_analysis"].is_array());
@@ -511,6 +557,35 @@ fn audit_rejects_unsupported_options() {
     let output = run(&["audit", "--format", "xml"]);
     assert_eq!(output.status.code(), Some(2));
     assert!(String::from_utf8_lossy(&output.stderr).contains("human` or `json"));
+}
+
+/// `T-TF-CLI-0001-R04-006`
+/// Fortress requirement: TF-CLI-0001-R04
+#[test]
+fn observation_commands_accept_ordinary_cargo_layout_without_governance_files() {
+    let fixture = ObservationFixture::new();
+    for command in ["psm", "state-effect", "source-artifacts"] {
+        let output = run_owned(&[command.into(), fixture.argument(), "--format=json".into()]);
+        assert!(
+            output.status.success(),
+            "{command} failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        let value: serde_json::Value =
+            serde_json::from_slice(&output.stdout).expect("command output is JSON");
+        assert!(value["project_id"].is_null());
+    }
+    let audit = run_owned(&["audit".into(), fixture.argument(), "--format=json".into()]);
+    assert_eq!(audit.status.code(), Some(1));
+    let value: serde_json::Value =
+        serde_json::from_slice(&audit.stdout).expect("audit output is JSON");
+    assert_eq!(value["outcome"], "MISSING");
+    assert_eq!(value["governance"]["project_authority"], "ABSENT");
+    assert!(
+        value["observation"]["psm_symbols"]
+            .as_u64()
+            .is_some_and(|count| count >= 2)
+    );
 }
 
 /// `T-TF-CLI-0001-R05-001`

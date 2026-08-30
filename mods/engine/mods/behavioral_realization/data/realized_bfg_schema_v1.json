@@ -28,7 +28,7 @@
     "$schema": { "const": "urn:fortress:schema:v1:realized-behavioral-flow-graph" },
     "schema_version": { "const": 1 },
     "semantic_version": { "const": "1.0.0" },
-    "project_id": { "$ref": "#/$defs/stable_id" },
+    "project_id": { "oneOf": [{ "$ref": "#/$defs/stable_id" }, { "type": "null" }] },
     "view": { "const": "realized" },
     "intended_bfg_digest": { "$ref": "#/$defs/digest" },
     "psm_digest": { "$ref": "#/$defs/digest" },

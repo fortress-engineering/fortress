@@ -86,6 +86,109 @@ pub struct ModuleTerritory {
     path: String,
 }
 
+/// Authority supporting one source-to-owner relation used by analyzers.
+///
+/// Analysis territories are deterministic repository-local scaffolding. They
+/// are never declarations of Fortress Module intent.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum SourceOwnershipAuthority {
+    /// The narrowest declared Fortress Module physically contains the source.
+    DeclaredModule,
+    /// Cargo placement supplies a mechanical owner only for analysis.
+    CargoAnalysisTerritory,
+}
+
+/// One explicit repository-relative source ownership relation.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct SourceOwnership {
+    source_path: String,
+    owner: String,
+    territory_path: String,
+    authority: SourceOwnershipAuthority,
+}
+
+impl SourceOwnership {
+    /// Returns the exact repository-relative source path.
+    #[must_use]
+    pub fn source_path(&self) -> &str {
+        &self.source_path
+    }
+
+    /// Returns the declared Module ID or explicit analysis-only territory ID.
+    #[must_use]
+    pub fn owner(&self) -> &str {
+        &self.owner
+    }
+
+    /// Returns the repository-relative root used to resolve the relation.
+    #[must_use]
+    pub fn territory_path(&self) -> &str {
+        &self.territory_path
+    }
+
+    /// Returns the authority supporting this ownership relation.
+    #[must_use]
+    pub const fn authority(&self) -> SourceOwnershipAuthority {
+        self.authority
+    }
+}
+
+/// Resolves Rust source ownership independently from filing conformance.
+///
+/// Declared Module containment takes precedence. Otherwise the nearest Cargo
+/// manifest supplies a deterministic analysis-only territory. Rust sources
+/// outside both authorities remain unresolved and are deliberately omitted.
+#[must_use]
+pub fn resolve_source_ownership<'a>(
+    paths: impl IntoIterator<Item = &'a str>,
+    modules: &[ModuleTerritory],
+) -> Vec<SourceOwnership> {
+    let mut paths = paths.into_iter().map(str::to_owned).collect::<Vec<_>>();
+    paths.sort();
+    paths.dedup();
+    let manifests = paths
+        .iter()
+        .filter(|path| path.as_str() == "Cargo.toml" || path.ends_with("/Cargo.toml"))
+        .map(|path| (path.clone(), parent_path(path)))
+        .collect::<Vec<_>>();
+    let mut ownerships = Vec::new();
+    for path in paths.iter().filter(|path| {
+        std::path::Path::new(path)
+            .extension()
+            .is_some_and(|extension| extension.eq_ignore_ascii_case("rs"))
+    }) {
+        if let Some(module) = modules
+            .iter()
+            .filter(|module| contains_path(module.path(), path))
+            .max_by_key(|module| module.path().len())
+        {
+            ownerships.push(SourceOwnership {
+                source_path: path.clone(),
+                owner: module.id().into(),
+                territory_path: module.path().into(),
+                authority: SourceOwnershipAuthority::DeclaredModule,
+            });
+            continue;
+        }
+        if let Some((manifest, territory)) = manifests
+            .iter()
+            .filter(|(_, territory)| contains_path(territory, path))
+            .max_by_key(|(_, territory)| territory.len())
+        {
+            let digest = format!("{:X}", Sha256::digest(manifest.as_bytes()));
+            ownerships.push(SourceOwnership {
+                source_path: path.clone(),
+                owner: format!("SRC-ANALYSIS-CARGO-{}", &digest[..16]),
+                territory_path: territory.clone(),
+                authority: SourceOwnershipAuthority::CargoAnalysisTerritory,
+            });
+        }
+    }
+    ownerships.sort();
+    ownerships
+}
+
 impl ModuleTerritory {
     /// Creates one Module identity/path pair inferred from canonical containment.
     #[must_use]
@@ -114,7 +217,7 @@ impl ModuleTerritory {
 pub struct ImplementationObservationInput {
     snapshot_fingerprint: String,
     files: Vec<SnapshotBoundFile>,
-    modules: Vec<ModuleTerritory>,
+    ownerships: Vec<SourceOwnership>,
 }
 
 impl ImplementationObservationInput {
@@ -127,10 +230,25 @@ impl ImplementationObservationInput {
     ) -> Self {
         files.sort_by(|left, right| left.path.cmp(&right.path));
         modules.sort_by(|left, right| left.path.cmp(&right.path));
+        let ownerships =
+            resolve_source_ownership(files.iter().map(SnapshotBoundFile::path), &modules);
+        Self::new_with_ownership(snapshot_fingerprint, files, ownerships)
+    }
+
+    /// Creates input from an already resolved canonical ownership relation.
+    #[must_use]
+    pub fn new_with_ownership(
+        snapshot_fingerprint: impl Into<String>,
+        mut files: Vec<SnapshotBoundFile>,
+        mut ownerships: Vec<SourceOwnership>,
+    ) -> Self {
+        files.sort_by(|left, right| left.path.cmp(&right.path));
+        ownerships.sort();
+        ownerships.dedup();
         Self {
             snapshot_fingerprint: snapshot_fingerprint.into(),
             files,
-            modules,
+            ownerships,
         }
     }
 
@@ -142,8 +260,8 @@ impl ImplementationObservationInput {
         &self.files
     }
 
-    pub(crate) fn modules(&self) -> &[ModuleTerritory] {
-        &self.modules
+    pub(crate) fn ownerships(&self) -> &[SourceOwnership] {
+        &self.ownerships
     }
 }
 
@@ -161,10 +279,22 @@ pub enum ImplementationRelationKind {
 pub enum TargetClassification {
     /// A source target owned by a governed Fortress Module.
     GovernedModule,
+    /// A local target owned only by deterministic analysis scaffolding.
+    AnalysisTerritory,
     /// A dependency outside the governed Fortress Module ecosystem.
     ExternalDependency,
     /// A supported reference whose target could not be established confidently.
     Unresolved,
+}
+
+fn parent_path(path: &str) -> String {
+    path.rsplit_once('/')
+        .map_or("", |(parent, _)| parent)
+        .into()
+}
+
+fn contains_path(root: &str, path: &str) -> bool {
+    root.is_empty() || path == root || path.starts_with(&format!("{root}/"))
 }
 
 /// Confidence/result state for one analyzed reference.

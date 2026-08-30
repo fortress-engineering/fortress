@@ -1,5 +1,7 @@
 //! Standard evaluation of the canonical Project Filing System model.
 
+pub(crate) const MODULE_RULE_SOURCE: &str = include_str!("../data/module_rule.json");
+
 use crate::filing::{FilingSystemProfiles, ProjectFilingModel, analyze_project_filing_system};
 use crate::finding::{
     CanonicalFinding, EvaluatorProvenance, FindingCategory, FindingError, FindingLocation,

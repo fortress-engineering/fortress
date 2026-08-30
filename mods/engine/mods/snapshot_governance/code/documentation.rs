@@ -5,6 +5,8 @@
 //! authority. Filesystem membership, Module contracts, and human projections
 //! remain distinct inputs whose required bijections are checked explicitly.
 
+pub(crate) const DOCUMENTATION_RULE_SOURCE: &str = include_str!("../data/documentation_rule.json");
+
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};

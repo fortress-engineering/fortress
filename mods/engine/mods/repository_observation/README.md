@@ -6,7 +6,7 @@ Repository Observation exists to turn an ordinary local repository tree into sta
 
 ## Responsibility
 
-Walk governed files using explicit exclusions, normalize repository-relative paths, hash bytes, and return a deterministically ordered observation suitable for snapshot stabilization.
+Walk repository files using explicit operational exclusions, normalize repository-relative paths, hash bytes, and return a deterministically ordered observation suitable for snapshot stabilization whether or not project governance authority is present.
 
 ## Scope
 
@@ -24,7 +24,7 @@ Project ownership claims, semantic rule interpretation, source-language analysis
 
 **Types:** `depends_on`
 
-Consumes the project-authored observation exclusion policy while preserving observations as separate facts.
+Consumes a project-authored observation exclusion policy when present. Without project authority, tooling may apply a documented operational exclusion such as `.git` without materializing that behavior as authored intent.
 
 ## Guarantees
 

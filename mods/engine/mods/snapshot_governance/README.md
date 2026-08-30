@@ -6,7 +6,7 @@ Snapshot Governance exists to answer what is true and what violates the declared
 
 ## Responsibility
 
-Build stabilized content-addressed repository snapshots, coordinate one CCG, one Intended BFG, one independent Rust implementation observation, one Program Semantic Model, one shared sequence of value-domain, state/effect, information-flow, and environmental analyses, and one Realized BFG, analyze supported Rust test facts, execute implemented rules truthfully, normalize deterministic findings, retain Architecture Evaluation diagnostics as a separate non-normative projection, orchestrate machine-readable and human repository audits, and issue or verify content-addressed local quality-gate certificates while governing deterministic projection materialization without overstating authentication.
+Build stabilized content-addressed repository snapshots, coordinate governed conformance when authored authority exists, expose implementation observation and supported semantic analysis when it does not, analyze Rust tests without conflating existence with stable governance identity, execute implemented rules truthfully, normalize deterministic findings, retain Architecture Evaluation diagnostics as a separate non-normative projection, orchestrate machine-readable and human repository audits, and issue or verify content-addressed local quality-gate certificates while governing deterministic projection materialization without overstating authentication.
 
 ## Scope
 
@@ -108,7 +108,7 @@ Consumes one deterministic PSM-backed function-domain evaluation so PROGRAM-DOMA
 
 **Types:** `depends_on`
 
-Compiles the canonical code documentation catalog, Project Filing ownership, and existing implementation observations into one deterministic language-neutral Source Artifact Model.
+Compiles the canonical code documentation catalog when governed and the shared explicit source-ownership relation plus existing implementation observations into one deterministic language-neutral Source Artifact Model.
 
 ### [State and Effect Analysis](../state_effect_analysis/README.md)
 
@@ -120,8 +120,8 @@ Consumes one PSM- and Semantic-Analysis-backed typestate/effect evaluation so PR
 
 **Types:** `depends_on`
 
-Consumes the exact applicable rule bundle and stable rule identities.
+Consumes an exact project-bound Standard bundle when authored and validated, or the exact Standard authority installed with Fortress for analysis. Installed authority does not create project opt-in or favorable conformance.
 
 ## Guarantees
 
-No wall-clock, cache location, or absolute path enters snapshot, CCG, Intended BFG, PSM, semantic-analysis, state/effect, information-flow, environmental, Realized BFG, or quality-certificate identity; repository mutation is rejected when observed bytes diverge; the CCG, Intended BFG, observed implementation, PSM, Semantic Analysis, State/Effect Analysis, Information Flow Analysis, Environmental Analysis, and Realized BFG are each compiled from one exact snapshot; unimplemented rules remain UNSUPPORTED; unmodeled behavior and unknown program, information-flow, environmental, or behavioral-realization semantics are not reported as passing proof; findings never redefine rules; diagnostics never alter PASS or FAIL; audit output never claims runtime trace evidence, verified behavior, or release certification. The local certificate binds every authoritative repository input, the complete derived-artifact registry, exact generated digests and byte sizes, tracked evidence bytes, and every passing gate. Locally materialized bulk bytes are addressed by the recorded source fingerprint; their absence is MISSING and prior-subject bytes are STALE, while lightweight certificate verification relies on durable digest evidence rather than undocumented cache state. Its digest stamp does not authenticate its issuer. Stabilization is an optimistic content protocol rather than a filesystem lock, so a malicious host or a transient mutation reverted to identical bytes remains outside its trust guarantee.
+No wall-clock, cache location, or absolute path enters snapshot, CCG, Intended BFG, PSM, semantic-analysis, state/effect, information-flow, environmental, Realized BFG, or quality-certificate identity; repository mutation is rejected when observed bytes diverge; governed analysis products are each compiled from one exact snapshot; unimplemented rules remain UNSUPPORTED; missing project authority is MISSING rather than PASS; unmodeled behavior and unknown program, information-flow, environmental, or behavioral-realization semantics are not reported as passing proof; findings never redefine rules; diagnostics never alter PASS or FAIL; audit output never claims runtime trace evidence, verified behavior, or release certification. Repository observation may precede governance resolution, but certification still requires exact authored authority and strict conformance. The local certificate binds every authoritative repository input, the complete derived-artifact registry, exact generated digests and byte sizes, tracked evidence bytes, and every passing gate. Locally materialized bulk bytes are addressed by the recorded source fingerprint; their absence is MISSING and prior-subject bytes are STALE, while lightweight certificate verification relies on durable digest evidence rather than undocumented cache state. Its digest stamp does not authenticate its issuer. Stabilization is an optimistic content protocol rather than a filesystem lock, so a malicious host or a transient mutation reverted to identical bytes remains outside its trust guarantee.

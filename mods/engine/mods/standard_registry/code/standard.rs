@@ -12,6 +12,15 @@ use sha2::{Digest, Sha256};
 
 use crate::identity::{RuleId, RuleIdError, StableId, StableIdError};
 
+const INSTALLED_STANDARD_MANIFEST: &str = include_str!("../data/standard_manifest.json");
+pub(crate) const STD_ID_RULE_SOURCE: &str = include_str!("../data/std_id_rule.json");
+
+/// Returns the exact Standard manifest authority installed with Fortress.
+#[must_use]
+pub const fn installed_standard_manifest() -> &'static str {
+    INSTALLED_STANDARD_MANIFEST
+}
+
 /// Rule category attached to normative metadata and normalized findings.
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "lowercase")]

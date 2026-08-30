@@ -1,5 +1,7 @@
 //! Snapshot-rule projection of CCG parent-local verification topology.
 
+pub(crate) const TEST_BOUNDARY_RULE_SOURCE: &str = include_str!("../data/test_boundary_rule.json");
+
 use crate::contract_coherency::ContractCoherencyGraph;
 use crate::finding::{
     CanonicalFinding, EvaluatorProvenance, FindingCategory, FindingError, FindingLocation,

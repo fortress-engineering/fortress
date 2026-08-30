@@ -12,7 +12,7 @@ Analyze exact snapshot-bound implementation source with supported language seman
 
 ### Includes
 
-Language-neutral observation facts, snapshot content verification, physical Fortress Module source ownership, structural Cargo and Rust namespace analysis, governed and external target classification, normalized direct Module dependencies, deterministic evidence ordering, and explicit unsupported or unresolved coverage.
+Language-neutral observation facts, snapshot content verification, explicit source ownership with declared-Module or analysis-only Cargo authority, structural Cargo and Rust namespace analysis, governed, analysis-territory, and external target classification, normalized direct Module dependencies, deterministic evidence ordering, and explicit unsupported or unresolved coverage.
 
 ### Excludes
 
@@ -24,4 +24,4 @@ This Module declares no outbound architectural relationships.
 
 ## Guarantees
 
-Equal snapshot bytes and analyzer semantics yield identically ordered observations; declared dependencies never influence what is observed; cross-package references preserve the package facade boundary; and mutation, unsupported semantics, and unresolved targets remain explicit.
+Equal snapshot bytes and analyzer semantics yield identically ordered observations; declared dependencies never influence what is observed; Cargo analysis territories never become authored Modules; Project Filing violations do not hide otherwise analyzable source; cross-package references preserve the package facade boundary; and mutation, unsupported semantics, and unresolved targets remain explicit.

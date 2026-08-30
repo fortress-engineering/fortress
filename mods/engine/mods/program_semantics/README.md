@@ -24,7 +24,7 @@ Behavioral checkpoint realization, capability-to-symbol mapping, Function Contra
 
 **Types:** `depends_on`
 
-Supplies canonical Module identities, containment, and verification topology used to classify source ownership without importing program facts into the CCG.
+Supplies canonical Module identities, containment, and verification topology when authored project authority exists. Program Semantics otherwise retains analysis-only Cargo ownership without importing it into the CCG.
 
 ### [Implementation Observation](../implementation_observation/README.md)
 
@@ -34,4 +34,4 @@ Supplies the exact snapshot-bound source substrate and the broader observed Modu
 
 ## Guarantees
 
-Identical semantic inputs produce byte-identical PSM documents and digests; every fact retains deterministic source provenance; exact resolution is never assigned to unsupported or ambiguous Rust semantics; Testing and production symbols remain distinguishable; and no PSM fact is represented as architecture or behavioral intent.
+Identical semantic inputs produce byte-identical PSM documents and digests; every fact retains deterministic source provenance; ordinary repository placement is not a semantic-analysis admission condition; exact resolution is never assigned to unsupported or ambiguous Rust semantics; missing project or test governance remains explicit; Testing and production symbols remain distinguishable where authority supports it; and no PSM fact or analysis territory is represented as architecture or behavioral intent.

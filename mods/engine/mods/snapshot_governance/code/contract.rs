@@ -3,6 +3,8 @@
 //! The evaluator projects CCG compilation and supported semantic coherency into
 //! the governing snapshot rule. Unsupported proof classes remain explicit.
 
+pub(crate) const CONTRACT_RULE_SOURCE: &str = include_str!("../data/contract_rule.json");
+
 use crate::contract_coherency::{CcgCoherencyStatus, CcgCompilation, ContractCoherencyGraph};
 use crate::documentation::DocumentationConformanceReport;
 use crate::finding::{

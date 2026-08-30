@@ -54,7 +54,7 @@ const UNSUPPORTED_SEMANTICS: &[&str] = &[
 /// Immutable input for one snapshot-bound PSM compilation.
 #[derive(Clone, Debug)]
 pub struct ProgramSemanticInput {
-    project_id: String,
+    project_id: Option<String>,
     observation: ImplementationObservationInput,
     testing_modules: BTreeSet<String>,
     observed_module_dependencies: BTreeSet<(String, String)>,
@@ -70,15 +70,30 @@ impl ProgramSemanticInput {
         observed_module_dependencies: impl IntoIterator<Item = (String, String)>,
     ) -> Self {
         Self {
-            project_id: project_id.into(),
+            project_id: Some(project_id.into()),
             observation,
             testing_modules: testing_modules.into_iter().collect(),
             observed_module_dependencies: observed_module_dependencies.into_iter().collect(),
         }
     }
 
-    pub(crate) fn project_id(&self) -> &str {
-        &self.project_id
+    /// Creates a PSM input for repository observation without project authority.
+    #[must_use]
+    pub fn observed(
+        observation: ImplementationObservationInput,
+        testing_modules: impl IntoIterator<Item = String>,
+        observed_module_dependencies: impl IntoIterator<Item = (String, String)>,
+    ) -> Self {
+        Self {
+            project_id: None,
+            observation,
+            testing_modules: testing_modules.into_iter().collect(),
+            observed_module_dependencies: observed_module_dependencies.into_iter().collect(),
+        }
+    }
+
+    pub(crate) fn project_id(&self) -> Option<&str> {
+        self.project_id.as_deref()
     }
 
     pub(crate) const fn observation(&self) -> &ImplementationObservationInput {
@@ -1762,7 +1777,7 @@ pub struct ProgramSemanticModel {
     schema: String,
     schema_version: u16,
     semantic_version: String,
-    project_id: String,
+    project_id: Option<String>,
     source_identity: String,
     analyzers: Vec<AnalyzerDescriptor>,
     languages: Vec<String>,
@@ -1789,8 +1804,8 @@ pub struct ProgramSemanticModel {
 impl ProgramSemanticModel {
     /// Returns the governed project identity.
     #[must_use]
-    pub fn project_id(&self) -> &str {
-        &self.project_id
+    pub fn project_id(&self) -> Option<&str> {
+        self.project_id.as_deref()
     }
 
     /// Returns the exact semantic input identity.
@@ -1932,6 +1947,7 @@ pub(crate) struct RustProgramFacts {
 /// Returns [`ProgramSemanticError`] for snapshot mutation, malformed supported
 /// input, missing physical ownership, or disagreement with Implementation
 /// Observation over a resolved cross-Module call.
+#[allow(clippy::too_many_lines)]
 pub fn compile_program_semantic_model(
     input: &ProgramSemanticInput,
 ) -> Result<ProgramSemanticModel, ProgramSemanticError> {
@@ -1948,7 +1964,23 @@ pub fn compile_program_semantic_model(
     facts.state_reads.sort();
     facts.mutations.sort();
     let topology = graph::derive_call_topology(&facts.symbols, &facts.calls);
-    let module_boundaries = graph::derive_module_boundaries(&facts.symbols, &facts.calls);
+    let governed_owners = input
+        .observation()
+        .ownerships()
+        .iter()
+        .filter(|ownership| {
+            ownership.authority()
+                == crate::implementation_observation::SourceOwnershipAuthority::DeclaredModule
+        })
+        .map(crate::implementation_observation::SourceOwnership::owner)
+        .collect::<BTreeSet<_>>();
+    let module_boundaries = graph::derive_module_boundaries(&facts.symbols, &facts.calls)
+        .into_iter()
+        .filter(|boundary| {
+            governed_owners.contains(boundary.source_module.as_str())
+                && governed_owners.contains(boundary.target_module.as_str())
+        })
+        .collect::<Vec<_>>();
     let missing = module_boundaries
         .iter()
         .filter_map(|boundary| {
@@ -1997,7 +2029,7 @@ pub fn compile_program_semantic_model(
         schema: PROGRAM_SEMANTIC_MODEL_SCHEMA.into(),
         schema_version: PROGRAM_SEMANTIC_MODEL_SCHEMA_VERSION,
         semantic_version: PROGRAM_SEMANTIC_MODEL_VERSION.into(),
-        project_id: input.project_id().into(),
+        project_id: input.project_id().map(str::to_owned),
         source_identity: facts.source_identity,
         analyzers: vec![AnalyzerDescriptor::rust()],
         languages: vec!["rust".into()],
@@ -2024,8 +2056,19 @@ pub fn compile_program_semantic_model(
         provenance: ProgramModelProvenance {
             identity_kind: "snapshot_bound_semantic_input_subset".into(),
             semantic_inputs: facts.source_inputs,
-            ownership_authority: "ccg_physical_module_containment".into(),
-            testing_authority: "ccg_verification_topology".into(),
+            ownership_authority: if input.observation().ownerships().iter().all(|ownership| {
+                ownership.authority()
+                    == crate::implementation_observation::SourceOwnershipAuthority::DeclaredModule
+            }) {
+                "ccg_physical_module_containment".into()
+            } else {
+                "declared_modules_and_cargo_analysis_territories".into()
+            },
+            testing_authority: if input.project_id().is_some() {
+                "ccg_verification_topology".into()
+            } else {
+                "test_governance_unbound".into()
+            },
         },
     })
 }

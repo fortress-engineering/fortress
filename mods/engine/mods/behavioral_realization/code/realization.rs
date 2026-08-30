@@ -1,5 +1,10 @@
 //! Coverage-aware reconciliation of Intended BFG checkpoints with implementation semantics.
 
+pub(crate) const BEHAVIOR_REALIZATION_RULE_SOURCE: &str =
+    include_str!("../data/behavior_realization_rule.json");
+pub(crate) const BEHAVIOR_BYPASS_RULE_SOURCE: &str =
+    include_str!("../data/behavior_bypass_rule.json");
+
 #[path = "realization_contract.rs"]
 mod realization_contract;
 
@@ -359,7 +364,7 @@ pub struct RealizedBehavioralFlowGraph {
     schema: String,
     schema_version: u16,
     semantic_version: String,
-    project_id: String,
+    project_id: Option<String>,
     view: String,
     intended_bfg_digest: String,
     psm_digest: String,
@@ -1318,7 +1323,7 @@ pub fn compile_realized_bfg(
         schema: REALIZED_BFG_SCHEMA.into(),
         schema_version: REALIZED_BFG_SCHEMA_VERSION,
         semantic_version: BEHAVIORAL_REALIZATION_VERSION.into(),
-        project_id: psm.project_id().into(),
+        project_id: psm.project_id().map(str::to_owned),
         view: "realized".into(),
         intended_bfg_digest: intended
             .digest()

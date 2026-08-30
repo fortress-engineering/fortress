@@ -2,11 +2,11 @@
 
 ## Purpose
 
-Establish one language-neutral architectural model for governed source artifacts between physical Project Filing placement and language-specific File Content Profiles.
+Establish one language-neutral architectural model for observed source artifacts between repository placement, optional governed Project Filing authority, and language-specific File Content Profiles.
 
 ## Responsibility
 
-Compile canonical authored file responsibility, Project Filing ownership, snapshot-bound observation facts, and registered profile semantics into deterministic Source Artifact Model v1, then evaluate only justified file-level structural coherence.
+Compile canonical authored file responsibility when present, explicit snapshot-bound source ownership, observation facts, and registered profile semantics into deterministic Source Artifact Model v1, then evaluate only justified file-level structural coherence.
 
 ## Scope
 
@@ -48,8 +48,8 @@ Existing symbols, nominal declarations, calls, and state-place facts are referen
 
 **Types:** `depends_on`
 
-The canonical Project Filing model remains authoritative for Module ownership, Code membership, and filesystem validity.
+The canonical Project Filing model remains authoritative for governed Module ownership, Code membership, and filesystem validity. Analysis-only ownership permits observation before that conformance exists and never substitutes for it.
 
 ## Guarantees
 
-Source Artifact identities derive from stable owning Module identity and Module-local path, exact bytes remain independently content-addressed, unsupported observations never become absence, and no universal language syntax or one-declaration-per-file doctrine is introduced.
+Source Artifact identities derive from stable owning Module identity when declared or deterministic repository-relative analysis territory otherwise; exact bytes remain independently content-addressed; missing authored responsibility and unsupported observations never become favorable intent; and no universal language syntax or one-declaration-per-file doctrine is introduced.

@@ -59,13 +59,14 @@
         },
         {
           "id": "TF-CLI-0001-R04",
-          "statement": "The native fortress audit command accepts an optional repository root, renders deterministic human or schema-versioned JSON output, succeeds only without evaluated violations, and rejects malformed project state or unsupported options.",
+          "statement": "The native fortress audit command accepts an optional repository root, renders deterministic human or schema-versioned JSON output, succeeds only for governed evaluation without violations, reports missing or invalid project authority as non-success after supported observation, and rejects unsupported options.",
           "tests": [
             "T-TF-CLI-0001-R04-001",
             "T-TF-CLI-0001-R04-002",
             "T-TF-CLI-0001-R04-003",
             "T-TF-CLI-0001-R04-004",
-            "T-TF-CLI-0001-R04-005"
+            "T-TF-CLI-0001-R04-005",
+            "T-TF-CLI-0001-R04-006"
           ]
         },
         {

@@ -9,7 +9,7 @@
     "$schema": { "const": "urn:fortress:schema:v1:state-effect-analysis" },
     "schema_version": { "const": 1 },
     "semantic_version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
-    "project_id": { "type": "string", "minLength": 1 },
+    "project_id": { "type": ["string", "null"], "minLength": 1 },
     "psm_digest": { "$ref": "#/$defs/digest" },
     "semantic_analysis_digest": { "$ref": "#/$defs/digest" },
     "state_contract_digest": { "$ref": "#/$defs/digest" },

@@ -35,7 +35,7 @@
     "$schema": { "const": "urn:fortress:schema:v3:program-semantic-model" },
     "schema_version": { "const": 3 },
     "semantic_version": { "$ref": "#/$defs/semver" },
-    "project_id": { "$ref": "#/$defs/stable_id" },
+    "project_id": { "oneOf": [{ "$ref": "#/$defs/stable_id" }, { "type": "null" }] },
     "source_identity": { "$ref": "#/$defs/digest" },
     "analyzers": { "type": "array", "items": { "$ref": "#/$defs/analyzer" } },
     "languages": { "type": "array", "items": { "type": "string", "minLength": 1 } },
@@ -594,8 +594,8 @@
       "properties": {
         "identity_kind": { "const": "snapshot_bound_semantic_input_subset" },
         "semantic_inputs": { "type": "array", "items": { "$ref": "#/$defs/source_input" } },
-        "ownership_authority": { "const": "ccg_physical_module_containment" },
-        "testing_authority": { "const": "ccg_verification_topology" }
+        "ownership_authority": { "enum": ["ccg_physical_module_containment", "declared_modules_and_cargo_analysis_territories"] },
+        "testing_authority": { "enum": ["ccg_verification_topology", "test_governance_unbound"] }
       }
     }
   }
