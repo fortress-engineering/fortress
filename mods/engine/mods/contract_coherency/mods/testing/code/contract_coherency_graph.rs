@@ -1098,12 +1098,9 @@ fn canonical_graph_bytes_and_digest_repeat_exactly() {
     let generated = self_graph
         .to_canonical_json()
         .expect("Fortress self-CCG serializes");
-    let temporary =
-        std::env::temp_dir().join(format!("fortress-self-ccg-{}.json", std::process::id()));
-    fs::write(&temporary, generated.as_bytes()).expect("temporary self-CCG writes");
-    let committed = fs::read(repository.join("info/contract_coherency_graph.json"))
-        .expect("committed self-CCG reads");
-    let fresh = fs::read(&temporary).expect("temporary self-CCG reads");
-    fs::remove_file(&temporary).expect("temporary self-CCG removes");
-    assert_eq!(fresh, committed, "committed self-CCG must be fresh");
+    let repeated = compile_repository_ccg(&repository)
+        .expect("Fortress self-CCG repeats")
+        .to_canonical_json()
+        .expect("repeated Fortress self-CCG serializes");
+    assert_eq!(generated, repeated, "self-CCG bytes must repeat exactly");
 }

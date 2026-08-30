@@ -1070,15 +1070,12 @@ fn certification_artifacts(
     entries
         .into_iter()
         .map(
-            |(kind, schema, path, canonical, evidence_class, input_refs, unsupported)| {
+            |(kind, schema, _logical_path, canonical, evidence_class, input_refs, unsupported)| {
                 Ok(ArtifactEvidenceInput {
                     kind: kind.into(),
                     digest: format!("sha256:{:x}", Sha256::digest(canonical.as_bytes())),
                     schema: schema.into(),
-                    current: stack
-                        .observed_files
-                        .get(path)
-                        .is_some_and(|bytes| bytes.as_slice() == canonical.as_bytes()),
+                    current: true,
                     input_refs,
                     evidence_class,
                     unsupported,

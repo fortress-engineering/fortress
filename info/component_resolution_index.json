@@ -1795,14 +1795,6 @@
       "source_module": "PF-FORTRESS",
       "target_module": "PF-FORTRESS",
       "authority": "repository-relative-local",
-      "projection": "../info/contract_coherency_graph.json",
-      "provenance": "docs/info_docs.md"
-    },
-    {
-      "class": "LOCAL",
-      "source_module": "PF-FORTRESS",
-      "target_module": "PF-FORTRESS",
-      "authority": "repository-relative-local",
       "projection": "../info/environmental_analysis.json",
       "provenance": "docs/info_docs.md"
     },
@@ -1819,55 +1811,7 @@
       "source_module": "PF-FORTRESS",
       "target_module": "PF-FORTRESS",
       "authority": "repository-relative-local",
-      "projection": "../info/information_flow_analysis.json",
-      "provenance": "docs/info_docs.md"
-    },
-    {
-      "class": "LOCAL",
-      "source_module": "PF-FORTRESS",
-      "target_module": "PF-FORTRESS",
-      "authority": "repository-relative-local",
-      "projection": "../info/program_semantic_model.json",
-      "provenance": "docs/info_docs.md"
-    },
-    {
-      "class": "LOCAL",
-      "source_module": "PF-FORTRESS",
-      "target_module": "PF-FORTRESS",
-      "authority": "repository-relative-local",
       "projection": "../info/quality_certificate.json",
-      "provenance": "docs/info_docs.md"
-    },
-    {
-      "class": "LOCAL",
-      "source_module": "PF-FORTRESS",
-      "target_module": "PF-FORTRESS",
-      "authority": "repository-relative-local",
-      "projection": "../info/realized_behavioral_flow_graph.json",
-      "provenance": "docs/info_docs.md"
-    },
-    {
-      "class": "LOCAL",
-      "source_module": "PF-FORTRESS",
-      "target_module": "PF-FORTRESS",
-      "authority": "repository-relative-local",
-      "projection": "../info/semantic_analysis.json",
-      "provenance": "docs/info_docs.md"
-    },
-    {
-      "class": "LOCAL",
-      "source_module": "PF-FORTRESS",
-      "target_module": "PF-FORTRESS",
-      "authority": "repository-relative-local",
-      "projection": "../info/source_artifact_model.json",
-      "provenance": "docs/info_docs.md"
-    },
-    {
-      "class": "LOCAL",
-      "source_module": "PF-FORTRESS",
-      "target_module": "PF-FORTRESS",
-      "authority": "repository-relative-local",
-      "projection": "../info/state_effect_analysis.json",
       "provenance": "docs/info_docs.md"
     },
     {
@@ -2116,6 +2060,14 @@
       "target_module": "TEST-SNAPSHOT-GOVERNANCE-0001",
       "authority": "repository-relative-local",
       "projection": "../code/audit.rs",
+      "provenance": "mods/engine/mods/snapshot_governance/mods/testing/docs/code_docs.md"
+    },
+    {
+      "class": "LOCAL",
+      "source_module": "TEST-SNAPSHOT-GOVERNANCE-0001",
+      "target_module": "TEST-SNAPSHOT-GOVERNANCE-0001",
+      "authority": "repository-relative-local",
+      "projection": "../code/derived_artifact_storage.py",
       "provenance": "mods/engine/mods/snapshot_governance/mods/testing/docs/code_docs.md"
     },
     {
@@ -9683,7 +9635,7 @@
   "summary": {
     "modules": 40,
     "semantic_references": 162,
-    "local_references": 250,
+    "local_references": 244,
     "physical_projections": 183,
     "external_references": 208,
     "authored_resolution_boundaries": 128,

@@ -1,7 +1,7 @@
 {
-  "$schema": "urn:fortress:derived:v1:local-quality-certificate",
-  "schema_version": 1,
-  "semantic_version": "quality-certificate-v1",
+  "$schema": "urn:fortress:derived:v2:local-quality-certificate",
+  "schema_version": 2,
+  "semantic_version": "quality-certificate-v2",
   "project": "PF-FORTRESS",
   "profile": "fortress-complete-local-v1",
   "claim": "LOCAL_QUALITY_GATES_PASS",
@@ -12,15 +12,31 @@
     "limitation": "Digest stamps detect mutation and staleness but are not signatures; authenticated antiforgery requires an external trusted signing identity."
   },
   "source": {
-    "fingerprint": "sha256:f7813a6811c1a1d631f77e52a6e5bb9f9fa4f3116a9c3e0103e08c1a2821bbd1",
-    "file_count": 376,
-    "excluded_self": "info/quality_certificate.json"
+    "fingerprint": "sha256:f6b1ab1006c975936fdcd152ed89a869537df1f8b7ea785e2f497dae1e9654a1",
+    "file_count": 364,
+    "excluded_self": "info/quality_certificate.json",
+    "excluded_derived_artifacts": [
+      "info/behavioral_flow_graph.json",
+      "info/certification.json",
+      "info/component_resolution_index.json",
+      "info/contract_coherency_graph.json",
+      "info/environmental_analysis.json",
+      "info/evidence_graph.json",
+      "info/information_flow_analysis.json",
+      "info/program_semantic_model.json",
+      "info/realized_behavioral_flow_graph.json",
+      "info/semantic_analysis.json",
+      "info/source_artifact_model.json",
+      "info/state_effect_analysis.json",
+      "info/verified_behavioral_flow_graph.json"
+    ]
   },
   "toolchain": {
     "rust": "1.97.1",
     "cargo_config": "data/cargo_config.toml",
     "resolver_lockfile": "info/Cargo.lock",
-    "build_artifacts": "external-temporary-directory"
+    "build_artifacts": "external-temporary-directory",
+    "derived_projections": "external-subject-addressed-cache"
   },
   "gates": [
     {
@@ -99,6 +115,11 @@
       "command": "cargo +1.97.1 --config data/cargo_config.toml clippy --manifest-path data/Cargo.toml --workspace --all-targets --all-features -- -D warnings"
     },
     {
+      "id": "DERIVED_ARTIFACT_STORAGE",
+      "status": "PASS",
+      "command": "python mods/engine/mods/snapshot_governance/mods/testing/code/derived_artifact_storage.py"
+    },
+    {
       "id": "FORMAT",
       "status": "PASS",
       "command": "cargo +1.97.1 --config data/cargo_config.toml fmt --manifest-path data/Cargo.toml --all --check"
@@ -147,57 +168,83 @@
   "artifacts": [
     {
       "path": "info/behavioral_flow_graph.json",
-      "digest": "sha256:ce349d136e1b25f89fb01d7fcd767da0d51462a9d60366ce3f57c9b0fe7cf267"
+      "digest": "sha256:ce349d136e1b25f89fb01d7fcd767da0d51462a9d60366ce3f57c9b0fe7cf267",
+      "bytes": 142541,
+      "storage": "TRACKED_EVIDENCE"
     },
     {
       "path": "info/certification.json",
-      "digest": "sha256:424b8640328f681ca69006f5d9515ec235c6a8f8f16c3e308a97baa399027a51"
+      "digest": "sha256:8fe81c4b5928eb4a0292180147ad3bb55f03d5b439a6fa11cf704d39b92e0c1e",
+      "bytes": 78638,
+      "storage": "TRACKED_EVIDENCE"
     },
     {
       "path": "info/component_resolution_index.json",
-      "digest": "sha256:c94b1ae3a2fff34e52fa8a99ede76c700a98ea66855fa9dc79b05275643764f0"
+      "digest": "sha256:1bb82c859c620bae1b86bf439fddcbea8f330d7d66ae001a9021d41029bef86a",
+      "bytes": 374814,
+      "storage": "TRACKED_EVIDENCE"
     },
     {
       "path": "info/contract_coherency_graph.json",
-      "digest": "sha256:2852ad53f7ae89e5e803439a0f53ab12413b40016d1a3cc107d6ee021c4ab75f"
+      "digest": "sha256:2852ad53f7ae89e5e803439a0f53ab12413b40016d1a3cc107d6ee021c4ab75f",
+      "bytes": 2181386,
+      "storage": "LOCAL_MATERIALIZATION"
     },
     {
       "path": "info/environmental_analysis.json",
-      "digest": "sha256:aac96ac49a7882966025d33bf7610c90e688e1c707075250b408c9823264d4fc"
+      "digest": "sha256:991862c850f1791c2b445d323dd4a318e591b57b20cb8a627d8dd6aeee9e01f9",
+      "bytes": 5415,
+      "storage": "TRACKED_EVIDENCE"
     },
     {
       "path": "info/evidence_graph.json",
-      "digest": "sha256:d0d2c9bf5edbd6326c3ff4774a9bd76380501784e774fb83b508abe5c0183072"
+      "digest": "sha256:56240f98f78a6c781146e0524c4f6564118ba8b1da0a5242d6e8eb0a2ab3fdc8",
+      "bytes": 477542,
+      "storage": "TRACKED_EVIDENCE"
     },
     {
       "path": "info/information_flow_analysis.json",
-      "digest": "sha256:a704d6e94f892ecce9bb9bb79c689120f6c6b5df98db2086855119c4198a7a8a"
+      "digest": "sha256:7f02d78f03273e4f3992ae1d3c25b62c39fe6133b542041a04b54d979b61803d",
+      "bytes": 1178592,
+      "storage": "LOCAL_MATERIALIZATION"
     },
     {
       "path": "info/program_semantic_model.json",
-      "digest": "sha256:74eecbeb20ecfab2c8bef229137df00d3c684b6b6a8f9dafc34b21131da31bcd"
+      "digest": "sha256:a23c85084cef03dd6d9ff3c74f4cff3c9a987fcedc0880fc4deff9cfafca7c29",
+      "bytes": 85147050,
+      "storage": "LOCAL_MATERIALIZATION"
     },
     {
       "path": "info/realized_behavioral_flow_graph.json",
-      "digest": "sha256:fd5276a04e9610882a6bfbbb42bf7131f59bf0199dad32bcc9df80fe3a48e4bb"
+      "digest": "sha256:3b1e4aa0ab9b406e447354e788d0e58e98b072ee50e006260aee6092b88c5e80",
+      "bytes": 21502779,
+      "storage": "LOCAL_MATERIALIZATION"
     },
     {
       "path": "info/semantic_analysis.json",
-      "digest": "sha256:fa8cda9ee26a4f9ac1876469322f84018b23f3bf183117a897a6ba59a73f0f45"
+      "digest": "sha256:34da69bc3413c95156ae89e71ebb8134f1ffad253db841dcac4748860730e4d7",
+      "bytes": 4393455,
+      "storage": "LOCAL_MATERIALIZATION"
     },
     {
       "path": "info/source_artifact_model.json",
-      "digest": "sha256:f6c3c07b20ee356c5cd108cb4098db727416767fcd6dba34017dc35e33c17c2b"
+      "digest": "sha256:23b90743cac6019157aae4624d86a157d31471638021b4139cc2ce0cf1a037eb",
+      "bytes": 6384430,
+      "storage": "LOCAL_MATERIALIZATION"
     },
     {
       "path": "info/state_effect_analysis.json",
-      "digest": "sha256:57a7c6aa2517f321cf32503764609cd60e558f7bb2b323e33f2c19cf5e486f7d"
+      "digest": "sha256:f1635f61f2d34e079f5d9032ef81ef13a6d623f982eb50013c5342a1964e805a",
+      "bytes": 6214385,
+      "storage": "LOCAL_MATERIALIZATION"
     },
     {
       "path": "info/verified_behavioral_flow_graph.json",
-      "digest": "sha256:dd142afeca6d725890f6b8e24495e44523065f69bc8b95807a1b5423cdc386d2"
+      "digest": "sha256:13f2092019c3d056301158f2076defb8daaabf53e9c4dff77a7812f52fca7375",
+      "bytes": 6988,
+      "storage": "TRACKED_EVIDENCE"
     }
   ],
-  "audit_json_digest": "sha256:c167d6ab46c2846a31c6006e8651fa53d69a2464327215757f34f59e4256395c",
-  "certificate_stamp": "sha256:4c0a7b86235351674f3f000b31dee0bfe347400aebb7735bea1705ed3c785d4f"
+  "audit_json_digest": "sha256:9913ba3ca8dc5c1959ccdf547d73f7af82df6f848bd85b20a9643fe62ef6ebfa",
+  "certificate_stamp": "sha256:2c340775904b885a18da7e55dae008b30d9e4cb3d5d2f06d1c4eb5d0624da169"
 }

@@ -26,6 +26,10 @@ Exercises complete, orphaned, overlapping, required, and minimum ownership cases
 
 Runs the complete self-audit and asserts every implemented applicable rule passes.
 
+### [`derived_artifact_storage.py`](../code/derived_artifact_storage.py)
+
+Verifies the complete projection-storage registry, subject-addressed external cache boundary, and distinct missing, current, stale, and invalid materialization states without executing semantic generators.
+
 ### [`repo_docs_001.rs`](../code/repo_docs_001.rs)
 
 Executes the specification-authored canonical documentation and contract synchronization cases.
