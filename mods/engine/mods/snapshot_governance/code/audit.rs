@@ -2,6 +2,7 @@
 
 use std::collections::BTreeMap;
 use std::error::Error;
+use std::fmt::Write as _;
 use std::fmt::{self, Display, Formatter};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -49,6 +50,10 @@ use crate::evaluation::{
 };
 use crate::filing::{FilingSystemProfiles, analyze_project_filing_system};
 use crate::finding::{CanonicalFinding, FindingError};
+use crate::finding_governance::{
+    FINDING_GOVERNANCE_PATH, FindingGovernanceDocument, FindingGovernanceError,
+    FindingGovernanceEvaluation, evaluate_finding_governance,
+};
 use crate::implementation_observation::{
     ImplementationObservationError, ImplementationObservationInput, ModuleTerritory,
     ObservedImplementation, SnapshotBoundFile, SourceOwnership, SourceOwnershipAuthority,
@@ -92,7 +97,7 @@ use crate::state_effect_analysis::{
 };
 
 /// Current stable machine-readable snapshot audit schema family.
-pub const AUDIT_RESULT_SCHEMA_VERSION: u16 = 3;
+pub const AUDIT_RESULT_SCHEMA_VERSION: u16 = 4;
 
 /// Deterministic repository audit result; this is not certification evidence.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
@@ -105,6 +110,7 @@ pub struct AuditResult {
     repository_content_fingerprint: String,
     outcome: AuditOutcome,
     summary: AuditSummary,
+    finding_governance: FindingGovernanceEvaluation,
     rules: Vec<RuleExecution>,
     findings: Vec<CanonicalFinding>,
     diagnostics: Vec<ArchitectureDiagnostic>,
@@ -117,6 +123,38 @@ impl AuditResult {
     #[must_use]
     pub fn is_success(&self) -> bool {
         self.outcome == AuditOutcome::Pass
+    }
+
+    /// Returns whether authored project authority was available and valid.
+    #[must_use]
+    pub fn is_governed(&self) -> bool {
+        self.governance.project_authority == ProjectGovernanceState::Declared
+    }
+
+    /// Returns whether progressive enforcement has no new, reintroduced, or
+    /// baseline-ineligible unexcepted violation.
+    #[must_use]
+    pub fn enforcement_success(&self) -> bool {
+        self.finding_governance.is_success()
+            && self.governance.project_authority == ProjectGovernanceState::Declared
+    }
+
+    /// Returns finding lifecycle and disposition separately from raw conformance.
+    #[must_use]
+    pub const fn finding_governance(&self) -> &FindingGovernanceEvaluation {
+        &self.finding_governance
+    }
+
+    /// Returns the exact Standard identity used for evaluation.
+    #[must_use]
+    pub fn standard_id(&self) -> &str {
+        &self.standard.id
+    }
+
+    /// Returns the exact Standard edition used for evaluation.
+    #[must_use]
+    pub fn standard_edition(&self) -> &str {
+        &self.standard.edition
     }
 
     /// Returns the exact stabilized snapshot fingerprint.
@@ -159,7 +197,7 @@ impl AuditResult {
     ///
     /// # Errors
     ///
-    /// Returns a serialization error if the version-two contract cannot be represented.
+    /// Returns a serialization error if the version-four contract cannot be represented.
     pub fn to_json_pretty(&self) -> Result<String, serde_json::Error> {
         serde_json::to_string_pretty(self)
     }
@@ -184,13 +222,41 @@ impl AuditResult {
                 let location = finding.location().path().unwrap_or("repository");
                 output.push_str("- [");
                 output.push_str(finding.rule_id());
+                output.push_str("] [");
+                output.push_str(finding.finding_id());
                 output.push_str("] ");
                 output.push_str(location);
                 output.push_str(": ");
                 output.push_str(finding.message());
+                if let Some(governed) = self
+                    .finding_governance
+                    .findings()
+                    .iter()
+                    .find(|value| value.finding_id() == finding.finding_id())
+                {
+                    let _ = write!(
+                        output,
+                        " [lifecycle={:?}, disposition={:?}, enforcement={:?}]",
+                        governed.lifecycle(),
+                        governed.disposition(),
+                        governed.enforcement()
+                    );
+                }
                 output.push('\n');
             }
         }
+        let governance = self.finding_governance.summary();
+        output.push_str("\nFinding governance:\n");
+        let _ = write!(
+            output,
+            "  new/blocking: {}\n  baselined/non-blocking: {}\n  excepted/non-blocking: {}\n  reintroduced/blocking: {}\n  resolved baseline entries: {}\n  baseline-ineligible: {}\n",
+            governance.new_blocking,
+            governance.baselined_non_blocking,
+            governance.excepted_non_blocking,
+            governance.reintroduced_blocking,
+            governance.resolved_baseline_entries,
+            governance.baseline_ineligible,
+        );
         output.push_str("\nArchitecture diagnostics:\n");
         if self.diagnostics.is_empty() {
             output.push_str("None\n");
@@ -222,6 +288,7 @@ impl AuditResult {
 /// Standard identity reported by an audit.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 struct AuditStandard {
+    id: String,
     edition: String,
     status: String,
 }
@@ -681,6 +748,7 @@ fn observation_only_audit(prepared: &PreparedAnalysis) -> Result<AuditResult, Au
             tests_missing_stable_id,
         },
         standard: AuditStandard {
+            id: prepared.standard.bundle.id().into(),
             edition: prepared.standard.bundle.edition().into(),
             status: prepared.standard.bundle.status().into(),
         },
@@ -693,6 +761,13 @@ fn observation_only_audit(prepared: &PreparedAnalysis) -> Result<AuditResult, Au
             failed: 0,
             unsupported: 0,
         },
+        finding_governance: evaluate_finding_governance(
+            &[],
+            None,
+            prepared.standard.bundle.id(),
+            prepared.standard.bundle.edition(),
+        )
+        .map_err(AuditError::FindingGovernance)?,
         rules: Vec::new(),
         findings: Vec::new(),
         diagnostics: Vec::new(),
@@ -1014,6 +1089,13 @@ pub fn compile_repository_certification(
                 result,
                 current: true,
                 finding_fingerprints,
+                finding_governance: stack
+                    .finding_governance
+                    .findings()
+                    .iter()
+                    .filter(|finding| finding.rule_id() == execution.rule_id())
+                    .cloned()
+                    .collect(),
                 input_refs: Vec::new(),
             }
         })
@@ -1057,6 +1139,7 @@ pub fn compile_repository_certification(
             id: stack.standard.id().to_owned(),
             edition: stack.standard.edition().to_owned(),
         },
+        finding_governance_digest: stack.finding_governance_authority_digest.clone(),
         profile,
         artifacts,
         applicable_rules,
@@ -1084,8 +1167,11 @@ struct CertificationSemanticStack {
     reference_resolution: ReferenceResolutionEvaluation,
     source_architecture: SourceArchitectureEvaluation,
     evaluation: crate::evaluation::SnapshotEvaluation,
+    finding_governance: FindingGovernanceEvaluation,
+    finding_governance_authority_digest: Option<String>,
 }
 
+#[allow(clippy::too_many_lines)]
 fn compile_certification_semantic_stack(
     root: &Path,
 ) -> Result<CertificationSemanticStack, AuditError> {
@@ -1168,6 +1254,21 @@ fn compile_certification_semantic_stack(
         &ccg,
         evaluation_inputs,
     )?;
+    let finding_governance = evaluate_finding_governance(
+        evaluation.findings(),
+        prepared.finding_governance.as_ref(),
+        prepared.standard.bundle.id(),
+        prepared.standard.bundle.edition(),
+    )
+    .map_err(AuditError::FindingGovernance)?;
+    let finding_governance_authority_digest = prepared
+        .finding_governance
+        .as_ref()
+        .map(FindingGovernanceDocument::to_canonical_json)
+        .transpose()
+        .map_err(CertificationError::Json)
+        .map_err(AuditError::Certification)?
+        .map(|source| format!("sha256:{:x}", Sha256::digest(source.as_bytes())));
     Ok(CertificationSemanticStack {
         observed_files: prepared.observed_files,
         rust_tests: prepared.rust_tests,
@@ -1180,6 +1281,8 @@ fn compile_certification_semantic_stack(
         reference_resolution,
         source_architecture,
         evaluation,
+        finding_governance,
+        finding_governance_authority_digest,
     })
 }
 
@@ -2143,7 +2246,9 @@ fn audit_repository_with_prepared(
             &architecture_diagnostics,
             unsupported_analysis,
             prepared.rust_tests.len(),
-        ),
+            prepared.finding_governance.as_ref(),
+            prepared.standard.bundle.id(),
+        )?,
         ccg.clone(),
         behavioral_semantics.graph().clone(),
     ))
@@ -2155,6 +2260,7 @@ struct PreparedAudit {
     rust_tests: Vec<crate::rust_test_analyzer::RustTestFact>,
     ccg_compilation: CcgCompilation,
     snapshot: RepositorySnapshot,
+    finding_governance: Option<FindingGovernanceDocument>,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
@@ -2348,12 +2454,24 @@ fn prepare_audit_from_analysis(
         )?;
     }
     verify_observed_files(&snapshot, &observed_files)?;
+    let finding_governance = observed_files
+        .get(FINDING_GOVERNANCE_PATH)
+        .map(|bytes| {
+            std::str::from_utf8(bytes)
+                .map_err(|_| AuditError::NonUtf8(FINDING_GOVERNANCE_PATH.into()))
+                .and_then(|source| {
+                    FindingGovernanceDocument::from_json_str(source)
+                        .map_err(AuditError::FindingGovernance)
+                })
+        })
+        .transpose()?;
     Ok(PreparedAudit {
         observed_files,
         standard,
         rust_tests,
         ccg_compilation,
         snapshot,
+        finding_governance,
     })
 }
 
@@ -2452,14 +2570,23 @@ fn result_from_evaluation(
     architecture_diagnostics: &crate::architecture_diagnostics::ArchitectureDiagnostics,
     unsupported_analysis: Vec<String>,
     observed_tests: usize,
-) -> AuditResult {
+    authority: Option<&FindingGovernanceDocument>,
+    standard_id: &str,
+) -> Result<AuditResult, AuditError> {
     let summary = AuditSummary {
         rules_evaluated: evaluation.evaluated_count(),
         passed: evaluation.passed_count(),
         failed: evaluation.failed_count(),
         unsupported: evaluation.unsupported_count(),
     };
-    AuditResult {
+    let finding_governance = evaluate_finding_governance(
+        evaluation.findings(),
+        authority,
+        standard_id,
+        snapshot.standard_edition(),
+    )
+    .map_err(AuditError::FindingGovernance)?;
+    Ok(AuditResult {
         schema_version: AUDIT_RESULT_SCHEMA_VERSION,
         project_id: Some(snapshot.project_id().into()),
         governance: AuditGovernance {
@@ -2479,6 +2606,7 @@ fn result_from_evaluation(
             tests_missing_stable_id: 0,
         },
         standard: AuditStandard {
+            id: standard_id.into(),
             edition: snapshot.standard_edition().into(),
             status: snapshot.standard_status().into(),
         },
@@ -2490,12 +2618,13 @@ fn result_from_evaluation(
             AuditOutcome::Fail
         },
         summary,
+        finding_governance,
         rules: evaluation.rules().to_vec(),
         findings: evaluation.findings().to_vec(),
         diagnostics: architecture_diagnostics.diagnostics().to_vec(),
         unsupported_analysis,
         observation: None,
-    }
+    })
 }
 
 #[derive(Deserialize)]
@@ -2824,6 +2953,8 @@ pub enum AuditError {
     SourceArchitecture(FindingError),
     /// Rule evaluation failed.
     Evaluation(EvaluationError),
+    /// Finding lifecycle/baseline/exception authority was invalid.
+    FindingGovernance(FindingGovernanceError),
     /// Certification evidence or profile construction failed.
     Certification(CertificationError),
 }
@@ -2912,6 +3043,9 @@ impl Display for AuditError {
             }
             Self::Evaluation(error) => {
                 write!(formatter, "snapshot rule evaluation failed: {error}")
+            }
+            Self::FindingGovernance(error) => {
+                write!(formatter, "finding governance failed: {error}")
             }
             Self::Certification(error) => {
                 write!(formatter, "snapshot certification failed: {error}")

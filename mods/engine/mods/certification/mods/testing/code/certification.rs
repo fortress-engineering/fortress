@@ -22,6 +22,7 @@ fn input() -> CertificationInput {
             id: "STD-FORTRESS-0001".into(),
             edition: "2026.1-draft".into(),
         },
+        finding_governance_digest: None,
         profile: CertificationProfile::full_snapshot(),
         artifacts: MANDATORY_SEMANTIC_ARTIFACTS
             .iter()
@@ -45,6 +46,7 @@ fn input() -> CertificationInput {
             result: EvidenceResult::Pass,
             current: true,
             finding_fingerprints: Vec::new(),
+            finding_governance: Vec::new(),
             input_refs: Vec::new(),
         }],
         requirements: vec![RequirementEvidenceInput {

@@ -30,6 +30,10 @@ Runs the complete self-audit and asserts every implemented applicable rule passe
 
 Verifies the complete projection-storage registry, subject-addressed external cache boundary, and distinct missing, current, stale, and invalid materialization states without executing semantic generators.
 
+### [`finding_governance.rs`](../code/finding_governance.rs)
+
+Verifies stable finding identity, baseline creation and monotonic pruning, reintroduction, explicit exception retirement, orthogonal conformance/enforcement, and deterministic authority serialization.
+
 ### [`repo_docs_001.rs`](../code/repo_docs_001.rs)
 
 Executes the specification-authored canonical documentation and contract synchronization cases.

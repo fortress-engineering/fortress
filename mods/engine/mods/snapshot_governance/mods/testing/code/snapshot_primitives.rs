@@ -101,7 +101,6 @@ fn finding(rule_id: &str, path: &str, message: &str) -> CanonicalFinding {
         .expect("occurrence must validate"),
         EvaluatorProvenance::new("fortress-core/test", "1").expect("provenance is valid"),
         "1.0.0-draft.1",
-        None,
     )
     .expect("finding must normalize")
 }

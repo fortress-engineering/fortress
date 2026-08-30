@@ -83,7 +83,6 @@ pub fn evaluate_testing_boundaries(
             )?,
             evaluator.clone(),
             standard_edition,
-            None,
         )?);
     }
     findings.sort();

@@ -2237,7 +2237,6 @@ fn finding_from_violation(
         occurrence,
         EvaluatorProvenance::new(SEMANTIC_ANALYZER_ID, SEMANTIC_ANALYSIS_VERSION)?,
         standard_edition,
-        None,
     )
 }
 

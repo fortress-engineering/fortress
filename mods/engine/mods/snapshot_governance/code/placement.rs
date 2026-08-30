@@ -73,7 +73,6 @@ pub fn findings_from_model(
             )?,
             evaluator.clone(),
             standard_edition,
-            None,
         )?);
     }
     findings.sort();

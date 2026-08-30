@@ -704,6 +704,8 @@ pub struct RuleEvidenceInput {
     pub current: bool,
     /// Normalized finding fingerprints.
     pub finding_fingerprints: Vec<String>,
+    /// Lifecycle, disposition, and enforcement context without changing result.
+    pub finding_governance: Vec<crate::finding_governance::GovernedFinding>,
     /// Exact semantic input evidence refs.
     pub input_refs: Vec<String>,
 }
@@ -802,6 +804,8 @@ pub struct CertificationInput {
     pub source_digest: String,
     /// Standard identity/edition.
     pub standard: StandardIdentity,
+    /// Digest of optional authored finding baseline/exception authority.
+    pub finding_governance_digest: Option<String>,
     /// Certification profile.
     pub profile: CertificationProfile,
     /// Current semantic artifacts.
@@ -900,6 +904,27 @@ pub fn compile_certification(
     )?;
     let standard_ref = standard.id.clone();
     nodes.push(standard);
+    let finding_governance_ref = input
+        .finding_governance_digest
+        .as_ref()
+        .map(|digest| {
+            EvidenceNode::new(
+                "finding_governance_authority",
+                &input.project_id,
+                EvidenceResult::Asserted,
+                vec![source_ref.clone(), standard_ref.clone()],
+                "fortress-finding-model",
+                CERTIFICATION_SEMANTIC_VERSION,
+                EvidenceClass::Authority,
+                json!({"authority_digest": digest}),
+            )
+        })
+        .transpose()?;
+    let finding_governance_ref = finding_governance_ref.map(|node| {
+        let id = node.id.clone();
+        nodes.push(node);
+        id
+    });
     let profile = EvidenceNode::new(
         "certification_profile",
         &input.profile.id,
@@ -1060,6 +1085,9 @@ pub fn compile_certification(
     for rule in sorted_rules(&input.rules)? {
         let mut refs = artifact_refs.values().cloned().collect::<Vec<_>>();
         refs.push(standard_ref.clone());
+        if let Some(reference) = &finding_governance_ref {
+            refs.push(reference.clone());
+        }
         let node = EvidenceNode::new(
             "standard_rule_evaluation",
             &rule.rule_id,
@@ -1071,6 +1099,7 @@ pub fn compile_certification(
             json!({
                 "standard_edition": input.standard.edition,
                 "finding_fingerprints": rule.finding_fingerprints,
+                "finding_governance": rule.finding_governance,
                 "current": rule.current,
             }),
         )?;

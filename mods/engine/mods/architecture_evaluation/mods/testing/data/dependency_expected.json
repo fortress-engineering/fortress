@@ -1,5 +1,7 @@
 {
-  "finding_fingerprint": "sha256:d1a83dbb6c507aa4b70cbc1b4f217868a07eec64d296eeefb986e7ee8e05df49",
+  "finding_id": "sha256:cbd1d2d79e69b8cc63e6879e3f063db2c241a1b14c16c8f05b70c1a078eb15bc",
+  "identity_eligibility": "ELIGIBLE",
+  "violation_discriminator": "VIOLATION",
   "rule_id": "ARCH-DEPENDENCY-001",
   "integrity_tier": 1,
   "category": "architecture",
@@ -16,6 +18,5 @@
     "id": "fortress-core/architecture",
     "version": "0.1.0"
   },
-  "standard_edition": "1.0.0-draft.1",
-  "exemption_reference": null
+  "standard_edition": "1.0.0-draft.1"
 }

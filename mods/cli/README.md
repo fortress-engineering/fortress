@@ -6,13 +6,13 @@ The CLI exists to expose implemented Fortress operations through deterministic t
 
 ## Responsibility
 
-Own command registration, argument validation, process exit behavior, human rendering, and schema-versioned JSON rendering for version, help, repository audit, CCG inspection, Intended BFG inspection, PSM inspection, semantic-domain analysis, state/effect analysis, information-flow analysis, environmental analysis, Realized BFG inspection, and exact-snapshot local certification.
+Own command registration, argument validation, process exit behavior, human rendering, and schema-versioned JSON rendering for version, help, raw repository audit, progressive finding checks, explicit baseline/exception mutation, semantic inspection, and exact-snapshot local certification.
 
 ## Scope
 
 ### Includes
 
-The native process boundary, built-in command registry, CLI package and command declarations, supported audit, CCG, Intended BFG, PSM, semantic-analysis, state/effect, information-flow, environmental, Realized BFG, and local certification formats, and explicit failure behavior for malformed or unsupported input.
+The native process boundary, built-in command registry, CLI package and command declarations, supported audit, finding listing/checking, baseline create/prune, exception list/create/retire, semantic-analysis formats, local certification formats, and explicit failure behavior for malformed or unsupported input.
 
 ### Excludes
 
@@ -34,4 +34,4 @@ Runs the canonical unfiltered Rust suite locally, constructs current execution e
 
 ## Guarantees
 
-Unsupported commands and options return non-success; audit succeeds only when every evaluated mandatory rule passes; CCG and Intended BFG inspection preserve their coherency boundaries; PSM inspection succeeds only without invalid facts or analyzer disagreement; semantic, state/effect, information-flow, environmental, and Realized BFG inspection fail on supported contradictions while preserving uncertainty; `certify` returns success only for a truthful full-profile PASS based on current local execution; JSON and human output remain deterministic; no command labels static realization as executed evidence or a digest stamp as an authenticated signature.
+Unsupported commands and options return non-success; audit succeeds only when every evaluated mandatory rule passes; progressive check may accept visible baselined or explicitly excepted residue without labeling it PASS; baseline never grows during ordinary validation; semantic inspections preserve their existing coherency and uncertainty boundaries; `certify` returns success only for a truthful full-profile PASS based on current local execution; JSON and human output remain deterministic; no command labels static realization as executed evidence or a digest stamp as an authenticated signature.

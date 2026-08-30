@@ -765,7 +765,6 @@ pub fn evaluate_behavioral_semantics(
                 .map_err(BehavioralSemanticsError::Finding)?,
                 evaluator.clone(),
                 standard_edition,
-                None,
             )
             .map_err(BehavioralSemanticsError::Finding)?,
         );

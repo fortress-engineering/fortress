@@ -125,6 +125,10 @@ name = "snapshot_primitives"
 path = "../mods/snapshot_governance/mods/testing/code/snapshot_primitives.rs"
 
 [[test]]
+name = "finding_governance"
+path = "../mods/snapshot_governance/mods/testing/code/finding_governance.rs"
+
+[[test]]
 name = "source_architecture"
 path = "../mods/source_architecture/mods/testing/code/source_architecture.rs"
 

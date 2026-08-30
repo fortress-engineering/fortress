@@ -121,8 +121,7 @@ impl ArchitectureManifest {
         )?;
         let evaluator =
             EvaluatorProvenance::new("fortress-core/architecture", env!("CARGO_PKG_VERSION"))?;
-        CanonicalFinding::failure(definition, occurrence, evaluator, standard_edition, None)
-            .map(Some)
+        CanonicalFinding::failure(definition, occurrence, evaluator, standard_edition).map(Some)
     }
 }
 

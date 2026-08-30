@@ -2,15 +2,15 @@
 
 ## Role
 
-The Module owns persisted semantic intent for the finite span-presence lifecycle of FindingLocation and the with_span operation that establishes it.
+The Module owns schemas and persisted semantic intent for finding governance plus the finite span-presence lifecycle of FindingLocation and the with_span operation that establishes it.
 
 ## Origin
 
-The declarations are project-authored from the stable Finding Model responsibility and exact PSM symbol and nominal identities.
+Finding governance authority is project-authored against stable rule/finding identities; state/function declarations are authored from exact PSM symbol and nominal identities.
 
 ## Semantics
 
-The State Contract classifies FindingLocation as spanned or unspanned from its direct Option field; Function Contract v3 promises that with_span returns the spanned state and permits only the supported receiver-state write needed to establish it.
+The finding-governance schema separates baseline lifecycle and exception disposition from conformance. The State Contract classifies FindingLocation as spanned or unspanned from its direct Option field; Function Contract v3 promises that with_span returns the spanned state and permits only the supported receiver-state write needed to establish it.
 
 ## Validity
 
@@ -21,6 +21,10 @@ Contracts must be canonical JSON, target Finding Model-owned PSM identities, use
 The declarations change only when the governed FindingLocation lifecycle or with_span semantics intentionally changes; PSM identity changes require explicit migration and fresh derived analysis.
 
 ## Files
+
+### [`finding_governance_schema_v1.json`](../data/finding_governance_schema_v1.json)
+
+Defines the canonical optional project-level legacy baseline, retired reintroduction identities, and finding-specific active or retired exception authority.
 
 ### [`function_contracts.json`](../data/function_contracts.json)
 

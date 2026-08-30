@@ -36,6 +36,50 @@
       "certification_implications": "Produces deterministic development audit evidence only; it is not Fortress certification."
     },
     {
+      "id": "CMD-FINDING-CHECK",
+      "name": "check",
+      "aliases": [],
+      "description": "Evaluate progressive finding enforcement without rewriting conformance.",
+      "owner": "TF-CLI-0001",
+      "executor": "builtin-sync",
+      "duration": "short",
+      "resumability": "restartable",
+      "certification_implications": "Applies authored baseline and exception authority only to blocking behavior; raw rule violations remain failed conformance and certification evidence."
+    },
+    {
+      "id": "CMD-FINDING-LIST",
+      "name": "findings",
+      "aliases": [],
+      "description": "List current stable finding identities and lifecycle governance.",
+      "owner": "TF-CLI-0001",
+      "executor": "builtin-sync",
+      "duration": "short",
+      "resumability": "restartable",
+      "certification_implications": "Reports finding identity, lifecycle, disposition, and enforcement without changing raw conformance or producing certification evidence."
+    },
+    {
+      "id": "CMD-FINDING-BASELINE",
+      "name": "baseline",
+      "aliases": [],
+      "description": "Create or monotonically prune authored legacy finding residue.",
+      "owner": "TF-CLI-0001",
+      "executor": "builtin-sync",
+      "duration": "short",
+      "resumability": "restartable",
+      "certification_implications": "Mutates explicit reviewed governance authority only; baseline membership never changes a failed rule result into passing certification evidence."
+    },
+    {
+      "id": "CMD-FINDING-EXCEPTION",
+      "name": "exceptions",
+      "aliases": [],
+      "description": "List, create, or retire finding-specific exception authority.",
+      "owner": "TF-CLI-0001",
+      "executor": "builtin-sync",
+      "duration": "short",
+      "resumability": "restartable",
+      "certification_implications": "Mutates finding-specific disposition authority only; an exception remains visible and never becomes proof of conformance."
+    },
+    {
       "id": "CMD-CONTRACT-CCG",
       "name": "ccg",
       "aliases": [],

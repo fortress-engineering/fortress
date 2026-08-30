@@ -1341,7 +1341,6 @@ fn finding(
         occurrence,
         EvaluatorProvenance::new(ENVIRONMENTAL_ANALYZER_ID, ENVIRONMENTAL_ANALYSIS_VERSION)?,
         edition,
-        None,
     )
 }
 

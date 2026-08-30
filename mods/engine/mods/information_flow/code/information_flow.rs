@@ -1330,7 +1330,6 @@ fn finding(
             INFORMATION_FLOW_ANALYSIS_VERSION,
         )?,
         edition,
-        None,
     )
 }
 

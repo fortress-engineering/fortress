@@ -3,7 +3,7 @@
   "schema_version": 1,
   "resolver_semantic_version": "1.0.0",
   "project_id": "PF-FORTRESS",
-  "source_ccg_digest": "sha256:df824c8b63ee778adc36cfd4fa44b88c4286b8136f18ac0085c473da2db14c13",
+  "source_ccg_digest": "sha256:e22ba70ec7e51bf4aec8ae6dfbec831e2403aad430d85e7d9283f5295cf1f396",
   "modules": [
     {
       "module_id": "AF-ARCHITECTURE-EVALUATION-0001",
@@ -923,6 +923,22 @@
       "source_module": "AF-FINDING-MODEL-0001",
       "target_module": "AF-FINDING-MODEL-0001",
       "authority": "repository-relative-local",
+      "projection": "../code/governance.rs",
+      "provenance": "mods/engine/mods/finding_model/docs/code_docs.md"
+    },
+    {
+      "class": "LOCAL",
+      "source_module": "AF-FINDING-MODEL-0001",
+      "target_module": "AF-FINDING-MODEL-0001",
+      "authority": "repository-relative-local",
+      "projection": "../data/finding_governance_schema_v1.json",
+      "provenance": "mods/engine/mods/finding_model/docs/data_docs.md"
+    },
+    {
+      "class": "LOCAL",
+      "source_module": "AF-FINDING-MODEL-0001",
+      "target_module": "AF-FINDING-MODEL-0001",
+      "authority": "repository-relative-local",
       "projection": "../data/function_contracts.json",
       "provenance": "mods/engine/mods/finding_model/docs/data_docs.md"
     },
@@ -941,6 +957,14 @@
       "authority": "rust-crate-module",
       "projection": null,
       "provenance": "mods/engine/mods/finding_model/code/finding.rs"
+    },
+    {
+      "class": "LOCAL",
+      "source_module": "AF-FINDING-MODEL-0001",
+      "target_module": "AF-FINDING-MODEL-0001",
+      "authority": "rust-crate-module",
+      "projection": null,
+      "provenance": "mods/engine/mods/finding_model/code/governance.rs"
     },
     {
       "class": "LOCAL",
@@ -1467,7 +1491,7 @@
       "source_module": "AF-SNAPSHOT-GOVERNANCE-0001",
       "target_module": "AF-SNAPSHOT-GOVERNANCE-0001",
       "authority": "repository-relative-local",
-      "projection": "../data/snapshot_audit_schema_v3.json",
+      "projection": "../data/snapshot_audit_schema_v4.json",
       "provenance": "mods/engine/mods/snapshot_governance/docs/data_docs.md"
     },
     {
@@ -1475,7 +1499,7 @@
       "source_module": "AF-SNAPSHOT-GOVERNANCE-0001",
       "target_module": "AF-SNAPSHOT-GOVERNANCE-0001",
       "authority": "repository-relative-local",
-      "projection": "../data/snapshot_finding_schema_v1.json",
+      "projection": "../data/snapshot_finding_schema_v2.json",
       "provenance": "mods/engine/mods/snapshot_governance/docs/data_docs.md"
     },
     {
@@ -1923,6 +1947,14 @@
       "source_module": "PF-FORTRESS",
       "target_module": "PF-FORTRESS",
       "authority": "repository-relative-local",
+      "projection": "../data/finding_governance.json",
+      "provenance": "docs/data_docs.md"
+    },
+    {
+      "class": "LOCAL",
+      "source_module": "PF-FORTRESS",
+      "target_module": "PF-FORTRESS",
+      "authority": "repository-relative-local",
       "projection": "../data/information_flow_policy.json",
       "provenance": "docs/data_docs.md"
     },
@@ -2252,6 +2284,14 @@
       "target_module": "TEST-SNAPSHOT-GOVERNANCE-0001",
       "authority": "repository-relative-local",
       "projection": "../code/derived_artifact_storage.py",
+      "provenance": "mods/engine/mods/snapshot_governance/mods/testing/docs/code_docs.md"
+    },
+    {
+      "class": "LOCAL",
+      "source_module": "TEST-SNAPSHOT-GOVERNANCE-0001",
+      "target_module": "TEST-SNAPSHOT-GOVERNANCE-0001",
+      "authority": "repository-relative-local",
+      "projection": "../code/finding_governance.rs",
       "provenance": "mods/engine/mods/snapshot_governance/mods/testing/docs/code_docs.md"
     },
     {
@@ -5650,6 +5690,14 @@
       "class": "EXTERNAL",
       "source_module": "AF-FINDING-MODEL-0001",
       "target_module": null,
+      "authority": "serde",
+      "projection": null,
+      "provenance": "mods/engine/mods/finding_model/code/governance.rs"
+    },
+    {
+      "class": "EXTERNAL",
+      "source_module": "AF-FINDING-MODEL-0001",
+      "target_module": null,
       "authority": "sha2",
       "projection": null,
       "provenance": "mods/engine/mods/finding_model/code/finding.rs"
@@ -5661,6 +5709,14 @@
       "authority": "std",
       "projection": null,
       "provenance": "mods/engine/mods/finding_model/code/finding.rs"
+    },
+    {
+      "class": "EXTERNAL",
+      "source_module": "AF-FINDING-MODEL-0001",
+      "target_module": null,
+      "authority": "std",
+      "projection": null,
+      "provenance": "mods/engine/mods/finding_model/code/governance.rs"
     },
     {
       "class": "EXTERNAL",
@@ -6820,6 +6876,14 @@
       "target_module": "AF-CORE-0001",
       "authority": "fortress-core",
       "projection": null,
+      "provenance": "mods/engine/mods/snapshot_governance/mods/testing/code/finding_governance.rs"
+    },
+    {
+      "class": "EXTERNAL",
+      "source_module": "TEST-SNAPSHOT-GOVERNANCE-0001",
+      "target_module": "AF-CORE-0001",
+      "authority": "fortress-core",
+      "projection": null,
       "provenance": "mods/engine/mods/snapshot_governance/mods/testing/code/repo_docs_001.rs"
     },
     {
@@ -7283,8 +7347,8 @@
       "path": "mods/engine/data/Cargo.toml",
       "pointer": "test[28].path",
       "source_module": "AF-CORE-0001",
-      "target_module": "TEST-SOURCE-ARCHITECTURE-0001",
-      "resolved_target": "mods/engine/mods/source_architecture/mods/testing/code/source_architecture.rs"
+      "target_module": "TEST-SNAPSHOT-GOVERNANCE-0001",
+      "resolved_target": "mods/engine/mods/snapshot_governance/mods/testing/code/finding_governance.rs"
     },
     {
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
@@ -7292,8 +7356,8 @@
       "path": "mods/engine/data/Cargo.toml",
       "pointer": "test[29].path",
       "source_module": "AF-CORE-0001",
-      "target_module": "TEST-STANDARD-REGISTRY-0001",
-      "resolved_target": "mods/engine/mods/standard_registry/mods/testing/code/std_id_001.rs"
+      "target_module": "TEST-SOURCE-ARCHITECTURE-0001",
+      "resolved_target": "mods/engine/mods/source_architecture/mods/testing/code/source_architecture.rs"
     },
     {
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
@@ -7310,6 +7374,15 @@
       "path": "mods/engine/data/Cargo.toml",
       "pointer": "test[30].path",
       "source_module": "AF-CORE-0001",
+      "target_module": "TEST-STANDARD-REGISTRY-0001",
+      "resolved_target": "mods/engine/mods/standard_registry/mods/testing/code/std_id_001.rs"
+    },
+    {
+      "class": "AUTHORED_RESOLUTION_BOUNDARY",
+      "format": "cargo",
+      "path": "mods/engine/data/Cargo.toml",
+      "pointer": "test[31].path",
+      "source_module": "AF-CORE-0001",
       "target_module": "TEST-SNAPSHOT-GOVERNANCE-0001",
       "resolved_target": "mods/engine/mods/snapshot_governance/mods/testing/code/test_traceability_001.rs"
     },
@@ -7317,7 +7390,7 @@
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
       "format": "cargo",
       "path": "mods/engine/data/Cargo.toml",
-      "pointer": "test[31].path",
+      "pointer": "test[32].path",
       "source_module": "AF-CORE-0001",
       "target_module": "TEST-SNAPSHOT-GOVERNANCE-0001",
       "resolved_target": "mods/engine/mods/snapshot_governance/mods/testing/code/test_boundary_001.rs"
@@ -7465,6 +7538,15 @@
       "source_module": "AF-CORE-0001",
       "target_module": "AF-FINDING-MODEL-0001",
       "resolved_target": "mods/engine/mods/finding_model/code/finding.rs"
+    },
+    {
+      "class": "AUTHORED_RESOLUTION_BOUNDARY",
+      "format": "rust-module",
+      "path": "mods/engine/code/lib.rs",
+      "pointer": "../mods/finding_model/code/governance.rs",
+      "source_module": "AF-CORE-0001",
+      "target_module": "AF-FINDING-MODEL-0001",
+      "resolved_target": "mods/engine/mods/finding_model/code/governance.rs"
     },
     {
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
@@ -7688,8 +7770,8 @@
       "path": "mods/engine/mods/standard_registry/data/schema_manifest.json",
       "pointer": "/schemas/10",
       "source_module": "AF-STANDARD-REGISTRY-0001",
-      "target_module": "AF-CONTRACT-COHERENCY-0001",
-      "resolved_target": "mods/engine/mods/contract_coherency/data/module_contract_schema_v2.json"
+      "target_module": "AF-SNAPSHOT-GOVERNANCE-0001",
+      "resolved_target": "mods/engine/mods/snapshot_governance/data/snapshot_audit_schema_v4.json"
     },
     {
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
@@ -7698,13 +7780,22 @@
       "pointer": "/schemas/11",
       "source_module": "AF-STANDARD-REGISTRY-0001",
       "target_module": "AF-CONTRACT-COHERENCY-0001",
-      "resolved_target": "mods/engine/mods/contract_coherency/data/graph_schema_v1.json"
+      "resolved_target": "mods/engine/mods/contract_coherency/data/module_contract_schema_v2.json"
     },
     {
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
       "format": "schema-registry",
       "path": "mods/engine/mods/standard_registry/data/schema_manifest.json",
       "pointer": "/schemas/12",
+      "source_module": "AF-STANDARD-REGISTRY-0001",
+      "target_module": "AF-CONTRACT-COHERENCY-0001",
+      "resolved_target": "mods/engine/mods/contract_coherency/data/graph_schema_v1.json"
+    },
+    {
+      "class": "AUTHORED_RESOLUTION_BOUNDARY",
+      "format": "schema-registry",
+      "path": "mods/engine/mods/standard_registry/data/schema_manifest.json",
+      "pointer": "/schemas/13",
       "source_module": "AF-STANDARD-REGISTRY-0001",
       "target_module": "AF-BEHAVIORAL-SEMANTICS-0001",
       "resolved_target": "mods/engine/mods/behavioral_semantics/data/behavior_graph_schema_v1.json"
@@ -7713,7 +7804,7 @@
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
       "format": "schema-registry",
       "path": "mods/engine/mods/standard_registry/data/schema_manifest.json",
-      "pointer": "/schemas/13",
+      "pointer": "/schemas/14",
       "source_module": "AF-STANDARD-REGISTRY-0001",
       "target_module": "AF-PROGRAM-SEMANTICS-0001",
       "resolved_target": "mods/engine/mods/program_semantics/data/program_model_schema_v3.json"
@@ -7722,7 +7813,7 @@
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
       "format": "schema-registry",
       "path": "mods/engine/mods/standard_registry/data/schema_manifest.json",
-      "pointer": "/schemas/14",
+      "pointer": "/schemas/15",
       "source_module": "AF-STANDARD-REGISTRY-0001",
       "target_module": "AF-SEMANTIC-ANALYSIS-0001",
       "resolved_target": "mods/engine/mods/semantic_analysis/data/function_contract_schema_v3.json"
@@ -7731,7 +7822,7 @@
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
       "format": "schema-registry",
       "path": "mods/engine/mods/standard_registry/data/schema_manifest.json",
-      "pointer": "/schemas/15",
+      "pointer": "/schemas/16",
       "source_module": "AF-STANDARD-REGISTRY-0001",
       "target_module": "AF-SEMANTIC-ANALYSIS-0001",
       "resolved_target": "mods/engine/mods/semantic_analysis/data/semantic_analysis_schema_v1.json"
@@ -7740,7 +7831,7 @@
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
       "format": "schema-registry",
       "path": "mods/engine/mods/standard_registry/data/schema_manifest.json",
-      "pointer": "/schemas/16",
+      "pointer": "/schemas/17",
       "source_module": "AF-STANDARD-REGISTRY-0001",
       "target_module": "AF-STATE-EFFECT-ANALYSIS-0001",
       "resolved_target": "mods/engine/mods/state_effect_analysis/data/state_contract_schema_v1.json"
@@ -7749,7 +7840,7 @@
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
       "format": "schema-registry",
       "path": "mods/engine/mods/standard_registry/data/schema_manifest.json",
-      "pointer": "/schemas/17",
+      "pointer": "/schemas/18",
       "source_module": "AF-STANDARD-REGISTRY-0001",
       "target_module": "AF-STATE-EFFECT-ANALYSIS-0001",
       "resolved_target": "mods/engine/mods/state_effect_analysis/data/state_effect_schema_v1.json"
@@ -7758,19 +7849,10 @@
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
       "format": "schema-registry",
       "path": "mods/engine/mods/standard_registry/data/schema_manifest.json",
-      "pointer": "/schemas/18",
-      "source_module": "AF-STANDARD-REGISTRY-0001",
-      "target_module": "AF-INFORMATION-FLOW-0001",
-      "resolved_target": "mods/engine/mods/information_flow/data/flow_analysis_schema_v1.json"
-    },
-    {
-      "class": "AUTHORED_RESOLUTION_BOUNDARY",
-      "format": "schema-registry",
-      "path": "mods/engine/mods/standard_registry/data/schema_manifest.json",
       "pointer": "/schemas/19",
       "source_module": "AF-STANDARD-REGISTRY-0001",
       "target_module": "AF-INFORMATION-FLOW-0001",
-      "resolved_target": "mods/engine/mods/information_flow/data/flow_policy_schema_v1.json"
+      "resolved_target": "mods/engine/mods/information_flow/data/flow_analysis_schema_v1.json"
     },
     {
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
@@ -7787,8 +7869,8 @@
       "path": "mods/engine/mods/standard_registry/data/schema_manifest.json",
       "pointer": "/schemas/20",
       "source_module": "AF-STANDARD-REGISTRY-0001",
-      "target_module": "AF-ENVIRONMENTAL-SEMANTICS-0001",
-      "resolved_target": "mods/engine/mods/environmental_semantics/data/environment_contract_schema_v1.json"
+      "target_module": "AF-INFORMATION-FLOW-0001",
+      "resolved_target": "mods/engine/mods/information_flow/data/flow_policy_schema_v1.json"
     },
     {
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
@@ -7797,7 +7879,7 @@
       "pointer": "/schemas/21",
       "source_module": "AF-STANDARD-REGISTRY-0001",
       "target_module": "AF-ENVIRONMENTAL-SEMANTICS-0001",
-      "resolved_target": "mods/engine/mods/environmental_semantics/data/environmental_analysis_schema_v1.json"
+      "resolved_target": "mods/engine/mods/environmental_semantics/data/environment_contract_schema_v1.json"
     },
     {
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
@@ -7805,8 +7887,8 @@
       "path": "mods/engine/mods/standard_registry/data/schema_manifest.json",
       "pointer": "/schemas/22",
       "source_module": "AF-STANDARD-REGISTRY-0001",
-      "target_module": "AF-BEHAVIORAL-REALIZATION-0001",
-      "resolved_target": "mods/engine/mods/behavioral_realization/data/realization_contract_schema_v1.json"
+      "target_module": "AF-ENVIRONMENTAL-SEMANTICS-0001",
+      "resolved_target": "mods/engine/mods/environmental_semantics/data/environmental_analysis_schema_v1.json"
     },
     {
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
@@ -7815,13 +7897,22 @@
       "pointer": "/schemas/23",
       "source_module": "AF-STANDARD-REGISTRY-0001",
       "target_module": "AF-BEHAVIORAL-REALIZATION-0001",
-      "resolved_target": "mods/engine/mods/behavioral_realization/data/realized_bfg_schema_v1.json"
+      "resolved_target": "mods/engine/mods/behavioral_realization/data/realization_contract_schema_v1.json"
     },
     {
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
       "format": "schema-registry",
       "path": "mods/engine/mods/standard_registry/data/schema_manifest.json",
       "pointer": "/schemas/24",
+      "source_module": "AF-STANDARD-REGISTRY-0001",
+      "target_module": "AF-BEHAVIORAL-REALIZATION-0001",
+      "resolved_target": "mods/engine/mods/behavioral_realization/data/realized_bfg_schema_v1.json"
+    },
+    {
+      "class": "AUTHORED_RESOLUTION_BOUNDARY",
+      "format": "schema-registry",
+      "path": "mods/engine/mods/standard_registry/data/schema_manifest.json",
+      "pointer": "/schemas/25",
       "source_module": "AF-STANDARD-REGISTRY-0001",
       "target_module": "AF-REFERENCE-RESOLUTION-0001",
       "resolved_target": "mods/engine/mods/reference_resolution/data/resolution_index_schema_v1.json"
@@ -7830,7 +7921,7 @@
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
       "format": "schema-registry",
       "path": "mods/engine/mods/standard_registry/data/schema_manifest.json",
-      "pointer": "/schemas/25",
+      "pointer": "/schemas/26",
       "source_module": "AF-STANDARD-REGISTRY-0001",
       "target_module": "AF-SOURCE-ARCHITECTURE-0001",
       "resolved_target": "mods/engine/mods/source_architecture/data/source_profile_schema_v1.json"
@@ -7839,7 +7930,7 @@
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
       "format": "schema-registry",
       "path": "mods/engine/mods/standard_registry/data/schema_manifest.json",
-      "pointer": "/schemas/26",
+      "pointer": "/schemas/27",
       "source_module": "AF-STANDARD-REGISTRY-0001",
       "target_module": "AF-SOURCE-ARCHITECTURE-0001",
       "resolved_target": "mods/engine/mods/source_architecture/data/source_model_schema_v1.json"
@@ -7848,7 +7939,7 @@
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
       "format": "schema-registry",
       "path": "mods/engine/mods/standard_registry/data/schema_manifest.json",
-      "pointer": "/schemas/27",
+      "pointer": "/schemas/28",
       "source_module": "AF-STANDARD-REGISTRY-0001",
       "target_module": "AF-CERTIFICATION-0001",
       "resolved_target": "mods/engine/mods/certification/data/evidence_graph_schema_v1.json"
@@ -7857,19 +7948,10 @@
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
       "format": "schema-registry",
       "path": "mods/engine/mods/standard_registry/data/schema_manifest.json",
-      "pointer": "/schemas/28",
-      "source_module": "AF-STANDARD-REGISTRY-0001",
-      "target_module": "AF-CERTIFICATION-0001",
-      "resolved_target": "mods/engine/mods/certification/data/certification_profile_schema_v1.json"
-    },
-    {
-      "class": "AUTHORED_RESOLUTION_BOUNDARY",
-      "format": "schema-registry",
-      "path": "mods/engine/mods/standard_registry/data/schema_manifest.json",
       "pointer": "/schemas/29",
       "source_module": "AF-STANDARD-REGISTRY-0001",
       "target_module": "AF-CERTIFICATION-0001",
-      "resolved_target": "mods/engine/mods/certification/data/certification_result_schema_v1.json"
+      "resolved_target": "mods/engine/mods/certification/data/certification_profile_schema_v1.json"
     },
     {
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
@@ -7887,7 +7969,7 @@
       "pointer": "/schemas/30",
       "source_module": "AF-STANDARD-REGISTRY-0001",
       "target_module": "AF-CERTIFICATION-0001",
-      "resolved_target": "mods/engine/mods/certification/data/verification_binding_schema_v1.json"
+      "resolved_target": "mods/engine/mods/certification/data/certification_result_schema_v1.json"
     },
     {
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
@@ -7896,13 +7978,22 @@
       "pointer": "/schemas/31",
       "source_module": "AF-STANDARD-REGISTRY-0001",
       "target_module": "AF-CERTIFICATION-0001",
-      "resolved_target": "mods/engine/mods/certification/data/verified_bfg_schema_v1.json"
+      "resolved_target": "mods/engine/mods/certification/data/verification_binding_schema_v1.json"
     },
     {
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
       "format": "schema-registry",
       "path": "mods/engine/mods/standard_registry/data/schema_manifest.json",
       "pointer": "/schemas/32",
+      "source_module": "AF-STANDARD-REGISTRY-0001",
+      "target_module": "AF-CERTIFICATION-0001",
+      "resolved_target": "mods/engine/mods/certification/data/verified_bfg_schema_v1.json"
+    },
+    {
+      "class": "AUTHORED_RESOLUTION_BOUNDARY",
+      "format": "schema-registry",
+      "path": "mods/engine/mods/standard_registry/data/schema_manifest.json",
+      "pointer": "/schemas/33",
       "source_module": "AF-STANDARD-REGISTRY-0001",
       "target_module": "TF-CLI-0001",
       "resolved_target": "mods/cli/data/command_schema_v1.json"
@@ -7911,7 +8002,7 @@
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
       "format": "schema-registry",
       "path": "mods/engine/mods/standard_registry/data/schema_manifest.json",
-      "pointer": "/schemas/33",
+      "pointer": "/schemas/34",
       "source_module": "AF-STANDARD-REGISTRY-0001",
       "target_module": "AF-PROJECT-MODEL-0001",
       "resolved_target": "mods/engine/mods/project_model/data/change_schema_v1.json"
@@ -7958,8 +8049,8 @@
       "path": "mods/engine/mods/standard_registry/data/schema_manifest.json",
       "pointer": "/schemas/8",
       "source_module": "AF-STANDARD-REGISTRY-0001",
-      "target_module": "AF-SNAPSHOT-GOVERNANCE-0001",
-      "resolved_target": "mods/engine/mods/snapshot_governance/data/snapshot_finding_schema_v1.json"
+      "target_module": "AF-FINDING-MODEL-0001",
+      "resolved_target": "mods/engine/mods/finding_model/data/finding_governance_schema_v1.json"
     },
     {
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
@@ -7968,7 +8059,7 @@
       "pointer": "/schemas/9",
       "source_module": "AF-STANDARD-REGISTRY-0001",
       "target_module": "AF-SNAPSHOT-GOVERNANCE-0001",
-      "resolved_target": "mods/engine/mods/snapshot_governance/data/snapshot_audit_schema_v3.json"
+      "resolved_target": "mods/engine/mods/snapshot_governance/data/snapshot_finding_schema_v2.json"
     },
     {
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
@@ -9819,10 +9910,10 @@
   "summary": {
     "modules": 40,
     "semantic_references": 162,
-    "local_references": 267,
+    "local_references": 272,
     "physical_projections": 183,
-    "external_references": 208,
-    "authored_resolution_boundaries": 128,
+    "external_references": 211,
+    "authored_resolution_boundaries": 131,
     "generated_projections": 183,
     "findings": 0
   }

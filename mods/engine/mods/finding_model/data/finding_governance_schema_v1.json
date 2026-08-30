@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:finding-governance",
+  "title": "Fortress authored finding baseline and exception authority",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "schema_version", "baseline", "exceptions"],
+  "properties": {
+    "$schema": { "const": "urn:fortress:schema:v1:finding-governance" },
+    "schema_version": { "const": 1 },
+    "baseline": {
+      "oneOf": [
+        { "$ref": "#/$defs/baseline" },
+        { "type": "null" }
+      ]
+    },
+    "exceptions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/exception" }
+    }
+  },
+  "$defs": {
+    "baseline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["standard_id", "standard_edition", "active_entries", "retired_entries"],
+      "properties": {
+        "standard_id": { "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id" },
+        "standard_edition": { "type": "string", "minLength": 1 },
+        "active_entries": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/baseline-entry" }
+        },
+        "retired_entries": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/retired-entry" }
+        }
+      }
+    },
+    "baseline-entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["finding_id", "rule_id", "subjects", "violation_discriminator", "rationale"],
+      "properties": {
+        "finding_id": { "$ref": "urn:fortress:schema:v1:common#/$defs/sha256" },
+        "rule_id": { "$ref": "urn:fortress:schema:v1:common#/$defs/rule-id" },
+        "subjects": { "type": "array", "items": { "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id" } },
+        "violation_discriminator": { "type": "string", "minLength": 1 },
+        "rationale": { "oneOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] }
+      }
+    },
+    "retired-entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["finding_id", "rule_id"],
+      "properties": {
+        "finding_id": { "$ref": "urn:fortress:schema:v1:common#/$defs/sha256" },
+        "rule_id": { "$ref": "urn:fortress:schema:v1:common#/$defs/rule-id" }
+      }
+    },
+    "exception": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "finding_id", "rule_id", "authority", "rationale", "review_condition", "state"],
+      "properties": {
+        "id": { "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id" },
+        "finding_id": { "$ref": "urn:fortress:schema:v1:common#/$defs/sha256" },
+        "rule_id": { "$ref": "urn:fortress:schema:v1:common#/$defs/rule-id" },
+        "authority": { "type": "string", "minLength": 1 },
+        "rationale": { "type": "string", "minLength": 1 },
+        "review_condition": { "oneOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+        "state": { "enum": ["ACTIVE", "RETIRED"] }
+      }
+    }
+  }
+}

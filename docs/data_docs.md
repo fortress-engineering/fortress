@@ -6,7 +6,7 @@ Persist root-owned operational and build inputs that cannot be derived from Modu
 
 ## Origin
 
-Maintainers author the observation configuration, project information-flow facet vocabulary, root audit-Feature realization bindings, workspace manifest, Cargo configuration, and toolchain pin. Certification is derived Info and is never authored here.
+Maintainers author the observation configuration, finding baseline/exception authority, project information-flow facet vocabulary, root audit-Feature realization bindings, workspace manifest, Cargo configuration, and toolchain pin. Certification is derived Info and is never authored here.
 
 ## Semantics
 
@@ -35,6 +35,10 @@ Configures Cargo to keep generated lock and build state outside authored Data lo
 ### [`Cargo.toml`](../data/Cargo.toml)
 
 Declares the Cargo workspace members, common package metadata, Rust edition, and warnings-denied workspace lint policy.
+
+### [`finding_governance.json`](../data/finding_governance.json)
+
+Carries explicit project-level legacy baseline and finding-specific exception authority; Fortress currently has neither active baseline residue nor exceptions.
 
 ### [`information_flow_policy.json`](../data/information_flow_policy.json)
 

@@ -1,6 +1,8 @@
 [
   {
-    "finding_fingerprint": "sha256:c5aa12a9bd54f2edf857ae41aabc73b3c5f29eedb2a714dbe773d66f22437205",
+    "finding_id": "sha256:aa6468d5fc5f58f2db5b70c0b8fdf6701a93416953e32be89422bb85f8a36c35",
+    "identity_eligibility": "ELIGIBLE",
+    "violation_discriminator": "PATH:README.md",
     "rule_id": "ARCH-OWNERSHIP-001",
     "integrity_tier": 1,
     "category": "architecture",
@@ -17,11 +19,12 @@
       "id": "fortress-core/ownership",
       "version": "0.1.0"
     },
-    "standard_edition": "1.0.0-draft.1",
-    "exemption_reference": null
+    "standard_edition": "1.0.0-draft.1"
   },
   {
-    "finding_fingerprint": "sha256:e42bc6fd37d7600a03f2700159fd83f3497783927206364d73f8ab244eafd470",
+    "finding_id": "sha256:09b036087137c6568bc800ce19fbf719fd385fe07fd819c3b791b93988234da1",
+    "identity_eligibility": "ELIGIBLE",
+    "violation_discriminator": "PATH:missing",
     "rule_id": "ARCH-OWNERSHIP-001",
     "integrity_tier": 1,
     "category": "architecture",
@@ -38,11 +41,12 @@
       "id": "fortress-core/ownership",
       "version": "0.1.0"
     },
-    "standard_edition": "1.0.0-draft.1",
-    "exemption_reference": null
+    "standard_edition": "1.0.0-draft.1"
   },
   {
-    "finding_fingerprint": "sha256:e8c0a233883381c29e80d66e578b2c96839027486b503f5d52500760577b03ce",
+    "finding_id": "sha256:1f0d5e65dc126a199a4ef43471ca2748b020fc99db2d313fff0cecd1c1fd0739",
+    "identity_eligibility": "ELIGIBLE",
+    "violation_discriminator": "PATH:orphan.txt",
     "rule_id": "ARCH-OWNERSHIP-001",
     "integrity_tier": 1,
     "category": "architecture",
@@ -59,11 +63,12 @@
       "id": "fortress-core/ownership",
       "version": "0.1.0"
     },
-    "standard_edition": "1.0.0-draft.1",
-    "exemption_reference": null
+    "standard_edition": "1.0.0-draft.1"
   },
   {
-    "finding_fingerprint": "sha256:18dc896dd2af4b4b2d51955c97eff6aed89ae80d553942c57d6e124e9b468367",
+    "finding_id": "sha256:b2b25610bdcd3101fb46d8983dfd7720743eaeede40fc25044acba97a7a96aa9",
+    "identity_eligibility": "ELIGIBLE",
+    "violation_discriminator": "PATH:src/shared/value.rs",
     "rule_id": "ARCH-OWNERSHIP-001",
     "integrity_tier": 1,
     "category": "architecture",
@@ -80,7 +85,6 @@
       "id": "fortress-core/ownership",
       "version": "0.1.0"
     },
-    "standard_edition": "1.0.0-draft.1",
-    "exemption_reference": null
+    "standard_edition": "1.0.0-draft.1"
   }
 ]

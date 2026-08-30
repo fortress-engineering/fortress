@@ -221,9 +221,9 @@ fn make_finding(
 ) -> Result<CanonicalFinding, FindingError> {
     CanonicalFinding::failure(
         definition.clone(),
-        FindingOccurrence::new(entities, FindingLocation::at_path(path)?, message)?,
+        FindingOccurrence::new(entities, FindingLocation::at_path(path)?, message)?
+            .with_discriminator(format!("PATH:{path}"))?,
         evaluator.clone(),
         standard_edition,
-        None,
     )
 }

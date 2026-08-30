@@ -1755,7 +1755,6 @@ fn reference_finding(
             REFERENCE_RESOLVER_SEMANTIC_VERSION,
         )?,
         edition,
-        None,
     )
 }
 

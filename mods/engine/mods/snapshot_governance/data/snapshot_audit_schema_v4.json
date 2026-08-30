@@ -1,12 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:fortress:schema:v3:snapshot-audit",
+  "$id": "urn:fortress:schema:v4:snapshot-audit",
   "title": "Fortress deterministic snapshot audit result",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "project_id", "governance", "standard", "snapshot_fingerprint", "repository_content_fingerprint", "outcome", "summary", "rules", "findings", "diagnostics", "unsupported_analysis", "observation"],
+  "required": ["schema_version", "project_id", "governance", "standard", "snapshot_fingerprint", "repository_content_fingerprint", "outcome", "summary", "finding_governance", "rules", "findings", "diagnostics", "unsupported_analysis", "observation"],
   "properties": {
-    "schema_version": { "const": 3 },
+    "schema_version": { "const": 4 },
     "project_id": {
       "oneOf": [
         { "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id" },
@@ -29,8 +29,9 @@
     "standard": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["edition", "status"],
+      "required": ["id", "edition", "status"],
       "properties": {
+        "id": { "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id" },
         "edition": { "type": "string", "minLength": 1 },
         "status": { "enum": ["draft", "candidate", "released"] }
       }
@@ -49,6 +50,7 @@
         "unsupported": { "type": "integer", "minimum": 0 }
       }
     },
+    "finding_governance": { "$ref": "#/$defs/finding-governance" },
     "rules": {
       "type": "array",
       "items": {
@@ -66,7 +68,7 @@
     },
     "findings": {
       "type": "array",
-      "items": { "$ref": "urn:fortress:schema:v1:snapshot-finding" }
+      "items": { "$ref": "urn:fortress:schema:v2:snapshot-finding" }
     },
     "diagnostics": {
       "type": "array",
@@ -96,6 +98,48 @@
     }
   },
   "$defs": {
+    "finding-governance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["authority", "enforcement", "findings", "resolved_baseline_entries", "unresolved_active_exceptions", "summary"],
+      "properties": {
+        "authority": { "enum": ["ABSENT", "VALID"] },
+        "enforcement": { "enum": ["PASS", "BLOCKED"] },
+        "findings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["finding_id", "rule_id", "raw_conformance", "lifecycle", "disposition", "enforcement", "exception_ids", "reason"],
+            "properties": {
+              "finding_id": { "$ref": "urn:fortress:schema:v1:common#/$defs/sha256" },
+              "rule_id": { "$ref": "urn:fortress:schema:v1:common#/$defs/rule-id" },
+              "raw_conformance": { "const": "FAIL" },
+              "lifecycle": { "enum": ["NEW", "BASELINED", "REINTRODUCED", "BASELINE_INELIGIBLE"] },
+              "disposition": { "enum": ["NONE", "EXCEPTED"] },
+              "enforcement": { "enum": ["BLOCKING", "NON_BLOCKING"] },
+              "exception_ids": { "type": "array", "items": { "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id" }, "uniqueItems": true },
+              "reason": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "resolved_baseline_entries": { "type": "array", "items": { "$ref": "urn:fortress:schema:v1:common#/$defs/sha256" }, "uniqueItems": true },
+        "unresolved_active_exceptions": { "type": "array", "items": { "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id" }, "uniqueItems": true },
+        "summary": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["new_blocking", "baselined_non_blocking", "excepted_non_blocking", "resolved_baseline_entries", "baseline_ineligible", "reintroduced_blocking"],
+          "properties": {
+            "new_blocking": { "type": "integer", "minimum": 0 },
+            "baselined_non_blocking": { "type": "integer", "minimum": 0 },
+            "excepted_non_blocking": { "type": "integer", "minimum": 0 },
+            "resolved_baseline_entries": { "type": "integer", "minimum": 0 },
+            "baseline_ineligible": { "type": "integer", "minimum": 0 },
+            "reintroduced_blocking": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    },
     "architecture-diagnostic": {
       "type": "object",
       "additionalProperties": false,

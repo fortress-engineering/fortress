@@ -8,6 +8,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use fortress_cli::command::{CommandDescriptor, CommandRegistry};
 use fortress_cli::{EXIT_SUCCESS, EXIT_USAGE};
 use fortress_core::contract_coherency::ModuleContract;
+use fortress_core::finding_governance::FindingGovernanceDocument;
 
 static NEXT_FIXTURE: AtomicU64 = AtomicU64::new(1);
 
@@ -45,6 +46,100 @@ fn reference_resolution_command_rejects_incomplete_move_preview() {
     .expect("dispatch writes");
     assert_eq!(status, fortress_cli::EXIT_USAGE);
     assert!(String::from_utf8_lossy(&error).contains("usage: fortress references"));
+}
+
+/// `T-TF-CLI-0001-R15-001`
+/// Fortress requirement: TF-CLI-0001-R15
+#[test]
+fn finding_governance_commands_are_stably_registered() {
+    let registry = CommandRegistry::builtin();
+    assert_eq!(
+        registry.find("check").map(CommandDescriptor::id),
+        Some("CMD-FINDING-CHECK")
+    );
+    assert_eq!(
+        registry.find("findings").map(CommandDescriptor::id),
+        Some("CMD-FINDING-LIST")
+    );
+    assert_eq!(
+        registry.find("baseline").map(CommandDescriptor::id),
+        Some("CMD-FINDING-BASELINE")
+    );
+    assert_eq!(
+        registry.find("exceptions").map(CommandDescriptor::id),
+        Some("CMD-FINDING-EXCEPTION")
+    );
+}
+
+/// `T-TF-CLI-0001-R15-002`
+/// Fortress requirement: TF-CLI-0001-R15
+#[test]
+fn finding_authority_mutation_requires_explicit_complete_arguments() {
+    let mut output = Vec::new();
+    let mut error = Vec::new();
+    let baseline = fortress_cli::run(["baseline"], &mut output, &mut error).unwrap();
+    assert_eq!(baseline, EXIT_USAGE);
+    output.clear();
+    error.clear();
+    let exception = fortress_cli::run(
+        [
+            "exceptions",
+            "create",
+            "EX-FINDING-0001",
+            "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+        ],
+        &mut output,
+        &mut error,
+    )
+    .unwrap();
+    assert_eq!(exception, EXIT_USAGE);
+}
+
+/// `T-TF-CLI-0001-R15-003`
+/// Fortress requirement: TF-CLI-0001-R15
+#[test]
+fn raw_audit_failure_remains_distinct_from_progressive_check_success() {
+    let fixture = AuditFixture::new();
+    fs::write(fixture.root.join("unexpected.txt"), "legacy residue").expect("legacy file writes");
+    let initial =
+        fortress_core::audit::audit_repository(&fixture.root).expect("governed fixture audits");
+    assert!(!initial.is_success());
+    let mut authority = FindingGovernanceDocument::empty();
+    authority
+        .create_baseline(
+            initial.standard_id(),
+            initial.standard_edition(),
+            initial.findings(),
+        )
+        .expect("baseline creates explicitly");
+    fs::write(
+        fixture.root.join("data/finding_governance.json"),
+        authority.to_canonical_json().expect("authority serializes"),
+    )
+    .expect("authority writes");
+    fs::write(
+        fixture.root.join("docs/data_docs.md"),
+        data_docs(&["finding_governance.json", "project.json"]),
+    )
+    .expect("data documentation updates");
+
+    let root = fixture.argument();
+    let raw = run(&["audit", &root, "--format=json"]);
+    assert_eq!(
+        raw.status.code(),
+        Some(i32::from(fortress_cli::EXIT_VIOLATION))
+    );
+    let raw_json: serde_json::Value = serde_json::from_slice(&raw.stdout).unwrap();
+    assert_eq!(raw_json["outcome"], "FAIL");
+    assert_eq!(
+        raw_json["finding_governance"]["summary"]["baselined_non_blocking"],
+        1
+    );
+
+    let progressive = run(&["check", &root, "--format=json"]);
+    assert!(progressive.status.success());
+    let progressive_json: serde_json::Value = serde_json::from_slice(&progressive.stdout).unwrap();
+    assert_eq!(progressive_json["outcome"], "FAIL");
 }
 
 fn run_owned(arguments: &[String]) -> Output {
@@ -544,7 +639,7 @@ fn audit_json_is_valid_and_repeatable() {
     assert_eq!(first.stdout, second.stdout);
     let value: serde_json::Value =
         serde_json::from_slice(&first.stdout).expect("audit output is JSON");
-    assert_eq!(value["schema_version"], 3);
+    assert_eq!(value["schema_version"], 4);
     assert_eq!(value["outcome"], "PASS");
     assert!(value["diagnostics"].is_array());
     assert!(value["unsupported_analysis"].is_array());

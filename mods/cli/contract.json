@@ -148,6 +148,15 @@
             "T-TF-CLI-0001-R14-001",
             "T-TF-CLI-0001-R14-002"
           ]
+        },
+        {
+          "id": "TF-CLI-0001-R15",
+          "statement": "The CLI lists stable finding identities, preserves raw audit failure, exposes a distinct progressive check, creates or monotonically prunes baseline authority only by explicit command, and creates or retires finding-specific exceptions only with authority and rationale.",
+          "tests": [
+            "T-TF-CLI-0001-R15-001",
+            "T-TF-CLI-0001-R15-002",
+            "T-TF-CLI-0001-R15-003"
+          ]
         }
       ]
     }

@@ -1157,7 +1157,6 @@ impl EvaluationContext<'_> {
             FindingOccurrence::new(Vec::new(), FindingLocation::at_path(path)?, message)?,
             self.evaluator.clone(),
             self.standard_edition,
-            None,
         )?);
         Ok(())
     }

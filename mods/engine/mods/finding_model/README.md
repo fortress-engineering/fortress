@@ -6,17 +6,17 @@ The Finding Model exists so every evaluator can describe snapshot-bound rule vio
 
 ## Responsibility
 
-Validate, normalize, deterministically order, and content-address canonical finding evidence while preserving normative rule identity, affected entities, source location, remediation, evaluator provenance, standard edition, and optional exemption reference.
+Validate, normalize, deterministically order, and content-address canonical finding evidence; derive stable lifecycle identity independently of presentation; and evaluate authored legacy baseline and finding-specific exception authority without changing raw conformance.
 
 ## Scope
 
 ### Includes
 
-Finding definitions, occurrences, source spans and locations, evaluator provenance, failure state, deterministic ordering, content fingerprints, typed construction errors, and the authored finite span-presence state/effect intent of FindingLocation.
+Finding definitions, occurrences, source spans and locations, evaluator provenance, failure state, deterministic ordering, stable identity eligibility, baseline lifecycle, explicit exception disposition, progressive enforcement, typed construction errors, and the authored finite span-presence state/effect intent of FindingLocation.
 
 ### Excludes
 
-Normative rule meaning, repository observation, architecture analysis, general heap-state reasoning, rule execution, certification, exemptions, and the decision that a particular violation exists.
+Normative rule meaning, repository observation, architecture analysis, general heap-state reasoning, rule execution, certification, broad rule waivers, approval workflow, and the decision that a particular violation exists.
 
 ## Relationships
 
@@ -28,4 +28,4 @@ Supplies stable entity and rule identities plus the normative rule-category voca
 
 ## Guarantees
 
-Equal normalized evidence produces the same finding fingerprint and sort position; invalid identities, locations, tiers, or provenance fail construction; and findings never redefine rules or claim certification.
+Equal semantic violation identity produces the same stable ID despite line, wording, checkout-root, or semantically transparent Module-location drift; unsafe identity is explicitly baseline-ineligible; baseline and exception authority never converts a violation into PASS; and invalid authority fails closed.

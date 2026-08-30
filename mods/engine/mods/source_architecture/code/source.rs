@@ -1440,7 +1440,6 @@ fn canonical_findings(
             )?,
             evaluator.clone(),
             standard_edition,
-            None,
         )?);
     }
     findings.sort();

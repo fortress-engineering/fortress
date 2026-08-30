@@ -46,13 +46,13 @@ Carries the draft normative rule record interpreted by the ownership evaluator.
 
 Defines the version-two snapshot identity that binds distributed Module contracts and their resolved-set fingerprint.
 
-### [`snapshot_audit_schema_v3.json`](../data/snapshot_audit_schema_v3.json)
+### [`snapshot_audit_schema_v4.json`](../data/snapshot_audit_schema_v4.json)
 
-Defines the version-two machine representation for snapshot audit records, including separate normative findings, non-normative architecture diagnostics, and explicitly unsupported analysis classes.
+Defines the version-four machine representation for snapshot audit records, including raw normative findings, orthogonal lifecycle/disposition/enforcement, non-normative architecture diagnostics, and explicitly unsupported analysis classes.
 
-### [`snapshot_finding_schema_v1.json`](../data/snapshot_finding_schema_v1.json)
+### [`snapshot_finding_schema_v2.json`](../data/snapshot_finding_schema_v2.json)
 
-Defines the version-one machine representation and validation boundary for snapshot finding records owned by this Module.
+Defines the version-two machine representation and validation boundary for stable or explicitly baseline-ineligible snapshot finding records.
 
 ### [`test_boundary_rule.json`](../data/test_boundary_rule.json)
 

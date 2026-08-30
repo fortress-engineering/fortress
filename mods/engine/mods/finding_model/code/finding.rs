@@ -23,6 +23,16 @@ pub enum FindingState {
     Fail,
 }
 
+/// Whether a finding has enough semantic authority for lifecycle governance.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum FindingIdentityEligibility {
+    /// The identifier is stable across irrelevant presentation and location drift.
+    Eligible,
+    /// No safe semantic or repository-relative subject identity was available.
+    BaselineIneligible,
+}
+
 /// One-based inclusive source range when an evaluator knows exact location.
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct SourceSpan {
@@ -127,6 +137,12 @@ impl FindingLocation {
     pub fn path(&self) -> Option<&str> {
         self.path.as_deref()
     }
+
+    /// Returns the analyzer-reported semantic symbol when one is known.
+    #[must_use]
+    pub fn symbol(&self) -> Option<&str> {
+        self.symbol.as_deref()
+    }
 }
 
 /// Normative metadata needed to normalize a rule violation.
@@ -174,6 +190,7 @@ impl RuleFindingDefinition {
 pub struct FindingOccurrence {
     entities: Vec<String>,
     location: FindingLocation,
+    violation_discriminator: Option<String>,
     message: String,
 }
 
@@ -202,8 +219,33 @@ impl FindingOccurrence {
         Ok(Self {
             entities,
             location,
+            violation_discriminator: None,
             message,
         })
+    }
+
+    /// Adds a stable evaluator-defined violation discriminator.
+    ///
+    /// A discriminator identifies the violated relationship or condition; it
+    /// must not contain presentation wording or a source coordinate.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`FindingError::InvalidDiscriminator`] for an empty or
+    /// non-canonical value.
+    pub fn with_discriminator(
+        mut self,
+        discriminator: impl Into<String>,
+    ) -> Result<Self, FindingError> {
+        let discriminator = discriminator.into();
+        if discriminator.is_empty()
+            || discriminator.contains(char::is_whitespace)
+            || discriminator.contains('\\')
+        {
+            return Err(FindingError::InvalidDiscriminator(discriminator.into()));
+        }
+        self.violation_discriminator = Some(discriminator);
+        Ok(self)
     }
 }
 
@@ -236,7 +278,9 @@ impl EvaluatorProvenance {
 /// Content-addressed normalized evidence of one snapshot rule violation.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct CanonicalFinding {
-    finding_fingerprint: String,
+    finding_id: String,
+    identity_eligibility: FindingIdentityEligibility,
+    violation_discriminator: Option<String>,
     rule_id: String,
     integrity_tier: u8,
     category: FindingCategory,
@@ -247,7 +291,6 @@ pub struct CanonicalFinding {
     remediation: String,
     evaluator: EvaluatorProvenance,
     standard_edition: String,
-    exemption_reference: Option<String>,
 }
 
 impl CanonicalFinding {
@@ -255,45 +298,64 @@ impl CanonicalFinding {
     ///
     /// # Errors
     ///
-    /// Returns [`FindingError`] for an empty standard edition, invalid exemption
-    /// identity, or canonical serialization failure.
+    /// Returns [`FindingError`] for an empty standard edition or canonical
+    /// serialization failure.
     pub fn failure(
         definition: RuleFindingDefinition,
         occurrence: FindingOccurrence,
         evaluator: EvaluatorProvenance,
         standard_edition: impl Into<String>,
-        exemption_reference: Option<String>,
     ) -> Result<Self, FindingError> {
         let standard_edition = standard_edition.into();
         if standard_edition.is_empty() {
             return Err(FindingError::EmptyField("standard_edition"));
         }
-        if let Some(reference) = &exemption_reference {
-            StableId::parse(reference).map_err(|source| FindingError::InvalidExemption {
-                value: reference.clone().into(),
-                source,
-            })?;
-        }
-
         let state = FindingState::Fail;
+        let stable_subject = stable_subject(&occurrence);
+        let violation_discriminator = occurrence.violation_discriminator.clone().or_else(|| {
+            if occurrence.entities.is_empty() {
+                occurrence
+                    .location
+                    .symbol()
+                    .map(|value| format!("SYMBOL:{value}"))
+                    .or_else(|| {
+                        occurrence
+                            .location
+                            .path()
+                            .map(|value| format!("PATH:{value}"))
+                    })
+            } else {
+                Some("VIOLATION".into())
+            }
+        });
+        let identity_eligibility = if stable_subject.is_some() {
+            FindingIdentityEligibility::Eligible
+        } else {
+            FindingIdentityEligibility::BaselineIneligible
+        };
         let material = FindingIdentityMaterial {
             rule_id: &definition.rule_id,
-            integrity_tier: definition.integrity_tier,
-            category: definition.category,
-            state,
-            entities: &occurrence.entities,
-            location: &occurrence.location,
-            message: &occurrence.message,
-            remediation: &definition.remediation,
-            evaluator: &evaluator,
-            standard_edition: &standard_edition,
-            exemption_reference: exemption_reference.as_deref(),
+            stable_subject,
+            violation_discriminator: violation_discriminator.as_deref(),
         };
         let serialized = serde_json::to_vec(&material).map_err(FindingError::Serialization)?;
-        let finding_fingerprint = format!("sha256:{:x}", Sha256::digest(serialized));
+        let finding_id = if identity_eligibility == FindingIdentityEligibility::Eligible {
+            format!("sha256:{:x}", Sha256::digest(serialized))
+        } else {
+            let fallback = IneligibleIdentityMaterial {
+                rule_id: &definition.rule_id,
+                entities: &occurrence.entities,
+                location: &occurrence.location,
+                message: &occurrence.message,
+            };
+            let serialized = serde_json::to_vec(&fallback).map_err(FindingError::Serialization)?;
+            format!("sha256:{:x}", Sha256::digest(serialized))
+        };
 
         Ok(Self {
-            finding_fingerprint,
+            finding_id,
+            identity_eligibility,
+            violation_discriminator,
             rule_id: definition.rule_id,
             integrity_tier: definition.integrity_tier,
             category: definition.category,
@@ -304,14 +366,32 @@ impl CanonicalFinding {
             remediation: definition.remediation,
             evaluator,
             standard_edition,
-            exemption_reference,
         })
     }
 
-    /// Returns the content identity of the normalized finding.
+    /// Returns the stable finding identity, or an occurrence identity when the
+    /// finding is explicitly baseline-ineligible.
     #[must_use]
     pub fn finding_fingerprint(&self) -> &str {
-        &self.finding_fingerprint
+        &self.finding_id
+    }
+
+    /// Returns the finding identity.
+    #[must_use]
+    pub fn finding_id(&self) -> &str {
+        &self.finding_id
+    }
+
+    /// Returns whether this finding may safely participate in a baseline.
+    #[must_use]
+    pub const fn identity_eligibility(&self) -> FindingIdentityEligibility {
+        self.identity_eligibility
+    }
+
+    /// Returns the stable violated-condition discriminator when available.
+    #[must_use]
+    pub fn violation_discriminator(&self) -> Option<&str> {
+        self.violation_discriminator.as_deref()
     }
 
     /// Returns the stable governing rule identity.
@@ -381,8 +461,12 @@ impl Ord for CanonicalFinding {
             .then_with(|| self.state.cmp(&other.state))
             .then_with(|| self.evaluator.cmp(&other.evaluator))
             .then_with(|| self.standard_edition.cmp(&other.standard_edition))
-            .then_with(|| self.exemption_reference.cmp(&other.exemption_reference))
-            .then_with(|| self.finding_fingerprint.cmp(&other.finding_fingerprint))
+            .then_with(|| self.identity_eligibility.cmp(&other.identity_eligibility))
+            .then_with(|| {
+                self.violation_discriminator
+                    .cmp(&other.violation_discriminator)
+            })
+            .then_with(|| self.finding_id.cmp(&other.finding_id))
     }
 }
 
@@ -406,13 +490,8 @@ pub enum FindingError {
         /// Stable identity validation failure.
         source: StableIdError,
     },
-    /// An exemption reference was invalid.
-    InvalidExemption {
-        /// Invalid exemption value.
-        value: Box<str>,
-        /// Stable identity validation failure.
-        source: StableIdError,
-    },
+    /// A violation discriminator was not stable canonical material.
+    InvalidDiscriminator(Box<str>),
     /// A required string field was empty.
     EmptyField(&'static str),
     /// A repository path was not canonical and relative.
@@ -442,8 +521,11 @@ impl Display for FindingError {
             Self::InvalidEntity { value, source } => {
                 write!(formatter, "invalid finding entity `{value}`: {source}")
             }
-            Self::InvalidExemption { value, source } => {
-                write!(formatter, "invalid finding exemption `{value}`: {source}")
+            Self::InvalidDiscriminator(value) => {
+                write!(
+                    formatter,
+                    "finding discriminator `{value}` is not canonical"
+                )
             }
             Self::EmptyField(field) => write!(formatter, "finding field `{field}` is empty"),
             Self::InvalidPath(path) => {
@@ -472,12 +554,11 @@ impl Error for FindingError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
             Self::InvalidRuleId(error) => Some(error),
-            Self::InvalidEntity { source, .. } | Self::InvalidExemption { source, .. } => {
-                Some(source)
-            }
+            Self::InvalidEntity { source, .. } => Some(source),
             Self::Serialization(error) => Some(error),
             Self::InvalidIntegrityTier(_)
             | Self::EmptyField(_)
+            | Self::InvalidDiscriminator(_)
             | Self::InvalidPath(_)
             | Self::InvalidSourceSpan { .. } => None,
         }
@@ -487,16 +568,37 @@ impl Error for FindingError {
 #[derive(Serialize)]
 struct FindingIdentityMaterial<'a> {
     rule_id: &'a str,
-    integrity_tier: u8,
-    category: FindingCategory,
-    state: FindingState,
+    stable_subject: Option<StableFindingSubject<'a>>,
+    violation_discriminator: Option<&'a str>,
+}
+
+#[derive(Serialize)]
+#[serde(tag = "kind", content = "value", rename_all = "SCREAMING_SNAKE_CASE")]
+enum StableFindingSubject<'a> {
+    Entities(&'a [String]),
+    Symbol(&'a str),
+    RepositoryPath(&'a str),
+}
+
+#[derive(Serialize)]
+struct IneligibleIdentityMaterial<'a> {
+    rule_id: &'a str,
     entities: &'a [String],
     location: &'a FindingLocation,
     message: &'a str,
-    remediation: &'a str,
-    evaluator: &'a EvaluatorProvenance,
-    standard_edition: &'a str,
-    exemption_reference: Option<&'a str>,
+}
+
+fn stable_subject(occurrence: &FindingOccurrence) -> Option<StableFindingSubject<'_>> {
+    if !occurrence.entities.is_empty() {
+        Some(StableFindingSubject::Entities(&occurrence.entities))
+    } else if let Some(symbol) = occurrence.location.symbol() {
+        Some(StableFindingSubject::Symbol(symbol))
+    } else {
+        occurrence
+            .location
+            .path()
+            .map(StableFindingSubject::RepositoryPath)
+    }
 }
 
 fn is_canonical_relative_path(value: &str) -> bool {

@@ -1,16 +1,23 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:fortress:schema:v1:snapshot-finding",
+  "$id": "urn:fortress:schema:v2:snapshot-finding",
   "title": "Canonical Fortress Snapshot Governance finding",
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "finding_fingerprint", "rule_id", "integrity_tier", "category", "state",
+    "finding_id", "identity_eligibility", "violation_discriminator", "rule_id", "integrity_tier", "category", "state",
     "entities", "location", "message", "remediation", "evaluator",
-    "standard_edition", "exemption_reference"
+    "standard_edition"
   ],
   "properties": {
-    "finding_fingerprint": { "$ref": "urn:fortress:schema:v1:common#/$defs/sha256" },
+    "finding_id": { "$ref": "urn:fortress:schema:v1:common#/$defs/sha256" },
+    "identity_eligibility": { "enum": ["ELIGIBLE", "BASELINE_INELIGIBLE"] },
+    "violation_discriminator": {
+      "oneOf": [
+        { "type": "string", "minLength": 1 },
+        { "type": "null" }
+      ]
+    },
     "rule_id": { "$ref": "urn:fortress:schema:v1:common#/$defs/rule-id" },
     "integrity_tier": { "type": "integer", "minimum": 0, "maximum": 4 },
     "category": {
@@ -71,12 +78,6 @@
         "version": { "type": "string", "minLength": 1 }
       }
     },
-    "standard_edition": { "type": "string", "minLength": 1 },
-    "exemption_reference": {
-      "oneOf": [
-        { "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id" },
-        { "type": "null" }
-      ]
-    }
+    "standard_edition": { "type": "string", "minLength": 1 }
   }
 }

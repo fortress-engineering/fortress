@@ -34,6 +34,8 @@ pub mod evaluation;
 pub mod filing;
 #[path = "../mods/finding_model/code/finding.rs"]
 pub mod finding;
+#[path = "../mods/finding_model/code/governance.rs"]
+pub mod finding_governance;
 #[path = "../mods/standard_registry/code/identity.rs"]
 pub mod identity;
 #[path = "../mods/implementation_observation/code/observation.rs"]

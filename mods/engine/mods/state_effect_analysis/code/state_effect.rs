@@ -1331,7 +1331,6 @@ fn finding(
         occurrence,
         EvaluatorProvenance::new(STATE_EFFECT_ANALYZER_ID, STATE_EFFECT_ANALYSIS_VERSION)?,
         edition,
-        None,
     )
 }
 

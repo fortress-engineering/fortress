@@ -24,7 +24,7 @@ Defines the stable built-in command registry and rejects duplicate or unimplemen
 
 ### [`lib.rs`](../code/lib.rs)
 
-Dispatches supported arguments, invokes Engine audit, CCG, Intended BFG, PSM, semantic-domain, state/effect, information-flow, environmental, Realized BFG, reference-resolution/relocation-preview, Source Artifact Model, and local full-snapshot certification behavior, renders output, and assigns process status.
+Dispatches supported arguments, invokes raw audit and progressive finding checks, performs explicit baseline/exception authority mutation, invokes semantic projections and local full-snapshot certification, renders output, and assigns process status without conflating conformance with enforcement.
 
 ### [`main.rs`](../code/main.rs)
 

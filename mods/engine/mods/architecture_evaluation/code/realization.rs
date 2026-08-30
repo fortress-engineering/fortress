@@ -487,7 +487,6 @@ fn record_finding(
             env!("CARGO_PKG_VERSION"),
         )?,
         standard_edition,
-        None,
     )
 }
 
@@ -512,6 +511,5 @@ fn issue_finding(
             env!("CARGO_PKG_VERSION"),
         )?,
         standard_edition,
-        None,
     )
 }

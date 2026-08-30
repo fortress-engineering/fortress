@@ -109,7 +109,8 @@
       "requirements": [
         "AF-SNAPSHOT-GOVERNANCE-0001-R01",
         "AF-SNAPSHOT-GOVERNANCE-0001-R02",
-        "AF-SNAPSHOT-GOVERNANCE-0001-R03"
+        "AF-SNAPSHOT-GOVERNANCE-0001-R03",
+        "AF-SNAPSHOT-GOVERNANCE-0001-R15"
       ]
     }
   ],
@@ -239,6 +240,17 @@
           "statement": "Snapshot Governance Testing executes the current generated success and failure scenarios for its filesystem document-read environmental boundary and establishes their exact deterministic obligation identities.",
           "tests": [
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R14-001"
+          ]
+        },
+        {
+          "id": "AF-SNAPSHOT-GOVERNANCE-0001-R15",
+          "statement": "Stable finding identity excludes presentation and position drift, while authored baseline lifecycle and finding-specific exception disposition alter progressive enforcement without changing raw conformance truth.",
+          "tests": [
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R15-001",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R15-002",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R15-003",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R15-004",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R15-005"
           ]
         }
       ]

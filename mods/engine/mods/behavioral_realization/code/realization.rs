@@ -1962,7 +1962,6 @@ pub fn evaluate_behavioral_realization(
                     .map_err(BehavioralRealizationError::Finding)?,
                     evaluator.clone(),
                     standard_edition,
-                    None,
                 )
                 .map_err(BehavioralRealizationError::Finding)?,
             );
@@ -1985,7 +1984,6 @@ pub fn evaluate_behavioral_realization(
                     .map_err(BehavioralRealizationError::Finding)?,
                     evaluator.clone(),
                     standard_edition,
-                    None,
                 )
                 .map_err(BehavioralRealizationError::Finding)?,
             );

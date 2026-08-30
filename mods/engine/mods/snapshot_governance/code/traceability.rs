@@ -93,7 +93,6 @@ pub fn evaluate_ccg_test_traceability(
             )?,
             evaluator.clone(),
             standard_edition,
-            None,
         )?);
     }
     findings.sort();

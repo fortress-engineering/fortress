@@ -90,7 +90,6 @@ pub fn evaluate_contract_coherency(
             )?,
             evaluator.clone(),
             standard_edition,
-            None,
         )?);
     }
     if !resolution.test_reference_resolution_supported() {
@@ -103,7 +102,6 @@ pub fn evaluate_contract_coherency(
             )?,
             evaluator.clone(),
             standard_edition,
-            None,
         )?);
     }
     if documentation.summary().relationship_violations() > 0 {
@@ -119,7 +117,6 @@ pub fn evaluate_contract_coherency(
             )?,
             evaluator,
             standard_edition,
-            None,
         )?);
     }
     findings.sort();
