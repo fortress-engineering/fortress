@@ -8,7 +8,10 @@
 mod rust;
 
 pub use rust::observe_rust_implementation;
-pub use rust::{CargoAnalysisTerritoryObservation, observe_cargo_analysis_territories};
+pub use rust::{
+    CargoAnalysisTerritoryObservation, CargoSourceRole, CargoTargetObservation,
+    observe_cargo_analysis_territories,
+};
 
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
@@ -24,7 +27,7 @@ use crate::project::{LogicalModuleDeclaration, SourcePathBindingKind};
 pub const RUST_LANGUAGE_ID: &str = "rust";
 
 /// Semantic version of Rust implementation observation behavior.
-pub const RUST_ANALYZER_VERSION: &str = "1.0.0";
+pub const RUST_ANALYZER_VERSION: &str = "1.1.0";
 
 /// One exact source file whose bytes are bound to a stabilized snapshot.
 #[derive(Clone, Debug, Eq, PartialEq)]

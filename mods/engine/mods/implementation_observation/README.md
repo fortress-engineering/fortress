@@ -12,7 +12,7 @@ Analyze exact snapshot-bound implementation source with supported language seman
 
 ### Includes
 
-Language-neutral observation facts, snapshot content verification, explicit source ownership backed by physical Module containment, authored logical path binding, or analysis-only Cargo authority, structural Cargo and Rust namespace analysis, normalized dependencies, deterministic evidence ordering, and explicit unsupported or unresolved coverage.
+Language-neutral observation facts, snapshot content verification, explicit source ownership backed by physical Module containment, authored logical path binding, or analysis-only Cargo authority, structural Cargo target-role and Rust namespace analysis, normalized dependencies, deterministic evidence ordering, and explicit unsupported or unresolved coverage.
 
 ### Excludes
 

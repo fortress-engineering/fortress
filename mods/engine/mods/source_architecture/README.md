@@ -12,11 +12,11 @@ Compile canonical authored file responsibility when present, explicit snapshot-b
 
 ### Includes
 
-Universal semantic regions, truthful coverage states, language-profile and archetype contracts, generated-source provenance, stable semantic references, deterministic projection, and SOURCE-PROFILE-001/SOURCE-ARTIFACT-001 evaluation.
+Universal semantic regions, truthful coverage states, language-profile and archetype contracts, the registered Rust structural profile, generated-source provenance, stable semantic references, deterministic projection, and SOURCE-PROFILE-001/SOURCE-ARTIFACT-001 evaluation.
 
 ### Excludes
 
-Rust-specific file archetypes or ordering, universal one-X-per-file rules, source reparsing, natural-language/code matching, automatic rewriting, and deep value/state/effect/security/environment reasoning.
+Compiler-semantic Rust resolution, prescribed Rust item ordering, universal one-X-per-file rules, natural-language/code matching, automatic rewriting, and deep value/state/effect/security/environment reasoning.
 
 ## Relationships
 

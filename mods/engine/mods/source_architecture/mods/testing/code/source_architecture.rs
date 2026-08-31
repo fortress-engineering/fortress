@@ -9,11 +9,15 @@ use fortress_core::contract_coherency::{
 };
 use fortress_core::documentation::code_file_responsibilities;
 use fortress_core::filing::{FilingSystemProfiles, analyze_project_filing_system};
+use fortress_core::implementation_observation::{
+    ImplementationObservationInput, SnapshotBoundFile, observe_cargo_analysis_territories,
+    resolve_source_ownership,
+};
 use fortress_core::source_architecture::{
     ArchetypeResolution, GeneratedSource, LanguageAssignment, RegionCoverage, SEMANTIC_REGIONS,
     SOURCE_ARTIFACT_MODEL_SCHEMA, SemanticRegion, SourceArchitectureInput, SourceArtifactInput,
     SourceFindingKind, SourceObservation, SourceProfileRegistry, SourceProvenanceKind,
-    SourceVerificationRelationship, evaluate_source_architecture,
+    SourceVerificationRelationship, evaluate_source_architecture, observe_rust_source_profile,
 };
 use serde_json::{Value, json};
 
@@ -194,6 +198,8 @@ fn evaluate(
         profiles,
         languages: &languages,
         observations,
+        archetype_observations: &[],
+        profile_facts: &BTreeMap::new(),
         generated_sources: generated,
         verification_relationships: verifications,
         available_adapters: &available_adapters,
@@ -334,6 +340,8 @@ fn relocation_preserves_artifact_and_cross_module_semantic_identity() {
             profiles: &SourceProfileRegistry::standard(),
             languages: &language,
             observations: &observation,
+            archetype_observations: &[],
+            profile_facts: &BTreeMap::new(),
             generated_sources: &[],
             verification_relationships: &[],
             available_adapters: &BTreeSet::new(),
@@ -357,13 +365,153 @@ fn relocation_preserves_artifact_and_cross_module_semantic_identity() {
 /// `T-AF-SOURCE-ARCHITECTURE-0001-R02-001`
 /// Fortress requirement: AF-SOURCE-ARCHITECTURE-0001-R02
 #[test]
-fn universal_region_vocabulary_and_empty_standard_registry_are_stable() {
+fn universal_region_vocabulary_and_rust_standard_profile_are_stable() {
     assert_eq!(SEMANTIC_REGIONS.len(), 11);
-    assert!(SourceProfileRegistry::standard().profiles().is_empty());
+    assert_eq!(SourceProfileRegistry::standard().profiles().len(), 1);
     assert_eq!(SEMANTIC_REGIONS[0], SemanticRegion::IdentityResponsibility);
     assert_eq!(
         SEMANTIC_REGIONS[10],
         SemanticRegion::VerificationRelationships
+    );
+}
+
+/// `T-AF-SOURCE-ARCHITECTURE-0001-R02-006`
+/// Fortress requirement: AF-SOURCE-ARCHITECTURE-0001-R02
+#[test]
+#[allow(clippy::too_many_lines)]
+fn rust_profile_uses_cargo_roles_and_preserves_structural_visibility() {
+    let files = BTreeMap::from([
+        (
+            "Cargo.toml".to_owned(),
+            br#"[package]
+name = "profile-fixture"
+version = "0.1.0"
+build = "build.rs"
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "tool"
+path = "src/bin/tool.rs"
+
+[[test]]
+name = "integration"
+path = "tests/integration.rs"
+
+[[bench]]
+name = "measure"
+path = "benches/measure.rs"
+
+[[example]]
+name = "demo"
+path = "examples/demo.rs"
+"#
+            .to_vec(),
+        ),
+        ("build.rs".to_owned(), b"fn main() {}".to_vec()),
+        ("src/bin/tool.rs".to_owned(), b"fn main() {}".to_vec()),
+        (
+            "tests/integration.rs".to_owned(),
+            b"#[test] fn runs() {}".to_vec(),
+        ),
+        ("benches/measure.rs".to_owned(), b"fn main() {}".to_vec()),
+        ("examples/demo.rs".to_owned(), b"fn main() {}".to_vec()),
+        (
+            "binary/Cargo.toml".to_owned(),
+            b"[package]\nname = \"binary\"\nversion = \"0.1.0\"\n".to_vec(),
+        ),
+        ("binary/src/main.rs".to_owned(), b"fn main() {}".to_vec()),
+        (
+            "proc/Cargo.toml".to_owned(),
+            b"[package]\nname = \"proc\"\nversion = \"0.1.0\"\n[lib]\nproc-macro = true\n".to_vec(),
+        ),
+        (
+            "proc/src/lib.rs".to_owned(),
+            b"extern crate proc_macro;".to_vec(),
+        ),
+        ("src/mod.rs".to_owned(), b"pub mod nested;".to_vec()),
+        (
+            "src/lib.rs".to_owned(),
+            br"#![allow(dead_code)]
+use std::fmt;
+pub struct Public;
+pub(crate) enum CrateOnly { Value }
+static STATE: usize = 0;
+trait Local { fn call(&self); }
+impl Local for Public { fn call(&self) {} }
+impl Public {
+    pub(super) async fn execute(&self) -> Result<(), fmt::Error> { Ok(()) }
+}
+macro_rules! local { () => {} }
+local!();
+"
+            .to_vec(),
+        ),
+    ]);
+    let ownerships = resolve_source_ownership(files.keys().map(String::as_str), &[]);
+    let input = ImplementationObservationInput::new_with_ownership(
+        "sha256:rust-profile-fixture",
+        files
+            .iter()
+            .map(|(path, bytes)| SnapshotBoundFile::from_bytes(path, bytes.clone()))
+            .collect(),
+        ownerships.clone(),
+    );
+    let cargo = observe_cargo_analysis_territories(&input).expect("Cargo roles observe");
+    let artifacts = ownerships
+        .iter()
+        .map(|ownership| {
+            SourceArtifactInput::new(
+                ownership.source_path(),
+                ownership.owner(),
+                ownership.source_path(),
+            )
+        })
+        .collect::<Vec<_>>();
+    let projection =
+        observe_rust_source_profile(&files, &artifacts, &cargo).expect("Rust profile observes");
+    let roles = projection
+        .archetypes()
+        .iter()
+        .map(|observation| (observation.path(), observation.candidates()))
+        .collect::<BTreeMap<_, _>>();
+    assert_eq!(roles["src/lib.rs"], ["RUST_CRATE_ROOT"]);
+    assert_eq!(roles["binary/src/main.rs"], ["RUST_CRATE_ROOT"]);
+    assert_eq!(roles["proc/src/lib.rs"], ["RUST_PROC_MACRO_CRATE_ROOT"]);
+    assert_eq!(roles["src/bin/tool.rs"], ["RUST_BINARY_TARGET_ROOT"]);
+    assert_eq!(roles["build.rs"], ["RUST_BUILD_SCRIPT"]);
+    assert_eq!(roles["tests/integration.rs"], ["RUST_INTEGRATION_TEST"]);
+    assert_eq!(roles["benches/measure.rs"], ["RUST_BENCHMARK"]);
+    assert_eq!(roles["examples/demo.rs"], ["RUST_EXAMPLE"]);
+    assert_eq!(roles["src/mod.rs"], ["RUST_MOD_MODULE"]);
+
+    let facts = &projection.facts()["src/lib.rs"];
+    assert!(
+        facts.iter().any(|fact| {
+            fact.kind() == "STRUCT_DECLARATION" && fact.visibility() == Some("PUB")
+        })
+    );
+    assert!(facts.iter().any(|fact| {
+        fact.kind() == "ENUM_DECLARATION" && fact.visibility() == Some("PUB_CRATE")
+    }));
+    assert!(facts.iter().any(|fact| fact.kind() == "TRAIT_DECLARATION"));
+    assert!(facts.iter().any(|fact| fact.kind() == "TRAIT_IMPL"));
+    assert!(facts.iter().any(|fact| fact.kind() == "INHERENT_IMPL"));
+    assert!(facts.iter().any(|fact| fact.kind() == "ASYNC_FUNCTION"));
+    assert!(
+        facts
+            .iter()
+            .any(|fact| fact.kind() == "FAILURE_BEARING_SURFACE")
+    );
+    assert!(facts.iter().any(|fact| fact.kind() == "MACRO_DEFINITION"));
+    assert!(facts.iter().any(|fact| fact.kind() == "MACRO_INVOCATION"));
+    assert!(facts.iter().any(|fact| fact.kind() == "MACRO_EXPANSION"));
+    assert!(
+        projection
+            .observations()
+            .windows(2)
+            .all(|pair| pair[0] <= pair[1])
     );
 }
 
@@ -857,7 +1005,7 @@ fn live_fortress_inventory_is_complete_and_rust_profile_status_is_truthful() {
         model.summary().documented_responsibilities(),
         expected.len()
     );
-    assert_eq!(model.summary().profile_not_registered(), expected.len());
+    assert_eq!(model.summary().profile_not_registered(), 2);
     assert_eq!(model.summary().findings(), 0);
     assert!(
         model
@@ -868,9 +1016,7 @@ fn live_fortress_inventory_is_complete_and_rust_profile_status_is_truthful() {
                     .extension()
                     .is_some_and(|extension| extension.eq_ignore_ascii_case("rs"))
             })
-            .all(
-                |artifact| artifact.profile().status() == ArchetypeResolution::ProfileNotRegistered
-            )
+            .all(|artifact| artifact.profile().status() == ArchetypeResolution::Resolved)
     );
 }
 
@@ -915,13 +1061,21 @@ fn ten_thousand_artifacts_remain_deterministic_and_lightweight() {
     ]);
     for index in 0..10_000 {
         files.insert(
-            format!("code/artifact_{index:05}.mix"),
-            format!("artifact {index}\n").into_bytes(),
+            format!("code/artifact_{index:05}.rs"),
+            format!("pub fn artifact_{index:05}() -> usize {{ {index} }}\n").into_bytes(),
         );
     }
     let ccg = fixture_ccg(&files);
     let artifacts = artifact_inputs(&files, &ccg);
-    let languages = [LanguageAssignment::new("mix", "mixed", "scale-adapter")];
+    let languages = [LanguageAssignment::new(
+        "rs",
+        "rust",
+        "fortress-core/rust-source-profile-v1",
+    )];
+    let rust = observe_rust_source_profile(&files, &artifacts, &[]).expect("Rust scale profile");
+    let adapters = ["fortress-core/rust-source-profile-v1".to_owned()]
+        .into_iter()
+        .collect::<BTreeSet<_>>();
     let compile = || {
         evaluate_source_architecture(&SourceArchitectureInput {
             project_id: Some("PF-SCALE"),
@@ -932,10 +1086,12 @@ fn ten_thousand_artifacts_remain_deterministic_and_lightweight() {
             responsibilities: &[],
             profiles: &SourceProfileRegistry::standard(),
             languages: &languages,
-            observations: &[],
+            observations: rust.observations(),
+            archetype_observations: rust.archetypes(),
+            profile_facts: rust.facts(),
             generated_sources: &[],
             verification_relationships: &[],
-            available_adapters: &BTreeSet::new(),
+            available_adapters: &adapters,
             psm_digest: None,
             standard_edition: EDITION,
         })
@@ -944,6 +1100,10 @@ fn ten_thousand_artifacts_remain_deterministic_and_lightweight() {
     let first = compile();
     let second = compile();
     assert_eq!(first.model().artifacts().len(), 10_000);
+    assert!(first.model().artifacts().iter().all(|artifact| {
+        artifact.profile().status() == ArchetypeResolution::Resolved
+            && artifact.profile().archetype_id() == Some("RUST_MODULE")
+    }));
     assert_eq!(
         first.model().to_canonical_json().expect("json"),
         second.model().to_canonical_json().expect("json")

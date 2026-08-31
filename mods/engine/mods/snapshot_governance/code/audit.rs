@@ -56,7 +56,7 @@ use crate::finding_governance::{
 use crate::implementation_observation::{
     ImplementationObservationError, ImplementationObservationInput, ModuleTerritory,
     ObservedImplementation, SnapshotBoundFile, SourceOwnership, SourceOwnershipAuthority,
-    SourceOwnershipDiagnostic, observe_rust_implementation,
+    SourceOwnershipDiagnostic, observe_cargo_analysis_territories, observe_rust_implementation,
     resolve_source_ownership_with_logical_modules,
 };
 use crate::information_flow::{
@@ -86,8 +86,9 @@ use crate::snapshot::{
 };
 use crate::source_architecture::{
     CodeFileResponsibility, LanguageAssignment, SourceArchitectureEvaluation,
-    SourceArchitectureInput, SourceArtifactInput, SourceArtifactModel, SourceProfileRegistry,
-    SourceVerificationRelationship, evaluate_source_architecture, observations_from_psm,
+    SourceArchitectureInput, SourceArtifactInput, SourceArtifactModel,
+    SourceArtifactOwnershipAuthority, SourceProfileRegistry, SourceVerificationRelationship,
+    evaluate_source_architecture, observations_from_psm, observe_rust_source_profile,
 };
 use crate::standard::{StandardBundle, StandardLoadError, installed_standard_manifest};
 use crate::state_effect_analysis::{
@@ -450,8 +451,8 @@ pub fn compile_repository_psm(root: impl AsRef<Path>) -> Result<ProgramSemanticM
 ///
 /// The compiler reuses Snapshot Governance's canonical source ownership and
 /// `code_docs.md` projection. Basic source-artifact observation does not depend
-/// on a complete PSM; Rust archetype status remains explicitly
-/// `PROFILE_NOT_REGISTERED` until the Rust File Content Profile exists.
+/// on a complete PSM; the registered Rust profile consumes Cargo and syntax
+/// observations independently from call/type authority.
 ///
 /// # Errors
 ///
@@ -668,7 +669,16 @@ fn compile_source_architecture_from(
     let responsibilities = code_file_responsibilities(&prepared.observed_files, ccg)
         .map_err(|error| AuditError::ContractState(error.into()))?;
     let artifacts = source_artifact_inputs(&prepared.ownerships, &responsibilities);
-    let observations = psm.map_or_else(Vec::new, observations_from_psm);
+    let observation_input =
+        implementation_input(&prepared.snapshot, ccg, &prepared.observed_files)?;
+    let cargo = observe_cargo_analysis_territories(&observation_input)
+        .map_err(AuditError::ImplementationObservation)?;
+    let rust_profile = observe_rust_source_profile(&prepared.observed_files, &artifacts, &cargo)
+        .map_err(|error| AuditError::ContractState(error.to_string().into()))?;
+    let mut observations = rust_profile.observations().to_vec();
+    observations.extend(psm.map_or_else(Vec::new, observations_from_psm));
+    observations.sort();
+    observations.dedup();
     let languages = [
         LanguageAssignment::new("rs", "rust", "fortress-core/program-semantics-v3"),
         LanguageAssignment::new(
@@ -691,9 +701,12 @@ fn compile_source_architecture_from(
             ))
         })
         .collect::<Vec<_>>();
-    let available_adapters = ["fortress-core/program-semantics-v3".to_owned()]
-        .into_iter()
-        .collect();
+    let available_adapters = [
+        "fortress-core/program-semantics-v3".to_owned(),
+        "fortress-core/rust-source-profile-v1".to_owned(),
+    ]
+    .into_iter()
+    .collect();
     let psm_json = psm
         .map(ProgramSemanticModel::to_canonical_json)
         .transpose()
@@ -716,6 +729,8 @@ fn compile_source_architecture_from(
         profiles: &SourceProfileRegistry::standard(),
         languages: &languages,
         observations: &observations,
+        archetype_observations: rust_profile.archetypes(),
+        profile_facts: rust_profile.facts(),
         generated_sources: &[],
         verification_relationships: &verification_relationships,
         available_adapters: &available_adapters,
@@ -974,7 +989,15 @@ fn compile_analysis_source_architecture(
         .map_err(|error| AuditError::ContractState(error.into()))?
         .unwrap_or_default();
     let artifacts = source_artifact_inputs(&prepared.ownerships, &responsibilities);
-    let observations = psm.map_or_else(Vec::new, observations_from_psm);
+    let observation_input = analysis_implementation_input(prepared);
+    let cargo = observe_cargo_analysis_territories(&observation_input)
+        .map_err(AuditError::ImplementationObservation)?;
+    let rust_profile = observe_rust_source_profile(&prepared.observed_files, &artifacts, &cargo)
+        .map_err(|error| AuditError::ContractState(error.to_string().into()))?;
+    let mut observations = rust_profile.observations().to_vec();
+    observations.extend(psm.map_or_else(Vec::new, observations_from_psm));
+    observations.sort();
+    observations.dedup();
     let languages = [
         LanguageAssignment::new("rs", "rust", "fortress-core/program-semantics-v3"),
         LanguageAssignment::new(
@@ -998,9 +1021,12 @@ fn compile_analysis_source_architecture(
             ))
         })
         .collect::<Vec<_>>();
-    let available_adapters = ["fortress-core/program-semantics-v3".to_owned()]
-        .into_iter()
-        .collect();
+    let available_adapters = [
+        "fortress-core/program-semantics-v3".to_owned(),
+        "fortress-core/rust-source-profile-v1".to_owned(),
+    ]
+    .into_iter()
+    .collect();
     let psm_json = psm
         .map(ProgramSemanticModel::to_canonical_json)
         .transpose()
@@ -1022,6 +1048,8 @@ fn compile_analysis_source_architecture(
         profiles: &SourceProfileRegistry::standard(),
         languages: &languages,
         observations: &observations,
+        archetype_observations: rust_profile.archetypes(),
+        profile_facts: rust_profile.facts(),
         generated_sources: &[],
         verification_relationships: &verification_relationships,
         available_adapters: &available_adapters,
@@ -1045,7 +1073,15 @@ fn source_artifact_inputs(
                 .trim_start_matches('/');
             (
                 ownership.source_path().to_owned(),
-                (ownership.owner().to_owned(), relative.to_owned()),
+                (
+                    ownership.owner().to_owned(),
+                    relative.to_owned(),
+                    if ownership.authority() == SourceOwnershipAuthority::DeclaredModule {
+                        SourceArtifactOwnershipAuthority::DeclaredModule
+                    } else {
+                        SourceArtifactOwnershipAuthority::CargoAnalysisTerritory
+                    },
+                ),
             )
         })
         .collect::<BTreeMap<_, _>>();
@@ -1060,12 +1096,18 @@ fn source_artifact_inputs(
                     .map_or(responsibility.source_path(), |index| {
                         &responsibility.source_path()[index + marker.len()..]
                     });
-                (responsibility.module_id().to_owned(), relative.to_owned())
+                (
+                    responsibility.module_id().to_owned(),
+                    relative.to_owned(),
+                    SourceArtifactOwnershipAuthority::DeclaredModule,
+                )
             });
     }
     artifacts
         .into_iter()
-        .map(|(path, (owner, relative))| SourceArtifactInput::new(path, owner, relative))
+        .map(|(path, (owner, relative, authority))| {
+            SourceArtifactInput::with_ownership_authority(path, owner, relative, authority)
+        })
         .collect()
 }
 

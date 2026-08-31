@@ -1,5 +1,296 @@
 {
   "$schema": "urn:fortress:schema:v1:source-profiles",
   "schema_version": 1,
-  "profiles": []
+  "profiles": [
+    {
+      "id": "FORTRESS-SOURCE-RUST",
+      "language": "rust",
+      "version": "1.0.0",
+      "extensions": [
+        "rs"
+      ],
+      "generated_source_recognition": "Explicit Source Architecture generator provenance only; filenames do not establish generation.",
+      "observation_adapter": "fortress-core/rust-source-profile-v1",
+      "archetypes": [
+        {
+          "id": "RUST_CRATE_ROOT",
+          "required_regions": [],
+          "allowed_regions": [
+            "IDENTITY_RESPONSIBILITY",
+            "DEPENDENCIES",
+            "DECLARATIONS",
+            "STATE",
+            "INITIALIZATION",
+            "PUBLIC_INTERFACE",
+            "IMPLEMENTATION",
+            "FAILURE_SEMANTICS",
+            "EFFECTS",
+            "DOCUMENTATION_INTENT",
+            "VERIFICATION_RELATIONSHIPS"
+          ],
+          "forbidden_regions": []
+        },
+        {
+          "id": "RUST_MODULE",
+          "required_regions": [],
+          "allowed_regions": [
+            "IDENTITY_RESPONSIBILITY",
+            "DEPENDENCIES",
+            "DECLARATIONS",
+            "STATE",
+            "INITIALIZATION",
+            "PUBLIC_INTERFACE",
+            "IMPLEMENTATION",
+            "FAILURE_SEMANTICS",
+            "EFFECTS",
+            "DOCUMENTATION_INTENT",
+            "VERIFICATION_RELATIONSHIPS"
+          ],
+          "forbidden_regions": []
+        },
+        {
+          "id": "RUST_MOD_MODULE",
+          "required_regions": [],
+          "allowed_regions": [
+            "IDENTITY_RESPONSIBILITY",
+            "DEPENDENCIES",
+            "DECLARATIONS",
+            "STATE",
+            "INITIALIZATION",
+            "PUBLIC_INTERFACE",
+            "IMPLEMENTATION",
+            "FAILURE_SEMANTICS",
+            "EFFECTS",
+            "DOCUMENTATION_INTENT",
+            "VERIFICATION_RELATIONSHIPS"
+          ],
+          "forbidden_regions": []
+        },
+        {
+          "id": "RUST_BINARY_TARGET_ROOT",
+          "required_regions": [],
+          "allowed_regions": [
+            "IDENTITY_RESPONSIBILITY",
+            "DEPENDENCIES",
+            "DECLARATIONS",
+            "STATE",
+            "INITIALIZATION",
+            "PUBLIC_INTERFACE",
+            "IMPLEMENTATION",
+            "FAILURE_SEMANTICS",
+            "EFFECTS",
+            "DOCUMENTATION_INTENT",
+            "VERIFICATION_RELATIONSHIPS"
+          ],
+          "forbidden_regions": []
+        },
+        {
+          "id": "RUST_BUILD_SCRIPT",
+          "required_regions": [],
+          "allowed_regions": [
+            "IDENTITY_RESPONSIBILITY",
+            "DEPENDENCIES",
+            "DECLARATIONS",
+            "STATE",
+            "INITIALIZATION",
+            "PUBLIC_INTERFACE",
+            "IMPLEMENTATION",
+            "FAILURE_SEMANTICS",
+            "EFFECTS",
+            "DOCUMENTATION_INTENT",
+            "VERIFICATION_RELATIONSHIPS"
+          ],
+          "forbidden_regions": []
+        },
+        {
+          "id": "RUST_INTEGRATION_TEST",
+          "required_regions": [],
+          "allowed_regions": [
+            "IDENTITY_RESPONSIBILITY",
+            "DEPENDENCIES",
+            "DECLARATIONS",
+            "STATE",
+            "INITIALIZATION",
+            "PUBLIC_INTERFACE",
+            "IMPLEMENTATION",
+            "FAILURE_SEMANTICS",
+            "EFFECTS",
+            "DOCUMENTATION_INTENT",
+            "VERIFICATION_RELATIONSHIPS"
+          ],
+          "forbidden_regions": []
+        },
+        {
+          "id": "RUST_BENCHMARK",
+          "required_regions": [],
+          "allowed_regions": [
+            "IDENTITY_RESPONSIBILITY",
+            "DEPENDENCIES",
+            "DECLARATIONS",
+            "STATE",
+            "INITIALIZATION",
+            "PUBLIC_INTERFACE",
+            "IMPLEMENTATION",
+            "FAILURE_SEMANTICS",
+            "EFFECTS",
+            "DOCUMENTATION_INTENT",
+            "VERIFICATION_RELATIONSHIPS"
+          ],
+          "forbidden_regions": []
+        },
+        {
+          "id": "RUST_EXAMPLE",
+          "required_regions": [],
+          "allowed_regions": [
+            "IDENTITY_RESPONSIBILITY",
+            "DEPENDENCIES",
+            "DECLARATIONS",
+            "STATE",
+            "INITIALIZATION",
+            "PUBLIC_INTERFACE",
+            "IMPLEMENTATION",
+            "FAILURE_SEMANTICS",
+            "EFFECTS",
+            "DOCUMENTATION_INTENT",
+            "VERIFICATION_RELATIONSHIPS"
+          ],
+          "forbidden_regions": []
+        },
+        {
+          "id": "RUST_PROC_MACRO_CRATE_ROOT",
+          "required_regions": [],
+          "allowed_regions": [
+            "IDENTITY_RESPONSIBILITY",
+            "DEPENDENCIES",
+            "DECLARATIONS",
+            "STATE",
+            "INITIALIZATION",
+            "PUBLIC_INTERFACE",
+            "IMPLEMENTATION",
+            "FAILURE_SEMANTICS",
+            "EFFECTS",
+            "DOCUMENTATION_INTENT",
+            "VERIFICATION_RELATIONSHIPS"
+          ],
+          "forbidden_regions": []
+        },
+        {
+          "id": "RUST_GENERATED_SOURCE",
+          "required_regions": [],
+          "allowed_regions": [
+            "IDENTITY_RESPONSIBILITY",
+            "DEPENDENCIES",
+            "DECLARATIONS",
+            "STATE",
+            "INITIALIZATION",
+            "PUBLIC_INTERFACE",
+            "IMPLEMENTATION",
+            "FAILURE_SEMANTICS",
+            "EFFECTS",
+            "DOCUMENTATION_INTENT",
+            "VERIFICATION_RELATIONSHIPS"
+          ],
+          "forbidden_regions": []
+        },
+        {
+          "id": "RUST_OTHER_UNKNOWN",
+          "required_regions": [],
+          "allowed_regions": [
+            "IDENTITY_RESPONSIBILITY",
+            "DEPENDENCIES",
+            "DECLARATIONS",
+            "STATE",
+            "INITIALIZATION",
+            "PUBLIC_INTERFACE",
+            "IMPLEMENTATION",
+            "FAILURE_SEMANTICS",
+            "EFFECTS",
+            "DOCUMENTATION_INTENT",
+            "VERIFICATION_RELATIONSHIPS"
+          ],
+          "forbidden_regions": []
+        }
+      ],
+      "semantic_region_mapping": [
+        {
+          "fact": "rust:module",
+          "region": "DECLARATIONS"
+        },
+        {
+          "fact": "rust:use",
+          "region": "DEPENDENCIES"
+        },
+        {
+          "fact": "rust:constant",
+          "region": "STATE"
+        },
+        {
+          "fact": "rust:type",
+          "region": "DECLARATIONS"
+        },
+        {
+          "fact": "rust:trait",
+          "region": "DECLARATIONS"
+        },
+        {
+          "fact": "rust:impl",
+          "region": "IMPLEMENTATION"
+        },
+        {
+          "fact": "rust:function",
+          "region": "IMPLEMENTATION"
+        },
+        {
+          "fact": "rust:macro",
+          "region": "IMPLEMENTATION"
+        },
+        {
+          "fact": "rust:visibility",
+          "region": "PUBLIC_INTERFACE"
+        },
+        {
+          "fact": "rust:failure-surface",
+          "region": "FAILURE_SEMANTICS"
+        },
+        {
+          "fact": "rust:attribute",
+          "region": "DOCUMENTATION_INTENT"
+        }
+      ],
+      "visibility_mapping": [
+        {
+          "native": "pub",
+          "public": true
+        },
+        {
+          "native": "pub(crate)",
+          "public": false
+        },
+        {
+          "native": "pub(super)",
+          "public": false
+        },
+        {
+          "native": "pub(self)",
+          "public": false
+        },
+        {
+          "native": "pub(in path)",
+          "public": false
+        },
+        {
+          "native": "private",
+          "public": false
+        }
+      ],
+      "responsibility_required": false,
+      "coverage_limitations": [
+        "Macro invocations are observed without expansion.",
+        "Visibility is syntactic and does not prove effective cross-crate reachability.",
+        "Trait and implementation structure does not resolve trait dispatch.",
+        "Archetype classification uses Cargo target authority and repository-relative source role only.",
+        "Borrow checking, type checking, effect semantics, and compiler equivalence are outside this profile."
+      ]
+    }
+  ]
 }

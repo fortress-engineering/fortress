@@ -75,6 +75,7 @@
             "T-AF-SOURCE-ARCHITECTURE-0001-R02-001",
             "T-AF-SOURCE-ARCHITECTURE-0001-R02-002",
             "T-AF-SOURCE-ARCHITECTURE-0001-R02-003",
+            "T-AF-SOURCE-ARCHITECTURE-0001-R02-006",
             "T-SOURCE-PROFILE-001-R01-001"
           ]
         },
@@ -90,7 +91,7 @@
         },
         {
           "id": "AF-SOURCE-ARCHITECTURE-0001-R04",
-          "statement": "Source Artifact Model v1 remains byte-deterministic, content-addressed, relocation-stable at semantic identity, complete for live governed source inventory, truthful about absent Rust profile coverage, and near-linear for at least ten thousand mixed source artifacts.",
+          "statement": "Source Artifact Model v1 remains byte-deterministic, content-addressed, relocation-stable at semantic identity, complete for live governed source inventory, truthful about Rust profile coverage, and near-linear for at least ten thousand profiled Rust source artifacts.",
           "tests": [
             "T-AF-SOURCE-ARCHITECTURE-0001-R04-001",
             "T-AF-SOURCE-ARCHITECTURE-0001-R04-002",

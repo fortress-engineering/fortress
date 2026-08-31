@@ -6,7 +6,7 @@ Transform exact stabilized source bytes into implementation facts that Architect
 
 ## Execution
 
-Callers supply a snapshot fingerprint, exact file bytes with expected size and digest, and one canonically resolved ownership relation. Physical Module `code/` containment and authored logical path bindings produce declared ownership; unmatched source retains deterministic Cargo analysis ownership. The Rust analyzer consumes that relation without reinterpreting paths.
+Callers supply a snapshot fingerprint, exact file bytes with expected size and digest, and one canonically resolved ownership relation. Physical Module `code/` containment and authored logical path bindings produce declared ownership; unmatched source retains deterministic Cargo analysis ownership. The Rust analyzer consumes that relation without reinterpreting paths. Cargo observation also records mechanical library, proc-macro, binary, build-script, integration-test, benchmark, and example source roles for profile consumers without turning those roles into Module intent.
 
 ## State
 

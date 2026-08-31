@@ -42,6 +42,7 @@
         "path",
         "module_id",
         "module_relative_path",
+        "ownership_authority",
         "content_digest",
         "provenance",
         "authored_responsibility",
@@ -58,6 +59,9 @@
         "path": { "type": "string", "minLength": 1 },
         "module_id": { "type": "string", "minLength": 1 },
         "module_relative_path": { "type": "string", "minLength": 1 },
+        "ownership_authority": {
+          "enum": ["DECLARED_MODULE", "CARGO_ANALYSIS_TERRITORY"]
+        },
         "content_digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
         "provenance": { "type": "object" },
         "authored_responsibility": { "type": ["object", "null"] },

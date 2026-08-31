@@ -2,8 +2,14 @@
 //!
 //! This module composes Project Filing membership, canonical authored file
 //! responsibilities, optional language-profile observations, and stable
-//! references to richer program semantics. It does not parse source syntax and
-//! does not define language-specific file idioms.
+//! references to richer program semantics. Registered adapters may project
+//! language syntax into structural facts; this module does not perform deep
+//! program semantics or define universal language idioms.
+
+#[path = "rust.rs"]
+mod rust;
+
+pub use rust::{RustProfileError, observe_rust_source_profile};
 
 pub(crate) const SOURCE_PROFILE_RULE_SOURCE: &str =
     include_str!("../data/source_profile_rule.json");
@@ -12,6 +18,7 @@ pub(crate) const SOURCE_ARTIFACT_RULE_SOURCE: &str =
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
+use std::fmt::Write as _;
 use std::fmt::{self, Display, Formatter};
 
 use serde::{Deserialize, Serialize};
@@ -22,6 +29,11 @@ use crate::finding::{
     FindingOccurrence, RuleFindingDefinition,
 };
 use crate::program_semantics::{ProgramSemanticModel, SymbolVisibility};
+
+/// Standard Rust Source Profile identity.
+pub const RUST_SOURCE_PROFILE_ID: &str = "FORTRESS-SOURCE-RUST";
+/// Standard Rust Source Profile semantic version.
+pub const RUST_SOURCE_PROFILE_VERSION: &str = "1.0.0";
 
 /// Universal source-profile conformance rule.
 pub const SOURCE_PROFILE_RULE_ID: &str = "SOURCE-PROFILE-001";
@@ -88,7 +100,7 @@ impl CodeFileResponsibility {
     }
 }
 /// Semantic implementation version of Source Architecture.
-pub const SOURCE_ARCHITECTURE_SEMANTIC_VERSION: &str = "1.0.0";
+pub const SOURCE_ARCHITECTURE_SEMANTIC_VERSION: &str = "1.1.0";
 
 const PROFILE_REMEDIATION: &str = "Correct the registered language profile so its identity, adapter, extensions, semantic-region mapping, archetypes, composition constraints, and coverage limitations conform to Source Profile v1.";
 const ARTIFACT_REMEDIATION: &str = "Document the file's single architectural responsibility in canonical code_docs.md, register or correct the applicable language profile, and align observed composition with exactly one permitted archetype without suppressing unsupported coverage.";
@@ -472,6 +484,106 @@ pub struct SourceObservation {
     start_line: Option<u32>,
 }
 
+/// Profile adapter conclusion about the native role of one source artifact.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub struct SourceArchetypeObservation {
+    path: String,
+    profile_id: String,
+    candidates: Vec<String>,
+    analyzer: String,
+    source_reference: String,
+}
+
+impl SourceArchetypeObservation {
+    /// Creates one deterministic profile-scoped archetype observation.
+    #[must_use]
+    pub fn new(
+        path: impl Into<String>,
+        profile_id: impl Into<String>,
+        candidates: impl IntoIterator<Item = impl Into<String>>,
+        analyzer: impl Into<String>,
+        source_reference: impl Into<String>,
+    ) -> Self {
+        let mut candidates = candidates.into_iter().map(Into::into).collect::<Vec<_>>();
+        candidates.sort();
+        candidates.dedup();
+        Self {
+            path: path.into(),
+            profile_id: profile_id.into(),
+            candidates,
+            analyzer: analyzer.into(),
+            source_reference: source_reference.into(),
+        }
+    }
+
+    /// Returns the repository-relative artifact path.
+    #[must_use]
+    pub fn path(&self) -> &str {
+        &self.path
+    }
+
+    /// Returns deterministic candidate archetypes established by the adapter.
+    #[must_use]
+    pub fn candidates(&self) -> &[String] {
+        &self.candidates
+    }
+}
+
+/// One language-native structural fact retained inside a profile conclusion.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct SourceProfileFact {
+    profile_id: String,
+    kind: String,
+    name: Option<String>,
+    visibility: Option<String>,
+    coverage: RegionCoverage,
+    source_reference: String,
+    start_line: Option<u32>,
+}
+
+impl SourceProfileFact {
+    /// Creates one deterministic profile-scoped structural fact.
+    #[must_use]
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(
+        profile_id: impl Into<String>,
+        kind: impl Into<String>,
+        name: Option<String>,
+        visibility: Option<String>,
+        coverage: RegionCoverage,
+        source_reference: impl Into<String>,
+        start_line: Option<u32>,
+    ) -> Self {
+        Self {
+            profile_id: profile_id.into(),
+            kind: kind.into(),
+            name,
+            visibility,
+            coverage,
+            source_reference: source_reference.into(),
+            start_line,
+        }
+    }
+
+    /// Returns the profile-native fact kind.
+    #[must_use]
+    pub fn kind(&self) -> &str {
+        &self.kind
+    }
+
+    /// Returns the observed native visibility, when applicable.
+    #[must_use]
+    pub fn visibility(&self) -> Option<&str> {
+        self.visibility.as_deref()
+    }
+
+    /// Returns truthful coverage for this native structural concern.
+    #[must_use]
+    pub const fn coverage(&self) -> RegionCoverage {
+        self.coverage
+    }
+}
+
 impl SourceObservation {
     /// Creates one deterministic observation fact.
     #[must_use]
@@ -593,6 +705,7 @@ pub struct SourceProfileEvaluation {
     archetype_id: Option<String>,
     candidate_archetypes: Vec<String>,
     coverage_limitations: Vec<String>,
+    structural_facts: Vec<SourceProfileFact>,
 }
 
 impl SourceProfileEvaluation {
@@ -612,6 +725,31 @@ impl SourceProfileEvaluation {
     #[must_use]
     pub fn candidate_archetypes(&self) -> &[String] {
         &self.candidate_archetypes
+    }
+
+    /// Returns native structural facts retained by the resolved profile.
+    #[must_use]
+    pub fn structural_facts(&self) -> &[SourceProfileFact] {
+        &self.structural_facts
+    }
+}
+
+/// Authority establishing source ownership independently from current placement.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum SourceArtifactOwnershipAuthority {
+    /// Authored Fortress Module authority.
+    DeclaredModule,
+    /// Mechanical Cargo analysis territory.
+    CargoAnalysisTerritory,
+}
+
+impl SourceArtifactOwnershipAuthority {
+    const fn as_str(self) -> &'static str {
+        match self {
+            Self::DeclaredModule => "DECLARED_MODULE",
+            Self::CargoAnalysisTerritory => "CARGO_ANALYSIS_TERRITORY",
+        }
     }
 }
 
@@ -640,6 +778,7 @@ pub struct SourceArtifact {
     path: String,
     module_id: String,
     module_relative_path: String,
+    ownership_authority: SourceArtifactOwnershipAuthority,
     content_digest: String,
     provenance: SourceProvenance,
     authored_responsibility: Option<AuthoredResponsibility>,
@@ -669,6 +808,12 @@ impl SourceArtifact {
     #[must_use]
     pub fn module_id(&self) -> &str {
         &self.module_id
+    }
+
+    /// Returns whether ownership is authored Module authority or analysis-only Cargo authority.
+    #[must_use]
+    pub const fn ownership_authority(&self) -> SourceArtifactOwnershipAuthority {
+        self.ownership_authority
     }
 
     /// Returns exact source content digest.
@@ -790,6 +935,7 @@ pub struct SourceArtifactInput {
     path: String,
     owner: String,
     owner_relative_path: String,
+    ownership_authority: SourceArtifactOwnershipAuthority,
 }
 
 impl SourceArtifactInput {
@@ -804,6 +950,23 @@ impl SourceArtifactInput {
             path: path.into(),
             owner: owner.into(),
             owner_relative_path: owner_relative_path.into(),
+            ownership_authority: SourceArtifactOwnershipAuthority::DeclaredModule,
+        }
+    }
+
+    /// Creates one artifact membership with explicit ownership authority.
+    #[must_use]
+    pub fn with_ownership_authority(
+        path: impl Into<String>,
+        owner: impl Into<String>,
+        owner_relative_path: impl Into<String>,
+        ownership_authority: SourceArtifactOwnershipAuthority,
+    ) -> Self {
+        Self {
+            path: path.into(),
+            owner: owner.into(),
+            owner_relative_path: owner_relative_path.into(),
+            ownership_authority,
         }
     }
 }
@@ -843,6 +1006,63 @@ impl SourceArtifactModel {
             value.push('\n');
             value
         })
+    }
+
+    /// Renders a deterministic profile-oriented human summary.
+    #[must_use]
+    pub fn to_human(&self) -> String {
+        let mut output = format!(
+            "Source Artifact Model\nArtifacts: {}\nRegistered profiles: {}\n\n",
+            self.summary.artifacts,
+            self.registered_profiles.join(", ")
+        );
+        for artifact in &self.artifacts {
+            let profile = artifact
+                .profile
+                .profile_id
+                .as_deref()
+                .unwrap_or("UNREGISTERED");
+            let archetype = artifact
+                .profile
+                .archetype_id
+                .as_deref()
+                .unwrap_or("UNRESOLVED");
+            let responsibility = artifact
+                .authored_responsibility
+                .as_ref()
+                .map_or("ABSENT", |value| value.text.as_str());
+            let mut coverage = BTreeMap::<RegionCoverage, usize>::new();
+            for region in &artifact.semantic_regions {
+                *coverage.entry(region.coverage).or_default() += 1;
+            }
+            let mut visibility = BTreeMap::<&str, usize>::new();
+            for fact in &artifact.profile.structural_facts {
+                if let Some(native) = fact.visibility.as_deref() {
+                    *visibility.entry(native).or_default() += 1;
+                }
+            }
+            let _ = writeln!(
+                output,
+                "{}\n  profile: {} ({:?})\n  archetype: {}\n  owner: {} {}\n  responsibility: {}\n  provenance: {:?}{}\n  regions: {:?}\n  visibility: {:?}\n  limitations: {}\n",
+                artifact.path,
+                profile,
+                artifact.profile.status,
+                archetype,
+                artifact.ownership_authority.as_str(),
+                artifact.module_id,
+                responsibility,
+                artifact.provenance.kind,
+                artifact
+                    .provenance
+                    .generator
+                    .as_deref()
+                    .map_or(String::new(), |generator| format!(" ({generator})")),
+                coverage,
+                visibility,
+                artifact.profile.coverage_limitations.join("; ")
+            );
+        }
+        output
     }
 }
 
@@ -887,6 +1107,10 @@ pub struct SourceArchitectureInput<'a> {
     pub languages: &'a [LanguageAssignment],
     /// Universal observations supplied by adapters or semantic reuse.
     pub observations: &'a [SourceObservation],
+    /// Profile-native archetype observations supplied by registered adapters.
+    pub archetype_observations: &'a [SourceArchetypeObservation],
+    /// Profile-native structural facts supplied by registered adapters.
+    pub profile_facts: &'a BTreeMap<String, Vec<SourceProfileFact>>,
     /// Explicit generated source records.
     pub generated_sources: &'a [GeneratedSource],
     /// Existing authoritative verification relationships.
@@ -899,8 +1123,8 @@ pub struct SourceArchitectureInput<'a> {
     pub standard_edition: &'a str,
 }
 
-/// Compiles and evaluates Source Artifact Model v1 without parsing source or
-/// Markdown.
+/// Compiles and evaluates Source Artifact Model v1 from already parsed Markdown
+/// authority and adapter-supplied structural observations.
 ///
 /// # Errors
 ///
@@ -921,6 +1145,7 @@ pub fn evaluate_source_architecture(
         .map(|entry| (entry.path.as_str(), entry))
         .collect::<BTreeMap<_, _>>();
     let observations = group_observations(input.observations);
+    let archetype_observations = group_archetype_observations(input.archetype_observations);
     let verifications = group_verification(input.verification_relationships);
     let language_map = input
         .languages
@@ -986,6 +1211,9 @@ pub fn evaluate_source_architecture(
             language.as_deref(),
             extension,
             authored_responsibility.is_some(),
+            source_provenance.kind,
+            archetype_observations.get(path).map_or(&[], Vec::as_slice),
+            input.profile_facts.get(path).map_or(&[], Vec::as_slice),
             &mut regions,
             &mut conclusions,
         );
@@ -1005,6 +1233,7 @@ pub fn evaluate_source_architecture(
             path: path.to_owned(),
             module_id: module_id.to_owned(),
             module_relative_path: module_relative_path.to_owned(),
+            ownership_authority: entry.ownership_authority,
             content_digest: sha256(bytes),
             provenance: source_provenance,
             authored_responsibility,
@@ -1075,6 +1304,9 @@ fn resolve_profile(
     language: Option<&str>,
     extension: &str,
     has_responsibility: bool,
+    provenance: SourceProvenanceKind,
+    archetype_observations: &[SourceArchetypeObservation],
+    profile_facts: &[SourceProfileFact],
     regions: &mut [SourceRegion],
     conclusions: &mut Vec<SourceConclusion>,
 ) -> SourceProfileEvaluation {
@@ -1115,6 +1347,11 @@ fn resolve_profile(
             archetype_id: None,
             candidate_archetypes: Vec::new(),
             coverage_limitations: profile.coverage_limitations.clone(),
+            structural_facts: profile_facts
+                .iter()
+                .filter(|fact| fact.profile_id == profile.id)
+                .cloned()
+                .collect(),
         };
     }
     if profile.responsibility_required && !has_responsibility {
@@ -1131,11 +1368,33 @@ fn resolve_profile(
         .iter()
         .map(|region| (region.region, region.coverage))
         .collect::<BTreeMap<_, _>>();
-    let matching = profile
-        .archetypes
+    let mut assigned = archetype_observations
         .iter()
-        .filter(|archetype| archetype_matches(archetype, &coverage))
+        .filter(|observation| observation.profile_id == profile.id)
+        .flat_map(|observation| observation.candidates.iter().map(String::as_str))
         .collect::<Vec<_>>();
+    if provenance == SourceProvenanceKind::Generated && profile.id == RUST_SOURCE_PROFILE_ID {
+        assigned = vec!["RUST_GENERATED_SOURCE"];
+    }
+    assigned.sort_unstable();
+    assigned.dedup();
+    let matching = if assigned.is_empty() {
+        profile
+            .archetypes
+            .iter()
+            .filter(|archetype| archetype_matches(archetype, &coverage))
+            .collect::<Vec<_>>()
+    } else {
+        assigned
+            .iter()
+            .filter_map(|candidate| {
+                profile
+                    .archetypes
+                    .iter()
+                    .find(|archetype| archetype.id == *candidate)
+            })
+            .collect::<Vec<_>>()
+    };
     let status = match matching.len() {
         0 => ArchetypeResolution::Missing,
         1 => ArchetypeResolution::Resolved,
@@ -1244,6 +1503,11 @@ fn resolve_profile(
         archetype_id: (matching.len() == 1).then(|| matching[0].id.clone()),
         candidate_archetypes: matching.iter().map(|item| item.id.clone()).collect(),
         coverage_limitations: profile.coverage_limitations.clone(),
+        structural_facts: profile_facts
+            .iter()
+            .filter(|fact| fact.profile_id == profile.id)
+            .cloned()
+            .collect(),
     }
 }
 
@@ -1257,7 +1521,25 @@ fn unresolved_profile(status: ArchetypeResolution) -> SourceProfileEvaluation {
         coverage_limitations: vec![
             "language-specific archetype classification is not registered".into(),
         ],
+        structural_facts: Vec::new(),
     }
+}
+
+fn group_archetype_observations(
+    observations: &[SourceArchetypeObservation],
+) -> BTreeMap<&str, Vec<SourceArchetypeObservation>> {
+    let mut grouped = BTreeMap::<&str, Vec<SourceArchetypeObservation>>::new();
+    for observation in observations {
+        grouped
+            .entry(observation.path.as_str())
+            .or_default()
+            .push(observation.clone());
+    }
+    for values in grouped.values_mut() {
+        values.sort();
+        values.dedup();
+    }
+    grouped
 }
 
 fn archetype_matches(
@@ -1288,14 +1570,15 @@ fn compile_regions(
                 .filter(|observation| observation.region == region)
                 .collect::<Vec<_>>();
             let implicit = match region {
-                SemanticRegion::IdentityResponsibility | SemanticRegion::DocumentationIntent
-                    if has_responsibility =>
-                {
+                SemanticRegion::IdentityResponsibility => Some(RegionCoverage::Observed),
+                SemanticRegion::DocumentationIntent if has_responsibility => {
                     Some(RegionCoverage::Observed)
                 }
-                SemanticRegion::VerificationRelationships if has_verification => {
-                    Some(RegionCoverage::Observed)
-                }
+                SemanticRegion::VerificationRelationships => Some(if has_verification {
+                    RegionCoverage::Observed
+                } else {
+                    RegionCoverage::Absent
+                }),
                 _ => None,
             };
             let coverage = implicit.unwrap_or_else(|| join_coverage(&relevant));

@@ -791,6 +791,15 @@ fn observation_commands_accept_ordinary_cargo_layout_without_governance_files() 
             serde_json::from_slice(&output.stdout).expect("command output is JSON");
         assert!(value["project_id"].is_null());
     }
+    let human = run_owned(&[
+        "source-artifacts".into(),
+        fixture.argument(),
+        "--format=human".into(),
+    ]);
+    assert!(human.status.success());
+    let human = String::from_utf8(human.stdout).expect("human source output");
+    assert!(human.contains("FORTRESS-SOURCE-RUST"));
+    assert!(human.contains("CARGO_ANALYSIS_TERRITORY"));
     let audit = run_owned(&["audit".into(), fixture.argument(), "--format=json".into()]);
     assert_eq!(audit.status.code(), Some(1));
     let value: serde_json::Value =

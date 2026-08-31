@@ -220,7 +220,7 @@ fn repeated_snapshot_analysis_is_byte_fact_deterministic() {
     let second = observe_rust_implementation(&input).expect("fixture repeats");
     assert_eq!(first, second);
     assert_eq!(first.snapshot_fingerprint(), "sha256:fixture");
-    assert_eq!(first.analyzer_version(), "1.0.0");
+    assert_eq!(first.analyzer_version(), "1.1.0");
     assert_eq!(first.module_dependencies().len(), 1);
     let edge = &first.module_dependencies()[0];
     assert_eq!(edge.source_module(), "AF-CONSUMER-0001");

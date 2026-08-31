@@ -3,7 +3,7 @@
   "schema_version": 1,
   "resolver_semantic_version": "1.0.0",
   "project_id": "PF-FORTRESS",
-  "source_ccg_digest": "sha256:49ba4d3ad9deccfa04d8f2a4a74f6625d5720417d2e1948daff25721c3c991b2",
+  "source_ccg_digest": "sha256:e5b09ce4d5bb0be4bceddb5be840fd5d014740f9191fd6c430662b30285c530f",
   "modules": [
     {
       "module_id": "AF-ARCHITECTURE-EVALUATION-0001",
@@ -1699,6 +1699,14 @@
       "source_module": "AF-SOURCE-ARCHITECTURE-0001",
       "target_module": "AF-SOURCE-ARCHITECTURE-0001",
       "authority": "repository-relative-local",
+      "projection": "../code/rust.rs",
+      "provenance": "mods/engine/mods/source_architecture/docs/code_docs.md"
+    },
+    {
+      "class": "LOCAL",
+      "source_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "target_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "authority": "repository-relative-local",
       "projection": "../code/source.rs",
       "provenance": "mods/engine/mods/source_architecture/docs/code_docs.md"
     },
@@ -1748,6 +1756,14 @@
       "target_module": "AF-SOURCE-ARCHITECTURE-0001",
       "authority": "rust-crate-module",
       "projection": null,
+      "provenance": "mods/engine/mods/source_architecture/code/rust.rs"
+    },
+    {
+      "class": "LOCAL",
+      "source_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "target_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "authority": "rust-crate-module",
+      "projection": null,
       "provenance": "mods/engine/mods/source_architecture/code/source.rs"
     },
     {
@@ -1772,6 +1788,14 @@
       "target_module": "AF-SOURCE-ARCHITECTURE-0001",
       "authority": "rust-local-path",
       "projection": "../data/source_profiles.json",
+      "provenance": "mods/engine/mods/source_architecture/code/source.rs"
+    },
+    {
+      "class": "LOCAL",
+      "source_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "target_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "authority": "rust-local-path",
+      "projection": "rust.rs",
       "provenance": "mods/engine/mods/source_architecture/code/source.rs"
     },
     {
@@ -6354,6 +6378,14 @@
       "class": "EXTERNAL",
       "source_module": "AF-SOURCE-ARCHITECTURE-0001",
       "target_module": null,
+      "authority": "quote",
+      "projection": null,
+      "provenance": "mods/engine/mods/source_architecture/code/rust.rs"
+    },
+    {
+      "class": "EXTERNAL",
+      "source_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "target_module": null,
       "authority": "serde",
       "projection": null,
       "provenance": "mods/engine/mods/source_architecture/code/source.rs"
@@ -6372,7 +6404,23 @@
       "target_module": null,
       "authority": "std",
       "projection": null,
+      "provenance": "mods/engine/mods/source_architecture/code/rust.rs"
+    },
+    {
+      "class": "EXTERNAL",
+      "source_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "target_module": null,
+      "authority": "std",
+      "projection": null,
       "provenance": "mods/engine/mods/source_architecture/code/source.rs"
+    },
+    {
+      "class": "EXTERNAL",
+      "source_module": "AF-SOURCE-ARCHITECTURE-0001",
+      "target_module": null,
+      "authority": "syn",
+      "projection": null,
+      "provenance": "mods/engine/mods/source_architecture/code/rust.rs"
     },
     {
       "class": "EXTERNAL",
@@ -10091,9 +10139,9 @@
   "summary": {
     "modules": 40,
     "semantic_references": 164,
-    "local_references": 279,
+    "local_references": 282,
     "physical_projections": 185,
-    "external_references": 217,
+    "external_references": 220,
     "authored_resolution_boundaries": 134,
     "generated_projections": 185,
     "findings": 0

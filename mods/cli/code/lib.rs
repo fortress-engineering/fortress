@@ -393,12 +393,7 @@ fn run_source_artifacts<O: Write, E: Write>(
     output: &mut O,
     error: &mut E,
 ) -> io::Result<u8> {
-    const USAGE: &str = "usage: fortress source-artifacts [path] [--format json] [--output path]";
-    let (root, destination) = match parse_derived_json_arguments(
-        arguments,
-        USAGE,
-        "source-artifacts format must be `json`",
-    ) {
+    let (root, destination, format) = match parse_source_artifact_arguments(arguments) {
         Ok(value) => value,
         Err(message) => {
             writeln!(error, "{message}")?;
@@ -412,7 +407,11 @@ fn run_source_artifacts<O: Write, E: Write>(
             return Ok(EXIT_USAGE);
         }
     };
-    let document = model.to_canonical_json().map_err(io::Error::other)?;
+    let document = if format == "human" {
+        model.to_human()
+    } else {
+        model.to_canonical_json().map_err(io::Error::other)?
+    };
     if let Some(destination) = destination {
         fs::write(destination, document)?;
     } else {
@@ -423,6 +422,52 @@ fn run_source_artifacts<O: Write, E: Write>(
     } else {
         EXIT_VIOLATION
     })
+}
+
+fn parse_source_artifact_arguments(
+    arguments: &[String],
+) -> Result<(PathBuf, Option<PathBuf>, &'static str), &'static str> {
+    const USAGE: &str =
+        "usage: fortress source-artifacts [path] [--format human|json] [--output path]";
+    let mut root = None;
+    let mut destination = None;
+    let mut format = "json";
+    let mut index = 0;
+    while index < arguments.len() {
+        let argument = &arguments[index];
+        if argument == "--format" {
+            index += 1;
+            format = match arguments.get(index).map(String::as_str) {
+                Some("human") => "human",
+                Some("json") => "json",
+                _ => return Err(USAGE),
+            };
+        } else if let Some(value) = argument.strip_prefix("--format=") {
+            format = match value {
+                "human" => "human",
+                "json" => "json",
+                _ => return Err("source-artifacts format must be `human` or `json`"),
+            };
+        } else if argument == "--output" {
+            index += 1;
+            let Some(value) = arguments.get(index) else {
+                return Err(USAGE);
+            };
+            if destination.replace(PathBuf::from(value)).is_some() {
+                return Err(USAGE);
+            }
+        } else if argument.starts_with('-') || root.is_some() {
+            return Err(USAGE);
+        } else {
+            root = Some(PathBuf::from(argument));
+        }
+        index += 1;
+    }
+    Ok((
+        root.unwrap_or_else(|| PathBuf::from(".")),
+        destination,
+        format,
+    ))
 }
 
 struct ReferenceArguments {

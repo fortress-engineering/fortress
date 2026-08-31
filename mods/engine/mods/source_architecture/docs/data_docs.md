@@ -2,11 +2,11 @@
 
 ## Role
 
-The Data owns the universal Source Artifact and Source Profile schemas, the intentionally empty pre-Rust profile registry, and two draft Standard rules.
+The Data owns the universal Source Artifact and Source Profile schemas, the canonical Rust Source Profile registration, and two draft Standard rules.
 
 ## Origin
 
-The schemas and rules are specification-authored from the language-neutral source-artifact doctrine; the registry remains empty until independently governed language profiles are implemented.
+The schemas and rules are specification-authored from the language-neutral source-artifact doctrine. The Rust registration binds only mechanically observable Cargo/source roles and structural syntax to that doctrine.
 
 ## Semantics
 
@@ -14,7 +14,7 @@ Source Artifact Model v1 separates authored responsibility, observed mechanics, 
 
 ## Validity
 
-Schema identities and versions are registry-unique, profile adapters and archetypes are explicit, region lists are closed and noncontradictory, and Rust remains truthfully PROFILE_NOT_REGISTERED.
+Schema identities and versions are registry-unique, profile adapters and archetypes are explicit, region lists are closed and noncontradictory, and unsupported macro, type, trait-selection, and compiler semantics remain explicit limitations.
 
 ## Lifecycle
 
@@ -40,4 +40,4 @@ Defines the language-independent Source Profile registry and profile-owned arche
 
 ### [`source_profiles.json`](../data/source_profiles.json)
 
-Records the canonical empty profile registry before the separately sequenced Rust File Content Profile.
+Registers `FORTRESS-SOURCE-RUST@1.0.0`, its mechanical source-role archetypes, native visibility mapping, universal region mapping, and truthful coverage limitations.

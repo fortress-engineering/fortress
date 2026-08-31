@@ -24,6 +24,10 @@ struct CargoDocument {
     #[serde(default)]
     test: Vec<CargoTargetDocument>,
     #[serde(default)]
+    bench: Vec<CargoTargetDocument>,
+    #[serde(default)]
+    example: Vec<CargoTargetDocument>,
+    #[serde(default)]
     dependencies: BTreeMap<String, CargoDependencyDocument>,
     #[serde(rename = "dev-dependencies", default)]
     dev_dependencies: BTreeMap<String, CargoDependencyDocument>,
@@ -34,12 +38,22 @@ struct CargoDocument {
 #[derive(Deserialize)]
 struct CargoPackageDocument {
     name: String,
+    build: Option<CargoBuildDocument>,
 }
 
 #[derive(Default, Deserialize)]
 struct CargoTargetDocument {
     name: Option<String>,
     path: Option<String>,
+    #[serde(rename = "proc-macro", default)]
+    proc_macro: bool,
+}
+
+#[derive(Deserialize)]
+#[serde(untagged)]
+enum CargoBuildDocument {
+    Enabled(bool),
+    Path(String),
 }
 
 #[derive(Clone, Deserialize)]
@@ -61,6 +75,8 @@ struct CargoPackage {
     manifest_path: String,
     lib_name: String,
     lib_root: Option<String>,
+    proc_macro: bool,
+    build_root: Option<String>,
     targets: Vec<CargoTarget>,
     dependencies: BTreeMap<String, DependencyResolution>,
 }
@@ -72,6 +88,7 @@ pub struct CargoAnalysisTerritoryObservation {
     package_name: String,
     manifest_path: String,
     target_roots: Vec<String>,
+    targets: Vec<CargoTargetObservation>,
 }
 
 impl CargoAnalysisTerritoryObservation {
@@ -98,6 +115,53 @@ impl CargoAnalysisTerritoryObservation {
     pub fn target_roots(&self) -> &[String] {
         &self.target_roots
     }
+
+    /// Returns mechanically declared and conventionally discovered Cargo target roles.
+    #[must_use]
+    pub fn targets(&self) -> &[CargoTargetObservation] {
+        &self.targets
+    }
+}
+
+/// Cargo-native source role used only to classify Rust file architecture.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum CargoSourceRole {
+    /// Library crate root.
+    LibraryCrateRoot,
+    /// Procedural-macro crate root.
+    ProcMacroCrateRoot,
+    /// Binary crate target root.
+    BinaryTargetRoot,
+    /// Package build script.
+    BuildScript,
+    /// Integration-test target root or support source.
+    IntegrationTest,
+    /// Benchmark target root or support source.
+    Benchmark,
+    /// Example target root or support source.
+    Example,
+}
+
+/// One repository-relative Cargo target classification.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct CargoTargetObservation {
+    path: String,
+    role: CargoSourceRole,
+}
+
+impl CargoTargetObservation {
+    /// Returns the canonical repository-relative target path.
+    #[must_use]
+    pub fn path(&self) -> &str {
+        &self.path
+    }
+
+    /// Returns the mechanically established Cargo source role.
+    #[must_use]
+    pub const fn role(&self) -> CargoSourceRole {
+        self.role
+    }
 }
 
 #[derive(Clone)]
@@ -109,7 +173,10 @@ struct CargoTarget {
 #[derive(Clone, Copy, Eq, PartialEq)]
 enum TargetKind {
     Library,
-    Other,
+    Binary,
+    Test,
+    Benchmark,
+    Example,
 }
 
 #[derive(Clone)]
@@ -240,19 +307,81 @@ pub fn observe_cargo_analysis_territories(
         .map(|package| {
             let mut target_roots = package
                 .targets
-                .into_iter()
-                .map(|target| target.root)
+                .iter()
+                .map(|target| target.root.clone())
                 .collect::<Vec<_>>();
+            if let Some(build_root) = &package.build_root {
+                target_roots.push(build_root.clone());
+            }
             target_roots.sort();
             target_roots.dedup();
+            let targets = cargo_target_observations(&package, files.keys().map(String::as_str));
             CargoAnalysisTerritoryObservation {
                 identity: cargo_analysis_territory_identity(&package.manifest_path),
                 package_name: package.name,
                 manifest_path: package.manifest_path,
                 target_roots,
+                targets,
             }
         })
         .collect())
+}
+
+fn cargo_target_observations<'a>(
+    package: &CargoPackage,
+    paths: impl IntoIterator<Item = &'a str>,
+) -> Vec<CargoTargetObservation> {
+    let mut observations = package
+        .targets
+        .iter()
+        .map(|target| CargoTargetObservation {
+            path: target.root.clone(),
+            role: match target.kind {
+                TargetKind::Library if package.proc_macro => CargoSourceRole::ProcMacroCrateRoot,
+                TargetKind::Library => CargoSourceRole::LibraryCrateRoot,
+                TargetKind::Binary => CargoSourceRole::BinaryTargetRoot,
+                TargetKind::Test => CargoSourceRole::IntegrationTest,
+                TargetKind::Benchmark => CargoSourceRole::Benchmark,
+                TargetKind::Example => CargoSourceRole::Example,
+            },
+        })
+        .collect::<Vec<_>>();
+    if let Some(path) = &package.build_root {
+        observations.push(CargoTargetObservation {
+            path: path.clone(),
+            role: CargoSourceRole::BuildScript,
+        });
+    }
+    let package_root = parent_path(&package.manifest_path);
+    for path in paths.into_iter().filter(|path| {
+        std::path::Path::new(path)
+            .extension()
+            .is_some_and(|extension| extension.eq_ignore_ascii_case("rs"))
+    }) {
+        for (directory, role) in [
+            ("tests", CargoSourceRole::IntegrationTest),
+            ("benches", CargoSourceRole::Benchmark),
+            ("examples", CargoSourceRole::Example),
+        ] {
+            let prefix = join_path(&package_root, directory);
+            if path.starts_with(&format!("{prefix}/")) {
+                observations.push(CargoTargetObservation {
+                    path: path.to_owned(),
+                    role,
+                });
+            }
+        }
+        let binary_prefix = join_path(&package_root, "src/bin");
+        if path.starts_with(&format!("{binary_prefix}/")) {
+            observations.push(CargoTargetObservation {
+                path: path.to_owned(),
+                role: CargoSourceRole::BinaryTargetRoot,
+            });
+        }
+    }
+    observations.sort();
+    observations.dedup();
+    observations
 }
 
 fn verified_files(
@@ -265,6 +394,7 @@ fn verified_files(
         .collect()
 }
 
+#[allow(clippy::too_many_lines)]
 fn parse_packages(
     files: &BTreeMap<String, &[u8]>,
 ) -> Result<Vec<CargoPackage>, ImplementationObservationError> {
@@ -290,6 +420,10 @@ fn parse_packages(
             .as_ref()
             .and_then(|target| target.name.clone())
             .unwrap_or_else(|| rust_crate_name(&package.name));
+        let proc_macro = document
+            .lib
+            .as_ref()
+            .is_some_and(|target| target.proc_macro);
         let lib_root = document.lib.as_ref().map_or_else(
             || {
                 let default = join_path(&manifest_dir, "src/lib.rs");
@@ -307,25 +441,51 @@ fn parse_packages(
                 kind: TargetKind::Library,
             });
         }
-        targets.extend(document.bin.iter().filter_map(|target| {
-            target.path.as_ref().map(|path| CargoTarget {
-                root: resolve_cargo_target_path(&manifest_dir, path, files),
-                kind: TargetKind::Other,
-            })
-        }));
-        targets.extend(document.test.iter().filter_map(|target| {
-            target.path.as_ref().map(|path| CargoTarget {
-                root: resolve_cargo_target_path(&manifest_dir, path, files),
-                kind: TargetKind::Other,
-            })
-        }));
+        targets.extend(cargo_targets(
+            &document.bin,
+            &manifest_dir,
+            "src/bin",
+            TargetKind::Binary,
+            files,
+        ));
+        targets.extend(cargo_targets(
+            &document.test,
+            &manifest_dir,
+            "tests",
+            TargetKind::Test,
+            files,
+        ));
+        targets.extend(cargo_targets(
+            &document.bench,
+            &manifest_dir,
+            "benches",
+            TargetKind::Benchmark,
+            files,
+        ));
+        targets.extend(cargo_targets(
+            &document.example,
+            &manifest_dir,
+            "examples",
+            TargetKind::Example,
+            files,
+        ));
         let default_main = join_path(&manifest_dir, "src/main.rs");
         if document.bin.is_empty() && files.contains_key(&default_main) {
             targets.push(CargoTarget {
                 root: default_main,
-                kind: TargetKind::Other,
+                kind: TargetKind::Binary,
             });
         }
+        let build_root = match package.build.as_ref() {
+            Some(CargoBuildDocument::Enabled(false)) => None,
+            Some(CargoBuildDocument::Enabled(true)) | None => {
+                let default = join_path(&manifest_dir, "build.rs");
+                files.contains_key(&default).then_some(default)
+            }
+            Some(CargoBuildDocument::Path(path)) => {
+                Some(resolve_cargo_target_path(&manifest_dir, path, files))
+            }
+        };
         targets.sort_by(|left, right| left.root.cmp(&right.root));
         targets.dedup_by(|left, right| left.root == right.root);
         let mut dependency_documents = document.dependencies;
@@ -359,12 +519,38 @@ fn parse_packages(
             manifest_path: path.clone(),
             lib_name,
             lib_root,
+            proc_macro,
+            build_root,
             targets,
             dependencies,
         });
     }
     packages.sort_by(|left, right| left.manifest_path.cmp(&right.manifest_path));
     Ok(packages)
+}
+
+fn cargo_targets(
+    documents: &[CargoTargetDocument],
+    manifest_dir: &str,
+    default_directory: &str,
+    kind: TargetKind,
+    files: &BTreeMap<String, &[u8]>,
+) -> Vec<CargoTarget> {
+    documents
+        .iter()
+        .filter_map(|target| {
+            let declared = target.path.clone().or_else(|| {
+                target
+                    .name
+                    .as_ref()
+                    .map(|name| format!("{default_directory}/{name}.rs"))
+            })?;
+            Some(CargoTarget {
+                root: resolve_cargo_target_path(manifest_dir, &declared, files),
+                kind,
+            })
+        })
+        .collect()
 }
 
 fn resolve_cargo_target_path(
