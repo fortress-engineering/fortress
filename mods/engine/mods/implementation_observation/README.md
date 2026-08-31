@@ -12,7 +12,7 @@ Analyze exact snapshot-bound implementation source with supported language seman
 
 ### Includes
 
-Language-neutral observation facts, snapshot content verification, explicit source ownership with declared-Module or analysis-only Cargo authority, structural Cargo and Rust namespace analysis, governed, analysis-territory, and external target classification, normalized direct Module dependencies, deterministic evidence ordering, and explicit unsupported or unresolved coverage.
+Language-neutral observation facts, snapshot content verification, explicit source ownership backed by physical Module containment, authored logical path binding, or analysis-only Cargo authority, structural Cargo and Rust namespace analysis, normalized dependencies, deterministic evidence ordering, and explicit unsupported or unresolved coverage.
 
 ### Excludes
 
@@ -20,7 +20,11 @@ CCG compilation, dependency authorization, architecture findings, capability-to-
 
 ## Relationships
 
-This Module declares no outbound architectural relationships.
+### [Project Model](../project_model/README.md)
+
+**Types:** `depends_on`
+
+Consumes validated logical Module contract locations and source bindings without becoming authority for Module identity or Project Filing conformance.
 
 ## Guarantees
 

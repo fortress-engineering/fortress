@@ -7,7 +7,8 @@ use std::path::{Path, PathBuf};
 use fortress_core::audit::compile_repository_ccg;
 use fortress_core::contract_coherency::{
     CcgCompilation, CcgObservedTestFact, CcgTestClassification, ContractStandardIndex,
-    ModuleContract, ModuleContractLoadError, compile_contract_coherency_graph,
+    LogicalModuleContractSource, ModuleContract, ModuleContractLoadError,
+    compile_contract_coherency_graph, compile_contract_coherency_graph_with_logical_modules,
 };
 use fortress_core::standard::{StandardBundle, StandardLoadError};
 use serde::Deserialize;
@@ -1103,4 +1104,46 @@ fn canonical_graph_bytes_and_digest_repeat_exactly() {
         .to_canonical_json()
         .expect("repeated Fortress self-CCG serializes");
     assert_eq!(generated, repeated, "self-CCG bytes must repeat exactly");
+}
+
+/// `T-LOGICAL-MODULE-CCG-001`
+/// Fortress classification: infrastructure
+#[test]
+fn logical_contracts_join_the_same_ccg_identity_space() {
+    let root = contract("PF-FIXTURE", "Fixture", true);
+    let logical = contract("AF-PAYMENTS-0001", "Payments", false);
+    let files = BTreeMap::from([
+        ("contract.json".to_owned(), canonical(&root).into_bytes()),
+        (
+            "data/logical_modules/payments/contract.json".to_owned(),
+            canonical(&logical).into_bytes(),
+        ),
+    ]);
+    let sources = [LogicalModuleContractSource::new(
+        "AF-PAYMENTS-0001",
+        "data/logical_modules/payments/contract.json",
+        "PF-FIXTURE",
+    )];
+    let result =
+        compile_contract_coherency_graph_with_logical_modules(&files, &standard(), None, &sources);
+    let graph = result.graph().expect("logical CCG compiles");
+    assert_eq!(graph.modules().len(), 2);
+    assert_eq!(
+        graph
+            .modules()
+            .get("AF-PAYMENTS-0001")
+            .expect("logical Module")
+            .parent_id(),
+        Some("PF-FIXTURE")
+    );
+
+    let invalid = [LogicalModuleContractSource::new(
+        "AF-UNKNOWN-0001",
+        "data/logical_modules/payments/contract.json",
+        "PF-FIXTURE",
+    )];
+    let failure =
+        compile_contract_coherency_graph_with_logical_modules(&files, &standard(), None, &invalid);
+    assert!(!failure.is_success());
+    assert!(messages(&failure).contains("does not match indexed Module"));
 }

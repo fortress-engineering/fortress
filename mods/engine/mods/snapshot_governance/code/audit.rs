@@ -1,6 +1,6 @@
 //! End-to-end provider-independent Snapshot Governance repository audit.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
 use std::fmt::Write as _;
 use std::fmt::{self, Display, Formatter};
@@ -35,7 +35,7 @@ use crate::certification::{
 use crate::contract::evaluate_contract_coherency;
 use crate::contract_coherency::{
     CcgCompilation, CcgObservedTestFact, ContractCoherencyGraph, ContractStandardIndex,
-    compile_contract_coherency_graph,
+    LogicalModuleContractSource, compile_contract_coherency_graph_with_logical_modules,
 };
 use crate::documentation::{
     DocumentationEvaluationError, code_file_responsibilities, evaluate_repository_documentation,
@@ -56,7 +56,8 @@ use crate::finding_governance::{
 use crate::implementation_observation::{
     ImplementationObservationError, ImplementationObservationInput, ModuleTerritory,
     ObservedImplementation, SnapshotBoundFile, SourceOwnership, SourceOwnershipAuthority,
-    observe_rust_implementation, resolve_source_ownership,
+    SourceOwnershipDiagnostic, observe_rust_implementation,
+    resolve_source_ownership_with_logical_modules,
 };
 use crate::information_flow::{
     InformationFlowAnalysisError, InformationFlowEvaluation, InformationFlowPolicyError,
@@ -461,6 +462,202 @@ pub fn compile_repository_source_artifact_model(
 ) -> Result<SourceArtifactModel, AuditError> {
     let prepared = prepare_analysis(root.as_ref())?;
     compile_analysis_source_architecture(&prepared, None).map(|value| value.model().clone())
+}
+
+/// Deterministic inspection of authored Modules and resolved implementation ownership.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+pub struct ModuleInspection {
+    schema_version: u16,
+    project_authority: ProjectGovernanceState,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    governance_detail: Option<String>,
+    modules: Vec<InspectedModule>,
+    analysis_territories: Vec<InspectedAnalysisTerritory>,
+    ownership_diagnostics: Vec<SourceOwnershipDiagnostic>,
+}
+
+impl ModuleInspection {
+    /// Serializes canonical UTF-8 JSON with two-space indentation and one LF.
+    ///
+    /// # Errors
+    ///
+    /// Returns a serialization error if the model cannot be represented.
+    pub fn to_canonical_json(&self) -> Result<String, serde_json::Error> {
+        serde_json::to_string_pretty(self).map(|mut value| {
+            value.push('\n');
+            value
+        })
+    }
+
+    /// Returns declared semantic Modules.
+    #[must_use]
+    pub fn modules(&self) -> &[InspectedModule] {
+        &self.modules
+    }
+
+    /// Returns mechanically observed ownership territories for unmapped source.
+    #[must_use]
+    pub fn analysis_territories(&self) -> &[InspectedAnalysisTerritory] {
+        &self.analysis_territories
+    }
+
+    /// Returns authored-binding problems that did not blind observation.
+    #[must_use]
+    pub fn ownership_diagnostics(&self) -> &[SourceOwnershipDiagnostic] {
+        &self.ownership_diagnostics
+    }
+
+    /// Returns whether authored governance and resolved ownership are valid.
+    ///
+    /// Missing project authority remains a valid observation-only state. An
+    /// invalid declaration or ambiguous binding is not.
+    #[must_use]
+    pub fn is_valid(&self) -> bool {
+        self.project_authority != ProjectGovernanceState::Invalid
+            && self.ownership_diagnostics.is_empty()
+    }
+}
+
+/// One declared Module and its current source-placement projection.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+pub struct InspectedModule {
+    module: String,
+    contract: String,
+    authority: String,
+    parent: Option<String>,
+    bindings: Vec<crate::project::SourcePathBinding>,
+    observed_sources: usize,
+}
+
+impl InspectedModule {
+    /// Returns the stable Module identity.
+    #[must_use]
+    pub fn module(&self) -> &str {
+        &self.module
+    }
+
+    /// Returns the authoritative contract location.
+    #[must_use]
+    pub fn contract(&self) -> &str {
+        &self.contract
+    }
+
+    /// Returns physical-containment or logical-binding authority.
+    #[must_use]
+    pub fn authority(&self) -> &str {
+        &self.authority
+    }
+
+    /// Returns authored binding count.
+    #[must_use]
+    pub fn bindings(&self) -> &[crate::project::SourcePathBinding] {
+        &self.bindings
+    }
+
+    /// Returns currently observed source count.
+    #[must_use]
+    pub const fn observed_sources(&self) -> usize {
+        self.observed_sources
+    }
+}
+
+/// One Cargo-derived analysis owner retained for architecturally unmapped source.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+pub struct InspectedAnalysisTerritory {
+    territory: String,
+    path: String,
+    observed_sources: usize,
+}
+
+impl InspectedAnalysisTerritory {
+    /// Returns the deterministic analysis-only identity.
+    #[must_use]
+    pub fn territory(&self) -> &str {
+        &self.territory
+    }
+
+    /// Returns the repository-relative Cargo territory path.
+    #[must_use]
+    pub fn path(&self) -> &str {
+        &self.path
+    }
+
+    /// Returns currently observed source count.
+    #[must_use]
+    pub const fn observed_sources(&self) -> usize {
+        self.observed_sources
+    }
+}
+
+/// Inspects declared and analysis-only source ownership without evaluating PFS conformance.
+///
+/// # Errors
+///
+/// Returns [`AuditError`] when stable repository observation itself fails.
+pub fn inspect_repository_modules(root: impl AsRef<Path>) -> Result<ModuleInspection, AuditError> {
+    let prepared = prepare_analysis(root.as_ref())?;
+    let logical = prepared
+        .project_configuration
+        .as_ref()
+        .map(|project| {
+            project
+                .logical_modules()
+                .iter()
+                .map(|module| (module.module(), module))
+                .collect::<BTreeMap<_, _>>()
+        })
+        .unwrap_or_default();
+    let mut modules = prepared
+        .ccg()
+        .into_iter()
+        .flat_map(ContractCoherencyGraph::modules)
+        .map(|(id, module)| {
+            let declaration = logical.get(id.as_str()).copied();
+            InspectedModule {
+                module: id.clone(),
+                contract: module.contract_path().into(),
+                authority: if declaration.is_some() {
+                    "LOGICAL_PATH_BINDING"
+                } else {
+                    "PHYSICAL_CONTAINMENT"
+                }
+                .into(),
+                parent: module.parent_id().map(str::to_owned),
+                bindings: declaration.map_or_else(Vec::new, |value| value.bindings().to_vec()),
+                observed_sources: prepared
+                    .ownerships
+                    .iter()
+                    .filter(|ownership| ownership.owner() == id)
+                    .count(),
+            }
+        })
+        .collect::<Vec<_>>();
+    modules.sort_by(|left, right| left.module.cmp(&right.module));
+    let mut territories = BTreeMap::<(String, String), usize>::new();
+    for ownership in &prepared.ownerships {
+        if ownership.authority() == SourceOwnershipAuthority::CargoAnalysisTerritory {
+            *territories
+                .entry((ownership.owner().into(), ownership.territory_path().into()))
+                .or_default() += 1;
+        }
+    }
+    Ok(ModuleInspection {
+        schema_version: 1,
+        project_authority: prepared.project_state,
+        governance_detail: prepared.project_detail.clone(),
+        modules,
+        analysis_territories: territories
+            .into_iter()
+            .map(
+                |((territory, path), observed_sources)| InspectedAnalysisTerritory {
+                    territory,
+                    path,
+                    observed_sources,
+                },
+            )
+            .collect(),
+        ownership_diagnostics: prepared.ownership_diagnostics,
+    })
 }
 
 fn compile_source_architecture_from(
@@ -2259,10 +2456,20 @@ struct PreparedAnalysis {
     project_state: ProjectGovernanceState,
     project_detail: Option<String>,
     project_document: Option<LoadedDocument>,
+    project_configuration: Option<ProjectConfiguration>,
     standard: LoadedStandard,
     rust_tests: Vec<RustTestObservation>,
     ccg_compilation: CcgCompilation,
     ownerships: Vec<SourceOwnership>,
+    ownership_diagnostics: Vec<SourceOwnershipDiagnostic>,
+}
+
+struct LoadedProjectAuthority {
+    state: ProjectGovernanceState,
+    detail: Option<String>,
+    document: Option<LoadedDocument>,
+    configuration: Option<ProjectConfiguration>,
+    observation_policy: ObservationPolicy,
 }
 
 impl PreparedAnalysis {
@@ -2278,53 +2485,14 @@ impl PreparedAnalysis {
 }
 
 fn prepare_analysis(root: &Path) -> Result<PreparedAnalysis, AuditError> {
-    let project_path = root.join("data/project.json");
-    let (project_state, project_detail, project_document, policy) = match fs::read(&project_path) {
-        Ok(bytes) => {
-            let document = LoadedDocument {
-                path: "data/project.json".into(),
-                bytes,
-            };
-            match document
-                .source()
-                .map_err(|error| error.to_string())
-                .and_then(|source| {
-                    ProjectConfiguration::from_json_str(source).map_err(|error| error.to_string())
-                }) {
-                Ok(project) => (
-                    ProjectGovernanceState::Declared,
-                    None,
-                    Some(document),
-                    ObservationPolicy::new(project.observation_exclusions().iter().cloned())
-                        .map_err(AuditError::ObservationPolicy)?,
-                ),
-                Err(detail) => (
-                    ProjectGovernanceState::Invalid,
-                    Some(detail),
-                    Some(document),
-                    ObservationPolicy::new([".git"]).map_err(AuditError::ObservationPolicy)?,
-                ),
-            }
-        }
-        Err(source) if source.kind() == std::io::ErrorKind::NotFound => (
-            ProjectGovernanceState::Absent,
-            Some("data/project.json is absent".into()),
-            None,
-            ObservationPolicy::new([".git"]).map_err(AuditError::ObservationPolicy)?,
-        ),
-        Err(source) => {
-            return Err(AuditError::Io {
-                path: project_path,
-                source,
-            });
-        }
-    };
-    let observation = observe_repository_stably(root, &policy).map_err(AuditError::Snapshot)?;
+    let project = load_project_authority(root)?;
+    let observation = observe_repository_stably(root, &project.observation_policy)
+        .map_err(AuditError::Snapshot)?;
     let observed_files = read_observed_files(root, &observation)?;
     let standard = load_standard(
         root,
         &observed_files,
-        project_state == ProjectGovernanceState::Declared,
+        project.state == ProjectGovernanceState::Declared,
     )?;
     let rust_tests = observe_observed_rust_tests(
         observed_files
@@ -2337,30 +2505,125 @@ fn prepare_analysis(root: &Path) -> Result<PreparedAnalysis, AuditError> {
         .filter_map(RustTestObservation::governed_fact)
         .map(|fact| CcgObservedTestFact::from(&fact))
         .collect::<Vec<_>>();
-    let ccg_compilation = compile_contract_coherency_graph(
+    let logical_contracts = project
+        .configuration
+        .as_ref()
+        .map(logical_contract_sources)
+        .unwrap_or_default();
+    let ccg_compilation = compile_contract_coherency_graph_with_logical_modules(
         &observed_files,
         &ContractStandardIndex::from_bundle(&standard.bundle),
         Some(&observed_test_facts),
+        &logical_contracts,
     );
+    let logical_ids = project
+        .configuration
+        .as_ref()
+        .map(|project| {
+            project
+                .logical_modules()
+                .iter()
+                .map(|module| module.module().to_owned())
+                .collect::<BTreeSet<_>>()
+        })
+        .unwrap_or_default();
     let modules = ccg_compilation.graph().map_or_else(Vec::new, |ccg| {
         ccg.modules()
             .iter()
+            .filter(|(id, _)| !logical_ids.contains(*id))
             .map(|(id, module)| ModuleTerritory::new(id, module.path()))
             .collect()
     });
-    let ownerships = resolve_source_ownership(observed_files.keys().map(String::as_str), &modules);
+    let known_module_ids = ccg_compilation
+        .graph()
+        .map(|ccg| ccg.modules().keys().cloned().collect())
+        .unwrap_or_default();
+    let ownership_resolution = resolve_source_ownership_with_logical_modules(
+        observed_files.keys().map(String::as_str),
+        &modules,
+        project
+            .configuration
+            .as_ref()
+            .map_or(&[], ProjectConfiguration::logical_modules),
+        &known_module_ids,
+    );
+    let ownerships = ownership_resolution.ownerships().to_vec();
+    let ownership_diagnostics = ownership_resolution.diagnostics().to_vec();
     let source_identity = certification_source_digest(&observed_files);
     Ok(PreparedAnalysis {
         observed_files,
         source_identity,
-        project_state,
-        project_detail,
-        project_document,
+        project_state: project.state,
+        project_detail: project.detail,
+        project_document: project.document,
+        project_configuration: project.configuration,
         standard,
         rust_tests,
         ccg_compilation,
         ownerships,
+        ownership_diagnostics,
     })
+}
+
+fn load_project_authority(root: &Path) -> Result<LoadedProjectAuthority, AuditError> {
+    let project_path = root.join("data/project.json");
+    let fallback_policy =
+        || ObservationPolicy::new([".git"]).map_err(AuditError::ObservationPolicy);
+    match fs::read(&project_path) {
+        Ok(bytes) => {
+            let document = LoadedDocument {
+                path: "data/project.json".into(),
+                bytes,
+            };
+            match document
+                .source()
+                .map_err(|error| error.to_string())
+                .and_then(|source| {
+                    ProjectConfiguration::from_json_str(source).map_err(|error| error.to_string())
+                }) {
+                Ok(configuration) => Ok(LoadedProjectAuthority {
+                    state: ProjectGovernanceState::Declared,
+                    detail: None,
+                    document: Some(document),
+                    observation_policy: ObservationPolicy::new(
+                        configuration.observation_exclusions().iter().cloned(),
+                    )
+                    .map_err(AuditError::ObservationPolicy)?,
+                    configuration: Some(configuration),
+                }),
+                Err(detail) => Ok(LoadedProjectAuthority {
+                    state: ProjectGovernanceState::Invalid,
+                    detail: Some(detail),
+                    document: Some(document),
+                    configuration: None,
+                    observation_policy: fallback_policy()?,
+                }),
+            }
+        }
+        Err(source) if source.kind() == std::io::ErrorKind::NotFound => {
+            Ok(LoadedProjectAuthority {
+                state: ProjectGovernanceState::Absent,
+                detail: Some("data/project.json is absent".into()),
+                document: None,
+                configuration: None,
+                observation_policy: fallback_policy()?,
+            })
+        }
+        Err(source) => Err(AuditError::Io {
+            path: project_path,
+            source,
+        }),
+    }
+}
+
+fn logical_contract_sources(project: &ProjectConfiguration) -> Vec<LogicalModuleContractSource> {
+    project
+        .logical_modules()
+        .iter()
+        .map(|module| {
+            LogicalModuleContractSource::new(module.module(), module.contract(), module.parent())
+        })
+        .collect()
 }
 
 fn prepare_audit(root: &Path) -> Result<PreparedAudit, AuditError> {
@@ -2394,10 +2657,12 @@ fn prepare_audit_from_analysis(
         .collect::<Vec<_>>();
     let observed_test_facts: Vec<CcgObservedTestFact> =
         rust_tests.iter().map(CcgObservedTestFact::from).collect();
-    let ccg_compilation = compile_contract_coherency_graph(
+    let logical_contracts = logical_contract_sources(&project);
+    let ccg_compilation = compile_contract_coherency_graph_with_logical_modules(
         &observed_files,
         &ContractStandardIndex::from_bundle(&standard.bundle),
         Some(&observed_test_facts),
+        &logical_contracts,
     );
     let ccg = ccg_compilation.graph().ok_or_else(|| {
         AuditError::ContractState(

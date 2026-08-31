@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The Project Model exists to hold operational project configuration and the canonical derived structural model of every governed repository path without becoming architectural intent.
+The Project Model holds operational project configuration, the canonical derived structural model of every governed repository path, and the narrow stable-ID index that locates independently stored logical Module contracts and their implementation paths without redefining contract-owned intent.
 
 ## Responsibility
 
@@ -31,5 +31,7 @@ Module identity, capability/dependency authority, CCG leaf-file expansion, repos
 Uses stable Fortress identity and standard semantics when validating governed configuration and record families.
 
 ## Guarantees
+
+Logical path bindings reference stable Module identities, use only canonical repository-relative exact-file or directory-prefix selectors, and remain distinct from both Project Filing conformance and Cargo analysis territories.
 
 Operational configuration rejects unsafe or duplicate observation paths. Filing analysis rejects unregistered root/Code structures and arbitrary Data/Info recursion while inventorying every observed leaf and keeping only structural aggregates in the Project Model.

@@ -24,4 +24,4 @@ Exercises atomic and composite Modules, root profiles, Code flatness, the closed
 
 ### [`project_model.rs`](../code/project_model.rs)
 
-Verifies operational project configuration loading and rejects duplicate or unsafe observation exclusions and unsupported schema identities.
+Verifies project configuration loading and rejects duplicate or unsafe observation exclusions, logical contract paths, source bindings, and unsupported schema identities.

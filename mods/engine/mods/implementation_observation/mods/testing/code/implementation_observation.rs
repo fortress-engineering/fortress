@@ -1,11 +1,13 @@
 //! Conformance evidence for snapshot-bound Rust implementation observation.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use fortress_core::implementation_observation::{
     ImplementationObservationError, ImplementationObservationInput, ModuleTerritory,
-    ResolutionStatus, SnapshotBoundFile, TargetClassification, observe_rust_implementation,
+    ResolutionStatus, SnapshotBoundFile, SourceOwnershipAuthority, TargetClassification,
+    observe_rust_implementation, resolve_source_ownership_with_logical_modules,
 };
+use fortress_core::project::ProjectConfiguration;
 use sha2::{Digest, Sha256};
 
 fn snapshot_input(
@@ -23,6 +25,162 @@ fn snapshot_input(
             .map(|(id, path)| ModuleTerritory::new(id, path))
             .collect(),
     )
+}
+
+fn logical_project() -> ProjectConfiguration {
+    ProjectConfiguration::from_json_str(
+        r#"{
+  "$schema": "urn:fortress:schema:v3:project-configuration",
+  "schema_version": 3,
+  "observation_exclusions": [
+    ".git"
+  ],
+  "logical_modules": [
+    {
+      "module": "AF-BILLING-0001",
+      "contract": "data/logical_modules/billing/contract.json",
+      "parent": "PF-FIXTURE",
+      "bindings": [
+        {
+          "kind": "directory",
+          "path": "crates/core/src/billing"
+        }
+      ]
+    },
+    {
+      "module": "AF-PAYMENTS-0001",
+      "contract": "data/logical_modules/payments/contract.json",
+      "parent": "PF-FIXTURE",
+      "bindings": [
+        {
+          "kind": "directory",
+          "path": "crates/api/src/payments"
+        },
+        {
+          "kind": "file",
+          "path": "crates/core/src/ledger/payment.rs"
+        }
+      ]
+    }
+  ]
+}"#,
+    )
+    .expect("logical project validates")
+}
+
+/// `T-LOGICAL-OWNERSHIP-EXACT-001`
+/// Fortress classification: infrastructure
+#[test]
+fn logical_file_directory_and_partial_ownership_are_distinct() {
+    let project = logical_project();
+    let paths = [
+        "Cargo.toml",
+        "crates/api/Cargo.toml",
+        "crates/api/src/lib.rs",
+        "crates/api/src/payments/charge.rs",
+        "crates/core/Cargo.toml",
+        "crates/core/src/billing/invoice.rs",
+        "crates/core/src/ledger/payment.rs",
+        "crates/core/src/unmapped.rs",
+    ];
+    let known = BTreeSet::from([
+        "AF-BILLING-0001".to_owned(),
+        "AF-PAYMENTS-0001".to_owned(),
+        "PF-FIXTURE".to_owned(),
+    ]);
+    let result = resolve_source_ownership_with_logical_modules(
+        paths,
+        &[],
+        project.logical_modules(),
+        &known,
+    );
+    let owners = result
+        .ownerships()
+        .iter()
+        .map(|ownership| {
+            (
+                ownership.source_path(),
+                (ownership.owner(), ownership.authority()),
+            )
+        })
+        .collect::<BTreeMap<_, _>>();
+    assert_eq!(
+        owners["crates/api/src/payments/charge.rs"].0,
+        "AF-PAYMENTS-0001"
+    );
+    assert_eq!(
+        owners["crates/core/src/billing/invoice.rs"].0,
+        "AF-BILLING-0001"
+    );
+    assert_eq!(
+        owners["crates/core/src/ledger/payment.rs"].0,
+        "AF-PAYMENTS-0001"
+    );
+    assert_eq!(
+        owners["crates/core/src/unmapped.rs"].1,
+        SourceOwnershipAuthority::CargoAnalysisTerritory
+    );
+    assert!(result.diagnostics().is_empty());
+}
+
+/// `T-LOGICAL-OWNERSHIP-RELOCATION-001`
+/// Fortress classification: infrastructure
+#[test]
+fn changing_only_binding_placement_preserves_semantic_owner() {
+    let first = logical_project();
+    let moved_source = serde_json::to_string(&serde_json::json!({
+        "$schema": "urn:fortress:schema:v3:project-configuration",
+        "schema_version": 3,
+        "observation_exclusions": [".git"],
+        "logical_modules": [{
+            "module": "AF-PAYMENTS-0001",
+            "contract": "data/logical_modules/payments/contract.json",
+            "parent": "PF-FIXTURE",
+            "bindings": [{"kind": "directory", "path": "src/domain/payments"}]
+        }]
+    }))
+    .expect("JSON serializes");
+    let moved =
+        ProjectConfiguration::from_json_str(&moved_source).expect("moved binding validates");
+    let known = BTreeSet::from(["AF-PAYMENTS-0001".to_owned()]);
+    let old = resolve_source_ownership_with_logical_modules(
+        ["Cargo.toml", "crates/api/src/payments/charge.rs"],
+        &[],
+        &first.logical_modules()[1..],
+        &known,
+    );
+    let new = resolve_source_ownership_with_logical_modules(
+        ["Cargo.toml", "src/domain/payments/charge.rs"],
+        &[],
+        moved.logical_modules(),
+        &known,
+    );
+    assert_eq!(old.ownerships()[0].owner(), "AF-PAYMENTS-0001");
+    assert_eq!(new.ownerships()[0].owner(), "AF-PAYMENTS-0001");
+}
+
+/// `T-LOGICAL-OWNERSHIP-SCALE-001`
+/// Fortress classification: infrastructure
+#[test]
+fn ten_thousand_paths_resolve_deterministically() {
+    let project = logical_project();
+    let mut paths = vec!["Cargo.toml".to_owned(), "crates/api/Cargo.toml".to_owned()];
+    paths.extend((0..10_000).map(|index| format!("crates/api/src/payments/item_{index:05}.rs")));
+    let known = BTreeSet::from(["AF-BILLING-0001".to_owned(), "AF-PAYMENTS-0001".to_owned()]);
+    let first = resolve_source_ownership_with_logical_modules(
+        paths.iter().map(String::as_str),
+        &[],
+        project.logical_modules(),
+        &known,
+    );
+    let second = resolve_source_ownership_with_logical_modules(
+        paths.iter().rev().map(String::as_str),
+        &[],
+        project.logical_modules(),
+        &known,
+    );
+    assert_eq!(first, second);
+    assert_eq!(first.ownerships().len(), 10_000);
 }
 
 fn basic_cross_package_input() -> ImplementationObservationInput {

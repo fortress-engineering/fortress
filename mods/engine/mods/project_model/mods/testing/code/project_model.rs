@@ -77,6 +77,70 @@ fn invalid_or_duplicate_exclusions_fail() {
     ));
 }
 
+/// `T-LOGICAL-MODULE-CONFIG-001`
+/// Fortress classification: infrastructure
+#[test]
+fn logical_contract_and_binding_authority_is_canonical() {
+    let source = r#"{
+      "$schema": "urn:fortress:schema:v3:project-configuration",
+      "schema_version": 3,
+      "observation_exclusions": [".git"],
+      "logical_modules": [{
+        "module": "AF-PAYMENTS-0001",
+        "contract": "data/logical_modules/payments/contract.json",
+        "parent": "PF-PROJECT",
+        "bindings": [
+          {"kind": "directory", "path": "crates/api/src/payments"},
+          {"kind": "file", "path": "crates/core/src/ledger/payment.rs"}
+        ]
+      }]
+    }"#;
+    let project = ProjectConfiguration::from_json_str(source).expect("logical authority validates");
+    let logical = &project.logical_modules()[0];
+    assert_eq!(logical.module(), "AF-PAYMENTS-0001");
+    assert_eq!(logical.parent(), "PF-PROJECT");
+    assert_eq!(logical.bindings().len(), 2);
+}
+
+/// `T-LOGICAL-MODULE-CONFIG-INVALID-001`
+/// Fortress classification: infrastructure
+#[test]
+fn absolute_traversal_and_windows_binding_paths_are_rejected() {
+    for path in ["C:/repo/src", "../src", "src\\payments"] {
+        let source = format!(
+            "{{\"$schema\":\"urn:fortress:schema:v3:project-configuration\",\"schema_version\":3,\"observation_exclusions\":[\".git\"],\"logical_modules\":[{{\"module\":\"AF-PAYMENTS-0001\",\"contract\":\"data/logical_modules/payments/contract.json\",\"parent\":\"PF-PROJECT\",\"bindings\":[{{\"kind\":\"directory\",\"path\":{}}}]}}]}}",
+            serde_json::to_string(path).unwrap()
+        );
+        assert!(matches!(
+            ProjectConfiguration::from_json_str(&source),
+            Err(ProjectConfigurationLoadError::Model(
+                ProjectConfigurationModelError::InvalidBindingPath(_)
+            ))
+        ));
+    }
+}
+
+/// `T-LOGICAL-MODULE-CONFIG-CONFLICT-001`
+/// Fortress classification: infrastructure
+#[test]
+fn equal_source_binding_authority_is_rejected_without_manifest_order() {
+    let source = r#"{
+      "$schema": "urn:fortress:schema:v3:project-configuration",
+      "schema_version": 3,
+      "observation_exclusions": [".git"],
+      "logical_modules": [
+        {"module": "AF-ALPHA-0001", "contract": "data/logical_modules/alpha/contract.json", "parent": "PF-PROJECT", "bindings": [{"kind": "directory", "path": "src/shared"}]},
+        {"module": "AF-BETA-0001", "contract": "data/logical_modules/beta/contract.json", "parent": "PF-PROJECT", "bindings": [{"kind": "directory", "path": "src/shared"}]}
+      ]
+    }"#;
+    assert!(matches!(
+        ProjectConfiguration::from_json_str(source),
+        Err(ProjectConfigurationLoadError::Model(
+            ProjectConfigurationModelError::ConflictingBinding(_)
+        ))
+    ));
+}
+
 /// `T-AF-PROJECT-MODEL-0001-R03-001`
 /// Fortress requirement: AF-PROJECT-MODEL-0001-R03
 #[test]

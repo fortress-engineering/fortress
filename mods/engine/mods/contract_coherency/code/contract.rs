@@ -1,9 +1,10 @@
 //! Canonical Fortress Module Contract v2 loading and CCG compilation.
 //!
-//! Filesystem containment remains authoritative for Module location, parentage,
-//! direct elemental ownership, and child membership. A contract owns stable
-//! architectural intent that containment cannot safely express. Repository-wide
-//! compilation produces the one canonical Contract Coherency Graph.
+//! Canonical physical containment remains authoritative for colocated Modules.
+//! Project-authorized logical contracts supply only stable contract location and
+//! semantic parentage where implementation placement is independent. Every
+//! Module's architectural meaning still comes from one Module Contract, and
+//! repository-wide compilation produces one Contract Coherency Graph.
 
 #[path = "graph.rs"]
 mod graph;
@@ -918,7 +919,61 @@ pub fn compile_contract_coherency_graph(
     standard: &ContractStandardIndex,
     observed_tests: Option<&[CcgObservedTestFact]>,
 ) -> CcgCompilation {
-    Resolver::new(files, standard, observed_tests).resolve()
+    Resolver::new(files, standard, observed_tests, &[]).resolve()
+}
+
+/// One project-authored logical Module contract location and semantic parent.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub struct LogicalModuleContractSource {
+    module: String,
+    contract_path: String,
+    parent: String,
+}
+
+impl LogicalModuleContractSource {
+    /// Creates one stable-ID contract-location reference.
+    #[must_use]
+    pub fn new(
+        module: impl Into<String>,
+        contract_path: impl Into<String>,
+        parent: impl Into<String>,
+    ) -> Self {
+        Self {
+            module: module.into(),
+            contract_path: contract_path.into(),
+            parent: parent.into(),
+        }
+    }
+
+    /// Returns the expected Module identity.
+    #[must_use]
+    pub fn module(&self) -> &str {
+        &self.module
+    }
+
+    /// Returns the exact repository-relative contract location.
+    #[must_use]
+    pub fn contract_path(&self) -> &str {
+        &self.contract_path
+    }
+
+    /// Returns the declared semantic parent identity.
+    #[must_use]
+    pub fn parent(&self) -> &str {
+        &self.parent
+    }
+}
+
+/// Compiles physical and explicitly indexed logical Module Contracts into one
+/// semantic CCG identity space.
+#[must_use]
+pub fn compile_contract_coherency_graph_with_logical_modules(
+    files: &BTreeMap<String, Vec<u8>>,
+    standard: &ContractStandardIndex,
+    observed_tests: Option<&[CcgObservedTestFact]>,
+    logical_modules: &[LogicalModuleContractSource],
+) -> CcgCompilation {
+    Resolver::new(files, standard, observed_tests, logical_modules).resolve()
 }
 
 /// Deterministic success or violations from repository-wide contract resolution.
@@ -1463,6 +1518,7 @@ struct Resolver<'a> {
     files: &'a BTreeMap<String, Vec<u8>>,
     standard: &'a ContractStandardIndex,
     observed_tests: Option<&'a [CcgObservedTestFact]>,
+    logical_modules: &'a [LogicalModuleContractSource],
     violations: Vec<CcgViolation>,
 }
 
@@ -1471,11 +1527,13 @@ impl<'a> Resolver<'a> {
         files: &'a BTreeMap<String, Vec<u8>>,
         standard: &'a ContractStandardIndex,
         observed_tests: Option<&'a [CcgObservedTestFact]>,
+        logical_modules: &'a [LogicalModuleContractSource],
     ) -> Self {
         Self {
             files,
             standard,
             observed_tests,
+            logical_modules,
             violations: Vec::new(),
         }
     }
@@ -1503,6 +1561,66 @@ impl<'a> Resolver<'a> {
                 }
                 Err(error) => self.violation(contract_path, "/", error.to_string()),
             }
+        }
+        let mut logical_parents = BTreeMap::<String, String>::new();
+        for source in self.logical_modules {
+            let contract_path = source.contract_path();
+            let Some(bytes) = self.files.get(contract_path) else {
+                self.violation(
+                    contract_path,
+                    "/",
+                    format!(
+                        "logical Module `{}` contract does not exist",
+                        source.module()
+                    ),
+                );
+                continue;
+            };
+            let Ok(contract_source) = std::str::from_utf8(bytes) else {
+                self.violation(contract_path, "/", "contract is not valid UTF-8");
+                continue;
+            };
+            let contract = match ModuleContract::from_json_str(contract_source) {
+                Ok(contract) => contract,
+                Err(error) => {
+                    self.violation(contract_path, "/", error.to_string());
+                    continue;
+                }
+            };
+            if contract.id() != source.module() {
+                self.violation(
+                    contract_path,
+                    "/id",
+                    format!(
+                        "logical contract identity `{}` does not match indexed Module `{}`",
+                        contract.id(),
+                        source.module()
+                    ),
+                );
+                continue;
+            }
+            if contract.ecosystem().is_some() {
+                self.violation(
+                    contract_path,
+                    "/ecosystem",
+                    "logical descendant contract must not author ecosystem interpretation",
+                );
+                continue;
+            }
+            let module_path = parent_path(contract_path).to_owned();
+            if loaded.contains_key(&module_path) {
+                self.violation(
+                    contract_path,
+                    "/",
+                    format!("contract directory `{module_path}` already owns another Module"),
+                );
+                continue;
+            }
+            logical_parents.insert(source.module().into(), source.parent().into());
+            loaded.insert(
+                module_path,
+                (contract_path.into(), contract, sha256_bytes(bytes)),
+            );
         }
         if !self.violations.is_empty() {
             return self.failure();
@@ -1786,9 +1904,41 @@ impl<'a> Resolver<'a> {
             }
         }
 
-        let containment = derive_containment(&loaded, &id_to_path);
+        let containment_violation_start = self.violations.len();
+        for (module, parent) in &logical_parents {
+            if !id_to_path.contains_key(parent) {
+                let path = loaded
+                    .values()
+                    .find(|(_, contract, _)| contract.id() == module)
+                    .map_or("data/project.json", |(path, _, _)| path.as_str());
+                self.violation(
+                    path,
+                    "/",
+                    format!("logical Module `{module}` parent `{parent}` does not exist"),
+                );
+            }
+        }
+        let containment = derive_containment(&loaded, &id_to_path, &logical_parents);
+        for module in logical_parents.keys() {
+            let mut seen = BTreeSet::new();
+            let mut current = Some(module.as_str());
+            while let Some(id) = current {
+                if !seen.insert(id) {
+                    let path = loaded
+                        .values()
+                        .find(|(_, contract, _)| contract.id() == module)
+                        .map_or("data/project.json", |(path, _, _)| path.as_str());
+                    self.violation(path, "/", "logical Module containment contains a cycle");
+                    break;
+                }
+                current = containment.get(id).and_then(Option::as_deref);
+            }
+        }
+        if self.violations.len() > containment_violation_start {
+            return self.failure();
+        }
         let effective_constraints = self.resolve_constraints(&loaded, &id_to_path, &containment);
-        self.validate_behavior(&loaded, &id_to_path, &features, &checkpoints);
+        self.validate_behavior(&loaded, &containment, &features, &checkpoints);
         if !self.violations.is_empty() {
             return self.failure();
         }
@@ -1846,17 +1996,15 @@ impl<'a> Resolver<'a> {
         id_to_path: &BTreeMap<String, String>,
         containment: &BTreeMap<String, Option<String>>,
     ) -> BTreeMap<String, Vec<ResolvedConstraint>> {
-        let path_to_id: BTreeMap<&str, &str> = id_to_path
-            .iter()
-            .map(|(id, path)| (path.as_str(), id.as_str()))
-            .collect();
-        let mut order: Vec<&str> = loaded.keys().map(String::as_str).collect();
-        order.sort_by_key(|path| (path.matches('/').count(), *path));
+        let mut order = id_to_path.keys().map(String::as_str).collect::<Vec<_>>();
+        order.sort_by(|left, right| {
+            containment_depth(left, containment)
+                .cmp(&containment_depth(right, containment))
+                .then_with(|| left.cmp(right))
+        });
         let mut effective = BTreeMap::<String, Vec<ResolvedConstraint>>::new();
-        for path in order {
-            let Some(id) = path_to_id.get(path).copied() else {
-                continue;
-            };
+        for id in order {
+            let path = &id_to_path[id];
             let (contract_path, contract, _) = &loaded[path];
             let mut values = containment
                 .get(id)
@@ -1931,11 +2079,11 @@ impl<'a> Resolver<'a> {
     fn validate_behavior(
         &mut self,
         loaded: &BTreeMap<String, (String, ModuleContract, String)>,
-        id_to_path: &BTreeMap<String, String>,
+        containment: &BTreeMap<String, Option<String>>,
         features: &BTreeMap<String, OwnedIdentity>,
         checkpoints: &BTreeMap<String, ResolvedCheckpoint>,
     ) {
-        for (module_path, (contract_path, contract, _)) in loaded {
+        for (contract_path, contract, _) in loaded.values() {
             for (index, checkpoint) in contract.behavior.iter().enumerate() {
                 let Some(feature) = features.get(&checkpoint.feature) else {
                     self.violation(
@@ -1945,8 +2093,7 @@ impl<'a> Resolver<'a> {
                     );
                     continue;
                 };
-                let owner_path = &id_to_path[&feature.owner];
-                if !is_same_or_descendant_module(module_path, owner_path) {
+                if !is_same_or_descendant_identity(contract.id(), &feature.owner, containment) {
                     self.violation(
                         contract_path,
                         format!("/behavior/{index}/feature"),
@@ -2007,9 +2154,35 @@ impl<'a> Resolver<'a> {
     }
 }
 
+fn containment_depth(id: &str, containment: &BTreeMap<String, Option<String>>) -> usize {
+    let mut depth = 0;
+    let mut current = containment.get(id).and_then(Option::as_deref);
+    while let Some(parent) = current {
+        depth += 1;
+        current = containment.get(parent).and_then(Option::as_deref);
+    }
+    depth
+}
+
+fn is_same_or_descendant_identity(
+    candidate: &str,
+    ancestor: &str,
+    containment: &BTreeMap<String, Option<String>>,
+) -> bool {
+    let mut current = Some(candidate);
+    while let Some(id) = current {
+        if id == ancestor {
+            return true;
+        }
+        current = containment.get(id).and_then(Option::as_deref);
+    }
+    false
+}
+
 fn derive_containment(
     loaded: &BTreeMap<String, (String, ModuleContract, String)>,
     id_to_path: &BTreeMap<String, String>,
+    logical_parents: &BTreeMap<String, String>,
 ) -> BTreeMap<String, Option<String>> {
     let path_to_id: BTreeMap<&str, &str> = id_to_path
         .iter()
@@ -2018,9 +2191,11 @@ fn derive_containment(
     loaded
         .iter()
         .map(|(path, (_, contract, _))| {
-            let parent = parent_module_path(path)
-                .and_then(|parent| path_to_id.get(parent).copied())
-                .map(str::to_owned);
+            let parent = logical_parents.get(contract.id()).cloned().or_else(|| {
+                parent_module_path(path)
+                    .and_then(|parent| path_to_id.get(parent).copied())
+                    .map(str::to_owned)
+            });
             (contract.id.clone(), parent)
         })
         .collect()
@@ -2048,21 +2223,16 @@ fn parent_module_path(path: &str) -> Option<&str> {
     }
 }
 
-fn is_same_or_descendant_module(candidate: &str, ancestor: &str) -> bool {
-    candidate == ancestor
-        || if ancestor.is_empty() {
-            true
-        } else {
-            candidate.starts_with(&format!("{ancestor}/mods/"))
-        }
-}
-
 fn child_path(parent: &str, child: &str) -> String {
     if parent.is_empty() {
         child.into()
     } else {
         format!("{parent}/{child}")
     }
+}
+
+fn parent_path(path: &str) -> &str {
+    path.rsplit_once('/').map_or("", |(parent, _)| parent)
 }
 
 fn provenance(path: &str, pointer: String) -> ContractProvenance {

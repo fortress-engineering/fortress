@@ -11,12 +11,14 @@ pub use rust::observe_rust_implementation;
 pub use rust::{CargoAnalysisTerritoryObservation, observe_cargo_analysis_territories};
 
 use std::cmp::Ordering;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
 
 use serde::Serialize;
 use sha2::{Digest, Sha256};
+
+use crate::project::{LogicalModuleDeclaration, SourcePathBindingKind};
 
 /// Stable language identity of the implemented analyzer.
 pub const RUST_LANGUAGE_ID: &str = "rust";
@@ -100,6 +102,18 @@ pub enum SourceOwnershipAuthority {
     CargoAnalysisTerritory,
 }
 
+/// Exact mechanism supporting one source ownership conclusion.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum SourceOwnershipBasis {
+    /// Canonical Module `code/` containment.
+    PhysicalModuleContainment,
+    /// Explicit stable-ID project path binding.
+    LogicalPathBinding,
+    /// Nearest observed Cargo manifest territory.
+    CargoAnalysisTerritory,
+}
+
 /// One explicit repository-relative source ownership relation.
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct SourceOwnership {
@@ -107,6 +121,64 @@ pub struct SourceOwnership {
     owner: String,
     territory_path: String,
     authority: SourceOwnershipAuthority,
+    basis: SourceOwnershipBasis,
+}
+
+/// Deterministic governance issue encountered while resolving authored source
+/// membership. Observation remains available through mechanical ownership.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct SourceOwnershipDiagnostic {
+    code: String,
+    source_path: String,
+    modules: Vec<String>,
+    detail: String,
+}
+
+impl SourceOwnershipDiagnostic {
+    /// Returns the stable diagnostic discriminator.
+    #[must_use]
+    pub fn code(&self) -> &str {
+        &self.code
+    }
+
+    /// Returns the affected source or authored binding path.
+    #[must_use]
+    pub fn source_path(&self) -> &str {
+        &self.source_path
+    }
+
+    /// Returns stable Module identities implicated by the invalid authority.
+    #[must_use]
+    pub fn modules(&self) -> &[String] {
+        &self.modules
+    }
+
+    /// Returns the deterministic explanation.
+    #[must_use]
+    pub fn detail(&self) -> &str {
+        &self.detail
+    }
+}
+
+/// Canonical source ownership relation plus non-blinding governance diagnostics.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SourceOwnershipResolution {
+    ownerships: Vec<SourceOwnership>,
+    diagnostics: Vec<SourceOwnershipDiagnostic>,
+}
+
+impl SourceOwnershipResolution {
+    /// Returns resolved declared or analysis-only ownership facts.
+    #[must_use]
+    pub fn ownerships(&self) -> &[SourceOwnership] {
+        &self.ownerships
+    }
+
+    /// Returns invalid authored-binding facts without suppressing observation.
+    #[must_use]
+    pub fn diagnostics(&self) -> &[SourceOwnershipDiagnostic] {
+        &self.diagnostics
+    }
 }
 
 impl SourceOwnership {
@@ -132,6 +204,12 @@ impl SourceOwnership {
     #[must_use]
     pub const fn authority(&self) -> SourceOwnershipAuthority {
         self.authority
+    }
+
+    /// Returns the exact physical, logical, or mechanical resolution mechanism.
+    #[must_use]
+    pub const fn basis(&self) -> SourceOwnershipBasis {
+        self.basis
     }
 }
 
@@ -161,7 +239,7 @@ pub fn resolve_source_ownership<'a>(
     }) {
         if let Some(module) = modules
             .iter()
-            .filter(|module| contains_path(module.path(), path))
+            .filter(|module| module.contains_source(path))
             .max_by_key(|module| module.path().len())
         {
             ownerships.push(SourceOwnership {
@@ -169,6 +247,7 @@ pub fn resolve_source_ownership<'a>(
                 owner: module.id().into(),
                 territory_path: module.path().into(),
                 authority: SourceOwnershipAuthority::DeclaredModule,
+                basis: SourceOwnershipBasis::PhysicalModuleContainment,
             });
             continue;
         }
@@ -182,11 +261,114 @@ pub fn resolve_source_ownership<'a>(
                 owner: cargo_analysis_territory_identity(manifest),
                 territory_path: territory.clone(),
                 authority: SourceOwnershipAuthority::CargoAnalysisTerritory,
+                basis: SourceOwnershipBasis::CargoAnalysisTerritory,
             });
         }
     }
     ownerships.sort();
     ownerships
+}
+
+/// Resolves authored logical bindings before deterministic Cargo fallback.
+///
+/// The most-specific selector wins. Exact files outrank directories, longer
+/// directory prefixes outrank shorter prefixes, and equal-specificity claims by
+/// different Modules are invalid. Invalid claims never become authored
+/// ownership; the source retains mechanical Cargo ownership when available.
+#[must_use]
+pub fn resolve_source_ownership_with_logical_modules<'a>(
+    paths: impl IntoIterator<Item = &'a str>,
+    physical_modules: &[ModuleTerritory],
+    logical_modules: &[LogicalModuleDeclaration],
+    known_module_ids: &BTreeSet<String>,
+) -> SourceOwnershipResolution {
+    let mut paths = paths.into_iter().map(str::to_owned).collect::<Vec<_>>();
+    paths.sort();
+    paths.dedup();
+    let mechanical = resolve_source_ownership(paths.iter().map(String::as_str), physical_modules)
+        .into_iter()
+        .map(|ownership| (ownership.source_path.clone(), ownership))
+        .collect::<BTreeMap<_, _>>();
+    let mut diagnostics = logical_modules
+        .iter()
+        .filter(|declaration| !known_module_ids.contains(declaration.module()))
+        .map(|declaration| SourceOwnershipDiagnostic {
+            code: "LOGICAL_MODULE_UNKNOWN".into(),
+            source_path: declaration.contract().into(),
+            modules: vec![declaration.module().into()],
+            detail: format!(
+                "logical binding references unknown Module `{}`",
+                declaration.module()
+            ),
+        })
+        .collect::<Vec<_>>();
+    let mut ownerships = Vec::new();
+    for path in paths.iter().filter(|path| {
+        std::path::Path::new(path)
+            .extension()
+            .is_some_and(|extension| extension.eq_ignore_ascii_case("rs"))
+    }) {
+        let mut candidates = logical_modules
+            .iter()
+            .filter(|declaration| known_module_ids.contains(declaration.module()))
+            .flat_map(|declaration| {
+                declaration
+                    .bindings()
+                    .iter()
+                    .filter(|binding| binding.matches(path))
+                    .map(move |binding| (declaration, binding))
+            })
+            .collect::<Vec<_>>();
+        candidates.sort_by(|left, right| {
+            right
+                .1
+                .specificity()
+                .cmp(&left.1.specificity())
+                .then_with(|| left.0.module().cmp(right.0.module()))
+                .then_with(|| left.1.path().cmp(right.1.path()))
+        });
+        if let Some((_, strongest)) = candidates.first() {
+            let specificity = strongest.specificity();
+            let strongest = candidates
+                .iter()
+                .take_while(|(_, binding)| binding.specificity() == specificity)
+                .collect::<Vec<_>>();
+            let modules = strongest
+                .iter()
+                .map(|(declaration, _)| declaration.module().to_owned())
+                .collect::<BTreeSet<_>>();
+            if modules.len() == 1 {
+                let (declaration, binding) = strongest[0];
+                ownerships.push(SourceOwnership {
+                    source_path: path.clone(),
+                    owner: declaration.module().into(),
+                    territory_path: match binding.kind() {
+                        SourcePathBindingKind::File => parent_path(binding.path()),
+                        SourcePathBindingKind::Directory => binding.path().into(),
+                    },
+                    authority: SourceOwnershipAuthority::DeclaredModule,
+                    basis: SourceOwnershipBasis::LogicalPathBinding,
+                });
+                continue;
+            }
+            diagnostics.push(SourceOwnershipDiagnostic {
+                code: "LOGICAL_MODULE_BINDING_AMBIGUOUS".into(),
+                source_path: path.clone(),
+                modules: modules.into_iter().collect(),
+                detail: "equal-specificity authored bindings assign different Modules".into(),
+            });
+        }
+        if let Some(ownership) = mechanical.get(path) {
+            ownerships.push(ownership.clone());
+        }
+    }
+    ownerships.sort();
+    diagnostics.sort();
+    diagnostics.dedup();
+    SourceOwnershipResolution {
+        ownerships,
+        diagnostics,
+    }
 }
 
 pub(crate) fn cargo_analysis_territory_identity(manifest: &str) -> String {
@@ -214,6 +396,15 @@ impl ModuleTerritory {
     #[must_use]
     pub fn path(&self) -> &str {
         &self.path
+    }
+
+    fn contains_source(&self, source_path: &str) -> bool {
+        let code = if self.path.is_empty() {
+            "code".to_owned()
+        } else {
+            format!("{}/code", self.path)
+        };
+        contains_path(&code, source_path)
     }
 }
 

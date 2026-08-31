@@ -37,3 +37,7 @@ Registers the Git, GitHub, Cargo, and Fortress-derived physical surfaces current
 ### [`project_schema_v2.json`](../data/project_schema_v2.json)
 
 Defines the closed version-two operational project configuration after architectural intent moved to distributed Module contracts.
+
+### [`project_schema_v3.json`](../data/project_schema_v3.json)
+
+Defines operational observation policy plus a narrow stable-ID index for logical Module contract locations and deterministic source path bindings.

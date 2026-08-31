@@ -24,4 +24,4 @@ Compiles the canonical recursive Project Filing System, validates Standard-owned
 
 ### [`project.rs`](../code/project.rs)
 
-Loads the root operational project configuration and validates canonical observation exclusions.
+Loads the root project configuration and validates canonical observation exclusions plus relocation-transparent logical Module contract and source bindings.

@@ -32,6 +32,46 @@ fn reference_resolution_command_is_registered_with_stable_alias() {
     );
 }
 
+/// `T-MODULE-INSPECTION-CLI-001`
+/// Fortress classification: infrastructure
+#[test]
+fn module_inspection_reports_analysis_only_ownership_without_inventing_modules() {
+    let registry = CommandRegistry::builtin();
+    assert_eq!(
+        registry.find("modules").map(CommandDescriptor::id),
+        Some("CMD-MODULE-INSPECTION")
+    );
+    let fixture = ObservationFixture::new();
+    let result = run(&["modules", &fixture.argument(), "--format=json"]);
+    assert!(result.status.success());
+    let document: serde_json::Value = serde_json::from_slice(&result.stdout).unwrap();
+    assert_eq!(document["project_authority"], "ABSENT");
+    assert_eq!(document["modules"].as_array().map(Vec::len), Some(0));
+    assert!(
+        document["analysis_territories"]
+            .as_array()
+            .is_some_and(|territories| !territories.is_empty())
+    );
+}
+
+/// `T-MODULE-INSPECTION-CLI-002`
+/// Fortress classification: infrastructure
+#[test]
+fn module_inspection_preserves_invalid_governance_as_non_success() {
+    let fixture = ObservationFixture::new();
+    fs::create_dir_all(fixture.root.join("data")).expect("Data creates");
+    fs::write(fixture.root.join("data/project.json"), "{").expect("project corrupts");
+    let result = run(&["modules", &fixture.argument(), "--format=json"]);
+    assert_eq!(result.status.code(), Some(1));
+    let document: serde_json::Value = serde_json::from_slice(&result.stdout).unwrap();
+    assert_eq!(document["project_authority"], "INVALID");
+    assert!(
+        document["analysis_territories"]
+            .as_array()
+            .is_some_and(|territories| !territories.is_empty())
+    );
+}
+
 /// `T-TF-CLI-0001-R14-002`
 /// Fortress requirement: TF-CLI-0001-R14
 #[test]

@@ -6,7 +6,7 @@ Transform exact stabilized source bytes into implementation facts that Architect
 
 ## Execution
 
-Callers supply a snapshot fingerprint, exact file bytes with expected size and digest, and physical Module territories. The Rust analyzer validates bytes, parses Cargo and Rust syntax, resolves supported namespaces conservatively, records reference provenance, and collapses repeated governed references into one direct Module edge.
+Callers supply a snapshot fingerprint, exact file bytes with expected size and digest, and one canonically resolved ownership relation. Physical Module `code/` containment and authored logical path bindings produce declared ownership; unmatched source retains deterministic Cargo analysis ownership. The Rust analyzer consumes that relation without reinterpreting paths.
 
 ## State
 

@@ -614,7 +614,7 @@ fn proposed_artifacts(
     let contract = format!(
         "{{\n  \"$schema\": \"urn:fortress:schema:v2:module-contract\",\n  \"schema_version\": 2,\n  \"id\": {project_id},\n  \"display_name\": {display_name},\n  \"ecosystem\": {{\n    \"repository_grammar\": 1,\n    \"standard\": {{\n      \"id\": {standard_id},\n      \"edition\": {standard_edition}\n    }}\n  }},\n  \"provides\": [],\n  \"requires\": [],\n  \"relationships\": [],\n  \"constraints\": [],\n  \"guarantees\": [],\n  \"features\": [],\n  \"behavior\": []\n}}\n"
     );
-    let project = "{\n  \"$schema\": \"urn:fortress:schema:v2:project-configuration\",\n  \"schema_version\": 2,\n  \"observation_exclusions\": [\n    \".git\"\n  ]\n}\n".to_owned();
+    let project = "{\n  \"$schema\": \"urn:fortress:schema:v3:project-configuration\",\n  \"schema_version\": 3,\n  \"observation_exclusions\": [\n    \".git\"\n  ],\n  \"logical_modules\": []\n}\n".to_owned();
     let governance = FindingGovernanceDocument::empty()
         .to_canonical_json()
         .map_err(|error| BootstrapError::Serialization(error.to_string().into()))?;

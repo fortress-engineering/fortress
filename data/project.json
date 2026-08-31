@@ -1,7 +1,8 @@
 {
-  "$schema": "urn:fortress:schema:v2:project-configuration",
-  "schema_version": 2,
+  "$schema": "urn:fortress:schema:v3:project-configuration",
+  "schema_version": 3,
   "observation_exclusions": [
     ".git"
-  ]
+  ],
+  "logical_modules": []
 }

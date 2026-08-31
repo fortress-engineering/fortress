@@ -91,6 +91,17 @@
       "certification_implications": "Discovery produces no authority or certification evidence; explicit apply materializes only reviewed canonical authority, and optional baseline creation changes progressive enforcement without changing raw conformance."
     },
     {
+      "id": "CMD-MODULE-INSPECTION",
+      "name": "modules",
+      "aliases": [],
+      "description": "Inspect declared Module contracts, logical source bindings, and analysis-only ownership.",
+      "owner": "TF-CLI-0001",
+      "executor": "builtin-sync",
+      "duration": "short",
+      "resumability": "restartable",
+      "certification_implications": "Reports authored and mechanical ownership distinctly; it creates no Module intent or certification evidence."
+    },
+    {
       "id": "CMD-CONTRACT-CCG",
       "name": "ccg",
       "aliases": [],

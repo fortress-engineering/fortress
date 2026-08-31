@@ -6,13 +6,13 @@ The CLI exists to expose implemented Fortress operations through deterministic t
 
 ## Responsibility
 
-Own command registration, argument validation, process exit behavior, human rendering, and schema-versioned JSON rendering for version, help, raw repository audit, progressive finding checks, explicit baseline/exception mutation, semantic inspection, and exact-snapshot local certification.
+Own command registration, argument validation, process exit behavior, human rendering, and schema-versioned JSON rendering for version, help, raw repository audit, progressive finding checks, explicit baseline/exception mutation, Module ownership inspection, semantic inspection, and exact-snapshot local certification.
 
 ## Scope
 
 ### Includes
 
-The native process boundary, built-in command registry, CLI package and command declarations, supported audit, finding listing/checking, baseline create/prune, exception list/create/retire, semantic-analysis formats, local certification formats, and explicit failure behavior for malformed or unsupported input.
+The native process boundary, built-in command registry, CLI package and command declarations, supported audit, finding listing/checking, baseline create/prune, exception list/create/retire, declared/logical/analysis-only Module inspection, semantic-analysis formats, local certification formats, and explicit failure behavior for malformed or unsupported input.
 
 ### Excludes
 

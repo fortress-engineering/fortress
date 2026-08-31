@@ -66,6 +66,13 @@ const BUILTIN_COMMANDS: &[CommandDescriptor] = &[
         usage: "fortress init [path] [--project-id ID --display-name NAME] [--format json] [--output path] | fortress init apply [path] --proposal path [--baseline-current]",
     },
     CommandDescriptor {
+        id: "CMD-MODULE-INSPECTION",
+        name: "modules",
+        aliases: &[],
+        description: "Inspect declared Module contracts, logical source bindings, and analysis-only ownership.",
+        usage: "fortress modules [path] [--format human|json]",
+    },
+    CommandDescriptor {
         id: "CMD-CONTRACT-CCG",
         name: "ccg",
         aliases: &[],

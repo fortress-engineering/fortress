@@ -7,7 +7,9 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use fortress_core::audit::{
     audit_repository, compile_repository_environmental_analysis, compile_repository_psm,
     compile_repository_source_artifact_model, compile_repository_state_effect_analysis,
+    inspect_repository_modules,
 };
+use fortress_core::program_semantics::ExecutableSymbol;
 
 static NEXT_REPOSITORY: AtomicU64 = AtomicU64::new(0);
 
@@ -35,6 +37,96 @@ impl TestRepository {
         }
         fs::write(path, contents).expect("test file must be written");
     }
+}
+
+fn minimal_contract(id: &str, name: &str, root: bool) -> String {
+    let ecosystem = if root {
+        ",\n  \"ecosystem\": {\n    \"repository_grammar\": 1,\n    \"standard\": {\n      \"id\": \"STD-FORTRESS-ENGINEERING\",\n      \"edition\": \"1.0.0-draft.1\"\n    }\n  }"
+    } else {
+        ""
+    };
+    format!(
+        "{{\n  \"$schema\": \"urn:fortress:schema:v2:module-contract\",\n  \"schema_version\": 2,\n  \"id\": \"{id}\",\n  \"display_name\": \"{name}\"{ecosystem},\n  \"provides\": [],\n  \"requires\": [],\n  \"relationships\": [],\n  \"constraints\": [],\n  \"guarantees\": [],\n  \"features\": [],\n  \"behavior\": []\n}}\n"
+    )
+}
+
+/// `T-LOGICAL-MODULE-INTEGRATION-001`
+/// Fortress classification: infrastructure
+#[test]
+fn logical_contracts_and_native_paths_feed_one_semantic_ownership_relation() {
+    let repository = TestRepository::new("logical-module");
+    repository.write(
+        "Cargo.toml",
+        "[package]\nname='native'\nversion='0.1.0'\nedition='2021'\n[lib]\npath='src/lib.rs'\n",
+    );
+    repository.write(
+        "contract.json",
+        &minimal_contract("PF-FIXTURE", "Fixture", true),
+    );
+    repository.write(
+        "data/project.json",
+        "{\n  \"$schema\": \"urn:fortress:schema:v3:project-configuration\",\n  \"schema_version\": 3,\n  \"observation_exclusions\": [\n    \".git\"\n  ],\n  \"logical_modules\": [\n    {\n      \"module\": \"AF-API-0001\",\n      \"contract\": \"data/logical_modules/api/contract.json\",\n      \"parent\": \"PF-FIXTURE\",\n      \"bindings\": [\n        {\n          \"kind\": \"directory\",\n          \"path\": \"src/api\"\n        }\n      ]\n    },\n    {\n      \"module\": \"AF-CORE-0001\",\n      \"contract\": \"data/logical_modules/core/contract.json\",\n      \"parent\": \"PF-FIXTURE\",\n      \"bindings\": [\n        {\n          \"kind\": \"directory\",\n          \"path\": \"src/core\"\n        }\n      ]\n    }\n  ]\n}\n",
+    );
+    repository.write(
+        "data/logical_modules/api/contract.json",
+        &minimal_contract("AF-API-0001", "API", false),
+    );
+    repository.write(
+        "data/logical_modules/core/contract.json",
+        &minimal_contract("AF-CORE-0001", "Core", false),
+    );
+    repository.write(
+        "src/lib.rs",
+        "pub mod api;\npub mod core;\npub mod utility;\n",
+    );
+    repository.write("src/api/mod.rs", "pub fn submit() {}\n");
+    repository.write("src/core/mod.rs", "pub fn calculate() {}\n");
+    repository.write("src/utility.rs", "pub fn utility() {}\n");
+
+    let inspection = inspect_repository_modules(repository.path()).expect("Modules inspect");
+    assert_eq!(inspection.modules().len(), 3);
+    assert_eq!(
+        inspection
+            .modules()
+            .iter()
+            .find(|module| module.module() == "AF-API-0001")
+            .expect("API Module")
+            .observed_sources(),
+        1
+    );
+    assert_eq!(inspection.analysis_territories().len(), 1);
+    assert_eq!(inspection.analysis_territories()[0].observed_sources(), 2);
+
+    let psm = compile_repository_psm(repository.path()).expect("logical PSM compiles");
+    let owners = psm
+        .symbols()
+        .iter()
+        .map(ExecutableSymbol::fortress_module)
+        .collect::<std::collections::BTreeSet<_>>();
+    assert!(owners.contains("AF-API-0001"));
+    assert!(owners.contains("AF-CORE-0001"));
+    assert!(
+        owners
+            .iter()
+            .any(|owner| owner.starts_with("SRC-ANALYSIS-CARGO-"))
+    );
+
+    let source = compile_repository_source_artifact_model(repository.path())
+        .expect("logical Source Artifact Model compiles");
+    let document: serde_json::Value = serde_json::from_str(
+        &source
+            .to_canonical_json()
+            .expect("Source Artifact Model serializes"),
+    )
+    .expect("Source Artifact Model parses");
+    assert!(document["artifacts"].as_array().is_some_and(|artifacts| {
+        artifacts
+            .iter()
+            .any(|artifact| artifact["module_id"] == "AF-API-0001")
+            && artifacts
+                .iter()
+                .any(|artifact| artifact["module_id"] == "AF-CORE-0001")
+    }));
 }
 
 impl Drop for TestRepository {

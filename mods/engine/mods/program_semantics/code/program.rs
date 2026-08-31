@@ -2056,7 +2056,12 @@ pub fn compile_program_semantic_model(
         provenance: ProgramModelProvenance {
             identity_kind: "snapshot_bound_semantic_input_subset".into(),
             semantic_inputs: facts.source_inputs,
-            ownership_authority: if input.observation().ownerships().iter().all(|ownership| {
+            ownership_authority: if input.observation().ownerships().iter().any(|ownership| {
+                ownership.basis()
+                    == crate::implementation_observation::SourceOwnershipBasis::LogicalPathBinding
+            }) {
+                "declared_logical_bindings_and_observation_territories".into()
+            } else if input.observation().ownerships().iter().all(|ownership| {
                 ownership.authority()
                     == crate::implementation_observation::SourceOwnershipAuthority::DeclaredModule
             }) {

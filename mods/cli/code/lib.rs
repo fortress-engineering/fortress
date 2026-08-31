@@ -19,7 +19,8 @@ use fortress_core::audit::{
     compile_repository_information_flow_analysis, compile_repository_psm,
     compile_repository_realized_bfg, compile_repository_reference_resolution,
     compile_repository_semantic_analysis, compile_repository_source_artifact_model,
-    compile_repository_state_effect_analysis, prepare_repository_certification_source,
+    compile_repository_state_effect_analysis, inspect_repository_modules,
+    prepare_repository_certification_source,
 };
 use fortress_core::bootstrap::{
     BootstrapDiscoveryOptions, BootstrapProposal, apply_repository_bootstrap,
@@ -78,6 +79,7 @@ where
         "CMD-FINDING-BASELINE" => run_baseline(&arguments[1..], output, error),
         "CMD-FINDING-EXCEPTION" => run_exceptions(&arguments[1..], output, error),
         "CMD-REPOSITORY-INIT" => run_init(&arguments[1..], output, error),
+        "CMD-MODULE-INSPECTION" => run_modules(&arguments[1..], output, error),
         "CMD-CONTRACT-CCG" => run_ccg(&arguments[1..], output, error),
         "CMD-BEHAVIOR-BFG" => run_bfg(&arguments[1..], output, error),
         "CMD-BEHAVIOR-REALIZED-BFG" => run_realized_bfg(&arguments[1..], output, error),
@@ -98,6 +100,104 @@ where
             Ok(EXIT_USAGE)
         }
     }
+}
+
+fn run_modules<O: Write, E: Write>(
+    arguments: &[String],
+    output: &mut O,
+    error: &mut E,
+) -> io::Result<u8> {
+    const USAGE: &str = "usage: fortress modules [path] [--format human|json]";
+    let mut root = None;
+    let mut json = false;
+    let mut index = 0;
+    while index < arguments.len() {
+        match arguments[index].as_str() {
+            "--format" => {
+                index += 1;
+                match arguments.get(index).map(String::as_str) {
+                    Some("json") => json = true,
+                    Some("human") => json = false,
+                    _ => {
+                        writeln!(error, "{USAGE}")?;
+                        return Ok(EXIT_USAGE);
+                    }
+                }
+            }
+            value if value.starts_with("--format=") => match value.strip_prefix("--format=") {
+                Some("json") => json = true,
+                Some("human") => json = false,
+                _ => {
+                    writeln!(error, "{USAGE}")?;
+                    return Ok(EXIT_USAGE);
+                }
+            },
+            value if !value.starts_with('-') && root.is_none() => {
+                root = Some(PathBuf::from(value));
+            }
+            _ => {
+                writeln!(error, "{USAGE}")?;
+                return Ok(EXIT_USAGE);
+            }
+        }
+        index += 1;
+    }
+    let inspection = match inspect_repository_modules(root.unwrap_or_else(|| PathBuf::from("."))) {
+        Ok(value) => value,
+        Err(inspection_error) => {
+            writeln!(error, "Module inspection failed: {inspection_error}")?;
+            return Ok(EXIT_VIOLATION);
+        }
+    };
+    if json {
+        write!(
+            output,
+            "{}",
+            inspection.to_canonical_json().map_err(io::Error::other)?
+        )?;
+    } else {
+        writeln!(output, "Declared Modules: {}", inspection.modules().len())?;
+        for module in inspection.modules() {
+            writeln!(
+                output,
+                "  {} [{}] contract={} bindings={} sources={}",
+                module.module(),
+                module.authority(),
+                module.contract(),
+                module.bindings().len(),
+                module.observed_sources()
+            )?;
+        }
+        writeln!(
+            output,
+            "Unmapped analysis territories: {}",
+            inspection.analysis_territories().len()
+        )?;
+        for territory in inspection.analysis_territories() {
+            writeln!(
+                output,
+                "  {} path={} sources={}",
+                territory.territory(),
+                territory.path(),
+                territory.observed_sources()
+            )?;
+        }
+        for diagnostic in inspection.ownership_diagnostics() {
+            writeln!(
+                output,
+                "  INVALID {} path={} modules={} {}",
+                diagnostic.code(),
+                diagnostic.source_path(),
+                diagnostic.modules().join(","),
+                diagnostic.detail()
+            )?;
+        }
+    }
+    Ok(if inspection.is_valid() {
+        EXIT_SUCCESS
+    } else {
+        EXIT_VIOLATION
+    })
 }
 
 fn run_init<O: Write, E: Write>(

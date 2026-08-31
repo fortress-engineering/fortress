@@ -32,6 +32,12 @@ Executes as a separate Rust test crate through the Engine package facade while p
 
 Invokes the parent analyzer and verifies its exact local Feature without introducing product behavior of its own.
 
+### [Project Model](../../../project_model/README.md)
+
+**Types:** `depends_on`
+
+Builds validated logical-binding fixtures through the same project authority consumed by the production resolver.
+
 ## Guarantees
 
 Verification inputs are content-addressed in memory, results are asserted in canonical order, and no test claims architectural conformance merely because a source relationship was observed.

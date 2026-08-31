@@ -24,7 +24,7 @@ Behavioral checkpoint realization, capability-to-symbol mapping, Function Contra
 
 **Types:** `depends_on`
 
-Supplies canonical Module identities, containment, and verification topology when authored project authority exists. Program Semantics otherwise retains analysis-only Cargo ownership without importing it into the CCG.
+Supplies canonical Module identities, containment, logical source bindings, and verification topology when authored project authority exists. Program Semantics consumes the resolved ownership relation and otherwise retains analysis-only Cargo ownership without importing it into the CCG.
 
 ### [Implementation Observation](../implementation_observation/README.md)
 
