@@ -110,7 +110,8 @@
         "AF-SNAPSHOT-GOVERNANCE-0001-R01",
         "AF-SNAPSHOT-GOVERNANCE-0001-R02",
         "AF-SNAPSHOT-GOVERNANCE-0001-R03",
-        "AF-SNAPSHOT-GOVERNANCE-0001-R15"
+        "AF-SNAPSHOT-GOVERNANCE-0001-R15",
+        "AF-SNAPSHOT-GOVERNANCE-0001-R16"
       ]
     }
   ],
@@ -251,6 +252,17 @@
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R15-003",
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R15-004",
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R15-005"
+          ]
+        },
+        {
+          "id": "AF-SNAPSHOT-GOVERNANCE-0001-R16",
+          "statement": "Repository bootstrap observes without mutation, emits a deterministic exact-source-bound proposal that separates mechanical facts from explicit owner choices, transactionally materializes only reviewed minimal authority, and optionally delegates one-time legacy residue capture to canonical finding governance without changing raw conformance.",
+          "tests": [
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R16-001",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R16-002",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R16-003",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R16-004",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R16-005"
           ]
         }
       ]

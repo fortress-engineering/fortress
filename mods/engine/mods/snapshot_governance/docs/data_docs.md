@@ -22,6 +22,10 @@ Maintainers update Data through reviewed semantic changes; schema versions chang
 
 ## Files
 
+### [`bootstrap_proposal_schema_v1.json`](../data/bootstrap_proposal_schema_v1.json)
+
+Defines the deterministic non-authoritative discovery proposal that separates observed repository/Cargo facts, reviewed authored content, unresolved owner choices, exact source identity, and deferred governed legacy-residue evaluation.
+
 ### [`environment_contracts.json`](../data/environment_contracts.json)
 
 Declares the live filesystem document-read boundary and its truthful success/failure outcome space for shared environmental handling analysis.

@@ -59,6 +59,13 @@ const BUILTIN_COMMANDS: &[CommandDescriptor] = &[
         usage: "fortress exceptions list [path] | create <id> <finding-id> --authority <ref> --rationale <text> [path] | retire <id> [path]",
     },
     CommandDescriptor {
+        id: "CMD-REPOSITORY-INIT",
+        name: "init",
+        aliases: &[],
+        description: "Discover and explicitly apply snapshot-bound minimal repository governance.",
+        usage: "fortress init [path] [--project-id ID --display-name NAME] [--format json] [--output path] | fortress init apply [path] --proposal path [--baseline-current]",
+    },
+    CommandDescriptor {
         id: "CMD-CONTRACT-CCG",
         name: "ccg",
         aliases: &[],

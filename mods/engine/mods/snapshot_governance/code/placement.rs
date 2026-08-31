@@ -7,6 +7,7 @@ use crate::finding::{
     CanonicalFinding, EvaluatorProvenance, FindingCategory, FindingError, FindingLocation,
     FindingOccurrence, RuleFindingDefinition,
 };
+use sha2::{Digest, Sha256};
 
 /// Stable identity of the recursive Fortress Module and Element grammar.
 pub const REPO_MODULE_RULE_ID: &str = "REPO-MODULE-001";
@@ -64,13 +65,24 @@ pub fn findings_from_model(
     )?;
     let mut findings = Vec::new();
     for violation in model.violations() {
+        let discriminator_material = format!(
+            "{}:{}:{}",
+            violation.kind().as_str(),
+            violation.element(),
+            violation.expected()
+        );
         findings.push(CanonicalFinding::failure(
             definition.clone(),
             FindingOccurrence::new(
                 Vec::new(),
                 FindingLocation::at_path(violation.path())?,
                 violation.message(),
-            )?,
+            )?
+            .with_discriminator(format!(
+                "{}:{:x}",
+                violation.kind().as_str(),
+                Sha256::digest(discriminator_material.as_bytes())
+            ))?,
             evaluator.clone(),
             standard_edition,
         )?);

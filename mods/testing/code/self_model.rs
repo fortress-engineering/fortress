@@ -156,7 +156,7 @@ fn live_contract_v2_ecosystem_resolves_completely() {
     assert_eq!(resolved.modules().len(), 40);
     assert_eq!(resolved.capabilities().len(), 20);
     assert_eq!(resolved.features().len(), 20);
-    assert_eq!(resolved.requirements().len(), 92);
+    assert_eq!(resolved.requirements().len(), 94);
     assert_eq!(resolved.guarantees().len(), 9);
     assert_eq!(resolved.checkpoints().len(), 10);
     assert_eq!(resolved.direct_requirements().len(), 143);

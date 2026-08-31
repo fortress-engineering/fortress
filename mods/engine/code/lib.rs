@@ -18,6 +18,8 @@ pub mod audit;
 pub mod behavioral_realization;
 #[path = "../mods/behavioral_semantics/code/behavior.rs"]
 pub mod behavioral_semantics;
+#[path = "../mods/snapshot_governance/code/bootstrap.rs"]
+pub mod bootstrap;
 #[path = "../mods/certification/code/certification.rs"]
 pub mod certification;
 #[path = "../mods/snapshot_governance/code/contract.rs"]

@@ -150,14 +150,16 @@ fn baseline_is_explicit_monotonic_and_detects_reintroduction() {
         1,
     );
     let mut authority = FindingGovernanceDocument::empty();
+    let duplicate_observations = [legacy.clone(), legacy.clone()];
     let created = authority
         .create_baseline(
             "STD-FORTRESS-ENGINEERING",
             "1.0.0-draft.1",
-            std::slice::from_ref(&legacy),
+            &duplicate_observations,
         )
         .unwrap();
     assert_eq!(created.active, 1);
+    assert_eq!(created.ineligible, 0);
     assert!(
         authority
             .create_baseline("STD-FORTRESS-ENGINEERING", "1.0.0-draft.1", &[])

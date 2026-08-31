@@ -3,7 +3,7 @@
   "schema_version": 1,
   "resolver_semantic_version": "1.0.0",
   "project_id": "PF-FORTRESS",
-  "source_ccg_digest": "sha256:e22ba70ec7e51bf4aec8ae6dfbec831e2403aad430d85e7d9283f5295cf1f396",
+  "source_ccg_digest": "sha256:ae93bc364b0cc8c10e490588614bc83cb745e69b0b78548b9eba5768802bef72",
   "modules": [
     {
       "module_id": "AF-ARCHITECTURE-EVALUATION-0001",
@@ -1363,6 +1363,14 @@
       "source_module": "AF-SNAPSHOT-GOVERNANCE-0001",
       "target_module": "AF-SNAPSHOT-GOVERNANCE-0001",
       "authority": "repository-relative-local",
+      "projection": "../code/bootstrap.rs",
+      "provenance": "mods/engine/mods/snapshot_governance/docs/code_docs.md"
+    },
+    {
+      "class": "LOCAL",
+      "source_module": "AF-SNAPSHOT-GOVERNANCE-0001",
+      "target_module": "AF-SNAPSHOT-GOVERNANCE-0001",
+      "authority": "repository-relative-local",
       "projection": "../code/contract.rs",
       "provenance": "mods/engine/mods/snapshot_governance/docs/code_docs.md"
     },
@@ -1437,6 +1445,14 @@
       "authority": "repository-relative-local",
       "projection": "../code/traceability.rs",
       "provenance": "mods/engine/mods/snapshot_governance/docs/code_docs.md"
+    },
+    {
+      "class": "LOCAL",
+      "source_module": "AF-SNAPSHOT-GOVERNANCE-0001",
+      "target_module": "AF-SNAPSHOT-GOVERNANCE-0001",
+      "authority": "repository-relative-local",
+      "projection": "../data/bootstrap_proposal_schema_v1.json",
+      "provenance": "mods/engine/mods/snapshot_governance/docs/data_docs.md"
     },
     {
       "class": "LOCAL",
@@ -1525,6 +1541,14 @@
       "authority": "rust-crate-module",
       "projection": null,
       "provenance": "mods/engine/mods/snapshot_governance/code/audit.rs"
+    },
+    {
+      "class": "LOCAL",
+      "source_module": "AF-SNAPSHOT-GOVERNANCE-0001",
+      "target_module": "AF-SNAPSHOT-GOVERNANCE-0001",
+      "authority": "rust-crate-module",
+      "projection": null,
+      "provenance": "mods/engine/mods/snapshot_governance/code/bootstrap.rs"
     },
     {
       "class": "LOCAL",
@@ -2308,6 +2332,14 @@
       "target_module": "TEST-SNAPSHOT-GOVERNANCE-0001",
       "authority": "repository-relative-local",
       "projection": "../code/repo_module_001.rs",
+      "provenance": "mods/engine/mods/snapshot_governance/mods/testing/docs/code_docs.md"
+    },
+    {
+      "class": "LOCAL",
+      "source_module": "TEST-SNAPSHOT-GOVERNANCE-0001",
+      "target_module": "TEST-SNAPSHOT-GOVERNANCE-0001",
+      "authority": "repository-relative-local",
+      "projection": "../code/repository_bootstrap.rs",
       "provenance": "mods/engine/mods/snapshot_governance/mods/testing/docs/code_docs.md"
     },
     {
@@ -6100,6 +6132,14 @@
       "target_module": null,
       "authority": "serde",
       "projection": null,
+      "provenance": "mods/engine/mods/snapshot_governance/code/bootstrap.rs"
+    },
+    {
+      "class": "EXTERNAL",
+      "source_module": "AF-SNAPSHOT-GOVERNANCE-0001",
+      "target_module": null,
+      "authority": "serde",
+      "projection": null,
       "provenance": "mods/engine/mods/snapshot_governance/code/documentation.rs"
     },
     {
@@ -6148,7 +6188,23 @@
       "target_module": null,
       "authority": "sha2",
       "projection": null,
+      "provenance": "mods/engine/mods/snapshot_governance/code/bootstrap.rs"
+    },
+    {
+      "class": "EXTERNAL",
+      "source_module": "AF-SNAPSHOT-GOVERNANCE-0001",
+      "target_module": null,
+      "authority": "sha2",
+      "projection": null,
       "provenance": "mods/engine/mods/snapshot_governance/code/documentation.rs"
+    },
+    {
+      "class": "EXTERNAL",
+      "source_module": "AF-SNAPSHOT-GOVERNANCE-0001",
+      "target_module": null,
+      "authority": "sha2",
+      "projection": null,
+      "provenance": "mods/engine/mods/snapshot_governance/code/placement.rs"
     },
     {
       "class": "EXTERNAL",
@@ -6173,6 +6229,14 @@
       "authority": "std",
       "projection": null,
       "provenance": "mods/engine/mods/snapshot_governance/code/audit.rs"
+    },
+    {
+      "class": "EXTERNAL",
+      "source_module": "AF-SNAPSHOT-GOVERNANCE-0001",
+      "target_module": null,
+      "authority": "std",
+      "projection": null,
+      "provenance": "mods/engine/mods/snapshot_governance/code/bootstrap.rs"
     },
     {
       "class": "EXTERNAL",
@@ -6812,6 +6876,14 @@
       "target_module": null,
       "authority": "std",
       "projection": null,
+      "provenance": "mods/engine/mods/snapshot_governance/mods/testing/code/repository_bootstrap.rs"
+    },
+    {
+      "class": "EXTERNAL",
+      "source_module": "TEST-SNAPSHOT-GOVERNANCE-0001",
+      "target_module": null,
+      "authority": "std",
+      "projection": null,
       "provenance": "mods/engine/mods/snapshot_governance/mods/testing/code/repository_grammar.rs"
     },
     {
@@ -6893,6 +6965,14 @@
       "authority": "fortress-core",
       "projection": null,
       "provenance": "mods/engine/mods/snapshot_governance/mods/testing/code/repo_module_001.rs"
+    },
+    {
+      "class": "EXTERNAL",
+      "source_module": "TEST-SNAPSHOT-GOVERNANCE-0001",
+      "target_module": "AF-CORE-0001",
+      "authority": "fortress-core",
+      "projection": null,
+      "provenance": "mods/engine/mods/snapshot_governance/mods/testing/code/repository_bootstrap.rs"
     },
     {
       "class": "EXTERNAL",
@@ -7356,8 +7436,8 @@
       "path": "mods/engine/data/Cargo.toml",
       "pointer": "test[29].path",
       "source_module": "AF-CORE-0001",
-      "target_module": "TEST-SOURCE-ARCHITECTURE-0001",
-      "resolved_target": "mods/engine/mods/source_architecture/mods/testing/code/source_architecture.rs"
+      "target_module": "TEST-SNAPSHOT-GOVERNANCE-0001",
+      "resolved_target": "mods/engine/mods/snapshot_governance/mods/testing/code/repository_bootstrap.rs"
     },
     {
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
@@ -7374,6 +7454,15 @@
       "path": "mods/engine/data/Cargo.toml",
       "pointer": "test[30].path",
       "source_module": "AF-CORE-0001",
+      "target_module": "TEST-SOURCE-ARCHITECTURE-0001",
+      "resolved_target": "mods/engine/mods/source_architecture/mods/testing/code/source_architecture.rs"
+    },
+    {
+      "class": "AUTHORED_RESOLUTION_BOUNDARY",
+      "format": "cargo",
+      "path": "mods/engine/data/Cargo.toml",
+      "pointer": "test[31].path",
+      "source_module": "AF-CORE-0001",
       "target_module": "TEST-STANDARD-REGISTRY-0001",
       "resolved_target": "mods/engine/mods/standard_registry/mods/testing/code/std_id_001.rs"
     },
@@ -7381,7 +7470,7 @@
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
       "format": "cargo",
       "path": "mods/engine/data/Cargo.toml",
-      "pointer": "test[31].path",
+      "pointer": "test[32].path",
       "source_module": "AF-CORE-0001",
       "target_module": "TEST-SNAPSHOT-GOVERNANCE-0001",
       "resolved_target": "mods/engine/mods/snapshot_governance/mods/testing/code/test_traceability_001.rs"
@@ -7390,7 +7479,7 @@
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
       "format": "cargo",
       "path": "mods/engine/data/Cargo.toml",
-      "pointer": "test[32].path",
+      "pointer": "test[33].path",
       "source_module": "AF-CORE-0001",
       "target_module": "TEST-SNAPSHOT-GOVERNANCE-0001",
       "resolved_target": "mods/engine/mods/snapshot_governance/mods/testing/code/test_boundary_001.rs"
@@ -7628,6 +7717,15 @@
       "source_module": "AF-CORE-0001",
       "target_module": "AF-SNAPSHOT-GOVERNANCE-0001",
       "resolved_target": "mods/engine/mods/snapshot_governance/code/audit.rs"
+    },
+    {
+      "class": "AUTHORED_RESOLUTION_BOUNDARY",
+      "format": "rust-module",
+      "path": "mods/engine/code/lib.rs",
+      "pointer": "../mods/snapshot_governance/code/bootstrap.rs",
+      "source_module": "AF-CORE-0001",
+      "target_module": "AF-SNAPSHOT-GOVERNANCE-0001",
+      "resolved_target": "mods/engine/mods/snapshot_governance/code/bootstrap.rs"
     },
     {
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
@@ -9910,10 +10008,10 @@
   "summary": {
     "modules": 40,
     "semantic_references": 162,
-    "local_references": 272,
+    "local_references": 276,
     "physical_projections": 183,
-    "external_references": 211,
-    "authored_resolution_boundaries": 131,
+    "external_references": 217,
+    "authored_resolution_boundaries": 133,
     "generated_projections": 183,
     "findings": 0
   }

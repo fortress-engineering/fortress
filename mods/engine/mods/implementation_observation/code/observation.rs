@@ -8,6 +8,7 @@
 mod rust;
 
 pub use rust::observe_rust_implementation;
+pub use rust::{CargoAnalysisTerritoryObservation, observe_cargo_analysis_territories};
 
 use std::cmp::Ordering;
 use std::collections::BTreeMap;
@@ -176,10 +177,9 @@ pub fn resolve_source_ownership<'a>(
             .filter(|(_, territory)| contains_path(territory, path))
             .max_by_key(|(_, territory)| territory.len())
         {
-            let digest = format!("{:X}", Sha256::digest(manifest.as_bytes()));
             ownerships.push(SourceOwnership {
                 source_path: path.clone(),
-                owner: format!("SRC-ANALYSIS-CARGO-{}", &digest[..16]),
+                owner: cargo_analysis_territory_identity(manifest),
                 territory_path: territory.clone(),
                 authority: SourceOwnershipAuthority::CargoAnalysisTerritory,
             });
@@ -187,6 +187,11 @@ pub fn resolve_source_ownership<'a>(
     }
     ownerships.sort();
     ownerships
+}
+
+pub(crate) fn cargo_analysis_territory_identity(manifest: &str) -> String {
+    let digest = format!("{:X}", Sha256::digest(manifest.as_bytes()));
+    format!("SRC-ANALYSIS-CARGO-{}", &digest[..16])
 }
 
 impl ModuleTerritory {

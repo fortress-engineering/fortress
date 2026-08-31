@@ -85,6 +85,12 @@ impl FindingGovernanceDocument {
         if self.baseline.is_some() {
             return Err(FindingGovernanceError::BaselineAlreadyExists);
         }
+        let ineligible = findings
+            .iter()
+            .filter(|finding| {
+                finding.identity_eligibility() == FindingIdentityEligibility::BaselineIneligible
+            })
+            .count();
         let mut active_entries = findings
             .iter()
             .filter(|finding| {
@@ -94,7 +100,6 @@ impl FindingGovernanceDocument {
             .collect::<Vec<_>>();
         active_entries.sort();
         active_entries.dedup_by(|left, right| left.finding_id == right.finding_id);
-        let ineligible = findings.len() - active_entries.len();
         self.baseline = Some(FindingBaseline {
             standard_id: standard_id.into(),
             standard_edition: standard_edition.into(),
@@ -570,9 +575,11 @@ pub fn evaluate_finding_governance(
         if let Some(existing) = current.insert(finding.finding_id(), finding)
             && existing != finding
         {
-            return Err(FindingGovernanceError::FindingIdentityCollision(
-                finding.finding_id().into(),
-            ));
+            return Err(FindingGovernanceError::FindingIdentityCollision {
+                id: finding.finding_id().into(),
+                existing: format!("{}: {}", existing.rule_id(), existing.message()).into(),
+                incoming: format!("{}: {}", finding.rule_id(), finding.message()).into(),
+            });
         }
     }
     let baseline = authority.and_then(FindingGovernanceDocument::baseline);
@@ -779,7 +786,14 @@ pub enum FindingGovernanceError {
     /// Authored rule metadata disagreed with its stable finding target.
     AuthorityTargetMismatch(Box<str>),
     /// A stable finding ID referred to conflicting semantic findings.
-    FindingIdentityCollision(Box<str>),
+    FindingIdentityCollision {
+        /// Colliding stable finding identity.
+        id: Box<str>,
+        /// First semantic violation using the identity.
+        existing: Box<str>,
+        /// Conflicting semantic violation using the identity.
+        incoming: Box<str>,
+    },
     /// Baseline already exists and cannot be silently overwritten.
     BaselineAlreadyExists,
     /// Prune was requested without a baseline.
@@ -838,9 +852,13 @@ impl Display for FindingGovernanceError {
                 formatter,
                 "finding governance metadata disagrees with target `{value}`"
             ),
-            Self::FindingIdentityCollision(value) => write!(
+            Self::FindingIdentityCollision {
+                id,
+                existing,
+                incoming,
+            } => write!(
                 formatter,
-                "stable finding ID `{value}` identifies disagreeing violations"
+                "stable finding ID `{id}` identifies disagreeing violations: `{existing}` versus `{incoming}`"
             ),
             Self::BaselineAlreadyExists => write!(
                 formatter,

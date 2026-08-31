@@ -157,6 +157,15 @@
             "T-TF-CLI-0001-R15-002",
             "T-TF-CLI-0001-R15-003"
           ]
+        },
+        {
+          "id": "TF-CLI-0001-R16",
+          "statement": "The native fortress init command performs read-only deterministic discovery, requires explicit owner identity for a ready proposal, refuses in-repository proposal output or governance overwrite, and applies reviewed snapshot-bound authority with optional explicit initial baseline creation.",
+          "tests": [
+            "T-TF-CLI-0001-R16-001",
+            "T-TF-CLI-0001-R16-002",
+            "T-TF-CLI-0001-R16-003"
+          ]
         }
       ]
     }

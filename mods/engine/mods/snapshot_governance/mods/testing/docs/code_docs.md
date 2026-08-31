@@ -46,6 +46,10 @@ Executes valid, invalid, and boundary recursive Module grammar fixtures.
 
 Verifies self-snapshot repeatability and binding to every declared draft rule.
 
+### [`repository_bootstrap.rs`](../code/repository_bootstrap.rs)
+
+Verifies read-only deterministic discovery, explicit owner-choice separation, proposal digest and staleness enforcement, transactional minimal authority application, source/Cargo preservation, and truthful zero-new-red baseline behavior.
+
 ### [`repository_grammar.rs`](../code/repository_grammar.rs)
 
 Checks Fortress's physical repository and canonical documentation at the Snapshot Governance boundary that implements those rules.

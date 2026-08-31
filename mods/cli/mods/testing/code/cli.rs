@@ -71,6 +71,87 @@ fn finding_governance_commands_are_stably_registered() {
     );
 }
 
+/// `T-TF-CLI-0001-R16-001`
+/// Fortress requirement: TF-CLI-0001-R16
+#[test]
+fn initialization_command_is_registered_and_discovery_is_read_only() {
+    let registry = CommandRegistry::builtin();
+    assert_eq!(
+        registry.find("init").map(CommandDescriptor::id),
+        Some("CMD-REPOSITORY-INIT")
+    );
+    let fixture = ObservationFixture::new();
+    let before = fs::read(fixture.root.join("Cargo.toml")).unwrap();
+    let output = run(&["init", &fixture.argument(), "--format=json"]);
+    assert!(output.status.success());
+    let proposal: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(proposal["state"], "PROPOSED");
+    assert_eq!(proposal["proposed_authority"]["state"], "UNRESOLVED");
+    assert_eq!(fs::read(fixture.root.join("Cargo.toml")).unwrap(), before);
+    assert!(!fixture.root.join("data/project.json").exists());
+}
+
+/// `T-TF-CLI-0001-R16-002`
+/// Fortress requirement: TF-CLI-0001-R16
+#[test]
+fn initialization_apply_requires_reviewed_proposal_and_preserves_source() {
+    let fixture = ObservationFixture::new();
+    let proposal_path = fixture.root.with_extension(format!(
+        "proposal-{}-{}.json",
+        std::process::id(),
+        NEXT_FIXTURE.fetch_add(1, Ordering::Relaxed)
+    ));
+    let source_before = fs::read(fixture.root.join("src/lib.rs")).unwrap();
+    let discovery = run_owned(&[
+        "init".into(),
+        fixture.argument(),
+        "--project-id".into(),
+        "PF-CLI-ADOPTION".into(),
+        "--display-name".into(),
+        "CLI Adoption".into(),
+        "--output".into(),
+        proposal_path.to_string_lossy().into_owned(),
+    ]);
+    assert!(discovery.status.success());
+    let apply = run_owned(&[
+        "init".into(),
+        "apply".into(),
+        fixture.argument(),
+        "--proposal".into(),
+        proposal_path.to_string_lossy().into_owned(),
+        "--baseline-current".into(),
+    ]);
+    assert!(
+        apply.status.success(),
+        "{}",
+        String::from_utf8_lossy(&apply.stderr)
+    );
+    let result: serde_json::Value = serde_json::from_slice(&apply.stdout).unwrap();
+    assert_eq!(result["baseline_created"], true);
+    assert_eq!(result["strict_conformance"], "FAIL");
+    assert_eq!(result["progressive_enforcement"], "PASS");
+    assert_eq!(
+        fs::read(fixture.root.join("src/lib.rs")).unwrap(),
+        source_before
+    );
+    fs::remove_file(proposal_path).expect("external proposal removes");
+}
+
+/// `T-TF-CLI-0001-R16-003`
+/// Fortress requirement: TF-CLI-0001-R16
+#[test]
+fn initialization_rejects_proposal_output_inside_subject() {
+    let fixture = ObservationFixture::new();
+    let output = run(&[
+        "init",
+        &fixture.argument(),
+        "--output",
+        &fixture.root.join("proposal.json").to_string_lossy(),
+    ]);
+    assert_eq!(output.status.code(), Some(i32::from(EXIT_USAGE)));
+    assert!(!fixture.root.join("proposal.json").exists());
+}
+
 /// `T-TF-CLI-0001-R15-002`
 /// Fortress requirement: TF-CLI-0001-R15
 #[test]

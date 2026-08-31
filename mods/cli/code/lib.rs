@@ -21,6 +21,10 @@ use fortress_core::audit::{
     compile_repository_semantic_analysis, compile_repository_source_artifact_model,
     compile_repository_state_effect_analysis, prepare_repository_certification_source,
 };
+use fortress_core::bootstrap::{
+    BootstrapDiscoveryOptions, BootstrapProposal, apply_repository_bootstrap,
+    discover_repository_bootstrap,
+};
 use fortress_core::certification::{CertificationStatus, RustSuiteExecution};
 use fortress_core::contract_coherency::CcgCoherencyStatus;
 use fortress_core::finding_governance::{FINDING_GOVERNANCE_PATH, FindingGovernanceDocument};
@@ -73,6 +77,7 @@ where
         "CMD-FINDING-LIST" => run_findings(&arguments[1..], output, error),
         "CMD-FINDING-BASELINE" => run_baseline(&arguments[1..], output, error),
         "CMD-FINDING-EXCEPTION" => run_exceptions(&arguments[1..], output, error),
+        "CMD-REPOSITORY-INIT" => run_init(&arguments[1..], output, error),
         "CMD-CONTRACT-CCG" => run_ccg(&arguments[1..], output, error),
         "CMD-BEHAVIOR-BFG" => run_bfg(&arguments[1..], output, error),
         "CMD-BEHAVIOR-REALIZED-BFG" => run_realized_bfg(&arguments[1..], output, error),
@@ -93,6 +98,194 @@ where
             Ok(EXIT_USAGE)
         }
     }
+}
+
+fn run_init<O: Write, E: Write>(
+    arguments: &[String],
+    output: &mut O,
+    error: &mut E,
+) -> io::Result<u8> {
+    if arguments.first().map(String::as_str) == Some("apply") {
+        return run_init_apply(&arguments[1..], output, error);
+    }
+    let request = match parse_init_discovery_arguments(arguments) {
+        Ok(value) => value,
+        Err(message) => {
+            writeln!(error, "{message}")?;
+            return Ok(EXIT_USAGE);
+        }
+    };
+    if let Some(destination) = &request.destination
+        && path_is_within(&request.root, destination)
+    {
+        writeln!(
+            error,
+            "initialization proposal output must be outside the subject repository so discovery remains read-only"
+        )?;
+        return Ok(EXIT_USAGE);
+    }
+    let proposal = match discover_repository_bootstrap(
+        &request.root,
+        &BootstrapDiscoveryOptions::new(request.project_id, request.display_name),
+    ) {
+        Ok(value) => value,
+        Err(discovery_error) => {
+            writeln!(error, "initialization discovery failed: {discovery_error}")?;
+            return Ok(EXIT_VIOLATION);
+        }
+    };
+    let document = proposal.to_canonical_json().map_err(io::Error::other)?;
+    if let Some(destination) = request.destination {
+        fs::write(destination, document)?;
+    } else {
+        write!(output, "{document}")?;
+    }
+    Ok(EXIT_SUCCESS)
+}
+
+struct InitDiscoveryArguments {
+    root: PathBuf,
+    destination: Option<PathBuf>,
+    project_id: Option<String>,
+    display_name: Option<String>,
+}
+
+fn parse_init_discovery_arguments(
+    arguments: &[String],
+) -> Result<InitDiscoveryArguments, &'static str> {
+    const USAGE: &str = "usage: fortress init [path] [--project-id ID --display-name NAME] [--format json] [--output path]";
+    let mut root = None;
+    let mut destination = None;
+    let mut project_id = None;
+    let mut display_name = None;
+    let mut index = 0;
+    while index < arguments.len() {
+        match arguments[index].as_str() {
+            "--format" => {
+                index += 1;
+                if arguments.get(index).map(String::as_str) != Some("json") {
+                    return Err(USAGE);
+                }
+            }
+            "--output" | "--project-id" | "--display-name" => {
+                let flag = arguments[index].as_str();
+                index += 1;
+                let Some(value) = arguments.get(index) else {
+                    return Err(USAGE);
+                };
+                let duplicate = match flag {
+                    "--output" => destination.replace(PathBuf::from(value)).is_some(),
+                    "--project-id" => project_id.replace(value.clone()).is_some(),
+                    "--display-name" => display_name.replace(value.clone()).is_some(),
+                    _ => unreachable!(),
+                };
+                if duplicate {
+                    return Err(USAGE);
+                }
+            }
+            value if value.starts_with("--format=") => {
+                if value.strip_prefix("--format=") != Some("json") {
+                    return Err(USAGE);
+                }
+            }
+            value if !value.starts_with('-') && root.is_none() => root = Some(PathBuf::from(value)),
+            _ => return Err(USAGE),
+        }
+        index += 1;
+    }
+    Ok(InitDiscoveryArguments {
+        root: root.unwrap_or_else(|| PathBuf::from(".")),
+        destination,
+        project_id,
+        display_name,
+    })
+}
+
+fn run_init_apply<O: Write, E: Write>(
+    arguments: &[String],
+    output: &mut O,
+    error: &mut E,
+) -> io::Result<u8> {
+    const USAGE: &str = "usage: fortress init apply [path] --proposal path [--baseline-current]";
+    let mut root = None;
+    let mut proposal_path = None;
+    let mut baseline_current = false;
+    let mut index = 0;
+    while index < arguments.len() {
+        match arguments[index].as_str() {
+            "--proposal" => {
+                index += 1;
+                let Some(value) = arguments.get(index) else {
+                    writeln!(error, "{USAGE}")?;
+                    return Ok(EXIT_USAGE);
+                };
+                if proposal_path.replace(PathBuf::from(value)).is_some() {
+                    writeln!(error, "{USAGE}")?;
+                    return Ok(EXIT_USAGE);
+                }
+            }
+            "--baseline-current" if !baseline_current => baseline_current = true,
+            value if !value.starts_with('-') && root.is_none() => root = Some(PathBuf::from(value)),
+            _ => {
+                writeln!(error, "{USAGE}")?;
+                return Ok(EXIT_USAGE);
+            }
+        }
+        index += 1;
+    }
+    let Some(proposal_path) = proposal_path else {
+        writeln!(error, "{USAGE}")?;
+        return Ok(EXIT_USAGE);
+    };
+    let proposal_source = match fs::read_to_string(&proposal_path) {
+        Ok(value) => value,
+        Err(source) => {
+            writeln!(
+                error,
+                "failed to read proposal {}: {source}",
+                proposal_path.display()
+            )?;
+            return Ok(EXIT_VIOLATION);
+        }
+    };
+    let proposal = match BootstrapProposal::from_json_str(&proposal_source) {
+        Ok(value) => value,
+        Err(proposal_error) => {
+            writeln!(error, "initialization apply failed: {proposal_error}")?;
+            return Ok(EXIT_VIOLATION);
+        }
+    };
+    let root = root.unwrap_or_else(|| PathBuf::from("."));
+    match apply_repository_bootstrap(&root, &proposal, baseline_current) {
+        Ok(result) => {
+            write!(
+                output,
+                "{}",
+                result.to_canonical_json().map_err(io::Error::other)?
+            )?;
+            Ok(EXIT_SUCCESS)
+        }
+        Err(apply_error) => {
+            writeln!(error, "initialization apply failed: {apply_error}")?;
+            Ok(EXIT_VIOLATION)
+        }
+    }
+}
+
+fn path_is_within(root: &std::path::Path, candidate: &std::path::Path) -> bool {
+    let Ok(root) = fs::canonicalize(root) else {
+        return false;
+    };
+    let absolute = if candidate.is_absolute() {
+        candidate.to_path_buf()
+    } else {
+        std::env::current_dir().map_or_else(
+            |_| candidate.to_path_buf(),
+            |current| current.join(candidate),
+        )
+    };
+    let parent = absolute.parent().unwrap_or(&absolute);
+    fs::canonicalize(parent).is_ok_and(|parent| parent.starts_with(root))
 }
 
 fn run_source_artifacts<O: Write, E: Write>(

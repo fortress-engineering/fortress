@@ -48,7 +48,6 @@ use crate::evaluation::{
     CompleteEvaluationInputs, EvaluationError, ProgramEvaluationInputs, RepositoryEvaluationInputs,
     RuleExecution, SnapshotRuleEngine,
 };
-use crate::filing::{FilingSystemProfiles, analyze_project_filing_system};
 use crate::finding::{CanonicalFinding, FindingError};
 use crate::finding_governance::{
     FINDING_GOVERNANCE_PATH, FindingGovernanceDocument, FindingGovernanceError,
@@ -73,8 +72,7 @@ use crate::reference_resolution::{
     ReferenceResolutionError, ReferenceResolutionEvaluation, evaluate_reference_resolution,
 };
 use crate::rust_test_analyzer::{
-    RustAnalyzerError, RustTestEligibility, RustTestObservation, analyze_observed_rust_tests,
-    observe_observed_rust_tests,
+    RustAnalyzerError, RustTestEligibility, RustTestObservation, observe_observed_rust_tests,
 };
 use crate::semantic_analysis::{
     FunctionContractError, FunctionContractSource, ResolvedFunctionContracts,
@@ -86,9 +84,9 @@ use crate::snapshot::{
     observe_repository_stably,
 };
 use crate::source_architecture::{
-    LanguageAssignment, SourceArchitectureEvaluation, SourceArchitectureInput, SourceArtifactInput,
-    SourceArtifactModel, SourceProfileRegistry, SourceVerificationRelationship,
-    evaluate_source_architecture, observations_from_psm,
+    CodeFileResponsibility, LanguageAssignment, SourceArchitectureEvaluation,
+    SourceArchitectureInput, SourceArtifactInput, SourceArtifactModel, SourceProfileRegistry,
+    SourceVerificationRelationship, evaluate_source_architecture, observations_from_psm,
 };
 use crate::standard::{StandardBundle, StandardLoadError, installed_standard_manifest};
 use crate::state_effect_analysis::{
@@ -470,35 +468,9 @@ fn compile_source_architecture_from(
     ccg: &ContractCoherencyGraph,
     psm: Option<&ProgramSemanticModel>,
 ) -> Result<SourceArchitectureEvaluation, AuditError> {
-    let observed_paths = prepared.observed_files.keys().cloned().collect::<Vec<_>>();
-    let filing = analyze_project_filing_system(&observed_paths, &FilingSystemProfiles::standard());
     let responsibilities = code_file_responsibilities(&prepared.observed_files, ccg)
         .map_err(|error| AuditError::ContractState(error.into()))?;
-    let module_paths = ccg
-        .module_paths()
-        .iter()
-        .map(|(id, path)| (if path.is_empty() { "." } else { path }, id))
-        .collect::<BTreeMap<_, _>>();
-    let artifacts = filing
-        .inventory()
-        .entries()
-        .iter()
-        .filter(|entry| entry.element() == "code")
-        .map(|entry| {
-            let module_id = module_paths
-                .get(entry.module())
-                .map_or("UNKNOWN-MODULE", |id| id.as_str());
-            let relative = if entry.module() == "." {
-                entry.path().strip_prefix("code/").unwrap_or(entry.path())
-            } else {
-                entry
-                    .path()
-                    .strip_prefix(&format!("{}/code/", entry.module()))
-                    .unwrap_or(entry.path())
-            };
-            SourceArtifactInput::new(entry.path(), module_id, relative)
-        })
-        .collect::<Vec<_>>();
+    let artifacts = source_artifact_inputs(&prepared.ownerships, &responsibilities);
     let observations = psm.map_or_else(Vec::new, observations_from_psm);
     let languages = [
         LanguageAssignment::new("rs", "rust", "fortress-core/program-semantics-v3"),
@@ -798,52 +770,13 @@ fn compile_analysis_source_architecture(
     psm: Option<&ProgramSemanticModel>,
 ) -> Result<SourceArchitectureEvaluation, AuditError> {
     let governed = prepared.project_id().is_some();
-    let observed_paths = prepared.observed_files.keys().cloned().collect::<Vec<_>>();
-    let filing = analyze_project_filing_system(&observed_paths, &FilingSystemProfiles::standard());
     let responsibilities = prepared
         .ccg()
         .map(|ccg| code_file_responsibilities(&prepared.observed_files, ccg))
         .transpose()
         .map_err(|error| AuditError::ContractState(error.into()))?
         .unwrap_or_default();
-    let artifacts = if governed {
-        let module_paths = prepared
-            .ccg()
-            .expect("governed analysis has a CCG")
-            .module_paths()
-            .iter()
-            .map(|(id, path)| (if path.is_empty() { "." } else { path }, id.as_str()))
-            .collect::<BTreeMap<_, _>>();
-        filing
-            .inventory()
-            .entries()
-            .iter()
-            .filter(|entry| entry.element() == "code")
-            .filter_map(|entry| {
-                let owner = module_paths.get(entry.module())?;
-                let prefix = if entry.module() == "." {
-                    "code/".into()
-                } else {
-                    format!("{}/code/", entry.module())
-                };
-                let relative = entry.path().strip_prefix(&prefix).unwrap_or(entry.path());
-                Some(SourceArtifactInput::new(entry.path(), *owner, relative))
-            })
-            .collect::<Vec<_>>()
-    } else {
-        prepared
-            .ownerships
-            .iter()
-            .map(|ownership| {
-                let relative = ownership
-                    .source_path()
-                    .strip_prefix(ownership.territory_path())
-                    .unwrap_or(ownership.source_path())
-                    .trim_start_matches('/');
-                SourceArtifactInput::new(ownership.source_path(), ownership.owner(), relative)
-            })
-            .collect()
-    };
+    let artifacts = source_artifact_inputs(&prepared.ownerships, &responsibilities);
     let observations = psm.map_or_else(Vec::new, observations_from_psm);
     let languages = [
         LanguageAssignment::new("rs", "rust", "fortress-core/program-semantics-v3"),
@@ -899,6 +832,44 @@ fn compile_analysis_source_architecture(
         standard_edition: prepared.standard.bundle.edition(),
     })
     .map_err(AuditError::SourceArchitecture)
+}
+
+fn source_artifact_inputs(
+    ownerships: &[SourceOwnership],
+    responsibilities: &[CodeFileResponsibility],
+) -> Vec<SourceArtifactInput> {
+    let mut artifacts = ownerships
+        .iter()
+        .map(|ownership| {
+            let relative = ownership
+                .source_path()
+                .strip_prefix(ownership.territory_path())
+                .unwrap_or(ownership.source_path())
+                .trim_start_matches('/');
+            (
+                ownership.source_path().to_owned(),
+                (ownership.owner().to_owned(), relative.to_owned()),
+            )
+        })
+        .collect::<BTreeMap<_, _>>();
+    for responsibility in responsibilities {
+        artifacts
+            .entry(responsibility.source_path().to_owned())
+            .or_insert_with(|| {
+                let marker = "/code/";
+                let relative = responsibility
+                    .source_path()
+                    .rfind(marker)
+                    .map_or(responsibility.source_path(), |index| {
+                        &responsibility.source_path()[index + marker.len()..]
+                    });
+                (responsibility.module_id().to_owned(), relative.to_owned())
+            });
+    }
+    artifacts
+        .into_iter()
+        .map(|(path, (owner, relative))| SourceArtifactInput::new(path, owner, relative))
+        .collect()
 }
 
 /// Compiles distributed Function Contracts and the snapshot-bound PSM into
@@ -1247,7 +1218,8 @@ fn compile_certification_semantic_stack(
             Some(&models.information_flow),
             Some(&models.environmental),
         ),
-    );
+    )
+    .with_rust_test_observations(&prepared.rust_test_observations);
     let evaluation = evaluate_certification_rules(
         &prepared.standard.bundle,
         &prepared.snapshot,
@@ -2177,7 +2149,8 @@ fn audit_repository_with_prepared(
             analyses.map(|models| &models.information_flow),
             analyses.map(|models| &models.environmental),
         ),
-    );
+    )
+    .with_rust_test_observations(&prepared.rust_test_observations);
     let evaluation = evaluate_snapshot_rules(standard, &prepared.snapshot, ccg, evaluation_inputs)?;
     let mut unsupported_analysis = architecture_diagnostics.unsupported_analysis().to_vec();
     unsupported_analysis.extend(
@@ -2245,7 +2218,14 @@ fn audit_repository_with_prepared(
             &evaluation,
             &architecture_diagnostics,
             unsupported_analysis,
-            prepared.rust_tests.len(),
+            ObservedTestSummary {
+                total: prepared.rust_test_observations.len(),
+                missing_stable_identity: prepared
+                    .rust_test_observations
+                    .iter()
+                    .filter(|test| !test.is_governed())
+                    .count(),
+            },
             prepared.finding_governance.as_ref(),
             prepared.standard.bundle.id(),
         )?,
@@ -2258,6 +2238,8 @@ struct PreparedAudit {
     observed_files: BTreeMap<String, Vec<u8>>,
     standard: LoadedStandard,
     rust_tests: Vec<crate::rust_test_analyzer::RustTestFact>,
+    rust_test_observations: Vec<RustTestObservation>,
+    ownerships: Vec<SourceOwnership>,
     ccg_compilation: CcgCompilation,
     snapshot: RepositorySnapshot,
     finding_governance: Option<FindingGovernanceDocument>,
@@ -2403,13 +2385,13 @@ fn prepare_audit_from_analysis(
     let policy = ObservationPolicy::new(project.observation_exclusions().iter().cloned())
         .map_err(AuditError::ObservationPolicy)?;
     let observed_files = analysis.observed_files;
+    let ownerships = analysis.ownerships;
     let standard = analysis.standard;
-    let rust_tests = analyze_observed_rust_tests(
-        observed_files
-            .iter()
-            .map(|(path, bytes)| (path.as_str(), bytes.as_slice())),
-    )
-    .map_err(AuditError::RustAnalyzer)?;
+    let rust_test_observations = analysis.rust_tests;
+    let rust_tests = rust_test_observations
+        .iter()
+        .filter_map(RustTestObservation::governed_fact)
+        .collect::<Vec<_>>();
     let observed_test_facts: Vec<CcgObservedTestFact> =
         rust_tests.iter().map(CcgObservedTestFact::from).collect();
     let ccg_compilation = compile_contract_coherency_graph(
@@ -2469,6 +2451,8 @@ fn prepare_audit_from_analysis(
         observed_files,
         standard,
         rust_tests,
+        rust_test_observations,
+        ownerships,
         ccg_compilation,
         snapshot,
         finding_governance,
@@ -2564,12 +2548,18 @@ fn reconcile_repository_implementation(
     Ok((observed, realization))
 }
 
+#[derive(Clone, Copy)]
+struct ObservedTestSummary {
+    total: usize,
+    missing_stable_identity: usize,
+}
+
 fn result_from_evaluation(
     snapshot: &RepositorySnapshot,
     evaluation: &crate::evaluation::SnapshotEvaluation,
     architecture_diagnostics: &crate::architecture_diagnostics::ArchitectureDiagnostics,
     unsupported_analysis: Vec<String>,
-    observed_tests: usize,
+    observed_tests: ObservedTestSummary,
     authority: Option<&FindingGovernanceDocument>,
     standard_id: &str,
 ) -> Result<AuditResult, AuditError> {
@@ -2602,8 +2592,8 @@ fn result_from_evaluation(
                 })
                 .count(),
             analysis_source_owners: 0,
-            observed_tests,
-            tests_missing_stable_id: 0,
+            observed_tests: observed_tests.total,
+            tests_missing_stable_id: observed_tests.missing_stable_identity,
         },
         standard: AuditStandard {
             id: standard_id.into(),

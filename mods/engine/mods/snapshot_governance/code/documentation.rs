@@ -393,6 +393,7 @@ impl EvaluationContext<'_> {
                 self.summary.missing_canonical_docs += 1;
                 self.structural_finding(
                     &readme,
+                    "MISSING_README",
                     format!(
                         "Module `{}` is missing canonical `README.md`.",
                         module_name(module)
@@ -403,6 +404,7 @@ impl EvaluationContext<'_> {
             if !self.paths.contains(&contract) {
                 self.structural_finding(
                     &contract,
+                    "MISSING_CONTRACT",
                     format!(
                         "Module `{}` is missing canonical `contract.json`.",
                         module_name(module)
@@ -423,6 +425,7 @@ impl EvaluationContext<'_> {
                     self.summary.missing_canonical_docs += 1;
                     self.structural_finding(
                         &documentation_path,
+                        "MISSING_ELEMENT_DOCUMENTATION",
                         format!(
                             "Module `{}` has `{attribute}/` but is missing `docs/{documentation}`.",
                             module_name(module)
@@ -431,6 +434,7 @@ impl EvaluationContext<'_> {
                 } else if !attribute_exists && documentation_exists {
                     self.structural_finding(
                         &documentation_path,
+                        "ORPHAN_ELEMENT_DOCUMENTATION",
                         format!(
                             "Module `{}` has `docs/{documentation}` without `{attribute}/`.",
                             module_name(module)
@@ -446,6 +450,7 @@ impl EvaluationContext<'_> {
                     self.summary.unexpected_docs_files += 1;
                     self.structural_finding(
                         path,
+                        "UNEXPECTED_DOCUMENTATION_PATH",
                         format!("Documentation path `{path}` is not an applicable direct canonical Module documentation file."),
                     )?;
                 }
@@ -479,6 +484,7 @@ impl EvaluationContext<'_> {
             let Ok(source) = std::str::from_utf8(bytes) else {
                 self.structural_finding(
                     &path,
+                    "CONTRACT_NOT_UTF8",
                     format!("Module contract `{path}` is not valid UTF-8."),
                 )?;
                 continue;
@@ -488,6 +494,7 @@ impl EvaluationContext<'_> {
                 Err(error) => {
                     self.structural_finding(
                         &path,
+                        "CONTRACT_INVALID",
                         format!("Module contract `{path}` is invalid: {error}"),
                     )?;
                     continue;
@@ -496,6 +503,7 @@ impl EvaluationContext<'_> {
             if let Some(first_path) = self.contract_paths.get(contract.id()) {
                 self.structural_finding(
                     &path,
+                    "DUPLICATE_MODULE_IDENTITY",
                     format!(
                         "Module identity `{}` duplicates the contract at `{first_path}`.",
                         contract.id()
@@ -559,6 +567,7 @@ impl EvaluationContext<'_> {
             if !identities.contains(&target) {
                 self.structural_finding(
                     &child_path(&module, "contract.json"),
+                    &semantic_discriminator("STALE_RELATIONSHIP", &target),
                         format!("Module `{source}` declares a stale relationship to nonexistent Module `{target}`."),
                 )?;
             }
@@ -571,6 +580,7 @@ impl EvaluationContext<'_> {
                 .map_or("", |(module, _, _)| module.as_str());
             self.structural_finding(
                 &child_path(module, "contract.json"),
+                "DEPENDENCY_CYCLE",
                 format!(
                     "Module `depends_on` relationships contain a prohibited cycle: {}.",
                     cycle.join(" -> ")
@@ -599,6 +609,7 @@ impl EvaluationContext<'_> {
             let Ok(source) = std::str::from_utf8(bytes) else {
                 self.structural_finding(
                     &path,
+                    "MARKDOWN_NOT_UTF8",
                     format!("Canonical Markdown `{path}` is not valid UTF-8."),
                 )?;
                 continue;
@@ -687,6 +698,7 @@ impl EvaluationContext<'_> {
         {
             self.markdown_finding(
                 &path,
+                "README_SCOPE_STRUCTURE",
                 "README `Scope` must contain exactly `Includes` then `Excludes`.".into(),
             )?;
         }
@@ -699,6 +711,7 @@ impl EvaluationContext<'_> {
             {
                 self.markdown_finding(
                     &path,
+                    &semantic_discriminator("README_H3_PARENT", &heading.text),
                     format!(
                         "H3 `{}` is not allowed beneath README section `{}`.",
                         heading.text,
@@ -726,6 +739,7 @@ impl EvaluationContext<'_> {
             if heading.links.len() != 1 {
                 self.markdown_finding(
                     path,
+                    &semantic_discriminator("RELATIONSHIP_LINK_COUNT", &heading.text),
                     format!(
                         "Relationship heading `{}` must contain exactly one Module README link.",
                         heading.text
@@ -749,6 +763,7 @@ impl EvaluationContext<'_> {
             if heading.text != target_display_name {
                 self.markdown_finding(
                     path,
+                    &semantic_discriminator("RELATIONSHIP_DISPLAY_NAME", &target_id),
                     format!(
                         "Relationship link text `{}` does not match target display name `{}`.",
                         heading.text, target_display_name
@@ -759,6 +774,7 @@ impl EvaluationContext<'_> {
             let Some(types_paragraph) = paragraphs.first() else {
                 self.markdown_finding(
                     path,
+                    &semantic_discriminator("RELATIONSHIP_TYPES_MISSING", &target_id),
                     format!(
                         "Relationship `{}` has no canonical Types paragraph.",
                         heading.text
@@ -784,7 +800,11 @@ impl EvaluationContext<'_> {
                     .join(", ")
             );
             if types.is_empty() || types_paragraph.text.trim() != expected_text {
-                self.markdown_finding(path, format!("Relationship `{}` must begin with canonical `Types:` and code-formatted supported relationship types.", heading.text))?;
+                self.markdown_finding(
+                    path,
+                    &semantic_discriminator("RELATIONSHIP_TYPES_INVALID", &target_id),
+                    format!("Relationship `{}` must begin with canonical `Types:` and code-formatted supported relationship types.", heading.text),
+                )?;
             }
             if paragraphs
                 .iter()
@@ -793,6 +813,7 @@ impl EvaluationContext<'_> {
             {
                 self.markdown_finding(
                     path,
+                    &semantic_discriminator("RELATIONSHIP_RATIONALE_MISSING", &target_id),
                     format!(
                         "Relationship `{}` must explain why the relationship exists.",
                         heading.text
@@ -802,6 +823,7 @@ impl EvaluationContext<'_> {
             if documented.insert(target_id.clone(), types).is_some() {
                 self.markdown_finding(
                     path,
+                    &semantic_discriminator("RELATIONSHIP_DUPLICATE", &target_id),
                     format!("Relationship target `{target_id}` is documented more than once."),
                 )?;
             }
@@ -818,8 +840,16 @@ impl EvaluationContext<'_> {
                 .collect();
             for (target, types) in &authoritative {
                 match documented.get(target) {
-                    None => self.markdown_finding(path, format!("Contract relationship to `{target}` is missing from README `Relationships`."))?,
-                    Some(documented_types) if documented_types != types => self.markdown_finding(path, format!("README relationship types for `{target}` do not match the Module contract."))?,
+                    None => self.markdown_finding(
+                        path,
+                        &semantic_discriminator("RELATIONSHIP_PROJECTION_MISSING", target),
+                        format!("Contract relationship to `{target}` is missing from README `Relationships`."),
+                    )?,
+                    Some(documented_types) if documented_types != types => self.markdown_finding(
+                        path,
+                        &semantic_discriminator("RELATIONSHIP_PROJECTION_TYPES", target),
+                        format!("README relationship types for `{target}` do not match the Module contract."),
+                    )?,
                     Some(_) => {}
                 }
             }
@@ -827,6 +857,7 @@ impl EvaluationContext<'_> {
                 if !authoritative.contains_key(target) {
                     self.markdown_finding(
                         path,
+                        &semantic_discriminator("RELATIONSHIP_WITHOUT_AUTHORITY", target),
                         format!(
                             "README relationship to `{target}` has no Module contract authority."
                         ),
@@ -852,6 +883,7 @@ impl EvaluationContext<'_> {
             if heading.level == 3 && heading.parent_h2.as_deref() != Some("Files") {
                 self.markdown_finding(
                     path,
+                    &semantic_discriminator("ELEMENT_H3_PARENT", &heading.text),
                     format!(
                         "H3 `{}` is allowed only beneath `Files` in `{}`.",
                         heading.text,
@@ -871,6 +903,7 @@ impl EvaluationContext<'_> {
             if !documented.insert(heading.text.clone()) {
                 self.markdown_finding(
                     path,
+                    &semantic_discriminator("CATALOG_ENTRY_DUPLICATE", &heading.text),
                     format!(
                         "File entry `{}` is documented more than once.",
                         heading.text
@@ -888,11 +921,15 @@ impl EvaluationContext<'_> {
                         == Some(child_path(&child_path(module, attribute), &heading.text))
             };
             if !valid_projection {
-                self.markdown_finding(path, if structured_catalog {
-                    format!("Structured `{attribute}` catalog entry `{}` must be one code-formatted role/ or role/collection/ scope without a leaf-file link.", heading.text)
-                } else {
-                    format!("File entry `{}` must link its code-formatted filename to the direct `{attribute}/` element.", heading.text)
-                })?;
+                self.markdown_finding(
+                    path,
+                    &semantic_discriminator("CATALOG_ENTRY_PROJECTION", &heading.text),
+                    if structured_catalog {
+                        format!("Structured `{attribute}` catalog entry `{}` must be one code-formatted role/ or role/collection/ scope without a leaf-file link.", heading.text)
+                    } else {
+                        format!("File entry `{}` must link its code-formatted filename to the direct `{attribute}/` element.", heading.text)
+                    },
+                )?;
             }
             if document
                 .paragraphs_for_h3(heading.index)
@@ -901,6 +938,7 @@ impl EvaluationContext<'_> {
             {
                 self.markdown_finding(
                     path,
+                    &semantic_discriminator("CATALOG_ENTRY_DESCRIPTION", &heading.text),
                     format!(
                         "File entry `{}` lacks a substantive contribution description.",
                         heading.text
@@ -926,6 +964,7 @@ impl EvaluationContext<'_> {
         self.validate_bijection(path, attribute, &physical, &documented)
     }
 
+    #[allow(clippy::too_many_lines)]
     fn validate_mods_document(&mut self, module: &str, path: &str) -> Result<(), FindingError> {
         let document = self.parsed[path].clone();
         self.validate_common(
@@ -938,6 +977,7 @@ impl EvaluationContext<'_> {
             if heading.level == 3 && heading.parent_h2.as_deref() != Some("Modules") {
                 self.markdown_finding(
                     path,
+                    &semantic_discriminator("MODS_H3_PARENT", &heading.text),
                     format!(
                         "H3 `{}` is allowed only beneath `Modules` in `mods_docs.md`.",
                         heading.text
@@ -958,6 +998,7 @@ impl EvaluationContext<'_> {
             let Some(link) = heading.links.first() else {
                 self.markdown_finding(
                     path,
+                    &semantic_discriminator("CHILD_MODULE_LINK_MISSING", &heading.text),
                     format!(
                         "Child Module heading `{}` must link to its canonical README.",
                         heading.text
@@ -973,19 +1014,25 @@ impl EvaluationContext<'_> {
                         child_path(child, "README.md") == resolved.clone().unwrap_or_default()
                     });
             let Some(child) = expected_child else {
-                self.markdown_finding(path, format!("Child Module entry `{}` does not identify an immediate physical child README.", heading.text))?;
+                self.markdown_finding(
+                    path,
+                    &semantic_discriminator("CHILD_MODULE_NOT_IMMEDIATE", &heading.text),
+                    format!("Child Module entry `{}` does not identify an immediate physical child README.", heading.text),
+                )?;
                 continue;
             };
             let child_name = child.rsplit('/').next().unwrap_or(&child).to_owned();
             if !documented.insert(child_name.clone()) {
                 self.markdown_finding(
                     path,
+                    &semantic_discriminator("CHILD_MODULE_DUPLICATE", &child_name),
                     format!("Child Module `{child_name}` is documented more than once."),
                 )?;
             }
             if heading.links.len() != 1 {
                 self.markdown_finding(
                     path,
+                    &semantic_discriminator("CHILD_MODULE_LINK_COUNT", &child_name),
                     format!(
                         "Child Module heading `{}` must contain exactly one canonical README link.",
                         heading.text
@@ -997,6 +1044,7 @@ impl EvaluationContext<'_> {
             {
                 self.markdown_finding(
                     path,
+                    &semantic_discriminator("CHILD_MODULE_DISPLAY_NAME", &child_name),
                     format!(
                         "Child Module link text `{}` does not match `{}`.",
                         heading.text,
@@ -1011,6 +1059,7 @@ impl EvaluationContext<'_> {
             {
                 self.markdown_finding(
                     path,
+                    &semantic_discriminator("CHILD_MODULE_DESCRIPTION", &child_name),
                     format!(
                         "Child Module `{}` lacks a substantive contribution description.",
                         heading.text
@@ -1031,10 +1080,24 @@ impl EvaluationContext<'_> {
         documented: &BTreeSet<String>,
     ) -> Result<(), FindingError> {
         for missing in physical.difference(documented) {
-            self.markdown_finding(path, format!("Physical `{attribute}` element `{missing}` is missing from the canonical documentation catalog."))?;
+            self.markdown_finding(
+                path,
+                &semantic_discriminator(
+                    "PHYSICAL_CATALOG_ENTRY_MISSING",
+                    &format!("{attribute}:{missing}"),
+                ),
+                format!("Physical `{attribute}` element `{missing}` is missing from the canonical documentation catalog."),
+            )?;
         }
         for phantom in documented.difference(physical) {
-            self.markdown_finding(path, format!("Documented `{attribute}` element `{phantom}` does not exist as a direct physical element."))?;
+            self.markdown_finding(
+                path,
+                &semantic_discriminator(
+                    "DOCUMENTED_CATALOG_ENTRY_MISSING",
+                    &format!("{attribute}:{phantom}"),
+                ),
+                format!("Documented `{attribute}` element `{phantom}` does not exist as a direct physical element."),
+            )?;
         }
         Ok(())
     }
@@ -1054,6 +1117,7 @@ impl EvaluationContext<'_> {
         if h1.len() != 1 || h1.first().is_none_or(|heading| heading.text != expected_h1) {
             self.markdown_finding(
                 path,
+                "CANONICAL_H1",
                 format!("Canonical Markdown must contain exactly one H1 `# {expected_h1}`."),
             )?;
         }
@@ -1062,7 +1126,11 @@ impl EvaluationContext<'_> {
             .first()
             .is_none_or(|heading| heading.level != 1)
         {
-            self.markdown_finding(path, "The canonical H1 must be the first heading.".into())?;
+            self.markdown_finding(
+                path,
+                "CANONICAL_H1_POSITION",
+                "The canonical H1 must be the first heading.".into(),
+            )?;
         }
         let actual_h2: Vec<&str> = document
             .headings
@@ -1073,6 +1141,7 @@ impl EvaluationContext<'_> {
         if actual_h2 != expected_h2 {
             self.markdown_finding(
                 path,
+                "CANONICAL_H2_SEQUENCE",
                 format!(
                     "H2 sections must be exactly `{}` in canonical order.",
                     expected_h2.join("`, `")
@@ -1086,6 +1155,7 @@ impl EvaluationContext<'_> {
         {
             self.markdown_finding(
                 path,
+                &semantic_discriminator("PROHIBITED_HEADING_DEPTH", &heading.text),
                 format!(
                     "Heading `{}` uses prohibited H{} depth.",
                     heading.text, heading.level
@@ -1096,6 +1166,7 @@ impl EvaluationContext<'_> {
             if !document.section_is_substantive(section) {
                 self.markdown_finding(
                     path,
+                    &semantic_discriminator("EMPTY_REQUIRED_SECTION", section),
                     format!("Required section `{section}` has no substantive content."),
                 )?;
             }
@@ -1103,12 +1174,14 @@ impl EvaluationContext<'_> {
         for placeholder in document.placeholders() {
             self.markdown_finding(
                 path,
+                &semantic_discriminator("PLACEHOLDER_CONTENT", placeholder),
                 format!("Canonical Markdown contains placeholder content `{placeholder}`."),
             )?;
         }
         if document.empty_list_items > 0 {
             self.markdown_finding(
                 path,
+                "EMPTY_LIST_ITEMS",
                 format!(
                     "Canonical Markdown contains {} empty list item(s).",
                     document.empty_list_items
@@ -1134,6 +1207,7 @@ impl EvaluationContext<'_> {
                     self.summary.broken_or_stale_links += 1;
                     self.finding(
                         &path,
+                        &semantic_discriminator("BROKEN_RELATIVE_LINK", &link),
                         format!("Relative Markdown link `{link}` is broken or stale."),
                     )?;
                 }
@@ -1142,24 +1216,44 @@ impl EvaluationContext<'_> {
         Ok(())
     }
 
-    fn structural_finding(&mut self, path: &str, message: String) -> Result<(), FindingError> {
-        self.finding(path, message)
+    fn structural_finding(
+        &mut self,
+        path: &str,
+        discriminator: &str,
+        message: String,
+    ) -> Result<(), FindingError> {
+        self.finding(path, discriminator, message)
     }
 
-    fn markdown_finding(&mut self, path: &str, message: String) -> Result<(), FindingError> {
+    fn markdown_finding(
+        &mut self,
+        path: &str,
+        discriminator: &str,
+        message: String,
+    ) -> Result<(), FindingError> {
         self.summary.structural_markdown_violations += 1;
-        self.finding(path, message)
+        self.finding(path, discriminator, message)
     }
 
-    fn finding(&mut self, path: &str, message: String) -> Result<(), FindingError> {
+    fn finding(
+        &mut self,
+        path: &str,
+        discriminator: &str,
+        message: String,
+    ) -> Result<(), FindingError> {
         self.findings.push(CanonicalFinding::failure(
             self.definition.clone(),
-            FindingOccurrence::new(Vec::new(), FindingLocation::at_path(path)?, message)?,
+            FindingOccurrence::new(Vec::new(), FindingLocation::at_path(path)?, message)?
+                .with_discriminator(discriminator)?,
             self.evaluator.clone(),
             self.standard_edition,
         )?);
         Ok(())
     }
+}
+
+fn semantic_discriminator(kind: &str, target: &str) -> String {
+    format!("{kind}:{:x}", Sha256::digest(target.as_bytes()))
 }
 
 #[derive(Clone, Debug)]

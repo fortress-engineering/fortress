@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:repository-bootstrap-proposal",
+  "title": "Fortress Repository Bootstrap Proposal v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "semantic_version",
+    "state",
+    "proposal_digest",
+    "source_fingerprint",
+    "governance_state",
+    "governance_detail",
+    "installed_standard",
+    "observed_facts",
+    "proposed_authority",
+    "unresolved_choices",
+    "predicted_legacy_residue"
+  ],
+  "properties": {
+    "$schema": { "const": "urn:fortress:schema:v1:repository-bootstrap-proposal" },
+    "schema_version": { "const": 1 },
+    "semantic_version": { "const": "1.0.0" },
+    "state": { "const": "PROPOSED" },
+    "proposal_digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "source_fingerprint": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "governance_state": { "enum": ["ABSENT", "DECLARED", "INVALID"] },
+    "governance_detail": { "type": ["string", "null"] },
+    "installed_standard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "edition"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[A-Z0-9]+(?:-[A-Z0-9]+)+$" },
+        "edition": { "type": "string", "minLength": 1 }
+      }
+    },
+    "observed_facts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository_files", "rust_source_files", "rust_tests", "rust_tests_without_stable_identity", "cargo_territories"],
+      "properties": {
+        "repository_files": { "type": "integer", "minimum": 0 },
+        "rust_source_files": { "type": "integer", "minimum": 0 },
+        "rust_tests": { "type": "integer", "minimum": 0 },
+        "rust_tests_without_stable_identity": { "type": "integer", "minimum": 0 },
+        "cargo_territories": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["analysis_identity", "package_name", "manifest_path", "target_roots"],
+            "properties": {
+              "analysis_identity": { "type": "string", "pattern": "^SRC-ANALYSIS-CARGO-[0-9A-F]{16}$" },
+              "package_name": { "type": "string", "minLength": 1 },
+              "manifest_path": { "type": "string", "minLength": 1 },
+              "target_roots": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+            }
+          }
+        }
+      }
+    },
+    "proposed_authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "artifacts"],
+      "properties": {
+        "state": { "enum": ["READY", "UNRESOLVED"] },
+        "artifacts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "authority_kind", "content_digest", "content"],
+            "properties": {
+              "path": { "type": "string", "minLength": 1 },
+              "authority_kind": { "type": "string", "minLength": 1 },
+              "content_digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+              "content": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    },
+    "unresolved_choices": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "detail"],
+        "properties": {
+          "code": { "type": "string", "minLength": 1 },
+          "detail": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "predicted_legacy_residue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "detail"],
+      "properties": {
+        "status": { "const": "EVALUATED_DURING_EXPLICIT_APPLY" },
+        "detail": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

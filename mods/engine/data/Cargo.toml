@@ -129,6 +129,10 @@ name = "finding_governance"
 path = "../mods/snapshot_governance/mods/testing/code/finding_governance.rs"
 
 [[test]]
+name = "repository_bootstrap"
+path = "../mods/snapshot_governance/mods/testing/code/repository_bootstrap.rs"
+
+[[test]]
 name = "source_architecture"
 path = "../mods/source_architecture/mods/testing/code/source_architecture.rs"
 

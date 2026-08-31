@@ -80,6 +80,17 @@
       "certification_implications": "Mutates finding-specific disposition authority only; an exception remains visible and never becomes proof of conformance."
     },
     {
+      "id": "CMD-REPOSITORY-INIT",
+      "name": "init",
+      "aliases": [],
+      "description": "Discover and explicitly apply snapshot-bound minimal repository governance.",
+      "owner": "TF-CLI-0001",
+      "executor": "builtin-sync",
+      "duration": "short",
+      "resumability": "restartable",
+      "certification_implications": "Discovery produces no authority or certification evidence; explicit apply materializes only reviewed canonical authority, and optional baseline creation changes progressive enforcement without changing raw conformance."
+    },
+    {
       "id": "CMD-CONTRACT-CCG",
       "name": "ccg",
       "aliases": [],

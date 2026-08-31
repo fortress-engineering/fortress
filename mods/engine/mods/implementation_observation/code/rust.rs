@@ -3,7 +3,7 @@
 use std::collections::{BTreeMap, VecDeque};
 
 use proc_macro2::Span;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use syn::spanned::Spanned;
 use syn::visit::{self, Visit};
 use syn::{Attribute, ItemUse, Path, UseTree};
@@ -12,7 +12,7 @@ use super::{
     Conditionality, ImplementationObservation, ImplementationObservationError,
     ImplementationObservationInput, ObservationIssue, ObservationIssueKind, ObservationProvenance,
     ObservedImplementation, RUST_LANGUAGE_ID, ResolutionStatus, SourceLocation, SourceOwnership,
-    SourceOwnershipAuthority, TargetClassification,
+    SourceOwnershipAuthority, TargetClassification, cargo_analysis_territory_identity,
 };
 
 #[derive(Deserialize)]
@@ -63,6 +63,41 @@ struct CargoPackage {
     lib_root: Option<String>,
     targets: Vec<CargoTarget>,
     dependencies: BTreeMap<String, DependencyResolution>,
+}
+
+/// One mechanically observed Cargo package used only as an analysis territory.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct CargoAnalysisTerritoryObservation {
+    identity: String,
+    package_name: String,
+    manifest_path: String,
+    target_roots: Vec<String>,
+}
+
+impl CargoAnalysisTerritoryObservation {
+    /// Returns the deterministic analysis-only territory identity.
+    #[must_use]
+    pub fn identity(&self) -> &str {
+        &self.identity
+    }
+
+    /// Returns the mechanically declared Cargo package name.
+    #[must_use]
+    pub fn package_name(&self) -> &str {
+        &self.package_name
+    }
+
+    /// Returns the canonical repository-relative Cargo manifest path.
+    #[must_use]
+    pub fn manifest_path(&self) -> &str {
+        &self.manifest_path
+    }
+
+    /// Returns supported Cargo target roots in canonical order.
+    #[must_use]
+    pub fn target_roots(&self) -> &[String] {
+        &self.target_roots
+    }
 }
 
 #[derive(Clone)]
@@ -187,6 +222,37 @@ pub fn observe_rust_implementation(
         observations,
         issues,
     ))
+}
+
+/// Observes Cargo package/target structure without assigning architectural intent.
+///
+/// # Errors
+///
+/// Returns an observation error when snapshot-bound bytes or supported Cargo
+/// syntax are invalid.
+pub fn observe_cargo_analysis_territories(
+    input: &ImplementationObservationInput,
+) -> Result<Vec<CargoAnalysisTerritoryObservation>, ImplementationObservationError> {
+    let files = verified_files(input)?;
+    let packages = parse_packages(&files)?;
+    Ok(packages
+        .into_iter()
+        .map(|package| {
+            let mut target_roots = package
+                .targets
+                .into_iter()
+                .map(|target| target.root)
+                .collect::<Vec<_>>();
+            target_roots.sort();
+            target_roots.dedup();
+            CargoAnalysisTerritoryObservation {
+                identity: cargo_analysis_territory_identity(&package.manifest_path),
+                package_name: package.name,
+                manifest_path: package.manifest_path,
+                target_roots,
+            }
+        })
+        .collect())
 }
 
 fn verified_files(

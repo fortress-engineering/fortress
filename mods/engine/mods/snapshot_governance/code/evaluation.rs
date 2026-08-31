@@ -26,7 +26,7 @@ use crate::information_flow::{InformationFlowEvaluation, PROGRAM_INFOFLOW_RULE_I
 use crate::ownership::{ARCH_OWNERSHIP_RULE_ID, evaluate_file_ownership};
 use crate::placement::{REPO_MODULE_RULE_ID, evaluate_module_grammar};
 use crate::reference_resolution::{REPO_REFERENCE_RULE_ID, ReferenceResolutionEvaluation};
-use crate::rust_test_analyzer::RustTestFact;
+use crate::rust_test_analyzer::{RustTestFact, RustTestObservation};
 use crate::semantic_analysis::{PROGRAM_DOMAIN_RULE_ID, SemanticAnalysisEvaluation};
 use crate::snapshot::RepositorySnapshot;
 use crate::source_architecture::{
@@ -37,7 +37,9 @@ use crate::state_effect_analysis::{
     PROGRAM_EFFECT_RULE_ID, PROGRAM_STATE_RULE_ID, StateEffectAnalysisEvaluation,
 };
 use crate::testing_boundary::{TEST_BOUNDARY_RULE_ID, evaluate_testing_boundaries};
-use crate::traceability::{TEST_TRACEABILITY_RULE_ID, evaluate_ccg_test_traceability};
+use crate::traceability::{
+    TEST_TRACEABILITY_RULE_ID, evaluate_ccg_test_traceability, missing_test_identity_findings,
+};
 
 const STABLE_ID_RULE_ID: &str = "STD-ID-001";
 
@@ -184,6 +186,7 @@ pub struct SnapshotRuleEngine;
 #[derive(Clone, Copy, Debug)]
 pub struct CompleteEvaluationInputs<'a> {
     rust_tests: &'a [RustTestFact],
+    rust_test_observations: Option<&'a [RustTestObservation]>,
     documentation: &'a DocumentationConformanceReport,
     contract_coherency: &'a ContractCoherencyEvaluation,
     architecture_realization: &'a ArchitectureRealization,
@@ -270,6 +273,7 @@ impl<'a> CompleteEvaluationInputs<'a> {
     ) -> Self {
         Self {
             rust_tests,
+            rust_test_observations: None,
             documentation: repository.documentation,
             contract_coherency: repository.contract_coherency,
             architecture_realization: repository.architecture_realization,
@@ -283,11 +287,22 @@ impl<'a> CompleteEvaluationInputs<'a> {
             source_architecture: repository.source_architecture,
         }
     }
+
+    /// Adds the complete observed test inventory, including missing governance identities.
+    #[must_use]
+    pub const fn with_rust_test_observations(
+        mut self,
+        observations: &'a [RustTestObservation],
+    ) -> Self {
+        self.rust_test_observations = Some(observations);
+        self
+    }
 }
 
 #[derive(Clone, Copy, Debug, Default)]
 struct EvaluationInputs<'a> {
     rust_tests: Option<&'a [RustTestFact]>,
+    rust_test_observations: Option<&'a [RustTestObservation]>,
     documentation: Option<&'a DocumentationConformanceReport>,
     contract_coherency: Option<&'a ContractCoherencyEvaluation>,
     architecture_realization: Option<&'a ArchitectureRealization>,
@@ -305,6 +320,7 @@ impl<'a> From<CompleteEvaluationInputs<'a>> for EvaluationInputs<'a> {
     fn from(inputs: CompleteEvaluationInputs<'a>) -> Self {
         Self {
             rust_tests: Some(inputs.rust_tests),
+            rust_test_observations: inputs.rust_test_observations,
             documentation: Some(inputs.documentation),
             contract_coherency: Some(inputs.contract_coherency),
             architecture_realization: Some(inputs.architecture_realization),
@@ -566,7 +582,15 @@ fn traceability_from_inputs(
                 "Traceability evaluation requires a compiled CCG verification topology.",
             ))
         },
-        |ccg| traceability_execution(rule_id, ccg, rust_tests, edition),
+        |ccg| {
+            traceability_execution(
+                rule_id,
+                ccg,
+                rust_tests,
+                inputs.rust_test_observations,
+                edition,
+            )
+        },
     )
 }
 
@@ -881,17 +905,26 @@ fn traceability_execution(
     rule_id: &str,
     ccg: &crate::contract_coherency::ContractCoherencyGraph,
     rust_tests: &[RustTestFact],
+    rust_test_observations: Option<&[RustTestObservation]>,
     standard_edition: &str,
 ) -> Result<(RuleExecution, Vec<CanonicalFinding>), EvaluationError> {
     let result = evaluate_ccg_test_traceability(ccg, rust_tests, standard_edition)
         .map_err(EvaluationError::Finding)?;
+    let mut findings = result.findings().to_vec();
+    if let Some(observations) = rust_test_observations {
+        findings.extend(
+            missing_test_identity_findings(observations, standard_edition)
+                .map_err(EvaluationError::Finding)?,
+        );
+        findings.sort();
+    }
     Ok((
         completed_execution(
             rule_id,
-            result.findings().len(),
+            findings.len(),
             "requirement/test traceability violation(s)",
         ),
-        result.findings().to_vec(),
+        findings,
     ))
 }
 

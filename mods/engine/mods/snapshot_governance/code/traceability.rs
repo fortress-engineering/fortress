@@ -9,7 +9,7 @@ use crate::finding::{
     CanonicalFinding, EvaluatorProvenance, FindingCategory, FindingError, FindingLocation,
     FindingOccurrence, RuleFindingDefinition,
 };
-use crate::rust_test_analyzer::{RustTestClassification, RustTestFact};
+use crate::rust_test_analyzer::{RustTestClassification, RustTestFact, RustTestObservation};
 
 /// Stable identity of mandatory requirement/test traceability.
 pub const TEST_TRACEABILITY_RULE_ID: &str = "TEST-TRACEABILITY-001";
@@ -110,4 +110,51 @@ pub fn evaluate_ccg_test_traceability(
             .count(),
         findings,
     })
+}
+
+/// Produces traceability findings for observed Rust tests lacking stable governance identity.
+///
+/// # Errors
+///
+/// Returns an error only if canonical finding construction fails.
+pub fn missing_test_identity_findings(
+    observations: &[RustTestObservation],
+    standard_edition: &str,
+) -> Result<Vec<CanonicalFinding>, FindingError> {
+    let definition = RuleFindingDefinition::new(
+        TEST_TRACEABILITY_RULE_ID,
+        1,
+        FindingCategory::Testing,
+        REMEDIATION,
+    )?;
+    let evaluator =
+        EvaluatorProvenance::new("fortress-core/traceability", env!("CARGO_PKG_VERSION"))?;
+    let mut findings = observations
+        .iter()
+        .filter(|test| !test.is_governed())
+        .map(|test| {
+            let location = FindingLocation::at_path(test.path())?.with_symbol(test.symbol())?;
+            let occurrence = FindingOccurrence::new(
+                Vec::new(),
+                location,
+                format!(
+                    "observed Rust test `{}` has no valid stable Fortress test identity",
+                    test.symbol()
+                ),
+            )?
+            .with_discriminator(format!(
+                "MISSING_TEST_ID:{}#{}",
+                test.path(),
+                test.symbol()
+            ))?;
+            CanonicalFinding::failure(
+                definition.clone(),
+                occurrence,
+                evaluator.clone(),
+                standard_edition,
+            )
+        })
+        .collect::<Result<Vec<_>, FindingError>>()?;
+    findings.sort();
+    Ok(findings)
 }
