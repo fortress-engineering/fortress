@@ -18,10 +18,14 @@ Invalid authored authority and serialization failures return typed errors; suppo
 
 ## Files
 
+### [`operation_effect.rs`](../code/operation_effect.rs)
+
+Classifies exact Program Semantics external-operation identities into refined direct effects without using ambiguous source method names.
+
 ### [`state_contract.rs`](../code/state_contract.rs)
 
 Defines, canonicalizes, validates, and resolves distributed State Contract v1 declarations against PSM nominal types and Semantic Analysis domains.
 
 ### [`state_effect.rs`](../code/state_effect.rs)
 
-Derives direct/transitive effects, typestate classifications and transitions, policy checks, findings, coverage, canonical serialization, and artifact digests.
+Defines the effect ontology and capability consequences and derives direct/transitive effects, typestate classifications, policy checks, findings, coverage, canonical serialization, and artifact digests.

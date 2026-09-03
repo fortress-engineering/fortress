@@ -517,7 +517,10 @@ pub fn analyze_environmental_semantics(
                 ));
             }
             for effect in outcome.forbidden_effects() {
-                if transitive_effects.binary_search(effect).is_ok() {
+                if transitive_effects
+                    .iter()
+                    .any(|observed| effect.policy_covers(*observed))
+                {
                     violations.push(violation(
                         PROGRAM_ENVIRONMENT_RULE_ID,
                         EnvironmentalViolationKind::ForbiddenEffect,
@@ -527,12 +530,13 @@ pub fn analyze_environmental_semantics(
                         source_path,
                         vec![
                             format!("outcome:{}", outcome.id()),
-                            format!("observed_effect:{effect:?}"),
+                            format!("observed_effect:{}", effect.stable_id()),
                         ],
                         format!(
-                            "Environment operation `{}` outcome `{}` forbids supported transitive effect `{effect:?}`.",
+                            "Environment operation `{}` outcome `{}` forbids supported transitive effect `{}`.",
                             operation.id(),
-                            outcome.id()
+                            outcome.id(),
+                            effect.stable_id()
                         ),
                     ));
                 }

@@ -969,9 +969,9 @@ fn state_effect_json_is_schema_versioned_and_repeatable() {
         serde_json::from_slice(&first.stdout).expect("state/effect output is JSON");
     assert_eq!(
         value["$schema"],
-        "urn:fortress:schema:v1:state-effect-analysis"
+        "urn:fortress:schema:v2:state-effect-analysis"
     );
-    assert_eq!(value["schema_version"], 1);
+    assert_eq!(value["schema_version"], 2);
     assert_eq!(value["coverage"]["violations"], 0);
 }
 

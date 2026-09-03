@@ -36,4 +36,8 @@ Defines canonical distributed declarations of finite states over direct nominal 
 
 ### [`state_effect_schema_v1.json`](../data/state_effect_schema_v1.json)
 
-Defines the deterministic derived State/Effect Analysis document serialized for inspection and freshness gating.
+Defines the retained State/Effect Analysis v1 envelope for historical projection interpretation.
+
+### [`state_effect_schema_v2.json`](../data/state_effect_schema_v2.json)
+
+Defines deterministic State/Effect Analysis v2 output with a structured effect catalog, capability consequences, operation-classification coverage, and causal evidence.

@@ -10,12 +10,14 @@ use fortress_core::program_semantics::{
     ExecutableSymbol, ProgramSemanticInput, ProgramSemanticModel, compile_program_semantic_model,
 };
 use fortress_core::semantic_analysis::{
-    FunctionContractSource, ResolvedFunctionContracts, SemanticAnalysisEvaluation,
-    analyze_program_domains, canonicalize_function_contract_json, load_function_contracts,
+    FunctionContractError, FunctionContractSource, FunctionEffect, ResolvedFunctionContracts,
+    SemanticAnalysisEvaluation, analyze_program_domains, canonicalize_function_contract_json,
+    load_function_contracts,
 };
 use fortress_core::state_effect_analysis::{
-    ResolvedStateContracts, StateContractError, StateContractSource, StateEffectAnalysisError,
-    StateEffectAnalysisEvaluation, analyze_state_effects, canonicalize_state_contract_json,
+    EffectCapability, EffectEvidenceKind, ResolvedStateContracts, StateContractError,
+    StateContractSource, StateEffectAnalysisError, StateEffectAnalysisEvaluation,
+    analyze_state_effects, canonicalize_state_contract_json, capability_for_effect,
     load_state_contracts,
 };
 
@@ -36,7 +38,7 @@ fn psm(source: &str) -> ProgramSemanticModel {
             vec![
                 SnapshotBoundFile::from_bytes(
                     "mods/sample/data/Cargo.toml",
-                    b"[package]\nname='sample'\nversion='0.1.0'\nedition='2024'\n[lib]\npath='../code/lib.rs'\n",
+                    b"[package]\nname='sample'\nversion='0.1.0'\nedition='2024'\n[lib]\npath='../code/lib.rs'\n[dependencies]\ngetrandom='0.3'\nrand='0.9'\n",
                 ),
                 SnapshotBoundFile::from_bytes("mods/sample/code/lib.rs", source.as_bytes()),
             ],
@@ -97,6 +99,20 @@ fn function_sources(
     model: &ProgramSemanticModel,
     entries: &[FunctionFixture<'_>],
 ) -> Vec<FunctionContractSource> {
+    function_sources_for_version(
+        model,
+        entries,
+        "urn:fortress:schema:v3:function-contracts",
+        3,
+    )
+}
+
+fn function_sources_for_version(
+    model: &ProgramSemanticModel,
+    entries: &[FunctionFixture<'_>],
+    schema: &str,
+    schema_version: u16,
+) -> Vec<FunctionContractSource> {
     let mut functions = entries
         .iter()
         .map(|(suffix, requires, ensures, effects)| {
@@ -122,8 +138,8 @@ fn function_sources(
         .collect::<Vec<_>>();
     functions.sort_by(|left, right| left["symbol"].as_str().cmp(&right["symbol"].as_str()));
     let raw = serde_json::json!({
-        "$schema": "urn:fortress:schema:v3:function-contracts",
-        "schema_version": 3,
+        "$schema": schema,
+        "schema_version": schema_version,
         "functions": functions
     })
     .to_string();
@@ -133,6 +149,18 @@ fn function_sources(
         canonicalize_function_contract_json("function_contracts.json", &raw)
             .expect("function contracts canonicalize"),
     )]
+}
+
+fn function_sources_v4(
+    model: &ProgramSemanticModel,
+    entries: &[FunctionFixture<'_>],
+) -> Vec<FunctionContractSource> {
+    function_sources_for_version(
+        model,
+        entries,
+        "urn:fortress:schema:v4:function-contracts",
+        4,
+    )
 }
 
 fn evaluate(
@@ -299,14 +327,16 @@ fn direct_receiver_mutation_proves_state_transition() {
 /// Fortress requirement: AF-STATE-EFFECT-ANALYSIS-0001-R02
 #[test]
 fn opaque_external_mutation_preserves_uncertainty() {
-    let model = connection_model("fn touch(&mut self) { std::mem::drop(self); }");
+    let model = connection_model(
+        "fn touch(&mut self) { std::sync::atomic::fence(std::sync::atomic::Ordering::SeqCst); }",
+    );
     let states = load_state_contracts(&model, vec![state_source(&model)]).expect("states resolve");
     let functions = load_function_contracts(&model, Vec::new()).expect("empty contracts resolve");
     let json = evaluate(&model, &states, &functions)
         .model()
         .to_canonical_json()
         .expect("serializes");
-    assert!(json.contains("opaque_external_effects"));
+    assert!(json.contains("unclassified_external_operation"));
     assert!(json.contains("external_interaction"));
 }
 
@@ -725,4 +755,351 @@ fn live_fortress_state_effect_analysis_executes_without_supported_contradictions
         .to_canonical_json()
         .expect("fresh analysis serializes");
     assert!(canonical.ends_with('\n'));
+}
+
+/// `T-AF-STATE-EFFECT-ANALYSIS-0001-R05-001`
+/// Fortress requirement: AF-STATE-EFFECT-ANALYSIS-0001-R05
+#[test]
+#[allow(clippy::too_many_lines)]
+fn refined_effect_ground_truth_exceeds_required_accuracy() {
+    let model = psm(r#"
+use std::io::{Read, Write};
+fn pure(value: u8) -> u8 { value + 1 }
+fn filesystem_read() { let _ = std::fs::read("input"); }
+fn filesystem_write() { let _ = std::fs::write("output", b"x"); }
+fn filesystem_copy() { let _ = std::fs::copy("input", "output"); }
+fn filesystem_file_read(mut file: std::fs::File) { let _ = file.read(&mut []); }
+fn filesystem_file_write(mut file: std::fs::File) { let _ = file.write(b"x"); }
+fn network_connect() { let _ = std::net::TcpStream::connect("127.0.0.1:1"); }
+fn network_listen() { let _ = std::net::TcpListener::bind("127.0.0.1:1"); }
+fn network_io(mut stream: std::net::TcpStream) { let _ = stream.write(b"x"); let _ = stream.read(&mut []); }
+fn process_spawn() { let mut command: std::process::Command = std::process::Command::new("echo"); let _ = command.spawn(); }
+fn environment_read() { let _ = std::env::var("HOME"); }
+fn environment_write() { unsafe { std::env::set_var("A", "B"); } }
+fn wall_time() { let _ = std::time::SystemTime::now(); }
+fn monotonic_time() { let _ = std::time::Instant::now(); }
+fn random_read() { let mut bytes = [0_u8; 4]; let _ = getrandom::fill(&mut bytes); }
+fn panic_macro() { panic!("failure"); }
+fn unreachable_macro() { unreachable!(); }
+fn todo_macro() { todo!(); }
+fn assertion(value: bool) { assert!(value); }
+fn unwrap_option(value: Option<u8>) { let _ = value.unwrap(); }
+fn expect_result(value: Result<u8, ()>) { let _ = value.expect("value"); }
+fn indexing(value: &[u8]) { let _ = value[1]; }
+fn division_zero() { let _ = 1 / 0; }
+unsafe fn unsafe_function() {}
+fn unsafe_block() { unsafe { std::ptr::read(std::ptr::null()); } }
+"#);
+    let states = load_state_contracts(&model, Vec::new()).expect("empty states resolve");
+    let functions = load_function_contracts(&model, Vec::new()).expect("empty functions resolve");
+    let evaluation = evaluate(&model, &states, &functions);
+    let expected: [(&str, &[FunctionEffect]); 24] = [
+        ("filesystem_read", &[FunctionEffect::FilesystemRead]),
+        ("filesystem_write", &[FunctionEffect::FilesystemWrite]),
+        (
+            "filesystem_copy",
+            &[
+                FunctionEffect::FilesystemRead,
+                FunctionEffect::FilesystemWrite,
+            ],
+        ),
+        ("filesystem_file_read", &[FunctionEffect::FilesystemRead]),
+        ("filesystem_file_write", &[FunctionEffect::FilesystemWrite]),
+        ("network_connect", &[FunctionEffect::NetworkConnect]),
+        ("network_listen", &[FunctionEffect::NetworkListen]),
+        ("network_io", &[FunctionEffect::NetworkIo]),
+        ("process_spawn", &[FunctionEffect::ProcessSpawn]),
+        ("environment_read", &[FunctionEffect::EnvironmentRead]),
+        ("environment_write", &[FunctionEffect::EnvironmentWrite]),
+        ("wall_time", &[FunctionEffect::TimeWallRead]),
+        ("monotonic_time", &[FunctionEffect::TimeMonotonicRead]),
+        ("random_read", &[FunctionEffect::RandomRead]),
+        ("panic_macro", &[FunctionEffect::MayPanic]),
+        ("unreachable_macro", &[FunctionEffect::MayPanic]),
+        ("todo_macro", &[FunctionEffect::MayPanic]),
+        ("assertion", &[FunctionEffect::MayPanic]),
+        ("unwrap_option", &[FunctionEffect::MayPanic]),
+        ("expect_result", &[FunctionEffect::MayPanic]),
+        ("indexing", &[FunctionEffect::MayPanic]),
+        ("division_zero", &[FunctionEffect::MayPanic]),
+        ("unsafe_function", &[FunctionEffect::UnsafeExecution]),
+        ("unsafe_block", &[FunctionEffect::UnsafeExecution]),
+    ];
+    let mut correct = 0_usize;
+    let mut failures = Vec::new();
+    for (suffix, effects) in expected {
+        let symbol = symbol_id(&model, suffix);
+        let summary = evaluation
+            .model()
+            .summaries()
+            .iter()
+            .find(|summary| summary.symbol() == symbol)
+            .expect("ground-truth summary exists");
+        for effect in effects {
+            if summary.direct_effects().contains(effect) {
+                correct += 1;
+            } else {
+                failures.push(format!("{suffix}:{}", effect.stable_id()));
+            }
+        }
+        let refined_external = summary
+            .direct_effects()
+            .iter()
+            .copied()
+            .filter(|observed| {
+                observed.is_external_resource_effect()
+                    && *observed != FunctionEffect::ExternalInteraction
+            })
+            .collect::<Vec<_>>();
+        let expected_external = effects
+            .iter()
+            .copied()
+            .filter(|effect| effect.is_external_resource_effect())
+            .collect::<Vec<_>>();
+        if expected_external.is_empty() {
+            assert!(refined_external.is_empty(), "{suffix}:{refined_external:?}");
+        } else {
+            assert_eq!(refined_external, expected_external, "{suffix}");
+        }
+    }
+    assert!(
+        correct * 100 >= 25 * 90,
+        "correct={correct} total=25 failures={failures:?}",
+    );
+    assert_eq!(correct, 25, "failures={failures:?}");
+    let pure = symbol_id(&model, "pure");
+    assert!(
+        evaluation
+            .model()
+            .summaries()
+            .iter()
+            .find(|summary| summary.symbol() == pure)
+            .expect("pure summary")
+            .direct_effects()
+            .is_empty()
+    );
+    let canonical = evaluation
+        .model()
+        .to_canonical_json()
+        .expect("ground truth serializes");
+    assert!(canonical.contains("std::fs::read"));
+    assert!(canonical.contains("program_semantics.external_target"));
+}
+
+/// `T-AF-STATE-EFFECT-ANALYSIS-0001-R05-002`
+/// Fortress requirement: AF-STATE-EFFECT-ANALYSIS-0001-R05
+#[test]
+fn effect_capability_pairs_are_independently_expressible() {
+    assert_ne!(
+        FunctionEffect::FilesystemWrite,
+        FunctionEffect::NetworkConnect
+    );
+    assert_ne!(
+        FunctionEffect::ProcessSpawn,
+        FunctionEffect::EnvironmentRead
+    );
+    assert_ne!(
+        FunctionEffect::EnvironmentRead,
+        FunctionEffect::EnvironmentWrite
+    );
+    assert!(!FunctionEffect::ExternalInteraction.policy_covers(FunctionEffect::UnsafeExecution));
+    assert!(FunctionEffect::ExternalInteraction.policy_covers(FunctionEffect::FilesystemRead));
+    assert_eq!(
+        capability_for_effect(FunctionEffect::FilesystemWrite),
+        Some(EffectCapability::Filesystem)
+    );
+    assert_eq!(
+        capability_for_effect(FunctionEffect::NetworkConnect),
+        Some(EffectCapability::NetworkClient)
+    );
+    assert_eq!(
+        capability_for_effect(FunctionEffect::NetworkListen),
+        Some(EffectCapability::NetworkServer)
+    );
+    assert_eq!(
+        capability_for_effect(FunctionEffect::EnvironmentRead),
+        capability_for_effect(FunctionEffect::EnvironmentWrite)
+    );
+}
+
+/// `T-AF-STATE-EFFECT-ANALYSIS-0001-R05-003`
+/// Fortress requirement: AF-STATE-EFFECT-ANALYSIS-0001-R05
+#[test]
+fn legacy_external_policy_is_an_explicit_refined_umbrella() {
+    let model = psm("fn write() { let _ = std::fs::write(\"output\", b\"x\"); }\n");
+    let states = load_state_contracts(&model, Vec::new()).expect("empty states resolve");
+    let legacy = load_function_contracts(
+        &model,
+        function_sources(
+            &model,
+            &[("write", &[], &[], Some(&["external_interaction"]))],
+        ),
+    )
+    .expect("legacy umbrella resolves");
+    assert!(
+        evaluate(&model, &states, &legacy)
+            .effect_findings()
+            .is_empty()
+    );
+
+    let refined = load_function_contracts(
+        &model,
+        function_sources_v4(&model, &[("write", &[], &[], Some(&["filesystem.write"]))]),
+    )
+    .expect("refined policy resolves");
+    assert!(
+        evaluate(&model, &states, &refined)
+            .effect_findings()
+            .is_empty()
+    );
+
+    let wrong = load_function_contracts(
+        &model,
+        function_sources_v4(&model, &[("write", &[], &[], Some(&["network.connect"]))]),
+    )
+    .expect("distinct policy resolves");
+    assert_eq!(evaluate(&model, &states, &wrong).effect_findings().len(), 1);
+
+    let raw = serde_json::json!({
+        "$schema": "urn:fortress:schema:v3:function-contracts",
+        "schema_version": 3,
+        "functions": [{
+            "symbol": symbol_id(&model, "write"), "requires": [], "ensures": [],
+            "state_requires": [], "state_ensures": [],
+            "effects": {"allowed": ["filesystem.write"]}
+        }]
+    })
+    .to_string();
+    assert!(matches!(
+        canonicalize_function_contract_json("legacy.json", &raw),
+        Err(FunctionContractError::EffectRequiresV4 { .. })
+    ));
+}
+
+/// `T-AF-STATE-EFFECT-ANALYSIS-0001-R05-004`
+/// Fortress requirement: AF-STATE-EFFECT-ANALYSIS-0001-R05
+#[test]
+fn panic_and_unsafe_structure_is_detected_in_nested_positions() {
+    let model = psm(
+        "fn nested(value: Option<u8>) -> u8 { let item = value.expect(\"item\"); if item > 0 { assert!(item < 10); } unsafe { std::ptr::read(&item) } }\n",
+    );
+    let states = load_state_contracts(&model, Vec::new()).expect("empty states resolve");
+    let functions = load_function_contracts(&model, Vec::new()).expect("empty functions resolve");
+    let evaluation = evaluate(&model, &states, &functions);
+    let summary = evaluation
+        .model()
+        .summaries()
+        .iter()
+        .find(|summary| summary.symbol() == symbol_id(&model, "nested"))
+        .expect("nested summary");
+    assert!(summary.direct_effects().contains(&FunctionEffect::MayPanic));
+    assert!(
+        summary
+            .direct_effects()
+            .contains(&FunctionEffect::UnsafeExecution)
+    );
+    assert!(
+        summary
+            .effect_evidence()
+            .iter()
+            .any(|evidence| evidence.operation() == "rust.unsafe_block")
+    );
+}
+
+/// `T-AF-STATE-EFFECT-ANALYSIS-0001-R05-005`
+/// Fortress requirement: AF-STATE-EFFECT-ANALYSIS-0001-R05
+#[test]
+fn two_hop_effect_closure_retains_origin_and_call_chain() {
+    let model = psm(r#"
+fn filesystem_origin() { let _ = std::fs::write("output", b"x"); }
+fn filesystem_helper() { filesystem_origin(); }
+fn filesystem_entry() { filesystem_helper(); }
+fn network_origin() { let _ = std::net::TcpStream::connect("127.0.0.1:1"); }
+fn network_helper() { network_origin(); }
+fn network_entry() { network_helper(); }
+fn process_origin() { let mut command: std::process::Command = std::process::Command::new("echo"); let _ = command.spawn(); }
+fn process_helper() { process_origin(); }
+fn process_entry() { process_helper(); }
+fn environment_origin() { let _ = std::env::var("HOME"); }
+fn environment_helper() { environment_origin(); }
+fn environment_entry() { environment_helper(); }
+fn time_origin() { let _ = std::time::Instant::now(); }
+fn time_helper() { time_origin(); }
+fn time_entry() { time_helper(); }
+fn random_origin() { let mut bytes = [0_u8; 4]; let _ = getrandom::fill(&mut bytes); }
+fn random_helper() { random_origin(); }
+fn random_entry() { random_helper(); }
+fn panic_origin() { panic!("failure"); }
+fn panic_helper() { panic_origin(); }
+fn panic_entry() { panic_helper(); }
+fn unsafe_origin() { unsafe { std::ptr::read(std::ptr::null::<u8>()); } }
+fn unsafe_helper() { unsafe_origin(); }
+fn unsafe_entry() { unsafe_helper(); }
+"#);
+    let states = load_state_contracts(&model, Vec::new()).expect("empty states resolve");
+    let functions = load_function_contracts(&model, Vec::new()).expect("empty functions resolve");
+    let evaluation = evaluate(&model, &states, &functions);
+    let cases = [
+        ("filesystem", FunctionEffect::FilesystemWrite),
+        ("network", FunctionEffect::NetworkConnect),
+        ("process", FunctionEffect::ProcessSpawn),
+        ("environment", FunctionEffect::EnvironmentRead),
+        ("time", FunctionEffect::TimeMonotonicRead),
+        ("random", FunctionEffect::RandomRead),
+        ("panic", FunctionEffect::MayPanic),
+        ("unsafe", FunctionEffect::UnsafeExecution),
+    ];
+    for (name, effect) in cases {
+        let entry = symbol_id(&model, &format!("{name}_entry"));
+        let origin = symbol_id(&model, &format!("{name}_origin"));
+        let summary = evaluation
+            .model()
+            .summaries()
+            .iter()
+            .find(|summary| summary.symbol() == entry)
+            .expect("entry summary");
+        assert!(summary.transitive_effects().contains(&effect), "{name}");
+        let evidence = summary
+            .effect_evidence()
+            .iter()
+            .find(|evidence| evidence.effect() == effect)
+            .expect("transitive evidence");
+        assert_eq!(evidence.kind(), EffectEvidenceKind::Transitive);
+        assert_eq!(evidence.entry_symbol(), entry);
+        assert_eq!(evidence.source_symbol(), origin);
+        assert_eq!(evidence.call_chain().len(), 3);
+        assert_eq!(evidence.capability(), capability_for_effect(effect));
+    }
+}
+
+/// `T-AF-STATE-EFFECT-ANALYSIS-0001-R05-006`
+/// Fortress requirement: AF-STATE-EFFECT-ANALYSIS-0001-R05
+#[test]
+fn unresolved_method_names_never_gain_refined_specificity() {
+    let model = psm(
+        "struct Writer; impl Writer { fn write(&self) {} fn unwrap(&self) {} } fn unknown<T>(value: T) { value.write(); } fn local(value: Writer) { value.write(); value.unwrap(); } fn foreign_file(value: getrandom::File) { value.write(); }\n",
+    );
+    let states = load_state_contracts(&model, Vec::new()).expect("empty states resolve");
+    let functions = load_function_contracts(&model, Vec::new()).expect("empty functions resolve");
+    let evaluation = evaluate(&model, &states, &functions);
+    for suffix in ["unknown", "local", "foreign_file"] {
+        let symbol = symbol_id(&model, suffix);
+        let summary = evaluation
+            .model()
+            .summaries()
+            .iter()
+            .find(|summary| summary.symbol() == symbol)
+            .expect("summary exists");
+        assert!(
+            !summary
+                .direct_effects()
+                .contains(&FunctionEffect::FilesystemWrite)
+        );
+        assert!(
+            !summary
+                .direct_effects()
+                .contains(&FunctionEffect::NetworkIo)
+        );
+        assert!(!summary.direct_effects().contains(&FunctionEffect::MayPanic));
+    }
 }

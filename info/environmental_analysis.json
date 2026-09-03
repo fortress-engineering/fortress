@@ -3,10 +3,10 @@
   "schema_version": 1,
   "semantic_version": "1.0.0",
   "project_id": "PF-FORTRESS",
-  "psm_digest": "sha256:f2ce8debb20efca64c9e7015abd9580928bb2e2972b6f572456f4fb98da4526f",
-  "semantic_analysis_digest": "sha256:bdbab3ffbadeeb23f20b57023ac9e0f513c6a9b146f17f4fd70f17acc5e4eb91",
-  "state_effect_digest": "sha256:58dde7a30ae7d123eb0306f574a773b6198827bec1ac6b5c8d162e3bb94e0788",
-  "information_flow_digest": "sha256:864070e843057ed9493a2f03a419bec313d2864744e4d5c65761c62f4f53694d",
+  "psm_digest": "sha256:529c126a23de54d858926f203443938a2b04e1e1d7554ecf59c22b9b73eac30e",
+  "semantic_analysis_digest": "sha256:e29c0f67614f4040b87080c36ead974dcbf097c053a14f9899f7f948900629d0",
+  "state_effect_digest": "sha256:b969247973de51c96fc891562a5f58ea18c56ae66ecac2bdfd51c4dd953a0278",
+  "information_flow_digest": "sha256:638a84aa662b501975171758d3ac71e960010fb715a6f8d5c3913a1c79e39c6b",
   "environment_contract_digest": "sha256:1830ce3648eb80379809b99f599aa73c6b889aa79616dee2207aa405285374fd",
   "function_contract_digest": "sha256:4cec037c542c897fc195b0c9b615bca32f14ac3834db97e20579f074251794b3",
   "operations": [
@@ -22,10 +22,12 @@
       "atomicity": "UNKNOWN",
       "interruption_sensitive": false,
       "direct_effects": [
-        "external_interaction"
+        "external_interaction",
+        "filesystem.read"
       ],
       "transitive_effects": [
-        "external_interaction"
+        "external_interaction",
+        "filesystem.read"
       ],
       "outcomes": [
         {

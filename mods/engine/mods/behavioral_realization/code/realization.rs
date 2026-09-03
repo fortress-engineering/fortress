@@ -1001,6 +1001,7 @@ fn lower_expression(
         | ProgramExpression::Unit
         | ProgramExpression::Variant { .. }
         | ProgramExpression::Exceptional { .. }
+        | ProgramExpression::StructuralEffect { .. }
         | ProgramExpression::Unsupported { .. } => inputs,
     }
 }
@@ -1139,7 +1140,7 @@ fn derive_state_effect_events(
         for effect in summary.direct_effects() {
             let event = builder.add_event(
                 "effect",
-                &format!("{}:{effect:?}", summary.symbol()),
+                &format!("{}:{}", summary.symbol(), effect.stable_id()),
                 Some(summary.symbol()),
                 symbol.fortress_module(),
                 EventAuthority::StateEffectAnalysis,
@@ -1678,9 +1679,10 @@ fn resolve_anchor_event(
                 classification_from_states(to_states)
             ),
         )),
-        BehaviorAnchor::Effect { effect, symbol } => {
-            Some(event_id("effect", &format!("{symbol}:{effect:?}")))
-        }
+        BehaviorAnchor::Effect { effect, symbol } => Some(event_id(
+            "effect",
+            &format!("{symbol}:{}", effect.stable_id()),
+        )),
         BehaviorAnchor::InformationTransition {
             transition,
             symbol,

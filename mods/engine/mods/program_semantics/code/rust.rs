@@ -568,6 +568,12 @@ fn lower_expression(expression: &Expr) -> ProgramExpression {
             mutable: value.mutability.is_some(),
             value: Box::new(lower_expression(&value.expr)),
         },
+        Expr::Index(_) => ProgramExpression::StructuralEffect {
+            operation: "rust.index".into(),
+        },
+        Expr::Unsafe(_) => ProgramExpression::StructuralEffect {
+            operation: "rust.unsafe_block".into(),
+        },
         Expr::Macro(value) => lower_macro(&value.mac.path.to_token_stream().to_string()),
         Expr::Block(value) => value
             .block
@@ -617,12 +623,24 @@ fn lower_pattern(pattern: &Pat) -> ProgramPattern {
 }
 
 fn lower_macro(path: &str) -> ProgramExpression {
-    let operation = match path {
-        "unreachable" => "unreachable",
-        "panic" => "panic",
+    let normalized = path.replace(' ', "");
+    let operation = match normalized.as_str() {
+        "panic" | "core::panic" | "std::panic" => "rust.macro.panic",
+        "unreachable" | "core::unreachable" | "std::unreachable" => "rust.macro.unreachable",
+        "todo" | "core::todo" | "std::todo" => "rust.macro.todo",
+        "assert" | "core::assert" | "std::assert" => "rust.macro.assert",
+        "assert_eq" | "core::assert_eq" | "std::assert_eq" => "rust.macro.assert_eq",
+        "assert_ne" | "core::assert_ne" | "std::assert_ne" => "rust.macro.assert_ne",
+        "debug_assert" | "core::debug_assert" | "std::debug_assert" => "rust.macro.debug_assert",
+        "debug_assert_eq" | "core::debug_assert_eq" | "std::debug_assert_eq" => {
+            "rust.macro.debug_assert_eq"
+        }
+        "debug_assert_ne" | "core::debug_assert_ne" | "std::debug_assert_ne" => {
+            "rust.macro.debug_assert_ne"
+        }
         _ => {
             return ProgramExpression::Unsupported {
-                rust_spelling: format!("{path}!(...)"),
+                rust_spelling: format!("{normalized}!(...)"),
             };
         }
     };
@@ -2186,7 +2204,19 @@ impl SymbolLookup {
                         target.facade_owner.clone(),
                     )
                 }
-                DependencyResolution::External(target) => CallOutcome::external(target.clone()),
+                DependencyResolution::External(target) => {
+                    let suffix = segments
+                        .iter()
+                        .skip(1)
+                        .cloned()
+                        .collect::<Vec<_>>()
+                        .join("::");
+                    CallOutcome::external(if suffix.is_empty() {
+                        target.clone()
+                    } else {
+                        format!("{target}::{suffix}")
+                    })
+                }
             };
         }
         if first == &current.lib_name && crate_name != current.lib_name {
@@ -2199,7 +2229,7 @@ impl SymbolLookup {
             );
         }
         if matches!(first.as_str(), "std" | "core" | "alloc") {
-            return CallOutcome::external(first.clone());
+            return CallOutcome::external(segments.join("::"));
         }
         let normalized = normalize_relative_path(namespace, segments);
         let outcome = self.resolve_in_scope(package, crate_name, namespace, &normalized, None);
@@ -2214,7 +2244,7 @@ impl SymbolLookup {
                 return outcome;
             }
             if is_standard_type(&owner) {
-                return CallOutcome::external(owner);
+                return CallOutcome::external(format!("rust_type::{owner}::{method}"));
             }
         }
         if matches!(first.as_str(), "Some" | "Ok" | "Err" | "Box") {
@@ -2512,6 +2542,14 @@ fn is_standard_type(value: &str) -> bool {
             | "Result"
             | "Path"
             | "PathBuf"
+            | "File"
+            | "OpenOptions"
+            | "TcpStream"
+            | "TcpListener"
+            | "UdpSocket"
+            | "Command"
+            | "SystemTime"
+            | "Instant"
             | "str"
     )
 }
@@ -3696,10 +3734,7 @@ fn resolve_call(call: &RawCall, lookup: &SymbolLookup) -> CallOutcome {
                         && starts_type_name(owner)
                         && simple_type_name(owner).len() > 1)
                 {
-                    CallOutcome::external(format!(
-                        "rust_method::{}::{method}",
-                        simple_type_name(owner)
-                    ))
+                    CallOutcome::external(format!("rust_method::{owner}::{method}"))
                 } else {
                     CallOutcome::unresolved().with_reason(if simple_type_name(owner).len() <= 2 {
                         CallResolutionReason::GenericReceiver

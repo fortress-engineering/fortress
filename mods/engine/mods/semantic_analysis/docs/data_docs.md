@@ -28,7 +28,11 @@ Narrows and proves the exact iteration-bound contract of the Semantic Analysis f
 
 ### [`function_contract_schema_v3.json`](../data/function_contract_schema_v3.json)
 
-Defines strict distributed Function Contract v3 documents, supported authored domain forms, state obligations, effect policies, and project-facet information-flow declarations.
+Defines backward-compatible Function Contract v3 documents and the legacy closed effect vocabulary, including the explicit `external_interaction` umbrella.
+
+### [`function_contract_schema_v4.json`](../data/function_contract_schema_v4.json)
+
+Defines strict distributed Function Contract v4 documents, supported authored domain forms, state obligations, refined effect policies, and project-facet information-flow declarations.
 
 ### [`program_domain_rule.json`](../data/program_domain_rule.json)
 

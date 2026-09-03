@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v2:state-effect-analysis",
+  "title": "Fortress State and Effect Analysis v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "schema_version", "semantic_version", "project_id", "psm_digest", "semantic_analysis_digest", "state_contract_digest", "function_contract_digest", "effect_catalog", "summaries", "violations", "direct_effect_counts", "transitive_effect_counts", "direct_capability_counts", "transitive_capability_counts", "coverage", "unsupported_semantics"],
+  "properties": {
+    "$schema": { "const": "urn:fortress:schema:v2:state-effect-analysis" },
+    "schema_version": { "const": 2 },
+    "semantic_version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "project_id": { "type": ["string", "null"], "minLength": 1 },
+    "psm_digest": { "$ref": "#/$defs/digest" },
+    "semantic_analysis_digest": { "$ref": "#/$defs/digest" },
+    "state_contract_digest": { "$ref": "#/$defs/digest" },
+    "function_contract_digest": { "$ref": "#/$defs/digest" },
+    "effect_catalog": { "type": "array", "items": { "$ref": "#/$defs/effect_descriptor" } },
+    "summaries": { "type": "array", "items": { "type": "object" } },
+    "violations": { "type": "array", "items": { "type": "object" } },
+    "direct_effect_counts": { "$ref": "#/$defs/count_map" },
+    "transitive_effect_counts": { "$ref": "#/$defs/count_map" },
+    "direct_capability_counts": { "$ref": "#/$defs/count_map" },
+    "transitive_capability_counts": { "$ref": "#/$defs/count_map" },
+    "coverage": { "type": "object" },
+    "unsupported_semantics": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+  },
+  "$defs": {
+    "digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "count_map": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 } },
+    "effect_descriptor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "family", "operation", "capability"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "family": { "enum": ["state", "filesystem", "network", "process", "environment", "time", "randomness", "panic", "unsafe", "external"] },
+        "operation": { "type": "string", "minLength": 1 },
+        "capability": { "type": ["string", "null"] }
+      }
+    }
+  }
+}

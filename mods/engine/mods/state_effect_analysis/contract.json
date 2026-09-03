@@ -37,7 +37,7 @@
       "requirements": [
         {
           "id": "AF-STATE-EFFECT-ANALYSIS-0001-R01",
-          "statement": "State and Effect Analysis validates canonical distributed State Contract v1 and Function Contract v3 state/effect authority against PSM nominal ownership, fields, symbols, and Semantic Analysis domains.",
+          "statement": "State and Effect Analysis validates canonical distributed State Contract v1 and Function Contract v3/v4 state/effect authority against PSM nominal ownership, fields, symbols, and Semantic Analysis domains.",
           "tests": [
             "T-AF-STATE-EFFECT-ANALYSIS-0001-R01-001",
             "T-AF-STATE-EFFECT-ANALYSIS-0001-R01-002",
@@ -79,6 +79,18 @@
             "T-AF-STATE-EFFECT-ANALYSIS-0001-R04-001",
             "T-AF-STATE-EFFECT-ANALYSIS-0001-R04-002",
             "T-AF-STATE-EFFECT-ANALYSIS-0001-R04-003"
+          ]
+        },
+        {
+          "id": "AF-STATE-EFFECT-ANALYSIS-0001-R05",
+          "statement": "State and Effect Analysis classifies exact semantic operation identities into a structured effect ontology and capability consequences, preserves unsupported operation coverage, detects supported Rust panic and unsafe boundaries, propagates causal evidence, and retains explicit Function Contract v3 umbrella compatibility without weakening v4 distinctions.",
+          "tests": [
+            "T-AF-STATE-EFFECT-ANALYSIS-0001-R05-001",
+            "T-AF-STATE-EFFECT-ANALYSIS-0001-R05-002",
+            "T-AF-STATE-EFFECT-ANALYSIS-0001-R05-003",
+            "T-AF-STATE-EFFECT-ANALYSIS-0001-R05-004",
+            "T-AF-STATE-EFFECT-ANALYSIS-0001-R05-005",
+            "T-AF-STATE-EFFECT-ANALYSIS-0001-R05-006"
           ]
         }
       ]

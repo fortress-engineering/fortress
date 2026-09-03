@@ -1612,7 +1612,7 @@ fn certification_artifacts(
         ),
         (
             "state_effect",
-            "urn:fortress:schema:v1:state-effect-analysis",
+            "urn:fortress:schema:v2:state-effect-analysis",
             "info/state_effect_analysis.json",
             stack
                 .models

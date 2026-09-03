@@ -20,4 +20,4 @@ Assertions compare exact classifications, findings, coverage, provenance, and ca
 
 ### [`state_effect_analysis.rs`](../code/state_effect_analysis.rs)
 
-Verifies contract ownership, typestate behavior, effect closure and policy, uncertainty, deterministic output, and live self-analysis.
+Verifies contract ownership, typestate behavior, refined operation classification, capability expressibility, panic and unsafe structure, causal effect closure, policy compatibility, uncertainty, deterministic output, and live self-analysis.

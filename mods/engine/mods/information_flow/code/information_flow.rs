@@ -924,6 +924,7 @@ fn collect_expression_sources(
         | ProgramExpression::Unit
         | ProgramExpression::Variant { .. }
         | ProgramExpression::Exceptional { .. }
+        | ProgramExpression::StructuralEffect { .. }
         | ProgramExpression::Unsupported { .. } => {}
     }
 }

@@ -1,0 +1,233 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v4:function-contracts",
+  "title": "Fortress Function Contracts v4",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "schema_version", "functions"],
+  "properties": {
+    "$schema": { "const": "urn:fortress:schema:v4:function-contracts" },
+    "schema_version": { "const": 4 },
+    "functions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/function" }
+    }
+  },
+  "$defs": {
+    "symbol": { "type": "string", "pattern": "^rust_symbol:sha256:[0-9a-f]{64}$" },
+    "domain": {
+      "oneOf": [
+        { "$ref": "#/$defs/top" },
+        { "$ref": "#/$defs/bottom" },
+        { "$ref": "#/$defs/boolean" },
+        { "$ref": "#/$defs/integer_interval" },
+        { "$ref": "#/$defs/option_states" },
+        { "$ref": "#/$defs/result_states" },
+        { "$ref": "#/$defs/enum_variants" },
+        { "$ref": "#/$defs/tuple" }
+      ]
+    },
+    "top": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": { "kind": { "const": "top" } }
+    },
+    "bottom": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": { "kind": { "const": "bottom" } }
+    },
+    "boolean": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "include"],
+      "properties": {
+        "kind": { "const": "boolean" },
+        "include": { "type": "array", "uniqueItems": true, "items": { "type": "boolean" } }
+      }
+    },
+    "integer_interval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "min", "max", "exclude"],
+      "properties": {
+        "kind": { "const": "integer_interval" },
+        "min": { "type": "integer" },
+        "max": { "type": "integer" },
+        "exclude": { "type": "array", "uniqueItems": true, "items": { "type": "integer" } }
+      }
+    },
+    "option_states": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "include", "some"],
+      "properties": {
+        "kind": { "const": "option_states" },
+        "include": { "type": "array", "uniqueItems": true, "items": { "enum": ["none", "some"] } },
+        "some": { "oneOf": [{ "$ref": "#/$defs/domain" }, { "type": "null" }] }
+      }
+    },
+    "result_states": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "include", "ok", "err"],
+      "properties": {
+        "kind": { "const": "result_states" },
+        "include": { "type": "array", "uniqueItems": true, "items": { "enum": ["err", "ok"] } },
+        "ok": { "oneOf": [{ "$ref": "#/$defs/domain" }, { "type": "null" }] },
+        "err": { "oneOf": [{ "$ref": "#/$defs/domain" }, { "type": "null" }] }
+      }
+    },
+    "enum_variants": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "include"],
+      "properties": {
+        "kind": { "const": "enum_variants" },
+        "include": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "tuple": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "elements"],
+      "properties": {
+        "kind": { "const": "tuple" },
+        "elements": { "type": "array", "items": { "$ref": "#/$defs/domain" } }
+      }
+    },
+    "requirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["parameter", "domain"],
+      "properties": {
+        "parameter": { "type": "string", "minLength": 1 },
+        "domain": { "$ref": "#/$defs/domain" }
+      }
+    },
+    "guarantee": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["return", "domain"],
+      "properties": {
+        "return": { "const": true },
+        "domain": { "$ref": "#/$defs/domain" }
+      }
+    },
+    "state_obligation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target", "state"],
+      "properties": {
+        "target": { "type": "string", "minLength": 1 },
+        "state": { "type": "string", "pattern": "^STATE-[A-Z0-9]+(?:-[A-Z0-9]+)*$" }
+      }
+    },
+    "effect_policy": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["allowed"],
+      "properties": {
+        "allowed": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "enum": ["receiver_state_read", "receiver_state_write", "owned_state_read", "owned_state_write", "external_interaction", "filesystem.read", "filesystem.write", "network.connect", "network.listen", "network.io", "process.spawn", "environment.read", "environment.write", "time.wall_read", "time.monotonic_read", "random.read", "may_panic", "unsafe_execution"] }
+        }
+      }
+    },
+    "flow_target": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "name"],
+          "properties": {
+            "kind": { "const": "parameter" },
+            "name": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": { "kind": { "enum": ["receiver", "return"] } }
+        }
+      ]
+    },
+    "flow_source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target", "facet", "level"],
+      "properties": {
+        "target": { "$ref": "#/$defs/flow_target" },
+        "facet": { "type": "string", "minLength": 1 },
+        "level": { "type": "string", "minLength": 1 }
+      }
+    },
+    "flow_requirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target", "facet"],
+      "properties": {
+        "target": { "$ref": "#/$defs/flow_target" },
+        "facet": { "type": "string", "minLength": 1 },
+        "minimum": { "type": "string", "minLength": 1 },
+        "maximum": { "type": "string", "minLength": 1 }
+      },
+      "oneOf": [
+        { "required": ["minimum"], "not": { "required": ["maximum"] } },
+        { "required": ["maximum"], "not": { "required": ["minimum"] } }
+      ]
+    },
+    "flow_ensure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target", "facet", "level"],
+      "properties": {
+        "target": { "$ref": "#/$defs/flow_target" },
+        "facet": { "type": "string", "minLength": 1 },
+        "level": { "type": "string", "minLength": 1 }
+      }
+    },
+    "flow_transform": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "input", "output", "facet", "from", "to"],
+      "properties": {
+        "kind": { "enum": ["endorsement", "declassification"] },
+        "input": { "$ref": "#/$defs/flow_target" },
+        "output": { "$ref": "#/$defs/flow_target" },
+        "facet": { "type": "string", "minLength": 1 },
+        "from": { "type": "string", "minLength": 1 },
+        "to": { "type": "string", "minLength": 1 }
+      }
+    },
+    "information_flow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sources", "requires", "ensures", "transforms"],
+      "properties": {
+        "sources": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/flow_source" } },
+        "requires": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/flow_requirement" } },
+        "ensures": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/flow_ensure" } },
+        "transforms": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/flow_transform" } }
+      }
+    },
+    "function": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["symbol", "requires", "ensures", "state_requires", "state_ensures", "effects"],
+      "properties": {
+        "symbol": { "$ref": "#/$defs/symbol" },
+        "requires": { "type": "array", "items": { "$ref": "#/$defs/requirement" } },
+        "ensures": { "type": "array", "maxItems": 1, "items": { "$ref": "#/$defs/guarantee" } },
+        "state_requires": { "type": "array", "items": { "$ref": "#/$defs/state_obligation" } },
+        "state_ensures": { "type": "array", "items": { "$ref": "#/$defs/state_obligation" } },
+        "effects": { "$ref": "#/$defs/effect_policy" },
+        "information_flow": { "$ref": "#/$defs/information_flow" }
+      }
+    }
+  }
+}

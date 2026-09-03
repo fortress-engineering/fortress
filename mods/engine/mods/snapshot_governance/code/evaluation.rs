@@ -449,11 +449,11 @@ fn evaluate_rule(
             ))
         }
         PROGRAM_DOMAIN_RULE_ID => Ok(inputs.semantic_analysis.map_or_else(
-            || unsupported_execution(rule_id, "Program-domain evaluation requires one snapshot-bound PSM and its distributed Function Contract v3 set."),
+            || unsupported_execution(rule_id, "Program-domain evaluation requires one snapshot-bound PSM and its distributed Function Contract v3/v4 set."),
             |result| semantic_execution(rule_id, result),
         )),
         PROGRAM_STATE_RULE_ID => Ok(inputs.state_effect_analysis.map_or_else(
-            || unsupported_execution(rule_id, "Program-state evaluation requires one snapshot-bound PSM, Semantic Analysis result, State Contract set, and Function Contract v3 set."),
+            || unsupported_execution(rule_id, "Program-state evaluation requires one snapshot-bound PSM, Semantic Analysis result, State Contract set, and Function Contract v3/v4 set."),
             |result| state_effect_execution(rule_id, result, true),
         )),
         PROGRAM_EFFECT_RULE_ID => Ok(inputs.state_effect_analysis.map_or_else(
@@ -461,7 +461,7 @@ fn evaluate_rule(
             |result| state_effect_execution(rule_id, result, false),
         )),
         PROGRAM_INFOFLOW_RULE_ID => Ok(inputs.information_flow_analysis.map_or_else(
-            || unsupported_execution(rule_id, "Program information-flow evaluation requires one snapshot-bound PSM, Semantic Analysis result, State/Effect result, policy, and Function Contract v3 set."),
+            || unsupported_execution(rule_id, "Program information-flow evaluation requires one snapshot-bound PSM, Semantic Analysis result, State/Effect result, policy, and Function Contract v3/v4 set."),
             |result| information_flow_execution(rule_id, result),
         )),
         PROGRAM_ENVIRONMENT_RULE_ID | PROGRAM_RETRY_RULE_ID | PROGRAM_RECOVERY_RULE_ID => {

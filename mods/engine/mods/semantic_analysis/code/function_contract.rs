@@ -1,4 +1,4 @@
-//! Distributed Function Contract v3 loading and validation.
+//! Distributed Function Contract v3/v4 loading and validation.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
@@ -11,10 +11,14 @@ use crate::program_semantics::{ExecutableSymbol, ProgramSemanticModel, ProgramTy
 
 use super::domain::{IntegerInterval, SemanticDomain};
 
-/// Canonical Function Contract v3 schema identity.
-pub const FUNCTION_CONTRACT_SCHEMA: &str = "urn:fortress:schema:v3:function-contracts";
+/// Canonical Function Contract v4 schema identity.
+pub const FUNCTION_CONTRACT_SCHEMA: &str = "urn:fortress:schema:v4:function-contracts";
 /// Canonical Function Contract schema version.
-pub const FUNCTION_CONTRACT_SCHEMA_VERSION: u16 = 3;
+pub const FUNCTION_CONTRACT_SCHEMA_VERSION: u16 = 4;
+/// Backward-compatible Function Contract v3 schema identity.
+pub const LEGACY_FUNCTION_CONTRACT_SCHEMA: &str = "urn:fortress:schema:v3:function-contracts";
+/// Backward-compatible Function Contract schema version.
+pub const LEGACY_FUNCTION_CONTRACT_SCHEMA_VERSION: u16 = 3;
 
 /// One snapshot-bound authored Function Contract source.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -136,24 +140,135 @@ impl FunctionStateObligation {
     }
 }
 
-/// Closed v1 effect vocabulary retained by Function Contract v3.
+/// Closed effect vocabulary shared by observed effects and Function Contract policy.
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Deserialize, Serialize)]
-#[serde(rename_all = "snake_case")]
 pub enum FunctionEffect {
     /// Read state through the current receiver.
+    #[serde(rename = "receiver_state_read")]
     ReceiverStateRead,
     /// Mutate state through the current receiver.
+    #[serde(rename = "receiver_state_write")]
     ReceiverStateWrite,
     /// Read a directly owned non-receiver nominal value.
+    #[serde(rename = "owned_state_read")]
     OwnedStateRead,
     /// Mutate a directly owned non-receiver nominal value.
+    #[serde(rename = "owned_state_write")]
     OwnedStateWrite,
-    /// Invoke an opaque target outside the governed executable model.
+    /// Invoke an external operation whose resource semantics remain unclassified.
+    #[serde(rename = "external_interaction")]
     ExternalInteraction,
+    /// Read filesystem-backed content or metadata.
+    #[serde(rename = "filesystem.read")]
+    FilesystemRead,
+    /// Mutate filesystem-backed content, metadata, or namespace state.
+    #[serde(rename = "filesystem.write")]
+    FilesystemWrite,
+    /// Initiate an outbound network connection.
+    #[serde(rename = "network.connect")]
+    NetworkConnect,
+    /// Bind, listen, or accept through a server network endpoint.
+    #[serde(rename = "network.listen")]
+    NetworkListen,
+    /// Transfer bytes through a semantically identified network endpoint.
+    #[serde(rename = "network.io")]
+    NetworkIo,
+    /// Spawn or execute an operating-system process.
+    #[serde(rename = "process.spawn")]
+    ProcessSpawn,
+    /// Read process environment authority.
+    #[serde(rename = "environment.read")]
+    EnvironmentRead,
+    /// Mutate process environment authority.
+    #[serde(rename = "environment.write")]
+    EnvironmentWrite,
+    /// Read wall or system time.
+    #[serde(rename = "time.wall_read")]
+    TimeWallRead,
+    /// Read a monotonic clock or elapsed monotonic time.
+    #[serde(rename = "time.monotonic_read")]
+    TimeMonotonicRead,
+    /// Consume nondeterministic random input from a semantically identified provider.
+    #[serde(rename = "random.read")]
+    RandomRead,
     /// Reach a supported panic operation.
+    #[serde(rename = "may_panic")]
     MayPanic,
     /// Execute an unsafe function/body region.
+    #[serde(rename = "unsafe_execution")]
     UnsafeExecution,
+}
+
+impl FunctionEffect {
+    /// Returns the stable policy and evidence identity.
+    #[must_use]
+    pub const fn stable_id(self) -> &'static str {
+        match self {
+            Self::ReceiverStateRead => "receiver_state_read",
+            Self::ReceiverStateWrite => "receiver_state_write",
+            Self::OwnedStateRead => "owned_state_read",
+            Self::OwnedStateWrite => "owned_state_write",
+            Self::ExternalInteraction => "external_interaction",
+            Self::FilesystemRead => "filesystem.read",
+            Self::FilesystemWrite => "filesystem.write",
+            Self::NetworkConnect => "network.connect",
+            Self::NetworkListen => "network.listen",
+            Self::NetworkIo => "network.io",
+            Self::ProcessSpawn => "process.spawn",
+            Self::EnvironmentRead => "environment.read",
+            Self::EnvironmentWrite => "environment.write",
+            Self::TimeWallRead => "time.wall_read",
+            Self::TimeMonotonicRead => "time.monotonic_read",
+            Self::RandomRead => "random.read",
+            Self::MayPanic => "may_panic",
+            Self::UnsafeExecution => "unsafe_execution",
+        }
+    }
+
+    /// Returns whether Function Contract v3 can author this exact effect identity.
+    #[must_use]
+    pub const fn is_legacy_v3(self) -> bool {
+        matches!(
+            self,
+            Self::ReceiverStateRead
+                | Self::ReceiverStateWrite
+                | Self::OwnedStateRead
+                | Self::OwnedStateWrite
+                | Self::ExternalInteraction
+                | Self::MayPanic
+                | Self::UnsafeExecution
+        )
+    }
+
+    /// Returns whether the legacy external-interaction umbrella covers this effect.
+    #[must_use]
+    pub const fn is_external_resource_effect(self) -> bool {
+        matches!(
+            self,
+            Self::ExternalInteraction
+                | Self::FilesystemRead
+                | Self::FilesystemWrite
+                | Self::NetworkConnect
+                | Self::NetworkListen
+                | Self::NetworkIo
+                | Self::ProcessSpawn
+                | Self::EnvironmentRead
+                | Self::EnvironmentWrite
+                | Self::TimeWallRead
+                | Self::TimeMonotonicRead
+                | Self::RandomRead
+        )
+    }
+
+    /// Returns whether this authored effect identity covers an observed effect.
+    ///
+    /// The legacy `external_interaction` identity is an explicit umbrella over
+    /// refined external-resource effects. No other effect gains umbrella semantics.
+    #[must_use]
+    pub const fn policy_covers(self, observed: Self) -> bool {
+        self as u8 == observed as u8
+            || (matches!(self, Self::ExternalInteraction) && observed.is_external_resource_effect())
+    }
 }
 
 /// Optional authored restriction over supported direct and transitive effects.
@@ -530,7 +645,7 @@ impl ResolvedFunctionContracts {
     }
 }
 
-/// Loads and resolves distributed Function Contract v3 sources against a PSM.
+/// Loads and resolves distributed Function Contract v3/v4 sources against a PSM.
 ///
 /// # Errors
 ///
@@ -561,13 +676,12 @@ pub fn load_function_contracts(
                     detail: error.to_string(),
                 }
             })?;
-        if document.schema != FUNCTION_CONTRACT_SCHEMA
-            || document.schema_version != FUNCTION_CONTRACT_SCHEMA_VERSION
-        {
+        if !supported_document_schema(&document) {
             return Err(FunctionContractError::UnsupportedSchema(
                 source.path.clone(),
             ));
         }
+        validate_effect_schema(&document, &source.path)?;
         let canonical = canonical_document(&document)?;
         if canonical != source.source {
             return Err(FunctionContractError::NonCanonical(source.path.clone()));
@@ -612,7 +726,7 @@ pub fn load_function_contracts(
 /// # Errors
 ///
 /// Returns [`FunctionContractError`] when `source` is not a Function Contract
-/// v3 JSON document or canonical serialization fails.
+/// v3/v4 JSON document or canonical serialization fails.
 pub fn canonicalize_function_contract_json(
     path: &str,
     source: &str,
@@ -622,7 +736,40 @@ pub fn canonicalize_function_contract_json(
             path: path.into(),
             detail: error.to_string(),
         })?;
+    if !supported_document_schema(&document) {
+        return Err(FunctionContractError::UnsupportedSchema(path.into()));
+    }
+    validate_effect_schema(&document, path)?;
     canonical_document(&document)
+}
+
+fn supported_document_schema(document: &FunctionContractDocument) -> bool {
+    (document.schema == FUNCTION_CONTRACT_SCHEMA
+        && document.schema_version == FUNCTION_CONTRACT_SCHEMA_VERSION)
+        || (document.schema == LEGACY_FUNCTION_CONTRACT_SCHEMA
+            && document.schema_version == LEGACY_FUNCTION_CONTRACT_SCHEMA_VERSION)
+}
+
+fn validate_effect_schema(
+    document: &FunctionContractDocument,
+    path: &str,
+) -> Result<(), FunctionContractError> {
+    if document.schema_version != LEGACY_FUNCTION_CONTRACT_SCHEMA_VERSION {
+        return Ok(());
+    }
+    let unsupported = document
+        .functions
+        .iter()
+        .filter_map(|contract| contract.effects.as_ref())
+        .flat_map(|policy| policy.allowed.iter().copied())
+        .find(|effect| !effect.is_legacy_v3());
+    if let Some(effect) = unsupported {
+        return Err(FunctionContractError::EffectRequiresV4 {
+            path: path.into(),
+            effect: effect.stable_id().into(),
+        });
+    }
+    Ok(())
 }
 
 /// Resolves one authored domain against its exact PSM static type.
@@ -1033,6 +1180,13 @@ pub enum FunctionContractError {
     },
     /// Schema identity/version is not v1.
     UnsupportedSchema(String),
+    /// A refined effect was authored under the legacy v3 vocabulary.
+    EffectRequiresV4 {
+        /// Source path.
+        path: String,
+        /// Refined effect identity.
+        effect: String,
+    },
     /// Valid JSON bytes are not canonical.
     NonCanonical(String),
     /// Canonical arrays are not sorted/unique.
@@ -1124,6 +1278,10 @@ impl Display for FunctionContractError {
             Self::UnsupportedSchema(path) => write!(
                 formatter,
                 "unsupported Function Contract schema in `{path}`"
+            ),
+            Self::EffectRequiresV4 { path, effect } => write!(
+                formatter,
+                "Function Contract `{path}` must use v4 to author refined effect `{effect}`"
             ),
             Self::NonCanonical(path) => write!(
                 formatter,

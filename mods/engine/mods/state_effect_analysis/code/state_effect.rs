@@ -4,6 +4,8 @@ pub(crate) const PROGRAM_STATE_RULE_SOURCE: &str = include_str!("../data/program
 pub(crate) const PROGRAM_EFFECT_RULE_SOURCE: &str =
     include_str!("../data/program_effect_rule.json");
 
+#[path = "operation_effect.rs"]
+mod operation_effect;
 #[path = "state_contract.rs"]
 mod state_contract;
 
@@ -19,13 +21,15 @@ use crate::finding::{
     FindingOccurrence, RuleFindingDefinition, SourceSpan,
 };
 use crate::program_semantics::{
-    CallResolutionState, ExecutableSymbol, ProgramBody, ProgramCall, ProgramExpression,
-    ProgramMutation, ProgramPlace, ProgramSemanticModel, ProgramStatement, ProgramType,
+    CallResolutionState, CallSiteEvidence, ExecutableSymbol, ProgramBody, ProgramCall,
+    ProgramExpression, ProgramMutation, ProgramPlace, ProgramSemanticModel, ProgramStatement,
+    ProgramType,
 };
 use crate::semantic_analysis::{
     DomainSpecification, FunctionContract, FunctionEffect, ResolvedFunctionContracts,
     SemanticAnalysisEvaluation, SemanticDomain, resolve_domain,
 };
+use operation_effect::{OperationEffectClassification, classify_operation};
 
 pub use state_contract::{
     ResolvedState, ResolvedStateContracts, ResolvedStatePredicate, ResolvedStateType,
@@ -34,11 +38,11 @@ pub use state_contract::{
 };
 
 /// Canonical State & Effect Analysis schema identity.
-pub const STATE_EFFECT_ANALYSIS_SCHEMA: &str = "urn:fortress:schema:v1:state-effect-analysis";
+pub const STATE_EFFECT_ANALYSIS_SCHEMA: &str = "urn:fortress:schema:v2:state-effect-analysis";
 /// Canonical State & Effect Analysis schema version.
-pub const STATE_EFFECT_ANALYSIS_SCHEMA_VERSION: u16 = 1;
+pub const STATE_EFFECT_ANALYSIS_SCHEMA_VERSION: u16 = 2;
 /// Semantic version of the state/effect analyzer.
-pub const STATE_EFFECT_ANALYSIS_VERSION: &str = "1.0.0";
+pub const STATE_EFFECT_ANALYSIS_VERSION: &str = "2.0.0";
 /// Stable analyzer identity.
 pub const STATE_EFFECT_ANALYZER_ID: &str = "fortress-state-effect-analysis";
 /// Normative typestate rule identity.
@@ -55,9 +59,184 @@ const UNSUPPORTED_SEMANTICS: &[&str] = &[
     "global_static_state_proof",
     "interior_mutability_theorem_proving",
     "lock_deadlock_analysis",
+    "nonliteral_integer_divisor_range",
+    "open_options_mode_inference",
+    "panic_from_arbitrary_user_implementations",
+    "randomness_from_user_seeded_generators",
     "symbolic_execution",
     "unsafe_alias_proof",
 ];
+
+const EFFECTS: [FunctionEffect; 18] = [
+    FunctionEffect::ReceiverStateRead,
+    FunctionEffect::ReceiverStateWrite,
+    FunctionEffect::OwnedStateRead,
+    FunctionEffect::OwnedStateWrite,
+    FunctionEffect::ExternalInteraction,
+    FunctionEffect::FilesystemRead,
+    FunctionEffect::FilesystemWrite,
+    FunctionEffect::NetworkConnect,
+    FunctionEffect::NetworkListen,
+    FunctionEffect::NetworkIo,
+    FunctionEffect::ProcessSpawn,
+    FunctionEffect::EnvironmentRead,
+    FunctionEffect::EnvironmentWrite,
+    FunctionEffect::TimeWallRead,
+    FunctionEffect::TimeMonotonicRead,
+    FunctionEffect::RandomRead,
+    FunctionEffect::MayPanic,
+    FunctionEffect::UnsafeExecution,
+];
+
+/// Stable semantic family for one effect identity.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum EffectFamily {
+    /// Governed receiver or owned state.
+    State,
+    /// Filesystem namespace, content, or metadata.
+    Filesystem,
+    /// Network endpoints and transfer.
+    Network,
+    /// Operating-system processes.
+    Process,
+    /// Process environment authority.
+    Environment,
+    /// Wall or monotonic clocks.
+    Time,
+    /// Nondeterministic random input.
+    Randomness,
+    /// Failure by Rust panic/unwind boundary.
+    Panic,
+    /// Rust unsafe execution boundary.
+    Unsafe,
+    /// Externally identified but operationally unclassified behavior.
+    External,
+}
+
+/// Language-neutral architectural resource class implied by an observed effect.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+pub enum EffectCapability {
+    /// Filesystem authority.
+    #[serde(rename = "filesystem")]
+    Filesystem,
+    /// Outbound network initiation.
+    #[serde(rename = "network.client")]
+    NetworkClient,
+    /// Inbound network exposure.
+    #[serde(rename = "network.server")]
+    NetworkServer,
+    /// Network byte transfer without a narrower endpoint role.
+    #[serde(rename = "network.io")]
+    NetworkIo,
+    /// Operating-system process execution.
+    #[serde(rename = "process.execution")]
+    ProcessExecution,
+    /// Process environment access.
+    #[serde(rename = "environment")]
+    Environment,
+    /// Clock access.
+    #[serde(rename = "time")]
+    Time,
+    /// Nondeterministic random input.
+    #[serde(rename = "randomness")]
+    Randomness,
+    /// Execution across a Rust unsafe boundary.
+    #[serde(rename = "unsafe.execution")]
+    UnsafeExecution,
+}
+
+impl EffectCapability {
+    /// Returns the stable capability identity.
+    #[must_use]
+    pub const fn stable_id(self) -> &'static str {
+        match self {
+            Self::Filesystem => "filesystem",
+            Self::NetworkClient => "network.client",
+            Self::NetworkServer => "network.server",
+            Self::NetworkIo => "network.io",
+            Self::ProcessExecution => "process.execution",
+            Self::Environment => "environment",
+            Self::Time => "time",
+            Self::Randomness => "randomness",
+            Self::UnsafeExecution => "unsafe.execution",
+        }
+    }
+}
+
+/// Returns the architectural capability consequence for an effect, when one exists.
+#[must_use]
+pub const fn capability_for_effect(effect: FunctionEffect) -> Option<EffectCapability> {
+    match effect {
+        FunctionEffect::FilesystemRead | FunctionEffect::FilesystemWrite => {
+            Some(EffectCapability::Filesystem)
+        }
+        FunctionEffect::NetworkConnect => Some(EffectCapability::NetworkClient),
+        FunctionEffect::NetworkListen => Some(EffectCapability::NetworkServer),
+        FunctionEffect::NetworkIo => Some(EffectCapability::NetworkIo),
+        FunctionEffect::ProcessSpawn => Some(EffectCapability::ProcessExecution),
+        FunctionEffect::EnvironmentRead | FunctionEffect::EnvironmentWrite => {
+            Some(EffectCapability::Environment)
+        }
+        FunctionEffect::TimeWallRead | FunctionEffect::TimeMonotonicRead => {
+            Some(EffectCapability::Time)
+        }
+        FunctionEffect::RandomRead => Some(EffectCapability::Randomness),
+        FunctionEffect::UnsafeExecution => Some(EffectCapability::UnsafeExecution),
+        FunctionEffect::ReceiverStateRead
+        | FunctionEffect::ReceiverStateWrite
+        | FunctionEffect::OwnedStateRead
+        | FunctionEffect::OwnedStateWrite
+        | FunctionEffect::ExternalInteraction
+        | FunctionEffect::MayPanic => None,
+    }
+}
+
+/// One stable ontology entry emitted with every State/Effect model.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct EffectDescriptor {
+    id: String,
+    family: EffectFamily,
+    operation: String,
+    capability: Option<EffectCapability>,
+}
+
+/// Whether one operation identity was classified by the supported ontology.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum OperationClassificationState {
+    /// One or more supported effects were derived.
+    Supported,
+    /// The exact operation is known not to produce a modeled operational effect.
+    NotApplicable,
+    /// No exact operation target was available.
+    Unresolved,
+    /// An exact operation target exists but has no supported classification.
+    Unsupported,
+}
+
+/// Snapshot-bound result of attempting to classify one call operation.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct OperationClassificationEvidence {
+    operation: Option<String>,
+    state: OperationClassificationState,
+    effects: Vec<FunctionEffect>,
+    authority: String,
+    reason: String,
+    path: String,
+    line: u32,
+    column: u32,
+}
+
+/// Whether effect evidence is direct at the summary symbol or propagated through calls.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum EffectEvidenceKind {
+    /// Directly observed in the executable body.
+    Direct,
+    /// Propagated through one or more resolved static calls.
+    Transitive,
+}
 
 /// Independent epistemic coverage for one state/effect property.
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
@@ -97,7 +276,12 @@ pub enum TypestateClassification {
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct EffectEvidence {
     effect: FunctionEffect,
+    capability: Option<EffectCapability>,
+    kind: EffectEvidenceKind,
+    entry_symbol: String,
     source_symbol: String,
+    operation: String,
+    classification_authority: String,
     path: String,
     line: u32,
     column: u32,
@@ -115,7 +299,10 @@ pub struct StateEffectSummary {
     field_writes: Vec<String>,
     direct_effects: Vec<FunctionEffect>,
     transitive_effects: Vec<FunctionEffect>,
+    direct_capabilities: Vec<EffectCapability>,
+    transitive_capabilities: Vec<EffectCapability>,
     effect_evidence: Vec<EffectEvidence>,
+    operation_classifications: Vec<OperationClassificationEvidence>,
     state_preconditions: StateEffectCoverage,
     state_postconditions: StateEffectCoverage,
     effects: StateEffectCoverage,
@@ -141,6 +328,18 @@ impl StateEffectSummary {
         &self.transitive_effects
     }
 
+    /// Returns direct architectural capability consequences.
+    #[must_use]
+    pub fn direct_capabilities(&self) -> &[EffectCapability] {
+        &self.direct_capabilities
+    }
+
+    /// Returns transitive architectural capability consequences.
+    #[must_use]
+    pub fn transitive_capabilities(&self) -> &[EffectCapability] {
+        &self.transitive_capabilities
+    }
+
     /// Returns inferred receiver output state.
     #[must_use]
     pub const fn output_receiver_state(&self) -> Option<&TypestateClassification> {
@@ -164,6 +363,12 @@ impl StateEffectSummary {
     pub fn effect_evidence(&self) -> &[EffectEvidence] {
         &self.effect_evidence
     }
+
+    /// Returns direct operation-classification results, including unresolved coverage.
+    #[must_use]
+    pub fn operation_classifications(&self) -> &[OperationClassificationEvidence] {
+        &self.operation_classifications
+    }
 }
 
 impl EffectEvidence {
@@ -173,10 +378,40 @@ impl EffectEvidence {
         self.effect
     }
 
+    /// Returns the capability consequence when this effect requires one.
+    #[must_use]
+    pub const fn capability(&self) -> Option<EffectCapability> {
+        self.capability
+    }
+
+    /// Returns whether evidence is direct or transitively propagated.
+    #[must_use]
+    pub const fn kind(&self) -> EffectEvidenceKind {
+        self.kind
+    }
+
     /// Returns the executable where the effect originates.
     #[must_use]
     pub fn source_symbol(&self) -> &str {
         &self.source_symbol
+    }
+
+    /// Returns the summary entry symbol receiving this evidence.
+    #[must_use]
+    pub fn entry_symbol(&self) -> &str {
+        &self.entry_symbol
+    }
+
+    /// Returns the semantic operation that directly caused the effect.
+    #[must_use]
+    pub fn operation(&self) -> &str {
+        &self.operation
+    }
+
+    /// Returns the resolved static call chain from entry to direct origin.
+    #[must_use]
+    pub fn call_chain(&self) -> &[String] {
+        &self.call_chain
     }
 
     /// Returns canonical repository-relative provenance.
@@ -260,15 +495,23 @@ pub struct StateEffectAnalysisModel {
     semantic_analysis_digest: String,
     state_contract_digest: String,
     function_contract_digest: String,
+    effect_catalog: Vec<EffectDescriptor>,
     summaries: Vec<StateEffectSummary>,
     violations: Vec<StateEffectViolation>,
     direct_effect_counts: BTreeMap<String, usize>,
     transitive_effect_counts: BTreeMap<String, usize>,
+    direct_capability_counts: BTreeMap<String, usize>,
+    transitive_capability_counts: BTreeMap<String, usize>,
     coverage: StateEffectCoverageSummary,
     unsupported_semantics: Vec<String>,
 }
 
 impl StateEffectAnalysisModel {
+    /// Returns the closed ontology represented by this model.
+    #[must_use]
+    pub fn effect_catalog(&self) -> &[EffectDescriptor] {
+        &self.effect_catalog
+    }
     /// Returns canonical summaries.
     #[must_use]
     pub fn summaries(&self) -> &[StateEffectSummary] {
@@ -350,6 +593,7 @@ struct EffectWork {
     direct: BTreeSet<FunctionEffect>,
     transitive: BTreeSet<FunctionEffect>,
     evidence: BTreeMap<FunctionEffect, BTreeSet<EffectEvidence>>,
+    operations: BTreeSet<OperationClassificationEvidence>,
     uncertain: BTreeSet<String>,
 }
 
@@ -474,7 +718,10 @@ pub fn analyze_state_effects(
             field_writes,
             direct_effects: work.direct.iter().copied().collect(),
             transitive_effects: work.transitive.iter().copied().collect(),
+            direct_capabilities: effect_capabilities(work.direct.iter().copied()),
+            transitive_capabilities: effect_capabilities(work.transitive.iter().copied()),
             effect_evidence: work.evidence.values().flatten().cloned().collect(),
+            operation_classifications: work.operations.into_iter().collect(),
             state_preconditions,
             state_postconditions,
             effects,
@@ -504,6 +751,16 @@ pub fn analyze_state_effects(
             .iter()
             .flat_map(|item| item.transitive_effects.iter().copied()),
     );
+    let direct_capability_counts = capability_counts(
+        summaries
+            .iter()
+            .flat_map(|item| item.direct_capabilities.iter().copied()),
+    );
+    let transitive_capability_counts = capability_counts(
+        summaries
+            .iter()
+            .flat_map(|item| item.transitive_capabilities.iter().copied()),
+    );
     let coverage = coverage(&summaries, state_contracts, &violations, effect_iterations);
     let model = StateEffectAnalysisModel {
         schema: STATE_EFFECT_ANALYSIS_SCHEMA.into(),
@@ -514,10 +771,13 @@ pub fn analyze_state_effects(
         semantic_analysis_digest: semantic.model().digest()?,
         state_contract_digest: state_contracts.digest().into(),
         function_contract_digest: function_contracts.digest().into(),
+        effect_catalog: effect_catalog(),
         summaries,
         violations,
         direct_effect_counts,
         transitive_effect_counts,
+        direct_capability_counts,
+        transitive_capability_counts,
         coverage,
         unsupported_semantics: UNSUPPORTED_SEMANTICS
             .iter()
@@ -536,6 +796,7 @@ fn empty_effect_work() -> EffectWork {
         direct: BTreeSet::new(),
         transitive: BTreeSet::new(),
         evidence: BTreeMap::new(),
+        operations: BTreeSet::new(),
         uncertain: BTreeSet::new(),
     }
 }
@@ -559,6 +820,8 @@ fn direct_effects(
             &mut result,
             read.symbol(),
             effect,
+            "psm.state_read",
+            "program_semantics.state_observation",
             read.provenance().path(),
             read.provenance().location().line(),
             read.provenance().location().column(),
@@ -577,6 +840,8 @@ fn direct_effects(
             &mut result,
             mutation.symbol(),
             effect,
+            "psm.state_mutation",
+            "program_semantics.state_observation",
             mutation.provenance().path(),
             mutation.provenance().location().line(),
             mutation.provenance().location().column(),
@@ -594,15 +859,17 @@ fn direct_effects(
     }
     for symbol in symbols
         .values()
-        .filter(|symbol| symbol.qualifiers().is_unsafe())
+        .filter(|symbol| symbol.qualifiers().is_unsafe() && symbol.has_body())
     {
         add_effect(
             &mut result,
             symbol.id(),
             FunctionEffect::UnsafeExecution,
-            symbol.source_path(),
-            1,
-            1,
+            "rust.unsafe_function_body",
+            "program_semantics.declaration_qualifier",
+            symbol.provenance().path(),
+            symbol.provenance().location().line(),
+            symbol.provenance().location().column(),
         );
         result
             .entry(symbol.id().into())
@@ -613,31 +880,117 @@ fn direct_effects(
     for call in psm.calls() {
         match call.state() {
             CallResolutionState::External => {
+                let operation = call.external_target();
                 for evidence in call.evidence() {
-                    add_effect(
-                        &mut result,
-                        call.caller(),
-                        FunctionEffect::ExternalInteraction,
-                        evidence.provenance().path(),
-                        evidence.provenance().location().line(),
-                        evidence.provenance().location().column(),
-                    );
-                    result
-                        .entry(call.caller().into())
-                        .or_insert_with(empty_effect_work)
-                        .uncertain
-                        .insert("opaque_external_effects".into());
+                    match operation.map(classify_operation) {
+                        Some(OperationEffectClassification::Supported(effects)) => {
+                            result
+                                .entry(call.caller().into())
+                                .or_insert_with(empty_effect_work)
+                                .operations
+                                .insert(operation_classification(
+                                    operation,
+                                    OperationClassificationState::Supported,
+                                    effects.clone(),
+                                    "program_semantics.external_target",
+                                    "operation identity matched the canonical classifier",
+                                    evidence,
+                                ));
+                            for effect in effects {
+                                add_effect(
+                                    &mut result,
+                                    call.caller(),
+                                    effect,
+                                    operation.expect("supported classification has identity"),
+                                    "program_semantics.external_target",
+                                    evidence.provenance().path(),
+                                    evidence.provenance().location().line(),
+                                    evidence.provenance().location().column(),
+                                );
+                            }
+                        }
+                        Some(OperationEffectClassification::NoOperationalEffect) => {
+                            result
+                                .entry(call.caller().into())
+                                .or_insert_with(empty_effect_work)
+                                .operations
+                                .insert(operation_classification(
+                                    operation,
+                                    OperationClassificationState::NotApplicable,
+                                    Vec::new(),
+                                    "program_semantics.external_target",
+                                    "operation is outside the modeled operational effect boundary",
+                                    evidence,
+                                ));
+                        }
+                        Some(OperationEffectClassification::Unsupported) => {
+                            let work = result
+                                .entry(call.caller().into())
+                                .or_insert_with(empty_effect_work);
+                            work.operations.insert(operation_classification(
+                                operation,
+                                OperationClassificationState::Unsupported,
+                                vec![FunctionEffect::ExternalInteraction],
+                                "program_semantics.external_target",
+                                "exact external operation has no supported refined classification",
+                                evidence,
+                            ));
+                            work.uncertain.insert(format!(
+                                "unclassified_external_operation:{}",
+                                operation.expect("external call has identity")
+                            ));
+                            add_effect(
+                                &mut result,
+                                call.caller(),
+                                FunctionEffect::ExternalInteraction,
+                                operation.expect("external call has identity"),
+                                "program_semantics.external_target",
+                                evidence.provenance().path(),
+                                evidence.provenance().location().line(),
+                                evidence.provenance().location().column(),
+                            );
+                        }
+                        None => {
+                            let work = result
+                                .entry(call.caller().into())
+                                .or_insert_with(empty_effect_work);
+                            work.operations.insert(operation_classification(
+                                None,
+                                OperationClassificationState::Unresolved,
+                                Vec::new(),
+                                "program_semantics.call_resolution",
+                                "external call lacks a stable operation identity",
+                                evidence,
+                            ));
+                            work.uncertain
+                                .insert("external_operation_identity_missing".into());
+                        }
+                    }
                 }
             }
             CallResolutionState::DynamicDispatch
             | CallResolutionState::Unresolved
             | CallResolutionState::Unsupported
             | CallResolutionState::Invalid => {
-                result
+                let work = result
                     .entry(call.caller().into())
-                    .or_insert_with(empty_effect_work)
-                    .uncertain
+                    .or_insert_with(empty_effect_work);
+                work.uncertain
                     .insert(format!("opaque_call:{:?}", call.state()));
+                for evidence in call.evidence() {
+                    work.operations.insert(operation_classification(
+                        None,
+                        if call.state() == CallResolutionState::Unsupported {
+                            OperationClassificationState::Unsupported
+                        } else {
+                            OperationClassificationState::Unresolved
+                        },
+                        Vec::new(),
+                        "program_semantics.call_resolution",
+                        &format!("call resolution state is {:?}", call.state()),
+                        evidence,
+                    ));
+                }
                 if call
                     .evidence()
                     .iter()
@@ -654,14 +1007,16 @@ fn direct_effects(
         }
     }
     for body in psm.bodies() {
-        for provenance in exceptional_sites(body) {
+        for site in exceptional_sites(body) {
             add_effect(
                 &mut result,
                 body.symbol(),
-                FunctionEffect::MayPanic,
-                provenance.0,
-                provenance.1,
-                provenance.2,
+                site.effect,
+                site.operation,
+                "program_semantics.rust_structure",
+                site.path,
+                site.line,
+                site.column,
             );
         }
     }
@@ -671,10 +1026,13 @@ fn direct_effects(
     result
 }
 
+#[allow(clippy::too_many_arguments)]
 fn add_effect(
     result: &mut BTreeMap<String, EffectWork>,
     symbol: &str,
     effect: FunctionEffect,
+    operation: &str,
+    classification_authority: &str,
     path: &str,
     line: u32,
     column: u32,
@@ -688,7 +1046,12 @@ fn add_effect(
         .or_default()
         .insert(EffectEvidence {
             effect,
+            capability: capability_for_effect(effect),
+            kind: EffectEvidenceKind::Direct,
+            entry_symbol: symbol.into(),
             source_symbol: symbol.into(),
+            operation: operation.into(),
+            classification_authority: classification_authority.into(),
             path: path.into(),
             line,
             column,
@@ -726,6 +1089,8 @@ fn close_effects(calls: &[ProgramCall], work: &mut BTreeMap<String, EffectWork>)
                     {
                         let mut derived = item.clone();
                         derived.call_chain.insert(0, caller.clone());
+                        derived.kind = EffectEvidenceKind::Transitive;
+                        derived.entry_symbol.clone_from(caller);
                         consumer_summary
                             .evidence
                             .entry(*effect)
@@ -1077,7 +1442,7 @@ fn effect_policy_violations(
     let allowed = allowed.iter().copied().collect::<BTreeSet<_>>();
     work.transitive
         .iter()
-        .filter(|effect| !allowed.contains(effect))
+        .filter(|effect| !effect_policy_allows(&allowed, **effect))
         .map(|effect| {
             let evidence = work
                 .evidence
@@ -1105,6 +1470,10 @@ fn effect_policy_violations(
             )
         })
         .collect()
+}
+
+fn effect_policy_allows(allowed: &BTreeSet<FunctionEffect>, effect: FunctionEffect) -> bool {
+    allowed.iter().any(|policy| policy.policy_covers(effect))
 }
 
 fn classify_fields(
@@ -1213,7 +1582,15 @@ fn state_ids(classification: &TypestateClassification) -> Vec<String> {
     }
 }
 
-fn exceptional_sites(body: &ProgramBody) -> Vec<(&str, u32, u32)> {
+struct StructuralEffectSite<'a> {
+    effect: FunctionEffect,
+    operation: &'static str,
+    path: &'a str,
+    line: u32,
+    column: u32,
+}
+
+fn exceptional_sites(body: &ProgramBody) -> Vec<StructuralEffectSite<'_>> {
     let mut result = Vec::new();
     collect_exceptional(body.statements(), &mut result);
     result
@@ -1221,35 +1598,164 @@ fn exceptional_sites(body: &ProgramBody) -> Vec<(&str, u32, u32)> {
 
 fn collect_exceptional<'a>(
     statements: &'a [ProgramStatement],
-    result: &mut Vec<(&'a str, u32, u32)>,
+    result: &mut Vec<StructuralEffectSite<'a>>,
 ) {
     for statement in statements {
         match statement {
-            ProgramStatement::Expression {
-                value: ProgramExpression::Exceptional { operation },
-                provenance,
-            } if operation == "panic" => result.push((
-                provenance.path(),
-                provenance.location().line(),
-                provenance.location().column(),
-            )),
+            ProgramStatement::Let {
+                value, provenance, ..
+            }
+            | ProgramStatement::Return { value, provenance } => {
+                if let Some(value) = value {
+                    collect_expression_effects(value, provenance, result);
+                }
+            }
+            ProgramStatement::Assign {
+                value, provenance, ..
+            }
+            | ProgramStatement::Expression { value, provenance } => {
+                collect_expression_effects(value, provenance, result);
+            }
             ProgramStatement::If {
+                condition,
                 then_branch,
                 else_branch,
-                ..
+                provenance,
             } => {
+                collect_expression_effects(condition, provenance, result);
                 collect_exceptional(then_branch, result);
                 collect_exceptional(else_branch, result);
             }
-            ProgramStatement::Match { arms, .. } => {
+            ProgramStatement::Match {
+                value,
+                arms,
+                provenance,
+            } => {
+                collect_expression_effects(value, provenance, result);
                 for arm in arms {
+                    if let Some(guard) = arm.guard() {
+                        collect_expression_effects(guard, provenance, result);
+                    }
                     collect_exceptional(arm.body(), result);
                 }
             }
-            ProgramStatement::WhileLet { body, .. } => collect_exceptional(body, result),
-            _ => {}
+            ProgramStatement::WhileLet {
+                value,
+                body,
+                provenance,
+                ..
+            } => {
+                collect_expression_effects(value, provenance, result);
+                collect_exceptional(body, result);
+            }
         }
     }
+}
+
+fn collect_expression_effects<'a>(
+    expression: &'a ProgramExpression,
+    provenance: &'a crate::program_semantics::ProgramProvenance,
+    result: &mut Vec<StructuralEffectSite<'a>>,
+) {
+    let site = |effect, operation| StructuralEffectSite {
+        effect,
+        operation,
+        path: provenance.path(),
+        line: provenance.location().line(),
+        column: provenance.location().column(),
+    };
+    match expression {
+        ProgramExpression::StructuralEffect { operation } if operation == "rust.unsafe_block" => {
+            result.push(site(FunctionEffect::UnsafeExecution, "rust.unsafe_block"));
+        }
+        ProgramExpression::Exceptional { operation } if operation.starts_with("rust.macro.") => {
+            result.push(site(
+                FunctionEffect::MayPanic,
+                exceptional_operation(operation),
+            ));
+        }
+        ProgramExpression::StructuralEffect { operation } if operation == "rust.index" => {
+            result.push(site(FunctionEffect::MayPanic, "rust.index"));
+        }
+        ProgramExpression::Binary {
+            operator,
+            left,
+            right,
+        } => {
+            collect_expression_effects(left, provenance, result);
+            collect_expression_effects(right, provenance, result);
+            if matches!(operator.as_str(), "/" | "%")
+                && matches!(right.as_ref(), ProgramExpression::Integer { value } if integer_literal_is_zero(value))
+            {
+                result.push(site(
+                    FunctionEffect::MayPanic,
+                    if operator == "/" {
+                        "rust.integer_division_zero"
+                    } else {
+                        "rust.integer_remainder_zero"
+                    },
+                ));
+            }
+        }
+        ProgramExpression::Call { arguments, .. }
+        | ProgramExpression::Construction { arguments, .. }
+        | ProgramExpression::Tuple {
+            elements: arguments,
+        } => {
+            for argument in arguments {
+                collect_expression_effects(argument, provenance, result);
+            }
+        }
+        ProgramExpression::MethodCall {
+            receiver,
+            arguments,
+            ..
+        } => {
+            collect_expression_effects(receiver, provenance, result);
+            for argument in arguments {
+                collect_expression_effects(argument, provenance, result);
+            }
+        }
+        ProgramExpression::Field { base, .. }
+        | ProgramExpression::PatternTest { value: base, .. }
+        | ProgramExpression::Unary { value: base, .. }
+        | ProgramExpression::Try { value: base }
+        | ProgramExpression::Reference { value: base, .. } => {
+            collect_expression_effects(base, provenance, result);
+        }
+        ProgramExpression::Binding { .. }
+        | ProgramExpression::Boolean { .. }
+        | ProgramExpression::Integer { .. }
+        | ProgramExpression::Unit
+        | ProgramExpression::Variant { .. }
+        | ProgramExpression::Exceptional { .. }
+        | ProgramExpression::StructuralEffect { .. }
+        | ProgramExpression::Unsupported { .. } => {}
+    }
+}
+
+fn exceptional_operation(operation: &str) -> &'static str {
+    match operation {
+        "rust.macro.panic" => "rust.macro.panic",
+        "rust.macro.unreachable" => "rust.macro.unreachable",
+        "rust.macro.todo" => "rust.macro.todo",
+        "rust.macro.assert" => "rust.macro.assert",
+        "rust.macro.assert_eq" => "rust.macro.assert_eq",
+        "rust.macro.assert_ne" => "rust.macro.assert_ne",
+        "rust.macro.debug_assert" => "rust.macro.debug_assert",
+        "rust.macro.debug_assert_eq" => "rust.macro.debug_assert_eq",
+        "rust.macro.debug_assert_ne" => "rust.macro.debug_assert_ne",
+        _ => "rust.macro.unknown_failure",
+    }
+}
+
+fn integer_literal_is_zero(value: &str) -> bool {
+    let digits = value
+        .chars()
+        .take_while(|character| character.is_ascii_digit() || *character == '_')
+        .filter(|character| *character != '_')
+        .collect::<String>();
+    !digits.is_empty() && digits.chars().all(|character| character == '0')
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -1400,20 +1906,114 @@ fn coverage(
 fn effect_counts(effects: impl Iterator<Item = FunctionEffect>) -> BTreeMap<String, usize> {
     let mut counts = BTreeMap::new();
     for effect in effects {
-        *counts.entry(effect_name(effect).into()).or_insert(0) += 1;
+        *counts.entry(effect.stable_id().into()).or_insert(0) += 1;
     }
     counts
 }
 
 fn effect_name(effect: FunctionEffect) -> &'static str {
+    effect.stable_id()
+}
+
+fn effect_capabilities(effects: impl Iterator<Item = FunctionEffect>) -> Vec<EffectCapability> {
+    effects
+        .filter_map(capability_for_effect)
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .collect()
+}
+
+fn capability_counts(
+    capabilities: impl Iterator<Item = EffectCapability>,
+) -> BTreeMap<String, usize> {
+    let mut counts = BTreeMap::new();
+    for capability in capabilities {
+        *counts.entry(capability.stable_id().into()).or_insert(0) += 1;
+    }
+    counts
+}
+
+fn effect_catalog() -> Vec<EffectDescriptor> {
+    let mut catalog = EFFECTS
+        .iter()
+        .copied()
+        .map(|effect| EffectDescriptor {
+            id: effect.stable_id().into(),
+            family: effect_family(effect),
+            operation: effect_operation(effect).into(),
+            capability: capability_for_effect(effect),
+        })
+        .collect::<Vec<_>>();
+    catalog.sort_by(|left, right| left.id.cmp(&right.id));
+    catalog
+}
+
+const fn effect_family(effect: FunctionEffect) -> EffectFamily {
     match effect {
-        FunctionEffect::ReceiverStateRead => "receiver_state_read",
-        FunctionEffect::ReceiverStateWrite => "receiver_state_write",
-        FunctionEffect::OwnedStateRead => "owned_state_read",
-        FunctionEffect::OwnedStateWrite => "owned_state_write",
-        FunctionEffect::ExternalInteraction => "external_interaction",
-        FunctionEffect::MayPanic => "may_panic",
-        FunctionEffect::UnsafeExecution => "unsafe_execution",
+        FunctionEffect::ReceiverStateRead
+        | FunctionEffect::ReceiverStateWrite
+        | FunctionEffect::OwnedStateRead
+        | FunctionEffect::OwnedStateWrite => EffectFamily::State,
+        FunctionEffect::ExternalInteraction => EffectFamily::External,
+        FunctionEffect::FilesystemRead | FunctionEffect::FilesystemWrite => {
+            EffectFamily::Filesystem
+        }
+        FunctionEffect::NetworkConnect
+        | FunctionEffect::NetworkListen
+        | FunctionEffect::NetworkIo => EffectFamily::Network,
+        FunctionEffect::ProcessSpawn => EffectFamily::Process,
+        FunctionEffect::EnvironmentRead | FunctionEffect::EnvironmentWrite => {
+            EffectFamily::Environment
+        }
+        FunctionEffect::TimeWallRead | FunctionEffect::TimeMonotonicRead => EffectFamily::Time,
+        FunctionEffect::RandomRead => EffectFamily::Randomness,
+        FunctionEffect::MayPanic => EffectFamily::Panic,
+        FunctionEffect::UnsafeExecution => EffectFamily::Unsafe,
+    }
+}
+
+const fn effect_operation(effect: FunctionEffect) -> &'static str {
+    match effect {
+        FunctionEffect::ReceiverStateRead
+        | FunctionEffect::OwnedStateRead
+        | FunctionEffect::FilesystemRead
+        | FunctionEffect::EnvironmentRead
+        | FunctionEffect::TimeWallRead
+        | FunctionEffect::TimeMonotonicRead
+        | FunctionEffect::RandomRead => "read",
+        FunctionEffect::ReceiverStateWrite
+        | FunctionEffect::OwnedStateWrite
+        | FunctionEffect::FilesystemWrite
+        | FunctionEffect::EnvironmentWrite => "write",
+        FunctionEffect::ExternalInteraction => "unclassified",
+        FunctionEffect::NetworkConnect => "connect",
+        FunctionEffect::NetworkListen => "listen",
+        FunctionEffect::NetworkIo => "io",
+        FunctionEffect::ProcessSpawn => "spawn",
+        FunctionEffect::MayPanic => "possible",
+        FunctionEffect::UnsafeExecution => "execute",
+    }
+}
+
+fn operation_classification(
+    operation: Option<&str>,
+    state: OperationClassificationState,
+    mut effects: Vec<FunctionEffect>,
+    authority: &str,
+    reason: &str,
+    evidence: &CallSiteEvidence,
+) -> OperationClassificationEvidence {
+    effects.sort();
+    effects.dedup();
+    OperationClassificationEvidence {
+        operation: operation.map(str::to_owned),
+        state,
+        effects,
+        authority: authority.into(),
+        reason: reason.into(),
+        path: evidence.provenance().path().into(),
+        line: evidence.provenance().location().line(),
+        column: evidence.provenance().location().column(),
     }
 }
 

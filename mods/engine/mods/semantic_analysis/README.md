@@ -12,11 +12,11 @@ Consume the canonical Program Semantic Model and distributed Function Contracts,
 
 ### Includes
 
-Function Contract v3 loading for value-domain obligations, static-type-relative domain validation, Boolean and integer lattices, Option and Result states, enum variants, tuple products, branch refinement, recursive fixed points, call precondition checks, postcondition proofs, modeled partial operations, impossible-state reachability, property-specific coverage, canonical summaries, findings, serialization, and digesting.
+Function Contract v3/v4 loading for value-domain obligations, static-type-relative domain validation, Boolean and integer lattices, Option and Result states, enum variants, tuple products, branch refinement, recursive fixed points, call precondition checks, postcondition proofs, modeled partial operations, impossible-state reachability, property-specific coverage, canonical summaries, findings, serialization, and digesting.
 
 ### Excludes
 
-Rust parsing or call extraction, automatic contract inference, Function Contract v3 state/effect/information-flow interpretation, BFG realization, heap alias analysis, concurrency, arbitrary dynamic dispatch, string-language proof, security flow proof, natural-language inference, and symbolic theorem proving.
+Rust parsing or call extraction, automatic contract inference, Function Contract state/effect/information-flow interpretation, BFG realization, heap alias analysis, concurrency, arbitrary dynamic dispatch, string-language proof, security flow proof, natural-language inference, and symbolic theorem proving.
 
 ## Relationships
 

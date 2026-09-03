@@ -1,6 +1,6 @@
 //! Function Contract and interprocedural semantic-domain analysis.
 //!
-//! This Module consumes PSM facts and authored Function Contract v3 sources.
+//! This Module consumes PSM facts and authored Function Contract v3/v4 sources.
 //! It does not parse Rust, modify the CCG, or map functions to BFG checkpoints.
 
 pub(crate) const PROGRAM_DOMAIN_RULE_SOURCE: &str =
@@ -989,7 +989,6 @@ impl<'a> AnalysisContext<'a> {
                     )
                 },
             ),
-            ProgramExpression::Unit => self.static_domain(fallback_type),
             ProgramExpression::Variant { name } => {
                 if last_path_segment(name) == "None"
                     && let Some(SemanticType::Option { value }) =
@@ -1153,7 +1152,7 @@ impl<'a> AnalysisContext<'a> {
                 self.static_domain(fallback_type)
             }
             ProgramExpression::Exceptional { operation } => {
-                if operation == "unreachable" {
+                if operation == "rust.macro.unreachable" {
                     let possible = SemanticDomain::Top {
                         type_id: "type:control_reachability".into(),
                     };
@@ -1182,9 +1181,10 @@ impl<'a> AnalysisContext<'a> {
                 }
                 SemanticDomain::bottom(fallback_type)
             }
-            ProgramExpression::Unsupported { .. } | ProgramExpression::Unary { .. } => {
-                self.static_domain(fallback_type)
-            }
+            ProgramExpression::Unit
+            | ProgramExpression::StructuralEffect { .. }
+            | ProgramExpression::Unsupported { .. }
+            | ProgramExpression::Unary { .. } => self.static_domain(fallback_type),
         }
     }
 
@@ -1679,6 +1679,7 @@ fn expression_domain_coverage(
         | ProgramExpression::Try { .. }
         | ProgramExpression::Reference { .. }
         | ProgramExpression::Exceptional { .. }
+        | ProgramExpression::StructuralEffect { .. }
         | ProgramExpression::Unsupported { .. } => AnalysisCoverageState::Unknown,
     }
 }

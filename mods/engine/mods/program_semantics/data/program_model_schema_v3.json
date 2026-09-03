@@ -361,7 +361,8 @@
         { "type": "object", "additionalProperties": false, "required": ["kind", "operator", "value"], "properties": { "kind": { "const": "unary" }, "operator": { "type": "string" }, "value": { "$ref": "#/$defs/expression" } } },
         { "type": "object", "additionalProperties": false, "required": ["kind", "value"], "properties": { "kind": { "const": "try" }, "value": { "$ref": "#/$defs/expression" } } },
         { "type": "object", "additionalProperties": false, "required": ["kind", "mutable", "value"], "properties": { "kind": { "const": "reference" }, "mutable": { "type": "boolean" }, "value": { "$ref": "#/$defs/expression" } } },
-        { "type": "object", "additionalProperties": false, "required": ["kind", "operation"], "properties": { "kind": { "const": "exceptional" }, "operation": { "enum": ["panic", "unreachable"] } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "operation"], "properties": { "kind": { "const": "exceptional" }, "operation": { "enum": ["rust.macro.panic", "rust.macro.unreachable", "rust.macro.todo", "rust.macro.assert", "rust.macro.assert_eq", "rust.macro.assert_ne", "rust.macro.debug_assert", "rust.macro.debug_assert_eq", "rust.macro.debug_assert_ne"] } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "operation"], "properties": { "kind": { "const": "structural_effect" }, "operation": { "enum": ["rust.index", "rust.unsafe_block"] } } },
         { "type": "object", "additionalProperties": false, "required": ["kind", "rust_spelling"], "properties": { "kind": { "const": "unsupported" }, "rust_spelling": { "type": "string" } } }
       ]
     },

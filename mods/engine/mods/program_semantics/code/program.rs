@@ -24,11 +24,11 @@ pub const PROGRAM_SEMANTIC_MODEL_SCHEMA: &str = "urn:fortress:schema:v3:program-
 /// Canonical PSM document schema version.
 pub const PROGRAM_SEMANTIC_MODEL_SCHEMA_VERSION: u16 = 3;
 /// Semantic version of the language-neutral PSM compiler.
-pub const PROGRAM_SEMANTIC_MODEL_VERSION: &str = "3.0.0";
+pub const PROGRAM_SEMANTIC_MODEL_VERSION: &str = "3.1.0";
 /// Stable Rust analyzer identity.
 pub const RUST_PROGRAM_ANALYZER_ID: &str = "fortress-rust-program-semantics";
 /// Semantic version of supported Rust program analysis.
-pub const RUST_PROGRAM_ANALYZER_VERSION: &str = "3.0.0";
+pub const RUST_PROGRAM_ANALYZER_VERSION: &str = "3.1.0";
 
 const UNSUPPORTED_SEMANTICS: &[&str] = &[
     "arbitrary_dynamic_dispatch_resolution",
@@ -41,6 +41,7 @@ const UNSUPPORTED_SEMANTICS: &[&str] = &[
     "general_function_preconditions_postconditions",
     "heap_object_field_flow",
     "macro_generated_executable_semantics",
+    "macro_shadowing_for_builtin_failure_classification",
     "reflection",
     "refinement_value_ranges",
     "resource_typestate",
@@ -387,6 +388,11 @@ pub enum ProgramExpression {
     /// A recognized exceptional macro site.
     Exceptional {
         /// Stable exceptional operation identity.
+        operation: String,
+    },
+    /// A structurally exact effect-bearing boundary without value interpretation.
+    StructuralEffect {
+        /// Stable structural operation identity.
         operation: String,
     },
     /// Expression semantics are not represented by PSM v3.
@@ -1426,6 +1432,12 @@ impl ProgramCall {
     #[must_use]
     pub fn callee(&self) -> Option<&str> {
         self.callee.as_deref()
+    }
+
+    /// Returns the stable external package/item identity when established.
+    #[must_use]
+    pub fn external_target(&self) -> Option<&str> {
+        self.external_target.as_deref()
     }
 
     /// Returns the call resolution state.

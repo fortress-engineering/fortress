@@ -105,6 +105,17 @@
             "owned_state_read",
             "owned_state_write",
             "external_interaction",
+            "filesystem.read",
+            "filesystem.write",
+            "network.connect",
+            "network.listen",
+            "network.io",
+            "process.spawn",
+            "environment.read",
+            "environment.write",
+            "time.wall_read",
+            "time.monotonic_read",
+            "random.read",
             "may_panic",
             "unsafe_execution"
           ]

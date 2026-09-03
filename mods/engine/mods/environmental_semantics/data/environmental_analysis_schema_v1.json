@@ -25,7 +25,7 @@
   "$defs": {
     "digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
     "coverage_state": { "enum": ["PROVEN", "PARTIAL", "UNKNOWN", "UNSUPPORTED"] },
-    "effect": { "enum": ["receiver_state_read", "receiver_state_write", "owned_state_read", "owned_state_write", "external_interaction", "may_panic", "unsafe_execution"] },
+    "effect": { "enum": ["receiver_state_read", "receiver_state_write", "owned_state_read", "owned_state_write", "external_interaction", "filesystem.read", "filesystem.write", "network.connect", "network.listen", "network.io", "process.spawn", "environment.read", "environment.write", "time.wall_read", "time.monotonic_read", "random.read", "may_panic", "unsafe_execution"] },
     "flow_label": {
       "type": "object",
       "additionalProperties": false,

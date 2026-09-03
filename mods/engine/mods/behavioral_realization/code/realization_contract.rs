@@ -345,7 +345,8 @@ impl Display for BehaviorRealizationContractError {
             Self::UnknownEffect { symbol, effect } => {
                 write!(
                     formatter,
-                    "effect '{effect:?}' is not established for '{symbol}'"
+                    "effect '{}' is not established for '{symbol}'",
+                    effect.stable_id()
                 )
             }
             Self::UnknownStateTransition(value) => {
@@ -591,7 +592,12 @@ fn validate_anchor(
                 .summaries()
                 .iter()
                 .find(|summary| summary.symbol() == symbol)
-                .is_some_and(|summary| summary.transitive_effects().contains(effect));
+                .is_some_and(|summary| {
+                    summary
+                        .transitive_effects()
+                        .iter()
+                        .any(|observed| effect.policy_covers(*observed))
+                });
             if !established {
                 return Err(BehaviorRealizationContractError::UnknownEffect {
                     symbol: symbol.clone(),
