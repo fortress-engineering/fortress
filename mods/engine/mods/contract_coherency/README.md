@@ -6,13 +6,13 @@ Contract Coherency exists so Fortress can compile distributed authored engineeri
 
 ## Responsibility
 
-Compile canonical Module Contract v2 authority, physical Module containment, standard rule logic, and supported verification declarations into a deterministic Contract Coherency Graph; derive effective relationships and obligations; reject contradictions within implemented semantics; and preserve provenance for every source and derived fact.
+Compile canonical Module Contract v2/v3 authority, physical Module containment, standard rule logic, and supported verification declarations into a deterministic Contract Coherency Graph; preserve optional authored Module semantic policy without interpreting implementation; derive effective relationships and obligations; reject contradictions within implemented semantics; and preserve provenance for every source and derived fact.
 
 ## Scope
 
 ### Includes
 
-Contract v2 parsing and canonical serialization, ecosystem identity indexing, capability and dependency closure, rule implication and conflict closure, effective constraints, guarantee support topology, parent-local verification topology, global behavioral checkpoint identity, Feature/Module ownership, transition integrity and provenance preservation, canonical CCG serialization, graph digests, and explicit unsupported semantic classes.
+Contract v2/v3 parsing and canonical serialization, semantic-policy authority preservation, ecosystem identity indexing, capability and dependency closure, rule implication and conflict closure, effective constraints, guarantee support topology, parent-local verification topology, global behavioral checkpoint identity, Feature/Module ownership, transition integrity and provenance preservation, canonical CCG serialization, graph digests, and explicit unsupported semantic classes.
 
 ### Excludes
 

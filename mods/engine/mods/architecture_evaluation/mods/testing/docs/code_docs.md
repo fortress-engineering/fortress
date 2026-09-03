@@ -30,6 +30,10 @@ Verifies every reconciliation state, exact transitive-bypass paths, declared-uno
 
 Verifies production Module profiles, physical LCA, Testing-topology exclusion, all four non-normative diagnostic predicates, evidence direction, deduplication, deterministic fingerprints, epistemic limits, and live audit integration.
 
+### [`semantic_conformance.rs`](../code/semantic_conformance.rs)
+
+Verifies Module Contract v2/v3 compatibility, explicit effect/capability policy, causal direct/transitive findings, claim-relative UNKNOWN coverage, independent panic/unsafe/residual targets, deterministic identity, and indexed 1,000-policy/10,000-effect scale.
+
 ### [`self_architecture.rs`](../code/self_architecture.rs)
 
 Compiles Fortress's live CCG and verifies that the parent architecture projection remains acyclic.

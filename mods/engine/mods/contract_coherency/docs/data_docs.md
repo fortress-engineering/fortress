@@ -29,3 +29,7 @@ Defines the deterministic serialized Contract Coherency Graph v1 representation.
 ### [`module_contract_schema_v2.json`](../data/module_contract_schema_v2.json)
 
 Defines canonical authored Module Contract v2 syntax.
+
+### [`module_contract_schema_v3.json`](../data/module_contract_schema_v3.json)
+
+Defines Module Contract v3 by adding explicit, closed capability/effect policy while retaining v2 as the loadable undeclared-policy form.

@@ -26,7 +26,7 @@ pub const CERTIFICATION_SEMANTIC_VERSION: &str = "1.0.0";
 /// Canonical full-snapshot profile identity.
 pub const FULL_SNAPSHOT_PROFILE_ID: &str = "CERT-FULL-SNAPSHOT-V1";
 /// Semantic artifact kinds mandatory for full-snapshot certification.
-pub const MANDATORY_SEMANTIC_ARTIFACTS: [&str; 10] = [
+pub const MANDATORY_SEMANTIC_ARTIFACTS: [&str; 11] = [
     "ccg",
     "environmental_analysis",
     "information_flow",
@@ -35,6 +35,7 @@ pub const MANDATORY_SEMANTIC_ARTIFACTS: [&str; 10] = [
     "realized_bfg",
     "reference_resolution",
     "semantic_analysis",
+    "semantic_conformance",
     "source_artifact_model",
     "state_effect",
 ];
@@ -55,6 +56,7 @@ pub const GENERATED_CERTIFICATION_PROJECTIONS: &[&str] = &[
     "info/quality_certificate.json",
     "info/realized_behavioral_flow_graph.json",
     "info/semantic_analysis.json",
+    "info/semantic_conformance.json",
     "info/source_artifact_model.json",
     "info/state_effect_analysis.json",
     "info/verified_behavioral_flow_graph.json",

@@ -29,3 +29,11 @@ Carries the draft normative rule record interpreted by the dependency evaluator.
 ### [`realization_rule.json`](../data/realization_rule.json)
 
 Defines ARCH-REALIZATION-001 and its direct-authorization, transitive-bypass, coverage-truthfulness, and remediation semantics.
+
+### [`semantic_conformance_rule.json`](../data/semantic_conformance_rule.json)
+
+Defines ARCH-SEMANTIC-001, including applicability, causal evidence, unsupported behavior, and canonical remediation.
+
+### [`semantic_conformance_schema_v1.json`](../data/semantic_conformance_schema_v1.json)
+
+Defines the deterministic derived Module semantic-conformance projection containing policy claims, observed consequences, coverage, dependency convergence, and summary counts.

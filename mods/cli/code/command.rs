@@ -115,6 +115,13 @@ const BUILTIN_COMMANDS: &[CommandDescriptor] = &[
         usage: "fortress state-effect [path] [--format json] [--output path]",
     },
     CommandDescriptor {
+        id: "CMD-SEMANTIC-CONFORMANCE",
+        name: "semantic-conformance",
+        aliases: &[],
+        description: "Evaluate declared Module semantic policy against causal effect evidence.",
+        usage: "fortress semantic-conformance [path] [--module ID] [--format human|json] [--output path]",
+    },
+    CommandDescriptor {
         id: "CMD-INFORMATION-FLOW",
         name: "information-flow",
         aliases: &[],

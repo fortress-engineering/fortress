@@ -1,0 +1,177 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v3:module-contract",
+  "title": "Fortress Module Contract v3",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "schema_version", "id", "display_name", "provides", "requires", "relationships", "constraints", "guarantees", "features", "behavior"],
+  "properties": {
+    "$schema": { "const": "urn:fortress:schema:v3:module-contract" },
+    "schema_version": { "const": 3 },
+    "id": { "$ref": "#/$defs/stable_id" },
+    "display_name": { "$ref": "#/$defs/nonempty" },
+    "ecosystem": { "$ref": "#/$defs/ecosystem" },
+    "provides": { "type": "array", "items": { "$ref": "#/$defs/provided_capability" } },
+    "requires": { "type": "array", "items": { "$ref": "#/$defs/required_capability" } },
+    "relationships": { "type": "array", "items": { "$ref": "#/$defs/relationship" } },
+    "constraints": { "type": "array", "items": { "$ref": "#/$defs/constraint" } },
+    "guarantees": { "type": "array", "items": { "$ref": "#/$defs/guarantee" } },
+    "features": { "type": "array", "items": { "$ref": "#/$defs/feature" } },
+    "behavior": { "type": "array", "items": { "$ref": "#/$defs/checkpoint" } },
+    "semantic_policy": { "$ref": "#/$defs/semantic_policy" }
+  },
+  "$defs": {
+    "stable_id": { "type": "string", "pattern": "^[A-Z0-9]+(?:-[A-Z0-9]+)+$" },
+    "nonempty": { "type": "string", "minLength": 1 },
+    "semver": { "type": "string", "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$" },
+    "ecosystem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository_grammar", "standard"],
+      "properties": {
+        "repository_grammar": { "type": "integer", "minimum": 1 },
+        "standard": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "edition"],
+          "properties": {
+            "id": { "$ref": "#/$defs/stable_id" },
+            "edition": { "$ref": "#/$defs/nonempty" }
+          }
+        }
+      }
+    },
+    "provided_capability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version", "visibility"],
+      "properties": {
+        "id": { "$ref": "#/$defs/stable_id" },
+        "version": { "$ref": "#/$defs/semver" },
+        "visibility": { "enum": ["project", "public"] }
+      }
+    },
+    "required_capability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider", "capability", "version"],
+      "properties": {
+        "provider": { "$ref": "#/$defs/stable_id" },
+        "capability": { "$ref": "#/$defs/stable_id" },
+        "version": { "$ref": "#/$defs/nonempty" }
+      }
+    },
+    "relationship": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "target", "subjects"],
+      "properties": {
+        "type": { "const": "verifies" },
+        "target": { "$ref": "#/$defs/stable_id" },
+        "subjects": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/stable_id" } }
+      }
+    },
+    "constraint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rule", "scope"],
+      "properties": {
+        "rule": { "$ref": "#/$defs/stable_id" },
+        "scope": { "enum": ["self", "subtree"] }
+      }
+    },
+    "guarantee": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "subject", "requirements"],
+      "properties": {
+        "id": { "$ref": "#/$defs/stable_id" },
+        "subject": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "id"],
+          "properties": {
+            "kind": { "enum": ["module", "capability", "feature"] },
+            "id": { "$ref": "#/$defs/stable_id" }
+          }
+        },
+        "requirements": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/stable_id" } }
+      }
+    },
+    "feature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version", "requirements"],
+      "properties": {
+        "id": { "$ref": "#/$defs/stable_id" },
+        "version": { "$ref": "#/$defs/semver" },
+        "requirements": { "type": "array", "items": { "$ref": "#/$defs/requirement" } }
+      }
+    },
+    "requirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "statement", "tests"],
+      "properties": {
+        "id": { "$ref": "#/$defs/stable_id" },
+        "statement": { "$ref": "#/$defs/nonempty" },
+        "tests": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/stable_id" } }
+      }
+    },
+    "checkpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "feature", "kind", "transitions"],
+      "properties": {
+        "id": { "$ref": "#/$defs/stable_id" },
+        "feature": { "$ref": "#/$defs/stable_id" },
+        "kind": { "enum": ["trigger", "action", "decision", "terminal"] },
+        "outcome": { "$ref": "#/$defs/nonempty" },
+        "transitions": { "type": "array", "items": { "$ref": "#/$defs/transition" } }
+      }
+    },
+    "transition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target"],
+      "properties": {
+        "outcome": { "$ref": "#/$defs/nonempty" },
+        "target": { "$ref": "#/$defs/stable_id" }
+      }
+    },
+    "semantic_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["default", "capabilities", "effects"],
+      "properties": {
+        "default": { "const": "UNDECLARED" },
+        "capabilities": { "$ref": "#/$defs/capability_policy" },
+        "effects": { "$ref": "#/$defs/effect_policy" }
+      }
+    },
+    "capability_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allow", "deny"],
+      "properties": {
+        "allow": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/capability" } },
+        "deny": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/capability" } }
+      }
+    },
+    "effect_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allow", "deny"],
+      "properties": {
+        "allow": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/effect" } },
+        "deny": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/effect" } }
+      }
+    },
+    "capability": {
+      "enum": ["environment", "filesystem", "network.client", "network.io", "network.server", "process.execution", "randomness", "time", "unsafe.execution"]
+    },
+    "effect": {
+      "enum": ["environment.read", "environment.write", "external_interaction", "filesystem.read", "filesystem.write", "may_panic", "network.connect", "network.io", "network.listen", "owned_state_read", "owned_state_write", "process.spawn", "random.read", "receiver_state_read", "receiver_state_write", "time.monotonic_read", "time.wall_read", "unsafe_execution"]
+    }
+  }
+}

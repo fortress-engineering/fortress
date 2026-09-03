@@ -168,6 +168,17 @@
       "certification_implications": "Renders supported typestate and effect consequences plus explicit uncertainty only; it is not total heap safety, external-system proof, or certification evidence."
     },
     {
+      "id": "CMD-SEMANTIC-CONFORMANCE",
+      "name": "semantic-conformance",
+      "aliases": [],
+      "description": "Evaluate declared Module semantic policy against causal effect evidence.",
+      "owner": "TF-CLI-0001",
+      "executor": "builtin-sync",
+      "duration": "short",
+      "resumability": "restartable",
+      "certification_implications": "Renders authored policy, observed effect/capability consequences, causal evidence, and raw conformance separately; it does not infer permission or replace certification."
+    },
+    {
       "id": "CMD-INFORMATION-FLOW",
       "name": "information-flow",
       "aliases": [],

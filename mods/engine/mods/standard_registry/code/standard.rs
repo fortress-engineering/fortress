@@ -77,6 +77,12 @@ const DRAFT_RULES: &[RuleDescriptor] = &[
         integrity_tier: 1,
     },
     RuleDescriptor {
+        id: "ARCH-SEMANTIC-001",
+        title: "Declared Module semantic policy governs supported operational consequences",
+        status: RuleStatus::Draft,
+        integrity_tier: 3,
+    },
+    RuleDescriptor {
         id: "BEHAVIOR-FLOW-001",
         title: "Modeled Feature behavior forms a coherent intended flow",
         status: RuleStatus::Draft,

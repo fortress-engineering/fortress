@@ -162,6 +162,24 @@ impl EffectCapability {
             Self::UnsafeExecution => "unsafe.execution",
         }
     }
+
+    /// Resolves one exact stable capability identity.
+    #[must_use]
+    pub fn from_stable_id(value: &str) -> Option<Self> {
+        [
+            Self::Filesystem,
+            Self::NetworkClient,
+            Self::NetworkServer,
+            Self::NetworkIo,
+            Self::ProcessExecution,
+            Self::Environment,
+            Self::Time,
+            Self::Randomness,
+            Self::UnsafeExecution,
+        ]
+        .into_iter()
+        .find(|capability| capability.stable_id() == value)
+    }
 }
 
 /// Returns the architectural capability consequence for an effect, when one exists.
@@ -369,6 +387,38 @@ impl StateEffectSummary {
     pub fn operation_classifications(&self) -> &[OperationClassificationEvidence] {
         &self.operation_classifications
     }
+
+    /// Returns claim-relevant uncertainty propagated through resolved call edges.
+    #[must_use]
+    pub fn uncertainty(&self) -> &[String] {
+        &self.uncertainty
+    }
+}
+
+impl OperationClassificationEvidence {
+    /// Returns the stable external operation identity when resolved.
+    #[must_use]
+    pub fn operation(&self) -> Option<&str> {
+        self.operation.as_deref()
+    }
+
+    /// Returns the truthful classifier coverage state.
+    #[must_use]
+    pub const fn state(&self) -> OperationClassificationState {
+        self.state
+    }
+
+    /// Returns effects derived by the canonical operation classifier.
+    #[must_use]
+    pub fn effects(&self) -> &[FunctionEffect] {
+        &self.effects
+    }
+
+    /// Returns canonical repository-relative source evidence.
+    #[must_use]
+    pub fn path(&self) -> &str {
+        &self.path
+    }
 }
 
 impl EffectEvidence {
@@ -418,6 +468,24 @@ impl EffectEvidence {
     #[must_use]
     pub fn path(&self) -> &str {
         &self.path
+    }
+
+    /// Returns the one-based evidence line.
+    #[must_use]
+    pub const fn line(&self) -> u32 {
+        self.line
+    }
+
+    /// Returns the one-based evidence column.
+    #[must_use]
+    pub const fn column(&self) -> u32 {
+        self.column
+    }
+
+    /// Returns the semantic authority that classified the operation.
+    #[must_use]
+    pub fn classification_authority(&self) -> &str {
+        &self.classification_authority
     }
 }
 

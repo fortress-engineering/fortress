@@ -26,8 +26,23 @@
       "version": "^0.1.0"
     },
     {
+      "provider": "AF-PROGRAM-SEMANTICS-0001",
+      "capability": "CAP-PROGRAM-SEMANTICS",
+      "version": "^0.1.0"
+    },
+    {
       "provider": "AF-REPOSITORY-OBSERVATION-0001",
       "capability": "CAP-REPOSITORY-OBSERVATION",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-SEMANTIC-ANALYSIS-0001",
+      "capability": "CAP-SEMANTIC-ANALYSIS",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-STATE-EFFECT-ANALYSIS-0001",
+      "capability": "CAP-STATE-EFFECT-ANALYSIS",
       "version": "^0.1.0"
     }
   ],

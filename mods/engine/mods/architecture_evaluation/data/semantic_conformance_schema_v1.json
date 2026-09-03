@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:semantic-conformance",
+  "title": "Fortress Module Semantic Conformance v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "schema_version", "semantic_version", "project_id", "standard_edition", "ccg_digest", "psm_digest", "state_effect_digest", "modules", "dependency_convergence", "summary", "unsupported_semantics"],
+  "properties": {
+    "$schema": { "const": "urn:fortress:schema:v1:semantic-conformance" },
+    "schema_version": { "const": 1 },
+    "semantic_version": { "type": "string", "minLength": 1 },
+    "project_id": { "type": ["string", "null"] },
+    "standard_edition": { "type": "string", "minLength": 1 },
+    "ccg_digest": { "$ref": "#/$defs/digest" },
+    "psm_digest": { "$ref": "#/$defs/digest" },
+    "state_effect_digest": { "$ref": "#/$defs/digest" },
+    "modules": { "type": "array", "items": { "type": "object" } },
+    "dependency_convergence": { "type": "array", "items": { "type": "object" } },
+    "summary": { "type": "object" },
+    "unsupported_semantics": { "type": "array", "items": { "type": "string" } }
+  },
+  "$defs": {
+    "digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+  }
+}

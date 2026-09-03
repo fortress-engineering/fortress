@@ -85,7 +85,7 @@ fn generated_certification_is_not_authored_project_data() {
 /// `T-AF-BOOTSTRAP-GOVERNANCE-0001-R02-001`
 /// Fortress requirement: AF-BOOTSTRAP-GOVERNANCE-0001-R02
 #[test]
-fn live_contract_v2_ecosystem_resolves_completely() {
+fn live_contract_v2_v3_ecosystem_resolves_completely() {
     let root = repository_root();
     let policy = ObservationPolicy::new([".git"]).expect("policy validates");
     let observation = observe_repository(&root, &policy).expect("repository observes");
@@ -122,6 +122,7 @@ fn live_contract_v2_ecosystem_resolves_completely() {
                 "ARCH-DEPENDENCY-001",
                 "ARCH-OWNERSHIP-001",
                 "ARCH-REALIZATION-001",
+                "ARCH-SEMANTIC-001",
                 "BEHAVIOR-BYPASS-001",
                 "BEHAVIOR-FLOW-001",
                 "BEHAVIOR-REALIZATION-001",
@@ -156,10 +157,10 @@ fn live_contract_v2_ecosystem_resolves_completely() {
     assert_eq!(resolved.modules().len(), 40);
     assert_eq!(resolved.capabilities().len(), 20);
     assert_eq!(resolved.features().len(), 20);
-    assert_eq!(resolved.requirements().len(), 95);
+    assert_eq!(resolved.requirements().len(), 98);
     assert_eq!(resolved.guarantees().len(), 9);
     assert_eq!(resolved.checkpoints().len(), 10);
-    assert_eq!(resolved.direct_requirements().len(), 145);
+    assert_eq!(resolved.direct_requirements().len(), 151);
     assert_eq!(resolved.relationships().len(), 19);
     assert!(
         resolved

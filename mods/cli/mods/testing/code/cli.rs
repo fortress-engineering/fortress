@@ -88,6 +88,35 @@ fn reference_resolution_command_rejects_incomplete_move_preview() {
     assert!(String::from_utf8_lossy(&error).contains("usage: fortress references"));
 }
 
+/// `T-TF-CLI-0001-R17-001`
+/// Fortress requirement: TF-CLI-0001-R17
+#[test]
+fn semantic_conformance_command_is_registered() {
+    let registry = CommandRegistry::builtin();
+    assert_eq!(
+        registry
+            .find("semantic-conformance")
+            .map(CommandDescriptor::id),
+        Some("CMD-SEMANTIC-CONFORMANCE")
+    );
+}
+
+/// `T-TF-CLI-0001-R17-002`
+/// Fortress requirement: TF-CLI-0001-R17
+#[test]
+fn semantic_conformance_command_rejects_incomplete_module_filter() {
+    let mut output = Vec::new();
+    let mut error = Vec::new();
+    let status = fortress_cli::run(
+        ["semantic-conformance", ".", "--module"],
+        &mut output,
+        &mut error,
+    )
+    .expect("dispatch writes");
+    assert_eq!(status, fortress_cli::EXIT_USAGE);
+    assert!(String::from_utf8_lossy(&error).contains("usage: fortress semantic-conformance"));
+}
+
 /// `T-TF-CLI-0001-R15-001`
 /// Fortress requirement: TF-CLI-0001-R15
 #[test]
@@ -453,6 +482,7 @@ impl AuditFixture {
             "mods/engine/mods/standard_registry/data/std_id_rule.json",
             "mods/engine/mods/architecture_evaluation/data/dependency_rule.json",
             "mods/engine/mods/architecture_evaluation/data/realization_rule.json",
+            "mods/engine/mods/architecture_evaluation/data/semantic_conformance_rule.json",
             "mods/engine/mods/behavioral_semantics/data/behavior_flow_rule.json",
             "mods/engine/mods/behavioral_realization/data/behavior_bypass_rule.json",
             "mods/engine/mods/behavioral_realization/data/behavior_realization_rule.json",
@@ -482,7 +512,11 @@ impl AuditFixture {
         .expect("standard Data documentation writes");
         fs::write(
             root.join("mods/engine/mods/architecture_evaluation/docs/data_docs.md"),
-            data_docs(&["dependency_rule.json", "realization_rule.json"]),
+            data_docs(&[
+                "dependency_rule.json",
+                "realization_rule.json",
+                "semantic_conformance_rule.json",
+            ]),
         )
         .expect("architecture Data documentation writes");
         fs::write(

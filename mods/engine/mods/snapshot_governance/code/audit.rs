@@ -80,6 +80,9 @@ use crate::semantic_analysis::{
     SemanticAnalysisError, SemanticAnalysisEvaluation, analyze_program_domains,
     load_function_contracts,
 };
+use crate::semantic_conformance::{
+    SemanticConformanceError, SemanticConformanceEvaluation, evaluate_semantic_conformance,
+};
 use crate::snapshot::{
     RepositorySnapshot, SnapshotDocuments, SnapshotError, build_repository_snapshot,
     observe_repository_stably,
@@ -136,6 +139,7 @@ impl AuditResult {
     #[must_use]
     pub fn enforcement_success(&self) -> bool {
         self.finding_governance.is_success()
+            && self.summary.unsupported == 0
             && self.governance.project_authority == ProjectGovernanceState::Declared
     }
 
@@ -669,8 +673,11 @@ fn compile_source_architecture_from(
     let responsibilities = code_file_responsibilities(&prepared.observed_files, ccg)
         .map_err(|error| AuditError::ContractState(error.into()))?;
     let artifacts = source_artifact_inputs(&prepared.ownerships, &responsibilities);
-    let observation_input =
-        implementation_input(&prepared.snapshot, ccg, &prepared.observed_files)?;
+    let observation_input = implementation_input(
+        &prepared.snapshot,
+        &prepared.observed_files,
+        &prepared.ownerships,
+    )?;
     let cargo = observe_cargo_analysis_territories(&observation_input)
         .map_err(AuditError::ImplementationObservation)?;
     let rust_profile = observe_rust_source_profile(&prepared.observed_files, &artifacts, &cargo)
@@ -1142,6 +1149,42 @@ pub fn compile_repository_state_effect_analysis(
     compile_observation_state_effect(&prepared)
 }
 
+/// Compiles Module semantic conformance from authored contracts and canonical effects.
+///
+/// # Errors
+///
+/// Returns [`AuditError`] for invalid project authority, semantic inputs, policy,
+/// architecture realization, or deterministic result construction.
+pub fn compile_repository_semantic_conformance(
+    root: impl AsRef<Path>,
+) -> Result<SemanticConformanceEvaluation, AuditError> {
+    let prepared = prepare_audit(root.as_ref())?;
+    let ccg = prepared
+        .ccg_compilation
+        .graph()
+        .ok_or_else(|| AuditError::ContractState("prepared audit did not contain a CCG".into()))?;
+    let observation_input = implementation_input(
+        &prepared.snapshot,
+        &prepared.observed_files,
+        &prepared.ownerships,
+    )?;
+    let observed = observe_rust_implementation(&observation_input)
+        .map_err(AuditError::ImplementationObservation)?;
+    let realization = reconcile_implementation(ccg, &observed, prepared.standard.bundle.edition())
+        .map_err(EvaluationError::Finding)
+        .map_err(AuditError::Evaluation)?;
+    let models =
+        compile_analysis_models_from_observed(&prepared, ccg, observation_input, &observed)?;
+    evaluate_semantic_conformance(
+        ccg,
+        &models.psm,
+        models.state_effect.model(),
+        &realization,
+        prepared.standard.bundle.edition(),
+    )
+    .map_err(AuditError::SemanticConformance)
+}
+
 /// Compiles the repository's canonical Information Flow Analysis v1 result.
 ///
 /// # Errors
@@ -1280,6 +1323,7 @@ pub fn compile_repository_certification(
         .evaluation
         .rules()
         .iter()
+        .filter(|execution| execution.applicable())
         .map(|execution| {
             let result = match execution.state() {
                 crate::evaluation::RuleExecutionState::Passed => EvidenceResult::Pass,
@@ -1336,10 +1380,11 @@ pub fn compile_repository_certification(
     .map_err(CertificationError::Json)
     .map_err(AuditError::Certification)?;
     let mut applicable_rules = stack
-        .standard
+        .evaluation
         .rules()
         .iter()
-        .map(|rule| rule.id().to_owned())
+        .filter(|execution| execution.applicable())
+        .map(|execution| execution.rule_id().to_owned())
         .collect::<Vec<_>>();
     applicable_rules.sort();
     compile_certification(&CertificationInput {
@@ -1376,6 +1421,7 @@ struct CertificationSemanticStack {
     realized: BehavioralRealizationEvaluation,
     reference_resolution: ReferenceResolutionEvaluation,
     source_architecture: SourceArchitectureEvaluation,
+    semantic_conformance: SemanticConformanceEvaluation,
     evaluation: crate::evaluation::SnapshotEvaluation,
     finding_governance: FindingGovernanceEvaluation,
     finding_governance_authority_digest: Option<String>,
@@ -1390,8 +1436,11 @@ fn compile_certification_semantic_stack(
         .ccg_compilation
         .graph()
         .ok_or_else(|| AuditError::ContractState("prepared audit did not contain a CCG".into()))?;
-    let observation_input =
-        implementation_input(&prepared.snapshot, initial_ccg, &prepared.observed_files)?;
+    let observation_input = implementation_input(
+        &prepared.snapshot,
+        &prepared.observed_files,
+        &prepared.ownerships,
+    )?;
     let observed = observe_rust_implementation(&observation_input)
         .map_err(AuditError::ImplementationObservation)?;
     let architecture_realization =
@@ -1440,6 +1489,14 @@ fn compile_certification_semantic_stack(
     )
     .map_err(AuditError::ReferenceResolution)?;
     let source_architecture = compile_source_architecture_from(&prepared, &ccg, Some(&models.psm))?;
+    let semantic_conformance = evaluate_semantic_conformance(
+        &ccg,
+        &models.psm,
+        models.state_effect.model(),
+        &architecture_realization,
+        prepared.standard.bundle.edition(),
+    )
+    .map_err(AuditError::SemanticConformance)?;
     let evaluation_inputs = CompleteEvaluationInputs::new(
         &prepared.rust_tests,
         RepositoryEvaluationInputs::new(
@@ -1456,6 +1513,7 @@ fn compile_certification_semantic_stack(
             Some(&models.state_effect),
             Some(&models.information_flow),
             Some(&models.environmental),
+            Some(&semantic_conformance),
         ),
     )
     .with_rust_test_observations(&prepared.rust_test_observations);
@@ -1491,6 +1549,7 @@ fn compile_certification_semantic_stack(
         realized,
         reference_resolution,
         source_architecture,
+        semantic_conformance,
         evaluation,
         finding_governance,
         finding_governance_authority_digest,
@@ -1625,6 +1684,27 @@ fn certification_artifacts(
             stack
                 .models
                 .state_effect
+                .model()
+                .unsupported_semantics()
+                .to_vec(),
+        ),
+        (
+            "semantic_conformance",
+            crate::semantic_conformance::SEMANTIC_CONFORMANCE_SCHEMA,
+            "info/semantic_conformance.json",
+            stack
+                .semantic_conformance
+                .model()
+                .to_canonical_json()
+                .map_err(CertificationError::Json)?,
+            EvidenceClass::StaticProof,
+            vec![
+                "ccg".to_owned(),
+                "psm".to_owned(),
+                "state_effect".to_owned(),
+            ],
+            stack
+                .semantic_conformance
                 .model()
                 .unsupported_semantics()
                 .to_vec(),
@@ -2066,8 +2146,11 @@ fn compile_analysis_models(
     prepared: &PreparedAudit,
     ccg: &ContractCoherencyGraph,
 ) -> Result<AnalysisModels, AuditError> {
-    let observation_input =
-        implementation_input(&prepared.snapshot, ccg, &prepared.observed_files)?;
+    let observation_input = implementation_input(
+        &prepared.snapshot,
+        &prepared.observed_files,
+        &prepared.ownerships,
+    )?;
     let observed = observe_rust_implementation(&observation_input)
         .map_err(AuditError::ImplementationObservation)?;
     compile_analysis_models_from_observed(prepared, ccg, observation_input, &observed)
@@ -2299,12 +2382,16 @@ fn audit_repository_with_prepared(
         &prepared.snapshot,
         ccg,
         &prepared.observed_files,
+        &prepared.ownerships,
         standard.edition(),
         include_implementation_observation,
     )?;
     let analysis_models = if include_implementation_observation {
-        let observation_input =
-            implementation_input(&prepared.snapshot, ccg, &prepared.observed_files)?;
+        let observation_input = implementation_input(
+            &prepared.snapshot,
+            &prepared.observed_files,
+            &prepared.ownerships,
+        )?;
         Some(compile_analysis_models_from_observed(
             prepared,
             ccg,
@@ -2371,6 +2458,18 @@ fn audit_repository_with_prepared(
         derive_architecture_diagnostics(ccg, &observed_implementation, &architecture_realization)
             .map_err(AuditError::ArchitectureDiagnostics)?;
     let analyses = analysis_models.as_ref();
+    let semantic_conformance = analyses
+        .map(|models| {
+            evaluate_semantic_conformance(
+                ccg,
+                &models.psm,
+                models.state_effect.model(),
+                &architecture_realization,
+                standard.edition(),
+            )
+        })
+        .transpose()
+        .map_err(AuditError::SemanticConformance)?;
     let evaluation_inputs = CompleteEvaluationInputs::new(
         &prepared.rust_tests,
         RepositoryEvaluationInputs::new(
@@ -2387,6 +2486,7 @@ fn audit_repository_with_prepared(
             analyses.map(|models| &models.state_effect),
             analyses.map(|models| &models.information_flow),
             analyses.map(|models| &models.environmental),
+            semantic_conformance.as_ref(),
         ),
     )
     .with_rust_test_observations(&prepared.rust_test_observations);
@@ -2796,8 +2896,8 @@ fn evaluate_snapshot_rules(
 
 fn implementation_input(
     snapshot: &RepositorySnapshot,
-    ccg: &ContractCoherencyGraph,
     files: &BTreeMap<String, Vec<u8>>,
+    ownerships: &[SourceOwnership],
 ) -> Result<ImplementationObservationInput, AuditError> {
     let by_path: BTreeMap<&str, &crate::observation::ObservedFile> = snapshot
         .files()
@@ -2818,15 +2918,10 @@ fn implementation_input(
             ))
         })
         .collect::<Result<Vec<_>, AuditError>>()?;
-    let modules = ccg
-        .modules()
-        .iter()
-        .map(|(id, module)| ModuleTerritory::new(id, module.path()))
-        .collect();
-    Ok(ImplementationObservationInput::new(
+    Ok(ImplementationObservationInput::new_with_ownership(
         snapshot.snapshot_fingerprint(),
         snapshot_files,
-        modules,
+        ownerships.to_vec(),
     ))
 }
 
@@ -2834,11 +2929,12 @@ fn reconcile_repository_implementation(
     snapshot: &RepositorySnapshot,
     ccg: &ContractCoherencyGraph,
     files: &BTreeMap<String, Vec<u8>>,
+    ownerships: &[SourceOwnership],
     standard_edition: &str,
     include_observation: bool,
 ) -> Result<(ObservedImplementation, ArchitectureRealization), AuditError> {
     let observed = if include_observation {
-        let input = implementation_input(snapshot, ccg, files)?;
+        let input = implementation_input(snapshot, files, ownerships)?;
         observe_rust_implementation(&input).map_err(AuditError::ImplementationObservation)?
     } else {
         crate::implementation_observation::ObservedImplementation::from_facts(
@@ -2985,6 +3081,10 @@ const INSTALLED_STANDARD_RULE_SOURCES: &[(&str, &str)] = &[
     (
         "mods/engine/mods/architecture_evaluation/data/realization_rule.json",
         crate::architecture_realization::REALIZATION_RULE_SOURCE,
+    ),
+    (
+        "mods/engine/mods/architecture_evaluation/data/semantic_conformance_rule.json",
+        crate::semantic_conformance::SEMANTIC_CONFORMANCE_RULE_SOURCE,
     ),
     (
         "mods/engine/mods/behavioral_semantics/data/behavior_flow_rule.json",
@@ -3226,6 +3326,8 @@ pub enum AuditError {
     StateContracts(StateContractError),
     /// State and Effect Analysis result construction failed.
     StateEffectAnalysis(StateEffectAnalysisError),
+    /// Module semantic-conformance evaluation failed.
+    SemanticConformance(SemanticConformanceError),
     /// Project information-flow policy authority was invalid.
     InformationFlowPolicy(InformationFlowPolicyError),
     /// Information Flow Analysis result construction failed.
@@ -3301,6 +3403,9 @@ impl Display for AuditError {
             }
             Self::StateEffectAnalysis(error) => {
                 write!(formatter, "state and effect analysis failed: {error}")
+            }
+            Self::SemanticConformance(error) => {
+                write!(formatter, "semantic conformance failed: {error}")
             }
             Self::InformationFlowPolicy(error) => {
                 write!(formatter, "information-flow policy failed: {error}")

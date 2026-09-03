@@ -28,6 +28,7 @@ use crate::placement::{REPO_MODULE_RULE_ID, evaluate_module_grammar};
 use crate::reference_resolution::{REPO_REFERENCE_RULE_ID, ReferenceResolutionEvaluation};
 use crate::rust_test_analyzer::{RustTestFact, RustTestObservation};
 use crate::semantic_analysis::{PROGRAM_DOMAIN_RULE_ID, SemanticAnalysisEvaluation};
+use crate::semantic_conformance::{ARCH_SEMANTIC_RULE_ID, SemanticConformanceEvaluation};
 use crate::snapshot::RepositorySnapshot;
 use crate::source_architecture::{
     SOURCE_ARTIFACT_RULE_ID, SOURCE_PROFILE_RULE_ID, SourceArchitectureEvaluation,
@@ -194,6 +195,7 @@ pub struct CompleteEvaluationInputs<'a> {
     behavioral_realization: Option<&'a BehavioralRealizationEvaluation>,
     semantic_analysis: Option<&'a SemanticAnalysisEvaluation>,
     state_effect_analysis: Option<&'a StateEffectAnalysisEvaluation>,
+    semantic_conformance: Option<&'a SemanticConformanceEvaluation>,
     information_flow_analysis: Option<&'a InformationFlowEvaluation>,
     environmental_analysis: Option<&'a EnvironmentalAnalysisEvaluation>,
     reference_resolution: &'a ReferenceResolutionEvaluation,
@@ -205,6 +207,7 @@ pub struct CompleteEvaluationInputs<'a> {
 pub struct ProgramEvaluationInputs<'a> {
     semantic: Option<&'a SemanticAnalysisEvaluation>,
     state_effect: Option<&'a StateEffectAnalysisEvaluation>,
+    semantic_conformance: Option<&'a SemanticConformanceEvaluation>,
     information_flow: Option<&'a InformationFlowEvaluation>,
     environmental: Option<&'a EnvironmentalAnalysisEvaluation>,
 }
@@ -253,12 +256,14 @@ impl<'a> ProgramEvaluationInputs<'a> {
         state_effect_analysis: Option<&'a StateEffectAnalysisEvaluation>,
         information_flow_analysis: Option<&'a InformationFlowEvaluation>,
         environmental_analysis: Option<&'a EnvironmentalAnalysisEvaluation>,
+        semantic_conformance: Option<&'a SemanticConformanceEvaluation>,
     ) -> Self {
         Self {
             semantic: semantic_analysis,
             state_effect: state_effect_analysis,
             information_flow: information_flow_analysis,
             environmental: environmental_analysis,
+            semantic_conformance,
         }
     }
 }
@@ -281,6 +286,7 @@ impl<'a> CompleteEvaluationInputs<'a> {
             behavioral_realization: repository.behavioral_realization,
             semantic_analysis: program_analysis.semantic,
             state_effect_analysis: program_analysis.state_effect,
+            semantic_conformance: program_analysis.semantic_conformance,
             information_flow_analysis: program_analysis.information_flow,
             environmental_analysis: program_analysis.environmental,
             reference_resolution: repository.reference_resolution,
@@ -310,6 +316,7 @@ struct EvaluationInputs<'a> {
     behavioral_realization: Option<&'a BehavioralRealizationEvaluation>,
     semantic_analysis: Option<&'a SemanticAnalysisEvaluation>,
     state_effect_analysis: Option<&'a StateEffectAnalysisEvaluation>,
+    semantic_conformance: Option<&'a SemanticConformanceEvaluation>,
     information_flow_analysis: Option<&'a InformationFlowEvaluation>,
     environmental_analysis: Option<&'a EnvironmentalAnalysisEvaluation>,
     reference_resolution: Option<&'a ReferenceResolutionEvaluation>,
@@ -328,6 +335,7 @@ impl<'a> From<CompleteEvaluationInputs<'a>> for EvaluationInputs<'a> {
             behavioral_realization: inputs.behavioral_realization,
             semantic_analysis: inputs.semantic_analysis,
             state_effect_analysis: inputs.state_effect_analysis,
+            semantic_conformance: inputs.semantic_conformance,
             information_flow_analysis: inputs.information_flow_analysis,
             environmental_analysis: inputs.environmental_analysis,
             reference_resolution: Some(inputs.reference_resolution),
@@ -437,6 +445,10 @@ fn evaluate_rule(
         ARCH_REALIZATION_RULE_ID => Ok(inputs.architecture_realization.map_or_else(
             || unsupported_execution(rule_id, "Architecture realization requires one snapshot-bound observed implementation and one compiled CCG reconciliation."),
             |result| realization_execution(rule_id, result),
+        )),
+        ARCH_SEMANTIC_RULE_ID => Ok(inputs.semantic_conformance.map_or_else(
+            || unsupported_execution(rule_id, "Module semantic conformance requires one CCG, PSM, State/Effect v2 result, and Architecture Realization reconciliation."),
+            |result| semantic_conformance_execution(rule_id, result),
         )),
         BEHAVIOR_FLOW_RULE_ID => Ok(inputs.behavioral_semantics.map_or_else(
             || unsupported_execution(rule_id, "Behavioral-flow evaluation requires one Intended BFG compiled from the audit CCG."),
@@ -733,6 +745,36 @@ fn state_effect_execution(
                 "State and Effect Analysis v1 evaluated {} function summary(ies) and produced {} supported contradiction(s) for this rule; unknown and unclassified semantics remain explicit.",
                 coverage.functions(),
                 findings.len(),
+            ),
+        },
+        findings,
+    )
+}
+
+fn semantic_conformance_execution(
+    rule_id: &str,
+    result: &SemanticConformanceEvaluation,
+) -> (RuleExecution, Vec<CanonicalFinding>) {
+    let findings = result.findings().to_vec();
+    let summary = result.model().summary();
+    let state = if !findings.is_empty() {
+        RuleExecutionState::Failed
+    } else if !result.coverage_findings().is_empty() {
+        RuleExecutionState::Unsupported
+    } else {
+        RuleExecutionState::Passed
+    };
+    (
+        RuleExecution {
+            rule_id: rule_id.into(),
+            state,
+            applicable: result.is_applicable(),
+            findings: findings.len(),
+            detail: format!(
+                "Module semantic conformance evaluated {} authored policy set(s), produced {} supported blocking contradiction(s), and retained {} claim-relative not-evaluable finding(s); undeclared policy is never interpreted as permission.",
+                summary.modules_with_policy(),
+                summary.blocking_findings(),
+                summary.not_evaluable_findings(),
             ),
         },
         findings,

@@ -6,10 +6,11 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 use fortress_core::audit::{
     audit_repository, compile_repository_environmental_analysis, compile_repository_psm,
-    compile_repository_source_artifact_model, compile_repository_state_effect_analysis,
-    inspect_repository_modules,
+    compile_repository_semantic_conformance, compile_repository_source_artifact_model,
+    compile_repository_state_effect_analysis, inspect_repository_modules,
 };
 use fortress_core::program_semantics::ExecutableSymbol;
+use fortress_core::semantic_conformance::SemanticConformanceState;
 
 static NEXT_REPOSITORY: AtomicU64 = AtomicU64::new(0);
 
@@ -50,6 +51,12 @@ fn minimal_contract(id: &str, name: &str, root: bool) -> String {
     )
 }
 
+fn semantic_contract(id: &str) -> String {
+    format!(
+        "{{\n  \"$schema\": \"urn:fortress:schema:v3:module-contract\",\n  \"schema_version\": 3,\n  \"id\": \"{id}\",\n  \"display_name\": \"{id}\",\n  \"provides\": [],\n  \"requires\": [],\n  \"relationships\": [],\n  \"constraints\": [],\n  \"guarantees\": [],\n  \"features\": [],\n  \"behavior\": [],\n  \"semantic_policy\": {{\n    \"default\": \"UNDECLARED\",\n    \"capabilities\": {{\n      \"allow\": [],\n      \"deny\": []\n    }},\n    \"effects\": {{\n      \"allow\": [],\n      \"deny\": [\n        \"filesystem.write\"\n      ]\n    }}\n  }}\n}}\n"
+    )
+}
+
 /// `T-LOGICAL-MODULE-INTEGRATION-001`
 /// Fortress classification: infrastructure
 #[test]
@@ -69,7 +76,7 @@ fn logical_contracts_and_native_paths_feed_one_semantic_ownership_relation() {
     );
     repository.write(
         "data/logical_modules/api/contract.json",
-        &minimal_contract("AF-API-0001", "API", false),
+        &semantic_contract("AF-API-0001"),
     );
     repository.write(
         "data/logical_modules/core/contract.json",
@@ -79,7 +86,10 @@ fn logical_contracts_and_native_paths_feed_one_semantic_ownership_relation() {
         "src/lib.rs",
         "pub mod api;\npub mod core;\npub mod utility;\n",
     );
-    repository.write("src/api/mod.rs", "pub fn submit() {}\n");
+    repository.write(
+        "src/api/mod.rs",
+        "pub fn submit() { std::fs::write(\"receipt.txt\", b\"ok\").unwrap(); }\n",
+    );
     repository.write("src/core/mod.rs", "pub fn calculate() {}\n");
     repository.write("src/utility.rs", "pub fn utility() {}\n");
 
@@ -126,6 +136,17 @@ fn logical_contracts_and_native_paths_feed_one_semantic_ownership_relation() {
             && artifacts
                 .iter()
                 .any(|artifact| artifact["module_id"] == "AF-CORE-0001")
+    }));
+
+    let conformance = compile_repository_semantic_conformance(repository.path())
+        .expect("logical semantic conformance compiles");
+    let api = conformance
+        .model()
+        .module("AF-API-0001")
+        .expect("API semantic policy conclusion");
+    assert_eq!(api.state(), SemanticConformanceState::Fail);
+    assert!(api.observations().iter().any(|observation| {
+        observation.operation() == "std::fs::write" && observation.policy_disposition().is_some()
     }));
 }
 

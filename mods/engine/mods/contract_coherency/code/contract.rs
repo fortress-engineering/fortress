@@ -1,4 +1,4 @@
-//! Canonical Fortress Module Contract v2 loading and CCG compilation.
+//! Canonical Fortress Module Contract v2/v3 loading and CCG compilation.
 //!
 //! Canonical physical containment remains authoritative for colocated Modules.
 //! Project-authorized logical contracts supply only stable contract location and
@@ -22,13 +22,16 @@ use sha2::{Digest, Sha256};
 use crate::identity::{RuleId, StableId};
 use crate::standard::StandardBundle;
 
-/// Exact Module Contract v2 schema identity.
-pub const MODULE_CONTRACT_SCHEMA: &str = "urn:fortress:schema:v2:module-contract";
+/// Exact current Module Contract schema identity.
+pub const MODULE_CONTRACT_SCHEMA: &str = "urn:fortress:schema:v3:module-contract";
 
-/// Current and only supported Module Contract schema version.
-pub const MODULE_CONTRACT_SCHEMA_VERSION: u16 = 2;
+/// Exact legacy Module Contract v2 schema identity.
+pub const MODULE_CONTRACT_SCHEMA_V2: &str = "urn:fortress:schema:v2:module-contract";
 
-/// A validated canonical Module Contract v2 document.
+/// Current Module Contract schema version.
+pub const MODULE_CONTRACT_SCHEMA_VERSION: u16 = 3;
+
+/// A validated canonical Module Contract v2 or v3 document.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct ModuleContract {
@@ -46,10 +49,12 @@ pub struct ModuleContract {
     guarantees: Vec<ModuleGuarantee>,
     features: Vec<ContractFeature>,
     behavior: Vec<BehaviorCheckpoint>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    semantic_policy: Option<ModuleSemanticPolicy>,
 }
 
 impl ModuleContract {
-    /// Parses, validates, and byte-checks one canonical v2 contract.
+    /// Parses, validates, and byte-checks one canonical v2 or v3 contract.
     ///
     /// # Errors
     ///
@@ -64,7 +69,7 @@ impl ModuleContract {
             .get("schema_version")
             .and_then(serde_json::Value::as_u64)
             .and_then(|value| u16::try_from(value).ok());
-        if version != Some(MODULE_CONTRACT_SCHEMA_VERSION) {
+        if !matches!(version, Some(2 | MODULE_CONTRACT_SCHEMA_VERSION)) {
             return Err(ModuleContractLoadError::UnsupportedSchemaVersion(version));
         }
         let contract: Self =
@@ -154,17 +159,32 @@ impl ModuleContract {
         &self.behavior
     }
 
+    /// Returns authored Module semantic-effect/capability policy, when declared.
+    #[must_use]
+    pub const fn semantic_policy(&self) -> Option<&ModuleSemanticPolicy> {
+        self.semantic_policy.as_ref()
+    }
+
     #[allow(clippy::too_many_lines)]
     fn validate_local(&self) -> Result<(), ModuleContractModelError> {
-        if self.schema != MODULE_CONTRACT_SCHEMA {
+        let expected_schema = match self.schema_version {
+            2 => MODULE_CONTRACT_SCHEMA_V2,
+            MODULE_CONTRACT_SCHEMA_VERSION => MODULE_CONTRACT_SCHEMA,
+            version => {
+                return Err(model_error(format!(
+                    "schema version {version} is unsupported"
+                )));
+            }
+        };
+        if self.schema != expected_schema {
             return Err(model_error(format!(
-                "`$schema` must be `{MODULE_CONTRACT_SCHEMA}`"
+                "`$schema` must be `{expected_schema}` for schema version {}",
+                self.schema_version
             )));
         }
-        if self.schema_version != MODULE_CONTRACT_SCHEMA_VERSION {
+        if self.schema_version == 2 && self.semantic_policy.is_some() {
             return Err(model_error(format!(
-                "schema version {} is unsupported",
-                self.schema_version
+                "Module Contract v2 cannot declare `semantic_policy`; use `{MODULE_CONTRACT_SCHEMA}`"
             )));
         }
         stable_id("id", &self.id)?;
@@ -369,7 +389,137 @@ impl ModuleContract {
             }
             checkpoint.validate_shape()?;
         }
+        if let Some(policy) = &self.semantic_policy {
+            policy.validate()?;
+        }
         Ok(())
+    }
+}
+
+/// Explicit fallback applied when neither an effect nor its capability is listed.
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum SemanticPolicyDefault {
+    /// Unlisted semantic consequences remain outside the authored claim.
+    Undeclared,
+}
+
+/// Canonical disjoint allow/deny sets for one semantic policy namespace.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct SemanticPolicySet {
+    allow: Vec<String>,
+    deny: Vec<String>,
+}
+
+impl SemanticPolicySet {
+    /// Returns explicitly allowed stable identities.
+    #[must_use]
+    pub fn allow(&self) -> &[String] {
+        &self.allow
+    }
+
+    /// Returns explicitly denied stable identities.
+    #[must_use]
+    pub fn deny(&self) -> &[String] {
+        &self.deny
+    }
+
+    fn validate(
+        &self,
+        field: &'static str,
+        vocabulary: &[&str],
+    ) -> Result<(), ModuleContractModelError> {
+        strictly_sorted(
+            &format!("semantic_policy.{field}.allow"),
+            self.allow.iter().map(String::as_str),
+        )?;
+        strictly_sorted(
+            &format!("semantic_policy.{field}.deny"),
+            self.deny.iter().map(String::as_str),
+        )?;
+        for value in self.allow.iter().chain(&self.deny) {
+            if !vocabulary.contains(&value.as_str()) {
+                return Err(model_error(format!(
+                    "semantic_policy.{field} contains unknown identity `{value}`"
+                )));
+            }
+        }
+        if let Some(value) = self
+            .allow
+            .iter()
+            .find(|value| self.deny.binary_search(value).is_ok())
+        {
+            return Err(model_error(format!(
+                "semantic_policy.{field} cannot both allow and deny `{value}`"
+            )));
+        }
+        Ok(())
+    }
+}
+
+/// Authored Module policy over stable effect and capability identities.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ModuleSemanticPolicy {
+    default: SemanticPolicyDefault,
+    capabilities: SemanticPolicySet,
+    effects: SemanticPolicySet,
+}
+
+impl ModuleSemanticPolicy {
+    /// Returns the explicit semantics for unlisted observations.
+    #[must_use]
+    pub const fn default(&self) -> SemanticPolicyDefault {
+        self.default
+    }
+
+    /// Returns capability-level allow/deny authority.
+    #[must_use]
+    pub const fn capabilities(&self) -> &SemanticPolicySet {
+        &self.capabilities
+    }
+
+    /// Returns refined effect-level allow/deny authority.
+    #[must_use]
+    pub const fn effects(&self) -> &SemanticPolicySet {
+        &self.effects
+    }
+
+    fn validate(&self) -> Result<(), ModuleContractModelError> {
+        const CAPABILITIES: &[&str] = &[
+            "environment",
+            "filesystem",
+            "network.client",
+            "network.io",
+            "network.server",
+            "process.execution",
+            "randomness",
+            "time",
+            "unsafe.execution",
+        ];
+        const EFFECTS: &[&str] = &[
+            "environment.read",
+            "environment.write",
+            "external_interaction",
+            "filesystem.read",
+            "filesystem.write",
+            "may_panic",
+            "network.connect",
+            "network.io",
+            "network.listen",
+            "owned_state_read",
+            "owned_state_write",
+            "process.spawn",
+            "random.read",
+            "receiver_state_read",
+            "receiver_state_write",
+            "time.monotonic_read",
+            "time.wall_read",
+            "unsafe_execution",
+        ];
+        self.capabilities.validate("capabilities", CAPABILITIES)?;
+        self.effects.validate("effects", EFFECTS)
     }
 }
 

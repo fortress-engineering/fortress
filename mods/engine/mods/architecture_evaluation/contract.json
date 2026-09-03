@@ -27,13 +27,28 @@
       "version": "^0.1.0"
     },
     {
+      "provider": "AF-PROGRAM-SEMANTICS-0001",
+      "capability": "CAP-PROGRAM-SEMANTICS",
+      "version": "^0.1.0"
+    },
+    {
       "provider": "AF-PROJECT-MODEL-0001",
       "capability": "CAP-PROJECT-MODEL",
       "version": "^0.1.0"
     },
     {
+      "provider": "AF-SEMANTIC-ANALYSIS-0001",
+      "capability": "CAP-SEMANTIC-ANALYSIS",
+      "version": "^0.1.0"
+    },
+    {
       "provider": "AF-STANDARD-REGISTRY-0001",
       "capability": "CAP-STANDARD-REGISTRY",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-STATE-EFFECT-ANALYSIS-0001",
+      "capability": "CAP-STATE-EFFECT-ANALYSIS",
       "version": "^0.1.0"
     }
   ],
@@ -83,6 +98,24 @@
             "T-AF-ARCHITECTURE-EVALUATION-0001-R04-004",
             "T-AF-ARCHITECTURE-EVALUATION-0001-R04-005",
             "T-AF-ARCHITECTURE-EVALUATION-0001-R04-006"
+          ]
+        },
+        {
+          "id": "AF-ARCHITECTURE-EVALUATION-0001-R05",
+          "statement": "Module Contract v3 declares explicit capability/effect allow and deny authority while v2 contracts remain loadable with semantic policy truthfully UNDECLARED.",
+          "tests": [
+            "T-AF-ARCHITECTURE-EVALUATION-0001-R05-001",
+            "T-AF-ARCHITECTURE-EVALUATION-0001-R05-002"
+          ]
+        },
+        {
+          "id": "AF-ARCHITECTURE-EVALUATION-0001-R06",
+          "statement": "ARCH-SEMANTIC-001 deterministically reconciles declared Module semantic policy with direct and transitive State/Effect evidence, preserves claim-relative uncertainty, emits causal canonical findings, excludes analysis-only territories, and scales by indexed Module ownership.",
+          "tests": [
+            "T-ARCH-SEMANTIC-001-R01-001",
+            "T-ARCH-SEMANTIC-001-R01-002",
+            "T-ARCH-SEMANTIC-001-R01-003",
+            "T-ARCH-SEMANTIC-001-R01-004"
           ]
         }
       ]

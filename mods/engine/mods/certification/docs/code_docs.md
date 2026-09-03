@@ -6,7 +6,7 @@ Certification Code defines content-addressed evidence nodes and DAG validation, 
 
 ## Execution
 
-The implementation consumes one stabilized source identity, one already-compiled semantic artifact stack including the current CCG-bound Reference Resolution projection, applicable rule results, one canonical local Rust suite result, and distributed Testing bindings before building evidence nodes in dependency order.
+The implementation consumes one stabilized source identity, one already-compiled semantic artifact stack including current CCG-bound Reference Resolution and Module semantic-conformance projections, applicable rule results, one canonical local Rust suite result, and distributed Testing bindings before building evidence nodes in dependency order. Non-applicable rules are not mislabeled as conformance proof, while unsupported applicable claims remain missing evidence.
 
 ## State
 

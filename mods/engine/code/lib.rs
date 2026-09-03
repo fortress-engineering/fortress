@@ -60,6 +60,8 @@ pub mod reference_resolution;
 pub mod rust_test_analyzer;
 #[path = "../mods/semantic_analysis/code/semantic.rs"]
 pub mod semantic_analysis;
+#[path = "../mods/architecture_evaluation/code/semantic_conformance.rs"]
+pub mod semantic_conformance;
 #[path = "../mods/snapshot_governance/code/snapshot.rs"]
 pub mod snapshot;
 #[path = "../mods/source_architecture/code/source.rs"]

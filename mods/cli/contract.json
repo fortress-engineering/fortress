@@ -166,6 +166,14 @@
             "T-TF-CLI-0001-R16-002",
             "T-TF-CLI-0001-R16-003"
           ]
+        },
+        {
+          "id": "TF-CLI-0001-R17",
+          "statement": "The native fortress semantic-conformance command renders Module Contract policy, supported effect/capability evidence, claim-relative coverage, and raw PASS, FAIL, UNKNOWN, or NOT_APPLICABLE conclusions without inferring permission from implementation.",
+          "tests": [
+            "T-TF-CLI-0001-R17-001",
+            "T-TF-CLI-0001-R17-002"
+          ]
         }
       ]
     }

@@ -24,7 +24,7 @@ Performs read-only repository discovery, compiles exact-source-bound reviewed au
 
 ### [`audit.rs`](../code/audit.rs)
 
-Orchestrates declaration loading, stabilized snapshot construction, shared CCG, Intended BFG, implementation observation, PSM, semantic-domain, state/effect, information-flow, environmental, Behavioral Realization, and Reference Resolution analysis, rule execution, and deterministic audit v2 rendering with normative findings, non-normative architecture diagnostics, and unsupported analysis kept distinct.
+Orchestrates declaration loading, stabilized snapshot construction, shared CCG, Intended BFG, implementation observation, PSM, semantic-domain, state/effect, Module semantic-conformance, information-flow, environmental, Behavioral Realization, and Reference Resolution analysis, rule execution, and deterministic audit v4 rendering with normative findings, non-normative architecture diagnostics, and unsupported analysis kept distinct.
 
 ### [`contract.rs`](../code/contract.rs)
 

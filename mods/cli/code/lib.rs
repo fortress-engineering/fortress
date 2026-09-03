@@ -18,9 +18,9 @@ use fortress_core::audit::{
     compile_repository_certification, compile_repository_environmental_analysis,
     compile_repository_information_flow_analysis, compile_repository_psm,
     compile_repository_realized_bfg, compile_repository_reference_resolution,
-    compile_repository_semantic_analysis, compile_repository_source_artifact_model,
-    compile_repository_state_effect_analysis, inspect_repository_modules,
-    prepare_repository_certification_source,
+    compile_repository_semantic_analysis, compile_repository_semantic_conformance,
+    compile_repository_source_artifact_model, compile_repository_state_effect_analysis,
+    inspect_repository_modules, prepare_repository_certification_source,
 };
 use fortress_core::bootstrap::{
     BootstrapDiscoveryOptions, BootstrapProposal, apply_repository_bootstrap,
@@ -86,6 +86,7 @@ where
         "CMD-PROGRAM-PSM" => run_psm(&arguments[1..], output, error),
         "CMD-SEMANTIC-ANALYSIS" => run_semantic(&arguments[1..], output, error),
         "CMD-STATE-EFFECT-ANALYSIS" => run_state_effect(&arguments[1..], output, error),
+        "CMD-SEMANTIC-CONFORMANCE" => run_semantic_conformance(&arguments[1..], output, error),
         "CMD-INFORMATION-FLOW" => run_information_flow(&arguments[1..], output, error),
         "CMD-ENVIRONMENTAL-ANALYSIS" => run_environmental(&arguments[1..], output, error),
         "CMD-REFERENCE-RESOLUTION" => run_references(&arguments[1..], output, error),
@@ -1097,6 +1098,176 @@ fn parse_state_effect_arguments(
         index += 1;
     }
     Ok((root.unwrap_or_else(|| PathBuf::from(".")), destination))
+}
+
+#[allow(clippy::too_many_lines)]
+fn run_semantic_conformance<O: Write, E: Write>(
+    arguments: &[String],
+    output: &mut O,
+    error: &mut E,
+) -> io::Result<u8> {
+    const USAGE: &str = "usage: fortress semantic-conformance [path] [--module ID] [--format human|json] [--output path]";
+    let mut root = None;
+    let mut module_id = None;
+    let mut destination = None;
+    let mut json = false;
+    let mut index = 0;
+    while index < arguments.len() {
+        match arguments[index].as_str() {
+            "--module" => {
+                index += 1;
+                let Some(value) = arguments.get(index) else {
+                    writeln!(error, "{USAGE}")?;
+                    return Ok(EXIT_USAGE);
+                };
+                module_id = Some(value.clone());
+            }
+            "--format" => {
+                index += 1;
+                match arguments.get(index).map(String::as_str) {
+                    Some("json") => json = true,
+                    Some("human") => json = false,
+                    _ => {
+                        writeln!(error, "{USAGE}")?;
+                        return Ok(EXIT_USAGE);
+                    }
+                }
+            }
+            value if value.starts_with("--format=") => match value.strip_prefix("--format=") {
+                Some("json") => json = true,
+                Some("human") => json = false,
+                _ => {
+                    writeln!(error, "{USAGE}")?;
+                    return Ok(EXIT_USAGE);
+                }
+            },
+            "--output" => {
+                index += 1;
+                let Some(value) = arguments.get(index) else {
+                    writeln!(error, "{USAGE}")?;
+                    return Ok(EXIT_USAGE);
+                };
+                if destination.replace(PathBuf::from(value)).is_some() {
+                    writeln!(error, "{USAGE}")?;
+                    return Ok(EXIT_USAGE);
+                }
+            }
+            value if !value.starts_with('-') && root.is_none() => {
+                root = Some(PathBuf::from(value));
+            }
+            _ => {
+                writeln!(error, "{USAGE}")?;
+                return Ok(EXIT_USAGE);
+            }
+        }
+        index += 1;
+    }
+    let evaluation =
+        match compile_repository_semantic_conformance(root.unwrap_or_else(|| PathBuf::from("."))) {
+            Ok(value) => value,
+            Err(analysis_error) => {
+                writeln!(error, "semantic conformance failed: {analysis_error}")?;
+                return Ok(EXIT_VIOLATION);
+            }
+        };
+    let modules = if let Some(id) = module_id.as_deref() {
+        let Some(module) = evaluation.model().module(id) else {
+            writeln!(error, "unknown declared Module `{id}`")?;
+            return Ok(EXIT_USAGE);
+        };
+        vec![module]
+    } else {
+        evaluation.model().modules().iter().collect::<Vec<_>>()
+    };
+    if destination.is_some() && !json {
+        writeln!(
+            error,
+            "semantic-conformance output files require `--format json`"
+        )?;
+        return Ok(EXIT_USAGE);
+    }
+    if json {
+        let document = if module_id.is_some() {
+            modules[0].to_canonical_json().map_err(io::Error::other)?
+        } else {
+            evaluation
+                .model()
+                .to_canonical_json()
+                .map_err(io::Error::other)?
+        };
+        if let Some(destination) = destination {
+            fs::write(destination, document)?;
+        } else {
+            write!(output, "{document}")?;
+        }
+    } else {
+        for module in modules {
+            writeln!(
+                output,
+                "Module {} policy={} result={:?} contract={}\n  Rule: {}",
+                module.module(),
+                module.policy_state(),
+                module.state(),
+                module.contract_path(),
+                fortress_core::semantic_conformance::ARCH_SEMANTIC_RULE_ID,
+            )?;
+            for conclusion in module.conclusions() {
+                writeln!(
+                    output,
+                    "  Policy: {:?} {} {:?}\n  Result: {:?} / {:?} (observations={})",
+                    conclusion.target_kind(),
+                    conclusion.target(),
+                    conclusion.disposition(),
+                    conclusion.state(),
+                    conclusion.blocking_eligibility(),
+                    conclusion.observation_count(),
+                )?;
+                for reason in conclusion.coverage_reasons() {
+                    writeln!(output, "    Coverage: {reason}")?;
+                }
+            }
+            for observation in module.observations().iter().filter(|observation| {
+                observation.policy_disposition()
+                    == Some(fortress_core::semantic_conformance::PolicyDisposition::Deny)
+            }) {
+                writeln!(
+                    output,
+                    "    {:?} effect={} capability={} operation={} source={}:{}:{} authority={} chain={}",
+                    observation.evidence_kind(),
+                    observation.effect().stable_id(),
+                    observation
+                        .capability()
+                        .map_or("none", |capability| capability.stable_id()),
+                    observation.operation(),
+                    observation.path(),
+                    observation.line(),
+                    observation.column(),
+                    observation.authority(),
+                    observation.call_chain().join(" -> "),
+                )?;
+            }
+            if module.state() == fortress_core::semantic_conformance::SemanticConformanceState::Fail
+            {
+                writeln!(
+                    output,
+                    "  Remediation: remove or isolate the forbidden reachable operation, or explicitly revise the Module Contract policy after architectural review."
+                )?;
+            }
+            if module.state()
+                == fortress_core::semantic_conformance::SemanticConformanceState::Unknown
+            {
+                writeln!(
+                    output,
+                    "  Remediation: resolve the claim-relevant opaque operation; missing semantic authority is not conformance."
+                )?;
+            }
+        }
+    }
+    Ok(if evaluation.is_success() {
+        EXIT_SUCCESS
+    } else {
+        EXIT_VIOLATION
+    })
 }
 
 fn run_semantic<O: Write, E: Write>(

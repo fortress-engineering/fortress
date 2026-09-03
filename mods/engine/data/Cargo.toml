@@ -21,6 +21,10 @@ name = "arch_realization_001"
 path = "../mods/architecture_evaluation/mods/testing/code/arch_realization_001.rs"
 
 [[test]]
+name = "semantic_conformance"
+path = "../mods/architecture_evaluation/mods/testing/code/semantic_conformance.rs"
+
+[[test]]
 name = "architecture_diagnostics"
 path = "../mods/architecture_evaluation/mods/testing/code/architecture_diagnostics.rs"
 

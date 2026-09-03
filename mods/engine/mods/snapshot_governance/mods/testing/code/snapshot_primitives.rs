@@ -361,6 +361,7 @@ fn exact_draft_standard_documents_load_as_one_validated_bundle() {
         "mods/engine/mods/standard_registry/data/std_id_rule.json",
         "mods/engine/mods/architecture_evaluation/data/dependency_rule.json",
         "mods/engine/mods/architecture_evaluation/data/realization_rule.json",
+        "mods/engine/mods/architecture_evaluation/data/semantic_conformance_rule.json",
         "mods/engine/mods/behavioral_semantics/data/behavior_flow_rule.json",
         "mods/engine/mods/behavioral_realization/data/behavior_realization_rule.json",
         "mods/engine/mods/behavioral_realization/data/behavior_bypass_rule.json",
@@ -393,7 +394,7 @@ fn exact_draft_standard_documents_load_as_one_validated_bundle() {
     let bundle = StandardBundle::from_json_documents(&manifest, &documents)
         .expect("draft bundle must validate");
     assert_eq!(bundle.edition(), "1.0.0-draft.1");
-    assert_eq!(bundle.rules().len(), 22);
+    assert_eq!(bundle.rules().len(), 23);
     assert!(matches!(
         StandardBundle::from_json_documents(&manifest, &[(paths[0], sources[0].as_str())]),
         Err(StandardLoadError::MissingRuleDocument(_))

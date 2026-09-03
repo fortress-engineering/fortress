@@ -6,7 +6,7 @@ This verification Module exists to prove only the Architecture Evaluation Featur
 
 ## Responsibility
 
-Exercise the parent architecture projection, dependency evaluator, and implementation reconciliation against canonical intent and independent observation facts, mapping findings exclusively to parent-owned requirements.
+Exercise the parent architecture projection, dependency evaluator, implementation reconciliation, and Module semantic-policy evaluator against canonical intent and independent observation/effect facts, mapping findings exclusively to parent-owned requirements.
 
 ## Scope
 
@@ -44,11 +44,29 @@ Executes as a separate Rust test crate through the Engine package facade while p
 
 Supplies independent observed-implementation facts used by reconciliation conformance cases.
 
+### [Program Semantics](../../../program_semantics/README.md)
+
+**Types:** `depends_on`
+
+Supplies deterministic executable identity and ownership for semantic-conformance fixtures.
+
 ### [Repository Observation](../../../repository_observation/README.md)
 
 **Types:** `depends_on`
 
 Provides stabilized live file facts used by the self-architecture verification target.
+
+### [Semantic Analysis](../../../semantic_analysis/README.md)
+
+**Types:** `depends_on`
+
+Supplies the canonical domain layer required by State/Effect fixture construction.
+
+### [State and Effect Analysis](../../../state_effect_analysis/README.md)
+
+**Types:** `depends_on`
+
+Supplies refined direct/transitive effects and causal evidence compared with authored Module policy.
 
 ## Guarantees
 

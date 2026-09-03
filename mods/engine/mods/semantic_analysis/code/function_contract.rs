@@ -225,6 +225,33 @@ impl FunctionEffect {
         }
     }
 
+    /// Resolves one exact stable effect identity.
+    #[must_use]
+    pub fn from_stable_id(value: &str) -> Option<Self> {
+        [
+            Self::ReceiverStateRead,
+            Self::ReceiverStateWrite,
+            Self::OwnedStateRead,
+            Self::OwnedStateWrite,
+            Self::ExternalInteraction,
+            Self::FilesystemRead,
+            Self::FilesystemWrite,
+            Self::NetworkConnect,
+            Self::NetworkListen,
+            Self::NetworkIo,
+            Self::ProcessSpawn,
+            Self::EnvironmentRead,
+            Self::EnvironmentWrite,
+            Self::TimeWallRead,
+            Self::TimeMonotonicRead,
+            Self::RandomRead,
+            Self::MayPanic,
+            Self::UnsafeExecution,
+        ]
+        .into_iter()
+        .find(|effect| effect.stable_id() == value)
+    }
+
     /// Returns whether Function Contract v3 can author this exact effect identity.
     #[must_use]
     pub const fn is_legacy_v3(self) -> bool {

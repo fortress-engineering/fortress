@@ -1,0 +1,35 @@
+{
+  "$schema": "urn:fortress:schema:v1:rule",
+  "schema_version": 1,
+  "id": "ARCH-SEMANTIC-001",
+  "title": "Declared Module semantic policy governs supported operational consequences",
+  "status": "draft",
+  "statement": "Every supported direct or transitive effect attributed to a declared Module MUST satisfy that Module Contract's explicit semantic capability/effect policy; insufficient claim-relative authority MUST remain UNKNOWN.",
+  "rationale": "Observed operations, derived effects, capabilities, authored permissions, conformance, and enforcement are different facts. Comparing them through one evidence-preserving evaluator makes semantic prohibitions enforceable without inferring permission from implementation.",
+  "failure_prevented": "Architecturally forbidden filesystem, network, process, environment, time, randomness, panic, unsafe, state, or residual external behavior hidden behind direct or transitive calls.",
+  "applicability": "Declared Fortress Modules whose canonical Module Contract v3 contains semantic_policy.",
+  "category": "architecture",
+  "integrity_tier": 3,
+  "evaluation": "Fortress consumes the canonical CCG, PSM ownership, State/Effect v2 consequences, and Architecture Realization records. Effect-specific policy overrides capability policy. Unlisted observations remain undeclared. Supported contradictions fail with exact causal evidence; claim-relevant opaque calls produce UNKNOWN rather than PASS.",
+  "required_capabilities": [
+    "contract-coherency-graph-v1",
+    "module-semantic-policy-v1",
+    "state-effect-analysis-v2"
+  ],
+  "logic": {
+    "implies": [],
+    "conflicts_with": []
+  },
+  "finding": {
+    "message": "A declared Module exercised a forbidden semantic effect/capability, or an authored prohibition could not be evaluated with required semantic authority.",
+    "location": "span"
+  },
+  "remediation": "Remove the forbidden reachable operation, route it through authorized architecture, improve the unresolved semantic authority, or explicitly revise the Module Contract policy after review. Never infer permission from current behavior.",
+  "valid_example": "A Module allows filesystem reads, denies filesystem writes, and supported causal evidence contains only std::fs::read.",
+  "invalid_example": "A Module denies filesystem.write while a supported entry-to-helper call chain reaches std::fs::write.",
+  "exception_policy": "Only canonical finding-governance baselines or narrow explicit exceptions may change enforcement; raw FAIL or UNKNOWN remains visible.",
+  "introduced": "1.0.0-draft.1",
+  "history": [
+    "Introduced with explicit Module Contract semantic policy and evidence-preserving effect/capability conformance."
+  ]
+}
