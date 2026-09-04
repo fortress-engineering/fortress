@@ -108,8 +108,9 @@ use crate::state_effect_analysis::{
 pub const AUDIT_RESULT_SCHEMA_VERSION: u16 = 4;
 
 /// Machine-local cache and exact semantic key for one repository projection.
-#[derive(Debug)]
 pub struct RepositoryProjectionCache {
+    root: PathBuf,
+    prepared: PreparedAnalysis,
     cache: IncrementalProjectionCache,
     key: ProjectionCacheKey,
 }
@@ -125,6 +126,64 @@ impl RepositoryProjectionCache {
     #[must_use]
     pub const fn key(&self) -> &ProjectionCacheKey {
         &self.key
+    }
+
+    /// Compiles the PSM from the exact stabilized inputs used by the cache key.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`AuditError`] when implementation observation or PSM compilation fails.
+    pub fn compile_psm(&self) -> Result<ProgramSemanticModel, AuditError> {
+        let observation_input = analysis_implementation_input(&self.prepared);
+        let observed = observe_rust_implementation(&observation_input)
+            .map_err(AuditError::ImplementationObservation)?;
+        compile_analysis_psm(&self.prepared, observation_input, &observed)
+    }
+
+    /// Compiles Source Artifacts from the exact stabilized inputs used by the cache key.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`AuditError`] when source-profile observation or projection fails.
+    pub fn compile_source_artifacts(&self) -> Result<SourceArtifactModel, AuditError> {
+        compile_analysis_source_architecture(&self.prepared, None)
+            .map(|value| value.model().clone())
+    }
+
+    /// Compiles State/Effect from the exact stabilized inputs used by the cache key.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`AuditError`] when any semantic input or State/Effect evaluation fails.
+    pub fn compile_state_effect(&self) -> Result<StateEffectAnalysisEvaluation, AuditError> {
+        compile_observation_state_effect(&self.prepared)
+    }
+
+    /// Compiles semantic conformance from the exact stabilized inputs used by the cache key.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`AuditError`] when governed snapshot preparation or evaluation fails.
+    pub fn compile_semantic_conformance(
+        &self,
+    ) -> Result<SemanticConformanceEvaluation, AuditError> {
+        compile_semantic_conformance_from_analysis(&self.root, self.prepared.clone())
+    }
+
+    /// Audits the exact stabilized inputs used by the cache key.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`AuditError`] when governed audit preparation or evaluation fails.
+    pub fn audit(&self) -> Result<AuditResult, AuditError> {
+        if self.prepared.project_state == ProjectGovernanceState::Declared
+            && self.prepared.ccg().is_some()
+        {
+            let prepared = prepare_audit_from_analysis(&self.root, self.prepared.clone())?;
+            return audit_repository_with_prepared(&self.root, &prepared, true)
+                .map(|(audit, _, _)| audit);
+        }
+        observation_only_audit(&self.prepared)
     }
 }
 
@@ -492,7 +551,8 @@ pub fn prepare_repository_projection_cache(
     root: impl AsRef<Path>,
     kind: ProjectionKind,
 ) -> Result<RepositoryProjectionCache, AuditError> {
-    let prepared = prepare_analysis(root.as_ref())?;
+    let root = root.as_ref().to_path_buf();
+    let prepared = prepare_analysis(&root)?;
     let project = prepared.project_id().map_or_else(
         || {
             format!(
@@ -517,7 +577,12 @@ pub fn prepare_repository_projection_cache(
     .map_err(|error| AuditError::AffectedAnalysis(error.to_string().into()))?;
     let cache = IncrementalProjectionCache::from_environment(project)
         .map_err(|error| AuditError::AffectedAnalysis(error.to_string().into()))?;
-    Ok(RepositoryProjectionCache { cache, key })
+    Ok(RepositoryProjectionCache {
+        root,
+        prepared,
+        cache,
+        key,
+    })
 }
 
 /// Compiles the canonical affected dependency graph for one exact repository
@@ -1297,7 +1362,16 @@ pub fn compile_repository_state_effect_analysis(
 pub fn compile_repository_semantic_conformance(
     root: impl AsRef<Path>,
 ) -> Result<SemanticConformanceEvaluation, AuditError> {
-    let prepared = prepare_audit(root.as_ref())?;
+    let root = root.as_ref();
+    let analysis = prepare_analysis(root)?;
+    compile_semantic_conformance_from_analysis(root, analysis)
+}
+
+fn compile_semantic_conformance_from_analysis(
+    root: &Path,
+    analysis: PreparedAnalysis,
+) -> Result<SemanticConformanceEvaluation, AuditError> {
+    let prepared = prepare_audit_from_analysis(root, analysis)?;
     let ccg = prepared
         .ccg_compilation
         .graph()
@@ -2888,6 +2962,7 @@ enum ProjectGovernanceState {
     Invalid,
 }
 
+#[derive(Clone)]
 struct PreparedAnalysis {
     observed_files: BTreeMap<String, Vec<u8>>,
     source_identity: String,
@@ -3962,11 +4037,13 @@ struct StandardManifestIndex {
     rules: Vec<String>,
 }
 
+#[derive(Clone)]
 struct LoadedDocument {
     path: String,
     bytes: Vec<u8>,
 }
 
+#[derive(Clone)]
 struct LoadedStandard {
     manifest: LoadedDocument,
     rules: Vec<LoadedDocument>,

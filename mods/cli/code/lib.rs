@@ -527,7 +527,10 @@ fn run_source_artifacts<O: Write, E: Write>(
         write_projection(destination, output, &bytes)?;
         return Ok(exit_code);
     }
-    let model = match compile_repository_source_artifact_model(&root) {
+    let model = match cache.as_ref().map_or_else(
+        || compile_repository_source_artifact_model(&root),
+        RepositoryProjectionCache::compile_source_artifacts,
+    ) {
         Ok(value) => value,
         Err(model_error) => {
             writeln!(error, "source artifact compilation failed: {model_error}")?;
@@ -1193,7 +1196,10 @@ fn run_state_effect<O: Write, E: Write>(
         write_projection(destination, output, &bytes)?;
         return Ok(exit_code);
     }
-    let evaluation = match compile_repository_state_effect_analysis(&root) {
+    let evaluation = match cache.as_ref().map_or_else(
+        || compile_repository_state_effect_analysis(&root),
+        RepositoryProjectionCache::compile_state_effect,
+    ) {
         Ok(evaluation) => evaluation,
         Err(analysis_error) => {
             writeln!(error, "state and effect analysis failed: {analysis_error}")?;
@@ -1320,7 +1326,10 @@ fn run_semantic_conformance<O: Write, E: Write>(
         write_projection(destination, output, &bytes)?;
         return Ok(exit_code);
     }
-    let evaluation = match compile_repository_semantic_conformance(&root) {
+    let evaluation = match cache.as_ref().map_or_else(
+        || compile_repository_semantic_conformance(&root),
+        RepositoryProjectionCache::compile_semantic_conformance,
+    ) {
         Ok(value) => value,
         Err(analysis_error) => {
             writeln!(error, "semantic conformance failed: {analysis_error}")?;
@@ -1514,7 +1523,10 @@ fn run_psm<O: Write, E: Write>(
         write_projection(destination, output, &bytes)?;
         return Ok(exit_code);
     }
-    let model = match compile_repository_psm(&root) {
+    let model = match cache.as_ref().map_or_else(
+        || compile_repository_psm(&root),
+        RepositoryProjectionCache::compile_psm,
+    ) {
         Ok(model) => model,
         Err(model_error) => {
             writeln!(error, "PSM compilation failed: {model_error}")?;
@@ -1998,7 +2010,10 @@ fn run_audit<O: Write, E: Write>(
         output.write_all(&bytes)?;
         return Ok(exit_code);
     }
-    let result: fortress_core::audit::AuditResult = match audit_repository(&root) {
+    let result: fortress_core::audit::AuditResult = match cache
+        .as_ref()
+        .map_or_else(|| audit_repository(&root), RepositoryProjectionCache::audit)
+    {
         Ok(result) => result,
         Err(audit_error) => {
             writeln!(error, "audit failed: {audit_error}")?;

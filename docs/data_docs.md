@@ -46,7 +46,7 @@ Declares the project-wide ordered integrity and confidentiality facet vocabulary
 
 ### [`project.json`](../data/project.json)
 
-Declares only the root observation exclusions that are operational input rather than architectural intent.
+Declares only the root observation exclusions that are operational input rather than architectural intent, including Cargo's disposable workspace-target materialization.
 
 ### [`rust_toolchain.toml`](../data/rust_toolchain.toml)
 

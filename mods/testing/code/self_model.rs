@@ -45,7 +45,7 @@ fn declared_project_loads_and_references_existing_documents() {
         .expect("self project configuration must be readable");
     let project = ProjectConfiguration::from_json_str(&source)
         .expect("self project configuration must validate");
-    assert_eq!(project.observation_exclusions(), [".git"]);
+    assert_eq!(project.observation_exclusions(), [".git", "data/target"]);
     assert!(repository_root().join("contract.json").is_file());
 }
 
