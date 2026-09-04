@@ -102,6 +102,17 @@
       "certification_implications": "Reports authored and mechanical ownership distinctly; it creates no Module intent or certification evidence."
     },
     {
+      "id": "CMD-AFFECTED-ANALYSIS",
+      "name": "affected",
+      "aliases": [],
+      "description": "Explain exact-snapshot semantic invalidation and reusable results.",
+      "owner": "TF-CLI-0001",
+      "executor": "builtin-sync",
+      "duration": "long",
+      "resumability": "restartable",
+      "certification_implications": "Reports invalidation and reuse proof only; cache state creates no conformance or certification authority."
+    },
+    {
       "id": "CMD-CONTRACT-CCG",
       "name": "ccg",
       "aliases": [],

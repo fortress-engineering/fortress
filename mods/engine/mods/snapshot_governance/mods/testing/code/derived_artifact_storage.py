@@ -7,6 +7,7 @@ import importlib.util
 import os
 from pathlib import Path
 import shutil
+import subprocess
 import sys
 import unittest
 from unittest.mock import patch
@@ -99,6 +100,27 @@ class DerivedArtifactStorageTests(unittest.TestCase):
         with patch.dict(os.environ, {"FORTRESS_DERIVED_CACHE_DIR": str(root / "cache")}):
             with self.assertRaises(quality.CertificateError):
                 quality.cache_subject_directory(root, fingerprint)
+
+    def test_issuance_directory_is_child_process_accessible(self) -> None:
+        base = self.workspace("issuance-directory")
+        with quality.issuance_directory(base) as temporary:
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-c",
+                    (
+                        "from pathlib import Path; import sys; "
+                        "Path(sys.argv[1], 'child-output').write_bytes(b'accessible')"
+                    ),
+                    str(temporary),
+                ],
+                check=False,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr.decode("utf-8"))
+            self.assertEqual((temporary / "child-output").read_bytes(), b"accessible")
+        self.assertFalse(temporary.exists())
 
     def test_materialization_writes_directly_to_external_temporary_root(self) -> None:
         fingerprint = "sha256:" + "d" * 64

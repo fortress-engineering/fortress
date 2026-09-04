@@ -11,6 +11,11 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 
+use crate::affected_analysis::{
+    AFFECTED_ANALYSIS_VERSION, AffectedAnalysis, AffectedInput, AffectedSnapshot, AffectedUnit,
+    AffectedUnitKind, IncrementalProjectionCache, ProjectionCacheKey, ProjectionDependency,
+    ProjectionKind, analyze_affected,
+};
 use crate::architecture::ArchitectureManifest;
 use crate::architecture_diagnostics::{
     ArchitectureDiagnostic, ArchitectureDiagnosticError, derive_architecture_diagnostics,
@@ -101,6 +106,27 @@ use crate::state_effect_analysis::{
 
 /// Current stable machine-readable snapshot audit schema family.
 pub const AUDIT_RESULT_SCHEMA_VERSION: u16 = 4;
+
+/// Machine-local cache and exact semantic key for one repository projection.
+#[derive(Debug)]
+pub struct RepositoryProjectionCache {
+    cache: IncrementalProjectionCache,
+    key: ProjectionCacheKey,
+}
+
+impl RepositoryProjectionCache {
+    /// Returns the verified machine-local cache boundary.
+    #[must_use]
+    pub const fn cache(&self) -> &IncrementalProjectionCache {
+        &self.cache
+    }
+
+    /// Returns the dependency-complete projection key.
+    #[must_use]
+    pub const fn key(&self) -> &ProjectionCacheKey {
+        &self.key
+    }
+}
 
 /// Deterministic repository audit result; this is not certification evidence.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
@@ -451,6 +477,112 @@ pub fn compile_repository_psm(root: impl AsRef<Path>) -> Result<ProgramSemanticM
     compile_analysis_psm(&prepared, observation_input, &observed)
 }
 
+/// Resolves a verified machine-local cache and complete semantic dependency
+/// key for one canonical repository projection.
+///
+/// Key construction stabilizes repository observation but does not run the
+/// requested semantic generator. Cache state is an optimization only; callers
+/// must recompute whenever verified current bytes are unavailable.
+///
+/// # Errors
+///
+/// Returns [`AuditError`] when repository observation, Standard resolution, or
+/// dependency-key construction fails.
+pub fn prepare_repository_projection_cache(
+    root: impl AsRef<Path>,
+    kind: ProjectionKind,
+) -> Result<RepositoryProjectionCache, AuditError> {
+    let prepared = prepare_analysis(root.as_ref())?;
+    let project = prepared.project_id().map_or_else(
+        || {
+            format!(
+                "repository-{}",
+                prepared
+                    .source_identity
+                    .trim_start_matches("sha256:")
+                    .chars()
+                    .take(16)
+                    .collect::<String>()
+            )
+        },
+        str::to_owned,
+    );
+    let dependencies = projection_dependencies(&prepared, kind)?;
+    let key = ProjectionCacheKey::new(
+        kind,
+        format!("fortress-core/{}", kind.as_str()),
+        projection_generator_version(kind),
+        dependencies,
+    )
+    .map_err(|error| AuditError::AffectedAnalysis(error.to_string().into()))?;
+    let cache = IncrementalProjectionCache::from_environment(project)
+        .map_err(|error| AuditError::AffectedAnalysis(error.to_string().into()))?;
+    Ok(RepositoryProjectionCache { cache, key })
+}
+
+/// Compiles the canonical affected dependency graph for one exact repository
+/// snapshot from existing observation and semantic authorities.
+///
+/// Invalid authored governance does not prevent source, symbol, call, or
+/// effect observation. Module conformance units exist only where declared
+/// Module authority resolves.
+///
+/// # Errors
+///
+/// Returns [`AuditError`] for unstable observation or an invalid supported
+/// semantic input.
+pub fn compile_repository_affected_snapshot(
+    root: impl AsRef<Path>,
+) -> Result<AffectedSnapshot, AuditError> {
+    let prepared = prepare_analysis(root.as_ref())?;
+    let observation_input = analysis_implementation_input(&prepared);
+    let observed = observe_rust_implementation(&observation_input)
+        .map_err(AuditError::ImplementationObservation)?;
+    let psm = compile_analysis_psm(&prepared, observation_input, &observed)?;
+    let state_effect = analyze_observation_state_effect(&prepared, &psm)?;
+    let semantic_conformance = prepared
+        .ccg()
+        .filter(|_| prepared.project_state == ProjectGovernanceState::Declared)
+        .map(|ccg| {
+            let realization =
+                reconcile_implementation(ccg, &observed, prepared.standard.bundle.edition())
+                    .map_err(EvaluationError::Finding)
+                    .map_err(AuditError::Evaluation)?;
+            evaluate_semantic_conformance(
+                ccg,
+                &psm,
+                state_effect.model(),
+                &realization,
+                prepared.standard.bundle.edition(),
+            )
+            .map_err(AuditError::SemanticConformance)
+        })
+        .transpose()?;
+    build_affected_snapshot(
+        &prepared,
+        &psm,
+        &state_effect,
+        semantic_conformance.as_ref(),
+    )
+}
+
+/// Compares two repository roots as exact affected dependency snapshots.
+///
+/// This surface answers recomputation impact only. It does not ascribe
+/// historical governance meaning to the two snapshots.
+///
+/// # Errors
+///
+/// Returns [`AuditError`] if either exact dependency snapshot cannot compile.
+pub fn compile_repository_affected_analysis(
+    current_root: impl AsRef<Path>,
+    previous_root: impl AsRef<Path>,
+) -> Result<AffectedAnalysis, AuditError> {
+    let previous = compile_repository_affected_snapshot(previous_root)?;
+    let current = compile_repository_affected_snapshot(current_root)?;
+    Ok(analyze_affected(&previous, &current))
+}
+
 /// Compiles the canonical language-neutral Source Artifact Model v1.
 ///
 /// The compiler reuses Snapshot Governance's canonical source ownership and
@@ -721,11 +853,14 @@ fn compile_source_architecture_from(
     let psm_digest = psm_json
         .as_deref()
         .map(|value| format!("sha256:{:x}", Sha256::digest(value.as_bytes())));
-    // Source Architecture is a derived projection. Bind it to the canonical
-    // certification source rather than Snapshot Governance's raw observation
-    // fingerprint so generated semantic projections cannot influence their
-    // own input identity.
-    let source_identity = certification_source_digest(&prepared.observed_files);
+    // Source Architecture binds only the authorities that can alter source
+    // structure. Certification independently binds this derived result to the
+    // complete exact repository snapshot.
+    let source_identity = projection_dependency_digest(
+        &prepared.observed_files,
+        &prepared.standard,
+        ProjectionKind::SourceArtifacts,
+    )?;
     evaluate_source_architecture(&SourceArchitectureInput {
         project_id: Some(prepared.snapshot.project_id()),
         source_identity: &source_identity,
@@ -1043,7 +1178,11 @@ fn compile_analysis_source_architecture(
         .map(|value| format!("sha256:{:x}", Sha256::digest(value.as_bytes())));
     evaluate_source_architecture(&SourceArchitectureInput {
         project_id: prepared.project_id(),
-        source_identity: &prepared.source_identity,
+        source_identity: &projection_dependency_digest(
+            &prepared.observed_files,
+            &prepared.standard,
+            ProjectionKind::SourceArtifacts,
+        )?,
         artifacts: &artifacts,
         project_model_authority: if governed {
             "project-model/project-filing-system-v1"
@@ -1301,6 +1440,40 @@ pub fn prepare_repository_certification_source(
     })
 }
 
+/// All exact-snapshot semantic projections and certification products compiled
+/// from one shared semantic stack.
+pub struct RepositoryCertificationBundle {
+    projections: BTreeMap<String, String>,
+    audit_json: String,
+    products: CertificationProducts,
+}
+
+impl RepositoryCertificationBundle {
+    /// Returns canonical projections keyed by repository-relative logical path.
+    #[must_use]
+    pub const fn projections(&self) -> &BTreeMap<String, String> {
+        &self.projections
+    }
+
+    /// Returns the canonical audit compiled from the same semantic stack.
+    #[must_use]
+    pub fn audit_json(&self) -> &str {
+        &self.audit_json
+    }
+
+    /// Returns content-addressed certification products.
+    #[must_use]
+    pub const fn products(&self) -> &CertificationProducts {
+        &self.products
+    }
+
+    /// Consumes the bundle and returns certification products.
+    #[must_use]
+    pub fn into_products(self) -> CertificationProducts {
+        self.products
+    }
+}
+
 /// Compiles all semantic models once and constructs current certification products.
 ///
 /// The supplied Rust suite execution must have been obtained by the external
@@ -1316,9 +1489,33 @@ pub fn compile_repository_certification(
     root: impl AsRef<Path>,
     suite_execution: RustSuiteExecution,
 ) -> Result<CertificationProducts, AuditError> {
+    compile_repository_certification_bundle(root, suite_execution)
+        .map(RepositoryCertificationBundle::into_products)
+}
+
+/// Compiles all canonical semantic projections and certification products from
+/// one exact-snapshot semantic stack.
+///
+/// The bundle allows local issuance to materialize the exact bytes consumed by
+/// certification without invoking overlapping generators independently.
+///
+/// # Errors
+///
+/// Returns an audit error for invalid/stale repository semantics, invalid
+/// distributed bindings, canonical serialization, or Evidence DAG failure.
+#[allow(clippy::too_many_lines)]
+pub fn compile_repository_certification_bundle(
+    root: impl AsRef<Path>,
+    suite_execution: RustSuiteExecution,
+) -> Result<RepositoryCertificationBundle, AuditError> {
     let stack = compile_certification_semantic_stack(root.as_ref())?;
     let source_digest = certification_source_digest(&stack.observed_files);
-    let artifacts = certification_artifacts(&stack)?;
+    let (artifacts, projections) = certification_artifacts(&stack)?;
+    let audit_json = stack
+        .audit
+        .to_json_pretty()
+        .map_err(CertificationError::Json)
+        .map_err(AuditError::Certification)?;
     let rules = stack
         .evaluation
         .rules()
@@ -1387,7 +1584,7 @@ pub fn compile_repository_certification(
         .map(|execution| execution.rule_id().to_owned())
         .collect::<Vec<_>>();
     applicable_rules.sort();
-    compile_certification(&CertificationInput {
+    let products = compile_certification(&CertificationInput {
         project_id: stack.snapshot.project_id().to_owned(),
         source_digest,
         standard: StandardIdentity {
@@ -1407,7 +1604,12 @@ pub fn compile_repository_certification(
         trusted_assertions,
         behavioral_projection,
     })
-    .map_err(AuditError::Certification)
+    .map_err(AuditError::Certification)?;
+    Ok(RepositoryCertificationBundle {
+        projections,
+        audit_json,
+        products,
+    })
 }
 
 struct CertificationSemanticStack {
@@ -1423,6 +1625,7 @@ struct CertificationSemanticStack {
     source_architecture: SourceArchitectureEvaluation,
     semantic_conformance: SemanticConformanceEvaluation,
     evaluation: crate::evaluation::SnapshotEvaluation,
+    audit: AuditResult,
     finding_governance: FindingGovernanceEvaluation,
     finding_governance_authority_digest: Option<String>,
 }
@@ -1538,6 +1741,32 @@ fn compile_certification_semantic_stack(
         .map_err(CertificationError::Json)
         .map_err(AuditError::Certification)?
         .map(|source| format!("sha256:{:x}", Sha256::digest(source.as_bytes())));
+    let architecture_diagnostics =
+        derive_architecture_diagnostics(&ccg, &observed, &architecture_realization)
+            .map_err(AuditError::ArchitectureDiagnostics)?;
+    let unsupported_analysis = certification_unsupported_analysis(
+        &architecture_diagnostics,
+        &behavioral_semantics,
+        &models,
+        &realized,
+        &source_architecture,
+    );
+    let audit = result_from_evaluation(
+        &prepared.snapshot,
+        &evaluation,
+        &architecture_diagnostics,
+        unsupported_analysis,
+        ObservedTestSummary {
+            total: prepared.rust_test_observations.len(),
+            missing_stable_identity: prepared
+                .rust_test_observations
+                .iter()
+                .filter(|test| !test.is_governed())
+                .count(),
+        },
+        prepared.finding_governance.as_ref(),
+        prepared.standard.bundle.id(),
+    )?;
     Ok(CertificationSemanticStack {
         observed_files: prepared.observed_files,
         rust_tests: prepared.rust_tests,
@@ -1551,9 +1780,76 @@ fn compile_certification_semantic_stack(
         source_architecture,
         semantic_conformance,
         evaluation,
+        audit,
         finding_governance,
         finding_governance_authority_digest,
     })
+}
+
+fn certification_unsupported_analysis(
+    architecture_diagnostics: &crate::architecture_diagnostics::ArchitectureDiagnostics,
+    behavioral_semantics: &crate::behavioral_semantics::BehavioralSemanticsEvaluation,
+    models: &AnalysisModels,
+    realized: &BehavioralRealizationEvaluation,
+    source_architecture: &SourceArchitectureEvaluation,
+) -> Vec<String> {
+    let mut unsupported = architecture_diagnostics.unsupported_analysis().to_vec();
+    unsupported.extend(
+        behavioral_semantics
+            .graph()
+            .unsupported_semantics()
+            .iter()
+            .map(|value| format!("intended_bfg:{value}")),
+    );
+    unsupported.extend(
+        models
+            .semantic
+            .model()
+            .unsupported_semantics()
+            .iter()
+            .map(|value| format!("semantic_analysis:{value}")),
+    );
+    unsupported.extend(
+        models
+            .state_effect
+            .model()
+            .unsupported_semantics()
+            .iter()
+            .map(|value| format!("state_effect_analysis:{value}")),
+    );
+    unsupported.extend(
+        models
+            .information_flow
+            .model()
+            .unsupported_semantics()
+            .iter()
+            .map(|value| format!("information_flow_analysis:{value}")),
+    );
+    unsupported.extend(
+        models
+            .environmental
+            .model()
+            .unsupported_semantics()
+            .iter()
+            .map(|value| format!("environmental_analysis:{value}")),
+    );
+    unsupported.extend(
+        realized
+            .graph()
+            .unsupported_semantics()
+            .iter()
+            .map(|value| format!("behavioral_realization:{value}")),
+    );
+    unsupported.extend(
+        source_architecture
+            .model()
+            .unsupported_semantics()
+            .iter()
+            .map(|value| format!("source_architecture:{value}")),
+    );
+    unsupported.sort();
+    unsupported.dedup();
+    unsupported
 }
 
 fn compile_certification_realization(
@@ -1601,7 +1897,7 @@ fn evaluate_certification_rules(
 #[allow(clippy::too_many_lines)]
 fn certification_artifacts(
     stack: &CertificationSemanticStack,
-) -> Result<Vec<ArtifactEvidenceInput>, AuditError> {
+) -> Result<(Vec<ArtifactEvidenceInput>, BTreeMap<String, String>), AuditError> {
     let entries = [
         (
             "ccg",
@@ -1807,22 +2103,22 @@ fn certification_artifacts(
                 .to_vec(),
         ),
     ];
-    entries
-        .into_iter()
-        .map(
-            |(kind, schema, _logical_path, canonical, evidence_class, input_refs, unsupported)| {
-                Ok(ArtifactEvidenceInput {
-                    kind: kind.into(),
-                    digest: format!("sha256:{:x}", Sha256::digest(canonical.as_bytes())),
-                    schema: schema.into(),
-                    current: true,
-                    input_refs,
-                    evidence_class,
-                    unsupported,
-                })
-            },
-        )
-        .collect()
+    let mut artifacts = Vec::with_capacity(entries.len());
+    let mut projections = BTreeMap::new();
+    for (kind, schema, logical_path, canonical, evidence_class, input_refs, unsupported) in entries
+    {
+        artifacts.push(ArtifactEvidenceInput {
+            kind: kind.into(),
+            digest: format!("sha256:{:x}", Sha256::digest(canonical.as_bytes())),
+            schema: schema.into(),
+            current: true,
+            input_refs,
+            evidence_class,
+            unsupported,
+        });
+        projections.insert(logical_path.into(), canonical);
+    }
+    Ok((artifacts, projections))
 }
 
 type CertificationBehaviorInputs = (
@@ -2626,6 +2922,647 @@ impl PreparedAnalysis {
     }
 }
 
+#[allow(clippy::too_many_lines)]
+fn build_affected_snapshot(
+    prepared: &PreparedAnalysis,
+    psm: &ProgramSemanticModel,
+    state_effect: &StateEffectAnalysisEvaluation,
+    semantic_conformance: Option<&SemanticConformanceEvaluation>,
+) -> Result<AffectedSnapshot, AuditError> {
+    let mut inputs = Vec::with_capacity(prepared.observed_files.len());
+    let mut units = Vec::new();
+    for (path, bytes) in &prepared.observed_files {
+        let digest = format!("sha256:{:x}", Sha256::digest(bytes));
+        inputs.push(
+            AffectedInput::new(
+                path,
+                &digest,
+                u64::try_from(bytes.len())
+                    .map_err(|_| AuditError::InputMismatch(path.clone().into()))?,
+            )
+            .map_err(|error| AuditError::AffectedAnalysis(error.to_string().into()))?,
+        );
+        units.push(affected_unit(
+            format!("authority:{path}"),
+            AffectedUnitKind::AuthorityInput,
+            digest,
+            Vec::new(),
+        )?);
+    }
+    let standard_id = format!(
+        "authority:standard:{}@{}",
+        prepared.standard.bundle.id(),
+        prepared.standard.bundle.edition()
+    );
+    units.push(affected_unit(
+        &standard_id,
+        AffectedUnitKind::AuthorityInput,
+        prepared.standard.bundle.digest(),
+        Vec::new(),
+    )?);
+
+    let ownership_by_path = prepared
+        .ownerships
+        .iter()
+        .map(|ownership| (ownership.source_path(), ownership))
+        .collect::<BTreeMap<_, _>>();
+    for ownership in &prepared.ownerships {
+        units.push(affected_unit(
+            format!("source:{}", ownership.source_path()),
+            AffectedUnitKind::SourceArtifact,
+            serialized_digest(ownership)?,
+            vec![format!("authority:{}", ownership.source_path())],
+        )?);
+    }
+
+    let symbols_by_id = psm.symbols().iter().fold(
+        BTreeMap::<&str, Vec<&crate::program_semantics::ExecutableSymbol>>::new(),
+        |mut index, symbol| {
+            index.entry(symbol.id()).or_default().push(symbol);
+            index
+        },
+    );
+    let symbol_ids = symbols_by_id.keys().copied().collect::<BTreeSet<_>>();
+    for (symbol_id, symbols) in symbols_by_id {
+        let dependencies = symbols
+            .iter()
+            .filter(|symbol| ownership_by_path.contains_key(symbol.source_path()))
+            .map(|symbol| format!("source:{}", symbol.source_path()))
+            .collect::<Vec<_>>();
+        if !dependencies.is_empty() {
+            units.push(affected_unit(
+                format!("symbol:{symbol_id}"),
+                AffectedUnitKind::Symbol,
+                serialized_digest(&symbols)?,
+                dependencies,
+            )?);
+        }
+    }
+    let calls_by_id = psm.calls().iter().fold(
+        BTreeMap::<&str, Vec<&crate::program_semantics::ProgramCall>>::new(),
+        |mut index, call| {
+            index.entry(call.id()).or_default().push(call);
+            index
+        },
+    );
+    for (call_id, calls) in calls_by_id {
+        let mut dependencies = Vec::new();
+        for call in &calls {
+            dependencies.push(format!("symbol:{}", call.caller()));
+            if let Some(callee) = call.callee().filter(|callee| symbol_ids.contains(*callee)) {
+                dependencies.push(format!("symbol:{callee}"));
+            }
+        }
+        units.push(affected_unit(
+            format!("call:{call_id}"),
+            AffectedUnitKind::CallRelationship,
+            serialized_digest(&calls)?,
+            dependencies,
+        )?);
+    }
+    let calls_by_caller = psm.calls().iter().fold(
+        BTreeMap::<&str, Vec<&crate::program_semantics::ProgramCall>>::new(),
+        |mut index, call| {
+            index.entry(call.caller()).or_default().push(call);
+            index
+        },
+    );
+    let summaries_by_symbol = state_effect.model().summaries().iter().fold(
+        BTreeMap::<&str, Vec<&crate::state_effect_analysis::StateEffectSummary>>::new(),
+        |mut index, summary| {
+            index.entry(summary.symbol()).or_default().push(summary);
+            index
+        },
+    );
+    let effect_symbols = summaries_by_symbol.keys().copied().collect::<BTreeSet<_>>();
+    for (symbol, summaries) in summaries_by_symbol {
+        let mut dependencies = vec![format!("symbol:{symbol}")];
+        for call in calls_by_caller.get(symbol).into_iter().flatten() {
+            dependencies.push(format!("call:{}", call.id()));
+            if let Some(callee) = call
+                .callee()
+                .filter(|callee| *callee != symbol)
+                .filter(|callee| effect_symbols.contains(*callee))
+            {
+                dependencies.push(format!("effect:{callee}"));
+            }
+        }
+        units.push(affected_unit(
+            format!("effect:{symbol}"),
+            AffectedUnitKind::Effect,
+            serialized_digest(&summaries)?,
+            dependencies,
+        )?);
+        let capabilities = summaries
+            .iter()
+            .map(|summary| {
+                (
+                    summary.direct_capabilities(),
+                    summary.transitive_capabilities(),
+                )
+            })
+            .collect::<Vec<_>>();
+        units.push(affected_unit(
+            format!("capability:{symbol}"),
+            AffectedUnitKind::Capability,
+            serialized_digest(&capabilities)?,
+            vec![format!("effect:{symbol}")],
+        )?);
+    }
+
+    if let Some(ccg) = prepared.ccg() {
+        for (module_id, module) in ccg.modules() {
+            let contract_path = if module.path().is_empty() {
+                "contract.json".to_owned()
+            } else {
+                format!("{}/contract.json", module.path())
+            };
+            let mut dependencies = Vec::new();
+            if prepared.observed_files.contains_key(&contract_path) {
+                dependencies.push(format!("authority:{contract_path}"));
+            }
+            dependencies.extend(
+                prepared
+                    .ownerships
+                    .iter()
+                    .filter(|ownership| ownership.owner() == module_id)
+                    .map(|ownership| format!("source:{}", ownership.source_path())),
+            );
+            dependencies.extend(
+                psm.symbols()
+                    .iter()
+                    .filter(|symbol| symbol.fortress_module() == module_id)
+                    .map(|symbol| format!("effect:{}", symbol.id())),
+            );
+            units.push(affected_unit(
+                format!("module:{module_id}"),
+                AffectedUnitKind::Module,
+                format!(
+                    "sha256:{:x}",
+                    Sha256::digest(format!("{module_id}\0{}", module.path()).as_bytes())
+                ),
+                dependencies,
+            )?);
+        }
+    }
+
+    let mut finding_ids = Vec::new();
+    if let Some(evaluation) = semantic_conformance {
+        for module in evaluation.model().modules() {
+            let mut dependencies = vec![format!("module:{}", module.module()), standard_id.clone()];
+            dependencies.extend(
+                psm.symbols()
+                    .iter()
+                    .filter(|symbol| symbol.fortress_module() == module.module())
+                    .map(|symbol| format!("effect:{}", symbol.id())),
+            );
+            units.push(affected_unit(
+                format!("claim:module:{}", module.module()),
+                AffectedUnitKind::ConformanceClaim,
+                serialized_digest(module)?,
+                dependencies,
+            )?);
+        }
+        for finding in evaluation.findings() {
+            let module = finding
+                .entities()
+                .iter()
+                .find(|entity| evaluation.model().module(entity).is_some())
+                .cloned();
+            let dependencies = module.map_or_else(
+                || vec![standard_id.clone()],
+                |module| vec![format!("claim:module:{module}")],
+            );
+            let id = format!("finding:{}", finding.finding_id());
+            units.push(affected_unit(
+                &id,
+                AffectedUnitKind::Finding,
+                serialized_digest(finding)?,
+                dependencies,
+            )?);
+            finding_ids.push(id);
+        }
+    }
+
+    let governance_authority = prepared
+        .observed_files
+        .contains_key(FINDING_GOVERNANCE_PATH)
+        .then(|| format!("authority:{FINDING_GOVERNANCE_PATH}"));
+    let mut evidence_dependencies = finding_ids.clone();
+    evidence_dependencies.extend(governance_authority);
+    evidence_dependencies.push(standard_id.clone());
+    units.push(affected_unit(
+        "evidence:repository",
+        AffectedUnitKind::Evidence,
+        serialized_digest(&evidence_dependencies)?,
+        evidence_dependencies,
+    )?);
+
+    let source_units = units
+        .iter()
+        .filter(|unit| unit.kind() == AffectedUnitKind::SourceArtifact)
+        .map(|unit| unit.id().to_owned())
+        .collect::<Vec<_>>();
+    let symbol_call_units = units
+        .iter()
+        .filter(|unit| {
+            matches!(
+                unit.kind(),
+                AffectedUnitKind::Symbol | AffectedUnitKind::CallRelationship
+            )
+        })
+        .map(|unit| unit.id().to_owned())
+        .collect::<Vec<_>>();
+    let module_units = units
+        .iter()
+        .filter(|unit| unit.kind() == AffectedUnitKind::Module)
+        .map(|unit| unit.id().to_owned())
+        .collect::<Vec<_>>();
+    let claim_units = units
+        .iter()
+        .filter(|unit| {
+            matches!(
+                unit.kind(),
+                AffectedUnitKind::ConformanceClaim | AffectedUnitKind::Finding
+            )
+        })
+        .map(|unit| unit.id().to_owned())
+        .collect::<Vec<_>>();
+    let responsibility_units = prepared
+        .observed_files
+        .keys()
+        .filter(|path| path.as_str() == "docs/code_docs.md" || path.ends_with("/docs/code_docs.md"))
+        .map(|path| format!("authority:{path}"))
+        .collect::<Vec<_>>();
+    let authority_units = |kind| {
+        prepared
+            .observed_files
+            .keys()
+            .filter(|path| crate::affected_analysis::classify_authority_path(path) == kind)
+            .map(|path| format!("authority:{path}"))
+            .collect::<Vec<_>>()
+    };
+    let function_contract_units =
+        authority_units(crate::affected_analysis::AuthorityInputKind::FunctionContract);
+    let state_contract_units =
+        authority_units(crate::affected_analysis::AuthorityInputKind::StateContract);
+    let information_flow_policy_units =
+        authority_units(crate::affected_analysis::AuthorityInputKind::InformationFlowPolicy);
+    let environment_contract_units =
+        authority_units(crate::affected_analysis::AuthorityInputKind::EnvironmentContract);
+    let behavioral_contract_units = authority_units(
+        crate::affected_analysis::AuthorityInputKind::BehavioralRealizationContract,
+    );
+    let cargo_authority_units =
+        authority_units(crate::affected_analysis::AuthorityInputKind::CargoAuthority);
+    let mut projection_ids = Vec::new();
+    for kind in [
+        ProjectionKind::Ccg,
+        ProjectionKind::Bfg,
+        ProjectionKind::Psm,
+        ProjectionKind::Semantic,
+        ProjectionKind::StateEffect,
+        ProjectionKind::SemanticConformance,
+        ProjectionKind::InformationFlow,
+        ProjectionKind::Environmental,
+        ProjectionKind::RealizedBfg,
+        ProjectionKind::References,
+        ProjectionKind::SourceArtifacts,
+        ProjectionKind::Audit,
+    ] {
+        let mut dependencies = match kind {
+            ProjectionKind::Ccg => module_units.clone(),
+            ProjectionKind::Bfg => {
+                let mut value = module_units.clone();
+                value.push("projection:ccg".into());
+                value
+            }
+            ProjectionKind::Psm => {
+                let mut value = source_units.clone();
+                value.extend(symbol_call_units.clone());
+                value.extend(cargo_authority_units.clone());
+                value
+            }
+            ProjectionKind::Semantic => {
+                let mut value = vec!["projection:psm".into()];
+                value.extend(function_contract_units.clone());
+                value
+            }
+            ProjectionKind::StateEffect => {
+                let mut value = vec!["projection:semantic".into()];
+                value.extend(state_contract_units.clone());
+                value
+            }
+            ProjectionKind::InformationFlow => {
+                let mut value = vec![
+                    "projection:semantic".into(),
+                    "projection:state-effect".into(),
+                ];
+                value.extend(information_flow_policy_units.clone());
+                value
+            }
+            ProjectionKind::Environmental => {
+                let mut value = vec![
+                    "projection:information-flow".into(),
+                    "projection:state-effect".into(),
+                ];
+                value.extend(environment_contract_units.clone());
+                value
+            }
+            ProjectionKind::SemanticConformance => {
+                let mut value = claim_units.clone();
+                value.push("projection:state-effect".into());
+                value
+            }
+            ProjectionKind::RealizedBfg => {
+                let mut value = vec![
+                    "projection:bfg".into(),
+                    "projection:psm".into(),
+                    "projection:semantic".into(),
+                    "projection:state-effect".into(),
+                    "projection:information-flow".into(),
+                    "projection:environmental".into(),
+                ];
+                value.extend(behavioral_contract_units.clone());
+                value
+            }
+            ProjectionKind::References => {
+                let mut value = module_units.clone();
+                value.extend(source_units.clone());
+                value
+            }
+            ProjectionKind::SourceArtifacts => {
+                let mut value = source_units.clone();
+                value.extend(responsibility_units.clone());
+                value.extend(cargo_authority_units.clone());
+                value
+            }
+            ProjectionKind::Audit => {
+                let mut value = vec!["evidence:repository".into()];
+                value.extend(projection_ids.clone());
+                value
+            }
+        };
+        if projection_uses_standard(kind) {
+            dependencies.push(standard_id.clone());
+        }
+        let id = format!("projection:{}", kind.as_str());
+        units.push(affected_unit(
+            &id,
+            AffectedUnitKind::Projection,
+            format!(
+                "sha256:{:x}",
+                Sha256::digest(projection_generator_version(kind).as_bytes())
+            ),
+            dependencies,
+        )?);
+        projection_ids.push(id);
+    }
+    let mut certification_dependencies = projection_ids;
+    certification_dependencies.push("evidence:repository".into());
+    units.push(affected_unit(
+        "certification:full-snapshot",
+        AffectedUnitKind::CertificationObligation,
+        format!(
+            "sha256:{:x}",
+            Sha256::digest(crate::certification::CERTIFICATION_SEMANTIC_VERSION.as_bytes())
+        ),
+        certification_dependencies,
+    )?);
+    AffectedSnapshot::new(prepared.source_identity.clone(), inputs, units)
+        .map_err(|error| AuditError::AffectedAnalysis(error.to_string().into()))
+}
+
+fn affected_unit(
+    id: impl Into<String>,
+    kind: AffectedUnitKind,
+    digest: impl Into<String>,
+    mut dependencies: Vec<String>,
+) -> Result<AffectedUnit, AuditError> {
+    dependencies.sort();
+    dependencies.dedup();
+    AffectedUnit::new(id, kind, digest, dependencies)
+        .map_err(|error| AuditError::AffectedAnalysis(error.to_string().into()))
+}
+
+fn serialized_digest(value: &impl Serialize) -> Result<String, AuditError> {
+    let bytes = serde_json::to_vec(value).map_err(|source| {
+        AuditError::AffectedAnalysis(
+            format!("cannot serialize affected dependency: {source}").into(),
+        )
+    })?;
+    Ok(format!("sha256:{:x}", Sha256::digest(bytes)))
+}
+
+fn projection_generator_version(kind: ProjectionKind) -> String {
+    match kind {
+        ProjectionKind::Psm => crate::program_semantics::PROGRAM_SEMANTIC_MODEL_VERSION.into(),
+        ProjectionKind::Semantic => crate::semantic_analysis::SEMANTIC_ANALYSIS_VERSION.into(),
+        ProjectionKind::StateEffect => {
+            crate::state_effect_analysis::STATE_EFFECT_ANALYSIS_VERSION.into()
+        }
+        ProjectionKind::SemanticConformance => {
+            crate::semantic_conformance::SEMANTIC_CONFORMANCE_VERSION.into()
+        }
+        ProjectionKind::InformationFlow => {
+            crate::information_flow::INFORMATION_FLOW_ANALYSIS_VERSION.into()
+        }
+        ProjectionKind::Environmental => {
+            crate::environmental_semantics::ENVIRONMENTAL_ANALYSIS_VERSION.into()
+        }
+        ProjectionKind::SourceArtifacts => {
+            crate::source_architecture::SOURCE_ARCHITECTURE_SEMANTIC_VERSION.into()
+        }
+        ProjectionKind::Audit => {
+            format!("{AFFECTED_ANALYSIS_VERSION}+audit-v{AUDIT_RESULT_SCHEMA_VERSION}")
+        }
+        _ => AFFECTED_ANALYSIS_VERSION.into(),
+    }
+}
+
+fn projection_dependencies(
+    prepared: &PreparedAnalysis,
+    kind: ProjectionKind,
+) -> Result<Vec<ProjectionDependency>, AuditError> {
+    projection_dependencies_from_files(&prepared.observed_files, &prepared.standard, kind)
+}
+
+fn projection_dependencies_from_files(
+    observed_files: &BTreeMap<String, Vec<u8>>,
+    standard: &LoadedStandard,
+    kind: ProjectionKind,
+) -> Result<Vec<ProjectionDependency>, AuditError> {
+    let mut dependencies = Vec::new();
+    for (path, bytes) in observed_files {
+        let Some(digest) = projection_file_digest(kind, path, bytes)? else {
+            continue;
+        };
+        dependencies.push(
+            ProjectionDependency::new(format!("repository:{path}"), digest)
+                .map_err(|error| AuditError::AffectedAnalysis(error.to_string().into()))?,
+        );
+    }
+    if projection_uses_standard(kind) {
+        dependencies.push(
+            ProjectionDependency::new(
+                format!(
+                    "standard:{}@{}",
+                    standard.bundle.id(),
+                    standard.bundle.edition()
+                ),
+                standard.bundle.digest(),
+            )
+            .map_err(|error| AuditError::AffectedAnalysis(error.to_string().into()))?,
+        );
+    }
+    dependencies.push(
+        ProjectionDependency::new(
+            "affected-analysis:dependency-semantics",
+            format!(
+                "sha256:{:x}",
+                Sha256::digest(AFFECTED_ANALYSIS_VERSION.as_bytes())
+            ),
+        )
+        .map_err(|error| AuditError::AffectedAnalysis(error.to_string().into()))?,
+    );
+    Ok(dependencies)
+}
+
+fn projection_file_digest(
+    kind: ProjectionKind,
+    path: &str,
+    bytes: &[u8],
+) -> Result<Option<String>, AuditError> {
+    let authority = crate::affected_analysis::classify_authority_path(path);
+    let relevant = match kind {
+        ProjectionKind::Psm => matches!(
+            authority,
+            crate::affected_analysis::AuthorityInputKind::Source
+                | crate::affected_analysis::AuthorityInputKind::CargoAuthority
+                | crate::affected_analysis::AuthorityInputKind::ProjectConfiguration
+                | crate::affected_analysis::AuthorityInputKind::ModuleContract
+        ),
+        ProjectionKind::SourceArtifacts => matches!(
+            authority,
+            crate::affected_analysis::AuthorityInputKind::Source
+                | crate::affected_analysis::AuthorityInputKind::CargoAuthority
+                | crate::affected_analysis::AuthorityInputKind::ProjectConfiguration
+                | crate::affected_analysis::AuthorityInputKind::ModuleContract
+                | crate::affected_analysis::AuthorityInputKind::SourceResponsibility
+        ),
+        ProjectionKind::Semantic => matches!(
+            authority,
+            crate::affected_analysis::AuthorityInputKind::Source
+                | crate::affected_analysis::AuthorityInputKind::CargoAuthority
+                | crate::affected_analysis::AuthorityInputKind::ProjectConfiguration
+                | crate::affected_analysis::AuthorityInputKind::ModuleContract
+                | crate::affected_analysis::AuthorityInputKind::FunctionContract
+        ),
+        ProjectionKind::StateEffect => matches!(
+            authority,
+            crate::affected_analysis::AuthorityInputKind::Source
+                | crate::affected_analysis::AuthorityInputKind::CargoAuthority
+                | crate::affected_analysis::AuthorityInputKind::ProjectConfiguration
+                | crate::affected_analysis::AuthorityInputKind::ModuleContract
+                | crate::affected_analysis::AuthorityInputKind::FunctionContract
+                | crate::affected_analysis::AuthorityInputKind::StateContract
+        ),
+        ProjectionKind::SemanticConformance => matches!(
+            authority,
+            crate::affected_analysis::AuthorityInputKind::Source
+                | crate::affected_analysis::AuthorityInputKind::CargoAuthority
+                | crate::affected_analysis::AuthorityInputKind::ProjectConfiguration
+                | crate::affected_analysis::AuthorityInputKind::ModuleContract
+                | crate::affected_analysis::AuthorityInputKind::FunctionContract
+                | crate::affected_analysis::AuthorityInputKind::StateContract
+        ),
+        ProjectionKind::InformationFlow => matches!(
+            authority,
+            crate::affected_analysis::AuthorityInputKind::Source
+                | crate::affected_analysis::AuthorityInputKind::CargoAuthority
+                | crate::affected_analysis::AuthorityInputKind::ProjectConfiguration
+                | crate::affected_analysis::AuthorityInputKind::ModuleContract
+                | crate::affected_analysis::AuthorityInputKind::FunctionContract
+                | crate::affected_analysis::AuthorityInputKind::StateContract
+                | crate::affected_analysis::AuthorityInputKind::InformationFlowPolicy
+        ),
+        ProjectionKind::Environmental => !matches!(
+            authority,
+            crate::affected_analysis::AuthorityInputKind::FindingGovernance
+                | crate::affected_analysis::AuthorityInputKind::SourceResponsibility
+        ),
+        ProjectionKind::Ccg | ProjectionKind::Bfg => matches!(
+            authority,
+            crate::affected_analysis::AuthorityInputKind::ModuleContract
+                | crate::affected_analysis::AuthorityInputKind::ProjectConfiguration
+                | crate::affected_analysis::AuthorityInputKind::Source
+        ),
+        ProjectionKind::References => !matches!(
+            authority,
+            crate::affected_analysis::AuthorityInputKind::FindingGovernance
+        ),
+        ProjectionKind::RealizedBfg => !matches!(
+            authority,
+            crate::affected_analysis::AuthorityInputKind::FindingGovernance
+                | crate::affected_analysis::AuthorityInputKind::SourceResponsibility
+        ),
+        ProjectionKind::Audit => true,
+    };
+    if !relevant {
+        return Ok(None);
+    }
+    let digest = if authority == crate::affected_analysis::AuthorityInputKind::ModuleContract
+        && !matches!(
+            kind,
+            ProjectionKind::SemanticConformance | ProjectionKind::Audit
+        ) {
+        structural_module_contract_digest(path, bytes)?
+    } else {
+        format!("sha256:{:x}", Sha256::digest(bytes))
+    };
+    Ok(Some(digest))
+}
+
+fn structural_module_contract_digest(path: &str, bytes: &[u8]) -> Result<String, AuditError> {
+    let Ok(value) = serde_json::from_slice::<Value>(bytes) else {
+        return Ok(format!("sha256:{:x}", Sha256::digest(bytes)));
+    };
+    let identity = serde_json::json!({
+        "path": path,
+        "schema": value.get("$schema"),
+        "schema_version": value.get("schema_version"),
+        "id": value.get("id"),
+    });
+    let bytes = serde_json::to_vec(&identity).map_err(|source| {
+        AuditError::AffectedAnalysis(
+            format!("cannot serialize Module Contract dependency `{path}`: {source}").into(),
+        )
+    })?;
+    Ok(format!("sha256:{:x}", Sha256::digest(bytes)))
+}
+
+fn projection_dependency_digest(
+    observed_files: &BTreeMap<String, Vec<u8>>,
+    standard: &LoadedStandard,
+    kind: ProjectionKind,
+) -> Result<String, AuditError> {
+    let dependencies = projection_dependencies_from_files(observed_files, standard, kind)?;
+    let bytes = serde_json::to_vec(&dependencies).map_err(|source| {
+        AuditError::AffectedAnalysis(
+            format!(
+                "cannot serialize {} semantic dependencies: {source}",
+                kind.as_str()
+            )
+            .into(),
+        )
+    })?;
+    Ok(format!("sha256:{:x}", Sha256::digest(bytes)))
+}
+
+const fn projection_uses_standard(kind: ProjectionKind) -> bool {
+    !matches!(kind, ProjectionKind::Psm | ProjectionKind::SourceArtifacts)
+}
+
 fn prepare_analysis(root: &Path) -> Result<PreparedAnalysis, AuditError> {
     let project = load_project_authority(root)?;
     let observation = observe_repository_stably(root, &project.observation_policy)
@@ -3356,6 +4293,8 @@ pub enum AuditError {
     FindingGovernance(FindingGovernanceError),
     /// Certification evidence or profile construction failed.
     Certification(CertificationError),
+    /// Affected dependency or incremental cache binding could not be constructed.
+    AffectedAnalysis(Box<str>),
 }
 
 impl Display for AuditError {
@@ -3451,6 +4390,9 @@ impl Display for AuditError {
             }
             Self::Certification(error) => {
                 write!(formatter, "snapshot certification failed: {error}")
+            }
+            Self::AffectedAnalysis(error) => {
+                write!(formatter, "affected analysis failed: {error}")
             }
         }
     }

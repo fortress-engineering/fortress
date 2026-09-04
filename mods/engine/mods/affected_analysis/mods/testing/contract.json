@@ -1,0 +1,32 @@
+{
+  "$schema": "urn:fortress:schema:v2:module-contract",
+  "schema_version": 2,
+  "id": "TEST-AFFECTED-ANALYSIS-0001",
+  "display_name": "Affected Analysis Testing",
+  "provides": [],
+  "requires": [
+    {
+      "provider": "AF-AFFECTED-ANALYSIS-0001",
+      "capability": "CAP-AFFECTED-ANALYSIS",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-CORE-0001",
+      "capability": "CAP-FORTRESS-ENGINE",
+      "version": "^0.1.0"
+    }
+  ],
+  "relationships": [
+    {
+      "type": "verifies",
+      "target": "AF-AFFECTED-ANALYSIS-0001",
+      "subjects": [
+        "AF-AFFECTED-ANALYSIS-0001"
+      ]
+    }
+  ],
+  "constraints": [],
+  "guarantees": [],
+  "features": [],
+  "behavior": []
+}

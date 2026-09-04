@@ -12,6 +12,11 @@
   ],
   "requires": [
     {
+      "provider": "AF-AFFECTED-ANALYSIS-0001",
+      "capability": "CAP-AFFECTED-ANALYSIS",
+      "version": "^0.1.0"
+    },
+    {
       "provider": "AF-ARCHITECTURE-EVALUATION-0001",
       "capability": "CAP-ARCHITECTURE-EVALUATION",
       "version": "^0.1.0"

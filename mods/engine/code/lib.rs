@@ -6,6 +6,8 @@
 #![forbid(unsafe_code)]
 #![deny(missing_docs, rustdoc::broken_intra_doc_links, warnings)]
 
+#[path = "../mods/affected_analysis/code/affected.rs"]
+pub mod affected_analysis;
 #[path = "../mods/architecture_evaluation/code/architecture.rs"]
 pub mod architecture;
 #[path = "../mods/architecture_evaluation/code/diagnostics.rs"]

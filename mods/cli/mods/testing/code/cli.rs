@@ -72,6 +72,62 @@ fn module_inspection_preserves_invalid_governance_as_non_success() {
     );
 }
 
+/// `T-TF-CLI-0001-R18-001`
+/// Fortress requirement: TF-CLI-0001-R18
+#[test]
+fn affected_command_reports_exact_repository_relative_change() {
+    let registry = CommandRegistry::builtin();
+    assert_eq!(
+        registry.find("affected").map(CommandDescriptor::id),
+        Some("CMD-AFFECTED-ANALYSIS")
+    );
+    let previous = ObservationFixture::new();
+    let current = ObservationFixture::new();
+    fs::write(
+        current.root.join("src/runtime/mod.rs"),
+        "pub fn flip(value: bool) -> bool { value }\n",
+    )
+    .expect("source changes");
+    let result = run(&[
+        "affected",
+        &current.argument(),
+        "--from",
+        &previous.argument(),
+        "--format=json",
+    ]);
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let document: serde_json::Value = serde_json::from_slice(&result.stdout).expect("JSON");
+    assert_eq!(document["schema_version"], 1);
+    assert!(
+        document["input_changes"]
+            .as_array()
+            .is_some_and(|changes| changes.iter().any(|change| {
+                change["kind"] == "MODIFIED" && change["current_path"] == "src/runtime/mod.rs"
+            }))
+    );
+    assert!(
+        document["affected_projections"]
+            .as_array()
+            .is_some_and(|projections| projections.iter().any(|value| value == "psm"))
+    );
+}
+
+/// `T-TF-CLI-0001-R18-002`
+/// Fortress requirement: TF-CLI-0001-R18
+#[test]
+fn affected_command_requires_explicit_prior_snapshot() {
+    let mut output = Vec::new();
+    let mut error = Vec::new();
+    let status =
+        fortress_cli::run(["affected", "."], &mut output, &mut error).expect("dispatch writes");
+    assert_eq!(status, EXIT_USAGE);
+    assert!(String::from_utf8_lossy(&error).contains("--from snapshot-path"));
+}
+
 /// `T-TF-CLI-0001-R14-002`
 /// Fortress requirement: TF-CLI-0001-R14
 #[test]
@@ -1188,6 +1244,8 @@ fn certification_command_is_registered_with_exact_profile_surface() {
     assert_eq!(descriptor.id(), "CMD-CERTIFICATION-FULL-SNAPSHOT");
     assert!(descriptor.usage().contains("--evidence-output"));
     assert!(descriptor.usage().contains("--verified-bfg-output"));
+    assert!(descriptor.usage().contains("--projection-output-dir"));
+    assert!(descriptor.usage().contains("--audit-output"));
 }
 
 /// `T-TF-CLI-0001-R13-002`

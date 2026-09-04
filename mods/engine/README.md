@@ -12,13 +12,19 @@ Compose the implemented core capabilities behind a stable Rust library facade wh
 
 ### Includes
 
-The crate facade, package contract, and integration of standard registry, finding model, contract coherency, Behavioral Semantics, Behavioral Realization, project model, repository observation, implementation observation, Program Semantics, Semantic Analysis, State and Effect Analysis, Information Flow, Environmental Semantics, Certification, architecture evaluation, and Snapshot Governance capabilities.
+The crate facade, package contract, and integration of affected analysis, standard registry, finding model, contract coherency, Behavioral Semantics, Behavioral Realization, project model, repository observation, implementation observation, Program Semantics, Semantic Analysis, State and Effect Analysis, Information Flow, Environmental Semantics, Certification, architecture evaluation, and Snapshot Governance capabilities.
 
 ### Excludes
 
 Terminal rendering, hosted-provider adapters, persistent jobs, onboarding, deployment, attestation, and capability-specific semantics owned by the child Modules.
 
 ## Relationships
+
+### [Affected Analysis](mods/affected_analysis/README.md)
+
+**Types:** `depends_on`
+
+Supplies exact-snapshot invalidation closure, dependency-complete projection keys, and verified machine-local semantic reuse through the Engine facade.
 
 ### [Architecture Evaluation](mods/architecture_evaluation/README.md)
 

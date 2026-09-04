@@ -6,7 +6,7 @@ The Code defines the language-neutral PSM and the Rust-specific translator that 
 
 ## Execution
 
-The orchestrator verifies snapshot-bound bytes, derives Cargo package and target contexts, builds a workspace-wide nominal/interface/impl index, propagates supported local static types, resolves only unique type-directed call targets, derives graph and transfer topology, reconciles cross-Module calls with Implementation Observation, and serializes canonical output. The pinned stable toolchain exposes neither stable rustdoc JSON/HIR nor a pinned rust-analyzer component, so v2 uses snapshot-bound Cargo interpretation and structural `syn` semantics while labeling every conclusion by authority and every residual call by a stable reason.
+The orchestrator verifies snapshot-bound bytes, derives Cargo package and target contexts, builds a workspace-wide nominal/interface/impl index, propagates supported local static types, resolves only unique type-directed call targets, derives graph and transfer topology, reconciles cross-Module calls with Implementation Observation, and serializes canonical output. PSM v3.2 binds only the source, Cargo, ownership, and stable Module-identity inputs that can alter program semantics, allowing unrelated Module policy changes to reuse identical PSM bytes while exact-snapshot certification remains independently complete. The pinned stable toolchain exposes neither stable rustdoc JSON/HIR nor a pinned rust-analyzer component, so production analysis uses snapshot-bound Cargo interpretation and structural `syn` semantics while labeling every conclusion by authority and every residual call by a stable reason.
 
 ## State
 

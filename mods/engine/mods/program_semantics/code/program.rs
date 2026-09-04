@@ -24,11 +24,11 @@ pub const PROGRAM_SEMANTIC_MODEL_SCHEMA: &str = "urn:fortress:schema:v3:program-
 /// Canonical PSM document schema version.
 pub const PROGRAM_SEMANTIC_MODEL_SCHEMA_VERSION: u16 = 3;
 /// Semantic version of the language-neutral PSM compiler.
-pub const PROGRAM_SEMANTIC_MODEL_VERSION: &str = "3.1.0";
+pub const PROGRAM_SEMANTIC_MODEL_VERSION: &str = "3.2.0";
 /// Stable Rust analyzer identity.
 pub const RUST_PROGRAM_ANALYZER_ID: &str = "fortress-rust-program-semantics";
 /// Semantic version of supported Rust program analysis.
-pub const RUST_PROGRAM_ANALYZER_VERSION: &str = "3.1.0";
+pub const RUST_PROGRAM_ANALYZER_VERSION: &str = "3.2.0";
 
 const UNSUPPORTED_SEMANTICS: &[&str] = &[
     "arbitrary_dynamic_dispatch_resolution",
@@ -1422,6 +1422,12 @@ pub struct ProgramCall {
 }
 
 impl ProgramCall {
+    /// Returns the deterministic semantic call-relationship identity.
+    #[must_use]
+    pub fn id(&self) -> &str {
+        &self.id
+    }
+
     /// Returns the caller identity.
     #[must_use]
     pub fn caller(&self) -> &str {

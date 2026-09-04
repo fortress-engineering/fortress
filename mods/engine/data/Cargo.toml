@@ -17,6 +17,10 @@ name = "arch_dependency_001"
 path = "../mods/architecture_evaluation/mods/testing/code/arch_dependency_001.rs"
 
 [[test]]
+name = "affected_analysis"
+path = "../mods/affected_analysis/mods/testing/code/affected_analysis.rs"
+
+[[test]]
 name = "arch_realization_001"
 path = "../mods/architecture_evaluation/mods/testing/code/arch_realization_001.rs"
 

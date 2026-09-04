@@ -12,13 +12,19 @@ Build stabilized content-addressed repository snapshots, coordinate governed con
 
 ### Includes
 
-Snapshot and audit schemas; audit orchestration; separate raw findings, baseline lifecycle, exception disposition, enforcement, architecture diagnostics, and unsupported-analysis reporting; contract coherency, intended behavioral-flow, behavioral realization, behavioral bypass, program-domain, program-state, program-effect, program-information-flow, program-environment, program-retry, program-recovery, ownership, architecture realization, Module semantic conformance, traceability, canonical Project Filing System, and documentation synchronization rule dispatch; Markdown and Rust test analyzers; two-pass stabilization; exact rule execution reporting; complete local gate issuance; deterministic external-cache materialization, status, and cleanup; and lightweight certificate PASS, authoritative-source freshness, tracked-evidence digest, artifact-registry, and tamper-stamp verification.
+Snapshot and audit schemas; audit orchestration; separate raw findings, baseline lifecycle, exception disposition, enforcement, architecture diagnostics, and unsupported-analysis reporting; contract coherency, intended behavioral-flow, behavioral realization, behavioral bypass, program-domain, program-state, program-effect, program-information-flow, program-environment, program-retry, program-recovery, ownership, architecture realization, Module semantic conformance, traceability, canonical Project Filing System, and documentation synchronization rule dispatch; Markdown and Rust test analyzers; two-pass stabilization; exact rule execution reporting; complete local gate issuance from one dependency-bound semantic stack; governed generator-determinism evidence; deterministic external-cache materialization, status, and cleanup; and lightweight certificate PASS, authoritative-source freshness, tracked-evidence digest, artifact-registry, and tamper-stamp verification.
 
 ### Excludes
 
 Authenticated signing, release certification or attestation, onboarding and migration state, persistent jobs, provider-hosted semantic execution, release orchestration, implementation observation, program semantics, and semantic-domain reasoning owned by sibling Modules, architecture judgment owned by Architecture Evaluation, Intended BFG semantics owned by Behavioral Semantics, realization semantics owned by Behavioral Realization, unsupported language analyzers, general behavioral satisfiability, runtime tracing, Verified BFGs, and BFG visualization.
 
 ## Relationships
+
+### [Affected Analysis](../affected_analysis/README.md)
+
+**Types:** `depends_on`
+
+Supplies the canonical exact-snapshot invalidation graph and verified projection reuse keys consumed by audit orchestration and local issuance.
 
 ### [Architecture Evaluation](../architecture_evaluation/README.md)
 

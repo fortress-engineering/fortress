@@ -48,7 +48,7 @@ Projects the canonical Project Model filing analysis into REPO-MODULE-001 findin
 
 ### [`quality_certificate.py`](../code/quality_certificate.py)
 
-Executes the complete pinned local quality-gate profile, maintains the closed tracked-evidence/local-materialization artifact registry, deterministically reconstructs subject-addressed bulk projections, distinguishes missing, stale, invalid, and current local bytes, and performs lightweight PASS, authoritative-source freshness, tracked-evidence digest, and tamper-stamp verification while explicitly retaining UNVERIFIED issuer authenticity.
+Executes the complete pinned local quality-gate profile, consumes one exact-snapshot certification stack for semantic projections, audit, and certification evidence, maintains the closed tracked-evidence/local-materialization artifact registry, deterministically reconstructs subject-addressed bulk projections, distinguishes missing, stale, invalid, and current local bytes, and performs lightweight PASS, authoritative-source freshness, tracked-evidence digest, and tamper-stamp verification while explicitly retaining UNVERIFIED issuer authenticity. Generator determinism remains proved by governed tests; routine issuance verifies exact dependency bindings and final canonical digests without repository-wide duplicate execution.
 
 ### [`rust_test_analyzer.rs`](../code/rust_test_analyzer.rs)
 

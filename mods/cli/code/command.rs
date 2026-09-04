@@ -73,6 +73,13 @@ const BUILTIN_COMMANDS: &[CommandDescriptor] = &[
         usage: "fortress modules [path] [--format human|json]",
     },
     CommandDescriptor {
+        id: "CMD-AFFECTED-ANALYSIS",
+        name: "affected",
+        aliases: &[],
+        description: "Explain exact-snapshot semantic invalidation and reusable results.",
+        usage: "fortress affected [path] --from snapshot-path [--format human|json] [--output path]",
+    },
+    CommandDescriptor {
         id: "CMD-CONTRACT-CCG",
         name: "ccg",
         aliases: &[],
@@ -154,7 +161,7 @@ const BUILTIN_COMMANDS: &[CommandDescriptor] = &[
         name: "certify",
         aliases: &[],
         description: "Execute local verification and certify the exact source snapshot.",
-        usage: "fortress certify [path] [--format human|json] [--evidence-output path] [--certification-output path] [--verified-bfg-output path]",
+        usage: "fortress certify [path] [--format human|json] [--evidence-output path] [--certification-output path] [--verified-bfg-output path] [--projection-output-dir path] [--audit-output path]",
     },
 ];
 

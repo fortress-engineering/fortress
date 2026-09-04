@@ -1,0 +1,117 @@
+{
+  "$schema": "urn:fortress:schema:v2:module-contract",
+  "schema_version": 2,
+  "id": "AF-AFFECTED-ANALYSIS-0001",
+  "display_name": "Affected Analysis",
+  "provides": [
+    {
+      "id": "CAP-AFFECTED-ANALYSIS",
+      "version": "0.1.0",
+      "visibility": "project"
+    }
+  ],
+  "requires": [
+    {
+      "provider": "AF-ARCHITECTURE-EVALUATION-0001",
+      "capability": "CAP-ARCHITECTURE-EVALUATION",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-CERTIFICATION-0001",
+      "capability": "CAP-CERTIFICATION",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-FINDING-MODEL-0001",
+      "capability": "CAP-FINDING-MODEL",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-IMPLEMENTATION-OBSERVATION-0001",
+      "capability": "CAP-IMPLEMENTATION-OBSERVATION",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-PROGRAM-SEMANTICS-0001",
+      "capability": "CAP-PROGRAM-SEMANTICS",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-REPOSITORY-OBSERVATION-0001",
+      "capability": "CAP-REPOSITORY-OBSERVATION",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-SOURCE-ARCHITECTURE-0001",
+      "capability": "CAP-SOURCE-ARCHITECTURE",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-STATE-EFFECT-ANALYSIS-0001",
+      "capability": "CAP-STATE-EFFECT-ANALYSIS",
+      "version": "^0.1.0"
+    }
+  ],
+  "relationships": [],
+  "constraints": [],
+  "guarantees": [
+    {
+      "id": "GUA-AFFECTED-REUSE-INTEGRITY",
+      "subject": {
+        "kind": "capability",
+        "id": "CAP-AFFECTED-ANALYSIS"
+      },
+      "requirements": [
+        "AF-AFFECTED-ANALYSIS-0001-R01",
+        "AF-AFFECTED-ANALYSIS-0001-R02",
+        "AF-AFFECTED-ANALYSIS-0001-R03",
+        "AF-AFFECTED-ANALYSIS-0001-R04"
+      ]
+    }
+  ],
+  "features": [
+    {
+      "id": "AF-AFFECTED-ANALYSIS-0001",
+      "version": "0.1.0",
+      "requirements": [
+        {
+          "id": "AF-AFFECTED-ANALYSIS-0001-R01",
+          "statement": "Affected Analysis deterministically classifies exact repository input changes and propagates explicit invalidation reasons through one stable semantic dependency graph.",
+          "tests": [
+            "T-AF-AFFECTED-ANALYSIS-0001-R01-001",
+            "T-AF-AFFECTED-ANALYSIS-0001-R01-002",
+            "T-AF-AFFECTED-ANALYSIS-0001-R01-003"
+          ]
+        },
+        {
+          "id": "AF-AFFECTED-ANALYSIS-0001-R02",
+          "statement": "Source, ownership, symbol, call, Module, effect, capability, conformance, finding, evidence, certification, and projection units retain complete deterministic dependency bindings and conservative invalidation.",
+          "tests": [
+            "T-AF-AFFECTED-ANALYSIS-0001-R02-001",
+            "T-AF-AFFECTED-ANALYSIS-0001-R02-002",
+            "T-AF-AFFECTED-ANALYSIS-0001-R02-003"
+          ]
+        },
+        {
+          "id": "AF-AFFECTED-ANALYSIS-0001-R03",
+          "statement": "Machine-local projection reuse verifies generator semantics, complete authority dependencies, canonical descriptors, content digests, and stored bytes while missing, stale, or invalid entries remain non-authoritative.",
+          "tests": [
+            "T-AF-AFFECTED-ANALYSIS-0001-R03-001",
+            "T-AF-AFFECTED-ANALYSIS-0001-R03-002",
+            "T-AF-AFFECTED-ANALYSIS-0001-R03-003",
+            "T-AF-AFFECTED-ANALYSIS-0001-R03-004"
+          ]
+        },
+        {
+          "id": "AF-AFFECTED-ANALYSIS-0001-R04",
+          "statement": "Affected closure and canonical serialization are checkout-root independent, byte-deterministic, cache-independent, and near-linear for at least ten thousand dependency nodes.",
+          "tests": [
+            "T-AF-AFFECTED-ANALYSIS-0001-R04-001",
+            "T-AF-AFFECTED-ANALYSIS-0001-R04-002"
+          ]
+        }
+      ]
+    }
+  ],
+  "behavior": []
+}

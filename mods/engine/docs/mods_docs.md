@@ -6,6 +6,10 @@ The Engine responsibility is decomposed where durable child boundaries have excl
 
 ## Modules
 
+### [Affected Analysis](../mods/affected_analysis/README.md)
+
+Compiles repository authority and derived semantic identities into deterministic affected closure, explains recomputation, and verifies dependency-bound machine-local reuse without making cache state authoritative.
+
 ### [Architecture Evaluation](../mods/architecture_evaluation/README.md)
 
 Consumes the CCG dependency and containment semantics to provide architecture rule evaluation and physical ownership views.

@@ -13,14 +13,16 @@ use std::io::{self, Write};
 use std::path::PathBuf;
 use std::process::Command;
 
+use fortress_core::affected_analysis::{IncrementalCacheState, ProjectionKind};
 use fortress_core::audit::{
-    audit_repository, compile_repository_bfg, compile_repository_ccg,
-    compile_repository_certification, compile_repository_environmental_analysis,
-    compile_repository_information_flow_analysis, compile_repository_psm,
-    compile_repository_realized_bfg, compile_repository_reference_resolution,
-    compile_repository_semantic_analysis, compile_repository_semantic_conformance,
-    compile_repository_source_artifact_model, compile_repository_state_effect_analysis,
-    inspect_repository_modules, prepare_repository_certification_source,
+    RepositoryProjectionCache, audit_repository, compile_repository_affected_analysis,
+    compile_repository_bfg, compile_repository_ccg, compile_repository_certification_bundle,
+    compile_repository_environmental_analysis, compile_repository_information_flow_analysis,
+    compile_repository_psm, compile_repository_realized_bfg,
+    compile_repository_reference_resolution, compile_repository_semantic_analysis,
+    compile_repository_semantic_conformance, compile_repository_source_artifact_model,
+    compile_repository_state_effect_analysis, inspect_repository_modules,
+    prepare_repository_certification_source, prepare_repository_projection_cache,
 };
 use fortress_core::bootstrap::{
     BootstrapDiscoveryOptions, BootstrapProposal, apply_repository_bootstrap,
@@ -39,6 +41,35 @@ pub const EXIT_SUCCESS: u8 = 0;
 pub const EXIT_VIOLATION: u8 = 1;
 /// User invocation or unsupported-command exit status.
 pub const EXIT_USAGE: u8 = 2;
+
+fn projection_cache(root: &PathBuf, kind: ProjectionKind) -> Option<RepositoryProjectionCache> {
+    prepare_repository_projection_cache(root, kind).ok()
+}
+
+fn cached_projection(binding: Option<&RepositoryProjectionCache>) -> Option<(Vec<u8>, u8)> {
+    let binding = binding?;
+    let loaded = binding.cache().load(binding.key()).ok()?;
+    (loaded.state() == IncrementalCacheState::ReusableCurrent)
+        .then(|| Some((loaded.content()?.to_vec(), loaded.exit_code()?)))?
+}
+
+fn store_projection(binding: Option<&RepositoryProjectionCache>, bytes: &[u8], exit_code: u8) {
+    if let Some(binding) = binding {
+        let _ = binding.cache().store(binding.key(), bytes, exit_code);
+    }
+}
+
+fn write_projection<O: Write>(
+    destination: Option<PathBuf>,
+    output: &mut O,
+    bytes: &[u8],
+) -> io::Result<()> {
+    if let Some(destination) = destination {
+        fs::write(destination, bytes)
+    } else {
+        output.write_all(bytes)
+    }
+}
 
 /// Runs Fortress CLI dispatch against caller-provided streams.
 ///
@@ -80,6 +111,7 @@ where
         "CMD-FINDING-EXCEPTION" => run_exceptions(&arguments[1..], output, error),
         "CMD-REPOSITORY-INIT" => run_init(&arguments[1..], output, error),
         "CMD-MODULE-INSPECTION" => run_modules(&arguments[1..], output, error),
+        "CMD-AFFECTED-ANALYSIS" => run_affected(&arguments[1..], output, error),
         "CMD-CONTRACT-CCG" => run_ccg(&arguments[1..], output, error),
         "CMD-BEHAVIOR-BFG" => run_bfg(&arguments[1..], output, error),
         "CMD-BEHAVIOR-REALIZED-BFG" => run_realized_bfg(&arguments[1..], output, error),
@@ -101,6 +133,93 @@ where
             Ok(EXIT_USAGE)
         }
     }
+}
+
+fn run_affected<O: Write, E: Write>(
+    arguments: &[String],
+    output: &mut O,
+    error: &mut E,
+) -> io::Result<u8> {
+    const USAGE: &str = "usage: fortress affected [path] --from snapshot-path [--format human|json] [--output path]";
+    let mut root = None;
+    let mut previous = None;
+    let mut destination = None;
+    let mut format = "human";
+    let mut index = 0;
+    while index < arguments.len() {
+        match arguments[index].as_str() {
+            "--from" => {
+                index += 1;
+                let Some(value) = arguments.get(index) else {
+                    writeln!(error, "{USAGE}")?;
+                    return Ok(EXIT_USAGE);
+                };
+                if previous.replace(PathBuf::from(value)).is_some() {
+                    writeln!(error, "{USAGE}")?;
+                    return Ok(EXIT_USAGE);
+                }
+            }
+            "--format" => {
+                index += 1;
+                format = match arguments.get(index).map(String::as_str) {
+                    Some("human") => "human",
+                    Some("json") => "json",
+                    _ => {
+                        writeln!(error, "{USAGE}")?;
+                        return Ok(EXIT_USAGE);
+                    }
+                };
+            }
+            value if value.starts_with("--format=") => {
+                format = match value.strip_prefix("--format=") {
+                    Some("human") => "human",
+                    Some("json") => "json",
+                    _ => {
+                        writeln!(error, "{USAGE}")?;
+                        return Ok(EXIT_USAGE);
+                    }
+                };
+            }
+            "--output" => {
+                index += 1;
+                let Some(value) = arguments.get(index) else {
+                    writeln!(error, "{USAGE}")?;
+                    return Ok(EXIT_USAGE);
+                };
+                if destination.replace(PathBuf::from(value)).is_some() {
+                    writeln!(error, "{USAGE}")?;
+                    return Ok(EXIT_USAGE);
+                }
+            }
+            value if !value.starts_with('-') && root.is_none() => {
+                root = Some(PathBuf::from(value));
+            }
+            _ => {
+                writeln!(error, "{USAGE}")?;
+                return Ok(EXIT_USAGE);
+            }
+        }
+        index += 1;
+    }
+    let Some(previous) = previous else {
+        writeln!(error, "{USAGE}")?;
+        return Ok(EXIT_USAGE);
+    };
+    let root = root.unwrap_or_else(|| PathBuf::from("."));
+    let analysis = match compile_repository_affected_analysis(&root, previous) {
+        Ok(value) => value,
+        Err(analysis_error) => {
+            writeln!(error, "affected analysis failed: {analysis_error}")?;
+            return Ok(EXIT_VIOLATION);
+        }
+    };
+    let document = if format == "json" {
+        analysis.to_canonical_json().map_err(io::Error::other)?
+    } else {
+        analysis.to_human()
+    };
+    write_projection(destination, output, document.as_bytes())?;
+    Ok(EXIT_SUCCESS)
 }
 
 fn run_modules<O: Write, E: Write>(
@@ -401,6 +520,13 @@ fn run_source_artifacts<O: Write, E: Write>(
             return Ok(EXIT_USAGE);
         }
     };
+    let cache = (format == "json")
+        .then(|| projection_cache(&root, ProjectionKind::SourceArtifacts))
+        .flatten();
+    if let Some((bytes, exit_code)) = cached_projection(cache.as_ref()) {
+        write_projection(destination, output, &bytes)?;
+        return Ok(exit_code);
+    }
     let model = match compile_repository_source_artifact_model(&root) {
         Ok(value) => value,
         Err(model_error) => {
@@ -413,16 +539,14 @@ fn run_source_artifacts<O: Write, E: Write>(
     } else {
         model.to_canonical_json().map_err(io::Error::other)?
     };
-    if let Some(destination) = destination {
-        fs::write(destination, document)?;
-    } else {
-        write!(output, "{document}")?;
-    }
-    Ok(if model.summary().findings() == 0 {
+    let exit_code = if model.summary().findings() == 0 {
         EXIT_SUCCESS
     } else {
         EXIT_VIOLATION
-    })
+    };
+    store_projection(cache.as_ref(), document.as_bytes(), exit_code);
+    write_projection(destination, output, document.as_bytes())?;
+    Ok(exit_code)
 }
 
 fn parse_source_artifact_arguments(
@@ -587,6 +711,8 @@ struct CertificationArguments {
     evidence_output: Option<PathBuf>,
     certification_output: Option<PathBuf>,
     verified_bfg_output: Option<PathBuf>,
+    projection_output_dir: Option<PathBuf>,
+    audit_output: Option<PathBuf>,
 }
 
 #[allow(clippy::too_many_lines)]
@@ -630,7 +756,7 @@ fn run_certify<O: Write, E: Write>(
         )?;
         return Ok(EXIT_USAGE);
     }
-    let products = match compile_repository_certification(
+    let bundle = match compile_repository_certification_bundle(
         &request.root,
         RustSuiteExecution {
             executor: "fortress-local-rust-executor".into(),
@@ -653,6 +779,20 @@ fn run_certify<O: Write, E: Write>(
             return Ok(EXIT_USAGE);
         }
     };
+    if let Some(directory) = &request.projection_output_dir {
+        for (logical_path, document) in bundle.projections() {
+            let destination = directory.join(logical_path);
+            let parent = destination
+                .parent()
+                .ok_or_else(|| io::Error::other("projection output path has no parent"))?;
+            fs::create_dir_all(parent)?;
+            fs::write(destination, document)?;
+        }
+    }
+    if let Some(path) = request.audit_output {
+        fs::write(path, bundle.audit_json())?;
+    }
+    let products = bundle.products();
     let evidence = products
         .evidence_graph
         .to_json_pretty()
@@ -745,12 +885,14 @@ fn execute_canonical_rust_suite<E: Write>(root: &PathBuf, error: &mut E) -> io::
 fn parse_certification_arguments(
     arguments: &[String],
 ) -> Result<CertificationArguments, &'static str> {
-    const USAGE: &str = "usage: fortress certify [path] [--format human|json] [--evidence-output path] [--certification-output path] [--verified-bfg-output path]";
+    const USAGE: &str = "usage: fortress certify [path] [--format human|json] [--evidence-output path] [--certification-output path] [--verified-bfg-output path] [--projection-output-dir path] [--audit-output path]";
     let mut root = None;
     let mut format = CertificationOutputFormat::Human;
     let mut evidence_output = None;
     let mut certification_output = None;
     let mut verified_bfg_output = None;
+    let mut projection_output_dir = None;
+    let mut audit_output = None;
     let mut index = 0;
     while index < arguments.len() {
         let argument = &arguments[index];
@@ -771,6 +913,8 @@ fn parse_certification_arguments(
             "--evidence-output",
             "--certification-output",
             "--verified-bfg-output",
+            "--projection-output-dir",
+            "--audit-output",
         ]
         .contains(&argument.as_str())
         {
@@ -781,7 +925,9 @@ fn parse_certification_arguments(
             let slot = match argument.as_str() {
                 "--evidence-output" => &mut evidence_output,
                 "--certification-output" => &mut certification_output,
-                _ => &mut verified_bfg_output,
+                "--verified-bfg-output" => &mut verified_bfg_output,
+                "--projection-output-dir" => &mut projection_output_dir,
+                _ => &mut audit_output,
             };
             if slot.replace(path).is_some() {
                 return Err(USAGE);
@@ -799,6 +945,8 @@ fn parse_certification_arguments(
         evidence_output,
         certification_output,
         verified_bfg_output,
+        projection_output_dir,
+        audit_output,
     })
 }
 
@@ -1040,6 +1188,11 @@ fn run_state_effect<O: Write, E: Write>(
             return Ok(EXIT_USAGE);
         }
     };
+    let cache = projection_cache(&root, ProjectionKind::StateEffect);
+    if let Some((bytes, exit_code)) = cached_projection(cache.as_ref()) {
+        write_projection(destination, output, &bytes)?;
+        return Ok(exit_code);
+    }
     let evaluation = match compile_repository_state_effect_analysis(&root) {
         Ok(evaluation) => evaluation,
         Err(analysis_error) => {
@@ -1051,18 +1204,15 @@ fn run_state_effect<O: Write, E: Write>(
         .model()
         .to_canonical_json()
         .map_err(io::Error::other)?;
-    if let Some(destination) = destination {
-        fs::write(destination, document)?;
-    } else {
-        write!(output, "{document}")?;
-    }
-    Ok(
+    let exit_code =
         if evaluation.state_findings().is_empty() && evaluation.effect_findings().is_empty() {
             EXIT_SUCCESS
         } else {
             EXIT_VIOLATION
-        },
-    )
+        };
+    store_projection(cache.as_ref(), document.as_bytes(), exit_code);
+    write_projection(destination, output, document.as_bytes())?;
+    Ok(exit_code)
 }
 
 fn parse_state_effect_arguments(
@@ -1162,14 +1312,21 @@ fn run_semantic_conformance<O: Write, E: Write>(
         }
         index += 1;
     }
-    let evaluation =
-        match compile_repository_semantic_conformance(root.unwrap_or_else(|| PathBuf::from("."))) {
-            Ok(value) => value,
-            Err(analysis_error) => {
-                writeln!(error, "semantic conformance failed: {analysis_error}")?;
-                return Ok(EXIT_VIOLATION);
-            }
-        };
+    let root = root.unwrap_or_else(|| PathBuf::from("."));
+    let cache = (json && module_id.is_none())
+        .then(|| projection_cache(&root, ProjectionKind::SemanticConformance))
+        .flatten();
+    if let Some((bytes, exit_code)) = cached_projection(cache.as_ref()) {
+        write_projection(destination, output, &bytes)?;
+        return Ok(exit_code);
+    }
+    let evaluation = match compile_repository_semantic_conformance(&root) {
+        Ok(value) => value,
+        Err(analysis_error) => {
+            writeln!(error, "semantic conformance failed: {analysis_error}")?;
+            return Ok(EXIT_VIOLATION);
+        }
+    };
     let modules = if let Some(id) = module_id.as_deref() {
         let Some(module) = evaluation.model().module(id) else {
             writeln!(error, "unknown declared Module `{id}`")?;
@@ -1195,72 +1352,72 @@ fn run_semantic_conformance<O: Write, E: Write>(
                 .to_canonical_json()
                 .map_err(io::Error::other)?
         };
-        if let Some(destination) = destination {
-            fs::write(destination, document)?;
+        let exit_code = if evaluation.is_success() {
+            EXIT_SUCCESS
         } else {
-            write!(output, "{document}")?;
-        }
-    } else {
-        for module in modules {
+            EXIT_VIOLATION
+        };
+        store_projection(cache.as_ref(), document.as_bytes(), exit_code);
+        write_projection(destination, output, document.as_bytes())?;
+        return Ok(exit_code);
+    }
+    for module in modules {
+        writeln!(
+            output,
+            "Module {} policy={} result={:?} contract={}\n  Rule: {}",
+            module.module(),
+            module.policy_state(),
+            module.state(),
+            module.contract_path(),
+            fortress_core::semantic_conformance::ARCH_SEMANTIC_RULE_ID,
+        )?;
+        for conclusion in module.conclusions() {
             writeln!(
                 output,
-                "Module {} policy={} result={:?} contract={}\n  Rule: {}",
-                module.module(),
-                module.policy_state(),
-                module.state(),
-                module.contract_path(),
-                fortress_core::semantic_conformance::ARCH_SEMANTIC_RULE_ID,
+                "  Policy: {:?} {} {:?}\n  Result: {:?} / {:?} (observations={})",
+                conclusion.target_kind(),
+                conclusion.target(),
+                conclusion.disposition(),
+                conclusion.state(),
+                conclusion.blocking_eligibility(),
+                conclusion.observation_count(),
             )?;
-            for conclusion in module.conclusions() {
-                writeln!(
-                    output,
-                    "  Policy: {:?} {} {:?}\n  Result: {:?} / {:?} (observations={})",
-                    conclusion.target_kind(),
-                    conclusion.target(),
-                    conclusion.disposition(),
-                    conclusion.state(),
-                    conclusion.blocking_eligibility(),
-                    conclusion.observation_count(),
-                )?;
-                for reason in conclusion.coverage_reasons() {
-                    writeln!(output, "    Coverage: {reason}")?;
-                }
+            for reason in conclusion.coverage_reasons() {
+                writeln!(output, "    Coverage: {reason}")?;
             }
-            for observation in module.observations().iter().filter(|observation| {
-                observation.policy_disposition()
-                    == Some(fortress_core::semantic_conformance::PolicyDisposition::Deny)
-            }) {
-                writeln!(
-                    output,
-                    "    {:?} effect={} capability={} operation={} source={}:{}:{} authority={} chain={}",
-                    observation.evidence_kind(),
-                    observation.effect().stable_id(),
-                    observation
-                        .capability()
-                        .map_or("none", |capability| capability.stable_id()),
-                    observation.operation(),
-                    observation.path(),
-                    observation.line(),
-                    observation.column(),
-                    observation.authority(),
-                    observation.call_chain().join(" -> "),
-                )?;
-            }
-            if module.state() == fortress_core::semantic_conformance::SemanticConformanceState::Fail
-            {
-                writeln!(
-                    output,
-                    "  Remediation: remove or isolate the forbidden reachable operation, or explicitly revise the Module Contract policy after architectural review."
-                )?;
-            }
-            if module.state()
-                == fortress_core::semantic_conformance::SemanticConformanceState::Unknown
-            {
-                writeln!(
-                    output,
-                    "  Remediation: resolve the claim-relevant opaque operation; missing semantic authority is not conformance."
-                )?;
-            }
+        }
+        for observation in module.observations().iter().filter(|observation| {
+            observation.policy_disposition()
+                == Some(fortress_core::semantic_conformance::PolicyDisposition::Deny)
+        }) {
+            writeln!(
+                output,
+                "    {:?} effect={} capability={} operation={} source={}:{}:{} authority={} chain={}",
+                observation.evidence_kind(),
+                observation.effect().stable_id(),
+                observation
+                    .capability()
+                    .map_or("none", |capability| capability.stable_id()),
+                observation.operation(),
+                observation.path(),
+                observation.line(),
+                observation.column(),
+                observation.authority(),
+                observation.call_chain().join(" -> "),
+            )?;
+        }
+        if module.state() == fortress_core::semantic_conformance::SemanticConformanceState::Fail {
+            writeln!(
+                output,
+                "  Remediation: remove or isolate the forbidden reachable operation, or explicitly revise the Module Contract policy after architectural review."
+            )?;
+        }
+        if module.state() == fortress_core::semantic_conformance::SemanticConformanceState::Unknown
+        {
+            writeln!(
+                output,
+                "  Remediation: resolve the claim-relevant opaque operation; missing semantic authority is not conformance."
+            )?;
         }
     }
     Ok(if evaluation.is_success() {
@@ -1352,6 +1509,11 @@ fn run_psm<O: Write, E: Write>(
             return Ok(EXIT_USAGE);
         }
     };
+    let cache = projection_cache(&root, ProjectionKind::Psm);
+    if let Some((bytes, exit_code)) = cached_projection(cache.as_ref()) {
+        write_projection(destination, output, &bytes)?;
+        return Ok(exit_code);
+    }
     let model = match compile_repository_psm(&root) {
         Ok(model) => model,
         Err(model_error) => {
@@ -1360,18 +1522,15 @@ fn run_psm<O: Write, E: Write>(
         }
     };
     let document = model.to_canonical_json().map_err(io::Error::other)?;
-    if let Some(destination) = destination {
-        fs::write(destination, document)?;
-    } else {
-        write!(output, "{document}")?;
-    }
-    Ok(
+    let exit_code =
         if model.analyzer_coherency().is_coherent() && model.coverage().invalid_calls() == 0 {
             EXIT_SUCCESS
         } else {
             EXIT_VIOLATION
-        },
-    )
+        };
+    store_projection(cache.as_ref(), document.as_bytes(), exit_code);
+    write_projection(destination, output, document.as_bytes())?;
+    Ok(exit_code)
 }
 
 fn parse_psm_arguments(arguments: &[String]) -> Result<(PathBuf, Option<PathBuf>), &'static str> {
@@ -1832,6 +1991,13 @@ fn run_audit<O: Write, E: Write>(
             return Ok(EXIT_USAGE);
         }
     };
+    let cache = matches!(format, AuditFormat::Json)
+        .then(|| projection_cache(&root, ProjectionKind::Audit))
+        .flatten();
+    if let Some((bytes, exit_code)) = cached_projection(cache.as_ref()) {
+        output.write_all(&bytes)?;
+        return Ok(exit_code);
+    }
     let result: fortress_core::audit::AuditResult = match audit_repository(&root) {
         Ok(result) => result,
         Err(audit_error) => {
@@ -1839,19 +2005,24 @@ fn run_audit<O: Write, E: Write>(
             return Ok(EXIT_USAGE);
         }
     };
-    match format {
-        AuditFormat::Human => write!(output, "{}", result.to_human())?,
-        AuditFormat::Json => writeln!(
-            output,
-            "{}",
-            result.to_json_pretty().map_err(io::Error::other)?
-        )?,
-    }
-    Ok(if result.is_success() {
+    let exit_code = if result.is_success() {
         EXIT_SUCCESS
     } else {
         EXIT_VIOLATION
-    })
+    };
+    match format {
+        AuditFormat::Human => write!(output, "{}", result.to_human())?,
+        AuditFormat::Json => {
+            let mut bytes = result
+                .to_json_pretty()
+                .map_err(io::Error::other)?
+                .into_bytes();
+            bytes.push(b'\n');
+            store_projection(cache.as_ref(), &bytes, exit_code);
+            output.write_all(&bytes)?;
+        }
+    }
+    Ok(exit_code)
 }
 
 fn parse_audit_arguments(arguments: &[String]) -> Result<(PathBuf, AuditFormat), &'static str> {

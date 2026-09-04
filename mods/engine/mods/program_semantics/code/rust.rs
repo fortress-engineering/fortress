@@ -683,14 +683,36 @@ fn semantic_source_inputs(files: &BTreeMap<String, &[u8]>) -> Vec<ProgramSourceI
         .filter(|(path, _)| {
             is_rust_path(path)
                 || path.ends_with("Cargo.toml")
+                || path.as_str() == "data/project.json"
                 || path.as_str() == "contract.json"
                 || path.ends_with("/contract.json")
         })
         .map(|(path, bytes)| ProgramSourceInput {
             path: path.clone(),
-            sha256: format!("sha256:{:x}", Sha256::digest(bytes)),
+            sha256: semantic_input_digest(path, bytes),
         })
         .collect()
+}
+
+fn semantic_input_digest(path: &str, bytes: &[u8]) -> String {
+    if path == "contract.json" || path.ends_with("/contract.json") {
+        let Ok(value) = serde_json::from_slice::<serde_json::Value>(bytes) else {
+            return format!("sha256:{:x}", Sha256::digest(bytes));
+        };
+        let identity = serde_json::json!({
+            "path": path,
+            "schema": value.get("$schema"),
+            "schema_version": value.get("schema_version"),
+            "id": value.get("id"),
+        });
+        return format!(
+            "sha256:{:x}",
+            Sha256::digest(
+                serde_json::to_vec(&identity).expect("Module identity projection serializes")
+            )
+        );
+    }
+    format!("sha256:{:x}", Sha256::digest(bytes))
 }
 
 fn semantic_source_identity(inputs: &[ProgramSourceInput]) -> String {

@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:affected-analysis",
+  "title": "Fortress Affected Analysis v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "semantic_version",
+    "previous_source_fingerprint",
+    "current_source_fingerprint",
+    "input_changes",
+    "affected",
+    "reusable",
+    "affected_modules",
+    "affected_projections",
+    "summary"
+  ],
+  "properties": {
+    "$schema": { "const": "urn:fortress:schema:v1:affected-analysis" },
+    "schema_version": { "const": 1 },
+    "semantic_version": { "type": "string", "minLength": 1 },
+    "previous_source_fingerprint": { "$ref": "#/$defs/digest" },
+    "current_source_fingerprint": { "$ref": "#/$defs/digest" },
+    "input_changes": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/input_change" }
+    },
+    "affected": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/affected_unit" }
+    },
+    "reusable": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "affected_modules": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "affected_projections": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["changed_inputs", "affected_units", "reusable_units", "removed_units", "recomputation_percent"],
+      "properties": {
+        "changed_inputs": { "type": "integer", "minimum": 0 },
+        "affected_units": { "type": "integer", "minimum": 0 },
+        "reusable_units": { "type": "integer", "minimum": 0 },
+        "removed_units": { "type": "integer", "minimum": 0 },
+        "recomputation_percent": { "type": "integer", "minimum": 0, "maximum": 100 }
+      }
+    }
+  },
+  "$defs": {
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "input_change": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "authority", "previous_path", "current_path", "previous_digest", "current_digest"],
+      "properties": {
+        "kind": { "enum": ["ADDED", "REMOVED", "MODIFIED", "RELOCATED"] },
+        "authority": { "type": "string", "minLength": 1 },
+        "previous_path": { "type": ["string", "null"] },
+        "current_path": { "type": ["string", "null"] },
+        "previous_digest": { "anyOf": [{ "$ref": "#/$defs/digest" }, { "type": "null" }] },
+        "current_digest": { "anyOf": [{ "$ref": "#/$defs/digest" }, { "type": "null" }] }
+      }
+    },
+    "affected_unit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "state", "reasons"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "kind": { "type": "string", "minLength": 1 },
+        "state": { "enum": ["RECOMPUTE", "REMOVED"] },
+        "reasons": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "object", "required": ["kind"] }
+        }
+      }
+    }
+  }
+}
