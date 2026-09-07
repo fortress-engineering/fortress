@@ -24,4 +24,8 @@ The schema changes only when the supported PSM document contract changes; incomp
 
 ### [`program_model_schema_v3.json`](../data/program_model_schema_v3.json)
 
-Defines the canonical PSM v3 serialized structure and its closed object grammar.
+Defines the retained PSM v3 serialized structure for historical projection interpretation.
+
+### [`program_model_schema_v4.json`](../data/program_model_schema_v4.json)
+
+Defines the canonical PSM v4 structure with explicit executable-symbol execution provenance and deterministic production-capable, test-only, and unknown-provenance coverage counts.

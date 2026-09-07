@@ -1,0 +1,607 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v4:program-semantic-model",
+  "title": "Fortress Program Semantic Model v4",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "semantic_version",
+    "project_id",
+    "source_identity",
+    "analyzers",
+    "languages",
+    "packages",
+    "nominal_types",
+    "impls",
+    "symbols",
+    "types",
+    "calls",
+    "bodies",
+    "value_transfers",
+    "transformations",
+    "state_reads",
+    "mutations",
+    "module_boundaries",
+    "call_topology",
+    "resolution_summary",
+    "coverage",
+    "analyzer_coherency",
+    "unsupported_semantics",
+    "provenance"
+  ],
+  "properties": {
+    "$schema": { "const": "urn:fortress:schema:v4:program-semantic-model" },
+    "schema_version": { "const": 4 },
+    "semantic_version": { "$ref": "#/$defs/semver" },
+    "project_id": { "oneOf": [{ "$ref": "#/$defs/stable_id" }, { "type": "null" }] },
+    "source_identity": { "$ref": "#/$defs/digest" },
+    "analyzers": { "type": "array", "items": { "$ref": "#/$defs/analyzer" } },
+    "languages": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "packages": { "type": "array", "items": { "$ref": "#/$defs/package" } },
+    "nominal_types": { "type": "array", "items": { "$ref": "#/$defs/nominal_type" } },
+    "impls": { "type": "array", "items": { "$ref": "#/$defs/impl" } },
+    "symbols": { "type": "array", "items": { "$ref": "#/$defs/symbol" } },
+    "types": { "type": "array", "items": { "$ref": "#/$defs/type_fact" } },
+    "calls": { "type": "array", "items": { "$ref": "#/$defs/call" } },
+    "bodies": { "type": "array", "items": { "$ref": "#/$defs/body" } },
+    "value_transfers": { "type": "array", "items": { "$ref": "#/$defs/transfer" } },
+    "transformations": { "type": "array", "items": { "$ref": "#/$defs/transformation" } },
+    "state_reads": { "type": "array", "items": { "$ref": "#/$defs/state_read" } },
+    "mutations": { "type": "array", "items": { "$ref": "#/$defs/mutation" } },
+    "module_boundaries": { "type": "array", "items": { "$ref": "#/$defs/module_boundary" } },
+    "call_topology": { "$ref": "#/$defs/call_topology" },
+    "resolution_summary": { "$ref": "#/$defs/resolution_summary" },
+    "coverage": { "$ref": "#/$defs/coverage" },
+    "analyzer_coherency": { "$ref": "#/$defs/analyzer_coherency" },
+    "unsupported_semantics": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "provenance": { "$ref": "#/$defs/model_provenance" }
+  },
+  "$defs": {
+    "semver": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "stable_id": { "type": "string", "pattern": "^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)+$" },
+    "nullable_string": { "type": ["string", "null"] },
+    "string_array": { "type": "array", "items": { "type": "string" } },
+    "analyzer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "semantic_version", "language", "package_authority", "declaration_authority", "call_resolution_authority"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "semantic_version": { "$ref": "#/$defs/semver" },
+        "language": { "type": "string", "minLength": 1 },
+        "package_authority": { "type": "string", "minLength": 1 },
+        "declaration_authority": { "type": "string", "minLength": 1 },
+        "call_resolution_authority": { "type": "string", "minLength": 1 }
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["crate_name", "kind", "source_root"],
+      "properties": {
+        "crate_name": { "type": "string", "minLength": 1 },
+        "kind": { "enum": ["library", "binary", "test"] },
+        "source_root": { "type": "string", "minLength": 1 }
+      }
+    },
+    "package": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "manifest", "targets", "workspace_dependencies", "external_dependencies"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "manifest": { "type": "string", "minLength": 1 },
+        "targets": { "type": "array", "items": { "$ref": "#/$defs/target" } },
+        "workspace_dependencies": { "$ref": "#/$defs/string_array" },
+        "external_dependencies": { "$ref": "#/$defs/string_array" }
+      }
+    },
+    "location": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["line", "column"],
+      "properties": {
+        "line": { "type": "integer", "minimum": 1 },
+        "column": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "location", "symbol_context", "analyzer", "analyzer_semantic_version"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "location": { "$ref": "#/$defs/location" },
+        "symbol_context": { "$ref": "#/$defs/nullable_string" },
+        "analyzer": { "type": "string", "minLength": 1 },
+        "analyzer_semantic_version": { "$ref": "#/$defs/semver" }
+      }
+    },
+    "semantic_type": {
+      "oneOf": [
+        { "$ref": "#/$defs/type_unit" },
+        { "$ref": "#/$defs/type_never" },
+        { "$ref": "#/$defs/type_bool" },
+        { "$ref": "#/$defs/type_char" },
+        { "$ref": "#/$defs/type_integer" },
+        { "$ref": "#/$defs/type_float" },
+        { "$ref": "#/$defs/type_string" },
+        { "$ref": "#/$defs/type_tuple" },
+        { "$ref": "#/$defs/type_array" },
+        { "$ref": "#/$defs/type_slice" },
+        { "$ref": "#/$defs/type_reference" },
+        { "$ref": "#/$defs/type_pointer" },
+        { "$ref": "#/$defs/type_named" },
+        { "$ref": "#/$defs/type_generic" },
+        { "$ref": "#/$defs/type_option" },
+        { "$ref": "#/$defs/type_result" },
+        { "$ref": "#/$defs/type_function" },
+        { "$ref": "#/$defs/type_unknown" }
+      ]
+    },
+    "type_unit": { "type": "object", "additionalProperties": false, "required": ["kind"], "properties": { "kind": { "const": "unit" } } },
+    "type_never": { "type": "object", "additionalProperties": false, "required": ["kind"], "properties": { "kind": { "const": "never" } } },
+    "type_bool": { "type": "object", "additionalProperties": false, "required": ["kind"], "properties": { "kind": { "const": "bool" } } },
+    "type_char": { "type": "object", "additionalProperties": false, "required": ["kind"], "properties": { "kind": { "const": "char" } } },
+    "type_integer": { "type": "object", "additionalProperties": false, "required": ["kind", "family"], "properties": { "kind": { "const": "integer" }, "family": { "type": "string" } } },
+    "type_float": { "type": "object", "additionalProperties": false, "required": ["kind", "family"], "properties": { "kind": { "const": "float" }, "family": { "type": "string" } } },
+    "type_string": { "type": "object", "additionalProperties": false, "required": ["kind", "representation"], "properties": { "kind": { "const": "string" }, "representation": { "type": "string" } } },
+    "type_tuple": { "type": "object", "additionalProperties": false, "required": ["kind", "elements"], "properties": { "kind": { "const": "tuple" }, "elements": { "type": "array", "items": { "$ref": "#/$defs/semantic_type" } } } },
+    "type_array": { "type": "object", "additionalProperties": false, "required": ["kind", "element", "length"], "properties": { "kind": { "const": "array" }, "element": { "$ref": "#/$defs/semantic_type" }, "length": { "type": "string" } } },
+    "type_slice": { "type": "object", "additionalProperties": false, "required": ["kind", "element"], "properties": { "kind": { "const": "slice" }, "element": { "$ref": "#/$defs/semantic_type" } } },
+    "type_reference": { "type": "object", "additionalProperties": false, "required": ["kind", "mutable", "lifetime", "target"], "properties": { "kind": { "const": "reference" }, "mutable": { "type": "boolean" }, "lifetime": { "$ref": "#/$defs/nullable_string" }, "target": { "$ref": "#/$defs/semantic_type" } } },
+    "type_pointer": { "type": "object", "additionalProperties": false, "required": ["kind", "mutable", "target"], "properties": { "kind": { "const": "pointer" }, "mutable": { "type": "boolean" }, "target": { "$ref": "#/$defs/semantic_type" } } },
+    "type_named": { "type": "object", "additionalProperties": false, "required": ["kind", "name", "arguments"], "properties": { "kind": { "const": "named" }, "name": { "type": "string" }, "arguments": { "type": "array", "items": { "$ref": "#/$defs/semantic_type" } } } },
+    "type_generic": { "type": "object", "additionalProperties": false, "required": ["kind", "name"], "properties": { "kind": { "const": "generic_parameter" }, "name": { "type": "string" } } },
+    "type_option": { "type": "object", "additionalProperties": false, "required": ["kind", "value"], "properties": { "kind": { "const": "option" }, "value": { "$ref": "#/$defs/semantic_type" } } },
+    "type_result": { "type": "object", "additionalProperties": false, "required": ["kind", "success", "error"], "properties": { "kind": { "const": "result" }, "success": { "$ref": "#/$defs/semantic_type" }, "error": { "$ref": "#/$defs/semantic_type" } } },
+    "type_function": { "type": "object", "additionalProperties": false, "required": ["kind", "parameters", "result"], "properties": { "kind": { "const": "function" }, "parameters": { "type": "array", "items": { "$ref": "#/$defs/semantic_type" } }, "result": { "$ref": "#/$defs/semantic_type" } } },
+    "type_unknown": { "type": "object", "additionalProperties": false, "required": ["kind", "rust_spelling"], "properties": { "kind": { "const": "unknown" }, "rust_spelling": { "type": "string" } } },
+    "type_fact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "language", "semantic", "rust_spellings"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^type:sha256:[0-9a-f]{64}$" },
+        "language": { "const": "rust" },
+        "semantic": { "$ref": "#/$defs/semantic_type" },
+        "rust_spellings": { "$ref": "#/$defs/string_array" }
+      }
+    },
+    "interface_type": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type_id", "rust_spelling", "resolution"],
+      "properties": {
+        "type_id": { "type": "string", "pattern": "^type:sha256:[0-9a-f]{64}$" },
+        "rust_spelling": { "type": "string" },
+        "resolution": { "enum": ["DECLARED_EXACT", "UNSUPPORTED"] }
+      }
+    },
+    "parameter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["position", "name", "parameter_type", "provenance"],
+      "properties": {
+        "position": { "type": "integer", "minimum": 0 },
+        "name": { "type": "string" },
+        "parameter_type": { "$ref": "#/$defs/interface_type" },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+    "receiver": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["mutable", "by_reference", "explicit_type"],
+      "properties": {
+        "mutable": { "type": "boolean" },
+        "by_reference": { "type": "boolean" },
+        "explicit_type": { "oneOf": [{ "$ref": "#/$defs/interface_type" }, { "type": "null" }] }
+      }
+    },
+    "visibility": {
+      "oneOf": [
+        { "enum": ["private", "crate", "public"] },
+        { "type": "object", "additionalProperties": false, "required": ["restricted"], "properties": { "restricted": { "type": "string" } } }
+      ]
+    },
+    "nominal_field": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "position", "field_type", "provenance"],
+      "properties": {
+        "name": { "type": "string" },
+        "position": { "type": "integer", "minimum": 0 },
+        "field_type": { "$ref": "#/$defs/interface_type" },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+    "nominal_variant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "fields", "provenance"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "fields": { "type": "array", "items": { "$ref": "#/$defs/nominal_field" } },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+    "nominal_type": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "qualified_name", "language", "package", "crate_name", "rust_module", "fortress_module", "kind", "generic_parameters", "fields", "variants", "trait_methods", "alias_target", "alias_transparent", "provenance"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^rust_nominal:sha256:[0-9a-f]{64}$" },
+        "qualified_name": { "type": "string", "minLength": 1 },
+        "language": { "const": "rust" },
+        "package": { "type": "string", "minLength": 1 },
+        "crate_name": { "type": "string", "minLength": 1 },
+        "rust_module": { "type": "string" },
+        "fortress_module": { "$ref": "#/$defs/stable_id" },
+        "kind": { "enum": ["struct", "enum", "trait", "type_alias"] },
+        "generic_parameters": { "$ref": "#/$defs/string_array" },
+        "fields": { "type": "array", "items": { "$ref": "#/$defs/nominal_field" } },
+        "variants": { "type": "array", "items": { "$ref": "#/$defs/nominal_variant" } },
+        "trait_methods": { "$ref": "#/$defs/string_array" },
+        "alias_target": { "oneOf": [{ "$ref": "#/$defs/interface_type" }, { "type": "null" }] },
+        "alias_transparent": { "type": "boolean" },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+    "impl": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "package", "crate_name", "rust_module", "fortress_module", "kind", "self_type", "trait_type", "generic_parameters", "methods", "resolution", "provenance"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^rust_impl:sha256:[0-9a-f]{64}$" },
+        "package": { "type": "string", "minLength": 1 },
+        "crate_name": { "type": "string", "minLength": 1 },
+        "rust_module": { "type": "string" },
+        "fortress_module": { "$ref": "#/$defs/stable_id" },
+        "kind": { "enum": ["inherent", "trait"] },
+        "self_type": { "$ref": "#/$defs/interface_type" },
+        "trait_type": { "oneOf": [{ "$ref": "#/$defs/interface_type" }, { "type": "null" }] },
+        "generic_parameters": { "$ref": "#/$defs/string_array" },
+        "methods": { "$ref": "#/$defs/string_array" },
+        "resolution": { "enum": ["RESOLVED_LOCAL", "EXTERNAL_OR_GENERIC", "UNRESOLVED"] },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+    "symbol": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "qualified_name", "language", "package", "crate_name", "rust_module", "fortress_module", "classification", "execution_provenance", "source_path", "kind", "owner_type", "owner_trait", "parameters", "return_type", "receiver", "generic_parameters", "lifetimes", "qualifiers", "visibility", "body_state", "provenance"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^rust_symbol:sha256:[0-9a-f]{64}$" },
+        "qualified_name": { "type": "string", "minLength": 1 },
+        "language": { "const": "rust" },
+        "package": { "type": "string", "minLength": 1 },
+        "crate_name": { "type": "string", "minLength": 1 },
+        "rust_module": { "type": "string" },
+        "fortress_module": { "$ref": "#/$defs/stable_id" },
+        "classification": { "enum": ["production", "testing"] },
+        "execution_provenance": { "enum": ["PRODUCTION_CAPABLE", "TEST_ONLY", "UNKNOWN"] },
+        "source_path": { "type": "string", "minLength": 1 },
+        "kind": { "enum": ["free_function", "associated_function", "inherent_method", "trait_method_declaration", "trait_method_implementation"] },
+        "owner_type": { "$ref": "#/$defs/nullable_string" },
+        "owner_trait": { "$ref": "#/$defs/nullable_string" },
+        "parameters": { "type": "array", "items": { "$ref": "#/$defs/parameter" } },
+        "return_type": { "$ref": "#/$defs/interface_type" },
+        "receiver": { "$ref": "#/$defs/receiver" },
+        "generic_parameters": { "$ref": "#/$defs/string_array" },
+        "lifetimes": { "$ref": "#/$defs/string_array" },
+        "qualifiers": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["is_async", "is_unsafe", "is_const"],
+          "properties": {
+            "is_async": { "type": "boolean" },
+            "is_unsafe": { "type": "boolean" },
+            "is_const": { "type": "boolean" }
+          }
+        },
+        "visibility": { "$ref": "#/$defs/visibility" },
+        "body_state": { "enum": ["DECLARATION", "DEFINITION"] },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+    "call_evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reference", "argument_count", "receiver", "provenance"],
+      "properties": {
+        "reference": { "type": "string" },
+        "argument_count": { "type": "integer", "minimum": 0 },
+        "receiver": { "oneOf": [{ "$ref": "#/$defs/place" }, { "type": "null" }] },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+    "call": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "caller", "state", "authority", "reason", "callee", "boundary_target_module", "external_target", "candidate_callees", "evidence"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^call:sha256:[0-9a-f]{64}$" },
+        "caller": { "type": "string" },
+        "state": { "enum": ["RESOLVED_STATIC", "EXTERNAL", "DYNAMIC_DISPATCH", "UNRESOLVED", "UNSUPPORTED", "INVALID"] },
+        "authority": { "enum": ["cargo_manifest", "structural_exact", "type_directed_exact", "exact_external_owner", "conservative_candidate_set", "insufficient_type_information", "conservative", "unsupported"] },
+        "reason": { "oneOf": [{ "enum": ["UNKNOWN_RECEIVER_TYPE", "AMBIGUOUS_LOCAL_METHOD", "GENERIC_RECEIVER", "TRAIT_OBJECT_DISPATCH", "UNRESOLVED_TRAIT_SELECTION", "EXTERNAL_RECEIVER", "UNSUPPORTED_DEREF", "MACRO_GENERATED", "FUNCTION_POINTER", "CLOSURE_TARGET", "UNSUPPORTED_SYNTAX", "UNKNOWN_PATH"] }, { "type": "null" }] },
+        "callee": { "$ref": "#/$defs/nullable_string" },
+        "boundary_target_module": { "$ref": "#/$defs/nullable_string" },
+        "external_target": { "$ref": "#/$defs/nullable_string" },
+        "candidate_callees": { "$ref": "#/$defs/string_array" },
+        "evidence": { "type": "array", "items": { "$ref": "#/$defs/call_evidence" } }
+      }
+    },
+    "pattern": {
+      "oneOf": [
+        { "type": "object", "additionalProperties": false, "required": ["kind"], "properties": { "kind": { "const": "wildcard" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "name"], "properties": { "kind": { "const": "binding" }, "name": { "type": "string" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "name", "fields"], "properties": { "kind": { "const": "variant" }, "name": { "type": "string" }, "fields": { "type": "array", "items": { "$ref": "#/$defs/pattern" } } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "elements"], "properties": { "kind": { "const": "tuple" }, "elements": { "type": "array", "items": { "$ref": "#/$defs/pattern" } } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "rust_spelling"], "properties": { "kind": { "const": "unsupported" }, "rust_spelling": { "type": "string" } } }
+      ]
+    },
+    "expression": {
+      "oneOf": [
+        { "type": "object", "additionalProperties": false, "required": ["kind", "name"], "properties": { "kind": { "const": "binding" }, "name": { "type": "string" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "value"], "properties": { "kind": { "const": "boolean" }, "value": { "type": "boolean" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "value"], "properties": { "kind": { "const": "integer" }, "value": { "type": "string" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind"], "properties": { "kind": { "const": "unit" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "name"], "properties": { "kind": { "const": "variant" }, "name": { "type": "string" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "elements"], "properties": { "kind": { "const": "tuple" }, "elements": { "type": "array", "items": { "$ref": "#/$defs/expression" } } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "base", "field"], "properties": { "kind": { "const": "field" }, "base": { "$ref": "#/$defs/expression" }, "field": { "type": "string", "minLength": 1 } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "constructor", "arguments"], "properties": { "kind": { "const": "construction" }, "constructor": { "type": "string" }, "arguments": { "type": "array", "items": { "$ref": "#/$defs/expression" } } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "pattern", "value"], "properties": { "kind": { "const": "pattern_test" }, "pattern": { "$ref": "#/$defs/pattern" }, "value": { "$ref": "#/$defs/expression" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "reference", "arguments"], "properties": { "kind": { "const": "call" }, "reference": { "type": "string" }, "arguments": { "type": "array", "items": { "$ref": "#/$defs/expression" } } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "receiver", "method", "arguments"], "properties": { "kind": { "const": "method_call" }, "receiver": { "$ref": "#/$defs/expression" }, "method": { "type": "string" }, "arguments": { "type": "array", "items": { "$ref": "#/$defs/expression" } } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "operator", "left", "right"], "properties": { "kind": { "const": "binary" }, "operator": { "type": "string" }, "left": { "$ref": "#/$defs/expression" }, "right": { "$ref": "#/$defs/expression" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "operator", "value"], "properties": { "kind": { "const": "unary" }, "operator": { "type": "string" }, "value": { "$ref": "#/$defs/expression" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "value"], "properties": { "kind": { "const": "try" }, "value": { "$ref": "#/$defs/expression" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "mutable", "value"], "properties": { "kind": { "const": "reference" }, "mutable": { "type": "boolean" }, "value": { "$ref": "#/$defs/expression" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "operation"], "properties": { "kind": { "const": "exceptional" }, "operation": { "enum": ["rust.macro.panic", "rust.macro.unreachable", "rust.macro.todo", "rust.macro.assert", "rust.macro.assert_eq", "rust.macro.assert_ne", "rust.macro.debug_assert", "rust.macro.debug_assert_eq", "rust.macro.debug_assert_ne"] } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "operation"], "properties": { "kind": { "const": "structural_effect" }, "operation": { "enum": ["rust.index", "rust.unsafe_block"] } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "rust_spelling"], "properties": { "kind": { "const": "unsupported" }, "rust_spelling": { "type": "string" } } }
+      ]
+    },
+    "match_arm": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pattern", "guard", "body", "provenance"],
+      "properties": {
+        "pattern": { "$ref": "#/$defs/pattern" },
+        "guard": { "oneOf": [{ "$ref": "#/$defs/expression" }, { "type": "null" }] },
+        "body": { "type": "array", "items": { "$ref": "#/$defs/statement" } },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+    "statement": {
+      "oneOf": [
+        { "type": "object", "additionalProperties": false, "required": ["kind", "pattern", "value", "provenance"], "properties": { "kind": { "const": "let" }, "pattern": { "$ref": "#/$defs/pattern" }, "value": { "oneOf": [{ "$ref": "#/$defs/expression" }, { "type": "null" }] }, "provenance": { "$ref": "#/$defs/provenance" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "target", "value", "provenance"], "properties": { "kind": { "const": "assign" }, "target": { "type": "string" }, "value": { "$ref": "#/$defs/expression" }, "provenance": { "$ref": "#/$defs/provenance" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "value", "provenance"], "properties": { "kind": { "const": "expression" }, "value": { "$ref": "#/$defs/expression" }, "provenance": { "$ref": "#/$defs/provenance" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "value", "provenance"], "properties": { "kind": { "const": "return" }, "value": { "oneOf": [{ "$ref": "#/$defs/expression" }, { "type": "null" }] }, "provenance": { "$ref": "#/$defs/provenance" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "condition", "then_branch", "else_branch", "provenance"], "properties": { "kind": { "const": "if" }, "condition": { "$ref": "#/$defs/expression" }, "then_branch": { "type": "array", "items": { "$ref": "#/$defs/statement" } }, "else_branch": { "type": "array", "items": { "$ref": "#/$defs/statement" } }, "provenance": { "$ref": "#/$defs/provenance" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "value", "arms", "provenance"], "properties": { "kind": { "const": "match" }, "value": { "$ref": "#/$defs/expression" }, "arms": { "type": "array", "items": { "$ref": "#/$defs/match_arm" } }, "provenance": { "$ref": "#/$defs/provenance" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "pattern", "value", "body", "provenance"], "properties": { "kind": { "const": "while_let" }, "pattern": { "$ref": "#/$defs/pattern" }, "value": { "$ref": "#/$defs/expression" }, "body": { "type": "array", "items": { "$ref": "#/$defs/statement" } }, "provenance": { "$ref": "#/$defs/provenance" } } }
+      ]
+    },
+    "body": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["symbol", "statements", "provenance"],
+      "properties": {
+        "symbol": { "type": "string", "pattern": "^rust_symbol:sha256:[0-9a-f]{64}$" },
+        "statements": { "type": "array", "items": { "$ref": "#/$defs/statement" } },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+    "place": {
+      "oneOf": [
+        { "type": "object", "additionalProperties": false, "required": ["kind", "name", "static_type"], "properties": { "kind": { "const": "binding" }, "name": { "type": "string" }, "static_type": { "$ref": "#/$defs/nullable_string" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "base", "nominal_owner", "field", "static_type"], "properties": { "kind": { "const": "field" }, "base": { "$ref": "#/$defs/place" }, "nominal_owner": { "$ref": "#/$defs/nullable_string" }, "field": { "type": "string", "minLength": 1 }, "static_type": { "$ref": "#/$defs/nullable_string" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "base", "position", "static_type"], "properties": { "kind": { "const": "tuple_field" }, "base": { "$ref": "#/$defs/place" }, "position": { "type": "integer", "minimum": 0 }, "static_type": { "$ref": "#/$defs/nullable_string" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "base", "static_type"], "properties": { "kind": { "const": "dereference" }, "base": { "$ref": "#/$defs/place" }, "static_type": { "$ref": "#/$defs/nullable_string" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "rust_spelling"], "properties": { "kind": { "const": "unsupported" }, "rust_spelling": { "type": "string" } } }
+      ]
+    },
+    "state_read": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "symbol", "place", "resolution", "provenance"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^state_read:sha256:[0-9a-f]{64}$" },
+        "symbol": { "type": "string" },
+        "place": { "$ref": "#/$defs/place" },
+        "resolution": { "enum": ["RESOLVED_EXACT", "TYPE_UNKNOWN", "ALIAS_UNKNOWN", "UNSUPPORTED"] },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+    "mutation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "symbol", "target", "mutation_kind", "value", "value_type", "resolution", "provenance"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^mutation:sha256:[0-9a-f]{64}$" },
+        "symbol": { "type": "string" },
+        "target": { "$ref": "#/$defs/place" },
+        "mutation_kind": { "enum": ["assignment", "compound_assignment", "mutable_field_update"] },
+        "value": { "$ref": "#/$defs/expression" },
+        "value_type": { "$ref": "#/$defs/nullable_string" },
+        "resolution": { "enum": ["RESOLVED_EXACT", "TYPE_UNKNOWN", "ALIAS_UNKNOWN", "UNSUPPORTED"] },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+    "endpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["symbol", "role", "name", "static_type"],
+      "properties": {
+        "symbol": { "type": "string" },
+        "role": { "type": "string" },
+        "name": { "type": "string" },
+        "static_type": { "$ref": "#/$defs/nullable_string" }
+      }
+    },
+    "transfer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "producer", "consumer", "resolution", "provenance"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^value_transfer:sha256:[0-9a-f]{64}$" },
+        "kind": { "enum": ["parameter_to_binding", "expression_to_binding", "assignment", "expression_to_return", "argument_to_parameter", "return_to_consumer"] },
+        "producer": { "$ref": "#/$defs/endpoint" },
+        "consumer": { "$ref": "#/$defs/endpoint" },
+        "resolution": { "enum": ["SYNTAX_EXACT", "RESOLVED_STATIC_CALL", "TYPE_UNKNOWN", "UNSUPPORTED"] },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+    "transformation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "symbol", "kind", "source_type", "target_type", "provenance"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^transformation:sha256:[0-9a-f]{64}$" },
+        "symbol": { "type": "string" },
+        "kind": { "enum": ["construction", "destructuring", "cast", "conversion_call", "option_transition", "result_transition", "pattern_narrowing", "reference_transition"] },
+        "source_type": { "$ref": "#/$defs/nullable_string" },
+        "target_type": { "$ref": "#/$defs/nullable_string" },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+    "module_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["caller", "callee", "source_module", "target_module", "callee_module", "call", "evidence"],
+      "properties": {
+        "caller": { "type": "string" },
+        "callee": { "type": "string" },
+        "source_module": { "$ref": "#/$defs/stable_id" },
+        "target_module": { "$ref": "#/$defs/stable_id" },
+        "callee_module": { "$ref": "#/$defs/stable_id" },
+        "call": { "type": "string" },
+        "evidence": { "type": "array", "items": { "$ref": "#/$defs/call_evidence" } }
+      }
+    },
+    "string_map": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/string_array" }
+    },
+    "component": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "symbols", "recursive"],
+      "properties": {
+        "id": { "type": "string" },
+        "symbols": { "$ref": "#/$defs/string_array" },
+        "recursive": { "type": "boolean" }
+      }
+    },
+    "call_topology": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["direct_callees", "direct_callers", "transitive_reachability", "strongly_connected_components", "recursive_symbols", "entry_candidates", "leaf_symbols", "cross_package_calls"],
+      "properties": {
+        "direct_callees": { "$ref": "#/$defs/string_map" },
+        "direct_callers": { "$ref": "#/$defs/string_map" },
+        "transitive_reachability": { "$ref": "#/$defs/string_map" },
+        "strongly_connected_components": { "type": "array", "items": { "$ref": "#/$defs/component" } },
+        "recursive_symbols": { "$ref": "#/$defs/string_array" },
+        "entry_candidates": { "$ref": "#/$defs/string_array" },
+        "leaf_symbols": { "$ref": "#/$defs/string_array" },
+        "cross_package_calls": { "$ref": "#/$defs/string_array" }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_files", "packages", "executable_symbols", "nominal_types", "nominal_structs", "nominal_enums", "nominal_traits", "nominal_type_aliases", "nominal_fields", "nominal_variants", "impls", "production_symbols", "testing_symbols", "production_capable_symbols", "test_only_symbols", "unknown_provenance_symbols", "free_functions", "associated_functions", "inherent_methods", "trait_method_declarations", "trait_method_implementations", "resolved_static_calls", "external_calls", "dynamic_dispatch_calls", "unresolved_calls", "unsupported_calls", "invalid_calls", "cross_module_calls", "cross_package_calls", "recursive_components", "value_transfers", "transformations", "state_reads", "mutations", "resolved_mutations", "uncertain_mutations"],
+      "properties": {
+        "source_files": { "type": "integer", "minimum": 0 },
+        "packages": { "type": "integer", "minimum": 0 },
+        "executable_symbols": { "type": "integer", "minimum": 0 },
+        "nominal_types": { "type": "integer", "minimum": 0 },
+        "nominal_structs": { "type": "integer", "minimum": 0 },
+        "nominal_enums": { "type": "integer", "minimum": 0 },
+        "nominal_traits": { "type": "integer", "minimum": 0 },
+        "nominal_type_aliases": { "type": "integer", "minimum": 0 },
+        "nominal_fields": { "type": "integer", "minimum": 0 },
+        "nominal_variants": { "type": "integer", "minimum": 0 },
+        "impls": { "type": "integer", "minimum": 0 },
+        "production_symbols": { "type": "integer", "minimum": 0 },
+        "testing_symbols": { "type": "integer", "minimum": 0 },
+        "production_capable_symbols": { "type": "integer", "minimum": 0 },
+        "test_only_symbols": { "type": "integer", "minimum": 0 },
+        "unknown_provenance_symbols": { "type": "integer", "minimum": 0 },
+        "free_functions": { "type": "integer", "minimum": 0 },
+        "associated_functions": { "type": "integer", "minimum": 0 },
+        "inherent_methods": { "type": "integer", "minimum": 0 },
+        "trait_method_declarations": { "type": "integer", "minimum": 0 },
+        "trait_method_implementations": { "type": "integer", "minimum": 0 },
+        "resolved_static_calls": { "type": "integer", "minimum": 0 },
+        "external_calls": { "type": "integer", "minimum": 0 },
+        "dynamic_dispatch_calls": { "type": "integer", "minimum": 0 },
+        "unresolved_calls": { "type": "integer", "minimum": 0 },
+        "unsupported_calls": { "type": "integer", "minimum": 0 },
+        "invalid_calls": { "type": "integer", "minimum": 0 },
+        "cross_module_calls": { "type": "integer", "minimum": 0 },
+        "cross_package_calls": { "type": "integer", "minimum": 0 },
+        "recursive_components": { "type": "integer", "minimum": 0 },
+        "value_transfers": { "type": "integer", "minimum": 0 },
+        "transformations": { "type": "integer", "minimum": 0 },
+        "state_reads": { "type": "integer", "minimum": 0 },
+        "mutations": { "type": "integer", "minimum": 0 },
+        "resolved_mutations": { "type": "integer", "minimum": 0 },
+        "uncertain_mutations": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "resolution_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["resolved_static", "external", "dynamic_dispatch", "unresolved", "unsupported", "invalid", "reasons", "fixed_point_iterations"],
+      "properties": {
+        "resolved_static": { "type": "integer", "minimum": 0 },
+        "external": { "type": "integer", "minimum": 0 },
+        "dynamic_dispatch": { "type": "integer", "minimum": 0 },
+        "unresolved": { "type": "integer", "minimum": 0 },
+        "unsupported": { "type": "integer", "minimum": 0 },
+        "invalid": { "type": "integer", "minimum": 0 },
+        "reasons": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 } },
+        "fixed_point_iterations": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "analyzer_coherency": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "checked_cross_module_calls", "missing_observation_edges"],
+      "properties": {
+        "status": { "const": "coherent" },
+        "checked_cross_module_calls": { "type": "integer", "minimum": 0 },
+        "missing_observation_edges": { "$ref": "#/$defs/string_array" }
+      }
+    },
+    "source_input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "model_provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["identity_kind", "semantic_inputs", "ownership_authority", "testing_authority"],
+      "properties": {
+        "identity_kind": { "const": "snapshot_bound_semantic_input_subset" },
+        "semantic_inputs": { "type": "array", "items": { "$ref": "#/$defs/source_input" } },
+        "ownership_authority": { "enum": ["ccg_physical_module_containment", "declared_modules_and_cargo_analysis_territories"] },
+        "testing_authority": { "enum": ["ccg_verification_topology", "test_governance_unbound"] }
+      }
+    }
+  }
+}

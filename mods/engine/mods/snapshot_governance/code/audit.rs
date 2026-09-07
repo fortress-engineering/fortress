@@ -105,7 +105,7 @@ use crate::state_effect_analysis::{
 };
 
 /// Current stable machine-readable snapshot audit schema family.
-pub const AUDIT_RESULT_SCHEMA_VERSION: u16 = 5;
+pub const AUDIT_RESULT_SCHEMA_VERSION: u16 = 6;
 
 /// Machine-local cache and exact semantic key for one repository projection.
 pub struct RepositoryProjectionCache {
@@ -427,10 +427,11 @@ impl AuditResult {
         output.push_str("\nFinding governance:\n");
         let _ = write!(
             output,
-            "  new/blocking: {}\n  baselined/non-blocking: {}\n  excepted/non-blocking: {}\n  reintroduced/blocking: {}\n  resolved baseline entries: {}\n  baseline-ineligible: {}\n",
+            "  new/blocking: {}\n  baselined/non-blocking: {}\n  excepted/non-blocking: {}\n  advisory-evidence/non-blocking: {}\n  reintroduced/blocking: {}\n  resolved baseline entries: {}\n  baseline-ineligible: {}\n",
             governance.new_blocking,
             governance.baselined_non_blocking,
             governance.excepted_non_blocking,
+            governance.advisory_non_blocking,
             governance.reintroduced_blocking,
             governance.resolved_baseline_entries,
             governance.baseline_ineligible,
@@ -1047,7 +1048,7 @@ fn compile_source_architecture_from(
     observations.sort();
     observations.dedup();
     let languages = [
-        LanguageAssignment::new("rs", "rust", "fortress-core/program-semantics-v3"),
+        LanguageAssignment::new("rs", "rust", "fortress-core/program-semantics-v4"),
         LanguageAssignment::new(
             "py",
             "python",
@@ -1069,7 +1070,7 @@ fn compile_source_architecture_from(
         })
         .collect::<Vec<_>>();
     let available_adapters = [
-        "fortress-core/program-semantics-v3".to_owned(),
+        "fortress-core/program-semantics-v4".to_owned(),
         "fortress-core/rust-source-profile-v1".to_owned(),
     ]
     .into_iter()
@@ -1381,7 +1382,7 @@ fn compile_analysis_source_architecture(
     observations.sort();
     observations.dedup();
     let languages = [
-        LanguageAssignment::new("rs", "rust", "fortress-core/program-semantics-v3"),
+        LanguageAssignment::new("rs", "rust", "fortress-core/program-semantics-v4"),
         LanguageAssignment::new(
             "py",
             "python",
@@ -1404,7 +1405,7 @@ fn compile_analysis_source_architecture(
         })
         .collect::<Vec<_>>();
     let available_adapters = [
-        "fortress-core/program-semantics-v3".to_owned(),
+        "fortress-core/program-semantics-v4".to_owned(),
         "fortress-core/rust-source-profile-v1".to_owned(),
     ]
     .into_iter()
@@ -2189,7 +2190,7 @@ fn certification_artifacts(
         ),
         (
             "psm",
-            "urn:fortress:schema:v3:program-semantic-model",
+            "urn:fortress:schema:v4:program-semantic-model",
             "info/program_semantic_model.json",
             stack
                 .models
@@ -2221,7 +2222,7 @@ fn certification_artifacts(
         ),
         (
             "state_effect",
-            "urn:fortress:schema:v2:state-effect-analysis",
+            "urn:fortress:schema:v3:state-effect-analysis",
             "info/state_effect_analysis.json",
             stack
                 .models

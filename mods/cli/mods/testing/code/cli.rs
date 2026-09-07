@@ -233,7 +233,7 @@ fn semantic_conformance_renders_zero_coverage_as_not_evaluable() {
     let document: serde_json::Value = serde_json::from_slice(&json.stdout).expect("JSON");
     assert_eq!(
         document["$schema"],
-        "urn:fortress:schema:v3:semantic-conformance"
+        "urn:fortress:schema:v4:semantic-conformance"
     );
     let module = document["modules"]
         .as_array()
@@ -322,7 +322,7 @@ fn semantic_conformance_groups_causal_paths_by_operation_site_with_readable_symb
     assert_eq!(human.status.code(), Some(1));
     let output = String::from_utf8_lossy(&human.stdout);
     assert!(
-        output.contains("Blocking findings (repository-wide): 3"),
+        output.contains("Block-supported findings (repository-wide): 3"),
         "{output}"
     );
     assert!(output.contains("Distinct offending sites: 1"), "{output}");
@@ -334,6 +334,46 @@ fn semantic_conformance_groups_causal_paths_by_operation_site_with_readable_symb
     assert!(!output.contains("rust_symbol:sha256:"), "{output}");
     let repeated = run(&["semantic-conformance", &fixture.argument()]);
     assert_eq!(human.stdout, repeated.stdout);
+}
+
+/// `T-TF-CLI-0001-R17-007`
+/// Fortress requirement: TF-CLI-0001-R17
+#[test]
+fn test_only_semantic_violation_is_rendered_as_raw_advisory_evidence() {
+    let fixture = SemanticCoverageFixture::with_policy(
+        &[],
+        &["filesystem"],
+        "#[cfg(test)] mod tests { fn writes() { let _ = std::fs::write(\"output\", b\"x\"); } }\n",
+    );
+    let human = run(&["semantic-conformance", &fixture.argument()]);
+    assert_eq!(human.status.code(), Some(1));
+    let output = String::from_utf8_lossy(&human.stdout);
+    assert!(
+        output.contains("Raw semantic conformance: FAIL"),
+        "{output}"
+    );
+    assert!(output.contains("ADVISORY_ONLY"), "{output}");
+    assert!(output.contains("TEST_ONLY_EVIDENCE"), "{output}");
+    assert!(output.contains("test-only 1"), "{output}");
+    assert!(
+        output.contains(
+            "All currently supported violating evidence originates in Rust test-only execution"
+        ),
+        "{output}"
+    );
+
+    let check = run(&["check", &fixture.argument(), "--format=json"]);
+    let audit: serde_json::Value = serde_json::from_slice(&check.stdout).expect("check JSON");
+    let governed = audit["finding_governance"]["findings"]
+        .as_array()
+        .expect("governed findings");
+    let semantic = governed
+        .iter()
+        .find(|finding| finding["rule_id"] == "ARCH-SEMANTIC-001")
+        .expect("semantic finding remains visible");
+    assert_eq!(semantic["raw_conformance"], "FAIL");
+    assert_eq!(semantic["evidence_eligibility"], "ADVISORY_ONLY");
+    assert_eq!(semantic["enforcement"], "NON_BLOCKING");
 }
 
 /// `T-TF-CLI-0001-R17-006`
@@ -1182,7 +1222,7 @@ fn audit_json_is_valid_and_repeatable() {
     assert_eq!(first.stdout, second.stdout);
     let value: serde_json::Value =
         serde_json::from_slice(&first.stdout).expect("audit output is JSON");
-    assert_eq!(value["schema_version"], 5);
+    assert_eq!(value["schema_version"], 6);
     assert_eq!(value["outcome"], "PASS");
     assert!(value["diagnostics"].is_array());
     assert!(value["unsupported_analysis"].is_array());
@@ -1343,9 +1383,9 @@ fn psm_json_is_observed_schema_versioned_and_repeatable() {
         serde_json::from_slice(&first.stdout).expect("PSM output is JSON");
     assert_eq!(
         value["$schema"],
-        "urn:fortress:schema:v3:program-semantic-model"
+        "urn:fortress:schema:v4:program-semantic-model"
     );
-    assert_eq!(value["schema_version"], 3);
+    assert_eq!(value["schema_version"], 4);
     assert_eq!(value["analyzer_coherency"]["status"], "coherent");
 }
 
@@ -1414,9 +1454,9 @@ fn state_effect_json_is_schema_versioned_and_repeatable() {
         serde_json::from_slice(&first.stdout).expect("state/effect output is JSON");
     assert_eq!(
         value["$schema"],
-        "urn:fortress:schema:v2:state-effect-analysis"
+        "urn:fortress:schema:v3:state-effect-analysis"
     );
-    assert_eq!(value["schema_version"], 2);
+    assert_eq!(value["schema_version"], 3);
     assert_eq!(value["coverage"]["violations"], 0);
 }
 

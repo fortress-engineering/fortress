@@ -1801,7 +1801,7 @@ pub fn observations_from_psm(psm: &ProgramSemanticModel) -> Vec<SourceObservatio
             symbol.source_path(),
             SemanticRegion::Declarations,
             RegionCoverage::Observed,
-            "fortress-core/program-semantics-v3",
+            "fortress-core/program-semantics-v4",
             format!("symbol:{}", symbol.id()),
             Some(symbol.provenance().location().line()),
         ));
@@ -1810,7 +1810,7 @@ pub fn observations_from_psm(psm: &ProgramSemanticModel) -> Vec<SourceObservatio
                 symbol.source_path(),
                 SemanticRegion::Implementation,
                 RegionCoverage::Observed,
-                "fortress-core/program-semantics-v3",
+                "fortress-core/program-semantics-v4",
                 format!("symbol-body:{}", symbol.id()),
                 Some(symbol.provenance().location().line()),
             ));
@@ -1820,7 +1820,7 @@ pub fn observations_from_psm(psm: &ProgramSemanticModel) -> Vec<SourceObservatio
                 symbol.source_path(),
                 SemanticRegion::PublicInterface,
                 RegionCoverage::Observed,
-                "fortress-core/program-semantics-v3",
+                "fortress-core/program-semantics-v4",
                 format!("public-symbol:{}", symbol.id()),
                 Some(symbol.provenance().location().line()),
             ));
@@ -1831,7 +1831,7 @@ pub fn observations_from_psm(psm: &ProgramSemanticModel) -> Vec<SourceObservatio
             nominal.provenance().path(),
             SemanticRegion::Declarations,
             RegionCoverage::Observed,
-            "fortress-core/program-semantics-v3",
+            "fortress-core/program-semantics-v4",
             format!("nominal-type:{}", nominal.id()),
             Some(nominal.provenance().location().line()),
         ));
@@ -1842,7 +1842,7 @@ pub fn observations_from_psm(psm: &ProgramSemanticModel) -> Vec<SourceObservatio
                 *path,
                 SemanticRegion::Dependencies,
                 RegionCoverage::Observed,
-                "fortress-core/program-semantics-v3",
+                "fortress-core/program-semantics-v4",
                 call.callee().map_or_else(
                     || format!("call:{:?}", call.state()),
                     |callee| format!("callee:{callee}"),
@@ -1858,7 +1858,7 @@ pub fn observations_from_psm(psm: &ProgramSemanticModel) -> Vec<SourceObservatio
             read.provenance().path(),
             SemanticRegion::State,
             RegionCoverage::Observed,
-            "fortress-core/program-semantics-v3",
+            "fortress-core/program-semantics-v4",
             format!("state-read:{}", read.symbol()),
             Some(read.provenance().location().line()),
         ));
@@ -1868,7 +1868,7 @@ pub fn observations_from_psm(psm: &ProgramSemanticModel) -> Vec<SourceObservatio
             mutation.provenance().path(),
             SemanticRegion::State,
             RegionCoverage::Observed,
-            "fortress-core/program-semantics-v3",
+            "fortress-core/program-semantics-v4",
             format!("mutation:{}", mutation.symbol()),
             Some(mutation.provenance().location().line()),
         ));

@@ -8,6 +8,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 
 use fortress_core::audit::ModuleInspection;
+use fortress_core::program_semantics::ExecutionProvenance;
 use fortress_core::semantic_conformance::{
     BlockingEligibility, ModuleEffectObservation, ModuleSemanticConformance, PolicyDisposition,
     PolicyTargetKind, SemanticConformanceEvaluation, SemanticConformanceState,
@@ -102,13 +103,15 @@ pub(crate) fn render_semantic_conformance(
     modules: &[&ModuleSemanticConformance],
 ) -> String {
     let mut output = format!(
-        "Fortress Semantic Conformance\nCommand result: {}\nBlocking findings (repository-wide): {}\nNot-evaluable findings (repository-wide): {}\nRendered Modules: {}\n",
+        "Fortress Semantic Conformance\nCommand result: {}\nRaw semantic findings (repository-wide): {}\nBlock-supported findings (repository-wide): {}\nAdvisory findings (repository-wide): {}\nNot-evaluable findings (repository-wide): {}\nRendered Modules: {}\n",
         if evaluation.is_success() {
             "SUCCESS"
         } else {
             "NON_SUCCESS"
         },
         evaluation.findings().len(),
+        evaluation.model().summary().blocking_findings(),
+        evaluation.model().summary().advisory_findings(),
         evaluation.coverage_findings().len(),
         modules.len(),
     );
@@ -201,6 +204,30 @@ fn render_semantic_module(
                     );
                 }
             }
+            for reason in claim.enforcement_reasons() {
+                let _ = writeln!(output, "      Enforcement reason: {reason}");
+                if reason == fortress_core::semantic_conformance::TEST_ONLY_EVIDENCE {
+                    output.push_str(
+                        "      All currently supported violating evidence originates in Rust test-only execution.\n",
+                    );
+                } else if reason
+                    == fortress_core::semantic_conformance::UNKNOWN_EXECUTION_PROVENANCE
+                {
+                    output.push_str(
+                        "      Current violating evidence does not establish production-capable execution.\n",
+                    );
+                }
+            }
+            let provenance = claim.evidence_provenance();
+            if claim.matching_observation_count() > 0 {
+                let _ = writeln!(
+                    output,
+                    "      Evidence provenance: production-capable {}, test-only {}, unknown {}",
+                    provenance.production_capable_observations(),
+                    provenance.test_only_observations(),
+                    provenance.unknown_observations(),
+                );
+            }
         }
     }
 
@@ -213,7 +240,7 @@ fn render_semantic_module(
     if !sites.is_empty() {
         let _ = write!(
             output,
-            "  Blocking semantic evidence:\n    Distinct offending sites: {}\n    Evidence paths: {}\n",
+            "  Semantic violation evidence:\n    Distinct offending sites: {}\n    Evidence paths: {}\n",
             sites.len(),
             governed.len(),
         );
@@ -276,6 +303,8 @@ struct OffendingSite {
     effects: BTreeSet<String>,
     capabilities: BTreeSet<String>,
     authorities: BTreeSet<String>,
+    entry_provenance: BTreeMap<ExecutionProvenance, usize>,
+    source_provenance: BTreeMap<ExecutionProvenance, usize>,
     direct: bool,
     call_chains: BTreeSet<Vec<String>>,
 }
@@ -302,6 +331,8 @@ fn group_offending_sites(
             effects: BTreeSet::new(),
             capabilities: BTreeSet::new(),
             authorities: BTreeSet::new(),
+            entry_provenance: BTreeMap::new(),
+            source_provenance: BTreeMap::new(),
             direct: false,
             call_chains: BTreeSet::new(),
         });
@@ -310,6 +341,14 @@ fn group_offending_sites(
             site.capabilities.insert(capability.stable_id().into());
         }
         site.authorities.insert(observation.authority().into());
+        *site
+            .entry_provenance
+            .entry(observation.entry_execution_provenance())
+            .or_default() += 1;
+        *site
+            .source_provenance
+            .entry(observation.source_execution_provenance())
+            .or_default() += 1;
         site.direct |= observation.evidence_kind() == EffectEvidenceKind::Direct;
         site.call_chains.insert(observation.call_chain().to_vec());
     }
@@ -324,7 +363,7 @@ fn render_offending_site(
 ) {
     let _ = write!(
         output,
-        "\n    {index}. Operation: {}\n       Policy: {} {} DENY\n       Effect(s): {}\n       Capability consequence(s): {}\n       Site: {}:{}:{}\n       Origin: {}\n       Direct operation evidence: {}\n       Classification authority: {}\n       Reachable through ({} path{}):\n",
+        "\n    {index}. Operation: {}\n       Policy: {} {} DENY\n       Effect(s): {}\n       Capability consequence(s): {}\n       Site: {}:{}:{}\n       Origin: {}\n       Entry-path provenance: {}\n       Direct-origin provenance: {}\n       Direct operation evidence: {}\n       Classification authority: {}\n       Reachable through ({} path{}):\n",
         site.key.operation,
         site.key.target_kind,
         site.key.target,
@@ -342,6 +381,8 @@ fn render_offending_site(
         site.key.line,
         site.key.column,
         display_symbol(evaluation, &site.key.source_symbol),
+        render_provenance_counts(&site.entry_provenance),
+        render_provenance_counts(&site.source_provenance),
         if site.direct { "yes" } else { "no" },
         site.authorities
             .iter()
@@ -358,6 +399,22 @@ fn render_offending_site(
             .collect::<Vec<_>>();
         labels.push(site.key.operation.clone());
         let _ = writeln!(output, "       - {}", labels.join(" -> "));
+    }
+}
+
+fn render_provenance_counts(counts: &BTreeMap<ExecutionProvenance, usize>) -> String {
+    counts
+        .iter()
+        .map(|(provenance, count)| format!("{} {count}", execution_provenance_label(*provenance)))
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
+const fn execution_provenance_label(provenance: ExecutionProvenance) -> &'static str {
+    match provenance {
+        ExecutionProvenance::ProductionCapable => "PRODUCTION_CAPABLE",
+        ExecutionProvenance::TestOnly => "TEST_ONLY",
+        ExecutionProvenance::Unknown => "UNKNOWN",
     }
 }
 

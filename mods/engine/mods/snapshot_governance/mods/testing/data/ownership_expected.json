@@ -7,6 +7,8 @@
     "integrity_tier": 1,
     "category": "architecture",
     "state": "FAIL",
+    "enforcement_eligibility": "BLOCK_SUPPORTED",
+    "enforcement_reason": null,
     "entities": ["AF-CORE-0001"],
     "location": {
       "path": "README.md",
@@ -29,6 +31,8 @@
     "integrity_tier": 1,
     "category": "architecture",
     "state": "FAIL",
+    "enforcement_eligibility": "BLOCK_SUPPORTED",
+    "enforcement_reason": null,
     "entities": ["AF-CORE-0001"],
     "location": {
       "path": "missing",
@@ -51,6 +55,8 @@
     "integrity_tier": 1,
     "category": "architecture",
     "state": "FAIL",
+    "enforcement_eligibility": "BLOCK_SUPPORTED",
+    "enforcement_reason": null,
     "entities": [],
     "location": {
       "path": "orphan.txt",
@@ -73,6 +79,8 @@
     "integrity_tier": 1,
     "category": "architecture",
     "state": "FAIL",
+    "enforcement_eligibility": "BLOCK_SUPPORTED",
+    "enforcement_reason": null,
     "entities": ["AF-CORE-0001", "AF-SHARED-0001"],
     "location": {
       "path": "src/shared/value.rs",

@@ -21,9 +21,9 @@ use crate::finding::{
     FindingOccurrence, RuleFindingDefinition, SourceSpan,
 };
 use crate::program_semantics::{
-    CallResolutionState, CallSiteEvidence, ExecutableSymbol, ProgramBody, ProgramCall,
-    ProgramExpression, ProgramMutation, ProgramPlace, ProgramSemanticModel, ProgramStatement,
-    ProgramType,
+    CallResolutionState, CallSiteEvidence, ExecutableSymbol, ExecutionProvenance, ProgramBody,
+    ProgramCall, ProgramExpression, ProgramMutation, ProgramPlace, ProgramSemanticModel,
+    ProgramStatement, ProgramType,
 };
 use crate::semantic_analysis::{
     DomainSpecification, FunctionContract, FunctionEffect, ResolvedFunctionContracts,
@@ -38,11 +38,11 @@ pub use state_contract::{
 };
 
 /// Canonical State & Effect Analysis schema identity.
-pub const STATE_EFFECT_ANALYSIS_SCHEMA: &str = "urn:fortress:schema:v2:state-effect-analysis";
+pub const STATE_EFFECT_ANALYSIS_SCHEMA: &str = "urn:fortress:schema:v3:state-effect-analysis";
 /// Canonical State & Effect Analysis schema version.
-pub const STATE_EFFECT_ANALYSIS_SCHEMA_VERSION: u16 = 2;
+pub const STATE_EFFECT_ANALYSIS_SCHEMA_VERSION: u16 = 3;
 /// Semantic version of the state/effect analyzer.
-pub const STATE_EFFECT_ANALYSIS_VERSION: &str = "2.0.0";
+pub const STATE_EFFECT_ANALYSIS_VERSION: &str = "3.0.0";
 /// Stable analyzer identity.
 pub const STATE_EFFECT_ANALYZER_ID: &str = "fortress-state-effect-analysis";
 /// Normative typestate rule identity.
@@ -297,7 +297,9 @@ pub struct EffectEvidence {
     capability: Option<EffectCapability>,
     kind: EffectEvidenceKind,
     entry_symbol: String,
+    entry_execution_provenance: ExecutionProvenance,
     source_symbol: String,
+    source_execution_provenance: ExecutionProvenance,
     operation: String,
     classification_authority: String,
     path: String,
@@ -450,6 +452,18 @@ impl EffectEvidence {
     #[must_use]
     pub fn entry_symbol(&self) -> &str {
         &self.entry_symbol
+    }
+
+    /// Returns execution provenance for the entry path receiving this effect.
+    #[must_use]
+    pub const fn entry_execution_provenance(&self) -> ExecutionProvenance {
+        self.entry_execution_provenance
+    }
+
+    /// Returns execution provenance for the direct operation's source symbol.
+    #[must_use]
+    pub const fn source_execution_provenance(&self) -> ExecutionProvenance {
+        self.source_execution_provenance
     }
 
     /// Returns the semantic operation that directly caused the effect.
@@ -691,7 +705,11 @@ pub fn analyze_state_effects(
     let owner_states = owner_state_types(psm, state_contracts);
     validate_function_state_references(function_contracts, state_contracts)?;
     let mut effect_work = direct_effects(psm, &symbols);
-    let effect_iterations = close_effects(psm.calls(), &mut effect_work);
+    let execution_provenance = symbols
+        .iter()
+        .map(|(id, symbol)| ((*id).to_owned(), symbol.execution_provenance()))
+        .collect::<BTreeMap<_, _>>();
+    let effect_iterations = close_effects(psm.calls(), &execution_provenance, &mut effect_work);
     let mut violations =
         state_call_violations(psm, function_contracts, &owner_states, &symbols, &types);
     let mut summaries = Vec::new();
@@ -887,6 +905,7 @@ fn direct_effects(
         add_effect(
             &mut result,
             read.symbol(),
+            symbol_execution_provenance(symbols, read.symbol()),
             effect,
             "psm.state_read",
             "program_semantics.state_observation",
@@ -907,6 +926,7 @@ fn direct_effects(
         add_effect(
             &mut result,
             mutation.symbol(),
+            symbol_execution_provenance(symbols, mutation.symbol()),
             effect,
             "psm.state_mutation",
             "program_semantics.state_observation",
@@ -932,6 +952,7 @@ fn direct_effects(
         add_effect(
             &mut result,
             symbol.id(),
+            symbol.execution_provenance(),
             FunctionEffect::UnsafeExecution,
             "rust.unsafe_function_body",
             "program_semantics.declaration_qualifier",
@@ -968,6 +989,7 @@ fn direct_effects(
                                 add_effect(
                                     &mut result,
                                     call.caller(),
+                                    symbol_execution_provenance(symbols, call.caller()),
                                     effect,
                                     operation.expect("supported classification has identity"),
                                     "program_semantics.external_target",
@@ -1010,6 +1032,7 @@ fn direct_effects(
                             add_effect(
                                 &mut result,
                                 call.caller(),
+                                symbol_execution_provenance(symbols, call.caller()),
                                 FunctionEffect::ExternalInteraction,
                                 operation.expect("external call has identity"),
                                 "program_semantics.external_target",
@@ -1079,6 +1102,7 @@ fn direct_effects(
             add_effect(
                 &mut result,
                 body.symbol(),
+                symbol_execution_provenance(symbols, body.symbol()),
                 site.effect,
                 site.operation,
                 "program_semantics.rust_structure",
@@ -1098,6 +1122,7 @@ fn direct_effects(
 fn add_effect(
     result: &mut BTreeMap<String, EffectWork>,
     symbol: &str,
+    execution_provenance: ExecutionProvenance,
     effect: FunctionEffect,
     operation: &str,
     classification_authority: &str,
@@ -1117,7 +1142,9 @@ fn add_effect(
             capability: capability_for_effect(effect),
             kind: EffectEvidenceKind::Direct,
             entry_symbol: symbol.into(),
+            entry_execution_provenance: execution_provenance,
             source_symbol: symbol.into(),
+            source_execution_provenance: execution_provenance,
             operation: operation.into(),
             classification_authority: classification_authority.into(),
             path: path.into(),
@@ -1127,7 +1154,22 @@ fn add_effect(
         });
 }
 
-fn close_effects(calls: &[ProgramCall], work: &mut BTreeMap<String, EffectWork>) -> usize {
+fn symbol_execution_provenance(
+    symbols: &BTreeMap<&str, &ExecutableSymbol>,
+    symbol: &str,
+) -> ExecutionProvenance {
+    symbols
+        .get(symbol)
+        .map_or(ExecutionProvenance::Unknown, |value| {
+            value.execution_provenance()
+        })
+}
+
+fn close_effects(
+    calls: &[ProgramCall],
+    execution_provenance: &BTreeMap<String, ExecutionProvenance>,
+    work: &mut BTreeMap<String, EffectWork>,
+) -> usize {
     let edges = calls
         .iter()
         .filter(|call| call.state() == CallResolutionState::ResolvedStatic)
@@ -1159,6 +1201,14 @@ fn close_effects(calls: &[ProgramCall], work: &mut BTreeMap<String, EffectWork>)
                         derived.call_chain.insert(0, caller.clone());
                         derived.kind = EffectEvidenceKind::Transitive;
                         derived.entry_symbol.clone_from(caller);
+                        let caller_execution_provenance = execution_provenance
+                            .get(caller)
+                            .copied()
+                            .unwrap_or(ExecutionProvenance::Unknown);
+                        derived.entry_execution_provenance = combine_path_execution_provenance(
+                            caller_execution_provenance,
+                            derived.entry_execution_provenance,
+                        );
                         consumer_summary
                             .evidence
                             .entry(*effect)
@@ -1176,6 +1226,23 @@ fn close_effects(calls: &[ProgramCall], work: &mut BTreeMap<String, EffectWork>)
         if !changed || iterations > work.len().saturating_add(1) {
             return iterations;
         }
+    }
+}
+
+const fn combine_path_execution_provenance(
+    caller: ExecutionProvenance,
+    callee_path: ExecutionProvenance,
+) -> ExecutionProvenance {
+    if matches!(caller, ExecutionProvenance::TestOnly)
+        || matches!(callee_path, ExecutionProvenance::TestOnly)
+    {
+        ExecutionProvenance::TestOnly
+    } else if matches!(caller, ExecutionProvenance::Unknown)
+        || matches!(callee_path, ExecutionProvenance::Unknown)
+    {
+        ExecutionProvenance::Unknown
+    } else {
+        ExecutionProvenance::ProductionCapable
     }
 }
 

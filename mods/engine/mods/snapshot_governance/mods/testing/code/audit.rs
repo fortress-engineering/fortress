@@ -241,7 +241,8 @@ fn ungoverned_cargo_repository_reaches_semantic_observation_without_admission_fi
     let psm_json: serde_json::Value =
         serde_json::from_str(&psm.to_canonical_json().expect("PSM serializes"))
             .expect("PSM JSON parses");
-    assert_eq!(psm_json["coverage"]["source_files"], 2);
+    assert_eq!(psm_json["coverage"]["source_files"], 3);
+    assert_eq!(psm_json["coverage"]["test_only_symbols"], 1);
     assert!(
         psm.symbols()
             .iter()

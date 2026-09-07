@@ -1,8 +1,9 @@
 //! Finding identity, baseline ratchet, and explicit exception conformance.
 
 use fortress_core::finding::{
-    CanonicalFinding, EvaluatorProvenance, FindingIdentityEligibility, FindingLocation,
-    FindingOccurrence, RuleFindingDefinition, SourceSpan,
+    CanonicalFinding, EvaluatorProvenance, FindingEnforcementEligibility,
+    FindingIdentityEligibility, FindingLocation, FindingOccurrence, RuleFindingDefinition,
+    SourceSpan,
 };
 use fortress_core::finding_governance::{
     ExceptionState, FindingDisposition, FindingEnforcement, FindingGovernanceDocument,
@@ -40,6 +41,95 @@ fn finding(
         "1.0.0-draft.1",
     )
     .unwrap()
+}
+
+/// `T-AF-SNAPSHOT-GOVERNANCE-0001-R15-006`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R15
+#[test]
+fn advisory_evidence_preserves_lifecycle_without_blocking_enforcement() {
+    let raw = finding(
+        "ARCH-SEMANTIC-001",
+        "AF-CORE-0001",
+        "mods/a/code/a.rs",
+        "TEST_ONLY",
+        "test-only semantic contradiction",
+        1,
+    )
+    .with_advisory_enforcement("TEST_ONLY_EVIDENCE")
+    .unwrap();
+    let result = evaluate_finding_governance(
+        std::slice::from_ref(&raw),
+        None,
+        "STD-FORTRESS-ENGINEERING",
+        "1.0.0-draft.1",
+    )
+    .unwrap();
+    assert!(result.is_success());
+    assert_eq!(result.summary().advisory_non_blocking, 1);
+    assert_eq!(result.summary().new_blocking, 0);
+    assert_eq!(result.findings()[0].lifecycle(), FindingLifecycle::New);
+    assert_eq!(
+        result.findings()[0].enforcement(),
+        FindingEnforcement::NonBlocking
+    );
+    assert_eq!(
+        result.findings()[0].evidence_eligibility(),
+        FindingEnforcementEligibility::AdvisoryOnly
+    );
+    assert_eq!(
+        result.findings()[0].evidence_reason(),
+        Some("TEST_ONLY_EVIDENCE")
+    );
+
+    let mut baseline_authority = FindingGovernanceDocument::empty();
+    baseline_authority
+        .create_baseline(
+            "STD-FORTRESS-ENGINEERING",
+            "1.0.0-draft.1",
+            std::slice::from_ref(&raw),
+        )
+        .unwrap();
+    let baselined = evaluate_finding_governance(
+        std::slice::from_ref(&raw),
+        Some(&baseline_authority),
+        "STD-FORTRESS-ENGINEERING",
+        "1.0.0-draft.1",
+    )
+    .unwrap();
+    assert_eq!(
+        baselined.findings()[0].lifecycle(),
+        FindingLifecycle::Baselined
+    );
+    assert_eq!(
+        baselined.findings()[0].evidence_eligibility(),
+        FindingEnforcementEligibility::AdvisoryOnly
+    );
+
+    let mut exception_authority = FindingGovernanceDocument::empty();
+    exception_authority
+        .create_exception(
+            "EX-TEST-PROVENANCE-0001",
+            raw.finding_id(),
+            "owner:test-governance",
+            "Explicit governance remains independent of evidence provenance.",
+            std::slice::from_ref(&raw),
+        )
+        .unwrap();
+    let excepted = evaluate_finding_governance(
+        &[raw],
+        Some(&exception_authority),
+        "STD-FORTRESS-ENGINEERING",
+        "1.0.0-draft.1",
+    )
+    .unwrap();
+    assert_eq!(
+        excepted.findings()[0].disposition(),
+        FindingDisposition::Excepted
+    );
+    assert_eq!(
+        excepted.findings()[0].evidence_eligibility(),
+        FindingEnforcementEligibility::AdvisoryOnly
+    );
 }
 
 /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R15-001`

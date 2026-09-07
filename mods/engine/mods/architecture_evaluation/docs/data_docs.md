@@ -44,4 +44,8 @@ Defines the deterministic derived Module semantic-conformance projection with ex
 
 ### [`semantic_conformance_schema_v3.json`](../data/semantic_conformance_schema_v3.json)
 
-Defines the current deterministic projection in which ALLOW entries are authored authorizations with observed-usage counts while only DENY entries carry conformance and blocking conclusions.
+Defines the retained deterministic projection in which ALLOW entries are authored authorizations with observed-usage counts while only DENY entries carry conformance and blocking conclusions.
+
+### [`semantic_conformance_schema_v4.json`](../data/semantic_conformance_schema_v4.json)
+
+Defines the current deterministic projection with per-claim execution-provenance composition and stable advisory reasons when supported violations lack production-capable evidence.

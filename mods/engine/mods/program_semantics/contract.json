@@ -50,12 +50,15 @@
         },
         {
           "id": "AF-PROGRAM-SEMANTICS-0001-R03",
-          "statement": "Program Semantic analysis records bounded value-transfer facts, remains byte deterministic, rejects snapshot mutation, distinguishes production from Testing symbols, and requires every resolved cross-Module call to agree with broader Implementation Observation evidence.",
+          "statement": "Program Semantic analysis records bounded value-transfer facts, remains byte deterministic, rejects snapshot mutation, distinguishes authored Testing ownership from structurally established Rust execution provenance, conservatively recognizes test-only lexical and Cargo-target ancestry, and requires every resolved cross-Module call to agree with broader Implementation Observation evidence.",
           "tests": [
             "T-AF-PROGRAM-SEMANTICS-0001-R03-001",
             "T-AF-PROGRAM-SEMANTICS-0001-R03-002",
             "T-AF-PROGRAM-SEMANTICS-0001-R03-003",
-            "T-AF-PROGRAM-SEMANTICS-0001-R03-004"
+            "T-AF-PROGRAM-SEMANTICS-0001-R03-004",
+            "T-AF-PROGRAM-SEMANTICS-0001-R03-005",
+            "T-AF-PROGRAM-SEMANTICS-0001-R03-006",
+            "T-AF-PROGRAM-SEMANTICS-0001-R03-007"
           ]
         },
         {

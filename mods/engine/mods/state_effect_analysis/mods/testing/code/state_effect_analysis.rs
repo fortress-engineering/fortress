@@ -7,7 +7,8 @@ use fortress_core::implementation_observation::{
     ImplementationObservationInput, ModuleTerritory, SnapshotBoundFile,
 };
 use fortress_core::program_semantics::{
-    ExecutableSymbol, ProgramSemanticInput, ProgramSemanticModel, compile_program_semantic_model,
+    ExecutableSymbol, ExecutionProvenance, ProgramSemanticInput, ProgramSemanticModel,
+    compile_program_semantic_model,
 };
 use fortress_core::semantic_analysis::{
     FunctionContractError, FunctionContractSource, FunctionEffect, ResolvedFunctionContracts,
@@ -1070,6 +1071,88 @@ fn unsafe_entry() { unsafe_helper(); }
         assert_eq!(evidence.call_chain().len(), 3);
         assert_eq!(evidence.capability(), capability_for_effect(effect));
     }
+}
+
+/// `T-AF-STATE-EFFECT-ANALYSIS-0001-R05-007`
+/// Fortress requirement: AF-STATE-EFFECT-ANALYSIS-0001-R05
+#[test]
+fn transitive_effect_evidence_retains_test_only_entry_and_origin_provenance() {
+    let model = psm(r#"
+#[cfg(test)]
+mod tests {
+    pub(super) fn filesystem_origin() { let _ = std::fs::write("output", b"x"); }
+    fn filesystem_helper() { filesystem_origin(); }
+    fn filesystem_entry() { filesystem_helper(); }
+}
+fn syntactically_production_caller() { tests::filesystem_origin(); }
+"#);
+    let states = load_state_contracts(&model, Vec::new()).expect("empty states resolve");
+    let functions = load_function_contracts(&model, Vec::new()).expect("empty functions resolve");
+    let evaluation = evaluate(&model, &states, &functions);
+    let entry = symbol_id(&model, "tests::filesystem_entry");
+    let origin = symbol_id(&model, "tests::filesystem_origin");
+
+    let direct = evaluation
+        .model()
+        .summaries()
+        .iter()
+        .find(|summary| summary.symbol() == origin)
+        .and_then(|summary| {
+            summary.effect_evidence().iter().find(|evidence| {
+                evidence.effect() == FunctionEffect::FilesystemWrite
+                    && evidence.kind() == EffectEvidenceKind::Direct
+            })
+        })
+        .expect("direct test-only evidence");
+    assert_eq!(
+        direct.entry_execution_provenance(),
+        ExecutionProvenance::TestOnly
+    );
+    assert_eq!(
+        direct.source_execution_provenance(),
+        ExecutionProvenance::TestOnly
+    );
+
+    let transitive = evaluation
+        .model()
+        .summaries()
+        .iter()
+        .find(|summary| summary.symbol() == entry)
+        .and_then(|summary| {
+            summary.effect_evidence().iter().find(|evidence| {
+                evidence.effect() == FunctionEffect::FilesystemWrite
+                    && evidence.kind() == EffectEvidenceKind::Transitive
+            })
+        })
+        .expect("transitive test-only evidence");
+    assert_eq!(transitive.entry_symbol(), entry);
+    assert_eq!(transitive.source_symbol(), origin);
+    assert_eq!(transitive.call_chain().len(), 3);
+    assert_eq!(
+        transitive.entry_execution_provenance(),
+        ExecutionProvenance::TestOnly
+    );
+    assert_eq!(
+        transitive.source_execution_provenance(),
+        ExecutionProvenance::TestOnly
+    );
+
+    let conditional_path = evaluation
+        .model()
+        .summaries()
+        .iter()
+        .find(|summary| summary.symbol() == symbol_id(&model, "syntactically_production_caller"))
+        .and_then(|summary| {
+            summary.effect_evidence().iter().find(|evidence| {
+                evidence.effect() == FunctionEffect::FilesystemWrite
+                    && evidence.kind() == EffectEvidenceKind::Transitive
+            })
+        })
+        .expect("a path through test-only source remains test-only");
+    assert_eq!(
+        conditional_path.entry_execution_provenance(),
+        ExecutionProvenance::TestOnly
+    );
 }
 
 /// `T-AF-STATE-EFFECT-ANALYSIS-0001-R05-006`

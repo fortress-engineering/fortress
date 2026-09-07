@@ -33,6 +33,16 @@ pub enum FindingIdentityEligibility {
     BaselineIneligible,
 }
 
+/// Whether current evidence may independently block progressive enforcement.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum FindingEnforcementEligibility {
+    /// Supported evidence may block unless baseline or exception authority applies.
+    BlockSupported,
+    /// The raw violation remains visible but its evidence is advisory for enforcement.
+    AdvisoryOnly,
+}
+
 /// One-based inclusive source range when an evaluator knows exact location.
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct SourceSpan {
@@ -285,6 +295,8 @@ pub struct CanonicalFinding {
     integrity_tier: u8,
     category: FindingCategory,
     state: FindingState,
+    enforcement_eligibility: FindingEnforcementEligibility,
+    enforcement_reason: Option<String>,
     entities: Vec<String>,
     location: FindingLocation,
     message: String,
@@ -360,6 +372,8 @@ impl CanonicalFinding {
             integrity_tier: definition.integrity_tier,
             category: definition.category,
             state,
+            enforcement_eligibility: FindingEnforcementEligibility::BlockSupported,
+            enforcement_reason: None,
             entities: occurrence.entities,
             location: occurrence.location,
             message: occurrence.message,
@@ -418,6 +432,38 @@ impl CanonicalFinding {
         self.state
     }
 
+    /// Marks a raw violation as advisory for progressive enforcement.
+    ///
+    /// This does not change the finding identity or raw conformance state.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`FindingError::EmptyField`] for an empty stable reason.
+    pub fn with_advisory_enforcement(
+        mut self,
+        reason: impl Into<String>,
+    ) -> Result<Self, FindingError> {
+        let reason = reason.into();
+        if reason.is_empty() {
+            return Err(FindingError::EmptyField("enforcement_reason"));
+        }
+        self.enforcement_eligibility = FindingEnforcementEligibility::AdvisoryOnly;
+        self.enforcement_reason = Some(reason);
+        Ok(self)
+    }
+
+    /// Returns whether evidence may independently block progressive enforcement.
+    #[must_use]
+    pub const fn enforcement_eligibility(&self) -> FindingEnforcementEligibility {
+        self.enforcement_eligibility
+    }
+
+    /// Returns the stable reason evidence is advisory, when applicable.
+    #[must_use]
+    pub fn enforcement_reason(&self) -> Option<&str> {
+        self.enforcement_reason.as_deref()
+    }
+
     /// Returns affected project entity identities in evaluator-defined order.
     #[must_use]
     pub fn entities(&self) -> &[String] {
@@ -459,6 +505,11 @@ impl Ord for CanonicalFinding {
             .then_with(|| self.integrity_tier.cmp(&other.integrity_tier))
             .then_with(|| self.category.cmp(&other.category))
             .then_with(|| self.state.cmp(&other.state))
+            .then_with(|| {
+                self.enforcement_eligibility
+                    .cmp(&other.enforcement_eligibility)
+            })
+            .then_with(|| self.enforcement_reason.cmp(&other.enforcement_reason))
             .then_with(|| self.evaluator.cmp(&other.evaluator))
             .then_with(|| self.standard_edition.cmp(&other.standard_edition))
             .then_with(|| self.identity_eligibility.cmp(&other.identity_eligibility))

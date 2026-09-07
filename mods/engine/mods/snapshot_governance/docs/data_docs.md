@@ -56,11 +56,19 @@ Defines the version-four machine representation for snapshot audit records, incl
 
 ### [`snapshot_audit_schema_v5.json`](../data/snapshot_audit_schema_v5.json)
 
-Defines the current audit representation with an explicit `NOT_APPLICABLE` rule state, stable applicability reasons, and summary counts that exclude non-applicable rules from PASS.
+Defines the retained audit representation with an explicit `NOT_APPLICABLE` rule state, stable applicability reasons, and summary counts that exclude non-applicable rules from PASS.
+
+### [`snapshot_audit_schema_v6.json`](../data/snapshot_audit_schema_v6.json)
+
+Defines the current audit representation with raw finding evidence eligibility, stable eligibility reasons, and progressive-enforcement summaries that distinguish advisory non-blocking findings from baseline or exception governance.
 
 ### [`snapshot_finding_schema_v2.json`](../data/snapshot_finding_schema_v2.json)
 
 Defines the version-two machine representation and validation boundary for stable or explicitly baseline-ineligible snapshot finding records.
+
+### [`snapshot_finding_schema_v3.json`](../data/snapshot_finding_schema_v3.json)
+
+Defines the current finding representation with orthogonal raw enforcement eligibility and a stable optional reason while preserving finding identity and conformance state.
 
 ### [`test_boundary_rule.json`](../data/test_boundary_rule.json)
 

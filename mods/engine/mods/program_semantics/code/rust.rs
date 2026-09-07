@@ -8,20 +8,22 @@ use proc_macro2::Span;
 use quote::ToTokens;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+use syn::parse::Parser;
+use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
 use syn::visit::{self, Visit};
 use syn::{
-    Attribute, Block, Expr, FnArg, GenericArgument, GenericParam, ImplItem, Item, Pat,
-    PathArguments, ReturnType, Signature, TraitItem, Type, UseTree, Visibility,
+    Attribute, Block, Expr, FnArg, GenericArgument, GenericParam, ImplItem, Item, Meta, Pat,
+    PathArguments, ReturnType, Signature, Token, TraitItem, Type, UseTree, Visibility,
 };
 
 use crate::implementation_observation::SourceOwnership;
 
 use super::{
     CallResolutionReason, CallResolutionState, CallSiteEvidence, ExecutableSymbol,
-    ExecutableSymbolKind, ImplResolutionState, InterfaceType, MutationKind, NominalField,
-    NominalType, NominalTypeKind, NominalVariant, PlaceResolutionState, ProgramBody, ProgramCall,
-    ProgramExpression, ProgramImpl, ProgramImplKind, ProgramMatchArm, ProgramMutation,
+    ExecutableSymbolKind, ExecutionProvenance, ImplResolutionState, InterfaceType, MutationKind,
+    NominalField, NominalType, NominalTypeKind, NominalVariant, PlaceResolutionState, ProgramBody,
+    ProgramCall, ProgramExpression, ProgramImpl, ProgramImplKind, ProgramMatchArm, ProgramMutation,
     ProgramPackage, ProgramParameter, ProgramPattern, ProgramPlace, ProgramProvenance,
     ProgramReceiver, ProgramSemanticError, ProgramSemanticInput, ProgramSourceInput,
     ProgramSourceLocation, ProgramStatement, ProgramTarget, ProgramType, RUST_PROGRAM_ANALYZER_ID,
@@ -50,6 +52,7 @@ struct CargoDocument {
 #[derive(Deserialize)]
 struct CargoPackageDocument {
     name: String,
+    autotests: Option<bool>,
 }
 
 #[derive(Default, Deserialize)]
@@ -101,6 +104,7 @@ struct SourceContext {
     target_root: String,
     crate_name: String,
     namespace: Vec<String>,
+    execution_provenance: ExecutionProvenance,
 }
 
 #[derive(Clone)]
@@ -245,7 +249,12 @@ pub(super) fn analyze(
                 transfers: &mut parameter_transfers,
                 reexports: &mut reexports,
             };
-            collection.collect_items(&syntax.items, &context.namespace, &BTreeMap::new());
+            collection.collect_items(
+                &syntax.items,
+                &context.namespace,
+                &BTreeMap::new(),
+                context.execution_provenance,
+            );
         }
     }
     canonicalize_declarations(&mut symbols, &mut nominal_types, &mut impls);
@@ -312,12 +321,39 @@ fn canonicalize_declarations(
     nominal_types: &mut Vec<NominalType>,
     impls: &mut Vec<ProgramImpl>,
 ) {
+    let mut execution_by_symbol = BTreeMap::new();
+    for symbol in symbols.iter() {
+        execution_by_symbol
+            .entry(symbol.id.clone())
+            .and_modify(|current| {
+                *current = merge_execution_provenance(*current, symbol.execution_provenance);
+            })
+            .or_insert(symbol.execution_provenance);
+    }
+    for symbol in symbols.iter_mut() {
+        symbol.execution_provenance = execution_by_symbol[&symbol.id];
+    }
     symbols.sort();
-    symbols.dedup();
+    symbols.dedup_by(|left, right| left.id == right.id);
     nominal_types.sort();
     nominal_types.dedup();
     impls.sort();
     impls.dedup();
+}
+
+fn merge_execution_provenance(
+    left: ExecutionProvenance,
+    right: ExecutionProvenance,
+) -> ExecutionProvenance {
+    if left == ExecutionProvenance::ProductionCapable
+        || right == ExecutionProvenance::ProductionCapable
+    {
+        ExecutionProvenance::ProductionCapable
+    } else if left == ExecutionProvenance::TestOnly && right == ExecutionProvenance::TestOnly {
+        ExecutionProvenance::TestOnly
+    } else {
+        ExecutionProvenance::Unknown
+    }
 }
 
 fn lower_program_body(body: &BodyFact) -> ProgramBody {
@@ -774,6 +810,7 @@ fn package_from_document(
     files: &BTreeMap<String, &[u8]>,
 ) -> CargoPackage {
     let manifest_dir = parent_path(manifest_path);
+    let autotests = package.autotests.unwrap_or(true);
     let lib_name = document
         .lib
         .as_ref()
@@ -807,13 +844,12 @@ fn package_from_document(
             kind: "binary".into(),
         })
     }));
-    targets.extend(document.test.iter().filter_map(|target| {
-        target.path.as_ref().map(|path| CargoTarget {
-            crate_name: rust_crate_name(target.name.as_deref().unwrap_or("test")),
-            root: resolve_cargo_target_path(&manifest_dir, path, files),
-            kind: "test".into(),
-        })
-    }));
+    targets.extend(cargo_test_targets(
+        &manifest_dir,
+        &document.test,
+        autotests,
+        files,
+    ));
     let default_main = join_path(&manifest_dir, "src/main.rs");
     if document.bin.is_empty() && files.contains_key(&default_main) {
         targets.push(CargoTarget {
@@ -858,6 +894,48 @@ fn package_from_document(
         targets,
         dependencies,
     }
+}
+
+fn cargo_test_targets(
+    manifest_dir: &str,
+    declared: &[CargoTargetDocument],
+    autotests: bool,
+    files: &BTreeMap<String, &[u8]>,
+) -> Vec<CargoTarget> {
+    let mut targets = declared
+        .iter()
+        .filter_map(|target| {
+            let name = target.name.as_deref().unwrap_or("test");
+            let default_path = format!("tests/{name}.rs");
+            let path = target.path.as_deref().unwrap_or(&default_path);
+            let root = resolve_cargo_target_path(manifest_dir, path, files);
+            files.contains_key(&root).then(|| CargoTarget {
+                crate_name: rust_crate_name(name),
+                root,
+                kind: "test".into(),
+            })
+        })
+        .collect::<Vec<_>>();
+    if autotests {
+        let tests_prefix = format!("{}/", join_path(manifest_dir, "tests"));
+        targets.extend(files.keys().filter_map(|path| {
+            let relative = path.strip_prefix(&tests_prefix)?;
+            if relative.contains('/')
+                || !Path::new(relative)
+                    .extension()
+                    .is_some_and(|extension| extension.eq_ignore_ascii_case("rs"))
+            {
+                return None;
+            }
+            let test_name = Path::new(relative).file_stem()?.to_str()?;
+            Some(CargoTarget {
+                crate_name: rust_crate_name(test_name),
+                root: path.clone(),
+                kind: "test".into(),
+            })
+        }));
+    }
+    targets
 }
 
 fn resolve_cargo_target_path(
@@ -952,7 +1030,19 @@ fn build_source_contexts(
                     target.root.clone(),
                 ));
             }
-            discover_module_tree(&target.root, &[], files, &mut contexts, package, target)?;
+            discover_module_tree(
+                &target.root,
+                &[],
+                files,
+                &mut contexts,
+                package,
+                target,
+                if target.kind == "test" {
+                    ExecutionProvenance::TestOnly
+                } else {
+                    ExecutionProvenance::ProductionCapable
+                },
+            )?;
         }
     }
     for values in contexts.values_mut() {
@@ -969,6 +1059,7 @@ fn discover_module_tree(
     contexts: &mut BTreeMap<String, Vec<SourceContext>>,
     package: &CargoPackage,
     target: &CargoTarget,
+    execution_provenance: ExecutionProvenance,
 ) -> Result<(), ProgramSemanticError> {
     contexts
         .entry(path.into())
@@ -979,6 +1070,7 @@ fn discover_module_tree(
             target_root: target.root.clone(),
             crate_name: target.crate_name.clone(),
             namespace: namespace.to_vec(),
+            execution_provenance,
         });
     let syntax = parse_rust(path, rust_source(path, files[path])?)?;
     let mut queue = VecDeque::new();
@@ -987,20 +1079,41 @@ fn discover_module_tree(
         path,
         path == target.root,
         namespace,
+        execution_provenance,
         &mut queue,
     );
     while let Some(module) = queue.pop_front() {
         match module {
-            DiscoveredModule::Inline { namespace, items } => {
-                collect_modules(&items, path, path == target.root, &namespace, &mut queue);
+            DiscoveredModule::Inline {
+                namespace,
+                items,
+                execution_provenance,
+            } => {
+                collect_modules(
+                    &items,
+                    path,
+                    path == target.root,
+                    &namespace,
+                    execution_provenance,
+                    &mut queue,
+                );
             }
             DiscoveredModule::External {
                 namespace,
                 declared_path,
+                execution_provenance,
             } => {
                 let target_path = resolve_module_file(path, &declared_path, files)
                     .ok_or(ProgramSemanticError::MissingTargetSource(declared_path))?;
-                discover_module_tree(&target_path, &namespace, files, contexts, package, target)?;
+                discover_module_tree(
+                    &target_path,
+                    &namespace,
+                    files,
+                    contexts,
+                    package,
+                    target,
+                    execution_provenance,
+                )?;
             }
         }
     }
@@ -1011,10 +1124,12 @@ enum DiscoveredModule {
     Inline {
         namespace: Vec<String>,
         items: Vec<Item>,
+        execution_provenance: ExecutionProvenance,
     },
     External {
         namespace: Vec<String>,
         declared_path: String,
+        execution_provenance: ExecutionProvenance,
     },
 }
 
@@ -1023,6 +1138,7 @@ fn collect_modules(
     source_path: &str,
     crate_root: bool,
     namespace: &[String],
+    inherited_execution_provenance: ExecutionProvenance,
     queue: &mut VecDeque<DiscoveredModule>,
 ) {
     for item in items {
@@ -1031,10 +1147,13 @@ fn collect_modules(
         };
         let mut child = namespace.to_vec();
         child.push(module.ident.to_string());
+        let execution_provenance =
+            execution_provenance(inherited_execution_provenance, &module.attrs);
         if let Some((_, items)) = &module.content {
             queue.push_back(DiscoveredModule::Inline {
                 namespace: child,
                 items: items.clone(),
+                execution_provenance,
             });
         } else {
             queue.push_back(DiscoveredModule::External {
@@ -1042,6 +1161,7 @@ fn collect_modules(
                 declared_path: module_path_attribute(&module.attrs).unwrap_or_else(|| {
                     default_module_path(source_path, &module.ident.to_string(), crate_root)
                 }),
+                execution_provenance,
             });
         }
     }
@@ -1136,6 +1256,140 @@ fn resolve_observed_path(candidate: &str, files: &BTreeMap<String, &[u8]>) -> Op
     None
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum TestRequirement {
+    Required,
+    NotRequired,
+    Unknown,
+}
+
+fn execution_provenance(
+    inherited: ExecutionProvenance,
+    attributes: &[Attribute],
+) -> ExecutionProvenance {
+    if inherited == ExecutionProvenance::TestOnly
+        || attributes.iter().any(|attribute| {
+            attribute.path().is_ident("test") || attribute.path().is_ident("bench")
+        })
+    {
+        return ExecutionProvenance::TestOnly;
+    }
+    let requirement = attributes
+        .iter()
+        .filter(|attribute| attribute.path().is_ident("cfg"))
+        .map(cfg_attribute_requirement)
+        .fold(TestRequirement::NotRequired, combine_cfg_requirements);
+    match (inherited, requirement) {
+        (_, TestRequirement::Required) => ExecutionProvenance::TestOnly,
+        (ExecutionProvenance::Unknown, _) | (_, TestRequirement::Unknown) => {
+            ExecutionProvenance::Unknown
+        }
+        _ => ExecutionProvenance::ProductionCapable,
+    }
+}
+
+fn combine_cfg_requirements(left: TestRequirement, right: TestRequirement) -> TestRequirement {
+    if left == TestRequirement::Required || right == TestRequirement::Required {
+        TestRequirement::Required
+    } else if left == TestRequirement::Unknown || right == TestRequirement::Unknown {
+        TestRequirement::Unknown
+    } else {
+        TestRequirement::NotRequired
+    }
+}
+
+fn cfg_attribute_requirement(attribute: &Attribute) -> TestRequirement {
+    let Meta::List(list) = &attribute.meta else {
+        return TestRequirement::Unknown;
+    };
+    let parser = Punctuated::<Meta, Token![,]>::parse_terminated;
+    let Ok(values) = parser.parse2(list.tokens.clone()) else {
+        return TestRequirement::Unknown;
+    };
+    if values.len() != 1 {
+        return TestRequirement::Unknown;
+    }
+    values
+        .first()
+        .map_or(TestRequirement::Unknown, cfg_meta_requirement)
+}
+
+fn cfg_meta_requirement(meta: &Meta) -> TestRequirement {
+    match meta {
+        Meta::Path(path) => {
+            if path.is_ident("test") {
+                TestRequirement::Required
+            } else {
+                TestRequirement::NotRequired
+            }
+        }
+        Meta::NameValue(_) => TestRequirement::NotRequired,
+        Meta::List(list) if list.path.is_ident("all") => {
+            let Some(values) = cfg_list_values(list) else {
+                return TestRequirement::Unknown;
+            };
+            values
+                .iter()
+                .map(cfg_meta_requirement)
+                .fold(TestRequirement::NotRequired, combine_cfg_requirements)
+        }
+        Meta::List(list) if list.path.is_ident("any") => {
+            let Some(values) = cfg_list_values(list) else {
+                return TestRequirement::Unknown;
+            };
+            if values.is_empty() {
+                return TestRequirement::NotRequired;
+            }
+            let requirements = values.iter().map(cfg_meta_requirement).collect::<Vec<_>>();
+            if requirements
+                .iter()
+                .all(|value| *value == TestRequirement::Required)
+            {
+                TestRequirement::Required
+            } else if requirements.contains(&TestRequirement::NotRequired) {
+                TestRequirement::NotRequired
+            } else {
+                TestRequirement::Unknown
+            }
+        }
+        Meta::List(list) if list.path.is_ident("not") => {
+            if cfg_list_values(list).is_some_and(|values| values.len() == 1) {
+                TestRequirement::NotRequired
+            } else {
+                TestRequirement::Unknown
+            }
+        }
+        Meta::List(_) => TestRequirement::Unknown,
+    }
+}
+
+fn cfg_list_values(list: &syn::MetaList) -> Option<Punctuated<Meta, Token![,]>> {
+    Punctuated::<Meta, Token![,]>::parse_terminated
+        .parse2(list.tokens.clone())
+        .ok()
+}
+
+fn item_attributes(item: &Item) -> &[Attribute] {
+    match item {
+        Item::Const(value) => &value.attrs,
+        Item::Enum(value) => &value.attrs,
+        Item::ExternCrate(value) => &value.attrs,
+        Item::Fn(value) => &value.attrs,
+        Item::ForeignMod(value) => &value.attrs,
+        Item::Impl(value) => &value.attrs,
+        Item::Macro(value) => &value.attrs,
+        Item::Mod(value) => &value.attrs,
+        Item::Static(value) => &value.attrs,
+        Item::Struct(value) => &value.attrs,
+        Item::Trait(value) => &value.attrs,
+        Item::TraitAlias(value) => &value.attrs,
+        Item::Type(value) => &value.attrs,
+        Item::Union(value) => &value.attrs,
+        Item::Use(value) => &value.attrs,
+        _ => &[],
+    }
+}
+
 struct SymbolCollection<'a> {
     package: &'a CargoPackage,
     context: &'a SourceContext,
@@ -1165,10 +1419,11 @@ impl SymbolCollection<'_> {
         items: &[Item],
         namespace: &[String],
         inherited_aliases: &BTreeMap<String, Vec<String>>,
+        inherited_execution_provenance: ExecutionProvenance,
     ) {
         let aliases = self.collect_aliases(items, namespace, inherited_aliases);
         for item in items {
-            self.collect_item(item, namespace, &aliases);
+            self.collect_item(item, namespace, &aliases, inherited_execution_provenance);
         }
     }
 
@@ -1208,7 +1463,10 @@ impl SymbolCollection<'_> {
         item: &Item,
         namespace: &[String],
         aliases: &BTreeMap<String, Vec<String>>,
+        inherited_execution_provenance: ExecutionProvenance,
     ) {
+        let item_execution_provenance =
+            execution_provenance(inherited_execution_provenance, item_attributes(item));
         match item {
             Item::Fn(function) => {
                 self.add_function(
@@ -1221,18 +1479,28 @@ impl SymbolCollection<'_> {
                     Some(function.block.as_ref().clone()),
                     aliases,
                     &BTreeSet::new(),
+                    item_execution_provenance,
                 );
             }
             Item::Struct(value) => self.collect_struct(value, namespace, aliases),
             Item::Enum(value) => self.collect_enum(value, namespace, aliases),
             Item::Type(value) => self.collect_type_alias(value, namespace, aliases),
-            Item::Impl(value) => self.collect_impl(value, namespace, aliases),
-            Item::Trait(value) => self.collect_trait(value, namespace, aliases),
+            Item::Impl(value) => {
+                self.collect_impl(value, namespace, aliases, item_execution_provenance);
+            }
+            Item::Trait(value) => {
+                self.collect_trait(value, namespace, aliases, item_execution_provenance);
+            }
             Item::Mod(module) => {
                 if let Some((_, child_items)) = &module.content {
                     let mut child_namespace = namespace.to_vec();
                     child_namespace.push(module.ident.to_string());
-                    self.collect_items(child_items, &child_namespace, &BTreeMap::new());
+                    self.collect_items(
+                        child_items,
+                        &child_namespace,
+                        &BTreeMap::new(),
+                        item_execution_provenance,
+                    );
                 }
             }
             _ => {}
@@ -1321,6 +1589,7 @@ impl SymbolCollection<'_> {
         value: &syn::ItemImpl,
         namespace: &[String],
         aliases: &BTreeMap<String, Vec<String>>,
+        execution_provenance: ExecutionProvenance,
     ) {
         let owner_type = value.self_ty.to_token_stream().to_string();
         let owner_trait = value
@@ -1339,6 +1608,7 @@ impl SymbolCollection<'_> {
                     &impl_generics,
                     &owner_type,
                     owner_trait.as_deref(),
+                    execution_provenance,
                 )),
                 _ => None,
             })
@@ -1388,6 +1658,7 @@ impl SymbolCollection<'_> {
         });
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn add_impl_method(
         &mut self,
         function: &syn::ImplItemFn,
@@ -1396,6 +1667,7 @@ impl SymbolCollection<'_> {
         impl_generics: &BTreeSet<String>,
         owner_type: &str,
         owner_trait: Option<&str>,
+        inherited_execution_provenance: ExecutionProvenance,
     ) -> String {
         let kind = if owner_trait.is_some() {
             ExecutableSymbolKind::TraitMethodImplementation
@@ -1414,6 +1686,7 @@ impl SymbolCollection<'_> {
             Some(function.block.clone()),
             aliases,
             impl_generics,
+            execution_provenance(inherited_execution_provenance, &function.attrs),
         )
     }
 
@@ -1422,6 +1695,7 @@ impl SymbolCollection<'_> {
         value: &syn::ItemTrait,
         namespace: &[String],
         aliases: &BTreeMap<String, Vec<String>>,
+        inherited_execution_provenance: ExecutionProvenance,
     ) {
         let owner_trait = value.ident.to_string();
         let trait_generics = generic_names(&value.generics.params);
@@ -1439,6 +1713,7 @@ impl SymbolCollection<'_> {
                     function.default.clone(),
                     aliases,
                     &trait_generics,
+                    execution_provenance(inherited_execution_provenance, &function.attrs),
                 )),
                 _ => None,
             })
@@ -1469,6 +1744,7 @@ impl SymbolCollection<'_> {
         block: Option<Block>,
         aliases: &BTreeMap<String, Vec<String>>,
         surrounding_generics: &BTreeSet<String>,
+        execution_provenance: ExecutionProvenance,
     ) -> String {
         let FunctionInterface {
             parameters,
@@ -1512,6 +1788,7 @@ impl SymbolCollection<'_> {
             rust_module: namespace.join("::"),
             fortress_module: self.owner.into(),
             classification: self.classification,
+            execution_provenance,
             source_path: self.source_path.into(),
             kind,
             owner_type: owner_type.clone(),

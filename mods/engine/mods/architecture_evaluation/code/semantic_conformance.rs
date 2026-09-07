@@ -17,7 +17,7 @@ use crate::finding::{
     FindingOccurrence, RuleFindingDefinition, SourceSpan,
 };
 use crate::implementation_observation::{SourceOwnership, SourceOwnershipAuthority};
-use crate::program_semantics::ProgramSemanticModel;
+use crate::program_semantics::{ExecutionProvenance, ProgramSemanticModel};
 use crate::semantic_analysis::FunctionEffect;
 use crate::state_effect_analysis::{
     EffectCapability, EffectEvidenceKind, StateEffectAnalysisModel,
@@ -26,15 +26,19 @@ use crate::state_effect_analysis::{
 /// Normative Module semantic-conformance rule identity.
 pub const ARCH_SEMANTIC_RULE_ID: &str = "ARCH-SEMANTIC-001";
 /// Canonical semantic-conformance projection schema identity.
-pub const SEMANTIC_CONFORMANCE_SCHEMA: &str = "urn:fortress:schema:v3:semantic-conformance";
+pub const SEMANTIC_CONFORMANCE_SCHEMA: &str = "urn:fortress:schema:v4:semantic-conformance";
 /// Canonical semantic-conformance projection schema version.
-pub const SEMANTIC_CONFORMANCE_SCHEMA_VERSION: u16 = 3;
+pub const SEMANTIC_CONFORMANCE_SCHEMA_VERSION: u16 = 4;
 /// Semantic version of the evaluator.
-pub const SEMANTIC_CONFORMANCE_VERSION: &str = "1.2.0";
+pub const SEMANTIC_CONFORMANCE_VERSION: &str = "2.0.0";
 /// Stable evaluator identity used in canonical findings.
 pub const SEMANTIC_CONFORMANCE_EVALUATOR_ID: &str = "fortress-semantic-conformance";
 /// Stable reason for governed source that produced no PSM symbols.
 pub const NO_SEMANTIC_COVERAGE: &str = "NO_SEMANTIC_COVERAGE";
+/// Stable enforcement limitation for exclusively test-only violating evidence.
+pub const TEST_ONLY_EVIDENCE: &str = "TEST_ONLY_EVIDENCE";
+/// Stable enforcement limitation for violating evidence with unknown execution provenance.
+pub const UNKNOWN_EXECUTION_PROVENANCE: &str = "UNKNOWN_EXECUTION_PROVENANCE";
 
 const REMEDIATION: &str = "Change the implementation so the forbidden semantic consequence is unreachable, or explicitly revise the owning Module Contract policy after architectural review. Do not infer permission from current behavior.";
 const COVERAGE_REMEDIATION: &str = "Resolve the identified opaque operation or narrow the authored policy claim to semantics Fortress can currently evaluate. Do not treat missing semantic authority as conformance.";
@@ -218,7 +222,9 @@ pub struct ModuleEffectObservation {
     capability: Option<EffectCapability>,
     evidence_kind: EffectEvidenceKind,
     entry_symbol: String,
+    entry_execution_provenance: ExecutionProvenance,
     source_symbol: String,
+    source_execution_provenance: ExecutionProvenance,
     operation: String,
     authority: String,
     path: String,
@@ -259,6 +265,18 @@ impl ModuleEffectObservation {
     #[must_use]
     pub fn source_symbol(&self) -> &str {
         &self.source_symbol
+    }
+
+    /// Returns execution provenance for the entry path receiving this evidence.
+    #[must_use]
+    pub const fn entry_execution_provenance(&self) -> ExecutionProvenance {
+        self.entry_execution_provenance
+    }
+
+    /// Returns execution provenance for the direct operation source.
+    #[must_use]
+    pub const fn source_execution_provenance(&self) -> ExecutionProvenance {
+        self.source_execution_provenance
     }
 
     /// Returns the proven call path from Module entry symbol to direct origin.
@@ -316,6 +334,51 @@ impl ModuleEffectObservation {
     }
 }
 
+/// Canonical provenance composition for observations supporting one policy entry.
+#[derive(Clone, Copy, Debug, Default, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct EvidenceProvenanceSummary {
+    #[serde(rename = "production_capable_observations")]
+    production_capable: usize,
+    #[serde(rename = "test_only_observations")]
+    test_only: usize,
+    #[serde(rename = "unknown_observations")]
+    unknown: usize,
+}
+
+impl EvidenceProvenanceSummary {
+    fn from_observations(observations: &[&ModuleEffectObservation]) -> Self {
+        let mut summary = Self::default();
+        for observation in observations {
+            match observation.entry_execution_provenance {
+                ExecutionProvenance::ProductionCapable => {
+                    summary.production_capable += 1;
+                }
+                ExecutionProvenance::TestOnly => summary.test_only += 1,
+                ExecutionProvenance::Unknown => summary.unknown += 1,
+            }
+        }
+        summary
+    }
+
+    /// Returns supported observations reachable through production-capable entries.
+    #[must_use]
+    pub const fn production_capable_observations(self) -> usize {
+        self.production_capable
+    }
+
+    /// Returns supported observations reachable only through test-only entries.
+    #[must_use]
+    pub const fn test_only_observations(self) -> usize {
+        self.test_only
+    }
+
+    /// Returns supported observations whose entry provenance is unknown.
+    #[must_use]
+    pub const fn unknown_observations(self) -> usize {
+        self.unknown
+    }
+}
+
 /// One authored policy entry and its authorization or conformance result.
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct SemanticPolicyConclusion {
@@ -326,8 +389,10 @@ pub struct SemanticPolicyConclusion {
     conformance: Option<SemanticConformanceState>,
     blocking_eligibility: Option<BlockingEligibility>,
     matching_observations: usize,
+    evidence_provenance: EvidenceProvenanceSummary,
     coverage: SemanticSourceCoverage,
     coverage_reasons: Vec<String>,
+    enforcement_reasons: Vec<String>,
 }
 
 impl SemanticPolicyConclusion {
@@ -373,6 +438,12 @@ impl SemanticPolicyConclusion {
         self.matching_observations
     }
 
+    /// Returns execution provenance composition for matching observations.
+    #[must_use]
+    pub const fn evidence_provenance(&self) -> EvidenceProvenanceSummary {
+        self.evidence_provenance
+    }
+
     /// Returns exact source-level semantic coverage for the owning Module.
     #[must_use]
     pub const fn coverage(&self) -> &SemanticSourceCoverage {
@@ -383,6 +454,12 @@ impl SemanticPolicyConclusion {
     #[must_use]
     pub fn coverage_reasons(&self) -> &[String] {
         &self.coverage_reasons
+    }
+
+    /// Returns stable reasons that reduce enforcement eligibility.
+    #[must_use]
+    pub fn enforcement_reasons(&self) -> &[String] {
+        &self.enforcement_reasons
     }
 }
 
@@ -495,6 +572,10 @@ pub struct SemanticConformanceSummary {
     analysis_only_observations: usize,
     forbidden_capability_findings: usize,
     forbidden_effect_findings: usize,
+    block_supported_findings: usize,
+    advisory_findings: usize,
+    test_only_advisory_claims: usize,
+    unknown_provenance_advisory_claims: usize,
     not_evaluable_findings: usize,
     no_semantic_coverage_claims: usize,
 }
@@ -554,10 +635,28 @@ impl SemanticConformanceSummary {
         self.deny_claims_not_applicable
     }
 
-    /// Returns supported semantic-policy contradictions.
+    /// Returns supported semantic-policy contradictions eligible to block enforcement.
     #[must_use]
     pub const fn blocking_findings(self) -> usize {
-        self.forbidden_capability_findings + self.forbidden_effect_findings
+        self.block_supported_findings
+    }
+
+    /// Returns raw semantic violations whose evidence cannot independently block.
+    #[must_use]
+    pub const fn advisory_findings(self) -> usize {
+        self.advisory_findings
+    }
+
+    /// Returns claims made advisory because all supported evidence is test-only.
+    #[must_use]
+    pub const fn test_only_advisory_claims(self) -> usize {
+        self.test_only_advisory_claims
+    }
+
+    /// Returns claims made advisory because all non-test evidence has unknown provenance.
+    #[must_use]
+    pub const fn unknown_provenance_advisory_claims(self) -> usize {
+        self.unknown_provenance_advisory_claims
     }
 
     /// Returns claim-relative coverage failures.
@@ -668,7 +767,7 @@ impl SemanticConformanceEvaluation {
         &self.model
     }
 
-    /// Returns block-eligible canonical semantic contradictions.
+    /// Returns all raw canonical semantic contradictions, including advisory evidence.
     #[must_use]
     pub fn findings(&self) -> &[CanonicalFinding] {
         &self.findings
@@ -770,7 +869,9 @@ pub fn evaluate_semantic_conformance(
                     capability: evidence.capability(),
                     evidence_kind: evidence.kind(),
                     entry_symbol: evidence.entry_symbol().into(),
+                    entry_execution_provenance: evidence.entry_execution_provenance(),
                     source_symbol: evidence.source_symbol().into(),
+                    source_execution_provenance: evidence.source_execution_provenance(),
                     operation: evidence.operation().into(),
                     authority: evidence.classification_authority().into(),
                     path: evidence.path().into(),
@@ -987,94 +1088,145 @@ fn apply_policy(
                     && observation.policy_disposition == Some(disposition)
             })
             .collect::<Vec<_>>();
-        let (authorization, conformance, blocking_eligibility, coverage_reasons) =
-            if disposition == PolicyDisposition::Allow {
-                summary.authored_authorizations += 1;
-                summary.authorization_observations += matching.len();
-                if !matching.is_empty() {
-                    summary.authorizations_with_observed_usage += 1;
-                }
-                (Some(AuthorizationState::Authorised), None, None, Vec::new())
-            } else if !matching.is_empty() {
-                for observation in &matching {
-                    let finding = forbidden_finding(
-                        module_id,
-                        module,
-                        target_kind,
-                        &target,
-                        observation,
-                        standard_edition,
+        let evidence_provenance = EvidenceProvenanceSummary::from_observations(&matching);
+        let (
+            authorization,
+            conformance,
+            blocking_eligibility,
+            coverage_reasons,
+            enforcement_reasons,
+        ) = if disposition == PolicyDisposition::Allow {
+            summary.authored_authorizations += 1;
+            summary.authorization_observations += matching.len();
+            if !matching.is_empty() {
+                summary.authorizations_with_observed_usage += 1;
+            }
+            (
+                Some(AuthorizationState::Authorised),
+                None,
+                None,
+                Vec::new(),
+                Vec::new(),
+            )
+        } else if !matching.is_empty() {
+            for observation in &matching {
+                let mut finding = forbidden_finding(
+                    module_id,
+                    module,
+                    target_kind,
+                    &target,
+                    observation,
+                    standard_edition,
+                )?;
+                if observation.entry_execution_provenance != ExecutionProvenance::ProductionCapable
+                {
+                    finding = finding.with_advisory_enforcement(
+                        match observation.entry_execution_provenance {
+                            ExecutionProvenance::TestOnly => TEST_ONLY_EVIDENCE,
+                            ExecutionProvenance::Unknown => UNKNOWN_EXECUTION_PROVENANCE,
+                            ExecutionProvenance::ProductionCapable => unreachable!(),
+                        },
                     )?;
-                    if finding_ids.insert(finding.finding_fingerprint().to_owned()) {
-                        findings.push(finding);
-                        match target_kind {
-                            PolicyTargetKind::Capability => {
-                                summary.forbidden_capability_findings += 1;
-                            }
-                            PolicyTargetKind::Effect => {
-                                summary.forbidden_effect_findings += 1;
-                            }
+                }
+                if finding_ids.insert(finding.finding_fingerprint().to_owned()) {
+                    if observation.entry_execution_provenance
+                        == ExecutionProvenance::ProductionCapable
+                    {
+                        summary.block_supported_findings += 1;
+                    } else {
+                        summary.advisory_findings += 1;
+                    }
+                    findings.push(finding);
+                    match target_kind {
+                        PolicyTargetKind::Capability => {
+                            summary.forbidden_capability_findings += 1;
+                        }
+                        PolicyTargetKind::Effect => {
+                            summary.forbidden_effect_findings += 1;
                         }
                     }
                 }
-                (
-                    None,
-                    Some(SemanticConformanceState::Fail),
-                    Some(BlockingEligibility::BlockSupported),
-                    Vec::new(),
-                )
-            } else if !coverage.has_governed_subject() {
-                (
-                    None,
-                    Some(SemanticConformanceState::NotApplicable),
-                    Some(BlockingEligibility::AdvisoryOnly),
-                    Vec::new(),
-                )
-            } else if coverage.has_no_semantic_coverage() {
-                let coverage_reasons = vec![NO_SEMANTIC_COVERAGE.into()];
-                coverage_findings.push(coverage_finding(
-                    module_id,
-                    module,
-                    target_kind,
-                    &target,
-                    &coverage_reasons,
-                    coverage,
-                    standard_edition,
-                )?);
-                summary.not_evaluable_findings += 1;
-                summary.no_semantic_coverage_claims += 1;
-                (
-                    None,
-                    Some(SemanticConformanceState::Unknown),
-                    Some(BlockingEligibility::NotEvaluable),
-                    coverage_reasons,
-                )
-            } else if !opaque.is_empty() {
-                let coverage_reasons = opaque.iter().cloned().collect::<Vec<_>>();
-                coverage_findings.push(coverage_finding(
-                    module_id,
-                    module,
-                    target_kind,
-                    &target,
-                    &coverage_reasons,
-                    coverage,
-                    standard_edition,
-                )?);
-                summary.not_evaluable_findings += 1;
-                (
-                    None,
-                    Some(SemanticConformanceState::Unknown),
-                    Some(BlockingEligibility::NotEvaluable),
-                    coverage_reasons,
-                )
-            } else {
-                (
-                    None,
-                    Some(SemanticConformanceState::Pass),
-                    Some(BlockingEligibility::AdvisoryOnly),
-                    Vec::new(),
-                )
-            };
+            }
+            let mut enforcement_reasons = Vec::new();
+            if evidence_provenance.production_capable_observations() == 0 {
+                if evidence_provenance.test_only_observations() > 0 {
+                    enforcement_reasons.push(TEST_ONLY_EVIDENCE.into());
+                    summary.test_only_advisory_claims += 1;
+                }
+                if evidence_provenance.unknown_observations() > 0 {
+                    enforcement_reasons.push(UNKNOWN_EXECUTION_PROVENANCE.into());
+                    summary.unknown_provenance_advisory_claims += 1;
+                }
+            }
+            (
+                None,
+                Some(SemanticConformanceState::Fail),
+                Some(
+                    if evidence_provenance.production_capable_observations() > 0 {
+                        BlockingEligibility::BlockSupported
+                    } else {
+                        BlockingEligibility::AdvisoryOnly
+                    },
+                ),
+                Vec::new(),
+                enforcement_reasons,
+            )
+        } else if !coverage.has_governed_subject() {
+            (
+                None,
+                Some(SemanticConformanceState::NotApplicable),
+                Some(BlockingEligibility::AdvisoryOnly),
+                Vec::new(),
+                Vec::new(),
+            )
+        } else if coverage.has_no_semantic_coverage() {
+            let coverage_reasons = vec![NO_SEMANTIC_COVERAGE.into()];
+            coverage_findings.push(coverage_finding(
+                module_id,
+                module,
+                target_kind,
+                &target,
+                &coverage_reasons,
+                coverage,
+                standard_edition,
+            )?);
+            summary.not_evaluable_findings += 1;
+            summary.no_semantic_coverage_claims += 1;
+            (
+                None,
+                Some(SemanticConformanceState::Unknown),
+                Some(BlockingEligibility::NotEvaluable),
+                coverage_reasons,
+                Vec::new(),
+            )
+        } else if !opaque.is_empty() {
+            let coverage_reasons = opaque.iter().cloned().collect::<Vec<_>>();
+            coverage_findings.push(coverage_finding(
+                module_id,
+                module,
+                target_kind,
+                &target,
+                &coverage_reasons,
+                coverage,
+                standard_edition,
+            )?);
+            summary.not_evaluable_findings += 1;
+            (
+                None,
+                Some(SemanticConformanceState::Unknown),
+                Some(BlockingEligibility::NotEvaluable),
+                coverage_reasons,
+                Vec::new(),
+            )
+        } else {
+            (
+                None,
+                Some(SemanticConformanceState::Pass),
+                Some(BlockingEligibility::AdvisoryOnly),
+                Vec::new(),
+                Vec::new(),
+            )
+        };
         if let Some(state) = conformance {
             summary.evaluative_deny_claims += 1;
             match state {
@@ -1094,8 +1246,10 @@ fn apply_policy(
             conformance,
             blocking_eligibility,
             matching_observations: matching.len(),
+            evidence_provenance,
             coverage: coverage.clone(),
             coverage_reasons,
+            enforcement_reasons,
         });
     }
     let deny_conclusions = conclusions

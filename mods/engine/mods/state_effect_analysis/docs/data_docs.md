@@ -40,4 +40,8 @@ Defines the retained State/Effect Analysis v1 envelope for historical projection
 
 ### [`state_effect_schema_v2.json`](../data/state_effect_schema_v2.json)
 
-Defines deterministic State/Effect Analysis v2 output with a structured effect catalog, capability consequences, operation-classification coverage, and causal evidence.
+Defines retained State/Effect Analysis v2 output with a structured effect catalog, capability consequences, operation-classification coverage, and causal evidence.
+
+### [`state_effect_schema_v3.json`](../data/state_effect_schema_v3.json)
+
+Defines deterministic State/Effect Analysis v3 output whose direct and transitive causal evidence retains entry-symbol and direct-origin execution provenance.

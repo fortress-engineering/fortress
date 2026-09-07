@@ -6,7 +6,7 @@ use std::fmt::{self, Display, Formatter};
 
 use serde::{Deserialize, Serialize};
 
-use crate::finding::{CanonicalFinding, FindingIdentityEligibility};
+use crate::finding::{CanonicalFinding, FindingEnforcementEligibility, FindingIdentityEligibility};
 use crate::identity::{RuleId, StableId};
 
 /// Canonical repository-relative location of finding governance authority.
@@ -471,6 +471,8 @@ pub struct GovernedFinding {
     finding_id: String,
     rule_id: String,
     raw_conformance: &'static str,
+    evidence_eligibility: FindingEnforcementEligibility,
+    evidence_reason: Option<String>,
     lifecycle: FindingLifecycle,
     disposition: FindingDisposition,
     enforcement: FindingEnforcement,
@@ -504,6 +506,18 @@ impl GovernedFinding {
     pub const fn enforcement(&self) -> FindingEnforcement {
         self.enforcement
     }
+
+    /// Returns whether evidence may independently block enforcement.
+    #[must_use]
+    pub const fn evidence_eligibility(&self) -> FindingEnforcementEligibility {
+        self.evidence_eligibility
+    }
+
+    /// Returns the stable reason evidence is advisory, when applicable.
+    #[must_use]
+    pub fn evidence_reason(&self) -> Option<&str> {
+        self.evidence_reason.as_deref()
+    }
 }
 
 /// Deterministic summary of finding governance evaluation.
@@ -515,6 +529,8 @@ pub struct FindingGovernanceSummary {
     pub baselined_non_blocking: usize,
     /// Current findings covered by active explicit exception authority.
     pub excepted_non_blocking: usize,
+    /// Current raw violations whose evidence is advisory for enforcement.
+    pub advisory_non_blocking: usize,
     /// Active baseline entries absent from current findings.
     pub resolved_baseline_entries: usize,
     /// Current findings lacking safe identity.
@@ -653,7 +669,6 @@ pub fn evaluate_finding_governance(
             } else if active.contains(finding.finding_id()) {
                 FindingLifecycle::Baselined
             } else if retired.contains(finding.finding_id()) {
-                summary.reintroduced_blocking += 1;
                 FindingLifecycle::Reintroduced
             } else {
                 FindingLifecycle::New
@@ -667,7 +682,9 @@ pub fn evaluate_finding_governance(
         } else {
             FindingDisposition::Excepted
         };
-        let enforcement = if disposition == FindingDisposition::Excepted
+        let enforcement = if finding.enforcement_eligibility()
+            == FindingEnforcementEligibility::AdvisoryOnly
+            || disposition == FindingDisposition::Excepted
             || lifecycle == FindingLifecycle::Baselined
         {
             FindingEnforcement::NonBlocking
@@ -681,6 +698,17 @@ pub fn evaluate_finding_governance(
             (FindingLifecycle::Baselined, _, FindingEnforcement::NonBlocking) => {
                 summary.baselined_non_blocking += 1;
             }
+            (_, FindingDisposition::None, FindingEnforcement::NonBlocking)
+                if finding.enforcement_eligibility()
+                    == FindingEnforcementEligibility::AdvisoryOnly =>
+            {
+                summary.advisory_non_blocking += 1;
+            }
+            (
+                FindingLifecycle::Reintroduced,
+                FindingDisposition::None,
+                FindingEnforcement::Blocking,
+            ) => summary.reintroduced_blocking += 1,
             (
                 FindingLifecycle::New | FindingLifecycle::BaselineIneligible,
                 _,
@@ -692,20 +720,30 @@ pub fn evaluate_finding_governance(
             finding_id: finding.finding_id().into(),
             rule_id: finding.rule_id().into(),
             raw_conformance: "FAIL",
+            evidence_eligibility: finding.enforcement_eligibility(),
+            evidence_reason: finding.enforcement_reason().map(str::to_owned),
             lifecycle,
             disposition,
             enforcement,
             exception_ids: applied.iter().map(|value| value.id.clone()).collect(),
-            reason: match (lifecycle, disposition) {
-                (_, FindingDisposition::Excepted) => "active explicit exception authority".into(),
-                (FindingLifecycle::Baselined, _) => "active legacy baseline residue".into(),
-                (FindingLifecycle::Reintroduced, _) => {
+            reason: match (finding.enforcement_eligibility(), lifecycle, disposition) {
+                (FindingEnforcementEligibility::AdvisoryOnly, _, FindingDisposition::None) => {
+                    format!(
+                        "advisory evidence: {}",
+                        finding.enforcement_reason().unwrap_or("UNSPECIFIED")
+                    )
+                }
+                (_, _, FindingDisposition::Excepted) => {
+                    "active explicit exception authority".into()
+                }
+                (_, FindingLifecycle::Baselined, _) => "active legacy baseline residue".into(),
+                (_, FindingLifecycle::Reintroduced, _) => {
                     "retired baseline violation reintroduced".into()
                 }
-                (FindingLifecycle::BaselineIneligible, _) => {
+                (_, FindingLifecycle::BaselineIneligible, _) => {
                     "stable semantic identity unavailable".into()
                 }
-                (FindingLifecycle::New, _) => "not present in active baseline".into(),
+                (_, FindingLifecycle::New, _) => "not present in active baseline".into(),
             },
         });
     }

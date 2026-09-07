@@ -18,7 +18,8 @@ use fortress_core::program_semantics::{ProgramSemanticInput, compile_program_sem
 use fortress_core::semantic_analysis::{analyze_program_domains, load_function_contracts};
 use fortress_core::semantic_conformance::{
     AuthorizationState, BlockingEligibility, NO_SEMANTIC_COVERAGE, PolicyDisposition,
-    SemanticConformanceEvaluation, SemanticConformanceState, evaluate_semantic_conformance,
+    SemanticConformanceEvaluation, SemanticConformanceState, TEST_ONLY_EVIDENCE,
+    UNKNOWN_EXECUTION_PROVENANCE, evaluate_semantic_conformance,
 };
 use fortress_core::state_effect_analysis::{analyze_state_effects, load_state_contracts};
 
@@ -294,6 +295,105 @@ pub fn entry() { write_file(); }
             .map(fortress_core::finding::CanonicalFinding::finding_id)
             .collect::<Vec<_>>()
     );
+}
+
+/// `T-ARCH-SEMANTIC-001-R01-005`
+/// Fortress requirement: AF-ARCHITECTURE-EVALUATION-0001-R06
+#[test]
+fn test_only_forbidden_effect_remains_fail_but_is_advisory() {
+    let result = evaluate(
+        r#"
+#[cfg(test)] mod tests {
+    fn write_fixture() { let _ = std::fs::write("output", b"x"); }
+    fn entry() { write_fixture(); }
+}
+"#,
+        module_contract("AF-SAMPLE-0001", &[], &[], &[], &["filesystem.write"]),
+    );
+    let module = result.model().module("AF-SAMPLE-0001").unwrap();
+    let claim = &module.conclusions()[0];
+    assert_eq!(claim.conformance(), Some(SemanticConformanceState::Fail));
+    assert_eq!(
+        claim.blocking_eligibility(),
+        Some(BlockingEligibility::AdvisoryOnly)
+    );
+    assert_eq!(claim.enforcement_reasons(), [TEST_ONLY_EVIDENCE]);
+    assert_eq!(
+        claim
+            .evidence_provenance()
+            .production_capable_observations(),
+        0
+    );
+    assert_eq!(claim.evidence_provenance().test_only_observations(), 2);
+    assert_eq!(result.findings().len(), 2);
+    assert!(result.findings().iter().all(|finding| {
+        finding.enforcement_eligibility()
+            == fortress_core::finding::FindingEnforcementEligibility::AdvisoryOnly
+            && finding.enforcement_reason() == Some(TEST_ONLY_EVIDENCE)
+    }));
+    assert_eq!(result.model().summary().blocking_findings(), 0);
+    assert_eq!(result.model().summary().advisory_findings(), 2);
+}
+
+/// `T-ARCH-SEMANTIC-001-R01-006`
+/// Fortress requirement: AF-ARCHITECTURE-EVALUATION-0001-R06
+#[test]
+fn unknown_only_evidence_is_advisory_while_production_evidence_is_sufficient() {
+    let unknown = evaluate(
+        "#[cfg(platform(test))] fn uncertain() { let _ = std::fs::write(\"x\", b\"x\"); }",
+        module_contract("AF-SAMPLE-0001", &[], &[], &[], &["filesystem.write"]),
+    );
+    let unknown_claim = &unknown
+        .model()
+        .module("AF-SAMPLE-0001")
+        .unwrap()
+        .conclusions()[0];
+    assert_eq!(
+        unknown_claim.blocking_eligibility(),
+        Some(BlockingEligibility::AdvisoryOnly)
+    );
+    assert_eq!(
+        unknown_claim.enforcement_reasons(),
+        [UNKNOWN_EXECUTION_PROVENANCE]
+    );
+
+    let mixed = evaluate(
+        r#"
+fn production_write() { let _ = std::fs::write("production", b"x"); }
+#[cfg(test)] mod tests {
+    fn test_write() { let _ = std::fs::write("test", b"x"); }
+}
+"#,
+        module_contract("AF-SAMPLE-0001", &[], &[], &[], &["filesystem.write"]),
+    );
+    let mixed_claim = &mixed
+        .model()
+        .module("AF-SAMPLE-0001")
+        .unwrap()
+        .conclusions()[0];
+    assert_eq!(
+        mixed_claim.blocking_eligibility(),
+        Some(BlockingEligibility::BlockSupported)
+    );
+    assert!(mixed_claim.enforcement_reasons().is_empty());
+    assert_eq!(
+        mixed_claim
+            .evidence_provenance()
+            .production_capable_observations(),
+        1
+    );
+    assert_eq!(
+        mixed_claim.evidence_provenance().test_only_observations(),
+        1
+    );
+    assert!(mixed.findings().iter().any(|finding| {
+        finding.enforcement_eligibility()
+            == fortress_core::finding::FindingEnforcementEligibility::BlockSupported
+    }));
+    assert!(mixed.findings().iter().any(|finding| {
+        finding.enforcement_eligibility()
+            == fortress_core::finding::FindingEnforcementEligibility::AdvisoryOnly
+    }));
 }
 
 /// `T-ARCH-SEMANTIC-001-R01-002`

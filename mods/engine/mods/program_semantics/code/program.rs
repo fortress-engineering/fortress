@@ -19,16 +19,16 @@ use crate::implementation_observation::{
     ImplementationObservationError, ImplementationObservationInput,
 };
 
-/// Registered PSM v3 schema identity.
-pub const PROGRAM_SEMANTIC_MODEL_SCHEMA: &str = "urn:fortress:schema:v3:program-semantic-model";
+/// Registered PSM v4 schema identity.
+pub const PROGRAM_SEMANTIC_MODEL_SCHEMA: &str = "urn:fortress:schema:v4:program-semantic-model";
 /// Canonical PSM document schema version.
-pub const PROGRAM_SEMANTIC_MODEL_SCHEMA_VERSION: u16 = 3;
+pub const PROGRAM_SEMANTIC_MODEL_SCHEMA_VERSION: u16 = 4;
 /// Semantic version of the language-neutral PSM compiler.
-pub const PROGRAM_SEMANTIC_MODEL_VERSION: &str = "3.2.0";
+pub const PROGRAM_SEMANTIC_MODEL_VERSION: &str = "4.0.0";
 /// Stable Rust analyzer identity.
 pub const RUST_PROGRAM_ANALYZER_ID: &str = "fortress-rust-program-semantics";
 /// Semantic version of supported Rust program analysis.
-pub const RUST_PROGRAM_ANALYZER_VERSION: &str = "3.2.0";
+pub const RUST_PROGRAM_ANALYZER_VERSION: &str = "4.0.0";
 
 const UNSUPPORTED_SEMANTICS: &[&str] = &[
     "arbitrary_dynamic_dispatch_resolution",
@@ -218,6 +218,21 @@ pub enum SymbolClassification {
     Testing,
 }
 
+/// Structurally established Rust execution provenance for one executable symbol.
+///
+/// This is independent of authored Module classification and does not participate
+/// in the stable semantic symbol identity.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum ExecutionProvenance {
+    /// No supported Rust or Cargo structure restricts the symbol to test compilation.
+    ProductionCapable,
+    /// Cargo target or Rust attributes prove that the symbol requires test compilation.
+    TestOnly,
+    /// Supported structure cannot safely determine execution provenance.
+    Unknown,
+}
+
 /// Language-neutral source visibility classification.
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "snake_case")]
@@ -282,7 +297,7 @@ pub enum ProgramPattern {
         /// Nested component patterns.
         elements: Vec<ProgramPattern>,
     },
-    /// Pattern semantics are not represented by PSM v3.
+    /// Pattern semantics are not represented by the current PSM.
     Unsupported {
         /// Exact Rust pattern spelling.
         rust_spelling: String,
@@ -395,7 +410,7 @@ pub enum ProgramExpression {
         /// Stable structural operation identity.
         operation: String,
     },
-    /// Expression semantics are not represented by PSM v3.
+    /// Expression semantics are not represented by the current PSM.
     Unsupported {
         /// Exact Rust expression spelling.
         rust_spelling: String,
@@ -1207,6 +1222,7 @@ pub struct ExecutableSymbol {
     rust_module: String,
     fortress_module: String,
     classification: SymbolClassification,
+    execution_provenance: ExecutionProvenance,
     source_path: String,
     kind: ExecutableSymbolKind,
     owner_type: Option<String>,
@@ -1264,6 +1280,12 @@ impl ExecutableSymbol {
         self.classification
     }
 
+    /// Returns structurally established execution provenance.
+    #[must_use]
+    pub const fn execution_provenance(&self) -> ExecutionProvenance {
+        self.execution_provenance
+    }
+
     /// Returns the executable category.
     #[must_use]
     pub const fn kind(&self) -> ExecutableSymbolKind {
@@ -1319,7 +1341,7 @@ pub enum CallResolutionState {
     DynamicDispatch,
     /// Supported syntax did not resolve confidently.
     Unresolved,
-    /// Required semantics are outside PSM v3.
+    /// Required semantics are outside the current PSM.
     Unsupported,
     /// Source or model violated a supported analyzer invariant.
     Invalid,
@@ -1485,7 +1507,7 @@ impl CallSiteEvidence {
     }
 }
 
-/// Initial value-transfer category supported by PSM v3.
+/// Initial value-transfer category supported by the current PSM.
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ValueTransferKind {
@@ -1513,7 +1535,7 @@ pub enum TransferResolutionState {
     ResolvedStaticCall,
     /// Transfer exists but its exact static type is unknown.
     TypeUnknown,
-    /// Required transfer semantics are outside PSM v3.
+    /// Required transfer semantics are outside the current PSM.
     Unsupported,
 }
 
@@ -1717,6 +1739,9 @@ pub struct ProgramCoverage {
     impls: usize,
     production_symbols: usize,
     testing_symbols: usize,
+    production_capable_symbols: usize,
+    test_only_symbols: usize,
+    unknown_provenance_symbols: usize,
     free_functions: usize,
     associated_functions: usize,
     inherent_methods: usize,
@@ -1759,6 +1784,24 @@ impl ProgramCoverage {
         self.executable_symbols
     }
 
+    /// Returns executable symbols that are not structurally restricted to tests.
+    #[must_use]
+    pub const fn production_capable_symbols(self) -> usize {
+        self.production_capable_symbols
+    }
+
+    /// Returns executable symbols proven confined to test compilation.
+    #[must_use]
+    pub const fn test_only_symbols(self) -> usize {
+        self.test_only_symbols
+    }
+
+    /// Returns executable symbols whose execution provenance is unresolved.
+    #[must_use]
+    pub const fn unknown_provenance_symbols(self) -> usize {
+        self.unknown_provenance_symbols
+    }
+
     /// Returns the number of invalid calls.
     #[must_use]
     pub const fn invalid_calls(self) -> usize {
@@ -1788,7 +1831,7 @@ pub struct ProgramModelProvenance {
     testing_authority: String,
 }
 
-/// Canonical Program Semantic Model v3 document.
+/// Canonical Program Semantic Model v4 document.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct ProgramSemanticModel {
     #[serde(rename = "$schema")]
@@ -2153,6 +2196,18 @@ fn coverage(
         testing_symbols: symbols
             .iter()
             .filter(|symbol| symbol.classification == SymbolClassification::Testing)
+            .count(),
+        production_capable_symbols: symbols
+            .iter()
+            .filter(|symbol| symbol.execution_provenance == ExecutionProvenance::ProductionCapable)
+            .count(),
+        test_only_symbols: symbols
+            .iter()
+            .filter(|symbol| symbol.execution_provenance == ExecutionProvenance::TestOnly)
+            .count(),
+        unknown_provenance_symbols: symbols
+            .iter()
+            .filter(|symbol| symbol.execution_provenance == ExecutionProvenance::Unknown)
             .count(),
         free_functions: count_symbols(symbols, ExecutableSymbolKind::FreeFunction),
         associated_functions: count_symbols(symbols, ExecutableSymbolKind::AssociatedFunction),

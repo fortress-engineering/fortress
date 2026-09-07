@@ -1,4 +1,4 @@
-//! Parent-local Program Semantic Model v3 conformance.
+//! Parent-local Program Semantic Model v4 conformance.
 
 use std::path::{Path, PathBuf};
 
@@ -7,9 +7,9 @@ use fortress_core::implementation_observation::{
     ImplementationObservationInput, ModuleTerritory, SnapshotBoundFile,
 };
 use fortress_core::program_semantics::{
-    CallResolutionReason, CallResolutionState, ExecutableSymbol, ExecutableSymbolKind, NominalType,
-    NominalTypeKind, ProgramCall, ProgramSemanticError, ProgramSemanticInput, SymbolClassification,
-    compile_program_semantic_model,
+    CallResolutionReason, CallResolutionState, ExecutableSymbol, ExecutableSymbolKind,
+    ExecutionProvenance, NominalType, NominalTypeKind, ProgramCall, ProgramSemanticError,
+    ProgramSemanticInput, SymbolClassification, compile_program_semantic_model,
 };
 
 fn repository_root() -> PathBuf {
@@ -136,6 +136,144 @@ fn deepest_module_ownership_and_testing_classification_are_independent_of_rust_n
     assert_eq!(
         model.symbols()[0].classification(),
         SymbolClassification::Testing
+    );
+}
+
+/// `T-AF-PROGRAM-SEMANTICS-0001-R03-005`
+/// Fortress requirement: AF-PROGRAM-SEMANTICS-0001-R03
+#[test]
+fn rust_execution_provenance_follows_test_attributes_and_lexical_ancestry() {
+    let model = compile_program_semantic_model(&one_package(
+        r"
+fn production() {}
+fn test_helper_name_is_not_authority() {}
+#[test] fn direct_test() {}
+#[bench] fn direct_bench() {}
+#[cfg(test)] mod tests {
+    fn helper() {}
+    mod nested { fn another_helper() {} }
+    struct Subject;
+    impl Subject { fn method(&self) {} }
+}
+",
+    ))
+    .expect("provenance fixture compiles");
+    let provenance = model
+        .symbols()
+        .iter()
+        .map(|symbol| (symbol.qualified_name(), symbol.execution_provenance()))
+        .collect::<std::collections::BTreeMap<_, _>>();
+    assert_eq!(
+        provenance["sample::production"],
+        ExecutionProvenance::ProductionCapable
+    );
+    assert_eq!(
+        provenance["sample::test_helper_name_is_not_authority"],
+        ExecutionProvenance::ProductionCapable
+    );
+    assert_eq!(
+        provenance["sample::direct_test"],
+        ExecutionProvenance::TestOnly
+    );
+    assert_eq!(
+        provenance["sample::direct_bench"],
+        ExecutionProvenance::TestOnly
+    );
+    assert_eq!(
+        provenance["sample::tests::helper"],
+        ExecutionProvenance::TestOnly
+    );
+    assert_eq!(
+        provenance["sample::tests::nested::another_helper"],
+        ExecutionProvenance::TestOnly
+    );
+    assert_eq!(
+        provenance["sample::tests::Subject::method"],
+        ExecutionProvenance::TestOnly
+    );
+    assert_eq!(model.coverage().test_only_symbols(), 5);
+    assert_eq!(model.coverage().unknown_provenance_symbols(), 0);
+}
+
+/// `T-AF-PROGRAM-SEMANTICS-0001-R03-006`
+/// Fortress requirement: AF-PROGRAM-SEMANTICS-0001-R03
+#[test]
+fn compound_cfg_provenance_is_conservative() {
+    let model = compile_program_semantic_model(&one_package(
+        r#"
+#[cfg(all(test, unix))] fn conjunctive() {}
+#[cfg(any(test, feature = "extra"))] fn alternative() {}
+#[cfg(not(test))] fn non_test() {}
+#[cfg(any(all(test, unix), all(test, windows)))] fn every_branch_requires_test() {}
+#[cfg(platform(test))] fn unsupported_predicate() {}
+"#,
+    ))
+    .expect("compound cfg fixture compiles structurally");
+    let provenance = model
+        .symbols()
+        .iter()
+        .map(|symbol| (symbol.qualified_name(), symbol.execution_provenance()))
+        .collect::<std::collections::BTreeMap<_, _>>();
+    assert_eq!(
+        provenance["sample::conjunctive"],
+        ExecutionProvenance::TestOnly
+    );
+    assert_eq!(
+        provenance["sample::alternative"],
+        ExecutionProvenance::ProductionCapable
+    );
+    assert_eq!(
+        provenance["sample::non_test"],
+        ExecutionProvenance::ProductionCapable
+    );
+    assert_eq!(
+        provenance["sample::every_branch_requires_test"],
+        ExecutionProvenance::TestOnly
+    );
+    assert_eq!(
+        provenance["sample::unsupported_predicate"],
+        ExecutionProvenance::Unknown
+    );
+}
+
+/// `T-AF-PROGRAM-SEMANTICS-0001-R03-007`
+/// Fortress requirement: AF-PROGRAM-SEMANTICS-0001-R03
+#[test]
+fn cargo_integration_test_targets_are_test_only_without_naming_inference() {
+    let fixture = input(
+        &[
+            (
+                "mods/sample/data/Cargo.toml",
+                "[package]\nname='sample'\nversion='0.1.0'\nedition='2024'\n[lib]\npath='../code/lib.rs'\n[[test]]\nname='integration'\npath='../code/tests/integration.rs'\n",
+            ),
+            ("mods/sample/code/lib.rs", "fn production() {}\n"),
+            (
+                "mods/sample/code/tests/integration.rs",
+                "fn ordinary_name() {}\n",
+            ),
+        ],
+        &[("PF-PSM-FIXTURE", ""), ("AF-SAMPLE-0001", "mods/sample")],
+        &[],
+        &[],
+    );
+    let model = compile_program_semantic_model(&fixture).expect("Cargo test target compiles");
+    assert_eq!(
+        model
+            .symbols()
+            .iter()
+            .find(|symbol| symbol.qualified_name() == "integration::ordinary_name")
+            .expect("integration symbol exists")
+            .execution_provenance(),
+        ExecutionProvenance::TestOnly
+    );
+    assert_eq!(
+        model
+            .symbols()
+            .iter()
+            .find(|symbol| symbol.qualified_name() == "sample::production")
+            .expect("production symbol exists")
+            .execution_provenance(),
+        ExecutionProvenance::ProductionCapable
     );
 }
 

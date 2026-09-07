@@ -83,14 +83,15 @@
         },
         {
           "id": "AF-STATE-EFFECT-ANALYSIS-0001-R05",
-          "statement": "State and Effect Analysis classifies exact semantic operation identities into a structured effect ontology and capability consequences, preserves unsupported operation coverage, detects supported Rust panic and unsafe boundaries, propagates causal evidence, and retains explicit Function Contract v3 umbrella compatibility without weakening v4 distinctions.",
+          "statement": "State and Effect Analysis classifies exact semantic operation identities into a structured effect ontology and capability consequences, preserves unsupported operation coverage, detects supported Rust panic and unsafe boundaries, propagates causal evidence with entry and direct-origin execution provenance, and retains explicit Function Contract v3 umbrella compatibility without weakening v4 distinctions.",
           "tests": [
             "T-AF-STATE-EFFECT-ANALYSIS-0001-R05-001",
             "T-AF-STATE-EFFECT-ANALYSIS-0001-R05-002",
             "T-AF-STATE-EFFECT-ANALYSIS-0001-R05-003",
             "T-AF-STATE-EFFECT-ANALYSIS-0001-R05-004",
             "T-AF-STATE-EFFECT-ANALYSIS-0001-R05-005",
-            "T-AF-STATE-EFFECT-ANALYSIS-0001-R05-006"
+            "T-AF-STATE-EFFECT-ANALYSIS-0001-R05-006",
+            "T-AF-STATE-EFFECT-ANALYSIS-0001-R05-007"
           ]
         }
       ]

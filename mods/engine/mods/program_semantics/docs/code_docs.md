@@ -6,7 +6,7 @@ The Code defines the language-neutral PSM and the Rust-specific translator that 
 
 ## Execution
 
-The orchestrator verifies snapshot-bound bytes, derives Cargo package and target contexts, builds a workspace-wide nominal/interface/impl index, propagates supported local static types, resolves only unique type-directed call targets, derives graph and transfer topology, reconciles cross-Module calls with Implementation Observation, and serializes canonical output. PSM v3.2 binds only the source, Cargo, ownership, and stable Module-identity inputs that can alter program semantics, allowing unrelated Module policy changes to reuse identical PSM bytes while exact-snapshot certification remains independently complete. The pinned stable toolchain exposes neither stable rustdoc JSON/HIR nor a pinned rust-analyzer component, so production analysis uses snapshot-bound Cargo interpretation and structural `syn` semantics while labeling every conclusion by authority and every residual call by a stable reason.
+The orchestrator verifies snapshot-bound bytes, derives Cargo package and target contexts, builds a workspace-wide nominal/interface/impl index, propagates supported local static types, resolves only unique type-directed call targets, derives graph and transfer topology, assigns structurally established execution provenance, reconciles cross-Module calls with Implementation Observation, and serializes canonical output. PSM v4 binds only the source, Cargo, ownership, and stable Module-identity inputs that can alter program semantics, allowing unrelated Module policy changes to reuse identical PSM bytes while exact-snapshot certification remains independently complete. The pinned stable toolchain exposes neither stable rustdoc JSON/HIR nor a pinned rust-analyzer component, so production analysis uses snapshot-bound Cargo interpretation and structural `syn` semantics while labeling every conclusion by authority and every residual call by a stable reason.
 
 ## State
 
@@ -24,7 +24,7 @@ Derives deterministic call adjacency, reachability, strongly connected component
 
 ### [`program.rs`](../code/program.rs)
 
-Defines canonical language-neutral PSM v3 types, nominal and impl facts, structured places and mutations, input/output boundaries, canonical serialization, digests, resolution/coverage summaries, and analyzer coherency.
+Defines canonical language-neutral PSM v4 types, nominal and impl facts, executable-symbol provenance, structured places and mutations, input/output boundaries, canonical serialization, digests, resolution/coverage summaries, and analyzer coherency.
 
 ### [`rust.rs`](../code/rust.rs)
 

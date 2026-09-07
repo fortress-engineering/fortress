@@ -88,7 +88,7 @@
         },
         {
           "id": "TF-CLI-0001-R07",
-          "statement": "The native fortress psm command compiles snapshot-bound Program Semantic Model v3, emits canonical deterministic JSON to standard output or an explicit file, returns non-success for invalid or analyzer-incoherent state, and never implies behavioral realization or certification.",
+          "statement": "The native fortress psm command compiles snapshot-bound Program Semantic Model v4, emits canonical deterministic JSON to standard output or an explicit file, returns non-success for invalid or analyzer-incoherent state, and never implies behavioral realization or certification.",
           "tests": [
             "T-TF-CLI-0001-R07-001",
             "T-TF-CLI-0001-R07-002"
@@ -170,14 +170,15 @@
         },
         {
           "id": "TF-CLI-0001-R17",
-          "statement": "The native fortress semantic-conformance command renders authored ALLOW entries as AUTHORISED permissions with independent usage, renders only DENY entries as PASS, FAIL, UNKNOWN, or NOT_APPLICABLE evaluative claims, preserves claim-relative coverage without inferring permission from implementation, resolves stable symbols to qualified human names when available, and groups propagated causal evidence by distinct operation site without discarding reachability paths.",
+          "statement": "The native fortress semantic-conformance command renders authored ALLOW entries as AUTHORISED permissions with independent usage, renders only DENY entries as PASS, FAIL, UNKNOWN, or NOT_APPLICABLE evaluative claims, preserves claim-relative coverage and execution-provenance eligibility without inferring permission from implementation, resolves stable symbols to qualified human names when available, and groups propagated causal evidence by distinct operation site without discarding reachability paths.",
           "tests": [
             "T-TF-CLI-0001-R17-001",
             "T-TF-CLI-0001-R17-002",
             "T-TF-CLI-0001-R17-003",
             "T-TF-CLI-0001-R17-004",
             "T-TF-CLI-0001-R17-005",
-            "T-TF-CLI-0001-R17-006"
+            "T-TF-CLI-0001-R17-006",
+            "T-TF-CLI-0001-R17-007"
           ]
         },
         {
