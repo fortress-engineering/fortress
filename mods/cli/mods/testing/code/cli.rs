@@ -1,9 +1,11 @@
 //! Process-level evidence for the canonical Fortress CLI entrypoints.
 
+use std::fmt::Write as _;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::time::Instant;
 
 use fortress_cli::command::{CommandDescriptor, CommandRegistry};
 use fortress_cli::{EXIT_SUCCESS, EXIT_USAGE};
@@ -60,7 +62,19 @@ fn module_inspection_reports_analysis_only_ownership_without_inventing_modules()
 fn module_inspection_preserves_invalid_governance_as_non_success() {
     let fixture = ObservationFixture::new();
     fs::create_dir_all(fixture.root.join("data")).expect("Data creates");
-    fs::write(fixture.root.join("data/project.json"), "{").expect("project corrupts");
+    fs::write(
+        fixture.root.join("data/project.json"),
+        r#"{
+          "$schema":"urn:fortress:schema:v3:project-configuration",
+          "schema_version":3,
+          "observation_exclusions":[".git"],
+          "logical_modules":[
+            {"module":"AF-ZETA-0001","contract":"data/logical_modules/zeta/contract.json","parent":"PF-FIXTURE","bindings":[{"kind":"directory","path":"src/zeta"}]},
+            {"module":"AF-ALPHA-0001","contract":"data/logical_modules/alpha/contract.json","parent":"PF-FIXTURE","bindings":[{"kind":"directory","path":"src/alpha"}]}
+          ]
+        }"#,
+    )
+    .expect("project ordering invalidates");
     let result = run(&["modules", &fixture.argument(), "--format=json"]);
     assert_eq!(result.status.code(), Some(1));
     let document: serde_json::Value = serde_json::from_slice(&result.stdout).unwrap();
@@ -69,6 +83,24 @@ fn module_inspection_preserves_invalid_governance_as_non_success() {
         document["analysis_territories"]
             .as_array()
             .is_some_and(|territories| !territories.is_empty())
+    );
+
+    let human = run(&["modules", &fixture.argument()]);
+    assert_eq!(human.status.code(), Some(1));
+    let output = String::from_utf8_lossy(&human.stdout);
+    assert!(output.contains("Project authority: INVALID"), "{output}");
+    assert!(output.contains("Reason:"), "{output}");
+    assert!(
+        output.contains("logical Modules must be strictly sorted by stable identity"),
+        "{output}"
+    );
+    assert!(
+        output.contains("Governed Module conclusions are unavailable"),
+        "{output}"
+    );
+    assert!(
+        output.contains("Mechanical analysis territories (not authored Modules)"),
+        "{output}"
     );
 }
 
@@ -181,13 +213,20 @@ fn semantic_conformance_renders_zero_coverage_as_not_evaluable() {
     let human = run(&["semantic-conformance", &fixture.argument()]);
     assert_eq!(human.status.code(), Some(1));
     let output = String::from_utf8_lossy(&human.stdout);
-    assert!(output.contains("conformance=Unknown"), "{output}");
     assert!(
-        output.contains("governed_source_files=1 analysed_source_files=0 ratio=0/1"),
+        output.contains("Raw semantic conformance: UNKNOWN"),
         "{output}"
     );
-    assert!(output.contains("NotEvaluable"), "{output}");
+    assert!(
+        output.contains("Semantic coverage: 0/1 governed source files (0/1)"),
+        "{output}"
+    );
+    assert!(output.contains("NOT_EVALUABLE"), "{output}");
     assert!(output.contains("NO_SEMANTIC_COVERAGE"), "{output}");
+    assert!(
+        output.contains("Fortress analyzed none of this Module's 1 governed source file"),
+        "{output}"
+    );
 
     let json = run(&["semantic-conformance", &fixture.argument(), "--format=json"]);
     assert_eq!(json.status.code(), Some(1));
@@ -246,9 +285,12 @@ fn semantic_conformance_renders_allow_as_authorization_not_pass() {
     let output = String::from_utf8_lossy(&human.stdout);
     assert!(output.contains("Authorizations:"), "{output}");
     assert!(output.contains("AUTHORISED"), "{output}");
-    assert!(output.contains("observed uses="), "{output}");
+    assert!(output.contains("observed supported uses:"), "{output}");
     assert!(!output.contains("ALLOW -> PASS"), "{output}");
-    assert!(output.contains("conformance=NotApplicable"), "{output}");
+    assert!(
+        output.contains("Raw semantic conformance: NOT_APPLICABLE"),
+        "{output}"
+    );
 
     let json = run(&["semantic-conformance", &fixture.argument(), "--format=json"]);
     assert!(json.status.success());
@@ -265,6 +307,57 @@ fn semantic_conformance_renders_allow_as_authorization_not_pass() {
     assert_eq!(entry["disposition"], "ALLOW");
     assert_eq!(entry["authorization"], "AUTHORISED");
     assert!(entry["conformance"].is_null());
+}
+
+/// `T-TF-CLI-0001-R17-005`
+/// Fortress requirement: TF-CLI-0001-R17
+#[test]
+fn semantic_conformance_groups_causal_paths_by_operation_site_with_readable_symbols() {
+    let fixture = SemanticCoverageFixture::with_policy(
+        &[],
+        &["filesystem"],
+        "pub fn leaf() { let _ = std::fs::write(\"output\", b\"x\"); }\npub fn first() { leaf(); }\npub fn second() { leaf(); }\n",
+    );
+    let human = run(&["semantic-conformance", &fixture.argument()]);
+    assert_eq!(human.status.code(), Some(1));
+    let output = String::from_utf8_lossy(&human.stdout);
+    assert!(
+        output.contains("Blocking findings (repository-wide): 3"),
+        "{output}"
+    );
+    assert!(output.contains("Distinct offending sites: 1"), "{output}");
+    assert!(output.contains("Evidence paths: 3"), "{output}");
+    assert_eq!(output.matches("1. Operation:").count(), 1, "{output}");
+    assert!(output.contains("coverage::leaf"), "{output}");
+    assert!(output.contains("coverage::first"), "{output}");
+    assert!(output.contains("coverage::second"), "{output}");
+    assert!(!output.contains("rust_symbol:sha256:"), "{output}");
+    let repeated = run(&["semantic-conformance", &fixture.argument()]);
+    assert_eq!(human.stdout, repeated.stdout);
+}
+
+/// `T-TF-CLI-0001-R17-006`
+/// Fortress requirement: TF-CLI-0001-R17
+#[test]
+fn semantic_conformance_groups_thousands_of_paths_without_multiplying_sites() {
+    let mut source = "pub fn leaf() { let _ = std::fs::write(\"output\", b\"x\"); }\n".to_owned();
+    for index in 0..2_000 {
+        let _ = writeln!(source, "pub fn caller_{index}() {{ leaf(); }}");
+    }
+    let fixture = SemanticCoverageFixture::with_policy(&[], &["filesystem"], &source);
+    let started = Instant::now();
+    let human = run(&["semantic-conformance", &fixture.argument()]);
+    let elapsed = started.elapsed();
+    assert_eq!(human.status.code(), Some(1));
+    let output = String::from_utf8_lossy(&human.stdout);
+    assert!(output.contains("Distinct offending sites: 1"), "{output}");
+    assert!(output.contains("Evidence paths: 2001"), "{output}");
+    assert_eq!(output.matches("1. Operation:").count(), 1, "{output}");
+    println!(
+        "grouped 2,001 causal paths into one operation site in {} ms",
+        elapsed.as_millis()
+    );
+    assert!(elapsed.as_secs() < 30, "rendering took {elapsed:?}");
 }
 
 /// `T-TF-CLI-0001-R15-001`
@@ -440,6 +533,13 @@ fn raw_audit_failure_remains_distinct_from_progressive_check_success() {
     assert!(progressive.status.success());
     let progressive_json: serde_json::Value = serde_json::from_slice(&progressive.stdout).unwrap();
     assert_eq!(progressive_json["outcome"], "FAIL");
+
+    let progressive_human = run(&["check", &root]);
+    assert!(progressive_human.status.success());
+    let output = String::from_utf8_lossy(&progressive_human.stdout);
+    assert!(output.contains("Progressive enforcement: PASS"), "{output}");
+    assert!(output.contains("Raw conformance: FAIL"), "{output}");
+    assert!(output.contains("baselined/non-blocking: 1"), "{output}");
 }
 
 fn run_owned(arguments: &[String]) -> Output {
@@ -968,9 +1068,16 @@ fn audit_success_renders_human_snapshot_report() {
         String::from_utf8_lossy(&output.stderr)
     );
     assert!(stdout.contains("Fortress Snapshot Audit"));
+    assert!(stdout.contains("Raw conformance: PASS"), "{stdout}");
+    assert!(stdout.contains("Project authority: DECLARED"), "{stdout}");
     assert!(stdout.contains("PASS: 16"), "{stdout}");
-    assert!(stdout.contains("Unsupported: 0"), "{stdout}");
+    assert!(stdout.contains("UNSUPPORTED: 0"), "{stdout}");
     assert!(stdout.contains("NOT_APPLICABLE: 7"), "{stdout}");
+    assert!(
+        stdout.contains("[ARCH-SEMANTIC-001] NOT_APPLICABLE:"),
+        "{stdout}"
+    );
+    assert!(!stdout.contains("[ARCH-SEMANTIC-001] PASS"), "{stdout}");
     assert!(stdout.contains("Architecture diagnostics:"));
     assert!(stdout.contains("Unsupported analysis:"));
     assert!(!stdout.contains("certification"));
@@ -997,8 +1104,70 @@ fn audit_malformed_project_state_is_non_success() {
     let output = run_owned(&["audit".into(), fixture.argument()]);
     assert_eq!(output.status.code(), Some(1));
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("Governance: Invalid"));
+    assert!(
+        stdout.contains("Raw conformance: NOT_EVALUATED"),
+        "{stdout}"
+    );
+    assert!(stdout.contains("Project authority: INVALID"), "{stdout}");
+    assert!(stdout.contains("Reason:"), "{stdout}");
+    assert!(stdout.contains("project configuration"), "{stdout}");
+    assert!(
+        stdout.contains("Unavailable — governed evaluation did not run"),
+        "{stdout}"
+    );
+    assert!(!stdout.contains("Findings:\nNone"), "{stdout}");
     assert!(stdout.contains("Unsupported analysis:"));
+}
+
+/// `T-TF-CLI-0001-R04-007`
+/// Fortress requirement: TF-CLI-0001-R04
+#[test]
+fn invalid_module_contract_explains_unevaluated_audit_and_module_inventory() {
+    let fixture = AuditFixture::new();
+    fs::write(fixture.root.join("mods/engine/contract.json"), "{")
+        .expect("Module contract corrupts");
+
+    let audit = run_owned(&["audit".into(), fixture.argument()]);
+    assert_eq!(audit.status.code(), Some(1));
+    let audit_output = String::from_utf8_lossy(&audit.stdout);
+    assert!(
+        audit_output.contains("Raw conformance: NOT_EVALUATED"),
+        "{audit_output}"
+    );
+    assert!(
+        audit_output.contains("Governed conformance evaluation: NOT_EVALUABLE"),
+        "{audit_output}"
+    );
+    assert!(audit_output.contains("Reason:"), "{audit_output}");
+    assert!(
+        audit_output.contains("mods/engine/contract.json"),
+        "{audit_output}"
+    );
+    assert!(
+        audit_output.contains("Unavailable — governed evaluation did not run"),
+        "{audit_output}"
+    );
+
+    let modules = run(&["modules", &fixture.argument()]);
+    assert_eq!(modules.status.code(), Some(1));
+    let module_output = String::from_utf8_lossy(&modules.stdout);
+    assert!(
+        module_output.contains("Project authority: INVALID"),
+        "{module_output}"
+    );
+    assert!(
+        module_output.contains("Module governance: INVALID"),
+        "{module_output}"
+    );
+    assert!(
+        module_output.contains("mods/engine/contract.json"),
+        "{module_output}"
+    );
+    let modules_json = run(&["modules", &fixture.argument(), "--format=json"]);
+    assert_eq!(modules_json.status.code(), Some(1));
+    let document: serde_json::Value =
+        serde_json::from_slice(&modules_json.stdout).expect("Module inspection JSON");
+    assert_eq!(document["project_authority"], "INVALID");
 }
 
 /// `T-TF-CLI-0001-R04-004`
@@ -1073,6 +1242,19 @@ fn observation_commands_accept_ordinary_cargo_layout_without_governance_files() 
         value["observation"]["psm_symbols"]
             .as_u64()
             .is_some_and(|count| count >= 2)
+    );
+    let audit = run_owned(&["audit".into(), fixture.argument()]);
+    assert_eq!(audit.status.code(), Some(1));
+    let output = String::from_utf8_lossy(&audit.stdout);
+    assert!(output.contains("Project authority: MISSING"), "{output}");
+    assert!(output.contains("data/project.json is absent"), "{output}");
+    assert!(
+        output.contains("Raw conformance: NOT_EVALUATED"),
+        "{output}"
+    );
+    assert!(
+        output.contains("Unavailable — governed evaluation did not run"),
+        "{output}"
     );
 }
 

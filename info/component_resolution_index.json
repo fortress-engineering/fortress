@@ -3,7 +3,7 @@
   "schema_version": 1,
   "resolver_semantic_version": "1.0.0",
   "project_id": "PF-FORTRESS",
-  "source_ccg_digest": "sha256:36ae10256aa2e7c15304bdf80dba3da528a604920d6718ad9274aea712ff4e2c",
+  "source_ccg_digest": "sha256:e0b15bb265f74d642fdeeb5f3e11eac64000234b8f1f296e4964fd2a79ea57c8",
   "modules": [
     {
       "module_id": "AF-AFFECTED-ANALYSIS-0001",
@@ -2850,6 +2850,14 @@
       "target_module": "TF-CLI-0001",
       "authority": "repository-relative-local",
       "projection": "../code/main.rs",
+      "provenance": "mods/cli/docs/code_docs.md"
+    },
+    {
+      "class": "LOCAL",
+      "source_module": "TF-CLI-0001",
+      "target_module": "TF-CLI-0001",
+      "authority": "repository-relative-local",
+      "projection": "../code/presentation.rs",
       "provenance": "mods/cli/docs/code_docs.md"
     },
     {
@@ -7807,6 +7815,14 @@
     {
       "class": "EXTERNAL",
       "source_module": "TF-CLI-0001",
+      "target_module": null,
+      "authority": "std",
+      "projection": null,
+      "provenance": "mods/cli/code/presentation.rs"
+    },
+    {
+      "class": "EXTERNAL",
+      "source_module": "TF-CLI-0001",
       "target_module": "AF-CORE-0001",
       "authority": "fortress-core",
       "projection": null,
@@ -7819,6 +7835,14 @@
       "authority": "fortress-core",
       "projection": null,
       "provenance": "mods/cli/code/lib.rs"
+    },
+    {
+      "class": "EXTERNAL",
+      "source_module": "TF-CLI-0001",
+      "target_module": "AF-CORE-0001",
+      "authority": "fortress-core",
+      "projection": null,
+      "provenance": "mods/cli/code/presentation.rs"
     }
   ],
   "resolution_boundaries": [
@@ -10994,9 +11018,9 @@
   "summary": {
     "modules": 42,
     "semantic_references": 183,
-    "local_references": 300,
+    "local_references": 301,
     "physical_projections": 205,
-    "external_references": 230,
+    "external_references": 232,
     "authored_resolution_boundaries": 147,
     "generated_projections": 205,
     "findings": 0

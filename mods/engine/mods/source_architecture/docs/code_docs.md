@@ -20,7 +20,7 @@ Invalid profile authority returns typed errors, while missing responsibility, un
 
 ### [`source.rs`](../code/source.rs)
 
-Defines Source Artifact Model v1, universal semantic regions and coverage, Source Profile/archetype contracts, generated and verification provenance, lightweight PSM projections, deterministic compilation, and SOURCE-PROFILE-001/SOURCE-ARTIFACT-001 evaluation.
+Defines Source Artifact Model v1, universal semantic regions and coverage, Source Profile/archetype contracts, generated and verification provenance, lightweight PSM projections, deterministic compilation, SOURCE-PROFILE-001/SOURCE-ARTIFACT-001 evaluation, and a human summary that explicitly distinguishes clean evaluation from remaining findings.
 
 ### [`rust.rs`](../code/rust.rs)
 

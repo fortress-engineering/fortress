@@ -149,7 +149,7 @@ fn non_applicable_rule_has_canonical_state_and_reason() {
     assert!(
         audit
             .to_human()
-            .contains("[ARCH-SEMANTIC-001] NO_EVALUATIVE_MODULE_SEMANTIC_POLICY")
+            .contains("[ARCH-SEMANTIC-001] NOT_APPLICABLE: NO_EVALUATIVE_MODULE_SEMANTIC_POLICY")
     );
 }
 

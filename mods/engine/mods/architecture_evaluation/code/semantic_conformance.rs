@@ -249,6 +249,18 @@ impl ModuleEffectObservation {
         &self.operation
     }
 
+    /// Returns the Module entry symbol receiving this direct or transitive evidence.
+    #[must_use]
+    pub fn entry_symbol(&self) -> &str {
+        &self.entry_symbol
+    }
+
+    /// Returns the executable symbol where the underlying operation originates.
+    #[must_use]
+    pub fn source_symbol(&self) -> &str {
+        &self.source_symbol
+    }
+
     /// Returns the proven call path from Module entry symbol to direct origin.
     #[must_use]
     pub fn call_chain(&self) -> &[String] {
@@ -289,6 +301,18 @@ impl ModuleEffectObservation {
     #[must_use]
     pub const fn policy_disposition(&self) -> Option<PolicyDisposition> {
         self.policy_disposition
+    }
+
+    /// Returns the namespace of the authored policy target matched by this evidence.
+    #[must_use]
+    pub const fn policy_target_kind(&self) -> Option<PolicyTargetKind> {
+        self.policy_target_kind
+    }
+
+    /// Returns the authored effect or capability target matched by this evidence.
+    #[must_use]
+    pub fn policy_target(&self) -> Option<&str> {
+        self.policy_target.as_deref()
     }
 }
 
@@ -634,6 +658,7 @@ pub struct SemanticConformanceEvaluation {
     model: SemanticConformanceModel,
     findings: Vec<CanonicalFinding>,
     coverage_findings: Vec<CanonicalFinding>,
+    symbol_display_names: BTreeMap<String, String>,
 }
 
 impl SemanticConformanceEvaluation {
@@ -653,6 +678,15 @@ impl SemanticConformanceEvaluation {
     #[must_use]
     pub fn coverage_findings(&self) -> &[CanonicalFinding] {
         &self.coverage_findings
+    }
+
+    /// Returns the canonical qualified name for a stable PSM symbol identity.
+    ///
+    /// The lookup is presentation authority only; stable machine identity remains
+    /// the symbol ID carried by the semantic model.
+    #[must_use]
+    pub fn symbol_display_name(&self, symbol_id: &str) -> Option<&str> {
+        self.symbol_display_names.get(symbol_id).map(String::as_str)
     }
 
     /// Returns whether at least one Module declared semantic policy.
@@ -690,6 +724,10 @@ pub fn evaluate_semantic_conformance(
         .iter()
         .map(|symbol| (symbol.id(), symbol))
         .collect::<BTreeMap<_, _>>();
+    let symbol_display_names = symbols
+        .iter()
+        .map(|(id, symbol)| ((*id).to_owned(), symbol.qualified_name().to_owned()))
+        .collect();
     let declared = ccg
         .modules()
         .keys()
@@ -866,6 +904,7 @@ pub fn evaluate_semantic_conformance(
         model,
         findings,
         coverage_findings,
+        symbol_display_names,
     })
 }
 

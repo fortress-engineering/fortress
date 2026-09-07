@@ -32,6 +32,7 @@ use fortress_core::certification::{CertificationStatus, RustSuiteExecution};
 use fortress_core::contract_coherency::CcgCoherencyStatus;
 use fortress_core::finding_governance::{FINDING_GOVERNANCE_PATH, FindingGovernanceDocument};
 pub mod command;
+mod presentation;
 
 use command::{CommandDescriptor, CommandRegistry};
 
@@ -276,42 +277,11 @@ fn run_modules<O: Write, E: Write>(
             inspection.to_canonical_json().map_err(io::Error::other)?
         )?;
     } else {
-        writeln!(output, "Declared Modules: {}", inspection.modules().len())?;
-        for module in inspection.modules() {
-            writeln!(
-                output,
-                "  {} [{}] contract={} bindings={} sources={}",
-                module.module(),
-                module.authority(),
-                module.contract(),
-                module.bindings().len(),
-                module.observed_sources()
-            )?;
-        }
-        writeln!(
+        write!(
             output,
-            "Unmapped analysis territories: {}",
-            inspection.analysis_territories().len()
+            "{}",
+            presentation::render_module_inspection(&inspection)
         )?;
-        for territory in inspection.analysis_territories() {
-            writeln!(
-                output,
-                "  {} path={} sources={}",
-                territory.territory(),
-                territory.path(),
-                territory.observed_sources()
-            )?;
-        }
-        for diagnostic in inspection.ownership_diagnostics() {
-            writeln!(
-                output,
-                "  INVALID {} path={} modules={} {}",
-                diagnostic.code(),
-                diagnostic.source_path(),
-                diagnostic.modules().join(","),
-                diagnostic.detail()
-            )?;
-        }
     }
     Ok(if inspection.is_valid() {
         EXIT_SUCCESS
@@ -820,9 +790,22 @@ fn run_certify<O: Write, E: Write>(
     match request.format {
         CertificationOutputFormat::Json => write!(output, "{certification}")?,
         CertificationOutputFormat::Human => {
+            let status = match products.certification.status() {
+                CertificationStatus::Pass => "PASS",
+                CertificationStatus::Fail => "FAIL",
+                CertificationStatus::Missing => "MISSING",
+                CertificationStatus::Invalid => "INVALID",
+                CertificationStatus::Stale => "STALE",
+            };
             writeln!(output, "Fortress Snapshot Certification")?;
             writeln!(output, "Profile: CERT-FULL-SNAPSHOT-V1")?;
-            writeln!(output, "Status: {:?}", products.certification.status())?;
+            writeln!(output, "Status: {status}")?;
+            if products.certification.status() != CertificationStatus::Pass {
+                writeln!(
+                    output,
+                    "Reason: one or more applicable certification obligations are {status}; no successful certification conclusion is available."
+                )?;
+            }
             writeln!(
                 output,
                 "Digest: {}",
@@ -1370,104 +1353,11 @@ fn run_semantic_conformance<O: Write, E: Write>(
         write_projection(destination, output, document.as_bytes())?;
         return Ok(exit_code);
     }
-    for module in modules {
-        writeln!(
-            output,
-            "Module {} policy={} conformance={:?} contract={}\n  Rule: {}\n  Semantic coverage: governed_source_files={} analysed_source_files={} ratio={}",
-            module.module(),
-            module.policy_state(),
-            module.state(),
-            module.contract_path(),
-            fortress_core::semantic_conformance::ARCH_SEMANTIC_RULE_ID,
-            module.coverage().governed_source_files(),
-            module.coverage().analysed_source_files(),
-            module.coverage().ratio().unwrap_or("NOT_APPLICABLE"),
-        )?;
-        let authorizations = module
-            .conclusions()
-            .iter()
-            .filter(|conclusion| {
-                conclusion.disposition()
-                    == fortress_core::semantic_conformance::PolicyDisposition::Allow
-            })
-            .collect::<Vec<_>>();
-        if !authorizations.is_empty() {
-            writeln!(output, "  Authorizations:")?;
-        }
-        for authorization in authorizations {
-            writeln!(
-                output,
-                "    {:?} {}: {} (observed uses={}, coverage={})",
-                authorization.target_kind(),
-                authorization.target(),
-                authorization
-                    .authorization()
-                    .expect("ALLOW is authorization")
-                    .as_str(),
-                authorization.matching_observation_count(),
-                authorization.coverage().ratio().unwrap_or("NOT_APPLICABLE"),
-            )?;
-        }
-        let claims = module
-            .conclusions()
-            .iter()
-            .filter(|conclusion| {
-                conclusion.disposition()
-                    == fortress_core::semantic_conformance::PolicyDisposition::Deny
-            })
-            .collect::<Vec<_>>();
-        if !claims.is_empty() {
-            writeln!(output, "  Conformance claims:")?;
-        }
-        for claim in claims {
-            writeln!(
-                output,
-                "    {:?} {} DENY: {:?} / {:?} (observations={}, coverage={})",
-                claim.target_kind(),
-                claim.target(),
-                claim.conformance().expect("DENY is evaluative"),
-                claim.blocking_eligibility().expect("DENY has eligibility"),
-                claim.matching_observation_count(),
-                claim.coverage().ratio().unwrap_or("NOT_APPLICABLE"),
-            )?;
-            for reason in claim.coverage_reasons() {
-                writeln!(output, "    Coverage: {reason}")?;
-            }
-        }
-        for observation in module.observations().iter().filter(|observation| {
-            observation.policy_disposition()
-                == Some(fortress_core::semantic_conformance::PolicyDisposition::Deny)
-        }) {
-            writeln!(
-                output,
-                "    {:?} effect={} capability={} operation={} source={}:{}:{} authority={} chain={}",
-                observation.evidence_kind(),
-                observation.effect().stable_id(),
-                observation
-                    .capability()
-                    .map_or("none", |capability| capability.stable_id()),
-                observation.operation(),
-                observation.path(),
-                observation.line(),
-                observation.column(),
-                observation.authority(),
-                observation.call_chain().join(" -> "),
-            )?;
-        }
-        if module.state() == fortress_core::semantic_conformance::SemanticConformanceState::Fail {
-            writeln!(
-                output,
-                "  Remediation: remove or isolate the forbidden reachable operation, or explicitly revise the Module Contract policy after architectural review."
-            )?;
-        }
-        if module.state() == fortress_core::semantic_conformance::SemanticConformanceState::Unknown
-        {
-            writeln!(
-                output,
-                "  Remediation: resolve the claim-relevant opaque operation; missing semantic authority is not conformance."
-            )?;
-        }
-    }
+    write!(
+        output,
+        "{}",
+        presentation::render_semantic_conformance(&evaluation, &modules)
+    )?;
     Ok(if evaluation.is_success() {
         EXIT_SUCCESS
     } else {
@@ -1775,7 +1665,7 @@ fn run_check<O: Write, E: Write>(
         }
     };
     match format {
-        AuditFormat::Human => write!(output, "{}", result.to_human())?,
+        AuditFormat::Human => write!(output, "{}", result.to_check_human())?,
         AuditFormat::Json => writeln!(
             output,
             "{}",
@@ -1794,7 +1684,33 @@ fn run_findings<O: Write, E: Write>(
     output: &mut O,
     error: &mut E,
 ) -> io::Result<u8> {
-    run_check(arguments, output, error)
+    let (root, format) = match parse_audit_arguments(arguments) {
+        Ok(value) => value,
+        Err(message) => {
+            writeln!(error, "{message}")?;
+            return Ok(EXIT_USAGE);
+        }
+    };
+    let result = match audit_repository(&root) {
+        Ok(result) => result,
+        Err(audit_error) => {
+            writeln!(error, "finding inventory failed: {audit_error}")?;
+            return Ok(EXIT_VIOLATION);
+        }
+    };
+    match format {
+        AuditFormat::Human => write!(output, "{}", result.to_findings_human())?,
+        AuditFormat::Json => writeln!(
+            output,
+            "{}",
+            result.to_json_pretty().map_err(io::Error::other)?
+        )?,
+    }
+    Ok(if result.enforcement_success() {
+        EXIT_SUCCESS
+    } else {
+        EXIT_VIOLATION
+    })
 }
 
 fn run_baseline<O: Write, E: Write>(

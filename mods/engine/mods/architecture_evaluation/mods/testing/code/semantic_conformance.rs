@@ -267,6 +267,16 @@ pub fn entry() { write_file(); }
             .iter()
             .any(|observation| observation.call_chain().len() == 2)
     );
+    for symbol in writes
+        .iter()
+        .flat_map(|observation| observation.call_chain())
+    {
+        assert!(
+            first
+                .symbol_display_name(symbol)
+                .is_some_and(|name| name.starts_with("sample::"))
+        );
+    }
     assert_eq!(first.findings().len(), 2);
     assert_eq!(
         first.model().to_canonical_json().unwrap(),

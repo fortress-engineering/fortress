@@ -204,6 +204,8 @@ pub struct AuditResult {
     diagnostics: Vec<ArchitectureDiagnostic>,
     unsupported_analysis: Vec<String>,
     observation: Option<AuditObservationSummary>,
+    #[serde(skip)]
+    evaluation_detail: Option<String>,
 }
 
 impl AuditResult {
@@ -282,11 +284,23 @@ impl AuditResult {
         &self.rules
     }
 
+    /// Renders the progressive-enforcement view without changing raw audit truth.
+    #[must_use]
+    pub fn to_check_human(&self) -> String {
+        self.render_human(AuditHumanView::ProgressiveCheck)
+    }
+
+    /// Renders the finding inventory with raw and enforcement states kept distinct.
+    #[must_use]
+    pub fn to_findings_human(&self) -> String {
+        self.render_human(AuditHumanView::FindingInventory)
+    }
+
     /// Serializes stable pretty JSON with deterministic collection ordering.
     ///
     /// # Errors
     ///
-    /// Returns a serialization error if the version-four contract cannot be represented.
+    /// Returns a serialization error if the current audit contract cannot be represented.
     pub fn to_json_pretty(&self) -> Result<String, serde_json::Error> {
         serde_json::to_string_pretty(self)
     }
@@ -294,9 +308,52 @@ impl AuditResult {
     /// Renders concise deterministic terminal output.
     #[must_use]
     pub fn to_human(&self) -> String {
-        let mut output = format!(
-            "Fortress Snapshot Audit\nGovernance: {:?}\nStandard: {}\nSnapshot: {}\n\nRules evaluated: {}\nPASS: {}\nFAIL: {}\nUnsupported: {}\nNOT_APPLICABLE: {}\n\nFindings:\n",
-            self.governance.project_authority,
+        self.render_human(AuditHumanView::RawAudit)
+    }
+
+    #[allow(clippy::too_many_lines)]
+    fn render_human(&self, view: AuditHumanView) -> String {
+        let raw_outcome = match self.outcome {
+            AuditOutcome::Pass => "PASS",
+            AuditOutcome::Fail => "FAIL",
+            AuditOutcome::Missing => "NOT_EVALUATED",
+        };
+        let project_authority = match self.governance.project_authority {
+            ProjectGovernanceState::Declared => "DECLARED",
+            ProjectGovernanceState::Absent => "MISSING",
+            ProjectGovernanceState::Invalid => "INVALID",
+        };
+        let mut output = match view {
+            AuditHumanView::RawAudit => format!(
+                "Fortress Snapshot Audit\nRaw conformance: {raw_outcome}\nProject authority: {project_authority}\n"
+            ),
+            AuditHumanView::ProgressiveCheck => format!(
+                "Fortress Progressive Check\nProgressive enforcement: {}\nRaw conformance: {raw_outcome}\nProject authority: {project_authority}\n",
+                if self.enforcement_success() {
+                    "PASS"
+                } else {
+                    "BLOCKED"
+                }
+            ),
+            AuditHumanView::FindingInventory => format!(
+                "Fortress Finding Inventory\nRaw conformance: {raw_outcome}\nProgressive enforcement: {}\nProject authority: {project_authority}\n",
+                if self.enforcement_success() {
+                    "PASS"
+                } else {
+                    "BLOCKED"
+                }
+            ),
+        };
+        if self.outcome == AuditOutcome::Missing {
+            output.push_str("Governed conformance evaluation: NOT_EVALUABLE\nReason:\n  ");
+            output.push_str(self.evaluation_detail());
+            output.push_str(
+                "\nImplementation observation remains available, but governed conclusions are unavailable until authored governance is valid and loadable.\n",
+            );
+        }
+        let _ = write!(
+            output,
+            "Standard: {}\nSnapshot: {}\n\nRule summary:\n  evaluated/applicable: {}\n  PASS: {}\n  FAIL: {}\n  UNSUPPORTED: {}\n  NOT_APPLICABLE: {}\n\nRaw conformance findings:\n",
             self.standard.edition,
             self.snapshot_fingerprint,
             self.summary.rules_evaluated,
@@ -306,7 +363,13 @@ impl AuditResult {
             self.summary.not_applicable
         );
         if self.findings.is_empty() {
-            output.push_str("None\n");
+            if self.outcome == AuditOutcome::Missing {
+                output.push_str(
+                    "Unavailable — governed evaluation did not run; an empty finding list is not a conformance result.\n",
+                );
+            } else {
+                output.push_str("None — governed evaluation completed and produced no findings.\n");
+            }
         } else {
             for finding in &self.findings {
                 let location = finding.location().path().unwrap_or("repository");
@@ -335,23 +398,28 @@ impl AuditResult {
                 output.push('\n');
             }
         }
-        let not_applicable = self
+        let non_passing_rules = self
             .rules
             .iter()
-            .filter(|execution| {
-                execution.state() == crate::evaluation::RuleExecutionState::NotApplicable
-            })
+            .filter(|execution| execution.state() != crate::evaluation::RuleExecutionState::Passed)
             .collect::<Vec<_>>();
-        if !not_applicable.is_empty() {
-            output.push_str("\nNot applicable rules:\n");
-            for execution in not_applicable {
+        if !non_passing_rules.is_empty() {
+            output.push_str("\nNon-passing rule states:\n");
+            for execution in non_passing_rules {
+                let state = match execution.state() {
+                    crate::evaluation::RuleExecutionState::Passed => "PASS",
+                    crate::evaluation::RuleExecutionState::Failed => "FAIL",
+                    crate::evaluation::RuleExecutionState::Unsupported => "UNSUPPORTED",
+                    crate::evaluation::RuleExecutionState::NotApplicable => "NOT_APPLICABLE",
+                };
                 let _ = writeln!(
                     output,
-                    "- [{}] {}",
+                    "- [{}] {}: {}",
                     execution.rule_id(),
+                    state,
                     execution
                         .applicability_reason()
-                        .unwrap_or("NO_GOVERNED_SUBJECT")
+                        .unwrap_or_else(|| execution.detail())
                 );
             }
         }
@@ -391,8 +459,36 @@ impl AuditResult {
                 output.push('\n');
             }
         }
+        if let Some(observation) = self.observation {
+            output.push_str("\nAvailable implementation observation:\n");
+            let _ = write!(
+                output,
+                "  files: {}\n  Rust sources: {}\n  PSM symbols: {}\n  source artifacts: {}\n  State/Effect functions: {}\n",
+                observation.files,
+                observation.rust_sources,
+                observation.psm_symbols,
+                observation.source_artifacts,
+                observation.state_effect_functions,
+            );
+        }
         output
     }
+
+    fn evaluation_detail(&self) -> &str {
+        self.evaluation_detail.as_deref().unwrap_or_else(|| {
+            self.unsupported_analysis
+                .iter()
+                .find_map(|value| value.strip_prefix("governance:"))
+                .unwrap_or("authored project authority is unavailable")
+        })
+    }
+}
+
+#[derive(Clone, Copy)]
+enum AuditHumanView {
+    RawAudit,
+    ProgressiveCheck,
+    FindingInventory,
 }
 
 /// Standard identity reported by an audit.
@@ -738,6 +834,28 @@ impl ModuleInspection {
         &self.ownership_diagnostics
     }
 
+    /// Returns the human-readable project-authority state.
+    #[must_use]
+    pub const fn project_authority_state(&self) -> &'static str {
+        match self.project_authority {
+            ProjectGovernanceState::Declared => "DECLARED",
+            ProjectGovernanceState::Absent => "MISSING",
+            ProjectGovernanceState::Invalid => "INVALID",
+        }
+    }
+
+    /// Returns the canonical project-authority diagnostic when one exists.
+    #[must_use]
+    pub fn governance_detail(&self) -> Option<&str> {
+        self.governance_detail.as_deref()
+    }
+
+    /// Returns whether Module conclusions are backed by valid authored authority.
+    #[must_use]
+    pub fn has_declared_authority(&self) -> bool {
+        self.project_authority == ProjectGovernanceState::Declared
+    }
+
     /// Returns whether authored governance and resolved ownership are valid.
     ///
     /// Missing project authority remains a valid observation-only state. An
@@ -827,6 +945,22 @@ impl InspectedAnalysisTerritory {
 /// Returns [`AuditError`] when stable repository observation itself fails.
 pub fn inspect_repository_modules(root: impl AsRef<Path>) -> Result<ModuleInspection, AuditError> {
     let prepared = prepare_analysis(root.as_ref())?;
+    let project_authority =
+        if prepared.project_state == ProjectGovernanceState::Declared && prepared.ccg().is_none() {
+            ProjectGovernanceState::Invalid
+        } else {
+            prepared.project_state
+        };
+    let governance_detail = if project_authority == ProjectGovernanceState::Invalid
+        && prepared.project_state == ProjectGovernanceState::Declared
+    {
+        Some(prepared.ccg_compilation.violations().first().map_or_else(
+            || "Module Contract authority could not be resolved".into(),
+            ToString::to_string,
+        ))
+    } else {
+        prepared.project_detail.clone()
+    };
     let logical = prepared
         .project_configuration
         .as_ref()
@@ -874,8 +1008,8 @@ pub fn inspect_repository_modules(root: impl AsRef<Path>) -> Result<ModuleInspec
     }
     Ok(ModuleInspection {
         schema_version: 1,
-        project_authority: prepared.project_state,
-        governance_detail: prepared.project_detail.clone(),
+        project_authority,
+        governance_detail,
         modules,
         analysis_territories: territories
             .into_iter()
@@ -1156,6 +1290,16 @@ fn observation_only_audit(prepared: &PreparedAnalysis) -> Result<AuditResult, Au
     }
     unsupported_analysis.sort();
     unsupported_analysis.dedup();
+    let evaluation_detail = Some(prepared.ccg_compilation.violations().first().map_or_else(
+        || {
+            prepared
+                .project_detail
+                .as_deref()
+                .unwrap_or("authored project conformance is unavailable")
+                .to_owned()
+        },
+        ToString::to_string,
+    ));
     Ok(AuditResult {
         schema_version: AUDIT_RESULT_SCHEMA_VERSION,
         project_id: prepared.project_id().map(str::to_owned),
@@ -1210,6 +1354,7 @@ fn observation_only_audit(prepared: &PreparedAnalysis) -> Result<AuditResult, Au
                 .as_ref()
                 .map_or(0, |analysis| analysis.model().coverage().functions()),
         }),
+        evaluation_detail,
     })
 }
 
@@ -4066,6 +4211,7 @@ fn result_from_evaluation(
         diagnostics: architecture_diagnostics.diagnostics().to_vec(),
         unsupported_analysis,
         observation: None,
+        evaluation_detail: None,
     })
 }
 

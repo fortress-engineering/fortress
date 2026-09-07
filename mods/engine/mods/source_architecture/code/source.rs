@@ -1012,10 +1012,21 @@ impl SourceArtifactModel {
     #[must_use]
     pub fn to_human(&self) -> String {
         let mut output = format!(
-            "Source Artifact Model\nArtifacts: {}\nRegistered profiles: {}\n\n",
+            "Source Artifact Model\nSource-artifact conformance: {}\nFindings: {}\nArtifacts: {}\nRegistered profiles: {}\n\n",
+            if self.summary.findings == 0 {
+                "PASS"
+            } else {
+                "FAIL"
+            },
+            self.summary.findings,
             self.summary.artifacts,
             self.registered_profiles.join(", ")
         );
+        if self.summary.findings > 0 {
+            output.push_str(
+                "Reason: one or more canonical Source Artifact/Profile findings remain; inspect audit or JSON output for stable finding details.\n\n",
+            );
+        }
         for artifact in &self.artifacts {
             let profile = artifact
                 .profile
