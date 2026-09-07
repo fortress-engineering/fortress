@@ -1,0 +1,210 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v5:snapshot-audit",
+  "title": "Fortress deterministic snapshot audit result v5",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "project_id", "governance", "standard", "snapshot_fingerprint", "repository_content_fingerprint", "outcome", "summary", "finding_governance", "rules", "findings", "diagnostics", "unsupported_analysis", "observation"],
+  "properties": {
+    "schema_version": { "const": 5 },
+    "project_id": { "oneOf": [{ "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id" }, { "type": "null" }] },
+    "governance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["project_authority", "standard_authority", "declared_source_owners", "analysis_source_owners", "observed_tests", "tests_missing_stable_id"],
+      "properties": {
+        "project_authority": { "enum": ["DECLARED", "ABSENT", "INVALID"] },
+        "standard_authority": { "enum": ["PROJECT_BOUND", "INSTALLED_UNBOUND"] },
+        "declared_source_owners": { "type": "integer", "minimum": 0 },
+        "analysis_source_owners": { "type": "integer", "minimum": 0 },
+        "observed_tests": { "type": "integer", "minimum": 0 },
+        "tests_missing_stable_id": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "standard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "edition", "status"],
+      "properties": {
+        "id": { "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id" },
+        "edition": { "type": "string", "minLength": 1 },
+        "status": { "enum": ["draft", "candidate", "released"] }
+      }
+    },
+    "snapshot_fingerprint": { "$ref": "urn:fortress:schema:v1:common#/$defs/sha256" },
+    "repository_content_fingerprint": { "$ref": "urn:fortress:schema:v1:common#/$defs/sha256" },
+    "outcome": { "enum": ["PASS", "FAIL", "MISSING"] },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rules_evaluated", "passed", "failed", "unsupported", "not_applicable"],
+      "properties": {
+        "rules_evaluated": { "type": "integer", "minimum": 0 },
+        "passed": { "type": "integer", "minimum": 0 },
+        "failed": { "type": "integer", "minimum": 0 },
+        "unsupported": { "type": "integer", "minimum": 0 },
+        "not_applicable": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "finding_governance": { "$ref": "#/$defs/finding-governance" },
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["rule_id", "state", "applicable", "applicability_reason", "findings", "detail"],
+        "properties": {
+          "rule_id": { "type": "string", "pattern": "^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)+$" },
+          "state": { "enum": ["PASSED", "FAILED", "UNSUPPORTED", "NOT_APPLICABLE"] },
+          "applicable": { "type": "boolean" },
+          "applicability_reason": { "oneOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+          "findings": { "type": "integer", "minimum": 0 },
+          "detail": { "type": "string", "minLength": 1 }
+        },
+        "allOf": [
+          {
+            "if": { "properties": { "applicable": { "const": false } } },
+            "then": {
+              "properties": {
+                "state": { "const": "NOT_APPLICABLE" },
+                "applicability_reason": { "type": "string", "minLength": 1 },
+                "findings": { "const": 0 }
+              }
+            }
+          },
+          {
+            "if": { "properties": { "applicable": { "const": true } } },
+            "then": {
+              "properties": {
+                "state": { "enum": ["PASSED", "FAILED", "UNSUPPORTED"] },
+                "applicability_reason": { "const": null }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "findings": { "type": "array", "items": { "$ref": "urn:fortress:schema:v2:snapshot-finding" } },
+    "diagnostics": { "type": "array", "items": { "$ref": "#/$defs/architecture-diagnostic" } },
+    "unsupported_analysis": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
+    "observation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["files", "rust_sources", "psm_symbols", "source_artifacts", "state_effect_functions"],
+          "properties": {
+            "files": { "type": "integer", "minimum": 0 },
+            "rust_sources": { "type": "integer", "minimum": 0 },
+            "psm_symbols": { "type": "integer", "minimum": 0 },
+            "source_artifacts": { "type": "integer", "minimum": 0 },
+            "state_effect_functions": { "type": "integer", "minimum": 0 }
+          }
+        },
+        { "type": "null" }
+      ]
+    }
+  },
+  "$defs": {
+    "finding-governance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["authority", "enforcement", "findings", "resolved_baseline_entries", "unresolved_active_exceptions", "summary"],
+      "properties": {
+        "authority": { "enum": ["ABSENT", "VALID"] },
+        "enforcement": { "enum": ["PASS", "BLOCKED"] },
+        "findings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["finding_id", "rule_id", "raw_conformance", "lifecycle", "disposition", "enforcement", "exception_ids", "reason"],
+            "properties": {
+              "finding_id": { "$ref": "urn:fortress:schema:v1:common#/$defs/sha256" },
+              "rule_id": { "type": "string", "pattern": "^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)+$" },
+              "raw_conformance": { "const": "FAIL" },
+              "lifecycle": { "enum": ["NEW", "BASELINED", "REINTRODUCED", "BASELINE_INELIGIBLE"] },
+              "disposition": { "enum": ["NONE", "EXCEPTED"] },
+              "enforcement": { "enum": ["BLOCKING", "NON_BLOCKING"] },
+              "exception_ids": { "type": "array", "items": { "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id" }, "uniqueItems": true },
+              "reason": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "resolved_baseline_entries": { "type": "array", "items": { "$ref": "urn:fortress:schema:v1:common#/$defs/sha256" }, "uniqueItems": true },
+        "unresolved_active_exceptions": { "type": "array", "items": { "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id" }, "uniqueItems": true },
+        "summary": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["new_blocking", "baselined_non_blocking", "excepted_non_blocking", "resolved_baseline_entries", "baseline_ineligible", "reintroduced_blocking"],
+          "properties": {
+            "new_blocking": { "type": "integer", "minimum": 0 },
+            "baselined_non_blocking": { "type": "integer", "minimum": 0 },
+            "excepted_non_blocking": { "type": "integer", "minimum": 0 },
+            "resolved_baseline_entries": { "type": "integer", "minimum": 0 },
+            "baseline_ineligible": { "type": "integer", "minimum": 0 },
+            "reintroduced_blocking": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "architecture-diagnostic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "primary_module", "related_modules", "summary", "reasoning", "declared_evidence", "observed_evidence", "candidate_structural_scope", "provenance", "fingerprint"],
+      "properties": {
+        "kind": { "enum": ["CROSS_SCOPE_PROVIDER", "FRAGMENTED_FOREIGN_SURFACE", "ISOLATED_INTERNAL_PROVIDER", "NARROWER_CONSUMER_SCOPE"] },
+        "primary_module": { "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id" },
+        "related_modules": { "type": "array", "items": { "$ref": "urn:fortress:schema:v2:module-contract#/$defs/stable_id" }, "uniqueItems": true },
+        "summary": { "type": "string", "minLength": 1 },
+        "reasoning": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "declared_evidence": { "type": "array", "items": { "$ref": "#/$defs/declared-dependency-evidence" } },
+        "observed_evidence": { "type": "array", "items": { "$ref": "#/$defs/observation-provenance" } },
+        "candidate_structural_scope": { "oneOf": [{ "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id" }, { "type": "null" }] },
+        "provenance": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/diagnostic-provenance" }, "uniqueItems": true },
+        "fingerprint": { "$ref": "urn:fortress:schema:v1:common#/$defs/sha256" }
+      }
+    },
+    "declared-dependency-evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["consumer", "provider", "capabilities", "provenance"],
+      "properties": {
+        "consumer": { "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id" },
+        "provider": { "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id" },
+        "capabilities": { "type": "array", "minItems": 1, "items": { "$ref": "urn:fortress:schema:v2:module-contract#/$defs/stable_id" }, "uniqueItems": true },
+        "provenance": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/diagnostic-provenance" }, "uniqueItems": true }
+      }
+    },
+    "observation-provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_path", "source_module", "reference", "location", "resolved_target"],
+      "properties": {
+        "source_path": { "$ref": "urn:fortress:schema:v1:common#/$defs/relative-path" },
+        "source_module": { "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id" },
+        "reference": { "type": "string", "minLength": 1 },
+        "location": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["line", "column"],
+          "properties": {
+            "line": { "type": "integer", "minimum": 1 },
+            "column": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "resolved_target": { "oneOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] }
+      }
+    },
+    "diagnostic-provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["authority", "path", "location"],
+      "properties": {
+        "authority": { "enum": ["contract", "filesystem", "source"] },
+        "path": { "$ref": "urn:fortress:schema:v1:common#/$defs/relative-path" },
+        "location": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

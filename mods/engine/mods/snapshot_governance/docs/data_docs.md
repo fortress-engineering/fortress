@@ -54,6 +54,10 @@ Defines the version-two snapshot identity that binds distributed Module contract
 
 Defines the version-four machine representation for snapshot audit records, including raw normative findings, orthogonal lifecycle/disposition/enforcement, non-normative architecture diagnostics, and explicitly unsupported analysis classes.
 
+### [`snapshot_audit_schema_v5.json`](../data/snapshot_audit_schema_v5.json)
+
+Defines the current audit representation with an explicit `NOT_APPLICABLE` rule state, stable applicability reasons, and summary counts that exclude non-applicable rules from PASS.
+
 ### [`snapshot_finding_schema_v2.json`](../data/snapshot_finding_schema_v2.json)
 
 Defines the version-two machine representation and validation boundary for stable or explicitly baseline-ineligible snapshot finding records.

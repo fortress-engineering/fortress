@@ -12,8 +12,8 @@
     "limitation": "Digest stamps detect mutation and staleness but are not signatures; authenticated antiforgery requires an external trusted signing identity."
   },
   "source": {
-    "fingerprint": "sha256:222b0fa8e5cde032e078816e7552832a89507ed98278be1492993425f400b206",
-    "file_count": 393,
+    "fingerprint": "sha256:b46e6a48bd7a4de631e4da8556b3a99d249a2490a4c1cd2666a790caee675965",
+    "file_count": 395,
     "excluded_self": "info/quality_certificate.json",
     "excluded_derived_artifacts": [
       "info/behavioral_flow_graph.json",
@@ -174,89 +174,89 @@
   "artifacts": [
     {
       "path": "info/behavioral_flow_graph.json",
-      "digest": "sha256:e36ac7ab1d8e6613cc73e25ea39866d30262302d7f3158b1b4ac37efc31ca73b",
+      "digest": "sha256:76b5b4fb1e0328c9277e098773364dd17c98e71431fed6fcbecc5d7bee890134",
       "bytes": 142671,
       "storage": "TRACKED_EVIDENCE"
     },
     {
       "path": "info/certification.json",
-      "digest": "sha256:7a89973848e55714753d3653944708dca194ed54fd76d5f846281b5472fa2d54",
-      "bytes": 88118,
+      "digest": "sha256:b18068d167c17af3754b6df6a23e9a62b11f2d4eb5dd4f3aa51ede2830d67b89",
+      "bytes": 89037,
       "storage": "TRACKED_EVIDENCE"
     },
     {
       "path": "info/component_resolution_index.json",
-      "digest": "sha256:546361f9779a55882e31d892e82f5b9d9207b4ed9b0304b5a0ea00d78eedb94b",
-      "bytes": 427480,
+      "digest": "sha256:8a1d3922d0b471f889ebb0809c7a64cff28d50f07a61c16a79ee03b627855785",
+      "bytes": 428994,
       "storage": "TRACKED_EVIDENCE"
     },
     {
       "path": "info/contract_coherency_graph.json",
-      "digest": "sha256:02d2eee84d481e518840804548057937cda654fe59e6e0dcbb568b2225cf9aa8",
-      "bytes": 2487032,
+      "digest": "sha256:36ae10256aa2e7c15304bdf80dba3da528a604920d6718ad9274aea712ff4e2c",
+      "bytes": 2496414,
       "storage": "LOCAL_MATERIALIZATION"
     },
     {
       "path": "info/environmental_analysis.json",
-      "digest": "sha256:b0e3700692fb8c421333d1bb649d31c329e5234e57f1955c44e8edd641d09c3d",
+      "digest": "sha256:3d8a9149c290a0074dc36caee0fc784eabae627b7ab6d70e104e6ba13b7db6ac",
       "bytes": 5469,
       "storage": "TRACKED_EVIDENCE"
     },
     {
       "path": "info/evidence_graph.json",
-      "digest": "sha256:4087f4c04db8b32475c212cab07bfcbd0f06834387c4c9b483e8ac7f884d0ca4",
-      "bytes": 547305,
+      "digest": "sha256:a9103f322b4696fe75704ae7b9504ff042ce577c6bc6783bfcc220b2ec0e628a",
+      "bytes": 553842,
       "storage": "TRACKED_EVIDENCE"
     },
     {
       "path": "info/information_flow_analysis.json",
-      "digest": "sha256:6cb941ffcf24ccd07d6b07e3d907b0f1d2bfb2c1c4ef69963e85e729e3f5dc68",
-      "bytes": 1437482,
+      "digest": "sha256:a9348469fe67dba3fcba2f6f9ae257f661bc7cf3ba6265e94e76302ec128d2f8",
+      "bytes": 1448331,
       "storage": "LOCAL_MATERIALIZATION"
     },
     {
       "path": "info/program_semantic_model.json",
-      "digest": "sha256:826533ed9b99a28244a66fbd5762f3020a7499d63db5d4afa6456eb1fc42dfcc",
-      "bytes": 107812864,
+      "digest": "sha256:c5225232065499c8af819f3469d2e630354848b52892f6760ac6269d139628c2",
+      "bytes": 108743204,
       "storage": "LOCAL_MATERIALIZATION"
     },
     {
       "path": "info/realized_behavioral_flow_graph.json",
-      "digest": "sha256:3517d074a7423fc8c435fdeebe016df9186c8232f74ef6ac75f9b8adb0c4b062",
-      "bytes": 27612131,
+      "digest": "sha256:fc88ee317bc68d9173d7774170ac18f8564b2496c55ed9c1a0261fbb492c9730",
+      "bytes": 27798561,
       "storage": "LOCAL_MATERIALIZATION"
     },
     {
       "path": "info/semantic_analysis.json",
-      "digest": "sha256:1b464d64a3f1129467e5f7868cc537bf3df161cb1fbcd39c6f07467e79b0f94e",
-      "bytes": 5393756,
+      "digest": "sha256:ca2599029c9c1bc40a3aea3c0ffbd8c0827c7a978c743d14538dd4b4cc63b4a8",
+      "bytes": 5430809,
       "storage": "LOCAL_MATERIALIZATION"
     },
     {
       "path": "info/semantic_conformance.json",
-      "digest": "sha256:76e98b3fdf5340018023111980ce0ab215324bdd5955b9b65b3c102d801fc066",
-      "bytes": 13136408,
+      "digest": "sha256:bd7c4dd0677339eceb971639cecf3048f3dc77c318a0cf1ef75ce9a4217aa1d8",
+      "bytes": 13272395,
       "storage": "LOCAL_MATERIALIZATION"
     },
     {
       "path": "info/source_artifact_model.json",
-      "digest": "sha256:1ded5a011228d3a5cc64f9111e314d671195ff6932886cbd76a0df72df2937ab",
-      "bytes": 17416039,
+      "digest": "sha256:7edbd1951eb6dc8a5f1cbc2259fbf26062ec3962e46e759affd1d37e95dc2310",
+      "bytes": 17552678,
       "storage": "LOCAL_MATERIALIZATION"
     },
     {
       "path": "info/state_effect_analysis.json",
-      "digest": "sha256:9e9dad7ee4f25c0ef498da9e5dbff59cdc606033b733bcca17fc33913b74892e",
-      "bytes": 19172167,
+      "digest": "sha256:407e90c4a62eefe3d4b9d644734b4a1693501bbdea6c35c40da0a79129cb32a0",
+      "bytes": 19325798,
       "storage": "LOCAL_MATERIALIZATION"
     },
     {
       "path": "info/verified_behavioral_flow_graph.json",
-      "digest": "sha256:ddef0a828fe9fcfdbeb3429a01892adfd1072b7116f12a99e98ffe03c5e7c59d",
+      "digest": "sha256:f01c2f4cfa8a4cc526cd3d7ed3e2b8a4b9f9704f9cd6cd2b639dfee6e534a0c2",
       "bytes": 6988,
       "storage": "TRACKED_EVIDENCE"
     }
   ],
-  "audit_json_digest": "sha256:4751b1994b4632e97e358dc8018ffbba6ff092580582c724799869c254f10527",
-  "certificate_stamp": "sha256:fe6dfa32fa2289552a6a44f0cb0aefb5d2cf98cd79890f643868983e1a1c22b3"
+  "audit_json_digest": "sha256:88b78e98733ece991d3ad8ed31dde00ce321d134ef6b10965f7be4bf0a509e7f",
+  "certificate_stamp": "sha256:a2cda2da941cb75a68cb85d74856aba55ffe8690c37ec6dc271cd8bed8376346"
 }

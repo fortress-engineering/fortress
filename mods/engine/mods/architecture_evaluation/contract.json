@@ -128,6 +128,16 @@
             "T-AF-ARCHITECTURE-EVALUATION-0001-R07-004",
             "T-AF-ARCHITECTURE-EVALUATION-0001-R07-005"
           ]
+        },
+        {
+          "id": "AF-ARCHITECTURE-EVALUATION-0001-R08",
+          "statement": "Authored ALLOW semantic-policy entries remain AUTHORISED permissions with independent supported-usage counts and no conformance conclusion, while Module conformance aggregates only evaluative DENY claims.",
+          "tests": [
+            "T-AF-ARCHITECTURE-EVALUATION-0001-R08-001",
+            "T-AF-ARCHITECTURE-EVALUATION-0001-R08-002",
+            "T-AF-ARCHITECTURE-EVALUATION-0001-R08-003",
+            "T-AF-ARCHITECTURE-EVALUATION-0001-R08-004"
+          ]
         }
       ]
     }

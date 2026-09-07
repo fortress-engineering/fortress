@@ -26,11 +26,11 @@ use crate::state_effect_analysis::{
 /// Normative Module semantic-conformance rule identity.
 pub const ARCH_SEMANTIC_RULE_ID: &str = "ARCH-SEMANTIC-001";
 /// Canonical semantic-conformance projection schema identity.
-pub const SEMANTIC_CONFORMANCE_SCHEMA: &str = "urn:fortress:schema:v2:semantic-conformance";
+pub const SEMANTIC_CONFORMANCE_SCHEMA: &str = "urn:fortress:schema:v3:semantic-conformance";
 /// Canonical semantic-conformance projection schema version.
-pub const SEMANTIC_CONFORMANCE_SCHEMA_VERSION: u16 = 2;
+pub const SEMANTIC_CONFORMANCE_SCHEMA_VERSION: u16 = 3;
 /// Semantic version of the evaluator.
-pub const SEMANTIC_CONFORMANCE_VERSION: &str = "1.1.0";
+pub const SEMANTIC_CONFORMANCE_VERSION: &str = "1.2.0";
 /// Stable evaluator identity used in canonical findings.
 pub const SEMANTIC_CONFORMANCE_EVALUATOR_ID: &str = "fortress-semantic-conformance";
 /// Stable reason for governed source that produced no PSM symbols.
@@ -71,6 +71,24 @@ pub enum SemanticConformanceState {
     Unknown,
     /// No authored semantic-policy claim applies.
     NotApplicable,
+}
+
+/// Authored authorization state, independent of implementation conformance.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum AuthorizationState {
+    /// The Module Contract explicitly permits the named semantic consequence.
+    Authorised,
+}
+
+impl AuthorizationState {
+    /// Returns the stable serialized authorization identity.
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Authorised => "AUTHORISED",
+        }
+    }
 }
 
 /// Central eligibility classification for enforcement decisions.
@@ -274,15 +292,16 @@ impl ModuleEffectObservation {
     }
 }
 
-/// One authored policy claim and its independent semantic conclusion.
+/// One authored policy entry and its authorization or conformance result.
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct SemanticPolicyConclusion {
     target_kind: PolicyTargetKind,
     target: String,
     disposition: PolicyDisposition,
-    state: SemanticConformanceState,
-    blocking_eligibility: BlockingEligibility,
-    observations: usize,
+    authorization: Option<AuthorizationState>,
+    conformance: Option<SemanticConformanceState>,
+    blocking_eligibility: Option<BlockingEligibility>,
+    matching_observations: usize,
     coverage: SemanticSourceCoverage,
     coverage_reasons: Vec<String>,
 }
@@ -306,22 +325,28 @@ impl SemanticPolicyConclusion {
         self.disposition
     }
 
-    /// Returns the raw claim conformance state.
+    /// Returns authored authorization for an ALLOW entry.
     #[must_use]
-    pub const fn state(&self) -> SemanticConformanceState {
-        self.state
+    pub const fn authorization(&self) -> Option<AuthorizationState> {
+        self.authorization
     }
 
-    /// Returns whether the claim is block-ready, advisory, or not evaluable.
+    /// Returns raw conformance only for an evaluative DENY claim.
     #[must_use]
-    pub const fn blocking_eligibility(&self) -> BlockingEligibility {
+    pub const fn conformance(&self) -> Option<SemanticConformanceState> {
+        self.conformance
+    }
+
+    /// Returns enforcement eligibility only for an evaluative DENY claim.
+    #[must_use]
+    pub const fn blocking_eligibility(&self) -> Option<BlockingEligibility> {
         self.blocking_eligibility
     }
 
-    /// Returns the number of supported observations matched by the claim.
+    /// Returns supported observations that exercise this policy entry.
     #[must_use]
-    pub const fn observation_count(&self) -> usize {
-        self.observations
+    pub const fn matching_observation_count(&self) -> usize {
+        self.matching_observations
     }
 
     /// Returns exact source-level semantic coverage for the owning Module.
@@ -432,6 +457,14 @@ pub struct SemanticConformanceSummary {
     modules_failed: usize,
     modules_unknown: usize,
     modules_not_applicable: usize,
+    authored_authorizations: usize,
+    authorizations_with_observed_usage: usize,
+    authorization_observations: usize,
+    evaluative_deny_claims: usize,
+    deny_claims_passed: usize,
+    deny_claims_failed: usize,
+    deny_claims_unknown: usize,
+    deny_claims_not_applicable: usize,
     supported_observations: usize,
     governed_observations: usize,
     ungoverned_observations: usize,
@@ -447,6 +480,54 @@ impl SemanticConformanceSummary {
     #[must_use]
     pub const fn modules_with_policy(self) -> usize {
         self.modules_with_policy
+    }
+
+    /// Returns explicit ALLOW authorizations, none of which are conformance claims.
+    #[must_use]
+    pub const fn authored_authorizations(self) -> usize {
+        self.authored_authorizations
+    }
+
+    /// Returns authorizations exercised by at least one supported observation.
+    #[must_use]
+    pub const fn authorizations_with_observed_usage(self) -> usize {
+        self.authorizations_with_observed_usage
+    }
+
+    /// Returns supported observations matched to authored authorizations.
+    #[must_use]
+    pub const fn authorization_observations(self) -> usize {
+        self.authorization_observations
+    }
+
+    /// Returns evaluative DENY claims independently of authorizations.
+    #[must_use]
+    pub const fn evaluative_deny_claims(self) -> usize {
+        self.evaluative_deny_claims
+    }
+
+    /// Returns favorable evaluative DENY conclusions.
+    #[must_use]
+    pub const fn deny_claims_passed(self) -> usize {
+        self.deny_claims_passed
+    }
+
+    /// Returns proved evaluative DENY contradictions.
+    #[must_use]
+    pub const fn deny_claims_failed(self) -> usize {
+        self.deny_claims_failed
+    }
+
+    /// Returns evaluative DENY claims that current authority cannot decide.
+    #[must_use]
+    pub const fn deny_claims_unknown(self) -> usize {
+        self.deny_claims_unknown
+    }
+
+    /// Returns evaluative DENY claims without a governed implementation subject.
+    #[must_use]
+    pub const fn deny_claims_not_applicable(self) -> usize {
+        self.deny_claims_not_applicable
     }
 
     /// Returns supported semantic-policy contradictions.
@@ -867,8 +948,15 @@ fn apply_policy(
                     && observation.policy_disposition == Some(disposition)
             })
             .collect::<Vec<_>>();
-        let (state, blocking_eligibility, coverage_reasons) =
-            if disposition == PolicyDisposition::Deny && !matching.is_empty() {
+        let (authorization, conformance, blocking_eligibility, coverage_reasons) =
+            if disposition == PolicyDisposition::Allow {
+                summary.authored_authorizations += 1;
+                summary.authorization_observations += matching.len();
+                if !matching.is_empty() {
+                    summary.authorizations_with_observed_usage += 1;
+                }
+                (Some(AuthorizationState::Authorised), None, None, Vec::new())
+            } else if !matching.is_empty() {
                 for observation in &matching {
                     let finding = forbidden_finding(
                         module_id,
@@ -891,18 +979,19 @@ fn apply_policy(
                     }
                 }
                 (
-                    SemanticConformanceState::Fail,
-                    BlockingEligibility::BlockSupported,
+                    None,
+                    Some(SemanticConformanceState::Fail),
+                    Some(BlockingEligibility::BlockSupported),
                     Vec::new(),
                 )
             } else if !coverage.has_governed_subject() {
                 (
-                    SemanticConformanceState::NotApplicable,
-                    BlockingEligibility::AdvisoryOnly,
+                    None,
+                    Some(SemanticConformanceState::NotApplicable),
+                    Some(BlockingEligibility::AdvisoryOnly),
                     Vec::new(),
                 )
-            } else if disposition == PolicyDisposition::Deny && coverage.has_no_semantic_coverage()
-            {
+            } else if coverage.has_no_semantic_coverage() {
                 let coverage_reasons = vec![NO_SEMANTIC_COVERAGE.into()];
                 coverage_findings.push(coverage_finding(
                     module_id,
@@ -916,11 +1005,12 @@ fn apply_policy(
                 summary.not_evaluable_findings += 1;
                 summary.no_semantic_coverage_claims += 1;
                 (
-                    SemanticConformanceState::Unknown,
-                    BlockingEligibility::NotEvaluable,
+                    None,
+                    Some(SemanticConformanceState::Unknown),
+                    Some(BlockingEligibility::NotEvaluable),
                     coverage_reasons,
                 )
-            } else if disposition == PolicyDisposition::Deny && !opaque.is_empty() {
+            } else if !opaque.is_empty() {
                 let coverage_reasons = opaque.iter().cloned().collect::<Vec<_>>();
                 coverage_findings.push(coverage_finding(
                     module_id,
@@ -933,42 +1023,59 @@ fn apply_policy(
                 )?);
                 summary.not_evaluable_findings += 1;
                 (
-                    SemanticConformanceState::Unknown,
-                    BlockingEligibility::NotEvaluable,
+                    None,
+                    Some(SemanticConformanceState::Unknown),
+                    Some(BlockingEligibility::NotEvaluable),
                     coverage_reasons,
                 )
             } else {
                 (
-                    SemanticConformanceState::Pass,
-                    BlockingEligibility::AdvisoryOnly,
+                    None,
+                    Some(SemanticConformanceState::Pass),
+                    Some(BlockingEligibility::AdvisoryOnly),
                     Vec::new(),
                 )
             };
+        if let Some(state) = conformance {
+            summary.evaluative_deny_claims += 1;
+            match state {
+                SemanticConformanceState::Pass => summary.deny_claims_passed += 1,
+                SemanticConformanceState::Fail => summary.deny_claims_failed += 1,
+                SemanticConformanceState::Unknown => summary.deny_claims_unknown += 1,
+                SemanticConformanceState::NotApplicable => {
+                    summary.deny_claims_not_applicable += 1;
+                }
+            }
+        }
         conclusions.push(SemanticPolicyConclusion {
             target_kind,
             target,
             disposition,
-            state,
+            authorization,
+            conformance,
             blocking_eligibility,
-            observations: matching.len(),
+            matching_observations: matching.len(),
             coverage: coverage.clone(),
             coverage_reasons,
         });
     }
-    let state = if conclusions.is_empty()
-        || conclusions
-            .iter()
-            .all(|conclusion| conclusion.state == SemanticConformanceState::NotApplicable)
-    {
-        SemanticConformanceState::NotApplicable
-    } else if conclusions
+    let deny_conclusions = conclusions
         .iter()
-        .any(|conclusion| conclusion.state == SemanticConformanceState::Fail)
+        .filter(|conclusion| conclusion.disposition == PolicyDisposition::Deny)
+        .collect::<Vec<_>>();
+    let state = if deny_conclusions.is_empty()
+        || deny_conclusions.iter().all(|conclusion| {
+            conclusion.conformance == Some(SemanticConformanceState::NotApplicable)
+        }) {
+        SemanticConformanceState::NotApplicable
+    } else if deny_conclusions
+        .iter()
+        .any(|conclusion| conclusion.conformance == Some(SemanticConformanceState::Fail))
     {
         SemanticConformanceState::Fail
-    } else if conclusions
+    } else if deny_conclusions
         .iter()
-        .any(|conclusion| conclusion.state == SemanticConformanceState::Unknown)
+        .any(|conclusion| conclusion.conformance == Some(SemanticConformanceState::Unknown))
     {
         SemanticConformanceState::Unknown
     } else {

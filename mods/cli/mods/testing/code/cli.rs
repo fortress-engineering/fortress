@@ -181,7 +181,7 @@ fn semantic_conformance_renders_zero_coverage_as_not_evaluable() {
     let human = run(&["semantic-conformance", &fixture.argument()]);
     assert_eq!(human.status.code(), Some(1));
     let output = String::from_utf8_lossy(&human.stdout);
-    assert!(output.contains("result=Unknown"), "{output}");
+    assert!(output.contains("conformance=Unknown"), "{output}");
     assert!(
         output.contains("governed_source_files=1 analysed_source_files=0 ratio=0/1"),
         "{output}"
@@ -194,7 +194,7 @@ fn semantic_conformance_renders_zero_coverage_as_not_evaluable() {
     let document: serde_json::Value = serde_json::from_slice(&json.stdout).expect("JSON");
     assert_eq!(
         document["$schema"],
-        "urn:fortress:schema:v2:semantic-conformance"
+        "urn:fortress:schema:v3:semantic-conformance"
     );
     let module = document["modules"]
         .as_array()
@@ -230,6 +230,41 @@ fn semantic_conformance_renders_zero_coverage_as_not_evaluable() {
                 .is_some_and(|detail| detail.contains("NO_SEMANTIC_COVERAGE"))
         );
     }
+}
+
+/// `T-TF-CLI-0001-R17-004`
+/// Fortress requirement: TF-CLI-0001-R17
+#[test]
+fn semantic_conformance_renders_allow_as_authorization_not_pass() {
+    let fixture = SemanticCoverageFixture::with_policy(
+        &["filesystem"],
+        &[],
+        "pub fn read_file() { let _ = std::fs::read(\"input\"); }\n",
+    );
+    let human = run(&["semantic-conformance", &fixture.argument()]);
+    assert!(human.status.success());
+    let output = String::from_utf8_lossy(&human.stdout);
+    assert!(output.contains("Authorizations:"), "{output}");
+    assert!(output.contains("AUTHORISED"), "{output}");
+    assert!(output.contains("observed uses="), "{output}");
+    assert!(!output.contains("ALLOW -> PASS"), "{output}");
+    assert!(output.contains("conformance=NotApplicable"), "{output}");
+
+    let json = run(&["semantic-conformance", &fixture.argument(), "--format=json"]);
+    assert!(json.status.success());
+    let document: serde_json::Value = serde_json::from_slice(&json.stdout).expect("JSON");
+    let entry = document["modules"]
+        .as_array()
+        .and_then(|modules| {
+            modules
+                .iter()
+                .find(|module| module["module"] == "AF-COVERAGE-0001")
+        })
+        .map(|module| &module["conclusions"][0])
+        .expect("authorization entry");
+    assert_eq!(entry["disposition"], "ALLOW");
+    assert_eq!(entry["authorization"], "AUTHORISED");
+    assert!(entry["conformance"].is_null());
 }
 
 /// `T-TF-CLI-0001-R15-001`
@@ -428,6 +463,10 @@ struct SemanticCoverageFixture {
 
 impl SemanticCoverageFixture {
     fn new() -> Self {
+        Self::with_policy(&[], &["filesystem"], "pub struct Marker;\n")
+    }
+
+    fn with_policy(capability_allow: &[&str], capability_deny: &[&str], source: &str) -> Self {
         let identity = NEXT_FIXTURE.fetch_add(1, Ordering::Relaxed);
         let root = std::env::temp_dir().join(format!(
             "fortress-cli-semantic-coverage-{}-{identity}",
@@ -456,7 +495,7 @@ impl SemanticCoverageFixture {
             "behavior": [],
             "semantic_policy": {
                 "default": "UNDECLARED",
-                "capabilities": { "allow": [], "deny": ["filesystem"] },
+                "capabilities": { "allow": capability_allow, "deny": capability_deny },
                 "effects": { "allow": [], "deny": [] }
             }
         }))
@@ -471,8 +510,7 @@ impl SemanticCoverageFixture {
             "[package]\nname='coverage'\nversion='0.1.0'\nedition='2021'\n[lib]\npath='../code/lib.rs'\n",
         )
         .expect("manifest writes");
-        fs::write(root.join("mods/sample/code/lib.rs"), "pub struct Marker;\n")
-            .expect("source writes");
+        fs::write(root.join("mods/sample/code/lib.rs"), source).expect("source writes");
         Self { root }
     }
 
@@ -932,6 +970,7 @@ fn audit_success_renders_human_snapshot_report() {
     assert!(stdout.contains("Fortress Snapshot Audit"));
     assert!(stdout.contains("PASS: 16"), "{stdout}");
     assert!(stdout.contains("Unsupported: 0"), "{stdout}");
+    assert!(stdout.contains("NOT_APPLICABLE: 7"), "{stdout}");
     assert!(stdout.contains("Architecture diagnostics:"));
     assert!(stdout.contains("Unsupported analysis:"));
     assert!(!stdout.contains("certification"));
@@ -974,10 +1013,20 @@ fn audit_json_is_valid_and_repeatable() {
     assert_eq!(first.stdout, second.stdout);
     let value: serde_json::Value =
         serde_json::from_slice(&first.stdout).expect("audit output is JSON");
-    assert_eq!(value["schema_version"], 4);
+    assert_eq!(value["schema_version"], 5);
     assert_eq!(value["outcome"], "PASS");
     assert!(value["diagnostics"].is_array());
     assert!(value["unsupported_analysis"].is_array());
+    let rules = value["rules"].as_array().expect("rule inventory");
+    let not_applicable = rules
+        .iter()
+        .filter(|rule| rule["applicable"] == false)
+        .collect::<Vec<_>>();
+    assert_eq!(value["summary"]["not_applicable"], not_applicable.len());
+    assert!(!not_applicable.is_empty());
+    assert!(not_applicable.iter().all(|rule| {
+        rule["state"] == "NOT_APPLICABLE" && rule["applicability_reason"].is_string()
+    }));
 }
 
 /// `T-TF-CLI-0001-R04-005`

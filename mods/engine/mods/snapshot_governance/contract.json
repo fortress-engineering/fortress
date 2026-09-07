@@ -155,11 +155,13 @@
         },
         {
           "id": "AF-SNAPSHOT-GOVERNANCE-0001-R04",
-          "statement": "The Snapshot Governance engine validates the exact standard bundle, compiles CCG-bound Reference Resolution once, executes only registered applicable evaluators, and distinguishes evaluated pass/fail results from unsupported rules.",
+          "statement": "The Snapshot Governance engine validates the exact standard bundle, compiles CCG-bound Reference Resolution once, executes only registered evaluators, and canonically distinguishes applicable pass/fail/unsupported results from rules that are NOT_APPLICABLE with stable reasons.",
           "tests": [
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R04-001",
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R04-002",
-            "T-AF-SNAPSHOT-GOVERNANCE-0001-R04-003"
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R04-003",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R04-004",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R04-005"
           ]
         },
         {

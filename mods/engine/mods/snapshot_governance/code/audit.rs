@@ -105,7 +105,7 @@ use crate::state_effect_analysis::{
 };
 
 /// Current stable machine-readable snapshot audit schema family.
-pub const AUDIT_RESULT_SCHEMA_VERSION: u16 = 4;
+pub const AUDIT_RESULT_SCHEMA_VERSION: u16 = 5;
 
 /// Machine-local cache and exact semantic key for one repository projection.
 pub struct RepositoryProjectionCache {
@@ -295,14 +295,15 @@ impl AuditResult {
     #[must_use]
     pub fn to_human(&self) -> String {
         let mut output = format!(
-            "Fortress Snapshot Audit\nGovernance: {:?}\nStandard: {}\nSnapshot: {}\n\nRules evaluated: {}\nPASS: {}\nFAIL: {}\nUnsupported: {}\n\nFindings:\n",
+            "Fortress Snapshot Audit\nGovernance: {:?}\nStandard: {}\nSnapshot: {}\n\nRules evaluated: {}\nPASS: {}\nFAIL: {}\nUnsupported: {}\nNOT_APPLICABLE: {}\n\nFindings:\n",
             self.governance.project_authority,
             self.standard.edition,
             self.snapshot_fingerprint,
             self.summary.rules_evaluated,
             self.summary.passed,
             self.summary.failed,
-            self.summary.unsupported
+            self.summary.unsupported,
+            self.summary.not_applicable
         );
         if self.findings.is_empty() {
             output.push_str("None\n");
@@ -332,6 +333,26 @@ impl AuditResult {
                     );
                 }
                 output.push('\n');
+            }
+        }
+        let not_applicable = self
+            .rules
+            .iter()
+            .filter(|execution| {
+                execution.state() == crate::evaluation::RuleExecutionState::NotApplicable
+            })
+            .collect::<Vec<_>>();
+        if !not_applicable.is_empty() {
+            output.push_str("\nNot applicable rules:\n");
+            for execution in not_applicable {
+                let _ = writeln!(
+                    output,
+                    "- [{}] {}",
+                    execution.rule_id(),
+                    execution
+                        .applicability_reason()
+                        .unwrap_or("NO_GOVERNED_SUBJECT")
+                );
             }
         }
         let governance = self.finding_governance.summary();
@@ -417,6 +438,7 @@ pub struct AuditSummary {
     passed: usize,
     failed: usize,
     unsupported: usize,
+    not_applicable: usize,
 }
 
 impl AuditSummary {
@@ -442,6 +464,12 @@ impl AuditSummary {
     #[must_use]
     pub const fn unsupported(&self) -> usize {
         self.unsupported
+    }
+
+    /// Returns rules without a governed subject in this snapshot.
+    #[must_use]
+    pub const fn not_applicable(&self) -> usize {
+        self.not_applicable
     }
 }
 
@@ -1152,6 +1180,7 @@ fn observation_only_audit(prepared: &PreparedAnalysis) -> Result<AuditResult, Au
             passed: 0,
             failed: 0,
             unsupported: 0,
+            not_applicable: 0,
         },
         finding_governance: evaluate_finding_governance(
             &[],
@@ -1596,12 +1625,15 @@ pub fn compile_repository_certification_bundle(
         .evaluation
         .rules()
         .iter()
-        .filter(|execution| execution.applicable())
-        .map(|execution| {
+        .filter_map(|execution| {
+            if !execution.applicable() {
+                return None;
+            }
             let result = match execution.state() {
                 crate::evaluation::RuleExecutionState::Passed => EvidenceResult::Pass,
                 crate::evaluation::RuleExecutionState::Failed => EvidenceResult::Fail,
                 crate::evaluation::RuleExecutionState::Unsupported => EvidenceResult::Unsupported,
+                crate::evaluation::RuleExecutionState::NotApplicable => return None,
             };
             let mut finding_fingerprints = stack
                 .evaluation
@@ -1611,7 +1643,7 @@ pub fn compile_repository_certification_bundle(
                 .map(|finding| finding.finding_fingerprint().to_owned())
                 .collect::<Vec<_>>();
             finding_fingerprints.sort();
-            RuleEvidenceInput {
+            Some(RuleEvidenceInput {
                 rule_id: execution.rule_id().to_owned(),
                 result,
                 current: true,
@@ -1624,7 +1656,7 @@ pub fn compile_repository_certification_bundle(
                     .cloned()
                     .collect(),
                 input_refs: Vec::new(),
-            }
+            })
         })
         .collect();
     let requirements = stack
@@ -3987,6 +4019,7 @@ fn result_from_evaluation(
         passed: evaluation.passed_count(),
         failed: evaluation.failed_count(),
         unsupported: evaluation.unsupported_count(),
+        not_applicable: evaluation.not_applicable_count(),
     };
     let finding_governance = evaluate_finding_governance(
         evaluation.findings(),

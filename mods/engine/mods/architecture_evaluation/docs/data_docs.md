@@ -41,3 +41,7 @@ Preserves the original deterministic Module semantic-conformance projection cont
 ### [`semantic_conformance_schema_v2.json`](../data/semantic_conformance_schema_v2.json)
 
 Defines the deterministic derived Module semantic-conformance projection with exact governed/source-symbol coverage on every Module and claim, including explicit zero-coverage uncertainty.
+
+### [`semantic_conformance_schema_v3.json`](../data/semantic_conformance_schema_v3.json)
+
+Defines the current deterministic projection in which ALLOW entries are authored authorizations with observed-usage counts while only DENY entries carry conformance and blocking conclusions.

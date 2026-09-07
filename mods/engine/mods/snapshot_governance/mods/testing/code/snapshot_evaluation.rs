@@ -129,3 +129,52 @@ fn recursive_testing_boundaries_pass_for_fortress_itself() {
     assert_eq!(execution.state(), RuleExecutionState::Passed);
     assert_eq!(execution.finding_count(), 0);
 }
+
+/// `T-AF-SNAPSHOT-GOVERNANCE-0001-R04-004`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R04
+#[test]
+fn non_applicable_rule_has_canonical_state_and_reason() {
+    let audit = audit_repository(repository_root()).expect("self audit completes");
+    let execution = audit
+        .rules()
+        .iter()
+        .find(|execution| execution.rule_id() == "ARCH-SEMANTIC-001")
+        .expect("semantic rule execution is reported");
+    assert!(!execution.applicable());
+    assert_eq!(execution.state(), RuleExecutionState::NotApplicable);
+    assert_eq!(
+        execution.applicability_reason(),
+        Some("NO_EVALUATIVE_MODULE_SEMANTIC_POLICY")
+    );
+    assert!(
+        audit
+            .to_human()
+            .contains("[ARCH-SEMANTIC-001] NO_EVALUATIVE_MODULE_SEMANTIC_POLICY")
+    );
+}
+
+/// `T-AF-SNAPSHOT-GOVERNANCE-0001-R04-005`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R04
+#[test]
+fn canonical_audit_never_serializes_non_applicable_as_passed() {
+    let audit = audit_repository(repository_root()).expect("self audit completes");
+    let document: serde_json::Value =
+        serde_json::from_str(&audit.to_json_pretty().unwrap()).expect("audit JSON parses");
+    let rules = document["rules"].as_array().expect("rules array");
+    for rule in rules {
+        if rule["applicable"] == false {
+            assert_eq!(rule["state"], "NOT_APPLICABLE");
+            assert!(rule["applicability_reason"].as_str().is_some());
+        }
+    }
+    assert_eq!(
+        audit.summary().rules_evaluated()
+            + audit.summary().unsupported()
+            + audit.summary().not_applicable(),
+        rules.len()
+    );
+    assert_eq!(
+        audit.summary().passed() + audit.summary().failed(),
+        audit.summary().rules_evaluated()
+    );
+}

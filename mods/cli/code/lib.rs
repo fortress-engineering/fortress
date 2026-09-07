@@ -1373,7 +1373,7 @@ fn run_semantic_conformance<O: Write, E: Write>(
     for module in modules {
         writeln!(
             output,
-            "Module {} policy={} result={:?} contract={}\n  Rule: {}\n  Semantic coverage: governed_source_files={} analysed_source_files={} ratio={}",
+            "Module {} policy={} conformance={:?} contract={}\n  Rule: {}\n  Semantic coverage: governed_source_files={} analysed_source_files={} ratio={}",
             module.module(),
             module.policy_state(),
             module.state(),
@@ -1383,19 +1383,54 @@ fn run_semantic_conformance<O: Write, E: Write>(
             module.coverage().analysed_source_files(),
             module.coverage().ratio().unwrap_or("NOT_APPLICABLE"),
         )?;
-        for conclusion in module.conclusions() {
+        let authorizations = module
+            .conclusions()
+            .iter()
+            .filter(|conclusion| {
+                conclusion.disposition()
+                    == fortress_core::semantic_conformance::PolicyDisposition::Allow
+            })
+            .collect::<Vec<_>>();
+        if !authorizations.is_empty() {
+            writeln!(output, "  Authorizations:")?;
+        }
+        for authorization in authorizations {
             writeln!(
                 output,
-                "  Policy: {:?} {} {:?}\n  Result: {:?} / {:?} (observations={}, coverage={})",
-                conclusion.target_kind(),
-                conclusion.target(),
-                conclusion.disposition(),
-                conclusion.state(),
-                conclusion.blocking_eligibility(),
-                conclusion.observation_count(),
-                conclusion.coverage().ratio().unwrap_or("NOT_APPLICABLE"),
+                "    {:?} {}: {} (observed uses={}, coverage={})",
+                authorization.target_kind(),
+                authorization.target(),
+                authorization
+                    .authorization()
+                    .expect("ALLOW is authorization")
+                    .as_str(),
+                authorization.matching_observation_count(),
+                authorization.coverage().ratio().unwrap_or("NOT_APPLICABLE"),
             )?;
-            for reason in conclusion.coverage_reasons() {
+        }
+        let claims = module
+            .conclusions()
+            .iter()
+            .filter(|conclusion| {
+                conclusion.disposition()
+                    == fortress_core::semantic_conformance::PolicyDisposition::Deny
+            })
+            .collect::<Vec<_>>();
+        if !claims.is_empty() {
+            writeln!(output, "  Conformance claims:")?;
+        }
+        for claim in claims {
+            writeln!(
+                output,
+                "    {:?} {} DENY: {:?} / {:?} (observations={}, coverage={})",
+                claim.target_kind(),
+                claim.target(),
+                claim.conformance().expect("DENY is evaluative"),
+                claim.blocking_eligibility().expect("DENY has eligibility"),
+                claim.matching_observation_count(),
+                claim.coverage().ratio().unwrap_or("NOT_APPLICABLE"),
+            )?;
+            for reason in claim.coverage_reasons() {
                 writeln!(output, "    Coverage: {reason}")?;
             }
         }

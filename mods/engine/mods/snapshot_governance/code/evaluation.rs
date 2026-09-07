@@ -54,6 +54,8 @@ pub enum RuleExecutionState {
     Failed,
     /// No Snapshot Governance evaluator is implemented for this rule.
     Unsupported,
+    /// The rule has no governed subject in the evaluated snapshot.
+    NotApplicable,
 }
 
 /// Deterministic execution record for one standard rule.
@@ -62,6 +64,7 @@ pub struct RuleExecution {
     rule_id: String,
     state: RuleExecutionState,
     applicable: bool,
+    applicability_reason: Option<String>,
     findings: usize,
     detail: String,
 }
@@ -83,6 +86,12 @@ impl RuleExecution {
     #[must_use]
     pub const fn applicable(&self) -> bool {
         self.applicable
+    }
+
+    /// Returns the stable reason a rule does not apply, when known.
+    #[must_use]
+    pub fn applicability_reason(&self) -> Option<&str> {
+        self.applicability_reason.as_deref()
     }
 
     /// Returns the number of normalized findings produced.
@@ -174,7 +183,18 @@ impl SnapshotEvaluation {
     pub fn unsupported_count(&self) -> usize {
         self.rules
             .iter()
-            .filter(|execution| execution.state == RuleExecutionState::Unsupported)
+            .filter(|execution| {
+                execution.applicable && execution.state == RuleExecutionState::Unsupported
+            })
+            .count()
+    }
+
+    /// Returns the number of rules without a governed subject.
+    #[must_use]
+    pub fn not_applicable_count(&self) -> usize {
+        self.rules
+            .iter()
+            .filter(|execution| execution.state == RuleExecutionState::NotApplicable)
             .count()
     }
 }
@@ -436,6 +456,7 @@ fn evaluate_rule(
                 rule_id: rule_id.into(),
                 state: RuleExecutionState::Passed,
                 applicable: true,
+                applicability_reason: None,
                 findings: 0,
                 detail: "The loaded Standard, Project, Module Contract v2 ecosystem, CCG, snapshot, and finding identities passed their canonical StableId/RuleId constructors before evaluation.".into(),
             },
@@ -526,6 +547,7 @@ fn reference_execution(
                 RuleExecutionState::Failed
             },
             applicable: true,
+            applicability_reason: None,
             findings: findings.len(),
             detail: format!(
                 "Reference Resolution v1 resolved {} Module(s), {} semantic reference(s), {} same-boundary relative reference(s), {} path projection(s), and {} authored resolution boundary location(s), with {} finding(s).",
@@ -561,6 +583,7 @@ fn source_architecture_execution(
                 RuleExecutionState::Failed
             },
             applicable: true,
+            applicability_reason: None,
             findings: findings.len(),
             detail: format!(
                 "Source Architecture v1 inventoried {} governed artifact(s), synchronized {} authored responsibility record(s), retained {} PROFILE_NOT_REGISTERED language result(s), and produced {} finding(s) for this rule.",
@@ -640,12 +663,9 @@ fn behavior_execution(
     (
         RuleExecution {
             rule_id: rule_id.into(),
-            state: if findings.is_empty() {
-                RuleExecutionState::Passed
-            } else {
-                RuleExecutionState::Failed
-            },
+            state: completed_state(applicable, findings.len()),
             applicable,
+            applicability_reason: (!applicable).then(|| "NO_MODELED_BEHAVIOR_FEATURES".into()),
             findings: findings.len(),
             detail: format!(
                 "Intended BFG v1 compiled {} modeled Feature(s): {} coherent, {} incoherent, with {} unmodeled Feature(s) preserved as {} and {} finding(s).",
@@ -671,15 +691,13 @@ fn behavioral_realization_execution(
         result.realization_findings().to_vec()
     };
     let summary = result.graph().summary();
+    let applicable = summary.opted_in_features() > 0;
     (
         RuleExecution {
             rule_id: rule_id.into(),
-            state: if findings.is_empty() {
-                RuleExecutionState::Passed
-            } else {
-                RuleExecutionState::Failed
-            },
-            applicable: summary.opted_in_features() > 0,
+            state: completed_state(applicable, findings.len()),
+            applicable,
+            applicability_reason: (!applicable).then(|| "NO_OPTED_IN_BEHAVIOR_FEATURES".into()),
             findings: findings.len(),
             detail: format!(
                 "Realized BFG v1 reconciled {} opted-in Feature(s), with {} realization contradiction(s), {} proven dominator bypass(es), and {} finding(s) for this rule; incomplete semantic coverage remains explicit.",
@@ -708,6 +726,7 @@ fn semantic_execution(
                 RuleExecutionState::Failed
             },
             applicable: true,
+            applicability_reason: None,
             findings: findings.len(),
             detail: format!(
                 "Semantic Analysis v1 evaluated {} function summary(ies), {} distributed Function Contract(s), and produced {} supported program-domain contradiction(s); unsupported semantics remain explicit.",
@@ -740,6 +759,7 @@ fn state_effect_execution(
                 RuleExecutionState::Failed
             },
             applicable: true,
+            applicability_reason: None,
             findings: findings.len(),
             detail: format!(
                 "State and Effect Analysis v1 evaluated {} function summary(ies) and produced {} supported contradiction(s) for this rule; unknown and unclassified semantics remain explicit.",
@@ -757,7 +777,10 @@ fn semantic_conformance_execution(
 ) -> (RuleExecution, Vec<CanonicalFinding>) {
     let findings = result.findings().to_vec();
     let summary = result.model().summary();
-    let state = if !findings.is_empty() {
+    let applicable = result.is_applicable();
+    let state = if !applicable {
+        RuleExecutionState::NotApplicable
+    } else if !findings.is_empty() {
         RuleExecutionState::Failed
     } else if !result.coverage_findings().is_empty() {
         RuleExecutionState::Unsupported
@@ -768,10 +791,16 @@ fn semantic_conformance_execution(
         RuleExecution {
             rule_id: rule_id.into(),
             state,
-            applicable: result.is_applicable(),
+            applicable,
+            applicability_reason: (!applicable)
+                .then(|| "NO_EVALUATIVE_MODULE_SEMANTIC_POLICY".into()),
             findings: findings.len(),
             detail: format!(
-                "Module semantic conformance evaluated {} authored policy set(s), produced {} supported blocking contradiction(s), and retained {} claim-relative not-evaluable finding(s), including {} claim(s) with NO_SEMANTIC_COVERAGE; undeclared policy and zero semantic coverage are never interpreted as permission.",
+                "Module semantic policy recorded {} authored authorization(s), including {} with supported observed usage across {} matched observation(s), and evaluated {} DENY claim(s) from {} authored policy set(s); DENY evaluation produced {} supported blocking contradiction(s) and retained {} claim-relative not-evaluable finding(s), including {} claim(s) with NO_SEMANTIC_COVERAGE. Authorizations do not discharge conformance obligations, and undeclared policy or zero semantic coverage is never interpreted as permission.",
+                summary.authored_authorizations(),
+                summary.authorizations_with_observed_usage(),
+                summary.authorization_observations(),
+                summary.evaluative_deny_claims(),
                 summary.modules_with_policy(),
                 summary.blocking_findings(),
                 summary.not_evaluable_findings(),
@@ -797,6 +826,7 @@ fn information_flow_execution(
                 RuleExecutionState::Failed
             },
             applicable: true,
+            applicability_reason: None,
             findings: findings.len(),
             detail: format!(
                 "Information Flow Analysis v1 evaluated project-defined ordered facets and produced {} supported information-flow contradiction(s); unknown and unsupported flow remains explicit.",
@@ -818,15 +848,13 @@ fn environmental_execution(
         _ => Vec::new(),
     };
     let coverage = result.model().coverage();
+    let applicable = coverage.operations() > 0;
     (
         RuleExecution {
             rule_id: rule_id.into(),
-            state: if findings.is_empty() {
-                RuleExecutionState::Passed
-            } else {
-                RuleExecutionState::Failed
-            },
-            applicable: coverage.operations() > 0,
+            state: completed_state(applicable, findings.len()),
+            applicable,
+            applicability_reason: (!applicable).then(|| "NO_MODELED_EXTERNAL_OPERATIONS".into()),
             findings: findings.len(),
             detail: format!(
                 "Environmental Analysis v1 evaluated {} modeled external operation(s) and produced {} supported contradiction(s) for this rule; unknown and unsupported environment behavior remains explicit.",
@@ -866,6 +894,7 @@ fn realization_execution(
                 RuleExecutionState::Failed
             },
             applicable: true,
+            applicability_reason: None,
             findings: findings.len(),
             detail: format!(
                 "Rust realization reconciliation produced {} declared-and-observed, {} observed-undeclared, {} transitive-bypass, {} declared-unobserved, {} external, {} unresolved, {} unsupported, and {} invalid conclusion(s); capability realization remains unsupported.",
@@ -985,6 +1014,7 @@ fn contract_execution(
                 RuleExecutionState::Failed
             },
             applicable: true,
+            applicability_reason: None,
             findings: findings.len(),
             detail: format!(
                 "CCG compilation ran with test-reference support {}, graph coherent {}, and produced {} CONTRACT-COHERENCY-001 finding(s); unsupported semantic classes: {}.",
@@ -1034,6 +1064,7 @@ fn documentation_execution(
                 RuleExecutionState::Failed
             },
             applicable: true,
+            applicability_reason: None,
             findings: findings.len(),
             detail: report.execution_detail(),
         },
@@ -1050,8 +1081,19 @@ fn completed_execution(rule_id: &str, findings: usize, subject: &str) -> RuleExe
             RuleExecutionState::Failed
         },
         applicable: true,
+        applicability_reason: None,
         findings,
         detail: format!("Evaluator ran and produced {findings} {subject}."),
+    }
+}
+
+const fn completed_state(applicable: bool, findings: usize) -> RuleExecutionState {
+    if !applicable {
+        RuleExecutionState::NotApplicable
+    } else if findings == 0 {
+        RuleExecutionState::Passed
+    } else {
+        RuleExecutionState::Failed
     }
 }
 
@@ -1061,6 +1103,7 @@ fn unsupported_execution(rule_id: &str, detail: &str) -> (RuleExecution, Vec<Can
             rule_id: rule_id.into(),
             state: RuleExecutionState::Unsupported,
             applicable: true,
+            applicability_reason: None,
             findings: 0,
             detail: detail.into(),
         },

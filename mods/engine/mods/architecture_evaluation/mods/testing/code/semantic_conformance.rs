@@ -17,8 +17,8 @@ use fortress_core::implementation_observation::{
 use fortress_core::program_semantics::{ProgramSemanticInput, compile_program_semantic_model};
 use fortress_core::semantic_analysis::{analyze_program_domains, load_function_contracts};
 use fortress_core::semantic_conformance::{
-    BlockingEligibility, NO_SEMANTIC_COVERAGE, PolicyDisposition, SemanticConformanceEvaluation,
-    SemanticConformanceState, evaluate_semantic_conformance,
+    AuthorizationState, BlockingEligibility, NO_SEMANTIC_COVERAGE, PolicyDisposition,
+    SemanticConformanceEvaluation, SemanticConformanceState, evaluate_semantic_conformance,
 };
 use fortress_core::state_effect_analysis::{analyze_state_effects, load_state_contracts};
 
@@ -333,7 +333,7 @@ pub fn residual() { std::sync::atomic::fence(std::sync::atomic::Ordering::SeqCst
         .unwrap()
         .conclusions()
         .iter()
-        .filter(|conclusion| conclusion.state() == SemanticConformanceState::Fail)
+        .filter(|conclusion| conclusion.conformance() == Some(SemanticConformanceState::Fail))
         .map(fortress_core::semantic_conformance::SemanticPolicyConclusion::target)
         .collect::<Vec<_>>();
     assert_eq!(
@@ -396,10 +396,13 @@ fn deny_claim_with_governed_source_and_zero_symbols_is_not_evaluable() {
     assert_eq!(module.coverage().analysed_source_files(), 0);
     assert_eq!(module.coverage().ratio(), Some("0/1"));
     assert_eq!(module.state(), SemanticConformanceState::Unknown);
-    assert_eq!(conclusion.state(), SemanticConformanceState::Unknown);
+    assert_eq!(
+        conclusion.conformance(),
+        Some(SemanticConformanceState::Unknown)
+    );
     assert_eq!(
         conclusion.blocking_eligibility(),
-        BlockingEligibility::NotEvaluable
+        Some(BlockingEligibility::NotEvaluable)
     );
     assert_eq!(conclusion.coverage_reasons(), [NO_SEMANTIC_COVERAGE]);
     assert_eq!(result.findings().len(), 0);
@@ -414,7 +417,7 @@ fn deny_claim_with_governed_source_and_zero_symbols_is_not_evaluable() {
         for module in evaluation.model().modules() {
             for claim in module.conclusions().iter().filter(|claim| {
                 claim.disposition() == PolicyDisposition::Deny
-                    && claim.state() == SemanticConformanceState::Pass
+                    && claim.conformance() == Some(SemanticConformanceState::Pass)
                     && claim.coverage().governed_source_files() > 0
             }) {
                 assert!(
@@ -498,7 +501,7 @@ fn policy_without_governed_source_has_no_subject_and_no_ratio() {
     assert_eq!(module.coverage().analysed_source_files(), 0);
     assert_eq!(module.coverage().ratio(), None);
     assert!(module.conclusions().iter().all(|conclusion| {
-        conclusion.state() == SemanticConformanceState::NotApplicable
+        conclusion.conformance() == Some(SemanticConformanceState::NotApplicable)
             && conclusion.coverage().ratio().is_none()
     }));
     assert!(result.coverage_findings().is_empty());
@@ -552,4 +555,122 @@ fn semantic_coverage_is_checkout_root_independent() {
         first.model().to_canonical_json().unwrap(),
         second.model().to_canonical_json().unwrap()
     );
+}
+
+/// `T-AF-ARCHITECTURE-EVALUATION-0001-R08-001`
+/// Fortress requirement: AF-ARCHITECTURE-EVALUATION-0001-R08
+#[test]
+fn allow_entries_are_authorizations_with_independent_observed_usage() {
+    let used = evaluate(
+        "pub fn read_file() { let _ = std::fs::read(\"input\"); }",
+        module_contract("AF-SAMPLE-0001", &["filesystem"], &[], &[], &[]),
+    );
+    let used_module = used.model().module("AF-SAMPLE-0001").unwrap();
+    let authorization = &used_module.conclusions()[0];
+    assert_eq!(used_module.state(), SemanticConformanceState::NotApplicable);
+    assert_eq!(authorization.disposition(), PolicyDisposition::Allow);
+    assert_eq!(
+        authorization.authorization(),
+        Some(AuthorizationState::Authorised)
+    );
+    assert_eq!(authorization.conformance(), None);
+    assert_eq!(authorization.blocking_eligibility(), None);
+    assert!(authorization.matching_observation_count() > 0);
+    assert_eq!(used.model().summary().authored_authorizations(), 1);
+    assert_eq!(
+        used.model().summary().authorizations_with_observed_usage(),
+        1
+    );
+    assert!(used.model().summary().authorization_observations() > 0);
+    assert_eq!(used.model().summary().evaluative_deny_claims(), 0);
+    assert!(used.findings().is_empty());
+
+    let unused = evaluate(
+        "pub fn pure() -> u32 { 42 }",
+        module_contract("AF-SAMPLE-0001", &["filesystem"], &[], &[], &[]),
+    );
+    let unused_authorization = &unused
+        .model()
+        .module("AF-SAMPLE-0001")
+        .unwrap()
+        .conclusions()[0];
+    assert_eq!(
+        unused_authorization.authorization(),
+        Some(AuthorizationState::Authorised)
+    );
+    assert_eq!(unused_authorization.conformance(), None);
+    assert_eq!(unused_authorization.matching_observation_count(), 0);
+    assert_eq!(
+        unused
+            .model()
+            .summary()
+            .authorizations_with_observed_usage(),
+        0
+    );
+}
+
+/// `T-AF-ARCHITECTURE-EVALUATION-0001-R08-002`
+/// Fortress requirement: AF-ARCHITECTURE-EVALUATION-0001-R08
+#[test]
+fn allow_authorization_survives_zero_coverage_without_becoming_pass() {
+    let result = evaluate(
+        "pub struct Marker;",
+        module_contract("AF-SAMPLE-0001", &["filesystem"], &[], &[], &[]),
+    );
+    let module = result.model().module("AF-SAMPLE-0001").unwrap();
+    let authorization = &module.conclusions()[0];
+    assert_eq!(module.coverage().ratio(), Some("0/1"));
+    assert_eq!(module.state(), SemanticConformanceState::NotApplicable);
+    assert_eq!(
+        authorization.authorization(),
+        Some(AuthorizationState::Authorised)
+    );
+    assert_eq!(authorization.conformance(), None);
+    assert_eq!(authorization.matching_observation_count(), 0);
+    assert!(result.coverage_findings().is_empty());
+}
+
+/// `T-AF-ARCHITECTURE-EVALUATION-0001-R08-003`
+/// Fortress requirement: AF-ARCHITECTURE-EVALUATION-0001-R08
+#[test]
+fn module_conformance_aggregates_only_evaluative_deny_claims() {
+    let result = evaluate(
+        "pub fn read_file() { let _ = std::fs::read(\"input\"); } pub fn panic_path() { panic!(\"stop\"); }",
+        module_contract("AF-SAMPLE-0001", &["filesystem"], &[], &[], &["may_panic"]),
+    );
+    let module = result.model().module("AF-SAMPLE-0001").unwrap();
+    assert_eq!(module.state(), SemanticConformanceState::Fail);
+    assert!(module.conclusions().iter().any(|entry| {
+        entry.disposition() == PolicyDisposition::Allow
+            && entry.authorization() == Some(AuthorizationState::Authorised)
+            && entry.conformance().is_none()
+    }));
+    assert!(module.conclusions().iter().any(|entry| {
+        entry.disposition() == PolicyDisposition::Deny
+            && entry.conformance() == Some(SemanticConformanceState::Fail)
+    }));
+    assert_eq!(result.model().summary().authored_authorizations(), 1);
+    assert_eq!(result.model().summary().evaluative_deny_claims(), 1);
+    assert_eq!(result.model().summary().deny_claims_failed(), 1);
+}
+
+/// `T-AF-ARCHITECTURE-EVALUATION-0001-R08-004`
+/// Fortress requirement: AF-ARCHITECTURE-EVALUATION-0001-R08
+#[test]
+fn canonical_output_never_represents_allow_as_conformance_pass() {
+    let result = evaluate(
+        "pub fn read_file() { let _ = std::fs::read(\"input\"); }",
+        module_contract("AF-SAMPLE-0001", &["filesystem"], &[], &[], &[]),
+    );
+    let document: serde_json::Value =
+        serde_json::from_str(&result.model().to_canonical_json().unwrap()).unwrap();
+    for module in document["modules"].as_array().unwrap() {
+        for entry in module["conclusions"].as_array().unwrap() {
+            if entry["disposition"] == "ALLOW" {
+                assert_eq!(entry["authorization"], "AUTHORISED");
+                assert!(entry["conformance"].is_null());
+                assert!(entry["blocking_eligibility"].is_null());
+            }
+        }
+    }
 }
