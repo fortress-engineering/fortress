@@ -459,7 +459,9 @@ impl ImplementationObservationInput {
         &self.files
     }
 
-    pub(crate) fn ownerships(&self) -> &[SourceOwnership] {
+    /// Returns the canonical resolved source ownership relation.
+    #[must_use]
+    pub fn ownerships(&self) -> &[SourceOwnership] {
         &self.ownerships
     }
 }

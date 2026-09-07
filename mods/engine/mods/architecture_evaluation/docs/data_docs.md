@@ -36,4 +36,8 @@ Defines ARCH-SEMANTIC-001, including applicability, causal evidence, unsupported
 
 ### [`semantic_conformance_schema_v1.json`](../data/semantic_conformance_schema_v1.json)
 
-Defines the deterministic derived Module semantic-conformance projection containing policy claims, observed consequences, coverage, dependency convergence, and summary counts.
+Preserves the original deterministic Module semantic-conformance projection contract for compatibility with previously materialized v1 artifacts.
+
+### [`semantic_conformance_schema_v2.json`](../data/semantic_conformance_schema_v2.json)
+
+Defines the deterministic derived Module semantic-conformance projection with exact governed/source-symbol coverage on every Module and claim, including explicit zero-coverage uncertainty.

@@ -16,6 +16,7 @@ use crate::finding::{
     CanonicalFinding, EvaluatorProvenance, FindingCategory, FindingError, FindingLocation,
     FindingOccurrence, RuleFindingDefinition, SourceSpan,
 };
+use crate::implementation_observation::{SourceOwnership, SourceOwnershipAuthority};
 use crate::program_semantics::ProgramSemanticModel;
 use crate::semantic_analysis::FunctionEffect;
 use crate::state_effect_analysis::{
@@ -25,13 +26,15 @@ use crate::state_effect_analysis::{
 /// Normative Module semantic-conformance rule identity.
 pub const ARCH_SEMANTIC_RULE_ID: &str = "ARCH-SEMANTIC-001";
 /// Canonical semantic-conformance projection schema identity.
-pub const SEMANTIC_CONFORMANCE_SCHEMA: &str = "urn:fortress:schema:v1:semantic-conformance";
+pub const SEMANTIC_CONFORMANCE_SCHEMA: &str = "urn:fortress:schema:v2:semantic-conformance";
 /// Canonical semantic-conformance projection schema version.
-pub const SEMANTIC_CONFORMANCE_SCHEMA_VERSION: u16 = 1;
+pub const SEMANTIC_CONFORMANCE_SCHEMA_VERSION: u16 = 2;
 /// Semantic version of the evaluator.
-pub const SEMANTIC_CONFORMANCE_VERSION: &str = "1.0.0";
+pub const SEMANTIC_CONFORMANCE_VERSION: &str = "1.1.0";
 /// Stable evaluator identity used in canonical findings.
 pub const SEMANTIC_CONFORMANCE_EVALUATOR_ID: &str = "fortress-semantic-conformance";
+/// Stable reason for governed source that produced no PSM symbols.
+pub const NO_SEMANTIC_COVERAGE: &str = "NO_SEMANTIC_COVERAGE";
 
 const REMEDIATION: &str = "Change the implementation so the forbidden semantic consequence is unreachable, or explicitly revise the owning Module Contract policy after architectural review. Do not infer permission from current behavior.";
 const COVERAGE_REMEDIATION: &str = "Resolve the identified opaque operation or narrow the authored policy claim to semantics Fortress can currently evaluate. Do not treat missing semantic authority as conformance.";
@@ -96,6 +99,97 @@ pub enum DependencyConvergenceState {
     Unmatched,
     /// Current observation cannot establish a safe comparison.
     Unknown,
+}
+
+/// Exact source-level semantic coverage for one declared Module.
+///
+/// The ratio is serialized as an unreduced rational so its numerator and
+/// denominator remain visibly identical to the measured source counts.
+#[derive(Clone, Debug, Default, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct SemanticSourceCoverage {
+    governed_source_files: usize,
+    analysed_source_files: usize,
+    ratio: Option<String>,
+}
+
+impl SemanticSourceCoverage {
+    fn from_counts(governed_source_files: usize, analysed_source_files: usize) -> Self {
+        Self {
+            governed_source_files,
+            analysed_source_files,
+            ratio: (governed_source_files > 0)
+                .then(|| format!("{analysed_source_files}/{governed_source_files}")),
+        }
+    }
+
+    /// Returns observed source artifacts owned by the declared Module.
+    #[must_use]
+    pub const fn governed_source_files(&self) -> usize {
+        self.governed_source_files
+    }
+
+    /// Returns distinct owned source paths represented by at least one PSM symbol.
+    #[must_use]
+    pub const fn analysed_source_files(&self) -> usize {
+        self.analysed_source_files
+    }
+
+    /// Returns the exact `analysed/governed` rational, or `None` without a subject.
+    #[must_use]
+    pub fn ratio(&self) -> Option<&str> {
+        self.ratio.as_deref()
+    }
+
+    const fn has_governed_subject(&self) -> bool {
+        self.governed_source_files > 0
+    }
+
+    const fn has_no_semantic_coverage(&self) -> bool {
+        self.has_governed_subject() && self.analysed_source_files == 0
+    }
+}
+
+/// Computes Module semantic coverage from canonical ownership and actual PSM symbols.
+///
+/// This deliberately does not consume the aggregate PSM `coverage.source_files`
+/// counter: opening a source file is not evidence that it produced semantic facts.
+#[must_use]
+pub fn compute_semantic_source_coverage(
+    ownerships: &[SourceOwnership],
+    psm: &ProgramSemanticModel,
+) -> BTreeMap<String, SemanticSourceCoverage> {
+    let mut governed_paths = BTreeMap::<String, BTreeSet<String>>::new();
+    for ownership in ownerships
+        .iter()
+        .filter(|ownership| ownership.authority() == SourceOwnershipAuthority::DeclaredModule)
+    {
+        governed_paths
+            .entry(ownership.owner().to_owned())
+            .or_default()
+            .insert(ownership.source_path().to_owned());
+    }
+    let mut analysed_paths = BTreeMap::<String, BTreeSet<String>>::new();
+    for symbol in psm.symbols() {
+        if governed_paths
+            .get(symbol.fortress_module())
+            .is_some_and(|paths| paths.contains(symbol.source_path()))
+        {
+            analysed_paths
+                .entry(symbol.fortress_module().to_owned())
+                .or_default()
+                .insert(symbol.source_path().to_owned());
+        }
+    }
+    governed_paths
+        .into_iter()
+        .map(|(module, paths)| {
+            let analysed = analysed_paths.get(&module).map_or(0, BTreeSet::len);
+            (
+                module,
+                SemanticSourceCoverage::from_counts(paths.len(), analysed),
+            )
+        })
+        .collect()
 }
 
 /// One exact direct or transitive effect attributed to a declared Module symbol.
@@ -189,6 +283,7 @@ pub struct SemanticPolicyConclusion {
     state: SemanticConformanceState,
     blocking_eligibility: BlockingEligibility,
     observations: usize,
+    coverage: SemanticSourceCoverage,
     coverage_reasons: Vec<String>,
 }
 
@@ -229,6 +324,12 @@ impl SemanticPolicyConclusion {
         self.observations
     }
 
+    /// Returns exact source-level semantic coverage for the owning Module.
+    #[must_use]
+    pub const fn coverage(&self) -> &SemanticSourceCoverage {
+        &self.coverage
+    }
+
     /// Returns claim-relative reasons that prevented evaluation.
     #[must_use]
     pub fn coverage_reasons(&self) -> &[String] {
@@ -246,6 +347,7 @@ pub struct ModuleSemanticConformance {
     conclusions: Vec<SemanticPolicyConclusion>,
     observations: Vec<ModuleEffectObservation>,
     ungoverned_observations: usize,
+    coverage: SemanticSourceCoverage,
     coverage_reasons: Vec<String>,
 }
 
@@ -284,6 +386,18 @@ impl ModuleSemanticConformance {
     #[must_use]
     pub fn contract_path(&self) -> &str {
         &self.contract_path
+    }
+
+    /// Returns exact source-level semantic coverage for this Module.
+    #[must_use]
+    pub const fn coverage(&self) -> &SemanticSourceCoverage {
+        &self.coverage
+    }
+
+    /// Returns Module-level semantic coverage limitations.
+    #[must_use]
+    pub fn coverage_reasons(&self) -> &[String] {
+        &self.coverage_reasons
     }
 
     /// Serializes this focused Module view deterministically.
@@ -325,6 +439,7 @@ pub struct SemanticConformanceSummary {
     forbidden_capability_findings: usize,
     forbidden_effect_findings: usize,
     not_evaluable_findings: usize,
+    no_semantic_coverage_claims: usize,
 }
 
 impl SemanticConformanceSummary {
@@ -344,6 +459,12 @@ impl SemanticConformanceSummary {
     #[must_use]
     pub const fn not_evaluable_findings(self) -> usize {
         self.not_evaluable_findings
+    }
+
+    /// Returns authored claims made unevaluable by zero symbol-bearing source.
+    #[must_use]
+    pub const fn no_semantic_coverage_claims(self) -> usize {
+        self.no_semantic_coverage_claims
     }
 
     /// Returns effect evidence owned only by mechanical analysis territories.
@@ -455,8 +576,11 @@ impl SemanticConformanceEvaluation {
 
     /// Returns whether at least one Module declared semantic policy.
     #[must_use]
-    pub const fn is_applicable(&self) -> bool {
-        self.model.summary.modules_with_policy > 0
+    pub fn is_applicable(&self) -> bool {
+        self.model
+            .modules
+            .iter()
+            .any(|module| module.state != SemanticConformanceState::NotApplicable)
     }
 
     /// Returns whether every applicable Module policy claim passed.
@@ -477,6 +601,7 @@ pub fn evaluate_semantic_conformance(
     psm: &ProgramSemanticModel,
     state_effect: &StateEffectAnalysisModel,
     architecture_realization: &ArchitectureRealization,
+    ownerships: &[SourceOwnership],
     standard_edition: &str,
 ) -> Result<SemanticConformanceEvaluation, SemanticConformanceError> {
     let symbols = psm
@@ -489,6 +614,7 @@ pub fn evaluate_semantic_conformance(
         .keys()
         .map(String::as_str)
         .collect::<BTreeSet<_>>();
+    let source_coverage = compute_semantic_source_coverage(ownerships, psm);
     let mut by_module = BTreeMap::<String, Vec<ModuleEffectObservation>>::new();
     let mut opaque_by_module = BTreeMap::<String, BTreeSet<String>>::new();
     let mut analysis_only_observations = 0;
@@ -555,6 +681,7 @@ pub fn evaluate_semantic_conformance(
     for (module_id, module) in ccg.modules() {
         let policy = module.contract().semantic_policy();
         let opaque = opaque_by_module.remove(module_id).unwrap_or_default();
+        let coverage = source_coverage.get(module_id).cloned().unwrap_or_default();
         let mut observations = by_module.remove(module_id).unwrap_or_default();
         summary.supported_observations += observations.len();
         let (conclusions, state, ungoverned) = if let Some(policy) = policy {
@@ -564,6 +691,7 @@ pub fn evaluate_semantic_conformance(
                 policy,
                 &mut observations,
                 &opaque,
+                &coverage,
                 standard_edition,
                 &mut findings,
                 &mut finding_ids,
@@ -588,6 +716,12 @@ pub fn evaluate_semantic_conformance(
         }
         summary.ungoverned_observations += ungoverned;
         summary.governed_observations += observations.len().saturating_sub(ungoverned);
+        let mut module_coverage_reasons = opaque;
+        module_coverage_reasons.extend(
+            conclusions
+                .iter()
+                .flat_map(|conclusion| conclusion.coverage_reasons.iter().cloned()),
+        );
         modules.push(ModuleSemanticConformance {
             module: module_id.clone(),
             contract_path: module.contract_path().into(),
@@ -600,7 +734,8 @@ pub fn evaluate_semantic_conformance(
             conclusions,
             observations,
             ungoverned_observations: ungoverned,
-            coverage_reasons: opaque.into_iter().collect(),
+            coverage,
+            coverage_reasons: module_coverage_reasons.into_iter().collect(),
         });
     }
     modules.sort_by(|left, right| left.module.cmp(&right.module));
@@ -660,6 +795,7 @@ fn apply_policy(
     policy: &ModuleSemanticPolicy,
     observations: &mut [ModuleEffectObservation],
     opaque: &BTreeSet<String>,
+    coverage: &SemanticSourceCoverage,
     standard_edition: &str,
     findings: &mut Vec<CanonicalFinding>,
     finding_ids: &mut BTreeSet<String>,
@@ -759,20 +895,47 @@ fn apply_policy(
                     BlockingEligibility::BlockSupported,
                     Vec::new(),
                 )
-            } else if disposition == PolicyDisposition::Deny && !opaque.is_empty() {
+            } else if !coverage.has_governed_subject() {
+                (
+                    SemanticConformanceState::NotApplicable,
+                    BlockingEligibility::AdvisoryOnly,
+                    Vec::new(),
+                )
+            } else if disposition == PolicyDisposition::Deny && coverage.has_no_semantic_coverage()
+            {
+                let coverage_reasons = vec![NO_SEMANTIC_COVERAGE.into()];
                 coverage_findings.push(coverage_finding(
                     module_id,
                     module,
                     target_kind,
                     &target,
-                    opaque,
+                    &coverage_reasons,
+                    coverage,
+                    standard_edition,
+                )?);
+                summary.not_evaluable_findings += 1;
+                summary.no_semantic_coverage_claims += 1;
+                (
+                    SemanticConformanceState::Unknown,
+                    BlockingEligibility::NotEvaluable,
+                    coverage_reasons,
+                )
+            } else if disposition == PolicyDisposition::Deny && !opaque.is_empty() {
+                let coverage_reasons = opaque.iter().cloned().collect::<Vec<_>>();
+                coverage_findings.push(coverage_finding(
+                    module_id,
+                    module,
+                    target_kind,
+                    &target,
+                    &coverage_reasons,
+                    coverage,
                     standard_edition,
                 )?);
                 summary.not_evaluable_findings += 1;
                 (
                     SemanticConformanceState::Unknown,
                     BlockingEligibility::NotEvaluable,
-                    opaque.iter().cloned().collect(),
+                    coverage_reasons,
                 )
             } else {
                 (
@@ -788,10 +951,15 @@ fn apply_policy(
             state,
             blocking_eligibility,
             observations: matching.len(),
+            coverage: coverage.clone(),
             coverage_reasons,
         });
     }
-    let state = if conclusions.is_empty() {
+    let state = if conclusions.is_empty()
+        || conclusions
+            .iter()
+            .all(|conclusion| conclusion.state == SemanticConformanceState::NotApplicable)
+    {
         SemanticConformanceState::NotApplicable
     } else if conclusions
         .iter()
@@ -884,7 +1052,8 @@ fn coverage_finding(
     module: &ResolvedModule,
     target_kind: PolicyTargetKind,
     target: &str,
-    opaque: &BTreeSet<String>,
+    reasons: &[String],
+    coverage: &SemanticSourceCoverage,
     standard_edition: &str,
 ) -> Result<CanonicalFinding, FindingError> {
     let discriminator = format!(
@@ -894,10 +1063,17 @@ fn coverage_finding(
             PolicyTargetKind::Effect => "EFFECT",
         }
     );
-    let message = format!(
-        "Module `{module_id}` policy for `{target}` is UNKNOWN because claim-relevant semantic operations remain opaque: {}",
-        opaque.iter().cloned().collect::<Vec<_>>().join(", ")
-    );
+    let message = if reasons == [NO_SEMANTIC_COVERAGE] {
+        format!(
+            "Module `{module_id}` policy for `{target}` is UNKNOWN because the Module owns {} governed source file(s), but the PSM produced semantic symbols for none of them ({NO_SEMANTIC_COVERAGE})",
+            coverage.governed_source_files
+        )
+    } else {
+        format!(
+            "Module `{module_id}` policy for `{target}` is UNKNOWN because claim-relevant semantic operations remain opaque: {}",
+            reasons.join(", ")
+        )
+    };
     canonical_finding(
         module_id,
         module,

@@ -32,4 +32,4 @@ Reconciles independent observed Module dependencies with exact direct CCG author
 
 ### [`semantic_conformance.rs`](../code/semantic_conformance.rs)
 
-Compares Module Contract semantic policy with canonical direct/transitive State/Effect consequences, preserves claim-relative uncertainty and dependency convergence separately, and emits evidence-complete findings without inferring permission.
+Computes exact Module source-to-PSM-symbol coverage, compares Module Contract semantic policy with canonical direct/transitive State/Effect consequences, preserves claim-relative uncertainty and dependency convergence separately, and emits evidence-complete findings without inferring permission.

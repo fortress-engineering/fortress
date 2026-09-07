@@ -1373,23 +1373,27 @@ fn run_semantic_conformance<O: Write, E: Write>(
     for module in modules {
         writeln!(
             output,
-            "Module {} policy={} result={:?} contract={}\n  Rule: {}",
+            "Module {} policy={} result={:?} contract={}\n  Rule: {}\n  Semantic coverage: governed_source_files={} analysed_source_files={} ratio={}",
             module.module(),
             module.policy_state(),
             module.state(),
             module.contract_path(),
             fortress_core::semantic_conformance::ARCH_SEMANTIC_RULE_ID,
+            module.coverage().governed_source_files(),
+            module.coverage().analysed_source_files(),
+            module.coverage().ratio().unwrap_or("NOT_APPLICABLE"),
         )?;
         for conclusion in module.conclusions() {
             writeln!(
                 output,
-                "  Policy: {:?} {} {:?}\n  Result: {:?} / {:?} (observations={})",
+                "  Policy: {:?} {} {:?}\n  Result: {:?} / {:?} (observations={}, coverage={})",
                 conclusion.target_kind(),
                 conclusion.target(),
                 conclusion.disposition(),
                 conclusion.state(),
                 conclusion.blocking_eligibility(),
                 conclusion.observation_count(),
+                conclusion.coverage().ratio().unwrap_or("NOT_APPLICABLE"),
             )?;
             for reason in conclusion.coverage_reasons() {
                 writeln!(output, "    Coverage: {reason}")?;

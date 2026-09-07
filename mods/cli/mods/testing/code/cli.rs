@@ -173,6 +173,65 @@ fn semantic_conformance_command_rejects_incomplete_module_filter() {
     assert!(String::from_utf8_lossy(&error).contains("usage: fortress semantic-conformance"));
 }
 
+/// `T-TF-CLI-0001-R17-003`
+/// Fortress requirement: TF-CLI-0001-R17
+#[test]
+fn semantic_conformance_renders_zero_coverage_as_not_evaluable() {
+    let fixture = SemanticCoverageFixture::new();
+    let human = run(&["semantic-conformance", &fixture.argument()]);
+    assert_eq!(human.status.code(), Some(1));
+    let output = String::from_utf8_lossy(&human.stdout);
+    assert!(output.contains("result=Unknown"), "{output}");
+    assert!(
+        output.contains("governed_source_files=1 analysed_source_files=0 ratio=0/1"),
+        "{output}"
+    );
+    assert!(output.contains("NotEvaluable"), "{output}");
+    assert!(output.contains("NO_SEMANTIC_COVERAGE"), "{output}");
+
+    let json = run(&["semantic-conformance", &fixture.argument(), "--format=json"]);
+    assert_eq!(json.status.code(), Some(1));
+    let document: serde_json::Value = serde_json::from_slice(&json.stdout).expect("JSON");
+    assert_eq!(
+        document["$schema"],
+        "urn:fortress:schema:v2:semantic-conformance"
+    );
+    let module = document["modules"]
+        .as_array()
+        .and_then(|modules| {
+            modules
+                .iter()
+                .find(|module| module["module"] == "AF-COVERAGE-0001")
+        })
+        .expect("coverage Module");
+    assert_eq!(module["coverage"]["governed_source_files"], 1);
+    assert_eq!(module["coverage"]["analysed_source_files"], 0);
+    assert_eq!(
+        module["conclusions"][0]["coverage_reasons"][0],
+        "NO_SEMANTIC_COVERAGE"
+    );
+
+    for command in ["audit", "check"] {
+        let result = run(&[command, &fixture.argument(), "--format=json"]);
+        let audit: serde_json::Value =
+            serde_json::from_slice(&result.stdout).expect("audit/check JSON");
+        let semantic_rule = audit["rules"]
+            .as_array()
+            .and_then(|rules| {
+                rules
+                    .iter()
+                    .find(|rule| rule["rule_id"] == "ARCH-SEMANTIC-001")
+            })
+            .expect("semantic rule execution");
+        assert_eq!(semantic_rule["state"], "UNSUPPORTED");
+        assert!(
+            semantic_rule["detail"]
+                .as_str()
+                .is_some_and(|detail| detail.contains("NO_SEMANTIC_COVERAGE"))
+        );
+    }
+}
+
 /// `T-TF-CLI-0001-R15-001`
 /// Fortress requirement: TF-CLI-0001-R15
 #[test]
@@ -361,6 +420,71 @@ struct AuditFixture {
 
 struct ObservationFixture {
     root: PathBuf,
+}
+
+struct SemanticCoverageFixture {
+    root: PathBuf,
+}
+
+impl SemanticCoverageFixture {
+    fn new() -> Self {
+        let identity = NEXT_FIXTURE.fetch_add(1, Ordering::Relaxed);
+        let root = std::env::temp_dir().join(format!(
+            "fortress-cli-semantic-coverage-{}-{identity}",
+            std::process::id()
+        ));
+        fs::create_dir_all(root.join("data")).expect("project Data creates");
+        fs::create_dir_all(root.join("mods/sample/data")).expect("Module Data creates");
+        fs::create_dir_all(root.join("mods/sample/code")).expect("Module Code creates");
+        fs::write(
+            root.join("contract.json"),
+            module_contract("PF-FIXTURE", "Fixture"),
+        )
+        .expect("root contract writes");
+        fs::write(root.join("data/project.json"), project_json()).expect("project writes");
+        let contract: ModuleContract = serde_json::from_value(serde_json::json!({
+            "$schema": "urn:fortress:schema:v3:module-contract",
+            "schema_version": 3,
+            "id": "AF-COVERAGE-0001",
+            "display_name": "Coverage",
+            "provides": [],
+            "requires": [],
+            "relationships": [],
+            "constraints": [],
+            "guarantees": [],
+            "features": [],
+            "behavior": [],
+            "semantic_policy": {
+                "default": "UNDECLARED",
+                "capabilities": { "allow": [], "deny": ["filesystem"] },
+                "effects": { "allow": [], "deny": [] }
+            }
+        }))
+        .expect("semantic policy contract parses");
+        fs::write(
+            root.join("mods/sample/contract.json"),
+            contract.to_canonical_json().expect("contract serializes"),
+        )
+        .expect("Module contract writes");
+        fs::write(
+            root.join("mods/sample/data/Cargo.toml"),
+            "[package]\nname='coverage'\nversion='0.1.0'\nedition='2021'\n[lib]\npath='../code/lib.rs'\n",
+        )
+        .expect("manifest writes");
+        fs::write(root.join("mods/sample/code/lib.rs"), "pub struct Marker;\n")
+            .expect("source writes");
+        Self { root }
+    }
+
+    fn argument(&self) -> String {
+        self.root.to_string_lossy().into_owned()
+    }
+}
+
+impl Drop for SemanticCoverageFixture {
+    fn drop(&mut self) {
+        fs::remove_dir_all(&self.root).expect("semantic coverage fixture removes");
+    }
 }
 
 impl ObservationFixture {

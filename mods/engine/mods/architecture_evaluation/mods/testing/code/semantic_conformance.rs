@@ -2,6 +2,9 @@
 
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
+use std::fs;
+use std::path::PathBuf;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Instant;
 
 use fortress_core::architecture_realization::reconcile_implementation;
@@ -14,11 +17,45 @@ use fortress_core::implementation_observation::{
 use fortress_core::program_semantics::{ProgramSemanticInput, compile_program_semantic_model};
 use fortress_core::semantic_analysis::{analyze_program_domains, load_function_contracts};
 use fortress_core::semantic_conformance::{
-    SemanticConformanceEvaluation, SemanticConformanceState, evaluate_semantic_conformance,
+    BlockingEligibility, NO_SEMANTIC_COVERAGE, PolicyDisposition, SemanticConformanceEvaluation,
+    SemanticConformanceState, evaluate_semantic_conformance,
 };
 use fortress_core::state_effect_analysis::{analyze_state_effects, load_state_contracts};
 
 const EDITION: &str = "1.0.0-draft.1";
+static NEXT_CHECKOUT: AtomicU64 = AtomicU64::new(0);
+
+struct CoverageCheckout(PathBuf);
+
+impl CoverageCheckout {
+    fn new(label: &str) -> Self {
+        let sequence = NEXT_CHECKOUT.fetch_add(1, Ordering::Relaxed);
+        let path = std::env::temp_dir().join(format!(
+            "fortress-semantic-coverage-{label}-{}-{sequence}",
+            std::process::id()
+        ));
+        fs::create_dir_all(&path).expect("checkout root creates");
+        Self(path)
+    }
+
+    fn write(&self, relative: &str, bytes: &[u8]) {
+        let path = self.0.join(relative);
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent).expect("checkout parent creates");
+        }
+        fs::write(path, bytes).expect("checkout file writes");
+    }
+
+    fn read(&self, relative: &str) -> Vec<u8> {
+        fs::read(self.0.join(relative)).expect("checkout file reads")
+    }
+}
+
+impl Drop for CoverageCheckout {
+    fn drop(&mut self) {
+        fs::remove_dir_all(&self.0).expect("checkout removes");
+    }
+}
 
 fn canonical_contract(document: serde_json::Value) -> String {
     let contract: ModuleContract = serde_json::from_value(document).expect("contract shape parses");
@@ -120,6 +157,7 @@ fn evaluate_files(files: &BTreeMap<String, Vec<u8>>) -> SemanticConformanceEvalu
         ],
     );
     let observed = observe_rust_implementation(&input).expect("implementation observes");
+    let ownerships = input.ownerships().to_vec();
     let psm = compile_program_semantic_model(&ProgramSemanticInput::new(
         "PF-SEMANTIC-FIXTURE",
         input,
@@ -139,8 +177,15 @@ fn evaluate_files(files: &BTreeMap<String, Vec<u8>>) -> SemanticConformanceEvalu
         .expect("effects analyze");
     let realization =
         reconcile_implementation(ccg, &observed, EDITION).expect("realization reconciles");
-    evaluate_semantic_conformance(ccg, &psm, state_effect.model(), &realization, EDITION)
-        .expect("semantic conformance evaluates")
+    evaluate_semantic_conformance(
+        ccg,
+        &psm,
+        state_effect.model(),
+        &realization,
+        &ownerships,
+        EDITION,
+    )
+    .expect("semantic conformance evaluates")
 }
 
 /// `T-AF-ARCHITECTURE-EVALUATION-0001-R05-001`
@@ -199,6 +244,9 @@ pub fn entry() { write_file(); }
         .module("AF-SAMPLE-0001")
         .expect("Module concludes");
     assert_eq!(module.state(), SemanticConformanceState::Fail);
+    assert_eq!(module.coverage().governed_source_files(), 1);
+    assert_eq!(module.coverage().analysed_source_files(), 1);
+    assert_eq!(module.coverage().ratio(), Some("1/1"));
     assert!(module.observations().iter().any(|observation| {
         observation.effect().stable_id() == "filesystem.read"
             && observation.policy_disposition()
@@ -332,4 +380,176 @@ fn indexed_evaluation_scales_to_one_thousand_policies_and_ten_thousand_effects()
     assert_eq!(result.model().summary().modules_with_policy(), 1_001);
     assert_eq!(result.model().summary().governed_observations(), 10_000);
     assert!(result.findings().is_empty());
+}
+
+/// `T-AF-ARCHITECTURE-EVALUATION-0001-R07-001`
+/// Fortress requirement: AF-ARCHITECTURE-EVALUATION-0001-R07
+#[test]
+fn deny_claim_with_governed_source_and_zero_symbols_is_not_evaluable() {
+    let result = evaluate(
+        "pub struct Marker;",
+        module_contract("AF-SAMPLE-0001", &[], &["filesystem"], &[], &[]),
+    );
+    let module = result.model().module("AF-SAMPLE-0001").unwrap();
+    let conclusion = &module.conclusions()[0];
+    assert_eq!(module.coverage().governed_source_files(), 1);
+    assert_eq!(module.coverage().analysed_source_files(), 0);
+    assert_eq!(module.coverage().ratio(), Some("0/1"));
+    assert_eq!(module.state(), SemanticConformanceState::Unknown);
+    assert_eq!(conclusion.state(), SemanticConformanceState::Unknown);
+    assert_eq!(
+        conclusion.blocking_eligibility(),
+        BlockingEligibility::NotEvaluable
+    );
+    assert_eq!(conclusion.coverage_reasons(), [NO_SEMANTIC_COVERAGE]);
+    assert_eq!(result.findings().len(), 0);
+    assert_eq!(result.coverage_findings().len(), 1);
+    assert_eq!(result.model().summary().no_semantic_coverage_claims(), 1);
+
+    let covered = evaluate(
+        "pub fn pure() {}",
+        module_contract("AF-SAMPLE-0001", &[], &["filesystem"], &[], &[]),
+    );
+    for evaluation in [&result, &covered] {
+        for module in evaluation.model().modules() {
+            for claim in module.conclusions().iter().filter(|claim| {
+                claim.disposition() == PolicyDisposition::Deny
+                    && claim.state() == SemanticConformanceState::Pass
+                    && claim.coverage().governed_source_files() > 0
+            }) {
+                assert!(
+                    claim.coverage().analysed_source_files() > 0,
+                    "favorable DENY claim must reference symbol-bearing governed source"
+                );
+            }
+        }
+    }
+}
+
+/// `T-AF-ARCHITECTURE-EVALUATION-0001-R07-002`
+/// Fortress requirement: AF-ARCHITECTURE-EVALUATION-0001-R07
+#[test]
+fn covered_deny_claim_preserves_current_favorable_semantics_without_violation() {
+    let result = evaluate(
+        "pub fn pure(value: u32) -> u32 { value + 1 }",
+        module_contract("AF-SAMPLE-0001", &[], &["filesystem"], &[], &[]),
+    );
+    let module = result.model().module("AF-SAMPLE-0001").unwrap();
+    assert_eq!(module.state(), SemanticConformanceState::Pass);
+    assert_eq!(module.coverage().governed_source_files(), 1);
+    assert_eq!(module.coverage().analysed_source_files(), 1);
+    assert_eq!(module.coverage().ratio(), Some("1/1"));
+    assert!(result.findings().is_empty());
+    assert!(result.coverage_findings().is_empty());
+}
+
+/// `T-AF-ARCHITECTURE-EVALUATION-0001-R07-003`
+/// Fortress requirement: AF-ARCHITECTURE-EVALUATION-0001-R07
+#[test]
+fn partial_coverage_records_distinct_symbol_bearing_source_paths() {
+    let files = BTreeMap::from([
+        ("contract.json".to_owned(), root_contract().into_bytes()),
+        (
+            "mods/sample/contract.json".to_owned(),
+            module_contract("AF-SAMPLE-0001", &[], &["filesystem"], &[], &[]).into_bytes(),
+        ),
+        (
+            "mods/sample/data/Cargo.toml".to_owned(),
+            b"[package]\nname='sample'\nversion='0.1.0'\nedition='2024'\n[lib]\npath='../code/lib.rs'\n"
+                .to_vec(),
+        ),
+        (
+            "mods/sample/code/lib.rs".to_owned(),
+            b"mod declarations_only; pub fn covered() {}\n".to_vec(),
+        ),
+        (
+            "mods/sample/code/declarations_only.rs".to_owned(),
+            b"pub struct Marker;\n".to_vec(),
+        ),
+    ]);
+    let first = evaluate_files(&files);
+    let second = evaluate_files(&files);
+    let module = first.model().module("AF-SAMPLE-0001").unwrap();
+    assert_eq!(module.state(), SemanticConformanceState::Pass);
+    assert_eq!(module.coverage().governed_source_files(), 2);
+    assert_eq!(module.coverage().analysed_source_files(), 1);
+    assert_eq!(module.coverage().ratio(), Some("1/2"));
+    assert_eq!(
+        first.model().to_canonical_json().unwrap(),
+        second.model().to_canonical_json().unwrap()
+    );
+}
+
+/// `T-AF-ARCHITECTURE-EVALUATION-0001-R07-004`
+/// Fortress requirement: AF-ARCHITECTURE-EVALUATION-0001-R07
+#[test]
+fn policy_without_governed_source_has_no_subject_and_no_ratio() {
+    let files = BTreeMap::from([
+        ("contract.json".to_owned(), root_contract().into_bytes()),
+        (
+            "mods/sample/contract.json".to_owned(),
+            module_contract("AF-SAMPLE-0001", &[], &["filesystem"], &[], &[]).into_bytes(),
+        ),
+    ]);
+    let result = evaluate_files(&files);
+    let module = result.model().module("AF-SAMPLE-0001").unwrap();
+    assert_eq!(module.state(), SemanticConformanceState::NotApplicable);
+    assert_eq!(module.coverage().governed_source_files(), 0);
+    assert_eq!(module.coverage().analysed_source_files(), 0);
+    assert_eq!(module.coverage().ratio(), None);
+    assert!(module.conclusions().iter().all(|conclusion| {
+        conclusion.state() == SemanticConformanceState::NotApplicable
+            && conclusion.coverage().ratio().is_none()
+    }));
+    assert!(result.coverage_findings().is_empty());
+}
+
+/// `T-AF-ARCHITECTURE-EVALUATION-0001-R07-005`
+/// Fortress requirement: AF-ARCHITECTURE-EVALUATION-0001-R07
+#[test]
+fn semantic_coverage_is_checkout_root_independent() {
+    fn evaluate_checkout(root: &CoverageCheckout) -> SemanticConformanceEvaluation {
+        let files = [
+            ("contract.json", root_contract().into_bytes()),
+            (
+                "mods/sample/contract.json",
+                module_contract("AF-SAMPLE-0001", &[], &["filesystem"], &[], &[]).into_bytes(),
+            ),
+            (
+                "mods/sample/data/Cargo.toml",
+                b"[package]\nname='sample'\nversion='0.1.0'\nedition='2024'\n[lib]\npath='../code/lib.rs'\n"
+                    .to_vec(),
+            ),
+            (
+                "mods/sample/code/lib.rs",
+                b"pub struct Marker;\n".to_vec(),
+            ),
+        ];
+        for (relative, bytes) in &files {
+            root.write(relative, bytes);
+        }
+        let observed = files
+            .iter()
+            .map(|(relative, _)| ((*relative).to_owned(), root.read(relative)))
+            .collect::<BTreeMap<_, _>>();
+        evaluate_files(&observed)
+    }
+
+    let first_root = CoverageCheckout::new("first-root");
+    let second_root = CoverageCheckout::new("second-root");
+    assert_ne!(&first_root.0, &second_root.0);
+    let first = evaluate_checkout(&first_root);
+    let second = evaluate_checkout(&second_root);
+    let coverage = first
+        .model()
+        .module("AF-SAMPLE-0001")
+        .expect("coverage Module")
+        .coverage();
+    assert_eq!(coverage.governed_source_files(), 1);
+    assert_eq!(coverage.analysed_source_files(), 0);
+    assert_eq!(coverage.ratio(), Some("0/1"));
+    assert_eq!(
+        first.model().to_canonical_json().unwrap(),
+        second.model().to_canonical_json().unwrap()
+    );
 }

@@ -117,6 +117,17 @@
             "T-ARCH-SEMANTIC-001-R01-003",
             "T-ARCH-SEMANTIC-001-R01-004"
           ]
+        },
+        {
+          "id": "AF-ARCHITECTURE-EVALUATION-0001-R07",
+          "statement": "Every Module semantic-policy claim carries exact governed-source and symbol-bearing-source coverage, and a DENY claim over governed source with zero semantic coverage remains UNKNOWN and NOT_EVALUABLE without weakening supported violations.",
+          "tests": [
+            "T-AF-ARCHITECTURE-EVALUATION-0001-R07-001",
+            "T-AF-ARCHITECTURE-EVALUATION-0001-R07-002",
+            "T-AF-ARCHITECTURE-EVALUATION-0001-R07-003",
+            "T-AF-ARCHITECTURE-EVALUATION-0001-R07-004",
+            "T-AF-ARCHITECTURE-EVALUATION-0001-R07-005"
+          ]
         }
       ]
     }

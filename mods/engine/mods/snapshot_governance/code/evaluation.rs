@@ -771,10 +771,11 @@ fn semantic_conformance_execution(
             applicable: result.is_applicable(),
             findings: findings.len(),
             detail: format!(
-                "Module semantic conformance evaluated {} authored policy set(s), produced {} supported blocking contradiction(s), and retained {} claim-relative not-evaluable finding(s); undeclared policy is never interpreted as permission.",
+                "Module semantic conformance evaluated {} authored policy set(s), produced {} supported blocking contradiction(s), and retained {} claim-relative not-evaluable finding(s), including {} claim(s) with NO_SEMANTIC_COVERAGE; undeclared policy and zero semantic coverage are never interpreted as permission.",
                 summary.modules_with_policy(),
                 summary.blocking_findings(),
                 summary.not_evaluable_findings(),
+                summary.no_semantic_coverage_claims(),
             ),
         },
         findings,

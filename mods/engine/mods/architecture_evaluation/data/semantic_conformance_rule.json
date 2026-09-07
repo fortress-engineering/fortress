@@ -4,13 +4,13 @@
   "id": "ARCH-SEMANTIC-001",
   "title": "Declared Module semantic policy governs supported operational consequences",
   "status": "draft",
-  "statement": "Every supported direct or transitive effect attributed to a declared Module MUST satisfy that Module Contract's explicit semantic capability/effect policy; insufficient claim-relative authority MUST remain UNKNOWN.",
+  "statement": "Every supported direct or transitive effect attributed to a declared Module MUST satisfy that Module Contract's explicit semantic capability/effect policy; insufficient claim-relative authority, including zero PSM symbol coverage over governed source, MUST remain UNKNOWN.",
   "rationale": "Observed operations, derived effects, capabilities, authored permissions, conformance, and enforcement are different facts. Comparing them through one evidence-preserving evaluator makes semantic prohibitions enforceable without inferring permission from implementation.",
   "failure_prevented": "Architecturally forbidden filesystem, network, process, environment, time, randomness, panic, unsafe, state, or residual external behavior hidden behind direct or transitive calls.",
   "applicability": "Declared Fortress Modules whose canonical Module Contract v3 contains semantic_policy.",
   "category": "architecture",
   "integrity_tier": 3,
-  "evaluation": "Fortress consumes the canonical CCG, PSM ownership, State/Effect v2 consequences, and Architecture Realization records. Effect-specific policy overrides capability policy. Unlisted observations remain undeclared. Supported contradictions fail with exact causal evidence; claim-relevant opaque calls produce UNKNOWN rather than PASS.",
+  "evaluation": "Fortress consumes the canonical CCG, resolved source ownership, PSM symbol source paths, State/Effect v2 consequences, and Architecture Realization records. Effect-specific policy overrides capability policy. Unlisted observations remain undeclared. Supported contradictions fail with exact causal evidence; claim-relevant opaque calls and DENY claims over governed source with zero symbol-bearing PSM coverage produce UNKNOWN rather than PASS.",
   "required_capabilities": [
     "contract-coherency-graph-v1",
     "module-semantic-policy-v1",
@@ -30,6 +30,7 @@
   "exception_policy": "Only canonical finding-governance baselines or narrow explicit exceptions may change enforcement; raw FAIL or UNKNOWN remains visible.",
   "introduced": "1.0.0-draft.1",
   "history": [
-    "Introduced with explicit Module Contract semantic policy and evidence-preserving effect/capability conformance."
+    "Introduced with explicit Module Contract semantic policy and evidence-preserving effect/capability conformance.",
+    "Required exact Module-owned source-to-PSM-symbol coverage so zero semantic observation cannot satisfy a DENY claim."
   ]
 }

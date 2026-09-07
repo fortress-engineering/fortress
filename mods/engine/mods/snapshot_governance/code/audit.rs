@@ -618,6 +618,7 @@ pub fn compile_repository_affected_snapshot(
                 &psm,
                 state_effect.model(),
                 &realization,
+                &prepared.ownerships,
                 prepared.standard.bundle.edition(),
             )
             .map_err(AuditError::SemanticConformance)
@@ -1393,6 +1394,7 @@ fn compile_semantic_conformance_from_analysis(
         &models.psm,
         models.state_effect.model(),
         &realization,
+        &prepared.ownerships,
         prepared.standard.bundle.edition(),
     )
     .map_err(AuditError::SemanticConformance)
@@ -1771,6 +1773,7 @@ fn compile_certification_semantic_stack(
         &models.psm,
         models.state_effect.model(),
         &architecture_realization,
+        &prepared.ownerships,
         prepared.standard.bundle.edition(),
     )
     .map_err(AuditError::SemanticConformance)?;
@@ -2835,6 +2838,7 @@ fn audit_repository_with_prepared(
                 &models.psm,
                 models.state_effect.model(),
                 &architecture_realization,
+                &prepared.ownerships,
                 standard.edition(),
             )
         })

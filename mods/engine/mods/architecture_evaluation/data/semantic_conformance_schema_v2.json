@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v2:semantic-conformance",
+  "title": "Fortress Module Semantic Conformance v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "schema_version", "semantic_version", "project_id", "standard_edition", "ccg_digest", "psm_digest", "state_effect_digest", "modules", "dependency_convergence", "summary", "unsupported_semantics"],
+  "properties": {
+    "$schema": { "const": "urn:fortress:schema:v2:semantic-conformance" },
+    "schema_version": { "const": 2 },
+    "semantic_version": { "type": "string", "minLength": 1 },
+    "project_id": { "type": ["string", "null"] },
+    "standard_edition": { "type": "string", "minLength": 1 },
+    "ccg_digest": { "$ref": "#/$defs/digest" },
+    "psm_digest": { "$ref": "#/$defs/digest" },
+    "state_effect_digest": { "$ref": "#/$defs/digest" },
+    "modules": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/module" }
+    },
+    "dependency_convergence": {
+      "type": "array",
+      "items": { "type": "object" }
+    },
+    "summary": { "$ref": "#/$defs/summary" },
+    "unsupported_semantics": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["governed_source_files", "analysed_source_files", "ratio"],
+      "properties": {
+        "governed_source_files": { "type": "integer", "minimum": 0 },
+        "analysed_source_files": { "type": "integer", "minimum": 0 },
+        "ratio": {
+          "oneOf": [
+            { "type": "string", "pattern": "^(0|[1-9][0-9]*)/[1-9][0-9]*$" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "conclusion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target_kind", "target", "disposition", "state", "blocking_eligibility", "observations", "coverage", "coverage_reasons"],
+      "properties": {
+        "target_kind": { "enum": ["CAPABILITY", "EFFECT"] },
+        "target": { "type": "string", "minLength": 1 },
+        "disposition": { "enum": ["ALLOW", "DENY"] },
+        "state": { "enum": ["PASS", "FAIL", "UNKNOWN", "NOT_APPLICABLE"] },
+        "blocking_eligibility": { "enum": ["BLOCK_SUPPORTED", "ADVISORY_ONLY", "NOT_EVALUABLE"] },
+        "observations": { "type": "integer", "minimum": 0 },
+        "coverage": { "$ref": "#/$defs/coverage" },
+        "coverage_reasons": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      }
+    },
+    "module": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["module", "contract_path", "policy_state", "state", "conclusions", "observations", "ungoverned_observations", "coverage", "coverage_reasons"],
+      "properties": {
+        "module": { "type": "string", "minLength": 1 },
+        "contract_path": { "type": "string" },
+        "policy_state": { "enum": ["DECLARED", "UNDECLARED"] },
+        "state": { "enum": ["PASS", "FAIL", "UNKNOWN", "NOT_APPLICABLE"] },
+        "conclusions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/conclusion" }
+        },
+        "observations": {
+          "type": "array",
+          "items": { "type": "object" }
+        },
+        "ungoverned_observations": { "type": "integer", "minimum": 0 },
+        "coverage": { "$ref": "#/$defs/coverage" },
+        "coverage_reasons": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["declared_modules", "modules_with_policy", "modules_passed", "modules_failed", "modules_unknown", "modules_not_applicable", "supported_observations", "governed_observations", "ungoverned_observations", "analysis_only_observations", "forbidden_capability_findings", "forbidden_effect_findings", "not_evaluable_findings", "no_semantic_coverage_claims"],
+      "properties": {
+        "declared_modules": { "type": "integer", "minimum": 0 },
+        "modules_with_policy": { "type": "integer", "minimum": 0 },
+        "modules_passed": { "type": "integer", "minimum": 0 },
+        "modules_failed": { "type": "integer", "minimum": 0 },
+        "modules_unknown": { "type": "integer", "minimum": 0 },
+        "modules_not_applicable": { "type": "integer", "minimum": 0 },
+        "supported_observations": { "type": "integer", "minimum": 0 },
+        "governed_observations": { "type": "integer", "minimum": 0 },
+        "ungoverned_observations": { "type": "integer", "minimum": 0 },
+        "analysis_only_observations": { "type": "integer", "minimum": 0 },
+        "forbidden_capability_findings": { "type": "integer", "minimum": 0 },
+        "forbidden_effect_findings": { "type": "integer", "minimum": 0 },
+        "not_evaluable_findings": { "type": "integer", "minimum": 0 },
+        "no_semantic_coverage_claims": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}
