@@ -28,4 +28,8 @@ Defines the retained PSM v3 serialized structure for historical projection inter
 
 ### [`program_model_schema_v4.json`](../data/program_model_schema_v4.json)
 
-Defines the canonical PSM v4 structure with explicit executable-symbol execution provenance and deterministic production-capable, test-only, and unknown-provenance coverage counts.
+Defines the retained PSM v4 structure with explicit executable-symbol execution provenance and deterministic production-capable, test-only, and unknown-provenance coverage counts.
+
+### [`program_model_schema_v5.json`](../data/program_model_schema_v5.json)
+
+Defines the canonical PSM v5 structure with versioned drift-tolerant semantic identities, legacy aliases, stable operation-site identities, explicit executable-symbol execution provenance, and deterministic production-capable, test-only, and unknown-provenance coverage counts.

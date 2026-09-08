@@ -1,4 +1,4 @@
-//! Distributed Behavior Realization Contract v1 authority.
+//! Distributed Behavior Realization Contract v1/v2 authority.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
@@ -11,15 +11,20 @@ use crate::behavioral_semantics::IntendedBehavioralFlowGraph;
 use crate::contract_coherency::ContractCoherencyGraph;
 use crate::environmental_semantics::EnvironmentalAnalysisModel;
 use crate::information_flow::InformationFlowAnalysisModel;
-use crate::program_semantics::ProgramSemanticModel;
+use crate::program_semantics::{
+    LegacySymbolReferenceUse, ProgramSemanticModel, SymbolReferenceAuthority, SymbolReferenceIndex,
+};
 use crate::semantic_analysis::{FunctionEffect, InformationFlowTransformKind};
 use crate::state_effect_analysis::StateEffectAnalysisModel;
 
 /// Canonical Behavior Realization Contract schema identity.
 pub const BEHAVIOR_REALIZATION_CONTRACT_SCHEMA: &str =
-    "urn:fortress:schema:v1:behavior-realization-contracts";
+    "urn:fortress:schema:v2:behavior-realization-contracts";
 /// Canonical Behavior Realization Contract schema version.
-pub const BEHAVIOR_REALIZATION_CONTRACT_SCHEMA_VERSION: u16 = 1;
+pub const BEHAVIOR_REALIZATION_CONTRACT_SCHEMA_VERSION: u16 = 2;
+const LEGACY_BEHAVIOR_REALIZATION_CONTRACT_SCHEMA: &str =
+    "urn:fortress:schema:v1:behavior-realization-contracts";
+const LEGACY_BEHAVIOR_REALIZATION_CONTRACT_SCHEMA_VERSION: u16 = 1;
 
 /// One snapshot-bound distributed realization-contract document.
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
@@ -202,6 +207,7 @@ impl ResolvedCheckpointRealization {
 pub struct ResolvedBehaviorRealizationContracts {
     features: Vec<String>,
     checkpoints: Vec<ResolvedCheckpointRealization>,
+    legacy_symbol_references: Vec<LegacySymbolReferenceUse>,
     digest: String,
 }
 
@@ -215,6 +221,12 @@ impl ResolvedBehaviorRealizationContracts {
     #[must_use]
     pub fn checkpoints(&self) -> &[ResolvedCheckpointRealization] {
         &self.checkpoints
+    }
+
+    /// Returns exact authored legacy symbol anchors normalized during loading.
+    #[must_use]
+    pub fn legacy_symbol_references(&self) -> &[LegacySymbolReferenceUse] {
+        &self.legacy_symbol_references
     }
     /// Returns the deterministic distributed-authority digest.
     #[must_use]
@@ -268,6 +280,15 @@ pub enum BehaviorRealizationContractError {
     },
     /// A symbol anchor is absent from the PSM.
     UnknownSymbol(String),
+    /// A current or legacy symbol anchor mapped to multiple current symbols.
+    AmbiguousSymbolReference {
+        /// Authored contract path.
+        path: String,
+        /// Ambiguous authored reference.
+        reference: String,
+        /// Deterministic candidate detail.
+        detail: String,
+    },
     /// A symbol lies outside the Feature-owner subtree.
     ForeignSymbol {
         /// Feature whose ownership boundary is enforced.
@@ -334,6 +355,14 @@ impl Display for BehaviorRealizationContractError {
                 "Module '{module}' cannot author realization for Feature '{feature}'"
             ),
             Self::UnknownSymbol(value) => write!(formatter, "unknown symbol '{value}'"),
+            Self::AmbiguousSymbolReference {
+                path,
+                reference,
+                detail,
+            } => write!(
+                formatter,
+                "behavior realization contract `{path}` has ambiguous symbol reference `{reference}`: {detail}"
+            ),
             Self::ForeignSymbol { feature, symbol } => write!(
                 formatter,
                 "symbol '{symbol}' lies outside Feature '{feature}' ownership"
@@ -397,6 +426,7 @@ pub fn load_behavior_realization_contracts(
         .iter()
         .map(|symbol| (symbol.id(), symbol))
         .collect::<BTreeMap<_, _>>();
+    let symbol_references = psm.symbol_reference_index();
     let nominal_types = psm
         .nominal_types()
         .iter()
@@ -405,15 +435,19 @@ pub fn load_behavior_realization_contracts(
     let mut features = BTreeSet::new();
     let mut checkpoint_ids = BTreeSet::new();
     let mut checkpoints = Vec::new();
+    let mut legacy_symbol_references = Vec::new();
     for source in &sources {
-        let document: ContractDocument = serde_json::from_str(&source.source).map_err(|error| {
-            BehaviorRealizationContractError::InvalidJson {
-                path: source.path.clone(),
-                detail: error.to_string(),
-            }
-        })?;
-        if document.schema != BEHAVIOR_REALIZATION_CONTRACT_SCHEMA
-            || document.schema_version != BEHAVIOR_REALIZATION_CONTRACT_SCHEMA_VERSION
+        let mut document: ContractDocument =
+            serde_json::from_str(&source.source).map_err(|error| {
+                BehaviorRealizationContractError::InvalidJson {
+                    path: source.path.clone(),
+                    detail: error.to_string(),
+                }
+            })?;
+        if !((document.schema == BEHAVIOR_REALIZATION_CONTRACT_SCHEMA
+            && document.schema_version == BEHAVIOR_REALIZATION_CONTRACT_SCHEMA_VERSION)
+            || (document.schema == LEGACY_BEHAVIOR_REALIZATION_CONTRACT_SCHEMA
+                && document.schema_version == LEGACY_BEHAVIOR_REALIZATION_CONTRACT_SCHEMA_VERSION))
         {
             return Err(BehaviorRealizationContractError::UnsupportedSchema(
                 source.path.clone(),
@@ -423,6 +457,26 @@ pub fn load_behavior_realization_contracts(
             return Err(BehaviorRealizationContractError::NonCanonical(
                 source.path.clone(),
             ));
+        }
+        for (feature_index, feature) in document.features.iter_mut().enumerate() {
+            for (checkpoint_index, checkpoint) in feature.checkpoints.iter_mut().enumerate() {
+                if !is_sorted_unique(&checkpoint.anchors) {
+                    return Err(BehaviorRealizationContractError::NonCanonicalOrder(
+                        format!(
+                            "{}/features/{feature_index}/checkpoints/{checkpoint_index}/anchors",
+                            source.path
+                        ),
+                    ));
+                }
+                for anchor in &mut checkpoint.anchors {
+                    normalize_behavior_anchor_symbol(
+                        anchor,
+                        &source.path,
+                        &symbol_references,
+                        &mut legacy_symbol_references,
+                    )?;
+                }
+            }
         }
         ensure_sorted_unique(
             document
@@ -470,14 +524,6 @@ pub fn load_behavior_realization_contracts(
                         checkpoint.checkpoint.clone(),
                     ));
                 }
-                if !is_sorted_unique(&checkpoint.anchors) {
-                    return Err(BehaviorRealizationContractError::NonCanonicalOrder(
-                        format!(
-                            "{}/features/{feature_index}/checkpoints/{checkpoint_index}/anchors",
-                            source.path
-                        ),
-                    ));
-                }
                 for anchor in &checkpoint.anchors {
                     validate_anchor(
                         anchor,
@@ -515,11 +561,50 @@ pub fn load_behavior_realization_contracts(
         }
     }
     checkpoints.sort();
+    legacy_symbol_references.sort();
+    legacy_symbol_references.dedup();
     Ok(ResolvedBehaviorRealizationContracts {
         features: features.into_iter().collect(),
         checkpoints,
+        legacy_symbol_references,
         digest: distributed_digest(&sources),
     })
+}
+
+fn normalize_behavior_anchor_symbol(
+    anchor: &mut BehaviorAnchor,
+    path: &str,
+    references: &SymbolReferenceIndex<'_>,
+    legacy_uses: &mut Vec<LegacySymbolReferenceUse>,
+) -> Result<(), BehaviorRealizationContractError> {
+    let symbol = match anchor {
+        BehaviorAnchor::SymbolEntry { symbol }
+        | BehaviorAnchor::SymbolReturn { symbol, .. }
+        | BehaviorAnchor::StateTransition { symbol, .. }
+        | BehaviorAnchor::Effect { symbol, .. }
+        | BehaviorAnchor::InformationTransition { symbol, .. } => symbol,
+        BehaviorAnchor::EnvironmentOutcome { .. } => return Ok(()),
+    };
+    let authored = symbol.clone();
+    let resolution = references
+        .resolve(&authored)
+        .map_err(
+            |error| BehaviorRealizationContractError::AmbiguousSymbolReference {
+                path: path.into(),
+                reference: authored.clone(),
+                detail: error.to_string(),
+            },
+        )?
+        .ok_or_else(|| BehaviorRealizationContractError::UnknownSymbol(authored.clone()))?;
+    if resolution.authority() == SymbolReferenceAuthority::LegacyAlias {
+        *symbol = resolution.symbol().id().into();
+        legacy_uses.push(LegacySymbolReferenceUse::new(
+            path,
+            authored,
+            symbol.clone(),
+        ));
+    }
+    Ok(())
 }
 
 #[allow(clippy::too_many_arguments, clippy::too_many_lines)]

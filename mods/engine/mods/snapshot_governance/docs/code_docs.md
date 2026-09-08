@@ -38,6 +38,10 @@ Parses canonical Markdown structurally and reconciles Module contracts, catalogs
 
 Dispatches only implemented applicable rules, including behavioral, program-domain/state/effect/information/environment, and REPO-REFERENCE-001 evaluators from shared results, and distinguishes evaluated pass or failure from unsupported capability.
 
+### [`identity_migration.rs`](../code/identity_migration.rs)
+
+Plans exact-snapshot legacy Rust symbol and semantic-finding reference migrations, rejects ambiguous or missing mappings, and applies only explicitly reviewed dependency-bound authority rewrites with rollback on write failure.
+
 ### [`ownership.rs`](../code/ownership.rs)
 
 Reconciles observed governed files with exact declared architectural ownership.

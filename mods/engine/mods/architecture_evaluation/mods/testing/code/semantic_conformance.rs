@@ -11,6 +11,9 @@ use fortress_core::architecture_realization::reconcile_implementation;
 use fortress_core::contract_coherency::{
     ContractStandardIndex, ModuleContract, compile_contract_coherency_graph,
 };
+use fortress_core::finding_governance::{
+    FindingGovernanceDocument, FindingLifecycle, evaluate_finding_governance,
+};
 use fortress_core::implementation_observation::{
     ImplementationObservationInput, ModuleTerritory, SnapshotBoundFile, observe_rust_implementation,
 };
@@ -278,7 +281,12 @@ pub fn entry() { write_file(); }
                 .is_some_and(|name| name.starts_with("sample::"))
         );
     }
-    assert_eq!(first.findings().len(), 2);
+    assert_eq!(first.findings().len(), 1);
+    assert_eq!(
+        writes.len(),
+        2,
+        "direct and transitive evidence remain visible"
+    );
     assert_eq!(
         first.model().to_canonical_json().unwrap(),
         second.model().to_canonical_json().unwrap()
@@ -325,14 +333,193 @@ fn test_only_forbidden_effect_remains_fail_but_is_advisory() {
         0
     );
     assert_eq!(claim.evidence_provenance().test_only_observations(), 2);
-    assert_eq!(result.findings().len(), 2);
+    assert_eq!(result.findings().len(), 1);
     assert!(result.findings().iter().all(|finding| {
         finding.enforcement_eligibility()
             == fortress_core::finding::FindingEnforcementEligibility::AdvisoryOnly
             && finding.enforcement_reason() == Some(TEST_ONLY_EVIDENCE)
     }));
     assert_eq!(result.model().summary().blocking_findings(), 0);
-    assert_eq!(result.model().summary().advisory_findings(), 2);
+    assert_eq!(result.model().summary().advisory_findings(), 1);
+}
+
+/// `T-ARCH-SEMANTIC-001-R01-007`
+/// Fortress requirement: AF-ARCHITECTURE-EVALUATION-0001-R06
+#[test]
+fn cosmetic_parameter_drift_preserves_symbol_operation_finding_and_baseline_identity() {
+    let before = evaluate(
+        "fn write_file(value: &[u8]) { let _ = std::fs::write(\"output\", value); }",
+        module_contract("AF-SAMPLE-0001", &[], &[], &[], &["filesystem.write"]),
+    );
+    let after = evaluate(
+        "// source position drift\nfn write_file(renamed: &[u8]) {\n    let _ = std::fs::write(\"output\", renamed);\n}",
+        module_contract("AF-SAMPLE-0001", &[], &[], &[], &["filesystem.write"]),
+    );
+    let before_observation = &before
+        .model()
+        .module("AF-SAMPLE-0001")
+        .unwrap()
+        .observations()[0];
+    let after_observation = &after
+        .model()
+        .module("AF-SAMPLE-0001")
+        .unwrap()
+        .observations()[0];
+    assert_eq!(
+        before_observation.entry_symbol(),
+        after_observation.entry_symbol()
+    );
+    assert_eq!(
+        before_observation.operation_site_id(),
+        after_observation.operation_site_id()
+    );
+    assert_eq!(
+        before.findings()[0].finding_id(),
+        after.findings()[0].finding_id()
+    );
+    assert_ne!(
+        before.findings()[0].legacy_finding_ids(),
+        after.findings()[0].legacy_finding_ids(),
+        "legacy token-stream identity records the drift being migrated"
+    );
+
+    let finding = &before.findings()[0];
+    let authority = serde_json::json!({
+        "$schema": "urn:fortress:schema:v1:finding-governance",
+        "schema_version": 1,
+        "baseline": {
+            "standard_id": "STD-IDENTITY-0001",
+            "standard_edition": EDITION,
+            "active_entries": [{
+                "finding_id": finding.finding_id(),
+                "rule_id": finding.rule_id(),
+                "subjects": finding.entities(),
+                "violation_discriminator": finding.violation_discriminator().unwrap(),
+                "rationale": "accepted historical residue"
+            }],
+            "retired_entries": []
+        },
+        "exceptions": []
+    });
+    let authority = FindingGovernanceDocument::from_json_str(&format!(
+        "{}\n",
+        serde_json::to_string_pretty(&authority).unwrap()
+    ))
+    .unwrap();
+    let governed = evaluate_finding_governance(
+        after.findings(),
+        Some(&authority),
+        "STD-IDENTITY-0001",
+        EDITION,
+    )
+    .unwrap();
+    assert_eq!(
+        governed.findings()[0].lifecycle(),
+        FindingLifecycle::Baselined
+    );
+    assert_eq!(governed.summary().new_blocking, 0);
+}
+
+/// `T-ARCH-SEMANTIC-001-R01-008`
+/// Fortress requirement: AF-ARCHITECTURE-EVALUATION-0001-R06
+#[test]
+fn meaningful_signature_change_changes_symbol_operation_and_finding_identity() {
+    let before = evaluate(
+        "fn write_file(value: &[u8]) { let _ = std::fs::write(\"output\", value); }",
+        module_contract("AF-SAMPLE-0001", &[], &[], &[], &["filesystem.write"]),
+    );
+    let after = evaluate(
+        "fn write_file(value: &str) { let _ = std::fs::write(\"output\", value); }",
+        module_contract("AF-SAMPLE-0001", &[], &[], &[], &["filesystem.write"]),
+    );
+    let before_observation = &before
+        .model()
+        .module("AF-SAMPLE-0001")
+        .unwrap()
+        .observations()[0];
+    let after_observation = &after
+        .model()
+        .module("AF-SAMPLE-0001")
+        .unwrap()
+        .observations()[0];
+    assert_ne!(
+        before_observation.entry_symbol(),
+        after_observation.entry_symbol()
+    );
+    assert_ne!(
+        before_observation.operation_site_id(),
+        after_observation.operation_site_id()
+    );
+    assert_ne!(
+        before.findings()[0].finding_id(),
+        after.findings()[0].finding_id()
+    );
+}
+
+/// `T-ARCH-SEMANTIC-001-R01-009`
+/// Fortress requirement: AF-ARCHITECTURE-EVALUATION-0001-R06
+#[test]
+fn caller_fan_in_changes_evidence_without_changing_underlying_finding() {
+    let before = evaluate(
+        "fn site() { let _ = std::fs::write(\"output\", b\"x\"); }\nfn one() { site(); }",
+        module_contract("AF-SAMPLE-0001", &[], &[], &[], &["filesystem.write"]),
+    );
+    let after = evaluate(
+        "fn site() { let _ = std::fs::write(\"output\", b\"x\"); }\nfn one() { site(); }\nfn two() { site(); }",
+        module_contract("AF-SAMPLE-0001", &[], &[], &[], &["filesystem.write"]),
+    );
+    assert_eq!(before.findings().len(), 1);
+    assert_eq!(after.findings().len(), 1);
+    assert_eq!(
+        before.findings()[0].finding_id(),
+        after.findings()[0].finding_id()
+    );
+    let before_paths = before
+        .model()
+        .module("AF-SAMPLE-0001")
+        .unwrap()
+        .observations()
+        .iter()
+        .filter(|observation| observation.effect().stable_id() == "filesystem.write")
+        .count();
+    let after_paths = after
+        .model()
+        .module("AF-SAMPLE-0001")
+        .unwrap()
+        .observations()
+        .iter()
+        .filter(|observation| observation.effect().stable_id() == "filesystem.write")
+        .count();
+    assert_eq!(before_paths, 2);
+    assert_eq!(after_paths, 3);
+}
+
+/// `T-ARCH-SEMANTIC-001-R01-010`
+/// Fortress requirement: AF-ARCHITECTURE-EVALUATION-0001-R06
+#[test]
+fn thousands_of_causal_paths_retain_one_operation_site_finding() {
+    let mut source = String::from("fn site() { let _ = std::fs::write(\"output\", b\"x\"); }\n");
+    for index in 0..2_000 {
+        writeln!(source, "fn caller_{index:04}() {{ site(); }}").unwrap();
+    }
+    let started = Instant::now();
+    let result = evaluate(
+        &source,
+        module_contract("AF-SAMPLE-0001", &[], &[], &[], &["filesystem.write"]),
+    );
+    assert!(started.elapsed().as_secs() < 120);
+    assert_eq!(result.findings().len(), 1);
+    assert_eq!(
+        result
+            .model()
+            .module("AF-SAMPLE-0001")
+            .unwrap()
+            .observations()
+            .iter()
+            .filter(|observation| observation.effect().stable_id() == "filesystem.write")
+            .count(),
+        2_001
+    );
 }
 
 /// `T-ARCH-SEMANTIC-001-R01-006`

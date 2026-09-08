@@ -23,7 +23,7 @@ use crate::finding::{
 use crate::program_semantics::{
     CallResolutionState, CallSiteEvidence, ExecutableSymbol, ExecutionProvenance, ProgramBody,
     ProgramCall, ProgramExpression, ProgramMutation, ProgramPlace, ProgramSemanticModel,
-    ProgramStatement, ProgramType,
+    ProgramStatement, ProgramType, rust_operation_site_id,
 };
 use crate::semantic_analysis::{
     DomainSpecification, FunctionContract, FunctionEffect, ResolvedFunctionContracts,
@@ -38,11 +38,11 @@ pub use state_contract::{
 };
 
 /// Canonical State & Effect Analysis schema identity.
-pub const STATE_EFFECT_ANALYSIS_SCHEMA: &str = "urn:fortress:schema:v3:state-effect-analysis";
+pub const STATE_EFFECT_ANALYSIS_SCHEMA: &str = "urn:fortress:schema:v4:state-effect-analysis";
 /// Canonical State & Effect Analysis schema version.
-pub const STATE_EFFECT_ANALYSIS_SCHEMA_VERSION: u16 = 3;
+pub const STATE_EFFECT_ANALYSIS_SCHEMA_VERSION: u16 = 4;
 /// Semantic version of the state/effect analyzer.
-pub const STATE_EFFECT_ANALYSIS_VERSION: &str = "3.0.0";
+pub const STATE_EFFECT_ANALYSIS_VERSION: &str = "4.0.0";
 /// Stable analyzer identity.
 pub const STATE_EFFECT_ANALYZER_ID: &str = "fortress-state-effect-analysis";
 /// Normative typestate rule identity.
@@ -301,6 +301,7 @@ pub struct EffectEvidence {
     source_symbol: String,
     source_execution_provenance: ExecutionProvenance,
     operation: String,
+    operation_site_id: String,
     classification_authority: String,
     path: String,
     line: u32,
@@ -470,6 +471,12 @@ impl EffectEvidence {
     #[must_use]
     pub fn operation(&self) -> &str {
         &self.operation
+    }
+
+    /// Returns the stable source-coordinate-independent direct operation-site identity.
+    #[must_use]
+    pub fn operation_site_id(&self) -> &str {
+        &self.operation_site_id
     }
 
     /// Returns the resolved static call chain from entry to direct origin.
@@ -896,25 +903,46 @@ fn direct_effects(
         .keys()
         .map(|id| ((*id).into(), empty_effect_work()))
         .collect::<BTreeMap<_, _>>();
-    for read in psm.state_reads() {
+    let mut site_ordinals = OperationSiteOrdinals::default();
+    let mut state_reads = psm.state_reads().iter().collect::<Vec<_>>();
+    state_reads.sort_by_key(|read| {
+        (
+            read.symbol(),
+            read.provenance().path(),
+            read.provenance().location().line(),
+            read.provenance().location().column(),
+        )
+    });
+    for read in state_reads {
         let effect = if read.place().is_receiver() {
             FunctionEffect::ReceiverStateRead
         } else {
             FunctionEffect::OwnedStateRead
         };
+        let site_id = site_ordinals.next(read.symbol(), "state_read", "psm.state_read");
         add_effect(
             &mut result,
             read.symbol(),
             symbol_execution_provenance(symbols, read.symbol()),
             effect,
             "psm.state_read",
+            &site_id,
             "program_semantics.state_observation",
             read.provenance().path(),
             read.provenance().location().line(),
             read.provenance().location().column(),
         );
     }
-    for mutation in psm.mutations() {
+    let mut mutations = psm.mutations().iter().collect::<Vec<_>>();
+    mutations.sort_by_key(|mutation| {
+        (
+            mutation.symbol(),
+            mutation.provenance().path(),
+            mutation.provenance().location().line(),
+            mutation.provenance().location().column(),
+        )
+    });
+    for mutation in mutations {
         if mutation.target().field_name().is_none() {
             continue;
         }
@@ -923,12 +951,14 @@ fn direct_effects(
         } else {
             FunctionEffect::OwnedStateWrite
         };
+        let site_id = site_ordinals.next(mutation.symbol(), "state_mutation", "psm.state_mutation");
         add_effect(
             &mut result,
             mutation.symbol(),
             symbol_execution_provenance(symbols, mutation.symbol()),
             effect,
             "psm.state_mutation",
+            &site_id,
             "program_semantics.state_observation",
             mutation.provenance().path(),
             mutation.provenance().location().line(),
@@ -949,12 +979,18 @@ fn direct_effects(
         .values()
         .filter(|symbol| symbol.qualifiers().is_unsafe() && symbol.has_body())
     {
+        let site_id = site_ordinals.next(
+            symbol.id(),
+            "unsafe_function_body",
+            "rust.unsafe_function_body",
+        );
         add_effect(
             &mut result,
             symbol.id(),
             symbol.execution_provenance(),
             FunctionEffect::UnsafeExecution,
             "rust.unsafe_function_body",
+            &site_id,
             "program_semantics.declaration_qualifier",
             symbol.provenance().path(),
             symbol.provenance().location().line(),
@@ -992,6 +1028,7 @@ fn direct_effects(
                                     symbol_execution_provenance(symbols, call.caller()),
                                     effect,
                                     operation.expect("supported classification has identity"),
+                                    evidence.operation_site_id(),
                                     "program_semantics.external_target",
                                     evidence.provenance().path(),
                                     evidence.provenance().location().line(),
@@ -1035,6 +1072,7 @@ fn direct_effects(
                                 symbol_execution_provenance(symbols, call.caller()),
                                 FunctionEffect::ExternalInteraction,
                                 operation.expect("external call has identity"),
+                                evidence.operation_site_id(),
                                 "program_semantics.external_target",
                                 evidence.provenance().path(),
                                 evidence.provenance().location().line(),
@@ -1099,12 +1137,14 @@ fn direct_effects(
     }
     for body in psm.bodies() {
         for site in exceptional_sites(body) {
+            let site_id = site_ordinals.next(body.symbol(), "rust_structure", site.operation);
             add_effect(
                 &mut result,
                 body.symbol(),
                 symbol_execution_provenance(symbols, body.symbol()),
                 site.effect,
                 site.operation,
+                &site_id,
                 "program_semantics.rust_structure",
                 site.path,
                 site.line,
@@ -1125,6 +1165,7 @@ fn add_effect(
     execution_provenance: ExecutionProvenance,
     effect: FunctionEffect,
     operation: &str,
+    operation_site_id: &str,
     classification_authority: &str,
     path: &str,
     line: u32,
@@ -1146,12 +1187,32 @@ fn add_effect(
             source_symbol: symbol.into(),
             source_execution_provenance: execution_provenance,
             operation: operation.into(),
+            operation_site_id: operation_site_id.into(),
             classification_authority: classification_authority.into(),
             path: path.into(),
             line,
             column,
             call_chain: vec![symbol.into()],
         });
+}
+
+#[derive(Default)]
+struct OperationSiteOrdinals {
+    next: BTreeMap<(String, String, String), usize>,
+}
+
+impl OperationSiteOrdinals {
+    fn next(&mut self, symbol: &str, operation_kind: &str, operation: &str) -> String {
+        let key = (
+            symbol.to_owned(),
+            operation_kind.to_owned(),
+            operation.to_owned(),
+        );
+        let ordinal = self.next.entry(key).or_default();
+        let identity = rust_operation_site_id(symbol, operation_kind, operation, *ordinal);
+        *ordinal += 1;
+        identity
+    }
 }
 
 fn symbol_execution_provenance(

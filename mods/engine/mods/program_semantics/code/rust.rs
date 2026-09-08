@@ -13,12 +13,13 @@ use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
 use syn::visit::{self, Visit};
 use syn::{
-    Attribute, Block, Expr, FnArg, GenericArgument, GenericParam, ImplItem, Item, Meta, Pat,
-    PathArguments, ReturnType, Signature, Token, TraitItem, Type, UseTree, Visibility,
+    Attribute, Block, Expr, FnArg, GenericArgument, GenericParam, Generics, ImplItem, Item, Meta,
+    Pat, PathArguments, ReturnType, Signature, Token, TraitItem, Type, UseTree, Visibility,
 };
 
 use crate::implementation_observation::SourceOwnership;
 
+use super::semantic_identity::{RustSymbolIdentityInput, rust_symbol_ids};
 use super::{
     CallResolutionReason, CallResolutionState, CallSiteEvidence, ExecutableSymbol,
     ExecutableSymbolKind, ExecutionProvenance, ImplResolutionState, InterfaceType, MutationKind,
@@ -117,18 +118,6 @@ struct BodyFact {
     parameter_types: BTreeMap<String, InterfaceType>,
     return_type: InterfaceType,
     block: Block,
-}
-
-#[derive(Serialize)]
-struct SymbolIdentity<'a> {
-    language: &'static str,
-    package: &'a str,
-    crate_name: &'a str,
-    namespace: &'a [String],
-    owner_type: &'a Option<String>,
-    owner_trait: &'a Option<String>,
-    name: String,
-    signature: String,
 }
 
 #[derive(Serialize)]
@@ -1478,7 +1467,7 @@ impl SymbolCollection<'_> {
                     None,
                     Some(function.block.as_ref().clone()),
                     aliases,
-                    &BTreeSet::new(),
+                    None,
                     item_execution_provenance,
                 );
             }
@@ -1605,7 +1594,7 @@ impl SymbolCollection<'_> {
                     function,
                     namespace,
                     aliases,
-                    &impl_generics,
+                    &value.generics,
                     &owner_type,
                     owner_trait.as_deref(),
                     execution_provenance,
@@ -1664,7 +1653,7 @@ impl SymbolCollection<'_> {
         function: &syn::ImplItemFn,
         namespace: &[String],
         aliases: &BTreeMap<String, Vec<String>>,
-        impl_generics: &BTreeSet<String>,
+        impl_generics: &Generics,
         owner_type: &str,
         owner_trait: Option<&str>,
         inherited_execution_provenance: ExecutionProvenance,
@@ -1685,7 +1674,7 @@ impl SymbolCollection<'_> {
             owner_trait.map(str::to_owned),
             Some(function.block.clone()),
             aliases,
-            impl_generics,
+            Some(impl_generics),
             execution_provenance(inherited_execution_provenance, &function.attrs),
         )
     }
@@ -1712,7 +1701,7 @@ impl SymbolCollection<'_> {
                     Some(owner_trait.clone()),
                     function.default.clone(),
                     aliases,
-                    &trait_generics,
+                    Some(&value.generics),
                     execution_provenance(inherited_execution_provenance, &function.attrs),
                 )),
                 _ => None,
@@ -1743,7 +1732,7 @@ impl SymbolCollection<'_> {
         owner_trait: Option<String>,
         block: Option<Block>,
         aliases: &BTreeMap<String, Vec<String>>,
-        surrounding_generics: &BTreeSet<String>,
+        surrounding_generics: Option<&Generics>,
         execution_provenance: ExecutionProvenance,
     ) -> String {
         let FunctionInterface {
@@ -1753,26 +1742,28 @@ impl SymbolCollection<'_> {
             receiver,
             generic_parameters,
             lifetimes,
-        } = self.function_interface(signature, surrounding_generics, aliases);
+        } = self.function_interface(
+            signature,
+            &surrounding_generics
+                .map_or_else(BTreeSet::new, |generics| generic_names(&generics.params)),
+            aliases,
+        );
         let qualified_name = qualified_name(
             &self.context.crate_name,
             namespace,
             owner_type.as_deref().or(owner_trait.as_deref()),
             &signature.ident.to_string(),
         );
-        let id = canonical_fact_id(
-            "rust_symbol",
-            &SymbolIdentity {
-                language: "rust",
-                package: &self.package.name,
-                crate_name: &self.context.crate_name,
-                namespace,
-                owner_type: &owner_type,
-                owner_trait: &owner_trait,
-                name: signature.ident.to_string(),
-                signature: signature.to_token_stream().to_string(),
-            },
-        );
+        let (id, legacy_id) = rust_symbol_ids(RustSymbolIdentityInput {
+            package: &self.package.name,
+            crate_name: &self.context.crate_name,
+            namespace,
+            kind,
+            owner_type: &owner_type,
+            owner_trait: &owner_trait,
+            signature,
+            surrounding_generics,
+        });
         let symbol_provenance = provenance(
             self.source_path,
             signature.ident.span(),
@@ -1781,6 +1772,9 @@ impl SymbolCollection<'_> {
         self.transfers.extend(parameter_transfers(&id, &parameters));
         let symbol = ExecutableSymbol {
             id: id.clone(),
+            identity_algorithm: super::RUST_SYMBOL_IDENTITY_ALGORITHM.into(),
+            identity_version: super::RUST_SYMBOL_IDENTITY_VERSION,
+            legacy_ids: vec![legacy_id],
             qualified_name,
             language: "rust".into(),
             package: self.package.name.clone(),
@@ -3937,7 +3931,8 @@ fn resolve_calls(
     registry: &mut TypeRegistry,
 ) -> Vec<ProgramCall> {
     let mut grouped = BTreeMap::<CallGroupKey, Vec<CallSiteEvidence>>::new();
-    for call in raw_calls {
+    let mut operation_ordinals = BTreeMap::<(String, String, String), usize>::new();
+    for mut call in raw_calls {
         let mut outcome = resolve_call(&call, lookup);
         outcome.candidates.sort();
         outcome.candidates.dedup();
@@ -3954,6 +3949,34 @@ fn resolve_calls(
                 | CallResolutionState::Invalid
         )
         .then(|| call.reference.clone());
+        let operation_kind = match outcome.state {
+            CallResolutionState::ResolvedStatic => "resolved_call",
+            CallResolutionState::External => "external_call",
+            CallResolutionState::DynamicDispatch => "dynamic_call",
+            CallResolutionState::Unresolved => "unresolved_call",
+            CallResolutionState::Unsupported => "unsupported_call",
+            CallResolutionState::Invalid => "invalid_call",
+        };
+        let operation = outcome
+            .callee
+            .as_deref()
+            .or(outcome.external_target.as_deref())
+            .unwrap_or(&call.reference);
+        let ordinal_key = (
+            call.caller.clone(),
+            operation_kind.to_owned(),
+            operation.to_owned(),
+        );
+        let ordinal = operation_ordinals.entry(ordinal_key).or_default();
+        call.evidence = call
+            .evidence
+            .with_operation_site_id(super::rust_operation_site_id(
+                &call.caller,
+                operation_kind,
+                operation,
+                *ordinal,
+            ));
+        *ordinal += 1;
         grouped
             .entry(CallGroupKey {
                 caller: call.caller,

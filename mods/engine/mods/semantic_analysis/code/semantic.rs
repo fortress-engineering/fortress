@@ -1,6 +1,6 @@
 //! Function Contract and interprocedural semantic-domain analysis.
 //!
-//! This Module consumes PSM facts and authored Function Contract v3/v4 sources.
+//! This Module consumes PSM facts and authored Function Contract v3-v5 sources.
 //! It does not parse Rust, modify the CCG, or map functions to BFG checkpoints.
 
 pub(crate) const PROGRAM_DOMAIN_RULE_SOURCE: &str =
@@ -40,11 +40,11 @@ use crate::program_semantics::{
 /// Draft rule governing supported function-domain consistency.
 pub const PROGRAM_DOMAIN_RULE_ID: &str = "PROGRAM-DOMAIN-001";
 /// Canonical Semantic Analysis artifact schema identity.
-pub const SEMANTIC_ANALYSIS_SCHEMA: &str = "urn:fortress:schema:v1:semantic-analysis";
+pub const SEMANTIC_ANALYSIS_SCHEMA: &str = "urn:fortress:schema:v2:semantic-analysis";
 /// Canonical Semantic Analysis artifact schema version.
-pub const SEMANTIC_ANALYSIS_SCHEMA_VERSION: u16 = 1;
+pub const SEMANTIC_ANALYSIS_SCHEMA_VERSION: u16 = 2;
 /// Semantic version of the abstract interpreter.
-pub const SEMANTIC_ANALYSIS_VERSION: &str = "1.0.0";
+pub const SEMANTIC_ANALYSIS_VERSION: &str = "2.0.0";
 /// Stable evaluator identity used by normalized findings.
 pub const SEMANTIC_ANALYZER_ID: &str = "fortress-semantic-domain-analysis";
 

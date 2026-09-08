@@ -48,4 +48,8 @@ Defines the retained deterministic projection in which ALLOW entries are authore
 
 ### [`semantic_conformance_schema_v4.json`](../data/semantic_conformance_schema_v4.json)
 
-Defines the current deterministic projection with per-claim execution-provenance composition and stable advisory reasons when supported violations lack production-capable evidence.
+Defines the retained deterministic projection with per-claim execution-provenance composition and stable advisory reasons when supported violations lack production-capable evidence.
+
+### [`semantic_conformance_schema_v5.json`](../data/semantic_conformance_schema_v5.json)
+
+Defines the current deterministic projection whose effect observations carry stable operation-site identities and whose semantic findings aggregate causal fan-in without using it as finding identity.

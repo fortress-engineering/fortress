@@ -88,7 +88,7 @@
         },
         {
           "id": "TF-CLI-0001-R07",
-          "statement": "The native fortress psm command compiles snapshot-bound Program Semantic Model v4, emits canonical deterministic JSON to standard output or an explicit file, returns non-success for invalid or analyzer-incoherent state, and never implies behavioral realization or certification.",
+          "statement": "The native fortress psm command compiles snapshot-bound Program Semantic Model v5, emits canonical deterministic JSON to standard output or an explicit file, returns non-success for invalid or analyzer-incoherent state, and never implies behavioral realization or certification.",
           "tests": [
             "T-TF-CLI-0001-R07-001",
             "T-TF-CLI-0001-R07-002"
@@ -144,10 +144,11 @@
         },
         {
           "id": "TF-CLI-0001-R14",
-          "statement": "The native fortress references command renders the deterministic CCG-bound component resolution projection or a non-mutating stable-identity relocation preview and rejects incomplete or invalid move requests without changing repository files.",
+          "statement": "The native fortress references command renders the deterministic CCG-bound component resolution projection or a non-mutating stable-identity relocation preview, while migrate-identities previews and explicitly applies only exact-snapshot unambiguous legacy symbol and finding-governance migrations; both reject incomplete or ambiguous requests without implicit repository mutation.",
           "tests": [
             "T-TF-CLI-0001-R14-001",
-            "T-TF-CLI-0001-R14-002"
+            "T-TF-CLI-0001-R14-002",
+            "T-TF-CLI-0001-R14-003"
           ]
         },
         {

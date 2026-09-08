@@ -1,11 +1,11 @@
 {
-  "$schema": "urn:fortress:schema:v1:environment-contracts",
-  "schema_version": 1,
+  "$schema": "urn:fortress:schema:v2:environment-contracts",
+  "schema_version": 2,
   "operations": [
     {
       "id": "EX-FILESYSTEM-READ-DOCUMENT",
       "actor": "ENV-LOCAL-FILESYSTEM",
-      "boundary": "rust_symbol:sha256:0e6c3d87d3e6a233e30245fa55003d5ec735de5a9ad2385290d1109a7d47dddb",
+      "boundary": "rust_symbol:v2:sha256:ab6f6494b0ca3e9754c01e7892874bd0a920134627878b4339bb49da78a49250",
       "retry_policy": "NEVER",
       "retryable_outcomes": [],
       "idempotency": "IDEMPOTENT",
@@ -28,7 +28,7 @@
           "forbidden_effects": [],
           "resource": null,
           "handling": {
-            "continuation": "rust_symbol:sha256:0e6c3d87d3e6a233e30245fa55003d5ec735de5a9ad2385290d1109a7d47dddb",
+            "continuation": "rust_symbol:v2:sha256:ab6f6494b0ca3e9754c01e7892874bd0a920134627878b4339bb49da78a49250",
             "terminal": true,
             "retry": false,
             "idempotency_key_parameter": null,
@@ -47,7 +47,7 @@
           "forbidden_effects": [],
           "resource": null,
           "handling": {
-            "continuation": "rust_symbol:sha256:0e6c3d87d3e6a233e30245fa55003d5ec735de5a9ad2385290d1109a7d47dddb",
+            "continuation": "rust_symbol:v2:sha256:ab6f6494b0ca3e9754c01e7892874bd0a920134627878b4339bb49da78a49250",
             "terminal": true,
             "retry": false,
             "idempotency_key_parameter": null,

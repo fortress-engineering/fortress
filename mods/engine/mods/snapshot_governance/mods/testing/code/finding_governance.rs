@@ -503,3 +503,65 @@ fn large_finding_set_uses_deterministic_keyed_matching() {
     assert_eq!(first.summary().baselined_non_blocking, 5_000);
     assert_eq!(first.summary().new_blocking, 5_000);
 }
+
+/// `T-AF-SNAPSHOT-GOVERNANCE-0001-R15-007`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R15
+#[test]
+fn legacy_finding_alias_preserves_governance_and_rejects_ambiguity() {
+    let legacy = finding(
+        "ARCH-SEMANTIC-001",
+        "AF-LEGACY-0001",
+        "mods/legacy/code/lib.rs",
+        "legacy-discriminator",
+        "legacy semantic finding",
+        7,
+    );
+    let mut authority = FindingGovernanceDocument::empty();
+    authority
+        .create_baseline(
+            "STD-FORTRESS-ENGINEERING",
+            "1.0.0-draft.1",
+            std::slice::from_ref(&legacy),
+        )
+        .unwrap();
+
+    let canonical = finding(
+        "ARCH-SEMANTIC-001",
+        "AF-LEGACY-0001",
+        "mods/legacy/code/lib.rs",
+        "canonical-discriminator",
+        "current semantic finding",
+        70,
+    )
+    .with_legacy_finding_id(legacy.finding_id());
+    let result = evaluate_finding_governance(
+        std::slice::from_ref(&canonical),
+        Some(&authority),
+        "STD-FORTRESS-ENGINEERING",
+        "1.0.0-draft.1",
+    )
+    .unwrap();
+    assert_eq!(result.summary().baselined_non_blocking, 1);
+    assert_eq!(result.summary().new_blocking, 0);
+    assert_eq!(result.summary().resolved_baseline_entries, 0);
+
+    let competing = finding(
+        "ARCH-SEMANTIC-001",
+        "AF-LEGACY-0001",
+        "mods/legacy/code/lib.rs",
+        "competing-discriminator",
+        "competing semantic finding",
+        700,
+    )
+    .with_legacy_finding_id(legacy.finding_id());
+    assert!(
+        evaluate_finding_governance(
+            &[canonical, competing],
+            Some(&authority),
+            "STD-FORTRESS-ENGINEERING",
+            "1.0.0-draft.1",
+        )
+        .is_err(),
+        "an ambiguous legacy identity must never select a current finding"
+    );
+}

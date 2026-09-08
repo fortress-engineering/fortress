@@ -1,4 +1,4 @@
-//! Parent-local Program Semantic Model v4 conformance.
+//! Parent-local Program Semantic Model v5 conformance.
 
 use std::path::{Path, PathBuf};
 
@@ -106,6 +106,218 @@ fn methods_associated_functions_and_traits_receive_distinct_identities() {
         .map(ExecutableSymbol::id)
         .collect::<std::collections::BTreeSet<_>>();
     assert_eq!(identities.len(), model.symbols().len());
+}
+
+/// `T-AF-PROGRAM-SEMANTICS-0001-R01-004`
+/// Fortress requirement: AF-PROGRAM-SEMANTICS-0001-R01
+#[test]
+fn rust_symbol_identity_ignores_incidental_spelling_and_preserves_meaningful_structure() {
+    fn id(source: &str, name: &str) -> String {
+        compile_program_semantic_model(&one_package(source))
+            .expect("identity fixture compiles")
+            .symbols()
+            .iter()
+            .find(|symbol| symbol.qualified_name().ends_with(name))
+            .expect("symbol exists")
+            .id()
+            .to_owned()
+    }
+
+    let baseline = id(
+        "/// docs\npub fn transform<'a, T: Clone>(value: &'a T) -> &'a T where T: Send { value }\n",
+        "transform",
+    );
+    assert!(baseline.starts_with("rust_symbol:v2:sha256:"));
+    assert_eq!(
+        baseline,
+        id(
+            "\n// moved and reformatted\npub fn transform<'scope, U: Clone>(renamed: &'scope U)->&'scope U where U: Send { renamed }\n",
+            "transform",
+        )
+    );
+    assert_ne!(
+        baseline,
+        id(
+            "pub fn renamed<'a, T: Clone>(value: &'a T) -> &'a T where T: Send { value }\n",
+            "renamed",
+        )
+    );
+    assert_ne!(
+        baseline,
+        id(
+            "pub fn transform<'a, T: Clone>(value: &'a mut T) -> &'a T where T: Send { value }\n",
+            "transform",
+        )
+    );
+    assert_ne!(
+        baseline,
+        id(
+            "pub fn transform<'a, T: Clone>(value: &'a T, other: u8) -> &'a T where T: Send { let _ = other; value }\n",
+            "transform",
+        )
+    );
+    assert_ne!(
+        baseline,
+        id(
+            "pub fn transform<'a, T: Copy>(value: &'a T) -> &'a T where T: Send { value }\n",
+            "transform",
+        )
+    );
+    assert_ne!(
+        baseline,
+        id(
+            "pub fn transform<'a, T: Clone>(value: &'a T) -> bool where T: Send { true }\n",
+            "transform",
+        )
+    );
+    assert_ne!(
+        baseline,
+        id(
+            "pub unsafe fn transform<'a, T: Clone>(value: &'a T) -> &'a T where T: Send { value }\n",
+            "transform",
+        )
+    );
+    assert_ne!(
+        baseline,
+        id(
+            "pub async fn transform<'a, T: Clone>(value: &'a T) -> &'a T where T: Send { value }\n",
+            "transform",
+        )
+    );
+    assert_ne!(
+        id("pub fn abi(value: u8) {}\n", "abi"),
+        id("pub extern \"C\" fn abi(value: u8) {}\n", "abi")
+    );
+}
+
+/// `T-AF-PROGRAM-SEMANTICS-0001-R01-005`
+/// Fortress requirement: AF-PROGRAM-SEMANTICS-0001-R01
+#[test]
+fn rust_symbol_identity_distinguishes_namespace_owner_trait_receiver_and_item_kind() {
+    let model = compile_program_semantic_model(&one_package(
+        r"
+mod left { pub fn same() {} }
+mod right { pub fn same() {} }
+struct First;
+struct Second;
+trait Left { fn run(&self); }
+trait Right { fn run(&self); }
+impl First { fn run(&self) {} fn make() {} }
+impl Second { fn run(&mut self) {} }
+impl Left for First { fn run(&self) {} }
+impl Right for First { fn run(&self) {} }
+",
+    ))
+    .expect("distinct identity fixture compiles");
+    let identities = model
+        .symbols()
+        .iter()
+        .map(ExecutableSymbol::id)
+        .collect::<std::collections::BTreeSet<_>>();
+    assert_eq!(identities.len(), model.symbols().len());
+}
+
+/// `T-AF-PROGRAM-SEMANTICS-0001-R01-006`
+/// Fortress requirement: AF-PROGRAM-SEMANTICS-0001-R01
+#[test]
+fn semantic_namespace_preserves_symbol_identity_across_physical_source_relocation() {
+    let manifest =
+        "[package]\nname='sample'\nversion='0.1.0'\nedition='2024'\n[lib]\npath='../code/lib.rs'\n";
+    let old = input(
+        &[
+            ("mods/sample/data/Cargo.toml", manifest),
+            (
+                "mods/sample/code/lib.rs",
+                "#[path=\"old/place.rs\"] mod api;\n",
+            ),
+            ("mods/sample/code/old/place.rs", "pub fn stable() {}\n"),
+        ],
+        &[("PF-PSM-FIXTURE", ""), ("AF-SAMPLE-0001", "mods/sample")],
+        &[],
+        &[],
+    );
+    let moved = input(
+        &[
+            ("mods/sample/data/Cargo.toml", manifest),
+            (
+                "mods/sample/code/lib.rs",
+                "#[path=\"new/place.rs\"] mod api;\n",
+            ),
+            ("mods/sample/code/new/place.rs", "pub fn stable() {}\n"),
+        ],
+        &[("PF-PSM-FIXTURE", ""), ("AF-SAMPLE-0001", "mods/sample")],
+        &[],
+        &[],
+    );
+    let old = compile_program_semantic_model(&old).expect("old placement compiles");
+    let moved = compile_program_semantic_model(&moved).expect("new placement compiles");
+    let old_symbol = old
+        .symbols()
+        .iter()
+        .find(|symbol| symbol.qualified_name() == "sample::api::stable")
+        .expect("old symbol");
+    let moved_symbol = moved
+        .symbols()
+        .iter()
+        .find(|symbol| symbol.qualified_name() == "sample::api::stable")
+        .expect("moved symbol");
+    assert_eq!(old_symbol.id(), moved_symbol.id());
+    assert_ne!(old_symbol.source_path(), moved_symbol.source_path());
+}
+
+/// `T-AF-PROGRAM-SEMANTICS-0001-R01-007`
+/// Fortress requirement: AF-PROGRAM-SEMANTICS-0001-R01
+#[test]
+fn operation_site_identity_survives_line_drift_and_distinguishes_repeated_operations() {
+    fn sites(source: &str) -> Vec<String> {
+        let model = compile_program_semantic_model(&one_package(source))
+            .expect("operation-site fixture compiles");
+        let mut result = model
+            .calls()
+            .iter()
+            .filter(|call| call.external_target() == Some("std::fs::write"))
+            .flat_map(ProgramCall::evidence)
+            .map(|evidence| evidence.operation_site_id().to_owned())
+            .collect::<Vec<_>>();
+        result.sort();
+        result
+    }
+    let before = sites(
+        "fn persist(path: &str) { std::fs::write(path, b\"one\").unwrap(); std::fs::write(path, b\"two\").unwrap(); }\n",
+    );
+    let after = sites(
+        "// unrelated line\nfn persist(renamed: &str) { let unrelated = 1 + 1; std::fs::write(renamed,b\"one\").unwrap();\nstd::fs::write(renamed, b\"two\").unwrap(); let _ = unrelated; }\n",
+    );
+    assert_eq!(before, after);
+    assert_eq!(before.len(), 2);
+    assert_ne!(before[0], before[1]);
+}
+
+/// `T-AF-PROGRAM-SEMANTICS-0001-R01-008`
+/// Fortress requirement: AF-PROGRAM-SEMANTICS-0001-R01
+#[test]
+fn rust_symbol_identity_scales_without_collision_or_traversal_order_dependence() {
+    let declarations = (0..10_000)
+        .map(|index| format!("fn item_{index}<T: Clone>(value: T) -> T {{ value }}\n"))
+        .collect::<Vec<_>>();
+    let forward = declarations.join("");
+    let reverse = declarations.iter().rev().cloned().collect::<String>();
+    let first = compile_program_semantic_model(&one_package(&forward))
+        .expect("large forward identity corpus compiles");
+    let second = compile_program_semantic_model(&one_package(&reverse))
+        .expect("large reverse identity corpus compiles");
+    let first_ids = first
+        .symbols()
+        .iter()
+        .map(ExecutableSymbol::id)
+        .collect::<std::collections::BTreeSet<_>>();
+    let second_ids = second
+        .symbols()
+        .iter()
+        .map(ExecutableSymbol::id)
+        .collect::<std::collections::BTreeSet<_>>();
+    assert_eq!(first_ids.len(), 10_000);
+    assert_eq!(first_ids, second_ids);
 }
 
 /// `T-AF-PROGRAM-SEMANTICS-0001-R01-003`

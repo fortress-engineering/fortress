@@ -13,7 +13,7 @@
   "evaluation": "Fortress derives direct effects from structured PSM reads, mutations, external calls, reachable exceptional sites, and unsafe declarations, then computes deterministic call-graph fixed-point closure and checks the supported set against the authored policy.",
   "required_capabilities": [
     "function-contract-v2",
-    "program-semantic-model-v4",
+    "program-semantic-model-v5",
     "state-effect-analysis-v1"
   ],
   "logic": {

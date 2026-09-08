@@ -1,6 +1,6 @@
 {
-  "$schema": "urn:fortress:schema:v1:behavior-realization-contracts",
-  "schema_version": 1,
+  "$schema": "urn:fortress:schema:v2:behavior-realization-contracts",
+  "schema_version": 2,
   "features": [
     {
       "feature": "AF-FORTRESS-AUDIT-0001",
@@ -10,7 +10,7 @@
           "anchors": [
             {
               "kind": "symbol_return",
-              "symbol": "rust_symbol:sha256:ffbd51eed128c8936ee1eedc21a14911eeed54a5a51042d77489c1e9baab6823"
+              "symbol": "rust_symbol:v2:sha256:c6dff638b6214e444bd0a85f4d5bf3830c6bedeec90a742e8bf60e2d0e124ae4"
             }
           ]
         },
@@ -19,7 +19,7 @@
           "anchors": [
             {
               "kind": "symbol_return",
-              "symbol": "rust_symbol:sha256:c0ac2084943a8cf65dfc2cbfff34670bc330f4dfba2a51fcf65c8567f3bfcaa1",
+              "symbol": "rust_symbol:v2:sha256:5b4fd1b0651a664d702b3c7fd6d8dd03a05af84af42193cc3bd3e6cca37abe20",
               "boolean": false
             }
           ]
@@ -29,7 +29,7 @@
           "anchors": [
             {
               "kind": "symbol_return",
-              "symbol": "rust_symbol:sha256:6130f80cae5aacede91c91571034244c7de892644facfce9a9a5e65cd8cc6f55"
+              "symbol": "rust_symbol:v2:sha256:36662a7ffb15ded523f567dca4ca0bd781091cd09ca09404711b135565b677ad"
             }
           ]
         },
@@ -38,7 +38,7 @@
           "anchors": [
             {
               "kind": "symbol_return",
-              "symbol": "rust_symbol:sha256:c0ac2084943a8cf65dfc2cbfff34670bc330f4dfba2a51fcf65c8567f3bfcaa1",
+              "symbol": "rust_symbol:v2:sha256:5b4fd1b0651a664d702b3c7fd6d8dd03a05af84af42193cc3bd3e6cca37abe20",
               "boolean": true
             }
           ]
@@ -48,7 +48,7 @@
           "anchors": [
             {
               "kind": "symbol_entry",
-              "symbol": "rust_symbol:sha256:e877bde48e241e5bf3e6e1a6c716eee315649f9b3aa69affe0b8e33b6cb9ddec"
+              "symbol": "rust_symbol:v2:sha256:5968dd0c977ff97946f19e856e0b87de0ceaed9138c28566629f97b474ad216d"
             }
           ]
         },
@@ -57,7 +57,7 @@
           "anchors": [
             {
               "kind": "symbol_entry",
-              "symbol": "rust_symbol:sha256:c0ac2084943a8cf65dfc2cbfff34670bc330f4dfba2a51fcf65c8567f3bfcaa1"
+              "symbol": "rust_symbol:v2:sha256:5b4fd1b0651a664d702b3c7fd6d8dd03a05af84af42193cc3bd3e6cca37abe20"
             }
           ]
         },
@@ -66,7 +66,7 @@
           "anchors": [
             {
               "kind": "symbol_return",
-              "symbol": "rust_symbol:sha256:46b8608c67cf509c505dc32bba89161e76d75d906835b084c4dabbd2c4d6c730"
+              "symbol": "rust_symbol:v2:sha256:a95e0a3ac2776acd8d633c950758df712e4c52d6f9911f1ca4e27c66de7a0b80"
             }
           ]
         },
@@ -75,7 +75,7 @@
           "anchors": [
             {
               "kind": "symbol_return",
-              "symbol": "rust_symbol:sha256:11e9c5592b0f083d4d1e4c4c4220f9334312a3aab57e1ea8bd3e8f6110442175"
+              "symbol": "rust_symbol:v2:sha256:c4da0167ee8af0665e635a23ec598eba7f7beaea05f719738191016d1245bb3b"
             }
           ]
         },
@@ -84,7 +84,7 @@
           "anchors": [
             {
               "kind": "symbol_return",
-              "symbol": "rust_symbol:sha256:da2e86d6efd014585ba114186ae0f7b41edc391afe096d547ab747cc116489de"
+              "symbol": "rust_symbol:v2:sha256:8423732da4362276ce7a581122e5e6332e39110e08051069ff3f3610fc0b9575"
             }
           ]
         },
@@ -93,7 +93,7 @@
           "anchors": [
             {
               "kind": "symbol_return",
-              "symbol": "rust_symbol:sha256:7d09bad5c08d4bb0ef283debc8a45c89170a7f91fa35148effed8b6fd01c6732"
+              "symbol": "rust_symbol:v2:sha256:2b441c1e5b14c64de9d4d5615ef931078a5d98de99d0972f0c7372aa37842115"
             }
           ]
         }

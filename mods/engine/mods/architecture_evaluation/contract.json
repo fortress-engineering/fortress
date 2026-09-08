@@ -110,14 +110,18 @@
         },
         {
           "id": "AF-ARCHITECTURE-EVALUATION-0001-R06",
-          "statement": "ARCH-SEMANTIC-001 deterministically reconciles declared Module semantic policy with direct and transitive State/Effect evidence, preserves claim-relative uncertainty and execution provenance, retains test-only or unknown-only violations as advisory findings, permits blocking when production-capable evidence independently proves the violation, excludes analysis-only territories, and scales by indexed Module ownership.",
+          "statement": "ARCH-SEMANTIC-001 deterministically reconciles declared Module semantic policy with direct and transitive State/Effect evidence, preserves claim-relative uncertainty and execution provenance, identifies each underlying violation from its stable operation site rather than coordinates or causal fan-in, retains test-only or unknown-only violations as advisory findings, permits blocking when production-capable evidence independently proves the violation, excludes analysis-only territories, and scales by indexed Module ownership.",
           "tests": [
             "T-ARCH-SEMANTIC-001-R01-001",
             "T-ARCH-SEMANTIC-001-R01-002",
             "T-ARCH-SEMANTIC-001-R01-003",
             "T-ARCH-SEMANTIC-001-R01-004",
             "T-ARCH-SEMANTIC-001-R01-005",
-            "T-ARCH-SEMANTIC-001-R01-006"
+            "T-ARCH-SEMANTIC-001-R01-006",
+            "T-ARCH-SEMANTIC-001-R01-007",
+            "T-ARCH-SEMANTIC-001-R01-008",
+            "T-ARCH-SEMANTIC-001-R01-009",
+            "T-ARCH-SEMANTIC-001-R01-010"
           ]
         },
         {

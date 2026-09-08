@@ -26,11 +26,11 @@ use crate::state_effect_analysis::{
 /// Normative Module semantic-conformance rule identity.
 pub const ARCH_SEMANTIC_RULE_ID: &str = "ARCH-SEMANTIC-001";
 /// Canonical semantic-conformance projection schema identity.
-pub const SEMANTIC_CONFORMANCE_SCHEMA: &str = "urn:fortress:schema:v4:semantic-conformance";
+pub const SEMANTIC_CONFORMANCE_SCHEMA: &str = "urn:fortress:schema:v5:semantic-conformance";
 /// Canonical semantic-conformance projection schema version.
-pub const SEMANTIC_CONFORMANCE_SCHEMA_VERSION: u16 = 4;
+pub const SEMANTIC_CONFORMANCE_SCHEMA_VERSION: u16 = 5;
 /// Semantic version of the evaluator.
-pub const SEMANTIC_CONFORMANCE_VERSION: &str = "2.0.0";
+pub const SEMANTIC_CONFORMANCE_VERSION: &str = "3.0.0";
 /// Stable evaluator identity used in canonical findings.
 pub const SEMANTIC_CONFORMANCE_EVALUATOR_ID: &str = "fortress-semantic-conformance";
 /// Stable reason for governed source that produced no PSM symbols.
@@ -226,6 +226,7 @@ pub struct ModuleEffectObservation {
     source_symbol: String,
     source_execution_provenance: ExecutionProvenance,
     operation: String,
+    operation_site_id: String,
     authority: String,
     path: String,
     line: u32,
@@ -253,6 +254,12 @@ impl ModuleEffectObservation {
     #[must_use]
     pub fn operation(&self) -> &str {
         &self.operation
+    }
+
+    /// Returns the stable underlying operation-site identity.
+    #[must_use]
+    pub fn operation_site_id(&self) -> &str {
+        &self.operation_site_id
     }
 
     /// Returns the Module entry symbol receiving this direct or transitive evidence.
@@ -827,6 +834,15 @@ pub fn evaluate_semantic_conformance(
         .iter()
         .map(|(id, symbol)| ((*id).to_owned(), symbol.qualified_name().to_owned()))
         .collect();
+    let legacy_symbol_ids = symbols
+        .iter()
+        .filter_map(|(id, symbol)| {
+            symbol
+                .legacy_ids()
+                .first()
+                .map(|legacy| (*id, legacy.as_str()))
+        })
+        .collect::<BTreeMap<_, _>>();
     let declared = ccg
         .modules()
         .keys()
@@ -873,6 +889,7 @@ pub fn evaluate_semantic_conformance(
                     source_symbol: evidence.source_symbol().into(),
                     source_execution_provenance: evidence.source_execution_provenance(),
                     operation: evidence.operation().into(),
+                    operation_site_id: evidence.operation_site_id().into(),
                     authority: evidence.classification_authority().into(),
                     path: evidence.path().into(),
                     line: evidence.line(),
@@ -890,7 +907,7 @@ pub fn evaluate_semantic_conformance(
     }
 
     let mut findings = Vec::new();
-    let mut finding_ids = BTreeSet::new();
+    let mut finding_positions = BTreeMap::new();
     let mut coverage_findings = Vec::new();
     let mut modules = Vec::new();
     let mut summary = SemanticConformanceSummary {
@@ -912,9 +929,10 @@ pub fn evaluate_semantic_conformance(
                 &mut observations,
                 &opaque,
                 &coverage,
+                &legacy_symbol_ids,
                 standard_edition,
                 &mut findings,
-                &mut finding_ids,
+                &mut finding_positions,
                 &mut coverage_findings,
                 &mut summary,
             )?
@@ -1017,9 +1035,10 @@ fn apply_policy(
     observations: &mut [ModuleEffectObservation],
     opaque: &BTreeSet<String>,
     coverage: &SemanticSourceCoverage,
+    legacy_symbol_ids: &BTreeMap<&str, &str>,
     standard_edition: &str,
     findings: &mut Vec<CanonicalFinding>,
-    finding_ids: &mut BTreeSet<String>,
+    finding_positions: &mut BTreeMap<String, usize>,
     coverage_findings: &mut Vec<CanonicalFinding>,
     summary: &mut SemanticConformanceSummary,
 ) -> Result<
@@ -1116,6 +1135,7 @@ fn apply_policy(
                     target_kind,
                     &target,
                     observation,
+                    legacy_symbol_ids,
                     standard_edition,
                 )?;
                 if observation.entry_execution_provenance != ExecutionProvenance::ProductionCapable
@@ -1128,7 +1148,13 @@ fn apply_policy(
                         },
                     )?;
                 }
-                if finding_ids.insert(finding.finding_fingerprint().to_owned()) {
+                if let Some(position) = finding_positions.get(finding.finding_fingerprint()) {
+                    for alias in finding.legacy_finding_ids() {
+                        findings[*position].add_legacy_finding_id(alias.clone());
+                    }
+                } else {
+                    finding_positions
+                        .insert(finding.finding_fingerprint().to_owned(), findings.len());
                     if observation.entry_execution_provenance
                         == ExecutionProvenance::ProductionCapable
                     {
@@ -1308,20 +1334,25 @@ fn forbidden_finding(
     target_kind: PolicyTargetKind,
     target: &str,
     observation: &ModuleEffectObservation,
+    legacy_symbol_ids: &BTreeMap<&str, &str>,
     standard_edition: &str,
 ) -> Result<CanonicalFinding, FindingError> {
     let kind = match target_kind {
         PolicyTargetKind::Capability => "FORBIDDEN_CAPABILITY_EXERCISED",
         PolicyTargetKind::Effect => "FORBIDDEN_EFFECT_EXERCISED",
     };
-    let material = format!(
-        "{kind}\0{module_id}\0{target}\0{}\0{}\0{}\0{}",
-        observation.entry_symbol,
-        observation.source_symbol,
-        observation.operation,
-        observation.call_chain.join("\0")
+    let material = (
+        kind,
+        module_id,
+        target_kind,
+        target,
+        observation.operation_site_id.as_str(),
+        observation.operation.as_str(),
     );
-    let discriminator = format!("{kind}:sha256:{:x}", Sha256::digest(material.as_bytes()));
+    let discriminator = format!(
+        "{kind}:v2:sha256:{:x}",
+        Sha256::digest(serde_json::to_vec(&material).expect("finding identity serializes"))
+    );
     let message = format!(
         "Module `{module_id}` explicitly forbids {} `{target}`, but `{}` produces `{}` through {} evidence along `{}`",
         match target_kind {
@@ -1336,7 +1367,7 @@ fn forbidden_finding(
         },
         observation.call_chain.join(" -> ")
     );
-    canonical_finding(
+    let mut finding = canonical_finding(
         module_id,
         module,
         &discriminator,
@@ -1344,7 +1375,45 @@ fn forbidden_finding(
         REMEDIATION,
         Some(observation),
         standard_edition,
-    )
+    )?;
+    let legacy_entry = legacy_symbol_ids
+        .get(observation.entry_symbol.as_str())
+        .copied()
+        .unwrap_or(observation.entry_symbol.as_str());
+    let legacy_source = legacy_symbol_ids
+        .get(observation.source_symbol.as_str())
+        .copied()
+        .unwrap_or(observation.source_symbol.as_str());
+    let legacy_chain = observation
+        .call_chain
+        .iter()
+        .map(|symbol| {
+            legacy_symbol_ids
+                .get(symbol.as_str())
+                .copied()
+                .unwrap_or(symbol.as_str())
+        })
+        .collect::<Vec<_>>();
+    let legacy_material = format!(
+        "{kind}\0{module_id}\0{target}\0{legacy_entry}\0{legacy_source}\0{}\0{}",
+        observation.operation,
+        legacy_chain.join("\0")
+    );
+    let legacy_discriminator = format!(
+        "{kind}:sha256:{:x}",
+        Sha256::digest(legacy_material.as_bytes())
+    );
+    let legacy_finding = canonical_finding(
+        module_id,
+        module,
+        &legacy_discriminator,
+        &message,
+        REMEDIATION,
+        Some(observation),
+        standard_edition,
+    )?;
+    finding.add_legacy_finding_id(legacy_finding.finding_id().to_owned());
+    Ok(finding)
 }
 
 fn coverage_finding(

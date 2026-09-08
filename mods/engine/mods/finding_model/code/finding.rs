@@ -289,6 +289,8 @@ impl EvaluatorProvenance {
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct CanonicalFinding {
     finding_id: String,
+    #[serde(skip)]
+    legacy_finding_ids: Vec<String>,
     identity_eligibility: FindingIdentityEligibility,
     violation_discriminator: Option<String>,
     rule_id: String,
@@ -366,6 +368,7 @@ impl CanonicalFinding {
 
         Ok(Self {
             finding_id,
+            legacy_finding_ids: Vec::new(),
             identity_eligibility,
             violation_discriminator,
             rule_id: definition.rule_id,
@@ -394,6 +397,26 @@ impl CanonicalFinding {
     #[must_use]
     pub fn finding_id(&self) -> &str {
         &self.finding_id
+    }
+
+    /// Returns non-authoritative legacy identities accepted during migration.
+    #[must_use]
+    pub fn legacy_finding_ids(&self) -> &[String] {
+        &self.legacy_finding_ids
+    }
+
+    /// Adds one unambiguous legacy identity alias without changing current identity.
+    #[must_use]
+    pub fn with_legacy_finding_id(mut self, legacy_finding_id: impl Into<String>) -> Self {
+        self.add_legacy_finding_id(legacy_finding_id);
+        self
+    }
+
+    /// Merges one unambiguous legacy identity alias into this current finding.
+    pub fn add_legacy_finding_id(&mut self, legacy_finding_id: impl Into<String>) {
+        self.legacy_finding_ids.push(legacy_finding_id.into());
+        self.legacy_finding_ids.sort();
+        self.legacy_finding_ids.dedup();
     }
 
     /// Returns whether this finding may safely participate in a baseline.

@@ -24,7 +24,11 @@ Schema and rule changes are reviewed with analyzer semantics and conformance evi
 
 ### [`environment_contract_schema_v1.json`](../data/environment_contract_schema_v1.json)
 
-Defines canonical distributed Environment Contracts v1.
+Defines retained distributed Environment Contracts v1 whose exact-snapshot legacy symbol references remain eligible for explicit migration.
+
+### [`environment_contract_schema_v2.json`](../data/environment_contract_schema_v2.json)
+
+Defines canonical distributed Environment Contracts v2 over current versioned semantic symbol identities.
 
 ### [`environmental_analysis_schema_v1.json`](../data/environmental_analysis_schema_v1.json)
 

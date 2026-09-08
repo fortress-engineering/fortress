@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:identity-migration",
+  "title": "Fortress Semantic Identity Migration Plan v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "symbol_identity_algorithm",
+    "symbol_identity_version",
+    "files",
+    "symbol_references",
+    "semantic_finding_references"
+  ],
+  "properties": {
+    "$schema": { "const": "urn:fortress:schema:v1:identity-migration" },
+    "schema_version": { "const": 1 },
+    "symbol_identity_algorithm": { "const": "fortress.rust.symbol" },
+    "symbol_identity_version": { "const": 2 },
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "before_digest", "after_digest", "replacements"],
+        "properties": {
+          "path": { "type": "string", "minLength": 1 },
+          "before_digest": { "$ref": "#/$defs/digest" },
+          "after_digest": { "$ref": "#/$defs/digest" },
+          "replacements": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/replacement" }
+          }
+        }
+      }
+    },
+    "symbol_references": { "type": "integer", "minimum": 0 },
+    "semantic_finding_references": { "type": "integer", "minimum": 0 }
+  },
+  "$defs": {
+    "digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "replacement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "authored_reference", "canonical_reference", "occurrences"],
+      "properties": {
+        "kind": { "enum": ["RUST_SYMBOL", "SEMANTIC_FINDING"] },
+        "authored_reference": { "type": "string", "minLength": 1 },
+        "canonical_reference": { "type": "string", "minLength": 1 },
+        "occurrences": { "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}

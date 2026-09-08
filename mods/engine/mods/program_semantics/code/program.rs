@@ -7,6 +7,13 @@
 mod graph;
 #[path = "rust.rs"]
 mod rust;
+#[path = "semantic_identity.rs"]
+mod semantic_identity;
+
+pub use semantic_identity::{
+    RUST_OPERATION_SITE_IDENTITY_ALGORITHM, RUST_OPERATION_SITE_IDENTITY_VERSION,
+    RUST_SYMBOL_IDENTITY_ALGORITHM, RUST_SYMBOL_IDENTITY_VERSION, rust_operation_site_id,
+};
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
@@ -19,16 +26,16 @@ use crate::implementation_observation::{
     ImplementationObservationError, ImplementationObservationInput,
 };
 
-/// Registered PSM v4 schema identity.
-pub const PROGRAM_SEMANTIC_MODEL_SCHEMA: &str = "urn:fortress:schema:v4:program-semantic-model";
+/// Registered PSM v5 schema identity.
+pub const PROGRAM_SEMANTIC_MODEL_SCHEMA: &str = "urn:fortress:schema:v5:program-semantic-model";
 /// Canonical PSM document schema version.
-pub const PROGRAM_SEMANTIC_MODEL_SCHEMA_VERSION: u16 = 4;
+pub const PROGRAM_SEMANTIC_MODEL_SCHEMA_VERSION: u16 = 5;
 /// Semantic version of the language-neutral PSM compiler.
-pub const PROGRAM_SEMANTIC_MODEL_VERSION: &str = "4.0.0";
+pub const PROGRAM_SEMANTIC_MODEL_VERSION: &str = "5.0.0";
 /// Stable Rust analyzer identity.
 pub const RUST_PROGRAM_ANALYZER_ID: &str = "fortress-rust-program-semantics";
 /// Semantic version of supported Rust program analysis.
-pub const RUST_PROGRAM_ANALYZER_VERSION: &str = "4.0.0";
+pub const RUST_PROGRAM_ANALYZER_VERSION: &str = "5.0.0";
 
 const UNSUPPORTED_SEMANTICS: &[&str] = &[
     "arbitrary_dynamic_dispatch_resolution",
@@ -1215,6 +1222,9 @@ pub enum SymbolBodyState {
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct ExecutableSymbol {
     id: String,
+    identity_algorithm: String,
+    identity_version: u16,
+    legacy_ids: Vec<String>,
     qualified_name: String,
     language: String,
     package: String,
@@ -1243,6 +1253,24 @@ impl ExecutableSymbol {
     #[must_use]
     pub fn id(&self) -> &str {
         &self.id
+    }
+
+    /// Returns the canonical semantic identity algorithm.
+    #[must_use]
+    pub fn identity_algorithm(&self) -> &str {
+        &self.identity_algorithm
+    }
+
+    /// Returns the canonical semantic identity algorithm version.
+    #[must_use]
+    pub const fn identity_version(&self) -> u16 {
+        self.identity_version
+    }
+
+    /// Returns non-authoritative exact-snapshot legacy identity aliases.
+    #[must_use]
+    pub fn legacy_ids(&self) -> &[String] {
+        &self.legacy_ids
     }
 
     /// Returns the human-readable Rust qualified name.
@@ -1329,6 +1357,170 @@ impl ExecutableSymbol {
     }
 }
 
+/// Authority by which an authored executable-symbol reference resolved.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum SymbolReferenceAuthority {
+    /// The authored reference already uses the current semantic identity.
+    Current,
+    /// The exact current snapshot maps a legacy token-stream identity uniquely.
+    LegacyAlias,
+}
+
+/// One resolved current executable-symbol reference.
+#[derive(Clone, Copy, Debug)]
+pub struct ResolvedSymbolReference<'a> {
+    symbol: &'a ExecutableSymbol,
+    authority: SymbolReferenceAuthority,
+}
+
+impl<'a> ResolvedSymbolReference<'a> {
+    /// Returns the current canonical executable symbol.
+    #[must_use]
+    pub const fn symbol(self) -> &'a ExecutableSymbol {
+        self.symbol
+    }
+
+    /// Returns whether current identity or a legacy alias established resolution.
+    #[must_use]
+    pub const fn authority(self) -> SymbolReferenceAuthority {
+        self.authority
+    }
+}
+
+/// One exact authored legacy reference normalized to a current semantic identity.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct LegacySymbolReferenceUse {
+    source_path: String,
+    authored_reference: String,
+    canonical_reference: String,
+}
+
+impl LegacySymbolReferenceUse {
+    /// Records an unambiguous exact-snapshot legacy reference resolution.
+    #[must_use]
+    pub fn new(
+        source_path: impl Into<String>,
+        authored_reference: impl Into<String>,
+        canonical_reference: impl Into<String>,
+    ) -> Self {
+        Self {
+            source_path: source_path.into(),
+            authored_reference: authored_reference.into(),
+            canonical_reference: canonical_reference.into(),
+        }
+    }
+
+    /// Returns the authored contract path carrying the legacy reference.
+    #[must_use]
+    pub fn source_path(&self) -> &str {
+        &self.source_path
+    }
+
+    /// Returns the non-authoritative legacy identity found in source.
+    #[must_use]
+    pub fn authored_reference(&self) -> &str {
+        &self.authored_reference
+    }
+
+    /// Returns the canonical current semantic identity.
+    #[must_use]
+    pub fn canonical_reference(&self) -> &str {
+        &self.canonical_reference
+    }
+}
+
+/// Prepared exact-snapshot lookup for current and legacy executable identities.
+pub struct SymbolReferenceIndex<'a> {
+    current: BTreeMap<&'a str, Vec<&'a ExecutableSymbol>>,
+    legacy: BTreeMap<&'a str, Vec<&'a ExecutableSymbol>>,
+}
+
+impl<'a> SymbolReferenceIndex<'a> {
+    fn new(symbols: &'a [ExecutableSymbol]) -> Self {
+        let mut current = BTreeMap::<_, Vec<_>>::new();
+        let mut legacy = BTreeMap::<_, Vec<_>>::new();
+        for symbol in symbols {
+            current.entry(symbol.id()).or_default().push(symbol);
+            for alias in symbol.legacy_ids() {
+                legacy.entry(alias.as_str()).or_default().push(symbol);
+            }
+        }
+        Self { current, legacy }
+    }
+
+    /// Resolves a current identity or exact-snapshot legacy alias without guessing.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`SymbolReferenceError`] when a current or legacy identity maps to
+    /// more than one executable symbol.
+    pub fn resolve(
+        &self,
+        reference: &str,
+    ) -> Result<Option<ResolvedSymbolReference<'a>>, SymbolReferenceError> {
+        if let Some(symbols) = self.current.get(reference) {
+            return unique_reference(reference, symbols, SymbolReferenceAuthority::Current)
+                .map(Some);
+        }
+        self.legacy
+            .get(reference)
+            .map(|symbols| {
+                unique_reference(reference, symbols, SymbolReferenceAuthority::LegacyAlias)
+            })
+            .transpose()
+    }
+}
+
+fn unique_reference<'a>(
+    reference: &str,
+    symbols: &[&'a ExecutableSymbol],
+    authority: SymbolReferenceAuthority,
+) -> Result<ResolvedSymbolReference<'a>, SymbolReferenceError> {
+    if symbols.len() != 1 {
+        return Err(SymbolReferenceError::Ambiguous {
+            reference: reference.into(),
+            candidates: symbols
+                .iter()
+                .map(|symbol| symbol.id().to_owned())
+                .collect(),
+        });
+    }
+    Ok(ResolvedSymbolReference {
+        symbol: symbols[0],
+        authority,
+    })
+}
+
+/// Failure to normalize an authored executable-symbol reference safely.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum SymbolReferenceError {
+    /// More than one current symbol carries the same current or legacy identity.
+    Ambiguous {
+        /// Authored identity that could not be selected uniquely.
+        reference: String,
+        /// Sorted candidate current identities.
+        candidates: Vec<String>,
+    },
+}
+
+impl Display for SymbolReferenceError {
+    fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Ambiguous {
+                reference,
+                candidates,
+            } => write!(
+                formatter,
+                "symbol reference `{reference}` is ambiguous among {}",
+                candidates.join(", ")
+            ),
+        }
+    }
+}
+
+impl Error for SymbolReferenceError {}
+
 /// Resolution state assigned to every relevant call expression.
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
@@ -1402,6 +1594,7 @@ pub enum ResolutionAuthority {
 /// One exact call-site observation.
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct CallSiteEvidence {
+    operation_site_id: String,
     reference: String,
     argument_count: usize,
     receiver: Option<ProgramPlace>,
@@ -1415,6 +1608,7 @@ impl CallSiteEvidence {
         provenance: ProgramProvenance,
     ) -> Self {
         Self {
+            operation_site_id: String::new(),
             reference,
             argument_count,
             receiver: None,
@@ -1424,6 +1618,11 @@ impl CallSiteEvidence {
 
     pub(crate) fn with_receiver(mut self, receiver: ProgramPlace) -> Self {
         self.receiver = Some(receiver);
+        self
+    }
+
+    pub(crate) fn with_operation_site_id(mut self, operation_site_id: String) -> Self {
+        self.operation_site_id = operation_site_id;
         self
     }
 }
@@ -1488,6 +1687,12 @@ impl ProgramCall {
 }
 
 impl CallSiteEvidence {
+    /// Returns the stable source-location-independent operation-site identity.
+    #[must_use]
+    pub fn operation_site_id(&self) -> &str {
+        &self.operation_site_id
+    }
+
     /// Returns the source reference spelling.
     #[must_use]
     pub fn reference(&self) -> &str {
@@ -1831,7 +2036,7 @@ pub struct ProgramModelProvenance {
     testing_authority: String,
 }
 
-/// Canonical Program Semantic Model v4 document.
+/// Canonical Program Semantic Model v5 document.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct ProgramSemanticModel {
     #[serde(rename = "$schema")]
@@ -1879,6 +2084,12 @@ impl ProgramSemanticModel {
     #[must_use]
     pub fn symbols(&self) -> &[ExecutableSymbol] {
         &self.symbols
+    }
+
+    /// Builds one canonical lookup for current identities and legacy aliases.
+    #[must_use]
+    pub fn symbol_reference_index(&self) -> SymbolReferenceIndex<'_> {
+        SymbolReferenceIndex::new(&self.symbols)
     }
 
     /// Returns locally governed nominal declarations.

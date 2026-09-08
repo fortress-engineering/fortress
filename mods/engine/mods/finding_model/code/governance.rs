@@ -132,7 +132,10 @@ impl FindingGovernanceDocument {
             .ok_or(FindingGovernanceError::BaselineAbsent)?;
         let current = findings
             .iter()
-            .map(CanonicalFinding::finding_id)
+            .flat_map(|finding| {
+                std::iter::once(finding.finding_id())
+                    .chain(finding.legacy_finding_ids().iter().map(String::as_str))
+            })
             .collect::<BTreeSet<_>>();
         let mut removed = Vec::new();
         baseline.active_entries.retain(|entry| {
@@ -598,6 +601,20 @@ pub fn evaluate_finding_governance(
             });
         }
     }
+    let mut current_identity = current.clone();
+    for finding in findings {
+        for alias in finding.legacy_finding_ids() {
+            if let Some(existing) = current_identity.insert(alias.as_str(), finding)
+                && existing.finding_id() != finding.finding_id()
+            {
+                return Err(FindingGovernanceError::FindingIdentityCollision {
+                    id: alias.clone().into(),
+                    existing: format!("{}: {}", existing.rule_id(), existing.message()).into(),
+                    incoming: format!("{}: {}", finding.rule_id(), finding.message()).into(),
+                });
+            }
+        }
+    }
     let baseline = authority.and_then(FindingGovernanceDocument::baseline);
     if let Some(baseline) = baseline {
         if baseline.standard_id != standard_id || baseline.standard_edition != standard_edition {
@@ -607,7 +624,7 @@ pub fn evaluate_finding_governance(
             });
         }
         for entry in &baseline.active_entries {
-            if let Some(finding) = current.get(entry.finding_id.as_str())
+            if let Some(finding) = current_identity.get(entry.finding_id.as_str())
                 && entry.rule_id != finding.rule_id()
             {
                 return Err(FindingGovernanceError::AuthorityTargetMismatch(
@@ -622,7 +639,7 @@ pub fn evaluate_finding_governance(
             .iter()
             .filter(|value| value.state == ExceptionState::Active)
         {
-            if let Some(finding) = current.get(exception.finding_id.as_str())
+            if let Some(finding) = current_identity.get(exception.finding_id.as_str())
                 && exception.rule_id != finding.rule_id()
             {
                 return Err(FindingGovernanceError::AuthorityTargetMismatch(
@@ -662,21 +679,32 @@ pub fn evaluate_finding_governance(
     let mut summary = FindingGovernanceSummary::default();
     let mut governed = Vec::new();
     for finding in findings {
+        let identity_candidates = std::iter::once(finding.finding_id())
+            .chain(finding.legacy_finding_ids().iter().map(String::as_str))
+            .collect::<Vec<_>>();
         let lifecycle =
             if finding.identity_eligibility() == FindingIdentityEligibility::BaselineIneligible {
                 summary.baseline_ineligible += 1;
                 FindingLifecycle::BaselineIneligible
-            } else if active.contains(finding.finding_id()) {
+            } else if identity_candidates
+                .iter()
+                .any(|identity| active.contains(identity))
+            {
                 FindingLifecycle::Baselined
-            } else if retired.contains(finding.finding_id()) {
+            } else if identity_candidates
+                .iter()
+                .any(|identity| retired.contains(identity))
+            {
                 FindingLifecycle::Reintroduced
             } else {
                 FindingLifecycle::New
             };
-        let applied = exceptions
-            .get(finding.finding_id())
-            .cloned()
-            .unwrap_or_default();
+        let mut applied = identity_candidates
+            .iter()
+            .flat_map(|identity| exceptions.get(identity).into_iter().flatten().copied())
+            .collect::<Vec<_>>();
+        applied.sort_by(|left, right| left.id.cmp(&right.id));
+        applied.dedup_by(|left, right| left.id == right.id);
         let disposition = if applied.is_empty() {
             FindingDisposition::None
         } else {
@@ -747,7 +775,7 @@ pub fn evaluate_finding_governance(
             },
         });
     }
-    let current_ids = current.keys().copied().collect::<BTreeSet<_>>();
+    let current_ids = current_identity.keys().copied().collect::<BTreeSet<_>>();
     let resolved_baseline_entries = baseline.map_or_else(Vec::new, |value| {
         value
             .active_entries

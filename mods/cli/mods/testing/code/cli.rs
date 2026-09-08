@@ -34,6 +34,18 @@ fn reference_resolution_command_is_registered_with_stable_alias() {
     );
 }
 
+/// `T-TF-CLI-0001-R14-003`
+/// Fortress requirement: TF-CLI-0001-R14
+#[test]
+fn identity_migration_command_is_explicit_and_registered() {
+    let registry = CommandRegistry::builtin();
+    let descriptor = registry
+        .find("migrate-identities")
+        .expect("identity migration registered");
+    assert_eq!(descriptor.id(), "CMD-IDENTITY-MIGRATION");
+    assert!(descriptor.usage().contains("--apply"));
+}
+
 /// `T-MODULE-INSPECTION-CLI-001`
 /// Fortress classification: infrastructure
 #[test]
@@ -233,7 +245,7 @@ fn semantic_conformance_renders_zero_coverage_as_not_evaluable() {
     let document: serde_json::Value = serde_json::from_slice(&json.stdout).expect("JSON");
     assert_eq!(
         document["$schema"],
-        "urn:fortress:schema:v4:semantic-conformance"
+        "urn:fortress:schema:v5:semantic-conformance"
     );
     let module = document["modules"]
         .as_array()
@@ -322,7 +334,7 @@ fn semantic_conformance_groups_causal_paths_by_operation_site_with_readable_symb
     assert_eq!(human.status.code(), Some(1));
     let output = String::from_utf8_lossy(&human.stdout);
     assert!(
-        output.contains("Block-supported findings (repository-wide): 3"),
+        output.contains("Block-supported findings (repository-wide): 1"),
         "{output}"
     );
     assert!(output.contains("Distinct offending sites: 1"), "{output}");
@@ -1383,9 +1395,9 @@ fn psm_json_is_observed_schema_versioned_and_repeatable() {
         serde_json::from_slice(&first.stdout).expect("PSM output is JSON");
     assert_eq!(
         value["$schema"],
-        "urn:fortress:schema:v4:program-semantic-model"
+        "urn:fortress:schema:v5:program-semantic-model"
     );
-    assert_eq!(value["schema_version"], 4);
+    assert_eq!(value["schema_version"], 5);
     assert_eq!(value["analyzer_coherency"]["status"], "coherent");
 }
 
@@ -1418,8 +1430,8 @@ fn semantic_json_is_schema_versioned_and_repeatable() {
     assert_eq!(first.stdout, second.stdout);
     let value: serde_json::Value =
         serde_json::from_slice(&first.stdout).expect("semantic output is JSON");
-    assert_eq!(value["$schema"], "urn:fortress:schema:v1:semantic-analysis");
-    assert_eq!(value["schema_version"], 1);
+    assert_eq!(value["$schema"], "urn:fortress:schema:v2:semantic-analysis");
+    assert_eq!(value["schema_version"], 2);
     assert_eq!(value["coverage"]["violations"], 0);
 }
 
@@ -1454,9 +1466,9 @@ fn state_effect_json_is_schema_versioned_and_repeatable() {
         serde_json::from_slice(&first.stdout).expect("state/effect output is JSON");
     assert_eq!(
         value["$schema"],
-        "urn:fortress:schema:v3:state-effect-analysis"
+        "urn:fortress:schema:v4:state-effect-analysis"
     );
-    assert_eq!(value["schema_version"], 3);
+    assert_eq!(value["schema_version"], 4);
     assert_eq!(value["coverage"]["violations"], 0);
 }
 

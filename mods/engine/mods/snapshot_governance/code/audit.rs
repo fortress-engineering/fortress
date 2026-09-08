@@ -2190,7 +2190,7 @@ fn certification_artifacts(
         ),
         (
             "psm",
-            "urn:fortress:schema:v4:program-semantic-model",
+            "urn:fortress:schema:v5:program-semantic-model",
             "info/program_semantic_model.json",
             stack
                 .models
@@ -2203,7 +2203,7 @@ fn certification_artifacts(
         ),
         (
             "semantic_analysis",
-            "urn:fortress:schema:v1:semantic-analysis",
+            "urn:fortress:schema:v2:semantic-analysis",
             "info/semantic_analysis.json",
             stack
                 .models
@@ -2222,7 +2222,7 @@ fn certification_artifacts(
         ),
         (
             "state_effect",
-            "urn:fortress:schema:v3:state-effect-analysis",
+            "urn:fortress:schema:v4:state-effect-analysis",
             "info/state_effect_analysis.json",
             stack
                 .models

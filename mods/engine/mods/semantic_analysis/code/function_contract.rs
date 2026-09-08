@@ -1,4 +1,4 @@
-//! Distributed Function Contract v3/v4 loading and validation.
+//! Distributed Function Contract v3-v5 loading and validation.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
@@ -7,18 +7,23 @@ use std::fmt::{self, Display, Formatter};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
-use crate::program_semantics::{ExecutableSymbol, ProgramSemanticModel, ProgramType, SemanticType};
+use crate::program_semantics::{
+    ExecutableSymbol, LegacySymbolReferenceUse, ProgramSemanticModel, ProgramType, SemanticType,
+    SymbolReferenceAuthority,
+};
 
 use super::domain::{IntegerInterval, SemanticDomain};
 
-/// Canonical Function Contract v4 schema identity.
-pub const FUNCTION_CONTRACT_SCHEMA: &str = "urn:fortress:schema:v4:function-contracts";
+/// Canonical Function Contract v5 schema identity.
+pub const FUNCTION_CONTRACT_SCHEMA: &str = "urn:fortress:schema:v5:function-contracts";
 /// Canonical Function Contract schema version.
-pub const FUNCTION_CONTRACT_SCHEMA_VERSION: u16 = 4;
+pub const FUNCTION_CONTRACT_SCHEMA_VERSION: u16 = 5;
 /// Backward-compatible Function Contract v3 schema identity.
 pub const LEGACY_FUNCTION_CONTRACT_SCHEMA: &str = "urn:fortress:schema:v3:function-contracts";
 /// Backward-compatible Function Contract schema version.
 pub const LEGACY_FUNCTION_CONTRACT_SCHEMA_VERSION: u16 = 3;
+const REFINED_LEGACY_FUNCTION_CONTRACT_SCHEMA: &str = "urn:fortress:schema:v4:function-contracts";
+const REFINED_LEGACY_FUNCTION_CONTRACT_SCHEMA_VERSION: u16 = 4;
 
 /// One snapshot-bound authored Function Contract source.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -638,6 +643,7 @@ struct FunctionContractDocument {
 pub struct ResolvedFunctionContracts {
     contracts: BTreeMap<String, FunctionContract>,
     source_paths: Vec<String>,
+    legacy_symbol_references: Vec<LegacySymbolReferenceUse>,
     digest: String,
 }
 
@@ -665,6 +671,12 @@ impl ResolvedFunctionContracts {
         self.contracts.len()
     }
 
+    /// Returns exact authored legacy references normalized during loading.
+    #[must_use]
+    pub fn legacy_symbol_references(&self) -> &[LegacySymbolReferenceUse] {
+        &self.legacy_symbol_references
+    }
+
     /// Returns whether no function contract is authored.
     #[must_use]
     pub fn is_empty(&self) -> bool {
@@ -684,17 +696,14 @@ pub fn load_function_contracts(
     mut sources: Vec<FunctionContractSource>,
 ) -> Result<ResolvedFunctionContracts, FunctionContractError> {
     sources.sort_by(|left, right| left.path.cmp(&right.path));
-    let symbols = psm
-        .symbols()
-        .iter()
-        .map(|symbol| (symbol.id(), symbol))
-        .collect::<BTreeMap<_, _>>();
+    let symbol_references = psm.symbol_reference_index();
     let types = psm
         .types()
         .iter()
         .map(|value| (value.id(), value))
         .collect::<BTreeMap<_, _>>();
     let mut contracts = BTreeMap::new();
+    let mut legacy_symbol_references = Vec::new();
     for source in &sources {
         let document: FunctionContractDocument =
             serde_json::from_str(&source.source).map_err(|error| {
@@ -714,13 +723,28 @@ pub fn load_function_contracts(
             return Err(FunctionContractError::NonCanonical(source.path.clone()));
         }
         validate_sorted_unique_contracts(&document, &source.path)?;
-        for contract in document.functions {
-            let symbol = symbols.get(contract.symbol.as_str()).ok_or_else(|| {
-                FunctionContractError::UnknownSymbol {
+        for mut contract in document.functions {
+            let authored_symbol = contract.symbol.clone();
+            let resolution = symbol_references
+                .resolve(&authored_symbol)
+                .map_err(|error| FunctionContractError::AmbiguousSymbolReference {
                     path: source.path.clone(),
-                    symbol: contract.symbol.clone(),
-                }
-            })?;
+                    reference: authored_symbol.clone(),
+                    detail: error.to_string(),
+                })?
+                .ok_or_else(|| FunctionContractError::UnknownSymbol {
+                    path: source.path.clone(),
+                    symbol: authored_symbol.clone(),
+                })?;
+            let symbol = resolution.symbol();
+            if resolution.authority() == SymbolReferenceAuthority::LegacyAlias {
+                legacy_symbol_references.push(LegacySymbolReferenceUse::new(
+                    &source.path,
+                    &authored_symbol,
+                    symbol.id(),
+                ));
+                contract.symbol = symbol.id().into();
+            }
             if symbol.fortress_module() != source.module_id {
                 return Err(FunctionContractError::ForeignSymbol {
                     path: source.path.clone(),
@@ -740,9 +764,12 @@ pub fn load_function_contracts(
     }
     let source_paths = sources.iter().map(|source| source.path.clone()).collect();
     let digest = distributed_digest(&sources);
+    legacy_symbol_references.sort();
+    legacy_symbol_references.dedup();
     Ok(ResolvedFunctionContracts {
         contracts,
         source_paths,
+        legacy_symbol_references,
         digest,
     })
 }
@@ -753,7 +780,7 @@ pub fn load_function_contracts(
 /// # Errors
 ///
 /// Returns [`FunctionContractError`] when `source` is not a Function Contract
-/// v3/v4 JSON document or canonical serialization fails.
+/// v3-v5 JSON document or canonical serialization fails.
 pub fn canonicalize_function_contract_json(
     path: &str,
     source: &str,
@@ -773,6 +800,8 @@ pub fn canonicalize_function_contract_json(
 fn supported_document_schema(document: &FunctionContractDocument) -> bool {
     (document.schema == FUNCTION_CONTRACT_SCHEMA
         && document.schema_version == FUNCTION_CONTRACT_SCHEMA_VERSION)
+        || (document.schema == REFINED_LEGACY_FUNCTION_CONTRACT_SCHEMA
+            && document.schema_version == REFINED_LEGACY_FUNCTION_CONTRACT_SCHEMA_VERSION)
         || (document.schema == LEGACY_FUNCTION_CONTRACT_SCHEMA
             && document.schema_version == LEGACY_FUNCTION_CONTRACT_SCHEMA_VERSION)
 }
@@ -1225,6 +1254,15 @@ pub enum FunctionContractError {
         /// Unknown PSM identity.
         symbol: String,
     },
+    /// A current or legacy reference mapped to multiple symbols.
+    AmbiguousSymbolReference {
+        /// Source path.
+        path: String,
+        /// Authored symbol reference.
+        reference: String,
+        /// Deterministic candidate detail.
+        detail: String,
+    },
     /// A contract targeted a symbol owned by another Module.
     ForeignSymbol {
         /// Source path.
@@ -1296,6 +1334,7 @@ pub enum FunctionContractError {
 }
 
 impl Display for FunctionContractError {
+    #[allow(clippy::too_many_lines)]
     fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
         match self {
             Self::InvalidJson { path, detail } => write!(
@@ -1324,6 +1363,14 @@ impl Display for FunctionContractError {
                     "Function Contract `{path}` targets unknown symbol `{symbol}`"
                 )
             }
+            Self::AmbiguousSymbolReference {
+                path,
+                reference,
+                detail,
+            } => write!(
+                formatter,
+                "Function Contract `{path}` has ambiguous symbol reference `{reference}`: {detail}"
+            ),
             Self::ForeignSymbol {
                 path,
                 symbol,

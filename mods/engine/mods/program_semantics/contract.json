@@ -32,11 +32,16 @@
       "requirements": [
         {
           "id": "AF-PROGRAM-SEMANTICS-0001-R01",
-          "statement": "Program Semantics deterministically derives snapshot-bound Rust executable symbols and language-neutral typed interfaces with exact physical Fortress Module ownership and explicit semantic coverage.",
+          "statement": "Program Semantics deterministically derives snapshot-bound Rust executable symbols and language-neutral typed interfaces with exact physical Fortress Module ownership, explicit semantic coverage, versioned structured symbol identity that excludes incidental source spelling, exact legacy aliases, and stable syntax-local operation-site identity.",
           "tests": [
             "T-AF-PROGRAM-SEMANTICS-0001-R01-001",
             "T-AF-PROGRAM-SEMANTICS-0001-R01-002",
-            "T-AF-PROGRAM-SEMANTICS-0001-R01-003"
+            "T-AF-PROGRAM-SEMANTICS-0001-R01-003",
+            "T-AF-PROGRAM-SEMANTICS-0001-R01-004",
+            "T-AF-PROGRAM-SEMANTICS-0001-R01-005",
+            "T-AF-PROGRAM-SEMANTICS-0001-R01-006",
+            "T-AF-PROGRAM-SEMANTICS-0001-R01-007",
+            "T-AF-PROGRAM-SEMANTICS-0001-R01-008"
           ]
         },
         {

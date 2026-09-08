@@ -7,7 +7,7 @@
   "statement": "Every admissible outcome declared for a governed external or environmental operation MUST have a supported defined continuation consistent with applicable value, state, effect, and information-flow obligations.",
   "rationale": "A happy path cannot establish environmental coherence when rejection, missing or malformed responses, deadline outcomes, duplicate delivery, resource unavailability, or uncertain completion remain legally possible.",
   "failure_prevented": "A declared environmental outcome being silently treated as impossible or reaching an undefined or explicitly forbidden supported program state/effect.",
-  "applicability": "Canonical Environment Contract v1 operations bound to exact PSM v4 symbols and composed with Semantic, State/Effect, and Information Flow Analysis v1. Unknown realization remains explicit rather than PASS.",
+  "applicability": "Canonical Environment Contract v1/v2 operations bound to exact PSM v5 symbols and composed with Semantic, State/Effect, and Information Flow Analysis v1. Unknown realization remains explicit rather than PASS.",
   "category": "environment",
   "integrity_tier": 3,
   "evaluation": "Fortress enumerates every declared outcome independently, resolves its exact continuation through supported PSM call topology, checks supported effects and states, and derives deterministic fault-injection obligations before joining outcomes.",
@@ -15,7 +15,7 @@
     "environment-contract-v1",
     "environmental-analysis-v1",
     "information-flow-analysis-v1",
-    "program-semantic-model-v4",
+    "program-semantic-model-v5",
     "state-effect-analysis-v1"
   ],
   "logic": {

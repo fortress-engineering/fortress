@@ -44,4 +44,8 @@ Defines retained State/Effect Analysis v2 output with a structured effect catalo
 
 ### [`state_effect_schema_v3.json`](../data/state_effect_schema_v3.json)
 
-Defines deterministic State/Effect Analysis v3 output whose direct and transitive causal evidence retains entry-symbol and direct-origin execution provenance.
+Defines retained deterministic State/Effect Analysis v3 output whose direct and transitive causal evidence retains entry-symbol and direct-origin execution provenance.
+
+### [`state_effect_schema_v4.json`](../data/state_effect_schema_v4.json)
+
+Defines current deterministic State/Effect Analysis v4 output whose direct and transitive evidence carries the stable underlying operation-site identity independently of causal paths and source coordinates.

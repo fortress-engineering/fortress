@@ -42,6 +42,8 @@ pub mod finding;
 pub mod finding_governance;
 #[path = "../mods/standard_registry/code/identity.rs"]
 pub mod identity;
+#[path = "../mods/snapshot_governance/code/identity_migration.rs"]
+pub mod identity_migration;
 #[path = "../mods/implementation_observation/code/observation.rs"]
 pub mod implementation_observation;
 #[path = "../mods/information_flow/code/information_flow.rs"]

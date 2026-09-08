@@ -1,9 +1,9 @@
 {
-  "$schema": "urn:fortress:schema:v3:function-contracts",
-  "schema_version": 3,
+  "$schema": "urn:fortress:schema:v5:function-contracts",
+  "schema_version": 5,
   "functions": [
     {
-      "symbol": "rust_symbol:sha256:b9cfa145a8de4c699b3403adebb58ff85d45482548ef12c2a42b0e13d9bdc9f3",
+      "symbol": "rust_symbol:v2:sha256:57656f0678a6dbef6e221e2aeb89042145a8ff86055bfa596d13789b495ad66a",
       "requires": [],
       "ensures": [],
       "state_requires": [],

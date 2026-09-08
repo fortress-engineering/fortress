@@ -30,6 +30,10 @@ Defines the deterministic non-authoritative discovery proposal that separates ob
 
 Declares the live filesystem document-read boundary and its truthful success/failure outcome space for shared environmental handling analysis.
 
+### [`identity_migration_schema_v1.json`](../data/identity_migration_schema_v1.json)
+
+Defines the exact-snapshot, reviewable migration plan for legacy symbol references and semantic finding-governance identities, including occurrence counts and dependency-bound source digests.
+
 ### [`contract_rule.json`](../data/contract_rule.json)
 
 Carries the draft normative rule governing canonical CCG compilation and currently supported logical coherency.

@@ -1,4 +1,4 @@
-//! Distributed Environment Contract v1 loading and validation.
+//! Distributed Environment Contract v1/v2 loading and validation.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
@@ -9,14 +9,19 @@ use sha2::{Digest, Sha256};
 
 use crate::identity::StableId;
 use crate::information_flow::InformationFlowPolicy;
-use crate::program_semantics::{ExecutableSymbol, ProgramSemanticModel};
+use crate::program_semantics::{
+    ExecutableSymbol, LegacySymbolReferenceUse, ProgramSemanticModel, SymbolReferenceAuthority,
+    SymbolReferenceIndex,
+};
 use crate::semantic_analysis::{DomainSpecification, FunctionEffect, resolve_domain};
 use crate::state_effect_analysis::ResolvedStateContracts;
 
-/// Canonical Environment Contract v1 schema identity.
-pub const ENVIRONMENT_CONTRACT_SCHEMA: &str = "urn:fortress:schema:v1:environment-contracts";
+/// Canonical Environment Contract v2 schema identity.
+pub const ENVIRONMENT_CONTRACT_SCHEMA: &str = "urn:fortress:schema:v2:environment-contracts";
 /// Canonical Environment Contract schema version.
-pub const ENVIRONMENT_CONTRACT_SCHEMA_VERSION: u16 = 1;
+pub const ENVIRONMENT_CONTRACT_SCHEMA_VERSION: u16 = 2;
+const LEGACY_ENVIRONMENT_CONTRACT_SCHEMA: &str = "urn:fortress:schema:v1:environment-contracts";
+const LEGACY_ENVIRONMENT_CONTRACT_SCHEMA_VERSION: u16 = 1;
 
 /// One snapshot-bound Environment Contract source and its declared Module owner.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -521,6 +526,7 @@ pub struct ResolvedEnvironmentContracts {
     operations: Vec<EnvironmentOperation>,
     operation_sources: BTreeMap<String, String>,
     operation_modules: BTreeMap<String, String>,
+    legacy_symbol_references: Vec<LegacySymbolReferenceUse>,
     digest: String,
 }
 
@@ -548,6 +554,12 @@ impl ResolvedEnvironmentContracts {
     pub fn digest(&self) -> &str {
         &self.digest
     }
+
+    /// Returns exact authored legacy symbol references normalized during loading.
+    #[must_use]
+    pub fn legacy_symbol_references(&self) -> &[LegacySymbolReferenceUse] {
+        &self.legacy_symbol_references
+    }
 }
 
 /// Loads and validates distributed Environment Contract v1 authority.
@@ -570,6 +582,7 @@ pub fn load_environment_contracts(
         .iter()
         .map(|symbol| (symbol.id(), symbol))
         .collect::<BTreeMap<_, _>>();
+    let symbol_references = psm.symbol_reference_index();
     let types = psm
         .types()
         .iter()
@@ -579,6 +592,7 @@ pub fn load_environment_contracts(
     let mut operation_sources = BTreeMap::new();
     let mut operation_modules = BTreeMap::new();
     let mut outcome_ids = BTreeSet::new();
+    let mut legacy_symbol_references = Vec::new();
     for source in &sources {
         let document: EnvironmentContractDocument =
             serde_json::from_str(&source.source).map_err(|error| {
@@ -587,8 +601,10 @@ pub fn load_environment_contracts(
                     detail: error.to_string(),
                 }
             })?;
-        if document.schema != ENVIRONMENT_CONTRACT_SCHEMA
-            || document.schema_version != ENVIRONMENT_CONTRACT_SCHEMA_VERSION
+        if !((document.schema == ENVIRONMENT_CONTRACT_SCHEMA
+            && document.schema_version == ENVIRONMENT_CONTRACT_SCHEMA_VERSION)
+            || (document.schema == LEGACY_ENVIRONMENT_CONTRACT_SCHEMA
+                && document.schema_version == LEGACY_ENVIRONMENT_CONTRACT_SCHEMA_VERSION))
         {
             return Err(EnvironmentContractError::UnsupportedSchema(
                 source.path.clone(),
@@ -598,7 +614,13 @@ pub fn load_environment_contracts(
             return Err(EnvironmentContractError::NonCanonical(source.path.clone()));
         }
         validate_order(&document, &source.path)?;
-        for operation in document.operations {
+        for mut operation in document.operations {
+            normalize_environment_symbol_references(
+                &mut operation,
+                &source.path,
+                &symbol_references,
+                &mut legacy_symbol_references,
+            )?;
             validate_identity(&operation.id, "operation")?;
             if operation.actor.trim().is_empty() {
                 return Err(EnvironmentContractError::EmptyActor(operation.id));
@@ -726,12 +748,62 @@ pub fn load_environment_contracts(
         }
     }
     operations.sort_by(|left, right| left.id.cmp(&right.id));
+    legacy_symbol_references.sort();
+    legacy_symbol_references.dedup();
     Ok(ResolvedEnvironmentContracts {
         operations,
         operation_sources,
         operation_modules,
+        legacy_symbol_references,
         digest: distributed_digest(&sources),
     })
+}
+
+fn normalize_environment_symbol_references(
+    operation: &mut EnvironmentOperation,
+    path: &str,
+    references: &SymbolReferenceIndex<'_>,
+    legacy_uses: &mut Vec<LegacySymbolReferenceUse>,
+) -> Result<(), EnvironmentContractError> {
+    normalize_symbol_reference(&mut operation.boundary, path, references, legacy_uses)?;
+    if let Some(recovery) = &mut operation.recovery {
+        normalize_symbol_reference(&mut recovery.handler, path, references, legacy_uses)?;
+    }
+    for outcome in &mut operation.outcomes {
+        if let Some(handling) = &mut outcome.handling {
+            normalize_symbol_reference(&mut handling.continuation, path, references, legacy_uses)?;
+        }
+    }
+    Ok(())
+}
+
+fn normalize_symbol_reference(
+    reference: &mut String,
+    path: &str,
+    references: &SymbolReferenceIndex<'_>,
+    legacy_uses: &mut Vec<LegacySymbolReferenceUse>,
+) -> Result<(), EnvironmentContractError> {
+    let authored = reference.clone();
+    let resolution = references
+        .resolve(&authored)
+        .map_err(|error| EnvironmentContractError::AmbiguousSymbolReference {
+            path: path.into(),
+            reference: authored.clone(),
+            detail: error.to_string(),
+        })?
+        .ok_or_else(|| EnvironmentContractError::UnknownSymbol {
+            path: path.into(),
+            symbol: authored.clone(),
+        })?;
+    if resolution.authority() == SymbolReferenceAuthority::LegacyAlias {
+        *reference = resolution.symbol().id().into();
+        legacy_uses.push(LegacySymbolReferenceUse::new(
+            path,
+            authored,
+            reference.clone(),
+        ));
+    }
+    Ok(())
 }
 
 fn validate_identity(value: &str, kind: &'static str) -> Result<(), EnvironmentContractError> {
@@ -981,6 +1053,15 @@ pub enum EnvironmentContractError {
         /// Missing PSM symbol.
         symbol: String,
     },
+    /// A current or legacy symbol reference is not unique in the snapshot.
+    AmbiguousSymbolReference {
+        /// Contract path.
+        path: String,
+        /// Authored reference.
+        reference: String,
+        /// Deterministic ambiguity detail.
+        detail: String,
+    },
     /// A Module authored semantics for a foreign symbol.
     ForeignSymbol {
         /// Contract path.
@@ -1138,6 +1219,14 @@ impl Display for EnvironmentContractError {
             Self::UnknownSymbol { path, symbol } => write!(
                 formatter,
                 "Environment Contract `{path}` references unknown symbol `{symbol}`"
+            ),
+            Self::AmbiguousSymbolReference {
+                path,
+                reference,
+                detail,
+            } => write!(
+                formatter,
+                "Environment Contract `{path}` has ambiguous symbol reference `{reference}`: {detail}"
             ),
             Self::ForeignSymbol {
                 path,

@@ -34,10 +34,18 @@ Defines backward-compatible Function Contract v3 documents and the legacy closed
 
 Defines strict distributed Function Contract v4 documents, supported authored domain forms, state obligations, refined effect policies, and project-facet information-flow declarations.
 
+### [`function_contract_schema_v5.json`](../data/function_contract_schema_v5.json)
+
+Defines current distributed Function Contract v5 documents over versioned semantic symbol identities while preserving the v4 declaration vocabulary.
+
 ### [`program_domain_rule.json`](../data/program_domain_rule.json)
 
 Defines PROGRAM-DOMAIN-001 and the precise supported contradictions that become normative findings.
 
 ### [`semantic_analysis_schema_v1.json`](../data/semantic_analysis_schema_v1.json)
 
-Defines the canonical derived Semantic Analysis v1 document envelope.
+Defines the retained derived Semantic Analysis v1 document envelope.
+
+### [`semantic_analysis_schema_v2.json`](../data/semantic_analysis_schema_v2.json)
+
+Defines the current deterministic Semantic Analysis projection and records exact legacy symbol-reference uses separately from canonical target identities.

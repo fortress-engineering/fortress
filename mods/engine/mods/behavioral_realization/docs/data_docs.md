@@ -28,7 +28,11 @@ Defines BEHAVIOR-BYPASS-001 supported dominator-passage obligations.
 
 ### [`realization_contract_schema_v1.json`](../data/realization_contract_schema_v1.json)
 
-Defines canonical distributed Behavior Realization Contracts v1.
+Defines retained distributed Behavior Realization Contracts v1 whose exact-snapshot legacy symbol references remain eligible for explicit migration.
+
+### [`realization_contract_schema_v2.json`](../data/realization_contract_schema_v2.json)
+
+Defines canonical distributed Behavior Realization Contracts v2 over current versioned semantic symbol identities.
 
 ### [`behavior_realization_rule.json`](../data/behavior_realization_rule.json)
 

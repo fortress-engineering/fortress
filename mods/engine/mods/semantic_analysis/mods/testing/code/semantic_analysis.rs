@@ -56,8 +56,8 @@ fn symbol_id(psm: &fortress_core::program_semantics::ProgramSemanticModel, suffi
 fn contract_source(module: &str, mut functions: Vec<Value>) -> FunctionContractSource {
     functions.sort_by(|left, right| left["symbol"].as_str().cmp(&right["symbol"].as_str()));
     let mut source = serde_json::to_string_pretty(&json!({
-        "$schema": "urn:fortress:schema:v3:function-contracts",
-        "schema_version": 3,
+        "$schema": "urn:fortress:schema:v5:function-contracts",
+        "schema_version": 5,
         "functions": functions
     }))
     .expect("contract fixture serializes");
@@ -265,6 +265,61 @@ fn function_contracts_reject_unknown_foreign_and_invalid_domains() {
         load_function_contracts(&model, vec![unknown]),
         Err(FunctionContractError::UnknownSymbol { .. })
     ));
+}
+
+/// `T-AF-SEMANTIC-ANALYSIS-0001-R01-004`
+/// Fortress requirement: AF-SEMANTIC-ANALYSIS-0001-R01
+#[test]
+fn function_contracts_survive_parameter_renames_and_report_legacy_alias_use() {
+    let before = psm("pub fn bounded(value: u8) -> u8 { value }\n");
+    let after = psm("pub fn bounded(renamed: u8) -> u8 { renamed }\n");
+    let before_id = symbol_id(&before, "bounded");
+    let after_id = symbol_id(&after, "bounded");
+    assert_eq!(before_id, after_id);
+    let source = contract_source(
+        "AF-SAMPLE-0001",
+        vec![function_contract(&before_id, Vec::new(), Vec::new())],
+    );
+    let resolved = load_function_contracts(&after, vec![source]).expect("current target survives");
+    assert!(resolved.get(&after_id).is_some());
+    assert!(resolved.legacy_symbol_references().is_empty());
+
+    let legacy = after
+        .symbols()
+        .iter()
+        .find(|symbol| symbol.id() == after_id)
+        .unwrap()
+        .legacy_ids()[0]
+        .clone();
+    let mut legacy_source = serde_json::to_string_pretty(&json!({
+        "$schema": "urn:fortress:schema:v4:function-contracts",
+        "schema_version": 4,
+        "functions": [function_contract(&legacy, Vec::new(), Vec::new())]
+    }))
+    .unwrap();
+    legacy_source.push('\n');
+    legacy_source = canonicalize_function_contract_json(
+        "mods/sample/data/function_contracts.json",
+        &legacy_source,
+    )
+    .unwrap();
+    let legacy_source = FunctionContractSource::new(
+        "AF-SAMPLE-0001",
+        "mods/sample/data/function_contracts.json",
+        legacy_source,
+    );
+    let resolved =
+        load_function_contracts(&after, vec![legacy_source]).expect("legacy alias resolves");
+    assert!(resolved.get(&after_id).is_some());
+    assert_eq!(resolved.legacy_symbol_references().len(), 1);
+    assert_eq!(
+        resolved.legacy_symbol_references()[0].authored_reference(),
+        legacy
+    );
+    assert_eq!(
+        resolved.legacy_symbol_references()[0].canonical_reference(),
+        after_id
+    );
 }
 
 /// `T-AF-SEMANTIC-ANALYSIS-0001-R02-001`

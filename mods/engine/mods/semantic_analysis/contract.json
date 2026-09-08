@@ -32,11 +32,12 @@
       "requirements": [
         {
           "id": "AF-SEMANTIC-ANALYSIS-0001-R01",
-          "statement": "Semantic Analysis validates canonical distributed Function Contract v3/v4 value-domain authority against exact PSM symbol ownership, static interfaces, and deterministic semantic value domains while leaving state/effect and information-flow obligations to their owning analyzers.",
+          "statement": "Semantic Analysis validates canonical distributed Function Contract v3/v4/v5 value-domain authority against exact PSM symbol ownership, static interfaces, and deterministic semantic value domains, normalizes only unambiguous exact-snapshot legacy symbol aliases to current identity with explicit use evidence, and leaves state/effect and information-flow obligations to their owning analyzers.",
           "tests": [
             "T-AF-SEMANTIC-ANALYSIS-0001-R01-001",
             "T-AF-SEMANTIC-ANALYSIS-0001-R01-002",
-            "T-AF-SEMANTIC-ANALYSIS-0001-R01-003"
+            "T-AF-SEMANTIC-ANALYSIS-0001-R01-003",
+            "T-AF-SEMANTIC-ANALYSIS-0001-R01-004"
           ]
         },
         {

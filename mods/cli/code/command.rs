@@ -150,6 +150,13 @@ const BUILTIN_COMMANDS: &[CommandDescriptor] = &[
         usage: "fortress references [path] [--format json] [--output path] [--move Module-ID --to Parent-Module-ID]",
     },
     CommandDescriptor {
+        id: "CMD-IDENTITY-MIGRATION",
+        name: "migrate-identities",
+        aliases: &[],
+        description: "Preview or explicitly apply unambiguous legacy semantic identity migrations.",
+        usage: "fortress migrate-identities [path] [--apply] [--format human|json]",
+    },
+    CommandDescriptor {
         id: "CMD-SOURCE-ARTIFACT-MODEL",
         name: "source-artifacts",
         aliases: &[],

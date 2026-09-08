@@ -31,6 +31,9 @@ use fortress_core::bootstrap::{
 use fortress_core::certification::{CertificationStatus, RustSuiteExecution};
 use fortress_core::contract_coherency::CcgCoherencyStatus;
 use fortress_core::finding_governance::{FINDING_GOVERNANCE_PATH, FindingGovernanceDocument};
+use fortress_core::identity_migration::{
+    apply_repository_identity_migration, plan_repository_identity_migration,
+};
 pub mod command;
 mod presentation;
 
@@ -123,6 +126,7 @@ where
         "CMD-INFORMATION-FLOW" => run_information_flow(&arguments[1..], output, error),
         "CMD-ENVIRONMENTAL-ANALYSIS" => run_environmental(&arguments[1..], output, error),
         "CMD-REFERENCE-RESOLUTION" => run_references(&arguments[1..], output, error),
+        "CMD-IDENTITY-MIGRATION" => run_identity_migration(&arguments[1..], output, error),
         "CMD-SOURCE-ARTIFACT-MODEL" => run_source_artifacts(&arguments[1..], output, error),
         "CMD-CERTIFICATION-FULL-SNAPSHOT" => run_certify(&arguments[1..], output, error),
         _ => {
@@ -134,6 +138,91 @@ where
             Ok(EXIT_USAGE)
         }
     }
+}
+
+fn run_identity_migration<O: Write, E: Write>(
+    arguments: &[String],
+    output: &mut O,
+    error: &mut E,
+) -> io::Result<u8> {
+    const USAGE: &str = "usage: fortress migrate-identities [path] [--apply] [--format human|json]";
+    let mut root = None;
+    let mut apply = false;
+    let mut format = "human";
+    let mut index = 0;
+    while index < arguments.len() {
+        let argument = &arguments[index];
+        if argument == "--apply" {
+            if apply {
+                writeln!(error, "{USAGE}")?;
+                return Ok(EXIT_USAGE);
+            }
+            apply = true;
+        } else if argument == "--format" {
+            index += 1;
+            format = match arguments.get(index).map(String::as_str) {
+                Some("human") => "human",
+                Some("json") => "json",
+                _ => {
+                    writeln!(error, "{USAGE}")?;
+                    return Ok(EXIT_USAGE);
+                }
+            };
+        } else if let Some(value) = argument.strip_prefix("--format=") {
+            format = match value {
+                "human" => "human",
+                "json" => "json",
+                _ => {
+                    writeln!(error, "{USAGE}")?;
+                    return Ok(EXIT_USAGE);
+                }
+            };
+        } else if argument.starts_with('-') || root.is_some() {
+            writeln!(error, "{USAGE}")?;
+            return Ok(EXIT_USAGE);
+        } else {
+            root = Some(PathBuf::from(argument));
+        }
+        index += 1;
+    }
+    let root = root.unwrap_or_else(|| PathBuf::from("."));
+    let plan = match plan_repository_identity_migration(&root) {
+        Ok(plan) => plan,
+        Err(migration_error) => {
+            writeln!(
+                error,
+                "identity migration planning failed: {migration_error}"
+            )?;
+            return Ok(EXIT_USAGE);
+        }
+    };
+    if apply {
+        let application = match apply_repository_identity_migration(&root, &plan) {
+            Ok(application) => application,
+            Err(migration_error) => {
+                writeln!(error, "identity migration failed: {migration_error}")?;
+                return Ok(EXIT_USAGE);
+            }
+        };
+        if format == "json" {
+            write!(
+                output,
+                "{}",
+                application.to_canonical_json().map_err(io::Error::other)?
+            )?;
+        } else {
+            write!(output, "{}", application.to_human())?;
+        }
+    } else if format == "json" {
+        write!(
+            output,
+            "{}",
+            plan.to_canonical_json().map_err(io::Error::other)?
+        )?;
+    } else {
+        write!(output, "{}", plan.to_human())?;
+    }
+    Ok(EXIT_SUCCESS)
 }
 
 fn run_affected<O: Write, E: Write>(
