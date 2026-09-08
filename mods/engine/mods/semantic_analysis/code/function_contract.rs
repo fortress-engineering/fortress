@@ -29,7 +29,7 @@ pub struct FunctionContractSource {
 }
 
 impl FunctionContractSource {
-    /// Creates one source attributed to its physical Module owner.
+    /// Creates one source attributed to its resolved declared Module owner.
     #[must_use]
     pub fn new(
         module_id: impl Into<String>,
@@ -376,9 +376,9 @@ impl InformationFlowSource {
 pub struct InformationFlowRequirement {
     target: InformationFlowTarget,
     facet: String,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     minimum: Option<String>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     maximum: Option<String>,
 }
 

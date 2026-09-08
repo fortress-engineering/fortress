@@ -94,6 +94,50 @@ fn analyze(
     analyze_program_domains(psm, contracts, "1.0.0-draft.1").expect("semantic analysis completes")
 }
 
+/// `T-FUNCTION-CONTRACT-INFORMATION-FLOW-ROUNDTRIP-001`
+/// Fortress classification: infrastructure
+#[test]
+fn exclusive_information_flow_bounds_round_trip_without_null_counterparts() {
+    let source = r#"{
+  "$schema": "urn:fortress:schema:v4:function-contracts",
+  "schema_version": 4,
+  "functions": [
+    {
+      "symbol": "rust_symbol:sha256:fixture",
+      "requires": [],
+      "ensures": [],
+      "state_requires": [],
+      "state_ensures": [],
+      "effects": null,
+      "information_flow": {
+        "sources": [],
+        "requires": [
+          {
+            "target": {
+              "kind": "return"
+            },
+            "facet": "FLOW-CONFIDENTIALITY",
+            "minimum": "PUBLIC"
+          }
+        ],
+        "ensures": [],
+        "transforms": []
+      }
+    }
+  ]
+}
+"#;
+    let canonical = canonicalize_function_contract_json("function_contracts.json", source)
+        .expect("exclusive minimum canonicalizes");
+    assert!(canonical.contains("\"minimum\": \"PUBLIC\""));
+    assert!(!canonical.contains("\"maximum\""));
+    assert_eq!(
+        canonicalize_function_contract_json("function_contracts.json", &canonical)
+            .expect("canonical contract repeats"),
+        canonical
+    );
+}
+
 /// `T-AF-SEMANTIC-ANALYSIS-0001-R01-001`
 /// Fortress requirement: AF-SEMANTIC-ANALYSIS-0001-R01
 #[test]

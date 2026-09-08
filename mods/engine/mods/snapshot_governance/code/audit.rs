@@ -73,7 +73,7 @@ use crate::program_semantics::{
     ProgramSemanticError, ProgramSemanticInput, ProgramSemanticModel,
     compile_program_semantic_model,
 };
-use crate::project::{ProjectConfiguration, ProjectConfigurationLoadError};
+use crate::project::{ProjectConfiguration, ProjectConfigurationLoadError, SourcePathBindingKind};
 use crate::reference_resolution::{
     ReferenceResolutionError, ReferenceResolutionEvaluation, evaluate_reference_resolution,
 };
@@ -2769,58 +2769,24 @@ fn behavior_realization_contract_sources(
     ccg: &ContractCoherencyGraph,
     files: &BTreeMap<String, Vec<u8>>,
 ) -> Result<Vec<BehaviorRealizationContractSource>, AuditError> {
-    files
-        .iter()
-        .filter(|(path, _)| {
-            path.as_str() == "data/behavior_realization_contracts.json"
-                || path.ends_with("/data/behavior_realization_contracts.json")
-        })
-        .map(|(path, bytes)| {
-            let owner = ccg
-                .module_paths()
-                .iter()
-                .filter(|(_, module_path)| {
-                    module_path.is_empty() || path.starts_with(&format!("{module_path}/"))
-                })
-                .max_by_key(|(_, module_path)| module_path.len())
-                .map(|(id, _)| id.clone())
-                .ok_or_else(|| {
-                    AuditError::ContractState(format!("no Module owns '{path}'").into())
-                })?;
-            let source =
-                std::str::from_utf8(bytes).map_err(|_| AuditError::NonUtf8(path.clone().into()))?;
-            Ok(BehaviorRealizationContractSource::new(owner, path, source))
-        })
-        .collect()
+    distributed_contract_sources(
+        ccg,
+        files,
+        "behavior_realization_contracts.json",
+        BehaviorRealizationContractSource::new,
+    )
 }
 
 fn environment_contract_sources(
     ccg: &ContractCoherencyGraph,
     files: &BTreeMap<String, Vec<u8>>,
 ) -> Result<Vec<EnvironmentContractSource>, AuditError> {
-    files
-        .iter()
-        .filter(|(path, _)| {
-            path.as_str() == "data/environment_contracts.json"
-                || path.ends_with("/data/environment_contracts.json")
-        })
-        .map(|(path, bytes)| {
-            let owner = ccg
-                .module_paths()
-                .iter()
-                .filter(|(_, module_path)| {
-                    module_path.is_empty() || path.starts_with(&format!("{module_path}/"))
-                })
-                .max_by_key(|(_, module_path)| module_path.len())
-                .map(|(id, _)| id.clone())
-                .ok_or_else(|| {
-                    AuditError::ContractState(format!("no Module owns `{path}`").into())
-                })?;
-            let source =
-                std::str::from_utf8(bytes).map_err(|_| AuditError::NonUtf8(path.clone().into()))?;
-            Ok(EnvironmentContractSource::new(owner, path, source))
-        })
-        .collect()
+    distributed_contract_sources(
+        ccg,
+        files,
+        "environment_contracts.json",
+        EnvironmentContractSource::new,
+    )
 }
 
 fn information_flow_policy_sources(
@@ -2841,56 +2807,44 @@ fn function_contract_sources(
     ccg: &ContractCoherencyGraph,
     files: &BTreeMap<String, Vec<u8>>,
 ) -> Result<Vec<FunctionContractSource>, AuditError> {
-    files
-        .iter()
-        .filter(|(path, _)| {
-            path.as_str() == "data/function_contracts.json"
-                || path.ends_with("/data/function_contracts.json")
-        })
-        .map(|(path, bytes)| {
-            let owner = ccg
-                .module_paths()
-                .iter()
-                .filter(|(_, module_path)| {
-                    module_path.is_empty() || path.starts_with(&format!("{module_path}/"))
-                })
-                .max_by_key(|(_, module_path)| module_path.len())
-                .map(|(id, _)| id.clone())
-                .ok_or_else(|| {
-                    AuditError::ContractState(format!("no Module owns `{path}`").into())
-                })?;
-            let source =
-                std::str::from_utf8(bytes).map_err(|_| AuditError::NonUtf8(path.clone().into()))?;
-            Ok(FunctionContractSource::new(owner, path, source))
-        })
-        .collect()
+    distributed_contract_sources(
+        ccg,
+        files,
+        "function_contracts.json",
+        FunctionContractSource::new,
+    )
 }
 
 fn state_contract_sources(
     ccg: &ContractCoherencyGraph,
     files: &BTreeMap<String, Vec<u8>>,
 ) -> Result<Vec<StateContractSource>, AuditError> {
-    files
-        .iter()
-        .filter(|(path, _)| {
-            path.as_str() == "data/state_contracts.json"
-                || path.ends_with("/data/state_contracts.json")
-        })
-        .map(|(path, bytes)| {
-            let owner = ccg
-                .module_paths()
-                .iter()
-                .filter(|(_, module_path)| {
-                    module_path.is_empty() || path.starts_with(&format!("{module_path}/"))
-                })
-                .max_by_key(|(_, module_path)| module_path.len())
-                .map(|(id, _)| id.clone())
-                .ok_or_else(|| {
-                    AuditError::ContractState(format!("no Module owns `{path}`").into())
-                })?;
-            let source =
-                std::str::from_utf8(bytes).map_err(|_| AuditError::NonUtf8(path.clone().into()))?;
-            Ok(StateContractSource::new(owner, path, source))
+    distributed_contract_sources(ccg, files, "state_contracts.json", StateContractSource::new)
+}
+
+fn distributed_contract_sources<T>(
+    ccg: &ContractCoherencyGraph,
+    files: &BTreeMap<String, Vec<u8>>,
+    file_name: &str,
+    source: impl Fn(String, String, String) -> T,
+) -> Result<Vec<T>, AuditError> {
+    ccg.governance_territories()
+        .discover(files.keys().map(String::as_str), file_name)
+        .map_err(|error| AuditError::ContractState(error.to_string().into()))?
+        .into_iter()
+        .map(|ownership| {
+            let bytes = files.get(ownership.path()).ok_or_else(|| {
+                AuditError::ContractState(
+                    format!("distributed contract `{}` disappeared", ownership.path()).into(),
+                )
+            })?;
+            let contents = std::str::from_utf8(bytes)
+                .map_err(|_| AuditError::NonUtf8(ownership.path().into()))?;
+            Ok(source(
+                ownership.module().into(),
+                ownership.path().into(),
+                contents.into(),
+            ))
         })
         .collect()
 }
@@ -3957,7 +3911,16 @@ fn logical_contract_sources(project: &ProjectConfiguration) -> Vec<LogicalModule
         .logical_modules()
         .iter()
         .map(|module| {
-            LogicalModuleContractSource::new(module.module(), module.contract(), module.parent())
+            LogicalModuleContractSource::with_directory_bindings(
+                module.module(),
+                module.contract(),
+                module.parent(),
+                module
+                    .bindings()
+                    .iter()
+                    .filter(|binding| binding.kind() == SourcePathBindingKind::Directory)
+                    .map(crate::project::SourcePathBinding::path),
+            )
         })
         .collect()
 }

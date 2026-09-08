@@ -1078,6 +1078,7 @@ pub struct LogicalModuleContractSource {
     module: String,
     contract_path: String,
     parent: String,
+    directory_bindings: Vec<String>,
 }
 
 impl LogicalModuleContractSource {
@@ -1092,6 +1093,29 @@ impl LogicalModuleContractSource {
             module: module.into(),
             contract_path: contract_path.into(),
             parent: parent.into(),
+            directory_bindings: Vec::new(),
+        }
+    }
+
+    /// Creates one logical contract source with its authored directory territories.
+    #[must_use]
+    pub fn with_directory_bindings(
+        module: impl Into<String>,
+        contract_path: impl Into<String>,
+        parent: impl Into<String>,
+        directory_bindings: impl IntoIterator<Item = impl Into<String>>,
+    ) -> Self {
+        let mut directory_bindings = directory_bindings
+            .into_iter()
+            .map(Into::into)
+            .collect::<Vec<_>>();
+        directory_bindings.sort();
+        directory_bindings.dedup();
+        Self {
+            module: module.into(),
+            contract_path: contract_path.into(),
+            parent: parent.into(),
+            directory_bindings,
         }
     }
 
@@ -1112,7 +1136,279 @@ impl LogicalModuleContractSource {
     pub fn parent(&self) -> &str {
         &self.parent
     }
+
+    /// Returns directory bindings that can host distributed contract authority.
+    #[must_use]
+    pub fn directory_bindings(&self) -> &[String] {
+        &self.directory_bindings
+    }
 }
+
+/// Authority that establishes one authored distributed-contract territory.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub enum GovernanceTerritoryAuthority {
+    /// Canonical physical Module containment.
+    PhysicalModule,
+    /// Explicit logical Module directory binding.
+    LogicalDirectoryBinding,
+}
+
+/// One indexed repository-relative territory for authored distributed contracts.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub struct GovernanceTerritory {
+    module: String,
+    path: String,
+    authority: GovernanceTerritoryAuthority,
+}
+
+impl GovernanceTerritory {
+    /// Returns the stable declared Module identity.
+    #[must_use]
+    pub fn module(&self) -> &str {
+        &self.module
+    }
+
+    /// Returns the canonical repository-relative territory root.
+    #[must_use]
+    pub fn path(&self) -> &str {
+        &self.path
+    }
+
+    /// Returns the authored authority establishing the territory.
+    #[must_use]
+    pub const fn authority(&self) -> GovernanceTerritoryAuthority {
+        self.authority
+    }
+}
+
+/// Resolved owner and location of one distributed contract source.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub struct DistributedContractOwnership {
+    module: String,
+    path: String,
+}
+
+impl DistributedContractOwnership {
+    /// Returns the stable owning Module identity.
+    #[must_use]
+    pub fn module(&self) -> &str {
+        &self.module
+    }
+
+    /// Returns the canonical repository-relative contract path.
+    #[must_use]
+    pub fn path(&self) -> &str {
+        &self.path
+    }
+}
+
+/// One deterministic distributed-contract territory resolution failure.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum GovernanceTerritoryError {
+    /// A physical and logical claim assign the same territory to different Modules.
+    ConflictingTerritory {
+        /// Canonical conflicting territory.
+        path: String,
+        /// Stable competing Module identities.
+        modules: Vec<String>,
+    },
+    /// A contract path is not a canonical recognized distributed-contract location.
+    InvalidContractPath(String),
+    /// A territory path is absolute, escaping, or otherwise noncanonical.
+    InvalidTerritory(String),
+    /// No authored Module directory territory owns the contract location.
+    UnownedContract(String),
+    /// Equal-specificity authored territories leave ownership ambiguous.
+    AmbiguousContract {
+        /// Canonical distributed contract path.
+        path: String,
+        /// Stable competing Module identities.
+        modules: Vec<String>,
+    },
+}
+
+impl Display for GovernanceTerritoryError {
+    fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::ConflictingTerritory { path, modules } => write!(
+                formatter,
+                "distributed contract territory `{path}` is assigned with equal authority to Modules {}",
+                modules.join(", ")
+            ),
+            Self::InvalidContractPath(path) => write!(
+                formatter,
+                "distributed contract path `{path}` is not a canonical recognized `data` location"
+            ),
+            Self::InvalidTerritory(path) => write!(
+                formatter,
+                "distributed contract territory `{path}` is not canonical and repository-relative"
+            ),
+            Self::UnownedContract(path) => write!(
+                formatter,
+                "no declared Module directory territory owns distributed contract `{path}`"
+            ),
+            Self::AmbiguousContract { path, modules } => write!(
+                formatter,
+                "distributed contract `{path}` has equal-specificity Module territories {}",
+                modules.join(", ")
+            ),
+        }
+    }
+}
+
+impl Error for GovernanceTerritoryError {}
+
+/// Prepared canonical ownership index shared by every distributed-contract loader.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct GovernanceTerritoryResolver {
+    territories: Vec<GovernanceTerritory>,
+    by_path: BTreeMap<String, GovernanceTerritory>,
+}
+
+impl GovernanceTerritoryResolver {
+    /// Builds one deterministic index from physical Modules and logical bindings.
+    ///
+    /// # Errors
+    ///
+    /// Rejects equal territory paths assigned to different Module identities.
+    pub fn new(
+        physical: impl IntoIterator<Item = (String, String)>,
+        logical: &[LogicalModuleContractSource],
+    ) -> Result<Self, GovernanceTerritoryError> {
+        let mut territories = physical
+            .into_iter()
+            .map(|(module, path)| GovernanceTerritory {
+                module,
+                path,
+                authority: GovernanceTerritoryAuthority::PhysicalModule,
+            })
+            .chain(logical.iter().flat_map(|source| {
+                source
+                    .directory_bindings()
+                    .iter()
+                    .map(|path| GovernanceTerritory {
+                        module: source.module().into(),
+                        path: path.clone(),
+                        authority: GovernanceTerritoryAuthority::LogicalDirectoryBinding,
+                    })
+            }))
+            .collect::<Vec<_>>();
+        if let Some(invalid) = territories.iter().find(|territory| {
+            (territory.path.is_empty()
+                && territory.authority != GovernanceTerritoryAuthority::PhysicalModule)
+                || (!territory.path.is_empty() && !is_canonical_relative_path(&territory.path))
+        }) {
+            return Err(GovernanceTerritoryError::InvalidTerritory(
+                invalid.path.clone(),
+            ));
+        }
+        territories.sort();
+        territories.dedup();
+        for claims in territories.chunk_by(|left, right| left.path == right.path) {
+            let modules = claims
+                .iter()
+                .map(|claim| claim.module.clone())
+                .collect::<BTreeSet<_>>();
+            if modules.len() > 1 {
+                return Err(GovernanceTerritoryError::ConflictingTerritory {
+                    path: claims[0].path.clone(),
+                    modules: modules.into_iter().collect(),
+                });
+            }
+        }
+        territories.sort_by(|left, right| {
+            right
+                .path
+                .len()
+                .cmp(&left.path.len())
+                .then_with(|| left.path.cmp(&right.path))
+                .then_with(|| left.module.cmp(&right.module))
+                .then_with(|| left.authority.cmp(&right.authority))
+        });
+        let by_path = territories
+            .iter()
+            .map(|territory| (territory.path.clone(), territory.clone()))
+            .collect();
+        Ok(Self {
+            territories,
+            by_path,
+        })
+    }
+
+    /// Returns all physical and logical directory territories in resolution order.
+    #[must_use]
+    pub fn territories(&self) -> &[GovernanceTerritory] {
+        &self.territories
+    }
+
+    /// Resolves one recognized repository-relative distributed contract path.
+    ///
+    /// # Errors
+    ///
+    /// Rejects noncanonical/unrecognized locations, unowned locations, and
+    /// equal-specificity competing authored territories.
+    pub fn resolve(&self, path: &str) -> Result<&str, GovernanceTerritoryError> {
+        let territory_root = distributed_contract_territory_root(path)
+            .ok_or_else(|| GovernanceTerritoryError::InvalidContractPath(path.into()))?;
+        let mut candidate_path = Some(territory_root);
+        while let Some(candidate) = candidate_path {
+            if let Some(territory) = self.by_path.get(candidate)
+                && (candidate == territory_root
+                    || territory.authority == GovernanceTerritoryAuthority::LogicalDirectoryBinding)
+            {
+                return Ok(&territory.module);
+            }
+            candidate_path = if candidate.is_empty() {
+                None
+            } else {
+                Some(parent_path(candidate))
+            };
+        }
+        Err(GovernanceTerritoryError::UnownedContract(path.into()))
+    }
+
+    /// Resolves every observed source of one recognized distributed-contract family.
+    ///
+    /// # Errors
+    ///
+    /// Returns the first canonical ownership error in repository path order.
+    pub fn discover<'a>(
+        &self,
+        paths: impl IntoIterator<Item = &'a str>,
+        file_name: &str,
+    ) -> Result<Vec<DistributedContractOwnership>, GovernanceTerritoryError> {
+        if !DISTRIBUTED_CONTRACT_FILE_NAMES.contains(&file_name) {
+            return Err(GovernanceTerritoryError::InvalidContractPath(
+                file_name.into(),
+            ));
+        }
+        let root_path = format!("data/{file_name}");
+        let suffix = format!("/{root_path}");
+        let mut paths = paths
+            .into_iter()
+            .filter(|path| *path == root_path || path.ends_with(&suffix))
+            .collect::<Vec<_>>();
+        paths.sort_unstable();
+        paths.dedup();
+        paths
+            .into_iter()
+            .map(|path| {
+                self.resolve(path)
+                    .map(|module| DistributedContractOwnership {
+                        module: module.into(),
+                        path: path.into(),
+                    })
+            })
+            .collect()
+    }
+}
+
+const DISTRIBUTED_CONTRACT_FILE_NAMES: &[&str] = &[
+    "behavior_realization_contracts.json",
+    "environment_contracts.json",
+    "function_contracts.json",
+    "state_contracts.json",
+];
 
 /// Compiles physical and explicitly indexed logical Module Contracts into one
 /// semantic CCG identity space.
@@ -1224,6 +1520,7 @@ impl Display for CcgViolation {
 pub struct ContractCoherencyGraph {
     modules: BTreeMap<String, ResolvedModule>,
     module_paths: BTreeMap<String, String>,
+    governance_territories: GovernanceTerritoryResolver,
     capabilities: BTreeMap<String, ResolvedCapability>,
     features: BTreeMap<String, OwnedIdentity>,
     requirements: BTreeMap<String, ResolvedRequirement>,
@@ -1252,6 +1549,18 @@ impl ContractCoherencyGraph {
     #[must_use]
     pub const fn module_paths(&self) -> &BTreeMap<String, String> {
         &self.module_paths
+    }
+
+    /// Returns the canonical distributed-contract ownership resolver.
+    #[must_use]
+    pub const fn governance_territories(&self) -> &GovernanceTerritoryResolver {
+        &self.governance_territories
+    }
+
+    /// Returns whether one Module is another Module or its semantic descendant.
+    #[must_use]
+    pub fn module_is_same_or_descendant(&self, candidate: &str, ancestor: &str) -> bool {
+        is_same_or_descendant_identity(candidate, ancestor, &self.containment)
     }
 
     /// Returns capability providers keyed by globally unique capability ID.
@@ -1790,6 +2099,24 @@ impl<'a> Resolver<'a> {
                 );
             }
         }
+        let logical_ids = self
+            .logical_modules
+            .iter()
+            .map(LogicalModuleContractSource::module)
+            .collect::<BTreeSet<_>>();
+        let governance_territories = match GovernanceTerritoryResolver::new(
+            id_to_path
+                .iter()
+                .filter(|(module, _)| !logical_ids.contains(module.as_str()))
+                .map(|(module, path)| (module.clone(), path.clone())),
+            self.logical_modules,
+        ) {
+            Ok(resolver) => resolver,
+            Err(error) => {
+                self.violation("data/project.json", "/logical_modules", error.to_string());
+                return self.failure();
+            }
+        };
         let Some((root_contract_path, root_contract, _)) = loaded.get("") else {
             return self.failure();
         };
@@ -2113,6 +2440,7 @@ impl<'a> Resolver<'a> {
         let mut graph = ContractCoherencyGraph {
             modules,
             module_paths: id_to_path,
+            governance_territories,
             capabilities,
             features,
             requirements,
@@ -2383,6 +2711,30 @@ fn child_path(parent: &str, child: &str) -> String {
 
 fn parent_path(path: &str) -> &str {
     path.rsplit_once('/').map_or("", |(parent, _)| parent)
+}
+
+fn distributed_contract_territory_root(path: &str) -> Option<&str> {
+    if !is_canonical_relative_path(path) {
+        return None;
+    }
+    let (data_path, file_name) = path.rsplit_once('/')?;
+    if !DISTRIBUTED_CONTRACT_FILE_NAMES.contains(&file_name) {
+        return None;
+    }
+    if data_path == "data" {
+        return Some("");
+    }
+    data_path.strip_suffix("/data")
+}
+
+fn is_canonical_relative_path(path: &str) -> bool {
+    !path.is_empty()
+        && !path.starts_with('/')
+        && !path.contains('\\')
+        && !path
+            .split('/')
+            .any(|segment| segment.is_empty() || matches!(segment, "." | ".."))
+        && path.as_bytes().get(1).is_none_or(|value| *value != b':')
 }
 
 fn provenance(path: &str, pointer: String) -> ContractProvenance {

@@ -537,6 +537,107 @@ fn repository_projection_keys_bind_only_semantically_relevant_authority() {
     fs::remove_dir_all(&root).expect("remove isolated repository");
 }
 
+/// `T-AF-AFFECTED-ANALYSIS-DISTRIBUTED-CONTRACTS-001`
+/// Fortress classification: infrastructure
+#[test]
+fn logical_distributed_contract_changes_invalidate_only_dependent_projection_keys() {
+    let root = temporary_root("logical-distributed-contract-keys");
+    fs::create_dir_all(root.join("data/logical_modules/worker")).expect("fixture authority");
+    fs::create_dir_all(root.join("src/data")).expect("logical contract directory");
+    fs::write(
+        root.join("Cargo.toml"),
+        "[package]\nname='affected-fixture'\nversion='0.1.0'\nedition='2021'\n[lib]\npath='src/lib.rs'\n",
+    )
+    .expect("Cargo authority");
+    fs::write(
+        root.join("contract.json"),
+        r#"{
+  "$schema": "urn:fortress:schema:v2:module-contract",
+  "schema_version": 2,
+  "id": "PF-AFFECTED-FIXTURE",
+  "display_name": "Affected Fixture",
+  "ecosystem": {
+    "repository_grammar": 1,
+    "standard": { "id": "STD-FORTRESS-ENGINEERING", "edition": "1.0.0-draft.1" }
+  },
+  "provides": [], "requires": [], "relationships": [], "constraints": [],
+  "guarantees": [], "features": [], "behavior": []
+}
+"#,
+    )
+    .expect("root contract");
+    fs::write(
+        root.join("data/project.json"),
+        r#"{
+  "$schema": "urn:fortress:schema:v3:project-configuration",
+  "schema_version": 3,
+  "observation_exclusions": [".git"],
+  "logical_modules": [{
+    "module": "AF-WORKER-0001",
+    "contract": "data/logical_modules/worker/contract.json",
+    "parent": "PF-AFFECTED-FIXTURE",
+    "bindings": [{ "kind": "directory", "path": "src" }]
+  }]
+}
+"#,
+    )
+    .expect("project configuration");
+    fs::write(
+        root.join("data/logical_modules/worker/contract.json"),
+        r#"{
+  "$schema": "urn:fortress:schema:v2:module-contract",
+  "schema_version": 2,
+  "id": "AF-WORKER-0001",
+  "display_name": "Worker",
+  "provides": [], "requires": [], "relationships": [], "constraints": [],
+  "guarantees": [], "features": [], "behavior": []
+}
+"#,
+    )
+    .expect("logical Module contract");
+    fs::write(root.join("src/lib.rs"), "pub fn execute() {}\n").expect("source");
+
+    let psm_key = || {
+        prepare_repository_projection_cache(&root, ProjectionKind::Psm)
+            .expect("PSM key")
+            .key()
+            .digest()
+            .to_owned()
+    };
+    for (file_name, projection) in [
+        ("function_contracts.json", ProjectionKind::Semantic),
+        ("state_contracts.json", ProjectionKind::StateEffect),
+        ("environment_contracts.json", ProjectionKind::Environmental),
+        (
+            "behavior_realization_contracts.json",
+            ProjectionKind::RealizedBfg,
+        ),
+    ] {
+        let path = root.join("src/data").join(file_name);
+        fs::write(&path, "first\n").expect("first distributed contract bytes");
+        let psm_before = psm_key();
+        let dependent_before = prepare_repository_projection_cache(&root, projection)
+            .expect("dependent key")
+            .key()
+            .digest()
+            .to_owned();
+        fs::write(&path, "second\n").expect("changed distributed contract bytes");
+        let psm_after = psm_key();
+        let dependent_after = prepare_repository_projection_cache(&root, projection)
+            .expect("changed dependent key")
+            .key()
+            .digest()
+            .to_owned();
+        assert_eq!(psm_before, psm_after, "{file_name} must not invalidate PSM");
+        assert_ne!(
+            dependent_before, dependent_after,
+            "{file_name} must invalidate {projection:?}"
+        );
+        fs::remove_file(path).expect("remove contract before next family");
+    }
+    fs::remove_dir_all(&root).expect("remove isolated repository");
+}
+
 /// `T-AF-AFFECTED-ANALYSIS-0001-R04-001`
 /// Fortress requirement: AF-AFFECTED-ANALYSIS-0001-R04
 #[test]

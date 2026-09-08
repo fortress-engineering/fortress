@@ -15,7 +15,7 @@ pub const STATE_CONTRACT_SCHEMA: &str = "urn:fortress:schema:v1:state-contracts"
 /// Canonical State Contract schema version.
 pub const STATE_CONTRACT_SCHEMA_VERSION: u16 = 1;
 
-/// One snapshot-bound State Contract source with physical Module provenance.
+/// One snapshot-bound State Contract source with declared Module provenance.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct StateContractSource {
     module_id: String,

@@ -18,7 +18,7 @@ pub const ENVIRONMENT_CONTRACT_SCHEMA: &str = "urn:fortress:schema:v1:environmen
 /// Canonical Environment Contract schema version.
 pub const ENVIRONMENT_CONTRACT_SCHEMA_VERSION: u16 = 1;
 
-/// One snapshot-bound Environment Contract source and its physical Module owner.
+/// One snapshot-bound Environment Contract source and its declared Module owner.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct EnvironmentContractSource {
     module_id: String,

@@ -5,11 +5,15 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use fortress_core::audit::{
-    audit_repository, compile_repository_environmental_analysis, compile_repository_psm,
+    audit_repository, compile_repository_environmental_analysis,
+    compile_repository_information_flow_analysis, compile_repository_psm,
+    compile_repository_realized_bfg, compile_repository_semantic_analysis,
     compile_repository_semantic_conformance, compile_repository_source_artifact_model,
     compile_repository_state_effect_analysis, inspect_repository_modules,
 };
+use fortress_core::environmental_semantics::canonicalize_environment_contract_json;
 use fortress_core::program_semantics::ExecutableSymbol;
+use fortress_core::semantic_analysis::canonicalize_function_contract_json;
 use fortress_core::semantic_conformance::SemanticConformanceState;
 
 static NEXT_REPOSITORY: AtomicU64 = AtomicU64::new(0);
@@ -148,6 +152,150 @@ fn logical_contracts_and_native_paths_feed_one_semantic_ownership_relation() {
     assert!(api.observations().iter().any(|observation| {
         observation.operation() == "std::fs::write" && observation.policy_disposition().is_some()
     }));
+}
+
+/// `T-DISTRIBUTED-CONTRACT-LOGICAL-LOADERS-001`
+/// Fortress classification: infrastructure
+#[test]
+fn all_distributed_contract_loaders_accept_one_logical_module_territory() {
+    let repository = TestRepository::new("logical-distributed-contracts");
+    repository.write(
+        "Cargo.toml",
+        "[package]\nname='native'\nversion='0.1.0'\nedition='2021'\n[lib]\npath='native/lib.rs'\n",
+    );
+    repository.write(
+        "contract.json",
+        &minimal_contract("PF-FIXTURE", "Fixture", true),
+    );
+    repository.write(
+        "data/project.json",
+        "{\n  \"$schema\": \"urn:fortress:schema:v3:project-configuration\",\n  \"schema_version\": 3,\n  \"observation_exclusions\": [\n    \".git\"\n  ],\n  \"logical_modules\": [\n    {\n      \"module\": \"AF-NATIVE-0001\",\n      \"contract\": \"data/logical_modules/native/contract.json\",\n      \"parent\": \"PF-FIXTURE\",\n      \"bindings\": [\n        {\n          \"kind\": \"directory\",\n          \"path\": \"native\"\n        }\n      ]\n    }\n  ]\n}\n",
+    );
+    repository.write(
+        "data/logical_modules/native/contract.json",
+        &minimal_contract("AF-NATIVE-0001", "Native", false),
+    );
+    repository.write(
+        "native/lib.rs",
+        "pub fn governed(value: bool) -> bool { !value }\n",
+    );
+
+    let psm = compile_repository_psm(repository.path()).expect("logical PSM compiles");
+    let symbol = psm
+        .symbols()
+        .iter()
+        .find(|symbol| {
+            symbol.fortress_module() == "AF-NATIVE-0001"
+                && symbol.qualified_name().ends_with("::governed")
+        })
+        .expect("logical Module symbol exists")
+        .id();
+    let authored = format!(
+        "{{\n  \"$schema\": \"urn:fortress:schema:v4:function-contracts\",\n  \"schema_version\": 4,\n  \"functions\": [\n    {{\n      \"symbol\": \"{symbol}\",\n      \"requires\": [],\n      \"ensures\": [],\n      \"state_requires\": [],\n      \"state_ensures\": [],\n      \"effects\": null\n    }}\n  ]\n}}\n"
+    );
+    let function_contract =
+        canonicalize_function_contract_json("native/data/function_contracts.json", &authored)
+            .expect("Function Contract canonicalizes");
+    repository.write("native/data/function_contracts.json", &function_contract);
+    repository.write(
+        "native/data/state_contracts.json",
+        "{\n  \"$schema\": \"urn:fortress:schema:v1:state-contracts\",\n  \"schema_version\": 1,\n  \"types\": []\n}\n",
+    );
+    let environment_contract = format!(
+        "{{\n  \"$schema\": \"urn:fortress:schema:v1:environment-contracts\",\n  \"schema_version\": 1,\n  \"operations\": [\n    {{\n      \"id\": \"EX-NATIVE-READ\",\n      \"actor\": \"ENV-NATIVE\",\n      \"boundary\": \"{symbol}\",\n      \"retry_policy\": \"NEVER\",\n      \"retryable_outcomes\": [],\n      \"idempotency\": \"IDEMPOTENT\",\n      \"idempotency_key_parameter\": null,\n      \"delivery\": \"AT_MOST_ONCE\",\n      \"interruption_sensitive\": false,\n      \"atomicity\": \"UNKNOWN\",\n      \"effect_steps\": [],\n      \"recovery\": null,\n      \"outcomes\": [\n        {{\n          \"id\": \"EX-NATIVE-READ-SUCCESS\",\n          \"completion\": \"COMPLETED\",\n          \"response\": \"ONE_RESPONSE\",\n          \"timing\": \"UNBOUNDED\",\n          \"result\": \"SUCCESS\",\n          \"domain\": null,\n          \"information_flow\": [],\n          \"state\": null,\n          \"forbidden_effects\": [],\n          \"resource\": null,\n          \"handling\": null\n        }}\n      ]\n    }}\n  ]\n}}\n"
+    );
+    repository.write(
+        "native/data/environment_contracts.json",
+        &canonicalize_environment_contract_json(
+            "native/data/environment_contracts.json",
+            &environment_contract,
+        )
+        .expect("Environment Contract canonicalizes"),
+    );
+    repository.write(
+        "native/data/behavior_realization_contracts.json",
+        "{\n  \"$schema\": \"urn:fortress:schema:v1:behavior-realization-contracts\",\n  \"schema_version\": 1,\n  \"features\": []\n}\n",
+    );
+
+    let ccg = fortress_core::audit::compile_repository_ccg(repository.path())
+        .expect("logical CCG compiles");
+    for path in [
+        "native/data/behavior_realization_contracts.json",
+        "native/data/environment_contracts.json",
+        "native/data/function_contracts.json",
+        "native/data/state_contracts.json",
+    ] {
+        assert_eq!(
+            ccg.governance_territories()
+                .resolve(path)
+                .expect("distributed contract resolves"),
+            "AF-NATIVE-0001"
+        );
+    }
+    let semantic = compile_repository_semantic_analysis(repository.path())
+        .expect("logical Function Contract loads");
+    assert_eq!(semantic.model().coverage().function_contracts(), 1);
+    compile_repository_state_effect_analysis(repository.path())
+        .expect("logical State Contract loads");
+    compile_repository_information_flow_analysis(repository.path())
+        .expect("logical Function Contract reaches Information Flow");
+    compile_repository_environmental_analysis(repository.path())
+        .expect("logical Environment Contract loads");
+    compile_repository_realized_bfg(repository.path())
+        .expect("logical Behavior-Realization Contract loads");
+}
+
+/// `T-DISTRIBUTED-CONTRACT-TARGET-OWNERSHIP-001`
+/// Fortress classification: infrastructure
+#[test]
+fn logical_function_contract_rejects_a_foreign_module_target() {
+    let repository = TestRepository::new("logical-contract-foreign-target");
+    repository.write(
+        "Cargo.toml",
+        "[package]\nname='native'\nversion='0.1.0'\nedition='2021'\n[lib]\npath='src/lib.rs'\n",
+    );
+    repository.write(
+        "contract.json",
+        &minimal_contract("PF-FIXTURE", "Fixture", true),
+    );
+    repository.write(
+        "data/project.json",
+        "{\n  \"$schema\": \"urn:fortress:schema:v3:project-configuration\",\n  \"schema_version\": 3,\n  \"observation_exclusions\": [\n    \".git\"\n  ],\n  \"logical_modules\": [\n    {\n      \"module\": \"AF-ALPHA-0001\",\n      \"contract\": \"data/logical_modules/alpha/contract.json\",\n      \"parent\": \"PF-FIXTURE\",\n      \"bindings\": [\n        {\n          \"kind\": \"directory\",\n          \"path\": \"src/alpha\"\n        }\n      ]\n    },\n    {\n      \"module\": \"AF-BETA-0001\",\n      \"contract\": \"data/logical_modules/beta/contract.json\",\n      \"parent\": \"PF-FIXTURE\",\n      \"bindings\": [\n        {\n          \"kind\": \"directory\",\n          \"path\": \"src/beta\"\n        }\n      ]\n    }\n  ]\n}\n",
+    );
+    repository.write(
+        "data/logical_modules/alpha/contract.json",
+        &minimal_contract("AF-ALPHA-0001", "Alpha", false),
+    );
+    repository.write(
+        "data/logical_modules/beta/contract.json",
+        &minimal_contract("AF-BETA-0001", "Beta", false),
+    );
+    repository.write("src/lib.rs", "pub mod alpha;\npub mod beta;\n");
+    repository.write("src/alpha/mod.rs", "pub fn alpha() {}\n");
+    repository.write("src/beta/mod.rs", "pub fn beta() {}\n");
+    let psm = compile_repository_psm(repository.path()).expect("logical PSM compiles");
+    let beta = psm
+        .symbols()
+        .iter()
+        .find(|symbol| {
+            symbol.fortress_module() == "AF-BETA-0001"
+                && symbol.qualified_name().ends_with("::beta")
+        })
+        .expect("beta symbol exists")
+        .id();
+    let authored = format!(
+        "{{\n  \"$schema\": \"urn:fortress:schema:v4:function-contracts\",\n  \"schema_version\": 4,\n  \"functions\": [\n    {{\n      \"symbol\": \"{beta}\",\n      \"requires\": [],\n      \"ensures\": [],\n      \"state_requires\": [],\n      \"state_ensures\": [],\n      \"effects\": null\n    }}\n  ]\n}}\n"
+    );
+    repository.write(
+        "src/alpha/data/function_contracts.json",
+        &canonicalize_function_contract_json("src/alpha/data/function_contracts.json", &authored)
+            .expect("Function Contract canonicalizes"),
+    );
+    let error = compile_repository_semantic_analysis(repository.path())
+        .expect_err("cross-Module target must fail")
+        .to_string();
+    assert!(error.contains("in `AF-ALPHA-0001`"));
+    assert!(error.contains("owned by `AF-BETA-0001`"));
 }
 
 impl Drop for TestRepository {

@@ -30,7 +30,7 @@ pub struct BehaviorRealizationContractSource {
 }
 
 impl BehaviorRealizationContractSource {
-    /// Creates a contract source owned by its deepest physical Fortress Module.
+    /// Creates a contract source owned by its resolved declared Module.
     #[must_use]
     pub fn new(
         module_id: impl Into<String>,
@@ -402,7 +402,6 @@ pub fn load_behavior_realization_contracts(
         .iter()
         .map(crate::program_semantics::NominalType::id)
         .collect::<BTreeSet<_>>();
-    let module_paths = ccg.module_paths();
     let mut features = BTreeSet::new();
     let mut checkpoint_ids = BTreeSet::new();
     let mut checkpoints = Vec::new();
@@ -441,12 +440,7 @@ pub fn load_behavior_realization_contracts(
                     feature.feature.clone(),
                 ));
             }
-            validate_module_in_subtree(
-                module_paths,
-                flow.owner(),
-                &source.module_id,
-                &feature.feature,
-            )?;
+            validate_module_in_subtree(ccg, flow.owner(), &source.module_id, &feature.feature)?;
             ensure_sorted_unique(
                 feature
                     .checkpoints
@@ -489,7 +483,7 @@ pub fn load_behavior_realization_contracts(
                         anchor,
                         &feature.feature,
                         flow.owner(),
-                        module_paths,
+                        ccg,
                         &symbols,
                         &nominal_types,
                         state_effect,
@@ -533,7 +527,7 @@ fn validate_anchor(
     anchor: &BehaviorAnchor,
     feature: &str,
     feature_owner: &str,
-    module_paths: &BTreeMap<String, String>,
+    ccg: &ContractCoherencyGraph,
     symbols: &BTreeMap<&str, &crate::program_semantics::ExecutableSymbol>,
     nominal_types: &BTreeSet<&str>,
     state_effect: &StateEffectAnalysisModel,
@@ -544,7 +538,7 @@ fn validate_anchor(
         let symbol = symbols
             .get(symbol_id)
             .ok_or_else(|| BehaviorRealizationContractError::UnknownSymbol(symbol_id.into()))?;
-        if !module_in_subtree(module_paths, feature_owner, symbol.fortress_module()) {
+        if !ccg.module_is_same_or_descendant(symbol.fortress_module(), feature_owner) {
             return Err(BehaviorRealizationContractError::ForeignSymbol {
                 feature: feature.into(),
                 symbol: symbol_id.into(),
@@ -662,12 +656,12 @@ fn classification_contains(
 }
 
 fn validate_module_in_subtree(
-    module_paths: &BTreeMap<String, String>,
+    ccg: &ContractCoherencyGraph,
     owner: &str,
     module: &str,
     feature: &str,
 ) -> Result<(), BehaviorRealizationContractError> {
-    if module_in_subtree(module_paths, owner, module) {
+    if ccg.module_is_same_or_descendant(module, owner) {
         Ok(())
     } else {
         Err(BehaviorRealizationContractError::ForeignContractOwner {
@@ -675,22 +669,6 @@ fn validate_module_in_subtree(
             module: module.into(),
         })
     }
-}
-
-fn module_in_subtree(
-    module_paths: &BTreeMap<String, String>,
-    owner: &str,
-    candidate: &str,
-) -> bool {
-    let Some(owner_path) = module_paths.get(owner) else {
-        return false;
-    };
-    let Some(candidate_path) = module_paths.get(candidate) else {
-        return false;
-    };
-    owner_path.is_empty()
-        || candidate_path == owner_path
-        || candidate_path.starts_with(&format!("{owner_path}/"))
 }
 
 fn ensure_sorted_unique<'a>(

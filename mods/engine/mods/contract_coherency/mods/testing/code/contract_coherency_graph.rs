@@ -7,8 +7,9 @@ use std::path::{Path, PathBuf};
 use fortress_core::audit::compile_repository_ccg;
 use fortress_core::contract_coherency::{
     CcgCompilation, CcgObservedTestFact, CcgTestClassification, ContractStandardIndex,
-    LogicalModuleContractSource, ModuleContract, ModuleContractLoadError,
-    compile_contract_coherency_graph, compile_contract_coherency_graph_with_logical_modules,
+    GovernanceTerritoryError, GovernanceTerritoryResolver, LogicalModuleContractSource,
+    ModuleContract, ModuleContractLoadError, compile_contract_coherency_graph,
+    compile_contract_coherency_graph_with_logical_modules,
 };
 use fortress_core::standard::{StandardBundle, StandardLoadError};
 use serde::Deserialize;
@@ -1146,4 +1147,246 @@ fn logical_contracts_join_the_same_ccg_identity_space() {
         compile_contract_coherency_graph_with_logical_modules(&files, &standard(), None, &invalid);
     assert!(!failure.is_success());
     assert!(messages(&failure).contains("does not match indexed Module"));
+}
+
+/// `T-DISTRIBUTED-CONTRACT-TERRITORY-001`
+/// Fortress classification: infrastructure
+#[test]
+fn physical_and_logical_contract_territories_resolve_without_path_inference() {
+    let root = contract("PF-FIXTURE", "Fixture", true);
+    let physical = contract("AF-PHYSICAL-0001", "Physical", false);
+    let broad = contract("AF-BROAD-0001", "Broad", false);
+    let nested = contract("AF-NESTED-0001", "Nested", false);
+    let files = BTreeMap::from([
+        ("contract.json".to_owned(), canonical(&root).into_bytes()),
+        (
+            "mods/physical/contract.json".to_owned(),
+            canonical(&physical).into_bytes(),
+        ),
+        (
+            "data/logical_modules/broad/contract.json".to_owned(),
+            canonical(&broad).into_bytes(),
+        ),
+        (
+            "data/logical_modules/nested/contract.json".to_owned(),
+            canonical(&nested).into_bytes(),
+        ),
+    ]);
+    let sources = [
+        LogicalModuleContractSource::with_directory_bindings(
+            "AF-BROAD-0001",
+            "data/logical_modules/broad/contract.json",
+            "PF-FIXTURE",
+            ["crates", "vendor/broad"],
+        ),
+        LogicalModuleContractSource::with_directory_bindings(
+            "AF-NESTED-0001",
+            "data/logical_modules/nested/contract.json",
+            "PF-FIXTURE",
+            ["crates/printer"],
+        ),
+    ];
+    let result =
+        compile_contract_coherency_graph_with_logical_modules(&files, &standard(), None, &sources);
+    let graph = result.graph().expect("governance territories compile");
+    let resolver = graph.governance_territories();
+    assert_eq!(
+        resolver
+            .resolve("data/function_contracts.json")
+            .expect("root physical contract resolves"),
+        "PF-FIXTURE"
+    );
+    assert_eq!(
+        resolver
+            .resolve("mods/physical/data/state_contracts.json")
+            .expect("physical Module contract resolves"),
+        "AF-PHYSICAL-0001"
+    );
+    assert_eq!(
+        resolver
+            .resolve("vendor/broad/data/environment_contracts.json")
+            .expect("second logical directory resolves"),
+        "AF-BROAD-0001"
+    );
+    assert_eq!(
+        resolver
+            .resolve("crates/printer/data/function_contracts.json")
+            .expect("most-specific nested directory resolves"),
+        "AF-NESTED-0001"
+    );
+
+    let paths = [
+        "crates/printer/data/behavior_realization_contracts.json",
+        "crates/printer/data/environment_contracts.json",
+        "crates/printer/data/function_contracts.json",
+        "crates/printer/data/state_contracts.json",
+    ];
+    for file_name in [
+        "behavior_realization_contracts.json",
+        "environment_contracts.json",
+        "function_contracts.json",
+        "state_contracts.json",
+    ] {
+        let ownership = resolver
+            .discover(paths, file_name)
+            .expect("all loaders share one territory resolver");
+        assert_eq!(ownership.len(), 1);
+        assert_eq!(ownership[0].module(), "AF-NESTED-0001");
+    }
+}
+
+/// `T-DISTRIBUTED-CONTRACT-TERRITORY-002`
+/// Fortress classification: infrastructure
+#[test]
+fn file_bindings_and_cargo_territories_cannot_author_distributed_contracts() {
+    let root = contract("PF-FIXTURE", "Fixture", true);
+    let logical = contract("AF-FILE-0001", "File", false);
+    let files = BTreeMap::from([
+        ("contract.json".to_owned(), canonical(&root).into_bytes()),
+        (
+            "data/logical_modules/file/contract.json".to_owned(),
+            canonical(&logical).into_bytes(),
+        ),
+    ]);
+    let sources = [LogicalModuleContractSource::new(
+        "AF-FILE-0001",
+        "data/logical_modules/file/contract.json",
+        "PF-FIXTURE",
+    )];
+    let result =
+        compile_contract_coherency_graph_with_logical_modules(&files, &standard(), None, &sources);
+    let resolver = result
+        .graph()
+        .expect("exact-file logical Module still compiles")
+        .governance_territories();
+    assert!(matches!(
+        resolver.resolve("legacy/data/function_contracts.json"),
+        Err(GovernanceTerritoryError::UnownedContract(_))
+    ));
+    assert!(matches!(
+        resolver.resolve("crates/unmapped/data/state_contracts.json"),
+        Err(GovernanceTerritoryError::UnownedContract(_))
+    ));
+}
+
+/// `T-DISTRIBUTED-CONTRACT-TERRITORY-003`
+/// Fortress classification: infrastructure
+#[test]
+fn equal_physical_and_logical_territories_fail_deterministically() {
+    let root = contract("PF-FIXTURE", "Fixture", true);
+    let physical = contract("AF-PHYSICAL-0001", "Physical", false);
+    let logical = contract("AF-LOGICAL-0001", "Logical", false);
+    let files = BTreeMap::from([
+        ("contract.json".to_owned(), canonical(&root).into_bytes()),
+        (
+            "mods/shared/contract.json".to_owned(),
+            canonical(&physical).into_bytes(),
+        ),
+        (
+            "data/logical_modules/logical/contract.json".to_owned(),
+            canonical(&logical).into_bytes(),
+        ),
+    ]);
+    let sources = [LogicalModuleContractSource::with_directory_bindings(
+        "AF-LOGICAL-0001",
+        "data/logical_modules/logical/contract.json",
+        "PF-FIXTURE",
+        ["mods/shared"],
+    )];
+    let first =
+        compile_contract_coherency_graph_with_logical_modules(&files, &standard(), None, &sources);
+    let second =
+        compile_contract_coherency_graph_with_logical_modules(&files, &standard(), None, &sources);
+    assert!(!first.is_success());
+    assert_eq!(messages(&first), messages(&second));
+    assert!(messages(&first).contains("assigned with equal authority"));
+    assert!(messages(&first).contains("AF-LOGICAL-0001"));
+    assert!(messages(&first).contains("AF-PHYSICAL-0001"));
+}
+
+/// `T-DISTRIBUTED-CONTRACT-RELOCATION-001`
+/// Fortress classification: infrastructure
+#[test]
+fn logical_contract_ownership_survives_repository_relative_relocation() {
+    let module = "AF-RELOCATABLE-0001";
+    let old = GovernanceTerritoryResolver::new(
+        [("PF-FIXTURE".into(), String::new())],
+        &[LogicalModuleContractSource::with_directory_bindings(
+            module,
+            "data/logical_modules/relocatable/contract.json",
+            "PF-FIXTURE",
+            ["old/path"],
+        )],
+    )
+    .expect("old territory compiles");
+    let new = GovernanceTerritoryResolver::new(
+        [("PF-FIXTURE".into(), String::new())],
+        &[LogicalModuleContractSource::with_directory_bindings(
+            module,
+            "data/logical_modules/relocatable/contract.json",
+            "PF-FIXTURE",
+            ["new/path"],
+        )],
+    )
+    .expect("new territory compiles");
+    assert_eq!(
+        old.resolve("old/path/data/function_contracts.json")
+            .expect("old placement resolves"),
+        module
+    );
+    assert_eq!(
+        new.resolve("new/path/data/function_contracts.json")
+            .expect("new placement resolves"),
+        module
+    );
+    assert!(matches!(
+        GovernanceTerritoryResolver::new(
+            [("PF-FIXTURE".into(), String::new())],
+            &[LogicalModuleContractSource::with_directory_bindings(
+                module,
+                "data/logical_modules/relocatable/contract.json",
+                "PF-FIXTURE",
+                ["C:/machine/repository"],
+            )],
+        ),
+        Err(GovernanceTerritoryError::InvalidTerritory(_))
+    ));
+}
+
+/// `T-DISTRIBUTED-CONTRACT-TERRITORY-STRESS-001`
+/// Fortress classification: infrastructure
+#[test]
+fn governance_territory_resolution_scales_to_thousands_of_contract_paths() {
+    let logical = (0..1_000)
+        .map(|index| {
+            LogicalModuleContractSource::with_directory_bindings(
+                format!("AF-STRESS-{index:04}"),
+                format!("data/logical_modules/{index:04}/contract.json"),
+                "PF-FIXTURE",
+                [format!("native/{index:04}"), format!("vendor/{index:04}")],
+            )
+        })
+        .collect::<Vec<_>>();
+    let resolver =
+        GovernanceTerritoryResolver::new([("PF-FIXTURE".into(), String::new())], &logical)
+            .expect("stress territories compile");
+    let paths = (0..1_000)
+        .flat_map(|index| {
+            [
+                format!("native/{index:04}/data/function_contracts.json"),
+                format!("native/{index:04}/data/state_contracts.json"),
+                format!("vendor/{index:04}/data/environment_contracts.json"),
+                format!("vendor/{index:04}/data/behavior_realization_contracts.json"),
+            ]
+        })
+        .collect::<Vec<_>>();
+    let started = std::time::Instant::now();
+    for path in &paths {
+        assert!(resolver.resolve(path).is_ok());
+    }
+    assert_eq!(paths.len(), 4_000);
+    assert!(
+        started.elapsed() < std::time::Duration::from_secs(10),
+        "indexed ownership resolution exceeded the stress budget"
+    );
 }
