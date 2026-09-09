@@ -245,7 +245,7 @@ fn semantic_conformance_renders_zero_coverage_as_not_evaluable() {
     let document: serde_json::Value = serde_json::from_slice(&json.stdout).expect("JSON");
     assert_eq!(
         document["$schema"],
-        "urn:fortress:schema:v5:semantic-conformance"
+        "urn:fortress:schema:v6:semantic-conformance"
     );
     let module = document["modules"]
         .as_array()
@@ -257,10 +257,19 @@ fn semantic_conformance_renders_zero_coverage_as_not_evaluable() {
         .expect("coverage Module");
     assert_eq!(module["coverage"]["governed_source_files"], 1);
     assert_eq!(module["coverage"]["analysed_source_files"], 0);
-    assert_eq!(
-        module["conclusions"][0]["coverage_reasons"][0],
-        "NO_SEMANTIC_COVERAGE"
-    );
+    let defeater_ref = module["conclusions"][0]["defeater_refs"][0]
+        .as_str()
+        .expect("defeater ref");
+    let defeater = document["defeaters"]
+        .as_array()
+        .and_then(|defeaters| {
+            defeaters
+                .iter()
+                .find(|defeater| defeater["id"] == defeater_ref)
+        })
+        .expect("zero-coverage defeater");
+    assert_eq!(defeater["kind"], "NO_SEMANTIC_COVERAGE");
+    assert_eq!(defeater["strength"], "DEFEATING");
 
     for command in ["audit", "check"] {
         let result = run(&[command, &fixture.argument(), "--format=json"]);

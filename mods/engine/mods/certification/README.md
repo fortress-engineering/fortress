@@ -6,19 +6,25 @@ Certification establishes whether sufficient current evidence supports every obl
 
 ## Responsibility
 
-Certification constructs immutable content-addressed evidence nodes, validates their dependency DAG, binds current rule proofs and executed verification to obligations, evaluates deterministic certification status, and projects Intended and Realized behavior into the Verified BFG.
+Certification constructs immutable content-addressed evidence nodes including derived defeaters, validates their dependency DAG, binds current rule proofs and executed verification to obligations, evaluates deterministic certification status, and projects Intended and Realized behavior into the Verified BFG.
 
 ## Scope
 
 ### Includes
 
-This Module owns Evidence Graph v1, Certification Profile and result v1, distributed Verification Binding v1, source-snapshot exclusion identity, test execution evidence semantics, affected-evidence closure, and Verified BFG v1.
+This Module owns current Evidence Graph v2 while retaining v1 schema compatibility, Certification Profile and result v1, distributed Verification Binding v1, source-snapshot exclusion identity, test execution and defeater evidence semantics, affected-evidence closure, and Verified BFG v1.
 
 ### Excludes
 
 This Module excludes semantic re-analysis, signatures, trusted issuer identity, timestamps, Git attestations, remote evidence, grades, hosted orchestration, badges, and claims that trusted assertions are mechanical proofs.
 
 ## Relationships
+
+### [Architecture Evaluation](../architecture_evaluation/README.md)
+
+**Types:** `depends_on`
+
+Provides Module semantic-conformance rule identity and the scoped defeaters referenced by certification evidence.
 
 ### [Behavioral Realization](../behavioral_realization/README.md)
 
@@ -48,7 +54,7 @@ Provides environmental proof results, generated scenarios, and trusted environme
 
 **Types:** `depends_on`
 
-Provides deterministic finding fingerprints attached to rule evidence.
+Provides deterministic finding fingerprints and canonical scoped defeaters attached to rule evidence.
 
 ### [Information Flow](../information_flow/README.md)
 
@@ -94,4 +100,4 @@ Provides current typestate and effect proof identities, coverage, and exact upst
 
 ## Guarantees
 
-Certification never changes upstream semantic conclusions, never treats CI configuration as execution, never allows ignored or filtered tests to satisfy full evidence, and never hides stale, missing, invalid, unsupported, or trusted inputs behind a top-level PASS.
+Certification never changes upstream semantic conclusions, never treats a defeater as authored policy or as a replacement for raw failure, never treats CI configuration as execution, never allows ignored or filtered tests to satisfy full evidence, and never hides stale, missing, invalid, unsupported, or trusted inputs behind a top-level PASS.

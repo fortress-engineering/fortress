@@ -6,7 +6,7 @@ The Code owns canonical authority-input classification, affected dependency unit
 
 ## Execution
 
-Callers construct exact dependency snapshots from existing Fortress semantic identities. The resolver compares stable units, propagates affectedness through indexed reverse dependencies, and admits cached bytes only after exact key and digest verification.
+Callers construct exact dependency snapshots from existing Fortress semantic identities, including defeater units between semantic observations and governed claims. The resolver compares stable units, propagates coverage, provenance, call-resolution, operation-classification, and authority changes through indexed reverse dependencies, and admits cached bytes only after exact key and digest verification.
 
 ## State
 

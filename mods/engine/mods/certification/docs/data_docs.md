@@ -32,7 +32,11 @@ Defines deterministic Certification result v1.
 
 ### [`evidence_graph_schema_v1.json`](../data/evidence_graph_schema_v1.json)
 
-Defines content-addressed Evidence Graph v1.
+Preserves content-addressed Evidence Graph v1 before derived defeaters were a dedicated evidence class.
+
+### [`evidence_graph_schema_v2.json`](../data/evidence_graph_schema_v2.json)
+
+Defines the current content-addressed Evidence Graph, including dedicated `DEFEATER` evidence nodes and coverage counts.
 
 ### [`verification_binding_schema_v1.json`](../data/verification_binding_schema_v1.json)
 

@@ -85,11 +85,12 @@
         },
         {
           "id": "AF-AFFECTED-ANALYSIS-0001-R02",
-          "statement": "Source, ownership, symbol, call, Module, effect, capability, conformance, finding, evidence, certification, and projection units retain complete deterministic dependency bindings and conservative invalidation.",
+          "statement": "Source, ownership, symbol, call, Module, effect, capability, defeater, conformance, finding, evidence, certification, and projection units retain complete deterministic dependency bindings and conservative invalidation.",
           "tests": [
             "T-AF-AFFECTED-ANALYSIS-0001-R02-001",
             "T-AF-AFFECTED-ANALYSIS-0001-R02-002",
-            "T-AF-AFFECTED-ANALYSIS-0001-R02-003"
+            "T-AF-AFFECTED-ANALYSIS-0001-R02-003",
+            "T-AF-AFFECTED-ANALYSIS-0001-R02-004"
           ]
         },
         {

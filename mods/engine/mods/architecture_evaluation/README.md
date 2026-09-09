@@ -6,13 +6,13 @@ Architecture Evaluation exists to judge declared and realized architecture again
 
 ## Responsibility
 
-Consume the Contract Coherency Graph, independent Implementation Observation, Program Semantics ownership, and State/Effect consequences; derive physical ownership and production Module profiles; evaluate declared capability dependency cycles; reconcile observed direct source dependencies and semantic policy with intended architecture using canonical findings; and derive deterministic non-normative diagnostics with complete evidence.
+Consume the Contract Coherency Graph, independent Implementation Observation, Program Semantics ownership, and State/Effect consequences; derive physical ownership and production Module profiles; evaluate declared capability dependency cycles; reconcile observed direct source dependencies and semantic policy with intended architecture using canonical findings and scoped defeaters; and derive deterministic non-normative diagnostics with complete evidence.
 
 ## Scope
 
 ### Includes
 
-CCG Module containment, direct dependency and reachability facts; observed Rust Module dependencies and evidence; authored Module semantic policy; canonical State/Effect consequences; production and verification topology separation; derived physical path ownership; component projections; Module lowest common ancestor; architecture profiles; scope and consumer-distribution diagnostics; facade-pressure and internal-isolation diagnostics; ARCH-DEPENDENCY-001 evaluation; ARCH-REALIZATION-001 reconciliation; and ARCH-SEMANTIC-001 conformance.
+CCG Module containment, direct dependency and reachability facts; observed Rust Module dependencies and evidence; authored Module semantic policy; canonical State/Effect consequences; scoped defeating and limiting evidence; production and verification topology separation; derived physical path ownership; component projections; Module lowest common ancestor; architecture profiles; scope and consumer-distribution diagnostics; facade-pressure and internal-isolation diagnostics; ARCH-DEPENDENCY-001 evaluation; ARCH-REALIZATION-001 reconciliation; and ARCH-SEMANTIC-001 conformance.
 
 ### Excludes
 
@@ -30,7 +30,7 @@ Supplies the one canonical semantic dependency and containment model consumed by
 
 **Types:** `depends_on`
 
-Supplies the canonical normalized evidence representation used for dependency and realization violations.
+Supplies canonical normalized findings plus content-addressed defeater kinds, strengths, scopes, and retirement conditions.
 
 ### [Implementation Observation](../implementation_observation/README.md)
 
@@ -70,4 +70,4 @@ Supplies canonical refined effects, capability consequences, direct/transitive p
 
 ## Guarantees
 
-Architecture views preserve distinct authorities: the CCG supplies declared semantic intent, Implementation Observation supplies source-derived facts, State/Effect supplies operational consequences, Architecture Realization establishes intent/implementation agreement, Architecture Diagnostics interprets those facts non-normatively, and canonical findings represent only Standard violations. Semantic policy is `UNDECLARED` unless a Module Contract v3 explicitly names an allowed or denied capability/effect; ALLOW is an `AUTHORISED` permission with independent observed-usage counts and no conformance conclusion, while only DENY entries are evaluative claims. Effect-specific entries take precedence over capability entries, unlisted consequences remain undeclared, analysis-only Cargo territories receive no Module conclusion, and claim-relevant uncertainty is `UNKNOWN` rather than PASS. Source-level semantic coverage is the exact intersection of declared-Module ownership paths with distinct PSM symbol source paths; aggregate parser/source counters are not semantic coverage, and a DENY claim over governed source with zero such coverage is `UNKNOWN` with `NO_SEMANTIC_COVERAGE`, never PASS. Profiles and diagnostics exclude CCG-identified Testing Modules from production placement inference, never infer capability re-export, realization, or permission, never read intent from names or prose, and preserve deterministic evidence, ordering, and fingerprints.
+Architecture views preserve distinct authorities: the CCG supplies declared semantic intent, Implementation Observation supplies source-derived facts, State/Effect supplies operational consequences, Architecture Realization establishes intent/implementation agreement, Architecture Diagnostics interprets those facts non-normatively, canonical findings represent only Standard violations, and defeaters are derived limitations rather than governance disposition. Semantic policy is `UNDECLARED` unless a Module Contract v3 explicitly names an allowed or denied capability/effect; ALLOW is an `AUTHORISED` permission with independent observed-usage counts and no conformance conclusion, while only DENY entries are evaluative claims. Effect-specific entries take precedence over capability entries, unlisted consequences remain undeclared, analysis-only Cargo territories receive no Module conclusion, and claim-relevant defeating uncertainty is `UNKNOWN` rather than PASS. Source-level semantic coverage is the exact intersection of declared-Module ownership paths with distinct PSM symbol source paths; aggregate parser/source counters are not semantic coverage, and a DENY claim over governed source with zero such coverage is `UNKNOWN` with `NO_SEMANTIC_COVERAGE`, never PASS. Supported violations remain FAIL despite unrelated uncertainty; limiting test-only or unknown-provenance evidence bounds enforcement without erasing the violation. Profiles and diagnostics exclude CCG-identified Testing Modules from production placement inference, never infer capability re-export, realization, or permission, never read intent from names or prose, and preserve deterministic evidence, ordering, and fingerprints.

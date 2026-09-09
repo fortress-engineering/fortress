@@ -12,6 +12,11 @@
   ],
   "requires": [
     {
+      "provider": "AF-ARCHITECTURE-EVALUATION-0001",
+      "capability": "CAP-ARCHITECTURE-EVALUATION",
+      "version": "^0.1.0"
+    },
+    {
       "provider": "AF-BEHAVIORAL-REALIZATION-0001",
       "capability": "CAP-BEHAVIORAL-REALIZATION",
       "version": "^0.1.0"
@@ -96,11 +101,15 @@
       "requirements": [
         {
           "id": "AF-CERTIFICATION-0001-R01",
-          "statement": "Certification constructs and validates an immutable deterministic content-addressed Evidence DAG whose node identities exclude their own IDs, whose dependencies are complete and acyclic, and whose affected closure preserves unrelated evidence.",
+          "statement": "Certification constructs and validates an immutable deterministic content-addressed Evidence DAG whose node identities exclude their own IDs, whose dependencies are complete and acyclic, whose defeater nodes preserve scoped limiting and defeating evidence including freshness failure, and whose affected closure preserves unrelated evidence.",
           "tests": [
             "T-AF-CERTIFICATION-0001-R01-001",
             "T-AF-CERTIFICATION-0001-R01-002",
-            "T-AF-CERTIFICATION-0001-R01-003"
+            "T-AF-CERTIFICATION-0001-R01-003",
+            "T-AF-CERTIFICATION-0001-R01-004",
+            "T-AF-CERTIFICATION-0001-R01-005",
+            "T-AF-CERTIFICATION-0001-R01-006",
+            "T-AF-CERTIFICATION-0001-R01-007"
           ]
         },
         {

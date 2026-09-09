@@ -8,6 +8,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 
 use fortress_core::audit::ModuleInspection;
+use fortress_core::finding::{Defeater, DefeaterKind, DefeaterStrength};
 use fortress_core::program_semantics::ExecutionProvenance;
 use fortress_core::semantic_conformance::{
     BlockingEligibility, ModuleEffectObservation, ModuleSemanticConformance, PolicyDisposition,
@@ -147,7 +148,7 @@ fn render_semantic_module(
     if module.coverage().governed_source_files() == 0 {
         output.push_str("  Coverage status: NOT_APPLICABLE — no governed source subject exists.\n");
     }
-    render_module_coverage_reasons(output, module);
+    render_module_defeaters(output, evaluation, module);
 
     let authorizations = module
         .conclusions()
@@ -194,30 +195,7 @@ fn render_semantic_module(
                 claim.matching_observation_count(),
                 claim.coverage().ratio().unwrap_or("NOT_APPLICABLE"),
             );
-            for reason in claim.coverage_reasons() {
-                let _ = writeln!(output, "      Coverage reason: {reason}");
-                if reason == fortress_core::semantic_conformance::NO_SEMANTIC_COVERAGE {
-                    let _ = writeln!(
-                        output,
-                        "      Fortress analyzed none of this Module's {} governed source file(s).",
-                        claim.coverage().governed_source_files()
-                    );
-                }
-            }
-            for reason in claim.enforcement_reasons() {
-                let _ = writeln!(output, "      Enforcement reason: {reason}");
-                if reason == fortress_core::semantic_conformance::TEST_ONLY_EVIDENCE {
-                    output.push_str(
-                        "      All currently supported violating evidence originates in Rust test-only execution.\n",
-                    );
-                } else if reason
-                    == fortress_core::semantic_conformance::UNKNOWN_EXECUTION_PROVENANCE
-                {
-                    output.push_str(
-                        "      Current violating evidence does not establish production-capable execution.\n",
-                    );
-                }
-            }
+            render_defeater_references(output, evaluation, claim.defeater_refs(), "      ");
             let provenance = claim.evidence_provenance();
             if claim.matching_observation_count() > 0 {
                 let _ = writeln!(
@@ -260,30 +238,131 @@ fn render_semantic_module(
     }
 }
 
-fn render_module_coverage_reasons(output: &mut String, module: &ModuleSemanticConformance) {
+fn render_module_defeaters(
+    output: &mut String,
+    evaluation: &SemanticConformanceEvaluation,
+    module: &ModuleSemanticConformance,
+) {
     const HUMAN_REASON_LIMIT: usize = 5;
-    let reasons = module.coverage_reasons();
-    if reasons.is_empty() {
+    let references = module.defeater_refs();
+    if references.is_empty() {
         return;
     }
-    let _ = writeln!(output, "  Semantic coverage limitations: {}", reasons.len());
-    for reason in reasons.iter().take(HUMAN_REASON_LIMIT) {
-        let _ = writeln!(output, "    - {reason}");
-        if reason == fortress_core::semantic_conformance::NO_SEMANTIC_COVERAGE {
-            let _ = writeln!(
-                output,
-                "      Fortress analyzed none of this Module's {} governed source file(s).",
-                module.coverage().governed_source_files()
-            );
-        }
+    let _ = writeln!(
+        output,
+        "  Derived defeaters/limitations: {}",
+        references.len()
+    );
+    let mut resolved = references
+        .iter()
+        .filter_map(|reference| evaluation.model().defeater(reference))
+        .collect::<Vec<_>>();
+    resolved.sort_by_key(|defeater| {
+        (
+            std::cmp::Reverse(defeater.strength()),
+            defeater.kind(),
+            defeater.id(),
+        )
+    });
+    for defeater in resolved.into_iter().take(HUMAN_REASON_LIMIT) {
+        render_defeater(output, defeater, "    ");
     }
-    if reasons.len() > HUMAN_REASON_LIMIT {
+    if references.len() > HUMAN_REASON_LIMIT {
         let _ = writeln!(
             output,
             "    - ... {} additional limitation(s); use --format json for the complete canonical list.",
-            reasons.len() - HUMAN_REASON_LIMIT
+            references.len() - HUMAN_REASON_LIMIT
         );
     }
+}
+
+fn render_defeater_references(
+    output: &mut String,
+    evaluation: &SemanticConformanceEvaluation,
+    references: &[String],
+    indent: &str,
+) {
+    const HUMAN_REASON_LIMIT: usize = 5;
+    let mut resolved = references
+        .iter()
+        .filter_map(|reference| evaluation.model().defeater(reference))
+        .collect::<Vec<_>>();
+    resolved.sort_by_key(|defeater| {
+        (
+            std::cmp::Reverse(defeater.strength()),
+            defeater.kind(),
+            defeater.id(),
+        )
+    });
+    for defeater in resolved.into_iter().take(HUMAN_REASON_LIMIT) {
+        render_defeater(output, defeater, indent);
+    }
+    if references.len() > HUMAN_REASON_LIMIT {
+        let _ = writeln!(
+            output,
+            "{indent}- ... {} additional limitation(s); use --format json for the complete canonical list.",
+            references.len() - HUMAN_REASON_LIMIT
+        );
+    }
+}
+
+fn render_defeater(output: &mut String, defeater: &Defeater, indent: &str) {
+    let relation = match defeater.strength() {
+        DefeaterStrength::Defeating => "Defeater",
+        DefeaterStrength::Limiting => "Limitation",
+    };
+    let _ = writeln!(
+        output,
+        "{indent}{relation}: {} ({})",
+        defeater.kind().as_str(),
+        defeater.reason()
+    );
+    if defeater.kind() == DefeaterKind::NoSemanticCoverage {
+        let analysed = defeater
+            .detail()
+            .get("analysed_source_files")
+            .map_or("0", String::as_str);
+        let governed = defeater
+            .detail()
+            .get("governed_source_files")
+            .map_or("unknown", String::as_str);
+        if analysed == "0" {
+            let _ = writeln!(
+                output,
+                "{indent}  Fortress analyzed none of this Module's {governed} governed source file(s)."
+            );
+        } else {
+            let _ = writeln!(
+                output,
+                "{indent}  Fortress analyzed {analysed} of {governed} governed source file(s)."
+            );
+        }
+    } else if defeater.kind() == DefeaterKind::PartialSemanticCoverage {
+        if let Some(ratio) = defeater.detail().get("ratio") {
+            let _ = writeln!(output, "{indent}  Semantic source coverage is {ratio}.");
+        }
+    } else if defeater.kind() == DefeaterKind::EvidenceProvenanceDoubt {
+        if defeater.reason() == fortress_core::semantic_conformance::TEST_ONLY_EVIDENCE {
+            output.push_str(indent);
+            output.push_str(
+                "  All currently supported violating evidence originates in Rust test-only execution.\n",
+            );
+        } else if defeater.reason()
+            == fortress_core::semantic_conformance::UNKNOWN_EXECUTION_PROVENANCE
+        {
+            output.push_str(indent);
+            output.push_str(
+                "  Current violating evidence does not establish production-capable execution.\n",
+            );
+        }
+    } else if let Some(uncertainty) = defeater.detail().get("uncertainty") {
+        let _ = writeln!(output, "{indent}  Underlying fact: {uncertainty}");
+    }
+    let _ = writeln!(
+        output,
+        "{indent}  Retirement: {:?}",
+        defeater.retirement_condition()
+    );
 }
 
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]

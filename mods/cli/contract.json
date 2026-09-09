@@ -171,7 +171,7 @@
         },
         {
           "id": "TF-CLI-0001-R17",
-          "statement": "The native fortress semantic-conformance command renders authored ALLOW entries as AUTHORISED permissions with independent usage, renders only DENY entries as PASS, FAIL, UNKNOWN, or NOT_APPLICABLE evaluative claims, preserves claim-relative coverage and execution-provenance eligibility without inferring permission from implementation, resolves stable symbols to qualified human names when available, and groups propagated causal evidence by distinct operation site without discarding reachability paths.",
+          "statement": "The native fortress semantic-conformance command renders authored ALLOW entries as AUTHORISED permissions with independent usage, renders only DENY entries as PASS, FAIL, UNKNOWN, or NOT_APPLICABLE evaluative claims, explains canonical defeating and limiting evidence without re-evaluating it, preserves claim-relative coverage and execution-provenance eligibility without inferring permission from implementation, resolves stable symbols to qualified human names when available, and groups propagated causal evidence by distinct operation site without discarding reachability paths.",
           "tests": [
             "T-TF-CLI-0001-R17-001",
             "T-TF-CLI-0001-R17-002",

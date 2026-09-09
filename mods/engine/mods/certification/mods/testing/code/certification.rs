@@ -11,6 +11,10 @@ use fortress_core::certification::{
     VerifiedBehavioralState, certification_source_digest, compile_certification,
     test_inventory_digest,
 };
+use fortress_core::finding::{
+    Defeater, DefeaterKind, DefeaterRetirementCondition, DefeaterScope, DefeaterScopeKind,
+    DefeaterStrength,
+};
 
 fn input() -> CertificationInput {
     let source_digest = "sha256:subject".to_owned();
@@ -40,6 +44,7 @@ fn input() -> CertificationInput {
                 unsupported: Vec::new(),
             })
             .collect(),
+        defeaters: Vec::new(),
         applicable_rules: vec!["STD-ID-001".into()],
         rules: vec![RuleEvidenceInput {
             rule_id: "STD-ID-001".into(),
@@ -90,6 +95,148 @@ fn content_addressed_dag_is_deterministic_and_valid() {
     );
     assert_eq!(first.certification.status(), CertificationStatus::Pass);
     first.evidence_graph.validate().expect("valid graph");
+}
+
+/// `T-AF-CERTIFICATION-0001-R01-004`
+/// Fortress requirement: AF-CERTIFICATION-0001-R01
+#[test]
+fn semantic_defeaters_are_first_class_dag_dependencies() {
+    let mut input = input();
+    input.applicable_rules = vec!["ARCH-SEMANTIC-001".into()];
+    input.rules[0].rule_id = "ARCH-SEMANTIC-001".into();
+    let defeater = Defeater::new(
+        DefeaterKind::NoSemanticCoverage,
+        DefeaterStrength::Defeating,
+        "fortress-semantic-conformance",
+        "4.0.0",
+        DefeaterScope::new(
+            DefeaterScopeKind::SemanticClaim,
+            "semantic_claim:v1:sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        )
+        .unwrap(),
+        "NO_SEMANTIC_COVERAGE",
+        BTreeMap::from([
+            ("analysed_source_files".into(), "0".into()),
+            ("governed_source_files".into(), "3".into()),
+        ]),
+        vec!["sha256:psm".into()],
+        DefeaterRetirementCondition::SemanticCoverageEstablished,
+    )
+    .unwrap();
+    let defeater_id = defeater.id().to_owned();
+    input.defeaters.push(defeater);
+
+    let products = compile_certification(&input).unwrap();
+    let node = products
+        .evidence_graph
+        .nodes()
+        .iter()
+        .find(|node| node.evidence_class() == EvidenceClass::Defeater)
+        .unwrap();
+    assert_eq!(node.kind(), "defeater");
+    assert_eq!(node.subject(), defeater_id);
+    let rule = products
+        .evidence_graph
+        .nodes()
+        .iter()
+        .find(|node| {
+            node.kind() == "standard_rule_evaluation" && node.subject() == "ARCH-SEMANTIC-001"
+        })
+        .unwrap();
+    assert!(rule.inputs().contains(&node.id().to_owned()));
+    assert_eq!(products.evidence_graph.coverage().defeater, 1);
+}
+
+/// `T-AF-CERTIFICATION-0001-R01-005`
+/// Fortress requirement: AF-CERTIFICATION-0001-R01
+#[test]
+fn stale_artifact_generates_defeating_freshness_evidence() {
+    let mut input = input();
+    input.artifacts[0].current = false;
+    let products = compile_certification(&input).unwrap();
+    assert_eq!(products.certification.status(), CertificationStatus::Stale);
+    let json = products.evidence_graph.to_json_pretty().unwrap();
+    assert!(json.contains("\"kind\": \"STALE_INPUT\""));
+    assert!(json.contains("\"strength\": \"DEFEATING\""));
+    assert!(json.contains("\"retirement_condition\": \"INPUT_CURRENT\""));
+}
+
+/// `T-AF-CERTIFICATION-0001-R01-006`
+/// Fortress requirement: AF-CERTIFICATION-0001-R01
+#[test]
+fn canonical_defeater_vocabulary_and_scopes_are_deterministic() {
+    let kinds = [
+        DefeaterKind::NoSemanticCoverage,
+        DefeaterKind::PartialSemanticCoverage,
+        DefeaterKind::UnresolvedCallPath,
+        DefeaterKind::UnclassifiedOperation,
+        DefeaterKind::UnsupportedConstruct,
+        DefeaterKind::AnalyserLimit,
+        DefeaterKind::EvidenceProvenanceDoubt,
+        DefeaterKind::StaleInput,
+        DefeaterKind::AuthoritySuperseded,
+    ];
+    let scopes = [
+        DefeaterScopeKind::Module,
+        DefeaterScopeKind::Symbol,
+        DefeaterScopeKind::OperationSite,
+        DefeaterScopeKind::SemanticClaim,
+        DefeaterScopeKind::Artifact,
+        DefeaterScopeKind::Obligation,
+    ];
+    let retirements = [
+        DefeaterRetirementCondition::SemanticCoverageEstablished,
+        DefeaterRetirementCondition::FullSemanticCoverageEstablished,
+        DefeaterRetirementCondition::CallResolved,
+        DefeaterRetirementCondition::OperationClassified,
+        DefeaterRetirementCondition::ConstructSupported,
+        DefeaterRetirementCondition::AnalyserSupportEstablished,
+        DefeaterRetirementCondition::ProductionCapableEvidenceEstablished,
+        DefeaterRetirementCondition::InputCurrent,
+        DefeaterRetirementCondition::CurrentAuthorityReevaluated,
+    ];
+    let mut ids = BTreeSet::new();
+    for (index, kind) in kinds.into_iter().enumerate() {
+        let build = |inputs: Vec<String>| {
+            Defeater::new(
+                kind,
+                if index % 2 == 0 {
+                    DefeaterStrength::Defeating
+                } else {
+                    DefeaterStrength::Limiting
+                },
+                "fortress-test",
+                "1.0.0",
+                DefeaterScope::new(scopes[index % scopes.len()], format!("subject:{index}"))
+                    .unwrap(),
+                kind.as_str(),
+                BTreeMap::from([("fact".into(), index.to_string())]),
+                inputs,
+                retirements[index],
+            )
+            .unwrap()
+        };
+        let first = build(vec!["sha256:b".into(), "sha256:a".into()]);
+        let second = build(vec!["sha256:a".into(), "sha256:b".into()]);
+        assert_eq!(first, second);
+        assert!(ids.insert(first.id().to_owned()));
+    }
+}
+
+/// `T-AF-CERTIFICATION-0001-R01-007`
+/// Fortress requirement: AF-CERTIFICATION-0001-R01
+#[test]
+fn analyzer_capability_manifest_becomes_one_limiting_artifact_defeater() {
+    let mut input = input();
+    input.artifacts[0].unsupported =
+        vec!["macro_expansion".into(), "receiver_type_propagation".into()];
+    let products = compile_certification(&input).unwrap();
+    assert_eq!(products.certification.status(), CertificationStatus::Pass);
+    let json = products.evidence_graph.to_json_pretty().unwrap();
+    assert!(json.contains("\"kind\": \"ANALYSER_LIMIT\""));
+    assert!(json.contains("\"strength\": \"LIMITING\""));
+    assert!(json.contains("macro_expansion,receiver_type_propagation"));
+    assert_eq!(products.evidence_graph.coverage().defeater, 1);
 }
 
 /// `T-AF-CERTIFICATION-0001-R01-002`

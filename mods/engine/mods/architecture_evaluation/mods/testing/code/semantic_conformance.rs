@@ -11,6 +11,7 @@ use fortress_core::architecture_realization::reconcile_implementation;
 use fortress_core::contract_coherency::{
     ContractStandardIndex, ModuleContract, compile_contract_coherency_graph,
 };
+use fortress_core::finding::{DefeaterKind, DefeaterStrength};
 use fortress_core::finding_governance::{
     FindingGovernanceDocument, FindingLifecycle, evaluate_finding_governance,
 };
@@ -149,16 +150,18 @@ fn evaluate_files(files: &BTreeMap<String, Vec<u8>>) -> SemanticConformanceEvalu
     let ccg = compilation
         .graph()
         .unwrap_or_else(|| panic!("fixture CCG compiles: {:#?}", compilation.violations()));
+    let territories = ccg
+        .modules()
+        .iter()
+        .map(|(id, module)| ModuleTerritory::new(id, module.path()))
+        .collect();
     let input = ImplementationObservationInput::new(
         "sha256:semantic-conformance-fixture",
         files
             .iter()
             .map(|(path, bytes)| SnapshotBoundFile::from_bytes(path, bytes.clone()))
             .collect(),
-        vec![
-            ModuleTerritory::new("PF-SEMANTIC-FIXTURE", ""),
-            ModuleTerritory::new("AF-SAMPLE-0001", "mods/sample"),
-        ],
+        territories,
     );
     let observed = observe_rust_implementation(&input).expect("implementation observes");
     let ownerships = input.ownerships().to_vec();
@@ -325,7 +328,13 @@ fn test_only_forbidden_effect_remains_fail_but_is_advisory() {
         claim.blocking_eligibility(),
         Some(BlockingEligibility::AdvisoryOnly)
     );
-    assert_eq!(claim.enforcement_reasons(), [TEST_ONLY_EVIDENCE]);
+    assert!(claim.defeater_refs().iter().any(|reference| {
+        result.model().defeater(reference).is_some_and(|defeater| {
+            defeater.kind() == DefeaterKind::EvidenceProvenanceDoubt
+                && defeater.strength() == DefeaterStrength::Limiting
+                && defeater.reason() == TEST_ONLY_EVIDENCE
+        })
+    }));
     assert_eq!(
         claim
             .evidence_provenance()
@@ -539,10 +548,12 @@ fn unknown_only_evidence_is_advisory_while_production_evidence_is_sufficient() {
         unknown_claim.blocking_eligibility(),
         Some(BlockingEligibility::AdvisoryOnly)
     );
-    assert_eq!(
-        unknown_claim.enforcement_reasons(),
-        [UNKNOWN_EXECUTION_PROVENANCE]
-    );
+    assert!(unknown_claim.defeater_refs().iter().any(|reference| {
+        unknown.model().defeater(reference).is_some_and(|defeater| {
+            defeater.kind() == DefeaterKind::EvidenceProvenanceDoubt
+                && defeater.reason() == UNKNOWN_EXECUTION_PROVENANCE
+        })
+    }));
 
     let mixed = evaluate(
         r#"
@@ -562,7 +573,12 @@ fn production_write() { let _ = std::fs::write("production", b"x"); }
         mixed_claim.blocking_eligibility(),
         Some(BlockingEligibility::BlockSupported)
     );
-    assert!(mixed_claim.enforcement_reasons().is_empty());
+    assert!(mixed_claim.defeater_refs().iter().all(|reference| {
+        mixed
+            .model()
+            .defeater(reference)
+            .is_some_and(|defeater| defeater.kind() != DefeaterKind::EvidenceProvenanceDoubt)
+    }));
     assert_eq!(
         mixed_claim
             .evidence_provenance()
@@ -597,12 +613,122 @@ fn claim_relative_uncertainty_is_unknown_without_fabricated_capability() {
     assert_eq!(result.model().summary().not_evaluable_findings(), 1);
     assert!(result.findings().is_empty());
     assert_eq!(result.coverage_findings().len(), 1);
+    let claim = &module.conclusions()[0];
+    assert!(claim.defeater_refs().iter().any(|reference| {
+        result.model().defeater(reference).is_some_and(|defeater| {
+            defeater.kind() == DefeaterKind::UnresolvedCallPath
+                && defeater.strength() == DefeaterStrength::Defeating
+        })
+    }));
     assert!(module.observations().iter().all(|observation| {
         observation
             .capability()
             .map(fortress_core::state_effect_analysis::EffectCapability::stable_id)
             != Some("filesystem")
     }));
+}
+
+/// `T-ARCH-SEMANTIC-001-R01-012`
+/// Fortress requirement: AF-ARCHITECTURE-EVALUATION-0001-R06
+#[test]
+fn unclassified_operation_is_structured_without_fabricated_capability() {
+    let result = evaluate(
+        "pub fn residual() { std::sync::atomic::fence(std::sync::atomic::Ordering::SeqCst); }",
+        module_contract("AF-SAMPLE-0001", &[], &["filesystem"], &[], &[]),
+    );
+    let claim = &result
+        .model()
+        .module("AF-SAMPLE-0001")
+        .unwrap()
+        .conclusions()[0];
+    assert_eq!(claim.conformance(), Some(SemanticConformanceState::Unknown));
+    assert!(claim.defeater_refs().iter().any(|reference| {
+        result.model().defeater(reference).is_some_and(|defeater| {
+            defeater.kind() == DefeaterKind::UnclassifiedOperation
+                && defeater.strength() == DefeaterStrength::Defeating
+                && defeater.retirement_condition()
+                    == fortress_core::finding::DefeaterRetirementCondition::OperationClassified
+        })
+    }));
+    assert!(result.findings().is_empty());
+    assert!(
+        result
+            .model()
+            .module("AF-SAMPLE-0001")
+            .unwrap()
+            .observations()
+            .iter()
+            .all(|observation| observation.capability().is_none())
+    );
+}
+
+/// `T-ARCH-SEMANTIC-001-R01-013`
+/// Fortress requirement: AF-ARCHITECTURE-EVALUATION-0001-R06
+#[test]
+fn unsupported_qualified_call_is_structured_without_fabricated_conformance() {
+    let result = evaluate(
+        r"
+pub trait Callable { fn invoke(); }
+pub struct Thing;
+impl Callable for Thing { fn invoke() {} }
+pub fn qualified_call() { <Thing as Callable>::invoke(); }
+",
+        module_contract("AF-SAMPLE-0001", &[], &["filesystem"], &[], &[]),
+    );
+    let claim = &result
+        .model()
+        .module("AF-SAMPLE-0001")
+        .unwrap()
+        .conclusions()[0];
+    assert_eq!(claim.conformance(), Some(SemanticConformanceState::Unknown));
+    assert!(claim.defeater_refs().iter().any(|reference| {
+        result.model().defeater(reference).is_some_and(|defeater| {
+            defeater.kind() == DefeaterKind::UnsupportedConstruct
+                && defeater.strength() == DefeaterStrength::Defeating
+                && defeater.retirement_condition()
+                    == fortress_core::finding::DefeaterRetirementCondition::ConstructSupported
+        })
+    }));
+    assert!(result.findings().is_empty());
+    assert!(
+        result
+            .model()
+            .module("AF-SAMPLE-0001")
+            .unwrap()
+            .observations()
+            .iter()
+            .all(|observation| observation.capability().is_none())
+    );
+}
+
+/// `T-ARCH-SEMANTIC-001-R01-011`
+/// Fortress requirement: AF-ARCHITECTURE-EVALUATION-0001-R06
+#[test]
+fn proven_production_violation_survives_unrelated_defeating_uncertainty() {
+    let result = evaluate(
+        r#"
+pub fn write() { let _ = std::fs::write("output", b"x"); }
+pub fn invoke<F: Fn()>(f: F) { f(); }
+"#,
+        module_contract("AF-SAMPLE-0001", &[], &[], &[], &["filesystem.write"]),
+    );
+    let claim = &result
+        .model()
+        .module("AF-SAMPLE-0001")
+        .unwrap()
+        .conclusions()[0];
+    assert_eq!(claim.conformance(), Some(SemanticConformanceState::Fail));
+    assert_eq!(
+        claim.blocking_eligibility(),
+        Some(BlockingEligibility::BlockSupported)
+    );
+    assert!(claim.defeater_refs().iter().any(|reference| {
+        result.model().defeater(reference).is_some_and(|defeater| {
+            defeater.kind() == DefeaterKind::UnresolvedCallPath
+                && defeater.strength() == DefeaterStrength::Defeating
+        })
+    }));
+    assert_eq!(result.findings().len(), 1);
 }
 
 /// `T-ARCH-SEMANTIC-001-R01-003`
@@ -648,10 +774,34 @@ fn indexed_evaluation_scales_to_one_thousand_policies_and_ten_thousand_effects()
     files.insert("contract.json".into(), root_contract().into_bytes());
     for index in 0..1_000 {
         let id = format!("AF-STRESS-{index:04}");
+        let (contract, source) = match index % 3 {
+            0 => (
+                module_contract(&id, &[], &["filesystem"], &[], &[]),
+                "pub struct Marker;\n".to_owned(),
+            ),
+            1 => (
+                module_contract(&id, &[], &["filesystem"], &[], &[]),
+                format!("pub fn pure_{index:04}() {{}}\n"),
+            ),
+            _ => (
+                module_contract(&id, &[], &[], &[], &["filesystem.write"]),
+                format!(
+                    "#[cfg(test)] pub fn write_{index:04}() {{ let _ = std::fs::write(\"x\", b\"x\"); }}\n"
+                ),
+            ),
+        };
         files.insert(
             format!("mods/m{index:04}/contract.json"),
-            module_contract(&id, &["filesystem"], &[], &[], &[]).into_bytes(),
+            contract.into_bytes(),
         );
+        files.insert(
+            format!("mods/m{index:04}/data/Cargo.toml"),
+            format!(
+                "[package]\nname='stress-{index:04}'\nversion='0.1.0'\nedition='2024'\n[lib]\npath='../code/lib.rs'\n"
+            )
+            .into_bytes(),
+        );
+        files.insert(format!("mods/m{index:04}/code/lib.rs"), source.into_bytes());
     }
     files.insert(
         "mods/sample/contract.json".into(),
@@ -675,8 +825,15 @@ fn indexed_evaluation_scales_to_one_thousand_policies_and_ten_thousand_effects()
     let result = evaluate_files(&files);
     assert!(started.elapsed().as_secs() < 120);
     assert_eq!(result.model().summary().modules_with_policy(), 1_001);
-    assert_eq!(result.model().summary().governed_observations(), 10_000);
-    assert!(result.findings().is_empty());
+    assert!(result.model().summary().governed_observations() >= 10_000);
+    assert!(result.model().defeaters().iter().any(|defeater| {
+        defeater.kind() == DefeaterKind::NoSemanticCoverage
+            && defeater.strength() == DefeaterStrength::Defeating
+    }));
+    assert!(result.model().defeaters().iter().any(|defeater| {
+        defeater.kind() == DefeaterKind::EvidenceProvenanceDoubt
+            && defeater.strength() == DefeaterStrength::Limiting
+    }));
 }
 
 /// `T-AF-ARCHITECTURE-EVALUATION-0001-R07-001`
@@ -701,7 +858,13 @@ fn deny_claim_with_governed_source_and_zero_symbols_is_not_evaluable() {
         conclusion.blocking_eligibility(),
         Some(BlockingEligibility::NotEvaluable)
     );
-    assert_eq!(conclusion.coverage_reasons(), [NO_SEMANTIC_COVERAGE]);
+    assert!(conclusion.defeater_refs().iter().any(|reference| {
+        result.model().defeater(reference).is_some_and(|defeater| {
+            defeater.kind() == DefeaterKind::NoSemanticCoverage
+                && defeater.strength() == DefeaterStrength::Defeating
+                && defeater.reason() == NO_SEMANTIC_COVERAGE
+        })
+    }));
     assert_eq!(result.findings().len(), 0);
     assert_eq!(result.coverage_findings().len(), 1);
     assert_eq!(result.model().summary().no_semantic_coverage_claims(), 1);
@@ -774,6 +937,12 @@ fn partial_coverage_records_distinct_symbol_bearing_source_paths() {
     assert_eq!(module.coverage().governed_source_files(), 2);
     assert_eq!(module.coverage().analysed_source_files(), 1);
     assert_eq!(module.coverage().ratio(), Some("1/2"));
+    assert!(module.defeater_refs().iter().any(|reference| {
+        first.model().defeater(reference).is_some_and(|defeater| {
+            defeater.kind() == DefeaterKind::PartialSemanticCoverage
+                && defeater.strength() == DefeaterStrength::Limiting
+        })
+    }));
     assert_eq!(
         first.model().to_canonical_json().unwrap(),
         second.model().to_canonical_json().unwrap()

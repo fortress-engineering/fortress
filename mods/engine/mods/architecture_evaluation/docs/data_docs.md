@@ -52,4 +52,8 @@ Defines the retained deterministic projection with per-claim execution-provenanc
 
 ### [`semantic_conformance_schema_v5.json`](../data/semantic_conformance_schema_v5.json)
 
-Defines the current deterministic projection whose effect observations carry stable operation-site identities and whose semantic findings aggregate causal fan-in without using it as finding identity.
+Preserves the deterministic projection whose effect observations carry stable operation-site identities and whose semantic findings aggregate causal fan-in without using it as finding identity.
+
+### [`semantic_conformance_schema_v6.json`](../data/semantic_conformance_schema_v6.json)
+
+Defines the current deterministic projection with stable semantic-policy claim identities, canonical defeater objects, and per-claim and per-Module defeater references. Defeaters carry closed kind, exact strength, stable scope, structured current facts, deterministic semantic inputs, and an explicit current-snapshot retirement condition.

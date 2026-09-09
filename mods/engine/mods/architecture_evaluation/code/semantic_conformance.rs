@@ -13,8 +13,9 @@ use sha2::{Digest, Sha256};
 use crate::architecture_realization::{ArchitectureRealization, ReconciliationState};
 use crate::contract_coherency::{ContractCoherencyGraph, ModuleSemanticPolicy, ResolvedModule};
 use crate::finding::{
-    CanonicalFinding, EvaluatorProvenance, FindingCategory, FindingError, FindingLocation,
-    FindingOccurrence, RuleFindingDefinition, SourceSpan,
+    CanonicalFinding, Defeater, DefeaterError, DefeaterKind, DefeaterRetirementCondition,
+    DefeaterScope, DefeaterScopeKind, DefeaterStrength, EvaluatorProvenance, FindingCategory,
+    FindingError, FindingLocation, FindingOccurrence, RuleFindingDefinition, SourceSpan,
 };
 use crate::implementation_observation::{SourceOwnership, SourceOwnershipAuthority};
 use crate::program_semantics::{ExecutionProvenance, ProgramSemanticModel};
@@ -26,11 +27,11 @@ use crate::state_effect_analysis::{
 /// Normative Module semantic-conformance rule identity.
 pub const ARCH_SEMANTIC_RULE_ID: &str = "ARCH-SEMANTIC-001";
 /// Canonical semantic-conformance projection schema identity.
-pub const SEMANTIC_CONFORMANCE_SCHEMA: &str = "urn:fortress:schema:v5:semantic-conformance";
+pub const SEMANTIC_CONFORMANCE_SCHEMA: &str = "urn:fortress:schema:v6:semantic-conformance";
 /// Canonical semantic-conformance projection schema version.
-pub const SEMANTIC_CONFORMANCE_SCHEMA_VERSION: u16 = 5;
+pub const SEMANTIC_CONFORMANCE_SCHEMA_VERSION: u16 = 6;
 /// Semantic version of the evaluator.
-pub const SEMANTIC_CONFORMANCE_VERSION: &str = "3.0.0";
+pub const SEMANTIC_CONFORMANCE_VERSION: &str = "4.0.0";
 /// Stable evaluator identity used in canonical findings.
 pub const SEMANTIC_CONFORMANCE_EVALUATOR_ID: &str = "fortress-semantic-conformance";
 /// Stable reason for governed source that produced no PSM symbols.
@@ -39,6 +40,8 @@ pub const NO_SEMANTIC_COVERAGE: &str = "NO_SEMANTIC_COVERAGE";
 pub const TEST_ONLY_EVIDENCE: &str = "TEST_ONLY_EVIDENCE";
 /// Stable enforcement limitation for violating evidence with unknown execution provenance.
 pub const UNKNOWN_EXECUTION_PROVENANCE: &str = "UNKNOWN_EXECUTION_PROVENANCE";
+/// Versioned namespace for stable authored semantic-policy claim identities.
+pub const SEMANTIC_CLAIM_ID_PREFIX: &str = "semantic_claim:v1:sha256";
 
 const REMEDIATION: &str = "Change the implementation so the forbidden semantic consequence is unreachable, or explicitly revise the owning Module Contract policy after architectural review. Do not infer permission from current behavior.";
 const COVERAGE_REMEDIATION: &str = "Resolve the identified opaque operation or narrow the authored policy claim to semantics Fortress can currently evaluate. Do not treat missing semantic authority as conformance.";
@@ -389,6 +392,7 @@ impl EvidenceProvenanceSummary {
 /// One authored policy entry and its authorization or conformance result.
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct SemanticPolicyConclusion {
+    id: String,
     target_kind: PolicyTargetKind,
     target: String,
     disposition: PolicyDisposition,
@@ -398,11 +402,16 @@ pub struct SemanticPolicyConclusion {
     matching_observations: usize,
     evidence_provenance: EvidenceProvenanceSummary,
     coverage: SemanticSourceCoverage,
-    coverage_reasons: Vec<String>,
-    enforcement_reasons: Vec<String>,
+    defeater_refs: Vec<String>,
 }
 
 impl SemanticPolicyConclusion {
+    /// Returns the stable authored semantic-policy claim identity.
+    #[must_use]
+    pub fn id(&self) -> &str {
+        &self.id
+    }
+
     /// Returns the policy target namespace.
     #[must_use]
     pub const fn target_kind(&self) -> PolicyTargetKind {
@@ -457,16 +466,10 @@ impl SemanticPolicyConclusion {
         &self.coverage
     }
 
-    /// Returns claim-relative reasons that prevented evaluation.
+    /// Returns canonical derived evidence that limits this claim.
     #[must_use]
-    pub fn coverage_reasons(&self) -> &[String] {
-        &self.coverage_reasons
-    }
-
-    /// Returns stable reasons that reduce enforcement eligibility.
-    #[must_use]
-    pub fn enforcement_reasons(&self) -> &[String] {
-        &self.enforcement_reasons
+    pub fn defeater_refs(&self) -> &[String] {
+        &self.defeater_refs
     }
 }
 
@@ -481,7 +484,7 @@ pub struct ModuleSemanticConformance {
     observations: Vec<ModuleEffectObservation>,
     ungoverned_observations: usize,
     coverage: SemanticSourceCoverage,
-    coverage_reasons: Vec<String>,
+    defeater_refs: Vec<String>,
 }
 
 impl ModuleSemanticConformance {
@@ -527,10 +530,10 @@ impl ModuleSemanticConformance {
         &self.coverage
     }
 
-    /// Returns Module-level semantic coverage limitations.
+    /// Returns canonical defeaters attached to this Module's policy entries.
     #[must_use]
-    pub fn coverage_reasons(&self) -> &[String] {
-        &self.coverage_reasons
+    pub fn defeater_refs(&self) -> &[String] {
+        &self.defeater_refs
     }
 
     /// Serializes this focused Module view deterministically.
@@ -703,6 +706,7 @@ pub struct SemanticConformanceModel {
     ccg_digest: String,
     psm_digest: String,
     state_effect_digest: String,
+    defeaters: Vec<Defeater>,
     modules: Vec<ModuleSemanticConformance>,
     dependency_convergence: Vec<DependencyConvergence>,
     summary: SemanticConformanceSummary,
@@ -710,6 +714,21 @@ pub struct SemanticConformanceModel {
 }
 
 impl SemanticConformanceModel {
+    /// Returns canonical derived evidence limiting semantic-policy claims.
+    #[must_use]
+    pub fn defeaters(&self) -> &[Defeater] {
+        &self.defeaters
+    }
+
+    /// Resolves one content-addressed defeater.
+    #[must_use]
+    pub fn defeater(&self, id: &str) -> Option<&Defeater> {
+        self.defeaters
+            .binary_search_by(|defeater| defeater.id().cmp(id))
+            .ok()
+            .map(|index| &self.defeaters[index])
+    }
+
     /// Returns canonical Module conclusions.
     #[must_use]
     pub fn modules(&self) -> &[ModuleSemanticConformance] {
@@ -825,6 +844,8 @@ pub fn evaluate_semantic_conformance(
     ownerships: &[SourceOwnership],
     standard_edition: &str,
 ) -> Result<SemanticConformanceEvaluation, SemanticConformanceError> {
+    let psm_digest = psm.digest()?;
+    let state_effect_digest = state_effect.digest()?;
     let symbols = psm
         .symbols()
         .iter()
@@ -850,7 +871,7 @@ pub fn evaluate_semantic_conformance(
         .collect::<BTreeSet<_>>();
     let source_coverage = compute_semantic_source_coverage(ownerships, psm);
     let mut by_module = BTreeMap::<String, Vec<ModuleEffectObservation>>::new();
-    let mut opaque_by_module = BTreeMap::<String, BTreeSet<String>>::new();
+    let mut opaque_by_module = BTreeMap::<String, BTreeMap<String, BTreeSet<String>>>::new();
     let mut analysis_only_observations = 0;
 
     for summary in state_effect.summaries() {
@@ -865,6 +886,8 @@ pub fn evaluate_semantic_conformance(
         for reason in summary.uncertainty().iter().filter(|reason| {
             reason.starts_with("opaque_call:")
                 || reason.starts_with("unclassified_external_operation:")
+                || reason.starts_with("unsupported_construct:")
+                || reason.starts_with("analyser_limit:")
                 || matches!(
                     reason.as_str(),
                     "external_operation_identity_missing" | "transitive_opaque_effect"
@@ -872,6 +895,8 @@ pub fn evaluate_semantic_conformance(
         }) {
             opaque_by_module
                 .entry(owner.into())
+                .or_default()
+                .entry(summary.symbol().into())
                 .or_default()
                 .insert(reason.clone());
         }
@@ -909,6 +934,7 @@ pub fn evaluate_semantic_conformance(
     let mut findings = Vec::new();
     let mut finding_positions = BTreeMap::new();
     let mut coverage_findings = Vec::new();
+    let mut defeaters = BTreeMap::<String, Defeater>::new();
     let mut modules = Vec::new();
     let mut summary = SemanticConformanceSummary {
         declared_modules: ccg.modules().len(),
@@ -929,11 +955,14 @@ pub fn evaluate_semantic_conformance(
                 &mut observations,
                 &opaque,
                 &coverage,
+                &psm_digest,
+                &state_effect_digest,
                 &legacy_symbol_ids,
                 standard_edition,
                 &mut findings,
                 &mut finding_positions,
                 &mut coverage_findings,
+                &mut defeaters,
                 &mut summary,
             )?
         } else {
@@ -954,12 +983,12 @@ pub fn evaluate_semantic_conformance(
         }
         summary.ungoverned_observations += ungoverned;
         summary.governed_observations += observations.len().saturating_sub(ungoverned);
-        let mut module_coverage_reasons = opaque;
-        module_coverage_reasons.extend(
-            conclusions
-                .iter()
-                .flat_map(|conclusion| conclusion.coverage_reasons.iter().cloned()),
-        );
+        let mut module_defeater_refs = conclusions
+            .iter()
+            .flat_map(|conclusion| conclusion.defeater_refs.iter().cloned())
+            .collect::<Vec<_>>();
+        module_defeater_refs.sort();
+        module_defeater_refs.dedup();
         modules.push(ModuleSemanticConformance {
             module: module_id.clone(),
             contract_path: module.contract_path().into(),
@@ -973,7 +1002,7 @@ pub fn evaluate_semantic_conformance(
             observations,
             ungoverned_observations: ungoverned,
             coverage,
-            coverage_reasons: module_coverage_reasons.into_iter().collect(),
+            defeater_refs: module_defeater_refs,
         });
     }
     modules.sort_by(|left, right| left.module.cmp(&right.module));
@@ -1007,8 +1036,9 @@ pub fn evaluate_semantic_conformance(
         project_id: psm.project_id().map(str::to_owned),
         standard_edition: standard_edition.into(),
         ccg_digest: ccg.digest()?,
-        psm_digest: psm.digest()?,
-        state_effect_digest: state_effect.digest()?,
+        psm_digest,
+        state_effect_digest,
+        defeaters: defeaters.into_values().collect(),
         modules,
         dependency_convergence,
         summary,
@@ -1033,13 +1063,16 @@ fn apply_policy(
     module: &ResolvedModule,
     policy: &ModuleSemanticPolicy,
     observations: &mut [ModuleEffectObservation],
-    opaque: &BTreeSet<String>,
+    opaque: &BTreeMap<String, BTreeSet<String>>,
     coverage: &SemanticSourceCoverage,
+    psm_digest: &str,
+    state_effect_digest: &str,
     legacy_symbol_ids: &BTreeMap<&str, &str>,
     standard_edition: &str,
     findings: &mut Vec<CanonicalFinding>,
     finding_positions: &mut BTreeMap<String, usize>,
     coverage_findings: &mut Vec<CanonicalFinding>,
+    defeaters: &mut BTreeMap<String, Defeater>,
     summary: &mut SemanticConformanceSummary,
 ) -> Result<
     (
@@ -1047,7 +1080,7 @@ fn apply_policy(
         SemanticConformanceState,
         usize,
     ),
-    FindingError,
+    SemanticConformanceError,
 > {
     let mut claims = Vec::new();
     claims.extend(policy.capabilities().allow().iter().map(|target| {
@@ -1099,6 +1132,7 @@ fn apply_policy(
 
     let mut conclusions = Vec::new();
     for (target_kind, target, disposition) in claims {
+        let claim_id = semantic_claim_id(module_id, target_kind, &target, disposition);
         let matching = observations
             .iter()
             .filter(|observation| {
@@ -1108,25 +1142,73 @@ fn apply_policy(
             })
             .collect::<Vec<_>>();
         let evidence_provenance = EvidenceProvenanceSummary::from_observations(&matching);
-        let (
-            authorization,
-            conformance,
-            blocking_eligibility,
-            coverage_reasons,
-            enforcement_reasons,
-        ) = if disposition == PolicyDisposition::Allow {
+        let mut claim_defeater_refs = Vec::new();
+        if coverage.has_governed_subject()
+            && coverage.analysed_source_files() < coverage.governed_source_files()
+        {
+            let (kind, strength, reason, retirement) = if coverage.has_no_semantic_coverage() {
+                (
+                    DefeaterKind::NoSemanticCoverage,
+                    DefeaterStrength::Defeating,
+                    NO_SEMANTIC_COVERAGE,
+                    DefeaterRetirementCondition::SemanticCoverageEstablished,
+                )
+            } else {
+                (
+                    DefeaterKind::PartialSemanticCoverage,
+                    DefeaterStrength::Limiting,
+                    DefeaterKind::PartialSemanticCoverage.as_str(),
+                    DefeaterRetirementCondition::FullSemanticCoverageEstablished,
+                )
+            };
+            let detail = BTreeMap::from([
+                (
+                    "analysed_source_files".into(),
+                    coverage.analysed_source_files().to_string(),
+                ),
+                (
+                    "governed_source_files".into(),
+                    coverage.governed_source_files().to_string(),
+                ),
+                (
+                    "ratio".into(),
+                    coverage.ratio().unwrap_or("UNDEFINED").into(),
+                ),
+            ]);
+            insert_defeater(
+                defeaters,
+                &mut claim_defeater_refs,
+                Defeater::new(
+                    kind,
+                    strength,
+                    SEMANTIC_CONFORMANCE_EVALUATOR_ID,
+                    SEMANTIC_CONFORMANCE_VERSION,
+                    DefeaterScope::new(DefeaterScopeKind::Module, module_id)?,
+                    reason,
+                    detail,
+                    vec![module_id.into(), psm_digest.into()],
+                    retirement,
+                )?,
+            );
+        }
+        for (symbol, reasons) in opaque {
+            for reason in reasons {
+                insert_defeater(
+                    defeaters,
+                    &mut claim_defeater_refs,
+                    opaque_defeater(symbol, module_id, reason, psm_digest, state_effect_digest)?,
+                );
+            }
+        }
+        let (authorization, conformance, blocking_eligibility) = if disposition
+            == PolicyDisposition::Allow
+        {
             summary.authored_authorizations += 1;
             summary.authorization_observations += matching.len();
             if !matching.is_empty() {
                 summary.authorizations_with_observed_usage += 1;
             }
-            (
-                Some(AuthorizationState::Authorised),
-                None,
-                None,
-                Vec::new(),
-                Vec::new(),
-            )
+            (Some(AuthorizationState::Authorised), None, None)
         } else if !matching.is_empty() {
             for observation in &matching {
                 let mut finding = forbidden_finding(
@@ -1173,14 +1255,31 @@ fn apply_policy(
                     }
                 }
             }
-            let mut enforcement_reasons = Vec::new();
             if evidence_provenance.production_capable_observations() == 0 {
                 if evidence_provenance.test_only_observations() > 0 {
-                    enforcement_reasons.push(TEST_ONLY_EVIDENCE.into());
+                    insert_defeater(
+                        defeaters,
+                        &mut claim_defeater_refs,
+                        provenance_defeater(
+                            &claim_id,
+                            TEST_ONLY_EVIDENCE,
+                            &matching,
+                            state_effect_digest,
+                        )?,
+                    );
                     summary.test_only_advisory_claims += 1;
                 }
                 if evidence_provenance.unknown_observations() > 0 {
-                    enforcement_reasons.push(UNKNOWN_EXECUTION_PROVENANCE.into());
+                    insert_defeater(
+                        defeaters,
+                        &mut claim_defeater_refs,
+                        provenance_defeater(
+                            &claim_id,
+                            UNKNOWN_EXECUTION_PROVENANCE,
+                            &matching,
+                            state_effect_digest,
+                        )?,
+                    );
                     summary.unknown_provenance_advisory_claims += 1;
                 }
             }
@@ -1194,63 +1293,43 @@ fn apply_policy(
                         BlockingEligibility::AdvisoryOnly
                     },
                 ),
-                Vec::new(),
-                enforcement_reasons,
             )
         } else if !coverage.has_governed_subject() {
             (
                 None,
                 Some(SemanticConformanceState::NotApplicable),
                 Some(BlockingEligibility::AdvisoryOnly),
-                Vec::new(),
-                Vec::new(),
             )
-        } else if coverage.has_no_semantic_coverage() {
-            let coverage_reasons = vec![NO_SEMANTIC_COVERAGE.into()];
+        } else if has_defeating_defeater(&claim_defeater_refs, defeaters) {
+            let reasons = claim_defeater_refs
+                .iter()
+                .filter_map(|id| defeaters.get(id))
+                .filter(|defeater| defeater.strength() == DefeaterStrength::Defeating)
+                .map(|defeater| defeater.reason().to_owned())
+                .collect::<Vec<_>>();
             coverage_findings.push(coverage_finding(
                 module_id,
                 module,
                 target_kind,
                 &target,
-                &coverage_reasons,
+                &reasons,
                 coverage,
                 standard_edition,
             )?);
             summary.not_evaluable_findings += 1;
-            summary.no_semantic_coverage_claims += 1;
+            if coverage.has_no_semantic_coverage() {
+                summary.no_semantic_coverage_claims += 1;
+            }
             (
                 None,
                 Some(SemanticConformanceState::Unknown),
                 Some(BlockingEligibility::NotEvaluable),
-                coverage_reasons,
-                Vec::new(),
-            )
-        } else if !opaque.is_empty() {
-            let coverage_reasons = opaque.iter().cloned().collect::<Vec<_>>();
-            coverage_findings.push(coverage_finding(
-                module_id,
-                module,
-                target_kind,
-                &target,
-                &coverage_reasons,
-                coverage,
-                standard_edition,
-            )?);
-            summary.not_evaluable_findings += 1;
-            (
-                None,
-                Some(SemanticConformanceState::Unknown),
-                Some(BlockingEligibility::NotEvaluable),
-                coverage_reasons,
-                Vec::new(),
             )
         } else {
             (
                 None,
                 Some(SemanticConformanceState::Pass),
                 Some(BlockingEligibility::AdvisoryOnly),
-                Vec::new(),
-                Vec::new(),
             )
         };
         if let Some(state) = conformance {
@@ -1264,7 +1343,10 @@ fn apply_policy(
                 }
             }
         }
+        claim_defeater_refs.sort();
+        claim_defeater_refs.dedup();
         conclusions.push(SemanticPolicyConclusion {
+            id: claim_id,
             target_kind,
             target,
             disposition,
@@ -1274,8 +1356,7 @@ fn apply_policy(
             matching_observations: matching.len(),
             evidence_provenance,
             coverage: coverage.clone(),
-            coverage_reasons,
-            enforcement_reasons,
+            defeater_refs: claim_defeater_refs,
         });
     }
     let deny_conclusions = conclusions
@@ -1305,6 +1386,129 @@ fn apply_policy(
         .filter(|observation| observation.policy_disposition.is_none())
         .count();
     Ok((conclusions, state, ungoverned))
+}
+
+fn semantic_claim_id(
+    module_id: &str,
+    target_kind: PolicyTargetKind,
+    target: &str,
+    disposition: PolicyDisposition,
+) -> String {
+    let material = (module_id, target_kind, target, disposition);
+    format!(
+        "{SEMANTIC_CLAIM_ID_PREFIX}:{:x}",
+        Sha256::digest(serde_json::to_vec(&material).expect("semantic claim identity serializes"))
+    )
+}
+
+fn insert_defeater(
+    defeaters: &mut BTreeMap<String, Defeater>,
+    refs: &mut Vec<String>,
+    defeater: Defeater,
+) {
+    let id = defeater.id().to_owned();
+    if let Some(previous) = defeaters.get(&id) {
+        debug_assert_eq!(previous, &defeater, "content-addressed defeater collision");
+    } else {
+        defeaters.insert(id.clone(), defeater);
+    }
+    refs.push(id);
+}
+
+fn has_defeating_defeater(refs: &[String], defeaters: &BTreeMap<String, Defeater>) -> bool {
+    refs.iter().any(|id| {
+        defeaters
+            .get(id)
+            .is_some_and(|defeater| defeater.strength() == DefeaterStrength::Defeating)
+    })
+}
+
+fn opaque_defeater(
+    symbol: &str,
+    module_id: &str,
+    uncertainty: &str,
+    psm_digest: &str,
+    state_effect_digest: &str,
+) -> Result<Defeater, DefeaterError> {
+    let (kind, retirement) = if uncertainty.starts_with("unclassified_external_operation:") {
+        (
+            DefeaterKind::UnclassifiedOperation,
+            DefeaterRetirementCondition::OperationClassified,
+        )
+    } else if uncertainty.starts_with("unsupported_construct:")
+        || uncertainty == "opaque_call:Unsupported"
+    {
+        (
+            DefeaterKind::UnsupportedConstruct,
+            DefeaterRetirementCondition::ConstructSupported,
+        )
+    } else if uncertainty.starts_with("analyser_limit:") {
+        (
+            DefeaterKind::AnalyserLimit,
+            DefeaterRetirementCondition::AnalyserSupportEstablished,
+        )
+    } else {
+        (
+            DefeaterKind::UnresolvedCallPath,
+            DefeaterRetirementCondition::CallResolved,
+        )
+    };
+    Defeater::new(
+        kind,
+        DefeaterStrength::Defeating,
+        SEMANTIC_CONFORMANCE_EVALUATOR_ID,
+        SEMANTIC_CONFORMANCE_VERSION,
+        DefeaterScope::new(DefeaterScopeKind::Symbol, symbol)?,
+        kind.as_str(),
+        BTreeMap::from([
+            ("module".into(), module_id.into()),
+            ("symbol".into(), symbol.into()),
+            ("uncertainty".into(), uncertainty.into()),
+        ]),
+        vec![symbol.into(), psm_digest.into(), state_effect_digest.into()],
+        retirement,
+    )
+}
+
+fn provenance_defeater(
+    claim_id: &str,
+    reason: &str,
+    observations: &[&ModuleEffectObservation],
+    state_effect_digest: &str,
+) -> Result<Defeater, DefeaterError> {
+    let relevant = observations
+        .iter()
+        .filter(|observation| match reason {
+            TEST_ONLY_EVIDENCE => {
+                observation.entry_execution_provenance == ExecutionProvenance::TestOnly
+            }
+            UNKNOWN_EXECUTION_PROVENANCE => {
+                observation.entry_execution_provenance == ExecutionProvenance::Unknown
+            }
+            _ => false,
+        })
+        .collect::<Vec<_>>();
+    let mut inputs = relevant
+        .iter()
+        .flat_map(|observation| {
+            [
+                observation.operation_site_id.clone(),
+                observation.entry_symbol.clone(),
+            ]
+        })
+        .collect::<Vec<_>>();
+    inputs.push(state_effect_digest.into());
+    Defeater::new(
+        DefeaterKind::EvidenceProvenanceDoubt,
+        DefeaterStrength::Limiting,
+        SEMANTIC_CONFORMANCE_EVALUATOR_ID,
+        SEMANTIC_CONFORMANCE_VERSION,
+        DefeaterScope::new(DefeaterScopeKind::SemanticClaim, claim_id)?,
+        reason,
+        BTreeMap::from([("supporting_observations".into(), relevant.len().to_string())]),
+        inputs,
+        DefeaterRetirementCondition::ProductionCapableEvidenceEstablished,
+    )
 }
 
 fn policy_disposition(
@@ -1503,6 +1707,8 @@ pub enum SemanticConformanceError {
     Serialization(serde_json::Error),
     /// Canonical finding construction failed.
     Finding(FindingError),
+    /// Canonical defeater construction failed.
+    Defeater(DefeaterError),
 }
 
 impl Display for SemanticConformanceError {
@@ -1510,6 +1716,7 @@ impl Display for SemanticConformanceError {
         match self {
             Self::Serialization(error) => write!(formatter, "serialization failed: {error}"),
             Self::Finding(error) => write!(formatter, "finding construction failed: {error}"),
+            Self::Defeater(error) => write!(formatter, "defeater construction failed: {error}"),
         }
     }
 }
@@ -1519,6 +1726,7 @@ impl Error for SemanticConformanceError {
         match self {
             Self::Serialization(error) => Some(error),
             Self::Finding(error) => Some(error),
+            Self::Defeater(error) => Some(error),
         }
     }
 }
@@ -1532,5 +1740,11 @@ impl From<serde_json::Error> for SemanticConformanceError {
 impl From<FindingError> for SemanticConformanceError {
     fn from(value: FindingError) -> Self {
         Self::Finding(value)
+    }
+}
+
+impl From<DefeaterError> for SemanticConformanceError {
+    fn from(value: DefeaterError) -> Self {
+        Self::Defeater(value)
     }
 }

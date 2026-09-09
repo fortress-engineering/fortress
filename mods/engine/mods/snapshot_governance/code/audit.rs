@@ -1848,6 +1848,7 @@ pub fn compile_repository_certification_bundle(
         finding_governance_digest: stack.finding_governance_authority_digest.clone(),
         profile,
         artifacts,
+        defeaters: stack.semantic_conformance.model().defeaters().to_vec(),
         applicable_rules,
         rules,
         requirements,
@@ -3318,14 +3319,37 @@ fn build_affected_snapshot(
     }
 
     let mut finding_ids = Vec::new();
+    let mut defeater_ids = Vec::new();
     if let Some(evaluation) = semantic_conformance {
+        let mut module_effect_dependencies = BTreeMap::<String, Vec<String>>::new();
+        for symbol in psm.symbols() {
+            module_effect_dependencies
+                .entry(symbol.fortress_module().into())
+                .or_default()
+                .push(format!("effect:{}", symbol.id()));
+        }
+        let mut defeater_owners = BTreeMap::<String, String>::new();
+        for module in evaluation.model().modules() {
+            for reference in module.defeater_refs() {
+                defeater_owners
+                    .entry(reference.clone())
+                    .or_insert_with(|| module.module().into());
+            }
+        }
         for module in evaluation.model().modules() {
             let mut dependencies = vec![format!("module:{}", module.module()), standard_id.clone()];
             dependencies.extend(
-                psm.symbols()
+                module_effect_dependencies
+                    .get(module.module())
+                    .into_iter()
+                    .flatten()
+                    .cloned(),
+            );
+            dependencies.extend(
+                module
+                    .defeater_refs()
                     .iter()
-                    .filter(|symbol| symbol.fortress_module() == module.module())
-                    .map(|symbol| format!("effect:{}", symbol.id())),
+                    .map(|reference| format!("defeater:{reference}")),
             );
             units.push(affected_unit(
                 format!("claim:module:{}", module.module()),
@@ -3333,6 +3357,27 @@ fn build_affected_snapshot(
                 serialized_digest(module)?,
                 dependencies,
             )?);
+        }
+        for defeater in evaluation.model().defeaters() {
+            let mut dependencies = vec![standard_id.clone()];
+            if let Some(module) = defeater_owners.get(defeater.id()) {
+                dependencies.push(format!("module:{module}"));
+                dependencies.extend(
+                    module_effect_dependencies
+                        .get(module)
+                        .into_iter()
+                        .flatten()
+                        .cloned(),
+                );
+            }
+            let id = format!("defeater:{}", defeater.id());
+            units.push(affected_unit(
+                &id,
+                AffectedUnitKind::Defeater,
+                serialized_digest(defeater)?,
+                dependencies,
+            )?);
+            defeater_ids.push(id);
         }
         for finding in evaluation.findings() {
             let module = finding
@@ -3360,6 +3405,7 @@ fn build_affected_snapshot(
         .contains_key(FINDING_GOVERNANCE_PATH)
         .then(|| format!("authority:{FINDING_GOVERNANCE_PATH}"));
     let mut evidence_dependencies = finding_ids.clone();
+    evidence_dependencies.extend(defeater_ids);
     evidence_dependencies.extend(governance_authority);
     evidence_dependencies.push(standard_id.clone());
     units.push(affected_unit(
@@ -3394,7 +3440,9 @@ fn build_affected_snapshot(
         .filter(|unit| {
             matches!(
                 unit.kind(),
-                AffectedUnitKind::ConformanceClaim | AffectedUnitKind::Finding
+                AffectedUnitKind::ConformanceClaim
+                    | AffectedUnitKind::Defeater
+                    | AffectedUnitKind::Finding
             )
         })
         .map(|unit| unit.id().to_owned())

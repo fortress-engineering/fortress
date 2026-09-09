@@ -238,6 +238,61 @@ fn transitive_effect_change_invalidates_callers_not_independent_module() {
     assert!(!has_affected(&analysis, "claim:C"));
 }
 
+/// `T-AF-AFFECTED-ANALYSIS-0001-R02-004`
+/// Fortress requirement: AF-AFFECTED-ANALYSIS-0001-R02
+#[test]
+fn defeater_changes_invalidate_claim_and_evidence_dependents() {
+    let make = |limitation: &str| {
+        snapshot(
+            limitation,
+            vec![input("mods/a/code/lib.rs", limitation)],
+            vec![
+                unit(
+                    "authority:a",
+                    AffectedUnitKind::AuthorityInput,
+                    limitation,
+                    &[],
+                ),
+                unit(
+                    "effect:a",
+                    AffectedUnitKind::Effect,
+                    "effect",
+                    &["authority:a"],
+                ),
+                unit(
+                    "defeater:a",
+                    AffectedUnitKind::Defeater,
+                    limitation,
+                    &["effect:a"],
+                ),
+                unit(
+                    "claim:a",
+                    AffectedUnitKind::ConformanceClaim,
+                    "claim",
+                    &["defeater:a", "effect:a"],
+                ),
+                unit(
+                    "evidence:a",
+                    AffectedUnitKind::Evidence,
+                    "evidence",
+                    &["claim:a"],
+                ),
+                unit(
+                    "claim:b",
+                    AffectedUnitKind::ConformanceClaim,
+                    "independent",
+                    &[],
+                ),
+            ],
+        )
+    };
+    let analysis = analyze_affected(&make("UNRESOLVED_CALL_PATH"), &make("OPERATION_CLASSIFIED"));
+    assert!(has_affected(&analysis, "defeater:a"));
+    assert!(has_affected(&analysis, "claim:a"));
+    assert!(has_affected(&analysis, "evidence:a"));
+    assert!(!has_affected(&analysis, "claim:b"));
+}
+
 /// `T-AF-AFFECTED-ANALYSIS-0001-R02-002`
 /// Fortress requirement: AF-AFFECTED-ANALYSIS-0001-R02
 #[test]

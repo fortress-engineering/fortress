@@ -6,13 +6,13 @@ Determine which exact-snapshot semantic and governance results a repository chan
 
 ## Responsibility
 
-Compile stable authority and derived-unit dependencies into one deterministic affected graph, propagate invalidation conservatively with explicit reasons, and verify machine-local reusable projection bytes against their complete semantic input bindings.
+Compile stable authority and derived-unit dependencies, including scoped defeaters, into one deterministic affected graph, propagate invalidation conservatively with explicit reasons, and verify machine-local reusable projection bytes against their complete semantic input bindings.
 
 ## Scope
 
 ### Includes
 
-Repository-input change classification, semantic dependency closure, recomputation reasons, projection dependency keys, verified machine-local reuse states, deterministic serialization, and cache-independent reconstruction.
+Repository-input change classification, semantic and defeater dependency closure, recomputation reasons, projection dependency keys, verified machine-local reuse states, deterministic serialization, and cache-independent reconstruction.
 
 ### Excludes
 
@@ -36,7 +36,7 @@ Supplies certification-obligation and evidence identities while continuing to bi
 
 **Types:** `depends_on`
 
-Supplies stable finding identities kept separate from finding-governance enforcement authority.
+Supplies stable finding and defeater identities kept separate from finding-governance enforcement authority.
 
 ### [Implementation Observation](../implementation_observation/README.md)
 

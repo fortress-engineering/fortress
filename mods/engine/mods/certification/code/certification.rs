@@ -13,8 +13,13 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 
+use crate::finding::{
+    Defeater, DefeaterError, DefeaterKind, DefeaterRetirementCondition, DefeaterScope,
+    DefeaterScopeKind, DefeaterStrength,
+};
+
 /// Evidence Graph schema version.
-pub const EVIDENCE_GRAPH_SCHEMA_VERSION: u16 = 1;
+pub const EVIDENCE_GRAPH_SCHEMA_VERSION: u16 = 2;
 /// Certification Profile schema version.
 pub const CERTIFICATION_PROFILE_SCHEMA_VERSION: u16 = 1;
 /// Certification result schema version.
@@ -22,7 +27,7 @@ pub const CERTIFICATION_SCHEMA_VERSION: u16 = 1;
 /// Verified Behavioral Flow Graph schema version.
 pub const VERIFIED_BFG_SCHEMA_VERSION: u16 = 1;
 /// Certification semantic implementation version.
-pub const CERTIFICATION_SEMANTIC_VERSION: &str = "1.0.0";
+pub const CERTIFICATION_SEMANTIC_VERSION: &str = "2.0.0";
 /// Canonical full-snapshot profile identity.
 pub const FULL_SNAPSHOT_PROFILE_ID: &str = "CERT-FULL-SNAPSHOT-V1";
 /// Semantic artifact kinds mandatory for full-snapshot certification.
@@ -78,6 +83,8 @@ pub enum EvidenceClass {
     ExecutedScenario,
     /// Explicitly trusted assertion, never relabeled as proof.
     TrustedAssertion,
+    /// Derived condition that defeats favorability or limits authority.
+    Defeater,
     /// Deterministic aggregation over other evidence.
     Aggregate,
 }
@@ -259,7 +266,7 @@ impl EvidenceGraph {
         root_obligations.dedup();
         let coverage = EvidenceCoverage::from_nodes(&nodes);
         let graph = Self {
-            schema: "urn:fortress:schema:v1:evidence-graph".into(),
+            schema: "urn:fortress:schema:v2:evidence-graph".into(),
             schema_version: EVIDENCE_GRAPH_SCHEMA_VERSION,
             subject: subject.into(),
             standard,
@@ -421,6 +428,8 @@ pub struct EvidenceCoverage {
     pub executed_scenario: usize,
     /// Trusted assertion nodes.
     pub trusted_assertion: usize,
+    /// Derived defeater nodes.
+    pub defeater: usize,
     /// Aggregate nodes.
     pub aggregate: usize,
 }
@@ -436,6 +445,7 @@ impl EvidenceCoverage {
                 EvidenceClass::ExecutedTest => value.executed_test += 1,
                 EvidenceClass::ExecutedScenario => value.executed_scenario += 1,
                 EvidenceClass::TrustedAssertion => value.trusted_assertion += 1,
+                EvidenceClass::Defeater => value.defeater += 1,
                 EvidenceClass::Aggregate => value.aggregate += 1,
             }
         }
@@ -812,6 +822,8 @@ pub struct CertificationInput {
     pub profile: CertificationProfile,
     /// Current semantic artifacts.
     pub artifacts: Vec<ArtifactEvidenceInput>,
+    /// Current semantic defeaters derived by canonical upstream evaluators.
+    pub defeaters: Vec<Defeater>,
     /// Complete sorted applicable Standard rule identities.
     pub applicable_rules: Vec<String>,
     /// Applicable Standard rule evaluations.
@@ -941,6 +953,7 @@ pub fn compile_certification(
     nodes.push(profile);
 
     let mut artifact_refs = BTreeMap::new();
+    let mut semantic_defeater_node_refs = BTreeMap::new();
     let mut obligations = Vec::new();
     for artifact in sorted_artifacts(&input.artifacts)? {
         let mut refs = artifact
@@ -970,11 +983,41 @@ pub fn compile_certification(
         )?;
         artifact_refs.insert(artifact.kind.clone(), node.id.clone());
         nodes.push(node);
+        let mut evidence_refs = vec![artifact_refs[&artifact.kind].clone()];
+        if !artifact.unsupported.is_empty() {
+            let limits = sorted_strings(&artifact.unsupported);
+            let defeater = Defeater::new(
+                DefeaterKind::AnalyserLimit,
+                DefeaterStrength::Limiting,
+                "fortress-semantic-artifact",
+                CERTIFICATION_SEMANTIC_VERSION,
+                DefeaterScope::new(DefeaterScopeKind::Artifact, &artifact.kind)?,
+                "DECLARED_UNSUPPORTED_SEMANTICS",
+                BTreeMap::from([
+                    ("limits".into(), limits.join(",")),
+                    ("limits_count".into(), limits.len().to_string()),
+                ]),
+                vec![artifact.digest.clone()],
+                DefeaterRetirementCondition::AnalyserSupportEstablished,
+            )?;
+            let defeater_node = EvidenceNode::new(
+                "defeater",
+                defeater.id(),
+                EvidenceResult::Observed,
+                vec![artifact_refs[&artifact.kind].clone()],
+                defeater.producer(),
+                defeater.producer_semantic_version(),
+                EvidenceClass::Defeater,
+                serde_json::to_value(&defeater)?,
+            )?;
+            evidence_refs.push(defeater_node.id.clone());
+            nodes.push(defeater_node);
+        }
         obligations.push(CertificationObligation {
             kind: CertificationObligationKind::ArtifactFreshness,
             subject: artifact.kind.clone(),
             required_evidence_classes: vec![artifact.evidence_class],
-            evidence_refs: vec![artifact_refs[&artifact.kind].clone()],
+            evidence_refs,
             status: if artifact.current {
                 CertificationStatus::Pass
             } else {
@@ -1000,6 +1043,30 @@ pub fn compile_certification(
                 });
             }
         }
+    }
+
+    let mut sorted_defeaters = input.defeaters.iter().collect::<Vec<_>>();
+    sorted_defeaters.sort_by(|left, right| left.id().cmp(right.id()));
+    for pair in sorted_defeaters.windows(2) {
+        if pair[0].id() == pair[1].id() {
+            return Err(CertificationError::DuplicateDefeater(pair[0].id().into()));
+        }
+    }
+    for defeater in sorted_defeaters {
+        let refs =
+            defeater_artifact_refs(defeater.kind(), &artifact_refs, &source_ref, &standard_ref);
+        let node = EvidenceNode::new(
+            "defeater",
+            defeater.id(),
+            EvidenceResult::Observed,
+            refs,
+            defeater.producer(),
+            defeater.producer_semantic_version(),
+            EvidenceClass::Defeater,
+            serde_json::to_value(defeater)?,
+        )?;
+        semantic_defeater_node_refs.insert(defeater.id().to_owned(), node.id.clone());
+        nodes.push(node);
     }
 
     let suite = EvidenceNode::new(
@@ -1087,6 +1154,9 @@ pub fn compile_certification(
     for rule in sorted_rules(&input.rules)? {
         let mut refs = artifact_refs.values().cloned().collect::<Vec<_>>();
         refs.push(standard_ref.clone());
+        if rule.rule_id == crate::semantic_conformance::ARCH_SEMANTIC_RULE_ID {
+            refs.extend(semantic_defeater_node_refs.values().cloned());
+        }
         if let Some(reference) = &finding_governance_ref {
             refs.push(reference.clone());
         }
@@ -1313,12 +1383,70 @@ pub fn compile_certification(
         nodes.push(node);
     }
 
+    let mut obligation_defeater_refs = BTreeMap::new();
+    for obligation in &obligations {
+        if !matches!(
+            obligation.status,
+            CertificationStatus::Missing
+                | CertificationStatus::Stale
+                | CertificationStatus::Invalid
+        ) {
+            continue;
+        }
+        let subject = format!("{:?}:{}", obligation.kind, obligation.subject).to_ascii_lowercase();
+        let reason = match obligation.status {
+            CertificationStatus::Missing => "MISSING_INPUT",
+            CertificationStatus::Stale => "STALE_INPUT",
+            CertificationStatus::Invalid => "INVALID_INPUT",
+            CertificationStatus::Pass | CertificationStatus::Fail => unreachable!(),
+        };
+        let mut semantic_inputs = obligation.evidence_refs.clone();
+        semantic_inputs.push(input.source_digest.clone());
+        let defeater = Defeater::new(
+            DefeaterKind::StaleInput,
+            DefeaterStrength::Defeating,
+            "fortress-certification",
+            CERTIFICATION_SEMANTIC_VERSION,
+            DefeaterScope::new(DefeaterScopeKind::Obligation, &subject)?,
+            reason,
+            BTreeMap::from([
+                ("obligation_kind".into(), format!("{:?}", obligation.kind)),
+                ("status".into(), format!("{:?}", obligation.status)),
+                ("subject".into(), obligation.subject.clone()),
+            ]),
+            semantic_inputs,
+            DefeaterRetirementCondition::InputCurrent,
+        )?;
+        let mut refs = obligation.evidence_refs.clone();
+        refs.push(source_ref.clone());
+        let node = EvidenceNode::new(
+            "defeater",
+            defeater.id(),
+            EvidenceResult::Observed,
+            refs,
+            defeater.producer(),
+            defeater.producer_semantic_version(),
+            EvidenceClass::Defeater,
+            serde_json::to_value(&defeater)?,
+        )?;
+        obligation_defeater_refs.insert(
+            (obligation.kind, obligation.subject.clone()),
+            node.id.clone(),
+        );
+        nodes.push(node);
+    }
+
     obligations.sort_by(|left, right| {
         (left.kind, left.subject.as_str()).cmp(&(right.kind, right.subject.as_str()))
     });
     let mut root_obligations = Vec::new();
     for obligation in &obligations {
         let mut inputs = obligation.evidence_refs.clone();
+        if let Some(reference) =
+            obligation_defeater_refs.get(&(obligation.kind, obligation.subject.clone()))
+        {
+            inputs.push(reference.clone());
+        }
         inputs.push(profile_ref.clone());
         let node = EvidenceNode::new(
             format!("certification_obligation:{:?}", obligation.kind).to_ascii_lowercase(),
@@ -1809,6 +1937,43 @@ fn sorted_artifacts(
         CertificationError::DuplicateArtifact,
     )
 }
+
+fn defeater_artifact_refs(
+    kind: DefeaterKind,
+    artifact_refs: &BTreeMap<String, String>,
+    source_ref: &str,
+    standard_ref: &str,
+) -> Vec<String> {
+    let kinds: &[&str] = match kind {
+        DefeaterKind::NoSemanticCoverage | DefeaterKind::PartialSemanticCoverage => &["psm"],
+        DefeaterKind::UnresolvedCallPath
+        | DefeaterKind::UnsupportedConstruct
+        | DefeaterKind::AnalyserLimit => &["psm", "state_effect"],
+        DefeaterKind::UnclassifiedOperation | DefeaterKind::EvidenceProvenanceDoubt => {
+            &["psm", "state_effect"]
+        }
+        DefeaterKind::StaleInput | DefeaterKind::AuthoritySuperseded => &[],
+    };
+    let mut refs = kinds
+        .iter()
+        .filter_map(|kind| artifact_refs.get(*kind).cloned())
+        .collect::<Vec<_>>();
+    if matches!(kind, DefeaterKind::AuthoritySuperseded) {
+        refs.push(standard_ref.into());
+    }
+    if refs.is_empty() {
+        refs.push(source_ref.into());
+    }
+    refs
+}
+
+fn sorted_strings(values: &[String]) -> Vec<String> {
+    let mut sorted = values.to_vec();
+    sorted.sort();
+    sorted.dedup();
+    sorted
+}
+
 fn sorted_rules(
     values: &[RuleEvidenceInput],
 ) -> Result<Vec<&RuleEvidenceInput>, CertificationError> {
@@ -1913,6 +2078,8 @@ fn canonical_pretty(value: &impl Serialize) -> Result<String, serde_json::Error>
 pub enum CertificationError {
     /// JSON serialization failed.
     Json(serde_json::Error),
+    /// Canonical defeater construction failed.
+    Defeater(DefeaterError),
     /// A required node field was empty.
     EmptyNodeField,
     /// Graph schema version is unsupported.
@@ -1959,6 +2126,8 @@ pub enum CertificationError {
     SuiteSubjectMismatch,
     /// Duplicate artifact evidence.
     DuplicateArtifact(String),
+    /// Duplicate canonical defeater evidence.
+    DuplicateDefeater(String),
     /// Duplicate rule evidence.
     DuplicateRuleEvidence(String),
     /// Applicable rule inventory is not strictly sorted.
@@ -1994,6 +2163,7 @@ impl Display for CertificationError {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
         match self {
             Self::Json(error) => write!(formatter, "certification JSON failed: {error}"),
+            Self::Defeater(error) => write!(formatter, "certification defeater failed: {error}"),
             Self::EmptyNodeField => formatter.write_str(
                 "evidence node identity, subject, producer, and version must be nonempty",
             ),
@@ -2043,6 +2213,9 @@ impl Display for CertificationError {
             ),
             Self::DuplicateArtifact(value) => {
                 write!(formatter, "duplicate artifact evidence `{value}`")
+            }
+            Self::DuplicateDefeater(value) => {
+                write!(formatter, "duplicate defeater evidence `{value}`")
             }
             Self::DuplicateRuleEvidence(value) => {
                 write!(formatter, "duplicate rule evidence `{value}`")
@@ -2094,6 +2267,7 @@ impl Error for CertificationError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
             Self::Json(error) => Some(error),
+            Self::Defeater(error) => Some(error),
             _ => None,
         }
     }
@@ -2102,5 +2276,11 @@ impl Error for CertificationError {
 impl From<serde_json::Error> for CertificationError {
     fn from(value: serde_json::Error) -> Self {
         Self::Json(value)
+    }
+}
+
+impl From<DefeaterError> for CertificationError {
+    fn from(value: DefeaterError) -> Self {
+        Self::Defeater(value)
     }
 }

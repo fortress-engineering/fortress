@@ -19,7 +19,7 @@ pub const AFFECTED_ANALYSIS_SCHEMA: &str = "urn:fortress:schema:v1:affected-anal
 /// Canonical affected-analysis schema version.
 pub const AFFECTED_ANALYSIS_SCHEMA_VERSION: u16 = 1;
 /// Semantic implementation version for dependency and cache interpretation.
-pub const AFFECTED_ANALYSIS_VERSION: &str = "1.0.0";
+pub const AFFECTED_ANALYSIS_VERSION: &str = "1.1.0";
 /// Stable affected dependency resolver identity.
 pub const AFFECTED_ANALYZER_ID: &str = "fortress-affected-analysis";
 
@@ -178,6 +178,8 @@ pub enum AffectedUnitKind {
     Capability,
     /// One authored-policy conformance claim.
     ConformanceClaim,
+    /// One derived limitation or counter-evidence fact.
+    Defeater,
     /// Canonical finding identity.
     Finding,
     /// Evidence node or compact evidence aggregate.

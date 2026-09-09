@@ -2,11 +2,11 @@
 
 ## Role
 
-Provide the shared canonical evidence representation used by rule evaluators without owning any evaluator's semantic judgment.
+Provide the shared canonical finding and defeater evidence representations used by rule evaluators without owning any evaluator's semantic judgment.
 
 ## Execution
 
-Evaluators construct validated rule metadata, stable violation discrimination, exact occurrence evidence, and evaluator provenance; the model separates stable semantic identity from presentation, computes SHA-256, and returns an immutable sortable finding. Finding governance then performs keyed baseline and exception matching.
+Evaluators construct validated rule metadata, stable violation discrimination, exact occurrence evidence, evaluator provenance, and scoped derived limitations; the model separates stable semantic identity from presentation, computes SHA-256, and returns immutable sortable findings and defeaters. Defeating evidence prevents unsupported favorable conclusions without erasing proven violations, while limiting evidence records bounded enforcement authority. Finding governance then performs keyed baseline and exception matching independently.
 
 ## State
 
@@ -20,7 +20,7 @@ Invalid rule or entity identities, tiers, paths, spans, discriminators, baseline
 
 ### [`finding.rs`](../code/finding.rs)
 
-Defines canonical findings, normalized occurrence and provenance inputs, content identity, deterministic ordering, and construction failures.
+Defines canonical findings and defeaters, normalized occurrence and provenance inputs, scoped limitation strengths and retirement conditions, content identity, deterministic ordering, and construction failures.
 
 ### [`governance.rs`](../code/governance.rs)
 

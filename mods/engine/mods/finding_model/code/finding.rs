@@ -5,6 +5,7 @@
 //! normative rule meaning or future certification state.
 
 use std::cmp::Ordering;
+use std::collections::BTreeMap;
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
 
@@ -14,6 +15,347 @@ use sha2::{Digest, Sha256};
 use crate::identity::{RuleId, RuleIdError, StableId, StableIdError};
 
 pub use crate::standard::FindingCategory;
+
+/// Versioned namespace for deterministic derived defeater identities.
+pub const DEFEATER_ID_PREFIX: &str = "defeater:v1:sha256";
+/// Semantic version of the canonical defeater model.
+pub const DEFEATER_SEMANTIC_VERSION: &str = "1.0.0";
+
+/// Closed vocabulary of conditions that limit or defeat derived claims.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum DefeaterKind {
+    /// Governed source exists but no owned source path produced a PSM symbol.
+    NoSemanticCoverage,
+    /// Some, but not all, governed source paths produced PSM symbols.
+    PartialSemanticCoverage,
+    /// A call relationship needed for the claim remains unresolved.
+    UnresolvedCallPath,
+    /// An observed external operation lacks a refined operation classification.
+    UnclassifiedOperation,
+    /// The analyzer observed syntax whose semantic consequence is unsupported.
+    UnsupportedConstruct,
+    /// A declared analyzer boundary limits the governed claim.
+    AnalyserLimit,
+    /// Supporting evidence provenance cannot establish production authority.
+    EvidenceProvenanceDoubt,
+    /// Required exact-snapshot evidence is missing, stale, or invalid.
+    StaleInput,
+    /// A prior authority was replaced and the claim requires current reevaluation.
+    AuthoritySuperseded,
+}
+
+impl DefeaterKind {
+    /// Returns the stable machine-readable kind identity.
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::NoSemanticCoverage => "NO_SEMANTIC_COVERAGE",
+            Self::PartialSemanticCoverage => "PARTIAL_SEMANTIC_COVERAGE",
+            Self::UnresolvedCallPath => "UNRESOLVED_CALL_PATH",
+            Self::UnclassifiedOperation => "UNCLASSIFIED_OPERATION",
+            Self::UnsupportedConstruct => "UNSUPPORTED_CONSTRUCT",
+            Self::AnalyserLimit => "ANALYSER_LIMIT",
+            Self::EvidenceProvenanceDoubt => "EVIDENCE_PROVENANCE_DOUBT",
+            Self::StaleInput => "STALE_INPUT",
+            Self::AuthoritySuperseded => "AUTHORITY_SUPERSEDED",
+        }
+    }
+}
+
+/// Whether a relevant defeater prevents favorability or records a limitation.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum DefeaterStrength {
+    /// Prevents a favorable conclusion but never erases independently proven failure.
+    Defeating,
+    /// Preserves the conclusion while recording reduced or bounded authority.
+    Limiting,
+}
+
+/// Stable semantic subject category limited by a defeater.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum DefeaterScopeKind {
+    /// One authored Module.
+    Module,
+    /// One stable semantic symbol.
+    Symbol,
+    /// One stable semantic operation site.
+    OperationSite,
+    /// One authored semantic-policy claim.
+    SemanticClaim,
+    /// One exact derived or authored artifact.
+    Artifact,
+    /// One certification or conformance obligation.
+    Obligation,
+}
+
+/// Stable subject limited by one defeater.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct DefeaterScope {
+    kind: DefeaterScopeKind,
+    subject: String,
+}
+
+impl DefeaterScope {
+    /// Creates a stable scope with a non-empty, machine-independent subject.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`DefeaterError::InvalidField`] for an empty subject or one
+    /// containing an absolute-path separator.
+    pub fn new(kind: DefeaterScopeKind, subject: impl Into<String>) -> Result<Self, DefeaterError> {
+        let subject = subject.into();
+        validate_defeater_field("scope.subject", &subject)?;
+        Ok(Self { kind, subject })
+    }
+
+    /// Returns the semantic scope category.
+    #[must_use]
+    pub const fn kind(&self) -> DefeaterScopeKind {
+        self.kind
+    }
+
+    /// Returns the stable scoped subject identity.
+    #[must_use]
+    pub fn subject(&self) -> &str {
+        &self.subject
+    }
+}
+
+/// Deterministic condition whose satisfaction retires a current defeater.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum DefeaterRetirementCondition {
+    /// At least one governed source path produces semantic symbols.
+    SemanticCoverageEstablished,
+    /// Every governed source path produces semantic symbols.
+    FullSemanticCoverageEstablished,
+    /// The relevant call relationship resolves under current authority.
+    CallResolved,
+    /// The relevant operation receives a refined classification.
+    OperationClassified,
+    /// The relevant source construct becomes semantically supported.
+    ConstructSupported,
+    /// Analyzer support expands to the currently limited semantic dimension.
+    AnalyserSupportEstablished,
+    /// Production-capable evidence independently supports the conclusion.
+    ProductionCapableEvidenceEstablished,
+    /// Required evidence is regenerated from current exact inputs.
+    InputCurrent,
+    /// The claim is reevaluated under the current authority.
+    CurrentAuthorityReevaluated,
+}
+
+/// One deterministic derived limitation or counter-evidence fact.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct Defeater {
+    id: String,
+    kind: DefeaterKind,
+    strength: DefeaterStrength,
+    producer: String,
+    producer_semantic_version: String,
+    scope: DefeaterScope,
+    reason: String,
+    detail: BTreeMap<String, String>,
+    inputs: Vec<String>,
+    retirement_condition: DefeaterRetirementCondition,
+}
+
+impl Defeater {
+    /// Creates and content-addresses one canonical defeater.
+    ///
+    /// Inputs are stable semantic identities or exact artifact digests. Detail
+    /// values are structured evidence, never presentation prose or source
+    /// coordinates.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`DefeaterError`] for invalid stable fields or serialization.
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(
+        kind: DefeaterKind,
+        strength: DefeaterStrength,
+        producer: impl Into<String>,
+        producer_semantic_version: impl Into<String>,
+        scope: DefeaterScope,
+        reason: impl Into<String>,
+        detail: BTreeMap<String, String>,
+        mut inputs: Vec<String>,
+        retirement_condition: DefeaterRetirementCondition,
+    ) -> Result<Self, DefeaterError> {
+        let producer = producer.into();
+        let producer_semantic_version = producer_semantic_version.into();
+        let reason = reason.into();
+        validate_defeater_field("producer", &producer)?;
+        validate_defeater_field("producer_semantic_version", &producer_semantic_version)?;
+        validate_defeater_field("reason", &reason)?;
+        for (key, value) in &detail {
+            validate_defeater_field("detail.key", key)?;
+            validate_defeater_field("detail.value", value)?;
+        }
+        for input in &inputs {
+            validate_defeater_field("inputs", input)?;
+        }
+        inputs.sort();
+        inputs.dedup();
+        let material = DefeaterIdentityMaterial {
+            kind,
+            strength,
+            producer: &producer,
+            producer_semantic_version: &producer_semantic_version,
+            scope: &scope,
+            reason: &reason,
+            detail: &detail,
+            inputs: &inputs,
+            retirement_condition,
+        };
+        let id = format!(
+            "{DEFEATER_ID_PREFIX}:{:x}",
+            Sha256::digest(serde_json::to_vec(&material).map_err(DefeaterError::Serialization)?)
+        );
+        Ok(Self {
+            id,
+            kind,
+            strength,
+            producer,
+            producer_semantic_version,
+            scope,
+            reason,
+            detail,
+            inputs,
+            retirement_condition,
+        })
+    }
+
+    /// Returns the content-addressed defeater identity.
+    #[must_use]
+    pub fn id(&self) -> &str {
+        &self.id
+    }
+
+    /// Returns the closed defeater kind.
+    #[must_use]
+    pub const fn kind(&self) -> DefeaterKind {
+        self.kind
+    }
+
+    /// Returns whether this defeater defeats favorability or limits authority.
+    #[must_use]
+    pub const fn strength(&self) -> DefeaterStrength {
+        self.strength
+    }
+
+    /// Returns the stable producer identity.
+    #[must_use]
+    pub fn producer(&self) -> &str {
+        &self.producer
+    }
+
+    /// Returns the producer semantic version.
+    #[must_use]
+    pub fn producer_semantic_version(&self) -> &str {
+        &self.producer_semantic_version
+    }
+
+    /// Returns the stable semantic scope.
+    #[must_use]
+    pub const fn scope(&self) -> &DefeaterScope {
+        &self.scope
+    }
+
+    /// Returns the stable reason code.
+    #[must_use]
+    pub fn reason(&self) -> &str {
+        &self.reason
+    }
+
+    /// Returns canonical structured detail.
+    #[must_use]
+    pub const fn detail(&self) -> &BTreeMap<String, String> {
+        &self.detail
+    }
+
+    /// Returns sorted semantic or exact-artifact dependencies.
+    #[must_use]
+    pub fn inputs(&self) -> &[String] {
+        &self.inputs
+    }
+
+    /// Returns the current-snapshot condition that retires this defeater.
+    #[must_use]
+    pub const fn retirement_condition(&self) -> DefeaterRetirementCondition {
+        self.retirement_condition
+    }
+}
+
+#[derive(Serialize)]
+struct DefeaterIdentityMaterial<'a> {
+    kind: DefeaterKind,
+    strength: DefeaterStrength,
+    producer: &'a str,
+    producer_semantic_version: &'a str,
+    scope: &'a DefeaterScope,
+    reason: &'a str,
+    detail: &'a BTreeMap<String, String>,
+    inputs: &'a [String],
+    retirement_condition: DefeaterRetirementCondition,
+}
+
+/// Explains invalid canonical defeater material.
+#[derive(Debug)]
+pub enum DefeaterError {
+    /// A stable field was empty or contained machine-path material.
+    InvalidField {
+        /// Field name.
+        field: &'static str,
+        /// Invalid value.
+        value: Box<str>,
+    },
+    /// Canonical identity material could not be serialized.
+    Serialization(serde_json::Error),
+}
+
+impl Display for DefeaterError {
+    fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::InvalidField { field, value } => {
+                write!(
+                    formatter,
+                    "defeater field `{field}` is not canonical: `{value}`"
+                )
+            }
+            Self::Serialization(error) => {
+                write!(
+                    formatter,
+                    "canonical defeater serialization failed: {error}"
+                )
+            }
+        }
+    }
+}
+
+impl Error for DefeaterError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            Self::Serialization(error) => Some(error),
+            Self::InvalidField { .. } => None,
+        }
+    }
+}
+
+fn validate_defeater_field(field: &'static str, value: &str) -> Result<(), DefeaterError> {
+    let bytes = value.as_bytes();
+    let drive_path = bytes.len() >= 2 && bytes[0].is_ascii_alphabetic() && bytes[1] == b':';
+    if value.is_empty() || value.contains('\\') || value.starts_with('/') || drive_path {
+        return Err(DefeaterError::InvalidField {
+            field,
+            value: value.into(),
+        });
+    }
+    Ok(())
+}
 
 /// Implemented semantic state of a normalized snapshot finding.
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
