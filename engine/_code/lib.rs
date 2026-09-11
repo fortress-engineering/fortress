@@ -1,0 +1,82 @@
+//! Core standard and project-model foundations for Fortress.
+//!
+//! This crate owns provider-independent model logic. It must not depend on CLI
+//! presentation, GitHub, a shell, an IDE, a CI provider, or a package ecosystem.
+
+#![forbid(unsafe_code)]
+#![deny(missing_docs, rustdoc::broken_intra_doc_links, warnings)]
+
+#[path = "../affected_analysis/_code/affected.rs"]
+pub mod affected_analysis;
+#[path = "../architecture_evaluation/_code/architecture.rs"]
+pub mod architecture;
+#[path = "../architecture_evaluation/_code/diagnostics.rs"]
+pub mod architecture_diagnostics;
+#[path = "../architecture_evaluation/_code/realization.rs"]
+pub mod architecture_realization;
+#[path = "../snapshot_governance/_code/audit.rs"]
+pub mod audit;
+#[path = "../behavioral_realization/_code/realization.rs"]
+pub mod behavioral_realization;
+#[path = "../behavioral_semantics/_code/behavior.rs"]
+pub mod behavioral_semantics;
+#[path = "../snapshot_governance/_code/bootstrap.rs"]
+pub mod bootstrap;
+#[path = "../certification/_code/certification.rs"]
+pub mod certification;
+#[path = "../snapshot_governance/_code/contract.rs"]
+pub mod contract;
+#[path = "../contract_coherency/_code/contract.rs"]
+pub mod contract_coherency;
+#[path = "../snapshot_governance/_code/documentation.rs"]
+pub mod documentation;
+#[path = "../environmental_semantics/_code/environmental.rs"]
+pub mod environmental_semantics;
+#[path = "../snapshot_governance/_code/evaluation.rs"]
+pub mod evaluation;
+#[path = "../project_model/_code/filing.rs"]
+pub mod filing;
+#[path = "../finding_model/_code/finding.rs"]
+pub mod finding;
+#[path = "../finding_model/_code/governance.rs"]
+pub mod finding_governance;
+#[path = "../standard_registry/_code/identity.rs"]
+pub mod identity;
+#[path = "../snapshot_governance/_code/identity_migration.rs"]
+pub mod identity_migration;
+#[path = "../implementation_observation/_code/observation.rs"]
+pub mod implementation_observation;
+#[path = "../information_flow/_code/information_flow.rs"]
+pub mod information_flow;
+#[path = "../project_model/_code/module_index.rs"]
+pub mod module_index;
+#[path = "../repository_observation/_code/observation.rs"]
+pub mod observation;
+#[path = "../snapshot_governance/_code/ownership.rs"]
+pub mod ownership;
+#[path = "../snapshot_governance/_code/placement.rs"]
+pub mod placement;
+#[path = "../program_semantics/_code/program.rs"]
+pub mod program_semantics;
+#[path = "../project_model/_code/project.rs"]
+pub mod project;
+#[path = "../reference_resolution/_code/reference.rs"]
+pub mod reference_resolution;
+#[path = "../snapshot_governance/_code/rust_test_analyzer.rs"]
+pub mod rust_test_analyzer;
+#[path = "../semantic_analysis/_code/semantic.rs"]
+pub mod semantic_analysis;
+#[path = "../architecture_evaluation/_code/semantic_conformance.rs"]
+pub mod semantic_conformance;
+#[path = "../snapshot_governance/_code/snapshot.rs"]
+pub mod snapshot;
+#[path = "../source_architecture/_code/source.rs"]
+pub mod source_architecture;
+#[path = "../standard_registry/_code/standard.rs"]
+pub mod standard;
+#[path = "../state_effect_analysis/_code/state_effect.rs"]
+pub mod state_effect_analysis;
+#[path = "../snapshot_governance/_code/testing_boundary.rs"]
+pub mod testing_boundary;
+#[path = "../snapshot_governance/_code/traceability.rs"]
+pub mod traceability;

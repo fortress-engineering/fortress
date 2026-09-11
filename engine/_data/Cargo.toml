@@ -1,0 +1,171 @@
+[package]
+name = "fortress-core"
+workspace = "../../_data"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+description.workspace = true
+repository.workspace = true
+autotests = false
+
+[lib]
+path = "../_code/lib.rs"
+
+[[test]]
+name = "arch_dependency_001"
+path = "../architecture_evaluation/testing/_code/arch_dependency_001.rs"
+
+[[test]]
+name = "affected_analysis"
+path = "../affected_analysis/testing/_code/affected_analysis.rs"
+
+[[test]]
+name = "arch_realization_001"
+path = "../architecture_evaluation/testing/_code/arch_realization_001.rs"
+
+[[test]]
+name = "semantic_conformance"
+path = "../architecture_evaluation/testing/_code/semantic_conformance.rs"
+
+[[test]]
+name = "architecture_diagnostics"
+path = "../architecture_evaluation/testing/_code/architecture_diagnostics.rs"
+
+[[test]]
+name = "behavioral_flow"
+path = "../behavioral_semantics/testing/_code/behavioral_flow.rs"
+
+[[test]]
+name = "behavioral_realization"
+path = "../behavioral_realization/testing/_code/behavioral_realization.rs"
+
+[[test]]
+name = "certification"
+path = "../certification/testing/_code/certification.rs"
+
+[[test]]
+name = "contract_coherency_graph"
+path = "../contract_coherency/testing/_code/contract_coherency_graph.rs"
+
+[[test]]
+name = "implementation_observation"
+path = "../implementation_observation/testing/_code/implementation_observation.rs"
+
+[[test]]
+name = "information_flow"
+path = "../information_flow/testing/_code/information_flow.rs"
+
+[[test]]
+name = "environmental_semantics"
+path = "../environmental_semantics/testing/_code/environmental_semantics.rs"
+
+[[test]]
+name = "self_architecture"
+path = "../architecture_evaluation/testing/_code/self_architecture.rs"
+
+[[test]]
+name = "arch_ownership_001"
+path = "../snapshot_governance/testing/_code/arch_ownership_001.rs"
+
+[[test]]
+name = "audit"
+path = "../snapshot_governance/testing/_code/audit.rs"
+
+[[test]]
+name = "project_model"
+path = "../project_model/testing/_code/project_model.rs"
+
+[[test]]
+name = "filing_system"
+path = "../project_model/testing/_code/filing_system.rs"
+
+[[test]]
+name = "program_semantics"
+path = "../program_semantics/testing/_code/program_semantics.rs"
+
+[[test]]
+name = "semantic_analysis"
+path = "../semantic_analysis/testing/_code/semantic_analysis.rs"
+
+[[test]]
+name = "state_effect_analysis"
+path = "../state_effect_analysis/testing/_code/state_effect_analysis.rs"
+
+[[test]]
+name = "repo_module_001"
+path = "../snapshot_governance/testing/_code/repo_module_001.rs"
+
+[[test]]
+name = "repo_docs_001"
+path = "../snapshot_governance/testing/_code/repo_docs_001.rs"
+
+[[test]]
+name = "repository_observation"
+path = "../repository_observation/testing/_code/repository_observation.rs"
+
+[[test]]
+name = "repository_snapshot"
+path = "../snapshot_governance/testing/_code/repository_snapshot.rs"
+
+[[test]]
+name = "repository_grammar"
+path = "../snapshot_governance/testing/_code/repository_grammar.rs"
+
+[[test]]
+name = "reference_resolution"
+path = "../reference_resolution/testing/_code/reference_resolution.rs"
+
+[[test]]
+name = "registry_primitives"
+path = "../standard_registry/testing/_code/registry_primitives.rs"
+
+[[test]]
+name = "schema_registry"
+path = "../standard_registry/testing/_code/schema_registry.rs"
+
+[[test]]
+name = "snapshot_evaluation"
+path = "../snapshot_governance/testing/_code/snapshot_evaluation.rs"
+
+[[test]]
+name = "snapshot_primitives"
+path = "../snapshot_governance/testing/_code/snapshot_primitives.rs"
+
+[[test]]
+name = "finding_governance"
+path = "../snapshot_governance/testing/_code/finding_governance.rs"
+
+[[test]]
+name = "repository_bootstrap"
+path = "../snapshot_governance/testing/_code/repository_bootstrap.rs"
+
+[[test]]
+name = "source_architecture"
+path = "../source_architecture/testing/_code/source_architecture.rs"
+
+[[test]]
+name = "std_id_001"
+path = "../standard_registry/testing/_code/std_id_001.rs"
+
+[[test]]
+name = "test_traceability_001"
+path = "../snapshot_governance/testing/_code/test_traceability_001.rs"
+
+[[test]]
+name = "test_boundary_001"
+path = "../snapshot_governance/testing/_code/test_boundary_001.rs"
+
+[dependencies]
+pulldown-cmark = { version = "0.13", default-features = false }
+proc-macro2 = { version = "1.0", features = ["span-locations"] }
+quote = "1.0"
+semver = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sha2 = "0.10"
+syn = { version = "2.0", features = ["full", "visit"] }
+toml = "0.9"
+
+[lints]
+workspace = true

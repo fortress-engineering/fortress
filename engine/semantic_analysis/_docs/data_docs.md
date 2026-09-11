@@ -1,0 +1,51 @@
+# Data
+
+## Role
+
+The Module owns schemas for authored Function Contract intent and derived Semantic Analysis results.
+
+## Origin
+
+Both schemas are specification-authored for the current draft. Optional function_contracts.json files are authored by the Module that physically owns each contracted PSM symbol.
+
+## Semantics
+
+Function Contracts narrow admitted parameters and output promises while carrying state/effect and information-flow obligations for responsible downstream analyzers without duplicating static signatures. Semantic Analysis documents contain derived value-domain summaries, checks, violations, coverage, unsupported classes, and authority digests.
+
+## Validity
+
+Contracts must be canonical JSON, target unique same-Module PSM symbols and parameters, and express domains contained by the static type. Derived results must match registered schemas, use deterministic order, exclude timestamps and absolute paths, and bind to exact PSM and contract digests.
+
+## Lifecycle
+
+Authored contracts change with intentional function semantics. Schemas change only through explicit semantic evolution; derived results are regenerated whenever their PSM, contract input, or analyzer version changes.
+
+## Files
+
+### [`function_contracts.json`](../_data/function_contracts.json)
+
+Narrows and proves the exact iteration-bound contract of the Semantic Analysis fixed-point engine without deriving intent from its callers.
+
+### [`function_contract_schema_v3.json`](../_data/function_contract_schema_v3.json)
+
+Defines backward-compatible Function Contract v3 documents and the legacy closed effect vocabulary, including the explicit `external_interaction` umbrella.
+
+### [`function_contract_schema_v4.json`](../_data/function_contract_schema_v4.json)
+
+Defines strict distributed Function Contract v4 documents, supported authored domain forms, state obligations, refined effect policies, and project-facet information-flow declarations.
+
+### [`function_contract_schema_v5.json`](../_data/function_contract_schema_v5.json)
+
+Defines current distributed Function Contract v5 documents over versioned semantic symbol identities while preserving the v4 declaration vocabulary.
+
+### [`program_domain_rule.json`](../_data/program_domain_rule.json)
+
+Defines PROGRAM-DOMAIN-001 and the precise supported contradictions that become normative findings.
+
+### [`semantic_analysis_schema_v1.json`](../_data/semantic_analysis_schema_v1.json)
+
+Defines the retained derived Semantic Analysis v1 document envelope.
+
+### [`semantic_analysis_schema_v2.json`](../_data/semantic_analysis_schema_v2.json)
+
+Defines the current deterministic Semantic Analysis projection and records exact legacy symbol-reference uses separately from canonical target identities.

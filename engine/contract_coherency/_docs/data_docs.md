@@ -1,0 +1,35 @@
+# Data
+
+## Role
+
+Own the schemas that define authored Module Contract input and derived CCG output representations.
+
+## Origin
+
+Fortress maintainers author these schemas as part of the draft standard implementation boundary.
+
+## Semantics
+
+The Module Contract schema constrains distributed architectural intent, while the CCG schema constrains its deterministic derived semantic projection without becoming another authored authority.
+
+## Validity
+
+Both schemas must be valid JSON Schema 2020-12 documents with unique stable URNs, closed object shapes, explicit required fields, and references that resolve through the schema registry.
+
+## Lifecycle
+
+Schema identity changes only for representation-breaking changes; compatible clarification remains within the active draft and Git preserves superseded history.
+
+## Files
+
+### [`graph_schema_v1.json`](../_data/graph_schema_v1.json)
+
+Defines the deterministic serialized Contract Coherency Graph v1 representation.
+
+### [`module_contract_schema_v2.json`](../_data/module_contract_schema_v2.json)
+
+Defines canonical authored Module Contract v2 syntax.
+
+### [`module_contract_schema_v3.json`](../_data/module_contract_schema_v3.json)
+
+Defines Module Contract v3 by adding explicit, closed capability/effect policy while retaining v2 as the loadable undeclared-policy form.

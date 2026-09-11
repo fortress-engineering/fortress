@@ -1,0 +1,139 @@
+# Engine
+
+## Purpose
+
+The Engine exists to provide one provider-independent boundary through which Fortress semantics can be loaded, observed, evaluated, and consumed without presentation or service-provider coupling.
+
+## Responsibility
+
+Compose the implemented core capabilities behind a stable Rust library facade while assigning each durable semantic responsibility to its narrowest child Module.
+
+## Scope
+
+### Includes
+
+The crate facade, package contract, and integration of affected analysis, standard registry, finding model, contract coherency, Behavioral Semantics, Behavioral Realization, project model, repository observation, implementation observation, Program Semantics, Semantic Analysis, State and Effect Analysis, Information Flow, Environmental Semantics, Certification, architecture evaluation, and Snapshot Governance capabilities.
+
+### Excludes
+
+Terminal rendering, hosted-provider adapters, persistent jobs, onboarding, deployment, attestation, and capability-specific semantics owned by the child Modules.
+
+## Relationships
+
+### [Affected Analysis](affected_analysis/README.md)
+
+**Types:** `depends_on`
+
+Supplies exact-snapshot invalidation closure, dependency-complete projection keys, and verified machine-local semantic reuse through the Engine facade.
+
+### [Architecture Evaluation](architecture_evaluation/README.md)
+
+**Types:** `depends_on`
+
+Supplies CCG-backed architecture and dependency evaluation through the Engine facade.
+
+### [Behavioral Realization](behavioral_realization/README.md)
+
+**Types:** `depends_on`
+
+Supplies coverage-aware checkpoint realization, meaningful edge reconciliation, dominator-bypass analysis, verification obligations, and deterministic Realized BFG compilation.
+
+### [Behavioral Semantics](behavioral_semantics/README.md)
+
+**Types:** `depends_on`
+
+Supplies deterministic Intended BFG compilation, graph-level flow coherence, and explicit behavioral modeling states.
+
+### [Contract Coherency](contract_coherency/README.md)
+
+**Types:** `depends_on`
+
+Supplies canonical Contract v2 compilation, semantic closure, contradiction analysis, provenance, and deterministic CCG serialization.
+
+### [Certification](certification/README.md)
+
+**Types:** `depends_on`
+
+Supplies content-addressed evidence, exact-snapshot profile evaluation, local execution evidence reconciliation, affected closure, and Verified BFG projection.
+
+### [Environmental Semantics](environmental_semantics/README.md)
+
+**Types:** `depends_on`
+
+Supplies generic external-outcome, handling-totality, retry/idempotency, and bounded recovery analysis through the Engine facade.
+
+### [Finding Model](finding_model/README.md)
+
+**Types:** `depends_on`
+
+Supplies the shared validated, content-addressed evidence representation used by Engine evaluators.
+
+### [Implementation Observation](implementation_observation/README.md)
+
+**Types:** `depends_on`
+
+Supplies independent snapshot-bound Rust source facts and normalized direct Module dependency evidence.
+
+### [Information Flow](information_flow/README.md)
+
+**Types:** `depends_on`
+
+Supplies project-defined security-label propagation, sink reconciliation, and trusted-transition diagnostics through the Engine facade.
+
+### [Program Semantics](program_semantics/README.md)
+
+**Types:** `depends_on`
+
+Supplies deterministic executable symbols, typed interfaces, supported static calls, bounded value-transfer facts, and analyzer-coherency evidence.
+
+### [Project Model](project_model/README.md)
+
+**Types:** `depends_on`
+
+Supplies operational project configuration and the deterministic Project Filing System model of recursive Modules, Elements, bounded Data/Info collections, registered ecosystem mechanics, and complete leaf inventory.
+
+### [Reference Resolution](reference_resolution/README.md)
+
+**Types:** `depends_on`
+
+Supplies stable identity-to-location resolution, path-boundary inventory, relocation previews, and REPO-REFERENCE-001 evaluation through the Engine facade.
+
+### [Repository Observation](repository_observation/README.md)
+
+**Types:** `depends_on`
+
+Supplies deterministic repository file facts and explicit exclusion behavior.
+
+### [Semantic Analysis](semantic_analysis/README.md)
+
+**Types:** `depends_on`
+
+Supplies distributed Function Contract interpretation, conservative semantic value-domain propagation, function summaries, and supported program-domain contradiction evidence.
+
+### [Snapshot Governance](snapshot_governance/README.md)
+
+**Types:** `depends_on`
+
+Supplies snapshot construction, rule execution, findings, and repository audit orchestration.
+
+### [Source Architecture](source_architecture/README.md)
+
+**Types:** `depends_on`
+
+Supplies language-neutral Source Artifact Model v1 compilation, universal profile/archetype semantics, lightweight PSM reference projection, and file-level structural coherence evaluation.
+
+### [State and Effect Analysis](state_effect_analysis/README.md)
+
+**Types:** `depends_on`
+
+Supplies conservative typestate transitions, transitive effect summaries, and supported state/effect contract contradiction evidence.
+
+### [Standard Registry](standard_registry/README.md)
+
+**Types:** `depends_on`
+
+Supplies stable identities and the exact draft standard bundle interpreted by the Engine.
+
+## Guarantees
+
+The Engine forbids unsafe code, denies warnings and broken documentation, preserves provider independence, and exposes child behavior without inventing a parallel source taxonomy.

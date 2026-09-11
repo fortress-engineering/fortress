@@ -1,0 +1,317 @@
+{
+  "$schema": "urn:fortress:schema:v2:module-contract",
+  "schema_version": 2,
+  "id": "AF-SNAPSHOT-GOVERNANCE-0001",
+  "display_name": "Snapshot Governance",
+  "provides": [
+    {
+      "id": "CAP-SNAPSHOT-GOVERNANCE",
+      "version": "0.1.0",
+      "visibility": "project"
+    }
+  ],
+  "requires": [
+    {
+      "provider": "AF-AFFECTED-ANALYSIS-0001",
+      "capability": "CAP-AFFECTED-ANALYSIS",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-ARCHITECTURE-EVALUATION-0001",
+      "capability": "CAP-ARCHITECTURE-EVALUATION",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-BEHAVIORAL-REALIZATION-0001",
+      "capability": "CAP-BEHAVIORAL-REALIZATION",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-BEHAVIORAL-SEMANTICS-0001",
+      "capability": "CAP-BEHAVIORAL-SEMANTICS",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-CERTIFICATION-0001",
+      "capability": "CAP-CERTIFICATION",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-CONTRACT-COHERENCY-0001",
+      "capability": "CAP-CONTRACT-COHERENCY",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-ENVIRONMENTAL-SEMANTICS-0001",
+      "capability": "CAP-ENVIRONMENTAL-SEMANTICS",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-FINDING-MODEL-0001",
+      "capability": "CAP-FINDING-MODEL",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-IMPLEMENTATION-OBSERVATION-0001",
+      "capability": "CAP-IMPLEMENTATION-OBSERVATION",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-INFORMATION-FLOW-0001",
+      "capability": "CAP-INFORMATION-FLOW",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-PROGRAM-SEMANTICS-0001",
+      "capability": "CAP-PROGRAM-SEMANTICS",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-PROJECT-MODEL-0001",
+      "capability": "CAP-PROJECT-MODEL",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-REFERENCE-RESOLUTION-0001",
+      "capability": "CAP-REFERENCE-RESOLUTION",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-REPOSITORY-OBSERVATION-0001",
+      "capability": "CAP-REPOSITORY-OBSERVATION",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-SEMANTIC-ANALYSIS-0001",
+      "capability": "CAP-SEMANTIC-ANALYSIS",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-SOURCE-ARCHITECTURE-0001",
+      "capability": "CAP-SOURCE-ARCHITECTURE",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-STANDARD-REGISTRY-0001",
+      "capability": "CAP-STANDARD-REGISTRY",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-STATE-EFFECT-ANALYSIS-0001",
+      "capability": "CAP-STATE-EFFECT-ANALYSIS",
+      "version": "^0.1.0"
+    }
+  ],
+  "relationships": [],
+  "constraints": [],
+  "guarantees": [
+    {
+      "id": "GUA-SNAPSHOT-DETERMINISM",
+      "subject": {
+        "kind": "capability",
+        "id": "CAP-SNAPSHOT-GOVERNANCE"
+      },
+      "requirements": [
+        "AF-SNAPSHOT-GOVERNANCE-0001-R01",
+        "AF-SNAPSHOT-GOVERNANCE-0001-R02",
+        "AF-SNAPSHOT-GOVERNANCE-0001-R03",
+        "AF-SNAPSHOT-GOVERNANCE-0001-R15",
+        "AF-SNAPSHOT-GOVERNANCE-0001-R16"
+      ]
+    }
+  ],
+  "features": [
+    {
+      "id": "AF-SNAPSHOT-GOVERNANCE-0001",
+      "version": "0.1.0",
+      "requirements": [
+        {
+          "id": "AF-SNAPSHOT-GOVERNANCE-0001-R01",
+          "statement": "A canonical repository snapshot deterministically binds the exact declared standard/project inputs, explicit observation policy, stable observed file inventory, engine interpretation version, and content fingerprints without wall-clock identity.",
+          "tests": [
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R01-001",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R01-002",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R01-003",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R01-004"
+          ]
+        },
+        {
+          "id": "AF-SNAPSHOT-GOVERNANCE-0001-R02",
+          "statement": "Snapshot creation rejects a repository whose included path set, byte sizes, or content digests change between two canonical observation passes.",
+          "tests": [
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R02-001",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R02-002",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R02-003"
+          ]
+        },
+        {
+          "id": "AF-SNAPSHOT-GOVERNANCE-0001-R03",
+          "statement": "Snapshot rule violations use one validated content-addressed finding contract and a deterministic global sort order.",
+          "tests": [
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R03-001",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R03-002",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R03-003"
+          ]
+        },
+        {
+          "id": "AF-SNAPSHOT-GOVERNANCE-0001-R04",
+          "statement": "The Snapshot Governance engine validates the exact standard bundle, compiles CCG-bound Reference Resolution once, executes only registered evaluators, and canonically distinguishes applicable pass/fail/unsupported results from rules that are NOT_APPLICABLE with stable reasons.",
+          "tests": [
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R04-001",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R04-002",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R04-003",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R04-004",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R04-005"
+          ]
+        },
+        {
+          "id": "AF-SNAPSHOT-GOVERNANCE-0001-R05",
+          "statement": "ARCH-OWNERSHIP-001 deterministically assigns every governed observed file to exactly one physical Module territory and reports orphan, incompatible overlap, or missing explicit fixture claims while respecting observation exclusions.",
+          "tests": [
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R05-001",
+            "T-ARCH-OWNERSHIP-001-R01-001",
+            "T-ARCH-OWNERSHIP-001-R01-002",
+            "T-ARCH-OWNERSHIP-001-R01-003"
+          ]
+        },
+        {
+          "id": "AF-SNAPSHOT-GOVERNANCE-0001-R06",
+          "statement": "TEST-TRACEABILITY-001 loads distributed requirement ownership, extracts deterministic snapshot-bound Rust test facts, and rejects missing, orphaned, stale, duplicate, cross-boundary, marker-mismatched, or infrastructure-counted evidence.",
+          "tests": [
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R06-001",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R06-002",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R06-003",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R06-004",
+            "T-TEST-TRACEABILITY-001-R01-001",
+            "T-TEST-TRACEABILITY-001-R01-002",
+            "T-TEST-TRACEABILITY-001-R01-003"
+          ]
+        },
+        {
+          "id": "AF-SNAPSHOT-GOVERNANCE-0001-R08",
+          "statement": "A repository audit loads the exact declared inputs, builds a stabilized content-addressed snapshot, requires loaded declaration bytes to match it, analyzes supported Rust test facts, and deterministically evaluates every implemented applicable snapshot rule without claiming certification.",
+          "tests": [
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R08-001",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R08-002"
+          ]
+        },
+        {
+          "id": "AF-SNAPSHOT-GOVERNANCE-0001-R09",
+          "statement": "REPO-MODULE-001 defines and deterministically evaluates the canonical recursive Project Filing System grammar, including scoped and opaque ecosystem surfaces, mandatory README.md and contract.json, direct child Modules, reserved structural Elements, lowercase snake_case Module names, the closed Docs set, bounded Data/Info role-collection-partition structure, bidirectional companion documentation presence, minimum necessary depth, canonical versioning, and complete machine inventory.",
+          "tests": [
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R09-001",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R09-002",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R09-003",
+            "T-REPO-MODULE-001-R01-001",
+            "T-REPO-MODULE-001-R01-002",
+            "T-REPO-MODULE-001-R01-003",
+            "T-REPO-MODULE-001-R01-004"
+          ]
+        },
+        {
+          "id": "AF-SNAPSHOT-GOVERNANCE-0001-R10",
+          "statement": "REPO-DOCS-001 parses canonical Module Markdown structurally, validates typed Module contracts, and deterministically reconciles flat file catalogs or structured Data/Info role-collection catalogs, child catalogs, relationship projections, and relative links without requiring human enumeration of partition leaf files or treating unsupported source-dependency inference as evaluated.",
+          "tests": [
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R10-001",
+            "T-REPO-DOCS-001-R01-001",
+            "T-REPO-DOCS-001-R01-002",
+            "T-REPO-DOCS-001-R01-003",
+            "T-REPO-DOCS-001-R01-004"
+          ]
+        },
+        {
+          "id": "AF-SNAPSHOT-GOVERNANCE-0001-R11",
+          "statement": "CONTRACT-COHERENCY-001 passes only when canonical CCG compilation succeeds, its supported semantic graph is coherent, provenance is complete, and README relationship projection agrees while explicitly unsupported semantic classes remain non-evidence.",
+          "tests": [
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R11-001"
+          ]
+        },
+        {
+          "id": "AF-SNAPSHOT-GOVERNANCE-0001-R12",
+          "statement": "TEST-BOUNDARY-001 deterministically enforces recursive parent-local Feature verification through exact Testing-child presence, Feature subjects, role restrictions, source placement, and ownership-aware requirement evidence without introducing unit, integration, or end-to-end filesystem taxonomies.",
+          "tests": [
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R12-001",
+            "T-TEST-BOUNDARY-001-R01-001",
+            "T-TEST-BOUNDARY-001-R01-002",
+            "T-TEST-BOUNDARY-001-R01-003"
+          ]
+        },
+        {
+          "id": "AF-SNAPSHOT-GOVERNANCE-0001-R13",
+          "statement": "A complete snapshot audit compiles Intended BFG semantics once from the same immutable CCG, evaluates BEHAVIOR-FLOW-001 without rebuilding graphs per rule, and leaves unmodeled Features explicit and non-failing.",
+          "tests": [
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R13-001"
+          ]
+        },
+        {
+          "id": "AF-SNAPSHOT-GOVERNANCE-0001-R14",
+          "statement": "Snapshot Governance Testing executes the current generated success and failure scenarios for its filesystem document-read environmental boundary and establishes their exact deterministic obligation identities.",
+          "tests": [
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R14-001"
+          ]
+        },
+        {
+          "id": "AF-SNAPSHOT-GOVERNANCE-0001-R15",
+          "statement": "Stable finding identity excludes presentation, position, and causal-path drift; exact-snapshot unambiguous legacy aliases preserve authored baseline and exception governance until explicit migration, while evidence eligibility, lifecycle, and disposition alter progressive enforcement without changing raw conformance truth.",
+          "tests": [
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R15-001",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R15-002",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R15-003",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R15-004",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R15-005",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R15-006",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R15-007"
+          ]
+        },
+        {
+          "id": "AF-SNAPSHOT-GOVERNANCE-0001-R16",
+          "statement": "Repository bootstrap observes without mutation, emits a deterministic exact-source-bound proposal that separates mechanical facts from explicit owner choices, transactionally materializes only reviewed minimal authority, and optionally delegates one-time legacy residue capture to canonical finding governance without changing raw conformance.",
+          "tests": [
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R16-001",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R16-002",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R16-003",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R16-004",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R16-005"
+          ]
+        }
+      ]
+    }
+  ],
+  "behavior": [
+    {
+      "id": "CHK-AUDIT-RESULT-CLASSIFIED",
+      "feature": "AF-FORTRESS-AUDIT-0001",
+      "kind": "decision",
+      "transitions": [
+        {
+          "outcome": "fail",
+          "target": "CHK-AUDIT-FAILED"
+        },
+        {
+          "outcome": "pass",
+          "target": "CHK-AUDIT-PASSED"
+        }
+      ]
+    },
+    {
+      "id": "CHK-REPOSITORY-STABILIZED",
+      "feature": "AF-FORTRESS-AUDIT-0001",
+      "kind": "action",
+      "transitions": [
+        {
+          "target": "CHK-CONTRACT-ECOSYSTEM-COMPILED"
+        }
+      ]
+    },
+    {
+      "id": "CHK-RULES-EVALUATED",
+      "feature": "AF-FORTRESS-AUDIT-0001",
+      "kind": "action",
+      "transitions": [
+        {
+          "target": "CHK-AUDIT-RESULT-CLASSIFIED"
+        }
+      ]
+    }
+  ]
+}

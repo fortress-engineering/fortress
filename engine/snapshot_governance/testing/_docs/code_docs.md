@@ -1,0 +1,71 @@
+# Code
+
+## Role
+
+Exercise the Module responsibility through directly owned verification logic without becoming normative authority.
+
+## Execution
+
+Cargo invokes each explicit test target; the code loads direct fixtures or the governed repository, performs deterministic assertions, and terminates with process success or failure.
+
+## State
+
+Verification is stateless apart from process-local values and isolated disposable runtime repositories where a scenario requires filesystem behavior.
+
+## Failure Semantics
+
+A violated assertion or fixture-loading failure fails the test target and surfaces its exact subject; verification never suppresses production errors.
+
+## Files
+
+### [`arch_ownership_001.rs`](../_code/arch_ownership_001.rs)
+
+Exercises complete, orphaned, overlapping, required, and minimum ownership cases.
+
+### [`audit.rs`](../_code/audit.rs)
+
+Runs the complete self-audit and asserts every implemented applicable rule passes.
+
+### [`derived_artifact_storage.py`](../_code/derived_artifact_storage.py)
+
+Verifies the complete projection-storage registry, subject-addressed external cache boundary, and distinct missing, current, stale, and invalid materialization states without executing semantic generators.
+
+### [`finding_governance.rs`](../_code/finding_governance.rs)
+
+Verifies stable finding identity, baseline creation and monotonic pruning, reintroduction, explicit exception retirement, orthogonal conformance/enforcement, and deterministic authority serialization.
+
+### [`repo_docs_001.rs`](../_code/repo_docs_001.rs)
+
+Executes the specification-authored canonical documentation and contract synchronization cases.
+
+### [`repo_module_001.rs`](../_code/repo_module_001.rs)
+
+Executes valid, invalid, and boundary recursive Module grammar fixtures.
+
+### [`repository_snapshot.rs`](../_code/repository_snapshot.rs)
+
+Verifies self-snapshot repeatability and binding to every declared draft rule.
+
+### [`repository_bootstrap.rs`](../_code/repository_bootstrap.rs)
+
+Verifies read-only deterministic discovery, explicit owner-choice separation, proposal digest and staleness enforcement, transactional minimal authority application, source/Cargo preservation, and truthful zero-new-red baseline behavior.
+
+### [`repository_grammar.rs`](../_code/repository_grammar.rs)
+
+Checks Fortress's physical repository and canonical documentation at the Snapshot Governance boundary that implements those rules.
+
+### [`snapshot_evaluation.rs`](../_code/snapshot_evaluation.rs)
+
+Verifies truthful rule dispatch, unsupported reporting, and complete self traceability inputs.
+
+### [`snapshot_primitives.rs`](../_code/snapshot_primitives.rs)
+
+Verifies snapshot stabilization, finding normalization, lexical placement, Rust analysis, and exact draft bundle loading as parent-owned behavior.
+
+### [`test_boundary_001.rs`](../_code/test_boundary_001.rs)
+
+Exercises simple, complex, invalid, cross-level, infrastructure, and recursive parent-local TEST-BOUNDARY-001 scenarios.
+
+### [`test_traceability_001.rs`](../_code/test_traceability_001.rs)
+
+Exercises complete, invalid, and infrastructure-boundary requirement and Rust-test traceability.

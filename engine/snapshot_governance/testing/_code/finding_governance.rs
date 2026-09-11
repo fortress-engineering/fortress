@@ -1,0 +1,567 @@
+//! Finding identity, baseline ratchet, and explicit exception conformance.
+
+use fortress_core::finding::{
+    CanonicalFinding, EvaluatorProvenance, FindingEnforcementEligibility,
+    FindingIdentityEligibility, FindingLocation, FindingOccurrence, RuleFindingDefinition,
+    SourceSpan,
+};
+use fortress_core::finding_governance::{
+    ExceptionState, FindingDisposition, FindingEnforcement, FindingGovernanceDocument,
+    FindingLifecycle, evaluate_finding_governance,
+};
+use fortress_core::standard::FindingCategory;
+
+fn finding(
+    rule: &str,
+    subject: &str,
+    path: &str,
+    discriminator: &str,
+    message: &str,
+    line: u32,
+) -> CanonicalFinding {
+    CanonicalFinding::failure(
+        RuleFindingDefinition::new(
+            rule,
+            1,
+            FindingCategory::Architecture,
+            "Repair the violation.",
+        )
+        .unwrap(),
+        FindingOccurrence::new(
+            vec![subject.into()],
+            FindingLocation::at_path(path)
+                .unwrap()
+                .with_span(SourceSpan::new(line, 1, line, 2).unwrap()),
+            message,
+        )
+        .unwrap()
+        .with_discriminator(discriminator)
+        .unwrap(),
+        EvaluatorProvenance::new("test-evaluator", "1").unwrap(),
+        "1.0.0-draft.1",
+    )
+    .unwrap()
+}
+
+/// `T-AF-SNAPSHOT-GOVERNANCE-0001-R15-006`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R15
+#[test]
+fn advisory_evidence_preserves_lifecycle_without_blocking_enforcement() {
+    let raw = finding(
+        "ARCH-SEMANTIC-001",
+        "AF-CORE-0001",
+        "a/_code/a.rs",
+        "TEST_ONLY",
+        "test-only semantic contradiction",
+        1,
+    )
+    .with_advisory_enforcement("TEST_ONLY_EVIDENCE")
+    .unwrap();
+    let result = evaluate_finding_governance(
+        std::slice::from_ref(&raw),
+        None,
+        "STD-FORTRESS-ENGINEERING",
+        "1.0.0-draft.1",
+    )
+    .unwrap();
+    assert!(result.is_success());
+    assert_eq!(result.summary().advisory_non_blocking, 1);
+    assert_eq!(result.summary().new_blocking, 0);
+    assert_eq!(result.findings()[0].lifecycle(), FindingLifecycle::New);
+    assert_eq!(
+        result.findings()[0].enforcement(),
+        FindingEnforcement::NonBlocking
+    );
+    assert_eq!(
+        result.findings()[0].evidence_eligibility(),
+        FindingEnforcementEligibility::AdvisoryOnly
+    );
+    assert_eq!(
+        result.findings()[0].evidence_reason(),
+        Some("TEST_ONLY_EVIDENCE")
+    );
+
+    let mut baseline_authority = FindingGovernanceDocument::empty();
+    baseline_authority
+        .create_baseline(
+            "STD-FORTRESS-ENGINEERING",
+            "1.0.0-draft.1",
+            std::slice::from_ref(&raw),
+        )
+        .unwrap();
+    let baselined = evaluate_finding_governance(
+        std::slice::from_ref(&raw),
+        Some(&baseline_authority),
+        "STD-FORTRESS-ENGINEERING",
+        "1.0.0-draft.1",
+    )
+    .unwrap();
+    assert_eq!(
+        baselined.findings()[0].lifecycle(),
+        FindingLifecycle::Baselined
+    );
+    assert_eq!(
+        baselined.findings()[0].evidence_eligibility(),
+        FindingEnforcementEligibility::AdvisoryOnly
+    );
+
+    let mut exception_authority = FindingGovernanceDocument::empty();
+    exception_authority
+        .create_exception(
+            "EX-TEST-PROVENANCE-0001",
+            raw.finding_id(),
+            "owner:test-governance",
+            "Explicit governance remains independent of evidence provenance.",
+            std::slice::from_ref(&raw),
+        )
+        .unwrap();
+    let excepted = evaluate_finding_governance(
+        &[raw],
+        Some(&exception_authority),
+        "STD-FORTRESS-ENGINEERING",
+        "1.0.0-draft.1",
+    )
+    .unwrap();
+    assert_eq!(
+        excepted.findings()[0].disposition(),
+        FindingDisposition::Excepted
+    );
+    assert_eq!(
+        excepted.findings()[0].evidence_eligibility(),
+        FindingEnforcementEligibility::AdvisoryOnly
+    );
+}
+
+/// `T-AF-SNAPSHOT-GOVERNANCE-0001-R15-001`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R15
+#[test]
+fn stable_finding_identity_excludes_presentation_and_position() {
+    let first = finding(
+        "ARCH-DEPENDENCY-001",
+        "AF-CORE-0001",
+        "a/_code/a.rs",
+        "UNDECLARED:CAP-X",
+        "old wording",
+        2,
+    );
+    let drifted = finding(
+        "ARCH-DEPENDENCY-001",
+        "AF-CORE-0001",
+        "a/_code/a.rs",
+        "UNDECLARED:CAP-X",
+        "new wording",
+        200,
+    );
+    assert_eq!(first.finding_id(), drifted.finding_id());
+
+    let relocated = finding(
+        "ARCH-DEPENDENCY-001",
+        "AF-CORE-0001",
+        "moved/_code/a.rs",
+        "UNDECLARED:CAP-X",
+        "new wording",
+        1,
+    );
+    assert_eq!(first.finding_id(), relocated.finding_id());
+    assert_ne!(
+        first.finding_id(),
+        finding(
+            "ARCH-DEPENDENCY-001",
+            "AF-OTHER-0001",
+            "a/_code/a.rs",
+            "UNDECLARED:CAP-X",
+            "old wording",
+            2
+        )
+        .finding_id()
+    );
+    assert_ne!(
+        first.finding_id(),
+        finding(
+            "ARCH-REALIZATION-001",
+            "AF-CORE-0001",
+            "a/_code/a.rs",
+            "UNDECLARED:CAP-X",
+            "old wording",
+            2
+        )
+        .finding_id()
+    );
+    assert_ne!(
+        first.finding_id(),
+        finding(
+            "ARCH-DEPENDENCY-001",
+            "AF-CORE-0001",
+            "a/_code/a.rs",
+            "UNDECLARED:CAP-Y",
+            "old wording",
+            2
+        )
+        .finding_id()
+    );
+
+    let ineligible = CanonicalFinding::failure(
+        RuleFindingDefinition::new(
+            "ARCH-DEPENDENCY-001",
+            1,
+            FindingCategory::Architecture,
+            "Repair.",
+        )
+        .unwrap(),
+        FindingOccurrence::new(Vec::new(), FindingLocation::none(), "No stable subject.").unwrap(),
+        EvaluatorProvenance::new("test", "1").unwrap(),
+        "1.0.0-draft.1",
+    )
+    .unwrap();
+    assert_eq!(
+        ineligible.identity_eligibility(),
+        FindingIdentityEligibility::BaselineIneligible
+    );
+}
+
+/// `T-AF-SNAPSHOT-GOVERNANCE-0001-R15-002`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R15
+#[test]
+fn baseline_is_explicit_monotonic_and_detects_reintroduction() {
+    let legacy = finding(
+        "ARCH-DEPENDENCY-001",
+        "AF-CORE-0001",
+        "a/_code/a.rs",
+        "LEGACY",
+        "legacy",
+        1,
+    );
+    let new = finding(
+        "ARCH-REALIZATION-001",
+        "AF-OTHER-0001",
+        "b/_code/b.rs",
+        "NEW",
+        "new",
+        1,
+    );
+    let mut authority = FindingGovernanceDocument::empty();
+    let duplicate_observations = [legacy.clone(), legacy.clone()];
+    let created = authority
+        .create_baseline(
+            "STD-FORTRESS-ENGINEERING",
+            "1.0.0-draft.1",
+            &duplicate_observations,
+        )
+        .unwrap();
+    assert_eq!(created.active, 1);
+    assert_eq!(created.ineligible, 0);
+    assert!(
+        authority
+            .create_baseline("STD-FORTRESS-ENGINEERING", "1.0.0-draft.1", &[])
+            .is_err()
+    );
+
+    let current = evaluate_finding_governance(
+        &[legacy.clone(), new.clone()],
+        Some(&authority),
+        "STD-FORTRESS-ENGINEERING",
+        "1.0.0-draft.1",
+    )
+    .unwrap();
+    assert_eq!(current.summary().baselined_non_blocking, 1);
+    assert_eq!(current.summary().new_blocking, 1);
+    assert!(!current.is_success());
+
+    let pruned = authority
+        .prune_baseline(std::slice::from_ref(&new))
+        .unwrap();
+    assert_eq!(pruned.removed, 1);
+    assert!(authority.baseline().unwrap().active_entries().is_empty());
+    let reintroduced = evaluate_finding_governance(
+        std::slice::from_ref(&legacy),
+        Some(&authority),
+        "STD-FORTRESS-ENGINEERING",
+        "1.0.0-draft.1",
+    )
+    .unwrap();
+    assert_eq!(
+        reintroduced.findings()[0].lifecycle(),
+        FindingLifecycle::Reintroduced
+    );
+    assert_eq!(
+        reintroduced.findings()[0].enforcement(),
+        FindingEnforcement::Blocking
+    );
+    assert_eq!(
+        authority.to_canonical_json().unwrap(),
+        authority.to_canonical_json().unwrap()
+    );
+    assert!(
+        FindingGovernanceDocument::from_json_str(
+            r#"{"$schema":"wrong","schema_version":1,"baseline":null,"exceptions":[]}"#
+        )
+        .is_err()
+    );
+}
+
+/// `T-AF-SNAPSHOT-GOVERNANCE-0001-R15-003`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R15
+#[test]
+fn exception_changes_enforcement_not_raw_violation() {
+    let violation = finding(
+        "ARCH-DEPENDENCY-001",
+        "AF-CORE-0001",
+        "a/_code/a.rs",
+        "EXCEPT",
+        "violation",
+        1,
+    );
+    let mut authority = FindingGovernanceDocument::empty();
+    assert!(
+        authority
+            .create_exception(
+                "EX-FINDING-0001",
+                violation.finding_id(),
+                "",
+                "reason",
+                std::slice::from_ref(&violation)
+            )
+            .is_err()
+    );
+    assert!(
+        authority
+            .create_exception(
+                "EX-FINDING-0001",
+                violation.finding_id(),
+                "owner:decision",
+                "",
+                std::slice::from_ref(&violation)
+            )
+            .is_err()
+    );
+    authority
+        .create_exception(
+            "EX-FINDING-0001",
+            violation.finding_id(),
+            "owner:decision",
+            "Temporary reviewed tolerance.",
+            std::slice::from_ref(&violation),
+        )
+        .unwrap();
+    let excepted = evaluate_finding_governance(
+        std::slice::from_ref(&violation),
+        Some(&authority),
+        "STD-FORTRESS-ENGINEERING",
+        "1.0.0-draft.1",
+    )
+    .unwrap();
+    assert_eq!(
+        excepted.findings()[0].disposition(),
+        FindingDisposition::Excepted
+    );
+    assert_eq!(
+        excepted.findings()[0].enforcement(),
+        FindingEnforcement::NonBlocking
+    );
+    assert_eq!(excepted.summary().excepted_non_blocking, 1);
+    let unresolved = evaluate_finding_governance(
+        &[],
+        Some(&authority),
+        "STD-FORTRESS-ENGINEERING",
+        "1.0.0-draft.1",
+    )
+    .unwrap();
+    assert_eq!(
+        unresolved.unresolved_active_exceptions(),
+        &["EX-FINDING-0001"]
+    );
+    authority.retire_exception("EX-FINDING-0001").unwrap();
+    assert_eq!(authority.exceptions()[0].state(), ExceptionState::Retired);
+    let retired = evaluate_finding_governance(
+        std::slice::from_ref(&violation),
+        Some(&authority),
+        "STD-FORTRESS-ENGINEERING",
+        "1.0.0-draft.1",
+    )
+    .unwrap();
+    assert_eq!(
+        retired.findings()[0].enforcement(),
+        FindingEnforcement::Blocking
+    );
+}
+
+/// `T-AF-SNAPSHOT-GOVERNANCE-0001-R15-004`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R15
+#[test]
+fn combined_lifecycle_keeps_truths_orthogonal() {
+    let baseline = finding(
+        "ARCH-DEPENDENCY-001",
+        "AF-ONE-0001",
+        "one/_code/a.rs",
+        "BASE",
+        "baseline",
+        1,
+    );
+    let excepted = finding(
+        "ARCH-REALIZATION-001",
+        "AF-TWO-0001",
+        "two/_code/a.rs",
+        "EXC",
+        "excepted",
+        1,
+    );
+    let new = finding(
+        "REPO-MODULE-001",
+        "AF-THREE-0001",
+        "three/_code/a.rs",
+        "NEW",
+        "new",
+        1,
+    );
+    let resolved = finding(
+        "REPO-DOCS-001",
+        "AF-FOUR-0001",
+        "four/README.md",
+        "OLD",
+        "resolved",
+        1,
+    );
+    let mut authority = FindingGovernanceDocument::empty();
+    authority
+        .create_baseline(
+            "STD-FORTRESS-ENGINEERING",
+            "1.0.0-draft.1",
+            &[baseline.clone(), resolved],
+        )
+        .unwrap();
+    authority
+        .create_exception(
+            "EX-REVIEWED-0001",
+            excepted.finding_id(),
+            "owner:review",
+            "Reviewed exception.",
+            std::slice::from_ref(&excepted),
+        )
+        .unwrap();
+    let result = evaluate_finding_governance(
+        &[baseline, excepted, new],
+        Some(&authority),
+        "STD-FORTRESS-ENGINEERING",
+        "1.0.0-draft.1",
+    )
+    .unwrap();
+    assert_eq!(result.summary().baselined_non_blocking, 1);
+    assert_eq!(result.summary().excepted_non_blocking, 1);
+    assert_eq!(result.summary().new_blocking, 1);
+    assert_eq!(result.summary().resolved_baseline_entries, 1);
+    assert!(!result.is_success());
+    assert!(
+        evaluate_finding_governance(
+            &[],
+            Some(&authority),
+            "STD-FORTRESS-ENGINEERING",
+            "different-edition"
+        )
+        .is_err()
+    );
+}
+
+/// `T-AF-SNAPSHOT-GOVERNANCE-0001-R15-005`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R15
+#[test]
+fn large_finding_set_uses_deterministic_keyed_matching() {
+    let findings = (0..10_000)
+        .map(|index| {
+            finding(
+                "ARCH-DEPENDENCY-001",
+                &format!("AF-VOLUME-{index:05}"),
+                &format!("volume/_code/{index:05}.rs"),
+                "VOLUME",
+                "volume finding",
+                1,
+            )
+        })
+        .collect::<Vec<_>>();
+    let mut authority = FindingGovernanceDocument::empty();
+    authority
+        .create_baseline(
+            "STD-FORTRESS-ENGINEERING",
+            "1.0.0-draft.1",
+            &findings[..5_000],
+        )
+        .unwrap();
+    let first = evaluate_finding_governance(
+        &findings,
+        Some(&authority),
+        "STD-FORTRESS-ENGINEERING",
+        "1.0.0-draft.1",
+    )
+    .unwrap();
+    let second = evaluate_finding_governance(
+        &findings,
+        Some(&authority),
+        "STD-FORTRESS-ENGINEERING",
+        "1.0.0-draft.1",
+    )
+    .unwrap();
+    assert_eq!(first, second);
+    assert_eq!(first.summary().baselined_non_blocking, 5_000);
+    assert_eq!(first.summary().new_blocking, 5_000);
+}
+
+/// `T-AF-SNAPSHOT-GOVERNANCE-0001-R15-007`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R15
+#[test]
+fn legacy_finding_alias_preserves_governance_and_rejects_ambiguity() {
+    let legacy = finding(
+        "ARCH-SEMANTIC-001",
+        "AF-LEGACY-0001",
+        "legacy/_code/lib.rs",
+        "legacy-discriminator",
+        "legacy semantic finding",
+        7,
+    );
+    let mut authority = FindingGovernanceDocument::empty();
+    authority
+        .create_baseline(
+            "STD-FORTRESS-ENGINEERING",
+            "1.0.0-draft.1",
+            std::slice::from_ref(&legacy),
+        )
+        .unwrap();
+
+    let canonical = finding(
+        "ARCH-SEMANTIC-001",
+        "AF-LEGACY-0001",
+        "legacy/_code/lib.rs",
+        "canonical-discriminator",
+        "current semantic finding",
+        70,
+    )
+    .with_legacy_finding_id(legacy.finding_id());
+    let result = evaluate_finding_governance(
+        std::slice::from_ref(&canonical),
+        Some(&authority),
+        "STD-FORTRESS-ENGINEERING",
+        "1.0.0-draft.1",
+    )
+    .unwrap();
+    assert_eq!(result.summary().baselined_non_blocking, 1);
+    assert_eq!(result.summary().new_blocking, 0);
+    assert_eq!(result.summary().resolved_baseline_entries, 0);
+
+    let competing = finding(
+        "ARCH-SEMANTIC-001",
+        "AF-LEGACY-0001",
+        "legacy/_code/lib.rs",
+        "competing-discriminator",
+        "competing semantic finding",
+        700,
+    )
+    .with_legacy_finding_id(legacy.finding_id());
+    assert!(
+        evaluate_finding_governance(
+            &[canonical, competing],
+            Some(&authority),
+            "STD-FORTRESS-ENGINEERING",
+            "1.0.0-draft.1",
+        )
+        .is_err(),
+        "an ambiguous legacy identity must never select a current finding"
+    );
+}

@@ -1,0 +1,38 @@
+[package]
+name = "fortress-cli"
+workspace = "../../_data"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+description.workspace = true
+repository.workspace = true
+autotests = false
+
+[lib]
+path = "../_code/lib.rs"
+
+[[bin]]
+name = "fortress"
+path = "../_code/main.rs"
+
+[[test]]
+name = "cli"
+path = "../testing/_code/cli.rs"
+
+[[test]]
+name = "self_model"
+path = "../../testing/_code/self_model.rs"
+
+[[test]]
+name = "audit_flow"
+path = "../../testing/_code/audit_flow.rs"
+
+[dependencies]
+fortress-core = { path = "../../engine/_data" }
+
+[dev-dependencies]
+serde_json = "1.0"
+
+[lints]
+workspace = true

@@ -1,0 +1,42 @@
+{
+  "$schema": "urn:fortress:schema:v1:rule",
+  "schema_version": 1,
+  "id": "REPO-MODULE-001",
+  "title": "Canonical recursive Project Filing System grammar",
+  "status": "draft",
+  "statement": "Every governed canonical repository MUST be a recursive tree of directly nested Modules. Each Module MUST contain README.md, a valid contract.json, and at least one of _code/ or a direct child Module. Canonical child names MUST be lowercase snake_case. The exact reserved structural directories are _code/, _data/, _docs/, and _info/; every other leading-underscore entry is invalid. Direct entries resolve in order as Fortress structure, applicable scoped ecosystem structure, contract-marked child Module attempts, or invalid content. Module roots and _docs/ are closed. Project-defined Code MUST be flat unless a registered ecosystem profile owns mechanical namespace structure. Data and Info MUST be either flat or use the frozen role/[collection]/[part_000001] grammar at minimum necessary depth. Companion documentation presence and canonical naming/versioning MUST be complete.",
+  "rationale": "One uniform recursive filing grammar maps Module ancestry directly to directory ancestry, makes the Fortress namespace visible through a reserved prefix, prevents hidden decomposition, distinguishes persisted inputs from derived outputs, permits ecosystem structure only through explicitly scoped profiles, scales human catalogs by collection, and removes arbitrary filesystem taxonomies.",
+  "failure_prevented": "Unowned implementation islands, malformed or ambiguously named Module attempts, responsibility hidden beneath structural paths, missing Module contracts, reserved-name collisions, ecosystem-scope leakage, mixed flat/structured Elements, recursive data taxonomies, malformed version or partition folders, arbitrary documentation archives, and entropy-producing path aliases.",
+  "applicability": "Every governed repository snapshot using canonical physical filing. Logical/freeform Modules remain governed by their explicit bindings and governance territories rather than canonical physical Element spelling. Ecosystem entries are admitted only by validated Standard-owned profiles with explicit scope and directory opacity.",
+  "category": "repository",
+  "integrity_tier": 1,
+  "evaluation": "The Fortress core builds one authoritative Module index from direct contract markers after reserved-namespace and scoped-ecosystem precedence; validates lowercase snake_case names, case-fold uniqueness, Module authority, Element structure, Code flatness, closed docs, Data/Info role-collection-partition depth, minimum necessary levels, _vN versions, part_000001 partitions, and companion documentation; inventories every leaf exactly once; then projects normalized violations into findings without adding leaf files to the CCG.",
+  "required_capabilities": [
+    "stabilized-repository-observation",
+    "recursive-module-discovery",
+    "canonical-path-grammar",
+    "ecosystem-filing-profile-registry",
+    "data-info-collection-inventory",
+    "module-documentation-reconciliation"
+  ],
+  "logic": {
+    "implies": [],
+    "conflicts_with": []
+  },
+  "finding": {
+    "message": "An observed path or inferred Module violates the canonical recursive repository grammar.",
+    "location": "path-or-module"
+  },
+  "remediation": "Converge paths to direct contract-marked child Modules and _code/_data/_docs/_info; use lowercase snake_case child names; keep source files directly beneath _code unless a registered mechanical profile applies; retain only canonical companion docs; use the shallowest canonical Data/Info role and optional collection; use one part_000001-style physical partition level; and remove or explicitly register ecosystem-required surfaces at their correct scope.",
+  "valid_example": "A composite Module has README.md, contract.json, a direct child_module/, and _docs/modules_docs.md; an atomic child has flat _code/; a large dataset remains _data/dataset/historical_events_v3/part_000001/... without creating volume-only Modules.",
+  "invalid_example": "A scripts/ island exists at a Module root, ChildModule/ violates naming, _cache/ claims the reserved namespace, nested .github/ exceeds its project-root scope, _code/parsing hides an architectural responsibility, or _data/schema/schemas adds a redundant level.",
+  "exception_policy": "Only entries in the validated ecosystem filing-profile registry are exceptions. Profiles declare project-root or Module-root scope, may make directory subtrees opaque, and may not claim leading-underscore names. Repository-specific prose and arbitrary directory names cannot create exemptions.",
+  "introduced": "1.0.0-draft.1",
+  "history": [
+    "Introduced during CHG-REPOSITORY-GRAMMAR-0007 as the canonical replacement for the earlier project-declared placement model.",
+    "Requires one Module contract and bidirectional modules_docs.md decomposition documentation.",
+    "Recognizes root .gitattributes as Git-supported integration authority needed to preserve canonical LF contract bytes across platforms.",
+    "Defines profile-owned ecosystem surfaces, flat Code, closed Docs, frozen Data/Info roles, one collection and partition level, _vN versions, and scalable machine inventory.",
+    "Simplified in 1.0.0-draft.2 so canonical Module ancestry maps directly to directory ancestry and Fortress structure occupies the reserved underscore namespace."
+  ]
+}

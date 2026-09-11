@@ -18,17 +18,26 @@ concurrency:
 
 jobs:
   validate:
-    name: Verify local quality certificate
+    name: Verify filing architecture and local quality certificate
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 15
     steps:
       - name: Check out exact revision
         uses: actions/checkout@v4.3.1
         with:
           persist-credentials: false
 
+      - name: Verify canonical filing architecture and repository purity
+        run: >-
+          cargo +1.97.1
+          --config _data/cargo_config.toml
+          test
+          --manifest-path _data/Cargo.toml
+          --all-features
+          --test filing_system
+
       - name: Verify passing local certificate and freshness stamps
         run: >-
           python3
-          mods/engine/mods/snapshot_governance/code/quality_certificate.py
+          engine/snapshot_governance/_code/quality_certificate.py
           verify .

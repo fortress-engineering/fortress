@@ -1,0 +1,262 @@
+{
+  "$schema": "urn:fortress:derived:v2:local-quality-certificate",
+  "schema_version": 2,
+  "semantic_version": "quality-certificate-v2.1",
+  "project": "PF-FORTRESS",
+  "profile": "fortress-complete-local-v1",
+  "claim": "LOCAL_QUALITY_GATES_PASS",
+  "trust": {
+    "level": "untrusted-local",
+    "tamper_evidence": "SHA-256",
+    "authenticity": "UNVERIFIED",
+    "limitation": "Digest stamps detect mutation and staleness but are not signatures; authenticated antiforgery requires an external trusted signing identity."
+  },
+  "source": {
+    "fingerprint": "sha256:b01ed3e0074d66c274e1dd41ec551dfebc3c93a7236d6e135c45b270a1449057",
+    "file_count": 415,
+    "excluded_self": "_info/quality_certificate.json",
+    "excluded_derived_artifacts": [
+      "_info/behavioral_flow_graph.json",
+      "_info/certification.json",
+      "_info/component_resolution_index.json",
+      "_info/contract_coherency_graph.json",
+      "_info/environmental_analysis.json",
+      "_info/evidence_graph.json",
+      "_info/information_flow_analysis.json",
+      "_info/program_semantic_model.json",
+      "_info/realized_behavioral_flow_graph.json",
+      "_info/semantic_analysis.json",
+      "_info/semantic_conformance.json",
+      "_info/source_artifact_model.json",
+      "_info/state_effect_analysis.json",
+      "_info/verified_behavioral_flow_graph.json"
+    ]
+  },
+  "toolchain": {
+    "rust": "1.97.1",
+    "cargo_config": "_data/cargo_config.toml",
+    "resolver_lockfile": "_info/Cargo.lock",
+    "build_artifacts": "external-temporary-directory",
+    "derived_projections": "external-subject-addressed-cache"
+  },
+  "gates": [
+    {
+      "id": "ARTIFACT_BFG",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config _data/cargo_config.toml run --quiet --manifest-path _data/Cargo.toml -p fortress-cli -- certify . --format json --evidence-output <machine-local-path> --certification-output <machine-local-path> --verified-bfg-output <machine-local-path> --projection-output-dir <machine-local-path> --audit-output <machine-local-path>"
+    },
+    {
+      "id": "ARTIFACT_CCG",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config _data/cargo_config.toml run --quiet --manifest-path _data/Cargo.toml -p fortress-cli -- certify . --format json --evidence-output <machine-local-path> --certification-output <machine-local-path> --verified-bfg-output <machine-local-path> --projection-output-dir <machine-local-path> --audit-output <machine-local-path>"
+    },
+    {
+      "id": "ARTIFACT_CERTIFICATION",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config _data/cargo_config.toml run --quiet --manifest-path _data/Cargo.toml -p fortress-cli -- certify . --format json --evidence-output <machine-local-path> --certification-output <machine-local-path> --verified-bfg-output <machine-local-path> --projection-output-dir <machine-local-path> --audit-output <machine-local-path>"
+    },
+    {
+      "id": "ARTIFACT_ENVIRONMENTAL",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config _data/cargo_config.toml run --quiet --manifest-path _data/Cargo.toml -p fortress-cli -- certify . --format json --evidence-output <machine-local-path> --certification-output <machine-local-path> --verified-bfg-output <machine-local-path> --projection-output-dir <machine-local-path> --audit-output <machine-local-path>"
+    },
+    {
+      "id": "ARTIFACT_EVIDENCE_GRAPH",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config _data/cargo_config.toml run --quiet --manifest-path _data/Cargo.toml -p fortress-cli -- certify . --format json --evidence-output <machine-local-path> --certification-output <machine-local-path> --verified-bfg-output <machine-local-path> --projection-output-dir <machine-local-path> --audit-output <machine-local-path>"
+    },
+    {
+      "id": "ARTIFACT_INFORMATION_FLOW",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config _data/cargo_config.toml run --quiet --manifest-path _data/Cargo.toml -p fortress-cli -- certify . --format json --evidence-output <machine-local-path> --certification-output <machine-local-path> --verified-bfg-output <machine-local-path> --projection-output-dir <machine-local-path> --audit-output <machine-local-path>"
+    },
+    {
+      "id": "ARTIFACT_PSM",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config _data/cargo_config.toml run --quiet --manifest-path _data/Cargo.toml -p fortress-cli -- certify . --format json --evidence-output <machine-local-path> --certification-output <machine-local-path> --verified-bfg-output <machine-local-path> --projection-output-dir <machine-local-path> --audit-output <machine-local-path>"
+    },
+    {
+      "id": "ARTIFACT_REALIZED_BFG",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config _data/cargo_config.toml run --quiet --manifest-path _data/Cargo.toml -p fortress-cli -- certify . --format json --evidence-output <machine-local-path> --certification-output <machine-local-path> --verified-bfg-output <machine-local-path> --projection-output-dir <machine-local-path> --audit-output <machine-local-path>"
+    },
+    {
+      "id": "ARTIFACT_REFERENCES",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config _data/cargo_config.toml run --quiet --manifest-path _data/Cargo.toml -p fortress-cli -- certify . --format json --evidence-output <machine-local-path> --certification-output <machine-local-path> --verified-bfg-output <machine-local-path> --projection-output-dir <machine-local-path> --audit-output <machine-local-path>"
+    },
+    {
+      "id": "ARTIFACT_SEMANTIC",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config _data/cargo_config.toml run --quiet --manifest-path _data/Cargo.toml -p fortress-cli -- certify . --format json --evidence-output <machine-local-path> --certification-output <machine-local-path> --verified-bfg-output <machine-local-path> --projection-output-dir <machine-local-path> --audit-output <machine-local-path>"
+    },
+    {
+      "id": "ARTIFACT_SEMANTIC_CONFORMANCE",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config _data/cargo_config.toml run --quiet --manifest-path _data/Cargo.toml -p fortress-cli -- certify . --format json --evidence-output <machine-local-path> --certification-output <machine-local-path> --verified-bfg-output <machine-local-path> --projection-output-dir <machine-local-path> --audit-output <machine-local-path>"
+    },
+    {
+      "id": "ARTIFACT_SOURCE_ARTIFACTS",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config _data/cargo_config.toml run --quiet --manifest-path _data/Cargo.toml -p fortress-cli -- certify . --format json --evidence-output <machine-local-path> --certification-output <machine-local-path> --verified-bfg-output <machine-local-path> --projection-output-dir <machine-local-path> --audit-output <machine-local-path>"
+    },
+    {
+      "id": "ARTIFACT_STATE_EFFECT",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config _data/cargo_config.toml run --quiet --manifest-path _data/Cargo.toml -p fortress-cli -- certify . --format json --evidence-output <machine-local-path> --certification-output <machine-local-path> --verified-bfg-output <machine-local-path> --projection-output-dir <machine-local-path> --audit-output <machine-local-path>"
+    },
+    {
+      "id": "ARTIFACT_VERIFIED_BFG",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config _data/cargo_config.toml run --quiet --manifest-path _data/Cargo.toml -p fortress-cli -- certify . --format json --evidence-output <machine-local-path> --certification-output <machine-local-path> --verified-bfg-output <machine-local-path> --projection-output-dir <machine-local-path> --audit-output <machine-local-path>"
+    },
+    {
+      "id": "AUDIT_JSON_DETERMINISM",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config _data/cargo_config.toml run --quiet --manifest-path _data/Cargo.toml -p fortress-cli -- certify . --format json --evidence-output <machine-local-path> --certification-output <machine-local-path> --verified-bfg-output <machine-local-path> --projection-output-dir <machine-local-path> --audit-output <machine-local-path>"
+    },
+    {
+      "id": "CLIPPY",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config _data/cargo_config.toml clippy --manifest-path _data/Cargo.toml --workspace --all-targets --all-features -- -D warnings"
+    },
+    {
+      "id": "DERIVED_ARTIFACT_STORAGE",
+      "status": "PASS",
+      "command": "python engine/snapshot_governance/testing/_code/derived_artifact_storage.py"
+    },
+    {
+      "id": "FORMAT",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config _data/cargo_config.toml fmt --manifest-path _data/Cargo.toml --all --check"
+    },
+    {
+      "id": "FULL_PROFILE_CERTIFICATION",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config _data/cargo_config.toml run --quiet --manifest-path _data/Cargo.toml -p fortress-cli -- certify . --format json --evidence-output <machine-local-path> --certification-output <machine-local-path> --verified-bfg-output <machine-local-path> --projection-output-dir <machine-local-path> --audit-output <machine-local-path>"
+    },
+    {
+      "id": "PROJECT_FILING_SYSTEM",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config _data/cargo_config.toml test --manifest-path _data/Cargo.toml --all-features --test filing_system --test repo_module_001 --test repo_docs_001"
+    },
+    {
+      "id": "RUSTDOC",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config _data/cargo_config.toml doc --manifest-path _data/Cargo.toml --workspace --all-features --no-deps"
+    },
+    {
+      "id": "SCHEMA_AND_STANDARD",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config _data/cargo_config.toml test --manifest-path _data/Cargo.toml --all-features --test schema_registry"
+    },
+    {
+      "id": "SELF_AUDIT",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config _data/cargo_config.toml run --quiet --manifest-path _data/Cargo.toml -p fortress-cli -- certify . --format json --evidence-output <machine-local-path> --certification-output <machine-local-path> --verified-bfg-output <machine-local-path> --projection-output-dir <machine-local-path> --audit-output <machine-local-path>"
+    },
+    {
+      "id": "SELF_MODEL",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config _data/cargo_config.toml test --manifest-path _data/Cargo.toml --all-features --test self_model"
+    },
+    {
+      "id": "SOURCE_ARCHITECTURE",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config _data/cargo_config.toml test --manifest-path _data/Cargo.toml --all-features --test source_architecture"
+    },
+    {
+      "id": "WORKSPACE_TESTS",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config _data/cargo_config.toml run --quiet --manifest-path _data/Cargo.toml -p fortress-cli -- certify . --format json --evidence-output <machine-local-path> --certification-output <machine-local-path> --verified-bfg-output <machine-local-path> --projection-output-dir <machine-local-path> --audit-output <machine-local-path>"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "_info/behavioral_flow_graph.json",
+      "digest": "sha256:ad938769ae3dcce4a4b3a05a7a213a4b73f2ed1530ecec3344ff1425d33623c7",
+      "bytes": 136841,
+      "storage": "TRACKED_EVIDENCE"
+    },
+    {
+      "path": "_info/certification.json",
+      "digest": "sha256:731024adc73c3004f3538e8cd2bbb5f0d52ca689da29f0ca90266a4c613b202f",
+      "bytes": 92689,
+      "storage": "TRACKED_EVIDENCE"
+    },
+    {
+      "path": "_info/component_resolution_index.json",
+      "digest": "sha256:ef38b35bbbc8616afa558654f50bd4801f002f8811a71d99e5a8d7d6c5609662",
+      "bytes": 428539,
+      "storage": "TRACKED_EVIDENCE"
+    },
+    {
+      "path": "_info/contract_coherency_graph.json",
+      "digest": "sha256:57cd08d4540fd5222be02d1ada05bb99f10dc20271de705d144ce8a1f82bdd94",
+      "bytes": 2508214,
+      "storage": "LOCAL_MATERIALIZATION"
+    },
+    {
+      "path": "_info/environmental_analysis.json",
+      "digest": "sha256:554bd2e0e08b2198f2606a8d0757d51372678cc20f98fdac0bf224b8c59cf006",
+      "bytes": 5439,
+      "storage": "TRACKED_EVIDENCE"
+    },
+    {
+      "path": "_info/evidence_graph.json",
+      "digest": "sha256:99241c62b715447b65265547db1ab98ceb42c4d3df2fc77ad0a5c19efd7dc6b1",
+      "bytes": 602451,
+      "storage": "TRACKED_EVIDENCE"
+    },
+    {
+      "path": "_info/information_flow_analysis.json",
+      "digest": "sha256:b949e1f92766c61dbe2948091ba2a2608fd9bc98b4842727eec36f35b96405ae",
+      "bytes": 1575584,
+      "storage": "LOCAL_MATERIALIZATION"
+    },
+    {
+      "path": "_info/program_semantic_model.json",
+      "digest": "sha256:5ef6089c5872859fb3870c51c6772363176feacf3c17765fc127d591cfb98d7b",
+      "bytes": 123823890,
+      "storage": "LOCAL_MATERIALIZATION"
+    },
+    {
+      "path": "_info/realized_behavioral_flow_graph.json",
+      "digest": "sha256:45d668b3d459e115a1f7770156243f214ee1e2c8a475380b806894b268c5160b",
+      "bytes": 30123811,
+      "storage": "LOCAL_MATERIALIZATION"
+    },
+    {
+      "path": "_info/semantic_analysis.json",
+      "digest": "sha256:35387ac4718f11c5a77f1c466d93bbc23aca72b7b9953dae9b9965657db20cce",
+      "bytes": 5905093,
+      "storage": "LOCAL_MATERIALIZATION"
+    },
+    {
+      "path": "_info/semantic_conformance.json",
+      "digest": "sha256:482d35edb948e83c2e483b7b9929707500d4d182c0097057b0e02257beaf0e29",
+      "bytes": 18644348,
+      "storage": "LOCAL_MATERIALIZATION"
+    },
+    {
+      "path": "_info/source_artifact_model.json",
+      "digest": "sha256:8bc9456b14b7636db1cebc333caafb9a91126ea80df9768072371a14094698fa",
+      "bytes": 19176996,
+      "storage": "LOCAL_MATERIALIZATION"
+    },
+    {
+      "path": "_info/state_effect_analysis.json",
+      "digest": "sha256:4f80199e2d91214c87379898c7075f0a91a3e0be422b43950ffbf95ca1617ebd",
+      "bytes": 25114764,
+      "storage": "LOCAL_MATERIALIZATION"
+    },
+    {
+      "path": "_info/verified_behavioral_flow_graph.json",
+      "digest": "sha256:4bdbd9bf1fb3cc6efb27c47f7bd18574eed94765bba8e457c69f46930af9bcb5",
+      "bytes": 6988,
+      "storage": "TRACKED_EVIDENCE"
+    }
+  ],
+  "audit_json_digest": "sha256:41edcc5de4644f0d29752c4f43cb136c6077552414b88355cf4aa4be2cfc6a6a",
+  "certificate_stamp": "sha256:055f6781f86d1d72a8b723d687867560e6a518dc20033dafbe414ae2bd324385"
+}
