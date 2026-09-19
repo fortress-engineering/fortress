@@ -12,7 +12,7 @@
     "limitation": "Digest stamps detect mutation and staleness but are not signatures; authenticated antiforgery requires an external trusted signing identity."
   },
   "source": {
-    "fingerprint": "sha256:bf64797c89daf962b0dae7f39c5883f9df78dded14eee8260b91a87ec17e1857",
+    "fingerprint": "sha256:bf154f7ab29224cf8ebabb4a8e6638ce211f0a4c4ec63e8a2374b57ad8b25087",
     "file_count": 419,
     "excluded_self": "_info/quality_certificate.json",
     "excluded_derived_artifacts": [
@@ -185,7 +185,7 @@
     },
     {
       "path": "_info/certification.json",
-      "digest": "sha256:e685a117532859c936f0bf3724ae0e52af95a5733e771b506d134aa0366ba840",
+      "digest": "sha256:c084f0e7c4abfec720d047eac6f1cce6bdadb22d81fc51a81772dc5d88b60bf7",
       "bytes": 93355,
       "storage": "TRACKED_EVIDENCE"
     },
@@ -209,7 +209,7 @@
     },
     {
       "path": "_info/evidence_graph.json",
-      "digest": "sha256:7900aaf771e3a247083502614a0eb95abb542af1983b119f3dea7a48edc1a6b8",
+      "digest": "sha256:8a62bf786636ce29ed98890848e0cdd411824457f2ff638aa5ad6c75676957c9",
       "bytes": 606610,
       "storage": "TRACKED_EVIDENCE"
     },
@@ -245,7 +245,7 @@
     },
     {
       "path": "_info/source_artifact_model.json",
-      "digest": "sha256:869a48b3e19fc67dd93f782297d21cb183a6039fd93d24663c7a5c1c42b7b8f5",
+      "digest": "sha256:cd113d105b7e082fdfe7045d8eb7de2d129125e21c8488fb6303d5f50b5920b5",
       "bytes": 19398864,
       "storage": "LOCAL_MATERIALIZATION"
     },
@@ -257,11 +257,11 @@
     },
     {
       "path": "_info/verified_behavioral_flow_graph.json",
-      "digest": "sha256:fb12acd1ac8c9532fabd4cce6ce811d6134eabb7c8c8e1cc51e29b1af0d8c7ae",
+      "digest": "sha256:62f36cad3dab4d35ace60bca62082a1e67ce18ad1162d1107b47be5ee2410f2d",
       "bytes": 6988,
       "storage": "TRACKED_EVIDENCE"
     }
   ],
-  "audit_json_digest": "sha256:3fe22c232054f82bbf176f336271a525d04d3873d445a298554c1d81ecc73168",
-  "certificate_stamp": "sha256:1f285753da031963494daedc62455f9c7c648bf5c2fca5ed9a919791b2542a64"
+  "audit_json_digest": "sha256:7e3b467f9b12c162a7a3a32c31bcd3020fe58510f76d3db7804eb2784b0d7973",
+  "certificate_stamp": "sha256:ebd0957c56436c26e62ba90c1bb2eb6dd8c7a93c225319c31b789c81bde5cfc9"
 }

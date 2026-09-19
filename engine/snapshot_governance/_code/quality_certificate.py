@@ -28,6 +28,9 @@ import tempfile
 from typing import Any, Iterable, Iterator
 import uuid
 
+# Verification must not create an untracked bytecode input before it checks the
+# repository fingerprint. Keep the storage adapter import side-effect free.
+sys.dont_write_bytecode = True
 from execution_storage import (
     RunWorkspace,
     StorageError,

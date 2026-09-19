@@ -51,6 +51,24 @@ class DerivedArtifactStorageTests(unittest.TestCase):
         self.addCleanup(shutil.rmtree, base, True)
         return base
 
+    def test_verifier_import_does_not_write_source_bytecode(self) -> None:
+        base = self.workspace("import-bytecode")
+        for name in ("quality_certificate.py", "execution_storage.py"):
+            shutil.copyfile(MODULE_PATH.parent / name, base / name)
+        environment = os.environ.copy()
+        environment.pop("PYTHONDONTWRITEBYTECODE", None)
+        environment.pop("PYTHONPYCACHEPREFIX", None)
+        result = subprocess.run(
+            [sys.executable, str(base / "quality_certificate.py"), "--help"],
+            cwd=base,
+            env=environment,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr.decode("utf-8"))
+        self.assertFalse((base / "__pycache__").exists())
+
     def test_interrupted_cargo_retains_child_record_for_descendant_review(self) -> None:
         process = Mock()
         process.pid = 12345
