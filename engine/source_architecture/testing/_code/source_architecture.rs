@@ -1005,7 +1005,15 @@ fn live_fortress_inventory_is_complete_and_rust_profile_status_is_truthful() {
         model.summary().documented_responsibilities(),
         expected.len()
     );
-    assert_eq!(model.summary().profile_not_registered(), 2);
+    let non_rust_code = expected
+        .iter()
+        .filter(|path| {
+            !Path::new(path)
+                .extension()
+                .is_some_and(|extension| extension.eq_ignore_ascii_case("rs"))
+        })
+        .count();
+    assert_eq!(model.summary().profile_not_registered(), non_rust_code);
     assert_eq!(model.summary().findings(), 0);
     assert!(
         model

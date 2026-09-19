@@ -28,7 +28,11 @@ Runs the complete self-audit and asserts every implemented applicable rule passe
 
 ### [`derived_artifact_storage.py`](../_code/derived_artifact_storage.py)
 
-Verifies the complete projection-storage registry, subject-addressed external cache boundary, and distinct missing, current, stale, and invalid materialization states without executing semantic generators.
+Verifies the complete projection-storage registry, subject-addressed external cache boundary, prior-certificate and Cargo-lock preservation through injected gate failures, leased materialization, scoped cleanup, and distinct missing, current, stale, and invalid materialization states without executing semantic generators.
+
+### [`execution_storage.py`](../_code/execution_storage.py)
+
+Exercises storage preflight and budgets, exclusive heavy-job leases, preservation of user bytes on failure, crash recovery before and after publication, external-mutation conflicts, active-child uncertainty, and cleanup accounting without invoking Cargo.
 
 ### [`finding_governance.rs`](../_code/finding_governance.rs)
 
@@ -45,6 +49,10 @@ Executes valid, invalid, and boundary recursive Module grammar fixtures.
 ### [`repository_snapshot.rs`](../_code/repository_snapshot.rs)
 
 Verifies self-snapshot repeatability and binding to every declared draft rule.
+
+### [`runtime_storage.rs`](../_code/runtime_storage.rs)
+
+Verifies the installed Rust adapter's exclusive heavy-job lease, disk preflight, active-child retention, and selected marked-target cleanup.
 
 ### [`repository_bootstrap.rs`](../_code/repository_bootstrap.rs)
 

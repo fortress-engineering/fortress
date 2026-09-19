@@ -38,6 +38,10 @@ Parses canonical Markdown structurally and reconciles Module contracts, catalogs
 
 Dispatches only implemented applicable rules, including behavioral, program-domain/state/effect/information/environment, and REPO-REFERENCE-001 evaluators from shared results, and distinguishes evaluated pass or failure from unsupported capability.
 
+### [`execution_storage.py`](../_code/execution_storage.py)
+
+Owns machine-local heavy-job leases, disk and projection preflight, retained bounded compiler targets, per-run staging, lifecycle and publication-recovery journals, and conservative orphan cleanup for certificate issuance and materialization. Python and Rust adapters use separate ownership namespaces. Its paths and process data are operational records outside semantic identity.
+
 ### [`identity_migration.rs`](../_code/identity_migration.rs)
 
 Plans exact-snapshot legacy Rust symbol and semantic-finding reference migrations, rejects ambiguous or missing mappings, and applies only explicitly reviewed dependency-bound authority rewrites with rollback on write failure.
@@ -52,7 +56,11 @@ Projects the canonical Project Model filing analysis into REPO-MODULE-001 findin
 
 ### [`quality_certificate.py`](../_code/quality_certificate.py)
 
-Executes the complete pinned local quality-gate profile, consumes one exact-snapshot certification stack for semantic projections, audit, and certification evidence, maintains the closed tracked-evidence/local-materialization artifact registry, deterministically reconstructs subject-addressed bulk projections, distinguishes missing, stale, invalid, and current local bytes, and performs lightweight PASS, authoritative-source freshness, tracked-evidence digest, and tamper-stamp verification while explicitly retaining UNVERIFIED issuer authenticity. Generator determinism remains proved by governed tests; routine issuance verifies exact dependency bindings and final canonical digests without repository-wide duplicate execution.
+Executes the complete pinned local quality-gate profile under the leased storage supervisor, consumes one exact-snapshot certification stack, stages tracked evidence with durable preimages, and publishes the certificate pointer last. It maintains the closed tracked-evidence/local-materialization registry, reconstructs bounded subject-addressed projections, cleans only idle Python-owned subject cache entries, distinguishes missing, stale, invalid, and current local bytes, and verifies PASS, source freshness, evidence digests, and the tamper stamp while retaining UNVERIFIED issuer authenticity. Generator determinism remains proved by governed tests.
+
+### [`runtime_storage.rs`](../_code/runtime_storage.rs)
+
+Provides the installed Rust runtime with the same machine-local resource-policy, lease, journal, staging, publication-intent, and conservative recovery boundary as the Python pre-build supervisor.
 
 ### [`rust_test_analyzer.rs`](../_code/rust_test_analyzer.rs)
 

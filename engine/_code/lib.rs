@@ -62,6 +62,8 @@ pub mod program_semantics;
 pub mod project;
 #[path = "../reference_resolution/_code/reference.rs"]
 pub mod reference_resolution;
+#[path = "../snapshot_governance/_code/runtime_storage.rs"]
+pub mod runtime_storage;
 #[path = "../snapshot_governance/_code/rust_test_analyzer.rs"]
 pub mod rust_test_analyzer;
 #[path = "../semantic_analysis/_code/semantic.rs"]

@@ -8,7 +8,8 @@ use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::env;
 use std::error::Error;
 use std::fmt::{self, Display, Formatter, Write as _};
-use std::fs;
+use std::fs::{self, OpenOptions};
+use std::io;
 use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
@@ -1069,6 +1070,27 @@ struct CacheIndex {
 pub struct IncrementalProjectionCache {
     base: PathBuf,
     project: String,
+    projection_budget_bytes: u64,
+}
+
+fn cache_tree_bytes(root: &Path) -> io::Result<u64> {
+    let mut total = 0_u64;
+    let mut pending = vec![root.to_path_buf()];
+    while let Some(directory) = pending.pop() {
+        for entry in fs::read_dir(directory)? {
+            let entry = entry?;
+            let metadata = fs::symlink_metadata(entry.path())?;
+            if metadata.file_type().is_symlink() {
+                return Err(io::Error::other("symbolic link in projection cache"));
+            }
+            if metadata.is_dir() {
+                pending.push(entry.path());
+            } else if metadata.is_file() {
+                total = total.saturating_add(metadata.len());
+            }
+        }
+    }
+    Ok(total)
 }
 
 impl IncrementalProjectionCache {
@@ -1083,7 +1105,15 @@ impl IncrementalProjectionCache {
     pub fn from_environment(project: impl Into<String>) -> Result<Self, AffectedAnalysisError> {
         let base = env::var_os("FORTRESS_DERIVED_CACHE_DIR")
             .map_or_else(|| env::temp_dir().join("fortress-derived"), PathBuf::from);
-        Self::new(base, project)
+        let budget = env::var("FORTRESS_PROJECTION_BUDGET_BYTES").ok().map_or(
+            Ok(8 * 1024 * 1024 * 1024),
+            |value| {
+                value
+                    .parse::<u64>()
+                    .map_err(|_| AffectedAnalysisError::InvalidCacheBudget(value))
+            },
+        )?;
+        Self::new_with_budget(base, project, budget)
     }
 
     /// Creates a cache rooted at an explicit execution-local directory.
@@ -1094,6 +1124,19 @@ impl IncrementalProjectionCache {
     pub fn new(
         base: impl Into<PathBuf>,
         project: impl Into<String>,
+    ) -> Result<Self, AffectedAnalysisError> {
+        Self::new_with_budget(base, project, 8 * 1024 * 1024 * 1024)
+    }
+
+    /// Creates a cache with an explicit local projection budget.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for an unsafe project cache segment.
+    pub fn new_with_budget(
+        base: impl Into<PathBuf>,
+        project: impl Into<String>,
+        projection_budget_bytes: u64,
     ) -> Result<Self, AffectedAnalysisError> {
         let project = project.into();
         if project.is_empty()
@@ -1106,6 +1149,7 @@ impl IncrementalProjectionCache {
         Ok(Self {
             base: base.into(),
             project,
+            projection_budget_bytes,
         })
     }
 
@@ -1183,11 +1227,31 @@ impl IncrementalProjectionCache {
         exit_code: u8,
     ) -> Result<(), AffectedAnalysisError> {
         let directory = self.key_directory(key);
-        fs::create_dir_all(&directory).map_err(|source| AffectedAnalysisError::Io {
-            operation: "create incremental cache directory",
-            path: directory.clone(),
+        let project_directory = self.base.join(&self.project);
+        fs::create_dir_all(&project_directory).map_err(|source| AffectedAnalysisError::Io {
+            operation: "create projection cache directory",
+            path: project_directory.clone(),
             source,
         })?;
+        let lease_path = project_directory.join("write.lock");
+        let lease = OpenOptions::new()
+            .create(true)
+            .truncate(false)
+            .read(true)
+            .write(true)
+            .open(&lease_path)
+            .map_err(|source| AffectedAnalysisError::Io {
+                operation: "open projection cache lease",
+                path: lease_path.clone(),
+                source,
+            })?;
+        lease
+            .try_lock()
+            .map_err(|source| AffectedAnalysisError::Io {
+                operation: "acquire projection cache lease",
+                path: lease_path,
+                source: source.into(),
+            })?;
         let descriptor = CacheDescriptor {
             schema_version: 1,
             key: key.clone(),
@@ -1195,22 +1259,43 @@ impl IncrementalProjectionCache {
             bytes: u64::try_from(content.len()).unwrap_or(u64::MAX),
             exit_code,
         };
-        atomic_write(&directory.join("artifact.json"), content)?;
-        atomic_write(
-            &directory.join("descriptor.json"),
-            canonical_json(&descriptor)
-                .map_err(AffectedAnalysisError::Serialization)?
-                .as_bytes(),
-        )?;
+        let descriptor_bytes =
+            canonical_json(&descriptor).map_err(AffectedAnalysisError::Serialization)?;
         let index = CacheIndex {
             schema_version: 1,
             latest_dependency_digest: key.digest.clone(),
         };
+        let index_bytes = canonical_json(&index).map_err(AffectedAnalysisError::Serialization)?;
+        let existing =
+            cache_tree_bytes(&project_directory).map_err(|source| AffectedAnalysisError::Io {
+                operation: "account for projection cache bytes",
+                path: project_directory.clone(),
+                source,
+            })?;
+        let new_bytes = (content.len() as u64)
+            .saturating_add(descriptor_bytes.len() as u64)
+            .saturating_add(index_bytes.len() as u64)
+            .saturating_mul(2);
+        if existing.saturating_add(new_bytes) > self.projection_budget_bytes {
+            return Err(AffectedAnalysisError::Io {
+                operation: "enforce projection cache budget",
+                path: project_directory,
+                source: io::Error::other("projection cache budget exceeded"),
+            });
+        }
+        fs::create_dir_all(&directory).map_err(|source| AffectedAnalysisError::Io {
+            operation: "create incremental cache directory",
+            path: directory.clone(),
+            source,
+        })?;
+        atomic_write(&directory.join("artifact.json"), content)?;
+        atomic_write(
+            &directory.join("descriptor.json"),
+            descriptor_bytes.as_bytes(),
+        )?;
         atomic_write(
             &self.kind_directory(key.kind()).join("current.json"),
-            canonical_json(&index)
-                .map_err(AffectedAnalysisError::Serialization)?
-                .as_bytes(),
+            index_bytes.as_bytes(),
         )
     }
 
@@ -1352,6 +1437,8 @@ pub enum AffectedAnalysisError {
     },
     /// Project cache segment was unsafe.
     InvalidCacheProject(String),
+    /// Projection cache budget setting was malformed.
+    InvalidCacheBudget(String),
     /// Cache path could not be safely resolved.
     InvalidCachePath(PathBuf),
     /// Canonical data could not be serialized.
@@ -1400,6 +1487,9 @@ impl Display for AffectedAnalysisError {
                     formatter,
                     "invalid incremental cache project segment: {project}"
                 )
+            }
+            Self::InvalidCacheBudget(value) => {
+                write!(formatter, "invalid projection cache budget: {value}")
             }
             Self::InvalidCachePath(path) => {
                 write!(

@@ -273,6 +273,16 @@
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R16-004",
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R16-005"
           ]
+        },
+        {
+          "id": "AF-SNAPSHOT-GOVERNANCE-0001-R17",
+          "statement": "Machine-local execution storage rejects insufficient disk headroom before work, leases shared targets exclusively, retains staging when child or ownership state is uncertain, cleans only marked owned resources, and keeps run metadata outside semantic identity.",
+          "tests": [
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R17-001",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R17-002",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R17-003",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R17-004"
+          ]
         }
       ]
     }

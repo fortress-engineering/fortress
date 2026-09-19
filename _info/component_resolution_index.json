@@ -3,7 +3,7 @@
   "schema_version": 1,
   "resolver_semantic_version": "1.0.0",
   "project_id": "PF-FORTRESS",
-  "source_ccg_digest": "sha256:57cd08d4540fd5222be02d1ada05bb99f10dc20271de705d144ce8a1f82bdd94",
+  "source_ccg_digest": "sha256:64f22bffe5e737255e8f6c5325533254e71ff885c4bab20314de0b71b5fdc5ec",
   "modules": [
     {
       "module_id": "AF-AFFECTED-ANALYSIS-0001",
@@ -1636,6 +1636,14 @@
       "source_module": "AF-SNAPSHOT-GOVERNANCE-0001",
       "target_module": "AF-SNAPSHOT-GOVERNANCE-0001",
       "authority": "repository-relative-local",
+      "projection": "../_code/execution_storage.py",
+      "provenance": "engine/snapshot_governance/_docs/code_docs.md"
+    },
+    {
+      "class": "LOCAL",
+      "source_module": "AF-SNAPSHOT-GOVERNANCE-0001",
+      "target_module": "AF-SNAPSHOT-GOVERNANCE-0001",
+      "authority": "repository-relative-local",
       "projection": "../_code/identity_migration.rs",
       "provenance": "engine/snapshot_governance/_docs/code_docs.md"
     },
@@ -1661,6 +1669,14 @@
       "target_module": "AF-SNAPSHOT-GOVERNANCE-0001",
       "authority": "repository-relative-local",
       "projection": "../_code/quality_certificate.py",
+      "provenance": "engine/snapshot_governance/_docs/code_docs.md"
+    },
+    {
+      "class": "LOCAL",
+      "source_module": "AF-SNAPSHOT-GOVERNANCE-0001",
+      "target_module": "AF-SNAPSHOT-GOVERNANCE-0001",
+      "authority": "repository-relative-local",
+      "projection": "../_code/runtime_storage.rs",
       "provenance": "engine/snapshot_governance/_docs/code_docs.md"
     },
     {
@@ -2692,6 +2708,14 @@
       "source_module": "TEST-SNAPSHOT-GOVERNANCE-0001",
       "target_module": "TEST-SNAPSHOT-GOVERNANCE-0001",
       "authority": "repository-relative-local",
+      "projection": "../_code/execution_storage.py",
+      "provenance": "engine/snapshot_governance/testing/_docs/code_docs.md"
+    },
+    {
+      "class": "LOCAL",
+      "source_module": "TEST-SNAPSHOT-GOVERNANCE-0001",
+      "target_module": "TEST-SNAPSHOT-GOVERNANCE-0001",
+      "authority": "repository-relative-local",
       "projection": "../_code/finding_governance.rs",
       "provenance": "engine/snapshot_governance/testing/_docs/code_docs.md"
     },
@@ -2733,6 +2757,14 @@
       "target_module": "TEST-SNAPSHOT-GOVERNANCE-0001",
       "authority": "repository-relative-local",
       "projection": "../_code/repository_snapshot.rs",
+      "provenance": "engine/snapshot_governance/testing/_docs/code_docs.md"
+    },
+    {
+      "class": "LOCAL",
+      "source_module": "TEST-SNAPSHOT-GOVERNANCE-0001",
+      "target_module": "TEST-SNAPSHOT-GOVERNANCE-0001",
+      "authority": "repository-relative-local",
+      "projection": "../_code/runtime_storage.rs",
       "provenance": "engine/snapshot_governance/testing/_docs/code_docs.md"
     },
     {
@@ -7029,6 +7061,14 @@
       "target_module": null,
       "authority": "serde",
       "projection": null,
+      "provenance": "engine/snapshot_governance/_code/runtime_storage.rs"
+    },
+    {
+      "class": "EXTERNAL",
+      "source_module": "AF-SNAPSHOT-GOVERNANCE-0001",
+      "target_module": null,
+      "authority": "serde",
+      "projection": null,
       "provenance": "engine/snapshot_governance/_code/rust_test_analyzer.rs"
     },
     {
@@ -7101,6 +7141,14 @@
       "target_module": null,
       "authority": "sha2",
       "projection": null,
+      "provenance": "engine/snapshot_governance/_code/runtime_storage.rs"
+    },
+    {
+      "class": "EXTERNAL",
+      "source_module": "AF-SNAPSHOT-GOVERNANCE-0001",
+      "target_module": null,
+      "authority": "sha2",
+      "projection": null,
       "provenance": "engine/snapshot_governance/_code/rust_test_analyzer.rs"
     },
     {
@@ -7165,6 +7213,14 @@
       "target_module": null,
       "authority": "std",
       "projection": null,
+      "provenance": "engine/snapshot_governance/_code/runtime_storage.rs"
+    },
+    {
+      "class": "EXTERNAL",
+      "source_module": "AF-SNAPSHOT-GOVERNANCE-0001",
+      "target_module": null,
+      "authority": "std",
+      "projection": null,
       "provenance": "engine/snapshot_governance/_code/rust_test_analyzer.rs"
     },
     {
@@ -7190,6 +7246,14 @@
       "authority": "syn",
       "projection": null,
       "provenance": "engine/snapshot_governance/_code/rust_test_analyzer.rs"
+    },
+    {
+      "class": "EXTERNAL",
+      "source_module": "AF-SNAPSHOT-GOVERNANCE-0001",
+      "target_module": null,
+      "authority": "sysinfo",
+      "projection": null,
+      "provenance": "engine/snapshot_governance/_code/runtime_storage.rs"
     },
     {
       "class": "EXTERNAL",
@@ -7853,6 +7917,14 @@
       "target_module": null,
       "authority": "std",
       "projection": null,
+      "provenance": "engine/snapshot_governance/testing/_code/runtime_storage.rs"
+    },
+    {
+      "class": "EXTERNAL",
+      "source_module": "TEST-SNAPSHOT-GOVERNANCE-0001",
+      "target_module": null,
+      "authority": "std",
+      "projection": null,
       "provenance": "engine/snapshot_governance/testing/_code/snapshot_evaluation.rs"
     },
     {
@@ -7942,6 +8014,14 @@
       "authority": "fortress-core",
       "projection": null,
       "provenance": "engine/snapshot_governance/testing/_code/repository_snapshot.rs"
+    },
+    {
+      "class": "EXTERNAL",
+      "source_module": "TEST-SNAPSHOT-GOVERNANCE-0001",
+      "target_module": "AF-CORE-0001",
+      "authority": "fortress-core",
+      "projection": null,
+      "provenance": "engine/snapshot_governance/testing/_code/runtime_storage.rs"
     },
     {
       "class": "EXTERNAL",
@@ -8361,13 +8441,22 @@
       "pointer": "test[24].path",
       "source_module": "AF-CORE-0001",
       "target_module": "TEST-SNAPSHOT-GOVERNANCE-0001",
-      "resolved_target": "engine/snapshot_governance/testing/_code/repository_grammar.rs"
+      "resolved_target": "engine/snapshot_governance/testing/_code/runtime_storage.rs"
     },
     {
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
       "format": "cargo",
       "path": "engine/_data/Cargo.toml",
       "pointer": "test[25].path",
+      "source_module": "AF-CORE-0001",
+      "target_module": "TEST-SNAPSHOT-GOVERNANCE-0001",
+      "resolved_target": "engine/snapshot_governance/testing/_code/repository_grammar.rs"
+    },
+    {
+      "class": "AUTHORED_RESOLUTION_BOUNDARY",
+      "format": "cargo",
+      "path": "engine/_data/Cargo.toml",
+      "pointer": "test[26].path",
       "source_module": "AF-CORE-0001",
       "target_module": "TEST-REFERENCE-RESOLUTION-0001",
       "resolved_target": "engine/reference_resolution/testing/_code/reference_resolution.rs"
@@ -8376,7 +8465,7 @@
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
       "format": "cargo",
       "path": "engine/_data/Cargo.toml",
-      "pointer": "test[26].path",
+      "pointer": "test[27].path",
       "source_module": "AF-CORE-0001",
       "target_module": "TEST-STANDARD-REGISTRY-0001",
       "resolved_target": "engine/standard_registry/testing/_code/registry_primitives.rs"
@@ -8385,7 +8474,7 @@
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
       "format": "cargo",
       "path": "engine/_data/Cargo.toml",
-      "pointer": "test[27].path",
+      "pointer": "test[28].path",
       "source_module": "AF-CORE-0001",
       "target_module": "TEST-STANDARD-REGISTRY-0001",
       "resolved_target": "engine/standard_registry/testing/_code/schema_registry.rs"
@@ -8394,19 +8483,10 @@
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
       "format": "cargo",
       "path": "engine/_data/Cargo.toml",
-      "pointer": "test[28].path",
-      "source_module": "AF-CORE-0001",
-      "target_module": "TEST-SNAPSHOT-GOVERNANCE-0001",
-      "resolved_target": "engine/snapshot_governance/testing/_code/snapshot_evaluation.rs"
-    },
-    {
-      "class": "AUTHORED_RESOLUTION_BOUNDARY",
-      "format": "cargo",
-      "path": "engine/_data/Cargo.toml",
       "pointer": "test[29].path",
       "source_module": "AF-CORE-0001",
       "target_module": "TEST-SNAPSHOT-GOVERNANCE-0001",
-      "resolved_target": "engine/snapshot_governance/testing/_code/snapshot_primitives.rs"
+      "resolved_target": "engine/snapshot_governance/testing/_code/snapshot_evaluation.rs"
     },
     {
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
@@ -8424,7 +8504,7 @@
       "pointer": "test[30].path",
       "source_module": "AF-CORE-0001",
       "target_module": "TEST-SNAPSHOT-GOVERNANCE-0001",
-      "resolved_target": "engine/snapshot_governance/testing/_code/finding_governance.rs"
+      "resolved_target": "engine/snapshot_governance/testing/_code/snapshot_primitives.rs"
     },
     {
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
@@ -8433,13 +8513,22 @@
       "pointer": "test[31].path",
       "source_module": "AF-CORE-0001",
       "target_module": "TEST-SNAPSHOT-GOVERNANCE-0001",
-      "resolved_target": "engine/snapshot_governance/testing/_code/repository_bootstrap.rs"
+      "resolved_target": "engine/snapshot_governance/testing/_code/finding_governance.rs"
     },
     {
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
       "format": "cargo",
       "path": "engine/_data/Cargo.toml",
       "pointer": "test[32].path",
+      "source_module": "AF-CORE-0001",
+      "target_module": "TEST-SNAPSHOT-GOVERNANCE-0001",
+      "resolved_target": "engine/snapshot_governance/testing/_code/repository_bootstrap.rs"
+    },
+    {
+      "class": "AUTHORED_RESOLUTION_BOUNDARY",
+      "format": "cargo",
+      "path": "engine/_data/Cargo.toml",
+      "pointer": "test[33].path",
       "source_module": "AF-CORE-0001",
       "target_module": "TEST-SOURCE-ARCHITECTURE-0001",
       "resolved_target": "engine/source_architecture/testing/_code/source_architecture.rs"
@@ -8448,7 +8537,7 @@
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
       "format": "cargo",
       "path": "engine/_data/Cargo.toml",
-      "pointer": "test[33].path",
+      "pointer": "test[34].path",
       "source_module": "AF-CORE-0001",
       "target_module": "TEST-STANDARD-REGISTRY-0001",
       "resolved_target": "engine/standard_registry/testing/_code/std_id_001.rs"
@@ -8457,7 +8546,7 @@
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
       "format": "cargo",
       "path": "engine/_data/Cargo.toml",
-      "pointer": "test[34].path",
+      "pointer": "test[35].path",
       "source_module": "AF-CORE-0001",
       "target_module": "TEST-SNAPSHOT-GOVERNANCE-0001",
       "resolved_target": "engine/snapshot_governance/testing/_code/test_traceability_001.rs"
@@ -8466,7 +8555,7 @@
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
       "format": "cargo",
       "path": "engine/_data/Cargo.toml",
-      "pointer": "test[35].path",
+      "pointer": "test[36].path",
       "source_module": "AF-CORE-0001",
       "target_module": "TEST-SNAPSHOT-GOVERNANCE-0001",
       "resolved_target": "engine/snapshot_governance/testing/_code/test_boundary_001.rs"
@@ -8794,6 +8883,15 @@
       "source_module": "AF-CORE-0001",
       "target_module": "AF-SNAPSHOT-GOVERNANCE-0001",
       "resolved_target": "engine/snapshot_governance/_code/placement.rs"
+    },
+    {
+      "class": "AUTHORED_RESOLUTION_BOUNDARY",
+      "format": "rust-module",
+      "path": "engine/_code/lib.rs",
+      "pointer": "../snapshot_governance/_code/runtime_storage.rs",
+      "source_module": "AF-CORE-0001",
+      "target_module": "AF-SNAPSHOT-GOVERNANCE-0001",
+      "resolved_target": "engine/snapshot_governance/_code/runtime_storage.rs"
     },
     {
       "class": "AUTHORED_RESOLUTION_BOUNDARY",
@@ -11472,10 +11570,10 @@
   "summary": {
     "modules": 42,
     "semantic_references": 185,
-    "local_references": 324,
+    "local_references": 328,
     "physical_projections": 207,
-    "external_references": 243,
-    "authored_resolution_boundaries": 164,
+    "external_references": 249,
+    "authored_resolution_boundaries": 166,
     "generated_projections": 207,
     "findings": 0
   }

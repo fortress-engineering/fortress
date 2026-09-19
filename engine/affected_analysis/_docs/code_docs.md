@@ -14,7 +14,7 @@ All graph and cache identities are derived from canonical repository-relative pa
 
 ## Failure Semantics
 
-Malformed identities and graphs return typed errors. Cache metadata or content corruption yields an explicit `INVALID` state. A missing prior key is `MISSING`; a different latest key is `STALE`; neither can supply bytes.
+Malformed identities and graphs return typed errors. Cache metadata or content corruption yields an explicit `INVALID` state. A missing prior key is `MISSING`; a different latest key is `STALE`; neither can supply bytes. Cache writes take a local lease and reject writes that exceed the configurable projection budget while preserving existing bytes. The cache does not reclaim unknown or potentially active data.
 
 ## Files
 

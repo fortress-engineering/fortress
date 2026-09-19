@@ -438,6 +438,16 @@ fn cache_accepts_only_exact_dependency_bound_bytes() {
     assert_eq!(loaded.state(), IncrementalCacheState::ReusableCurrent);
     assert_eq!(loaded.content(), Some(b"{\"model\":1}\n".as_slice()));
     assert_eq!(loaded.exit_code(), Some(1));
+    let bounded =
+        IncrementalProjectionCache::new_with_budget(&root, "PF-TEST", 0).expect("bounded cache");
+    assert!(bounded.store(&key, b"changed\n", 0).is_err());
+    assert_eq!(
+        cache
+            .load(&key)
+            .expect("prior cache remains valid")
+            .content(),
+        Some(b"{\"model\":1}\n".as_slice())
+    );
     fs::remove_dir_all(&root).expect("remove isolated cache");
 }
 

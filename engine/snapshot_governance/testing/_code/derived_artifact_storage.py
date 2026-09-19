@@ -10,11 +10,12 @@ import shutil
 import subprocess
 import sys
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 
 MODULE_PATH = Path(__file__).resolve().parents[2] / "_code" / "quality_certificate.py"
 sys.dont_write_bytecode = True
+sys.path.insert(0, str(MODULE_PATH.parent))
 SPEC = importlib.util.spec_from_file_location("fortress_quality_certificate", MODULE_PATH)
 if SPEC is None or SPEC.loader is None:
     raise RuntimeError("quality certificate module cannot be loaded")
@@ -43,12 +44,26 @@ class DerivedArtifactStorageTests(unittest.TestCase):
         }
 
     def workspace(self, name: str) -> Path:
-        base = Path.cwd().parent / f".fortress-derived-test-{os.getpid()}-{name}"
+        base = Path.cwd() / f".fortress-derived-test-{os.getpid()}-{name}"
         if base.exists():
             shutil.rmtree(base)
         base.mkdir()
         self.addCleanup(shutil.rmtree, base, True)
         return base
+
+    def test_interrupted_cargo_retains_child_record_for_descendant_review(self) -> None:
+        process = Mock()
+        process.pid = 12345
+        process.communicate.side_effect = subprocess.TimeoutExpired("cargo", 1)
+        process.poll.return_value = -1
+        workspace = Mock()
+        workspace.check_budget.side_effect = quality.StorageError("injected sample failure")
+        with patch.object(quality.subprocess, "Popen", return_value=process):
+            with self.assertRaisesRegex(quality.StorageError, "injected"):
+                quality.run_command(Path.cwd(), ["cargo"], {}, workspace=workspace)
+        process.terminate.assert_called_once()
+        workspace.record_child.assert_called_once_with(12345)
+        workspace.clear_child.assert_not_called()
 
     def test_registry_is_complete_sorted_and_authority_excluded(self) -> None:
         paths = quality.derived_artifact_paths()
@@ -122,6 +137,87 @@ class DerivedArtifactStorageTests(unittest.TestCase):
             self.assertEqual((temporary / "child-output").read_bytes(), b"accessible")
         self.assertFalse(temporary.exists())
 
+    def test_issuance_failure_preserves_prior_certificate_and_user_lock(self) -> None:
+        base = self.workspace("prior-certificate")
+        root = base / "repository"
+        (root / ".git").mkdir(parents=True)
+        (root / "_data").mkdir()
+        prior_certificate = root / quality.CERTIFICATE_PATH
+        prior_certificate.parent.mkdir()
+        prior_certificate.write_bytes(b"prior valid certificate\n")
+        user_lock = root / "_data" / "Cargo.lock"
+        user_lock.write_bytes(b"user lock bytes")
+        environment = {
+            "FORTRESS_EXECUTION_STORAGE_DIR": str(base / "execution-storage"),
+            "FORTRESS_DISK_RESERVE_BYTES": "0",
+            "FORTRESS_DERIVED_CACHE_DIR": str(base / "cache"),
+        }
+        with (
+            patch.dict(os.environ, environment),
+            patch.object(quality, "repository_fingerprint", return_value=("sha256:source", 2)),
+            patch.object(quality, "run_command", side_effect=quality.CertificateError("injected gate failure")),
+        ):
+            with self.assertRaisesRegex(quality.CertificateError, "injected"):
+                quality.issue(root)
+        self.assertEqual(prior_certificate.read_bytes(), b"prior valid certificate\n")
+        self.assertEqual(user_lock.read_bytes(), b"user lock bytes")
+
+    def test_transient_lock_cleanup_preserves_preexisting_bytes(self) -> None:
+        base = self.workspace("lock")
+        root = base / "repository"
+        (root / "_data").mkdir(parents=True)
+        (root / "_info").mkdir()
+        (root / "_info" / "Cargo.lock").write_bytes(b"canonical")
+        transient = root / "_data" / "Cargo.lock"
+        transient.write_bytes(b"user lock")
+        quality.remove_transient_cargo_lock(root, b"user lock")
+        self.assertEqual(transient.read_bytes(), b"user lock")
+        transient.write_bytes(b"changed")
+        with self.assertRaises(quality.CertificateError):
+            quality.remove_transient_cargo_lock(root, b"user lock")
+        self.assertEqual(transient.read_bytes(), b"changed")
+
+    def test_compile_and_analysis_failures_preserve_prior_bytes(self) -> None:
+        for failure_call in (4, 9):
+            with self.subTest(failure_call=failure_call):
+                base = self.workspace(f"failure-{failure_call}")
+                root = base / "repository"
+                (root / ".git").mkdir(parents=True)
+                (root / "_data").mkdir()
+                (root / "_info").mkdir()
+                (root / "_info" / "Cargo.lock").write_bytes(b"canonical lock")
+                certificate = root / quality.CERTIFICATE_PATH
+                certificate.write_bytes(b"prior certificate")
+                user_lock = root / "_data" / "Cargo.lock"
+                user_lock.write_bytes(b"user lock")
+                calls = 0
+
+                def fail_at_gate(*_args: object, **_kwargs: object) -> bytes:
+                    nonlocal calls
+                    calls += 1
+                    if calls == failure_call:
+                        raise quality.CertificateError("injected gate failure")
+                    return b""
+
+                environment = {
+                    "FORTRESS_EXECUTION_STORAGE_DIR": str(base / "storage"),
+                    "FORTRESS_DERIVED_CACHE_DIR": str(base / "cache"),
+                    "FORTRESS_DISK_RESERVE_BYTES": "0",
+                }
+                with (
+                    patch.dict(os.environ, environment),
+                    patch.object(
+                        quality,
+                        "repository_fingerprint",
+                        return_value=("sha256:source", 2),
+                    ),
+                    patch.object(quality, "run_command", side_effect=fail_at_gate),
+                ):
+                    with self.assertRaisesRegex(quality.CertificateError, "injected"):
+                        quality.issue(root)
+                self.assertEqual(certificate.read_bytes(), b"prior certificate")
+                self.assertEqual(user_lock.read_bytes(), b"user lock")
+
     def test_materialization_writes_directly_to_external_temporary_root(self) -> None:
         fingerprint = "sha256:" + "d" * 64
         content = b"canonical projection\n"
@@ -145,15 +241,19 @@ class DerivedArtifactStorageTests(unittest.TestCase):
         root.mkdir()
         temporary = base / "temporary"
 
-        def generate(_root: Path, command: list[str], _environment: dict[str, str]) -> None:
+        def generate(
+            _root: Path, command: list[str], _environment: dict[str, str], **_kwargs: object
+        ) -> None:
             output = Path(command[-1])
-            self.assertEqual(output.parent.resolve(), temporary.resolve())
+            self.assertEqual(output.parent.name, "s")
             output.write_bytes(content)
 
         environment = {
             "FORTRESS_DERIVED_CACHE_DIR": str(base / "cache"),
             "FORTRESS_CERTIFICATE_TEMP_DIR": str(temporary),
             "FORTRESS_CERTIFICATE_TARGET_DIR": str(base / "target"),
+            "FORTRESS_EXECUTION_STORAGE_DIR": str(base / "storage"),
+            "FORTRESS_DISK_RESERVE_BYTES": "0",
         }
         with (
             patch.dict(os.environ, environment),
@@ -169,7 +269,32 @@ class DerivedArtifactStorageTests(unittest.TestCase):
                 quality.cache_artifact_path(root, fingerprint, logical_path).read_bytes(),
                 content,
             )
-            self.assertEqual(list(temporary.iterdir()), [])
+            self.assertFalse(temporary.exists())
+
+    def test_clean_preserves_incremental_and_unknown_cache_bytes(self) -> None:
+        base = self.workspace("clean")
+        root = base / "repository"
+        root.mkdir()
+        cache = base / "cache" / "PF-FORTRESS"
+        subject = cache / ("e" * 64)
+        subject.mkdir(parents=True)
+        (subject / "contract_coherency_graph.json").write_bytes(b"derived")
+        incremental = cache / "incremental-v1" / "active-output"
+        incremental.mkdir(parents=True)
+        (incremental / "artifact.json").write_bytes(b"IDE bytes")
+        unknown = cache / ("f" * 64)
+        unknown.mkdir()
+        (unknown / "user.bin").write_bytes(b"user bytes")
+        environment = {
+            "FORTRESS_DERIVED_CACHE_DIR": str(base / "cache"),
+            "FORTRESS_EXECUTION_STORAGE_DIR": str(base / "storage"),
+            "FORTRESS_DISK_RESERVE_BYTES": "0",
+        }
+        with patch.dict(os.environ, environment):
+            quality.clean_materializations(root)
+        self.assertFalse(subject.exists())
+        self.assertEqual((incremental / "artifact.json").read_bytes(), b"IDE bytes")
+        self.assertEqual((unknown / "user.bin").read_bytes(), b"user bytes")
 
 
 if __name__ == "__main__":

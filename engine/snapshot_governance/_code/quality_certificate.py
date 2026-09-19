@@ -15,17 +15,25 @@ an external trusted signing identity is configured.
 from __future__ import annotations
 
 import argparse
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
 import tempfile
 from typing import Any, Iterable, Iterator
 import uuid
+
+from execution_storage import (
+    RunWorkspace,
+    StorageError,
+    StoragePolicy,
+    recover_owned_orphans,
+)
 
 
 CERTIFICATE_PATH = "_info/quality_certificate.json"
@@ -80,6 +88,7 @@ REQUIRED_GATE_IDS = (
     "AUDIT_JSON_DETERMINISM",
     "CLIPPY",
     "DERIVED_ARTIFACT_STORAGE",
+    "EXECUTION_STORAGE",
     "FORMAT",
     "FULL_PROFILE_CERTIFICATION",
     "PROJECT_FILING_SYSTEM",
@@ -170,6 +179,27 @@ def derived_cache_root(root: Path) -> Path:
     return cache
 
 
+def execution_storage_root() -> Path:
+    """Resolve the machine-local storage registry shared by Python jobs."""
+    return Path(
+        os.environ.get(
+            "FORTRESS_EXECUTION_STORAGE_DIR", str(Path(tempfile.gettempdir()) / "fx")
+        )
+    )
+
+
+def publication_paths(root: Path) -> set[Path]:
+    """List only the derived tracked paths the issuer may restore."""
+    return {
+        (root / CERTIFICATE_PATH).resolve(),
+        *(
+            (root / logical_path).resolve()
+            for _, logical_path, storage in ARTIFACTS
+            if storage == TRACKED_EVIDENCE
+        ),
+    }
+
+
 def cache_subject_directory(root: Path, source_fingerprint: str) -> Path:
     """Map an exact source fingerprint to its machine-local cache directory."""
     algorithm, separator, value = source_fingerprint.partition(":")
@@ -189,6 +219,15 @@ def atomic_write(path: Path, content: bytes) -> None:
     temporary = path.with_name(path.name + ".pending")
     temporary.write_bytes(content)
     os.replace(temporary, path)
+
+
+def write_projection_with_budget(
+    workspace: RunWorkspace, path: Path, content: bytes
+) -> None:
+    """Reject a cache write that would exceed the selected local budget."""
+    previous = path.stat().st_size if path.is_file() else 0
+    workspace.check_projection_budget(max(0, len(content) - previous))
+    atomic_write(path, content)
 
 
 @contextmanager
@@ -218,16 +257,19 @@ def cargo_base() -> list[str]:
     ]
 
 
-def remove_transient_cargo_lock(root: Path) -> None:
-    """Remove Cargo's noncanonical Clippy lock projection on Windows."""
+def remove_transient_cargo_lock(root: Path, preexisting: bytes | None) -> None:
+    """Remove only a newly generated copy of the canonical Cargo lock."""
     transient = root / "_data" / "Cargo.lock"
     canonical = root / "_info" / "Cargo.lock"
-    if transient.exists():
-        if not canonical.is_file():
-            raise CertificateError(
-                "refusing to remove transient Cargo.lock without canonical _info/Cargo.lock"
-            )
-        transient.unlink()
+    if preexisting is not None:
+        if not transient.is_file() or transient.read_bytes() != preexisting:
+            raise CertificateError("pre-existing _data/Cargo.lock changed during issuance")
+        return
+    if not transient.exists():
+        return
+    if not canonical.is_file() or transient.read_bytes() != canonical.read_bytes():
+        raise CertificateError("uncertain _data/Cargo.lock ownership; retaining file")
+    transient.unlink()
 
 
 def command_text(parts: Iterable[str]) -> str:
@@ -248,20 +290,52 @@ def run_command(
     environment: dict[str, str],
     *,
     capture: bool = False,
+    workspace: RunWorkspace | None = None,
 ) -> bytes:
     print(f"[local-certificate] {command_text(command)}", flush=True)
-    result = subprocess.run(
+    process = subprocess.Popen(
         command,
         cwd=root,
         env=environment,
-        check=False,
         stdout=subprocess.PIPE if capture else None,
     )
-    if result.returncode != 0:
+    recorded = False
+    descendants_uncertain = False
+    try:
+        if workspace is not None:
+            workspace.record_child(process.pid)
+            recorded = True
+        while True:
+            try:
+                output, _ = process.communicate(timeout=1)
+                break
+            except subprocess.TimeoutExpired:
+                if workspace is not None:
+                    workspace.check_budget()
+    except BaseException:
+        # Terminating Cargo does not prove its compiler or test descendants
+        # have exited. Retain the child record for next-start review.
+        descendants_uncertain = True
+        process.terminate()
+        try:
+            process.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait()
+        raise
+    finally:
+        if (
+            recorded
+            and not descendants_uncertain
+            and workspace is not None
+            and process.poll() is not None
+        ):
+            workspace.clear_child(process.pid)
+    if process.returncode != 0:
         raise CertificateError(
-            f"quality gate exited {result.returncode}: {command_text(command)}"
+            f"quality gate exited {process.returncode}: {command_text(command)}"
         )
-    return result.stdout if capture else b""
+    return output if capture else b""
 
 
 def pass_gate(gates: list[dict[str, str]], gate_id: str, command: list[str]) -> None:
@@ -275,6 +349,17 @@ def pass_gate(gates: list[dict[str, str]], gate_id: str, command: list[str]) -> 
 
 
 def issue(root: Path) -> dict[str, Any]:
+    """Run a bounded issuer without changing a prior certificate on failure."""
+    root = root.resolve()
+    storage_root = execution_storage_root()
+    recovered = recover_owned_orphans(root, storage_root, publication_paths(root))
+    for item in recovered:
+        print(f"[local-certificate] recovery {item['status']}: {item['journal']}")
+    with RunWorkspace(root, storage_root, StoragePolicy.from_environment()) as workspace:
+        return _issue(root, workspace)
+
+
+def _issue(root: Path, workspace: RunWorkspace) -> dict[str, Any]:
     root = root.resolve()
     if not (root / ".git").exists():
         raise CertificateError(f"not a Fortress Git repository: {root}")
@@ -286,56 +371,36 @@ def issue(root: Path) -> dict[str, Any]:
     )
     gates: list[dict[str, str]] = []
     destination = root / CERTIFICATE_PATH
-    destination.write_text(
-        json.dumps(
-            {
-                "$schema": SCHEMA_ID,
-                "schema_version": 2,
-                "semantic_version": SEMANTIC_VERSION,
-                "project": "PF-FORTRESS",
-                "profile": PROFILE_ID,
-                "claim": "PENDING_LOCAL_QUALITY_GATES",
-                "trust": {
-                    "level": "untrusted-local",
-                    "tamper_evidence": "NONE",
-                    "authenticity": "UNVERIFIED",
-                    "limitation": "No PASS evidence exists until local issuance completes.",
-                },
-            },
-            ensure_ascii=False,
-            indent=2,
-        )
-        + "\n",
-        encoding="utf-8",
-        newline="\n",
-    )
     initial_fingerprint, initial_file_count = repository_fingerprint(root)
+    workspace.track_projection_root(derived_cache_root(root))
+    transient_lock = root / "_data" / "Cargo.lock"
+    preexisting_lock = transient_lock.read_bytes() if transient_lock.is_file() else None
+    workspace.record_preexisting(transient_lock)
 
-    temporary_root = Path(
-        os.environ.get(
-            "FORTRESS_CERTIFICATE_TEMP_DIR",
-            str(Path(tempfile.gettempdir()) / "fortress-quality-certificate"),
-        )
-    ).resolve()
+    temporary_root = workspace.staging
     if temporary_root.is_relative_to(root):
         raise CertificateError("certificate temporary output must remain outside the repository")
     temporary_root.mkdir(parents=True, exist_ok=True)
-    environment["CARGO_TARGET_DIR"] = os.environ.get(
-        "FORTRESS_CERTIFICATE_TARGET_DIR",
-        str(Path(tempfile.gettempdir()) / "fortress-target-quality-certificate"),
-    )
+    environment["CARGO_TARGET_DIR"] = str(workspace.target)
     if Path(environment["CARGO_TARGET_DIR"]).resolve().is_relative_to(root):
         raise CertificateError("certificate build target must remain outside the repository")
 
-    with issuance_directory(temporary_root) as temporary:
+    with nullcontext(temporary_root) as temporary:
         base = cargo_base()
 
         storage_test = [
             sys.executable,
             "engine/snapshot_governance/testing/_code/derived_artifact_storage.py",
         ]
-        run_command(root, storage_test, environment)
+        run_command(root, storage_test, environment, workspace=workspace)
         pass_gate(gates, "DERIVED_ARTIFACT_STORAGE", storage_test)
+
+        execution_storage_test = [
+            sys.executable,
+            "engine/snapshot_governance/testing/_code/execution_storage.py",
+        ]
+        run_command(root, execution_storage_test, environment, workspace=workspace)
+        pass_gate(gates, "EXECUTION_STORAGE", execution_storage_test)
 
         formatting = base + [
             "fmt",
@@ -344,7 +409,7 @@ def issue(root: Path) -> dict[str, Any]:
             "--all",
             "--check",
         ]
-        run_command(root, formatting, environment)
+        run_command(root, formatting, environment, workspace=workspace)
         pass_gate(gates, "FORMAT", formatting)
 
         clippy = base + [
@@ -358,8 +423,8 @@ def issue(root: Path) -> dict[str, Any]:
             "-D",
             "warnings",
         ]
-        run_command(root, clippy, environment)
-        remove_transient_cargo_lock(root)
+        run_command(root, clippy, environment, workspace=workspace)
+        remove_transient_cargo_lock(root, preexisting_lock)
         pass_gate(gates, "CLIPPY", clippy)
 
         schema = base + [
@@ -370,7 +435,7 @@ def issue(root: Path) -> dict[str, Any]:
             "--test",
             "schema_registry",
         ]
-        run_command(root, schema, environment)
+        run_command(root, schema, environment, workspace=workspace)
         pass_gate(gates, "SCHEMA_AND_STANDARD", schema)
 
         filing_system = base + [
@@ -385,7 +450,7 @@ def issue(root: Path) -> dict[str, Any]:
             "--test",
             "repo_docs_001",
         ]
-        run_command(root, filing_system, environment)
+        run_command(root, filing_system, environment, workspace=workspace)
         pass_gate(gates, "PROJECT_FILING_SYSTEM", filing_system)
 
         source_architecture = base + [
@@ -396,7 +461,7 @@ def issue(root: Path) -> dict[str, Any]:
             "--test",
             "source_architecture",
         ]
-        run_command(root, source_architecture, environment)
+        run_command(root, source_architecture, environment, workspace=workspace)
         pass_gate(gates, "SOURCE_ARCHITECTURE", source_architecture)
 
         self_model = base + [
@@ -407,10 +472,11 @@ def issue(root: Path) -> dict[str, Any]:
             "--test",
             "self_model",
         ]
-        run_command(root, self_model, environment)
+        run_command(root, self_model, environment, workspace=workspace)
         pass_gate(gates, "SELF_MODEL", self_model)
 
         artifact_records: list[dict[str, Any]] = []
+        pending_artifacts: dict[str, bytes] = {}
         projection_directory = temporary / "projections"
         audit_output = temporary / "audit.json"
         certification_outputs = {
@@ -441,8 +507,8 @@ def issue(root: Path) -> dict[str, Any]:
             "--audit-output",
             str(audit_output),
         ]
-        run_command(root, certify, environment, capture=True)
-        remove_transient_cargo_lock(root)
+        run_command(root, certify, environment, capture=True, workspace=workspace)
+        remove_transient_cargo_lock(root, preexisting_lock)
         # The certify boundary executes the canonical unfiltered workspace suite.
         # Governed generator tests prove repeatability; routine issuance binds one
         # exact semantic stack and every resulting canonical digest.
@@ -451,13 +517,7 @@ def issue(root: Path) -> dict[str, Any]:
         for command_name, logical_path, storage in SEMANTIC_ARTIFACTS:
             projection = projection_directory / logical_path
             projection_bytes = projection.read_bytes()
-            if storage == TRACKED_EVIDENCE:
-                atomic_write(root / logical_path, projection_bytes)
-            else:
-                atomic_write(
-                    cache_artifact_path(root, initial_fingerprint, logical_path),
-                    projection_bytes,
-                )
+            pending_artifacts[logical_path] = projection_bytes
             pass_gate(
                 gates,
                 f"ARTIFACT_{command_name.upper().replace('-', '_')}",
@@ -476,7 +536,7 @@ def issue(root: Path) -> dict[str, Any]:
             artifact_bytes = certification_outputs[command_name].read_bytes()
             if storage != TRACKED_EVIDENCE:
                 raise CertificateError("certification evidence must remain tracked")
-            atomic_write(root / logical_path, artifact_bytes)
+            pending_artifacts[logical_path] = artifact_bytes
             pass_gate(
                 gates,
                 f"ARTIFACT_{command_name.upper().replace('-', '_')}",
@@ -519,7 +579,7 @@ def issue(root: Path) -> dict[str, Any]:
         ]
         documentation_environment = environment.copy()
         documentation_environment["RUSTDOCFLAGS"] = "-D warnings"
-        run_command(root, documentation, documentation_environment)
+        run_command(root, documentation, documentation_environment, workspace=workspace)
         pass_gate(gates, "RUSTDOC", documentation)
 
     gates.sort(key=lambda gate: gate["id"])
@@ -569,11 +629,48 @@ def issue(root: Path) -> dict[str, Any]:
     }
     document = dict(payload)
     document["certificate_stamp"] = certificate_stamp(payload)
-    destination.write_text(
-        json.dumps(document, ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
-        newline="\n",
+    workspace.set_lifecycle("VALIDATING")
+    certificate_bytes = (
+        json.dumps(document, ensure_ascii=False, indent=2) + "\n"
+    ).encode("utf-8")
+    workspace.prepare_publication(
+        destination,
+        certificate_bytes,
+        {
+            root / logical_path: pending_artifacts[logical_path]
+            for _, logical_path, storage in ARTIFACTS
+            if storage == TRACKED_EVIDENCE
+        },
     )
+    prior_bytes: dict[Path, bytes | None] = {}
+    try:
+        for _, logical_path, storage in ARTIFACTS:
+            path = (
+                root / logical_path
+                if storage == TRACKED_EVIDENCE
+                else cache_artifact_path(root, source_fingerprint, logical_path)
+            )
+            prior_bytes[path] = path.read_bytes() if path.is_file() else None
+            if storage == LOCAL_MATERIALIZATION:
+                write_projection_with_budget(
+                    workspace, path, pending_artifacts[logical_path]
+                )
+            else:
+                atomic_write(path, pending_artifacts[logical_path])
+        prior_bytes[destination] = destination.read_bytes() if destination.is_file() else None
+        atomic_write(destination, certificate_bytes)
+    except BaseException:
+        try:
+            for path, original in reversed(list(prior_bytes.items())):
+                if original is None:
+                    path.unlink(missing_ok=True)
+                else:
+                    atomic_write(path, original)
+        except BaseException:
+            workspace.set_lifecycle("RECOVERY_REQUIRED")
+            raise
+        raise
+    workspace.publish(document["certificate_stamp"])
     print(f"issued {CERTIFICATE_PATH} {document['certificate_stamp']}")
     return document
 
@@ -815,27 +912,32 @@ def verify(root: Path) -> dict[str, Any]:
 def materialize(root: Path) -> None:
     """Reconstruct exact certified bulk projections in the local subject cache."""
     root = root.resolve()
+    recovered = recover_owned_orphans(
+        root, execution_storage_root(), publication_paths(root)
+    )
+    for item in recovered:
+        print(f"[materialize] recovery {item['status']}: {item['journal']}")
+    with RunWorkspace(
+        root, execution_storage_root(), StoragePolicy.from_environment()
+    ) as workspace:
+        _materialize(root, workspace)
+
+
+def _materialize(root: Path, workspace: RunWorkspace) -> None:
+    """Execute one leased materialization without changing declaration truth."""
     document = verify(root)
+    workspace.track_projection_root(derived_cache_root(root))
     source_fingerprint = document["source"]["fingerprint"]
     expected = {artifact["path"]: artifact for artifact in artifact_records(document)}
     environment = os.environ.copy()
     environment["CARGO_RESOLVER_LOCKFILE_PATH"] = str(
         (root / "_info" / "Cargo.lock").resolve()
     )
-    environment["CARGO_TARGET_DIR"] = os.environ.get(
-        "FORTRESS_CERTIFICATE_TARGET_DIR",
-        str(Path(tempfile.gettempdir()) / "fortress-target-quality-certificate"),
-    )
+    environment["CARGO_TARGET_DIR"] = str(workspace.target)
     if Path(environment["CARGO_TARGET_DIR"]).resolve().is_relative_to(root):
         raise CertificateError("materialization build target must remain outside the repository")
 
-    temporary_root = Path(
-        os.environ.get(
-            "FORTRESS_CERTIFICATE_TEMP_DIR",
-            str(Path(tempfile.gettempdir()) / "fortress-quality-certificate"),
-        )
-    )
-    temporary_root = temporary_root.resolve()
+    temporary_root = workspace.staging
     if temporary_root.is_relative_to(root):
         raise CertificateError("materialization temporary output must remain outside the repository")
     temporary_root.mkdir(parents=True, exist_ok=True)
@@ -864,8 +966,8 @@ def materialize(root: Path) -> None:
                 "json",
                 "--output",
             ]
-            run_command(root, generator + [str(first)], environment)
-            run_command(root, generator + [str(second)], environment)
+            run_command(root, generator + [str(first)], environment, workspace=workspace)
+            run_command(root, generator + [str(second)], environment, workspace=workspace)
             content = first.read_bytes()
             if content != second.read_bytes():
                 raise CertificateError(f"nondeterministic derived artifact: {command_name}")
@@ -874,7 +976,8 @@ def materialize(root: Path) -> None:
                 raise CertificateError(
                     f"generated projection does not match certified digest: {logical_path}"
                 )
-            atomic_write(
+            write_projection_with_budget(
+                workspace,
                 cache_artifact_path(root, source_fingerprint, logical_path),
                 content,
             )
@@ -885,6 +988,8 @@ def materialize(root: Path) -> None:
     states = local_materialization_states(root, document, source_fingerprint)
     if any(item["status"] != "CURRENT" for item in states):
         raise CertificateError("local projection materialization is incomplete")
+    workspace.set_lifecycle("VALIDATING")
+    workspace.publish(source_fingerprint)
     print(f"materialized {len(states)} certified projections for {source_fingerprint}")
 
 
@@ -907,14 +1012,48 @@ def artifact_status(root: Path) -> bool:
 
 
 def clean_materializations(root: Path) -> None:
-    """Remove only Fortress's explicit execution-local projection cache."""
+    """Remove idle Python-owned subject projections, retaining unknown cache data."""
     root = root.resolve()
+    recovered = recover_owned_orphans(
+        root, execution_storage_root(), publication_paths(root)
+    )
+    for item in recovered:
+        print(f"[clean] recovery {item['status']}: {item['journal']}")
     cache = derived_cache_root(root)
     if cache.name != "PF-FORTRESS" or cache == Path(cache.anchor):
         raise CertificateError("refusing to remove an unexpected cache target")
-    if cache.exists():
-        shutil.rmtree(cache)
-    print("removed Fortress local projection cache")
+    allowed = {
+        Path(logical_path).name
+        for _, logical_path, storage in ARTIFACTS
+        if storage == LOCAL_MATERIALIZATION
+    }
+    removed = 0
+    retained: list[str] = []
+    with RunWorkspace(
+        root, execution_storage_root(), StoragePolicy.from_environment()
+    ) as workspace:
+        workspace.track_projection_root(cache)
+        if cache.is_dir():
+            for subject in cache.iterdir():
+                if (
+                    subject.is_symlink()
+                    or not subject.is_dir()
+                    or re.fullmatch(r"[0-9a-f]{64}", subject.name) is None
+                ):
+                    retained.append(subject.name)
+                    continue
+                entries = list(subject.iterdir())
+                if any(
+                    entry.is_symlink() or not entry.is_file() or entry.name not in allowed
+                    for entry in entries
+                ):
+                    retained.append(subject.name)
+                    continue
+                shutil.rmtree(subject)
+                removed += 1
+        workspace.set_lifecycle("VALIDATING")
+        workspace.publish(f"cleaned-subjects:{removed}")
+    print(f"removed {removed} idle subject caches; retained {len(retained)} unknown entries")
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -940,7 +1079,7 @@ def main() -> int:
             return 0 if artifact_status(Path(arguments.repository)) else 2
         else:
             clean_materializations(Path(arguments.repository))
-    except (CertificateError, OSError, subprocess.SubprocessError) as error:
+    except (CertificateError, StorageError, OSError, subprocess.SubprocessError) as error:
         print(f"quality certificate error: {error}", file=sys.stderr)
         return 1
     return 0
