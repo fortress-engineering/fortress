@@ -12,7 +12,7 @@
     "limitation": "Digest stamps detect mutation and staleness but are not signatures; authenticated antiforgery requires an external trusted signing identity."
   },
   "source": {
-    "fingerprint": "sha256:c3f008952e3e95998430ac5130355efb1d45ec9e18b8f6df31df2fdfc5133ac2",
+    "fingerprint": "sha256:aa1ed6dda19e541166d16a8065a6a55cb7edba8e2989681cefd9f1c608cada21",
     "file_count": 442,
     "excluded_self": "_info/quality_certificate.json",
     "excluded_derived_artifacts": [
@@ -190,7 +190,7 @@
     },
     {
       "path": "_info/certification.json",
-      "digest": "sha256:5ca1026d2fcf0f901e86f72bc9b3034ada62f07dbc4ef79be13ea5f8e3f36ff7",
+      "digest": "sha256:b1df164633b9c239b74af04d82d60b6d27bcf17540e90c78023393c7989131a1",
       "bytes": 98083,
       "storage": "TRACKED_EVIDENCE"
     },
@@ -214,7 +214,7 @@
     },
     {
       "path": "_info/evidence_graph.json",
-      "digest": "sha256:d470f23bb7ad79410c00efc821e9411a19eba07d09cb82177d92b382a5832835",
+      "digest": "sha256:e67d6ee417d412454ea8c6777ceffa935a3770c5601cd0c6070f7911eb96f952",
       "bytes": 642932,
       "storage": "TRACKED_EVIDENCE"
     },
@@ -262,11 +262,11 @@
     },
     {
       "path": "_info/verified_behavioral_flow_graph.json",
-      "digest": "sha256:bad3b915520b62e10366ec3fa964eea82ba9d1c776d515e9a6c3dbfc7325873c",
+      "digest": "sha256:cd34469f45ede0413839b92481fa69947de9e44494fa8648ad499c54f48c8526",
       "bytes": 6988,
       "storage": "TRACKED_EVIDENCE"
     }
   ],
-  "audit_json_digest": "sha256:ef7a79a1bb12e9184a983483c3a5dbab7c14d170bf6f0333141066c06a84c4da",
-  "certificate_stamp": "sha256:acb494b23e9195e2ef062b6dd2091ce1346da5404076b12edea78fc348d68da3"
+  "audit_json_digest": "sha256:d2e39818abcc927126ef6244dcab5536cbdf0a85839d6fd39fcb3a5020193648",
+  "certificate_stamp": "sha256:be5ed70692f32fd671b0e7ef527522f4a1dd244d919955eca6230d5c73437d56"
 }
