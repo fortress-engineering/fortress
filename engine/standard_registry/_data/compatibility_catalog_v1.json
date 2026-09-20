@@ -245,6 +245,28 @@
       }
     },
     {
+      "schema_id": "urn:fortress:schema:v1:source-manifest",
+      "schema_path": "engine/repository_observation/_data/source_manifest_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/repository_observation/_code/source_manifest.rs"
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "sha256-source-manifest-ordered-entry-and-exclusion-material",
+        "source": "engine/repository_observation/_code/source_manifest.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-observed-source-bytes",
+        "source": "engine/repository_observation/_code/observation.rs"
+      }
+    },
+    {
       "schema_id": "urn:fortress:schema:v2:repository-snapshot",
       "schema_path": "engine/snapshot_governance/_data/repository_snapshot_schema_v2.json",
       "version": 2,
@@ -732,6 +754,28 @@
       "schema_id": "urn:fortress:schema:v5:program-semantic-model",
       "schema_path": "engine/program_semantics/_data/program_model_schema_v5.json",
       "version": 5,
+      "writer": {
+        "status": "RETIRED",
+        "source": null
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "REQUIRED_BEFORE_USE",
+      "identity_algorithm": {
+        "id": "rust-semantic-identity-v2-sha256-owner-material",
+        "source": "engine/program_semantics/_code/semantic_identity.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-owner-canonical-json-bytes",
+        "source": "engine/program_semantics/_code/program.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v6:program-semantic-model",
+      "schema_path": "engine/program_semantics/_data/program_model_schema_v6.json",
+      "version": 6,
       "writer": {
         "status": "ACTIVE",
         "source": "engine/program_semantics/_code/program.rs"

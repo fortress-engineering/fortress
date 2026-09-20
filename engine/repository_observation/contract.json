@@ -28,7 +28,8 @@
       },
       "requirements": [
         "AF-REPOSITORY-OBSERVATION-0001-R01",
-        "AF-REPOSITORY-OBSERVATION-0001-R02"
+        "AF-REPOSITORY-OBSERVATION-0001-R02",
+        "AF-REPOSITORY-OBSERVATION-0001-R03"
       ]
     }
   ],
@@ -53,6 +54,17 @@
             "T-AF-REPOSITORY-OBSERVATION-0001-R02-001",
             "T-AF-REPOSITORY-OBSERVATION-0001-R02-002",
             "T-AF-REPOSITORY-OBSERVATION-0001-R02-003"
+          ]
+        },
+        {
+          "id": "AF-REPOSITORY-OBSERVATION-0001-R03",
+          "statement": "Repository Observation emits a portable manifest with explicit exclusions and bounded nonregular-entry limitations, and provides immutable exact-byte source views with conflict-checked hypothetical changes that remain distinct from actual observed state.",
+          "tests": [
+            "T-AF-REPOSITORY-OBSERVATION-0001-R03-001",
+            "T-AF-REPOSITORY-OBSERVATION-0001-R03-002",
+            "T-AF-REPOSITORY-OBSERVATION-0001-R03-003",
+            "T-AF-REPOSITORY-OBSERVATION-0001-R03-004",
+            "T-AF-REPOSITORY-OBSERVATION-0001-R03-005"
           ]
         }
       ]

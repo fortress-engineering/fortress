@@ -6,7 +6,8 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use fortress_core::observation::{
-    KnowledgeState, ObservationError, ObservationPolicy, ObservedFile, observe_repository,
+    CandidateChangeSet, ChangeOperation, KnowledgeState, ObservationError, ObservationPolicy,
+    ObservedFile, SourceView, observe_repository, observe_source_manifest,
 };
 use serde::Deserialize;
 
@@ -169,4 +170,204 @@ fn exclusion_policy_is_sorted_and_deduplicated() {
     let policy = ObservationPolicy::new(["target", ".git", "target"])
         .expect("canonical exclusions are valid");
     assert_eq!(policy.excluded_prefixes(), [".git", "target"]);
+}
+
+/// `T-AF-REPOSITORY-OBSERVATION-0001-R03-001`
+/// Fortress requirement: AF-REPOSITORY-OBSERVATION-0001-R03
+#[test]
+fn source_manifest_reports_exclusions_and_nonregular_barriers() {
+    let fixture = ObservationFixture::empty();
+    fs::write(fixture.root.join("plain.rs"), "pub fn run() {}").unwrap();
+    fs::create_dir(fixture.root.join(".git")).unwrap();
+    fs::write(fixture.root.join(".git/config"), "private").unwrap();
+    let manifest = observe_source_manifest(&fixture.root, &ObservationPolicy::default()).unwrap();
+    assert_eq!(manifest.entries().len(), 1);
+    assert_eq!(manifest.entries()[0].repository_relative_path(), "plain.rs");
+    assert!(
+        manifest
+            .exclusions()
+            .iter()
+            .any(|item| item.selector() == ".git")
+    );
+    assert_eq!(
+        manifest.entries_digest(),
+        observe_source_manifest(&fixture.root, &ObservationPolicy::default())
+            .unwrap()
+            .entries_digest()
+    );
+    let policy = ObservationPolicy::new([".git"]).unwrap();
+    let direct = observe_source_manifest(&fixture.root, &policy).unwrap();
+    let observed = observe_repository(&fixture.root, &policy).unwrap();
+    let reused =
+        fortress_core::observation::SourceManifest::from_observation(&observed, &policy).unwrap();
+    assert_eq!(direct, reused);
+}
+
+/// `T-AF-REPOSITORY-OBSERVATION-0001-R03-002`
+/// Fortress requirement: AF-REPOSITORY-OBSERVATION-0001-R03
+#[test]
+fn candidate_change_set_checks_exact_base_and_keeps_unsaved_view_separate() {
+    let base = SourceView::from_bytes([("src/lib.rs", b"pub fn old() {}".to_vec())]).unwrap();
+    let candidate = CandidateChangeSet::new(
+        &base,
+        "sha256:context",
+        "sha256:authority",
+        [ChangeOperation::Replace {
+            path: "src/lib.rs".into(),
+            base_bytes: b"pub fn old() {}".to_vec(),
+            candidate_bytes: b"pub fn new() {}".to_vec(),
+        }],
+    )
+    .unwrap();
+    assert_eq!(
+        base.bytes("src/lib.rs"),
+        Some(b"pub fn old() {}".as_slice())
+    );
+    assert_eq!(
+        candidate.view().bytes("src/lib.rs"),
+        Some(b"pub fn new() {}".as_slice())
+    );
+    assert_ne!(candidate.view().digest(), base.digest());
+    let changed_context = CandidateChangeSet::new(
+        &base,
+        "sha256:other-context",
+        "sha256:authority",
+        [ChangeOperation::Replace {
+            path: "src/lib.rs".into(),
+            base_bytes: b"pub fn old() {}".to_vec(),
+            candidate_bytes: b"pub fn new() {}".to_vec(),
+        }],
+    )
+    .unwrap();
+    assert_eq!(candidate.view().digest(), changed_context.view().digest());
+    assert_ne!(candidate.digest(), changed_context.digest());
+    assert!(
+        CandidateChangeSet::new(
+            &base,
+            "sha256:context",
+            "sha256:authority",
+            [ChangeOperation::Delete {
+                path: "src/lib.rs".into(),
+                base_bytes: b"wrong".to_vec()
+            }]
+        )
+        .is_err()
+    );
+}
+
+/// `T-AF-REPOSITORY-OBSERVATION-0001-R03-003`
+/// Fortress requirement: AF-REPOSITORY-OBSERVATION-0001-R03
+#[test]
+fn symlink_escape_cycle_and_reparse_are_bounded() {
+    let fixture = ObservationFixture::empty();
+    let outside = ObservationFixture::empty();
+    fs::write(outside.root.join("secret.rs"), "secret").unwrap();
+    #[cfg(windows)]
+    {
+        let create_junction = |name: &str, target: &Path| {
+            let status = std::process::Command::new("cmd")
+                .args(["/C", "mklink", "/J"])
+                .arg(fixture.root.join(name))
+                .arg(target)
+                .status()
+                .expect("Windows junction fixture command starts");
+            assert!(status.success(), "Windows junction fixture creates");
+        };
+        create_junction("escape_dir", &outside.root);
+        create_junction("cycle_dir", &fixture.root);
+    }
+    #[cfg(unix)]
+    {
+        std::os::unix::fs::symlink(
+            outside.root.join("secret.rs"),
+            fixture.root.join("escape.rs"),
+        )
+        .unwrap();
+        std::os::unix::fs::symlink("cycle.rs", fixture.root.join("cycle.rs")).unwrap();
+        std::os::unix::fs::symlink(&fixture.root, fixture.root.join("directory_link")).unwrap();
+    }
+    let manifest = observe_source_manifest(&fixture.root, &ObservationPolicy::default()).unwrap();
+    #[cfg(windows)]
+    assert_eq!(manifest.entries().len(), 2);
+    #[cfg(unix)]
+    assert_eq!(manifest.entries().len(), 3);
+    assert!(
+        manifest
+            .entries()
+            .iter()
+            .all(|entry| entry.limitation_ref().is_some())
+    );
+    assert!(
+        !manifest
+            .entries()
+            .iter()
+            .any(|entry| entry.repository_relative_path().contains("secret"))
+    );
+    assert!(matches!(
+        observe_repository(&fixture.root, &ObservationPolicy::default()),
+        Err(ObservationError::UnsupportedEntry(_))
+    ));
+    #[cfg(windows)]
+    {
+        fs::remove_dir(fixture.root.join("escape_dir"))
+            .expect("escape junction removes without target traversal");
+        fs::remove_dir(fixture.root.join("cycle_dir"))
+            .expect("cycle junction removes without traversal");
+        assert!(outside.root.join("secret.rs").exists());
+    }
+}
+
+/// `T-AF-REPOSITORY-OBSERVATION-0001-R03-004`
+/// Fortress requirement: AF-REPOSITORY-OBSERVATION-0001-R03
+#[test]
+fn source_manifest_writer_matches_registered_schema() {
+    let fixture = ObservationFixture::empty();
+    fs::write(fixture.root.join("source.rs"), "pub fn run() {}").unwrap();
+    let manifest = observe_source_manifest(&fixture.root, &ObservationPolicy::default()).unwrap();
+    let instance: serde_json::Value = serde_json::from_str(&manifest.to_canonical_json()).unwrap();
+    let schema_path = repository_root()
+        .join("engine/repository_observation/_data/source_manifest_schema_v1.json");
+    let schema: serde_json::Value =
+        serde_json::from_slice(&fs::read(schema_path).unwrap()).unwrap();
+    jsonschema::draft202012::validate(&schema, &instance).expect("source manifest v1 validates");
+}
+
+/// `T-AF-REPOSITORY-OBSERVATION-0001-R03-005`
+/// Fortress requirement: AF-REPOSITORY-OBSERVATION-0001-R03
+#[test]
+fn candidate_operations_are_ordered_and_conflict_checked() {
+    let base = SourceView::from_bytes([("src/old.rs", b"old".to_vec())]).unwrap();
+    let moved = CandidateChangeSet::new(
+        &base,
+        "sha256:context",
+        "sha256:authority",
+        [ChangeOperation::Move {
+            source: "src/old.rs".into(),
+            destination: "src/new.rs".into(),
+            base_bytes: b"old".to_vec(),
+        }],
+    )
+    .unwrap();
+    assert_eq!(moved.view().bytes("src/old.rs"), None);
+    assert_eq!(moved.view().bytes("src/new.rs"), Some(b"old".as_slice()));
+    assert!(
+        CandidateChangeSet::new(
+            &base,
+            "sha256:context",
+            "sha256:authority",
+            [
+                ChangeOperation::Delete {
+                    path: "src/old.rs".into(),
+                    base_bytes: b"old".to_vec()
+                },
+                ChangeOperation::Create {
+                    path: "src/old.rs".into(),
+                    candidate_bytes: b"new".to_vec()
+                },
+            ]
+        )
+        .is_err()
+    );
+    assert!(SourceView::from_bytes([("C:/outside", b"bad".to_vec())]).is_err());
+    assert!(SourceView::from_bytes([(".git/config", b"bad".to_vec())]).is_err());
 }

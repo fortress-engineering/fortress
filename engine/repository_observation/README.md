@@ -12,7 +12,7 @@ Walk repository files using explicit operational exclusions, normalize repositor
 
 ### Includes
 
-Ordinary-file discovery, path normalization, byte sizes, SHA-256 digests, exclusion policy identity, symlink rejection, and local filesystem error reporting.
+Ordinary-file discovery, portable path normalization, byte sizes, SHA-256 digests, exclusion policy identity, explicit nonregular-entry and symlink barriers, immutable source views, conflict-checked hypothetical byte changes, and local filesystem error reporting.
 
 ### Excludes
 
@@ -28,4 +28,4 @@ Consumes a project-authored observation exclusion policy when present. Without p
 
 ## Guarantees
 
-Equivalent included content produces equivalent sorted facts; unsafe exclusions and symlinks fail explicitly; no timestamp or absolute host path enters semantic observation identity.
+Equivalent included content produces equivalent sorted facts; unsafe exclusions fail explicitly; links and reparse points are never followed by read-only manifest discovery and appear as bounded limitations. The strict legacy observer rejects them. A proposed source view remains separate from actual observed bytes. No timestamp or absolute host path enters semantic observation identity.

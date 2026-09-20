@@ -21,17 +21,19 @@ use crate::implementation_observation::SourceOwnership;
 
 use super::semantic_identity::{RustSymbolIdentityInput, rust_symbol_ids};
 use super::{
-    CallResolutionReason, CallResolutionState, CallSiteEvidence, ExecutableSymbol,
-    ExecutableSymbolKind, ExecutionProvenance, ImplResolutionState, InterfaceType, MutationKind,
-    NominalField, NominalType, NominalTypeKind, NominalVariant, PlaceResolutionState, ProgramBody,
-    ProgramCall, ProgramExpression, ProgramImpl, ProgramImplKind, ProgramMatchArm, ProgramMutation,
-    ProgramPackage, ProgramParameter, ProgramPattern, ProgramPlace, ProgramProvenance,
-    ProgramReceiver, ProgramSemanticError, ProgramSemanticInput, ProgramSourceInput,
-    ProgramSourceLocation, ProgramStatement, ProgramTarget, ProgramType, RUST_PROGRAM_ANALYZER_ID,
-    ResolutionAuthority, RustProgramFacts, SemanticType, StateRead, SymbolBodyState,
-    SymbolClassification, SymbolQualifiers, SymbolVisibility, TransferResolutionState,
-    TransformationKind, TypeResolution, TypeTransformation, ValueEndpoint, ValueTransfer,
-    ValueTransferKind, canonical_fact_id,
+    CallResolutionReason, CallResolutionState, CallSiteEvidence, ContextKnowledge,
+    ExecutableSymbol, ExecutableSymbolKind, ExecutionProvenance, FileCoverageRecord,
+    ImplResolutionState, InterfaceType, MutationKind, NominalField, NominalType, NominalTypeKind,
+    NominalVariant, OperationOutcome, PlaceResolutionState, ProgramBody, ProgramCall,
+    ProgramContext, ProgramExpression, ProgramImpl, ProgramImplKind, ProgramInputRole,
+    ProgramMatchArm, ProgramMutation, ProgramPackage, ProgramPackageContext, ProgramParameter,
+    ProgramPattern, ProgramPlace, ProgramProvenance, ProgramReceiver, ProgramSemanticError,
+    ProgramSemanticInput, ProgramSourceInput, ProgramSourceLocation, ProgramStatement,
+    ProgramTarget, ProgramType, RUST_PROGRAM_ANALYZER_ID, ResolutionAuthority, RustProgramFacts,
+    SemanticType, StateRead, SymbolBodyState, SymbolClassification, SymbolQualifiers,
+    SymbolVisibility, SyntacticOperation, TransferResolutionState, TransformationKind,
+    TypeResolution, TypeTransformation, ValueEndpoint, ValueTransfer, ValueTransferKind,
+    canonical_fact_id,
 };
 
 #[derive(Deserialize)]
@@ -195,9 +197,28 @@ pub(super) fn analyze(
 ) -> Result<RustProgramFacts, ProgramSemanticError> {
     let files = verified_files(input)?;
     let source_inputs = semantic_source_inputs(&files);
-    let source_identity = semantic_source_identity(&source_inputs);
     let mut packages = parse_packages(&files)?;
     resolve_dependencies(&mut packages);
+    if let Some(selected) = input.selected_context()
+        && !packages
+            .iter()
+            .flat_map(|package| {
+                package.targets.iter().map(move |target| {
+                    format!("{}/{}:{}", package.name, target.kind, target.crate_name)
+                })
+            })
+            .any(|identity| identity == selected.target_identity)
+    {
+        return Err(ProgramSemanticError::UnknownTargetContext(
+            selected.target_identity.clone(),
+        ));
+    }
+    let program_context = derive_program_context(&packages, &files, input);
+    let source_identity = semantic_source_identity(
+        &source_inputs,
+        &program_context,
+        input.observation().ownerships(),
+    );
     let source_owners = source_owners(input.observation().ownerships());
     let source_contexts = build_source_contexts(&packages, &files)?;
     let package_by_manifest: BTreeMap<&str, &CargoPackage> = packages
@@ -258,6 +279,7 @@ pub(super) fn analyze(
         reexports,
     );
     let mut raw_calls = Vec::new();
+    let mut operation_inventory = Vec::new();
     let mut value_transfers = parameter_transfers;
     let mut transformations = Vec::new();
     let mut state_reads = Vec::new();
@@ -270,6 +292,7 @@ pub(super) fn analyze(
             &lookup,
             &mut registry,
             &mut raw_calls,
+            &mut operation_inventory,
             &mut value_transfers,
             &mut transformations,
             &mut state_reads,
@@ -277,7 +300,29 @@ pub(super) fn analyze(
         )
         .analyze();
     }
-    let calls = resolve_calls(raw_calls, &lookup, &mut value_transfers, &mut registry);
+    let calls = resolve_calls(
+        raw_calls,
+        &lookup,
+        &mut value_transfers,
+        &mut registry,
+        &mut operation_inventory,
+    );
+    operation_inventory.sort();
+    let symbol_paths = symbols
+        .iter()
+        .map(|symbol| symbol.source_path.as_str())
+        .collect::<BTreeSet<_>>();
+    let file_coverage = files
+        .keys()
+        .filter(|path| is_rust_path(path))
+        .map(|path| {
+            FileCoverageRecord::new(
+                path.clone(),
+                source_contexts.contains_key(path),
+                symbol_paths.contains(path.as_str()),
+            )
+        })
+        .collect::<Vec<_>>();
     value_transfers.sort();
     value_transfers.dedup();
     transformations.sort();
@@ -288,6 +333,7 @@ pub(super) fn analyze(
     mutations.dedup();
     Ok(RustProgramFacts {
         source_identity,
+        program_context,
         source_inputs,
         source_files: source_contexts.len(),
         packages: package_facts(&packages),
@@ -296,6 +342,8 @@ pub(super) fn analyze(
         symbols,
         types: registry.finish(),
         calls,
+        operation_inventory,
+        file_coverage,
         bodies: program_bodies,
         value_transfers,
         transformations,
@@ -705,34 +753,86 @@ fn is_rust_path(path: &str) -> bool {
 fn semantic_source_inputs(files: &BTreeMap<String, &[u8]>) -> Vec<ProgramSourceInput> {
     files
         .iter()
-        .filter(|(path, _)| {
-            is_rust_path(path)
-                || path.ends_with("Cargo.toml")
-                || path.as_str() == "_data/project.json"
-                || path.as_str() == "contract.json"
-                || path.ends_with("/contract.json")
-        })
-        .map(|(path, bytes)| ProgramSourceInput {
-            path: path.clone(),
-            sha256: semantic_input_digest(path, bytes),
-        })
+        .filter_map(|(path, bytes)| semantic_input_descriptor(path, bytes))
         .collect()
 }
 
-fn semantic_input_digest(path: &str, bytes: &[u8]) -> String {
-    if path == "contract.json" || path.ends_with("/contract.json") {
+pub(super) fn semantic_input_descriptor(path: &str, bytes: &[u8]) -> Option<ProgramSourceInput> {
+    let role = semantic_input_role(path, bytes)?;
+    Some(ProgramSourceInput {
+        path: path.into(),
+        role,
+        sha256: semantic_input_digest(path, bytes, role),
+    })
+}
+
+fn semantic_input_role(path: &str, bytes: &[u8]) -> Option<ProgramInputRole> {
+    let file_name = path.rsplit('/').next().unwrap_or(path);
+    if is_rust_path(path) {
+        return Some(ProgramInputRole::RustSource);
+    }
+    if file_name == "Cargo.toml" {
+        return Some(ProgramInputRole::CargoManifest);
+    }
+    if file_name == "Cargo.lock" {
+        return Some(ProgramInputRole::CargoLock);
+    }
+    let candidate = if path == "_data/project.json" {
+        ProgramInputRole::ProjectIdentity
+    } else if file_name == "contract.json" {
+        ProgramInputRole::ModuleIdentity
+    } else {
+        return None;
+    };
+    if crate::wire::reject_duplicate_json_keys_bytes(bytes).is_err() {
+        return Some(ProgramInputRole::Unknown);
+    }
+    let Ok(value) = serde_json::from_slice::<serde_json::Value>(bytes) else {
+        return Some(ProgramInputRole::Unknown);
+    };
+    let schema = value.get("$schema").and_then(serde_json::Value::as_str);
+    let recognized = match candidate {
+        ProgramInputRole::ProjectIdentity => matches!(
+            schema,
+            Some(
+                "urn:fortress:schema:v2:project-configuration"
+                    | "urn:fortress:schema:v3:project-configuration"
+            )
+        ),
+        ProgramInputRole::ModuleIdentity => matches!(
+            schema,
+            Some(
+                "urn:fortress:schema:v2:module-contract" | "urn:fortress:schema:v3:module-contract"
+            )
+        ),
+        _ => false,
+    };
+    Some(if recognized {
+        candidate
+    } else {
+        ProgramInputRole::Unknown
+    })
+}
+
+fn semantic_input_digest(path: &str, bytes: &[u8], role: ProgramInputRole) -> String {
+    if matches!(
+        role,
+        ProgramInputRole::ModuleIdentity | ProgramInputRole::ProjectIdentity
+    ) {
         if crate::wire::reject_duplicate_json_keys_bytes(bytes).is_err() {
             return format!("sha256:{:x}", Sha256::digest(bytes));
         }
         let Ok(value) = serde_json::from_slice::<serde_json::Value>(bytes) else {
             return format!("sha256:{:x}", Sha256::digest(bytes));
         };
-        let identity = serde_json::json!({
-            "path": path,
-            "schema": value.get("$schema"),
-            "schema_version": value.get("schema_version"),
-            "id": value.get("id"),
-        });
+        let identity = if role == ProgramInputRole::ModuleIdentity {
+            serde_json::json!({ "path": path, "schema": value.get("$schema"),
+                "schema_version": value.get("schema_version"), "id": value.get("id") })
+        } else {
+            serde_json::json!({ "path": path, "schema": value.get("$schema"),
+                "schema_version": value.get("schema_version"),
+                "logical_modules": value.get("logical_modules") })
+        };
         return format!(
             "sha256:{:x}",
             Sha256::digest(
@@ -743,17 +843,31 @@ fn semantic_input_digest(path: &str, bytes: &[u8]) -> String {
     format!("sha256:{:x}", Sha256::digest(bytes))
 }
 
-fn semantic_source_identity(inputs: &[ProgramSourceInput]) -> String {
+fn semantic_source_identity(
+    inputs: &[ProgramSourceInput],
+    context: &ProgramContext,
+    ownerships: &[SourceOwnership],
+) -> String {
     #[derive(Serialize)]
     struct Identity<'a> {
         analyzer: &'static str,
         version: &'static str,
         inputs: &'a [ProgramSourceInput],
+        context_digest: String,
+        ownership_digest: String,
     }
+    let mut ownerships = ownerships.to_vec();
+    ownerships.sort();
+    let ownership_digest = format!(
+        "sha256:{:x}",
+        Sha256::digest(serde_json::to_vec(&ownerships).expect("ownership facts serialize"))
+    );
     let bytes = serde_json::to_vec(&Identity {
         analyzer: RUST_PROGRAM_ANALYZER_ID,
         version: super::RUST_PROGRAM_ANALYZER_VERSION,
         inputs,
+        context_digest: context.digest(),
+        ownership_digest,
     })
     .expect("PSM source identity is serializable");
     format!("sha256:{:x}", Sha256::digest(bytes))
@@ -776,7 +890,7 @@ fn parse_packages(
     let mut packages = Vec::new();
     for (path, bytes) in files
         .iter()
-        .filter(|(path, _)| path.ends_with("Cargo.toml"))
+        .filter(|(path, _)| path.rsplit('/').next() == Some("Cargo.toml"))
     {
         let source = std::str::from_utf8(bytes)
             .map_err(|_| ProgramSemanticError::NonUtf8Rust(path.clone()))?;
@@ -962,6 +1076,83 @@ fn resolve_dependencies(packages: &mut [CargoPackage]) {
             }
         }
     }
+}
+
+fn derive_program_context(
+    packages: &[CargoPackage],
+    files: &BTreeMap<String, &[u8]>,
+    input: &ProgramSemanticInput,
+) -> ProgramContext {
+    let selected = input.selected_context();
+    let lock_inputs = files
+        .iter()
+        .filter(|(path, _)| path.rsplit('/').next() == Some("Cargo.lock"))
+        .map(|(path, bytes)| (path, format!("sha256:{:x}", Sha256::digest(bytes))))
+        .collect::<Vec<_>>();
+    let contexts = packages
+        .iter()
+        .flat_map(|package| {
+            let dependencies = package
+                .dependencies
+                .iter()
+                .map(|(alias, resolution)| {
+                    let target = match resolution {
+                        DependencyResolution::WorkspacePackage(name) => format!("workspace:{name}"),
+                        DependencyResolution::External(name) => format!("external:{name}"),
+                    };
+                    (alias, target)
+                })
+                .collect::<Vec<_>>();
+            let manifest_digest = format!(
+                "sha256:{:x}",
+                Sha256::digest(files[package.manifest_path.as_str()])
+            );
+            let dependency_bytes =
+                serde_json::to_vec(&(&dependencies, &lock_inputs, &manifest_digest))
+                    .expect("dependency facts serialize");
+            let dependency_digest = format!("sha256:{:x}", Sha256::digest(dependency_bytes));
+            package.targets.iter().map(move |target| {
+                let target_identity =
+                    format!("{}/{}:{}", package.name, target.kind, target.crate_name);
+                let target_selected =
+                    selected.is_some_and(|selection| selection.target_identity == target_identity);
+                let features = if target_selected {
+                    ContextKnowledge::Known(selected.expect("selection exists").features.clone())
+                } else {
+                    ContextKnowledge::Unknown
+                };
+                let cfg = if target_selected {
+                    ContextKnowledge::Known(selected.expect("selection exists").cfg.clone())
+                } else {
+                    ContextKnowledge::Unknown
+                };
+                ProgramPackageContext::new(
+                    format!("{}@{}", package.name, package.manifest_path),
+                    target_identity,
+                    features,
+                    cfg,
+                    dependency_digest.clone(),
+                )
+            })
+        })
+        .collect::<Vec<_>>();
+    let limitations = if selected.is_some() {
+        vec!["cfg_and_feature_selection_not_applied_to_ast".to_owned()]
+    } else {
+        vec!["target_features_cfg_and_platform_unresolved".to_owned()]
+    };
+    let context = ProgramContext::new(
+        super::RUST_PROGRAM_ANALYZER_ID,
+        super::RUST_PROGRAM_ANALYZER_VERSION,
+        contexts,
+        ContextKnowledge::Unknown,
+        input.generated_inputs().clone(),
+        "repository",
+        limitations,
+    );
+    context.with_target_platform(selected.map_or(ContextKnowledge::Unknown, |selection| {
+        ContextKnowledge::Known(selection.target_platform.clone())
+    }))
 }
 
 fn package_facts(packages: &[CargoPackage]) -> Vec<ProgramPackage> {
@@ -2873,6 +3064,7 @@ struct BodyAnalyzer<'a> {
     lookup: &'a SymbolLookup,
     registry: &'a mut TypeRegistry,
     raw_calls: &'a mut Vec<RawCall>,
+    operation_inventory: &'a mut Vec<SyntacticOperation>,
     transfers: &'a mut Vec<ValueTransfer>,
     transformations: &'a mut Vec<TypeTransformation>,
     state_reads: &'a mut Vec<StateRead>,
@@ -2905,6 +3097,7 @@ impl<'a> BodyAnalyzer<'a> {
         lookup: &'a SymbolLookup,
         registry: &'a mut TypeRegistry,
         raw_calls: &'a mut Vec<RawCall>,
+        operation_inventory: &'a mut Vec<SyntacticOperation>,
         transfers: &'a mut Vec<ValueTransfer>,
         transformations: &'a mut Vec<TypeTransformation>,
         state_reads: &'a mut Vec<StateRead>,
@@ -2926,6 +3119,7 @@ impl<'a> BodyAnalyzer<'a> {
             lookup,
             registry,
             raw_calls,
+            operation_inventory,
             transfers,
             transformations,
             state_reads,
@@ -2941,6 +3135,18 @@ impl<'a> BodyAnalyzer<'a> {
             self.transfer_to_return(expression, expression.span());
         }
         self.visit_block(&self.body.block);
+    }
+
+    fn account_implicit(&mut self, category: &str, reference: &str, span: Span) {
+        self.operation_inventory.push(SyntacticOperation::new(
+            category,
+            &self.body.symbol,
+            reference,
+            OperationOutcome::Unsupported,
+            Some("implicit_operation_semantics_not_lowered".into()),
+            true,
+            provenance(&self.body.source_path, span, Some(self.body.symbol.clone())),
+        ));
     }
 
     fn expand_alias(&self, segments: &[String]) -> Vec<String> {
@@ -3625,6 +3831,11 @@ impl<'ast> Visit<'ast> for BodyAnalyzer<'_> {
     }
 
     fn visit_expr_binary(&mut self, expression: &'ast syn::ExprBinary) {
+        self.account_implicit(
+            "implicit_operator",
+            &expression.op.to_token_stream().to_string(),
+            expression.span(),
+        );
         if matches!(
             expression.op,
             syn::BinOp::AddAssign(_)
@@ -3682,6 +3893,7 @@ impl<'ast> Visit<'ast> for BodyAnalyzer<'_> {
         }
     }
 
+    #[allow(clippy::too_many_lines)]
     fn visit_expr_call(&mut self, call: &'ast syn::ExprCall) {
         let reference = call.func.to_token_stream().to_string();
         let target = match call.func.as_ref() {
@@ -3748,7 +3960,21 @@ impl<'ast> Visit<'ast> for BodyAnalyzer<'_> {
             false
         };
         let arguments = self.raw_arguments(call.args.iter());
-        if !semantic_constructor {
+        if semantic_constructor {
+            self.operation_inventory.push(SyntacticOperation::new(
+                "builtin_constructor",
+                &self.body.symbol,
+                &reference,
+                OperationOutcome::Resolved,
+                Some("builtin_wrapper_construction".into()),
+                false,
+                provenance(
+                    &self.body.source_path,
+                    call.span(),
+                    Some(self.body.symbol.clone()),
+                ),
+            ));
+        } else {
             self.raw_calls.push(RawCall {
                 caller: self.body.symbol.clone(),
                 package: self.package_name().into(),
@@ -3894,6 +4120,7 @@ impl<'ast> Visit<'ast> for BodyAnalyzer<'_> {
     }
 
     fn visit_expr_try(&mut self, expression: &'ast syn::ExprTry) {
+        self.account_implicit("implicit_try", "?", expression.span());
         let source_type = self
             .expression_type(&expression.expr)
             .map(|value| value.type_id);
@@ -3904,6 +4131,28 @@ impl<'ast> Visit<'ast> for BodyAnalyzer<'_> {
             None,
         );
         visit::visit_expr_try(self, expression);
+    }
+
+    fn visit_expr_index(&mut self, expression: &'ast syn::ExprIndex) {
+        self.account_implicit("implicit_index", "[]", expression.span());
+        visit::visit_expr_index(self, expression);
+    }
+
+    fn visit_expr_unary(&mut self, expression: &'ast syn::ExprUnary) {
+        if matches!(expression.op, syn::UnOp::Deref(_)) {
+            self.account_implicit("implicit_deref", "*", expression.span());
+        }
+        visit::visit_expr_unary(self, expression);
+    }
+
+    fn visit_expr_await(&mut self, expression: &'ast syn::ExprAwait) {
+        self.account_implicit("implicit_await", "await", expression.span());
+        visit::visit_expr_await(self, expression);
+    }
+
+    fn visit_expr_for_loop(&mut self, expression: &'ast syn::ExprForLoop) {
+        self.account_implicit("implicit_into_iterator", "for", expression.span());
+        visit::visit_expr_for_loop(self, expression);
     }
 
     fn visit_expr_reference(&mut self, expression: &'ast syn::ExprReference) {
@@ -3951,11 +4200,13 @@ struct CallGroupKey {
     unresolved_reference: Option<String>,
 }
 
+#[allow(clippy::too_many_lines)]
 fn resolve_calls(
     raw_calls: Vec<RawCall>,
     lookup: &SymbolLookup,
     transfers: &mut Vec<ValueTransfer>,
     registry: &mut TypeRegistry,
+    operation_inventory: &mut Vec<SyntacticOperation>,
 ) -> Vec<ProgramCall> {
     let mut grouped = BTreeMap::<CallGroupKey, Vec<CallSiteEvidence>>::new();
     let mut operation_ordinals = BTreeMap::<(String, String, String), usize>::new();
@@ -4004,6 +4255,32 @@ fn resolve_calls(
                 *ordinal,
             ));
         *ordinal += 1;
+        let category = match &call.target {
+            RawCallTarget::Method { .. } => "method_call",
+            RawCallTarget::Macro => "macro_invocation",
+            RawCallTarget::Path { .. } | RawCallTarget::Dynamic => "explicit_call",
+        };
+        let accounted_outcome = match outcome.state {
+            CallResolutionState::ResolvedStatic => OperationOutcome::Resolved,
+            CallResolutionState::External => OperationOutcome::External,
+            CallResolutionState::DynamicDispatch => OperationOutcome::Dynamic,
+            CallResolutionState::Unresolved => OperationOutcome::Unresolved,
+            CallResolutionState::Unsupported | CallResolutionState::Invalid => {
+                OperationOutcome::Unsupported
+            }
+        };
+        operation_inventory.push(
+            SyntacticOperation::new(
+                category,
+                &call.caller,
+                &call.reference,
+                accounted_outcome,
+                outcome.reason.map(|reason| format!("{reason:?}")),
+                matches!(&call.target, RawCallTarget::Macro),
+                call.evidence.provenance.clone(),
+            )
+            .with_site(call.evidence.operation_site_id.clone()),
+        );
         grouped
             .entry(CallGroupKey {
                 caller: call.caller,

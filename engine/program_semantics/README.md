@@ -12,7 +12,7 @@ Analyze exact snapshot-bound source into deterministic language-neutral facts ab
 
 ### Includes
 
-Stable Cargo package and target interpretation, structural Rust syntax analysis, canonical executable identities, nominal structs/enums/traits/aliases and impls, recursive type normalization, local expression-type propagation, type-directed inherent and concrete trait method resolution, stable residual-resolution reasons, call-graph derivations, initial value-transfer topology, neutral body/control structure for downstream reasoning, Testing classification, analyzer coherency, provenance, canonical serialization, and deterministic digesting.
+Stable Cargo package and target interpretation, explicit known or unknown feature/cfg and platform context, structural Rust syntax analysis, canonical executable identities, nominal structs/enums/traits/aliases and impls, recursive type normalization, local expression-type propagation, type-directed inherent and concrete trait method resolution, one accounted outcome for each enumerated syntactic operation, separate observed/opened/parsed/symbol-bearing file coverage, stable residual-resolution reasons, call-graph derivations, initial value-transfer topology, neutral body/control structure for downstream reasoning, Testing classification, analyzer coherency, provenance, canonical serialization, and deterministic digesting.
 
 ### Excludes
 
@@ -32,6 +32,12 @@ Supplies canonical Module identities, containment, logical source bindings, and 
 
 Supplies the exact snapshot-bound source substrate and the broader observed Module dependency projection against which cross-Module call facts are reconciled.
 
+### [Repository Observation](../repository_observation/README.md)
+
+**Types:** `depends_on`
+
+Supplies the bounded source manifest and explicit observation barriers used for source coverage accounting.
+
 ### [Standard Registry](../standard_registry/README.md)
 
 **Types:** `depends_on`
@@ -40,4 +46,4 @@ Supplies strict JSON preflight for authored and cached semantic inputs without c
 
 ## Guarantees
 
-Identical semantic inputs produce byte-identical PSM documents and digests; semantic input identity binds Rust bytes, Cargo authority, project ownership configuration, and stable Module identity while leaving unrelated Module policy to downstream conformance; certification separately binds the resulting PSM to the complete exact repository snapshot. Every fact retains deterministic source provenance; ordinary repository placement is not a semantic-analysis admission condition; exact resolution is never assigned to unsupported or ambiguous Rust semantics; missing project or test governance remains explicit; Testing and production symbols remain distinguishable where authority supports it; and no PSM fact or analysis territory is represented as architecture or behavioral intent.
+Identical semantic inputs produce byte-identical PSM documents and digests; semantic input identity binds Rust bytes, Cargo authority, explicit analysis context, project ownership configuration, and stable Module identity while leaving unrelated Module policy to downstream conformance; certification separately binds the resulting PSM to the complete exact repository snapshot. Unknown target, feature, cfg, toolchain, or generated-input semantics never imply a known empty context. Every enumerated call has an outcome; unexpanded macro bodies and unsupported implicit operations remain coverage barriers. Every fact retains deterministic source provenance; ordinary repository placement is not a semantic-analysis admission condition; exact resolution is never assigned to unsupported or ambiguous Rust semantics; missing project or test governance remains explicit; Testing and production symbols remain distinguishable where authority supports it; and no PSM fact or analysis territory is represented as architecture or behavioral intent.

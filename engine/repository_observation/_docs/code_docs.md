@@ -21,3 +21,11 @@ Invalid inputs and inability to fulfill the responsibility return explicit typed
 ### [`observation.rs`](../_code/observation.rs)
 
 Walks ordinary files, applies explicit exclusions, normalizes paths, hashes bytes, and emits the sorted observation.
+
+### [`source_manifest.rs`](../_code/source_manifest.rs)
+
+Inventories ordinary and unsupported entries without following links or traversing Git metadata. Link targets that would reveal machine paths are omitted.
+
+### [`source_view.rs`](../_code/source_view.rs)
+
+Keeps exact observed bytes in an immutable view and applies ordered, preimage-checked candidate changes to a separate hypothetical view.

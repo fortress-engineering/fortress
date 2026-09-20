@@ -32,4 +32,8 @@ Defines the retained PSM v4 structure with explicit executable-symbol execution 
 
 ### [`program_model_schema_v5.json`](../_data/program_model_schema_v5.json)
 
-Defines the canonical PSM v5 structure with versioned drift-tolerant semantic identities, legacy aliases, stable operation-site identities, explicit executable-symbol execution provenance, and deterministic production-capable, test-only, and unknown-provenance coverage counts.
+Retains the historical PSM v5 structure with versioned drift-tolerant semantic identities, legacy aliases, stable operation-site identities, and execution-provenance counts.
+
+### [`program_model_schema_v6.json`](../_data/program_model_schema_v6.json)
+
+Defines the current PSM shape with an explicit program context, a per-occurrence syntactic operation inventory, and distinct file observation, opening, parsing, and symbol coverage.

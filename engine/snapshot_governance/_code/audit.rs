@@ -68,12 +68,17 @@ use crate::information_flow::{
     InformationFlowAnalysisError, InformationFlowEvaluation, InformationFlowPolicyError,
     InformationFlowPolicySource, analyze_information_flow, load_information_flow_policy,
 };
-use crate::observation::{ObservationError, ObservationPolicy, RepositoryObservation};
+use crate::observation::{
+    ObservationError, ObservationPolicy, RepositoryObservation, SourceManifest, SourceView,
+};
 use crate::program_semantics::{
     ProgramSemanticError, ProgramSemanticInput, ProgramSemanticModel,
     compile_program_semantic_model,
 };
-use crate::project::{ProjectConfiguration, ProjectConfigurationLoadError, SourcePathBindingKind};
+use crate::project::{
+    AuthorityBinding, EvaluationKey, ProjectConfiguration, ProjectConfigurationLoadError,
+    SourcePathBindingKind,
+};
 use crate::reference_resolution::{
     ReferenceResolutionError, ReferenceResolutionEvaluation, evaluate_reference_resolution,
 };
@@ -1866,7 +1871,7 @@ pub fn compile_repository_certification_bundle(
 }
 
 struct CertificationSemanticStack {
-    observed_files: BTreeMap<String, Vec<u8>>,
+    observed_files: SourceView,
     rust_tests: Vec<crate::rust_test_analyzer::RustTestFact>,
     standard: StandardBundle,
     snapshot: RepositorySnapshot,
@@ -2189,7 +2194,7 @@ fn certification_artifacts(
         ),
         (
             "psm",
-            "urn:fortress:schema:v5:program-semantic-model",
+            "urn:fortress:schema:v6:program-semantic-model",
             "_info/program_semantic_model.json",
             stack
                 .models
@@ -3082,7 +3087,7 @@ fn audit_repository_with_prepared(
 }
 
 struct PreparedAudit {
-    observed_files: BTreeMap<String, Vec<u8>>,
+    observed_files: SourceView,
     standard: LoadedStandard,
     rust_tests: Vec<crate::rust_test_analyzer::RustTestFact>,
     rust_test_observations: Vec<RustTestObservation>,
@@ -3102,7 +3107,8 @@ enum ProjectGovernanceState {
 
 #[derive(Clone)]
 struct PreparedAnalysis {
-    observed_files: BTreeMap<String, Vec<u8>>,
+    observed_files: SourceView,
+    source_manifest: SourceManifest,
     source_identity: String,
     project_state: ProjectGovernanceState,
     project_detail: Option<String>,
@@ -3144,6 +3150,13 @@ fn build_affected_snapshot(
 ) -> Result<AffectedSnapshot, AuditError> {
     let mut inputs = Vec::with_capacity(prepared.observed_files.len());
     let mut units = Vec::new();
+    let evaluation_key = prepared_evaluation_key(prepared, psm)?;
+    units.push(affected_unit(
+        "evaluation:input-key",
+        AffectedUnitKind::Projection,
+        evaluation_key.digest(),
+        Vec::new(),
+    )?);
     for (path, bytes) in &prepared.observed_files {
         let digest = format!("sha256:{:x}", Sha256::digest(bytes));
         inputs.push(
@@ -3595,6 +3608,39 @@ fn build_affected_snapshot(
         .map_err(|error| AuditError::AffectedAnalysis(error.to_string().into()))
 }
 
+fn prepared_evaluation_key(
+    prepared: &PreparedAnalysis,
+    psm: &ProgramSemanticModel,
+) -> Result<EvaluationKey, AuditError> {
+    let project_digest = prepared.project_document.as_ref().map_or_else(
+        || {
+            format!(
+                "sha256:{:x}",
+                Sha256::digest(b"project-authority-absent-v1")
+            )
+        },
+        |document| format!("sha256:{:x}", Sha256::digest(&document.bytes)),
+    );
+    let finding_digest = prepared
+        .observed_files
+        .bytes(FINDING_GOVERNANCE_PATH)
+        .map(|bytes| format!("sha256:{:x}", Sha256::digest(bytes)));
+    let binding = AuthorityBinding::new(
+        prepared.standard.bundle.digest(),
+        prepared.standard.bundle.edition(),
+        Vec::<String>::new(),
+        project_digest,
+        serialized_digest(&prepared.ownerships)?,
+        None,
+        finding_digest,
+    );
+    Ok(EvaluationKey::new(
+        prepared.source_manifest.entries_digest(),
+        psm.program_context().digest(),
+        binding.digest(),
+    ))
+}
+
 fn affected_unit(
     id: impl Into<String>,
     kind: AffectedUnitKind,
@@ -3646,7 +3692,27 @@ fn projection_dependencies(
     prepared: &PreparedAnalysis,
     kind: ProjectionKind,
 ) -> Result<Vec<ProjectionDependency>, AuditError> {
-    projection_dependencies_from_files(&prepared.observed_files, &prepared.standard, kind)
+    let mut dependencies =
+        projection_dependencies_from_files(&prepared.observed_files, &prepared.standard, kind)?;
+    if kind == ProjectionKind::Psm {
+        dependencies.push(
+            ProjectionDependency::new(
+                "repository:source-ownership",
+                serialized_digest(&prepared.ownerships)?,
+            )
+            .map_err(|error| AuditError::AffectedAnalysis(error.to_string().into()))?,
+        );
+    }
+    if kind == ProjectionKind::Audit {
+        dependencies.push(
+            ProjectionDependency::new(
+                "repository:source-manifest",
+                prepared.source_manifest.entries_digest(),
+            )
+            .map_err(|error| AuditError::AffectedAnalysis(error.to_string().into()))?,
+        );
+    }
+    Ok(dependencies)
 }
 
 fn projection_dependencies_from_files(
@@ -3695,6 +3761,11 @@ fn projection_file_digest(
     path: &str,
     bytes: &[u8],
 ) -> Result<Option<String>, AuditError> {
+    if kind == ProjectionKind::Psm {
+        return crate::program_semantics::program_input_descriptor(path, bytes)
+            .map(|descriptor| serialized_digest(&descriptor))
+            .transpose();
+    }
     let authority = crate::affected_analysis::classify_authority_path(path);
     let relevant = match kind {
         ProjectionKind::Psm => matches!(
@@ -3832,7 +3903,11 @@ fn prepare_analysis(root: &Path) -> Result<PreparedAnalysis, AuditError> {
     let project = load_project_authority(root)?;
     let observation = observe_repository_stably(root, &project.observation_policy)
         .map_err(AuditError::Snapshot)?;
-    let observed_files = read_observed_files(root, &observation)?;
+    let source_manifest =
+        SourceManifest::from_observation(&observation, &project.observation_policy)
+            .map_err(|error| AuditError::InputMismatch(error.to_string().into()))?;
+    let observed_files = SourceView::from_bytes(read_observed_files(root, &observation)?)
+        .map_err(|error| AuditError::InputMismatch(error.to_string().into()))?;
     let standard = load_standard(
         root,
         &observed_files,
@@ -3896,6 +3971,7 @@ fn prepare_analysis(root: &Path) -> Result<PreparedAnalysis, AuditError> {
     let source_identity = certification_source_digest(&observed_files);
     Ok(PreparedAnalysis {
         observed_files,
+        source_manifest,
         source_identity,
         project_state: project.state,
         project_detail: project.detail,

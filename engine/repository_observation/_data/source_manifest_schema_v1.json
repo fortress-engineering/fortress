@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:source-manifest",
+  "title": "Fortress Source Manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "entries_digest", "entries", "exclusions"],
+  "properties": {
+    "version": { "const": 1 },
+    "entries_digest": { "$ref": "#/$defs/digest" },
+    "entries": { "type": "array", "items": { "$ref": "#/$defs/entry" } },
+    "exclusions": { "type": "array", "items": { "$ref": "#/$defs/exclusion" } }
+  },
+  "$defs": {
+    "digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository_relative_path", "entry_kind", "content_digest", "byte_count", "executable", "link_target", "handling", "limitation_ref"],
+      "properties": {
+        "repository_relative_path": { "type": "string", "minLength": 1 },
+        "entry_kind": { "enum": ["FILE", "DIRECTORY", "SYMLINK", "REPARSE_POINT", "NONREGULAR"] },
+        "content_digest": { "oneOf": [{ "$ref": "#/$defs/digest" }, { "type": "null" }] },
+        "byte_count": { "type": ["integer", "null"], "minimum": 0, "maximum": 9007199254740991 },
+        "executable": { "type": ["boolean", "null"] },
+        "link_target": { "type": ["string", "null"] },
+        "handling": { "enum": ["OBSERVED", "BARRIER"] },
+        "limitation_ref": { "type": ["string", "null"] }
+      }
+    },
+    "exclusion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["selector", "authority_ref", "reason"],
+      "properties": {
+        "selector": { "type": "string", "minLength": 1 },
+        "authority_ref": { "type": "string", "minLength": 1 },
+        "reason": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

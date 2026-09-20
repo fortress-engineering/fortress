@@ -12,6 +12,14 @@ use std::path::{Component, Path, PathBuf};
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 
+#[path = "source_manifest.rs"]
+mod source_manifest;
+#[path = "source_view.rs"]
+mod source_view;
+
+pub use source_manifest::{SourceEntry, SourceExclusion, SourceManifest, observe_source_manifest};
+pub use source_view::{CandidateChangeSet, ChangeOperation, SourceView, SourceViewError};
+
 /// Current supported repository observation schema family.
 pub const OBSERVATION_SCHEMA_VERSION: u16 = 1;
 
@@ -57,12 +65,14 @@ impl ObservationPolicy {
     }
 
     fn excludes(&self, path: &str) -> bool {
-        self.excluded_prefixes.iter().any(|prefix| {
-            path == prefix
-                || path
-                    .strip_prefix(prefix)
-                    .is_some_and(|suffix| suffix.starts_with('/'))
-        })
+        path == ".git"
+            || path.starts_with(".git/")
+            || self.excluded_prefixes.iter().any(|prefix| {
+                path == prefix
+                    || path
+                        .strip_prefix(prefix)
+                        .is_some_and(|suffix| suffix.starts_with('/'))
+            })
     }
 }
 
@@ -364,11 +374,50 @@ fn relative_path(root: &Path, path: &Path) -> Result<String, ObservationError> {
     Ok(segments.join("/"))
 }
 
-fn is_canonical_relative_path(value: &str) -> bool {
+/// Returns whether a path follows the portable repository-relative grammar.
+#[must_use]
+pub fn is_canonical_relative_path(value: &str) -> bool {
     !value.is_empty()
         && !value.contains('\\')
         && !value.starts_with('/')
-        && value
-            .split('/')
-            .all(|segment| !segment.is_empty() && segment != "." && segment != "..")
+        && !value
+            .chars()
+            .any(|character| character.is_control() || "<>:\"|?*".contains(character))
+        && value.split('/').all(|segment| {
+            !segment.is_empty()
+                && segment != "."
+                && segment != ".."
+                && !segment.ends_with(' ')
+                && !segment.ends_with('.')
+                && !matches!(
+                    segment
+                        .split('.')
+                        .next()
+                        .unwrap_or_default()
+                        .to_ascii_uppercase()
+                        .as_str(),
+                    "CON"
+                        | "PRN"
+                        | "AUX"
+                        | "NUL"
+                        | "COM1"
+                        | "COM2"
+                        | "COM3"
+                        | "COM4"
+                        | "COM5"
+                        | "COM6"
+                        | "COM7"
+                        | "COM8"
+                        | "COM9"
+                        | "LPT1"
+                        | "LPT2"
+                        | "LPT3"
+                        | "LPT4"
+                        | "LPT5"
+                        | "LPT6"
+                        | "LPT7"
+                        | "LPT8"
+                        | "LPT9"
+                )
+        })
 }

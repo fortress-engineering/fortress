@@ -29,3 +29,7 @@ Indexes every canonical Module exactly once from direct contract-marked ancestry
 ### [`project.rs`](../_code/project.rs)
 
 Loads the root project configuration and validates canonical observation exclusions plus relocation-transparent logical Module contract and source bindings.
+
+### [`evaluation_key.rs`](../_code/evaluation_key.rs)
+
+Binds exact Standard, project, ownership, selected profile and governance identities, then combines that authority digest with source-manifest and program-context digests for one evaluation. The key contains no machine path or clock value.

@@ -13,6 +13,11 @@ use serde::{Deserialize, Serialize};
 
 use crate::identity::StableId;
 
+#[path = "evaluation_key.rs"]
+mod evaluation_key;
+
+pub use evaluation_key::{AuthorityBinding, EvaluationKey};
+
 /// Current supported operational project configuration schema.
 pub const PROJECT_CONFIGURATION_SCHEMA_VERSION: u16 = 3;
 

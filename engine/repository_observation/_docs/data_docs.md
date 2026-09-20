@@ -25,3 +25,7 @@ Maintainers update Data through reviewed semantic changes; schema versions chang
 ### [`observation_schema_v1.json`](../_data/observation_schema_v1.json)
 
 Defines the version-one machine representation and validation boundary for observation records owned by this Module.
+
+### [`source_manifest_schema_v1.json`](../_data/source_manifest_schema_v1.json)
+
+Defines the portable source-entry inventory, explicit exclusions, byte identities, and observation limitations.

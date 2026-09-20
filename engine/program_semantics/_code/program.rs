@@ -3,6 +3,8 @@
 //! The PSM records implementation facts only. It does not modify the CCG,
 //! infer Intended BFG checkpoints, or claim function correctness.
 
+#[path = "analysis_context.rs"]
+mod analysis_context;
 #[path = "graph.rs"]
 mod graph;
 #[path = "rust.rs"]
@@ -10,6 +12,9 @@ mod rust;
 #[path = "semantic_identity.rs"]
 mod semantic_identity;
 
+pub use analysis_context::{
+    ContextKnowledge, GeneratedInput, ProgramContext, ProgramContextError, ProgramPackageContext,
+};
 pub use semantic_identity::{
     RUST_OPERATION_SITE_IDENTITY_ALGORITHM, RUST_OPERATION_SITE_IDENTITY_VERSION,
     RUST_SYMBOL_IDENTITY_ALGORITHM, RUST_SYMBOL_IDENTITY_VERSION, rust_operation_site_id,
@@ -26,16 +31,16 @@ use crate::implementation_observation::{
     ImplementationObservationError, ImplementationObservationInput,
 };
 
-/// Registered PSM v5 schema identity.
-pub const PROGRAM_SEMANTIC_MODEL_SCHEMA: &str = "urn:fortress:schema:v5:program-semantic-model";
+/// Registered PSM v6 schema identity.
+pub const PROGRAM_SEMANTIC_MODEL_SCHEMA: &str = "urn:fortress:schema:v6:program-semantic-model";
 /// Canonical PSM document schema version.
-pub const PROGRAM_SEMANTIC_MODEL_SCHEMA_VERSION: u16 = 5;
+pub const PROGRAM_SEMANTIC_MODEL_SCHEMA_VERSION: u16 = 6;
 /// Semantic version of the language-neutral PSM compiler.
-pub const PROGRAM_SEMANTIC_MODEL_VERSION: &str = "5.0.0";
+pub const PROGRAM_SEMANTIC_MODEL_VERSION: &str = "6.0.0";
 /// Stable Rust analyzer identity.
 pub const RUST_PROGRAM_ANALYZER_ID: &str = "fortress-rust-program-semantics";
 /// Semantic version of supported Rust program analysis.
-pub const RUST_PROGRAM_ANALYZER_VERSION: &str = "5.0.0";
+pub const RUST_PROGRAM_ANALYZER_VERSION: &str = "6.0.0";
 
 const UNSUPPORTED_SEMANTICS: &[&str] = &[
     "arbitrary_dynamic_dispatch_resolution",
@@ -66,6 +71,16 @@ pub struct ProgramSemanticInput {
     observation: ImplementationObservationInput,
     testing_modules: BTreeSet<String>,
     observed_module_dependencies: BTreeSet<(String, String)>,
+    selected_context: Option<SelectedProgramContext>,
+    generated_inputs: ContextKnowledge<Vec<GeneratedInput>>,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct SelectedProgramContext {
+    pub(crate) target_identity: String,
+    pub(crate) features: Vec<String>,
+    pub(crate) cfg: Vec<String>,
+    pub(crate) target_platform: String,
 }
 
 impl ProgramSemanticInput {
@@ -82,6 +97,8 @@ impl ProgramSemanticInput {
             observation,
             testing_modules: testing_modules.into_iter().collect(),
             observed_module_dependencies: observed_module_dependencies.into_iter().collect(),
+            selected_context: None,
+            generated_inputs: ContextKnowledge::Unknown,
         }
     }
 
@@ -97,7 +114,45 @@ impl ProgramSemanticInput {
             observation,
             testing_modules: testing_modules.into_iter().collect(),
             observed_module_dependencies: observed_module_dependencies.into_iter().collect(),
+            selected_context: None,
+            generated_inputs: ContextKnowledge::Unknown,
         }
+    }
+
+    /// Supplies an explicit target/feature/cfg selection from a trusted caller.
+    #[must_use]
+    pub fn with_selected_context(
+        mut self,
+        target_identity: impl Into<String>,
+        features: impl IntoIterator<Item = impl Into<String>>,
+        cfg: impl IntoIterator<Item = impl Into<String>>,
+        target_platform: impl Into<String>,
+    ) -> Self {
+        self.selected_context = Some(SelectedProgramContext {
+            target_identity: target_identity.into(),
+            features: features.into_iter().map(Into::into).collect(),
+            cfg: cfg.into_iter().map(Into::into).collect(),
+            target_platform: target_platform.into(),
+        });
+        self
+    }
+
+    /// Supplies exact generated inputs established by a trusted external observation.
+    #[must_use]
+    pub fn with_generated_inputs(
+        mut self,
+        inputs: impl IntoIterator<Item = GeneratedInput>,
+    ) -> Self {
+        self.generated_inputs = ContextKnowledge::Known(inputs.into_iter().collect());
+        self
+    }
+
+    pub(crate) const fn generated_inputs(&self) -> &ContextKnowledge<Vec<GeneratedInput>> {
+        &self.generated_inputs
+    }
+
+    pub(crate) const fn selected_context(&self) -> Option<&SelectedProgramContext> {
+        self.selected_context.as_ref()
     }
 
     pub(crate) fn project_id(&self) -> Option<&str> {
@@ -1539,6 +1594,111 @@ pub enum CallResolutionState {
     Invalid,
 }
 
+/// Accounted outcome for one syntactic operation occurrence.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum OperationOutcome {
+    /// Supported exact local semantics were established.
+    Resolved,
+    /// The operation is owned outside the analyzed program.
+    External,
+    /// Runtime dispatch prevents one exact target.
+    Dynamic,
+    /// Supported syntax could not be resolved from available context.
+    Unresolved,
+    /// The frontend does not model this operation's full semantics.
+    Unsupported,
+}
+
+/// One source-local operation, retained independently of grouped semantic calls.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct SyntacticOperation {
+    occurrence_key: String,
+    category: String,
+    enclosing_symbol: String,
+    reference: String,
+    outcome: OperationOutcome,
+    reason: Option<String>,
+    semantic_operation_site_id: Option<String>,
+    coverage_barrier: bool,
+    provenance: ProgramProvenance,
+}
+
+impl SyntacticOperation {
+    pub(crate) fn new(
+        category: &str,
+        enclosing_symbol: &str,
+        reference: &str,
+        outcome: OperationOutcome,
+        reason: Option<String>,
+        coverage_barrier: bool,
+        provenance: ProgramProvenance,
+    ) -> Self {
+        let occurrence_key = canonical_fact_id(
+            "occurrence",
+            &(
+                provenance.path(),
+                provenance.location(),
+                category,
+                enclosing_symbol,
+                reference,
+            ),
+        );
+        Self {
+            occurrence_key,
+            category: category.into(),
+            enclosing_symbol: enclosing_symbol.into(),
+            reference: reference.into(),
+            outcome,
+            reason,
+            semantic_operation_site_id: None,
+            coverage_barrier,
+            provenance,
+        }
+    }
+
+    pub(crate) fn with_site(mut self, id: String) -> Self {
+        self.semantic_operation_site_id = Some(id);
+        self
+    }
+
+    /// Returns the syntax-local occurrence identity.
+    #[must_use]
+    pub fn occurrence_key(&self) -> &str {
+        &self.occurrence_key
+    }
+
+    /// Returns the exact source spelling of the operation.
+    #[must_use]
+    pub fn reference(&self) -> &str {
+        &self.reference
+    }
+
+    /// Returns the frontend's syntactic category.
+    #[must_use]
+    pub fn category(&self) -> &str {
+        &self.category
+    }
+
+    /// Returns the linked semantic operation identity, when one was produced.
+    #[must_use]
+    pub fn semantic_operation_site_id(&self) -> Option<&str> {
+        self.semantic_operation_site_id.as_deref()
+    }
+
+    /// Returns the single assigned outcome.
+    #[must_use]
+    pub const fn outcome(&self) -> OperationOutcome {
+        self.outcome
+    }
+
+    /// Returns whether hidden source semantics block complete coverage.
+    #[must_use]
+    pub const fn coverage_barrier(&self) -> bool {
+        self.coverage_barrier
+    }
+}
+
 /// Stable semantic explanation for a non-static call classification.
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
@@ -1932,6 +2092,10 @@ impl AnalyzerCoherency {
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
 pub struct ProgramCoverage {
     source_files: usize,
+    observed_source_files: usize,
+    opened_source_files: usize,
+    parsed_source_files: usize,
+    symbol_bearing_source_files: usize,
     packages: usize,
     executable_symbols: usize,
     nominal_types: usize,
@@ -1983,6 +2147,29 @@ pub struct ResolutionSummary {
 }
 
 impl ProgramCoverage {
+    /// Returns all observed Rust source files, including unparsed ones.
+    #[must_use]
+    pub const fn observed_source_files(self) -> usize {
+        self.observed_source_files
+    }
+
+    /// Returns Rust source files whose snapshot-bound bytes were opened and verified.
+    #[must_use]
+    pub const fn opened_source_files(self) -> usize {
+        self.opened_source_files
+    }
+
+    /// Returns Rust source files successfully parsed in at least one Cargo target.
+    #[must_use]
+    pub const fn parsed_source_files(self) -> usize {
+        self.parsed_source_files
+    }
+
+    /// Returns parsed files containing at least one executable symbol.
+    #[must_use]
+    pub const fn symbol_bearing_source_files(self) -> usize {
+        self.symbol_bearing_source_files
+    }
     /// Returns the number of executable symbols.
     #[must_use]
     pub const fn executable_symbols(self) -> usize {
@@ -2020,11 +2207,93 @@ impl ProgramCoverage {
     }
 }
 
+/// Distinct observation and semantic coverage for one source file.
+#[allow(clippy::struct_excessive_bools)]
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct FileCoverageRecord {
+    path: String,
+    observed: bool,
+    opened: bool,
+    parsed: bool,
+    symbol_bearing: bool,
+    limitation: Option<String>,
+}
+
+impl FileCoverageRecord {
+    pub(crate) fn new(path: String, parsed: bool, symbol_bearing: bool) -> Self {
+        Self {
+            path,
+            observed: true,
+            opened: true,
+            parsed,
+            symbol_bearing,
+            limitation: (!parsed).then(|| "not_in_resolved_cargo_target".into()),
+        }
+    }
+
+    /// Returns the canonical source path.
+    #[must_use]
+    pub fn path(&self) -> &str {
+        &self.path
+    }
+
+    /// Returns whether this file was parsed in a target.
+    #[must_use]
+    pub const fn parsed(&self) -> bool {
+        self.parsed
+    }
+}
+
 /// One exact semantic source input participating in PSM identity.
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct ProgramSourceInput {
     path: String,
+    role: ProgramInputRole,
     sha256: String,
+}
+
+impl ProgramSourceInput {
+    /// Returns the exact repository path.
+    #[must_use]
+    pub fn path(&self) -> &str {
+        &self.path
+    }
+
+    /// Returns the semantic input role.
+    #[must_use]
+    pub const fn role(&self) -> ProgramInputRole {
+        self.role
+    }
+
+    /// Returns the role-specific content identity.
+    #[must_use]
+    pub fn sha256(&self) -> &str {
+        &self.sha256
+    }
+}
+
+/// Classifies one source input through registered authority schema identity and Cargo conventions.
+#[must_use]
+pub fn program_input_descriptor(path: &str, bytes: &[u8]) -> Option<ProgramSourceInput> {
+    rust::semantic_input_descriptor(path, bytes)
+}
+
+/// Typed reason one input can change Program Semantics.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum ProgramInputRole {
+    /// Rust source bytes.
+    RustSource,
+    /// Cargo package or workspace declaration.
+    CargoManifest,
+    /// Exact Cargo dependency resolution.
+    CargoLock,
+    /// Project identity and source ownership selection.
+    ProjectIdentity,
+    /// Module stable identity without policy body.
+    ModuleIdentity,
+    /// A candidate authority path whose schema role cannot be established.
+    Unknown,
 }
 
 /// Canonical PSM provenance envelope.
@@ -2036,7 +2305,7 @@ pub struct ProgramModelProvenance {
     testing_authority: String,
 }
 
-/// Canonical Program Semantic Model v5 document.
+/// Canonical Program Semantic Model v6 document.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct ProgramSemanticModel {
     #[serde(rename = "$schema")]
@@ -2045,6 +2314,7 @@ pub struct ProgramSemanticModel {
     semantic_version: String,
     project_id: Option<String>,
     source_identity: String,
+    program_context: ProgramContext,
     analyzers: Vec<AnalyzerDescriptor>,
     languages: Vec<String>,
     packages: Vec<ProgramPackage>,
@@ -2053,6 +2323,8 @@ pub struct ProgramSemanticModel {
     symbols: Vec<ExecutableSymbol>,
     types: Vec<ProgramType>,
     calls: Vec<ProgramCall>,
+    operation_inventory: Vec<SyntacticOperation>,
+    file_coverage: Vec<FileCoverageRecord>,
     bodies: Vec<ProgramBody>,
     value_transfers: Vec<ValueTransfer>,
     transformations: Vec<TypeTransformation>,
@@ -2078,6 +2350,12 @@ impl ProgramSemanticModel {
     #[must_use]
     pub fn source_identity(&self) -> &str {
         &self.source_identity
+    }
+
+    /// Returns the exact frontend, package and configuration context.
+    #[must_use]
+    pub const fn program_context(&self) -> &ProgramContext {
+        &self.program_context
     }
 
     /// Returns all executable symbols in canonical order.
@@ -2108,6 +2386,18 @@ impl ProgramSemanticModel {
     #[must_use]
     pub fn calls(&self) -> &[ProgramCall] {
         &self.calls
+    }
+
+    /// Returns every enumerated syntactic operation with one outcome.
+    #[must_use]
+    pub fn operation_inventory(&self) -> &[SyntacticOperation] {
+        &self.operation_inventory
+    }
+
+    /// Returns per-file observation and parse coverage.
+    #[must_use]
+    pub fn file_coverage(&self) -> &[FileCoverageRecord] {
+        &self.file_coverage
     }
 
     /// Returns observed executable body structure.
@@ -2196,6 +2486,7 @@ impl ProgramSemanticModel {
 
 pub(crate) struct RustProgramFacts {
     source_identity: String,
+    program_context: ProgramContext,
     source_inputs: Vec<ProgramSourceInput>,
     source_files: usize,
     packages: Vec<ProgramPackage>,
@@ -2204,6 +2495,8 @@ pub(crate) struct RustProgramFacts {
     symbols: Vec<ExecutableSymbol>,
     types: Vec<ProgramType>,
     calls: Vec<ProgramCall>,
+    operation_inventory: Vec<SyntacticOperation>,
+    file_coverage: Vec<FileCoverageRecord>,
     bodies: Vec<ProgramBody>,
     value_transfers: Vec<ValueTransfer>,
     transformations: Vec<TypeTransformation>,
@@ -2230,6 +2523,8 @@ pub fn compile_program_semantic_model(
     facts.symbols.sort();
     facts.types.sort();
     facts.calls.sort();
+    facts.operation_inventory.sort();
+    facts.file_coverage.sort();
     facts.bodies.sort();
     facts.value_transfers.sort();
     facts.transformations.sort();
@@ -2284,6 +2579,7 @@ pub fn compile_program_semantic_model(
     };
     let coverage = coverage(
         facts.source_files,
+        &facts.file_coverage,
         &facts.packages,
         &facts.nominal_types,
         &facts.impls,
@@ -2303,6 +2599,7 @@ pub fn compile_program_semantic_model(
         semantic_version: PROGRAM_SEMANTIC_MODEL_VERSION.into(),
         project_id: input.project_id().map(str::to_owned),
         source_identity: facts.source_identity,
+        program_context: facts.program_context,
         analyzers: vec![AnalyzerDescriptor::rust()],
         languages: vec!["rust".into()],
         packages: facts.packages,
@@ -2311,6 +2608,8 @@ pub fn compile_program_semantic_model(
         symbols: facts.symbols,
         types: facts.types,
         calls: facts.calls,
+        operation_inventory: facts.operation_inventory,
+        file_coverage: facts.file_coverage,
         bodies: facts.bodies,
         value_transfers: facts.value_transfers,
         transformations: facts.transformations,
@@ -2353,6 +2652,7 @@ pub fn compile_program_semantic_model(
 #[allow(clippy::too_many_arguments)]
 fn coverage(
     source_files: usize,
+    file_coverage: &[FileCoverageRecord],
     packages: &[ProgramPackage],
     nominal_types: &[NominalType],
     impls: &[ProgramImpl],
@@ -2368,6 +2668,13 @@ fn coverage(
     let count_calls = |state| calls.iter().filter(|call| call.state == state).count();
     ProgramCoverage {
         source_files,
+        observed_source_files: file_coverage.iter().filter(|item| item.observed).count(),
+        opened_source_files: file_coverage.iter().filter(|item| item.opened).count(),
+        parsed_source_files: file_coverage.iter().filter(|item| item.parsed).count(),
+        symbol_bearing_source_files: file_coverage
+            .iter()
+            .filter(|item| item.symbol_bearing)
+            .count(),
         packages: packages.len(),
         executable_symbols: symbols.len(),
         nominal_types: nominal_types.len(),
@@ -2525,6 +2832,8 @@ pub enum ProgramSemanticError {
     MissingSourceOwner(String),
     /// A Cargo target referenced a source artifact absent from the snapshot.
     MissingTargetSource(String),
+    /// A requested target does not occur in the observed Cargo package graph.
+    UnknownTargetContext(String),
     /// PSM cross-Module calls lacked the broader observation edge they imply.
     AnalyzerDisagreement(Vec<String>),
 }
@@ -2552,6 +2861,12 @@ impl Display for ProgramSemanticError {
                     "Cargo target source `{path}` is absent from the snapshot"
                 )
             }
+            Self::UnknownTargetContext(target) => {
+                write!(
+                    formatter,
+                    "selected Cargo target `{target}` is not observed"
+                )
+            }
             Self::AnalyzerDisagreement(edges) => write!(
                 formatter,
                 "PSM cross-Module call projection disagrees with Implementation Observation: {}",
@@ -2570,6 +2885,7 @@ impl Error for ProgramSemanticError {
             Self::NonUtf8Rust(_)
             | Self::MissingSourceOwner(_)
             | Self::MissingTargetSource(_)
+            | Self::UnknownTargetContext(_)
             | Self::AnalyzerDisagreement(_) => None,
         }
     }

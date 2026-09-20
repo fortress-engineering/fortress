@@ -22,6 +22,11 @@
       "version": "^0.1.0"
     },
     {
+      "provider": "AF-REPOSITORY-OBSERVATION-0001",
+      "capability": "CAP-REPOSITORY-OBSERVATION",
+      "version": "^0.1.0"
+    },
+    {
       "provider": "AF-STANDARD-REGISTRY-0001",
       "capability": "CAP-STANDARD-REGISTRY",
       "version": "^0.1.0"
@@ -101,6 +106,24 @@
           "tests": [
             "T-AF-PROGRAM-SEMANTICS-0001-R07-001",
             "T-AF-PROGRAM-SEMANTICS-0001-R07-002"
+          ]
+        },
+        {
+          "id": "AF-PROGRAM-SEMANTICS-0001-R08",
+          "statement": "Program Semantics records explicit package, target, feature and cfg knowledge in a machine-independent context, accounts for every enumerated call and unsupported implicit or macro operation, and distinguishes observed, opened, parsed and symbol-bearing source coverage without treating policy-only edits as program changes.",
+          "tests": [
+            "T-AF-PROGRAM-SEMANTICS-0001-R08-001",
+            "T-AF-PROGRAM-SEMANTICS-0001-R08-002",
+            "T-AF-PROGRAM-SEMANTICS-0001-R08-003",
+            "T-AF-PROGRAM-SEMANTICS-0001-R08-004",
+            "T-AF-PROGRAM-SEMANTICS-0001-R08-005",
+            "T-AF-PROGRAM-SEMANTICS-0001-R08-006",
+            "T-AF-PROGRAM-SEMANTICS-0001-R08-007",
+            "T-AF-PROGRAM-SEMANTICS-0001-R08-008",
+            "T-AF-PROGRAM-SEMANTICS-0001-R08-009",
+            "T-AF-PROGRAM-SEMANTICS-0001-R08-010",
+            "T-AF-PROGRAM-SEMANTICS-0001-R08-011",
+            "T-AF-PROGRAM-SEMANTICS-0001-R08-012"
           ]
         }
       ]

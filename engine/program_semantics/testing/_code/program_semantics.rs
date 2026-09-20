@@ -1,4 +1,4 @@
-//! Parent-local Program Semantic Model v5 conformance.
+//! Parent-local Program Semantic Model v6 conformance.
 
 use std::path::{Path, PathBuf};
 
@@ -7,10 +7,341 @@ use fortress_core::implementation_observation::{
     ImplementationObservationInput, ModuleTerritory, SnapshotBoundFile,
 };
 use fortress_core::program_semantics::{
-    CallResolutionReason, CallResolutionState, ExecutableSymbol, ExecutableSymbolKind,
-    ExecutionProvenance, NominalType, NominalTypeKind, ProgramCall, ProgramSemanticError,
-    ProgramSemanticInput, SymbolClassification, compile_program_semantic_model,
+    CallResolutionReason, CallResolutionState, ContextKnowledge, ExecutableSymbol,
+    ExecutableSymbolKind, ExecutionProvenance, GeneratedInput, NominalType, NominalTypeKind,
+    ProgramCall, ProgramContext, ProgramPackageContext, ProgramSemanticError, ProgramSemanticInput,
+    SymbolClassification, compile_program_semantic_model,
 };
+
+/// `T-AF-PROGRAM-SEMANTICS-0001-R08-001`
+/// Fortress requirement: AF-PROGRAM-SEMANTICS-0001-R08
+#[test]
+fn unknown_context_is_not_empty_context() {
+    let unknown = ProgramContext::new(
+        "fortress-rust-program-semantics",
+        "6.0.0",
+        [ProgramPackageContext::new(
+            "sample",
+            "sample/lib",
+            ContextKnowledge::Unknown,
+            ContextKnowledge::Unknown,
+            "sha256:dependencies",
+        )],
+        ContextKnowledge::Unknown,
+        ContextKnowledge::Unknown,
+        "repository",
+        [],
+    );
+    let empty = ProgramContext::new(
+        "fortress-rust-program-semantics",
+        "6.0.0",
+        [ProgramPackageContext::new(
+            "sample",
+            "sample/lib",
+            ContextKnowledge::Known(vec![]),
+            ContextKnowledge::Known(vec![]),
+            "sha256:dependencies",
+        )],
+        ContextKnowledge::Unknown,
+        ContextKnowledge::Unknown,
+        "repository",
+        [],
+    );
+    assert_ne!(unknown.digest(), empty.digest());
+    assert_ne!(unknown.to_canonical_json(), empty.to_canonical_json());
+}
+
+/// `T-AF-PROGRAM-SEMANTICS-0001-R08-002`
+/// Fortress requirement: AF-PROGRAM-SEMANTICS-0001-R08
+#[test]
+fn feature_target_keys_do_not_alias() {
+    let base = one_package("pub fn start() {}");
+    let default_model = compile_program_semantic_model(&base).expect("default context compiles");
+    let changed = base.with_selected_context(
+        "sample/library:sample",
+        ["extra"],
+        ["feature=extra"],
+        "x86_64-pc-windows-msvc",
+    );
+    let selected_model =
+        compile_program_semantic_model(&changed).expect("selected context compiles");
+    assert_ne!(
+        default_model.program_context().digest(),
+        selected_model.program_context().digest()
+    );
+    assert_ne!(
+        default_model.source_identity(),
+        selected_model.source_identity()
+    );
+}
+
+/// `T-AF-PROGRAM-SEMANTICS-0001-R08-003`
+/// Fortress requirement: AF-PROGRAM-SEMANTICS-0001-R08
+#[test]
+fn every_enumerated_call_has_outcome() {
+    let model = compile_program_semantic_model(&one_package(
+        "pub struct Runner; impl Runner { pub fn first(&self) -> &Self { self } pub fn spawn(&self) {} } pub fn run(r: &Runner) { r.first().spawn(); }",
+    )).expect("chained call fixture compiles");
+    let ledger = model.operation_inventory();
+    assert_eq!(
+        ledger
+            .iter()
+            .filter(|entry| entry.reference().contains("spawn"))
+            .count(),
+        1
+    );
+    let accounted_calls = ledger
+        .iter()
+        .filter(|entry| {
+            matches!(
+                entry.category(),
+                "explicit_call" | "method_call" | "macro_invocation"
+            )
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(
+        accounted_calls.len(),
+        model
+            .calls()
+            .iter()
+            .map(|call| call.evidence().len())
+            .sum::<usize>()
+    );
+    assert!(
+        accounted_calls
+            .iter()
+            .all(|entry| entry.semantic_operation_site_id().is_some())
+    );
+    assert_eq!(
+        ledger
+            .iter()
+            .map(fortress_core::program_semantics::SyntacticOperation::occurrence_key)
+            .collect::<std::collections::BTreeSet<_>>()
+            .len(),
+        ledger.len()
+    );
+}
+
+/// `T-AF-PROGRAM-SEMANTICS-0001-R08-004`
+/// Fortress requirement: AF-PROGRAM-SEMANTICS-0001-R08
+#[test]
+fn macro_hidden_source_is_coverage_barrier() {
+    let model = compile_program_semantic_model(&one_package(
+        "macro_rules! hidden { () => { danger(); } } pub fn run() { hidden!(); }",
+    ))
+    .expect("macro fixture compiles");
+    assert!(
+        model
+            .operation_inventory()
+            .iter()
+            .any(|entry| entry.category() == "macro_invocation" && entry.coverage_barrier())
+    );
+    assert!(
+        !model
+            .operation_inventory()
+            .iter()
+            .any(|entry| entry.reference() == "danger")
+    );
+}
+
+/// `T-AF-PROGRAM-SEMANTICS-0001-R08-005`
+/// Fortress requirement: AF-PROGRAM-SEMANTICS-0001-R08
+#[test]
+fn policy_only_edit_preserves_program_key() {
+    let manifest = "[package]\nname='sample'\nversion='0.1.0'\nedition='2024'\n[lib]\npath='../_code/lib.rs'\n";
+    let make = |policy: &str| {
+        input(
+            &[
+                ("sample/_data/Cargo.toml", manifest),
+                ("sample/_code/lib.rs", "pub fn run() {}"),
+                ("sample/contract.json", policy),
+            ],
+            &[("PF-PSM-FIXTURE", ""), ("AF-SAMPLE-0001", "sample")],
+            &[],
+            &[],
+        )
+    };
+    let first = compile_program_semantic_model(&make(
+        r#"{"$schema":"urn:fortress:schema:v2:module-contract","schema_version":2,"id":"AF-SAMPLE-0001","policy":"ALLOW"}"#,
+    ))
+    .unwrap();
+    let second = compile_program_semantic_model(&make(
+        r#"{"$schema":"urn:fortress:schema:v2:module-contract","schema_version":2,"id":"AF-SAMPLE-0001","policy":"DENY"}"#,
+    ))
+    .unwrap();
+    assert_eq!(first.source_identity(), second.source_identity());
+    assert_eq!(
+        first.program_context().digest(),
+        second.program_context().digest()
+    );
+}
+
+/// `T-AF-PROGRAM-SEMANTICS-0001-R08-006`
+/// Fortress requirement: AF-PROGRAM-SEMANTICS-0001-R08
+#[test]
+fn relocated_checkout_has_identical_context_bytes() {
+    let fixture = one_package("pub fn run() {}");
+    let first = compile_program_semantic_model(&fixture).unwrap();
+    let second = compile_program_semantic_model(&fixture).unwrap();
+    assert_eq!(
+        first.program_context().to_canonical_json(),
+        second.program_context().to_canonical_json()
+    );
+    assert!(
+        !first
+            .program_context()
+            .to_canonical_json()
+            .contains(&repository_root().display().to_string())
+    );
+}
+
+/// `T-AF-PROGRAM-SEMANTICS-0001-R08-007`
+/// Fortress requirement: AF-PROGRAM-SEMANTICS-0001-R08
+#[test]
+fn file_denominators_distinguish_unparsed_and_symbol_free_source() {
+    let fixture = input(
+        &[
+            (
+                "sample/_data/Cargo.toml",
+                "[package]\nname='sample'\nversion='0.1.0'\nedition='2024'\n[lib]\npath='../_code/lib.rs'\n",
+            ),
+            ("sample/_code/lib.rs", "pub struct Empty;"),
+            ("sample/_code/orphan.rs", "pub fn not_in_target() {}"),
+        ],
+        &[("PF-PSM-FIXTURE", ""), ("AF-SAMPLE-0001", "sample")],
+        &[],
+        &[],
+    );
+    let model = compile_program_semantic_model(&fixture).unwrap();
+    assert_eq!(model.coverage().observed_source_files(), 2);
+    assert_eq!(model.coverage().opened_source_files(), 2);
+    assert_eq!(model.coverage().parsed_source_files(), 1);
+    assert_eq!(model.coverage().symbol_bearing_source_files(), 0);
+    assert!(
+        model
+            .file_coverage()
+            .iter()
+            .any(|entry| entry.path() == "sample/_code/orphan.rs" && !entry.parsed())
+    );
+}
+
+/// `T-AF-PROGRAM-SEMANTICS-0001-R08-008`
+/// Fortress requirement: AF-PROGRAM-SEMANTICS-0001-R08
+#[test]
+fn psm_writer_matches_registered_context_schema() {
+    let model = compile_program_semantic_model(&one_package("pub fn run() { if true { run(); } }"))
+        .unwrap();
+    let instance: serde_json::Value =
+        serde_json::from_str(&model.to_canonical_json().unwrap()).unwrap();
+    let schema_path =
+        repository_root().join("engine/program_semantics/_data/program_model_schema_v6.json");
+    let schema: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(schema_path).unwrap()).unwrap();
+    jsonschema::draft202012::validate(&schema, &instance).expect("PSM v6 validates");
+}
+
+/// `T-AF-PROGRAM-SEMANTICS-0001-R08-009`
+/// Fortress requirement: AF-PROGRAM-SEMANTICS-0001-R08
+#[test]
+fn dependency_resolution_and_generated_inputs_change_program_key() {
+    let make = |lock: &str| {
+        input(
+            &[
+                (
+                    "sample/_data/Cargo.toml",
+                    "[package]\nname='sample'\nversion='0.1.0'\nedition='2024'\n[lib]\npath='../_code/lib.rs'\n",
+                ),
+                ("sample/_data/Cargo.lock", lock),
+                ("sample/_code/lib.rs", "pub fn run() {}"),
+            ],
+            &[("PF-PSM-FIXTURE", ""), ("AF-SAMPLE-0001", "sample")],
+            &[],
+            &[],
+        )
+    };
+    let first = compile_program_semantic_model(&make("dependency-v1")).unwrap();
+    let second = compile_program_semantic_model(&make("dependency-v2")).unwrap();
+    assert_ne!(
+        first.program_context().digest(),
+        second.program_context().digest()
+    );
+    assert_ne!(first.source_identity(), second.source_identity());
+    let generated =
+        GeneratedInput::new("out/generated.rs", format!("sha256:{}", "a".repeat(64))).unwrap();
+    let with_generated =
+        compile_program_semantic_model(&make("dependency-v1").with_generated_inputs([generated]))
+            .unwrap();
+    assert_ne!(
+        first.program_context().digest(),
+        with_generated.program_context().digest()
+    );
+    assert_ne!(first.source_identity(), with_generated.source_identity());
+}
+
+/// `T-AF-PROGRAM-SEMANTICS-0001-R08-010`
+/// Fortress requirement: AF-PROGRAM-SEMANTICS-0001-R08
+#[test]
+fn unknown_selected_target_is_rejected() {
+    let selected = one_package("pub fn run() {}").with_selected_context(
+        "sample/binary:missing",
+        std::iter::empty::<&str>(),
+        std::iter::empty::<&str>(),
+        "x86_64-pc-windows-msvc",
+    );
+    assert!(matches!(
+        compile_program_semantic_model(&selected),
+        Err(ProgramSemanticError::UnknownTargetContext(_))
+    ));
+}
+
+/// `T-AF-PROGRAM-SEMANTICS-0001-R08-011`
+/// Fortress requirement: AF-PROGRAM-SEMANTICS-0001-R08
+#[test]
+fn ownership_descriptor_changes_program_key() {
+    let files = [
+        (
+            "sample/_data/Cargo.toml",
+            "[package]\nname='sample'\nversion='0.1.0'\nedition='2024'\n[lib]\npath='../_code/lib.rs'\n",
+        ),
+        ("sample/_code/lib.rs", "pub fn run() {}"),
+    ];
+    let governed = compile_program_semantic_model(&input(
+        &files,
+        &[("PF-PSM-FIXTURE", ""), ("AF-SAMPLE-0001", "sample")],
+        &[],
+        &[],
+    ))
+    .unwrap();
+    let rebound = compile_program_semantic_model(&input(
+        &files,
+        &[("PF-PSM-FIXTURE", ""), ("AF-OTHER-0001", "sample")],
+        &[],
+        &[],
+    ))
+    .unwrap();
+    assert_ne!(governed.source_identity(), rebound.source_identity());
+}
+
+/// `T-AF-PROGRAM-SEMANTICS-0001-R08-012`
+/// Fortress requirement: AF-PROGRAM-SEMANTICS-0001-R08
+#[test]
+fn registered_authority_roles_are_typed_and_unknown_remains_explicit() {
+    use fortress_core::program_semantics::{ProgramInputRole, program_input_descriptor};
+    let known = program_input_descriptor("sample/contract.json",
+        br#"{"$schema":"urn:fortress:schema:v2:module-contract","schema_version":2,"id":"AF-SAMPLE-0001","policy":"ALLOW"}"#).unwrap();
+    assert_eq!(known.role(), ProgramInputRole::ModuleIdentity);
+    let unknown = program_input_descriptor(
+        "sample/contract.json",
+        br#"{"$schema":"unexpected","id":"AF-SAMPLE-0001"}"#,
+    )
+    .unwrap();
+    assert_eq!(unknown.role(), ProgramInputRole::Unknown);
+    assert_ne!(known.sha256(), unknown.sha256());
+    let project_a = program_input_descriptor("_data/project.json", br#"{"$schema":"urn:fortress:schema:v3:project-configuration","schema_version":3,"logical_modules":[],"observation_exclusions":[".git"]}"#).unwrap();
+    let project_b = program_input_descriptor("_data/project.json", br#"{"$schema":"urn:fortress:schema:v3:project-configuration","schema_version":3,"logical_modules":[],"observation_exclusions":[".git","target"]}"#).unwrap();
+    assert_eq!(project_a.role(), ProgramInputRole::ProjectIdentity);
+    assert_eq!(project_a.sha256(), project_b.sha256());
+}
 
 fn repository_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))

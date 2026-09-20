@@ -4,8 +4,38 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use fortress_core::project::{
-    ProjectConfiguration, ProjectConfigurationLoadError, ProjectConfigurationModelError,
+    AuthorityBinding, EvaluationKey, ProjectConfiguration, ProjectConfigurationLoadError,
+    ProjectConfigurationModelError,
 };
+
+/// `T-AF-PROJECT-MODEL-0001-R05-001`
+/// Fortress requirement: AF-PROJECT-MODEL-0001-R05
+#[test]
+fn evaluation_key_distinguishes_authority_and_context_without_machine_paths() {
+    let first = AuthorityBinding::new(
+        "sha256:standard",
+        "draft-1",
+        ["sha256:profile-b".into(), "sha256:profile-a".into()],
+        "sha256:project",
+        "sha256:owners",
+        None,
+        None,
+    );
+    let reordered = AuthorityBinding::new(
+        "sha256:standard",
+        "draft-1",
+        ["sha256:profile-a".into(), "sha256:profile-b".into()],
+        "sha256:project",
+        "sha256:owners",
+        None,
+        None,
+    );
+    assert_eq!(first.digest(), reordered.digest());
+    let key = EvaluationKey::new("sha256:source", "sha256:context", first.digest());
+    let changed = EvaluationKey::new("sha256:source", "sha256:other-context", first.digest());
+    assert_ne!(key.digest(), changed.digest());
+    assert_eq!(key.program_context_digest(), "sha256:context");
+}
 
 fn fixture_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../project_model/testing/_data")
