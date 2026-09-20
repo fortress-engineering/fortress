@@ -153,7 +153,7 @@ fn logical_contracts_and_native_paths_feed_one_semantic_ownership_relation() {
         .model()
         .module("AF-API-0001")
         .expect("API semantic policy conclusion");
-    assert_eq!(api.state(), SemanticConformanceState::Fail);
+    assert_eq!(api.state(), SemanticConformanceState::SupportedViolation);
     assert!(api.observations().iter().any(|observation| {
         observation.operation() == "std::fs::write" && observation.policy_disposition().is_some()
     }));

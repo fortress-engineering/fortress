@@ -56,4 +56,8 @@ Preserves the deterministic projection whose effect observations carry stable op
 
 ### [`semantic_conformance_schema_v6.json`](../_data/semantic_conformance_schema_v6.json)
 
-Defines the current deterministic projection with stable semantic-policy claim identities, canonical defeater objects, and per-claim and per-Module defeater references. Defeaters carry closed kind, exact strength, stable scope, structured current facts, deterministic semantic inputs, and an explicit current-snapshot retirement condition.
+Preserves the deterministic projection with stable semantic-policy claim identities, canonical defeater objects, and per-claim and per-Module defeater references. Defeaters carry closed kind, exact strength, stable scope, structured current facts, deterministic semantic inputs, and an explicit current-snapshot retirement condition.
+
+### [`semantic_conformance_schema_v7.json`](../_data/semantic_conformance_schema_v7.json)
+
+Defines the current claim-relative projection: compiled effective policy and override status, disposition-independent claim slots, snapshot-bound claim instances, four semantic verdicts, separate authorization and enforcement, coverage, witness partitions, proof references, findings and reason codes. v6 remains registered for historical artifacts; v7 is the active writer.

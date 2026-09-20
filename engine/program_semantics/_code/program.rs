@@ -1668,6 +1668,24 @@ impl SyntacticOperation {
         &self.occurrence_key
     }
 
+    /// Returns the executable symbol containing this operation.
+    #[must_use]
+    pub fn enclosing_symbol(&self) -> &str {
+        &self.enclosing_symbol
+    }
+
+    /// Returns the exact repository-relative source path.
+    #[must_use]
+    pub fn source_path(&self) -> &str {
+        self.provenance.path()
+    }
+
+    /// Returns the frontend's reason for its accounted outcome.
+    #[must_use]
+    pub fn reason(&self) -> Option<&str> {
+        self.reason.as_deref()
+    }
+
     /// Returns the exact source spelling of the operation.
     #[must_use]
     pub fn reference(&self) -> &str {

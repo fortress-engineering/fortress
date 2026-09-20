@@ -667,6 +667,28 @@
       "schema_path": "engine/architecture_evaluation/_data/semantic_conformance_schema_v6.json",
       "version": 6,
       "writer": {
+        "status": "RETIRED",
+        "source": null
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "REQUIRED_BEFORE_USE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-owner-canonical-json-bytes",
+        "source": "engine/architecture_evaluation/_code/semantic_conformance.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v7:semantic-conformance",
+      "schema_path": "engine/architecture_evaluation/_data/semantic_conformance_schema_v7.json",
+      "version": 7,
+      "writer": {
         "status": "ACTIVE",
         "source": "engine/architecture_evaluation/_code/semantic_conformance.rs"
       },

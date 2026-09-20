@@ -226,7 +226,7 @@ fn semantic_conformance_renders_zero_coverage_as_not_evaluable() {
     assert_eq!(human.status.code(), Some(1));
     let output = String::from_utf8_lossy(&human.stdout);
     assert!(
-        output.contains("Raw semantic conformance: UNKNOWN"),
+        output.contains("Raw semantic conformance: NOT_EVALUABLE"),
         "{output}"
     );
     assert!(
@@ -245,7 +245,7 @@ fn semantic_conformance_renders_zero_coverage_as_not_evaluable() {
     let document: serde_json::Value = serde_json::from_slice(&json.stdout).expect("JSON");
     assert_eq!(
         document["$schema"],
-        "urn:fortress:schema:v6:semantic-conformance"
+        "urn:fortress:schema:v7:semantic-conformance"
     );
     let module = document["modules"]
         .as_array()
@@ -327,7 +327,7 @@ fn semantic_conformance_renders_allow_as_authorization_not_pass() {
         .expect("authorization entry");
     assert_eq!(entry["disposition"], "ALLOW");
     assert_eq!(entry["authorization"], "AUTHORISED");
-    assert!(entry["conformance"].is_null());
+    assert!(entry["verdict"].is_null());
 }
 
 /// `T-TF-CLI-0001-R17-005`
@@ -370,7 +370,7 @@ fn test_only_semantic_violation_is_rendered_as_raw_advisory_evidence() {
     assert_eq!(human.status.code(), Some(1));
     let output = String::from_utf8_lossy(&human.stdout);
     assert!(
-        output.contains("Raw semantic conformance: FAIL"),
+        output.contains("Raw semantic conformance: SUPPORTED_VIOLATION"),
         "{output}"
     );
     assert!(output.contains("ADVISORY_ONLY"), "{output}");

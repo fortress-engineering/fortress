@@ -27,10 +27,11 @@
       "requirements": [
         {
           "id": "AF-FINDING-MODEL-0001-R01",
-          "statement": "A shared proof graph names resolved evidence, rejects cycles and ambiguous mandatory references, and cannot turn an empty obligation into favorable support.",
+          "statement": "A shared proof graph names resolved evidence, rejects cycles and ambiguous mandatory references, evaluates ALL and ANY premises without ignoring mandatory evidence, and cannot turn an empty obligation into favorable support.",
           "tests": [
             "T-AF-FINDING-MODEL-0001-R01-001",
-            "T-AF-FINDING-MODEL-0001-R01-002"
+            "T-AF-FINDING-MODEL-0001-R01-002",
+            "T-AF-FINDING-MODEL-0001-R01-003"
           ]
         }
       ]

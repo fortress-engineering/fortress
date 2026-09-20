@@ -137,6 +137,71 @@ impl ProofGraph {
         validate_reachability(&by_id, &self.root_node_id)?;
         validate_acyclic(&self.nodes, &self.root_node_id)
     }
+
+    /// Evaluates structural sufficiency against evidence accepted by the caller.
+    ///
+    /// This method only applies the proof's logical operators. The caller owns
+    /// evidence authenticity, semantic relevance and the claim's universe.
+    ///
+    /// # Errors
+    /// Returns a shape or reference error if the graph or supplied identities
+    /// are invalid.
+    pub fn is_satisfied(
+        &self,
+        known_refs: &BTreeSet<String>,
+        satisfied_refs: &BTreeSet<String>,
+    ) -> Result<bool, ProofValidationError> {
+        self.validate(known_refs)?;
+        if let Some(unknown) = satisfied_refs.difference(known_refs).next() {
+            return Err(ProofValidationError::DanglingEvidence(unknown.clone()));
+        }
+        let by_id = self
+            .nodes
+            .iter()
+            .map(|node| (node.node_id.as_str(), node))
+            .collect::<BTreeMap<_, _>>();
+        let mut remaining = self
+            .nodes
+            .iter()
+            .map(|node| (node.node_id.as_str(), node.children.len()))
+            .collect::<BTreeMap<_, _>>();
+        let mut parents = BTreeMap::<&str, Vec<&str>>::new();
+        for node in &self.nodes {
+            for child in &node.children {
+                parents.entry(child).or_default().push(&node.node_id);
+            }
+        }
+        let mut ready = remaining
+            .iter()
+            .filter_map(|(id, count)| (*count == 0).then_some(*id))
+            .collect::<VecDeque<_>>();
+        let mut values = BTreeMap::<&str, bool>::new();
+        while let Some(id) = ready.pop_front() {
+            let node = by_id[id];
+            let premises = node
+                .required_refs
+                .iter()
+                .all(|reference| satisfied_refs.contains(reference.id()));
+            let children = match node.operator {
+                ProofOperator::Leaf => true,
+                ProofOperator::All => node.children.iter().all(|child| values[child.as_str()]),
+                ProofOperator::Any => node.children.iter().any(|child| values[child.as_str()]),
+            };
+            values.insert(id, premises && children);
+            if let Some(referrers) = parents.get(id) {
+                for parent in referrers {
+                    let count = remaining
+                        .get_mut(parent)
+                        .ok_or_else(|| ProofValidationError::DanglingNode((*parent).into()))?;
+                    *count -= 1;
+                    if *count == 0 {
+                        ready.push_back(parent);
+                    }
+                }
+            }
+        }
+        Ok(values[self.root_node_id.as_str()])
+    }
 }
 
 fn validate_node(

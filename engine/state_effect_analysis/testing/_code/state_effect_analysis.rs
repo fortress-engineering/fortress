@@ -1073,6 +1073,40 @@ fn unsafe_entry() { unsafe_helper(); }
     }
 }
 
+/// `T-AF-STATE-EFFECT-ANALYSIS-0001-R05-009`
+/// Fortress requirement: AF-STATE-EFFECT-ANALYSIS-0001-R05
+#[test]
+fn transitive_closure_keeps_all_same_effect_origins() {
+    let model = psm(r#"
+fn first_origin() { let _ = std::fs::write("first", b"x"); }
+fn second_origin() { let _ = std::fs::write("second", b"x"); }
+fn hub() { first_origin(); second_origin(); }
+pub fn entry() { hub(); }
+"#);
+    let states = load_state_contracts(&model, Vec::new()).expect("empty states resolve");
+    let functions = load_function_contracts(&model, Vec::new()).expect("empty functions resolve");
+    let evaluation = evaluate(&model, &states, &functions);
+    let entry = symbol_id(&model, "entry");
+    let sources = evaluation
+        .model()
+        .summaries()
+        .iter()
+        .find(|summary| summary.symbol() == entry)
+        .unwrap()
+        .effect_evidence()
+        .iter()
+        .filter(|evidence| evidence.effect() == FunctionEffect::FilesystemWrite)
+        .map(|evidence| {
+            (
+                evidence.source_symbol().to_owned(),
+                evidence.call_chain().len(),
+            )
+        })
+        .collect::<std::collections::BTreeSet<_>>();
+    assert_eq!(sources.len(), 2);
+    assert!(sources.iter().all(|(_, length)| *length == 3));
+}
+
 /// `T-AF-STATE-EFFECT-ANALYSIS-0001-R05-007`
 /// Fortress requirement: AF-STATE-EFFECT-ANALYSIS-0001-R05
 #[test]

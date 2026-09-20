@@ -140,3 +140,45 @@ fn proof_references_are_canonical_and_resolved() {
         Err(ProofValidationError::NonCanonicalOrder(_))
     ));
 }
+
+/// `T-AF-FINDING-MODEL-0001-R01-003`
+/// Fortress requirement: AF-FINDING-MODEL-0001-R01
+#[test]
+fn proof_alternative_with_missing_premise_is_not_sufficient() {
+    let graph = ProofGraph::new(
+        "root",
+        vec![
+            leaf("complete", "evidence:a"),
+            ProofExpression {
+                node_id: "incomplete".into(),
+                operator: ProofOperator::All,
+                required_refs: vec![EvidenceReference::new("evidence:b").unwrap()],
+                children: vec!["complete".into()],
+            },
+            ProofExpression {
+                node_id: "root".into(),
+                operator: ProofOperator::Any,
+                required_refs: Vec::new(),
+                children: vec!["complete".into(), "incomplete".into()],
+            },
+        ],
+    );
+    let known = references();
+    let only_a = BTreeSet::from(["evidence:a".to_owned()]);
+    assert!(graph.is_satisfied(&known, &only_a).unwrap());
+    let all = ProofGraph::new(
+        "root",
+        vec![
+            leaf("complete", "evidence:a"),
+            leaf("incomplete", "evidence:b"),
+            ProofExpression {
+                node_id: "root".into(),
+                operator: ProofOperator::All,
+                required_refs: Vec::new(),
+                children: vec!["complete".into(), "incomplete".into()],
+            },
+        ],
+    );
+    assert!(!all.is_satisfied(&known, &only_a).unwrap());
+    assert!(!graph.is_satisfied(&known, &BTreeSet::new()).unwrap());
+}

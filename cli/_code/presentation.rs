@@ -226,12 +226,12 @@ fn render_semantic_module(
             render_offending_site(output, evaluation, index + 1, site);
         }
     }
-    if module.state() == SemanticConformanceState::Fail {
+    if module.state() == SemanticConformanceState::SupportedViolation {
         output.push_str(
             "  Remediation: remove or isolate the forbidden reachable operation, or explicitly revise the Module Contract policy after architectural review.\n",
         );
     }
-    if module.state() == SemanticConformanceState::Unknown {
+    if module.state() == SemanticConformanceState::NotEvaluable {
         output.push_str(
             "  Remediation: resolve the claim-relevant semantic gap; missing authority is not conformance.\n",
         );
@@ -512,9 +512,9 @@ const fn target_kind_label(kind: PolicyTargetKind) -> &'static str {
 
 const fn conformance_label(state: SemanticConformanceState) -> &'static str {
     match state {
-        SemanticConformanceState::Pass => "PASS",
-        SemanticConformanceState::Fail => "FAIL",
-        SemanticConformanceState::Unknown => "UNKNOWN",
+        SemanticConformanceState::NoSupportedViolation => "NO_SUPPORTED_VIOLATION",
+        SemanticConformanceState::SupportedViolation => "SUPPORTED_VIOLATION",
+        SemanticConformanceState::NotEvaluable => "NOT_EVALUABLE",
         SemanticConformanceState::NotApplicable => "NOT_APPLICABLE",
     }
 }

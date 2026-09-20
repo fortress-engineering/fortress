@@ -117,6 +117,12 @@ pub struct ProgramContext {
 }
 
 impl ProgramContext {
+    /// Returns the language frontend family recorded by this context.
+    #[must_use]
+    pub fn language_frontend_id(&self) -> &str {
+        &self.language_frontend_id
+    }
+
     /// Creates a canonical context without reading local machine state.
     #[must_use]
     pub fn new(

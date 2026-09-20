@@ -42,7 +42,7 @@ pub const STATE_EFFECT_ANALYSIS_SCHEMA: &str = "urn:fortress:schema:v4:state-eff
 /// Canonical State & Effect Analysis schema version.
 pub const STATE_EFFECT_ANALYSIS_SCHEMA_VERSION: u16 = 4;
 /// Semantic version of the state/effect analyzer.
-pub const STATE_EFFECT_ANALYSIS_VERSION: &str = "4.1.0";
+pub const STATE_EFFECT_ANALYSIS_VERSION: &str = "4.2.0";
 /// Stable analyzer identity.
 pub const STATE_EFFECT_ANALYZER_ID: &str = "fortress-state-effect-analysis";
 /// Normative typestate rule identity.
@@ -217,6 +217,20 @@ pub struct EffectDescriptor {
     family: EffectFamily,
     operation: String,
     capability: Option<EffectCapability>,
+}
+
+impl EffectDescriptor {
+    /// Returns the registry's stable effect identity.
+    #[must_use]
+    pub fn id(&self) -> &str {
+        &self.id
+    }
+
+    /// Returns the registry's architectural capability membership.
+    #[must_use]
+    pub const fn capability(&self) -> Option<EffectCapability> {
+        self.capability
+    }
 }
 
 /// Whether one operation identity was classified by the supported ontology.
@@ -681,9 +695,72 @@ impl StateEffectAnalysisEvaluation {
 struct EffectWork {
     direct: BTreeSet<FunctionEffect>,
     transitive: BTreeSet<FunctionEffect>,
-    evidence: BTreeMap<FunctionEffect, BTreeSet<EffectEvidence>>,
+    evidence: BTreeMap<FunctionEffect, BTreeMap<EffectWitnessKey, EffectEvidence>>,
     operations: BTreeSet<OperationClassificationEvidence>,
     uncertain: BTreeSet<String>,
+}
+
+/// A bounded witness edge in the static call graph. Deeper fan-in remains
+/// represented by the provider summaries instead of multiplying full paths.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
+struct EffectWitnessKey {
+    kind: EffectEvidenceKind,
+    operation_site_id: String,
+    source_symbol: String,
+    first_hop: Option<String>,
+    entry_execution_provenance: ExecutionProvenance,
+    source_execution_provenance: ExecutionProvenance,
+}
+
+impl EffectWitnessKey {
+    fn of(item: &EffectEvidence) -> Self {
+        Self {
+            kind: item.kind,
+            operation_site_id: item.operation_site_id.clone(),
+            source_symbol: item.source_symbol.clone(),
+            first_hop: item.call_chain.get(1).cloned(),
+            entry_execution_provenance: item.entry_execution_provenance,
+            source_execution_provenance: item.source_execution_provenance,
+        }
+    }
+}
+
+fn insert_witness(
+    witnesses: &mut BTreeMap<EffectWitnessKey, EffectEvidence>,
+    uncertain: &mut BTreeSet<String>,
+    candidate: EffectEvidence,
+) -> bool {
+    const TRANSITIVE_LIMIT_PER_EFFECT_AND_PROVENANCE: usize = 4;
+    let key = EffectWitnessKey::of(&candidate);
+    if let Some(existing) = witnesses.get_mut(&key) {
+        if candidate < *existing {
+            *existing = candidate;
+            return true;
+        }
+        return false;
+    }
+    if candidate.kind == EffectEvidenceKind::Transitive {
+        let group = witnesses
+            .keys()
+            .filter(|existing| {
+                existing.kind == EffectEvidenceKind::Transitive
+                    && existing.entry_execution_provenance == key.entry_execution_provenance
+            })
+            .cloned()
+            .collect::<Vec<_>>();
+        if group.len() >= TRANSITIVE_LIMIT_PER_EFFECT_AND_PROVENANCE {
+            let new_limit = uncertain.insert("analyser_limit:witness_budget_exhausted".into());
+            let largest = group.last().expect("nonempty capped witness group");
+            if key >= *largest {
+                return new_limit;
+            }
+            witnesses.remove(largest);
+            witnesses.insert(key, candidate);
+            return true;
+        }
+    }
+    witnesses.insert(key, candidate);
+    true
 }
 
 /// Derives conservative state transitions and transitive effects.
@@ -813,7 +890,12 @@ pub fn analyze_state_effects(
             transitive_effects: work.transitive.iter().copied().collect(),
             direct_capabilities: effect_capabilities(work.direct.iter().copied()),
             transitive_capabilities: effect_capabilities(work.transitive.iter().copied()),
-            effect_evidence: work.evidence.values().flatten().cloned().collect(),
+            effect_evidence: work
+                .evidence
+                .values()
+                .flat_map(|witnesses| witnesses.values())
+                .cloned()
+                .collect(),
             operation_classifications: work.operations.into_iter().collect(),
             state_preconditions,
             state_postconditions,
@@ -1175,10 +1257,10 @@ fn add_effect(
         .entry(symbol.into())
         .or_insert_with(empty_effect_work);
     work.direct.insert(effect);
-    work.evidence
-        .entry(effect)
-        .or_default()
-        .insert(EffectEvidence {
+    insert_witness(
+        work.evidence.entry(effect).or_default(),
+        &mut work.uncertain,
+        EffectEvidence {
             effect,
             capability: capability_for_effect(effect),
             kind: EffectEvidenceKind::Direct,
@@ -1193,7 +1275,8 @@ fn add_effect(
             line,
             column,
             call_chain: vec![symbol.into()],
-        });
+        },
+    );
 }
 
 #[derive(Default)]
@@ -1250,14 +1333,12 @@ fn close_effects(
             };
             let consumer_summary = work.entry(caller.clone()).or_insert_with(empty_effect_work);
             for effect in &provider_summary.transitive {
-                if consumer_summary.transitive.insert(*effect) {
-                    changed = true;
-                    if let Some(item) = provider_summary
-                        .evidence
-                        .get(effect)
-                        .and_then(BTreeSet::first)
-                        && !item.call_chain.iter().any(|symbol| symbol == caller)
-                    {
+                changed |= consumer_summary.transitive.insert(*effect);
+                if let Some(items) = provider_summary.evidence.get(effect) {
+                    for item in items.values() {
+                        if item.call_chain.iter().any(|symbol| symbol == caller) {
+                            continue;
+                        }
                         let mut derived = item.clone();
                         derived.call_chain.insert(0, caller.clone());
                         derived.kind = EffectEvidenceKind::Transitive;
@@ -1270,11 +1351,11 @@ fn close_effects(
                             caller_execution_provenance,
                             derived.entry_execution_provenance,
                         );
-                        consumer_summary
-                            .evidence
-                            .entry(*effect)
-                            .or_default()
-                            .insert(derived);
+                        changed |= insert_witness(
+                            consumer_summary.evidence.entry(*effect).or_default(),
+                            &mut consumer_summary.uncertain,
+                            derived,
+                        );
                     }
                 }
             }
@@ -1644,10 +1725,13 @@ fn effect_policy_violations(
                 .evidence
                 .get(effect)
                 .into_iter()
-                .flatten()
+                .flat_map(|items| items.values())
                 .map(|item| item.call_chain.join(" -> "))
                 .collect::<Vec<_>>();
-            let first = work.evidence.get(effect).and_then(|items| items.first());
+            let first = work
+                .evidence
+                .get(effect)
+                .and_then(|items| items.values().next());
             violation(
                 PROGRAM_EFFECT_RULE_ID,
                 StateEffectViolationKind::ForbiddenEffect,

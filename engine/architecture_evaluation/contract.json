@@ -102,13 +102,17 @@
         },
         {
           "id": "AF-ARCHITECTURE-EVALUATION-0001-R05",
-          "statement": "Module Contract v3 declares explicit capability/effect allow and deny authority while v2 contracts remain loadable with semantic policy truthfully UNDECLARED.",
+          "statement": "Module Contract v3 declares explicit capability/effect allow and deny authority while v2 contracts remain loadable with semantic policy truthfully UNDECLARED. Effective policy gives explicit effect entries precedence over capability membership, retains overridden declarations as explanations, binds authored scope and context to claim instances, and refuses favorable conclusions across missing semantic coverage.",
           "tests": [
             "T-AF-ARCHITECTURE-EVALUATION-0001-R05-001",
             "T-AF-ARCHITECTURE-EVALUATION-0001-R05-002",
             "T-AF-ARCHITECTURE-EVALUATION-0001-R05-003",
             "T-AF-ARCHITECTURE-EVALUATION-0001-R05-004",
-            "T-AF-ARCHITECTURE-EVALUATION-0001-R05-005"
+            "T-AF-ARCHITECTURE-EVALUATION-0001-R05-005",
+            "T-AF-ARCHITECTURE-EVALUATION-0001-R05-006",
+            "T-AF-ARCHITECTURE-EVALUATION-0001-R05-007",
+            "T-AF-ARCHITECTURE-EVALUATION-0001-R05-008",
+            "T-AF-ARCHITECTURE-EVALUATION-0001-R05-009"
           ]
         },
         {

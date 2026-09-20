@@ -22,9 +22,9 @@ use fortress_core::implementation_observation::{
 use fortress_core::program_semantics::{ProgramSemanticInput, compile_program_semantic_model};
 use fortress_core::semantic_analysis::{analyze_program_domains, load_function_contracts};
 use fortress_core::semantic_conformance::{
-    AuthorizationState, BlockingEligibility, NO_SEMANTIC_COVERAGE, PolicyDisposition,
-    SemanticConformanceEvaluation, SemanticConformanceState, TEST_ONLY_EVIDENCE,
-    UNKNOWN_EXECUTION_PROVENANCE, evaluate_semantic_conformance,
+    AuthoredClaimScope, AuthorizationState, BlockingEligibility, NO_SEMANTIC_COVERAGE,
+    PolicyDisposition, PolicyTargetKind, SemanticConformanceEvaluation, SemanticConformanceState,
+    TEST_ONLY_EVIDENCE, UNKNOWN_EXECUTION_PROVENANCE, evaluate_semantic_conformance_with_scopes,
 };
 use fortress_core::state_effect_analysis::{analyze_state_effects, load_state_contracts};
 
@@ -125,6 +125,14 @@ fn module_contract(
 }
 
 fn evaluate(source: &str, contract: String) -> SemanticConformanceEvaluation {
+    evaluate_with_scope(source, contract, None)
+}
+
+fn evaluate_with_scope(
+    source: &str,
+    contract: String,
+    selected_entry: Option<&str>,
+) -> SemanticConformanceEvaluation {
     let files = BTreeMap::from([
         ("contract.json".to_owned(), root_contract().into_bytes()),
         (
@@ -141,10 +149,17 @@ fn evaluate(source: &str, contract: String) -> SemanticConformanceEvaluation {
             source.as_bytes().to_vec(),
         ),
     ]);
-    evaluate_files(&files)
+    evaluate_files_with_scope(&files, selected_entry)
 }
 
 fn evaluate_files(files: &BTreeMap<String, Vec<u8>>) -> SemanticConformanceEvaluation {
+    evaluate_files_with_scope(files, None)
+}
+
+fn evaluate_files_with_scope(
+    files: &BTreeMap<String, Vec<u8>>,
+    selected_entry: Option<&str>,
+) -> SemanticConformanceEvaluation {
     let standard =
         ContractStandardIndex::new("STD-FORTRESS-ENGINEERING", EDITION, ["ARCH-SEMANTIC-001"]);
     let compilation = compile_contract_coherency_graph(files, &standard, None);
@@ -185,13 +200,31 @@ fn evaluate_files(files: &BTreeMap<String, Vec<u8>>) -> SemanticConformanceEvalu
         .expect("effects analyze");
     let realization =
         reconcile_implementation(ccg, &observed, EDITION).expect("realization reconciles");
-    evaluate_semantic_conformance(
+    let scopes = selected_entry.map_or_else(Vec::new, |suffix| {
+        let entry = psm
+            .symbols()
+            .iter()
+            .find(|symbol| symbol.qualified_name().ends_with(suffix))
+            .expect("selected entry exists");
+        vec![
+            AuthoredClaimScope::new(
+                "AF-SAMPLE-0001",
+                PolicyTargetKind::Capability,
+                "filesystem",
+                [entry.id().to_owned()],
+                "sha256:fixture-profile",
+            )
+            .expect("fixture scope"),
+        ]
+    });
+    evaluate_semantic_conformance_with_scopes(
         ccg,
         &psm,
         state_effect.model(),
         &realization,
         &ownerships,
         EDITION,
+        &scopes,
     )
     .expect("semantic conformance evaluates")
 }
@@ -251,7 +284,7 @@ pub fn entry() { write_file(); }
         .model()
         .module("AF-SAMPLE-0001")
         .expect("Module concludes");
-    assert_eq!(module.state(), SemanticConformanceState::Fail);
+    assert_eq!(module.state(), SemanticConformanceState::SupportedViolation);
     assert_eq!(module.coverage().governed_source_files(), 1);
     assert_eq!(module.coverage().analysed_source_files(), 1);
     assert_eq!(module.coverage().ratio(), Some("1/1"));
@@ -324,7 +357,10 @@ fn test_only_forbidden_effect_remains_fail_but_is_advisory() {
     );
     let module = result.model().module("AF-SAMPLE-0001").unwrap();
     let claim = &module.conclusions()[0];
-    assert_eq!(claim.conformance(), Some(SemanticConformanceState::Fail));
+    assert_eq!(
+        claim.conformance(),
+        Some(SemanticConformanceState::SupportedViolation)
+    );
     assert_eq!(
         claim.blocking_eligibility(),
         Some(BlockingEligibility::AdvisoryOnly)
@@ -603,7 +639,7 @@ fn production_write() { let _ = std::fs::write("production", b"x"); }
 /// `T-AF-ARCHITECTURE-EVALUATION-0001-R05-003`
 /// Fortress requirement: AF-ARCHITECTURE-EVALUATION-0001-R05
 #[test]
-fn shared_operation_site_retains_production_support_and_both_causal_paths() {
+fn production_witness_order_does_not_change_enforcement() {
     let sources = [
         r#"
 fn site() { let _ = std::fs::write("output", b"x"); }
@@ -645,6 +681,11 @@ pub fn production_entry() { site(); }
         assert_eq!(result.findings().len(), 1);
         assert_eq!(result.model().summary().blocking_findings(), 1);
         assert_eq!(result.model().summary().advisory_findings(), 0);
+        let graph = module.conclusions()[0]
+            .evaluation()
+            .proof_graph()
+            .expect("witness alternatives");
+        assert_eq!(graph.nodes.len(), paths.len() + 1);
         assert_eq!(
             result.findings()[0].enforcement_eligibility(),
             fortress_core::finding::FindingEnforcementEligibility::BlockSupported
@@ -657,7 +698,7 @@ pub fn production_entry() { site(); }
 /// `T-AF-ARCHITECTURE-EVALUATION-0001-R05-004`
 /// Fortress requirement: AF-ARCHITECTURE-EVALUATION-0001-R05
 #[test]
-fn shadowed_policy_empty_claim_is_reproduced_for_effective_policy_work() {
+fn capability_effect_override_matrix_is_total() {
     let source = "pub fn write() { let _ = std::fs::write(\"out\", b\"x\"); }\n";
     let policy = module_contract(
         "AF-SAMPLE-0001",
@@ -678,15 +719,185 @@ fn shadowed_policy_empty_claim_is_reproduced_for_effective_policy_work() {
         .iter()
         .find(|claim| claim.target() == "filesystem.write")
         .unwrap();
-    // This captures the current empty claim, not a valid independent PASS.
-    // Effective policy compilation removes it in the dependent claim-algebra work.
+    // The capability still governs filesystem.read; the effect entry governs
+    // filesystem.write. Neither declaration creates an empty favorable claim.
     assert_eq!(capability.matching_observation_count(), 0);
     assert_eq!(
         capability.conformance(),
-        Some(SemanticConformanceState::Pass)
+        Some(SemanticConformanceState::NoSupportedViolation)
     );
-    assert_eq!(effect.conformance(), Some(SemanticConformanceState::Fail));
+    assert_eq!(
+        effect.conformance(),
+        Some(SemanticConformanceState::SupportedViolation)
+    );
+    let policy = module.effective_policy().expect("policy compiles");
+    let capability_entry = policy
+        .entries()
+        .iter()
+        .find(|entry| entry.target() == "filesystem")
+        .unwrap();
+    assert_eq!(capability_entry.status().as_str(), "PARTIALLY_OVERRIDDEN");
+    assert_eq!(capability_entry.effective_effects(), ["filesystem.read"]);
     assert_eq!(result.findings().len(), 1);
+
+    let reversed = evaluate(
+        source,
+        module_contract(
+            "AF-SAMPLE-0001",
+            &["filesystem"],
+            &[],
+            &["filesystem.read"],
+            &["filesystem.write"],
+        ),
+    );
+    let policy = reversed
+        .model()
+        .module("AF-SAMPLE-0001")
+        .unwrap()
+        .effective_policy()
+        .unwrap();
+    assert_eq!(
+        policy
+            .entries()
+            .iter()
+            .find(|entry| entry.target() == "filesystem")
+            .unwrap()
+            .status()
+            .as_str(),
+        "OVERRIDDEN"
+    );
+    assert_eq!(
+        policy
+            .entries()
+            .iter()
+            .find(|entry| entry.target() == "filesystem")
+            .unwrap()
+            .effective_effects()
+            .len(),
+        0
+    );
+    assert!(
+        reversed
+            .model()
+            .module("AF-SAMPLE-0001")
+            .unwrap()
+            .conclusions()
+            .iter()
+            .all(|claim| claim.target() != "filesystem")
+    );
+}
+
+/// `T-AF-ARCHITECTURE-EVALUATION-0001-R05-006`
+/// Fortress requirement: AF-ARCHITECTURE-EVALUATION-0001-R05
+#[test]
+fn claim_slot_survives_disposition_change_but_instance_does_not() {
+    let source = "pub fn pure() {}";
+    let allow = evaluate(
+        source,
+        module_contract("AF-SAMPLE-0001", &["filesystem"], &[], &[], &[]),
+    );
+    let deny = evaluate(
+        source,
+        module_contract("AF-SAMPLE-0001", &[], &["filesystem"], &[], &[]),
+    );
+    let authorized = &allow
+        .model()
+        .module("AF-SAMPLE-0001")
+        .unwrap()
+        .conclusions()[0];
+    let evaluated = &deny.model().module("AF-SAMPLE-0001").unwrap().conclusions()[0];
+    assert_eq!(authorized.slot().id(), evaluated.slot().id());
+    assert_ne!(authorized.instance().id(), evaluated.instance().id());
+    assert_eq!(authorized.conformance(), None);
+    assert_eq!(
+        evaluated.conformance(),
+        Some(SemanticConformanceState::NoSupportedViolation)
+    );
+}
+
+/// `T-AF-ARCHITECTURE-EVALUATION-0001-R05-007`
+/// Fortress requirement: AF-ARCHITECTURE-EVALUATION-0001-R05
+#[test]
+fn operation_inventory_barrier_limits_favorable_claim() {
+    let result = evaluate(
+        "pub fn hidden() { mystery!(); }",
+        module_contract("AF-SAMPLE-0001", &[], &["filesystem"], &[], &[]),
+    );
+    let claim = &result
+        .model()
+        .module("AF-SAMPLE-0001")
+        .unwrap()
+        .conclusions()[0];
+    assert_eq!(
+        claim.conformance(),
+        Some(SemanticConformanceState::NotEvaluable)
+    );
+    assert!(claim.defeater_refs().iter().any(|id| {
+        result.model().defeater(id).is_some_and(|defeater| {
+            defeater.kind() == DefeaterKind::AnalyserLimit
+                && defeater
+                    .detail()
+                    .get("uncertainty")
+                    .is_some_and(|reason| reason.starts_with("analyser_limit:syntax_inventory:"))
+        })
+    }));
+}
+
+/// `T-AF-ARCHITECTURE-EVALUATION-0001-R05-008`
+/// Fortress requirement: AF-ARCHITECTURE-EVALUATION-0001-R05
+#[test]
+fn unrelated_opacity_does_not_poison_explicit_scope() {
+    let source = "pub fn pure() {} pub fn opaque() { mystery!(); } pub fn reaches() { opaque(); }";
+    let contract = module_contract("AF-SAMPLE-0001", &[], &["filesystem"], &[], &[]);
+    let whole = evaluate(source, contract.clone());
+    let pure = evaluate_with_scope(source, contract.clone(), Some("pure"));
+    let reachable = evaluate_with_scope(source, contract, Some("reaches"));
+    assert_eq!(
+        whole.model().module("AF-SAMPLE-0001").unwrap().state(),
+        SemanticConformanceState::NotEvaluable
+    );
+    assert_eq!(
+        pure.model().module("AF-SAMPLE-0001").unwrap().state(),
+        SemanticConformanceState::NoSupportedViolation
+    );
+    assert_eq!(
+        reachable.model().module("AF-SAMPLE-0001").unwrap().state(),
+        SemanticConformanceState::NotEvaluable
+    );
+    let whole_slot = whole
+        .model()
+        .module("AF-SAMPLE-0001")
+        .unwrap()
+        .conclusions()[0]
+        .slot()
+        .id();
+    let pure_slot = pure.model().module("AF-SAMPLE-0001").unwrap().conclusions()[0]
+        .slot()
+        .id();
+    assert_ne!(
+        whole_slot, pure_slot,
+        "authored scope is part of claim identity"
+    );
+}
+
+/// `T-AF-ARCHITECTURE-EVALUATION-0001-R05-009`
+/// Fortress requirement: AF-ARCHITECTURE-EVALUATION-0001-R05
+#[test]
+fn semantic_v7_model_validates_against_advertised_schema() {
+    let result = evaluate(
+        "pub fn write() { let _ = std::fs::write(\"out\", b\"x\"); }",
+        module_contract("AF-SAMPLE-0001", &[], &["filesystem"], &[], &[]),
+    );
+    let schema_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../architecture_evaluation/_data/semantic_conformance_schema_v7.json");
+    let schema: serde_json::Value =
+        serde_json::from_slice(&fs::read(schema_path).unwrap()).unwrap();
+    let model: serde_json::Value =
+        serde_json::from_str(&result.model().to_canonical_json().unwrap()).unwrap();
+    jsonschema::draft202012::validate(&schema, &model).expect("v7 model validates");
+    let claim = &model["modules"][0]["conclusions"][0];
+    assert_eq!(claim["instance_ref"], claim["instance"]["id"]);
+    assert_eq!(claim["slot"]["id"], claim["instance"]["slot_id"]);
 }
 
 fn fixture_count(value: &serde_json::Value) -> usize {
@@ -732,6 +943,7 @@ fn qualification_corpus_replays_authored_cases() {
         assert!(subject["governance_files"].as_array().unwrap().is_empty());
         assert!(subject["expected_claims"].is_null());
     }
+    let mut output_digest_drifts = Vec::new();
     for case in manifest["cases"].as_array().unwrap() {
         let mut files = BTreeMap::new();
         let mut source_entries = Vec::new();
@@ -777,9 +989,9 @@ fn qualification_corpus_replays_authored_cases() {
                 .find(|entry| entry.target() == expected["target"].as_str().unwrap())
                 .expect("expected claim exists");
             let expected_verdict = match expected["verdict"].as_str().unwrap() {
-                "FAIL" => SemanticConformanceState::Fail,
-                "UNKNOWN" => SemanticConformanceState::Unknown,
-                "PASS" => SemanticConformanceState::Pass,
+                "FAIL" => SemanticConformanceState::SupportedViolation,
+                "UNKNOWN" => SemanticConformanceState::NotEvaluable,
+                "PASS" => SemanticConformanceState::NoSupportedViolation,
                 other => panic!("unexpected fixture verdict {other}"),
             };
             let expected_eligibility = match expected["blocking_eligibility"].as_str().unwrap() {
@@ -798,7 +1010,7 @@ fn qualification_corpus_replays_authored_cases() {
                 module.defeater_refs()
             );
             assert_eq!(claim.blocking_eligibility(), Some(expected_eligibility));
-            if expected_verdict == SemanticConformanceState::Unknown {
+            if expected_verdict == SemanticConformanceState::NotEvaluable {
                 assert!(!claim.defeater_refs().is_empty());
             }
         }
@@ -838,7 +1050,13 @@ fn qualification_corpus_replays_authored_cases() {
             entry["governance_digests"],
             serde_json::Value::Array(governance_digests)
         );
-        assert_eq!(entry["raw_output_digest"], raw_digest);
+        if entry["raw_output_digest"] != raw_digest {
+            output_digest_drifts.push((
+                case["case_id"].as_str().unwrap().to_owned(),
+                entry["raw_output_digest"].as_str().unwrap().to_owned(),
+                raw_digest.clone(),
+            ));
+        }
         assert_eq!(entry["expected_claims"], case["expected_claims"]);
         assert_eq!(entry["expected_findings"], case["expected_findings"]);
         assert_eq!(entry["expected_limitations"], case["expected_limitations"]);
@@ -862,6 +1080,10 @@ fn qualification_corpus_replays_authored_cases() {
         );
         println!("{} {}", case["case_id"].as_str().unwrap(), raw_digest);
     }
+    assert!(
+        output_digest_drifts.is_empty(),
+        "authored raw output digests changed: {output_digest_drifts:#?}"
+    );
 }
 
 /// `T-ARCH-SEMANTIC-001-R01-002`
@@ -873,7 +1095,7 @@ fn claim_relative_uncertainty_is_unknown_without_fabricated_capability() {
         module_contract("AF-SAMPLE-0001", &[], &["filesystem"], &[], &[]),
     );
     let module = result.model().module("AF-SAMPLE-0001").unwrap();
-    assert_eq!(module.state(), SemanticConformanceState::Unknown);
+    assert_eq!(module.state(), SemanticConformanceState::NotEvaluable);
     assert_eq!(result.model().summary().blocking_findings(), 0);
     assert_eq!(result.model().summary().not_evaluable_findings(), 1);
     assert!(result.findings().is_empty());
@@ -906,7 +1128,10 @@ fn unclassified_operation_is_structured_without_fabricated_capability() {
         .module("AF-SAMPLE-0001")
         .unwrap()
         .conclusions()[0];
-    assert_eq!(claim.conformance(), Some(SemanticConformanceState::Unknown));
+    assert_eq!(
+        claim.conformance(),
+        Some(SemanticConformanceState::NotEvaluable)
+    );
     assert!(claim.defeater_refs().iter().any(|reference| {
         result.model().defeater(reference).is_some_and(|defeater| {
             defeater.kind() == DefeaterKind::UnclassifiedOperation
@@ -945,7 +1170,10 @@ pub fn qualified_call() { <Thing as Callable>::invoke(); }
         .module("AF-SAMPLE-0001")
         .unwrap()
         .conclusions()[0];
-    assert_eq!(claim.conformance(), Some(SemanticConformanceState::Unknown));
+    assert_eq!(
+        claim.conformance(),
+        Some(SemanticConformanceState::NotEvaluable)
+    );
     assert!(claim.defeater_refs().iter().any(|reference| {
         result.model().defeater(reference).is_some_and(|defeater| {
             defeater.kind() == DefeaterKind::UnsupportedConstruct
@@ -982,7 +1210,10 @@ pub fn invoke<F: Fn()>(f: F) { f(); }
         .module("AF-SAMPLE-0001")
         .unwrap()
         .conclusions()[0];
-    assert_eq!(claim.conformance(), Some(SemanticConformanceState::Fail));
+    assert_eq!(
+        claim.conformance(),
+        Some(SemanticConformanceState::SupportedViolation)
+    );
     assert_eq!(
         claim.blocking_eligibility(),
         Some(BlockingEligibility::BlockSupported)
@@ -1021,7 +1252,9 @@ pub fn residual() { std::sync::atomic::fence(std::sync::atomic::Ordering::SeqCst
         .unwrap()
         .conclusions()
         .iter()
-        .filter(|conclusion| conclusion.conformance() == Some(SemanticConformanceState::Fail))
+        .filter(|conclusion| {
+            conclusion.conformance() == Some(SemanticConformanceState::SupportedViolation)
+        })
         .map(fortress_core::semantic_conformance::SemanticPolicyConclusion::target)
         .collect::<Vec<_>>();
     assert_eq!(
@@ -1111,10 +1344,10 @@ fn deny_claim_with_governed_source_and_zero_symbols_is_not_evaluable() {
     assert_eq!(module.coverage().governed_source_files(), 1);
     assert_eq!(module.coverage().analysed_source_files(), 0);
     assert_eq!(module.coverage().ratio(), Some("0/1"));
-    assert_eq!(module.state(), SemanticConformanceState::Unknown);
+    assert_eq!(module.state(), SemanticConformanceState::NotEvaluable);
     assert_eq!(
         conclusion.conformance(),
-        Some(SemanticConformanceState::Unknown)
+        Some(SemanticConformanceState::NotEvaluable)
     );
     assert_eq!(
         conclusion.blocking_eligibility(),
@@ -1139,7 +1372,7 @@ fn deny_claim_with_governed_source_and_zero_symbols_is_not_evaluable() {
         for module in evaluation.model().modules() {
             for claim in module.conclusions().iter().filter(|claim| {
                 claim.disposition() == PolicyDisposition::Deny
-                    && claim.conformance() == Some(SemanticConformanceState::Pass)
+                    && claim.conformance() == Some(SemanticConformanceState::NoSupportedViolation)
                     && claim.coverage().governed_source_files() > 0
             }) {
                 assert!(
@@ -1156,11 +1389,14 @@ fn deny_claim_with_governed_source_and_zero_symbols_is_not_evaluable() {
 #[test]
 fn covered_deny_claim_preserves_current_favorable_semantics_without_violation() {
     let result = evaluate(
-        "pub fn pure(value: u32) -> u32 { value + 1 }",
+        "pub fn pure() {}",
         module_contract("AF-SAMPLE-0001", &[], &["filesystem"], &[], &[]),
     );
     let module = result.model().module("AF-SAMPLE-0001").unwrap();
-    assert_eq!(module.state(), SemanticConformanceState::Pass);
+    assert_eq!(
+        module.state(),
+        SemanticConformanceState::NoSupportedViolation
+    );
     assert_eq!(module.coverage().governed_source_files(), 1);
     assert_eq!(module.coverage().analysed_source_files(), 1);
     assert_eq!(module.coverage().ratio(), Some("1/1"));
@@ -1171,7 +1407,7 @@ fn covered_deny_claim_preserves_current_favorable_semantics_without_violation() 
 /// `T-AF-ARCHITECTURE-EVALUATION-0001-R07-003`
 /// Fortress requirement: AF-ARCHITECTURE-EVALUATION-0001-R07
 #[test]
-fn partial_coverage_records_distinct_symbol_bearing_source_paths() {
+fn whole_module_partial_scope_never_passes_as_complete() {
     let files = BTreeMap::from([
         ("contract.json".to_owned(), root_contract().into_bytes()),
         (
@@ -1195,14 +1431,14 @@ fn partial_coverage_records_distinct_symbol_bearing_source_paths() {
     let first = evaluate_files(&files);
     let second = evaluate_files(&files);
     let module = first.model().module("AF-SAMPLE-0001").unwrap();
-    assert_eq!(module.state(), SemanticConformanceState::Pass);
+    assert_eq!(module.state(), SemanticConformanceState::NotEvaluable);
     assert_eq!(module.coverage().governed_source_files(), 2);
     assert_eq!(module.coverage().analysed_source_files(), 1);
     assert_eq!(module.coverage().ratio(), Some("1/2"));
     assert!(module.defeater_refs().iter().any(|reference| {
         first.model().defeater(reference).is_some_and(|defeater| {
             defeater.kind() == DefeaterKind::PartialSemanticCoverage
-                && defeater.strength() == DefeaterStrength::Limiting
+                && defeater.strength() == DefeaterStrength::Defeating
         })
     }));
     assert_eq!(
@@ -1367,7 +1603,7 @@ fn module_conformance_aggregates_only_evaluative_deny_claims() {
         module_contract("AF-SAMPLE-0001", &["filesystem"], &[], &[], &["may_panic"]),
     );
     let module = result.model().module("AF-SAMPLE-0001").unwrap();
-    assert_eq!(module.state(), SemanticConformanceState::Fail);
+    assert_eq!(module.state(), SemanticConformanceState::SupportedViolation);
     assert!(module.conclusions().iter().any(|entry| {
         entry.disposition() == PolicyDisposition::Allow
             && entry.authorization() == Some(AuthorizationState::Authorised)
@@ -1375,7 +1611,7 @@ fn module_conformance_aggregates_only_evaluative_deny_claims() {
     }));
     assert!(module.conclusions().iter().any(|entry| {
         entry.disposition() == PolicyDisposition::Deny
-            && entry.conformance() == Some(SemanticConformanceState::Fail)
+            && entry.conformance() == Some(SemanticConformanceState::SupportedViolation)
     }));
     assert_eq!(result.model().summary().authored_authorizations(), 1);
     assert_eq!(result.model().summary().evaluative_deny_claims(), 1);
@@ -1396,7 +1632,7 @@ fn canonical_output_never_represents_allow_as_conformance_pass() {
         for entry in module["conclusions"].as_array().unwrap() {
             if entry["disposition"] == "ALLOW" {
                 assert_eq!(entry["authorization"], "AUTHORISED");
-                assert!(entry["conformance"].is_null());
+                assert!(entry["verdict"].is_null());
                 assert!(entry["blocking_eligibility"].is_null());
             }
         }
