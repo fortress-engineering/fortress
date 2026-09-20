@@ -26,6 +26,10 @@ The declarations change only when the governed FindingLocation lifecycle or with
 
 Defines the canonical optional project-level legacy baseline, retired reintroduction identities, and finding-specific active or retired exception authority.
 
+### [`proof_graph_schema_v1.json`](../_data/proof_graph_schema_v1.json)
+
+Defines the first shared proof graph wire shape. The model validator additionally enforces graph ordering, reference resolution, reachability, and acyclicity.
+
 ### [`function_contracts.json`](../_data/function_contracts.json)
 
 Declares the return typestate and allowed supported effect for FindingLocation::with_span.

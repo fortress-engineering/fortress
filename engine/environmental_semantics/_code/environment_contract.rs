@@ -594,12 +594,10 @@ pub fn load_environment_contracts(
     let mut outcome_ids = BTreeSet::new();
     let mut legacy_symbol_references = Vec::new();
     for source in &sources {
-        let document: EnvironmentContractDocument =
-            serde_json::from_str(&source.source).map_err(|error| {
-                EnvironmentContractError::InvalidJson {
-                    path: source.path.clone(),
-                    detail: error.to_string(),
-                }
+        let document: EnvironmentContractDocument = crate::wire::parse_strict_json(&source.source)
+            .map_err(|error| EnvironmentContractError::InvalidJson {
+                path: source.path.clone(),
+                detail: error.to_string(),
             })?;
         if !((document.schema == ENVIRONMENT_CONTRACT_SCHEMA
             && document.schema_version == ENVIRONMENT_CONTRACT_SCHEMA_VERSION)
@@ -996,11 +994,12 @@ pub fn canonicalize_environment_contract_json(
     path: &str,
     source: &str,
 ) -> Result<String, EnvironmentContractError> {
-    let document =
-        serde_json::from_str(source).map_err(|error| EnvironmentContractError::InvalidJson {
+    let document = crate::wire::parse_strict_json(source).map_err(|error| {
+        EnvironmentContractError::InvalidJson {
             path: path.into(),
             detail: error.to_string(),
-        })?;
+        }
+    })?;
     canonical_document(&document)
 }
 

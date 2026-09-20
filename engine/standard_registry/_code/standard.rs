@@ -394,6 +394,12 @@ impl StandardBundle {
         manifest_source: &str,
         rule_documents: &[(&str, &str)],
     ) -> Result<Self, StandardLoadError> {
+        crate::wire::reject_duplicate_json_keys(manifest_source).map_err(|source| {
+            StandardLoadError::Json {
+                document: "standard manifest".into(),
+                source,
+            }
+        })?;
         let manifest: StandardManifestWire =
             serde_json::from_str(manifest_source).map_err(|source| StandardLoadError::Json {
                 document: "standard manifest".into(),
@@ -433,6 +439,12 @@ impl StandardBundle {
             let source = supplied
                 .remove(path.as_str())
                 .ok_or_else(|| StandardLoadError::MissingRuleDocument(path.clone().into()))?;
+            crate::wire::reject_duplicate_json_keys(source).map_err(|source| {
+                StandardLoadError::Json {
+                    document: path.clone().into(),
+                    source,
+                }
+            })?;
             let wire: StandardRuleWire =
                 serde_json::from_str(source).map_err(|source| StandardLoadError::Json {
                     document: path.clone().into(),

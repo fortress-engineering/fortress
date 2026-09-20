@@ -1091,6 +1091,7 @@ fn inspect_registry_boundaries(
         let Some(bytes) = files.get(path) else {
             continue;
         };
+        crate::wire::reject_duplicate_json_keys_bytes(bytes)?;
         let document: serde_json::Value = serde_json::from_slice(bytes)?;
         let source_owner = deepest_owner(ccg, path).unwrap_or_default();
         for (index, value) in document[field].as_array().into_iter().flatten().enumerate() {

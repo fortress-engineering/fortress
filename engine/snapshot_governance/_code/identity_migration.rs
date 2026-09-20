@@ -322,11 +322,12 @@ fn plan_identity_migration(
         })?;
         let source = std::str::from_utf8(&bytes)
             .map_err(|_| IdentityMigrationError::InvalidUtf8(relative.clone()))?;
-        let mut document: Value =
-            serde_json::from_str(source).map_err(|error| IdentityMigrationError::InvalidJson {
+        let mut document: Value = crate::wire::parse_strict_json(source).map_err(|error| {
+            IdentityMigrationError::InvalidJson {
                 path: relative.clone(),
                 detail: error.to_string(),
-            })?;
+            }
+        })?;
         let filename = path
             .file_name()
             .and_then(|name| name.to_str())

@@ -1816,16 +1816,18 @@ pub fn compile_repository_certification_bundle(
     let verification_bindings =
         certification_verification_bindings(&stack.ccg, &stack.observed_files, &stack.rust_tests)?;
     let trusted_assertions = certification_trusted_assertions(&stack)?;
-    let profile: CertificationProfile = serde_json::from_slice(
-        stack
-            .observed_files
-            .get("engine/standard_registry/_data/cert_full_snapshot_v1.json")
-            .ok_or_else(|| {
-                AuditError::ContractState("missing CERT-FULL-SNAPSHOT-V1 authority".into())
-            })?,
-    )
-    .map_err(CertificationError::Json)
-    .map_err(AuditError::Certification)?;
+    let profile_bytes = stack
+        .observed_files
+        .get("engine/standard_registry/_data/cert_full_snapshot_v1.json")
+        .ok_or_else(|| {
+            AuditError::ContractState("missing CERT-FULL-SNAPSHOT-V1 authority".into())
+        })?;
+    crate::wire::reject_duplicate_json_keys_bytes(profile_bytes)
+        .map_err(CertificationError::Json)
+        .map_err(AuditError::Certification)?;
+    let profile: CertificationProfile = serde_json::from_slice(profile_bytes)
+        .map_err(CertificationError::Json)
+        .map_err(AuditError::Certification)?;
     let mut applicable_rules = stack
         .evaluation
         .rules()
@@ -2538,6 +2540,9 @@ fn certification_verification_bindings(
                     .into(),
             ));
         }
+        crate::wire::reject_duplicate_json_keys_bytes(bytes)
+            .map_err(CertificationError::Json)
+            .map_err(AuditError::Certification)?;
         let document: VerificationBindingDocument = serde_json::from_slice(bytes)
             .map_err(CertificationError::Json)
             .map_err(AuditError::Certification)?;
@@ -3781,6 +3786,9 @@ fn projection_file_digest(
 }
 
 fn structural_module_contract_digest(path: &str, bytes: &[u8]) -> Result<String, AuditError> {
+    if crate::wire::reject_duplicate_json_keys_bytes(bytes).is_err() {
+        return Ok(format!("sha256:{:x}", Sha256::digest(bytes)));
+    }
     let Ok(value) = serde_json::from_slice::<Value>(bytes) else {
         return Ok(format!("sha256:{:x}", Sha256::digest(bytes)));
     };
@@ -4404,8 +4412,11 @@ fn load_standard(
         });
     };
     let manifest = read_document(root, &manifest_path)?;
+    let manifest_source = manifest.source()?;
+    crate::wire::reject_duplicate_json_keys(manifest_source)
+        .map_err(AuditError::StandardManifestIndex)?;
     let index: StandardManifestIndex =
-        serde_json::from_str(manifest.source()?).map_err(AuditError::StandardManifestIndex)?;
+        serde_json::from_str(manifest_source).map_err(AuditError::StandardManifestIndex)?;
     let rules: Vec<LoadedDocument> = index
         .rules
         .iter()

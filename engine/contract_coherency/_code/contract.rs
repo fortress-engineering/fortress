@@ -65,6 +65,7 @@ impl ModuleContract {
     /// canonical-serialization error when valid meaning is formatted
     /// noncanonically.
     pub fn from_json_str(source: &str) -> Result<Self, ModuleContractLoadError> {
+        crate::wire::reject_duplicate_json_keys(source).map_err(ModuleContractLoadError::Json)?;
         let value: serde_json::Value =
             serde_json::from_str(source).map_err(ModuleContractLoadError::Json)?;
         let version = value

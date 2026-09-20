@@ -1,13 +1,12 @@
 //! Structural validation for versioned schemas and the draft standard bundle.
 //!
-//! This is a truthful bootstrap check of JSON structure, registered files,
-//! dialect identity, unique schema IDs, and registry agreement. It does not
-//! claim complete evaluation of the JSON Schema 2020-12 vocabulary.
+//! This validates the live manifest and registered JSON Schema 2020-12 files.
 
 use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use fortress_core::proof::{EvidenceReference, ProofExpression, ProofGraph, ProofOperator};
 use fortress_core::standard::StandardRegistry;
 use serde_json::Value;
 
@@ -35,7 +34,11 @@ fn registered_schemas_are_unique_json_schema_documents() {
         .expect("schema manifest must contain a schemas array");
     let mut identities = HashSet::with_capacity(paths.len());
 
-    assert_eq!(paths.len(), 59);
+    assert_eq!(paths.len(), 63);
+    let manifest_schema =
+        read_json("engine/standard_registry/_data/schema_manifest_schema_v2.json");
+    jsonschema::draft202012::validate(&manifest_schema, &manifest)
+        .expect("live schema manifest must validate under its advertised version");
     for path in paths {
         let relative = path.as_str().expect("schema path must be a string");
         let schema = read_json(relative);
@@ -50,7 +53,76 @@ fn registered_schemas_are_unique_json_schema_documents() {
             identities.insert(identity.to_owned()),
             "schema identity `{identity}` is duplicated"
         );
+        jsonschema::draft202012::meta::validate(&schema)
+            .unwrap_or_else(|error| panic!("invalid JSON Schema at {relative}: {error}"));
     }
+}
+
+/// `T-AF-STANDARD-REGISTRY-0001-R03-010`
+/// Fortress requirement: AF-STANDARD-REGISTRY-0001-R03
+#[test]
+fn proof_writer_validates_against_advertised_schema() {
+    let schema = read_json("engine/finding_model/_data/proof_graph_schema_v1.json");
+    let graph = ProofGraph::new(
+        "root",
+        vec![ProofExpression {
+            node_id: "root".to_owned(),
+            operator: ProofOperator::Leaf,
+            required_refs: vec![EvidenceReference::new("evidence:a").expect("stable evidence ID")],
+            children: Vec::new(),
+        }],
+    );
+    let instance = serde_json::to_value(graph).expect("proof graph serializes");
+    jsonschema::draft202012::validate(&schema, &instance)
+        .expect("emitted proof graph must match its advertised schema");
+}
+
+/// `T-AF-STANDARD-REGISTRY-0001-R03-011`
+/// Fortress requirement: AF-STANDARD-REGISTRY-0001-R03
+#[test]
+fn local_certificate_writer_validates_against_advertised_schema() {
+    let schema = read_json("engine/snapshot_governance/_data/quality_certificate_schema_v2.json");
+    let certificate = read_json("_info/quality_certificate.json");
+    jsonschema::draft202012::validate(&schema, &certificate)
+        .expect("emitted local certificate must match its advertised schema");
+}
+
+/// `T-AF-STANDARD-REGISTRY-0001-R03-012`
+/// Fortress requirement: AF-STANDARD-REGISTRY-0001-R03
+#[test]
+fn compatibility_catalog_covers_every_registered_schema_version() {
+    let schema = read_json("engine/standard_registry/_data/compatibility_catalog_schema_v1.json");
+    let catalog = read_json("engine/standard_registry/_data/compatibility_catalog_v1.json");
+    jsonschema::draft202012::validate(&schema, &catalog).expect("catalog wire shape");
+    let manifest = read_json("engine/standard_registry/_data/schema_manifest.json");
+    let entries = catalog["entries"].as_array().expect("catalog entries");
+    let paths = manifest["schemas"].as_array().expect("schema paths");
+    assert_eq!(entries.len(), paths.len());
+    let mut seen = HashSet::new();
+    for entry in entries {
+        let path = entry["schema_path"].as_str().expect("schema path");
+        assert!(
+            seen.insert(path.to_owned()),
+            "duplicate catalog path {path}"
+        );
+        assert_eq!(entry["schema_id"], read_json(path)["$id"]);
+        for role in ["writer", "reader"] {
+            if let Some(source) = entry[role]["source"].as_str() {
+                assert!(
+                    repository_root().join(source).is_file(),
+                    "missing {role} source {source}"
+                );
+            }
+        }
+        if entry["writer"]["status"] == "RETIRED" && entry["reader"]["status"] == "UNSUPPORTED" {
+            assert_eq!(entry["migration"], "REQUIRED_BEFORE_USE");
+        }
+    }
+    assert!(
+        paths
+            .iter()
+            .all(|path| seen.contains(path.as_str().expect("path")))
+    );
 }
 
 /// `T-AF-STANDARD-REGISTRY-0001-R05-001`

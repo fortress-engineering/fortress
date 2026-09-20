@@ -62,6 +62,12 @@ Supplies exact repository-relative input paths and content identities.
 
 Supplies source-artifact identities and source-profile dependency boundaries.
 
+### [Standard Registry](../standard_registry/README.md)
+
+**Types:** `depends_on`
+
+Supplies strict JSON decoding for stored cache descriptors without changing their historical digest semantics.
+
 ### [State and Effect Analysis](../state_effect_analysis/README.md)
 
 **Types:** `depends_on`

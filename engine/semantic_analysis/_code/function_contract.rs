@@ -705,12 +705,10 @@ pub fn load_function_contracts(
     let mut contracts = BTreeMap::new();
     let mut legacy_symbol_references = Vec::new();
     for source in &sources {
-        let document: FunctionContractDocument =
-            serde_json::from_str(&source.source).map_err(|error| {
-                FunctionContractError::InvalidJson {
-                    path: source.path.clone(),
-                    detail: error.to_string(),
-                }
+        let document: FunctionContractDocument = crate::wire::parse_strict_json(&source.source)
+            .map_err(|error| FunctionContractError::InvalidJson {
+                path: source.path.clone(),
+                detail: error.to_string(),
             })?;
         if !supported_document_schema(&document) {
             return Err(FunctionContractError::UnsupportedSchema(
@@ -786,9 +784,11 @@ pub fn canonicalize_function_contract_json(
     source: &str,
 ) -> Result<String, FunctionContractError> {
     let document: FunctionContractDocument =
-        serde_json::from_str(source).map_err(|error| FunctionContractError::InvalidJson {
-            path: path.into(),
-            detail: error.to_string(),
+        crate::wire::parse_strict_json(source).map_err(|error| {
+            FunctionContractError::InvalidJson {
+                path: path.into(),
+                detail: error.to_string(),
+            }
         })?;
     if !supported_document_schema(&document) {
         return Err(FunctionContractError::UnsupportedSchema(path.into()));

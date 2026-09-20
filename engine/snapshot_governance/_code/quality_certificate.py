@@ -41,7 +41,7 @@ from execution_storage import (
 
 CERTIFICATE_PATH = "_info/quality_certificate.json"
 SCHEMA_ID = "urn:fortress:derived:v2:local-quality-certificate"
-SEMANTIC_VERSION = "quality-certificate-v2.1"
+SEMANTIC_VERSION = "quality-certificate-v2.2"
 PROFILE_ID = "fortress-complete-local-v1"
 TOOLCHAIN = "1.97.1"
 TRACKED_EVIDENCE = "TRACKED_EVIDENCE"
@@ -97,6 +97,7 @@ REQUIRED_GATE_IDS = (
     "PROJECT_FILING_SYSTEM",
     "RUSTDOC",
     "SCHEMA_AND_STANDARD",
+    "SCHEMA_ARTIFACTS",
     "SELF_AUDIT",
     "SELF_MODEL",
     "SOURCE_ARCHITECTURE",
@@ -490,6 +491,7 @@ def _issue(root: Path, workspace: RunWorkspace) -> dict[str, Any]:
         certify = base + [
             "run",
             "--quiet",
+            "--all-features",
             "--manifest-path",
             "_data/Cargo.toml",
             "-p",
@@ -553,6 +555,33 @@ def _issue(root: Path, workspace: RunWorkspace) -> dict[str, Any]:
                     "storage": storage,
                 }
             )
+
+        artifact_files = {
+            logical_path: str((projection_directory / logical_path).resolve())
+            for _, logical_path, _ in SEMANTIC_ARTIFACTS
+        }
+        artifact_files.update(
+            {
+                logical_path: str(certification_outputs[command_name].resolve())
+                for command_name, logical_path, _ in CERTIFICATION_ARTIFACTS
+            }
+        )
+        artifact_manifest = temporary / "schema-artifacts.json"
+        artifact_manifest.write_bytes(
+            json.dumps(artifact_files, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        )
+        schema_artifacts = base + [
+            "test",
+            "--manifest-path",
+            "_data/Cargo.toml",
+            "--all-features",
+            "--test",
+            "artifact_schemas",
+        ]
+        schema_environment = environment.copy()
+        schema_environment["FORTRESS_SCHEMA_ARTIFACT_MANIFEST"] = str(artifact_manifest)
+        run_command(root, schema_artifacts, schema_environment, workspace=workspace)
+        pass_gate(gates, "SCHEMA_ARTIFACTS", schema_artifacts)
 
         certification_document = json.loads(
             certification_outputs["certification"].read_text(encoding="utf-8")

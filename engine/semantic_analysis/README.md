@@ -32,6 +32,12 @@ Supplies the shared normalized finding contract used to report supported PROGRAM
 
 Supplies exact snapshot-bound executable identities, static types, calls, value transfers, and neutral control structure interpreted by this Module.
 
+### [Standard Registry](../standard_registry/README.md)
+
+**Types:** `depends_on`
+
+Supplies strict JSON decoding for authored Function Contracts before semantic interpretation.
+
 ## Guarantees
 
 Absent preconditions admit the full static type domain; uncertainty only widens possible states; supported recursive analysis converges deterministically; authored postconditions are proved rather than trusted; findings include representable abstract counter-domains; and unsupported semantics never become evidence of safety.

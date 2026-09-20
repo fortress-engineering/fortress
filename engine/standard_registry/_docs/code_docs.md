@@ -25,3 +25,7 @@ Validates canonical stable entity and rule identities under the registered Fortr
 ### [`standard.rs`](../_code/standard.rs)
 
 Loads the exact draft manifest and complete rule-document bundle, validates canonical implication/conflict metadata, and rejects registry disagreement or inherently unsatisfiable rule logic.
+
+### [`wire.rs`](../_code/wire.rs)
+
+Rejects duplicate JSON object keys before typed decoding, enforces exact public integer limits, emits RFC 8785 bytes for new public records, and resolves explicit reader-version support without altering historical model serializers.

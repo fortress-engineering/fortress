@@ -937,6 +937,10 @@ fn execute_canonical_rust_suite<E: Write>(root: &PathBuf, error: &mut E) -> io::
             "certification Cargo target must be absolute and outside the governed repository",
         ));
     }
+    // Cargo's all-target test build can replace the CLI executable. Keep it in
+    // a supervised child target so Windows never tries to overwrite the
+    // running `fortress certify` process.
+    let suite_target = target.join("certification-tests");
     writeln!(
         error,
         "[fortress-certify] executing canonical local Rust suite with external build target"
@@ -944,7 +948,7 @@ fn execute_canonical_rust_suite<E: Write>(root: &PathBuf, error: &mut E) -> io::
     let status = Command::new(cargo)
         .current_dir(root)
         .env("RUSTUP_TOOLCHAIN", "1.97.1")
-        .env("CARGO_TARGET_DIR", target)
+        .env("CARGO_TARGET_DIR", suite_target)
         .arg("--config")
         .arg("_data/cargo_config.toml")
         .arg("test")

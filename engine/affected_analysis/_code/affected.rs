@@ -1188,7 +1188,7 @@ impl IncrementalProjectionCache {
                 path: descriptor_path.clone(),
                 source,
             })?;
-        let descriptor = serde_json::from_slice::<CacheDescriptor>(&descriptor_bytes);
+        let descriptor = crate::wire::parse_strict_json_bytes::<CacheDescriptor>(&descriptor_bytes);
         let Ok(descriptor) = descriptor else {
             return Ok(invalid_cache());
         };
@@ -1314,7 +1314,7 @@ impl IncrementalProjectionCache {
 
     fn latest_key(&self, kind: ProjectionKind) -> Option<String> {
         let bytes = fs::read(self.kind_directory(kind).join("current.json")).ok()?;
-        let index: CacheIndex = serde_json::from_slice(&bytes).ok()?;
+        let index: CacheIndex = crate::wire::parse_strict_json_bytes(&bytes).ok()?;
         (index.schema_version == 1).then_some(index.latest_dependency_digest)
     }
 }

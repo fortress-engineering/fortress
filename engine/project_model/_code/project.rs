@@ -136,6 +136,8 @@ impl ProjectConfiguration {
     /// Returns [`ProjectConfigurationLoadError::Json`] for invalid JSON and
     /// [`ProjectConfigurationLoadError::Model`] for schema or path violations.
     pub fn from_json_str(source: &str) -> Result<Self, ProjectConfigurationLoadError> {
+        crate::wire::reject_duplicate_json_keys(source)
+            .map_err(ProjectConfigurationLoadError::Json)?;
         let configuration: Self =
             serde_json::from_str(source).map_err(ProjectConfigurationLoadError::Json)?;
         configuration

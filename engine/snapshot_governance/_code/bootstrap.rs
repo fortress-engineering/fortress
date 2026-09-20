@@ -198,7 +198,7 @@ impl BootstrapProposal {
     ///
     /// Returns an error for malformed, noncanonical, or digest-invalid content.
     pub fn from_json_str(source: &str) -> Result<Self, BootstrapError> {
-        let proposal: Self = serde_json::from_str(source)
+        let proposal: Self = crate::wire::parse_strict_json(source)
             .map_err(|error| BootstrapError::InvalidProposal(error.to_string().into()))?;
         proposal.validate()?;
         if proposal.to_canonical_json()?.as_bytes() != source.as_bytes() {
@@ -744,7 +744,7 @@ struct InstalledStandardManifest {
 
 fn installed_standard_binding() -> Result<BootstrapStandardBinding, BootstrapError> {
     let manifest: InstalledStandardManifest =
-        serde_json::from_str(installed_standard_manifest())
+        crate::wire::parse_strict_json(installed_standard_manifest())
             .map_err(|error| BootstrapError::InvalidProposal(error.to_string().into()))?;
     if manifest.id.is_empty() || manifest.edition.is_empty() {
         return Err(BootstrapError::InvalidProposal(

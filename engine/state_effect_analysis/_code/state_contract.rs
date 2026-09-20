@@ -210,12 +210,10 @@ pub fn load_state_contracts(
     let mut resolved_types = BTreeMap::new();
     let mut state_owners = BTreeMap::new();
     for source in &sources {
-        let document: StateContractDocument =
-            serde_json::from_str(&source.source).map_err(|error| {
-                StateContractError::InvalidJson {
-                    path: source.path.clone(),
-                    detail: error.to_string(),
-                }
+        let document: StateContractDocument = crate::wire::parse_strict_json(&source.source)
+            .map_err(|error| StateContractError::InvalidJson {
+                path: source.path.clone(),
+                detail: error.to_string(),
             })?;
         if document.schema != STATE_CONTRACT_SCHEMA
             || document.schema_version != STATE_CONTRACT_SCHEMA_VERSION
@@ -420,11 +418,12 @@ pub fn canonicalize_state_contract_json(
     path: &str,
     source: &str,
 ) -> Result<String, StateContractError> {
-    let document =
-        serde_json::from_str(source).map_err(|error| StateContractError::InvalidJson {
+    let document = crate::wire::parse_strict_json(source).map_err(|error| {
+        StateContractError::InvalidJson {
             path: path.into(),
             detail: error.to_string(),
-        })?;
+        }
+    })?;
     canonical_document(&document)
 }
 

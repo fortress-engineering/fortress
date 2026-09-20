@@ -50,6 +50,12 @@ Existing symbols, nominal declarations, calls, and state-place facts are referen
 
 The canonical Project Filing model remains authoritative for governed Module ownership, Code membership, and filesystem validity. Analysis-only ownership permits observation before that conformance exists and never substitutes for it.
 
+### [Standard Registry](../standard_registry/README.md)
+
+**Types:** `depends_on`
+
+Supplies duplicate-key rejection for authored Source Profiles before structural evaluation.
+
 ## Guarantees
 
 Source Artifact identities derive from stable owning Module identity when declared or deterministic repository-relative analysis territory otherwise; exact bytes remain independently content-addressed; missing authored responsibility and unsupported observations never become favorable intent; and no universal language syntax or one-declaration-per-file doctrine is introduced.

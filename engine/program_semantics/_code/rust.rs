@@ -721,6 +721,9 @@ fn semantic_source_inputs(files: &BTreeMap<String, &[u8]>) -> Vec<ProgramSourceI
 
 fn semantic_input_digest(path: &str, bytes: &[u8]) -> String {
     if path == "contract.json" || path.ends_with("/contract.json") {
+        if crate::wire::reject_duplicate_json_keys_bytes(bytes).is_err() {
+            return format!("sha256:{:x}", Sha256::digest(bytes));
+        }
         let Ok(value) = serde_json::from_slice::<serde_json::Value>(bytes) else {
             return format!("sha256:{:x}", Sha256::digest(bytes));
         };

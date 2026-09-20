@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:compatibility-catalog",
+  "title": "Fortress wire compatibility catalog",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "schema_version", "entries"],
+  "properties": {
+    "$schema": { "const": "urn:fortress:schema:v1:compatibility-catalog" },
+    "schema_version": { "const": 1 },
+    "entries": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["schema_id", "schema_path", "version", "writer", "reader", "migration", "identity_algorithm", "content_hash_algorithm"],
+        "properties": {
+          "schema_id": { "type": "string", "minLength": 1 },
+          "schema_path": { "type": "string", "minLength": 1 },
+          "version": { "type": "integer", "minimum": 1 },
+          "writer": { "$ref": "#/$defs/implementation" },
+          "reader": { "$ref": "#/$defs/implementation" },
+          "migration": { "enum": ["NONE", "REQUIRED_BEFORE_USE", "NOT_APPLICABLE"] },
+          "identity_algorithm": { "$ref": "#/$defs/algorithm" },
+          "content_hash_algorithm": { "$ref": "#/$defs/algorithm" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "implementation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "source"],
+      "properties": {
+        "status": { "enum": ["ACTIVE", "AUTHORED", "RETIRED", "SUPPORTED", "TEST_ONLY", "UNSUPPORTED", "SCHEMA_ONLY"] },
+        "source": { "type": ["string", "null"] }
+      }
+    },
+    "algorithm": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "source"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "source": { "type": ["string", "null"] }
+      }
+    }
+  }
+}

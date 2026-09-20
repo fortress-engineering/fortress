@@ -233,7 +233,7 @@ impl RuntimeStorage {
             if path.extension().is_none_or(|extension| extension != "json") {
                 continue;
             }
-            let journal: RunJournal = serde_json::from_slice(&fs::read(path)?)
+            let journal: RunJournal = crate::wire::parse_strict_json_bytes(&fs::read(path)?)
                 .map_err(|_| io::Error::other("uncertain prior execution journal"))?;
             if journal.root_identity == self.root_identity
                 && journal.run_root.exists()
@@ -279,8 +279,9 @@ impl RuntimeStorage {
             namespace: "rust".into(),
         };
         if marker_path.exists() {
-            let marker: TargetMarker = serde_json::from_slice(&fs::read(&marker_path)?)
-                .map_err(|_| io::Error::other("uncertain compiler target owner"))?;
+            let marker: TargetMarker =
+                crate::wire::parse_strict_json_bytes(&fs::read(&marker_path)?)
+                    .map_err(|_| io::Error::other("uncertain compiler target owner"))?;
             if marker != expected_marker {
                 return Err(io::Error::other("compiler target owner mismatch"));
             }
@@ -359,7 +360,7 @@ impl RuntimeStorage {
                 results.push((path, "RETAINED_UNCERTAIN".into()));
                 continue;
             };
-            let Ok(mut journal) = serde_json::from_slice::<RunJournal>(&bytes) else {
+            let Ok(mut journal) = crate::wire::parse_strict_json_bytes::<RunJournal>(&bytes) else {
                 results.push((path, "RETAINED_UNCERTAIN".into()));
                 continue;
             };
@@ -382,7 +383,7 @@ impl RuntimeStorage {
             }
             let marker = fs::read(expected.join("owner.json"))
                 .ok()
-                .and_then(|value| serde_json::from_slice::<OwnerMarker>(&value).ok());
+                .and_then(|value| crate::wire::parse_strict_json_bytes::<OwnerMarker>(&value).ok());
             if marker.is_none_or(|marker| {
                 marker.run_nonce != journal.run_nonce || marker.root_identity != self.root_identity
             }) {
@@ -522,9 +523,10 @@ impl RunWorkspace {
             let retained_compiler = if self.policy.retain_shared_compiler {
                 compiler_bytes
             } else {
-                let marker: TargetMarker =
-                    serde_json::from_slice(&fs::read(self.target.join("_owner.json"))?)
-                        .map_err(|_| io::Error::other("uncertain compiler target owner"))?;
+                let marker: TargetMarker = crate::wire::parse_strict_json_bytes(&fs::read(
+                    self.target.join("_owner.json"),
+                )?)
+                .map_err(|_| io::Error::other("uncertain compiler target owner"))?;
                 if marker.root_identity != self.journal.root_identity || marker.namespace != "rust"
                 {
                     return Err(io::Error::other("compiler target owner mismatch"));

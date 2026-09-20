@@ -142,6 +142,7 @@ impl FilingSystemProfiles {
     /// Returns a typed error for invalid JSON, schema identity, duplicate
     /// registrations, noncanonical paths, or unsupported element names.
     pub fn from_json_str(source: &str) -> Result<Self, FilingProfileError> {
+        crate::wire::reject_duplicate_json_keys(source).map_err(FilingProfileError::Json)?;
         let profiles: Self = serde_json::from_str(source).map_err(FilingProfileError::Json)?;
         profiles.validate()?;
         Ok(profiles)

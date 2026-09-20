@@ -43,6 +43,7 @@ impl FindingGovernanceDocument {
     ///
     /// Returns an error for malformed JSON or invalid/deduplicated authority.
     pub fn from_json_str(source: &str) -> Result<Self, FindingGovernanceError> {
+        crate::wire::reject_duplicate_json_keys(source).map_err(FindingGovernanceError::Json)?;
         let document: Self = serde_json::from_str(source).map_err(FindingGovernanceError::Json)?;
         document.validate()?;
         Ok(document)

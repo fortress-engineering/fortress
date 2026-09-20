@@ -34,6 +34,10 @@ Declares the live filesystem document-read boundary and its truthful success/fai
 
 Defines the exact-snapshot, reviewable migration plan for legacy symbol references and semantic finding-governance identities, including occurrence counts and dependency-bound source digests.
 
+### [`quality_certificate_schema_v2.json`](../_data/quality_certificate_schema_v2.json)
+
+Defines the current source-pure local quality certificate emitted by the build issuer, including exact source, gates, artifact digests, and an explicit unverified-authenticity limitation.
+
 ### [`contract_rule.json`](../_data/contract_rule.json)
 
 Carries the draft normative rule governing canonical CCG compilation and currently supported logical coherency.

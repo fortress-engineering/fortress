@@ -38,6 +38,12 @@ Provides canonical executable bodies, value transfers, calls, fields, reads, and
 
 Provides the value-domain result and input identity on which information-flow derivation is bound.
 
+### [Standard Registry](../standard_registry/README.md)
+
+**Types:** `depends_on`
+
+Supplies duplicate-key-rejecting JSON decoding for authored information-flow policy.
+
 ### [State and Effect Analysis](../state_effect_analysis/README.md)
 
 **Types:** `depends_on`

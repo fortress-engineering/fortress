@@ -24,7 +24,15 @@ Verifies stable identity parsing and exact draft rule registry metadata at the S
 
 ### [`schema_registry.rs`](../_code/schema_registry.rs)
 
-Checks schema identities and references plus agreement between the draft manifest and implemented rule registry.
+Validates registered JSON Schema documents, the live manifest, emitted proof and certificate shapes, complete compatibility catalog coverage, and agreement with the draft rule registry.
+
+### [`artifact_schemas.rs`](../_code/artifact_schemas.rs)
+
+After issuance produces its exact candidate, validates every advertised artifact schema, including large local materializations, using the registered 2020-12 schemas. The issuer records this as a separate required gate.
+
+### [`wire_contract.rs`](../_code/wire_contract.rs)
+
+Checks duplicate-key rejection, exact public integers, optional bounds, unknown versions and enums, and RFC 8785 canonical byte vectors.
 
 ### [`std_id_001.rs`](../_code/std_id_001.rs)
 

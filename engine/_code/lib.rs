@@ -60,6 +60,8 @@ pub mod placement;
 pub mod program_semantics;
 #[path = "../project_model/_code/project.rs"]
 pub mod project;
+#[path = "../finding_model/_code/proof.rs"]
+pub mod proof;
 #[path = "../reference_resolution/_code/reference.rs"]
 pub mod reference_resolution;
 #[path = "../snapshot_governance/_code/runtime_storage.rs"]
@@ -82,3 +84,5 @@ pub mod state_effect_analysis;
 pub mod testing_boundary;
 #[path = "../snapshot_governance/_code/traceability.rs"]
 pub mod traceability;
+#[path = "../standard_registry/_code/wire.rs"]
+pub mod wire;

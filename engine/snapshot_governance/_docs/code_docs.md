@@ -56,7 +56,7 @@ Projects the canonical Project Model filing analysis into REPO-MODULE-001 findin
 
 ### [`quality_certificate.py`](../_code/quality_certificate.py)
 
-Executes the complete pinned local quality-gate profile under the leased storage supervisor, consumes one exact-snapshot certification stack, stages tracked evidence with durable preimages, and publishes the certificate pointer last. It maintains the closed tracked-evidence/local-materialization registry, reconstructs bounded subject-addressed projections, cleans only idle Python-owned subject cache entries, distinguishes missing, stale, invalid, and current local bytes, and verifies PASS, source freshness, evidence digests, and the tamper stamp while retaining UNVERIFIED issuer authenticity. Generator determinism remains proved by governed tests.
+Executes the complete pinned local quality-gate profile under the leased storage supervisor, consumes one exact-snapshot certification stack, validates every emitted artifact against its advertised registered schema, stages tracked evidence with durable preimages, and publishes the certificate pointer last. It maintains the closed tracked-evidence/local-materialization registry, reconstructs bounded subject-addressed projections, cleans only idle Python-owned subject cache entries, distinguishes missing, stale, invalid, and current local bytes, and verifies PASS, source freshness, evidence digests, and the tamper stamp while retaining UNVERIFIED issuer authenticity. Generator determinism remains proved by governed tests.
 
 ### [`runtime_storage.rs`](../_code/runtime_storage.rs)
 

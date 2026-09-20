@@ -6,13 +6,13 @@ The Finding Model exists so every evaluator can describe snapshot-bound rule vio
 
 ## Responsibility
 
-Validate, normalize, deterministically order, and content-address canonical finding and defeater evidence; derive stable lifecycle identity independently of presentation; and evaluate authored legacy baseline and finding-specific exception authority without changing raw conformance or derived epistemic limitations.
+Validate, normalize, deterministically order, and content-address canonical finding and defeater evidence; define the neutral evidence-reference and acyclic proof shape used by claim consumers; derive stable lifecycle identity independently of presentation; and evaluate authored legacy baseline and finding-specific exception authority without changing raw conformance or derived epistemic limitations.
 
 ## Scope
 
 ### Includes
 
-Finding definitions, occurrences, source spans and locations, evaluator provenance, failure state, closed defeater kinds and strengths, stable defeater scopes and retirement conditions, deterministic ordering, stable identity eligibility, baseline lifecycle, explicit exception disposition, progressive enforcement, typed construction errors, and the authored finite span-presence state/effect intent of FindingLocation.
+Finding definitions, occurrences, source spans and locations, evaluator provenance, failure state, closed defeater kinds and strengths, stable defeater scopes and retirement conditions, canonical proof graphs and evidence citations, deterministic ordering, stable identity eligibility, baseline lifecycle, explicit exception disposition, progressive enforcement, typed construction errors, and the authored finite span-presence state/effect intent of FindingLocation.
 
 ### Excludes
 

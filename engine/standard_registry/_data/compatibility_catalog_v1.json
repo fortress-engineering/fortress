@@ -1,0 +1,1392 @@
+{
+  "$schema": "urn:fortress:schema:v1:compatibility-catalog",
+  "schema_version": 1,
+  "entries": [
+    {
+      "schema_id": "urn:fortress:schema:v1:affected-analysis",
+      "schema_path": "engine/affected_analysis/_data/affected_analysis_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/affected_analysis/_code/affected.rs"
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "no-model-level-content-hash-algorithm",
+        "source": null
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v1:schema-manifest",
+      "schema_path": "engine/standard_registry/_data/schema_manifest_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "RETIRED",
+        "source": null
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "REQUIRED_BEFORE_USE",
+      "identity_algorithm": {
+        "id": "historical-algorithm-unavailable-to-current-reader",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "historical-algorithm-unavailable-to-current-reader",
+        "source": null
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v2:schema-manifest",
+      "schema_path": "engine/standard_registry/_data/schema_manifest_schema_v2.json",
+      "version": 2,
+      "writer": {
+        "status": "AUTHORED",
+        "source": null
+      },
+      "reader": {
+        "status": "TEST_ONLY",
+        "source": "engine/standard_registry/testing/_code/schema_registry.rs"
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "literal-authored-identity-fields",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "no-model-level-content-hash-algorithm",
+        "source": null
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v1:compatibility-catalog",
+      "schema_path": "engine/standard_registry/_data/compatibility_catalog_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "SCHEMA_ONLY",
+        "source": null
+      },
+      "reader": {
+        "status": "TEST_ONLY",
+        "source": "engine/standard_registry/testing/_code/schema_registry.rs"
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "no-model-level-content-hash-algorithm",
+        "source": null
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v1:common",
+      "schema_path": "engine/standard_registry/_data/common_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "SCHEMA_ONLY",
+        "source": null
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "no-model-level-content-hash-algorithm",
+        "source": null
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v1:standard-manifest",
+      "schema_path": "engine/standard_registry/_data/standard_manifest_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "AUTHORED",
+        "source": null
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/standard_registry/_code/standard.rs"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "literal-authored-identity-fields",
+        "source": "engine/standard_registry/_code/standard.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "no-model-level-content-hash-algorithm",
+        "source": null
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v1:rule",
+      "schema_path": "engine/standard_registry/_data/rule_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "AUTHORED",
+        "source": null
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/standard_registry/_code/standard.rs"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "literal-authored-identity-fields",
+        "source": "engine/standard_registry/_code/standard.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "no-model-level-content-hash-algorithm",
+        "source": null
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v2:project-configuration",
+      "schema_path": "engine/project_model/_data/project_schema_v2.json",
+      "version": 2,
+      "writer": {
+        "status": "RETIRED",
+        "source": null
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/project_model/_code/project.rs"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "historical-authored-identity-preserved-by-reader",
+        "source": "engine/project_model/_code/project.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "historical-source-digest-not-recomputed",
+        "source": "engine/project_model/_code/project.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v3:project-configuration",
+      "schema_path": "engine/project_model/_data/project_schema_v3.json",
+      "version": 3,
+      "writer": {
+        "status": "AUTHORED",
+        "source": null
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/project_model/_code/project.rs"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "literal-authored-identity-fields",
+        "source": "engine/project_model/_code/project.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "no-model-level-content-hash-algorithm",
+        "source": null
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v2:filing-system-profiles",
+      "schema_path": "engine/project_model/_data/filing_profile_schema_v2.json",
+      "version": 2,
+      "writer": {
+        "status": "AUTHORED",
+        "source": null
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/project_model/_code/filing.rs"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "literal-authored-identity-fields",
+        "source": "engine/project_model/_code/filing.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "no-model-level-content-hash-algorithm",
+        "source": null
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v1:repository-observation",
+      "schema_path": "engine/repository_observation/_data/observation_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/repository_observation/_code/observation.rs"
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-observed-repository-material",
+        "source": "engine/repository_observation/_code/observation.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v2:repository-snapshot",
+      "schema_path": "engine/snapshot_governance/_data/repository_snapshot_schema_v2.json",
+      "version": 2,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/snapshot_governance/_code/snapshot.rs"
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-snapshot-identity-material",
+        "source": "engine/snapshot_governance/_code/snapshot.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v1:identity-migration",
+      "schema_path": "engine/snapshot_governance/_data/identity_migration_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/snapshot_governance/_code/identity_migration.rs"
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-exact-migration-input-bytes",
+        "source": "engine/snapshot_governance/_code/identity_migration.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:derived:v2:local-quality-certificate",
+      "schema_path": "engine/snapshot_governance/_data/quality_certificate_schema_v2.json",
+      "version": 2,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/snapshot_governance/_code/quality_certificate.py"
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/snapshot_governance/_code/quality_certificate.py"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-source-pure-certificate-stamp-v2",
+        "source": "engine/snapshot_governance/_code/quality_certificate.py"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v1:finding-governance",
+      "schema_path": "engine/finding_model/_data/finding_governance_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "AUTHORED",
+        "source": null
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/finding_model/_code/governance.rs"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "literal-authored-identity-fields",
+        "source": "engine/finding_model/_code/governance.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "no-model-level-content-hash-algorithm",
+        "source": null
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v1:proof-graph",
+      "schema_path": "engine/finding_model/_data/proof_graph_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/finding_model/_code/proof.rs"
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/finding_model/_code/proof.rs"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "caller-supplied-stable-node-and-evidence-ids",
+        "source": "engine/finding_model/_code/proof.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "no-model-level-content-hash-algorithm",
+        "source": null
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v2:snapshot-finding",
+      "schema_path": "engine/snapshot_governance/_data/snapshot_finding_schema_v2.json",
+      "version": 2,
+      "writer": {
+        "status": "RETIRED",
+        "source": null
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "REQUIRED_BEFORE_USE",
+      "identity_algorithm": {
+        "id": "historical-algorithm-unavailable-to-current-reader",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "historical-algorithm-unavailable-to-current-reader",
+        "source": null
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v3:snapshot-finding",
+      "schema_path": "engine/snapshot_governance/_data/snapshot_finding_schema_v3.json",
+      "version": 3,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/snapshot_governance/_code/audit.rs"
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "finding-id-v2-sha256-owner-material",
+        "source": "engine/finding_model/_code/finding.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "no-model-level-content-hash-algorithm",
+        "source": null
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v4:snapshot-audit",
+      "schema_path": "engine/snapshot_governance/_data/snapshot_audit_schema_v4.json",
+      "version": 4,
+      "writer": {
+        "status": "RETIRED",
+        "source": null
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "REQUIRED_BEFORE_USE",
+      "identity_algorithm": {
+        "id": "historical-algorithm-unavailable-to-current-reader",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "historical-algorithm-unavailable-to-current-reader",
+        "source": null
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v5:snapshot-audit",
+      "schema_path": "engine/snapshot_governance/_data/snapshot_audit_schema_v5.json",
+      "version": 5,
+      "writer": {
+        "status": "RETIRED",
+        "source": null
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "REQUIRED_BEFORE_USE",
+      "identity_algorithm": {
+        "id": "historical-algorithm-unavailable-to-current-reader",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "historical-algorithm-unavailable-to-current-reader",
+        "source": null
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v6:snapshot-audit",
+      "schema_path": "engine/snapshot_governance/_data/snapshot_audit_schema_v6.json",
+      "version": 6,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/snapshot_governance/_code/audit.rs"
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "no-model-level-content-hash-algorithm",
+        "source": null
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v2:module-contract",
+      "schema_path": "engine/contract_coherency/_data/module_contract_schema_v2.json",
+      "version": 2,
+      "writer": {
+        "status": "RETIRED",
+        "source": null
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/contract_coherency/_code/contract.rs"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "historical-authored-identity-preserved-by-reader",
+        "source": "engine/contract_coherency/_code/contract.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "historical-source-digest-not-recomputed",
+        "source": "engine/contract_coherency/_code/contract.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v3:module-contract",
+      "schema_path": "engine/contract_coherency/_data/module_contract_schema_v3.json",
+      "version": 3,
+      "writer": {
+        "status": "AUTHORED",
+        "source": null
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/contract_coherency/_code/contract.rs"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "literal-authored-identity-fields",
+        "source": "engine/contract_coherency/_code/contract.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "no-model-level-content-hash-algorithm",
+        "source": null
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v1:contract-coherency-graph",
+      "schema_path": "engine/contract_coherency/_data/graph_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/contract_coherency/_code/graph.rs"
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-owner-canonical-json-bytes",
+        "source": "engine/contract_coherency/_code/graph.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v1:semantic-conformance",
+      "schema_path": "engine/architecture_evaluation/_data/semantic_conformance_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "RETIRED",
+        "source": null
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "REQUIRED_BEFORE_USE",
+      "identity_algorithm": {
+        "id": "historical-algorithm-unavailable-to-current-reader",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "historical-algorithm-unavailable-to-current-reader",
+        "source": null
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v2:semantic-conformance",
+      "schema_path": "engine/architecture_evaluation/_data/semantic_conformance_schema_v2.json",
+      "version": 2,
+      "writer": {
+        "status": "RETIRED",
+        "source": null
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "REQUIRED_BEFORE_USE",
+      "identity_algorithm": {
+        "id": "historical-algorithm-unavailable-to-current-reader",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "historical-algorithm-unavailable-to-current-reader",
+        "source": null
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v3:semantic-conformance",
+      "schema_path": "engine/architecture_evaluation/_data/semantic_conformance_schema_v3.json",
+      "version": 3,
+      "writer": {
+        "status": "RETIRED",
+        "source": null
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "REQUIRED_BEFORE_USE",
+      "identity_algorithm": {
+        "id": "historical-algorithm-unavailable-to-current-reader",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "historical-algorithm-unavailable-to-current-reader",
+        "source": null
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v4:semantic-conformance",
+      "schema_path": "engine/architecture_evaluation/_data/semantic_conformance_schema_v4.json",
+      "version": 4,
+      "writer": {
+        "status": "RETIRED",
+        "source": null
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "REQUIRED_BEFORE_USE",
+      "identity_algorithm": {
+        "id": "historical-algorithm-unavailable-to-current-reader",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "historical-algorithm-unavailable-to-current-reader",
+        "source": null
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v5:semantic-conformance",
+      "schema_path": "engine/architecture_evaluation/_data/semantic_conformance_schema_v5.json",
+      "version": 5,
+      "writer": {
+        "status": "RETIRED",
+        "source": null
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "REQUIRED_BEFORE_USE",
+      "identity_algorithm": {
+        "id": "historical-algorithm-unavailable-to-current-reader",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "historical-algorithm-unavailable-to-current-reader",
+        "source": null
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v6:semantic-conformance",
+      "schema_path": "engine/architecture_evaluation/_data/semantic_conformance_schema_v6.json",
+      "version": 6,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/architecture_evaluation/_code/semantic_conformance.rs"
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-owner-canonical-json-bytes",
+        "source": "engine/architecture_evaluation/_code/semantic_conformance.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v1:behavioral-flow-graph",
+      "schema_path": "engine/behavioral_semantics/_data/behavior_graph_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/behavioral_semantics/_code/behavior.rs"
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-owner-canonical-json-bytes",
+        "source": "engine/behavioral_semantics/_code/behavior.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v3:program-semantic-model",
+      "schema_path": "engine/program_semantics/_data/program_model_schema_v3.json",
+      "version": 3,
+      "writer": {
+        "status": "RETIRED",
+        "source": null
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "REQUIRED_BEFORE_USE",
+      "identity_algorithm": {
+        "id": "historical-algorithm-unavailable-to-current-reader",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "historical-algorithm-unavailable-to-current-reader",
+        "source": null
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v4:program-semantic-model",
+      "schema_path": "engine/program_semantics/_data/program_model_schema_v4.json",
+      "version": 4,
+      "writer": {
+        "status": "RETIRED",
+        "source": null
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "REQUIRED_BEFORE_USE",
+      "identity_algorithm": {
+        "id": "historical-algorithm-unavailable-to-current-reader",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "historical-algorithm-unavailable-to-current-reader",
+        "source": null
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v5:program-semantic-model",
+      "schema_path": "engine/program_semantics/_data/program_model_schema_v5.json",
+      "version": 5,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/program_semantics/_code/program.rs"
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "rust-semantic-identity-v2-sha256-owner-material",
+        "source": "engine/program_semantics/_code/semantic_identity.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-owner-canonical-json-bytes",
+        "source": "engine/program_semantics/_code/program.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v3:function-contracts",
+      "schema_path": "engine/semantic_analysis/_data/function_contract_schema_v3.json",
+      "version": 3,
+      "writer": {
+        "status": "RETIRED",
+        "source": null
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/semantic_analysis/_code/function_contract.rs"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "historical-authored-identity-preserved-by-reader",
+        "source": "engine/semantic_analysis/_code/function_contract.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "historical-source-digest-not-recomputed",
+        "source": "engine/semantic_analysis/_code/function_contract.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v4:function-contracts",
+      "schema_path": "engine/semantic_analysis/_data/function_contract_schema_v4.json",
+      "version": 4,
+      "writer": {
+        "status": "RETIRED",
+        "source": null
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/semantic_analysis/_code/function_contract.rs"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "historical-authored-identity-preserved-by-reader",
+        "source": "engine/semantic_analysis/_code/function_contract.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "historical-source-digest-not-recomputed",
+        "source": "engine/semantic_analysis/_code/function_contract.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v5:function-contracts",
+      "schema_path": "engine/semantic_analysis/_data/function_contract_schema_v5.json",
+      "version": 5,
+      "writer": {
+        "status": "AUTHORED",
+        "source": null
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/semantic_analysis/_code/function_contract.rs"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "literal-authored-identity-fields",
+        "source": "engine/semantic_analysis/_code/function_contract.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-distributed-exact-source-material",
+        "source": "engine/semantic_analysis/_code/function_contract.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v1:semantic-analysis",
+      "schema_path": "engine/semantic_analysis/_data/semantic_analysis_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "RETIRED",
+        "source": null
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "REQUIRED_BEFORE_USE",
+      "identity_algorithm": {
+        "id": "historical-algorithm-unavailable-to-current-reader",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "historical-algorithm-unavailable-to-current-reader",
+        "source": null
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v2:semantic-analysis",
+      "schema_path": "engine/semantic_analysis/_data/semantic_analysis_schema_v2.json",
+      "version": 2,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/semantic_analysis/_code/semantic.rs"
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-owner-canonical-json-bytes",
+        "source": "engine/semantic_analysis/_code/semantic.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v1:state-contracts",
+      "schema_path": "engine/state_effect_analysis/_data/state_contract_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "AUTHORED",
+        "source": null
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/state_effect_analysis/_code/state_contract.rs"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "literal-authored-identity-fields",
+        "source": "engine/state_effect_analysis/_code/state_contract.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-distributed-exact-source-material",
+        "source": "engine/state_effect_analysis/_code/state_contract.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v1:state-effect-analysis",
+      "schema_path": "engine/state_effect_analysis/_data/state_effect_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "RETIRED",
+        "source": null
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "REQUIRED_BEFORE_USE",
+      "identity_algorithm": {
+        "id": "historical-algorithm-unavailable-to-current-reader",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "historical-algorithm-unavailable-to-current-reader",
+        "source": null
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v2:state-effect-analysis",
+      "schema_path": "engine/state_effect_analysis/_data/state_effect_schema_v2.json",
+      "version": 2,
+      "writer": {
+        "status": "RETIRED",
+        "source": null
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "REQUIRED_BEFORE_USE",
+      "identity_algorithm": {
+        "id": "historical-algorithm-unavailable-to-current-reader",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "historical-algorithm-unavailable-to-current-reader",
+        "source": null
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v3:state-effect-analysis",
+      "schema_path": "engine/state_effect_analysis/_data/state_effect_schema_v3.json",
+      "version": 3,
+      "writer": {
+        "status": "RETIRED",
+        "source": null
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "REQUIRED_BEFORE_USE",
+      "identity_algorithm": {
+        "id": "historical-algorithm-unavailable-to-current-reader",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "historical-algorithm-unavailable-to-current-reader",
+        "source": null
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v4:state-effect-analysis",
+      "schema_path": "engine/state_effect_analysis/_data/state_effect_schema_v4.json",
+      "version": 4,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/state_effect_analysis/_code/state_effect.rs"
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-owner-canonical-json-bytes",
+        "source": "engine/state_effect_analysis/_code/state_effect.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v1:information-flow-analysis",
+      "schema_path": "engine/information_flow/_data/flow_analysis_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/information_flow/_code/information_flow.rs"
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-owner-canonical-json-bytes",
+        "source": "engine/information_flow/_code/information_flow.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v1:information-flow-policy",
+      "schema_path": "engine/information_flow/_data/flow_policy_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "AUTHORED",
+        "source": null
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/information_flow/_code/policy.rs"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "literal-authored-identity-fields",
+        "source": "engine/information_flow/_code/policy.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-exact-policy-source-bytes",
+        "source": "engine/information_flow/_code/policy.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v1:environment-contracts",
+      "schema_path": "engine/environmental_semantics/_data/environment_contract_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "RETIRED",
+        "source": null
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/environmental_semantics/_code/environment_contract.rs"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "historical-authored-identity-preserved-by-reader",
+        "source": "engine/environmental_semantics/_code/environment_contract.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "historical-source-digest-not-recomputed",
+        "source": "engine/environmental_semantics/_code/environment_contract.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v2:environment-contracts",
+      "schema_path": "engine/environmental_semantics/_data/environment_contract_schema_v2.json",
+      "version": 2,
+      "writer": {
+        "status": "AUTHORED",
+        "source": null
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/environmental_semantics/_code/environment_contract.rs"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "literal-authored-identity-fields",
+        "source": "engine/environmental_semantics/_code/environment_contract.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-distributed-exact-source-material",
+        "source": "engine/environmental_semantics/_code/environment_contract.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v1:environmental-analysis",
+      "schema_path": "engine/environmental_semantics/_data/environmental_analysis_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/environmental_semantics/_code/environmental.rs"
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-owner-canonical-json-bytes",
+        "source": "engine/environmental_semantics/_code/environmental.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v1:behavior-realization-contracts",
+      "schema_path": "engine/behavioral_realization/_data/realization_contract_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "RETIRED",
+        "source": null
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/behavioral_realization/_code/realization_contract.rs"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "historical-authored-identity-preserved-by-reader",
+        "source": "engine/behavioral_realization/_code/realization_contract.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "historical-source-digest-not-recomputed",
+        "source": "engine/behavioral_realization/_code/realization_contract.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v2:behavior-realization-contracts",
+      "schema_path": "engine/behavioral_realization/_data/realization_contract_schema_v2.json",
+      "version": 2,
+      "writer": {
+        "status": "AUTHORED",
+        "source": null
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/behavioral_realization/_code/realization_contract.rs"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "literal-authored-identity-fields",
+        "source": "engine/behavioral_realization/_code/realization_contract.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-distributed-exact-source-material",
+        "source": "engine/behavioral_realization/_code/realization_contract.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v1:realized-behavioral-flow-graph",
+      "schema_path": "engine/behavioral_realization/_data/realized_bfg_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/behavioral_realization/_code/realization.rs"
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-owner-canonical-json-bytes",
+        "source": "engine/behavioral_realization/_code/realization.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v1:component-resolution-index",
+      "schema_path": "engine/reference_resolution/_data/resolution_index_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/reference_resolution/_code/reference.rs"
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-owner-canonical-json-bytes",
+        "source": "engine/reference_resolution/_code/reference.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v1:source-profiles",
+      "schema_path": "engine/source_architecture/_data/source_profile_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "AUTHORED",
+        "source": null
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/source_architecture/_code/source.rs"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "literal-authored-identity-fields",
+        "source": "engine/source_architecture/_code/source.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "no-model-level-content-hash-algorithm",
+        "source": null
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v1:source-artifact-model",
+      "schema_path": "engine/source_architecture/_data/source_model_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/source_architecture/_code/source.rs"
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "no-model-level-content-hash-algorithm",
+        "source": null
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v1:evidence-graph",
+      "schema_path": "engine/certification/_data/evidence_graph_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "RETIRED",
+        "source": null
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "REQUIRED_BEFORE_USE",
+      "identity_algorithm": {
+        "id": "historical-algorithm-unavailable-to-current-reader",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "historical-algorithm-unavailable-to-current-reader",
+        "source": null
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v2:evidence-graph",
+      "schema_path": "engine/certification/_data/evidence_graph_schema_v2.json",
+      "version": 2,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/certification/_code/certification.rs"
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "no-model-level-content-hash-algorithm",
+        "source": null
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v1:certification-profile",
+      "schema_path": "engine/certification/_data/certification_profile_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "AUTHORED",
+        "source": null
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/certification/_code/certification.rs"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "literal-authored-identity-fields",
+        "source": "engine/certification/_code/certification.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "no-model-level-content-hash-algorithm",
+        "source": null
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v1:certification-result",
+      "schema_path": "engine/certification/_data/certification_result_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/certification/_code/certification.rs"
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "no-model-level-content-hash-algorithm",
+        "source": null
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v1:verification-bindings",
+      "schema_path": "engine/certification/_data/verification_binding_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "AUTHORED",
+        "source": null
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/snapshot_governance/_code/audit.rs"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "literal-authored-identity-fields",
+        "source": "engine/snapshot_governance/_code/audit.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "no-model-level-content-hash-algorithm",
+        "source": null
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v1:verified-behavioral-flow-graph",
+      "schema_path": "engine/certification/_data/verified_bfg_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/certification/_code/certification.rs"
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "no-model-level-content-hash-algorithm",
+        "source": null
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v1:command",
+      "schema_path": "cli/_data/command_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "SCHEMA_ONLY",
+        "source": null
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "no-model-level-content-hash-algorithm",
+        "source": null
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v1:change",
+      "schema_path": "engine/project_model/_data/change_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "SCHEMA_ONLY",
+        "source": null
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "no-model-level-content-hash-algorithm",
+        "source": null
+      }
+    }
+  ]
+}

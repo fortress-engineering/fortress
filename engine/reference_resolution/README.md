@@ -40,6 +40,12 @@ Supplies deterministic content-addressed findings for supported REPO-REFERENCE-0
 
 Supplies project-level repository interpretation while the resolver remains a derived location and projection service.
 
+### [Standard Registry](../standard_registry/README.md)
+
+**Types:** `depends_on`
+
+Supplies duplicate-key rejection at the reference record input boundary.
+
 ## Guarantees
 
 Identical CCG and snapshot reference inputs yield byte-identical resolution output; a pure Module move requires zero semantic-reference edits; persisted resolved paths are repository-relative, forward-slash normalized, case-exact, and free of dot segments; machine-absolute paths never become governed authority.

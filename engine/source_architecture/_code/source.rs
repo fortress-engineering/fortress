@@ -295,6 +295,7 @@ impl SourceProfileRegistry {
     ///
     /// Returns a typed error for invalid JSON or universal profile invariants.
     pub fn from_json_str(source: &str) -> Result<Self, SourceProfileError> {
+        crate::wire::reject_duplicate_json_keys(source).map_err(SourceProfileError::Json)?;
         let registry: Self = serde_json::from_str(source).map_err(SourceProfileError::Json)?;
         registry.validate()?;
         Ok(registry)

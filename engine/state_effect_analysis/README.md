@@ -38,6 +38,12 @@ Supplies snapshot-bound structured places, state reads, mutations, calls, symbol
 
 Supplies the canonical static-type-relative domain lattice reused by State predicates and field-domain interpretation.
 
+### [Standard Registry](../standard_registry/README.md)
+
+**Types:** `depends_on`
+
+Supplies strict JSON decoding for authored State Contracts before effect analysis.
+
 ## Guarantees
 
 State and effect conclusions are deterministic and conservative; refined external effects require stable Program Semantics operation identity; unsupported aliases and operations remain explicit; every propagated effect retains its direct origin and call chain; legacy `external_interaction` policy remains an explicit umbrella without absorbing panic or unsafe execution; capability consequences describe resource classes but never imply permission; and only contradictions supported by implemented semantics become findings.

@@ -160,7 +160,7 @@ pub fn load_information_flow_policy(
                 ));
             }
             let document: PolicyDocument =
-                serde_json::from_str(&source.source).map_err(|error| {
+                crate::wire::parse_strict_json(&source.source).map_err(|error| {
                     InformationFlowPolicyError::InvalidJson {
                         path: source.path.clone(),
                         detail: error.to_string(),
@@ -207,11 +207,12 @@ pub fn canonicalize_information_flow_policy_json(
     path: &str,
     source: &str,
 ) -> Result<String, InformationFlowPolicyError> {
-    let document: PolicyDocument =
-        serde_json::from_str(source).map_err(|error| InformationFlowPolicyError::InvalidJson {
+    let document: PolicyDocument = crate::wire::parse_strict_json(source).map_err(|error| {
+        InformationFlowPolicyError::InvalidJson {
             path: path.into(),
             detail: error.to_string(),
-        })?;
+        }
+    })?;
     canonical_document(&document)
 }
 

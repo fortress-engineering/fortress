@@ -38,11 +38,24 @@ The Standard manifest also registers `REPO-REFERENCE-001` from Reference Resolut
 
 ### [`schema_manifest_schema_v1.json`](../_data/schema_manifest_schema_v1.json)
 
-Defines the version-one machine representation and validation boundary for schema manifest records owned by this Module.
+Retains the historical version-one path grammar. The live repository-relative manifest is version two.
+
+### [`schema_manifest_schema_v2.json`](../_data/schema_manifest_schema_v2.json)
+
+Defines the current repository-relative schema inventory path grammar without changing the retained version-one schema.
 
 ### [`schema_manifest.json`](../_data/schema_manifest.json)
 
-Indexes every active schema by its canonical repository-relative authority path, including the component resolution index v1.
+Indexes every registered schema version by its canonical repository-relative authority path, including historical shapes and the current compatibility catalog.
+
+### [`compatibility_catalog_schema_v1.json`](../_data/compatibility_catalog_schema_v1.json)
+
+Defines the machine-readable writer, reader, migration, identity, and content-hash inventory shape.
+
+### [`compatibility_catalog_v1.json`](../_data/compatibility_catalog_v1.json)
+
+Records exact-version support. `UNSUPPORTED` is explicit; a retained historical schema alone does not imply a live reader.
+Algorithms describe document-level identity and model-owned content hashes; nested semantic entity identities remain with their model owners. `no-model-level-content-hash-algorithm` does not preclude an external issuer from hashing exact emitted artifact bytes. Historical unsupported records require a separately qualified migration before use. The catalog does not promote a historical schema into a supported reader.
 
 ### [`standard_manifest_schema_v1.json`](../_data/standard_manifest_schema_v1.json)
 

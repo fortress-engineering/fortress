@@ -437,12 +437,10 @@ pub fn load_behavior_realization_contracts(
     let mut checkpoints = Vec::new();
     let mut legacy_symbol_references = Vec::new();
     for source in &sources {
-        let mut document: ContractDocument =
-            serde_json::from_str(&source.source).map_err(|error| {
-                BehaviorRealizationContractError::InvalidJson {
-                    path: source.path.clone(),
-                    detail: error.to_string(),
-                }
+        let mut document: ContractDocument = crate::wire::parse_strict_json(&source.source)
+            .map_err(|error| BehaviorRealizationContractError::InvalidJson {
+                path: source.path.clone(),
+                detail: error.to_string(),
             })?;
         if !((document.schema == BEHAVIOR_REALIZATION_CONTRACT_SCHEMA
             && document.schema_version == BEHAVIOR_REALIZATION_CONTRACT_SCHEMA_VERSION)
@@ -804,7 +802,7 @@ fn distributed_digest(sources: &[BehaviorRealizationContractSource]) -> String {
 pub fn canonicalize_behavior_realization_contract_json(
     source: &str,
 ) -> Result<String, BehaviorRealizationContractError> {
-    let document: ContractDocument = serde_json::from_str(source).map_err(|error| {
+    let document: ContractDocument = crate::wire::parse_strict_json(source).map_err(|error| {
         BehaviorRealizationContractError::InvalidJson {
             path: "<memory>".into(),
             detail: error.to_string(),
