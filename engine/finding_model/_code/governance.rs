@@ -117,53 +117,20 @@ impl FindingGovernanceDocument {
         })
     }
 
-    /// Removes resolved entries without ever adding current findings.
+    /// Refuses legacy retirement until comparable coverage/authority evidence exists.
+    /// A missing current finding alone cannot prove that baseline residue resolved.
     ///
     /// # Errors
     ///
-    /// Returns an error if no baseline exists or authority is invalid.
+    /// Returns an error if no baseline exists or retirement evidence is unavailable.
     pub fn prune_baseline(
         &mut self,
-        findings: &[CanonicalFinding],
+        _findings: &[CanonicalFinding],
     ) -> Result<BaselineMutationSummary, FindingGovernanceError> {
-        let baseline = self
-            .baseline
-            .as_mut()
+        self.baseline
+            .as_ref()
             .ok_or(FindingGovernanceError::BaselineAbsent)?;
-        let current = findings
-            .iter()
-            .flat_map(|finding| {
-                std::iter::once(finding.finding_id())
-                    .chain(finding.legacy_finding_ids().iter().map(String::as_str))
-            })
-            .collect::<BTreeSet<_>>();
-        let mut removed = Vec::new();
-        baseline.active_entries.retain(|entry| {
-            if current.contains(entry.finding_id.as_str()) {
-                true
-            } else {
-                removed.push(RetiredBaselineEntry {
-                    finding_id: entry.finding_id.clone(),
-                    rule_id: entry.rule_id.clone(),
-                });
-                false
-            }
-        });
-        baseline.retired_entries.extend(removed.iter().cloned());
-        baseline.retired_entries.sort();
-        baseline.retired_entries.dedup();
-        let summary = BaselineMutationSummary {
-            active: baseline.active_entries.len(),
-            removed: removed.len(),
-            ineligible: findings
-                .iter()
-                .filter(|finding| {
-                    finding.identity_eligibility() == FindingIdentityEligibility::BaselineIneligible
-                })
-                .count(),
-        };
-        self.validate()?;
-        Ok(summary)
+        Err(FindingGovernanceError::RetirementEvidenceRequired)
     }
 
     /// Adds one explicit, active, finding-specific exception.
@@ -864,6 +831,8 @@ pub enum FindingGovernanceError {
     BaselineAlreadyExists,
     /// Prune was requested without a baseline.
     BaselineAbsent,
+    /// Current finding absence cannot establish comparable resolution.
+    RetirementEvidenceRequired,
     /// Baseline Standard authority does not match current semantics.
     IncompatibleBaseline {
         /// Required current authority.
@@ -931,6 +900,10 @@ impl Display for FindingGovernanceError {
                 "finding baseline already exists; prune it instead of replacing it"
             ),
             Self::BaselineAbsent => write!(formatter, "finding baseline is absent"),
+            Self::RetirementEvidenceRequired => write!(
+                formatter,
+                "baseline retirement requires comparable subject, authority and coverage evidence"
+            ),
             Self::IncompatibleBaseline { expected, actual } => write!(
                 formatter,
                 "finding baseline authority `{actual}` is incompatible with current `{expected}`"

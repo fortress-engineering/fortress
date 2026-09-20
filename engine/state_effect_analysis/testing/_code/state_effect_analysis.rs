@@ -16,10 +16,10 @@ use fortress_core::semantic_analysis::{
     load_function_contracts,
 };
 use fortress_core::state_effect_analysis::{
-    EffectCapability, EffectEvidenceKind, ResolvedStateContracts, StateContractError,
-    StateContractSource, StateEffectAnalysisError, StateEffectAnalysisEvaluation,
-    analyze_state_effects, canonicalize_state_contract_json, capability_for_effect,
-    load_state_contracts,
+    EffectCapability, EffectEvidenceKind, OperationClassificationState, ResolvedStateContracts,
+    StateContractError, StateContractSource, StateEffectAnalysisError,
+    StateEffectAnalysisEvaluation, analyze_state_effects, canonicalize_state_contract_json,
+    capability_for_effect, load_state_contracts,
 };
 
 type FunctionFixture<'a> = (&'a str, &'a [&'a str], &'a [&'a str], Option<&'a [&'a str]>);
@@ -1160,7 +1160,7 @@ fn syntactically_production_caller() { tests::filesystem_origin(); }
 #[test]
 fn unresolved_method_names_never_gain_refined_specificity() {
     let model = psm(
-        "struct Writer; impl Writer { fn write(&self) {} fn unwrap(&self) {} } fn unknown<T>(value: T) { value.write(); } fn local(value: Writer) { value.write(); value.unwrap(); } fn foreign_file(value: getrandom::File) { value.write(); }\n",
+        "struct Writer; impl Writer { fn write(&self) {} fn unwrap(&self) {} fn spawn(&self) {} fn drop(&self) {} } fn unknown<T>(value: T) { value.write(); } fn local(value: Writer) { value.write(); value.unwrap(); value.spawn(); value.drop(); } fn foreign_file(value: getrandom::File) { value.write(); }\n",
     );
     let states = load_state_contracts(&model, Vec::new()).expect("empty states resolve");
     let functions = load_function_contracts(&model, Vec::new()).expect("empty functions resolve");
@@ -1184,5 +1184,82 @@ fn unresolved_method_names_never_gain_refined_specificity() {
                 .contains(&FunctionEffect::NetworkIo)
         );
         assert!(!summary.direct_effects().contains(&FunctionEffect::MayPanic));
+        assert!(
+            !summary
+                .direct_effects()
+                .contains(&FunctionEffect::ProcessSpawn)
+        );
     }
+}
+
+/// `T-AF-STATE-EFFECT-ANALYSIS-0001-R05-008`
+/// Fortress requirement: AF-STATE-EFFECT-ANALYSIS-0001-R05
+#[test]
+fn destructor_unchecked_unwrap_and_open_options_do_not_gain_false_purity() {
+    let model = psm(r#"
+struct Writer;
+impl Drop for Writer { fn drop(&mut self) { let _ = std::fs::write("out", b"x"); } }
+fn release() { let value = Writer; std::mem::drop(value); }
+fn unchecked(value: Option<u8>) { unsafe { let _ = value.unwrap_unchecked(); } }
+fn open(path: &str) { let _ = std::fs::OpenOptions::new().write(true).open(path); }
+struct Mock;
+impl Mock { fn open(&self) {} }
+fn local(value: Mock) { value.open(); }
+"#);
+    let states = load_state_contracts(&model, Vec::new()).unwrap();
+    let functions = load_function_contracts(&model, Vec::new()).unwrap();
+    let evaluation = evaluate(&model, &states, &functions);
+    let summary = |suffix| {
+        evaluation
+            .model()
+            .summaries()
+            .iter()
+            .find(|summary| summary.symbol() == symbol_id(&model, suffix))
+            .expect("summary exists")
+    };
+    let release = summary("release");
+    assert!(release.operation_classifications().iter().any(|item| {
+        item.operation() == Some("std::mem::drop")
+            && item.state() == OperationClassificationState::Unsupported
+    }));
+    assert!(
+        release
+            .direct_effects()
+            .contains(&FunctionEffect::ExternalInteraction)
+    );
+
+    let unchecked = summary("unchecked");
+    assert!(unchecked.operation_classifications().iter().any(|item| {
+        item.operation() == Some("rust_method::Option::unwrap_unchecked")
+            && item.effects() == [FunctionEffect::UnsafeExecution]
+    }));
+    assert!(
+        !unchecked
+            .direct_effects()
+            .contains(&FunctionEffect::MayPanic)
+    );
+
+    let open = summary("open");
+    assert!(open.operation_classifications().iter().any(|item| {
+        item.operation() == Some("std::fs::OpenOptions::new")
+            && item.state() == OperationClassificationState::Unsupported
+    }));
+    assert!(
+        open.operation_classifications()
+            .iter()
+            .any(|item| { item.state() == OperationClassificationState::Unresolved })
+    );
+    assert!(!open.uncertainty().is_empty());
+
+    let local = summary("local");
+    assert!(
+        !local
+            .direct_effects()
+            .contains(&FunctionEffect::FilesystemRead)
+    );
+    assert!(
+        !local
+            .direct_effects()
+            .contains(&FunctionEffect::FilesystemWrite)
+    );
 }

@@ -15,7 +15,8 @@ use crate::contract_coherency::{ContractCoherencyGraph, ModuleSemanticPolicy, Re
 use crate::finding::{
     CanonicalFinding, Defeater, DefeaterError, DefeaterKind, DefeaterRetirementCondition,
     DefeaterScope, DefeaterScopeKind, DefeaterStrength, EvaluatorProvenance, FindingCategory,
-    FindingError, FindingLocation, FindingOccurrence, RuleFindingDefinition, SourceSpan,
+    FindingEnforcementEligibility, FindingError, FindingLocation, FindingOccurrence,
+    RuleFindingDefinition, SourceSpan,
 };
 use crate::implementation_observation::{SourceOwnership, SourceOwnershipAuthority};
 use crate::program_semantics::{ExecutionProvenance, ProgramSemanticModel};
@@ -31,7 +32,7 @@ pub const SEMANTIC_CONFORMANCE_SCHEMA: &str = "urn:fortress:schema:v6:semantic-c
 /// Canonical semantic-conformance projection schema version.
 pub const SEMANTIC_CONFORMANCE_SCHEMA_VERSION: u16 = 6;
 /// Semantic version of the evaluator.
-pub const SEMANTIC_CONFORMANCE_VERSION: &str = "4.0.0";
+pub const SEMANTIC_CONFORMANCE_VERSION: &str = "4.1.0";
 /// Stable evaluator identity used in canonical findings.
 pub const SEMANTIC_CONFORMANCE_EVALUATOR_ID: &str = "fortress-semantic-conformance";
 /// Stable reason for governed source that produced no PSM symbols.
@@ -1006,6 +1007,13 @@ pub fn evaluate_semantic_conformance(
         });
     }
     modules.sort_by(|left, right| left.module.cmp(&right.module));
+    summary.block_supported_findings = findings
+        .iter()
+        .filter(|finding| {
+            finding.enforcement_eligibility() == FindingEnforcementEligibility::BlockSupported
+        })
+        .count();
+    summary.advisory_findings = findings.len() - summary.block_supported_findings;
     findings.sort();
     coverage_findings.sort();
     let dependency_convergence = architecture_realization
@@ -1231,19 +1239,10 @@ fn apply_policy(
                     )?;
                 }
                 if let Some(position) = finding_positions.get(finding.finding_fingerprint()) {
-                    for alias in finding.legacy_finding_ids() {
-                        findings[*position].add_legacy_finding_id(alias.clone());
-                    }
+                    merge_semantic_finding(&mut findings[*position], finding);
                 } else {
                     finding_positions
                         .insert(finding.finding_fingerprint().to_owned(), findings.len());
-                    if observation.entry_execution_provenance
-                        == ExecutionProvenance::ProductionCapable
-                    {
-                        summary.block_supported_findings += 1;
-                    } else {
-                        summary.advisory_findings += 1;
-                    }
                     findings.push(finding);
                     match target_kind {
                         PolicyTargetKind::Capability => {
@@ -1386,6 +1385,30 @@ fn apply_policy(
         .filter(|observation| observation.policy_disposition.is_none())
         .count();
     Ok((conclusions, state, ungoverned))
+}
+
+/// Merge all support for one stable operation-site finding before enforcement.
+/// The full causal paths remain in the Module's observation set; this selects a
+/// deterministic representative with production support preferred when present.
+fn merge_semantic_finding(existing: &mut CanonicalFinding, candidate: CanonicalFinding) {
+    debug_assert_eq!(existing.finding_id(), candidate.finding_id());
+    let existing_blocks =
+        existing.enforcement_eligibility() == FindingEnforcementEligibility::BlockSupported;
+    let candidate_blocks =
+        candidate.enforcement_eligibility() == FindingEnforcementEligibility::BlockSupported;
+    if (candidate_blocks && !existing_blocks)
+        || (candidate_blocks == existing_blocks && candidate < *existing)
+    {
+        let aliases = existing.legacy_finding_ids().to_vec();
+        *existing = candidate;
+        for alias in aliases {
+            existing.add_legacy_finding_id(alias);
+        }
+    } else {
+        for alias in candidate.legacy_finding_ids() {
+            existing.add_legacy_finding_id(alias.clone());
+        }
+    }
 }
 
 fn semantic_claim_id(

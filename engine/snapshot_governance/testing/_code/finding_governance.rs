@@ -7,7 +7,7 @@ use fortress_core::finding::{
 };
 use fortress_core::finding_governance::{
     ExceptionState, FindingDisposition, FindingEnforcement, FindingGovernanceDocument,
-    FindingLifecycle, evaluate_finding_governance,
+    FindingGovernanceError, FindingLifecycle, evaluate_finding_governance,
 };
 use fortress_core::standard::FindingCategory;
 
@@ -267,14 +267,26 @@ fn baseline_is_explicit_monotonic_and_detects_reintroduction() {
     assert_eq!(current.summary().new_blocking, 1);
     assert!(!current.is_success());
 
-    let pruned = authority
-        .prune_baseline(std::slice::from_ref(&new))
-        .unwrap();
-    assert_eq!(pruned.removed, 1);
-    assert!(authority.baseline().unwrap().active_entries().is_empty());
+    let before = authority.to_canonical_json().unwrap();
+    assert!(matches!(
+        authority.prune_baseline(std::slice::from_ref(&new)),
+        Err(FindingGovernanceError::RetirementEvidenceRequired)
+    ));
+    assert_eq!(authority.to_canonical_json().unwrap(), before);
+    let mut retired_document: serde_json::Value = serde_json::from_str(&before).unwrap();
+    let active = retired_document["baseline"]["active_entries"]
+        .as_array_mut()
+        .unwrap()
+        .remove(0);
+    retired_document["baseline"]["retired_entries"] = serde_json::json!([{
+        "finding_id": active["finding_id"],
+        "rule_id": active["rule_id"]
+    }]);
+    let retired_authority =
+        FindingGovernanceDocument::from_json_str(&retired_document.to_string()).unwrap();
     let reintroduced = evaluate_finding_governance(
         std::slice::from_ref(&legacy),
-        Some(&authority),
+        Some(&retired_authority),
         "STD-FORTRESS-ENGINEERING",
         "1.0.0-draft.1",
     )
@@ -297,6 +309,40 @@ fn baseline_is_explicit_monotonic_and_detects_reintroduction() {
         )
         .is_err()
     );
+}
+
+/// `T-AF-SNAPSHOT-GOVERNANCE-0001-R15-008`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R15
+#[test]
+fn coverage_loss_is_not_resolution_without_comparable_retirement_evidence() {
+    let legacy = finding(
+        "ARCH-DEPENDENCY-001",
+        "AF-CORE-0001",
+        "a/_code/a.rs",
+        "LEGACY",
+        "legacy",
+        1,
+    );
+    let mut authority = FindingGovernanceDocument::empty();
+    authority
+        .create_baseline("STD-FORTRESS-ENGINEERING", "1.0.0-draft.1", &[legacy])
+        .unwrap();
+    let before = authority.to_canonical_json().unwrap();
+    let unrelated = finding(
+        "ARCH-REALIZATION-001",
+        "AF-OTHER-0001",
+        "b/_code/b.rs",
+        "OTHER",
+        "other",
+        1,
+    );
+    for current in [&[][..], std::slice::from_ref(&unrelated)] {
+        assert!(matches!(
+            authority.prune_baseline(current),
+            Err(FindingGovernanceError::RetirementEvidenceRequired)
+        ));
+        assert_eq!(authority.to_canonical_json().unwrap(), before);
+    }
 }
 
 /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R15-003`

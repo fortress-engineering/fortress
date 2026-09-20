@@ -1,6 +1,7 @@
 //! Module semantic-policy conformance fixtures.
 
-use std::collections::BTreeMap;
+use sha2::{Digest, Sha256};
+use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::Write as _;
 use std::fs;
 use std::path::PathBuf;
@@ -597,6 +598,270 @@ fn production_write() { let _ = std::fs::write("production", b"x"); }
         finding.enforcement_eligibility()
             == fortress_core::finding::FindingEnforcementEligibility::AdvisoryOnly
     }));
+}
+
+/// `T-AF-ARCHITECTURE-EVALUATION-0001-R05-003`
+/// Fortress requirement: AF-ARCHITECTURE-EVALUATION-0001-R05
+#[test]
+fn shared_operation_site_retains_production_support_and_both_causal_paths() {
+    let sources = [
+        r#"
+fn site() { let _ = std::fs::write("output", b"x"); }
+pub fn production_entry() { site(); }
+#[cfg(test)] mod tests {
+    pub fn test_entry() { super::site(); }
+}
+
+"#,
+        r#"
+fn site() { let _ = std::fs::write("output", b"x"); }
+#[cfg(test)] mod tests {
+    pub fn test_entry() { super::site(); }
+}
+pub fn production_entry() { site(); }
+
+"#,
+    ];
+    let mut finding_ids = BTreeSet::new();
+    for source in sources {
+        let result = evaluate(
+            source,
+            module_contract("AF-SAMPLE-0001", &[], &[], &[], &["filesystem.write"]),
+        );
+        let module = result.model().module("AF-SAMPLE-0001").unwrap();
+        let paths = module
+            .observations()
+            .iter()
+            .filter(|observation| observation.effect().stable_id() == "filesystem.write")
+            .collect::<Vec<_>>();
+        assert!(paths.iter().any(|observation| {
+            observation.entry_execution_provenance()
+                == fortress_core::program_semantics::ExecutionProvenance::ProductionCapable
+        }));
+        assert!(paths.iter().any(|observation| {
+            observation.entry_execution_provenance()
+                == fortress_core::program_semantics::ExecutionProvenance::TestOnly
+        }));
+        assert_eq!(result.findings().len(), 1);
+        assert_eq!(result.model().summary().blocking_findings(), 1);
+        assert_eq!(result.model().summary().advisory_findings(), 0);
+        assert_eq!(
+            result.findings()[0].enforcement_eligibility(),
+            fortress_core::finding::FindingEnforcementEligibility::BlockSupported
+        );
+        finding_ids.insert(result.findings()[0].finding_id().to_owned());
+    }
+    assert_eq!(finding_ids.len(), 1);
+}
+
+/// `T-AF-ARCHITECTURE-EVALUATION-0001-R05-004`
+/// Fortress requirement: AF-ARCHITECTURE-EVALUATION-0001-R05
+#[test]
+fn shadowed_policy_empty_claim_is_reproduced_for_effective_policy_work() {
+    let source = "pub fn write() { let _ = std::fs::write(\"out\", b\"x\"); }\n";
+    let policy = module_contract(
+        "AF-SAMPLE-0001",
+        &[],
+        &["filesystem"],
+        &[],
+        &["filesystem.write"],
+    );
+    let result = evaluate(source, policy);
+    let module = result.model().module("AF-SAMPLE-0001").unwrap();
+    let capability = module
+        .conclusions()
+        .iter()
+        .find(|claim| claim.target() == "filesystem")
+        .unwrap();
+    let effect = module
+        .conclusions()
+        .iter()
+        .find(|claim| claim.target() == "filesystem.write")
+        .unwrap();
+    // This captures the current empty claim, not a valid independent PASS.
+    // Effective policy compilation removes it in the dependent claim-algebra work.
+    assert_eq!(capability.matching_observation_count(), 0);
+    assert_eq!(
+        capability.conformance(),
+        Some(SemanticConformanceState::Pass)
+    );
+    assert_eq!(effect.conformance(), Some(SemanticConformanceState::Fail));
+    assert_eq!(result.findings().len(), 1);
+}
+
+fn fixture_count(value: &serde_json::Value) -> usize {
+    usize::try_from(value.as_u64().expect("fixture count is unsigned"))
+        .expect("fixture count fits the host")
+}
+
+/// `T-AF-ARCHITECTURE-EVALUATION-0001-R05-005`
+/// Fortress requirement: AF-ARCHITECTURE-EVALUATION-0001-R05
+#[test]
+#[allow(clippy::too_many_lines)]
+fn qualification_corpus_replays_authored_cases() {
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../testing/_data/qualification_cases.json");
+    let manifest: serde_json::Value =
+        serde_json::from_slice(&fs::read(path).expect("qualification corpus reads"))
+            .expect("qualification corpus parses");
+    let ledger_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../testing/_data/regression_ledger.json");
+    let ledger: serde_json::Value =
+        serde_json::from_slice(&fs::read(ledger_path).expect("regression ledger reads"))
+            .expect("regression ledger parses");
+    assert_eq!(manifest["historical_population"]["status"], "UNREPRODUCED");
+    assert!(manifest["historical_population"]["original_case_count"].is_null());
+    assert_eq!(ledger["upstream_reproduction"]["status"], "UNREPRODUCED");
+    assert_eq!(
+        manifest["cases"].as_array().unwrap().len(),
+        ledger["cases"].as_array().unwrap().len()
+    );
+    let ids = manifest["cases"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|case| case["case_id"].as_str().unwrap())
+        .collect::<BTreeSet<_>>();
+    assert_eq!(ids.len(), manifest["cases"].as_array().unwrap().len());
+    for subject in manifest["upstream_subjects"].as_array().unwrap() {
+        assert_eq!(
+            subject["adjudication_status"],
+            "PINNED_REPRESENTATIVE_NOT_HISTORICAL_REPRODUCTION"
+        );
+        assert_eq!(subject["upstream_sha"].as_str().unwrap().len(), 40);
+        assert!(subject["governance_files"].as_array().unwrap().is_empty());
+        assert!(subject["expected_claims"].is_null());
+    }
+    for case in manifest["cases"].as_array().unwrap() {
+        let mut files = BTreeMap::new();
+        let mut source_entries = Vec::new();
+        for field in ["governance_files", "source_files"] {
+            for entry in case[field].as_array().unwrap() {
+                let path = entry["path"].as_str().unwrap();
+                let bytes = entry["bytes"].as_str().unwrap().as_bytes().to_vec();
+                assert_eq!(entry["byte_count"].as_u64().unwrap(), bytes.len() as u64);
+                assert_eq!(
+                    entry["digest"].as_str().unwrap(),
+                    format!("sha256:{:x}", Sha256::digest(&bytes))
+                );
+                assert!(files.insert(path.to_owned(), bytes.clone()).is_none());
+                if field == "source_files" {
+                    source_entries.push((path.to_owned(), bytes));
+                }
+            }
+        }
+        source_entries.sort_by(|left, right| left.0.cmp(&right.0));
+        let mut source_hash = Sha256::new();
+        for (path, bytes) in source_entries {
+            source_hash.update(path.as_bytes());
+            source_hash.update([0]);
+            source_hash.update(bytes.len().to_string().as_bytes());
+            source_hash.update([0]);
+            source_hash.update(Sha256::digest(&bytes));
+            source_hash.update(b"\n");
+        }
+        assert_eq!(
+            case["source_digest"].as_str().unwrap(),
+            format!("sha256:{:x}", source_hash.finalize())
+        );
+        assert_eq!(case["expected_exit"], 0);
+        let result = evaluate_files(&files);
+        for expected in case["expected_claims"].as_array().unwrap() {
+            let module = result
+                .model()
+                .module(expected["module_id"].as_str().unwrap())
+                .expect("expected Module exists");
+            let claim = module
+                .conclusions()
+                .iter()
+                .find(|entry| entry.target() == expected["target"].as_str().unwrap())
+                .expect("expected claim exists");
+            let expected_verdict = match expected["verdict"].as_str().unwrap() {
+                "FAIL" => SemanticConformanceState::Fail,
+                "UNKNOWN" => SemanticConformanceState::Unknown,
+                "PASS" => SemanticConformanceState::Pass,
+                other => panic!("unexpected fixture verdict {other}"),
+            };
+            let expected_eligibility = match expected["blocking_eligibility"].as_str().unwrap() {
+                "BLOCK_SUPPORTED" => BlockingEligibility::BlockSupported,
+                "NOT_EVALUABLE" => BlockingEligibility::NotEvaluable,
+                "ADVISORY_ONLY" => BlockingEligibility::AdvisoryOnly,
+                other => panic!("unexpected fixture eligibility {other}"),
+            };
+            assert_eq!(
+                claim.conformance(),
+                Some(expected_verdict),
+                "case {}: claim {:?}, module coverage {:?}, defeaters {:?}",
+                case["case_id"],
+                claim,
+                module.coverage(),
+                module.defeater_refs()
+            );
+            assert_eq!(claim.blocking_eligibility(), Some(expected_eligibility));
+            if expected_verdict == SemanticConformanceState::Unknown {
+                assert!(!claim.defeater_refs().is_empty());
+            }
+        }
+        assert_eq!(
+            result.findings().len(),
+            fixture_count(&case["expected_findings"]["distinct_sites"])
+        );
+        assert_eq!(
+            result.model().summary().blocking_findings(),
+            fixture_count(&case["expected_findings"]["blocking"])
+        );
+        assert_eq!(
+            result.model().summary().advisory_findings(),
+            fixture_count(&case["expected_findings"]["advisory"])
+        );
+        let raw = serde_json::to_vec(&(
+            result.model().to_canonical_json().unwrap(),
+            result.findings(),
+        ))
+        .unwrap();
+        let raw_digest = format!("sha256:{:x}", Sha256::digest(raw));
+        let entry = ledger["cases"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|entry| entry["case_id"] == case["case_id"])
+            .expect("every replay case has a regression ledger entry");
+        assert_eq!(entry["source_digest"], case["source_digest"]);
+        assert_eq!(entry["configuration"], case["configuration"]);
+        let governance_digests = case["governance_files"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|entry| serde_json::json!({"path": entry["path"], "digest": entry["digest"]}))
+            .collect::<Vec<_>>();
+        assert_eq!(
+            entry["governance_digests"],
+            serde_json::Value::Array(governance_digests)
+        );
+        assert_eq!(entry["raw_output_digest"], raw_digest);
+        assert_eq!(entry["expected_claims"], case["expected_claims"]);
+        assert_eq!(entry["expected_findings"], case["expected_findings"]);
+        assert_eq!(entry["expected_limitations"], case["expected_limitations"]);
+        assert_eq!(entry["distinct_source_sites"], result.findings().len());
+        assert_eq!(
+            entry["finding_lifecycle"],
+            if result.findings().is_empty() {
+                "NO_FINDING"
+            } else {
+                "UNBASELINED_CONTROL"
+            }
+        );
+        assert_eq!(
+            entry["propagated_paths"],
+            result
+                .model()
+                .modules()
+                .iter()
+                .map(|module| module.observations().len())
+                .sum::<usize>()
+        );
+        println!("{} {}", case["case_id"].as_str().unwrap(), raw_digest);
+    }
 }
 
 /// `T-ARCH-SEMANTIC-001-R01-002`

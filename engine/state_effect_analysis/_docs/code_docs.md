@@ -20,7 +20,7 @@ Invalid authored authority and serialization failures return typed errors; suppo
 
 ### [`operation_effect.rs`](../_code/operation_effect.rs)
 
-Classifies exact Program Semantics external-operation identities into refined direct effects without using ambiguous source method names.
+Classifies exact Program Semantics external-operation identities into refined direct effects without using ambiguous source method names. Explicit `drop` remains unsupported because a destructor may perform arbitrary effects; unchecked unwrap is unsafe execution rather than a panic claim. `OpenOptions` builder/open chains remain unresolved or unsupported until option-sensitive call identity is qualified.
 
 ### [`state_contract.rs`](../_code/state_contract.rs)
 

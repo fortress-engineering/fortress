@@ -2,11 +2,11 @@
 
 ## Purpose
 
-This verification Module exists to prove only the bootstrap-governance and complete audit Features introduced directly by the Fortress root Module.
+This verification Module proves the bootstrap-governance and complete audit Features introduced directly by the Fortress root Module and owns shared replayable regression fixture data for descendant tests.
 
 ## Responsibility
 
-Validate the root-owned self-model, command-declaration agreement, complete contract resolution, derived-certification authority boundary, and cross-subsystem repository audit lifecycle without claiming evidence for descendant Features.
+Validate the root-owned self-model, command-declaration agreement, complete contract resolution, derived-certification authority boundary, and cross-subsystem repository audit lifecycle without claiming evidence for descendant Features. Pin exact source and policy controls that descendant tests replay without granting production exemptions.
 
 ## Scope
 

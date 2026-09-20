@@ -22,7 +22,7 @@ pub(super) fn classify_operation(operation: &str) -> OperationEffectClassificati
     use FunctionEffect::{
         EnvironmentRead, EnvironmentWrite, FilesystemRead, FilesystemWrite, MayPanic,
         NetworkConnect, NetworkIo, NetworkListen, ProcessSpawn, RandomRead, TimeMonotonicRead,
-        TimeWallRead,
+        TimeWallRead, UnsafeExecution,
     };
 
     let effects = if matches!(
@@ -147,19 +147,21 @@ pub(super) fn classify_operation(operation: &str) -> OperationEffectClassificati
             | "core::panicking::panic"
             | "rust_method::Option::expect"
             | "rust_method::Option::unwrap"
-            | "rust_method::Option::unwrap_unchecked"
             | "rust_method::Result::expect"
             | "rust_method::Result::unwrap"
             | "rust_method::Result::unwrap_err"
-            | "rust_method::Result::unwrap_unchecked"
-            | "rust_method::Result::unwrap_err_unchecked"
     ) {
         vec![MayPanic]
     } else if matches!(
         operation,
-        "std::mem::drop"
-            | "core::mem::drop"
-            | "std::process::Command::new"
+        "rust_method::Option::unwrap_unchecked"
+            | "rust_method::Result::unwrap_unchecked"
+            | "rust_method::Result::unwrap_err_unchecked"
+    ) {
+        vec![UnsafeExecution]
+    } else if matches!(
+        operation,
+        "std::process::Command::new"
             | "rust_type::Command::new"
             | "rust_prelude::Box"
             | "rust_prelude::None"

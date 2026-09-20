@@ -44,4 +44,4 @@ Constructs versioned structured Rust symbol and operation-site identities, alpha
 
 ### [`rust.rs`](../_code/rust.rs)
 
-Translates snapshot-bound Cargo manifests and structurally parsed Rust declarations, nominal types, impls, explicit signatures, supported expression types, calls, and transfers into the language-neutral PSM. It resolves unique inherent and concrete trait implementation methods from proven receiver types, classifies known external ownership, and preserves ambiguity, dynamic dispatch, macros, custom dereference, and missing type information as explicit residual states.
+Translates snapshot-bound Cargo manifests and structurally parsed Rust declarations, nominal types, impls, explicit signatures, supported expression types, calls, and transfers into the language-neutral PSM. It resolves unique inherent and concrete trait implementation methods from proven receiver types, classifies known external ownership, and preserves ambiguity, dynamic dispatch, expression and statement macros, custom dereference, and missing type information as explicit residual states. Macro bodies are not expanded; their invocation sites remain opaque calls.

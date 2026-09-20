@@ -42,7 +42,7 @@ pub const STATE_EFFECT_ANALYSIS_SCHEMA: &str = "urn:fortress:schema:v4:state-eff
 /// Canonical State & Effect Analysis schema version.
 pub const STATE_EFFECT_ANALYSIS_SCHEMA_VERSION: u16 = 4;
 /// Semantic version of the state/effect analyzer.
-pub const STATE_EFFECT_ANALYSIS_VERSION: &str = "4.0.0";
+pub const STATE_EFFECT_ANALYSIS_VERSION: &str = "4.1.0";
 /// Stable analyzer identity.
 pub const STATE_EFFECT_ANALYZER_ID: &str = "fortress-state-effect-analysis";
 /// Normative typestate rule identity.

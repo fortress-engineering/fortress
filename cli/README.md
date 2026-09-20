@@ -12,7 +12,7 @@ Own command registration, argument validation, process exit behavior, human rend
 
 ### Includes
 
-The native process boundary, built-in command registry, CLI package and command declarations, supported audit, finding listing/checking, baseline create/prune, exception list/create/retire, declared/logical/analysis-only Module inspection, semantic-analysis formats, local certification formats, and explicit failure behavior for malformed or unsupported input.
+The native process boundary, built-in command registry, CLI package and command declarations, supported audit, finding listing/checking, baseline creation, guarded baseline prune, exception list/create/retire, declared/logical/analysis-only Module inspection, semantic-analysis formats, local certification formats, and explicit failure behavior for malformed or unsupported input. Prune refuses to retire entries from absence alone until comparable subject, authority, and coverage evidence is available.
 
 ### Excludes
 

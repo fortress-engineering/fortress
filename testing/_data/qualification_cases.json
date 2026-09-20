@@ -1,0 +1,528 @@
+{
+  "$schema": "urn:fortress:test:v1:qualification-corpus",
+  "schema_version": 1,
+  "digest_algorithm": "path-length-content-sha256-v1",
+  "historical_population": {
+    "status": "UNREPRODUCED",
+    "original_case_count": null,
+    "reason": "Original exact SHA and authored policy/mutation populations were absent from the supplied execution basis; representative tags do not replace them."
+  },
+  "upstream_subjects": [
+    {
+      "case_id": "ripgrep-representative",
+      "upstream_locator": "https://github.com/BurntSushi/ripgrep",
+      "upstream_tag": "14.1.1",
+      "upstream_sha": "4649aa9700619f94cf9c66876e9549d83420e16c",
+      "source_digest": "git-tree-sha1:d7a1d4d108598ad6e23d82a180c71541b221d32c",
+      "governance_files": [],
+      "configuration": {
+        "status": "UNRECOVERED_HISTORICAL_POLICY"
+      },
+      "mutation_patch_digest": null,
+      "expected_claims": null,
+      "expected_findings": null,
+      "expected_limitations": [
+        "ORIGINAL_POLICY_AND_MUTATION_POPULATION_UNAVAILABLE"
+      ],
+      "expected_exit": null,
+      "adjudication_status": "PINNED_REPRESENTATIVE_NOT_HISTORICAL_REPRODUCTION",
+      "reproduction_command": "git clone --filter=blob:none https://github.com/BurntSushi/ripgrep && git checkout --detach 4649aa9700619f94cf9c66876e9549d83420e16c"
+    },
+    {
+      "case_id": "serde-representative",
+      "upstream_locator": "https://github.com/serde-rs/serde",
+      "upstream_tag": "v1.0.228",
+      "upstream_sha": "a866b336f14aa57a07f0d0be9f8762746e64ecb4",
+      "source_digest": "git-tree-sha1:c6375d24a486e815151b038bb9f16d29a1d9db6f",
+      "governance_files": [],
+      "configuration": {
+        "status": "UNRECOVERED_HISTORICAL_POLICY"
+      },
+      "mutation_patch_digest": null,
+      "expected_claims": null,
+      "expected_findings": null,
+      "expected_limitations": [
+        "ORIGINAL_POLICY_AND_MUTATION_POPULATION_UNAVAILABLE"
+      ],
+      "expected_exit": null,
+      "adjudication_status": "PINNED_REPRESENTATIVE_NOT_HISTORICAL_REPRODUCTION",
+      "reproduction_command": "git clone --filter=blob:none https://github.com/serde-rs/serde && git checkout --detach a866b336f14aa57a07f0d0be9f8762746e64ecb4"
+    },
+    {
+      "case_id": "tokio-representative",
+      "upstream_locator": "https://github.com/tokio-rs/tokio",
+      "upstream_tag": "tokio-1.48.0",
+      "upstream_sha": "556820ff84030b37e74e11b86b7733f5795770ea",
+      "source_digest": "git-tree-sha1:450d7dc0cddc85ec191f7f63fd6ca480f938acde",
+      "governance_files": [],
+      "configuration": {
+        "status": "UNRECOVERED_HISTORICAL_POLICY"
+      },
+      "mutation_patch_digest": null,
+      "expected_claims": null,
+      "expected_findings": null,
+      "expected_limitations": [
+        "ORIGINAL_POLICY_AND_MUTATION_POPULATION_UNAVAILABLE"
+      ],
+      "expected_exit": null,
+      "adjudication_status": "PINNED_REPRESENTATIVE_NOT_HISTORICAL_REPRODUCTION",
+      "reproduction_command": "git clone --filter=blob:none https://github.com/tokio-rs/tokio && git checkout --detach 556820ff84030b37e74e11b86b7733f5795770ea"
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "async-service-write",
+      "workload_shape": "async/service",
+      "upstream_locator": "fortress-fixture://async-service-write",
+      "upstream_sha": null,
+      "source_digest": "sha256:7959057735e23492c8d3142f6d78e67c24c8567e339d34241175d233b6683982",
+      "governance_files": [
+        {
+          "path": "contract.json",
+          "digest": "sha256:8212c84bbe33b4009b9ff9111f4d95c1c661b9772f841c0d8aac751d19917268",
+          "byte_count": 434,
+          "bytes": "{\n  \"$schema\": \"urn:fortress:schema:v2:module-contract\",\n  \"schema_version\": 2,\n  \"id\": \"PF-SEMANTIC-FIXTURE\",\n  \"display_name\": \"Semantic Fixture\",\n  \"ecosystem\": {\n    \"repository_grammar\": 1,\n    \"standard\": {\n      \"id\": \"STD-FORTRESS-ENGINEERING\",\n      \"edition\": \"1.0.0-draft.1\"\n    }\n  },\n  \"provides\": [],\n  \"requires\": [],\n  \"relationships\": [],\n  \"constraints\": [],\n  \"guarantees\": [],\n  \"features\": [],\n  \"behavior\": []\n}\n"
+        },
+        {
+          "path": "sample/contract.json",
+          "digest": "sha256:5d2f6f1855c76dc1a1c4ea2df90214ac5ffc7f940b0183ad5fa531fe5325651a",
+          "byte_count": 494,
+          "bytes": "{\n  \"$schema\": \"urn:fortress:schema:v3:module-contract\",\n  \"schema_version\": 3,\n  \"id\": \"AF-SAMPLE-0001\",\n  \"display_name\": \"AF-SAMPLE-0001\",\n  \"provides\": [],\n  \"requires\": [],\n  \"relationships\": [],\n  \"constraints\": [],\n  \"guarantees\": [],\n  \"features\": [],\n  \"behavior\": [],\n  \"semantic_policy\": {\n    \"default\": \"UNDECLARED\",\n    \"capabilities\": {\n      \"allow\": [],\n      \"deny\": []\n    },\n    \"effects\": {\n      \"allow\": [],\n      \"deny\": [\n        \"filesystem.write\"\n      ]\n    }\n  }\n}\n"
+        }
+      ],
+      "configuration": {
+        "language_frontend": "rust-structural",
+        "standard_edition": "1.0.0-draft.1",
+        "target_platform": "UNSPECIFIED_STRUCTURAL_FIXTURE",
+        "features": [],
+        "cfg": []
+      },
+      "mutation_patch_digest": null,
+      "expected_claims": [
+        {
+          "module_id": "AF-SAMPLE-0001",
+          "target": "filesystem.write",
+          "verdict": "FAIL",
+          "blocking_eligibility": "BLOCK_SUPPORTED"
+        }
+      ],
+      "expected_findings": {
+        "distinct_sites": 1,
+        "blocking": 1,
+        "advisory": 0
+      },
+      "expected_limitations": [],
+      "expected_exit": 0,
+      "adjudication_status": "AUTHORED_POSITIVE_CONTROL",
+      "reproduction_command": "cargo +1.97.1 --config _data/cargo_config.toml test --manifest-path _data/Cargo.toml --all-features --test semantic_conformance qualification_corpus_replays_authored_cases",
+      "source_files": [
+        {
+          "path": "sample/_code/lib.rs",
+          "digest": "sha256:0d1ca19e19e5a79f6037c8901e4e24a0740fb8e43180d221d492eb5ea0a04aaf",
+          "byte_count": 68,
+          "bytes": "pub async fn serve() { let _ = std::fs::write(\"response\", b\"ok\"); }\n"
+        },
+        {
+          "path": "sample/_data/Cargo.toml",
+          "digest": "sha256:34cded9e1a49cb5719a439fabb894c7bc21cda29023eb06024704059e83b5deb",
+          "byte_count": 84,
+          "bytes": "[package]\nname='sample'\nversion='0.1.0'\nedition='2024'\n[lib]\npath='../_code/lib.rs'\n"
+        }
+      ]
+    },
+    {
+      "case_id": "macro-library-direct-read",
+      "workload_shape": "macro-heavy library",
+      "upstream_locator": "fortress-fixture://macro-library-direct-read",
+      "upstream_sha": null,
+      "source_digest": "sha256:9eb445a60448570ad17836071e1d56b97c32049277805a499ff0755242cb125b",
+      "governance_files": [
+        {
+          "path": "contract.json",
+          "digest": "sha256:8212c84bbe33b4009b9ff9111f4d95c1c661b9772f841c0d8aac751d19917268",
+          "byte_count": 434,
+          "bytes": "{\n  \"$schema\": \"urn:fortress:schema:v2:module-contract\",\n  \"schema_version\": 2,\n  \"id\": \"PF-SEMANTIC-FIXTURE\",\n  \"display_name\": \"Semantic Fixture\",\n  \"ecosystem\": {\n    \"repository_grammar\": 1,\n    \"standard\": {\n      \"id\": \"STD-FORTRESS-ENGINEERING\",\n      \"edition\": \"1.0.0-draft.1\"\n    }\n  },\n  \"provides\": [],\n  \"requires\": [],\n  \"relationships\": [],\n  \"constraints\": [],\n  \"guarantees\": [],\n  \"features\": [],\n  \"behavior\": []\n}\n"
+        },
+        {
+          "path": "sample/contract.json",
+          "digest": "sha256:42678d1e1faf895f4f8b21010fac3eef0a65ff62a4b6a2d8b118b2579fa16289",
+          "byte_count": 493,
+          "bytes": "{\n  \"$schema\": \"urn:fortress:schema:v3:module-contract\",\n  \"schema_version\": 3,\n  \"id\": \"AF-SAMPLE-0001\",\n  \"display_name\": \"AF-SAMPLE-0001\",\n  \"provides\": [],\n  \"requires\": [],\n  \"relationships\": [],\n  \"constraints\": [],\n  \"guarantees\": [],\n  \"features\": [],\n  \"behavior\": [],\n  \"semantic_policy\": {\n    \"default\": \"UNDECLARED\",\n    \"capabilities\": {\n      \"allow\": [],\n      \"deny\": []\n    },\n    \"effects\": {\n      \"allow\": [],\n      \"deny\": [\n        \"filesystem.read\"\n      ]\n    }\n  }\n}\n"
+        }
+      ],
+      "configuration": {
+        "language_frontend": "rust-structural",
+        "standard_edition": "1.0.0-draft.1",
+        "target_platform": "UNSPECIFIED_STRUCTURAL_FIXTURE",
+        "features": [],
+        "cfg": []
+      },
+      "mutation_patch_digest": null,
+      "expected_claims": [
+        {
+          "module_id": "AF-SAMPLE-0001",
+          "target": "filesystem.read",
+          "verdict": "FAIL",
+          "blocking_eligibility": "BLOCK_SUPPORTED"
+        }
+      ],
+      "expected_findings": {
+        "distinct_sites": 1,
+        "blocking": 1,
+        "advisory": 0
+      },
+      "expected_limitations": [
+        "MACRO_EXPANSION_NOT_EXECUTED"
+      ],
+      "expected_exit": 0,
+      "adjudication_status": "AUTHORED_POSITIVE_CONTROL",
+      "reproduction_command": "cargo +1.97.1 --config _data/cargo_config.toml test --manifest-path _data/Cargo.toml --all-features --test semantic_conformance qualification_corpus_replays_authored_cases",
+      "source_files": [
+        {
+          "path": "sample/_code/lib.rs",
+          "digest": "sha256:cf1965157245ddfc61a1da87de9cde1afa029f207adf8b9208bd8f07bb230c8e",
+          "byte_count": 122,
+          "bytes": "macro_rules! identity { ($x:expr) => { $x }; }\npub fn load() { let _ = std::fs::read(\"input\"); let _ = identity!(1_u8); }\n"
+        },
+        {
+          "path": "sample/_data/Cargo.toml",
+          "digest": "sha256:34cded9e1a49cb5719a439fabb894c7bc21cda29023eb06024704059e83b5deb",
+          "byte_count": 84,
+          "bytes": "[package]\nname='sample'\nversion='0.1.0'\nedition='2024'\n[lib]\npath='../_code/lib.rs'\n"
+        }
+      ]
+    },
+    {
+      "case_id": "multi-package-external-effects",
+      "workload_shape": "multi-package external effects",
+      "upstream_locator": "fortress-fixture://multi-package-external-effects",
+      "upstream_sha": null,
+      "source_digest": "sha256:191f77592c97fd772831a0346b385877cddd1481f4b7e5b5a1eeca9c7c680294",
+      "governance_files": [
+        {
+          "path": "contract.json",
+          "digest": "sha256:8212c84bbe33b4009b9ff9111f4d95c1c661b9772f841c0d8aac751d19917268",
+          "byte_count": 434,
+          "bytes": "{\n  \"$schema\": \"urn:fortress:schema:v2:module-contract\",\n  \"schema_version\": 2,\n  \"id\": \"PF-SEMANTIC-FIXTURE\",\n  \"display_name\": \"Semantic Fixture\",\n  \"ecosystem\": {\n    \"repository_grammar\": 1,\n    \"standard\": {\n      \"id\": \"STD-FORTRESS-ENGINEERING\",\n      \"edition\": \"1.0.0-draft.1\"\n    }\n  },\n  \"provides\": [],\n  \"requires\": [],\n  \"relationships\": [],\n  \"constraints\": [],\n  \"guarantees\": [],\n  \"features\": [],\n  \"behavior\": []\n}\n"
+        },
+        {
+          "path": "sample/contract.json",
+          "digest": "sha256:5d2f6f1855c76dc1a1c4ea2df90214ac5ffc7f940b0183ad5fa531fe5325651a",
+          "byte_count": 494,
+          "bytes": "{\n  \"$schema\": \"urn:fortress:schema:v3:module-contract\",\n  \"schema_version\": 3,\n  \"id\": \"AF-SAMPLE-0001\",\n  \"display_name\": \"AF-SAMPLE-0001\",\n  \"provides\": [],\n  \"requires\": [],\n  \"relationships\": [],\n  \"constraints\": [],\n  \"guarantees\": [],\n  \"features\": [],\n  \"behavior\": [],\n  \"semantic_policy\": {\n    \"default\": \"UNDECLARED\",\n    \"capabilities\": {\n      \"allow\": [],\n      \"deny\": []\n    },\n    \"effects\": {\n      \"allow\": [],\n      \"deny\": [\n        \"filesystem.write\"\n      ]\n    }\n  }\n}\n"
+        },
+        {
+          "path": "worker/contract.json",
+          "digest": "sha256:182e1c9599d1cab2cee5b83e741f1d74a6ae30545e6973392231913428edd9b6",
+          "byte_count": 491,
+          "bytes": "{\n  \"$schema\": \"urn:fortress:schema:v3:module-contract\",\n  \"schema_version\": 3,\n  \"id\": \"AF-WORKER-0001\",\n  \"display_name\": \"AF-WORKER-0001\",\n  \"provides\": [],\n  \"requires\": [],\n  \"relationships\": [],\n  \"constraints\": [],\n  \"guarantees\": [],\n  \"features\": [],\n  \"behavior\": [],\n  \"semantic_policy\": {\n    \"default\": \"UNDECLARED\",\n    \"capabilities\": {\n      \"allow\": [],\n      \"deny\": []\n    },\n    \"effects\": {\n      \"allow\": [],\n      \"deny\": [\n        \"process.spawn\"\n      ]\n    }\n  }\n}\n"
+        }
+      ],
+      "configuration": {
+        "language_frontend": "rust-structural",
+        "standard_edition": "1.0.0-draft.1",
+        "target_platform": "UNSPECIFIED_STRUCTURAL_FIXTURE",
+        "features": [],
+        "cfg": []
+      },
+      "mutation_patch_digest": null,
+      "expected_claims": [
+        {
+          "module_id": "AF-SAMPLE-0001",
+          "target": "filesystem.write",
+          "verdict": "FAIL",
+          "blocking_eligibility": "BLOCK_SUPPORTED"
+        },
+        {
+          "module_id": "AF-WORKER-0001",
+          "target": "process.spawn",
+          "verdict": "FAIL",
+          "blocking_eligibility": "BLOCK_SUPPORTED"
+        }
+      ],
+      "expected_findings": {
+        "distinct_sites": 2,
+        "blocking": 2,
+        "advisory": 0
+      },
+      "expected_limitations": [],
+      "expected_exit": 0,
+      "adjudication_status": "AUTHORED_POSITIVE_CONTROL",
+      "reproduction_command": "cargo +1.97.1 --config _data/cargo_config.toml test --manifest-path _data/Cargo.toml --all-features --test semantic_conformance qualification_corpus_replays_authored_cases",
+      "source_files": [
+        {
+          "path": "sample/_code/lib.rs",
+          "digest": "sha256:32cf161e21a6235c31c82eac50362848b94ba25aa08533ece1021a39df58c978",
+          "byte_count": 58,
+          "bytes": "pub fn persist() { let _ = std::fs::write(\"out\", b\"x\"); }\n"
+        },
+        {
+          "path": "sample/_data/Cargo.toml",
+          "digest": "sha256:34cded9e1a49cb5719a439fabb894c7bc21cda29023eb06024704059e83b5deb",
+          "byte_count": 84,
+          "bytes": "[package]\nname='sample'\nversion='0.1.0'\nedition='2024'\n[lib]\npath='../_code/lib.rs'\n"
+        },
+        {
+          "path": "worker/_code/lib.rs",
+          "digest": "sha256:cab7322c0da7fdb67770b39cb47b6e6865c5ddb38a76b72f624a350d6e8f3015",
+          "byte_count": 121,
+          "bytes": "pub fn spawn() { let mut command: std::process::Command = std::process::Command::new(\"echo\"); let _ = command.spawn(); }\n"
+        },
+        {
+          "path": "worker/_data/Cargo.toml",
+          "digest": "sha256:cb3f5ff304176aecf15a84e1e7b0a40972c63ae94b57727bfd989d1af73d1f71",
+          "byte_count": 84,
+          "bytes": "[package]\nname='worker'\nversion='0.1.0'\nedition='2024'\n[lib]\npath='../_code/lib.rs'\n"
+        }
+      ]
+    },
+    {
+      "case_id": "macro-generated-write",
+      "workload_shape": "macro-expanded operation",
+      "upstream_locator": "fortress-fixture://macro-generated-write",
+      "upstream_sha": null,
+      "source_digest": "sha256:fceb1d3bdb3c4de1bb703574024714440385756d6825870b3e5d95962bad3004",
+      "governance_files": [
+        {
+          "path": "contract.json",
+          "digest": "sha256:8212c84bbe33b4009b9ff9111f4d95c1c661b9772f841c0d8aac751d19917268",
+          "byte_count": 434,
+          "bytes": "{\n  \"$schema\": \"urn:fortress:schema:v2:module-contract\",\n  \"schema_version\": 2,\n  \"id\": \"PF-SEMANTIC-FIXTURE\",\n  \"display_name\": \"Semantic Fixture\",\n  \"ecosystem\": {\n    \"repository_grammar\": 1,\n    \"standard\": {\n      \"id\": \"STD-FORTRESS-ENGINEERING\",\n      \"edition\": \"1.0.0-draft.1\"\n    }\n  },\n  \"provides\": [],\n  \"requires\": [],\n  \"relationships\": [],\n  \"constraints\": [],\n  \"guarantees\": [],\n  \"features\": [],\n  \"behavior\": []\n}\n"
+        },
+        {
+          "path": "sample/contract.json",
+          "digest": "sha256:5d2f6f1855c76dc1a1c4ea2df90214ac5ffc7f940b0183ad5fa531fe5325651a",
+          "byte_count": 494,
+          "bytes": "{\n  \"$schema\": \"urn:fortress:schema:v3:module-contract\",\n  \"schema_version\": 3,\n  \"id\": \"AF-SAMPLE-0001\",\n  \"display_name\": \"AF-SAMPLE-0001\",\n  \"provides\": [],\n  \"requires\": [],\n  \"relationships\": [],\n  \"constraints\": [],\n  \"guarantees\": [],\n  \"features\": [],\n  \"behavior\": [],\n  \"semantic_policy\": {\n    \"default\": \"UNDECLARED\",\n    \"capabilities\": {\n      \"allow\": [],\n      \"deny\": []\n    },\n    \"effects\": {\n      \"allow\": [],\n      \"deny\": [\n        \"filesystem.write\"\n      ]\n    }\n  }\n}\n"
+        }
+      ],
+      "configuration": {
+        "language_frontend": "rust-structural",
+        "standard_edition": "1.0.0-draft.1",
+        "target_platform": "UNSPECIFIED_STRUCTURAL_FIXTURE",
+        "features": [],
+        "cfg": []
+      },
+      "mutation_patch_digest": null,
+      "expected_claims": [
+        {
+          "module_id": "AF-SAMPLE-0001",
+          "target": "filesystem.write",
+          "verdict": "UNKNOWN",
+          "blocking_eligibility": "NOT_EVALUABLE"
+        }
+      ],
+      "expected_findings": {
+        "distinct_sites": 0,
+        "blocking": 0,
+        "advisory": 0
+      },
+      "expected_limitations": [
+        "MACRO_EXPANSION_UNSUPPORTED"
+      ],
+      "expected_exit": 0,
+      "adjudication_status": "AUTHORED_NEGATIVE_CONTROL",
+      "reproduction_command": "cargo +1.97.1 --config _data/cargo_config.toml test --manifest-path _data/Cargo.toml --all-features --test semantic_conformance qualification_corpus_replays_authored_cases",
+      "source_files": [
+        {
+          "path": "sample/_code/lib.rs",
+          "digest": "sha256:7d0c70ce4706a7bf2e6240676bb27c6aaeefa6553498651242ef71f9329e595e",
+          "byte_count": 111,
+          "bytes": "macro_rules! write_data { () => { let _ = std::fs::write(\"out\", b\"x\"); }; }\npub fn invoke() { write_data!(); }\n"
+        },
+        {
+          "path": "sample/_data/Cargo.toml",
+          "digest": "sha256:34cded9e1a49cb5719a439fabb894c7bc21cda29023eb06024704059e83b5deb",
+          "byte_count": 84,
+          "bytes": "[package]\nname='sample'\nversion='0.1.0'\nedition='2024'\n[lib]\npath='../_code/lib.rs'\n"
+        }
+      ]
+    },
+    {
+      "case_id": "no-executable-symbols",
+      "workload_shape": "source coverage loss",
+      "upstream_locator": "fortress-fixture://no-executable-symbols",
+      "upstream_sha": null,
+      "source_digest": "sha256:48618e0c8a723557af909471f1797d99b7454adff8049eeb390982c3eb0ac885",
+      "governance_files": [
+        {
+          "path": "contract.json",
+          "digest": "sha256:8212c84bbe33b4009b9ff9111f4d95c1c661b9772f841c0d8aac751d19917268",
+          "byte_count": 434,
+          "bytes": "{\n  \"$schema\": \"urn:fortress:schema:v2:module-contract\",\n  \"schema_version\": 2,\n  \"id\": \"PF-SEMANTIC-FIXTURE\",\n  \"display_name\": \"Semantic Fixture\",\n  \"ecosystem\": {\n    \"repository_grammar\": 1,\n    \"standard\": {\n      \"id\": \"STD-FORTRESS-ENGINEERING\",\n      \"edition\": \"1.0.0-draft.1\"\n    }\n  },\n  \"provides\": [],\n  \"requires\": [],\n  \"relationships\": [],\n  \"constraints\": [],\n  \"guarantees\": [],\n  \"features\": [],\n  \"behavior\": []\n}\n"
+        },
+        {
+          "path": "sample/contract.json",
+          "digest": "sha256:5d2f6f1855c76dc1a1c4ea2df90214ac5ffc7f940b0183ad5fa531fe5325651a",
+          "byte_count": 494,
+          "bytes": "{\n  \"$schema\": \"urn:fortress:schema:v3:module-contract\",\n  \"schema_version\": 3,\n  \"id\": \"AF-SAMPLE-0001\",\n  \"display_name\": \"AF-SAMPLE-0001\",\n  \"provides\": [],\n  \"requires\": [],\n  \"relationships\": [],\n  \"constraints\": [],\n  \"guarantees\": [],\n  \"features\": [],\n  \"behavior\": [],\n  \"semantic_policy\": {\n    \"default\": \"UNDECLARED\",\n    \"capabilities\": {\n      \"allow\": [],\n      \"deny\": []\n    },\n    \"effects\": {\n      \"allow\": [],\n      \"deny\": [\n        \"filesystem.write\"\n      ]\n    }\n  }\n}\n"
+        }
+      ],
+      "configuration": {
+        "language_frontend": "rust-structural",
+        "standard_edition": "1.0.0-draft.1",
+        "target_platform": "UNSPECIFIED_STRUCTURAL_FIXTURE",
+        "features": [],
+        "cfg": []
+      },
+      "mutation_patch_digest": null,
+      "expected_claims": [
+        {
+          "module_id": "AF-SAMPLE-0001",
+          "target": "filesystem.write",
+          "verdict": "UNKNOWN",
+          "blocking_eligibility": "NOT_EVALUABLE"
+        }
+      ],
+      "expected_findings": {
+        "distinct_sites": 0,
+        "blocking": 0,
+        "advisory": 0
+      },
+      "expected_limitations": [
+        "NO_SEMANTIC_COVERAGE"
+      ],
+      "expected_exit": 0,
+      "adjudication_status": "AUTHORED_NEGATIVE_CONTROL",
+      "reproduction_command": "cargo +1.97.1 --config _data/cargo_config.toml test --manifest-path _data/Cargo.toml --all-features --test semantic_conformance qualification_corpus_replays_authored_cases",
+      "source_files": [
+        {
+          "path": "sample/_code/lib.rs",
+          "digest": "sha256:27bd787e1dbab1b7ee3c782473f6018dbd526cc6adbc22212866da5268ef5e40",
+          "byte_count": 19,
+          "bytes": "pub struct Marker;\n"
+        },
+        {
+          "path": "sample/_data/Cargo.toml",
+          "digest": "sha256:34cded9e1a49cb5719a439fabb894c7bc21cda29023eb06024704059e83b5deb",
+          "byte_count": 84,
+          "bytes": "[package]\nname='sample'\nversion='0.1.0'\nedition='2024'\n[lib]\npath='../_code/lib.rs'\n"
+        }
+      ]
+    },
+    {
+      "case_id": "open-options-write",
+      "workload_shape": "OpenOptions option chain",
+      "upstream_locator": "fortress-fixture://open-options-write",
+      "upstream_sha": null,
+      "source_digest": "sha256:7aa810bc59972df7284f342ded4a9d15e79c790462495e44f7d09651b1156b5f",
+      "governance_files": [
+        {
+          "path": "contract.json",
+          "digest": "sha256:8212c84bbe33b4009b9ff9111f4d95c1c661b9772f841c0d8aac751d19917268",
+          "byte_count": 434,
+          "bytes": "{\n  \"$schema\": \"urn:fortress:schema:v2:module-contract\",\n  \"schema_version\": 2,\n  \"id\": \"PF-SEMANTIC-FIXTURE\",\n  \"display_name\": \"Semantic Fixture\",\n  \"ecosystem\": {\n    \"repository_grammar\": 1,\n    \"standard\": {\n      \"id\": \"STD-FORTRESS-ENGINEERING\",\n      \"edition\": \"1.0.0-draft.1\"\n    }\n  },\n  \"provides\": [],\n  \"requires\": [],\n  \"relationships\": [],\n  \"constraints\": [],\n  \"guarantees\": [],\n  \"features\": [],\n  \"behavior\": []\n}\n"
+        },
+        {
+          "path": "sample/contract.json",
+          "digest": "sha256:5d2f6f1855c76dc1a1c4ea2df90214ac5ffc7f940b0183ad5fa531fe5325651a",
+          "byte_count": 494,
+          "bytes": "{\n  \"$schema\": \"urn:fortress:schema:v3:module-contract\",\n  \"schema_version\": 3,\n  \"id\": \"AF-SAMPLE-0001\",\n  \"display_name\": \"AF-SAMPLE-0001\",\n  \"provides\": [],\n  \"requires\": [],\n  \"relationships\": [],\n  \"constraints\": [],\n  \"guarantees\": [],\n  \"features\": [],\n  \"behavior\": [],\n  \"semantic_policy\": {\n    \"default\": \"UNDECLARED\",\n    \"capabilities\": {\n      \"allow\": [],\n      \"deny\": []\n    },\n    \"effects\": {\n      \"allow\": [],\n      \"deny\": [\n        \"filesystem.write\"\n      ]\n    }\n  }\n}\n"
+        }
+      ],
+      "configuration": {
+        "language_frontend": "rust-structural",
+        "standard_edition": "1.0.0-draft.1",
+        "target_platform": "UNSPECIFIED_STRUCTURAL_FIXTURE",
+        "features": [],
+        "cfg": []
+      },
+      "mutation_patch_digest": null,
+      "expected_claims": [
+        {
+          "module_id": "AF-SAMPLE-0001",
+          "target": "filesystem.write",
+          "verdict": "UNKNOWN",
+          "blocking_eligibility": "NOT_EVALUABLE"
+        }
+      ],
+      "expected_findings": {
+        "distinct_sites": 0,
+        "blocking": 0,
+        "advisory": 0
+      },
+      "expected_limitations": [
+        "OPEN_OPTIONS_OPTION_SENSITIVITY_UNSUPPORTED"
+      ],
+      "expected_exit": 0,
+      "adjudication_status": "AUTHORED_NEGATIVE_CONTROL",
+      "reproduction_command": "cargo +1.97.1 --config _data/cargo_config.toml test --manifest-path _data/Cargo.toml --all-features --test semantic_conformance qualification_corpus_replays_authored_cases",
+      "source_files": [
+        {
+          "path": "sample/_code/lib.rs",
+          "digest": "sha256:27cfbd5429722c2e0494bb6b739fa20dce0970c8385a54bddb71a8d3f597cf9a",
+          "byte_count": 79,
+          "bytes": "pub fn open() { let _ = std::fs::OpenOptions::new().write(true).open(\"out\"); }\n"
+        },
+        {
+          "path": "sample/_data/Cargo.toml",
+          "digest": "sha256:34cded9e1a49cb5719a439fabb894c7bc21cda29023eb06024704059e83b5deb",
+          "byte_count": 84,
+          "bytes": "[package]\nname='sample'\nversion='0.1.0'\nedition='2024'\n[lib]\npath='../_code/lib.rs'\n"
+        }
+      ]
+    },
+    {
+      "case_id": "generic-callback",
+      "workload_shape": "generic callback",
+      "upstream_locator": "fortress-fixture://generic-callback",
+      "upstream_sha": null,
+      "source_digest": "sha256:03a4c705527112291a7dd53e09b75e7910598b131022853fee1ff7a5a4b14a4f",
+      "governance_files": [
+        {
+          "path": "contract.json",
+          "digest": "sha256:8212c84bbe33b4009b9ff9111f4d95c1c661b9772f841c0d8aac751d19917268",
+          "byte_count": 434,
+          "bytes": "{\n  \"$schema\": \"urn:fortress:schema:v2:module-contract\",\n  \"schema_version\": 2,\n  \"id\": \"PF-SEMANTIC-FIXTURE\",\n  \"display_name\": \"Semantic Fixture\",\n  \"ecosystem\": {\n    \"repository_grammar\": 1,\n    \"standard\": {\n      \"id\": \"STD-FORTRESS-ENGINEERING\",\n      \"edition\": \"1.0.0-draft.1\"\n    }\n  },\n  \"provides\": [],\n  \"requires\": [],\n  \"relationships\": [],\n  \"constraints\": [],\n  \"guarantees\": [],\n  \"features\": [],\n  \"behavior\": []\n}\n"
+        },
+        {
+          "path": "sample/contract.json",
+          "digest": "sha256:5d2f6f1855c76dc1a1c4ea2df90214ac5ffc7f940b0183ad5fa531fe5325651a",
+          "byte_count": 494,
+          "bytes": "{\n  \"$schema\": \"urn:fortress:schema:v3:module-contract\",\n  \"schema_version\": 3,\n  \"id\": \"AF-SAMPLE-0001\",\n  \"display_name\": \"AF-SAMPLE-0001\",\n  \"provides\": [],\n  \"requires\": [],\n  \"relationships\": [],\n  \"constraints\": [],\n  \"guarantees\": [],\n  \"features\": [],\n  \"behavior\": [],\n  \"semantic_policy\": {\n    \"default\": \"UNDECLARED\",\n    \"capabilities\": {\n      \"allow\": [],\n      \"deny\": []\n    },\n    \"effects\": {\n      \"allow\": [],\n      \"deny\": [\n        \"filesystem.write\"\n      ]\n    }\n  }\n}\n"
+        }
+      ],
+      "configuration": {
+        "language_frontend": "rust-structural",
+        "standard_edition": "1.0.0-draft.1",
+        "target_platform": "UNSPECIFIED_STRUCTURAL_FIXTURE",
+        "features": [],
+        "cfg": []
+      },
+      "mutation_patch_digest": null,
+      "expected_claims": [
+        {
+          "module_id": "AF-SAMPLE-0001",
+          "target": "filesystem.write",
+          "verdict": "UNKNOWN",
+          "blocking_eligibility": "NOT_EVALUABLE"
+        }
+      ],
+      "expected_findings": {
+        "distinct_sites": 0,
+        "blocking": 0,
+        "advisory": 0
+      },
+      "expected_limitations": [
+        "GENERIC_CALLBACK_EFFECTS_UNRESOLVED"
+      ],
+      "expected_exit": 0,
+      "adjudication_status": "AUTHORED_NEGATIVE_CONTROL",
+      "reproduction_command": "cargo +1.97.1 --config _data/cargo_config.toml test --manifest-path _data/Cargo.toml --all-features --test semantic_conformance qualification_corpus_replays_authored_cases",
+      "source_files": [
+        {
+          "path": "sample/_code/lib.rs",
+          "digest": "sha256:1f6dcbe28c34fe212554b993daaf05944b8a0ba0aceefaed3f8a09a56e060aad",
+          "byte_count": 38,
+          "bytes": "pub fn invoke<F: Fn()>(f: F) { f(); }\n"
+        },
+        {
+          "path": "sample/_data/Cargo.toml",
+          "digest": "sha256:34cded9e1a49cb5719a439fabb894c7bc21cda29023eb06024704059e83b5deb",
+          "byte_count": 84,
+          "bytes": "[package]\nname='sample'\nversion='0.1.0'\nedition='2024'\n[lib]\npath='../_code/lib.rs'\n"
+        }
+      ]
+    }
+  ]
+}

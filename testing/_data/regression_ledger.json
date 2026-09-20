@@ -1,0 +1,427 @@
+{
+  "$schema": "urn:fortress:test:v1:regression-ledger",
+  "schema_version": 1,
+  "measurement_status": "CONTROL_REPLAY_ONLY_NO_INDEPENDENT_ACCURACY_CLAIM",
+  "manifest": "qualification_cases.json",
+  "cases": [
+    {
+      "case_id": "async-service-write",
+      "workload_shape": "async/service",
+      "source_digest": "sha256:7959057735e23492c8d3142f6d78e67c24c8567e339d34241175d233b6683982",
+      "governance_digests": [
+        {
+          "path": "contract.json",
+          "digest": "sha256:8212c84bbe33b4009b9ff9111f4d95c1c661b9772f841c0d8aac751d19917268"
+        },
+        {
+          "path": "sample/contract.json",
+          "digest": "sha256:5d2f6f1855c76dc1a1c4ea2df90214ac5ffc7f940b0183ad5fa531fe5325651a"
+        }
+      ],
+      "raw_output_digest": "sha256:85e4de3393dc888fe3bf53cc732d1b2a1cd670fb34d9ff4fd2d71600fb4ce6a1",
+      "disposition": "AUTHORED_CONTROL_REPLAY_PASS",
+      "distinct_source_sites": 1,
+      "propagated_paths": 1,
+      "expected_claims": [
+        {
+          "module_id": "AF-SAMPLE-0001",
+          "target": "filesystem.write",
+          "verdict": "FAIL",
+          "blocking_eligibility": "BLOCK_SUPPORTED"
+        }
+      ],
+      "expected_findings": {
+        "distinct_sites": 1,
+        "blocking": 1,
+        "advisory": 0
+      },
+      "expected_limitations": [],
+      "configuration": {
+        "language_frontend": "rust-structural",
+        "standard_edition": "1.0.0-draft.1",
+        "target_platform": "UNSPECIFIED_STRUCTURAL_FIXTURE",
+        "features": [],
+        "cfg": []
+      },
+      "finding_lifecycle": "UNBASELINED_CONTROL"
+    },
+    {
+      "case_id": "macro-library-direct-read",
+      "workload_shape": "macro-heavy library",
+      "source_digest": "sha256:9eb445a60448570ad17836071e1d56b97c32049277805a499ff0755242cb125b",
+      "governance_digests": [
+        {
+          "path": "contract.json",
+          "digest": "sha256:8212c84bbe33b4009b9ff9111f4d95c1c661b9772f841c0d8aac751d19917268"
+        },
+        {
+          "path": "sample/contract.json",
+          "digest": "sha256:42678d1e1faf895f4f8b21010fac3eef0a65ff62a4b6a2d8b118b2579fa16289"
+        }
+      ],
+      "raw_output_digest": "sha256:0de221e48518a4951bd1a78443819bc1fa9da68fc3d580036d542d33f05defc6",
+      "disposition": "AUTHORED_CONTROL_REPLAY_PASS",
+      "distinct_source_sites": 1,
+      "propagated_paths": 1,
+      "expected_claims": [
+        {
+          "module_id": "AF-SAMPLE-0001",
+          "target": "filesystem.read",
+          "verdict": "FAIL",
+          "blocking_eligibility": "BLOCK_SUPPORTED"
+        }
+      ],
+      "expected_findings": {
+        "distinct_sites": 1,
+        "blocking": 1,
+        "advisory": 0
+      },
+      "expected_limitations": [
+        "MACRO_EXPANSION_NOT_EXECUTED"
+      ],
+      "configuration": {
+        "language_frontend": "rust-structural",
+        "standard_edition": "1.0.0-draft.1",
+        "target_platform": "UNSPECIFIED_STRUCTURAL_FIXTURE",
+        "features": [],
+        "cfg": []
+      },
+      "finding_lifecycle": "UNBASELINED_CONTROL"
+    },
+    {
+      "case_id": "multi-package-external-effects",
+      "workload_shape": "multi-package external effects",
+      "source_digest": "sha256:191f77592c97fd772831a0346b385877cddd1481f4b7e5b5a1eeca9c7c680294",
+      "governance_digests": [
+        {
+          "path": "contract.json",
+          "digest": "sha256:8212c84bbe33b4009b9ff9111f4d95c1c661b9772f841c0d8aac751d19917268"
+        },
+        {
+          "path": "sample/contract.json",
+          "digest": "sha256:5d2f6f1855c76dc1a1c4ea2df90214ac5ffc7f940b0183ad5fa531fe5325651a"
+        },
+        {
+          "path": "worker/contract.json",
+          "digest": "sha256:182e1c9599d1cab2cee5b83e741f1d74a6ae30545e6973392231913428edd9b6"
+        }
+      ],
+      "raw_output_digest": "sha256:c07cddc0e7d656fec8b0cc69c07953ca60c3c1af7cc4b9f85e9ad08f08b154c2",
+      "disposition": "AUTHORED_CONTROL_REPLAY_PASS",
+      "distinct_source_sites": 2,
+      "propagated_paths": 2,
+      "expected_claims": [
+        {
+          "module_id": "AF-SAMPLE-0001",
+          "target": "filesystem.write",
+          "verdict": "FAIL",
+          "blocking_eligibility": "BLOCK_SUPPORTED"
+        },
+        {
+          "module_id": "AF-WORKER-0001",
+          "target": "process.spawn",
+          "verdict": "FAIL",
+          "blocking_eligibility": "BLOCK_SUPPORTED"
+        }
+      ],
+      "expected_findings": {
+        "distinct_sites": 2,
+        "blocking": 2,
+        "advisory": 0
+      },
+      "expected_limitations": [],
+      "configuration": {
+        "language_frontend": "rust-structural",
+        "standard_edition": "1.0.0-draft.1",
+        "target_platform": "UNSPECIFIED_STRUCTURAL_FIXTURE",
+        "features": [],
+        "cfg": []
+      },
+      "finding_lifecycle": "UNBASELINED_CONTROL"
+    },
+    {
+      "case_id": "macro-generated-write",
+      "workload_shape": "macro-expanded operation",
+      "source_digest": "sha256:fceb1d3bdb3c4de1bb703574024714440385756d6825870b3e5d95962bad3004",
+      "governance_digests": [
+        {
+          "path": "contract.json",
+          "digest": "sha256:8212c84bbe33b4009b9ff9111f4d95c1c661b9772f841c0d8aac751d19917268"
+        },
+        {
+          "path": "sample/contract.json",
+          "digest": "sha256:5d2f6f1855c76dc1a1c4ea2df90214ac5ffc7f940b0183ad5fa531fe5325651a"
+        }
+      ],
+      "raw_output_digest": "sha256:2c4bf1380046085740b9a8931eae75e24b4846d96d7bcc99b5fc140c8df4d478",
+      "disposition": "AUTHORED_NEGATIVE_CONTROL_REPLAY_PASS",
+      "distinct_source_sites": 0,
+      "propagated_paths": 0,
+      "expected_claims": [
+        {
+          "module_id": "AF-SAMPLE-0001",
+          "target": "filesystem.write",
+          "verdict": "UNKNOWN",
+          "blocking_eligibility": "NOT_EVALUABLE"
+        }
+      ],
+      "expected_findings": {
+        "distinct_sites": 0,
+        "blocking": 0,
+        "advisory": 0
+      },
+      "expected_limitations": [
+        "MACRO_EXPANSION_UNSUPPORTED"
+      ],
+      "configuration": {
+        "language_frontend": "rust-structural",
+        "standard_edition": "1.0.0-draft.1",
+        "target_platform": "UNSPECIFIED_STRUCTURAL_FIXTURE",
+        "features": [],
+        "cfg": []
+      },
+      "finding_lifecycle": "NO_FINDING"
+    },
+    {
+      "case_id": "no-executable-symbols",
+      "workload_shape": "source coverage loss",
+      "source_digest": "sha256:48618e0c8a723557af909471f1797d99b7454adff8049eeb390982c3eb0ac885",
+      "governance_digests": [
+        {
+          "path": "contract.json",
+          "digest": "sha256:8212c84bbe33b4009b9ff9111f4d95c1c661b9772f841c0d8aac751d19917268"
+        },
+        {
+          "path": "sample/contract.json",
+          "digest": "sha256:5d2f6f1855c76dc1a1c4ea2df90214ac5ffc7f940b0183ad5fa531fe5325651a"
+        }
+      ],
+      "raw_output_digest": "sha256:24e7c9d358264a58a044672c5a73b345415796a5fd11a63bf8ba83ac5eb0b090",
+      "disposition": "AUTHORED_NEGATIVE_CONTROL_REPLAY_PASS",
+      "distinct_source_sites": 0,
+      "propagated_paths": 0,
+      "expected_claims": [
+        {
+          "module_id": "AF-SAMPLE-0001",
+          "target": "filesystem.write",
+          "verdict": "UNKNOWN",
+          "blocking_eligibility": "NOT_EVALUABLE"
+        }
+      ],
+      "expected_findings": {
+        "distinct_sites": 0,
+        "blocking": 0,
+        "advisory": 0
+      },
+      "expected_limitations": [
+        "NO_SEMANTIC_COVERAGE"
+      ],
+      "configuration": {
+        "language_frontend": "rust-structural",
+        "standard_edition": "1.0.0-draft.1",
+        "target_platform": "UNSPECIFIED_STRUCTURAL_FIXTURE",
+        "features": [],
+        "cfg": []
+      },
+      "finding_lifecycle": "NO_FINDING"
+    },
+    {
+      "case_id": "open-options-write",
+      "workload_shape": "OpenOptions option chain",
+      "source_digest": "sha256:7aa810bc59972df7284f342ded4a9d15e79c790462495e44f7d09651b1156b5f",
+      "governance_digests": [
+        {
+          "path": "contract.json",
+          "digest": "sha256:8212c84bbe33b4009b9ff9111f4d95c1c661b9772f841c0d8aac751d19917268"
+        },
+        {
+          "path": "sample/contract.json",
+          "digest": "sha256:5d2f6f1855c76dc1a1c4ea2df90214ac5ffc7f940b0183ad5fa531fe5325651a"
+        }
+      ],
+      "raw_output_digest": "sha256:aba1a319c455a341698d9179c8ababbd5ea8e1434f3a035f8890540613d0ef59",
+      "disposition": "AUTHORED_NEGATIVE_CONTROL_REPLAY_PASS",
+      "distinct_source_sites": 0,
+      "propagated_paths": 1,
+      "expected_claims": [
+        {
+          "module_id": "AF-SAMPLE-0001",
+          "target": "filesystem.write",
+          "verdict": "UNKNOWN",
+          "blocking_eligibility": "NOT_EVALUABLE"
+        }
+      ],
+      "expected_findings": {
+        "distinct_sites": 0,
+        "blocking": 0,
+        "advisory": 0
+      },
+      "expected_limitations": [
+        "OPEN_OPTIONS_OPTION_SENSITIVITY_UNSUPPORTED"
+      ],
+      "configuration": {
+        "language_frontend": "rust-structural",
+        "standard_edition": "1.0.0-draft.1",
+        "target_platform": "UNSPECIFIED_STRUCTURAL_FIXTURE",
+        "features": [],
+        "cfg": []
+      },
+      "finding_lifecycle": "NO_FINDING"
+    },
+    {
+      "case_id": "generic-callback",
+      "workload_shape": "generic callback",
+      "source_digest": "sha256:03a4c705527112291a7dd53e09b75e7910598b131022853fee1ff7a5a4b14a4f",
+      "governance_digests": [
+        {
+          "path": "contract.json",
+          "digest": "sha256:8212c84bbe33b4009b9ff9111f4d95c1c661b9772f841c0d8aac751d19917268"
+        },
+        {
+          "path": "sample/contract.json",
+          "digest": "sha256:5d2f6f1855c76dc1a1c4ea2df90214ac5ffc7f940b0183ad5fa531fe5325651a"
+        }
+      ],
+      "raw_output_digest": "sha256:a29e91ccb17c0bd7f94cebbd8664d59b8e568175132f5a0a18c0e08a5c0216ea",
+      "disposition": "AUTHORED_NEGATIVE_CONTROL_REPLAY_PASS",
+      "distinct_source_sites": 0,
+      "propagated_paths": 0,
+      "expected_claims": [
+        {
+          "module_id": "AF-SAMPLE-0001",
+          "target": "filesystem.write",
+          "verdict": "UNKNOWN",
+          "blocking_eligibility": "NOT_EVALUABLE"
+        }
+      ],
+      "expected_findings": {
+        "distinct_sites": 0,
+        "blocking": 0,
+        "advisory": 0
+      },
+      "expected_limitations": [
+        "GENERIC_CALLBACK_EFFECTS_UNRESOLVED"
+      ],
+      "configuration": {
+        "language_frontend": "rust-structural",
+        "standard_edition": "1.0.0-draft.1",
+        "target_platform": "UNSPECIFIED_STRUCTURAL_FIXTURE",
+        "features": [],
+        "cfg": []
+      },
+      "finding_lifecycle": "NO_FINDING"
+    }
+  ],
+  "review_findings": [
+    {
+      "id": "statement-macro-omission",
+      "disposition": "CONFIRMED_FIXED_CONSERVATIVELY",
+      "tests": [
+        "qualification_corpus_replays_authored_cases"
+      ],
+      "note": "Statement-position macro invocation previously escaped call resolution and falsely passed a deny claim. It now creates an unsupported opaque call and UNKNOWN claim."
+    },
+    {
+      "id": "mixed-witness-order",
+      "disposition": "CONFIRMED_FIXED",
+      "tests": [
+        "shared_operation_site_retains_production_support_and_both_causal_paths"
+      ],
+      "note": "One canonical operation-site finding is blocking when any retained path is production-capable; the same site identity and eligibility survive source-order permutation."
+    },
+    {
+      "id": "coverage-loss-retirement",
+      "disposition": "CONFIRMED_TEMPORARILY_REFUSED",
+      "tests": [
+        "coverage_loss_is_not_resolution_without_comparable_retirement_evidence",
+        "raw_audit_failure_remains_distinct_from_progressive_check_success"
+      ],
+      "note": "Legacy prune has no comparable coverage or authority input and refuses mutation. Transition-based retirement belongs to later governance work."
+    },
+    {
+      "id": "explicit-drop",
+      "disposition": "CONFIRMED_FIXED_CONSERVATIVELY",
+      "tests": [
+        "destructor_unchecked_unwrap_and_open_options_do_not_gain_false_purity"
+      ],
+      "note": "Explicit std::mem::drop is unsupported with uncertainty and possible external effects; no destructor purity is inferred."
+    },
+    {
+      "id": "unchecked-unwrap",
+      "disposition": "CONFIRMED_FIXED",
+      "tests": [
+        "destructor_unchecked_unwrap_and_open_options_do_not_gain_false_purity"
+      ],
+      "note": "Exact Option/Result unchecked unwrap operations imply unsafe execution rather than a panic claim."
+    },
+    {
+      "id": "open-options",
+      "disposition": "SUPPORTED_BOUNDARY_LIMITATION",
+      "tests": [
+        "destructor_unchecked_unwrap_and_open_options_do_not_gain_false_purity"
+      ],
+      "note": "OpenOptions::new is unsupported and chained open unresolved; option-sensitive read/write effects are not claimed."
+    },
+    {
+      "id": "user-method-spelling",
+      "disposition": "DISPROVED_BY_CONTROL",
+      "tests": [
+        "unresolved_method_names_never_gain_refined_specificity"
+      ],
+      "note": "Unrelated user write/spawn/drop/unwrap names do not acquire standard operation effects."
+    },
+    {
+      "id": "implicit-drop",
+      "disposition": "SUPPORTED_BOUNDARY_LIMITATION",
+      "tests": [
+        "destructor_unchecked_unwrap_and_open_options_do_not_gain_false_purity"
+      ],
+      "note": "Implicit scope-end destructor propagation is not yet modeled; negative claims involving it remain outside the qualified semantic envelope."
+    },
+    {
+      "id": "shadowed-capability-policy",
+      "disposition": "CONFIRMED_PENDING_CLAIMS",
+      "tests": [
+        "shadowed_policy_empty_claim_is_reproduced_for_effective_policy_work"
+      ],
+      "note": "The current evaluator emits an empty PASS for a capability restriction whose only observation is assigned to a more specific effect restriction. This is a reproduced defect, not a passing negative claim; effective-policy truth tables belong to the dependent claim-algebra work."
+    },
+    {
+      "id": "omitted-operation-record",
+      "disposition": "SUPPORTED_BOUNDARY_LIMITATION",
+      "tests": [],
+      "note": "Calls absent before PSM construction lack an independent syntax inventory; no dropped-operation detection is claimed."
+    },
+    {
+      "id": "callback-generic-operation",
+      "disposition": "SUPPORTED_BOUNDARY_LIMITATION",
+      "tests": [
+        "residual_calls_distinguish_trait_objects_generics_external_and_unknown_receivers"
+      ],
+      "note": "Dynamic/generic receiver effects remain explicit uncertainty rather than resolved standard effects."
+    }
+  ],
+  "upstream_reproduction": {
+    "status": "UNREPRODUCED",
+    "representative_snapshots": [
+      {
+        "case_id": "ripgrep-representative",
+        "upstream_sha": "4649aa9700619f94cf9c66876e9549d83420e16c",
+        "source_digest": "git-tree-sha1:d7a1d4d108598ad6e23d82a180c71541b221d32c"
+      },
+      {
+        "case_id": "serde-representative",
+        "upstream_sha": "a866b336f14aa57a07f0d0be9f8762746e64ecb4",
+        "source_digest": "git-tree-sha1:c6375d24a486e815151b038bb9f16d29a1d9db6f"
+      },
+      {
+        "case_id": "tokio-representative",
+        "upstream_sha": "556820ff84030b37e74e11b86b7733f5795770ea",
+        "source_digest": "git-tree-sha1:450d7dc0cddc85ec191f7f63fd6ca480f938acde"
+      }
+    ],
+    "original_population_count": null,
+    "original_policy_bytes_available": false,
+    "reason": "The supplied basis and live repository contain no historical policy/mutation bytes or original upstream SHAs. Representative tags are pinned separately and excluded from scoring."
+  }
+}

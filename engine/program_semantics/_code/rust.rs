@@ -3852,6 +3852,30 @@ impl<'ast> Visit<'ast> for BodyAnalyzer<'_> {
         });
     }
 
+    fn visit_stmt_macro(&mut self, statement: &'ast syn::StmtMacro) {
+        let reference = statement.mac.path.to_token_stream().to_string();
+        self.raw_calls.push(RawCall {
+            caller: self.body.symbol.clone(),
+            package: self.package_name().into(),
+            crate_name: self.body.context.crate_name.clone(),
+            namespace: self.body.context.namespace.clone(),
+            owner_type: self.body.owner_type.clone(),
+            target: RawCallTarget::Macro,
+            reference: reference.clone(),
+            arguments: Vec::new(),
+            consumer: None,
+            evidence: CallSiteEvidence::new(
+                reference,
+                0,
+                provenance(
+                    &self.body.source_path,
+                    statement.span(),
+                    Some(self.body.symbol.clone()),
+                ),
+            ),
+        });
+    }
+
     fn visit_expr_cast(&mut self, expression: &'ast syn::ExprCast) {
         let source_type = self
             .expression_type(&expression.expr)

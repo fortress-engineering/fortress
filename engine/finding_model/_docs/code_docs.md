@@ -24,4 +24,4 @@ Defines canonical findings and defeaters, normalized occurrence and provenance i
 
 ### [`governance.rs`](../_code/governance.rs)
 
-Defines canonical authored baseline and finding-specific exception authority, monotonic pruning with reintroduction history, lifecycle/disposition/enforcement evaluation, and deterministic serialization.
+Defines canonical authored baseline and finding-specific exception authority, reintroduction history, lifecycle/disposition/enforcement evaluation, and deterministic serialization. Legacy prune refuses retirement from finding absence alone until comparable subject, authority, and coverage evidence is available.

@@ -601,6 +601,16 @@ fn raw_audit_failure_remains_distinct_from_progressive_check_success() {
     assert!(output.contains("Progressive enforcement: PASS"), "{output}");
     assert!(output.contains("Raw conformance: FAIL"), "{output}");
     assert!(output.contains("baselined/non-blocking: 1"), "{output}");
+
+    let authority_path = fixture.root.join("_data/finding_governance.json");
+    let before = fs::read(&authority_path).expect("baseline authority reads");
+    let prune = run(&["baseline", "prune", &root]);
+    assert_eq!(
+        prune.status.code(),
+        Some(i32::from(fortress_cli::EXIT_VIOLATION))
+    );
+    assert!(String::from_utf8_lossy(&prune.stderr).contains("comparable subject"));
+    assert_eq!(fs::read(&authority_path).unwrap(), before);
 }
 
 fn run_owned(arguments: &[String]) -> Output {
