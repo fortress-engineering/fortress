@@ -1228,6 +1228,217 @@ fn ambiguity_and_user_defined_dereference_remain_explicit_without_guessing() {
     }));
 }
 
+/// `T-AF-PROGRAM-SEMANTICS-0001-R06-004`
+/// Fortress requirement: AF-PROGRAM-SEMANTICS-0001-R06
+#[test]
+fn constructor_receiver_resolves_unannotated_spawn() {
+    let model = compile_program_semantic_model(&one_package(
+        "use std::process::Command; fn run() { let mut command = Command::new(\"echo\"); let _ = command.spawn(); }",
+    ))
+    .expect("unannotated command fixture compiles");
+    assert!(model.calls().iter().any(|call| {
+        call.state() == CallResolutionState::External
+            && call.external_target() == Some("rust_method::std::process::Command::spawn")
+    }));
+}
+
+/// `T-AF-PROGRAM-SEMANTICS-0001-R06-005`
+/// Fortress requirement: AF-PROGRAM-SEMANTICS-0001-R06
+#[test]
+fn method_chain_open_options_tracks_supported_modes() {
+    let model = compile_program_semantic_model(&one_package(
+        "use std::fs::OpenOptions; fn run(flag: bool) { let _ = OpenOptions::new().read(true).open(\"input\"); let _ = OpenOptions::new().write(flag).open(\"output\"); }",
+    ))
+    .expect("OpenOptions chain fixture compiles");
+    let opens = model
+        .calls()
+        .iter()
+        .filter(|call| {
+            call.external_target().is_some_and(|target| {
+                target.starts_with("rust_method::std::fs::OpenOptions::open[")
+            })
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(opens.len(), 2);
+    assert!(opens.iter().any(|call| {
+        call.external_target() == Some("rust_method::std::fs::OpenOptions::open[read]")
+    }));
+    assert!(opens.iter().any(|call| {
+        call.external_target() == Some("rust_method::std::fs::OpenOptions::open[unknown]")
+    }));
+}
+
+/// `T-AF-PROGRAM-SEMANTICS-0001-R06-006`
+/// Fortress requirement: AF-PROGRAM-SEMANTICS-0001-R06
+#[test]
+fn user_command_and_same_named_methods_are_not_std() {
+    let model = compile_program_semantic_model(&one_package(
+        "struct Command; impl Command { fn new(_: &str) -> Self { Self } fn spawn(&mut self) {} } fn run() { let mut command = Command::new(\"local\"); command.spawn(); }",
+    ))
+    .expect("local Command fixture compiles");
+    assert!(!model.calls().iter().any(|call| {
+        call.external_target() == Some("rust_method::std::process::Command::spawn")
+    }));
+    assert!(model.calls().iter().any(|call| {
+        call.callee()
+            .and_then(|id| model.symbols().iter().find(|symbol| symbol.id() == id))
+            .is_some_and(|symbol| symbol.qualified_name().ends_with("Command::spawn"))
+    }));
+
+    let namespaced = compile_program_semantic_model(&one_package(
+        "mod left { pub struct Item; impl Item { pub fn execute(&self) {} } } mod right { pub struct Item; impl Item { pub fn execute(&self) {} } } fn run(left: left::Item, right: right::Item) { left.execute(); right.execute(); }",
+    ))
+    .expect("same-name namespaced types compile structurally");
+    let resolved = namespaced
+        .calls()
+        .iter()
+        .filter_map(ProgramCall::callee)
+        .filter_map(|id| namespaced.symbols().iter().find(|symbol| symbol.id() == id))
+        .map(ExecutableSymbol::qualified_name)
+        .collect::<std::collections::BTreeSet<_>>();
+    assert!(resolved.contains("sample::left::Item::execute"));
+    assert!(resolved.contains("sample::right::Item::execute"));
+}
+
+/// `T-AF-PROGRAM-SEMANTICS-0001-R06-007`
+/// Fortress requirement: AF-PROGRAM-SEMANTICS-0001-R06
+#[test]
+fn branch_type_join_is_conservative() {
+    let model = compile_program_semantic_model(&one_package(
+        "struct Left; struct Right; impl Left { fn run(&self) {} } impl Right { fn run(&self) {} } fn choose(flag: bool) { let mut value = Left; if flag { value = Left; } else { value = Right; } value.run(); }",
+    ))
+    .expect("structural branch fixture compiles");
+    let call = model
+        .calls()
+        .iter()
+        .find(|call| {
+            call.evidence()
+                .iter()
+                .any(|site| site.reference().contains("value . run"))
+        })
+        .expect("post-merge call is retained");
+    assert_eq!(call.state(), CallResolutionState::Unresolved);
+    assert_eq!(
+        call.reason(),
+        Some(CallResolutionReason::UnknownReceiverType)
+    );
+}
+
+/// `T-AF-PROGRAM-SEMANTICS-0001-R06-008`
+/// Fortress requirement: AF-PROGRAM-SEMANTICS-0001-R06
+#[test]
+fn callback_drop_and_async_are_not_false_purity() {
+    let model = compile_program_semantic_model(&one_package(
+        "struct Resource; impl Drop for Resource { fn drop(&mut self) {} } async fn hidden() { let _ = std::fs::write(\"out\", b\"x\"); } fn boundaries(callback: fn()) { callback(); let value = String::new(); std::mem::drop(value); let _resource = Resource; let _future = hidden(); } async fn executed() { hidden().await; }",
+    ))
+    .expect("execution-boundary fixture compiles");
+    let reasons = model
+        .calls()
+        .iter()
+        .filter_map(ProgramCall::reason)
+        .collect::<Vec<_>>();
+    assert!(reasons.contains(&CallResolutionReason::FunctionPointer));
+    assert!(reasons.contains(&CallResolutionReason::AsyncBodyNotPolled));
+    assert!(model.calls().iter().any(|call| {
+        call.state() == CallResolutionState::External
+            && call.external_target() == Some("std::mem::drop")
+    }));
+    assert!(model.operation_inventory().iter().any(|operation| {
+        operation.category() == "implicit_destructor" && operation.coverage_barrier()
+    }));
+    assert!(model.calls().iter().any(|call| {
+        call.state() == CallResolutionState::ResolvedStatic
+            && call
+                .evidence()
+                .iter()
+                .any(|site| site.reference().contains("hidden"))
+    }));
+}
+
+/// `T-AF-PROGRAM-SEMANTICS-0001-R06-009`
+/// Fortress requirement: AF-PROGRAM-SEMANTICS-0001-R06
+#[test]
+fn worklist_limit_emits_explicit_limit() {
+    let nested = (0..10).fold("value.run();".to_owned(), |body, _| {
+        format!("if flag {{ {body} }} else {{ {body} }}")
+    });
+    let source = format!(
+        "struct Value; impl Value {{ fn run(&self) {{}} }} fn bounded(flag: bool, value: Value) {{ {nested} }}"
+    );
+    let model = compile_program_semantic_model(&one_package(&source))
+        .expect("bounded nesting fixture compiles structurally");
+    assert!(model.operation_inventory().iter().any(|operation| {
+        operation.category() == "type_worklist_limit" && operation.coverage_barrier()
+    }));
+}
+
+/// `T-AF-PROGRAM-SEMANTICS-0001-R06-010`
+/// Fortress requirement: AF-PROGRAM-SEMANTICS-0001-R06
+#[test]
+fn external_targets_match_independent_source_review() {
+    let model = compile_program_semantic_model(&one_package(
+        "use std::process::Command; use std::fs::OpenOptions; fn run() { let _ = Command::new(\"echo\").arg(\"ok\").status(); let _ = OpenOptions::new().read(true).open(\"input\"); }",
+    ))
+    .expect("reviewed external sample compiles");
+    let targets = model
+        .calls()
+        .iter()
+        .filter_map(ProgramCall::external_target)
+        .collect::<std::collections::BTreeSet<_>>();
+    assert!(targets.contains("std::process::Command::new"));
+    assert!(targets.contains("rust_method::std::process::Command::arg"));
+    assert!(targets.contains("rust_method::std::process::Command::status"));
+    assert!(targets.contains("std::fs::OpenOptions::new"));
+    assert!(targets.contains("rust_method::std::fs::OpenOptions::read"));
+    assert!(targets.contains("rust_method::std::fs::OpenOptions::open[read]"));
+}
+
+/// `T-AF-PROGRAM-SEMANTICS-0001-R08-013`
+/// Fortress requirement: AF-PROGRAM-SEMANTICS-0001-R08
+#[test]
+fn control_evidence_is_nonrecursive_and_control_cargo_is_rejected() {
+    let retained = input(
+        &[
+            (
+                "sample/_data/Cargo.toml",
+                "[package]\nname='sample'\nversion='0.1.0'\nedition='2024'\n[lib]\npath='../_code/lib.rs'\n",
+            ),
+            ("sample/_code/lib.rs", "pub fn live() {}"),
+            (
+                "__fortress/evidence/generations/sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/historical.rs",
+                "pub fn must_not_parse( {",
+            ),
+        ],
+        &[("PF-PSM-FIXTURE", ""), ("AF-SAMPLE-0001", "sample")],
+        &[],
+        &[],
+    );
+    let model = compile_program_semantic_model(&retained).expect("retained evidence is not source");
+    assert_eq!(model.coverage().observed_source_files(), 1);
+
+    let invalid = input(
+        &[
+            (
+                "sample/_data/Cargo.toml",
+                "[package]\nname='sample'\nversion='0.1.0'\nedition='2024'\n[lib]\npath='../_code/lib.rs'\n",
+            ),
+            ("sample/_code/lib.rs", "pub fn live() {}"),
+            (
+                "__fortress/Cargo.toml",
+                "[package]\nname='hidden'\nversion='0.1.0'",
+            ),
+        ],
+        &[("PF-PSM-FIXTURE", ""), ("AF-SAMPLE-0001", "sample")],
+        &[],
+        &[],
+    );
+    assert!(matches!(
+        compile_program_semantic_model(&invalid),
+        Err(ProgramSemanticError::ControlNamespaceApplicationSource(path))
+            if path == "__fortress/Cargo.toml"
+    ));
+}
+
 /// `T-AF-PROGRAM-SEMANTICS-0001-R07-001`
 /// Fortress requirement: AF-PROGRAM-SEMANTICS-0001-R07
 #[test]

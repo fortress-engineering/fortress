@@ -432,20 +432,18 @@
         {
           "module_id": "AF-SAMPLE-0001",
           "target": "filesystem.write",
-          "verdict": "UNKNOWN",
-          "blocking_eligibility": "NOT_EVALUABLE"
+          "verdict": "FAIL",
+          "blocking_eligibility": "BLOCK_SUPPORTED"
         }
       ],
       "expected_findings": {
-        "distinct_sites": 0,
-        "blocking": 0,
+        "distinct_sites": 1,
+        "blocking": 1,
         "advisory": 0
       },
-      "expected_limitations": [
-        "OPEN_OPTIONS_OPTION_SENSITIVITY_UNSUPPORTED"
-      ],
+      "expected_limitations": [],
       "expected_exit": 0,
-      "adjudication_status": "AUTHORED_NEGATIVE_CONTROL",
+      "adjudication_status": "AUTHORED_POSITIVE_CONTROL",
       "reproduction_command": "cargo +1.97.1 --config _data/cargo_config.toml test --manifest-path _data/Cargo.toml --all-features --test semantic_conformance qualification_corpus_replays_authored_cases",
       "source_files": [
         {

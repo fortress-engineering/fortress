@@ -32,6 +32,12 @@ Supplies canonical Module identities, containment, logical source bindings, and 
 
 Supplies the exact snapshot-bound source substrate and the broader observed Module dependency projection against which cross-Module call facts are reconciled.
 
+### [Project Model](../project_model/README.md)
+
+**Types:** `depends_on`
+
+Supplies the CONTROL namespace layout and role registry used to distinguish partitioned application inputs from governed control configuration and nonrecursive retained evidence.
+
 ### [Repository Observation](../repository_observation/README.md)
 
 **Types:** `depends_on`

@@ -36,11 +36,11 @@ pub const PROGRAM_SEMANTIC_MODEL_SCHEMA: &str = "urn:fortress:schema:v6:program-
 /// Canonical PSM document schema version.
 pub const PROGRAM_SEMANTIC_MODEL_SCHEMA_VERSION: u16 = 6;
 /// Semantic version of the language-neutral PSM compiler.
-pub const PROGRAM_SEMANTIC_MODEL_VERSION: &str = "6.0.0";
+pub const PROGRAM_SEMANTIC_MODEL_VERSION: &str = "6.1.0";
 /// Stable Rust analyzer identity.
 pub const RUST_PROGRAM_ANALYZER_ID: &str = "fortress-rust-program-semantics";
 /// Semantic version of supported Rust program analysis.
-pub const RUST_PROGRAM_ANALYZER_VERSION: &str = "6.0.0";
+pub const RUST_PROGRAM_ANALYZER_VERSION: &str = "6.1.0";
 
 const UNSUPPORTED_SEMANTICS: &[&str] = &[
     "arbitrary_dynamic_dispatch_resolution",
@@ -1261,6 +1261,12 @@ impl SymbolQualifiers {
     pub const fn is_unsafe(self) -> bool {
         self.is_unsafe
     }
+
+    /// Returns whether invoking the declaration constructs an async future.
+    #[must_use]
+    pub const fn is_async(self) -> bool {
+        self.is_async
+    }
 }
 
 /// Whether an executable symbol is only declared or has an analyzable body.
@@ -1745,6 +1751,10 @@ pub enum CallResolutionReason {
     UnsupportedSyntax,
     /// A supported path did not resolve to a known target.
     UnknownPath,
+    /// A local async body is constructed but execution is not established without polling.
+    AsyncBodyNotPolled,
+    /// Local type propagation reached its bounded fixed-point iteration limit.
+    AnalyzerLimit,
 }
 
 /// Semantic authority used for a call classification.
@@ -2852,6 +2862,8 @@ pub enum ProgramSemanticError {
     MissingTargetSource(String),
     /// A requested target does not occur in the observed Cargo package graph.
     UnknownTargetContext(String),
+    /// Application source selection attempted to cross into the reserved control namespace.
+    ControlNamespaceApplicationSource(String),
     /// PSM cross-Module calls lacked the broader observation edge they imply.
     AnalyzerDisagreement(Vec<String>),
 }
@@ -2885,6 +2897,10 @@ impl Display for ProgramSemanticError {
                     "selected Cargo target `{target}` is not observed"
                 )
             }
+            Self::ControlNamespaceApplicationSource(path) => write!(
+                formatter,
+                "application source `{path}` is beneath the reserved __fortress control namespace"
+            ),
             Self::AnalyzerDisagreement(edges) => write!(
                 formatter,
                 "PSM cross-Module call projection disagrees with Implementation Observation: {}",
@@ -2904,6 +2920,7 @@ impl Error for ProgramSemanticError {
             | Self::MissingSourceOwner(_)
             | Self::MissingTargetSource(_)
             | Self::UnknownTargetContext(_)
+            | Self::ControlNamespaceApplicationSource(_)
             | Self::AnalyzerDisagreement(_) => None,
         }
     }

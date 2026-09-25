@@ -18,7 +18,7 @@
           "digest": "sha256:5d2f6f1855c76dc1a1c4ea2df90214ac5ffc7f940b0183ad5fa531fe5325651a"
         }
       ],
-      "raw_output_digest": "sha256:7897f056061615e3b608283cd0942d34998d56773eb3f768399580a524923be9",
+      "raw_output_digest": "sha256:f7ebd7da6d83241eced64885a2a7a16d685cc813e472316591980e82accd462d",
       "disposition": "AUTHORED_CONTROL_REPLAY_PASS",
       "distinct_source_sites": 1,
       "propagated_paths": 1,
@@ -59,7 +59,7 @@
           "digest": "sha256:42678d1e1faf895f4f8b21010fac3eef0a65ff62a4b6a2d8b118b2579fa16289"
         }
       ],
-      "raw_output_digest": "sha256:e5c1aef09e7c4c68574f9051c3fba390692353e44f4de54be6dead388399311c",
+      "raw_output_digest": "sha256:4a9ff03c299beba01b97957da7ab850ce8ce029202e074547a53354f54af56f5",
       "disposition": "AUTHORED_CONTROL_REPLAY_PASS",
       "distinct_source_sites": 1,
       "propagated_paths": 1,
@@ -106,7 +106,7 @@
           "digest": "sha256:182e1c9599d1cab2cee5b83e741f1d74a6ae30545e6973392231913428edd9b6"
         }
       ],
-      "raw_output_digest": "sha256:e10041085a3e03d79b0918b51ed9d056b0b05e793b6e3824391d29580d59fc52",
+      "raw_output_digest": "sha256:80b05a88e8fc449bf7e1f7c315ba1c85cf1a30faa807e2fa08901fb5c8c8c266",
       "disposition": "AUTHORED_CONTROL_REPLAY_PASS",
       "distinct_source_sites": 2,
       "propagated_paths": 2,
@@ -153,7 +153,7 @@
           "digest": "sha256:5d2f6f1855c76dc1a1c4ea2df90214ac5ffc7f940b0183ad5fa531fe5325651a"
         }
       ],
-      "raw_output_digest": "sha256:41b0a1de8d8696c393d734ccf0956703d0e35d4a18b5cdb30acf27c9124e29e5",
+      "raw_output_digest": "sha256:dd0c5392ccf4fdd930906c8f40a4a81d4206b49e13c92d0be2bd97cca59cd0eb",
       "disposition": "AUTHORED_NEGATIVE_CONTROL_REPLAY_PASS",
       "distinct_source_sites": 0,
       "propagated_paths": 0,
@@ -196,7 +196,7 @@
           "digest": "sha256:5d2f6f1855c76dc1a1c4ea2df90214ac5ffc7f940b0183ad5fa531fe5325651a"
         }
       ],
-      "raw_output_digest": "sha256:de6f23e2149f813208180b70f1aa632080e5d2216a339c5c6ef3171aab17c328",
+      "raw_output_digest": "sha256:0f0d80093fc796eebbce97f3b047538ea934d3c67b2288037c5ae20432e2d0e4",
       "disposition": "AUTHORED_NEGATIVE_CONTROL_REPLAY_PASS",
       "distinct_source_sites": 0,
       "propagated_paths": 0,
@@ -239,26 +239,24 @@
           "digest": "sha256:5d2f6f1855c76dc1a1c4ea2df90214ac5ffc7f940b0183ad5fa531fe5325651a"
         }
       ],
-      "raw_output_digest": "sha256:c238cec44c0750d3f0fca68e0fee23caead69b1179971cd403a730e46c8a99b7",
-      "disposition": "AUTHORED_NEGATIVE_CONTROL_REPLAY_PASS",
-      "distinct_source_sites": 0,
+      "raw_output_digest": "sha256:e0f0b16731ddfc1c9be7e39a3dd3a17a46b137f4221e863fb0cedc7744664bb1",
+      "disposition": "AUTHORED_POSITIVE_CONTROL_REPLAY_PASS",
+      "distinct_source_sites": 1,
       "propagated_paths": 1,
       "expected_claims": [
         {
           "module_id": "AF-SAMPLE-0001",
           "target": "filesystem.write",
-          "verdict": "UNKNOWN",
-          "blocking_eligibility": "NOT_EVALUABLE"
+          "verdict": "FAIL",
+          "blocking_eligibility": "BLOCK_SUPPORTED"
         }
       ],
       "expected_findings": {
-        "distinct_sites": 0,
-        "blocking": 0,
+        "distinct_sites": 1,
+        "blocking": 1,
         "advisory": 0
       },
-      "expected_limitations": [
-        "OPEN_OPTIONS_OPTION_SENSITIVITY_UNSUPPORTED"
-      ],
+      "expected_limitations": [],
       "configuration": {
         "language_frontend": "rust-structural",
         "standard_edition": "1.0.0-draft.1",
@@ -266,7 +264,7 @@
         "features": [],
         "cfg": []
       },
-      "finding_lifecycle": "NO_FINDING"
+      "finding_lifecycle": "UNBASELINED_CONTROL"
     },
     {
       "case_id": "generic-callback",
@@ -282,7 +280,7 @@
           "digest": "sha256:5d2f6f1855c76dc1a1c4ea2df90214ac5ffc7f940b0183ad5fa531fe5325651a"
         }
       ],
-      "raw_output_digest": "sha256:aa0a71f715c48c5e71fa4d844b3b5374735531e030fbfe550f0a7cc969efead8",
+      "raw_output_digest": "sha256:dc24bf580e90ded00a6e5cd4cac3b8779145c9953501efcfcd2026af3182e6e8",
       "disposition": "AUTHORED_NEGATIVE_CONTROL_REPLAY_PASS",
       "distinct_source_sites": 0,
       "propagated_paths": 0,

@@ -22,6 +22,11 @@
       "version": "^0.1.0"
     },
     {
+      "provider": "AF-PROJECT-MODEL-0001",
+      "capability": "CAP-PROJECT-MODEL",
+      "version": "^0.1.0"
+    },
+    {
       "provider": "AF-REPOSITORY-OBSERVATION-0001",
       "capability": "CAP-REPOSITORY-OBSERVATION",
       "version": "^0.1.0"
@@ -93,11 +98,18 @@
         },
         {
           "id": "AF-PROGRAM-SEMANTICS-0001-R06",
-          "statement": "Program Semantics propagates supported local static expression types to resolve inherent and concrete trait method calls conservatively, emits canonical interprocedural transfers for newly resolved calls, and assigns stable semantic reasons to every residual non-static call.",
+          "statement": "Program Semantics propagates a bounded local type lattice from explicit and registered exact return signatures, joins branches and loops conservatively, resolves fully qualified inherent and concrete trait method calls, emits canonical interprocedural transfers for newly resolved calls, and assigns stable semantic reasons or coverage barriers to every residual callback, destructor, async, macro, dereference, trait, and analyzer-limit boundary.",
           "tests": [
             "T-AF-PROGRAM-SEMANTICS-0001-R06-001",
             "T-AF-PROGRAM-SEMANTICS-0001-R06-002",
-            "T-AF-PROGRAM-SEMANTICS-0001-R06-003"
+            "T-AF-PROGRAM-SEMANTICS-0001-R06-003",
+            "T-AF-PROGRAM-SEMANTICS-0001-R06-004",
+            "T-AF-PROGRAM-SEMANTICS-0001-R06-005",
+            "T-AF-PROGRAM-SEMANTICS-0001-R06-006",
+            "T-AF-PROGRAM-SEMANTICS-0001-R06-007",
+            "T-AF-PROGRAM-SEMANTICS-0001-R06-008",
+            "T-AF-PROGRAM-SEMANTICS-0001-R06-009",
+            "T-AF-PROGRAM-SEMANTICS-0001-R06-010"
           ]
         },
         {
@@ -123,7 +135,8 @@
             "T-AF-PROGRAM-SEMANTICS-0001-R08-009",
             "T-AF-PROGRAM-SEMANTICS-0001-R08-010",
             "T-AF-PROGRAM-SEMANTICS-0001-R08-011",
-            "T-AF-PROGRAM-SEMANTICS-0001-R08-012"
+            "T-AF-PROGRAM-SEMANTICS-0001-R08-012",
+            "T-AF-PROGRAM-SEMANTICS-0001-R08-013"
           ]
         }
       ]

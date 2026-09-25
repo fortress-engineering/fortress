@@ -887,6 +887,74 @@ fn unsafe_block() { unsafe { std::ptr::read(std::ptr::null()); } }
     assert!(canonical.contains("program_semantics.external_target"));
 }
 
+/// `T-AF-STATE-EFFECT-ANALYSIS-0001-R05-010`
+/// Fortress requirement: AF-STATE-EFFECT-ANALYSIS-0001-R05
+#[test]
+fn constructor_receiver_resolves_unannotated_spawn() {
+    let model = psm(
+        "use std::process::Command; fn process_spawn() { let mut command = Command::new(\"echo\"); let _ = command.spawn(); }",
+    );
+    let states = load_state_contracts(&model, Vec::new()).expect("empty states resolve");
+    let functions = load_function_contracts(&model, Vec::new()).expect("empty functions resolve");
+    let evaluation = evaluate(&model, &states, &functions);
+    let summary = evaluation
+        .model()
+        .summaries()
+        .iter()
+        .find(|summary| summary.symbol() == symbol_id(&model, "process_spawn"))
+        .expect("spawn summary");
+    assert!(
+        summary
+            .direct_effects()
+            .contains(&FunctionEffect::ProcessSpawn)
+    );
+    assert!(
+        !summary
+            .direct_effects()
+            .contains(&FunctionEffect::ExternalInteraction)
+    );
+}
+
+/// `T-AF-STATE-EFFECT-ANALYSIS-0001-R05-011`
+/// Fortress requirement: AF-STATE-EFFECT-ANALYSIS-0001-R05
+#[test]
+fn method_chain_open_options_tracks_supported_modes() {
+    let model = psm(
+        "use std::fs::OpenOptions; fn read_file() { let _ = OpenOptions::new().read(true).open(\"input\"); } fn unknown(flag: bool) { let _ = OpenOptions::new().write(flag).open(\"output\"); }",
+    );
+    let states = load_state_contracts(&model, Vec::new()).expect("empty states resolve");
+    let functions = load_function_contracts(&model, Vec::new()).expect("empty functions resolve");
+    let evaluation = evaluate(&model, &states, &functions);
+    let summary = |suffix| {
+        evaluation
+            .model()
+            .summaries()
+            .iter()
+            .find(|summary| summary.symbol() == symbol_id(&model, suffix))
+            .expect("summary exists")
+    };
+    assert!(
+        summary("read_file")
+            .direct_effects()
+            .contains(&FunctionEffect::FilesystemRead)
+    );
+    assert!(
+        !summary("read_file")
+            .direct_effects()
+            .contains(&FunctionEffect::FilesystemWrite)
+    );
+    assert!(
+        summary("unknown")
+            .direct_effects()
+            .contains(&FunctionEffect::ExternalInteraction)
+    );
+    assert!(
+        !summary("unknown")
+            .direct_effects()
+            .contains(&FunctionEffect::FilesystemWrite)
+    );
+}
+
 /// `T-AF-STATE-EFFECT-ANALYSIS-0001-R05-002`
 /// Fortress requirement: AF-STATE-EFFECT-ANALYSIS-0001-R05
 #[test]
@@ -1229,7 +1297,7 @@ fn unresolved_method_names_never_gain_refined_specificity() {
 /// `T-AF-STATE-EFFECT-ANALYSIS-0001-R05-008`
 /// Fortress requirement: AF-STATE-EFFECT-ANALYSIS-0001-R05
 #[test]
-fn destructor_unchecked_unwrap_and_open_options_do_not_gain_false_purity() {
+fn destructor_unchecked_unwrap_and_open_options_keep_distinct_boundaries() {
     let model = psm(r#"
 struct Writer;
 impl Drop for Writer { fn drop(&mut self) { let _ = std::fs::write("out", b"x"); } }
@@ -1276,14 +1344,17 @@ fn local(value: Mock) { value.open(); }
     let open = summary("open");
     assert!(open.operation_classifications().iter().any(|item| {
         item.operation() == Some("std::fs::OpenOptions::new")
-            && item.state() == OperationClassificationState::Unsupported
+            && item.state() == OperationClassificationState::NotApplicable
+    }));
+    assert!(open.operation_classifications().iter().any(|item| {
+        item.operation() == Some("rust_method::std::fs::OpenOptions::open[write]")
+            && item.state() == OperationClassificationState::Supported
     }));
     assert!(
-        open.operation_classifications()
-            .iter()
-            .any(|item| { item.state() == OperationClassificationState::Unresolved })
+        open.direct_effects()
+            .contains(&FunctionEffect::FilesystemWrite)
     );
-    assert!(!open.uncertainty().is_empty());
+    assert!(open.uncertainty().is_empty());
 
     let local = summary("local");
     assert!(

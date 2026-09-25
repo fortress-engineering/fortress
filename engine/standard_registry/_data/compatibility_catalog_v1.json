@@ -1487,6 +1487,16 @@
       "content_hash_algorithm": { "id": "sha256-exact-installed-layout-bytes", "source": "engine/project_model/_code/control_layout.rs" }
     },
     {
+      "schema_id": "urn:fortress:schema:v1:rust-signature-catalog",
+      "schema_path": "engine/program_semantics/_data/rust_signature_schema_v1.json",
+      "version": 1,
+      "writer": { "status": "AUTHORED", "source": null },
+      "reader": { "status": "SUPPORTED", "source": "engine/program_semantics/_code/rust.rs" },
+      "migration": "NONE",
+      "identity_algorithm": { "id": "literal-toolchain-bound-signature-identity", "source": "engine/program_semantics/_code/rust.rs" },
+      "content_hash_algorithm": { "id": "sha256-exact-installed-catalog-bytes", "source": "engine/program_semantics/_code/rust.rs" }
+    },
+    {
       "schema_id": "urn:fortress:derived:v1:assessment-generation-manifest",
       "schema_path": "engine/certification/_data/generation_manifest_schema_v1.json",
       "version": 1,

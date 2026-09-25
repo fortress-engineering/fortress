@@ -37,3 +37,11 @@ Retains the historical PSM v5 structure with versioned drift-tolerant semantic i
 ### [`program_model_schema_v6.json`](../_data/program_model_schema_v6.json)
 
 Defines the current PSM shape with an explicit program context, a per-occurrence syntactic operation inventory, and distinct file observation, opening, parsing, and symbol coverage.
+
+### [`rust_signature_catalog_v1.json`](../_data/rust_signature_catalog_v1.json)
+
+Defines the closed Rust 1.97.1 external constructor and receiver-preserving builder signature set used for bounded `Command` and `OpenOptions` propagation. It contains type facts only; operational effect authority remains in State/Effect Analysis.
+
+### [`rust_signature_schema_v1.json`](../_data/rust_signature_schema_v1.json)
+
+Defines the closed wire shape and pinned toolchain identity for the bounded Rust signature catalog.

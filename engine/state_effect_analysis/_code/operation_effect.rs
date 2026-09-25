@@ -25,7 +25,13 @@ pub(super) fn classify_operation(operation: &str) -> OperationEffectClassificati
         TimeWallRead, UnsafeExecution,
     };
 
-    let effects = if matches!(
+    let effects = if operation == "rust_method::std::fs::OpenOptions::open[read]" {
+        vec![FilesystemRead]
+    } else if operation == "rust_method::std::fs::OpenOptions::open[write]" {
+        vec![FilesystemWrite]
+    } else if operation == "rust_method::std::fs::OpenOptions::open[read_write]" {
+        vec![FilesystemRead, FilesystemWrite]
+    } else if matches!(
         operation,
         "std::fs::read"
             | "std::fs::read_dir"
@@ -163,6 +169,30 @@ pub(super) fn classify_operation(operation: &str) -> OperationEffectClassificati
         operation,
         "std::process::Command::new"
             | "rust_type::Command::new"
+            | "std::fs::OpenOptions::new"
+            | "rust_method::std::process::Command::arg"
+            | "rust_method::std::process::Command::args"
+            | "rust_method::std::process::Command::current_dir"
+            | "rust_method::std::process::Command::env"
+            | "rust_method::std::process::Command::env_clear"
+            | "rust_method::std::process::Command::env_remove"
+            | "rust_method::std::process::Command::stdin"
+            | "rust_method::std::process::Command::stdout"
+            | "rust_method::std::process::Command::stderr"
+            | "rust_method::std::process::Command::uid"
+            | "rust_method::std::process::Command::gid"
+            | "rust_method::std::fs::OpenOptions::read"
+            | "rust_method::std::fs::OpenOptions::write"
+            | "rust_method::std::fs::OpenOptions::append"
+            | "rust_method::std::fs::OpenOptions::truncate"
+            | "rust_method::std::fs::OpenOptions::create"
+            | "rust_method::std::fs::OpenOptions::create_new"
+            | "rust_method::std::fs::OpenOptions::custom_flags"
+            | "rust_method::std::fs::OpenOptions::mode"
+            | "rust_method::std::fs::OpenOptions::access_mode"
+            | "rust_method::std::fs::OpenOptions::share_mode"
+            | "rust_method::std::fs::OpenOptions::attributes"
+            | "rust_method::std::fs::OpenOptions::security_qos_flags"
             | "rust_prelude::Box"
             | "rust_prelude::None"
             | "rust_prelude::Ok"

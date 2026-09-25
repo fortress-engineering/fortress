@@ -1,0 +1,50 @@
+{
+  "$schema": "urn:fortress:schema:v1:rust-signature-catalog",
+  "schema_version": 1,
+  "rust_toolchain": "1.97.1",
+  "constructors": [
+    {
+      "path": "std::fs::OpenOptions::new",
+      "return_type": "std::fs::OpenOptions"
+    },
+    {
+      "path": "std::process::Command::new",
+      "return_type": "std::process::Command"
+    }
+  ],
+  "builders": [
+    {
+      "owner": "std::fs::OpenOptions",
+      "receiver_methods": [
+        "access_mode",
+        "append",
+        "attributes",
+        "create",
+        "create_new",
+        "custom_flags",
+        "mode",
+        "read",
+        "security_qos_flags",
+        "share_mode",
+        "truncate",
+        "write"
+      ]
+    },
+    {
+      "owner": "std::process::Command",
+      "receiver_methods": [
+        "arg",
+        "args",
+        "current_dir",
+        "env",
+        "env_clear",
+        "env_remove",
+        "gid",
+        "stderr",
+        "stdin",
+        "stdout",
+        "uid"
+      ]
+    }
+  ]
+}

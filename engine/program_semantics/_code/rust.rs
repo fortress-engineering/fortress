@@ -3,6 +3,7 @@
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::path::Path;
+use std::sync::LazyLock;
 
 use proc_macro2::Span;
 use quote::ToTokens;
@@ -17,6 +18,7 @@ use syn::{
     Pat, PathArguments, ReturnType, Signature, Token, TraitItem, Type, UseTree, Visibility,
 };
 
+use crate::control_layout::{ControlLayout, ControlRole, ControlSourceBinding};
 use crate::implementation_observation::SourceOwnership;
 
 use super::semantic_identity::{RustSymbolIdentityInput, rust_symbol_ids};
@@ -35,6 +37,45 @@ use super::{
     TypeResolution, TypeTransformation, ValueEndpoint, ValueTransfer, ValueTransferKind,
     canonical_fact_id,
 };
+
+const RUST_SIGNATURE_CATALOG_SOURCE: &str = include_str!("../_data/rust_signature_catalog_v1.json");
+
+static RUST_SIGNATURE_CATALOG: LazyLock<RustSignatureCatalog> = LazyLock::new(|| {
+    let catalog: RustSignatureCatalog = serde_json::from_str(RUST_SIGNATURE_CATALOG_SOURCE)
+        .expect("installed Rust signature catalog must be valid JSON");
+    assert_eq!(
+        catalog.schema,
+        "urn:fortress:schema:v1:rust-signature-catalog"
+    );
+    assert_eq!(catalog.schema_version, 1);
+    assert_eq!(catalog.rust_toolchain, "1.97.1");
+    catalog
+});
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RustSignatureCatalog {
+    #[serde(rename = "$schema")]
+    schema: String,
+    schema_version: u16,
+    rust_toolchain: String,
+    constructors: Vec<ExternalConstructorSignature>,
+    builders: Vec<ExternalBuilderSignature>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ExternalConstructorSignature {
+    path: String,
+    return_type: String,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ExternalBuilderSignature {
+    owner: String,
+    receiver_methods: Vec<String>,
+}
 
 #[derive(Deserialize)]
 struct CargoDocument {
@@ -285,9 +326,10 @@ pub(super) fn analyze(
     let mut state_reads = Vec::new();
     let mut mutations = Vec::new();
     let mut program_bodies = Vec::new();
+    let mut fixed_point_iterations = 1;
     for body in &bodies {
         program_bodies.push(lower_program_body(body));
-        BodyAnalyzer::new(
+        let iterations = BodyAnalyzer::new(
             body,
             &lookup,
             &mut registry,
@@ -299,6 +341,7 @@ pub(super) fn analyze(
             &mut mutations,
         )
         .analyze();
+        fixed_point_iterations = fixed_point_iterations.max(iterations);
     }
     let calls = resolve_calls(
         raw_calls,
@@ -349,7 +392,7 @@ pub(super) fn analyze(
         transformations,
         state_reads,
         mutations,
-        fixed_point_iterations: 1,
+        fixed_point_iterations,
     })
 }
 
@@ -736,12 +779,39 @@ fn starts_lowercase(value: &str) -> bool {
 fn verified_files(
     input: &ProgramSemanticInput,
 ) -> Result<BTreeMap<String, &[u8]>, ProgramSemanticError> {
-    input
+    let layout = ControlLayout::standard();
+    let bound_control_sources = input
         .observation()
-        .files()
+        .ownerships()
         .iter()
-        .map(|file| Ok((file.path().to_owned(), file.verified_bytes()?)))
-        .collect()
+        .filter(|ownership| layout.resolve(ownership.source_path()).is_some())
+        .map(SourceOwnership::source_path)
+        .collect::<BTreeSet<_>>();
+    let mut files = BTreeMap::new();
+    for file in input.observation().files() {
+        let path = file.path();
+        let bytes = file.verified_bytes()?;
+        let Some(entry) = layout.resolve(path) else {
+            files.insert(path.to_owned(), bytes);
+            continue;
+        };
+        let application_shaped = is_rust_path(path)
+            || matches!(path.rsplit('/').next(), Some("Cargo.toml" | "Cargo.lock"));
+        if application_shaped
+            && (bound_control_sources.contains(path)
+                || matches!(path.rsplit('/').next(), Some("Cargo.toml" | "Cargo.lock")))
+        {
+            return Err(ProgramSemanticError::ControlNamespaceApplicationSource(
+                path.to_owned(),
+            ));
+        }
+        if entry.source_binding() == ControlSourceBinding::Required
+            && entry.role() != ControlRole::Unrecognized
+        {
+            files.insert(path.to_owned(), bytes);
+        }
+    }
+    Ok(files)
 }
 
 fn is_rust_path(path: &str) -> bool {
@@ -767,6 +837,13 @@ pub(super) fn semantic_input_descriptor(path: &str, bytes: &[u8]) -> Option<Prog
 }
 
 fn semantic_input_role(path: &str, bytes: &[u8]) -> Option<ProgramInputRole> {
+    let layout = ControlLayout::standard();
+    if layout.resolve(path).is_some_and(|entry| {
+        entry.source_binding() == ControlSourceBinding::Nonrecursive
+            || entry.role() == ControlRole::Unrecognized
+    }) {
+        return None;
+    }
     let file_name = path.rsplit('/').next().unwrap_or(path);
     if is_rust_path(path) {
         return Some(ProgramInputRole::RustSource);
@@ -2520,16 +2597,18 @@ struct PackageLookup {
 struct SymbolLookup {
     path_to_symbols: BTreeMap<(String, String, Vec<String>), Vec<String>>,
     methods: BTreeMap<(String, String, String), Vec<String>>,
+    exact_methods: BTreeMap<(String, String, String), Vec<String>>,
     symbols: BTreeMap<String, ExecutableSymbol>,
     packages: BTreeMap<String, PackageLookup>,
     reexports: BTreeMap<ReexportKey, Vec<String>>,
     nominal_fields: BTreeMap<(String, String, String), InterfaceType>,
-    local_nominals: BTreeSet<(String, String)>,
     nominal_ids: BTreeMap<(String, String), String>,
     nominal_aliases: BTreeMap<(String, String), InterfaceType>,
+    local_drop_types: BTreeSet<(String, String)>,
 }
 
 impl SymbolLookup {
+    #[allow(clippy::too_many_lines)]
     fn new(
         symbols: &[ExecutableSymbol],
         nominal_types: &[NominalType],
@@ -2539,6 +2618,8 @@ impl SymbolLookup {
     ) -> Self {
         let mut path_to_symbols = BTreeMap::<_, Vec<String>>::new();
         let mut methods = BTreeMap::<_, Vec<String>>::new();
+        let mut exact_methods = BTreeMap::<_, Vec<String>>::new();
+        let mut local_drop_types = BTreeSet::new();
         for symbol in symbols.iter().filter(|symbol| symbol.has_body()) {
             let mut path = split_namespace(&symbol.rust_module);
             if let Some(owner) = symbol
@@ -2560,10 +2641,33 @@ impl SymbolLookup {
                 .or_default()
                 .push(symbol.id.clone());
             if let Some(owner) = &symbol.owner_type {
+                if symbol
+                    .owner_trait
+                    .as_deref()
+                    .is_some_and(|name| simple_type_name(name) == "Drop")
+                    && symbol.qualified_name.ends_with("::drop")
+                {
+                    local_drop_types.insert((symbol.package.clone(), simple_type_name(owner)));
+                }
                 methods
                     .entry((symbol.package.clone(), simple_type_name(owner), name))
                     .or_default()
                     .push(symbol.id.clone());
+                if let Some((qualified_owner, _)) = symbol.qualified_name.rsplit_once("::") {
+                    exact_methods
+                        .entry((
+                            symbol.package.clone(),
+                            qualified_owner.to_owned(),
+                            symbol
+                                .qualified_name
+                                .rsplit("::")
+                                .next()
+                                .unwrap_or_default()
+                                .to_owned(),
+                        ))
+                        .or_default()
+                        .push(symbol.id.clone());
+                }
             }
         }
         for values in path_to_symbols.values_mut() {
@@ -2571,6 +2675,10 @@ impl SymbolLookup {
             values.dedup();
         }
         for values in methods.values_mut() {
+            values.sort();
+            values.dedup();
+        }
+        for values in exact_methods.values_mut() {
             values.sort();
             values.dedup();
         }
@@ -2593,12 +2701,10 @@ impl SymbolLookup {
             })
             .collect();
         let mut nominal_fields = BTreeMap::new();
-        let mut local_nominals = BTreeSet::new();
         let mut nominal_ids = BTreeMap::new();
         let mut nominal_aliases = BTreeMap::new();
         for nominal in nominal_types {
             let simple = simple_type_name(&nominal.qualified_name);
-            local_nominals.insert((nominal.package.clone(), simple.clone()));
             nominal_ids.insert(
                 (nominal.package.clone(), simple.clone()),
                 nominal.id.clone(),
@@ -2618,6 +2724,7 @@ impl SymbolLookup {
         Self {
             path_to_symbols,
             methods,
+            exact_methods,
             symbols: symbols
                 .iter()
                 .map(|symbol| (symbol.id.clone(), symbol.clone()))
@@ -2625,9 +2732,9 @@ impl SymbolLookup {
             packages: package_lookup,
             reexports,
             nominal_fields,
-            local_nominals,
             nominal_ids,
             nominal_aliases,
+            local_drop_types,
         }
     }
 
@@ -2641,9 +2748,21 @@ impl SymbolLookup {
             .cloned()
     }
 
-    fn is_local_nominal(&self, package: &str, owner: &str) -> bool {
-        self.local_nominals
-            .contains(&(package.into(), simple_type_name(owner)))
+    fn is_external_owner(&self, package: &str, owner: &str) -> bool {
+        let Some(first) = owner.split("::").next() else {
+            return false;
+        };
+        matches!(first, "std" | "core" | "alloc")
+            || self
+                .packages
+                .get(package)
+                .and_then(|current| current.dependencies.get(first))
+                .is_some_and(|dependency| matches!(dependency, DependencyResolution::External(_)))
+    }
+
+    fn has_local_drop(&self, package: &str, owner: &str) -> bool {
+        self.local_drop_types
+            .contains(&(package.to_owned(), simple_type_name(owner)))
     }
 
     fn nominal_id(&self, package: &str, owner: &str) -> Option<&str> {
@@ -2822,6 +2941,32 @@ impl SymbolLookup {
 
     fn resolve_method(&self, package: &str, owner: &str, method: &str) -> CallOutcome {
         let simple_owner = simple_type_name(owner);
+        let normalized_owner = owner
+            .strip_prefix("crate::")
+            .or_else(|| owner.strip_prefix("self::"))
+            .unwrap_or(owner);
+        if normalized_owner.contains("::") {
+            let mut exact = self
+                .exact_methods
+                .iter()
+                .filter(
+                    |((candidate_package, candidate_owner, candidate_method), _)| {
+                        candidate_package == package
+                            && candidate_method == method
+                            && (candidate_owner == normalized_owner
+                                || candidate_owner.ends_with(&format!("::{normalized_owner}")))
+                    },
+                )
+                .flat_map(|(_, candidates)| candidates.iter().cloned())
+                .collect::<Vec<_>>();
+            exact.sort();
+            exact.dedup();
+            match exact.as_slice() {
+                [callee] => return CallOutcome::resolved(callee.clone(), None),
+                [] => {}
+                _ => return CallOutcome::ambiguous(exact),
+            }
+        }
         let key = (package.into(), simple_owner.clone(), method.into());
         let mut candidates = self.methods.get(&key).cloned().unwrap_or_default();
         let mut boundary_target_module = None;
@@ -2866,6 +3011,7 @@ enum RawCallTarget {
         receiver_type: Option<String>,
         receiver_display: String,
         receiver_reason: Option<CallResolutionReason>,
+        external_operation: Option<String>,
     },
     Dynamic,
     Macro,
@@ -2883,6 +3029,7 @@ struct RawCall {
     arguments: Vec<RawArgument>,
     consumer: Option<ValueEndpoint>,
     evidence: CallSiteEvidence,
+    polled: bool,
 }
 
 #[derive(Clone)]
@@ -3015,9 +3162,32 @@ fn starts_type_name(value: &str) -> bool {
         .is_some_and(|character| character.is_ascii_uppercase())
 }
 
+fn standard_constructor_return(segments: &[String]) -> Option<&'static str> {
+    let path = segments.join("::");
+    RUST_SIGNATURE_CATALOG
+        .constructors
+        .iter()
+        .find(|signature| signature.path == path)
+        .map(|signature| signature.return_type.as_str())
+}
+
+fn standard_builder_return(owner: &str, method: &str) -> Option<&'static str> {
+    RUST_SIGNATURE_CATALOG
+        .builders
+        .iter()
+        .find(|signature| {
+            signature.owner == owner
+                && signature
+                    .receiver_methods
+                    .iter()
+                    .any(|candidate| candidate == method)
+        })
+        .map(|signature| signature.owner.as_str())
+}
+
 fn is_standard_type(value: &str) -> bool {
     matches!(
-        simple_type_name(value).as_str(),
+        value,
         "String"
             | "Vec"
             | "Box"
@@ -3029,14 +3199,14 @@ fn is_standard_type(value: &str) -> bool {
             | "Result"
             | "Path"
             | "PathBuf"
-            | "File"
-            | "OpenOptions"
-            | "TcpStream"
-            | "TcpListener"
-            | "UdpSocket"
-            | "Command"
-            | "SystemTime"
-            | "Instant"
+            | "std::fs::File"
+            | "std::fs::OpenOptions"
+            | "std::net::TcpStream"
+            | "std::net::TcpListener"
+            | "std::net::UdpSocket"
+            | "std::process::Command"
+            | "std::time::SystemTime"
+            | "std::time::Instant"
             | "str"
     )
 }
@@ -3069,9 +3239,65 @@ struct BodyAnalyzer<'a> {
     transformations: &'a mut Vec<TypeTransformation>,
     state_reads: &'a mut Vec<StateRead>,
     mutations: &'a mut Vec<ProgramMutation>,
-    local_types: BTreeMap<String, InterfaceType>,
+    local_types: BTreeMap<String, LocalTypeKnowledge>,
     direct_consumer: Option<(SpanKey, ValueEndpoint)>,
     write_target: bool,
+    await_depth: usize,
+    fixed_point_iterations: usize,
+    flow_depth: usize,
+}
+
+const LOCAL_TYPE_ALTERNATIVE_LIMIT: usize = 8;
+const LOCAL_TYPE_FIXED_POINT_LIMIT: usize = 8;
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+enum LocalTypeKnowledge {
+    Unknown,
+    Known(InterfaceType),
+    FiniteAlternatives(BTreeSet<InterfaceType>),
+    Conflict,
+}
+
+impl LocalTypeKnowledge {
+    fn exact(&self) -> Option<&InterfaceType> {
+        match self {
+            Self::Known(value) => Some(value),
+            Self::Unknown | Self::FiniteAlternatives(_) | Self::Conflict => None,
+        }
+    }
+
+    fn join(left: Option<&Self>, right: Option<&Self>) -> Self {
+        let (Some(left), Some(right)) = (left, right) else {
+            return Self::Unknown;
+        };
+        if left == right {
+            return left.clone();
+        }
+        if matches!(left, Self::Conflict) || matches!(right, Self::Conflict) {
+            return Self::Conflict;
+        }
+        if matches!(left, Self::Unknown) || matches!(right, Self::Unknown) {
+            return Self::Unknown;
+        }
+        let mut alternatives = BTreeSet::new();
+        for knowledge in [left, right] {
+            match knowledge {
+                Self::Known(value) => {
+                    alternatives.insert(value.clone());
+                }
+                Self::FiniteAlternatives(values) => alternatives.extend(values.iter().cloned()),
+                Self::Unknown | Self::Conflict => {}
+            }
+        }
+        match alternatives.len() {
+            0 => Self::Unknown,
+            1 => Self::Known(alternatives.into_iter().next().expect("one alternative")),
+            count if count <= LOCAL_TYPE_ALTERNATIVE_LIMIT => {
+                Self::FiniteAlternatives(alternatives)
+            }
+            _ => Self::Conflict,
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
@@ -3103,7 +3329,11 @@ impl<'a> BodyAnalyzer<'a> {
         state_reads: &'a mut Vec<StateRead>,
         mutations: &'a mut Vec<ProgramMutation>,
     ) -> Self {
-        let mut local_types = body.parameter_types.clone();
+        let mut local_types = body
+            .parameter_types
+            .iter()
+            .map(|(name, value)| (name.clone(), LocalTypeKnowledge::Known(value.clone())))
+            .collect::<BTreeMap<_, _>>();
         if let Some(owner) = &body.owner_type {
             let interface = registry.register_semantic(
                 SemanticType::Named {
@@ -3112,7 +3342,7 @@ impl<'a> BodyAnalyzer<'a> {
                 },
                 owner.clone(),
             );
-            local_types.insert("self".into(), interface);
+            local_types.insert("self".into(), LocalTypeKnowledge::Known(interface));
         }
         Self {
             body,
@@ -3127,14 +3357,18 @@ impl<'a> BodyAnalyzer<'a> {
             local_types,
             direct_consumer: None,
             write_target: false,
+            await_depth: 0,
+            fixed_point_iterations: 1,
+            flow_depth: 0,
         }
     }
 
-    fn analyze(mut self) {
+    fn analyze(mut self) -> usize {
         if let Some(syn::Stmt::Expr(expression, None)) = self.body.block.stmts.last() {
             self.transfer_to_return(expression, expression.span());
         }
         self.visit_block(&self.body.block);
+        self.fixed_point_iterations
     }
 
     fn account_implicit(&mut self, category: &str, reference: &str, span: Span) {
@@ -3144,6 +3378,75 @@ impl<'a> BodyAnalyzer<'a> {
             reference,
             OperationOutcome::Unsupported,
             Some("implicit_operation_semantics_not_lowered".into()),
+            true,
+            provenance(&self.body.source_path, span, Some(self.body.symbol.clone())),
+        ));
+    }
+
+    fn join_local_types(
+        left: &BTreeMap<String, LocalTypeKnowledge>,
+        right: &BTreeMap<String, LocalTypeKnowledge>,
+    ) -> BTreeMap<String, LocalTypeKnowledge> {
+        left.keys()
+            .chain(right.keys())
+            .cloned()
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .map(|name| {
+                let joined = LocalTypeKnowledge::join(left.get(&name), right.get(&name));
+                (name, joined)
+            })
+            .collect()
+    }
+
+    fn enter_flow_scope(&mut self, span: Span) -> bool {
+        self.flow_depth += 1;
+        if self.flow_depth <= LOCAL_TYPE_FIXED_POINT_LIMIT {
+            return true;
+        }
+        self.operation_inventory.push(SyntacticOperation::new(
+            "type_worklist_limit",
+            &self.body.symbol,
+            "local_type_flow",
+            OperationOutcome::Unsupported,
+            Some("bounded_local_type_fixed_point_limit".into()),
+            true,
+            provenance(&self.body.source_path, span, Some(self.body.symbol.clone())),
+        ));
+        false
+    }
+
+    fn exit_flow_scope(&mut self) {
+        self.flow_depth = self.flow_depth.saturating_sub(1);
+    }
+
+    fn visit_loop_block<'ast>(&mut self, block: &'ast Block, span: Span)
+    where
+        Self: Visit<'ast>,
+    {
+        let baseline = self.local_types.clone();
+        let mut current = baseline.clone();
+        for iteration in 1..=LOCAL_TYPE_FIXED_POINT_LIMIT {
+            self.local_types.clone_from(&current);
+            self.visit_block(block);
+            let next = Self::join_local_types(&baseline, &self.local_types);
+            self.fixed_point_iterations = self.fixed_point_iterations.max(iteration + 1);
+            if next == current {
+                self.local_types = next;
+                return;
+            }
+            current = next;
+        }
+        self.local_types = current
+            .into_keys()
+            .map(|name| (name, LocalTypeKnowledge::Conflict))
+            .collect();
+        self.operation_inventory.push(SyntacticOperation::new(
+            "type_worklist_limit",
+            &self.body.symbol,
+            "local_type_loop",
+            OperationOutcome::Unsupported,
+            Some("bounded_local_type_fixed_point_limit".into()),
             true,
             provenance(&self.body.source_path, span, Some(self.body.symbol.clone())),
         ));
@@ -3163,6 +3466,56 @@ impl<'a> BodyAnalyzer<'a> {
                     .collect()
             },
         )
+    }
+
+    fn open_options_operation(&self, expression: &Expr) -> String {
+        let mode = self
+            .open_options_access(expression)
+            .map_or("unknown", |access| access.mode());
+        format!("rust_method::std::fs::OpenOptions::open[{mode}]")
+    }
+
+    fn open_options_access(&self, expression: &Expr) -> Option<OpenOptionsAccess> {
+        match expression {
+            Expr::Paren(value) => self.open_options_access(&value.expr),
+            Expr::Group(value) => self.open_options_access(&value.expr),
+            Expr::Call(call) => {
+                let Expr::Path(path) = call.func.as_ref() else {
+                    return None;
+                };
+                let segments = self.expand_alias(
+                    &path
+                        .path
+                        .segments
+                        .iter()
+                        .map(|segment| segment.ident.to_string())
+                        .collect::<Vec<_>>(),
+                );
+                (standard_constructor_return(&segments) == Some("std::fs::OpenOptions"))
+                    .then(OpenOptionsAccess::default)
+            }
+            Expr::MethodCall(call) => {
+                let mut access = self.open_options_access(&call.receiver)?;
+                let method = call.method.to_string();
+                match method.as_str() {
+                    "read" | "write" | "append" | "truncate" | "create" | "create_new" => {
+                        let value = call.args.first().and_then(|argument| match argument {
+                            Expr::Lit(value) => match &value.lit {
+                                syn::Lit::Bool(value) => Some(value.value),
+                                _ => None,
+                            },
+                            _ => None,
+                        });
+                        access.set(&method, value);
+                        Some(access)
+                    }
+                    "custom_flags" | "mode" | "access_mode" | "share_mode" | "attributes"
+                    | "security_qos_flags" => Some(access),
+                    _ => None,
+                }
+            }
+            _ => None,
+        }
     }
 
     fn expression_type(&mut self, expression: &Expr) -> Option<InterfaceType> {
@@ -3192,6 +3545,7 @@ impl<'a> BodyAnalyzer<'a> {
             && let Some(local) = self
                 .local_types
                 .get(&value.path.segments[0].ident.to_string())
+                .and_then(LocalTypeKnowledge::exact)
         {
             return Some(local.clone());
         }
@@ -3421,6 +3775,15 @@ impl<'a> BodyAnalyzer<'a> {
                 return None;
             }
         }
+        if let Some(return_type) = standard_constructor_return(&segments) {
+            return Some(self.registry.register_semantic(
+                SemanticType::Named {
+                    name: return_type.into(),
+                    arguments: Vec::new(),
+                },
+                return_type,
+            ));
+        }
         let outcome = self.lookup.resolve_path(
             self.package_name(),
             &self.body.context.crate_name,
@@ -3439,8 +3802,21 @@ impl<'a> BodyAnalyzer<'a> {
         let outcome =
             self.lookup
                 .resolve_method(self.package_name(), &owner, &call.method.to_string());
-        let callee = self.lookup.symbol(outcome.callee.as_deref()?)?;
-        Some(callee.return_type.clone())
+        if let Some(callee) = outcome
+            .callee
+            .as_deref()
+            .and_then(|callee| self.lookup.symbol(callee))
+        {
+            return Some(callee.return_type.clone());
+        }
+        let return_type = standard_builder_return(&owner, &call.method.to_string())?;
+        Some(self.registry.register_semantic(
+            SemanticType::Named {
+                name: return_type.into(),
+                arguments: Vec::new(),
+            },
+            return_type,
+        ))
     }
 
     fn substitute_return<'b>(
@@ -3567,8 +3943,10 @@ impl<'a> BodyAnalyzer<'a> {
     fn bind_pattern_type(&mut self, pattern: &Pat, interface: &InterfaceType) {
         match pattern {
             Pat::Ident(value) => {
-                self.local_types
-                    .insert(value.ident.to_string(), interface.clone());
+                self.local_types.insert(
+                    value.ident.to_string(),
+                    LocalTypeKnowledge::Known(interface.clone()),
+                );
             }
             Pat::Type(value) => self.bind_pattern_type(&value.pat, interface),
             Pat::Tuple(value) => {
@@ -3710,6 +4088,64 @@ impl<'a> BodyAnalyzer<'a> {
     }
 }
 
+#[derive(Clone, Copy, Debug)]
+struct OpenOptionsAccess {
+    read: Option<bool>,
+    write: Option<bool>,
+    append: Option<bool>,
+    truncate: Option<bool>,
+    create: Option<bool>,
+    create_new: Option<bool>,
+}
+
+impl Default for OpenOptionsAccess {
+    fn default() -> Self {
+        Self {
+            read: Some(false),
+            write: Some(false),
+            append: Some(false),
+            truncate: Some(false),
+            create: Some(false),
+            create_new: Some(false),
+        }
+    }
+}
+
+impl OpenOptionsAccess {
+    fn set(&mut self, method: &str, value: Option<bool>) {
+        match method {
+            "read" => self.read = value,
+            "write" => self.write = value,
+            "append" => self.append = value,
+            "truncate" => self.truncate = value,
+            "create" => self.create = value,
+            "create_new" => self.create_new = value,
+            _ => {}
+        }
+    }
+
+    fn mode(self) -> &'static str {
+        let write_values = [
+            self.write,
+            self.append,
+            self.truncate,
+            self.create,
+            self.create_new,
+        ];
+        if self.read.is_none() || write_values.contains(&None) {
+            return "unknown";
+        }
+        let read = self.read == Some(true);
+        let write = write_values.contains(&Some(true));
+        match (read, write) {
+            (true, true) => "read_write",
+            (true, false) => "read",
+            (false, true) => "write",
+            (false, false) => "unknown",
+        }
+    }
+}
+
 #[derive(Serialize)]
 struct MutationIdentity<'a> {
     symbol: &'a str,
@@ -3739,7 +4175,8 @@ impl<'ast> Visit<'ast> for BodyAnalyzer<'_> {
         if let Some(binding) = simple_pattern_name(&local.pat)
             && let Some(value) = &declared_type
         {
-            self.local_types.insert(binding, value.clone());
+            self.local_types
+                .insert(binding, LocalTypeKnowledge::Known(value.clone()));
         }
         if !matches!(local.pat, Pat::Ident(_) | Pat::Type(_)) {
             self.add_transformation(
@@ -3754,10 +4191,29 @@ impl<'ast> Visit<'ast> for BodyAnalyzer<'_> {
             if let Some(binding) = simple_pattern_name(&local.pat)
                 && let Some(value) = &inferred
             {
-                self.local_types.insert(binding, value.clone());
+                self.local_types
+                    .insert(binding, LocalTypeKnowledge::Known(value.clone()));
             }
             if let Some(value) = &inferred {
                 self.bind_pattern_type(&local.pat, value);
+                if self
+                    .type_spelling(value)
+                    .is_some_and(|owner| self.lookup.has_local_drop(self.package_name(), &owner))
+                {
+                    self.operation_inventory.push(SyntacticOperation::new(
+                        "implicit_destructor",
+                        &self.body.symbol,
+                        &name,
+                        OperationOutcome::Unsupported,
+                        Some("drop_body_execution_is_scope_and_control_flow_dependent".into()),
+                        true,
+                        provenance(
+                            &self.body.source_path,
+                            local.span(),
+                            Some(self.body.symbol.clone()),
+                        ),
+                    ));
+                }
             }
             let consumer = ValueEndpoint::new(
                 self.body.symbol.clone(),
@@ -3800,8 +4256,10 @@ impl<'ast> Visit<'ast> for BodyAnalyzer<'_> {
             && path.path.segments.len() == 1
             && let Some(value) = &inferred_assignment
         {
-            self.local_types
-                .insert(path.path.segments[0].ident.to_string(), value.clone());
+            self.local_types.insert(
+                path.path.segments[0].ident.to_string(),
+                LocalTypeKnowledge::Known(value.clone()),
+            );
         }
         let consumer = ValueEndpoint::new(
             self.body.symbol.clone(),
@@ -3828,6 +4286,73 @@ impl<'ast> Visit<'ast> for BodyAnalyzer<'_> {
         self.direct_consumer = Some((SpanKey::from_span(assignment.right.span()), consumer));
         self.visit_expr(&assignment.right);
         self.direct_consumer = None;
+    }
+
+    fn visit_expr_if(&mut self, expression: &'ast syn::ExprIf) {
+        self.visit_expr(&expression.cond);
+        let baseline = self.local_types.clone();
+        if !self.enter_flow_scope(expression.span()) {
+            self.exit_flow_scope();
+            self.local_types = baseline;
+            return;
+        }
+        self.visit_block(&expression.then_branch);
+        let then_types = self.local_types.clone();
+        self.local_types.clone_from(&baseline);
+        if let Some((_, otherwise)) = &expression.else_branch {
+            self.visit_expr(otherwise);
+        }
+        let else_types = self.local_types.clone();
+        self.local_types = Self::join_local_types(&then_types, &else_types);
+        self.exit_flow_scope();
+    }
+
+    fn visit_expr_match(&mut self, expression: &'ast syn::ExprMatch) {
+        self.visit_expr(&expression.expr);
+        let baseline = self.local_types.clone();
+        if !self.enter_flow_scope(expression.span()) {
+            self.exit_flow_scope();
+            self.local_types = baseline;
+            return;
+        }
+        let mut joined: Option<BTreeMap<String, LocalTypeKnowledge>> = None;
+        for arm in &expression.arms {
+            self.local_types.clone_from(&baseline);
+            if let Some((_, guard)) = &arm.guard {
+                self.visit_expr(guard);
+            }
+            self.visit_expr(&arm.body);
+            joined = Some(joined.map_or_else(
+                || self.local_types.clone(),
+                |current| Self::join_local_types(&current, &self.local_types),
+            ));
+        }
+        self.local_types = joined.unwrap_or(baseline);
+        self.exit_flow_scope();
+    }
+
+    fn visit_expr_loop(&mut self, expression: &'ast syn::ExprLoop) {
+        if self.enter_flow_scope(expression.span()) {
+            self.visit_loop_block(&expression.body, expression.span());
+        }
+        self.exit_flow_scope();
+    }
+
+    fn visit_expr_while(&mut self, expression: &'ast syn::ExprWhile) {
+        self.visit_expr(&expression.cond);
+        if self.enter_flow_scope(expression.span()) {
+            self.visit_loop_block(&expression.body, expression.span());
+        }
+        self.exit_flow_scope();
+    }
+
+    fn visit_expr_for_loop(&mut self, expression: &'ast syn::ExprForLoop) {
+        self.account_implicit("implicit_into_iterator", "for", expression.span());
+        self.visit_expr(&expression.expr);
+        if self.enter_flow_scope(expression.span()) {
+            self.visit_loop_block(&expression.body, expression.span());
+        }
+        self.exit_flow_scope();
     }
 
     fn visit_expr_binary(&mut self, expression: &'ast syn::ExprBinary) {
@@ -3908,6 +4433,7 @@ impl<'ast> Visit<'ast> for BodyAnalyzer<'_> {
                     && self
                         .local_types
                         .get(&segments[0])
+                        .and_then(LocalTypeKnowledge::exact)
                         .and_then(|value| self.registry.types.get(&value.type_id))
                         .is_some_and(|(semantic, _)| {
                             matches!(semantic, SemanticType::Function { .. })
@@ -3994,6 +4520,7 @@ impl<'ast> Visit<'ast> for BodyAnalyzer<'_> {
                         Some(self.body.symbol.clone()),
                     ),
                 ),
+                polled: self.await_depth > 0,
             });
         }
         visit::visit_expr_call(self, call);
@@ -4022,6 +4549,9 @@ impl<'ast> Visit<'ast> for BodyAnalyzer<'_> {
                     })
             });
         let method = call.method.to_string();
+        let external_operation = (receiver_type.as_deref() == Some("std::fs::OpenOptions")
+            && method == "open")
+            .then(|| self.open_options_operation(&call.receiver));
         if matches!(method.as_str(), "into" | "try_into" | "from") {
             self.add_transformation(TransformationKind::ConversionCall, call.span(), None, None);
         }
@@ -4039,6 +4569,7 @@ impl<'ast> Visit<'ast> for BodyAnalyzer<'_> {
                 receiver_type,
                 receiver_display: call.receiver.to_token_stream().to_string(),
                 receiver_reason,
+                external_operation,
             },
             reference: reference.clone(),
             arguments,
@@ -4053,6 +4584,7 @@ impl<'ast> Visit<'ast> for BodyAnalyzer<'_> {
                 ),
             )
             .with_receiver(receiver_place),
+            polled: self.await_depth > 0,
         });
         visit::visit_expr_method_call(self, call);
     }
@@ -4078,6 +4610,7 @@ impl<'ast> Visit<'ast> for BodyAnalyzer<'_> {
                     Some(self.body.symbol.clone()),
                 ),
             ),
+            polled: self.await_depth > 0,
         });
     }
 
@@ -4102,6 +4635,7 @@ impl<'ast> Visit<'ast> for BodyAnalyzer<'_> {
                     Some(self.body.symbol.clone()),
                 ),
             ),
+            polled: self.await_depth > 0,
         });
     }
 
@@ -4147,12 +4681,9 @@ impl<'ast> Visit<'ast> for BodyAnalyzer<'_> {
 
     fn visit_expr_await(&mut self, expression: &'ast syn::ExprAwait) {
         self.account_implicit("implicit_await", "await", expression.span());
-        visit::visit_expr_await(self, expression);
-    }
-
-    fn visit_expr_for_loop(&mut self, expression: &'ast syn::ExprForLoop) {
-        self.account_implicit("implicit_into_iterator", "for", expression.span());
-        visit::visit_expr_for_loop(self, expression);
+        self.await_depth += 1;
+        self.visit_expr(&expression.base);
+        self.await_depth = self.await_depth.saturating_sub(1);
     }
 
     fn visit_expr_reference(&mut self, expression: &'ast syn::ExprReference) {
@@ -4335,6 +4866,7 @@ fn resolve_call(call: &RawCall, lookup: &SymbolLookup) -> CallOutcome {
             receiver_type,
             receiver_display,
             receiver_reason,
+            external_operation,
         } => {
             if *receiver_reason == Some(CallResolutionReason::GenericReceiver) {
                 return CallOutcome::unresolved()
@@ -4355,12 +4887,13 @@ fn resolve_call(call: &RawCall, lookup: &SymbolLookup) -> CallOutcome {
                     outcome
                 } else if outcome.reason == Some(CallResolutionReason::AmbiguousLocalMethod) {
                     outcome
-                } else if is_standard_type(owner)
-                    || (!lookup.is_local_nominal(&call.package, owner)
-                        && starts_type_name(owner)
-                        && simple_type_name(owner).len() > 1)
+                } else if is_standard_type(owner) || lookup.is_external_owner(&call.package, owner)
                 {
-                    CallOutcome::external(format!("rust_method::{owner}::{method}"))
+                    CallOutcome::external(
+                        external_operation
+                            .clone()
+                            .unwrap_or_else(|| format!("rust_method::{owner}::{method}")),
+                    )
                 } else {
                     CallOutcome::unresolved().with_reason(if simple_type_name(owner).len() <= 2 {
                         CallResolutionReason::GenericReceiver
@@ -4381,6 +4914,16 @@ fn resolve_call(call: &RawCall, lookup: &SymbolLookup) -> CallOutcome {
             CallOutcome::unsupported().with_reason(CallResolutionReason::MacroGenerated)
         }
     };
+    if outcome.state == CallResolutionState::ResolvedStatic
+        && !call.polled
+        && outcome
+            .callee
+            .as_deref()
+            .and_then(|callee| lookup.symbol(callee))
+            .is_some_and(|callee| callee.qualifiers.is_async())
+    {
+        outcome = CallOutcome::unsupported().with_reason(CallResolutionReason::AsyncBodyNotPolled);
+    }
     if outcome.state == CallResolutionState::ResolvedStatic
         && let Some(callee) = outcome
             .callee
