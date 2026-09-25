@@ -73,9 +73,9 @@ fn module_inspection_reports_analysis_only_ownership_without_inventing_modules()
 #[test]
 fn module_inspection_preserves_invalid_governance_as_non_success() {
     let fixture = ObservationFixture::new();
-    fs::create_dir_all(fixture.root.join("_data")).expect("Data creates");
+    fs::create_dir_all(fixture.root.join("__fortress")).expect("control root creates");
     fs::write(
-        fixture.root.join("_data/project.json"),
+        fixture.root.join("__fortress/.fsconfig"),
         r#"{
           "$schema":"urn:fortress:schema:v3:project-configuration",
           "schema_version":3,
@@ -461,7 +461,7 @@ fn initialization_command_is_registered_and_discovery_is_read_only() {
     assert_eq!(proposal["state"], "PROPOSED");
     assert_eq!(proposal["proposed_authority"]["state"], "UNRESOLVED");
     assert_eq!(fs::read(fixture.root.join("Cargo.toml")).unwrap(), before);
-    assert!(!fixture.root.join("_data/project.json").exists());
+    assert!(!fixture.root.join("__fortress/.fsconfig").exists());
 }
 
 /// `T-TF-CLI-0001-R16-002`
@@ -566,17 +566,15 @@ fn raw_audit_failure_remains_distinct_from_progressive_check_success() {
             initial.findings(),
         )
         .expect("baseline creates explicitly");
+    fs::create_dir_all(fixture.root.join("__fortress/governance"))
+        .expect("governance directory creates");
     fs::write(
-        fixture.root.join("_data/finding_governance.json"),
+        fixture
+            .root
+            .join("__fortress/governance/finding_governance.json"),
         authority.to_canonical_json().expect("authority serializes"),
     )
     .expect("authority writes");
-    fs::write(
-        fixture.root.join("_docs/data_docs.md"),
-        data_docs(&["finding_governance.json", "project.json"]),
-    )
-    .expect("data documentation updates");
-
     let root = fixture.argument();
     let raw = run(&["audit", &root, "--format=json"]);
     assert_eq!(
@@ -602,7 +600,9 @@ fn raw_audit_failure_remains_distinct_from_progressive_check_success() {
     assert!(output.contains("Raw conformance: FAIL"), "{output}");
     assert!(output.contains("baselined/non-blocking: 1"), "{output}");
 
-    let authority_path = fixture.root.join("_data/finding_governance.json");
+    let authority_path = fixture
+        .root
+        .join("__fortress/governance/finding_governance.json");
     let before = fs::read(&authority_path).expect("baseline authority reads");
     let prune = run(&["baseline", "prune", &root]);
     assert_eq!(
@@ -644,6 +644,7 @@ impl SemanticCoverageFixture {
             std::process::id()
         ));
         fs::create_dir_all(root.join("_data")).expect("project Data creates");
+        fs::create_dir_all(root.join("__fortress")).expect("project control creates");
         fs::create_dir_all(root.join("sample/_data")).expect("Module Data creates");
         fs::create_dir_all(root.join("sample/_code")).expect("Module Code creates");
         fs::write(
@@ -651,7 +652,7 @@ impl SemanticCoverageFixture {
             module_contract("PF-FIXTURE", "Fixture"),
         )
         .expect("root contract writes");
-        fs::write(root.join("_data/project.json"), project_json()).expect("project writes");
+        fs::write(root.join("__fortress/.fsconfig"), project_json()).expect("project writes");
         let contract: ModuleContract = serde_json::from_value(serde_json::json!({
             "$schema": "urn:fortress:schema:v3:module-contract",
             "schema_version": 3,
@@ -752,13 +753,8 @@ impl AuditFixture {
             module_contract("PF-FIXTURE", "Fixture"),
         )
         .expect("root contract writes");
-        fs::create_dir_all(root.join("_data")).expect("root data creates");
+        fs::create_dir_all(root.join("__fortress")).expect("root control creates");
         fs::create_dir_all(root.join("_docs")).expect("root docs creates");
-        fs::write(
-            root.join("_docs/data_docs.md"),
-            data_docs(&["project.json"]),
-        )
-        .expect("root data documentation writes");
         fs::write(
             root.join("_docs/modules_docs.md"),
             modules_docs(&[("engine", "Fixture Engine")]),
@@ -970,7 +966,7 @@ impl AuditFixture {
             ]),
         )
         .expect("snapshot Data documentation writes");
-        fs::write(root.join("_data/project.json"), project_json()).expect("project writes");
+        fs::write(root.join("__fortress/.fsconfig"), project_json()).expect("project writes");
         Self { root }
     }
 
@@ -1138,8 +1134,9 @@ fn audit_success_renders_human_snapshot_report() {
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(
         output.status.success(),
-        "{}",
-        String::from_utf8_lossy(&output.stderr)
+        "stderr={} stdout={}",
+        String::from_utf8_lossy(&output.stderr),
+        stdout
     );
     assert!(stdout.contains("Fortress Snapshot Audit"));
     assert!(stdout.contains("Raw conformance: PASS"), "{stdout}");
@@ -1174,7 +1171,7 @@ fn audit_rule_failure_returns_violation_status() {
 #[test]
 fn audit_malformed_project_state_is_non_success() {
     let fixture = AuditFixture::new();
-    fs::write(fixture.root.join("_data/project.json"), "{").expect("project corrupts");
+    fs::write(fixture.root.join("__fortress/.fsconfig"), "{").expect("project corrupts");
     let output = run_owned(&["audit".into(), fixture.argument()]);
     assert_eq!(output.status.code(), Some(1));
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -1191,6 +1188,45 @@ fn audit_malformed_project_state_is_non_success() {
     );
     assert!(!stdout.contains("Findings:\nNone"), "{stdout}");
     assert!(stdout.contains("Unsupported analysis:"));
+}
+
+/// `T-CONTROL-CLI-001`
+/// Fortress classification: infrastructure
+#[test]
+fn audit_rejects_wrong_case_and_unregistered_control_entries() {
+    let fixture = AuditFixture::new();
+    let canonical = fixture.root.join("__fortress");
+    let temporary = fixture.root.join("control-temporary");
+    fs::rename(&canonical, &temporary).expect("control root moves through neutral name");
+    fs::rename(&temporary, fixture.root.join("__Fortress"))
+        .expect("wrong-case control root creates");
+    let wrong_case = run_owned(&["audit".into(), fixture.argument()]);
+    assert!(!wrong_case.status.success());
+    let diagnostic = format!(
+        "{}{}",
+        String::from_utf8_lossy(&wrong_case.stdout),
+        String::from_utf8_lossy(&wrong_case.stderr)
+    );
+    assert!(
+        diagnostic.contains("must use exact spelling `__fortress`"),
+        "{diagnostic}"
+    );
+
+    fs::rename(fixture.root.join("__Fortress"), &temporary)
+        .expect("wrong-case control root moves through neutral name");
+    fs::rename(&temporary, &canonical).expect("canonical control root restores");
+    fs::write(canonical.join("rogue.json"), "{}\n").expect("unknown control file writes");
+    let unknown = run_owned(&["audit".into(), fixture.argument()]);
+    assert!(!unknown.status.success());
+    let diagnostic = format!(
+        "{}{}",
+        String::from_utf8_lossy(&unknown.stdout),
+        String::from_utf8_lossy(&unknown.stderr)
+    );
+    assert!(
+        diagnostic.contains("unregistered control file"),
+        "{diagnostic}"
+    );
 }
 
 /// `T-TF-CLI-0001-R04-007`
@@ -1251,7 +1287,12 @@ fn audit_json_is_valid_and_repeatable() {
     let arguments = ["audit".into(), fixture.argument(), "--format=json".into()];
     let first = run_owned(&arguments);
     let second = run_owned(&arguments);
-    assert!(first.status.success());
+    assert!(
+        first.status.success(),
+        "stderr={} stdout={}",
+        String::from_utf8_lossy(&first.stderr),
+        String::from_utf8_lossy(&first.stdout)
+    );
     assert_eq!(first.stdout, second.stdout);
     let value: serde_json::Value =
         serde_json::from_slice(&first.stdout).expect("audit output is JSON");
@@ -1320,7 +1361,10 @@ fn observation_commands_accept_ordinary_cargo_layout_without_governance_files() 
     assert_eq!(audit.status.code(), Some(1));
     let output = String::from_utf8_lossy(&audit.stdout);
     assert!(output.contains("Project authority: MISSING"), "{output}");
-    assert!(output.contains("_data/project.json is absent"), "{output}");
+    assert!(
+        output.contains("__fortress/.fsconfig is absent"),
+        "{output}"
+    );
     assert!(
         output.contains("Raw conformance: NOT_EVALUATED"),
         "{output}"

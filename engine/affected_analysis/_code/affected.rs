@@ -60,9 +60,9 @@ pub enum AuthorityInputKind {
 #[must_use]
 pub fn classify_authority_path(path: &str) -> AuthorityInputKind {
     let extension = Path::new(path).extension();
-    if path == "_data/project.json" {
+    if path == "__fortress/.fsconfig" {
         AuthorityInputKind::ProjectConfiguration
-    } else if path == "_data/finding_governance.json" {
+    } else if path == "__fortress/governance/finding_governance.json" {
         AuthorityInputKind::FindingGovernance
     } else if path == "contract.json" || path.ends_with("/contract.json") {
         AuthorityInputKind::ModuleContract
@@ -70,7 +70,7 @@ pub fn classify_authority_path(path: &str) -> AuthorityInputKind {
         AuthorityInputKind::FunctionContract
     } else if is_distributed_data_authority(path, "state_contracts.json") {
         AuthorityInputKind::StateContract
-    } else if path == "_data/information_flow_policy.json"
+    } else if path == "__fortress/governance/information_flow_policy.json"
         || path.ends_with("/_data/information_flow_policy.json")
     {
         AuthorityInputKind::InformationFlowPolicy

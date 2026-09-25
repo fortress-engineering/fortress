@@ -1,0 +1,146 @@
+{
+  "$schema": "urn:fortress:derived:v1:assessment-generation-manifest",
+  "schema_version": 1,
+  "generation_kind": "HISTORICAL_MIGRATION",
+  "project": "PF-FORTRESS",
+  "profile": "fortress-complete-local-v1",
+  "selection_key": "sha256:30be03b83f15941d0e53afaae7e82c2e66d1670df0735af095e829223c5755ac",
+  "source": {
+    "fingerprint": "sha256:aa1ed6dda19e541166d16a8065a6a55cb7edba8e2989681cefd9f1c608cada21",
+    "file_count": 442
+  },
+  "control_layout": {
+    "id": "fortress-control-layout-v1",
+    "digest": "sha256:96445f8243bacabd8bd934d76f7e1c40768c60a7443d2fde5db908eb1fc737bc"
+  },
+  "artifacts": [
+    {
+      "id": "bfg",
+      "producer_id": "behavioral_semantics",
+      "schema_ref": "urn:fortress:derived:v1:behavioral-flow-graph",
+      "producer_semantic_version": "1.0.0",
+      "content_digest": "sha256:27d9ff3e93bd4ebdb0a20e080038eed94efa8a3c07c84e6961cf2dc4c74c81a3",
+      "byte_count": 136963,
+      "disposition": "REQUIRED",
+      "storage": {
+        "kind": "INCLUDED",
+        "member_name": "behavioral_flow_graph.json"
+      }
+    },
+    {
+      "id": "certification",
+      "producer_id": "certification",
+      "schema_ref": "urn:fortress:derived:v1:certification-result",
+      "producer_semantic_version": "2.0.0",
+      "content_digest": "sha256:b1df164633b9c239b74af04d82d60b6d27bcf17540e90c78023393c7989131a1",
+      "byte_count": 98083,
+      "disposition": "REQUIRED",
+      "storage": {
+        "kind": "INCLUDED",
+        "member_name": "certification.json"
+      }
+    },
+    {
+      "id": "environmental",
+      "producer_id": "environmental_semantics",
+      "schema_ref": "urn:fortress:derived:v1:environmental-analysis",
+      "producer_semantic_version": "1.0.0",
+      "content_digest": "sha256:73b05c472663be6d6094c6fff95358ab4e69e9846b85a53f4b6a71150efb2d65",
+      "byte_count": 5439,
+      "disposition": "REQUIRED",
+      "storage": {
+        "kind": "INCLUDED",
+        "member_name": "environmental_analysis.json"
+      }
+    },
+    {
+      "id": "evidence-graph",
+      "producer_id": "certification",
+      "schema_ref": "urn:fortress:derived:v2:evidence-graph",
+      "producer_semantic_version": "2.0.0",
+      "content_digest": "sha256:e67d6ee417d412454ea8c6777ceffa935a3770c5601cd0c6070f7911eb96f952",
+      "byte_count": 642932,
+      "disposition": "REQUIRED",
+      "storage": {
+        "kind": "INCLUDED",
+        "member_name": "evidence_graph.json"
+      }
+    },
+    {
+      "id": "quality-certificate",
+      "producer_id": "snapshot_governance",
+      "schema_ref": "urn:fortress:derived:v2:local-quality-certificate",
+      "producer_semantic_version": "quality-certificate-v2.2",
+      "content_digest": "sha256:96849d403a714a401738ff27136d5eb89e49f3e3e7876f0f2b098a002c836cef",
+      "byte_count": 14998,
+      "disposition": "REQUIRED",
+      "storage": {
+        "kind": "INCLUDED",
+        "member_name": "quality_certificate.json"
+      }
+    },
+    {
+      "id": "references",
+      "producer_id": "reference_resolution",
+      "schema_ref": "urn:fortress:derived:v1:component-resolution-index",
+      "producer_semantic_version": "1.0.0",
+      "content_digest": "sha256:bd30521491e7f28cb1fc1340fa59a4ca45a7e8674f412429624ed30e6672ec2f",
+      "byte_count": 460907,
+      "disposition": "REQUIRED",
+      "storage": {
+        "kind": "INCLUDED",
+        "member_name": "component_resolution_index.json"
+      }
+    },
+    {
+      "id": "verified-bfg",
+      "producer_id": "certification",
+      "schema_ref": "urn:fortress:derived:v1:verified-behavioral-flow-graph",
+      "producer_semantic_version": "2.0.0",
+      "content_digest": "sha256:cd34469f45ede0413839b92481fa69947de9e44494fa8648ad499c54f48c8526",
+      "byte_count": 6988,
+      "disposition": "REQUIRED",
+      "storage": {
+        "kind": "INCLUDED",
+        "member_name": "verified_behavioral_flow_graph.json"
+      }
+    }
+  ],
+  "origin_provenance": [
+    {
+      "id": "bfg",
+      "path": "_info/behavioral_flow_graph.json",
+      "content_digest": "sha256:27d9ff3e93bd4ebdb0a20e080038eed94efa8a3c07c84e6961cf2dc4c74c81a3"
+    },
+    {
+      "id": "certification",
+      "path": "_info/certification.json",
+      "content_digest": "sha256:b1df164633b9c239b74af04d82d60b6d27bcf17540e90c78023393c7989131a1"
+    },
+    {
+      "id": "environmental",
+      "path": "_info/environmental_analysis.json",
+      "content_digest": "sha256:73b05c472663be6d6094c6fff95358ab4e69e9846b85a53f4b6a71150efb2d65"
+    },
+    {
+      "id": "evidence-graph",
+      "path": "_info/evidence_graph.json",
+      "content_digest": "sha256:e67d6ee417d412454ea8c6777ceffa935a3770c5601cd0c6070f7911eb96f952"
+    },
+    {
+      "id": "quality-certificate",
+      "path": "_info/quality_certificate.json",
+      "content_digest": "sha256:96849d403a714a401738ff27136d5eb89e49f3e3e7876f0f2b098a002c836cef"
+    },
+    {
+      "id": "references",
+      "path": "_info/component_resolution_index.json",
+      "content_digest": "sha256:bd30521491e7f28cb1fc1340fa59a4ca45a7e8674f412429624ed30e6672ec2f"
+    },
+    {
+      "id": "verified-bfg",
+      "path": "_info/verified_behavioral_flow_graph.json",
+      "content_digest": "sha256:cd34469f45ede0413839b92481fa69947de9e44494fa8648ad499c54f48c8526"
+    }
+  ]
+}

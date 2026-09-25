@@ -143,7 +143,7 @@ fn fortress_observes_itself_without_transient_roots() {
     let paths: Vec<&str> = observation.files().iter().map(ObservedFile::path).collect();
 
     assert!(paths.contains(&"_data/Cargo.toml"));
-    assert!(paths.contains(&"_data/project.json"));
+    assert!(paths.contains(&"__fortress/.fsconfig"));
     assert!(paths.windows(2).all(|window| window[0] < window[1]));
     assert!(
         paths

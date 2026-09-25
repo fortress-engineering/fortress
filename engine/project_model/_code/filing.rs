@@ -110,6 +110,8 @@ pub enum RootEntryKind {
 pub enum RootEntryClassification {
     /// README, contract, or a canonical Module Element.
     FortressCanonical,
+    /// Fixed root-only Fortress operational control namespace.
+    FortressControl,
     /// A validated external ecosystem requires the entry.
     EcosystemRequired,
     /// A validated generator owns the persisted root projection.
@@ -849,34 +851,13 @@ fn evaluate_module_root(
         .iter()
         .filter(|file| direct_parent(file) == module)
         .collect::<Vec<_>>();
-    let mut casefold_entries = BTreeMap::<String, Vec<String>>::new();
-    for entry in direct_directories
-        .iter()
-        .map(|entry| entry.as_str())
-        .chain(direct_files.iter().map(|entry| entry.as_str()))
-    {
-        casefold_entries
-            .entry(file_name(entry).to_ascii_lowercase())
-            .or_default()
-            .push(entry.to_owned());
-    }
-    for entries in casefold_entries
-        .values()
-        .filter(|entries| entries.len() > 1)
-    {
-        violation(
-            violations,
-            FilingViolationKind::CaseFoldCollision,
-            module,
-            "module",
-            &entries.join(", "),
-            "Module-root entries are unique under case folding",
-            "one canonical spelling for each direct entry",
-        );
-    }
+    evaluate_module_root_casefold(module, &direct_directories, &direct_files, violations);
     for directory in direct_directories {
         let name = file_name(directory);
         if RESERVED_STRUCTURAL_DIRECTORIES.contains(&name) {
+            continue;
+        }
+        if module.is_empty() && name == crate::control_layout::CONTROL_ROOT {
             continue;
         }
         if name.starts_with('_') {
@@ -925,6 +906,39 @@ fn evaluate_module_root(
                 "README.md, contract.json, or a scoped ecosystem file",
             );
         }
+    }
+}
+
+fn evaluate_module_root_casefold(
+    module: &str,
+    directories: &[&String],
+    files: &[&String],
+    violations: &mut Vec<FilingSystemViolation>,
+) {
+    let mut entries_by_casefold = BTreeMap::<String, Vec<String>>::new();
+    for entry in directories
+        .iter()
+        .map(|entry| entry.as_str())
+        .chain(files.iter().map(|entry| entry.as_str()))
+    {
+        entries_by_casefold
+            .entry(file_name(entry).to_ascii_lowercase())
+            .or_default()
+            .push(entry.to_owned());
+    }
+    for entries in entries_by_casefold
+        .values()
+        .filter(|entries| entries.len() > 1)
+    {
+        violation(
+            violations,
+            FilingViolationKind::CaseFoldCollision,
+            module,
+            "module",
+            &entries.join(", "),
+            "Module-root entries are unique under case folding",
+            "one canonical spelling for each direct entry",
+        );
     }
 }
 
@@ -1425,14 +1439,16 @@ fn build_root_entries(
         .iter()
         .filter(|path| parent_path(path).is_none())
     {
-        let classification =
-            if RESERVED_STRUCTURAL_DIRECTORIES.contains(&path.as_str()) || modules.contains(path) {
-                RootEntryClassification::FortressCanonical
-            } else {
-                profiles
-                    .entry_classification("", path, RootEntryKind::Directory)
-                    .unwrap_or(RootEntryClassification::Invalid)
-            };
+        let classification = if path == crate::control_layout::CONTROL_ROOT {
+            RootEntryClassification::FortressControl
+        } else if RESERVED_STRUCTURAL_DIRECTORIES.contains(&path.as_str()) || modules.contains(path)
+        {
+            RootEntryClassification::FortressCanonical
+        } else {
+            profiles
+                .entry_classification("", path, RootEntryKind::Directory)
+                .unwrap_or(RootEntryClassification::Invalid)
+        };
         entries.push(ClassifiedRootEntry {
             path: path.clone(),
             kind: RootEntryKind::Directory,
@@ -1477,6 +1493,7 @@ fn build_inventory(
                 Some("_docs") => "docs",
                 Some("_info") => "info",
                 Some("README.md" | "contract.json") => "module",
+                Some(crate::control_layout::CONTROL_ROOT) => "control",
                 _ => "ecosystem",
             };
             let (role, collection, partition) = if matches!(element, "data" | "info") {

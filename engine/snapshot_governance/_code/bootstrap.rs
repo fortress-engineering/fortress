@@ -620,7 +620,7 @@ fn proposed_artifacts(
         .map_err(|error| BootstrapError::Serialization(error.to_string().into()))?;
     let mut artifacts = vec![
         ProposedAuthorityArtifact::new("contract.json", "ROOT_MODULE_CONTRACT", contract),
-        ProposedAuthorityArtifact::new("_data/project.json", "PROJECT_CONFIGURATION", project),
+        ProposedAuthorityArtifact::new("__fortress/.fsconfig", "PROJECT_CONFIGURATION", project),
         ProposedAuthorityArtifact::new(FINDING_GOVERNANCE_PATH, "FINDING_GOVERNANCE", governance),
     ];
     artifacts.sort_by(|left, right| left.path.cmp(&right.path));
@@ -653,7 +653,7 @@ fn validate_reviewed_artifacts(proposal: &BootstrapProposal) -> Result<(), Boots
         ));
     }
     let project = by_path
-        .get("_data/project.json")
+        .get("__fortress/.fsconfig")
         .ok_or_else(|| BootstrapError::InvalidProposal("project configuration is absent".into()))?;
     let project_bytes = project.bytes();
     ProjectConfiguration::from_json_str(std::str::from_utf8(&project_bytes).map_err(|_| {
@@ -704,14 +704,14 @@ fn snapshot_bound_files(files: &BTreeMap<String, Vec<u8>>) -> Vec<SnapshotBoundF
 fn observe_governance(
     files: &BTreeMap<String, Vec<u8>>,
 ) -> (BootstrapGovernanceState, Option<String>) {
-    let Some(project) = files.get("_data/project.json") else {
+    let Some(project) = files.get("__fortress/.fsconfig") else {
         return (
             BootstrapGovernanceState::Absent,
-            Some("_data/project.json is absent".into()),
+            Some("__fortress/.fsconfig is absent".into()),
         );
     };
     let parsed_project = std::str::from_utf8(project)
-        .map_err(|_| "_data/project.json is not UTF-8".to_owned())
+        .map_err(|_| "__fortress/.fsconfig is not UTF-8".to_owned())
         .and_then(|source| ProjectConfiguration::from_json_str(source).map_err(|e| e.to_string()));
     let parsed_contract = files
         .get("contract.json")

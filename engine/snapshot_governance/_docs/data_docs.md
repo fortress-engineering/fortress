@@ -36,7 +36,11 @@ Defines the exact-snapshot, reviewable migration plan for legacy symbol referenc
 
 ### [`quality_certificate_schema_v2.json`](../_data/quality_certificate_schema_v2.json)
 
-Defines the current source-pure local quality certificate emitted by the build issuer, including exact source, gates, artifact digests, and an explicit unverified-authenticity limitation.
+Defines the retained pre-control-layout quality certificate representation. Its reader is retired and migration preserves exact historical bytes.
+
+### [`quality_certificate_schema_v3.json`](../_data/quality_certificate_schema_v3.json)
+
+Defines the current generation-bound quality certificate with logical artifact IDs, exact source, gates, digests, and explicit unverified authenticity.
 
 ### [`contract_rule.json`](../_data/contract_rule.json)
 

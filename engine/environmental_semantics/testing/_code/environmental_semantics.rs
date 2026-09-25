@@ -91,7 +91,7 @@ fn policy() -> fortress_core::information_flow::InformationFlowPolicy {
     let source =
         canonicalize_information_flow_policy_json("policy", &raw).expect("policy canonicalizes");
     load_information_flow_policy(vec![InformationFlowPolicySource::new(
-        "_data/information_flow_policy.json",
+        "__fortress/governance/information_flow_policy.json",
         source,
     )])
     .expect("policy resolves")

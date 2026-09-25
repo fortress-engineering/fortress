@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v1:assessment-generation-manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "schema_version", "generation_kind", "project", "profile", "selection_key", "source", "control_layout", "artifacts"],
+  "properties": {
+    "$schema": { "const": "urn:fortress:derived:v1:assessment-generation-manifest" },
+    "schema_version": { "const": 1 },
+    "generation_kind": { "enum": ["LOCAL_QUALITY", "HISTORICAL_MIGRATION"] },
+    "project": { "type": "string", "minLength": 1 },
+    "profile": { "type": "string", "minLength": 1 },
+    "selection_key": { "$ref": "#/$defs/digest" },
+    "source": {
+      "type": "object", "additionalProperties": false,
+      "required": ["fingerprint", "file_count"],
+      "properties": { "fingerprint": { "$ref": "#/$defs/digest" }, "file_count": { "type": "integer", "minimum": 1 } }
+    },
+    "control_layout": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "digest"],
+      "properties": { "id": { "const": "fortress-control-layout-v1" }, "digest": { "$ref": "#/$defs/digest" } }
+    },
+    "artifacts": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/artifact" } },
+    "origin_provenance": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["id", "path", "content_digest"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+          "path": { "type": "string", "pattern": "^_info/[a-z][a-z0-9_]*\\.json$" },
+          "content_digest": { "$ref": "#/$defs/digest" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "artifact": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "producer_id", "schema_ref", "producer_semantic_version", "content_digest", "byte_count", "disposition", "storage"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+        "producer_id": { "type": "string", "minLength": 1 },
+        "schema_ref": { "type": "string", "minLength": 1 },
+        "producer_semantic_version": { "type": "string", "minLength": 1 },
+        "content_digest": { "$ref": "#/$defs/digest" },
+        "byte_count": { "type": "integer", "minimum": 1 },
+        "disposition": { "enum": ["REQUIRED", "OPTIONAL"] },
+        "storage": {
+          "oneOf": [
+            { "type": "object", "additionalProperties": false, "required": ["kind", "member_name"], "properties": { "kind": { "const": "INCLUDED" }, "member_name": { "type": "string", "pattern": "^[a-z][a-z0-9_]*\\.json$" } } },
+            { "type": "object", "additionalProperties": false, "required": ["kind", "logical_artifact_id"], "properties": { "kind": { "const": "EXTERNAL_MATERIALIZATION" }, "logical_artifact_id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" } } }
+          ]
+        }
+      }
+    }
+  }
+}

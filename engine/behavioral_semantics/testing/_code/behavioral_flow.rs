@@ -22,6 +22,43 @@ fn repository_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
+fn selected_live_bfg(root: &Path) -> Option<Vec<u8>> {
+    let evidence = root.join("__fortress/evidence");
+    let index: Value =
+        serde_json::from_slice(&fs::read(evidence.join("current.json")).ok()?).ok()?;
+    for selection in index["selections"].as_array()? {
+        let digest = selection["generation_digest"]
+            .as_str()?
+            .strip_prefix("sha256:")?;
+        let generation = evidence.join("generations").join(digest);
+        let manifest: Value =
+            serde_json::from_slice(&fs::read(generation.join("manifest.json")).ok()?).ok()?;
+        if manifest["generation_kind"] != "LOCAL_QUALITY" {
+            continue;
+        }
+        let member = manifest["artifacts"]
+            .as_array()?
+            .iter()
+            .find(|artifact| artifact["id"] == "bfg")?["storage"]["member_name"]
+            .as_str()?;
+        return fs::read(generation.join(member)).ok();
+    }
+    None
+}
+
+fn has_historical_generation(root: &Path) -> bool {
+    fs::read_dir(root.join("__fortress/evidence/generations"))
+        .into_iter()
+        .flatten()
+        .filter_map(Result::ok)
+        .any(|entry| {
+            fs::read(entry.path().join("manifest.json"))
+                .ok()
+                .and_then(|bytes| serde_json::from_slice::<Value>(&bytes).ok())
+                .is_some_and(|manifest| manifest["generation_kind"] == "HISTORICAL_MIGRATION")
+        })
+}
+
 fn base_contract(id: &str, name: &str) -> Value {
     json!({
         "$schema": "urn:fortress:schema:v2:module-contract",
@@ -500,7 +537,10 @@ fn live_fortress_bfg_is_coherent_deterministic_and_fresh() {
     assert_eq!(first.summary().modeled_features(), 1);
     assert_eq!(first.summary().incoherent_features(), 0);
     assert!(first.violations().is_empty());
-    let committed =
-        fs::read(root.join("_info/behavioral_flow_graph.json")).expect("committed self-BFG reads");
-    assert_eq!(first_bytes.as_bytes(), committed);
+    if root.join("__fortress/evidence/current.json").is_file() {
+        let selected = selected_live_bfg(&root).expect("exact selected local-quality BFG reads");
+        assert_eq!(first_bytes.as_bytes(), selected);
+    } else {
+        assert!(has_historical_generation(&root));
+    }
 }

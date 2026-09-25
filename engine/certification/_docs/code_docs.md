@@ -21,3 +21,7 @@ Missing references, digest corruption, cycles, invalid bindings, unsupported aut
 ### [`certification.rs`](../_code/certification.rs)
 
 Implements Evidence Graph including the dedicated defeater evidence class, certification, source identity, execution evidence, affected closure, and Verified BFG semantics.
+
+### [`control_manifest.rs`](../_code/control_manifest.rs)
+
+Validates immutable assessment generation manifests and exact selection indexes, including safe members, logical external artifacts, canonical ordering, and content-addressed generation identity.

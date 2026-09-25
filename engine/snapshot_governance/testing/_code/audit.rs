@@ -75,7 +75,7 @@ fn logical_contracts_and_native_paths_feed_one_semantic_ownership_relation() {
         &minimal_contract("PF-FIXTURE", "Fixture", true),
     );
     repository.write(
-        "_data/project.json",
+        "__fortress/.fsconfig",
         "{\n  \"$schema\": \"urn:fortress:schema:v3:project-configuration\",\n  \"schema_version\": 3,\n  \"observation_exclusions\": [\n    \".git\"\n  ],\n  \"logical_modules\": [\n    {\n      \"module\": \"AF-API-0001\",\n      \"contract\": \"_data/logical_modules/api/contract.json\",\n      \"parent\": \"PF-FIXTURE\",\n      \"bindings\": [\n        {\n          \"kind\": \"directory\",\n          \"path\": \"src/api\"\n        }\n      ]\n    },\n    {\n      \"module\": \"AF-CORE-0001\",\n      \"contract\": \"_data/logical_modules/core/contract.json\",\n      \"parent\": \"PF-FIXTURE\",\n      \"bindings\": [\n        {\n          \"kind\": \"directory\",\n          \"path\": \"src/core\"\n        }\n      ]\n    }\n  ]\n}\n",
     );
     repository.write(
@@ -173,7 +173,7 @@ fn all_distributed_contract_loaders_accept_one_logical_module_territory() {
         &minimal_contract("PF-FIXTURE", "Fixture", true),
     );
     repository.write(
-        "_data/project.json",
+        "__fortress/.fsconfig",
         "{\n  \"$schema\": \"urn:fortress:schema:v3:project-configuration\",\n  \"schema_version\": 3,\n  \"observation_exclusions\": [\n    \".git\"\n  ],\n  \"logical_modules\": [\n    {\n      \"module\": \"AF-NATIVE-0001\",\n      \"contract\": \"_data/logical_modules/native/contract.json\",\n      \"parent\": \"PF-FIXTURE\",\n      \"bindings\": [\n        {\n          \"kind\": \"directory\",\n          \"path\": \"native\"\n        }\n      ]\n    }\n  ]\n}\n",
     );
     repository.write(
@@ -264,7 +264,7 @@ fn logical_function_contract_rejects_a_foreign_module_target() {
         &minimal_contract("PF-FIXTURE", "Fixture", true),
     );
     repository.write(
-        "_data/project.json",
+        "__fortress/.fsconfig",
         "{\n  \"$schema\": \"urn:fortress:schema:v3:project-configuration\",\n  \"schema_version\": 3,\n  \"observation_exclusions\": [\n    \".git\"\n  ],\n  \"logical_modules\": [\n    {\n      \"module\": \"AF-ALPHA-0001\",\n      \"contract\": \"_data/logical_modules/alpha/contract.json\",\n      \"parent\": \"PF-FIXTURE\",\n      \"bindings\": [\n        {\n          \"kind\": \"directory\",\n          \"path\": \"src/alpha\"\n        }\n      ]\n    },\n    {\n      \"module\": \"AF-BETA-0001\",\n      \"contract\": \"_data/logical_modules/beta/contract.json\",\n      \"parent\": \"PF-FIXTURE\",\n      \"bindings\": [\n        {\n          \"kind\": \"directory\",\n          \"path\": \"src/beta\"\n        }\n      ]\n    }\n  ]\n}\n",
     );
     repository.write(

@@ -177,19 +177,7 @@ impl ProjectConfiguration {
                 self.schema_version,
             ));
         }
-        let mut seen = BTreeSet::new();
-        for path in &self.observation_exclusions {
-            if !is_canonical_relative_path(path) {
-                return Err(ProjectConfigurationModelError::InvalidExclusion(
-                    path.clone().into(),
-                ));
-            }
-            if !seen.insert(path.as_str()) {
-                return Err(ProjectConfigurationModelError::DuplicateExclusion(
-                    path.clone().into(),
-                ));
-            }
-        }
+        self.validate_observation_exclusions()?;
         let mut modules = BTreeSet::new();
         let mut contracts = BTreeSet::new();
         let mut selectors = BTreeSet::<(SourcePathBindingKind, &str)>::new();
@@ -218,6 +206,7 @@ impl ProjectConfiguration {
             if !is_canonical_relative_path(declaration.contract())
                 || declaration.contract == "contract.json"
                 || !declaration.contract.ends_with("/contract.json")
+                || declaration.contract.starts_with("__fortress/")
             {
                 return Err(ProjectConfigurationModelError::InvalidContractPath(
                     declaration.contract.clone().into(),
@@ -248,11 +237,38 @@ impl ProjectConfiguration {
                         binding.path.clone().into(),
                     ));
                 }
+                if binding.path() == "__fortress" || binding.path().starts_with("__fortress/") {
+                    return Err(ProjectConfigurationModelError::ControlSourceBinding(
+                        binding.path.clone().into(),
+                    ));
+                }
                 if !selectors.insert((binding.kind(), binding.path())) {
                     return Err(ProjectConfigurationModelError::ConflictingBinding(
                         binding.path.clone().into(),
                     ));
                 }
+            }
+        }
+        Ok(())
+    }
+
+    fn validate_observation_exclusions(&self) -> Result<(), ProjectConfigurationModelError> {
+        let mut seen = BTreeSet::new();
+        for path in &self.observation_exclusions {
+            if !is_canonical_relative_path(path) {
+                return Err(ProjectConfigurationModelError::InvalidExclusion(
+                    path.clone().into(),
+                ));
+            }
+            if path == "__fortress" || path.starts_with("__fortress/") {
+                return Err(ProjectConfigurationModelError::ControlAuthorityExcluded(
+                    path.clone().into(),
+                ));
+            }
+            if !seen.insert(path.as_str()) {
+                return Err(ProjectConfigurationModelError::DuplicateExclusion(
+                    path.clone().into(),
+                ));
             }
         }
         Ok(())
@@ -299,6 +315,8 @@ pub enum ProjectConfigurationModelError {
     InvalidExclusion(Box<str>),
     /// An exclusion prefix appeared more than once.
     DuplicateExclusion(Box<str>),
+    /// An observation exclusion attempted to hide active control authority.
+    ControlAuthorityExcluded(Box<str>),
     /// A logical Module identity or parent identity was not canonical.
     InvalidModuleId(Box<str>),
     /// A logical Module attempted to parent itself.
@@ -317,6 +335,8 @@ pub enum ProjectConfigurationModelError {
     NoncanonicalBindingOrder(Box<str>),
     /// A source membership path was not canonical and repository-relative.
     InvalidBindingPath(Box<str>),
+    /// A logical source binding attempted to treat control storage as application source.
+    ControlSourceBinding(Box<str>),
     /// Equal selectors assigned one source territory ambiguously.
     ConflictingBinding(Box<str>),
 }
@@ -341,6 +361,10 @@ impl Display for ProjectConfigurationModelError {
             Self::DuplicateExclusion(value) => {
                 write!(formatter, "observation exclusion `{value}` is duplicated")
             }
+            Self::ControlAuthorityExcluded(value) => write!(
+                formatter,
+                "observation exclusion `{value}` cannot suppress the control namespace"
+            ),
             Self::InvalidModuleId(value) => {
                 write!(formatter, "logical Module identity `{value}` is invalid")
             }
@@ -379,6 +403,10 @@ impl Display for ProjectConfigurationModelError {
                     "logical source binding `{value}` is not canonical"
                 )
             }
+            Self::ControlSourceBinding(value) => write!(
+                formatter,
+                "logical source binding `{value}` cannot enter the control namespace"
+            ),
             Self::ConflictingBinding(value) => write!(
                 formatter,
                 "logical source binding `{value}` is assigned with equal authority more than once"

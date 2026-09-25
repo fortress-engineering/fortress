@@ -26,6 +26,14 @@ Maintainers update Data through reviewed semantic changes; schema versions chang
 
 Defines the version-one machine representation and validation boundary for change records owned by this Module.
 
+### [`control_layout_schema_v1.json`](../_data/control_layout_schema_v1.json)
+
+Defines the fixed root, active roles, source bindings, manifest member, and closed artifact registry.
+
+### [`control_layout_v1.json`](../_data/control_layout_v1.json)
+
+Provides the authoritative cross-adapter `__fortress` layout and artifact-role dataset.
+
 ### [`filing_profile_schema_v2.json`](../_data/filing_profile_schema_v2.json)
 
 Defines the version-two closed registry shape, including explicit project-root or Module-root scope, opaque ecosystem directories, ecosystem-owned Data/Info filenames, and mechanically required Code namespace structures.

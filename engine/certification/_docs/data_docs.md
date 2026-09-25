@@ -22,6 +22,14 @@ Incompatible semantic changes advance schema versions rather than silently chang
 
 ## Files
 
+### [`generation_manifest_schema_v1.json`](../_data/generation_manifest_schema_v1.json)
+
+Defines source-bound immutable generation manifests with included and external artifact descriptors.
+
+### [`selection_index_schema_v1.json`](../_data/selection_index_schema_v1.json)
+
+Defines the sorted exact selection-key to generation-digest index.
+
 ### [`certification_profile_schema_v1.json`](../_data/certification_profile_schema_v1.json)
 
 Defines Certification Profile v1.

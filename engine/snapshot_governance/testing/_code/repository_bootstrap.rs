@@ -120,8 +120,13 @@ fn stale_or_conflicting_proposal_never_partially_initializes() {
         .expect_err("stale proposal fails");
     assert!(error.to_string().contains("proposal is stale"));
     assert!(!fixture.root.join("contract.json").exists());
-    assert!(!fixture.root.join("_data/project.json").exists());
-    assert!(!fixture.root.join("_data/finding_governance.json").exists());
+    assert!(!fixture.root.join("__fortress/.fsconfig").exists());
+    assert!(
+        !fixture
+            .root
+            .join("__fortress/governance/finding_governance.json")
+            .exists()
+    );
 }
 
 /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R16-003`
@@ -136,7 +141,7 @@ fn apply_materializes_only_reviewed_minimal_authority() {
     let result = apply_repository_bootstrap(&fixture.root, &proposal, false)
         .expect("explicit adoption succeeds");
     let result_json = result.to_canonical_json().expect("apply result serializes");
-    assert!(result_json.contains("_data/project.json"));
+    assert!(result_json.contains("__fortress/.fsconfig"));
     assert_eq!(
         fs::read(fixture.root.join("Cargo.toml")).unwrap(),
         cargo_before
@@ -146,8 +151,13 @@ fn apply_materializes_only_reviewed_minimal_authority() {
         source_before
     );
     assert!(fixture.root.join("contract.json").is_file());
-    assert!(fixture.root.join("_data/project.json").is_file());
-    assert!(fixture.root.join("_data/finding_governance.json").is_file());
+    assert!(fixture.root.join("__fortress/.fsconfig").is_file());
+    assert!(
+        fixture
+            .root
+            .join("__fortress/governance/finding_governance.json")
+            .is_file()
+    );
     assert!(!fixture.root.join("engine/standard_registry").exists());
     assert!(apply_repository_bootstrap(&fixture.root, &proposal, false).is_err());
 }

@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:control-layout",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "schema_version", "id", "root", "config", "roles", "manifest_member", "artifact_registry"],
+  "properties": {
+    "$schema": { "const": "urn:fortress:schema:v1:control-layout" },
+    "schema_version": { "const": 1 },
+    "id": { "const": "fortress-control-layout-v1" },
+    "root": { "const": "__fortress" },
+    "config": { "const": "__fortress/.fsconfig" },
+    "roles": { "type": "array", "minItems": 4, "items": { "$ref": "#/$defs/role" } },
+    "manifest_member": { "$ref": "#/$defs/manifest" },
+    "artifact_registry": { "type": "array", "minItems": 15, "items": { "$ref": "#/$defs/artifact" } }
+  },
+  "$defs": {
+    "role": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "role", "owner", "source_binding"],
+      "properties": {
+        "path": { "type": "string", "pattern": "^__fortress/" },
+        "role": { "enum": ["PROJECT_CONFIGURATION", "FINDING_GOVERNANCE", "GLOBAL_INFORMATION_FLOW_POLICY", "ASSESSMENT_SELECTION_INDEX"] },
+        "owner": { "type": "string", "minLength": 1 },
+        "source_binding": { "enum": ["REQUIRED", "NONRECURSIVE"] }
+      }
+    },
+    "manifest": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "owner"],
+      "properties": {
+        "name": { "const": "manifest.json" },
+        "owner": { "type": "string", "minLength": 1 }
+      }
+    },
+    "artifact": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "logical_path", "owner", "schema_ref", "producer_semantic_version", "production_group", "storage"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+        "logical_path": { "type": "string", "pattern": "^_info/[a-z][a-z0-9_]*\\.json$" },
+        "owner": { "type": "string", "minLength": 1 },
+        "schema_ref": { "type": "string", "minLength": 1 },
+        "producer_semantic_version": { "type": "string", "minLength": 1 },
+        "production_group": { "enum": ["SEMANTIC", "CERTIFICATION", "CERTIFICATE"] },
+        "storage": { "enum": ["INCLUDED", "EXTERNAL_MATERIALIZATION"] },
+        "member_name": { "type": "string", "pattern": "^[a-z][a-z0-9_]*\\.json$" }
+      },
+      "allOf": [
+        { "if": { "properties": { "storage": { "const": "INCLUDED" } } }, "then": { "required": ["member_name"] }, "else": { "not": { "required": ["member_name"] } } }
+      ]
+    }
+  }
+}

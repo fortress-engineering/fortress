@@ -7,10 +7,10 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use fortress_cli::command::CommandRegistry;
-use fortress_core::certification::GENERATED_CERTIFICATION_PROJECTIONS;
 use fortress_core::contract_coherency::{
     CcgObservedTestFact, ContractStandardIndex, compile_contract_coherency_graph,
 };
+use fortress_core::control_layout::ControlLayout;
 use fortress_core::observation::{ObservationPolicy, observe_repository};
 use fortress_core::project::ProjectConfiguration;
 use fortress_core::rust_test_analyzer::analyze_rust_source;
@@ -41,7 +41,7 @@ fn array_member<'a>(document: &'a Value, name: &str) -> &'a [Value] {
 /// Fortress requirement: AF-BOOTSTRAP-GOVERNANCE-0001-R01
 #[test]
 fn declared_project_loads_and_references_existing_documents() {
-    let source = fs::read_to_string(repository_root().join("_data/project.json"))
+    let source = fs::read_to_string(repository_root().join("__fortress/.fsconfig"))
         .expect("self project configuration must be readable");
     let project = ProjectConfiguration::from_json_str(&source)
         .expect("self project configuration must validate");
@@ -79,7 +79,11 @@ fn declared_commands_match_the_implemented_registry() {
 #[test]
 fn generated_certification_is_not_authored_project_data() {
     assert!(!repository_root().join("_data/certification.json").exists());
-    assert!(GENERATED_CERTIFICATION_PROJECTIONS.contains(&"_info/certification.json"));
+    assert!(
+        ControlLayout::standard()
+            .artifact_logical_paths()
+            .contains(&"_info/certification.json")
+    );
 }
 
 /// `T-AF-BOOTSTRAP-GOVERNANCE-0001-R02-001`

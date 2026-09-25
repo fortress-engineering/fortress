@@ -318,7 +318,7 @@ fn contract_binding_and_function_authority_have_narrow_dependencies() {
             &format!("{policy}-{binding}-{function}"),
             vec![
                 input("a/contract.json", policy),
-                input("_data/project.json", binding),
+                input("__fortress/.fsconfig", binding),
                 input("a/_data/function_contracts.json", function),
             ],
             vec![
@@ -385,7 +385,10 @@ fn finding_governance_updates_enforcement_without_raw_semantic_recomputation() {
     let make = |governance: &str| {
         snapshot(
             governance,
-            vec![input("_data/finding_governance.json", governance)],
+            vec![input(
+                "__fortress/governance/finding_governance.json",
+                governance,
+            )],
             vec![
                 unit(
                     "authority:governance",
@@ -529,6 +532,7 @@ fn deleting_cache_changes_runtime_state_not_canonical_output() {
 fn repository_projection_keys_bind_only_semantically_relevant_authority() {
     let root = temporary_root("repository-keys");
     fs::create_dir_all(root.join("_data/logical_modules/worker")).expect("fixture directories");
+    fs::create_dir_all(root.join("__fortress")).expect("control directory");
     fs::create_dir_all(root.join("src")).expect("source directory");
     fs::write(
         root.join("Cargo.toml"),
@@ -553,7 +557,7 @@ fn repository_projection_keys_bind_only_semantically_relevant_authority() {
     )
     .expect("root contract");
     fs::write(
-        root.join("_data/project.json"),
+        root.join("__fortress/.fsconfig"),
         r#"{
   "$schema": "urn:fortress:schema:v3:project-configuration",
   "schema_version": 3,
@@ -624,6 +628,7 @@ fn repository_projection_keys_bind_only_semantically_relevant_authority() {
 fn logical_distributed_contract_changes_invalidate_only_dependent_projection_keys() {
     let root = temporary_root("logical-distributed-contract-keys");
     fs::create_dir_all(root.join("_data/logical_modules/worker")).expect("fixture authority");
+    fs::create_dir_all(root.join("__fortress")).expect("control directory");
     fs::create_dir_all(root.join("src/_data")).expect("logical contract directory");
     fs::write(
         root.join("Cargo.toml"),
@@ -648,7 +653,7 @@ fn logical_distributed_contract_changes_invalidate_only_dependent_projection_key
     )
     .expect("root contract");
     fs::write(
-        root.join("_data/project.json"),
+        root.join("__fortress/.fsconfig"),
         r#"{
   "$schema": "urn:fortress:schema:v3:project-configuration",
   "schema_version": 3,

@@ -2129,7 +2129,11 @@ impl<'a> Resolver<'a> {
         ) {
             Ok(resolver) => resolver,
             Err(error) => {
-                self.violation("_data/project.json", "/logical_modules", error.to_string());
+                self.violation(
+                    "__fortress/.fsconfig",
+                    "/logical_modules",
+                    error.to_string(),
+                );
                 return self.failure();
             }
         };
@@ -2403,7 +2407,7 @@ impl<'a> Resolver<'a> {
                 let path = loaded
                     .values()
                     .find(|(_, contract, _)| contract.id() == module)
-                    .map_or("_data/project.json", |(path, _, _)| path.as_str());
+                    .map_or("__fortress/.fsconfig", |(path, _, _)| path.as_str());
                 self.violation(
                     path,
                     "/",
@@ -2420,7 +2424,7 @@ impl<'a> Resolver<'a> {
                     let path = loaded
                         .values()
                         .find(|(_, contract, _)| contract.id() == module)
-                        .map_or("_data/project.json", |(path, _, _)| path.as_str());
+                        .map_or("__fortress/.fsconfig", |(path, _, _)| path.as_str());
                     self.violation(path, "/", "logical Module containment contains a cycle");
                     break;
                 }

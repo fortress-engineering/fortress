@@ -39,39 +39,80 @@ from execution_storage import (
 )
 
 
-CERTIFICATE_PATH = "_info/quality_certificate.json"
-SCHEMA_ID = "urn:fortress:derived:v2:local-quality-certificate"
-SEMANTIC_VERSION = "quality-certificate-v2.2"
+CONTROL_ROOT = "__fortress"
+CONFIG_PATH = "__fortress/.fsconfig"
+LEGACY_CONFIG_PATH = "_data/project.json"
+EVIDENCE_ROOT = "__fortress/evidence"
+CURRENT_INDEX_PATH = "__fortress/evidence/current.json"
+GENERATIONS_PATH = "__fortress/evidence/generations"
+CONTROL_LAYOUT_PATH = "engine/project_model/_data/control_layout_v1.json"
+CERTIFICATE_ID = "quality-certificate"
+CERTIFICATE_MEMBER = "quality_certificate.json"
+SCHEMA_ID = "urn:fortress:derived:v3:local-quality-certificate"
+SEMANTIC_VERSION = "quality-certificate-v3.0"
 PROFILE_ID = "fortress-complete-local-v1"
 TOOLCHAIN = "1.97.1"
 TRACKED_EVIDENCE = "TRACKED_EVIDENCE"
 LOCAL_MATERIALIZATION = "LOCAL_MATERIALIZATION"
 
-SEMANTIC_ARTIFACTS = (
-    ("ccg", "_info/contract_coherency_graph.json", LOCAL_MATERIALIZATION),
-    ("bfg", "_info/behavioral_flow_graph.json", TRACKED_EVIDENCE),
-    ("psm", "_info/program_semantic_model.json", LOCAL_MATERIALIZATION),
-    ("semantic", "_info/semantic_analysis.json", LOCAL_MATERIALIZATION),
-    (
-        "semantic-conformance",
-        "_info/semantic_conformance.json",
-        LOCAL_MATERIALIZATION,
-    ),
-    ("state-effect", "_info/state_effect_analysis.json", LOCAL_MATERIALIZATION),
-    ("information-flow", "_info/information_flow_analysis.json", LOCAL_MATERIALIZATION),
-    ("environmental", "_info/environmental_analysis.json", TRACKED_EVIDENCE),
-    ("realized-bfg", "_info/realized_behavioral_flow_graph.json", LOCAL_MATERIALIZATION),
-    ("references", "_info/component_resolution_index.json", TRACKED_EVIDENCE),
-    ("source-artifacts", "_info/source_artifact_model.json", LOCAL_MATERIALIZATION),
-)
+def load_installed_artifact_contract() -> tuple[
+    tuple[tuple[str, str, str], ...],
+    tuple[tuple[str, str, str], ...],
+    dict[str, tuple[str, str, str]],
+    list[dict[str, Any]],
+]:
+    """Load the one shared artifact dataset without affecting standalone help."""
+    path = Path(__file__).resolve().parents[3] / CONTROL_LAYOUT_PATH
+    if not path.is_file():
+        return (), (), {}, []
+    layout = json.loads(path.read_text(encoding="utf-8"))
+    records = layout["artifact_registry"]
+    semantic: list[tuple[str, str, str]] = []
+    certification: list[tuple[str, str, str]] = []
+    metadata: dict[str, tuple[str, str, str]] = {}
+    for record in records:
+        identifier = record["id"]
+        storage = (
+            TRACKED_EVIDENCE
+            if record["storage"] == "INCLUDED"
+            else LOCAL_MATERIALIZATION
+        )
+        metadata[identifier] = (
+            record["owner"],
+            record["schema_ref"],
+            record["producer_semantic_version"],
+        )
+        artifact = (identifier, record["logical_path"], storage)
+        if record["production_group"] == "SEMANTIC":
+            semantic.append(artifact)
+        elif record["production_group"] == "CERTIFICATION":
+            certification.append(artifact)
+        elif record["production_group"] != "CERTIFICATE":
+            raise ValueError(f"unknown artifact production group: {record['production_group']}")
+    return tuple(semantic), tuple(certification), metadata, records
 
-CERTIFICATION_ARTIFACTS = (
-    ("evidence-graph", "_info/evidence_graph.json", TRACKED_EVIDENCE),
-    ("certification", "_info/certification.json", TRACKED_EVIDENCE),
-    ("verified-bfg", "_info/verified_behavioral_flow_graph.json", TRACKED_EVIDENCE),
-)
 
+(
+    SEMANTIC_ARTIFACTS,
+    CERTIFICATION_ARTIFACTS,
+    ARTIFACT_METADATA,
+    INSTALLED_ARTIFACT_RECORDS,
+) = load_installed_artifact_contract()
 ARTIFACTS = SEMANTIC_ARTIFACTS + CERTIFICATION_ARTIFACTS
+
+
+def validate_control_artifact_registry(root: Path) -> None:
+    """Reject execution against a different or malformed artifact registry."""
+    path = root.resolve() / CONTROL_LAYOUT_PATH
+    try:
+        layout = json.loads(path.read_text(encoding="utf-8"))
+        records = layout["artifact_registry"]
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError, KeyError, TypeError) as error:
+        raise CertificateError(f"cannot load {CONTROL_LAYOUT_PATH}: {error}") from error
+    if records != INSTALLED_ARTIFACT_RECORDS:
+        raise CertificateError(
+            f"{CONTROL_LAYOUT_PATH} changed after the Python adapter loaded it"
+        )
 
 REQUIRED_GATE_IDS = (
     "ARTIFACT_BFG",
@@ -131,26 +172,58 @@ def derived_artifact_paths() -> tuple[str, ...]:
     return tuple(sorted(path for _, path, _ in ARTIFACTS))
 
 
+def derived_artifact_ids() -> tuple[str, ...]:
+    """Return canonical logical IDs without exposing physical storage paths."""
+    return tuple(sorted(identifier for identifier, _, _ in ARTIFACTS))
+
+
 def excluded_source_paths() -> set[str]:
     """Return generated paths excluded from authoritative source identity."""
-    return {CERTIFICATE_PATH, *derived_artifact_paths()}
+    return {EVIDENCE_ROOT}
 
 
 def repository_files(root: Path) -> list[str]:
-    result = subprocess.run(
-        ["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z"],
-        cwd=root,
-        check=True,
-        stdout=subprocess.PIPE,
-    )
-    paths = result.stdout.decode("utf-8").split("\0")
-    excluded = excluded_source_paths()
-    normalized = sorted(
-        normalized
-        for path in paths
-        if path
-        if (normalized := path.replace("\\", "/")) not in excluded
-    )
+    config = root / CONFIG_PATH
+    legacy = root / LEGACY_CONFIG_PATH
+    if legacy.is_file() and config.is_file():
+        raise CertificateError("dual project configuration authority is invalid")
+    if legacy.is_file():
+        raise CertificateError(f"{LEGACY_CONFIG_PATH} requires explicit migration")
+    try:
+        configuration = json.loads(config.read_text(encoding="utf-8"))
+        exclusions = configuration["observation_exclusions"]
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError, KeyError, TypeError) as error:
+        raise CertificateError(f"cannot load {CONFIG_PATH}: {error}") from error
+    if not isinstance(exclusions, list) or any(
+        not isinstance(item, str) or item == CONTROL_ROOT or item.startswith(CONTROL_ROOT + "/")
+        for item in exclusions
+    ):
+        raise CertificateError("configuration observation exclusions are invalid")
+    excluded = {".git", EVIDENCE_ROOT, *exclusions}
+    normalized: list[str] = []
+    for directory, names, files in os.walk(root, topdown=True, followlinks=False):
+        relative_directory = Path(directory).relative_to(root).as_posix()
+        if relative_directory == ".":
+            relative_directory = ""
+        kept: list[str] = []
+        for name in sorted(names):
+            relative = f"{relative_directory}/{name}".strip("/")
+            absolute = Path(directory) / name
+            if absolute.is_symlink():
+                raise CertificateError(f"repository source directory is a symbolic link: {relative}")
+            if any(relative == prefix or relative.startswith(prefix + "/") for prefix in excluded):
+                continue
+            kept.append(name)
+        names[:] = kept
+        for name in sorted(files):
+            relative = f"{relative_directory}/{name}".strip("/")
+            absolute = Path(directory) / name
+            if absolute.is_symlink():
+                raise CertificateError(f"repository source file is a symbolic link: {relative}")
+            if any(relative == prefix or relative.startswith(prefix + "/") for prefix in excluded):
+                continue
+            normalized.append(relative)
+    normalized.sort()
     if not normalized:
         raise CertificateError("repository input set is empty")
     return normalized
@@ -193,15 +266,12 @@ def execution_storage_root() -> Path:
 
 
 def publication_paths(root: Path) -> set[Path]:
-    """List only the derived tracked paths the issuer may restore."""
-    return {
-        (root / CERTIFICATE_PATH).resolve(),
-        *(
-            (root / logical_path).resolve()
-            for _, logical_path, storage in ARTIFACTS
-            if storage == TRACKED_EVIDENCE
-        ),
-    }
+    """List existing immutable publication files and the one mutable index."""
+    paths = {(root / CURRENT_INDEX_PATH).resolve()}
+    generations = root / GENERATIONS_PATH
+    if generations.is_dir():
+        paths.update(path.resolve() for path in generations.glob("*/*.json") if path.is_file())
+    return paths
 
 
 def cache_subject_directory(root: Path, source_fingerprint: str) -> Path:
@@ -223,6 +293,144 @@ def atomic_write(path: Path, content: bytes) -> None:
     temporary = path.with_name(path.name + ".pending")
     temporary.write_bytes(content)
     os.replace(temporary, path)
+
+
+def selection_key() -> str:
+    """Return the stable project/profile/scope/context-family selection key."""
+    return sha256_bytes(
+        canonical_payload_bytes(
+            {
+                "project": "PF-FORTRESS",
+                "profile": PROFILE_ID,
+                "scope": "repository",
+                "context_family": "native-static",
+            }
+        )
+    )
+
+
+def control_layout_digest(root: Path) -> str:
+    """Bind publications to the installed declarative role registry."""
+    path = root / "engine/project_model/_data/control_layout_v1.json"
+    return sha256_bytes(path.read_bytes())
+
+
+def manifest_digest(manifest: dict[str, Any]) -> str:
+    """Return the content-addressed generation identity."""
+    return sha256_bytes(canonical_payload_bytes(manifest))
+
+
+def artifact_member(identifier: str) -> str:
+    """Resolve a registered durable artifact to its safe generation member."""
+    if identifier == CERTIFICATE_ID:
+        return CERTIFICATE_MEMBER
+    for artifact_id, logical_path, storage in ARTIFACTS:
+        if artifact_id == identifier and storage == TRACKED_EVIDENCE:
+            return Path(logical_path).name
+    raise CertificateError(f"artifact is not an included generation member: {identifier}")
+
+
+def build_generation_manifest(
+    root: Path,
+    certificate: dict[str, Any],
+    certificate_bytes: bytes,
+    pending_artifacts: dict[str, bytes],
+) -> dict[str, Any]:
+    """Build a sorted self-independent generation manifest."""
+    descriptors: list[dict[str, Any]] = []
+    certificate_artifacts = {record["id"]: record for record in artifact_records(certificate)}
+    for identifier, logical_path, storage in ARTIFACTS:
+        record = certificate_artifacts[identifier]
+        producer, schema_ref, version = ARTIFACT_METADATA[identifier]
+        storage_record = (
+            {"kind": "INCLUDED", "member_name": artifact_member(identifier)}
+            if storage == TRACKED_EVIDENCE
+            else {"kind": "EXTERNAL_MATERIALIZATION", "logical_artifact_id": identifier}
+        )
+        descriptors.append(
+            {
+                "id": identifier,
+                "producer_id": producer,
+                "schema_ref": schema_ref,
+                "producer_semantic_version": version,
+                "content_digest": record["digest"],
+                "byte_count": record["bytes"],
+                "disposition": "REQUIRED",
+                "storage": storage_record,
+            }
+        )
+        if storage == TRACKED_EVIDENCE and logical_path not in pending_artifacts:
+            raise CertificateError(f"included artifact bytes are absent: {identifier}")
+    producer, schema_ref, version = ARTIFACT_METADATA[CERTIFICATE_ID]
+    descriptors.append(
+        {
+            "id": CERTIFICATE_ID,
+            "producer_id": producer,
+            "schema_ref": schema_ref,
+            "producer_semantic_version": version,
+            "content_digest": sha256_bytes(certificate_bytes),
+            "byte_count": len(certificate_bytes),
+            "disposition": "REQUIRED",
+            "storage": {"kind": "INCLUDED", "member_name": CERTIFICATE_MEMBER},
+        }
+    )
+    descriptors.sort(key=lambda item: item["id"])
+    return {
+        "$schema": "urn:fortress:derived:v1:assessment-generation-manifest",
+        "schema_version": 1,
+        "generation_kind": "LOCAL_QUALITY",
+        "project": "PF-FORTRESS",
+        "profile": PROFILE_ID,
+        "selection_key": selection_key(),
+        "source": {
+            "fingerprint": certificate["source"]["fingerprint"],
+            "file_count": certificate["source"]["file_count"],
+        },
+        "control_layout": {
+            "id": "fortress-control-layout-v1",
+            "digest": control_layout_digest(root),
+        },
+        "artifacts": descriptors,
+    }
+
+
+def canonical_pretty_json(value: dict[str, Any]) -> bytes:
+    """Serialize repository records as deterministic UTF-8/LF pretty JSON."""
+    return (json.dumps(value, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
+
+
+def updated_selection_index(root: Path, generation_digest: str) -> tuple[bytes | None, bytes]:
+    """Replace only this exact selection while preserving other contexts."""
+    path = root / CURRENT_INDEX_PATH
+    old = path.read_bytes() if path.is_file() else None
+    if old is None:
+        document: dict[str, Any] = {
+            "$schema": "urn:fortress:derived:v1:assessment-selection-index",
+            "schema_version": 1,
+            "selections": [],
+        }
+    else:
+        try:
+            document = json.loads(old.decode("utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError) as error:
+            raise CertificateError(f"current selection index is invalid: {error}") from error
+        if canonical_pretty_json(document) != old:
+            raise CertificateError("current selection index bytes are noncanonical")
+        if set(document) != {"$schema", "schema_version", "selections"} or document["$schema"] != "urn:fortress:derived:v1:assessment-selection-index" or document["schema_version"] != 1 or not isinstance(document["selections"], list):
+            raise CertificateError("current selection index shape is unsupported")
+    selections = {
+        item["selection_key"]: item["generation_digest"]
+        for item in document["selections"]
+        if isinstance(item, dict) and set(item) == {"selection_key", "generation_digest"}
+    }
+    if len(selections) != len(document["selections"]):
+        raise CertificateError("current selection index contains invalid or duplicate entries")
+    selections[selection_key()] = generation_digest
+    document["selections"] = [
+        {"selection_key": key, "generation_digest": selections[key]}
+        for key in sorted(selections)
+    ]
+    return old, canonical_pretty_json(document)
 
 
 def write_projection_with_budget(
@@ -355,6 +563,7 @@ def pass_gate(gates: list[dict[str, str]], gate_id: str, command: list[str]) -> 
 def issue(root: Path) -> dict[str, Any]:
     """Run a bounded issuer without changing a prior certificate on failure."""
     root = root.resolve()
+    validate_control_artifact_registry(root)
     storage_root = execution_storage_root()
     recovered = recover_owned_orphans(root, storage_root, publication_paths(root))
     for item in recovered:
@@ -374,7 +583,6 @@ def _issue(root: Path, workspace: RunWorkspace) -> dict[str, Any]:
         (root / "_info" / "Cargo.lock").resolve()
     )
     gates: list[dict[str, str]] = []
-    destination = root / CERTIFICATE_PATH
     initial_fingerprint, initial_file_count = repository_fingerprint(root)
     workspace.track_projection_root(derived_cache_root(root))
     transient_lock = root / "_data" / "Cargo.lock"
@@ -530,7 +738,7 @@ def _issue(root: Path, workspace: RunWorkspace) -> dict[str, Any]:
             )
             artifact_records.append(
                 {
-                    "path": logical_path,
+                    "id": command_name,
                     "digest": sha256_bytes(projection_bytes),
                     "bytes": len(projection_bytes),
                     "storage": storage,
@@ -549,7 +757,7 @@ def _issue(root: Path, workspace: RunWorkspace) -> dict[str, Any]:
             )
             artifact_records.append(
                 {
-                    "path": logical_path,
+                    "id": command_name,
                     "digest": sha256_bytes(artifact_bytes),
                     "bytes": len(artifact_bytes),
                     "storage": storage,
@@ -615,7 +823,7 @@ def _issue(root: Path, workspace: RunWorkspace) -> dict[str, Any]:
         pass_gate(gates, "RUSTDOC", documentation)
 
     gates.sort(key=lambda gate: gate["id"])
-    artifact_records.sort(key=lambda artifact: artifact["path"])
+    artifact_records.sort(key=lambda artifact: artifact["id"])
     source_fingerprint, source_file_count = repository_fingerprint(root)
     if (
         source_fingerprint != initial_fingerprint
@@ -628,7 +836,7 @@ def _issue(root: Path, workspace: RunWorkspace) -> dict[str, Any]:
         )
     payload: dict[str, Any] = {
         "$schema": SCHEMA_ID,
-        "schema_version": 2,
+        "schema_version": 3,
         "semantic_version": SEMANTIC_VERSION,
         "project": "PF-FORTRESS",
         "profile": PROFILE_ID,
@@ -645,8 +853,8 @@ def _issue(root: Path, workspace: RunWorkspace) -> dict[str, Any]:
         "source": {
             "fingerprint": source_fingerprint,
             "file_count": source_file_count,
-            "excluded_self": CERTIFICATE_PATH,
-            "excluded_derived_artifacts": list(derived_artifact_paths()),
+            "excluded_self": CERTIFICATE_ID,
+            "excluded_derived_artifacts": list(derived_artifact_ids()),
         },
         "toolchain": {
             "rust": TOOLCHAIN,
@@ -665,45 +873,45 @@ def _issue(root: Path, workspace: RunWorkspace) -> dict[str, Any]:
     certificate_bytes = (
         json.dumps(document, ensure_ascii=False, indent=2) + "\n"
     ).encode("utf-8")
-    workspace.prepare_publication(
-        destination,
-        certificate_bytes,
-        {
-            root / logical_path: pending_artifacts[logical_path]
-            for _, logical_path, storage in ARTIFACTS
-            if storage == TRACKED_EVIDENCE
-        },
+    generation_manifest = build_generation_manifest(
+        root, document, certificate_bytes, pending_artifacts
     )
-    prior_bytes: dict[Path, bytes | None] = {}
-    try:
-        for _, logical_path, storage in ARTIFACTS:
-            path = (
-                root / logical_path
-                if storage == TRACKED_EVIDENCE
-                else cache_artifact_path(root, source_fingerprint, logical_path)
+    generation_id = manifest_digest(generation_manifest)
+    generation_name = generation_id.removeprefix("sha256:")
+    generation_root = root / GENERATIONS_PATH / generation_name
+    generation_files = {
+        generation_root / "manifest.json": canonical_pretty_json(generation_manifest),
+        generation_root / CERTIFICATE_MEMBER: certificate_bytes,
+    }
+    for identifier, logical_path, storage in ARTIFACTS:
+        if storage == TRACKED_EVIDENCE:
+            generation_files[generation_root / artifact_member(identifier)] = pending_artifacts[logical_path]
+    old_index, index_bytes = updated_selection_index(root, generation_id)
+    index_path = root / CURRENT_INDEX_PATH
+    workspace.prepare_publication(index_path, index_bytes, generation_files)
+    for _, logical_path, storage in ARTIFACTS:
+        if storage == LOCAL_MATERIALIZATION:
+            write_projection_with_budget(
+                workspace,
+                cache_artifact_path(root, source_fingerprint, logical_path),
+                pending_artifacts[logical_path],
             )
-            prior_bytes[path] = path.read_bytes() if path.is_file() else None
-            if storage == LOCAL_MATERIALIZATION:
-                write_projection_with_budget(
-                    workspace, path, pending_artifacts[logical_path]
+    for path, content in sorted(generation_files.items(), key=lambda item: str(item[0])):
+        if path.is_file():
+            if path.read_bytes() != content:
+                raise CertificateError(
+                    f"immutable generation member differs: {path.relative_to(root).as_posix()}"
                 )
-            else:
-                atomic_write(path, pending_artifacts[logical_path])
-        prior_bytes[destination] = destination.read_bytes() if destination.is_file() else None
-        atomic_write(destination, certificate_bytes)
-    except BaseException:
-        try:
-            for path, original in reversed(list(prior_bytes.items())):
-                if original is None:
-                    path.unlink(missing_ok=True)
-                else:
-                    atomic_write(path, original)
-        except BaseException:
-            workspace.set_lifecycle("RECOVERY_REQUIRED")
-            raise
-        raise
-    workspace.publish(document["certificate_stamp"])
-    print(f"issued {CERTIFICATE_PATH} {document['certificate_stamp']}")
+        else:
+            atomic_write(path, content)
+    if (index_path.read_bytes() if index_path.is_file() else None) != old_index:
+        raise CertificateError("current selection index changed during publication")
+    atomic_write(index_path, index_bytes)
+    workspace.publish(generation_id)
+    print(
+        f"issued {CURRENT_INDEX_PATH} generation={generation_id} "
+        f"certificate={document['certificate_stamp']}"
+    )
     return document
 
 
@@ -716,14 +924,96 @@ def require_exact_keys(value: dict[str, Any], expected: set[str], context: str) 
         )
 
 
-def load_certificate(root: Path) -> tuple[bytes, dict[str, Any]]:
-    """Load canonical certificate bytes and validate their digest stamp."""
-    certificate_path = root / CERTIFICATE_PATH
+def load_selected_generation(
+    root: Path,
+) -> tuple[bytes, dict[str, Any], dict[str, Any], Path]:
+    """Resolve and validate exactly the selected immutable generation."""
+    index_path = root / CURRENT_INDEX_PATH
+    try:
+        index_bytes = index_path.read_bytes()
+        index = json.loads(index_bytes.decode("utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise CertificateError(f"cannot load {CURRENT_INDEX_PATH}: {error}") from error
+    if canonical_pretty_json(index) != index_bytes:
+        raise CertificateError("current selection index bytes are noncanonical")
+    if set(index) != {"$schema", "schema_version", "selections"} or index["$schema"] != "urn:fortress:derived:v1:assessment-selection-index" or index["schema_version"] != 1 or not isinstance(index["selections"], list):
+        raise CertificateError("current selection index shape is unsupported")
+    matches = [
+        item for item in index["selections"]
+        if isinstance(item, dict) and item.get("selection_key") == selection_key()
+    ]
+    if len(matches) != 1:
+        raise CertificateError("current selection is missing or ambiguous")
+    generation_id = matches[0].get("generation_digest")
+    if not isinstance(generation_id, str) or re.fullmatch(r"sha256:[0-9a-f]{64}", generation_id) is None:
+        raise CertificateError("selected generation digest is invalid")
+    generation_root = root / GENERATIONS_PATH / generation_id.removeprefix("sha256:")
+    manifest_path = generation_root / "manifest.json"
+    try:
+        manifest_bytes = manifest_path.read_bytes()
+        manifest = json.loads(manifest_bytes.decode("utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise CertificateError(f"cannot load selected generation manifest: {error}") from error
+    if canonical_pretty_json(manifest) != manifest_bytes:
+        raise CertificateError("selected generation manifest bytes are noncanonical")
+    if manifest_digest(manifest) != generation_id:
+        raise CertificateError("selected generation directory does not match manifest digest")
+    require_exact_keys(
+        manifest,
+        {
+            "$schema", "schema_version", "generation_kind", "project", "profile",
+            "selection_key", "source", "control_layout", "artifacts",
+        },
+        "generation manifest",
+    )
+    if manifest["$schema"] != "urn:fortress:derived:v1:assessment-generation-manifest" or manifest["schema_version"] != 1 or manifest["generation_kind"] != "LOCAL_QUALITY" or manifest["project"] != "PF-FORTRESS" or manifest["profile"] != PROFILE_ID or manifest["selection_key"] != selection_key():
+        raise CertificateError("selected generation manifest identity is unsupported")
+    if manifest["control_layout"] != {"id": "fortress-control-layout-v1", "digest": control_layout_digest(root)}:
+        raise CertificateError("selected generation control layout is stale or invalid")
+    descriptors = manifest.get("artifacts")
+    if not isinstance(descriptors, list) or not descriptors:
+        raise CertificateError("selected generation contains no artifacts")
+    identifiers = [item.get("id") for item in descriptors if isinstance(item, dict)]
+    if identifiers != sorted(identifiers) or len(identifiers) != len(set(identifiers)):
+        raise CertificateError("generation artifact descriptors are not canonical")
+    certificate_path = None
+    for descriptor in descriptors:
+        require_exact_keys(
+            descriptor,
+            {
+                "id", "producer_id", "schema_ref", "producer_semantic_version",
+                "content_digest", "byte_count", "disposition", "storage",
+            },
+            "generation artifact",
+        )
+        storage = descriptor["storage"]
+        if not isinstance(storage, dict) or storage.get("kind") not in {"INCLUDED", "EXTERNAL_MATERIALIZATION"}:
+            raise CertificateError("generation artifact storage is invalid")
+        if storage["kind"] == "INCLUDED":
+            require_exact_keys(storage, {"kind", "member_name"}, "included storage")
+            member = storage["member_name"]
+            if not isinstance(member, str) or Path(member).name != member or not member.endswith(".json") or member == "manifest.json":
+                raise CertificateError("generation member name is unsafe")
+            path = generation_root / member
+            try:
+                content = path.read_bytes()
+            except OSError as error:
+                raise CertificateError(f"included generation member is missing: {member}") from error
+            if len(content) != descriptor["byte_count"] or sha256_bytes(content) != descriptor["content_digest"]:
+                raise CertificateError(f"included generation member is invalid: {member}")
+            if descriptor["id"] == CERTIFICATE_ID:
+                certificate_path = path
+        else:
+            require_exact_keys(storage, {"kind", "logical_artifact_id"}, "external storage")
+            if storage["logical_artifact_id"] != descriptor["id"]:
+                raise CertificateError("external artifact locator differs from its logical ID")
+    if certificate_path is None:
+        raise CertificateError("selected generation lacks the quality certificate")
     try:
         certificate_bytes = certificate_path.read_bytes()
         document = json.loads(certificate_bytes.decode("utf-8"))
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
-        raise CertificateError(f"cannot load {CERTIFICATE_PATH}: {error}") from error
+        raise CertificateError(f"cannot load selected quality certificate: {error}") from error
     if not isinstance(document, dict):
         raise CertificateError("quality certificate root must be an object")
     canonical_document = (
@@ -740,6 +1030,12 @@ def load_certificate(root: Path) -> tuple[bytes, dict[str, Any]]:
         raise CertificateError(
             f"certificate stamp mismatch: {stamp!r} != {expected_stamp!r}"
         )
+    return certificate_bytes, document, manifest, generation_root
+
+
+def load_certificate(root: Path) -> tuple[bytes, dict[str, Any]]:
+    """Load canonical certificate bytes from the exact current selection."""
+    certificate_bytes, document, _, _ = load_selected_generation(root)
     return certificate_bytes, document
 
 
@@ -749,14 +1045,14 @@ def artifact_records(document: dict[str, Any]) -> list[dict[str, Any]]:
     if not isinstance(artifacts, list) or not artifacts:
         raise CertificateError("certificate contains no derived artifacts")
     paths: list[str] = []
-    expected_storage = {path: storage for _, path, storage in ARTIFACTS}
+    expected_storage = {identifier: storage for identifier, _, storage in ARTIFACTS}
     for artifact in artifacts:
         if not isinstance(artifact, dict):
             raise CertificateError("artifact stamp must be an object")
-        require_exact_keys(artifact, {"path", "digest", "bytes", "storage"}, "artifact")
-        relative = artifact["path"]
+        require_exact_keys(artifact, {"id", "digest", "bytes", "storage"}, "artifact")
+        relative = artifact["id"]
         if relative not in expected_storage:
-            raise CertificateError(f"unknown artifact path: {relative!r}")
+            raise CertificateError(f"unknown artifact ID: {relative!r}")
         if artifact["storage"] != expected_storage[relative]:
             raise CertificateError(f"artifact storage mismatch: {relative}")
         if not isinstance(artifact["bytes"], int) or artifact["bytes"] <= 0:
@@ -767,7 +1063,7 @@ def artifact_records(document: dict[str, Any]) -> list[dict[str, Any]]:
         paths.append(relative)
     if paths != sorted(paths) or len(paths) != len(set(paths)):
         raise CertificateError("artifact stamps must be sorted and unique")
-    if paths != list(derived_artifact_paths()):
+    if paths != list(derived_artifact_ids()):
         raise CertificateError("certificate does not bind the complete derived artifact set")
     return artifacts
 
@@ -786,7 +1082,8 @@ def local_materialization_states(
         if recorded_fingerprint != actual_fingerprint:
             state = "STALE"
         else:
-            path = cache_artifact_path(root, recorded_fingerprint, artifact["path"])
+            logical_path = next(path for identifier, path, _ in ARTIFACTS if identifier == artifact["id"])
+            path = cache_artifact_path(root, recorded_fingerprint, logical_path)
             if not path.is_file():
                 state = "MISSING"
             else:
@@ -797,13 +1094,14 @@ def local_materialization_states(
                     and sha256_bytes(content) == artifact["digest"]
                     else "INVALID"
                 )
-        states.append({"path": artifact["path"], "status": state})
+        states.append({"id": artifact["id"], "status": state})
     return states
 
 
 def verify(root: Path) -> dict[str, Any]:
     root = root.resolve()
-    certificate_bytes, document = load_certificate(root)
+    validate_control_artifact_registry(root)
+    certificate_bytes, document, manifest, generation_root = load_selected_generation(root)
     require_exact_keys(
         document,
         {
@@ -823,7 +1121,7 @@ def verify(root: Path) -> dict[str, Any]:
         },
         "certificate",
     )
-    if document["$schema"] != SCHEMA_ID or document["schema_version"] != 2:
+    if document["$schema"] != SCHEMA_ID or document["schema_version"] != 3:
         raise CertificateError("unsupported quality certificate schema")
     if document["semantic_version"] != SEMANTIC_VERSION:
         raise CertificateError("unsupported quality certificate semantic version")
@@ -883,9 +1181,9 @@ def verify(root: Path) -> dict[str, Any]:
         },
         "source",
     )
-    if source["excluded_self"] != CERTIFICATE_PATH:
+    if source["excluded_self"] != CERTIFICATE_ID:
         raise CertificateError("certificate self-exclusion is not canonical")
-    if source["excluded_derived_artifacts"] != list(derived_artifact_paths()):
+    if source["excluded_derived_artifacts"] != list(derived_artifact_ids()):
         raise CertificateError("certificate derived-artifact exclusions are not canonical")
     actual_fingerprint, actual_count = repository_fingerprint(root)
     if source["fingerprint"] != actual_fingerprint or source["file_count"] != actual_count:
@@ -915,16 +1213,18 @@ def verify(root: Path) -> dict[str, Any]:
     if tuple(gate_ids) != REQUIRED_GATE_IDS:
         raise CertificateError("quality certificate does not bind every required gate")
 
+    if manifest["source"] != {
+        "fingerprint": source["fingerprint"],
+        "file_count": source["file_count"],
+    }:
+        raise CertificateError("generation and certificate source bindings differ")
+    descriptor_by_id = {item["id"]: item for item in manifest["artifacts"]}
     for artifact in artifact_records(document):
-        if artifact["storage"] != TRACKED_EVIDENCE:
-            continue
-        relative = artifact["path"]
-        path = root / relative
-        if not path.is_file():
-            raise CertificateError(f"certified tracked artifact is missing: {relative}")
-        content = path.read_bytes()
-        if len(content) != artifact["bytes"] or sha256_bytes(content) != artifact["digest"]:
-            raise CertificateError(f"certified tracked artifact is stale: {relative}")
+        descriptor = descriptor_by_id.get(artifact["id"])
+        if descriptor is None or descriptor["content_digest"] != artifact["digest"] or descriptor["byte_count"] != artifact["bytes"]:
+            raise CertificateError(
+                f"generation descriptor differs from certificate: {artifact['id']}"
+            )
 
     materialization = local_materialization_states(root, document, actual_fingerprint)
     counts = {
@@ -935,6 +1235,7 @@ def verify(root: Path) -> dict[str, Any]:
     print(
         "quality certificate PASS "
         f"source={actual_fingerprint} stamp={stamp} "
+        f"generation=sha256:{generation_root.name} "
         "authenticity=UNVERIFIED "
         f"local_materialization={counts}"
     )
@@ -944,6 +1245,7 @@ def verify(root: Path) -> dict[str, Any]:
 def materialize(root: Path) -> None:
     """Reconstruct exact certified bulk projections in the local subject cache."""
     root = root.resolve()
+    validate_control_artifact_registry(root)
     recovered = recover_owned_orphans(
         root, execution_storage_root(), publication_paths(root)
     )
@@ -960,7 +1262,7 @@ def _materialize(root: Path, workspace: RunWorkspace) -> None:
     document = verify(root)
     workspace.track_projection_root(derived_cache_root(root))
     source_fingerprint = document["source"]["fingerprint"]
-    expected = {artifact["path"]: artifact for artifact in artifact_records(document)}
+    expected = {artifact["id"]: artifact for artifact in artifact_records(document)}
     environment = os.environ.copy()
     environment["CARGO_RESOLVER_LOCKFILE_PATH"] = str(
         (root / "_info" / "Cargo.lock").resolve()
@@ -1003,7 +1305,7 @@ def _materialize(root: Path, workspace: RunWorkspace) -> None:
             content = first.read_bytes()
             if content != second.read_bytes():
                 raise CertificateError(f"nondeterministic derived artifact: {command_name}")
-            record = expected[logical_path]
+            record = expected[command_name]
             if len(content) != record["bytes"] or sha256_bytes(content) != record["digest"]:
                 raise CertificateError(
                     f"generated projection does not match certified digest: {logical_path}"
@@ -1028,6 +1330,7 @@ def _materialize(root: Path, workspace: RunWorkspace) -> None:
 def artifact_status(root: Path) -> bool:
     """Report local projection state without conflating absence with conformance."""
     root = root.resolve()
+    validate_control_artifact_registry(root)
     _, document = load_certificate(root)
     actual_fingerprint, _ = repository_fingerprint(root)
     states = local_materialization_states(root, document, actual_fingerprint)
@@ -1046,6 +1349,7 @@ def artifact_status(root: Path) -> bool:
 def clean_materializations(root: Path) -> None:
     """Remove idle Python-owned subject projections, retaining unknown cache data."""
     root = root.resolve()
+    validate_control_artifact_registry(root)
     recovered = recover_owned_orphans(
         root, execution_storage_root(), publication_paths(root)
     )

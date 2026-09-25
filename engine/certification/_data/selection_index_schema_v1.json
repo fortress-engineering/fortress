@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v1:assessment-selection-index",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "schema_version", "selections"],
+  "properties": {
+    "$schema": { "const": "urn:fortress:derived:v1:assessment-selection-index" },
+    "schema_version": { "const": 1 },
+    "selections": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["selection_key", "generation_digest"],
+        "properties": {
+          "selection_key": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+          "generation_digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+        }
+      }
+    }
+  }
+}

@@ -562,19 +562,14 @@ fn trusted_assertion_remains_distinct_from_static_proof() {
 /// `T-AF-CERTIFICATION-0001-R04-001`
 /// Fortress requirement: AF-CERTIFICATION-0001-R04
 #[test]
-fn generated_outputs_do_not_change_certification_source() {
+fn source_digest_binds_every_supplied_authoritative_input() {
     let mut files = BTreeMap::from([("_code/lib.rs".into(), b"fn x() {}".to_vec())]);
     let first = certification_source_digest(&files);
-    files.insert("_info/certification.json".into(), b"old".to_vec());
-    assert_eq!(first, certification_source_digest(&files));
-    files.insert("_info/evidence_graph.json".into(), b"changed".to_vec());
-    files.insert(
-        "_info/verified_behavioral_flow_graph.json".into(),
-        b"changed".to_vec(),
-    );
-    assert_eq!(first, certification_source_digest(&files));
-    files.insert("_code/lib.rs".into(), b"fn y() {}".to_vec());
+    files.insert("__fortress/.fsconfig".into(), b"{}".to_vec());
     assert_ne!(first, certification_source_digest(&files));
+    let second = certification_source_digest(&files);
+    files.insert("_code/lib.rs".into(), b"fn y() {}".to_vec());
+    assert_ne!(second, certification_source_digest(&files));
 }
 
 /// `T-AF-CERTIFICATION-0001-R04-002`

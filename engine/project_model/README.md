@@ -2,17 +2,17 @@
 
 ## Purpose
 
-The Project Model holds operational project configuration, the canonical derived structural model of every governed repository path, and the narrow stable-ID index that locates independently stored logical Module contracts and their implementation paths without redefining contract-owned intent.
+The Project Model holds operational project configuration, the fixed `__fortress` control-layout and artifact registry, the canonical derived structural model of every governed repository path, and the narrow stable-ID index that locates independently stored logical Module contracts and their implementation paths without redefining contract-owned intent.
 
 ## Responsibility
 
-Load and validate root operational configuration, compile the recursive Project Filing System through the authoritative canonical Module index, retain complete leaf inventory outside the CCG, and expose deterministic Module/Element/Data/Info structure without imposing canonical spelling on logical/freeform bindings.
+Load and validate root operational configuration, resolve the closed control namespace, compile the recursive Project Filing System through the authoritative canonical Module index, retain complete leaf inventory outside the CCG, and expose deterministic Module/Element/Data/Info structure without imposing canonical spelling on logical/freeform bindings.
 
 ## Scope
 
 ### Includes
 
-Observation exclusions, operational/change schemas, direct recursive Module ancestry, lowercase snake_case Module names, reserved Element mappings, Data/Info role-collection-partition classification, complete inventory digests, explicitly scoped or opaque ecosystem structures, and exact authority and evaluation-context binding records.
+Observation exclusions, operational/change schemas, fixed control roles, cross-adapter artifact metadata, direct recursive Module ancestry, lowercase snake_case Module names, reserved Element mappings, Data/Info role-collection-partition classification, complete inventory digests, explicitly scoped or opaque ecosystem structures, and exact authority and evaluation-context binding records.
 
 Data is persisted input supplied to computation and uses the frozen roles `config`, `schema`, `policy`, `reference`, `fixture`, `seed`, `template`, `migration`, `resource`, and `dataset`. Info is persisted derived output and uses `report`, `snapshot`, `graph`, `index`, `manifest`, `evidence`, `metric`, and `log`. Either Element is flat or follows `role[_vN]/collection[_vN]/part_000001/files`, with every level optional after the Element and the shallowest truthful form required.
 

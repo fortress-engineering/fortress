@@ -1,0 +1,181 @@
+{
+  "$schema": "urn:fortress:schema:v1:control-layout",
+  "schema_version": 1,
+  "id": "fortress-control-layout-v1",
+  "root": "__fortress",
+  "config": "__fortress/.fsconfig",
+  "roles": [
+    {
+      "path": "__fortress/.fsconfig",
+      "role": "PROJECT_CONFIGURATION",
+      "owner": "project_model",
+      "source_binding": "REQUIRED"
+    },
+    {
+      "path": "__fortress/governance/finding_governance.json",
+      "role": "FINDING_GOVERNANCE",
+      "owner": "finding_model",
+      "source_binding": "REQUIRED"
+    },
+    {
+      "path": "__fortress/governance/information_flow_policy.json",
+      "role": "GLOBAL_INFORMATION_FLOW_POLICY",
+      "owner": "information_flow",
+      "source_binding": "REQUIRED"
+    },
+    {
+      "path": "__fortress/evidence/current.json",
+      "role": "ASSESSMENT_SELECTION_INDEX",
+      "owner": "snapshot_governance",
+      "source_binding": "NONRECURSIVE"
+    }
+  ],
+  "manifest_member": {
+    "name": "manifest.json",
+    "owner": "certification"
+  },
+  "artifact_registry": [
+    {
+      "id": "bfg",
+      "logical_path": "_info/behavioral_flow_graph.json",
+      "owner": "behavioral_semantics",
+      "schema_ref": "urn:fortress:derived:v1:behavioral-flow-graph",
+      "producer_semantic_version": "1.0.0",
+      "storage": "INCLUDED",
+      "member_name": "behavioral_flow_graph.json",
+      "production_group": "SEMANTIC"
+    },
+    {
+      "id": "ccg",
+      "logical_path": "_info/contract_coherency_graph.json",
+      "owner": "contract_coherency",
+      "schema_ref": "urn:fortress:derived:v1:contract-coherency-graph",
+      "producer_semantic_version": "1.0.0",
+      "storage": "EXTERNAL_MATERIALIZATION",
+      "production_group": "SEMANTIC"
+    },
+    {
+      "id": "certification",
+      "logical_path": "_info/certification.json",
+      "owner": "certification",
+      "schema_ref": "urn:fortress:derived:v1:certification-result",
+      "producer_semantic_version": "2.0.0",
+      "storage": "INCLUDED",
+      "member_name": "certification.json",
+      "production_group": "CERTIFICATION"
+    },
+    {
+      "id": "environmental",
+      "logical_path": "_info/environmental_analysis.json",
+      "owner": "environmental_semantics",
+      "schema_ref": "urn:fortress:derived:v1:environmental-analysis",
+      "producer_semantic_version": "1.0.0",
+      "storage": "INCLUDED",
+      "member_name": "environmental_analysis.json",
+      "production_group": "SEMANTIC"
+    },
+    {
+      "id": "evidence-graph",
+      "logical_path": "_info/evidence_graph.json",
+      "owner": "certification",
+      "schema_ref": "urn:fortress:derived:v2:evidence-graph",
+      "producer_semantic_version": "2.0.0",
+      "storage": "INCLUDED",
+      "member_name": "evidence_graph.json",
+      "production_group": "CERTIFICATION"
+    },
+    {
+      "id": "information-flow",
+      "logical_path": "_info/information_flow_analysis.json",
+      "owner": "information_flow",
+      "schema_ref": "urn:fortress:derived:v1:information-flow-analysis",
+      "producer_semantic_version": "1.0.0",
+      "storage": "EXTERNAL_MATERIALIZATION",
+      "production_group": "SEMANTIC"
+    },
+    {
+      "id": "psm",
+      "logical_path": "_info/program_semantic_model.json",
+      "owner": "program_semantics",
+      "schema_ref": "urn:fortress:derived:v6:program-semantic-model",
+      "producer_semantic_version": "6.0.0",
+      "storage": "EXTERNAL_MATERIALIZATION",
+      "production_group": "SEMANTIC"
+    },
+    {
+      "id": "quality-certificate",
+      "logical_path": "_info/quality_certificate.json",
+      "owner": "snapshot_governance",
+      "schema_ref": "urn:fortress:derived:v3:local-quality-certificate",
+      "producer_semantic_version": "quality-certificate-v3.0",
+      "storage": "INCLUDED",
+      "member_name": "quality_certificate.json",
+      "production_group": "CERTIFICATE"
+    },
+    {
+      "id": "realized-bfg",
+      "logical_path": "_info/realized_behavioral_flow_graph.json",
+      "owner": "behavioral_realization",
+      "schema_ref": "urn:fortress:derived:v1:realized-behavioral-flow-graph",
+      "producer_semantic_version": "1.0.0",
+      "storage": "EXTERNAL_MATERIALIZATION",
+      "production_group": "SEMANTIC"
+    },
+    {
+      "id": "references",
+      "logical_path": "_info/component_resolution_index.json",
+      "owner": "reference_resolution",
+      "schema_ref": "urn:fortress:derived:v1:component-resolution-index",
+      "producer_semantic_version": "1.0.0",
+      "storage": "INCLUDED",
+      "member_name": "component_resolution_index.json",
+      "production_group": "SEMANTIC"
+    },
+    {
+      "id": "semantic",
+      "logical_path": "_info/semantic_analysis.json",
+      "owner": "semantic_analysis",
+      "schema_ref": "urn:fortress:derived:v2:semantic-analysis",
+      "producer_semantic_version": "2.0.0",
+      "storage": "EXTERNAL_MATERIALIZATION",
+      "production_group": "SEMANTIC"
+    },
+    {
+      "id": "semantic-conformance",
+      "logical_path": "_info/semantic_conformance.json",
+      "owner": "architecture_evaluation",
+      "schema_ref": "urn:fortress:derived:v7:semantic-conformance",
+      "producer_semantic_version": "7.0.0",
+      "storage": "EXTERNAL_MATERIALIZATION",
+      "production_group": "SEMANTIC"
+    },
+    {
+      "id": "source-artifacts",
+      "logical_path": "_info/source_artifact_model.json",
+      "owner": "source_architecture",
+      "schema_ref": "urn:fortress:derived:v1:source-artifact-model",
+      "producer_semantic_version": "1.0.0",
+      "storage": "EXTERNAL_MATERIALIZATION",
+      "production_group": "SEMANTIC"
+    },
+    {
+      "id": "state-effect",
+      "logical_path": "_info/state_effect_analysis.json",
+      "owner": "state_effect_analysis",
+      "schema_ref": "urn:fortress:derived:v4:state-effect-analysis",
+      "producer_semantic_version": "4.2.0",
+      "storage": "EXTERNAL_MATERIALIZATION",
+      "production_group": "SEMANTIC"
+    },
+    {
+      "id": "verified-bfg",
+      "logical_path": "_info/verified_behavioral_flow_graph.json",
+      "owner": "certification",
+      "schema_ref": "urn:fortress:derived:v1:verified-behavioral-flow-graph",
+      "producer_semantic_version": "2.0.0",
+      "storage": "INCLUDED",
+      "member_name": "verified_behavioral_flow_graph.json",
+      "production_group": "CERTIFICATION"
+    }
+  ]
+}

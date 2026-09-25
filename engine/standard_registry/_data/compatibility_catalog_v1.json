@@ -315,6 +315,28 @@
       "schema_path": "engine/snapshot_governance/_data/quality_certificate_schema_v2.json",
       "version": 2,
       "writer": {
+        "status": "RETIRED",
+        "source": null
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "REQUIRED_BEFORE_USE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-source-pure-certificate-stamp-v2",
+        "source": "engine/snapshot_governance/_code/quality_certificate.py"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:derived:v3:local-quality-certificate",
+      "schema_path": "engine/snapshot_governance/_data/quality_certificate_schema_v3.json",
+      "version": 3,
+      "writer": {
         "status": "ACTIVE",
         "source": "engine/snapshot_governance/_code/quality_certificate.py"
       },
@@ -324,11 +346,11 @@
       },
       "migration": "NONE",
       "identity_algorithm": {
-        "id": "no-document-level-identity-algorithm",
-        "source": null
+        "id": "selected-generation-bound-certificate-v3",
+        "source": "engine/snapshot_governance/_code/quality_certificate.py"
       },
       "content_hash_algorithm": {
-        "id": "sha256-source-pure-certificate-stamp-v2",
+        "id": "sha256-source-pure-certificate-stamp-v3",
         "source": "engine/snapshot_governance/_code/quality_certificate.py"
       }
     },
@@ -1453,6 +1475,36 @@
         "id": "no-model-level-content-hash-algorithm",
         "source": null
       }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v1:control-layout",
+      "schema_path": "engine/project_model/_data/control_layout_schema_v1.json",
+      "version": 1,
+      "writer": { "status": "AUTHORED", "source": null },
+      "reader": { "status": "SUPPORTED", "source": "engine/project_model/_code/control_layout.rs" },
+      "migration": "NONE",
+      "identity_algorithm": { "id": "literal-installed-layout-identity", "source": "engine/project_model/_code/control_layout.rs" },
+      "content_hash_algorithm": { "id": "sha256-exact-installed-layout-bytes", "source": "engine/project_model/_code/control_layout.rs" }
+    },
+    {
+      "schema_id": "urn:fortress:derived:v1:assessment-generation-manifest",
+      "schema_path": "engine/certification/_data/generation_manifest_schema_v1.json",
+      "version": 1,
+      "writer": { "status": "ACTIVE", "source": "engine/snapshot_governance/_code/quality_certificate.py" },
+      "reader": { "status": "SUPPORTED", "source": "engine/certification/_code/control_manifest.rs" },
+      "migration": "NONE",
+      "identity_algorithm": { "id": "sha256-rfc8785-manifest-v1", "source": "engine/certification/_code/control_manifest.rs" },
+      "content_hash_algorithm": { "id": "artifact-owner-advertised-digest", "source": "engine/certification/_code/control_manifest.rs" }
+    },
+    {
+      "schema_id": "urn:fortress:derived:v1:assessment-selection-index",
+      "schema_path": "engine/certification/_data/selection_index_schema_v1.json",
+      "version": 1,
+      "writer": { "status": "ACTIVE", "source": "engine/snapshot_governance/_code/quality_certificate.py" },
+      "reader": { "status": "SUPPORTED", "source": "engine/certification/_code/control_manifest.rs" },
+      "migration": "NONE",
+      "identity_algorithm": { "id": "exact-selection-key-to-generation-digest", "source": "engine/certification/_code/control_manifest.rs" },
+      "content_hash_algorithm": { "id": "sha256-generation-manifest-jcs", "source": "engine/certification/_code/control_manifest.rs" }
     }
   ]
 }

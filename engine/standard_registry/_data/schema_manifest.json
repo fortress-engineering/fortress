@@ -12,12 +12,14 @@
     "engine/standard_registry/_data/rule_schema_v1.json",
     "engine/project_model/_data/project_schema_v2.json",
     "engine/project_model/_data/project_schema_v3.json",
+    "engine/project_model/_data/control_layout_schema_v1.json",
     "engine/project_model/_data/filing_profile_schema_v2.json",
     "engine/repository_observation/_data/observation_schema_v1.json",
     "engine/repository_observation/_data/source_manifest_schema_v1.json",
     "engine/snapshot_governance/_data/repository_snapshot_schema_v2.json",
     "engine/snapshot_governance/_data/identity_migration_schema_v1.json",
     "engine/snapshot_governance/_data/quality_certificate_schema_v2.json",
+    "engine/snapshot_governance/_data/quality_certificate_schema_v3.json",
     "engine/finding_model/_data/finding_governance_schema_v1.json",
     "engine/finding_model/_data/proof_graph_schema_v1.json",
     "engine/snapshot_governance/_data/snapshot_finding_schema_v2.json",
@@ -67,6 +69,8 @@
     "engine/certification/_data/certification_result_schema_v1.json",
     "engine/certification/_data/verification_binding_schema_v1.json",
     "engine/certification/_data/verified_bfg_schema_v1.json",
+    "engine/certification/_data/generation_manifest_schema_v1.json",
+    "engine/certification/_data/selection_index_schema_v1.json",
     "cli/_data/command_schema_v1.json",
     "engine/project_model/_data/change_schema_v1.json"
   ]

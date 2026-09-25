@@ -27,7 +27,7 @@ fn policy_source(facets: serde_json::Value) -> InformationFlowPolicySource {
     let raw = document.to_string();
     let source = canonicalize_information_flow_policy_json("fixture", &raw)
         .expect("policy fixture canonicalizes");
-    InformationFlowPolicySource::new("_data/information_flow_policy.json", source)
+    InformationFlowPolicySource::new("__fortress/governance/information_flow_policy.json", source)
 }
 
 fn policy() -> InformationFlowPolicy {
@@ -205,7 +205,7 @@ fn rejects_invalid_direction_and_nonroot_policy() {
     let raw = r#"{"$schema":"urn:fortress:schema:v1:information-flow-policy","schema_version":1,"facets":[{"id":"FLOW-X","direction":"sideways","levels":["LOW","HIGH"]}]}"#;
     assert!(matches!(
         load_information_flow_policy(vec![InformationFlowPolicySource::new(
-            "_data/information_flow_policy.json",
+            "__fortress/governance/information_flow_policy.json",
             raw,
         )]),
         Err(InformationFlowPolicyError::InvalidJson { .. })

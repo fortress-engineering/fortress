@@ -33,3 +33,7 @@ Loads the root project configuration and validates canonical observation exclusi
 ### [`evaluation_key.rs`](../_code/evaluation_key.rs)
 
 Binds exact Standard, project, ownership, selected profile and governance identities, then combines that authority digest with source-manifest and program-context digests for one evaluation. The key contains no machine path or clock value.
+
+### [`control_layout.rs`](../_code/control_layout.rs)
+
+Loads the fixed root-only control registry, classifies exact active authority and immutable generation members, exposes the shared artifact dataset, and rejects unregistered control paths.

@@ -10,7 +10,7 @@ use crate::finding::{CanonicalFinding, FindingEnforcementEligibility, FindingIde
 use crate::identity::{RuleId, StableId};
 
 /// Canonical repository-relative location of finding governance authority.
-pub const FINDING_GOVERNANCE_PATH: &str = "_data/finding_governance.json";
+pub const FINDING_GOVERNANCE_PATH: &str = "__fortress/governance/finding_governance.json";
 /// Finding governance document schema identity.
 pub const FINDING_GOVERNANCE_SCHEMA: &str = "urn:fortress:schema:v1:finding-governance";
 

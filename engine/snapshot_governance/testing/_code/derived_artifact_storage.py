@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import os
 from pathlib import Path
 import shutil
@@ -14,6 +15,7 @@ from unittest.mock import Mock, patch
 
 
 MODULE_PATH = Path(__file__).resolve().parents[2] / "_code" / "quality_certificate.py"
+ROOT = MODULE_PATH.parents[3]
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(MODULE_PATH.parent))
 SPEC = importlib.util.spec_from_file_location("fortress_quality_certificate", MODULE_PATH)
@@ -22,22 +24,103 @@ if SPEC is None or SPEC.loader is None:
 quality = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(quality)
 
+MIGRATION_PATH = MODULE_PATH.parent / "control_migration.py"
+MIGRATION_SPEC = importlib.util.spec_from_file_location(
+    "fortress_control_migration", MIGRATION_PATH
+)
+if MIGRATION_SPEC is None or MIGRATION_SPEC.loader is None:
+    raise RuntimeError("control migration module cannot be loaded")
+migration = importlib.util.module_from_spec(MIGRATION_SPEC)
+MIGRATION_SPEC.loader.exec_module(migration)
+
 
 class DerivedArtifactStorageTests(unittest.TestCase):
     """Exercise storage classification without running semantic generators."""
+
+    def test_shared_control_registry_matches_python_contract(self) -> None:
+        quality.validate_control_artifact_registry(ROOT)
+
+    def test_fingerprint_binds_ignored_governance_and_excludes_evidence(self) -> None:
+        base = self.workspace("fingerprint-partition")
+        root = base / "repository"
+        governance = root / "__fortress" / "governance"
+        governance.mkdir(parents=True)
+        (root / "__fortress" / ".fsconfig").write_text(
+            json.dumps(
+                {
+                    "$schema": "urn:fortress:schema:v3:project-configuration",
+                    "schema_version": 3,
+                    "observation_exclusions": [".git", "target"],
+                    "logical_modules": [],
+                }
+            ),
+            encoding="utf-8",
+        )
+        finding = governance / "finding_governance.json"
+        finding.write_text("{}\n", encoding="utf-8")
+        (governance / "information_flow_policy.json").write_text("{}\n", encoding="utf-8")
+        (root / ".gitignore").write_text("__fortress/\n", encoding="utf-8")
+        first, count = quality.repository_fingerprint(root)
+        evidence = root / quality.GENERATIONS_PATH / ("a" * 64) / "manifest.json"
+        evidence.parent.mkdir(parents=True)
+        evidence.write_text("generated\n", encoding="utf-8")
+        second, second_count = quality.repository_fingerprint(root)
+        self.assertEqual((first, count), (second, second_count))
+        finding.write_text("{\"changed\":true}\n", encoding="utf-8")
+        third, third_count = quality.repository_fingerprint(root)
+        self.assertNotEqual(first, third)
+        self.assertEqual(count, third_count)
+
+    def test_dual_configuration_authority_is_rejected(self) -> None:
+        base = self.workspace("dual-config")
+        root = base / "repository"
+        (root / "__fortress").mkdir(parents=True)
+        (root / "__fortress" / ".fsconfig").write_text("{}\n", encoding="utf-8")
+        (root / "_data").mkdir()
+        (root / quality.LEGACY_CONFIG_PATH).write_text("{}\n", encoding="utf-8")
+        with self.assertRaisesRegex(quality.CertificateError, "dual"):
+            quality.repository_files(root)
+
+    def test_selection_never_falls_back_to_an_unselected_generation(self) -> None:
+        base = self.workspace("no-selection-fallback")
+        root = base / "repository"
+        current = root / quality.CURRENT_INDEX_PATH
+        current.parent.mkdir(parents=True)
+        selected = "sha256:" + "a" * 64
+        current.write_bytes(
+            quality.canonical_pretty_json(
+                {
+                    "$schema": "urn:fortress:derived:v1:assessment-selection-index",
+                    "schema_version": 1,
+                    "selections": [
+                        {
+                            "selection_key": quality.selection_key(),
+                            "generation_digest": selected,
+                        }
+                    ],
+                }
+            )
+        )
+        unselected = root / quality.GENERATIONS_PATH / ("b" * 64)
+        unselected.mkdir(parents=True)
+        (unselected / "manifest.json").write_text("{}\n", encoding="utf-8")
+        with self.assertRaisesRegex(
+            quality.CertificateError, "cannot load selected generation manifest"
+        ):
+            quality.load_selected_generation(root)
 
     def certificate(self, fingerprint: str) -> dict[str, object]:
         content = b"canonical projection\n"
         artifacts = [
             {
-                "path": path,
+                "id": identifier,
                 "digest": quality.sha256_bytes(content),
                 "bytes": len(content),
                 "storage": storage,
             }
-            for _, path, storage in quality.ARTIFACTS
+            for identifier, _, storage in quality.ARTIFACTS
         ]
-        artifacts.sort(key=lambda artifact: artifact["path"])
+        artifacts.sort(key=lambda artifact: artifact["id"])
         return {
             "source": {"fingerprint": fingerprint},
             "artifacts": artifacts,
@@ -87,7 +170,8 @@ class DerivedArtifactStorageTests(unittest.TestCase):
         paths = quality.derived_artifact_paths()
         self.assertEqual(paths, tuple(sorted(paths)))
         self.assertEqual(len(paths), len(set(paths)))
-        self.assertEqual(set(paths), quality.excluded_source_paths() - {quality.CERTIFICATE_PATH})
+        self.assertEqual(quality.excluded_source_paths(), {quality.EVIDENCE_ROOT})
+        self.assertEqual(len(quality.derived_artifact_ids()), len(paths))
         self.assertTrue(
             all(
                 storage in {quality.TRACKED_EVIDENCE, quality.LOCAL_MATERIALIZATION}
@@ -110,15 +194,21 @@ class DerivedArtifactStorageTests(unittest.TestCase):
 
             for artifact in document["artifacts"]:
                 if artifact["storage"] == quality.LOCAL_MATERIALIZATION:
+                    logical_path = next(
+                        path
+                        for identifier, path, _ in quality.ARTIFACTS
+                        if identifier == artifact["id"]
+                    )
                     quality.atomic_write(
-                        quality.cache_artifact_path(root, fingerprint, artifact["path"]),
+                        quality.cache_artifact_path(root, fingerprint, logical_path),
                         content,
                     )
             current = quality.local_materialization_states(root, document, fingerprint)
             self.assertEqual({item["status"] for item in current}, {"CURRENT"})
 
-            first = current[0]["path"]
-            quality.cache_artifact_path(root, fingerprint, first).write_bytes(b"corrupt")
+            first = current[0]["id"]
+            first_path = next(path for identifier, path, _ in quality.ARTIFACTS if identifier == first)
+            quality.cache_artifact_path(root, fingerprint, first_path).write_bytes(b"corrupt")
             invalid = quality.local_materialization_states(root, document, fingerprint)
             self.assertIn("INVALID", {item["status"] for item in invalid})
 
@@ -133,6 +223,88 @@ class DerivedArtifactStorageTests(unittest.TestCase):
         with patch.dict(os.environ, {"FORTRESS_DERIVED_CACHE_DIR": str(root / "cache")}):
             with self.assertRaises(quality.CertificateError):
                 quality.cache_subject_directory(root, fingerprint)
+
+    def test_selection_index_preserves_unrelated_contexts(self) -> None:
+        base = self.workspace("selection-index")
+        root = base / "repository"
+        current = root / quality.CURRENT_INDEX_PATH
+        current.parent.mkdir(parents=True)
+        other_key = "sha256:" + "1" * 64
+        current.write_bytes(
+            quality.canonical_pretty_json(
+                {
+                    "$schema": "urn:fortress:derived:v1:assessment-selection-index",
+                    "schema_version": 1,
+                    "selections": [
+                        {
+                            "selection_key": other_key,
+                            "generation_digest": "sha256:" + "2" * 64,
+                        }
+                    ],
+                }
+            )
+        )
+        old, updated = quality.updated_selection_index(root, "sha256:" + "3" * 64)
+        self.assertEqual(old, current.read_bytes())
+        document = json.loads(updated)
+        self.assertEqual(len(document["selections"]), 2)
+        self.assertEqual(
+            [item["selection_key"] for item in document["selections"]],
+            sorted([other_key, quality.selection_key()]),
+        )
+
+    def test_legacy_outputs_migrate_byte_exact_without_becoming_current(self) -> None:
+        base = self.workspace("legacy-migration")
+        root = base / "repository"
+        (root / ".git").mkdir(parents=True)
+        layout_source = MODULE_PATH.parents[2] / "project_model" / "_data" / "control_layout_v1.json"
+        layout_target = root / "engine/project_model/_data/control_layout_v1.json"
+        layout_target.parent.mkdir(parents=True)
+        shutil.copyfile(layout_source, layout_target)
+        for _, target in migration.INPUT_MOVES:
+            path = root / target
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("{}\n", encoding="utf-8")
+        payloads: dict[str, bytes] = {}
+        for identifier, old_name, *_ in migration.OUTPUTS:
+            path = root / old_name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            content = (
+                json.dumps(
+                    {
+                        "project": "PF-FORTRESS",
+                        "profile": "fortress-complete-local-v1",
+                        "source": {
+                            "fingerprint": "sha256:" + "a" * 64,
+                            "file_count": 1,
+                        },
+                    }
+                ).encode("utf-8")
+                if identifier == "quality-certificate"
+                else f"{identifier}\n".encode("utf-8")
+            )
+            path.write_bytes(content)
+            payloads[identifier] = content
+        report = migration.migrate(root)
+        self.assertIsNotNone(report["historical_generation"])
+        self.assertFalse((root / quality.CURRENT_INDEX_PATH).exists())
+        generation = root / quality.GENERATIONS_PATH / report["historical_generation"].removeprefix("sha256:")
+        manifest = json.loads((generation / "manifest.json").read_text(encoding="utf-8"))
+        self.assertEqual(manifest["generation_kind"], "HISTORICAL_MIGRATION")
+        for identifier, old_name, member, *_ in migration.OUTPUTS:
+            self.assertFalse((root / old_name).exists())
+            self.assertEqual((generation / member).read_bytes(), payloads[identifier])
+
+    def test_migration_refuses_dual_configuration_authority(self) -> None:
+        base = self.workspace("dual-authority")
+        root = base / "repository"
+        (root / ".git").mkdir(parents=True)
+        for name in (quality.CONFIG_PATH, quality.LEGACY_CONFIG_PATH):
+            path = root / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("{}\n", encoding="utf-8")
+        with self.assertRaisesRegex(migration.MigrationError, "dual authority"):
+            migration.migrate_inputs(root)
 
     def test_issuance_directory_is_child_process_accessible(self) -> None:
         base = self.workspace("issuance-directory")
@@ -160,8 +332,8 @@ class DerivedArtifactStorageTests(unittest.TestCase):
         root = base / "repository"
         (root / ".git").mkdir(parents=True)
         (root / "_data").mkdir()
-        prior_certificate = root / quality.CERTIFICATE_PATH
-        prior_certificate.parent.mkdir()
+        prior_certificate = root / quality.CURRENT_INDEX_PATH
+        prior_certificate.parent.mkdir(parents=True)
         prior_certificate.write_bytes(b"prior valid certificate\n")
         user_lock = root / "_data" / "Cargo.lock"
         user_lock.write_bytes(b"user lock bytes")
@@ -172,6 +344,7 @@ class DerivedArtifactStorageTests(unittest.TestCase):
         }
         with (
             patch.dict(os.environ, environment),
+            patch.object(quality, "validate_control_artifact_registry"),
             patch.object(quality, "repository_fingerprint", return_value=("sha256:source", 2)),
             patch.object(quality, "run_command", side_effect=quality.CertificateError("injected gate failure")),
         ):
@@ -204,7 +377,8 @@ class DerivedArtifactStorageTests(unittest.TestCase):
                 (root / "_data").mkdir()
                 (root / "_info").mkdir()
                 (root / "_info" / "Cargo.lock").write_bytes(b"canonical lock")
-                certificate = root / quality.CERTIFICATE_PATH
+                certificate = root / quality.CURRENT_INDEX_PATH
+                certificate.parent.mkdir(parents=True)
                 certificate.write_bytes(b"prior certificate")
                 user_lock = root / "_data" / "Cargo.lock"
                 user_lock.write_bytes(b"user lock")
@@ -224,6 +398,7 @@ class DerivedArtifactStorageTests(unittest.TestCase):
                 }
                 with (
                     patch.dict(os.environ, environment),
+                    patch.object(quality, "validate_control_artifact_registry"),
                     patch.object(
                         quality,
                         "repository_fingerprint",
@@ -247,7 +422,7 @@ class DerivedArtifactStorageTests(unittest.TestCase):
             "source": {"fingerprint": fingerprint},
             "artifacts": [
                 {
-                    "path": logical_path,
+                    "id": "ccg",
                     "digest": quality.sha256_bytes(content),
                     "bytes": len(content),
                     "storage": quality.LOCAL_MATERIALIZATION,
@@ -275,6 +450,7 @@ class DerivedArtifactStorageTests(unittest.TestCase):
         }
         with (
             patch.dict(os.environ, environment),
+            patch.object(quality, "validate_control_artifact_registry"),
             patch.object(quality, "ARTIFACTS", artifact_registry),
             patch.object(quality, "SEMANTIC_ARTIFACTS", artifact_registry),
             patch.object(quality, "verify", return_value=document),
@@ -308,7 +484,10 @@ class DerivedArtifactStorageTests(unittest.TestCase):
             "FORTRESS_EXECUTION_STORAGE_DIR": str(base / "storage"),
             "FORTRESS_DISK_RESERVE_BYTES": "0",
         }
-        with patch.dict(os.environ, environment):
+        with (
+            patch.dict(os.environ, environment),
+            patch.object(quality, "validate_control_artifact_registry"),
+        ):
             quality.clean_materializations(root)
         self.assertFalse(subject.exists())
         self.assertEqual((incremental / "artifact.json").read_bytes(), b"IDE bytes")

@@ -45,28 +45,6 @@ pub const MANDATORY_SEMANTIC_ARTIFACTS: [&str; 11] = [
     "state_effect",
 ];
 
-/// Generated semantic projections excluded from certification source identity.
-///
-/// This is the one canonical exclusion registry. Authored data, source,
-/// contracts, documentation, and lockfiles are intentionally absent.
-pub const GENERATED_CERTIFICATION_PROJECTIONS: &[&str] = &[
-    "_info/behavioral_flow_graph.json",
-    "_info/certification.json",
-    "_info/component_resolution_index.json",
-    "_info/contract_coherency_graph.json",
-    "_info/environmental_analysis.json",
-    "_info/evidence_graph.json",
-    "_info/information_flow_analysis.json",
-    "_info/program_semantic_model.json",
-    "_info/quality_certificate.json",
-    "_info/realized_behavioral_flow_graph.json",
-    "_info/semantic_analysis.json",
-    "_info/semantic_conformance.json",
-    "_info/source_artifact_model.json",
-    "_info/state_effect_analysis.json",
-    "_info/verified_behavioral_flow_graph.json",
-];
-
 /// Closed evidence-authority vocabulary.
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
@@ -1826,19 +1804,13 @@ fn verified_element(
 
 /// Computes the canonical certification-source digest from observed bytes.
 ///
-/// Paths must be canonical repository-relative spellings. Generated projections
-/// registered by [`GENERATED_CERTIFICATION_PROJECTIONS`] do not contribute.
+/// Paths must be canonical repository-relative spellings. The caller supplies
+/// the already-partitioned authoritative source set; Certification does not
+/// rediscover filesystem storage roles.
 #[must_use]
 pub fn certification_source_digest(files: &BTreeMap<String, Vec<u8>>) -> String {
-    let excluded: BTreeSet<&str> = GENERATED_CERTIFICATION_PROJECTIONS
-        .iter()
-        .copied()
-        .collect();
     let mut hasher = Sha256::new();
     for (path, bytes) in files {
-        if excluded.contains(path.as_str()) {
-            continue;
-        }
         hasher.update(u64::try_from(path.len()).unwrap_or(u64::MAX).to_be_bytes());
         hasher.update(path.as_bytes());
         hasher.update(u64::try_from(bytes.len()).unwrap_or(u64::MAX).to_be_bytes());

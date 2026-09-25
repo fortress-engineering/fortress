@@ -42,6 +42,10 @@ use crate::contract_coherency::{
     CcgCompilation, CcgObservedTestFact, ContractCoherencyGraph, ContractStandardIndex,
     LogicalModuleContractSource, compile_contract_coherency_graph_with_logical_modules,
 };
+use crate::control_layout::{
+    ControlLayout, ControlRole, EVIDENCE_ROOT, LEGACY_PROJECT_CONFIGURATION_PATH,
+    PROJECT_CONFIGURATION_PATH,
+};
 use crate::documentation::{
     DocumentationEvaluationError, code_file_responsibilities, evaluate_repository_documentation,
 };
@@ -2801,7 +2805,7 @@ fn information_flow_policy_sources(
 ) -> Result<Vec<InformationFlowPolicySource>, AuditError> {
     files
         .iter()
-        .filter(|(path, _)| path.as_str() == "_data/information_flow_policy.json")
+        .filter(|(path, _)| path.as_str() == "__fortress/governance/information_flow_policy.json")
         .map(|(path, bytes)| {
             let source =
                 std::str::from_utf8(bytes).map_err(|_| AuditError::NonUtf8(path.clone().into()))?;
@@ -3986,13 +3990,32 @@ fn prepare_analysis(root: &Path) -> Result<PreparedAnalysis, AuditError> {
 }
 
 fn load_project_authority(root: &Path) -> Result<LoadedProjectAuthority, AuditError> {
-    let project_path = root.join("_data/project.json");
+    validate_control_namespace(root)?;
+    let project_path = root.join(PROJECT_CONFIGURATION_PATH);
+    let legacy_path = root.join(LEGACY_PROJECT_CONFIGURATION_PATH);
+    let current_exists = project_path.is_file();
+    let legacy_exists = legacy_path.is_file();
     let fallback_policy =
-        || ObservationPolicy::new([".git"]).map_err(AuditError::ObservationPolicy);
+        || ObservationPolicy::new([".git", EVIDENCE_ROOT]).map_err(AuditError::ObservationPolicy);
+    if legacy_exists {
+        return Ok(LoadedProjectAuthority {
+            state: ProjectGovernanceState::Invalid,
+            detail: Some(if current_exists {
+                "dual project configuration authority is invalid".into()
+            } else {
+                format!(
+                    "{LEGACY_PROJECT_CONFIGURATION_PATH} requires explicit migration to {PROJECT_CONFIGURATION_PATH}"
+                )
+            }),
+            document: None,
+            configuration: None,
+            observation_policy: fallback_policy()?,
+        });
+    }
     match fs::read(&project_path) {
         Ok(bytes) => {
             let document = LoadedDocument {
-                path: "_data/project.json".into(),
+                path: PROJECT_CONFIGURATION_PATH.into(),
                 bytes,
             };
             match document
@@ -4005,10 +4028,7 @@ fn load_project_authority(root: &Path) -> Result<LoadedProjectAuthority, AuditEr
                     state: ProjectGovernanceState::Declared,
                     detail: None,
                     document: Some(document),
-                    observation_policy: ObservationPolicy::new(
-                        configuration.observation_exclusions().iter().cloned(),
-                    )
-                    .map_err(AuditError::ObservationPolicy)?,
+                    observation_policy: control_observation_policy(&configuration)?,
                     configuration: Some(configuration),
                 }),
                 Err(detail) => Ok(LoadedProjectAuthority {
@@ -4023,7 +4043,7 @@ fn load_project_authority(root: &Path) -> Result<LoadedProjectAuthority, AuditEr
         Err(source) if source.kind() == std::io::ErrorKind::NotFound => {
             Ok(LoadedProjectAuthority {
                 state: ProjectGovernanceState::Absent,
-                detail: Some("_data/project.json is absent".into()),
+                detail: Some(format!("{PROJECT_CONFIGURATION_PATH} is absent")),
                 document: None,
                 configuration: None,
                 observation_policy: fallback_policy()?,
@@ -4034,6 +4054,115 @@ fn load_project_authority(root: &Path) -> Result<LoadedProjectAuthority, AuditEr
             source,
         }),
     }
+}
+
+fn control_observation_policy(
+    configuration: &ProjectConfiguration,
+) -> Result<ObservationPolicy, AuditError> {
+    ObservationPolicy::new(
+        configuration
+            .observation_exclusions()
+            .iter()
+            .cloned()
+            .chain([EVIDENCE_ROOT.to_owned()]),
+    )
+    .map_err(AuditError::ObservationPolicy)
+}
+
+fn validate_control_namespace(root: &Path) -> Result<(), AuditError> {
+    for entry in fs::read_dir(root).map_err(|source| AuditError::Io {
+        path: root.to_path_buf(),
+        source,
+    })? {
+        let entry = entry.map_err(|source| AuditError::Io {
+            path: root.to_path_buf(),
+            source,
+        })?;
+        let name = entry.file_name();
+        let name = name.to_string_lossy();
+        if name.eq_ignore_ascii_case("__fortress") && name != "__fortress" {
+            return Err(AuditError::ProjectAuthority(
+                format!("control root `{name}` must use exact spelling `__fortress`").into(),
+            ));
+        }
+    }
+    let control_root = root.join("__fortress");
+    let Ok(metadata) = fs::symlink_metadata(&control_root) else {
+        return Ok(());
+    };
+    if !metadata.is_dir() || metadata.file_type().is_symlink() {
+        return Err(AuditError::ProjectAuthority(
+            "control root must be one ordinary root directory".into(),
+        ));
+    }
+    let layout = ControlLayout::standard();
+    let mut pending = vec![control_root];
+    while let Some(directory) = pending.pop() {
+        let entries = fs::read_dir(&directory).map_err(|source| AuditError::Io {
+            path: directory.clone(),
+            source,
+        })?;
+        for entry in entries {
+            let entry = entry.map_err(|source| AuditError::Io {
+                path: directory.clone(),
+                source,
+            })?;
+            let path = entry.path();
+            let metadata = fs::symlink_metadata(&path).map_err(|source| AuditError::Io {
+                path: path.clone(),
+                source,
+            })?;
+            let relative = path
+                .strip_prefix(root)
+                .map_err(|_| {
+                    AuditError::ProjectAuthority("control path escaped repository".into())
+                })?
+                .to_string_lossy()
+                .replace('\\', "/");
+            if metadata.file_type().is_symlink() {
+                return Err(AuditError::ProjectAuthority(
+                    format!("control entry `{relative}` cannot be a symbolic link").into(),
+                ));
+            }
+            if metadata.is_dir() {
+                if !valid_control_directory(&relative) {
+                    return Err(AuditError::ProjectAuthority(
+                        format!("unregistered control directory `{relative}`").into(),
+                    ));
+                }
+                pending.push(path);
+            } else if metadata.is_file() {
+                if layout
+                    .resolve(&relative)
+                    .is_none_or(|entry| entry.role() == ControlRole::Unrecognized)
+                {
+                    return Err(AuditError::ProjectAuthority(
+                        format!("unregistered control file `{relative}`").into(),
+                    ));
+                }
+            } else {
+                return Err(AuditError::ProjectAuthority(
+                    format!("unsupported control entry `{relative}`").into(),
+                ));
+            }
+        }
+    }
+    Ok(())
+}
+
+fn valid_control_directory(path: &str) -> bool {
+    matches!(
+        path,
+        "__fortress/governance" | "__fortress/evidence" | "__fortress/evidence/generations"
+    ) || path
+        .strip_prefix("__fortress/evidence/generations/")
+        .is_some_and(|digest| {
+            !digest.contains('/')
+                && digest.len() == 64
+                && digest
+                    .bytes()
+                    .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
+        })
 }
 
 fn logical_contract_sources(project: &ProjectConfiguration) -> Vec<LogicalModuleContractSource> {
@@ -4074,8 +4203,7 @@ fn prepare_audit_from_analysis(
     })?;
     let project = ProjectConfiguration::from_json_str(project_document.source()?)
         .map_err(AuditError::Project)?;
-    let policy = ObservationPolicy::new(project.observation_exclusions().iter().cloned())
-        .map_err(AuditError::ObservationPolicy)?;
+    let policy = control_observation_policy(&project)?;
     let observed_files = analysis.observed_files;
     let ownerships = analysis.ownerships;
     let standard = analysis.standard;

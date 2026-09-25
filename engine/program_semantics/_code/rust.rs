@@ -777,7 +777,7 @@ fn semantic_input_role(path: &str, bytes: &[u8]) -> Option<ProgramInputRole> {
     if file_name == "Cargo.lock" {
         return Some(ProgramInputRole::CargoLock);
     }
-    let candidate = if path == "_data/project.json" {
+    let candidate = if path == "__fortress/.fsconfig" {
         ProgramInputRole::ProjectIdentity
     } else if file_name == "contract.json" {
         ProgramInputRole::ModuleIdentity

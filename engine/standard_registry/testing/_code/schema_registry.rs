@@ -34,7 +34,7 @@ fn registered_schemas_are_unique_json_schema_documents() {
         .expect("schema manifest must contain a schemas array");
     let mut identities = HashSet::with_capacity(paths.len());
 
-    assert_eq!(paths.len(), 66);
+    assert_eq!(paths.len(), 70);
     let manifest_schema =
         read_json("engine/standard_registry/_data/schema_manifest_schema_v2.json");
     jsonschema::draft202012::validate(&manifest_schema, &manifest)
@@ -81,8 +81,39 @@ fn proof_writer_validates_against_advertised_schema() {
 /// Fortress requirement: AF-STANDARD-REGISTRY-0001-R03
 #[test]
 fn local_certificate_writer_validates_against_advertised_schema() {
-    let schema = read_json("engine/snapshot_governance/_data/quality_certificate_schema_v2.json");
-    let certificate = read_json("_info/quality_certificate.json");
+    let schema = read_json("engine/snapshot_governance/_data/quality_certificate_schema_v3.json");
+    let digest = format!("sha256:{}", "a".repeat(64));
+    let certificate = serde_json::json!({
+        "$schema": "urn:fortress:derived:v3:local-quality-certificate",
+        "schema_version": 3,
+        "semantic_version": "quality-certificate-v3.0",
+        "project": "PF-FORTRESS",
+        "profile": "fortress-complete-local-v1",
+        "claim": "LOCAL_QUALITY_GATES_PASS",
+        "trust": {
+            "level": "untrusted-local",
+            "tamper_evidence": "SHA-256",
+            "authenticity": "UNVERIFIED",
+            "limitation": "local digest evidence is not an authenticated signature"
+        },
+        "source": {
+            "fingerprint": digest.clone(),
+            "file_count": 1,
+            "excluded_self": "quality-certificate",
+            "excluded_derived_artifacts": ["ccg"]
+        },
+        "toolchain": {
+            "rust": "1.97.1",
+            "cargo_config": "_data/cargo_config.toml",
+            "resolver_lockfile": "_info/Cargo.lock",
+            "build_artifacts": "external-temporary-directory",
+            "derived_projections": "external-subject-addressed-cache"
+        },
+        "gates": [{"id": "FORMAT", "status": "PASS", "command": "cargo fmt --check"}],
+        "artifacts": [{"id": "ccg", "digest": digest.clone(), "bytes": 1, "storage": "LOCAL_MATERIALIZATION"}],
+        "audit_json_digest": digest.clone(),
+        "certificate_stamp": digest
+    });
     jsonschema::draft202012::validate(&schema, &certificate)
         .expect("emitted local certificate must match its advertised schema");
 }

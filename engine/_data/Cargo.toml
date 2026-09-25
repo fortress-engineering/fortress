@@ -45,6 +45,10 @@ name = "certification"
 path = "../certification/testing/_code/certification.rs"
 
 [[test]]
+name = "control_plane"
+path = "../certification/testing/_code/control_plane.rs"
+
+[[test]]
 name = "contract_coherency_graph"
 path = "../contract_coherency/testing/_code/contract_coherency_graph.rs"
 

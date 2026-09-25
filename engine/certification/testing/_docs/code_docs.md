@@ -21,3 +21,7 @@ Any graph, digest, cycle, status, eligibility, binding, assertion, source-exclus
 ### [`certification.rs`](../_code/certification.rs)
 
 Exercises Certification v1 conformance.
+
+### [`control_plane.rs`](../_code/control_plane.rs)
+
+Exercises the fixed control layout, authority-exclusion boundary, safe immutable manifest identity, and exact selection lookup.

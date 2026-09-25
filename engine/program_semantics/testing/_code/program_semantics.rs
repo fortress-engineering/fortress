@@ -337,8 +337,8 @@ fn registered_authority_roles_are_typed_and_unknown_remains_explicit() {
     .unwrap();
     assert_eq!(unknown.role(), ProgramInputRole::Unknown);
     assert_ne!(known.sha256(), unknown.sha256());
-    let project_a = program_input_descriptor("_data/project.json", br#"{"$schema":"urn:fortress:schema:v3:project-configuration","schema_version":3,"logical_modules":[],"observation_exclusions":[".git"]}"#).unwrap();
-    let project_b = program_input_descriptor("_data/project.json", br#"{"$schema":"urn:fortress:schema:v3:project-configuration","schema_version":3,"logical_modules":[],"observation_exclusions":[".git","target"]}"#).unwrap();
+    let project_a = program_input_descriptor("__fortress/.fsconfig", br#"{"$schema":"urn:fortress:schema:v3:project-configuration","schema_version":3,"logical_modules":[],"observation_exclusions":[".git"]}"#).unwrap();
+    let project_b = program_input_descriptor("__fortress/.fsconfig", br#"{"$schema":"urn:fortress:schema:v3:project-configuration","schema_version":3,"logical_modules":[],"observation_exclusions":[".git","target"]}"#).unwrap();
     assert_eq!(project_a.role(), ProgramInputRole::ProjectIdentity);
     assert_eq!(project_a.sha256(), project_b.sha256());
 }

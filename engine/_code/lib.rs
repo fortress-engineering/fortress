@@ -28,6 +28,10 @@ pub mod certification;
 pub mod contract;
 #[path = "../contract_coherency/_code/contract.rs"]
 pub mod contract_coherency;
+#[path = "../project_model/_code/control_layout.rs"]
+pub mod control_layout;
+#[path = "../certification/_code/control_manifest.rs"]
+pub mod control_manifest;
 #[path = "../snapshot_governance/_code/documentation.rs"]
 pub mod documentation;
 #[path = "../environmental_semantics/_code/environmental.rs"]

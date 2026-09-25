@@ -30,6 +30,10 @@ Orchestrates declaration loading, stabilized snapshot construction, shared CCG, 
 
 Projects CCG compilation, supported logical coherency, and README synchronization into canonical CONTRACT-COHERENCY-001 findings.
 
+### [`control_migration.py`](../_code/control_migration.py)
+
+Performs the narrow one-time move of registered active authority and archives exact legacy output bytes as an unselected historical generation while refusing dual, partial, or conflicting state.
+
 ### [`documentation.rs`](../_code/documentation.rs)
 
 Parses canonical Markdown structurally and reconciles Module contracts, catalogs, child decomposition, and links.
@@ -56,7 +60,7 @@ Projects the canonical Project Model filing analysis into REPO-MODULE-001 findin
 
 ### [`quality_certificate.py`](../_code/quality_certificate.py)
 
-Executes the complete pinned local quality-gate profile under the leased storage supervisor, consumes one exact-snapshot certification stack, validates every emitted artifact against its advertised registered schema, stages tracked evidence with durable preimages, and publishes the certificate pointer last. It maintains the closed tracked-evidence/local-materialization registry, reconstructs bounded subject-addressed projections, cleans only idle Python-owned subject cache entries, distinguishes missing, stale, invalid, and current local bytes, and verifies PASS, source freshness, evidence digests, and the tamper stamp while retaining UNVERIFIED issuer authenticity. Generator determinism remains proved by governed tests.
+Executes the complete pinned local quality-gate profile under the leased storage supervisor, consumes one exact-snapshot certification stack, validates every emitted artifact against its advertised registered schema, checks the shared Project Model artifact registry, stages generation members with durable preimages, and publishes the selection index last. It reconstructs bounded subject-addressed projections, cleans only idle Python-owned subject cache entries, distinguishes missing, stale, invalid, and current local bytes, and verifies PASS, source freshness, evidence digests, and the tamper stamp while retaining UNVERIFIED issuer authenticity. Generator determinism remains proved by governed tests.
 
 ### [`runtime_storage.rs`](../_code/runtime_storage.rs)
 

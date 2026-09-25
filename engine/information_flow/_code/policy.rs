@@ -154,7 +154,7 @@ pub fn load_information_flow_policy(
             source_path: None,
         }),
         [source] => {
-            if source.path != "_data/information_flow_policy.json" {
+            if source.path != "__fortress/governance/information_flow_policy.json" {
                 return Err(InformationFlowPolicyError::NonRootPolicy(
                     source.path.clone(),
                 ));
@@ -336,7 +336,7 @@ impl Display for InformationFlowPolicyError {
             }
             Self::NonRootPolicy(path) => write!(
                 formatter,
-                "information-flow policy `{path}` is not root-owned `_data/information_flow_policy.json`"
+                "information-flow policy `{path}` is not root-owned `__fortress/governance/information_flow_policy.json`"
             ),
             Self::DuplicatePolicy(paths) => write!(
                 formatter,
