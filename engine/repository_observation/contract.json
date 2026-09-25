@@ -49,11 +49,12 @@
         },
         {
           "id": "AF-REPOSITORY-OBSERVATION-0001-R02",
-          "statement": "Observation rejects unsafe exclusion paths and applies explicit exclusions without converting observations into declarations.",
+          "statement": "Observation rejects unsafe exclusion paths, applies explicit exclusions without converting observations into declarations, and observes active control-plane configuration from the filesystem regardless of Git ignore or tracking state.",
           "tests": [
             "T-AF-REPOSITORY-OBSERVATION-0001-R02-001",
             "T-AF-REPOSITORY-OBSERVATION-0001-R02-002",
-            "T-AF-REPOSITORY-OBSERVATION-0001-R02-003"
+            "T-AF-REPOSITORY-OBSERVATION-0001-R02-003",
+            "T-AF-REPOSITORY-OBSERVATION-0001-R02-004"
           ]
         },
         {

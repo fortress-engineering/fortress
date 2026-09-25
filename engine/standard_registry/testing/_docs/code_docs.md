@@ -18,6 +18,10 @@ A violated assertion or fixture-loading failure fails the test target and surfac
 
 ## Files
 
+### [`governance_profiles.rs`](../_code/governance_profiles.rs)
+
+Verifies immutable profile definitions, order-independent composition, explicit conflict rejection, stable Module-scoped overrides, native and strict filing applicability, assurance evidence holds, and policy-only invalidation boundaries.
+
 ### [`registry_primitives.rs`](../_code/registry_primitives.rs)
 
 Verifies stable identity parsing and exact draft rule registry metadata at the Standard Registry boundary.

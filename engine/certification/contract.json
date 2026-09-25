@@ -114,11 +114,12 @@
         },
         {
           "id": "AF-CERTIFICATION-0001-R02",
-          "statement": "Certification evaluates the canonical full-snapshot profile with exact INVALID, FAIL, STALE, MISSING, and PASS precedence while unsupported mandatory rule semantics remain missing rather than passing.",
+          "statement": "Certification evaluates the canonical full-snapshot profile with exact INVALID, FAIL, STALE, MISSING, and PASS precedence while unsupported mandatory rule semantics remain missing rather than passing, and consumes resolved assurance requirement manifests as separate REQUIRED_EVIDENCE_MISSING obligations without rewriting semantic outcomes.",
           "tests": [
             "T-AF-CERTIFICATION-0001-R02-001",
             "T-AF-CERTIFICATION-0001-R02-002",
-            "T-AF-CERTIFICATION-0001-R02-003"
+            "T-AF-CERTIFICATION-0001-R02-003",
+            "T-AF-CERTIFICATION-0001-R02-004"
           ]
         },
         {

@@ -165,7 +165,7 @@ fn apply_materializes_only_reviewed_minimal_authority() {
 /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R16-004`
 /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R16
 #[test]
-fn explicit_baseline_bootstrap_preserves_raw_failure_and_green_check_semantics() {
+fn explicit_baseline_bootstrap_preserves_native_pass_without_filing_residue() {
     let fixture = Fixture::new();
     let proposal = discover_repository_bootstrap(&fixture.root, &Fixture::explicit_options())
         .expect("proposal compiles");
@@ -174,18 +174,22 @@ fn explicit_baseline_bootstrap_preserves_raw_failure_and_green_check_semantics()
     let result_json: serde_json::Value =
         serde_json::from_str(&result.to_canonical_json().unwrap()).unwrap();
     assert_eq!(result_json["baseline_created"], true);
-    assert_eq!(result_json["strict_conformance"], "FAIL");
+    assert_eq!(result_json["strict_conformance"], "PASS");
     assert_eq!(result_json["progressive_enforcement"], "PASS");
 
     let audit = audit_repository(&fixture.root).expect("adopted repository audits");
-    assert!(!audit.is_success());
+    assert!(audit.is_success());
     assert!(audit.enforcement_success());
-    assert!(audit.finding_governance().summary().baselined_non_blocking > 0);
-    fs::write(fixture.root.join("new-unrecognized.txt"), "new violation")
-        .expect("new violation writes");
+    assert_eq!(
+        audit.finding_governance().summary().baselined_non_blocking,
+        0
+    );
+    fs::write(fixture.root.join("new-unrecognized.txt"), "native content")
+        .expect("native content writes");
     let changed = audit_repository(&fixture.root).expect("changed repository audits");
-    assert!(!changed.enforcement_success());
-    assert!(changed.finding_governance().summary().new_blocking > 0);
+    assert!(changed.is_success());
+    assert!(changed.enforcement_success());
+    assert_eq!(changed.finding_governance().summary().new_blocking, 0);
 }
 
 /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R16-005`

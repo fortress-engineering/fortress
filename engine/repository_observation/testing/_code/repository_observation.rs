@@ -152,6 +152,28 @@ fn fortress_observes_itself_without_transient_roots() {
     );
 }
 
+/// `T-AF-REPOSITORY-OBSERVATION-0001-R02-004`
+/// Fortress requirement: AF-REPOSITORY-OBSERVATION-0001-R02
+#[test]
+fn active_control_configuration_remains_observed_when_git_ignored_and_untracked() {
+    let fixture = ObservationFixture::empty();
+    fs::create_dir_all(fixture.root.join("__fortress")).expect("control root creates");
+    fs::write(fixture.root.join(".gitignore"), "__fortress/\n").expect("ignore file writes");
+    fs::write(
+        fixture.root.join("__fortress/.fsconfig"),
+        r#"{"$schema":"urn:fortress:schema:v4:project-configuration","schema_version":4}"#,
+    )
+    .expect("untracked configuration writes");
+    let policy = ObservationPolicy::new([".git"]).expect("policy");
+    let observation = observe_repository(&fixture.root, &policy).expect("observation");
+    assert!(
+        observation
+            .files()
+            .iter()
+            .any(|file| file.path() == "__fortress/.fsconfig")
+    );
+}
+
 /// `T-AF-REPOSITORY-OBSERVATION-0001-R02-001`
 /// Fortress requirement: AF-REPOSITORY-OBSERVATION-0001-R02
 #[test]

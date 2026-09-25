@@ -838,7 +838,8 @@ pub(super) fn semantic_input_descriptor(path: &str, bytes: &[u8]) -> Option<Prog
 
 fn semantic_input_role(path: &str, bytes: &[u8]) -> Option<ProgramInputRole> {
     let layout = ControlLayout::standard();
-    if layout.resolve(path).is_some_and(|entry| {
+    let control_entry = layout.resolve(path);
+    if control_entry.as_ref().is_some_and(|entry| {
         entry.source_binding() == ControlSourceBinding::Nonrecursive
             || entry.role() == ControlRole::Unrecognized
     }) {
@@ -854,7 +855,10 @@ fn semantic_input_role(path: &str, bytes: &[u8]) -> Option<ProgramInputRole> {
     if file_name == "Cargo.lock" {
         return Some(ProgramInputRole::CargoLock);
     }
-    let candidate = if path == "__fortress/.fsconfig" {
+    let candidate = if control_entry
+        .as_ref()
+        .is_some_and(|entry| entry.role() == ControlRole::ProjectConfiguration)
+    {
         ProgramInputRole::ProjectIdentity
     } else if file_name == "contract.json" {
         ProgramInputRole::ModuleIdentity
@@ -874,6 +878,7 @@ fn semantic_input_role(path: &str, bytes: &[u8]) -> Option<ProgramInputRole> {
             Some(
                 "urn:fortress:schema:v2:project-configuration"
                     | "urn:fortress:schema:v3:project-configuration"
+                    | "urn:fortress:schema:v4:project-configuration"
             )
         ),
         ProgramInputRole::ModuleIdentity => matches!(

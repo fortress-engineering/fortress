@@ -25,6 +25,7 @@ use crate::finding::{CanonicalFinding, FindingError};
 use crate::information_flow::{InformationFlowEvaluation, PROGRAM_INFOFLOW_RULE_ID};
 use crate::ownership::{ARCH_OWNERSHIP_RULE_ID, evaluate_file_ownership};
 use crate::placement::{REPO_MODULE_RULE_ID, evaluate_module_grammar};
+use crate::profile::ResolvedProfiles;
 use crate::reference_resolution::{REPO_REFERENCE_RULE_ID, ReferenceResolutionEvaluation};
 use crate::rust_test_analyzer::{RustTestFact, RustTestObservation};
 use crate::semantic_analysis::{PROGRAM_DOMAIN_RULE_ID, SemanticAnalysisEvaluation};
@@ -410,24 +411,65 @@ impl SnapshotRuleEngine {
         Self::evaluate_internal(standard, snapshot, architecture, inputs.into())
     }
 
+    /// Evaluates the bundle using one Standard-resolved project profile composition.
+    ///
+    /// Unselected rules remain visible as `NOT_APPLICABLE` with an explicit
+    /// profile reason and cannot produce findings. Profile resolution occurs
+    /// before this boundary.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`EvaluationError`] under the same conditions as [`Self::evaluate`].
+    pub fn evaluate_complete_with_profiles(
+        &self,
+        standard: &StandardBundle,
+        snapshot: &RepositorySnapshot,
+        architecture: &ArchitectureManifest,
+        inputs: CompleteEvaluationInputs<'_>,
+        profiles: &ResolvedProfiles,
+    ) -> Result<SnapshotEvaluation, EvaluationError> {
+        Self::evaluate_internal_with_profiles(
+            standard,
+            snapshot,
+            architecture,
+            inputs.into(),
+            Some(profiles),
+        )
+    }
+
     fn evaluate_internal(
         standard: &StandardBundle,
         snapshot: &RepositorySnapshot,
         architecture: &ArchitectureManifest,
         inputs: EvaluationInputs<'_>,
     ) -> Result<SnapshotEvaluation, EvaluationError> {
+        Self::evaluate_internal_with_profiles(standard, snapshot, architecture, inputs, None)
+    }
+
+    fn evaluate_internal_with_profiles(
+        standard: &StandardBundle,
+        snapshot: &RepositorySnapshot,
+        architecture: &ArchitectureManifest,
+        inputs: EvaluationInputs<'_>,
+        profiles: Option<&ResolvedProfiles>,
+    ) -> Result<SnapshotEvaluation, EvaluationError> {
         validate_standard_edition(standard, snapshot)?;
 
         let mut rules = Vec::with_capacity(standard.rules().len());
         let mut findings = Vec::new();
         for rule in standard.rules() {
-            let (execution, mut rule_findings) = evaluate_rule(
-                rule.id(),
-                standard.edition(),
-                snapshot,
-                architecture,
-                inputs,
-            )?;
+            let (execution, mut rule_findings) =
+                if profiles.is_some_and(|profiles| !profiles.rule_applicable(rule.id())) {
+                    unselected_profile_execution(rule.id(), profiles.expect("checked profile"))
+                } else {
+                    evaluate_rule(
+                        rule.id(),
+                        standard.edition(),
+                        snapshot,
+                        architecture,
+                        inputs,
+                    )?
+                };
             rules.push(execution);
             findings.append(&mut rule_findings);
         }
@@ -441,6 +483,27 @@ impl SnapshotRuleEngine {
             findings,
         })
     }
+}
+
+fn unselected_profile_execution(
+    rule_id: &str,
+    profiles: &ResolvedProfiles,
+) -> (RuleExecution, Vec<CanonicalFinding>) {
+    (
+        RuleExecution {
+            rule_id: rule_id.into(),
+            state: RuleExecutionState::NotApplicable,
+            applicable: false,
+            applicability_reason: Some("UNSELECTED_BY_GOVERNANCE_PROFILE".into()),
+            findings: 0,
+            detail: format!(
+                "Rule is outside the explicit `{}` layout profile composition: {}.",
+                profiles.layout_id(),
+                profiles.selected_profiles().join(", ")
+            ),
+        },
+        Vec::new(),
+    )
 }
 
 fn evaluate_rule(

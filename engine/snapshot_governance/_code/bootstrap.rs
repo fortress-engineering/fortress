@@ -614,7 +614,7 @@ fn proposed_artifacts(
     let contract = format!(
         "{{\n  \"$schema\": \"urn:fortress:schema:v2:module-contract\",\n  \"schema_version\": 2,\n  \"id\": {project_id},\n  \"display_name\": {display_name},\n  \"ecosystem\": {{\n    \"repository_grammar\": 1,\n    \"standard\": {{\n      \"id\": {standard_id},\n      \"edition\": {standard_edition}\n    }}\n  }},\n  \"provides\": [],\n  \"requires\": [],\n  \"relationships\": [],\n  \"constraints\": [],\n  \"guarantees\": [],\n  \"features\": [],\n  \"behavior\": []\n}}\n"
     );
-    let project = "{\n  \"$schema\": \"urn:fortress:schema:v3:project-configuration\",\n  \"schema_version\": 3,\n  \"observation_exclusions\": [\n    \".git\"\n  ],\n  \"logical_modules\": []\n}\n".to_owned();
+    let project = "{\n  \"$schema\": \"urn:fortress:schema:v4:project-configuration\",\n  \"schema_version\": 4,\n  \"observation_exclusions\": [\n    \".git\"\n  ],\n  \"logical_modules\": [],\n  \"governance\": {\n    \"default_layout\": \"native-logical-v1\",\n    \"selected_profiles\": [\n      {\n        \"id\": \"GOV-FORTRESS-NATIVE\",\n        \"version\": \"1.0.0\",\n        \"digest\": \"sha256:ac541bb1e1dd0f7f6ef6c8f1c1babcbe62c9a13cc507e74ad0058454baa7c475\"\n      }\n    ],\n    \"module_overrides\": []\n  },\n  \"assurance_profiles\": []\n}\n".to_owned();
     let governance = FindingGovernanceDocument::empty()
         .to_canonical_json()
         .map_err(|error| BootstrapError::Serialization(error.to_string().into()))?;

@@ -38,10 +38,12 @@
       "requirements": [
         {
           "id": "AF-PROJECT-MODEL-0001-R01",
-          "statement": "The core loads schema-versioned operational project configuration and rejects invalid, duplicate, or unsafe repository observation exclusions.",
+          "statement": "The core loads one schema-versioned operational project configuration and rejects invalid, duplicate, or unsafe observation exclusions plus malformed governance, assurance, stable Module override, and coverage-floor selections.",
           "tests": [
             "T-AF-PROJECT-MODEL-0001-R01-001",
             "T-AF-PROJECT-MODEL-0001-R01-002",
+            "T-AF-PROJECT-MODEL-0001-R01-003",
+            "T-AF-PROJECT-MODEL-0001-R01-004",
             "T-AF-PROJECT-MODEL-0001-R02-001",
             "T-AF-PROJECT-MODEL-0001-R02-002",
             "T-AF-PROJECT-MODEL-0001-R02-003"

@@ -26,6 +26,10 @@ Validates canonical stable entity and rule identities under the registered Fortr
 
 Loads the exact draft manifest and complete rule-document bundle, validates canonical implication/conflict metadata, and rejects registry disagreement or inherently unsatisfiable rule logic.
 
+### [`profile.rs`](../_code/profile.rs)
+
+Loads content-addressed Standard-owned governance and assurance profiles, validates exact project references, composes rule/layout/scope/evidence requirements without array precedence, rejects conflicts, and resolves Module overrides only through stable CCG identities.
+
 ### [`wire.rs`](../_code/wire.rs)
 
 Rejects duplicate JSON object keys before typed decoding, enforces exact public integer limits, emits RFC 8785 bytes for new public records, and resolves explicit reader-version support without altering historical model serializers.

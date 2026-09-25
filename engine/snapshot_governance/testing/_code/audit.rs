@@ -61,6 +61,33 @@ fn semantic_contract(id: &str) -> String {
     )
 }
 
+fn assert_native_profile_has_no_filing_noise(repository: &Path) {
+    let audit = audit_repository(repository).expect("native logical audit completes");
+    for rule_id in [
+        "REPO-DOCS-001",
+        "REPO-MODULE-001",
+        "TEST-BOUNDARY-001",
+        "TEST-TRACEABILITY-001",
+    ] {
+        let execution = audit
+            .rules()
+            .iter()
+            .find(|execution| execution.rule_id() == rule_id)
+            .expect("Standard rule remains declared");
+        assert!(!execution.applicable());
+        assert_eq!(
+            execution.applicability_reason(),
+            Some("UNSELECTED_BY_GOVERNANCE_PROFILE")
+        );
+        assert!(
+            audit
+                .findings()
+                .iter()
+                .all(|finding| finding.rule_id() != rule_id)
+        );
+    }
+}
+
 /// `T-LOGICAL-MODULE-INTEGRATION-001`
 /// Fortress classification: infrastructure
 #[test]
@@ -157,6 +184,8 @@ fn logical_contracts_and_native_paths_feed_one_semantic_ownership_relation() {
     assert!(api.observations().iter().any(|observation| {
         observation.operation() == "std::fs::write" && observation.policy_disposition().is_some()
     }));
+
+    assert_native_profile_has_no_filing_noise(repository.path());
 }
 
 /// `T-DISTRIBUTED-CONTRACT-LOGICAL-LOADERS-001`

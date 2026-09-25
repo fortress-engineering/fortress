@@ -30,6 +30,14 @@ Defines the canonical mandatory `CERT-FULL-SNAPSHOT-V1` profile without project 
 
 Defines the version-one machine representation and validation boundary for common records owned by this Module.
 
+### [`governance_profile_schema_v1.json`](../_data/governance_profile_schema_v1.json)
+
+Defines immutable governance and assurance profile bodies with explicit layout, rule, semantic-scope, evidence, conflict, version, and digest fields.
+
+### [`governance_profiles_v1.json`](../_data/governance_profiles_v1.json)
+
+Publishes native logical, strict canonical, semantic overlay, and semantic-evaluability assurance definitions as Standard authority. These selected defaults remain draft policy pending OWNER-ASSURANCE approval.
+
 ### [`rule_schema_v1.json`](../_data/rule_schema_v1.json)
 
 Defines the version-one machine representation and validation boundary for rule records, including formal implication and conflict logic, owned by this Module.

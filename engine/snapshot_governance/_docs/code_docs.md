@@ -40,7 +40,7 @@ Parses canonical Markdown structurally and reconciles Module contracts, catalogs
 
 ### [`evaluation.rs`](../_code/evaluation.rs)
 
-Dispatches only implemented applicable rules, including behavioral, program-domain/state/effect/information/environment, and REPO-REFERENCE-001 evaluators from shared results, and distinguishes evaluated pass or failure from unsupported capability.
+Dispatches only implemented applicable rules, including behavioral, program-domain/state/effect/information/environment, and REPO-REFERENCE-001 evaluators from shared results; consumes resolved profile applicability before dispatch; and distinguishes evaluated pass or failure, explicit profile-driven non-applicability, and unsupported capability.
 
 ### [`execution_storage.py`](../_code/execution_storage.py)
 

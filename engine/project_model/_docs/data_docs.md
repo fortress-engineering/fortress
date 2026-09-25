@@ -49,3 +49,7 @@ Defines the closed version-two operational project configuration after architect
 ### [`project_schema_v3.json`](../_data/project_schema_v3.json)
 
 Defines operational observation policy plus a narrow stable-ID index for logical Module contract locations and deterministic source path bindings.
+
+### [`project_schema_v4.json`](../_data/project_schema_v4.json)
+
+Extends the same root project authority with explicit versioned governance profiles, stable Module-scoped overrides, protected coverage floors, and assurance profile selection.

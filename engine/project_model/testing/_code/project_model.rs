@@ -92,6 +92,81 @@ fn minimal_operational_configuration_is_valid() {
     assert_eq!(configuration.observation_exclusions(), [".git"]);
 }
 
+/// `T-AF-PROJECT-MODEL-0001-R01-003`
+/// Fortress requirement: AF-PROJECT-MODEL-0001-R01
+#[test]
+fn current_configuration_extends_one_authority_with_profile_selection() {
+    let source = r#"{
+      "$schema":"urn:fortress:schema:v4:project-configuration",
+      "schema_version":4,
+      "observation_exclusions":[".git"],
+      "logical_modules":[],
+      "governance":{
+        "default_layout":"native-logical-v1",
+        "selected_profiles":[{
+          "id":"GOV-FORTRESS-NATIVE",
+          "version":"1.0.0",
+          "digest":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }],
+        "module_overrides":[],
+        "coverage_floor":{
+          "minimum_semantic_functions":1,
+          "minimum_evaluable_basis_points":9000
+        }
+      },
+      "assurance_profiles":[]
+    }"#;
+    let configuration =
+        ProjectConfiguration::from_json_str(source).expect("v4 configuration validates");
+    let governance = configuration.governance().expect("governance selection");
+    assert_eq!(governance.default_layout(), "native-logical-v1");
+    assert_eq!(governance.selected_profiles().len(), 1);
+    assert_eq!(
+        governance
+            .coverage_floor()
+            .expect("coverage floor")
+            .minimum_evaluable_basis_points(),
+        9000
+    );
+}
+
+/// `T-AF-PROJECT-MODEL-0001-R01-004`
+/// Fortress requirement: AF-PROJECT-MODEL-0001-R01
+#[test]
+fn current_configuration_rejects_missing_or_malformed_profile_authority() {
+    let missing = r#"{
+      "$schema":"urn:fortress:schema:v4:project-configuration",
+      "schema_version":4,
+      "observation_exclusions":[".git"],
+      "logical_modules":[],
+      "assurance_profiles":[]
+    }"#;
+    assert!(matches!(
+        ProjectConfiguration::from_json_str(missing),
+        Err(ProjectConfigurationLoadError::Model(
+            ProjectConfigurationModelError::MissingGovernanceSelection
+        ))
+    ));
+    let malformed = r#"{
+      "$schema":"urn:fortress:schema:v4:project-configuration",
+      "schema_version":4,
+      "observation_exclusions":[".git"],
+      "logical_modules":[],
+      "governance":{
+        "default_layout":"native-logical-v1",
+        "selected_profiles":[{"id":"GOV-NATIVE","version":"1.0.0","digest":"sha256:nope"}],
+        "module_overrides":[]
+      },
+      "assurance_profiles":[]
+    }"#;
+    assert!(matches!(
+        ProjectConfiguration::from_json_str(malformed),
+        Err(ProjectConfigurationLoadError::Model(
+            ProjectConfigurationModelError::InvalidProfileReference(_)
+        ))
+    ));
+}
+
 /// `T-AF-PROJECT-MODEL-0001-R01-002`
 /// Fortress requirement: AF-PROJECT-MODEL-0001-R01
 #[test]

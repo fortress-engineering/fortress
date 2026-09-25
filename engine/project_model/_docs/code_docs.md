@@ -28,7 +28,7 @@ Indexes every canonical Module exactly once from direct contract-marked ancestry
 
 ### [`project.rs`](../_code/project.rs)
 
-Loads the root project configuration and validates canonical observation exclusions plus relocation-transparent logical Module contract and source bindings.
+Loads the root project configuration and validates canonical observation exclusions, relocation-transparent logical Module contract and source bindings, and exact profile, assurance, Module-scope, and coverage-floor selections without creating another manifest.
 
 ### [`evaluation_key.rs`](../_code/evaluation_key.rs)
 

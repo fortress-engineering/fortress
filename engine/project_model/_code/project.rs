@@ -12,6 +12,7 @@ use std::fmt::{self, Display, Formatter};
 use serde::{Deserialize, Serialize};
 
 use crate::identity::StableId;
+use crate::profile::{ModuleProfileSelectionInput, ProfileReferenceInput, ProfileSelectionInput};
 
 #[path = "evaluation_key.rs"]
 mod evaluation_key;
@@ -19,12 +20,13 @@ mod evaluation_key;
 pub use evaluation_key::{AuthorityBinding, EvaluationKey};
 
 /// Current supported operational project configuration schema.
-pub const PROJECT_CONFIGURATION_SCHEMA_VERSION: u16 = 3;
+pub const PROJECT_CONFIGURATION_SCHEMA_VERSION: u16 = 4;
 
 /// Exact operational configuration schema identity.
-pub const PROJECT_CONFIGURATION_SCHEMA: &str = "urn:fortress:schema:v3:project-configuration";
+pub const PROJECT_CONFIGURATION_SCHEMA: &str = "urn:fortress:schema:v4:project-configuration";
 
 const LEGACY_PROJECT_CONFIGURATION_SCHEMA: &str = "urn:fortress:schema:v2:project-configuration";
+const PREVIOUS_PROJECT_CONFIGURATION_SCHEMA: &str = "urn:fortress:schema:v3:project-configuration";
 
 /// Validated repository operation and logical source-placement configuration.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
@@ -36,6 +38,129 @@ pub struct ProjectConfiguration {
     observation_exclusions: Vec<String>,
     #[serde(default)]
     logical_modules: Vec<LogicalModuleDeclaration>,
+    #[serde(default)]
+    governance: Option<GovernanceSelection>,
+    #[serde(default)]
+    assurance_profiles: Vec<ProfileReference>,
+}
+
+/// Exact immutable Standard-owned profile identity selected by a project.
+#[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ProfileReference {
+    id: String,
+    version: String,
+    digest: String,
+}
+
+impl ProfileReference {
+    /// Returns the stable profile identity.
+    #[must_use]
+    pub fn id(&self) -> &str {
+        &self.id
+    }
+
+    /// Returns the exact selected profile version.
+    #[must_use]
+    pub fn version(&self) -> &str {
+        &self.version
+    }
+
+    /// Returns the exact selected profile definition digest.
+    #[must_use]
+    pub fn digest(&self) -> &str {
+        &self.digest
+    }
+}
+
+/// A project-wide coverage threshold protected by project authority.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct CoverageFloor {
+    minimum_semantic_functions: u64,
+    minimum_evaluable_basis_points: u16,
+}
+
+impl CoverageFloor {
+    /// Returns the minimum number of functions that must receive semantic analysis.
+    #[must_use]
+    pub const fn minimum_semantic_functions(&self) -> u64 {
+        self.minimum_semantic_functions
+    }
+
+    /// Returns the required evaluable share in basis points.
+    #[must_use]
+    pub const fn minimum_evaluable_basis_points(&self) -> u16 {
+        self.minimum_evaluable_basis_points
+    }
+}
+
+/// Explicit versioned governance composition for the whole project.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct GovernanceSelection {
+    default_layout: String,
+    selected_profiles: Vec<ProfileReference>,
+    #[serde(default)]
+    module_overrides: Vec<ModuleProfileOverride>,
+    #[serde(default)]
+    coverage_floor: Option<CoverageFloor>,
+}
+
+impl GovernanceSelection {
+    /// Returns the selected default layout interpretation.
+    #[must_use]
+    pub fn default_layout(&self) -> &str {
+        &self.default_layout
+    }
+
+    /// Returns project-wide governance profile references.
+    #[must_use]
+    pub fn selected_profiles(&self) -> &[ProfileReference] {
+        &self.selected_profiles
+    }
+
+    /// Returns stable Module-scoped profile overrides.
+    #[must_use]
+    pub fn module_overrides(&self) -> &[ModuleProfileOverride] {
+        &self.module_overrides
+    }
+
+    /// Returns the optional protected semantic coverage floor.
+    #[must_use]
+    pub const fn coverage_floor(&self) -> Option<&CoverageFloor> {
+        self.coverage_floor.as_ref()
+    }
+}
+
+/// Explicit profile selection for one stable semantic Module identity.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ModuleProfileOverride {
+    module: String,
+    selected_profiles: Vec<ProfileReference>,
+    #[serde(default)]
+    assurance_profiles: Vec<ProfileReference>,
+}
+
+impl ModuleProfileOverride {
+    /// Returns the stable Module identity; physical paths are never accepted here.
+    #[must_use]
+    pub fn module(&self) -> &str {
+        &self.module
+    }
+
+    /// Returns governance profiles selected for this Module.
+    #[must_use]
+    pub fn selected_profiles(&self) -> &[ProfileReference] {
+        &self.selected_profiles
+    }
+
+    /// Returns assurance profiles selected for this Module.
+    #[must_use]
+    pub fn assurance_profiles(&self) -> &[ProfileReference] {
+        &self.assurance_profiles
+    }
 }
 
 /// One authored semantic Module whose contract and implementation are not
@@ -163,21 +288,133 @@ impl ProjectConfiguration {
         &self.logical_modules
     }
 
+    /// Returns explicit project governance selection, or `None` for legacy native defaults.
+    #[must_use]
+    pub const fn governance(&self) -> Option<&GovernanceSelection> {
+        self.governance.as_ref()
+    }
+
+    /// Returns project-wide assurance profile references.
+    #[must_use]
+    pub fn assurance_profiles(&self) -> &[ProfileReference] {
+        &self.assurance_profiles
+    }
+
+    /// Projects authored selection into the Standard Registry resolver boundary.
+    /// Legacy v2/v3 configurations return `None` and therefore receive the
+    /// reviewed native default without inventing new project authority bytes.
+    #[must_use]
+    pub fn profile_selection(&self) -> Option<ProfileSelectionInput> {
+        self.governance.as_ref().map(|governance| {
+            ProfileSelectionInput::new(
+                &governance.default_layout,
+                governance
+                    .selected_profiles
+                    .iter()
+                    .map(profile_reference_input)
+                    .collect(),
+                governance
+                    .module_overrides
+                    .iter()
+                    .map(|profile_override| {
+                        ModuleProfileSelectionInput::new(
+                            &profile_override.module,
+                            profile_override
+                                .selected_profiles
+                                .iter()
+                                .map(profile_reference_input)
+                                .collect(),
+                            profile_override
+                                .assurance_profiles
+                                .iter()
+                                .map(profile_reference_input)
+                                .collect(),
+                        )
+                    })
+                    .collect(),
+                self.assurance_profiles
+                    .iter()
+                    .map(profile_reference_input)
+                    .collect(),
+            )
+        })
+    }
+
     fn validate(&self) -> Result<(), ProjectConfigurationModelError> {
+        self.validate_schema()?;
+        self.validate_observation_exclusions()?;
+        self.validate_governance()?;
+        self.validate_logical_modules()
+    }
+
+    fn validate_schema(&self) -> Result<(), ProjectConfigurationModelError> {
         let supported_legacy = self.schema == LEGACY_PROJECT_CONFIGURATION_SCHEMA
             && self.schema_version == 2
-            && self.logical_modules.is_empty();
-        if self.schema != PROJECT_CONFIGURATION_SCHEMA && !supported_legacy {
+            && self.logical_modules.is_empty()
+            && self.governance.is_none()
+            && self.assurance_profiles.is_empty();
+        let supported_previous = self.schema == PREVIOUS_PROJECT_CONFIGURATION_SCHEMA
+            && self.schema_version == 3
+            && self.governance.is_none()
+            && self.assurance_profiles.is_empty();
+        if self.schema != PROJECT_CONFIGURATION_SCHEMA && !supported_previous && !supported_legacy {
             return Err(ProjectConfigurationModelError::InvalidSchema(
                 self.schema.clone().into(),
             ));
         }
-        if self.schema_version != PROJECT_CONFIGURATION_SCHEMA_VERSION && !supported_legacy {
+        if self.schema_version != PROJECT_CONFIGURATION_SCHEMA_VERSION
+            && !supported_previous
+            && !supported_legacy
+        {
             return Err(ProjectConfigurationModelError::UnsupportedSchemaVersion(
                 self.schema_version,
             ));
         }
-        self.validate_observation_exclusions()?;
+        if self.schema == PROJECT_CONFIGURATION_SCHEMA && self.governance.is_none() {
+            return Err(ProjectConfigurationModelError::MissingGovernanceSelection);
+        }
+        Ok(())
+    }
+
+    fn validate_governance(&self) -> Result<(), ProjectConfigurationModelError> {
+        if let Some(governance) = &self.governance {
+            validate_layout_id(&governance.default_layout)?;
+            if governance.selected_profiles.is_empty() {
+                return Err(ProjectConfigurationModelError::MissingGovernanceProfile);
+            }
+            validate_profile_references(&governance.selected_profiles)?;
+            if governance
+                .coverage_floor
+                .as_ref()
+                .is_some_and(|floor| floor.minimum_evaluable_basis_points > 10_000)
+            {
+                return Err(ProjectConfigurationModelError::InvalidCoverageFloor);
+            }
+            let mut override_modules = BTreeSet::new();
+            for profile_override in &governance.module_overrides {
+                StableId::parse(profile_override.module()).map_err(|_| {
+                    ProjectConfigurationModelError::InvalidModuleId(
+                        profile_override.module.clone().into(),
+                    )
+                })?;
+                if !override_modules.insert(profile_override.module()) {
+                    return Err(ProjectConfigurationModelError::DuplicateModuleOverride(
+                        profile_override.module.clone().into(),
+                    ));
+                }
+                if profile_override.selected_profiles.is_empty() {
+                    return Err(ProjectConfigurationModelError::MissingModuleProfile(
+                        profile_override.module.clone().into(),
+                    ));
+                }
+                validate_profile_references(&profile_override.selected_profiles)?;
+                validate_profile_references(&profile_override.assurance_profiles)?;
+            }
+        }
+        validate_profile_references(&self.assurance_profiles)
+    }
+
+    fn validate_logical_modules(&self) -> Result<(), ProjectConfigurationModelError> {
         let mut modules = BTreeSet::new();
         let mut contracts = BTreeSet::new();
         let mut selectors = BTreeSet::<(SourcePathBindingKind, &str)>::new();
@@ -339,6 +576,22 @@ pub enum ProjectConfigurationModelError {
     ControlSourceBinding(Box<str>),
     /// Equal selectors assigned one source territory ambiguously.
     ConflictingBinding(Box<str>),
+    /// Current configuration omitted explicit governance composition.
+    MissingGovernanceSelection,
+    /// Governance composition selected no immutable profile.
+    MissingGovernanceProfile,
+    /// A layout identity was empty or noncanonical.
+    InvalidLayoutId(Box<str>),
+    /// A profile reference was malformed.
+    InvalidProfileReference(Box<str>),
+    /// A profile reference appeared more than once.
+    DuplicateProfileReference(Box<str>),
+    /// A Module override appeared more than once.
+    DuplicateModuleOverride(Box<str>),
+    /// A Module override selected no governance profile.
+    MissingModuleProfile(Box<str>),
+    /// A configured coverage floor exceeded its closed range.
+    InvalidCoverageFloor,
 }
 
 impl Display for ProjectConfigurationModelError {
@@ -411,6 +664,29 @@ impl Display for ProjectConfigurationModelError {
                 formatter,
                 "logical source binding `{value}` is assigned with equal authority more than once"
             ),
+            Self::MissingGovernanceSelection => formatter
+                .write_str("project configuration v4 requires one explicit governance composition"),
+            Self::MissingGovernanceProfile => {
+                formatter.write_str("governance composition must select at least one profile")
+            }
+            Self::InvalidLayoutId(value) => {
+                write!(formatter, "layout identity `{value}` is not canonical")
+            }
+            Self::InvalidProfileReference(value) => {
+                write!(formatter, "profile reference `{value}` is invalid")
+            }
+            Self::DuplicateProfileReference(value) => {
+                write!(formatter, "profile reference `{value}` is duplicated")
+            }
+            Self::DuplicateModuleOverride(value) => {
+                write!(formatter, "Module profile override `{value}` is duplicated")
+            }
+            Self::MissingModuleProfile(value) => write!(
+                formatter,
+                "Module profile override `{value}` selects no governance profile"
+            ),
+            Self::InvalidCoverageFloor => formatter
+                .write_str("coverage floor evaluability must be between 0 and 10000 basis points"),
         }
     }
 }
@@ -428,4 +704,58 @@ fn is_canonical_relative_path(value: &str) -> bool {
         && value
             .split('/')
             .all(|segment| !segment.is_empty() && segment != "." && segment != "..")
+}
+
+fn validate_layout_id(value: &str) -> Result<(), ProjectConfigurationModelError> {
+    if value.is_empty()
+        || value.starts_with('-')
+        || value.ends_with('-')
+        || !value
+            .bytes()
+            .all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || byte == b'-')
+    {
+        return Err(ProjectConfigurationModelError::InvalidLayoutId(
+            value.into(),
+        ));
+    }
+    Ok(())
+}
+
+fn validate_profile_references(
+    profiles: &[ProfileReference],
+) -> Result<(), ProjectConfigurationModelError> {
+    let mut seen = BTreeSet::new();
+    for profile in profiles {
+        let valid_id = !profile.id.is_empty()
+            && profile
+                .id
+                .bytes()
+                .all(|byte| byte.is_ascii_uppercase() || byte.is_ascii_digit() || byte == b'-');
+        let components = profile.version.split('.').collect::<Vec<_>>();
+        let valid_version = components.len() == 3
+            && components.iter().all(|component| {
+                !component.is_empty() && component.bytes().all(|byte| byte.is_ascii_digit())
+            });
+        let valid_digest = profile.digest.strip_prefix("sha256:").is_some_and(|value| {
+            value.len() == 64
+                && value
+                    .bytes()
+                    .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
+        });
+        if !valid_id || !valid_version || !valid_digest {
+            return Err(ProjectConfigurationModelError::InvalidProfileReference(
+                profile.id.clone().into(),
+            ));
+        }
+        if !seen.insert((profile.id.as_str(), profile.version.as_str())) {
+            return Err(ProjectConfigurationModelError::DuplicateProfileReference(
+                profile.id.clone().into(),
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn profile_reference_input(reference: &ProfileReference) -> ProfileReferenceInput {
+    ProfileReferenceInput::new(&reference.id, &reference.version, &reference.digest)
 }

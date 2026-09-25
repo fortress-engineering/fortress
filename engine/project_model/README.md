@@ -12,7 +12,7 @@ Load and validate root operational configuration, resolve the closed control nam
 
 ### Includes
 
-Observation exclusions, operational/change schemas, fixed control roles, cross-adapter artifact metadata, direct recursive Module ancestry, lowercase snake_case Module names, reserved Element mappings, Data/Info role-collection-partition classification, complete inventory digests, explicitly scoped or opaque ecosystem structures, and exact authority and evaluation-context binding records.
+Observation exclusions, explicit governance and assurance profile selection in `__fortress/.fsconfig`, protected coverage floors, stable Module-scoped overrides, operational/change schemas, fixed control roles, cross-adapter artifact metadata, direct recursive Module ancestry, lowercase snake_case Module names, reserved Element mappings, Data/Info role-collection-partition classification, complete inventory digests, explicitly scoped or opaque ecosystem structures, and exact authority and evaluation-context binding records.
 
 Data is persisted input supplied to computation and uses the frozen roles `config`, `schema`, `policy`, `reference`, `fixture`, `seed`, `template`, `migration`, `resource`, and `dataset`. Info is persisted derived output and uses `report`, `snapshot`, `graph`, `index`, `manifest`, `evidence`, `metric`, and `log`. Either Element is flat or follows `role[_vN]/collection[_vN]/part_000001/files`, with every level optional after the Element and the shallowest truthful form required.
 
@@ -34,6 +34,6 @@ Uses stable Fortress identity and standard semantics when validating governed co
 
 Logical path bindings reference stable Module identities, use only canonical repository-relative exact-file or directory-prefix selectors, and remain distinct from both physical Project Filing conformance and Cargo analysis territories. Logical governance may therefore own native `data` paths while canonical physical Modules use `_data`; filing mode, not a global path rewrite, selects the interpretation.
 
-Operational configuration rejects unsafe or duplicate observation paths. Filing analysis rejects unregistered root/Code structures and arbitrary Data/Info recursion while inventorying every observed leaf and keeping only structural aggregates in the Project Model.
+Operational configuration rejects unsafe or duplicate observation paths, any attempt to exclude or bind application source beneath `__fortress`, malformed profile references, path-scoped overrides, and invalid coverage floors. The CONTROL registry keeps `.fsconfig` active even when Git ignores it and keeps generated evidence nonrecursive. Filing analysis rejects unregistered root/Code structures and arbitrary Data/Info recursion while inventorying every observed leaf and keeping only structural aggregates in the Project Model.
 
 Authority binding keeps Standard, project, ownership, selected profile and governance identities distinct from source bytes and program context. Evaluation keys combine those digests without using machine paths or hidden time.

@@ -75,6 +75,7 @@ use crate::information_flow::{
 use crate::observation::{
     ObservationError, ObservationPolicy, RepositoryObservation, SourceManifest, SourceView,
 };
+use crate::profile::{ProfileResolutionError, ResolvedProfiles, resolve_profiles};
 use crate::program_semantics::{
     ProgramSemanticError, ProgramSemanticInput, ProgramSemanticModel,
     compile_program_semantic_model,
@@ -1845,6 +1846,17 @@ pub fn compile_repository_certification_bundle(
         .map(|execution| execution.rule_id().to_owned())
         .collect::<Vec<_>>();
     applicable_rules.sort();
+    let available_assurance_evidence = if stack.semantic_conformance.model().defeaters().is_empty()
+    {
+        stack
+            .profiles
+            .required_evidence()
+            .iter()
+            .map(|requirement| requirement.id().to_owned())
+            .collect()
+    } else {
+        BTreeSet::new()
+    };
     let products = compile_certification(&CertificationInput {
         project_id: stack.snapshot.project_id().to_owned(),
         source_digest,
@@ -1857,6 +1869,8 @@ pub fn compile_repository_certification_bundle(
         artifacts,
         defeaters: stack.semantic_conformance.model().defeaters().to_vec(),
         applicable_rules,
+        assurance_requirements: stack.profiles.required_evidence().to_vec(),
+        available_assurance_evidence,
         rules,
         requirements,
         suite_execution,
@@ -1890,6 +1904,7 @@ struct CertificationSemanticStack {
     audit: AuditResult,
     finding_governance: FindingGovernanceEvaluation,
     finding_governance_authority_digest: Option<String>,
+    profiles: ResolvedProfiles,
 }
 
 #[allow(clippy::too_many_lines)]
@@ -1988,6 +2003,7 @@ fn compile_certification_semantic_stack(
         &prepared.snapshot,
         &ccg,
         evaluation_inputs,
+        &prepared.profiles,
     )?;
     let finding_governance = evaluate_finding_governance(
         evaluation.findings(),
@@ -2046,6 +2062,7 @@ fn compile_certification_semantic_stack(
         audit,
         finding_governance,
         finding_governance_authority_digest,
+        profiles: prepared.profiles,
     })
 }
 
@@ -2153,8 +2170,9 @@ fn evaluate_certification_rules(
     snapshot: &RepositorySnapshot,
     ccg: &ContractCoherencyGraph,
     inputs: CompleteEvaluationInputs<'_>,
+    profiles: &ResolvedProfiles,
 ) -> Result<crate::evaluation::SnapshotEvaluation, AuditError> {
-    evaluate_snapshot_rules(standard, snapshot, ccg, inputs)
+    evaluate_snapshot_rules(standard, snapshot, ccg, inputs, profiles)
 }
 
 #[allow(clippy::too_many_lines)]
@@ -3007,7 +3025,13 @@ fn audit_repository_with_prepared(
         ),
     )
     .with_rust_test_observations(&prepared.rust_test_observations);
-    let evaluation = evaluate_snapshot_rules(standard, &prepared.snapshot, ccg, evaluation_inputs)?;
+    let evaluation = evaluate_snapshot_rules(
+        standard,
+        &prepared.snapshot,
+        ccg,
+        evaluation_inputs,
+        &prepared.profiles,
+    )?;
     let mut unsupported_analysis = architecture_diagnostics.unsupported_analysis().to_vec();
     unsupported_analysis.extend(
         behavioral_semantics
@@ -3099,6 +3123,7 @@ struct PreparedAudit {
     ccg_compilation: CcgCompilation,
     snapshot: RepositorySnapshot,
     finding_governance: Option<FindingGovernanceDocument>,
+    profiles: ResolvedProfiles,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
@@ -3123,6 +3148,7 @@ struct PreparedAnalysis {
     ccg_compilation: CcgCompilation,
     ownerships: Vec<SourceOwnership>,
     ownership_diagnostics: Vec<SourceOwnershipDiagnostic>,
+    profiles: ResolvedProfiles,
 }
 
 struct LoadedProjectAuthority {
@@ -3632,7 +3658,7 @@ fn prepared_evaluation_key(
     let binding = AuthorityBinding::new(
         prepared.standard.bundle.digest(),
         prepared.standard.bundle.edition(),
-        Vec::<String>::new(),
+        prepared.profiles.authority_digests().to_vec(),
         project_digest,
         serialized_digest(&prepared.ownerships)?,
         None,
@@ -3972,6 +3998,16 @@ fn prepare_analysis(root: &Path) -> Result<PreparedAnalysis, AuditError> {
     );
     let ownerships = ownership_resolution.ownerships().to_vec();
     let ownership_diagnostics = ownership_resolution.diagnostics().to_vec();
+    let module_ids = ccg_compilation
+        .graph()
+        .map(|ccg| ccg.modules().keys().cloned().collect::<BTreeSet<_>>())
+        .unwrap_or_default();
+    let profile_selection = project
+        .configuration
+        .as_ref()
+        .and_then(ProjectConfiguration::profile_selection);
+    let profiles = resolve_profiles(&standard.bundle, profile_selection.as_ref(), &module_ids)
+        .map_err(AuditError::Profiles)?;
     let source_identity = certification_source_digest(&observed_files);
     Ok(PreparedAnalysis {
         observed_files,
@@ -3986,6 +4022,7 @@ fn prepare_analysis(root: &Path) -> Result<PreparedAnalysis, AuditError> {
         ccg_compilation,
         ownerships,
         ownership_diagnostics,
+        profiles,
     })
 }
 
@@ -4206,6 +4243,7 @@ fn prepare_audit_from_analysis(
     let policy = control_observation_policy(&project)?;
     let observed_files = analysis.observed_files;
     let ownerships = analysis.ownerships;
+    let profiles = analysis.profiles;
     let standard = analysis.standard;
     let rust_test_observations = analysis.rust_tests;
     let rust_tests = rust_test_observations
@@ -4278,6 +4316,7 @@ fn prepare_audit_from_analysis(
         ccg_compilation,
         snapshot,
         finding_governance,
+        profiles,
     })
 }
 
@@ -4297,6 +4336,7 @@ fn evaluate_snapshot_rules(
     snapshot: &RepositorySnapshot,
     ccg: &ContractCoherencyGraph,
     inputs: CompleteEvaluationInputs<'_>,
+    profiles: &ResolvedProfiles,
 ) -> Result<crate::evaluation::SnapshotEvaluation, AuditError> {
     let paths: Vec<String> = snapshot
         .files()
@@ -4305,7 +4345,7 @@ fn evaluate_snapshot_rules(
         .collect();
     let architecture = ArchitectureManifest::from_ccg(ccg, &paths);
     SnapshotRuleEngine::builtin()
-        .evaluate_complete(standard, snapshot, &architecture, inputs)
+        .evaluate_complete_with_profiles(standard, snapshot, &architecture, inputs, profiles)
         .map_err(AuditError::Evaluation)
 }
 
@@ -4718,6 +4758,8 @@ pub enum AuditError {
     NonUtf8(Box<str>),
     /// Operational project configuration was invalid.
     Project(ProjectConfigurationLoadError),
+    /// Selected governance or assurance profiles were invalid.
+    Profiles(ProfileResolutionError),
     /// Required authored project authority was absent for governed evaluation.
     ProjectAuthority(Box<str>),
     /// The applicable standard manifest could not be discovered unambiguously.
@@ -4790,6 +4832,7 @@ impl Display for AuditError {
             }
             Self::NonUtf8(path) => write!(formatter, "audit input `{path}` is not UTF-8"),
             Self::Project(error) => write!(formatter, "invalid project state: {error}"),
+            Self::Profiles(error) => write!(formatter, "invalid profile selection: {error}"),
             Self::ProjectAuthority(error) => {
                 write!(formatter, "project authority is unavailable: {error}")
             }

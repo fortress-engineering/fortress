@@ -4,17 +4,18 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use fortress_core::certification::{
     ArtifactEvidenceInput, BehavioralProjectionInput, BehavioralRealizationEvidenceInput,
-    CertificationInput, CertificationProfile, CertificationStatus, EvidenceClass, EvidenceGraph,
-    EvidenceNode, EvidenceResult, GeneratedVerificationInput, GeneratedVerificationKind,
-    MANDATORY_SEMANTIC_ARTIFACTS, ProfileIdentity, RequirementEvidenceInput, RuleEvidenceInput,
-    RustSuiteExecution, StandardIdentity, TrustedAssertionInput, VerificationBinding,
-    VerifiedBehavioralState, certification_source_digest, compile_certification,
-    test_inventory_digest,
+    CertificationInput, CertificationObligationKind, CertificationProfile, CertificationStatus,
+    EvidenceClass, EvidenceGraph, EvidenceNode, EvidenceResult, GeneratedVerificationInput,
+    GeneratedVerificationKind, MANDATORY_SEMANTIC_ARTIFACTS, ProfileIdentity,
+    RequirementEvidenceInput, RuleEvidenceInput, RustSuiteExecution, StandardIdentity,
+    TrustedAssertionInput, VerificationBinding, VerifiedBehavioralState,
+    certification_source_digest, compile_certification, test_inventory_digest,
 };
 use fortress_core::finding::{
     Defeater, DefeaterKind, DefeaterRetirementCondition, DefeaterScope, DefeaterScopeKind,
     DefeaterStrength,
 };
+use fortress_core::profile::RequiredEvidenceDescriptor;
 
 fn input() -> CertificationInput {
     let source_digest = "sha256:subject".to_owned();
@@ -46,6 +47,8 @@ fn input() -> CertificationInput {
             .collect(),
         defeaters: Vec::new(),
         applicable_rules: vec!["STD-ID-001".into()],
+        assurance_requirements: Vec::new(),
+        available_assurance_evidence: BTreeSet::new(),
         rules: vec![RuleEvidenceInput {
             rule_id: "STD-ID-001".into(),
             result: EvidenceResult::Pass,
@@ -95,6 +98,28 @@ fn content_addressed_dag_is_deterministic_and_valid() {
     );
     assert_eq!(first.certification.status(), CertificationStatus::Pass);
     first.evidence_graph.validate().expect("valid graph");
+}
+
+/// `T-AF-CERTIFICATION-0001-R02-004`
+/// Fortress requirement: AF-CERTIFICATION-0001-R02
+#[test]
+fn assurance_requirement_manifest_reports_missing_evidence_separately() {
+    let mut input = input();
+    input.assurance_requirements = vec![
+        serde_json::from_str::<RequiredEvidenceDescriptor>(
+            r#"{"id":"SEMANTIC-EVALUABILITY","semantic_scope":"PROGRAM_SEMANTICS","evidence_class":"STATIC_PROOF"}"#,
+        )
+        .expect("requirement descriptor"),
+    ];
+    let products = compile_certification(&input).expect("certification compiles");
+    let obligation = products
+        .certification
+        .obligations()
+        .iter()
+        .find(|obligation| obligation.kind == CertificationObligationKind::AssuranceEvidence)
+        .expect("assurance obligation");
+    assert_eq!(obligation.status, CertificationStatus::Missing);
+    assert!(obligation.reason.starts_with("REQUIRED_EVIDENCE_MISSING:"));
 }
 
 /// `T-AF-CERTIFICATION-0001-R01-004`

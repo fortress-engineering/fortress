@@ -129,6 +129,10 @@ name = "registry_primitives"
 path = "../standard_registry/testing/_code/registry_primitives.rs"
 
 [[test]]
+name = "governance_profiles"
+path = "../standard_registry/testing/_code/governance_profiles.rs"
+
+[[test]]
 name = "schema_registry"
 path = "../standard_registry/testing/_code/schema_registry.rs"
 

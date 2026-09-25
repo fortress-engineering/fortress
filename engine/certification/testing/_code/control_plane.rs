@@ -6,6 +6,7 @@ use fortress_core::control_layout::{
 use fortress_core::control_manifest::{
     ArtifactStorage, AssessmentGenerationManifest, AssessmentSelectionIndex,
 };
+use fortress_core::program_semantics::{ProgramInputRole, program_input_descriptor};
 use fortress_core::project::ProjectConfiguration;
 
 const DIGEST_A: &str = "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
@@ -86,6 +87,36 @@ fn project_configuration_cannot_hide_or_bind_control_storage() {
       }]
     }"#;
     assert!(ProjectConfiguration::from_json_str(bound).is_err());
+}
+
+/// `T-AF-CONTROL-LAYOUT-0001-R01-003`
+/// Fortress classification: infrastructure
+#[test]
+fn profile_selection_uses_the_registered_project_configuration_role() {
+    let source = br#"{
+      "$schema":"urn:fortress:schema:v4:project-configuration",
+      "schema_version":4,
+      "observation_exclusions":[".git"],
+      "logical_modules":[],
+      "governance":{
+        "default_layout":"native-logical-v1",
+        "selected_profiles":[{
+          "id":"GOV-FORTRESS-NATIVE",
+          "version":"1.0.0",
+          "digest":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }],
+        "module_overrides":[]
+      },
+      "assurance_profiles":[]
+    }"#;
+    let role = ControlLayout::standard()
+        .resolve(PROJECT_CONFIGURATION_PATH)
+        .expect("registered configuration")
+        .role();
+    assert_eq!(role, ControlRole::ProjectConfiguration);
+    let descriptor = program_input_descriptor(PROJECT_CONFIGURATION_PATH, source)
+        .expect("active control authority is a program context input");
+    assert_eq!(descriptor.role(), ProgramInputRole::ProjectIdentity);
 }
 
 fn manifest(member: &str) -> String {

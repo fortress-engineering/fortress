@@ -25,7 +25,8 @@
         "AF-STANDARD-REGISTRY-0001-R02",
         "AF-STANDARD-REGISTRY-0001-R03",
         "AF-STANDARD-REGISTRY-0001-R04",
-        "AF-STANDARD-REGISTRY-0001-R05"
+        "AF-STANDARD-REGISTRY-0001-R05",
+        "AF-STANDARD-REGISTRY-0001-R06"
       ]
     }
   ],
@@ -71,7 +72,8 @@
             "T-AF-STANDARD-REGISTRY-0001-R03-011",
             "T-AF-STANDARD-REGISTRY-0001-R03-012",
             "T-AF-STANDARD-REGISTRY-0001-R03-013",
-            "T-AF-STANDARD-REGISTRY-0001-R03-014"
+            "T-AF-STANDARD-REGISTRY-0001-R03-014",
+            "T-AF-STANDARD-REGISTRY-0001-R03-015"
           ]
         },
         {
@@ -88,6 +90,19 @@
           "statement": "The Standard Registry owns a canonical full-snapshot certification profile that requires current passing evidence for every applicable rule, declared Requirement test, opted-in realization, generated verification obligation, and mandatory semantic artifact without project-specific exclusions.",
           "tests": [
             "T-AF-STANDARD-REGISTRY-0001-R05-001"
+          ]
+        },
+        {
+          "id": "AF-STANDARD-REGISTRY-0001-R06",
+          "statement": "The Standard Registry resolves immutable governance and assurance profiles by exact identity, version, and digest into order-independent rule applicability, layout, semantic scope, Module-scoped policy, and required-evidence manifests while rejecting conflicting composition.",
+          "tests": [
+            "T-AF-STANDARD-REGISTRY-0001-R06-001",
+            "T-AF-STANDARD-REGISTRY-0001-R06-002",
+            "T-AF-STANDARD-REGISTRY-0001-R06-003",
+            "T-AF-STANDARD-REGISTRY-0001-R06-004",
+            "T-AF-STANDARD-REGISTRY-0001-R06-005",
+            "T-AF-STANDARD-REGISTRY-0001-R06-006",
+            "T-AF-STANDARD-REGISTRY-0001-R06-007"
           ]
         }
       ]

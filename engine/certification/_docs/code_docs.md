@@ -6,7 +6,7 @@ Certification Code defines content-addressed evidence nodes and DAG validation, 
 
 ## Execution
 
-The implementation consumes one stabilized source identity, one already-compiled semantic artifact stack including current CCG-bound Reference Resolution and Module semantic-conformance projections, canonical semantic defeaters, applicable rule results, one canonical local Rust suite result, and distributed Testing bindings before building evidence nodes in dependency order. Semantic rule evidence depends on its scoped defeater nodes, freshness failures produce defeating evidence without changing obligation status algebra, non-applicable rules are not mislabeled as conformance proof, and unsupported applicable claims remain missing evidence.
+The implementation consumes one stabilized source identity, one already-compiled semantic artifact stack including current CCG-bound Reference Resolution and Module semantic-conformance projections, canonical semantic defeaters, the resolved assurance requirement manifest, applicable rule results, one canonical local Rust suite result, and distributed Testing bindings before building evidence nodes in dependency order. Semantic rule evidence depends on its scoped defeater nodes, freshness failures produce defeating evidence without changing obligation status algebra, non-applicable rules are not mislabeled as conformance proof, and unsupported applicable claims remain missing evidence. Missing assurance evidence is reported as `REQUIRED_EVIDENCE_MISSING` without rewriting an upstream semantic `UNKNOWN`.
 
 ## State
 

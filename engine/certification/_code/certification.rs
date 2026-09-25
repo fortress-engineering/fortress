@@ -17,6 +17,7 @@ use crate::finding::{
     Defeater, DefeaterError, DefeaterKind, DefeaterRetirementCondition, DefeaterScope,
     DefeaterScopeKind, DefeaterStrength,
 };
+use crate::profile::{RequiredEvidenceClass, RequiredEvidenceDescriptor};
 
 /// Evidence Graph schema version.
 pub const EVIDENCE_GRAPH_SCHEMA_VERSION: u16 = 2;
@@ -471,6 +472,8 @@ pub enum CertificationObligationKind {
     EnvironmentalVerification,
     /// Semantic artifact freshness.
     ArtifactFreshness,
+    /// Evidence explicitly required by a selected assurance profile.
+    AssuranceEvidence,
 }
 
 /// One deterministic certification obligation and its supporting evidence.
@@ -804,6 +807,10 @@ pub struct CertificationInput {
     pub defeaters: Vec<Defeater>,
     /// Complete sorted applicable Standard rule identities.
     pub applicable_rules: Vec<String>,
+    /// Exact requirement manifest emitted by selected assurance profiles.
+    pub assurance_requirements: Vec<RequiredEvidenceDescriptor>,
+    /// Requirement identities with current qualifying evidence.
+    pub available_assurance_evidence: BTreeSet<String>,
     /// Applicable Standard rule evaluations.
     pub rules: Vec<RuleEvidenceInput>,
     /// Feature Requirements.
@@ -1021,6 +1028,48 @@ pub fn compile_certification(
                 });
             }
         }
+    }
+
+    let assurance_requirements = input.assurance_requirements.iter().collect::<BTreeSet<_>>();
+    for requirement in assurance_requirements {
+        let satisfied = input
+            .available_assurance_evidence
+            .contains(requirement.id());
+        let evidence_class = profile_evidence_class(requirement.evidence_class());
+        let node = EvidenceNode::new(
+            "assurance_requirement",
+            requirement.id(),
+            if satisfied {
+                EvidenceResult::Pass
+            } else {
+                EvidenceResult::Unsupported
+            },
+            vec![profile_ref.clone(), standard_ref.clone()],
+            "fortress-certification",
+            CERTIFICATION_SEMANTIC_VERSION,
+            evidence_class,
+            json!({
+                "semantic_scope": requirement.semantic_scope(),
+                "required_evidence_class": requirement.evidence_class(),
+            }),
+        )?;
+        obligations.push(CertificationObligation {
+            kind: CertificationObligationKind::AssuranceEvidence,
+            subject: requirement.id().into(),
+            required_evidence_classes: vec![evidence_class],
+            evidence_refs: vec![node.id.clone()],
+            status: if satisfied {
+                CertificationStatus::Pass
+            } else {
+                CertificationStatus::Missing
+            },
+            reason: if satisfied {
+                "selected assurance requirement has current qualifying evidence".into()
+            } else {
+                "REQUIRED_EVIDENCE_MISSING: selected assurance requirement has no current qualifying evidence".into()
+            },
+        });
+        nodes.push(node);
     }
 
     let mut sorted_defeaters = input.defeaters.iter().collect::<Vec<_>>();
@@ -1510,6 +1559,15 @@ pub fn compile_certification(
         certification,
         verified_bfg,
     })
+}
+
+const fn profile_evidence_class(value: RequiredEvidenceClass) -> EvidenceClass {
+    match value {
+        RequiredEvidenceClass::StaticProof => EvidenceClass::StaticProof,
+        RequiredEvidenceClass::ExecutedTest => EvidenceClass::ExecutedTest,
+        RequiredEvidenceClass::ExecutedScenario => EvidenceClass::ExecutedScenario,
+        RequiredEvidenceClass::Authority => EvidenceClass::Authority,
+    }
 }
 
 /// Evidence-aware behavioral verification state.

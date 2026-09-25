@@ -501,7 +501,7 @@ fn initialization_apply_requires_reviewed_proposal_and_preserves_source() {
     );
     let result: serde_json::Value = serde_json::from_slice(&apply.stdout).unwrap();
     assert_eq!(result["baseline_created"], true);
-    assert_eq!(result["strict_conformance"], "FAIL");
+    assert_eq!(result["strict_conformance"], "PASS");
     assert_eq!(result["progressive_enforcement"], "PASS");
     assert_eq!(
         fs::read(fixture.root.join("src/lib.rs")).unwrap(),
@@ -1070,8 +1070,19 @@ impl Drop for AuditFixture {
 
 fn project_json() -> &'static str {
     r#"{
-      "$schema":"urn:fortress:schema:v2:project-configuration","schema_version":2,
-      "observation_exclusions":[".git"]
+      "$schema":"urn:fortress:schema:v4:project-configuration","schema_version":4,
+      "observation_exclusions":[".git"],
+      "logical_modules":[],
+      "governance":{
+        "default_layout":"canonical-filing-v1",
+        "selected_profiles":[{
+          "id":"GOV-FORTRESS-CANONICAL",
+          "version":"1.0.0",
+          "digest":"sha256:7640a6e2c9a7fcf5f0a0d10bcd776914412b80c364162c24d013094de2ff883a"
+        }],
+        "module_overrides":[]
+      },
+      "assurance_profiles":[]
     }"#
 }
 

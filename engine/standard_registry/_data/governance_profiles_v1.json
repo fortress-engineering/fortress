@@ -1,0 +1,126 @@
+{
+  "$schema": "urn:fortress:schema:v1:governance-profiles",
+  "schema_version": 1,
+  "profiles": [
+    {
+      "id": "ASSURE-SEMANTIC-EVALUABILITY",
+      "version": "1.0.0",
+      "digest": "sha256:590aa518f3ea324d396877362e6a68c98febf297990810e46523729aa35786c8",
+      "kind": "ASSURANCE",
+      "layout_id": null,
+      "active_rules": [],
+      "semantic_scopes": [
+        "PROGRAM_SEMANTICS"
+      ],
+      "required_evidence": [
+        {
+          "id": "SEMANTIC-EVALUABILITY",
+          "semantic_scope": "PROGRAM_SEMANTICS",
+          "evidence_class": "STATIC_PROOF"
+        }
+      ],
+      "conflicts": []
+    },
+    {
+      "id": "GOV-FORTRESS-CANONICAL",
+      "version": "1.0.0",
+      "digest": "sha256:7640a6e2c9a7fcf5f0a0d10bcd776914412b80c364162c24d013094de2ff883a",
+      "kind": "GOVERNANCE",
+      "layout_id": "canonical-filing-v1",
+      "active_rules": [
+        "ARCH-DEPENDENCY-001",
+        "ARCH-OWNERSHIP-001",
+        "ARCH-REALIZATION-001",
+        "ARCH-SEMANTIC-001",
+        "BEHAVIOR-BYPASS-001",
+        "BEHAVIOR-FLOW-001",
+        "BEHAVIOR-REALIZATION-001",
+        "CONTRACT-COHERENCY-001",
+        "PROGRAM-DOMAIN-001",
+        "PROGRAM-EFFECT-001",
+        "PROGRAM-ENVIRONMENT-001",
+        "PROGRAM-INFOFLOW-001",
+        "PROGRAM-RECOVERY-001",
+        "PROGRAM-RETRY-001",
+        "PROGRAM-STATE-001",
+        "REPO-DOCS-001",
+        "REPO-MODULE-001",
+        "REPO-REFERENCE-001",
+        "SOURCE-ARTIFACT-001",
+        "SOURCE-PROFILE-001",
+        "STD-ID-001",
+        "TEST-BOUNDARY-001",
+        "TEST-TRACEABILITY-001"
+      ],
+      "semantic_scopes": [
+        "ARCHITECTURE",
+        "BEHAVIOR",
+        "CANONICAL_FILING",
+        "PROGRAM_SEMANTICS",
+        "TEST_GOVERNANCE"
+      ],
+      "required_evidence": [],
+      "conflicts": [
+        "GOV-FORTRESS-NATIVE"
+      ]
+    },
+    {
+      "id": "GOV-FORTRESS-NATIVE",
+      "version": "1.0.0",
+      "digest": "sha256:ac541bb1e1dd0f7f6ef6c8f1c1babcbe62c9a13cc507e74ad0058454baa7c475",
+      "kind": "GOVERNANCE",
+      "layout_id": "native-logical-v1",
+      "active_rules": [
+        "ARCH-DEPENDENCY-001",
+        "ARCH-OWNERSHIP-001",
+        "ARCH-REALIZATION-001",
+        "ARCH-SEMANTIC-001",
+        "BEHAVIOR-BYPASS-001",
+        "BEHAVIOR-FLOW-001",
+        "BEHAVIOR-REALIZATION-001",
+        "CONTRACT-COHERENCY-001",
+        "PROGRAM-DOMAIN-001",
+        "PROGRAM-EFFECT-001",
+        "PROGRAM-ENVIRONMENT-001",
+        "PROGRAM-INFOFLOW-001",
+        "PROGRAM-RECOVERY-001",
+        "PROGRAM-RETRY-001",
+        "PROGRAM-STATE-001",
+        "REPO-REFERENCE-001",
+        "SOURCE-ARTIFACT-001",
+        "SOURCE-PROFILE-001",
+        "STD-ID-001"
+      ],
+      "semantic_scopes": [
+        "ARCHITECTURE",
+        "BEHAVIOR",
+        "PROGRAM_SEMANTICS"
+      ],
+      "required_evidence": [],
+      "conflicts": [
+        "GOV-FORTRESS-CANONICAL"
+      ]
+    },
+    {
+      "id": "GOV-FORTRESS-SEMANTIC",
+      "version": "1.0.0",
+      "digest": "sha256:cedf72ff808e6bef344ecdced91111fcf56ba3d0f3894d25fa5bfa0f1e61073f",
+      "kind": "GOVERNANCE",
+      "layout_id": null,
+      "active_rules": [
+        "PROGRAM-DOMAIN-001",
+        "PROGRAM-EFFECT-001",
+        "PROGRAM-ENVIRONMENT-001",
+        "PROGRAM-INFOFLOW-001",
+        "PROGRAM-RECOVERY-001",
+        "PROGRAM-RETRY-001",
+        "PROGRAM-STATE-001"
+      ],
+      "semantic_scopes": [
+        "PROGRAM_SEMANTICS"
+      ],
+      "required_evidence": [],
+      "conflicts": []
+    }
+  ]
+}
