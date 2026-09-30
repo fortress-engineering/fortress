@@ -28,7 +28,7 @@ Verifies stable identity parsing and exact draft rule registry metadata at the S
 
 ### [`schema_registry.rs`](../_code/schema_registry.rs)
 
-Validates registered JSON Schema documents, the live manifest, emitted proof and certificate shapes, complete compatibility catalog coverage, and agreement with the draft rule registry.
+Validates registered JSON Schema documents, the live manifest, emitted proof and certificate shapes, typed operation-summary context and bound rejection controls, complete compatibility catalog coverage, and agreement with the draft rule registry.
 
 ### [`artifact_schemas.rs`](../_code/artifact_schemas.rs)
 

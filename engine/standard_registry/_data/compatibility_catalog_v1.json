@@ -1085,14 +1085,14 @@
       "schema_path": "engine/state_effect_analysis/_data/state_effect_schema_v4.json",
       "version": 4,
       "writer": {
-        "status": "ACTIVE",
-        "source": "engine/state_effect_analysis/_code/state_effect.rs"
+        "status": "RETIRED",
+        "source": null
       },
       "reader": {
         "status": "UNSUPPORTED",
         "source": null
       },
-      "migration": "NOT_APPLICABLE",
+      "migration": "REQUIRED_BEFORE_USE",
       "identity_algorithm": {
         "id": "no-document-level-identity-algorithm",
         "source": null
@@ -1570,7 +1570,7 @@
       "version": 1,
       "writer": {
         "status": "ACTIVE",
-        "source": "engine/snapshot_governance/_code/quality_certificate.py"
+        "source": "engine/snapshot_governance/_code/control_migration.py"
       },
       "reader": {
         "status": "SUPPORTED",
@@ -1605,6 +1605,94 @@
       },
       "content_hash_algorithm": {
         "id": "sha256-generation-manifest-jcs",
+        "source": "engine/certification/_code/control_manifest.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v1:operation-summary-catalog",
+      "schema_path": "engine/state_effect_analysis/_data/operation_summary_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "AUTHORED",
+        "source": null
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/state_effect_analysis/_code/summary.rs"
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "literal-authored-identity-fields",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-jcs-sorted-summary-identities",
+        "source": "engine/state_effect_analysis/_code/summary.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v5:state-effect-analysis",
+      "schema_path": "engine/state_effect_analysis/_data/state_effect_schema_v5.json",
+      "version": 5,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/state_effect_analysis/_code/state_effect.rs"
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "literal-authored-identity-fields",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-owner-canonical-json-bytes",
+        "source": "engine/state_effect_analysis/_code/state_effect.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v2:control-layout",
+      "schema_path": "engine/project_model/_data/control_layout_schema_v2.json",
+      "version": 2,
+      "writer": {
+        "status": "AUTHORED",
+        "source": null
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/project_model/_code/control_layout.rs"
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "literal-authored-identity-fields",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-exact-installed-authority-bytes",
+        "source": "engine/project_model/_code/control_layout.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:derived:v2:assessment-generation-manifest",
+      "schema_path": "engine/certification/_data/generation_manifest_schema_v2.json",
+      "version": 2,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/snapshot_governance/_code/quality_certificate.py"
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/certification/_code/control_manifest.rs"
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "literal-authored-identity-fields",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-jcs-generation-manifest",
         "source": "engine/certification/_code/control_manifest.rs"
       }
     }

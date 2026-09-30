@@ -12,7 +12,7 @@ Certification constructs immutable content-addressed evidence nodes including de
 
 ### Includes
 
-This Module owns current Evidence Graph v2 while retaining v1 schema compatibility, Certification Profile and result v1, distributed Verification Binding v1, assessment generation manifest and selection index v1, source-snapshot exclusion identity, test execution and defeater evidence semantics, affected-evidence closure, and Verified BFG v1.
+This Module owns current Evidence Graph v2 while retaining v1 schema compatibility, Certification Profile and result v1, distributed Verification Binding v1, assessment generation manifest v2 with retained v1 compatibility, selection index v1, source-snapshot exclusion identity, test execution and defeater evidence semantics, affected-evidence closure, and Verified BFG v1.
 
 ### Excludes
 

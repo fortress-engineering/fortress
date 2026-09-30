@@ -1354,7 +1354,16 @@ fn local(value: Mock) { value.open(); }
         open.direct_effects()
             .contains(&FunctionEffect::FilesystemWrite)
     );
-    assert!(open.uncertainty().is_empty());
+    assert!(
+        open.uncertainty()
+            .iter()
+            .any(|reason| reason.starts_with("operation_summary:unknown:"))
+    );
+    assert!(
+        open.operation_summaries()
+            .iter()
+            .all(|record| !record.outcome().is_sufficient())
+    );
 
     let local = summary("local");
     assert!(

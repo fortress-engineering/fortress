@@ -452,12 +452,12 @@ pub fn analyze_program_domains(
 }
 
 struct AnalysisContext<'a> {
-    psm: &'a ProgramSemanticModel,
     contracts: &'a ResolvedFunctionContracts,
     symbols: BTreeMap<&'a str, &'a ExecutableSymbol>,
     types: BTreeMap<&'a str, &'a ProgramType>,
     bodies: BTreeMap<&'a str, &'a ProgramBody>,
     local_types: BTreeMap<(&'a str, &'a str), &'a str>,
+    calls_by_caller: BTreeMap<&'a str, Vec<&'a ProgramCall>>,
 }
 
 impl<'a> AnalysisContext<'a> {
@@ -497,14 +497,23 @@ impl<'a> AnalysisContext<'a> {
                 })
             })
             .collect();
+        let mut calls_by_caller: BTreeMap<&str, Vec<&ProgramCall>> = BTreeMap::new();
+        // Preserve original call order and duplicates for identical first-match resolution.
+        for call in psm.calls() {
+            calls_by_caller.entry(call.caller()).or_default().push(call);
+        }
         Self {
-            psm,
             contracts,
             symbols,
             types,
             bodies,
             local_types,
+            calls_by_caller,
         }
+    }
+
+    fn calls_for(&self, caller: &str) -> &[&'a ProgramCall] {
+        self.calls_by_caller.get(caller).map_or(&[], Vec::as_slice)
     }
 
     fn static_domain(&self, type_id: &str) -> SemanticDomain {
@@ -661,9 +670,9 @@ impl<'a> AnalysisContext<'a> {
         exceptional_outcomes.sort();
         exceptional_outcomes.dedup();
         let callees = self
-            .psm
-            .calls()
+            .calls_for(symbol.id())
             .iter()
+            .copied()
             .filter(|call| call.caller() == symbol.id())
             .filter_map(ProgramCall::callee)
             .map(str::to_owned)
@@ -706,9 +715,9 @@ impl<'a> AnalysisContext<'a> {
 
     fn symbol_unsupported(&self, symbol: &ExecutableSymbol) -> Vec<String> {
         let mut unsupported = self
-            .psm
-            .calls()
+            .calls_for(symbol.id())
             .iter()
+            .copied()
             .filter(|call| call.caller() == symbol.id())
             .filter_map(|call| match call.state() {
                 CallResolutionState::DynamicDispatch => Some("dynamic_dispatch"),
@@ -1299,7 +1308,7 @@ impl<'a> AnalysisContext<'a> {
         state: &mut AnalysisState,
         provenance: &ProgramProvenance,
     ) -> SemanticDomain {
-        let resolved = self.psm.calls().iter().find(|call| {
+        let resolved = self.calls_for(caller.id()).iter().copied().find(|call| {
             call.caller() == caller.id()
                 && call.state() == CallResolutionState::ResolvedStatic
                 && call

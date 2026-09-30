@@ -38,6 +38,10 @@ Defines immutable governance and assurance profile bodies with explicit layout, 
 
 Publishes native logical, strict canonical, semantic overlay, and semantic-evaluability assurance definitions as Standard authority. These selected defaults remain draft policy pending OWNER-ASSURANCE approval.
 
+### [`operation_summaries_v1.json`](../_data/operation_summaries_v1.json)
+
+Defines the reviewed installed catalog of exact operation identities with source and version binding, target and feature constraints, type and callback/destructor dependencies, completeness, authority class, and qualification references. The registry supplies these authority bytes without interpreting effects. State and Effect Analysis preserves historical classifier facts as observed partial authority and applies complete qualified bounds only to the explicitly supported context; unknown context is never qualified by catalog membership.
+
 ### [`rule_schema_v1.json`](../_data/rule_schema_v1.json)
 
 Defines the version-one machine representation and validation boundary for rule records, including formal implication and conflict logic, owned by this Module.

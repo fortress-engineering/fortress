@@ -13,12 +13,31 @@ use sha2::{Digest, Sha256};
 use crate::identity::{RuleId, RuleIdError, StableId, StableIdError};
 
 const INSTALLED_STANDARD_MANIFEST: &str = include_str!("../_data/standard_manifest.json");
+const INSTALLED_OPERATION_SUMMARIES: &str = include_str!("../_data/operation_summaries_v1.json");
 pub(crate) const STD_ID_RULE_SOURCE: &str = include_str!("../_data/std_id_rule.json");
 
 /// Returns the exact Standard manifest authority installed with Fortress.
 #[must_use]
 pub const fn installed_standard_manifest() -> &'static str {
     INSTALLED_STANDARD_MANIFEST
+}
+
+/// Returns the exact reviewed operation catalog installed with the Standard.
+///
+/// Interpretation belongs to State and Effect Analysis; the registry only binds
+/// the installed authority bytes and never executes an effect evaluator.
+#[must_use]
+pub const fn installed_operation_summaries() -> &'static str {
+    INSTALLED_OPERATION_SUMMARIES
+}
+
+/// Identifies the installed operation catalog without incorporating local caches.
+#[must_use]
+pub fn installed_operation_summaries_digest() -> String {
+    format!(
+        "sha256:{:x}",
+        Sha256::digest(INSTALLED_OPERATION_SUMMARIES.as_bytes())
+    )
 }
 
 /// Rule category attached to normative metadata and normalized findings.

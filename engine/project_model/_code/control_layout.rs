@@ -17,7 +17,12 @@ pub const LEGACY_PROJECT_CONFIGURATION_PATH: &str = "_data/project.json";
 pub const EVIDENCE_ROOT: &str = "__fortress/evidence";
 
 /// Declarative layout bytes shared by all compiled adapters.
-pub const CONTROL_LAYOUT_SOURCE: &str = include_str!("../_data/control_layout_v1.json");
+pub const CONTROL_LAYOUT_SOURCE: &str = include_str!("../_data/control_layout_v2.json");
+/// Retained declarative layout bytes for historical records.
+pub const LEGACY_CONTROL_LAYOUT_SOURCE: &str = include_str!("../_data/control_layout_v1.json");
+/// Exact project-local effect-summary authority location.
+pub const EFFECT_SUMMARY_AUTHORITY_PATH: &str =
+    "__fortress/governance/effect_summaries/catalog.json";
 
 /// Whether a control entry participates in the current source subject.
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq)]
@@ -29,7 +34,7 @@ pub enum ControlSourceBinding {
     Nonrecursive,
 }
 
-/// Closed initial control role vocabulary.
+/// Closed versioned control role vocabulary.
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum ControlRole {
@@ -39,6 +44,8 @@ pub enum ControlRole {
     FindingGovernance,
     /// Root information-flow authority.
     GlobalInformationFlowPolicy,
+    /// Exact-context operation-summary selection and override authority.
+    EffectSummaryAuthority,
     /// Current assessment selection index.
     AssessmentSelectionIndex,
     /// Immutable assessment generation manifest.
@@ -164,10 +171,31 @@ impl ControlLayout {
     /// Returns a stable digest of the exact installed registry bytes.
     #[must_use]
     pub fn digest(&self) -> String {
-        format!(
-            "sha256:{:x}",
-            Sha256::digest(CONTROL_LAYOUT_SOURCE.as_bytes())
-        )
+        let source = if self.schema_version == 1 {
+            LEGACY_CONTROL_LAYOUT_SOURCE
+        } else {
+            CONTROL_LAYOUT_SOURCE
+        };
+        format!("sha256:{:x}", Sha256::digest(source.as_bytes()))
+    }
+
+    /// Returns whether a directory is needed by a registered role or generation.
+    ///
+    /// Role ancestors are exact component prefixes. Admission of a parent does
+    /// not admit arbitrary files or descendants beneath that directory.
+    #[must_use]
+    pub fn allows_directory(&self, path: &str) -> bool {
+        path == self.root
+            || self.roles.iter().any(|record| {
+                record
+                    .path
+                    .strip_prefix(path)
+                    .is_some_and(|remainder| remainder.starts_with('/'))
+            })
+            || path == "__fortress/evidence/generations"
+            || path
+                .strip_prefix("__fortress/evidence/generations/")
+                .is_some_and(is_sha256_hex)
     }
 
     /// Resolves a path under the control root. Paths outside return `None`.
@@ -238,9 +266,19 @@ impl ControlLayout {
     }
 
     fn validate(&self) -> Result<(), ControlLayoutError> {
-        if self.schema != "urn:fortress:schema:v1:control-layout"
-            || self.schema_version != 1
-            || self.id != "fortress-control-layout-v1"
+        let supported_version = matches!(
+            (self.schema.as_str(), self.schema_version, self.id.as_str()),
+            (
+                "urn:fortress:schema:v1:control-layout",
+                1,
+                "fortress-control-layout-v1"
+            ) | (
+                "urn:fortress:schema:v2:control-layout",
+                2,
+                "fortress-control-layout-v2"
+            )
+        );
+        if !supported_version
             || self.root != CONTROL_ROOT
             || self.config != PROJECT_CONFIGURATION_PATH
         {
@@ -251,12 +289,29 @@ impl ControlLayout {
             if !role.path.starts_with("__fortress/")
                 || role.owner.is_empty()
                 || !paths.insert(role.path.as_str())
+                || (role.role == ControlRole::EffectSummaryAuthority
+                    && (self.schema_version != 2
+                        || role.path != EFFECT_SUMMARY_AUTHORITY_PATH
+                        || role.owner != "state_effect_analysis"
+                        || role.source_binding != ControlSourceBinding::Required))
             {
                 return Err(ControlLayoutError::InvalidEntry(role.path.clone().into()));
             }
         }
         if !paths.contains(PROJECT_CONFIGURATION_PATH) {
             return Err(ControlLayoutError::MissingConfiguration);
+        }
+        if self.schema_version == 2
+            && !self.roles.iter().any(|role| {
+                role.path == EFFECT_SUMMARY_AUTHORITY_PATH
+                    && role.role == ControlRole::EffectSummaryAuthority
+                    && role.owner == "state_effect_analysis"
+                    && role.source_binding == ControlSourceBinding::Required
+            })
+        {
+            return Err(ControlLayoutError::InvalidEntry(
+                EFFECT_SUMMARY_AUTHORITY_PATH.into(),
+            ));
         }
         if self.manifest_member.name != "manifest.json" || self.manifest_member.owner.is_empty() {
             return Err(ControlLayoutError::MissingManifest);

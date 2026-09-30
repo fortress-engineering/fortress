@@ -720,12 +720,27 @@ fn capability_effect_override_matrix_is_total() {
         .find(|claim| claim.target() == "filesystem.write")
         .unwrap();
     // The capability still governs filesystem.read; the effect entry governs
-    // filesystem.write. Neither declaration creates an empty favorable claim.
+    // filesystem.write. The write witness proves its contradiction, while an
+    // unqualified external-operation bound cannot establish the absence of reads.
     assert_eq!(capability.matching_observation_count(), 0);
     assert_eq!(
         capability.conformance(),
-        Some(SemanticConformanceState::NoSupportedViolation)
+        Some(SemanticConformanceState::NotEvaluable)
     );
+    assert_eq!(
+        capability.blocking_eligibility(),
+        Some(BlockingEligibility::NotEvaluable)
+    );
+    assert!(capability.evaluation().proof_graph().is_none());
+    assert!(capability.defeater_refs().iter().any(|reference| {
+        result.model().defeater(reference).is_some_and(|defeater| {
+            defeater.strength() == DefeaterStrength::Defeating
+                && defeater
+                    .detail()
+                    .get("uncertainty")
+                    .is_some_and(|reason| reason.starts_with("operation_summary:unknown:"))
+        })
+    }));
     assert_eq!(
         effect.conformance(),
         Some(SemanticConformanceState::SupportedViolation)
@@ -813,6 +828,35 @@ fn claim_slot_survives_disposition_change_but_instance_does_not() {
         evaluated.conformance(),
         Some(SemanticConformanceState::NoSupportedViolation)
     );
+    let graph = evaluated
+        .evaluation()
+        .proof_graph()
+        .expect("complete negative proof");
+    let root = graph
+        .nodes
+        .iter()
+        .find(|node| node.node_id == graph.root_node_id)
+        .unwrap();
+    assert_eq!(root.operator, fortress_core::proof::ProofOperator::All);
+    let refs = root
+        .required_refs
+        .iter()
+        .map(|reference| reference.id().to_owned())
+        .collect::<BTreeSet<_>>();
+    for prefix in [
+        "claim_universe:v1:",
+        "program_context:v1:",
+        "program_semantic_model:",
+        "state_effect_analysis:",
+    ] {
+        assert!(refs.iter().any(|reference| reference.starts_with(prefix)));
+    }
+    assert_eq!(graph.is_satisfied(&refs, &refs), Ok(true));
+    for required in &refs {
+        let mut available = refs.clone();
+        available.remove(required);
+        assert_eq!(graph.is_satisfied(&refs, &available), Ok(false));
+    }
 }
 
 /// `T-AF-ARCHITECTURE-EVALUATION-0001-R05-007`

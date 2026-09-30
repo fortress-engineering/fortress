@@ -6,8 +6,13 @@ use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use fortress_core::program_semantics::ContextKnowledge;
 use fortress_core::proof::{EvidenceReference, ProofExpression, ProofGraph, ProofOperator};
+use fortress_core::semantic_analysis::FunctionEffect;
 use fortress_core::standard::StandardRegistry;
+use fortress_core::state_effect_analysis::{
+    SummaryAuthorityClass, SummaryContext, SummaryEffectBound, SummaryOutcome,
+};
 use serde_json::Value;
 
 /// Returns the checked-out repository root.
@@ -34,7 +39,7 @@ fn registered_schemas_are_unique_json_schema_documents() {
         .expect("schema manifest must contain a schemas array");
     let mut identities = HashSet::with_capacity(paths.len());
 
-    assert_eq!(paths.len(), 73);
+    assert_eq!(paths.len(), 77);
     let manifest_schema =
         read_json("engine/standard_registry/_data/schema_manifest_schema_v2.json");
     jsonschema::draft202012::validate(&manifest_schema, &manifest)
@@ -56,6 +61,105 @@ fn registered_schemas_are_unique_json_schema_documents() {
         jsonschema::draft202012::meta::validate(&schema)
             .unwrap_or_else(|error| panic!("invalid JSON Schema at {relative}: {error}"));
     }
+    state_effect_summary_schema_preserves_typed_contexts();
+}
+
+#[allow(clippy::too_many_lines)]
+fn state_effect_summary_schema_preserves_typed_contexts() {
+    let schema = read_json("engine/state_effect_analysis/_data/state_effect_schema_v5.json");
+    let digest = format!("sha256:{}", "a".repeat(64));
+    let context = SummaryContext {
+        source_digest: ContextKnowledge::Known(digest.clone()),
+        version: ContextKnowledge::Known("1.97.1".into()),
+        target: ContextKnowledge::Known("x86_64-unknown-linux-gnu".into()),
+        features: ContextKnowledge::Known(Vec::new()),
+        type_bindings: ContextKnowledge::Known(vec!["T=u8".into()]),
+    };
+    let outcome = SummaryOutcome {
+        selected_summary_id: Some("qualified-operation".into()),
+        catalog_digest: digest.clone(),
+        authority: Some(SummaryAuthorityClass::Qualified),
+        upper_bound: SummaryEffectBound::Known(vec![FunctionEffect::FilesystemRead]),
+        premise_refs: vec!["qualification:exact-operation".into()],
+        assumption_refs: Vec::new(),
+        reasons: Vec::new(),
+    };
+    let mut document = serde_json::json!({
+        "$schema": "urn:fortress:schema:v5:state-effect-analysis", "schema_version": 5,
+        "semantic_version": "5.0.0", "project_id": null,
+        "psm_digest": digest.clone(), "semantic_analysis_digest": digest.clone(),
+        "state_contract_digest": digest.clone(), "function_contract_digest": digest.clone(),
+        "operation_summary_catalog_digest": digest,
+        "effect_catalog": [], "violations": [], "coverage": {}, "unsupported_semantics": [],
+        "direct_effect_counts": {}, "transitive_effect_counts": {},
+        "direct_capability_counts": {}, "transitive_capability_counts": {},
+        "summaries": [{"effect_evidence": [], "operation_summaries": [{
+            "operation_site_id": format!("rust_operation_site:v1:sha256:{}", "b".repeat(64)),
+            "operation": "std::fs::read", "context": context, "outcome": outcome,
+            "observation_refs": ["source-context:exact-observation"]
+        }]}]
+    });
+    jsonschema::draft202012::validate(&schema, &document)
+        .expect("typed exact summary context and bound validate");
+    let summary_path = "/summaries/0/operation_summaries/0";
+    for (field, invalid) in [
+        ("context/source_digest/value", serde_json::json!([])),
+        (
+            "context/source_digest/value",
+            serde_json::json!("invalid-digest"),
+        ),
+        ("context/version/value", serde_json::json!(["1.97.1"])),
+        ("context/version/value", serde_json::json!("")),
+        ("context/target/value", serde_json::json!([])),
+        ("context/features/value", serde_json::json!("feature")),
+        ("context/features/value", serde_json::json!(["x", "x"])),
+        ("context/features/value", serde_json::json!([1])),
+        ("context/type_bindings/value", serde_json::json!("T=u8")),
+        ("context/type_bindings/value", serde_json::json!([""])),
+        (
+            "context/type_bindings/value",
+            serde_json::json!(["T=u8", "T=u8"]),
+        ),
+        (
+            "outcome/upper_bound/effects",
+            serde_json::json!(["unregistered.effect"]),
+        ),
+        (
+            "outcome/upper_bound/effects",
+            serde_json::json!(["filesystem.read", "filesystem.read"]),
+        ),
+    ] {
+        let mut malformed = document.clone();
+        *malformed
+            .pointer_mut(&format!("{summary_path}/{field}"))
+            .expect("fixture field") = invalid;
+        assert!(
+            jsonschema::draft202012::validate(&schema, &malformed).is_err(),
+            "summary schema must reject invalid {field}"
+        );
+    }
+    document["summaries"][0]["operation_summaries"][0]["context"] =
+        serde_json::to_value(SummaryContext::default()).expect("unknown context serializes");
+    document["summaries"][0]["operation_summaries"][0]["outcome"]["upper_bound"] =
+        serde_json::to_value(SummaryEffectBound::Unknown).expect("unknown bound serializes");
+    jsonschema::draft202012::validate(&schema, &document)
+        .expect("explicit unknown context and bound remain valid");
+    let mut malformed_unknown = document.clone();
+    malformed_unknown["summaries"][0]["operation_summaries"][0]["context"]["features"]["value"] =
+        serde_json::json!([]);
+    assert!(jsonschema::draft202012::validate(&schema, &malformed_unknown).is_err());
+    document["summaries"][0]["operation_summaries"][0]["context"] =
+        serde_json::to_value(SummaryContext {
+            features: ContextKnowledge::Known(Vec::new()),
+            type_bindings: ContextKnowledge::Known(Vec::new()),
+            ..SummaryContext::default()
+        })
+        .expect("known empty context sets serialize");
+    document["summaries"][0]["operation_summaries"][0]["outcome"]["upper_bound"] =
+        serde_json::to_value(SummaryEffectBound::Known(Vec::new()))
+            .expect("empty bound serializes");
+    jsonschema::draft202012::validate(&schema, &document)
+        .expect("known empty sets and established empty bound remain distinct from unknown");
 }
 
 /// `T-AF-STANDARD-REGISTRY-0001-R03-010`

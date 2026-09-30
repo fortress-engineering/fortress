@@ -12,7 +12,7 @@ Validate stable Fortress identities and assemble the declared standard manifest,
 
 ### Includes
 
-Stable entity and rule identity syntax, common schema vocabulary, standard and schema manifests, rule metadata, satisfiable rule-logic declarations, content-addressed profile definitions, deterministic conjunctive composition, and the mutable 1.0.0-draft.2 authority.
+Stable entity and rule identity syntax, common schema vocabulary, standard and schema manifests, rule metadata, reviewed installed operation-summary catalog bytes, satisfiable rule-logic declarations, content-addressed profile definitions, deterministic conjunctive composition, and the mutable 1.0.0-draft.2 authority.
 
 ### Excludes
 

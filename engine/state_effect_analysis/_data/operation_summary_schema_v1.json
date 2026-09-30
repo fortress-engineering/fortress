@@ -1,0 +1,135 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:operation-summary-catalog",
+  "title": "Fortress exact-context operation-summary catalog",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "schema_version", "id", "producer_version", "summaries"],
+  "properties": {
+    "$schema": { "const": "urn:fortress:schema:v1:operation-summary-catalog" },
+    "schema_version": { "const": 1 },
+    "id": { "$ref": "#/$defs/text" },
+    "producer_version": { "$ref": "#/$defs/text" },
+    "summaries": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/summary" }
+    }
+  },
+  "$defs": {
+    "text": { "type": "string", "minLength": 1 },
+    "strings": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/text" }
+    },
+    "effect": {
+      "enum": [
+        "environment.read",
+        "environment.write",
+        "external_interaction",
+        "filesystem.read",
+        "filesystem.write",
+        "may_panic",
+        "network.connect",
+        "network.io",
+        "network.listen",
+        "owned_state_read",
+        "owned_state_write",
+        "process.spawn",
+        "random.read",
+        "receiver_state_read",
+        "receiver_state_write",
+        "time.monotonic_read",
+        "time.wall_read",
+        "unsafe_execution"
+      ]
+    },
+    "effects": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/effect" }
+    },
+    "bound": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["state"],
+          "properties": { "state": { "const": "UNKNOWN" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["state", "effects"],
+          "properties": {
+            "state": { "const": "KNOWN" },
+            "effects": { "$ref": "#/$defs/effects" }
+          }
+        }
+      ]
+    },
+    "configuration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["targets", "features"],
+      "properties": {
+        "targets": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/text" }
+        },
+        "features": { "$ref": "#/$defs/strings" }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "operation_selector",
+        "toolchain_or_package_source_digest",
+        "supported_versions",
+        "target_features_constraints",
+        "type_constraints",
+        "observed_effects",
+        "effect_upper_bound",
+        "callback_dependencies",
+        "destructor_dependencies",
+        "completeness",
+        "authority_class",
+        "qualification_refs"
+      ],
+      "properties": {
+        "id": { "$ref": "#/$defs/text" },
+        "operation_selector": { "$ref": "#/$defs/text" },
+        "toolchain_or_package_source_digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "supported_versions": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/text" }
+        },
+        "target_features_constraints": { "$ref": "#/$defs/configuration" },
+        "type_constraints": { "$ref": "#/$defs/strings" },
+        "observed_effects": { "$ref": "#/$defs/effects" },
+        "effect_upper_bound": { "$ref": "#/$defs/bound" },
+        "callback_dependencies": { "$ref": "#/$defs/strings" },
+        "destructor_dependencies": { "$ref": "#/$defs/strings" },
+        "completeness": { "enum": ["PARTIAL", "COMPLETE"] },
+        "authority_class": { "enum": ["OBSERVED", "DERIVED", "ASSUMED", "QUALIFIED"] },
+        "qualification_refs": { "$ref": "#/$defs/strings" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": ["authority_class"],
+            "properties": { "authority_class": { "const": "QUALIFIED" } }
+          },
+          "then": { "properties": { "qualification_refs": { "minItems": 1 } } }
+        }
+      ]
+    }
+  }
+}

@@ -117,6 +117,18 @@ pub struct ProgramContext {
 }
 
 impl ProgramContext {
+    /// Returns observed toolchain knowledge without interpreting authored toolchain intent.
+    #[must_use]
+    pub const fn toolchain_identity(&self) -> &ContextKnowledge<String> {
+        &self.toolchain_identity
+    }
+
+    /// Returns the explicit target-platform knowledge supplied to this evaluation.
+    #[must_use]
+    pub const fn target_platform(&self) -> &ContextKnowledge<String> {
+        &self.target_platform
+    }
+
     /// Returns the language frontend family recorded by this context.
     #[must_use]
     pub fn language_frontend_id(&self) -> &str {

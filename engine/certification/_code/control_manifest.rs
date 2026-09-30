@@ -7,8 +7,11 @@ use std::fmt::{self, Display, Formatter};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
-/// Assessment generation manifest schema identity.
+/// Current assessment generation manifest schema identity.
 pub const GENERATION_MANIFEST_SCHEMA: &str =
+    "urn:fortress:derived:v2:assessment-generation-manifest";
+/// Retained assessment generation manifest schema identity.
+pub const LEGACY_GENERATION_MANIFEST_SCHEMA: &str =
     "urn:fortress:derived:v1:assessment-generation-manifest";
 /// Current assessment selection index schema identity.
 pub const SELECTION_INDEX_SCHEMA: &str = "urn:fortress:derived:v1:assessment-selection-index";
@@ -140,8 +143,19 @@ impl AssessmentGenerationManifest {
     }
 
     fn validate(&self) -> Result<(), ControlManifestError> {
-        if self.schema != GENERATION_MANIFEST_SCHEMA
-            || self.schema_version != 1
+        let supported_layout_pair = matches!(
+            (
+                self.schema.as_str(),
+                self.schema_version,
+                self.control_layout.id.as_str(),
+            ),
+            (
+                LEGACY_GENERATION_MANIFEST_SCHEMA,
+                1,
+                "fortress-control-layout-v1"
+            ) | (GENERATION_MANIFEST_SCHEMA, 2, "fortress-control-layout-v2")
+        );
+        if !supported_layout_pair
             || !matches!(
                 self.generation_kind.as_str(),
                 "LOCAL_QUALITY" | "HISTORICAL_MIGRATION"
@@ -149,7 +163,6 @@ impl AssessmentGenerationManifest {
             || self.project.is_empty()
             || self.profile.is_empty()
             || self.source.file_count == 0
-            || self.control_layout.id != "fortress-control-layout-v1"
         {
             return Err(ControlManifestError::UnsupportedRecord);
         }
@@ -242,7 +255,10 @@ impl AssessmentSelectionIndex {
             crate::wire::parse_public_json(source).map_err(ControlManifestError::Wire)?;
         if value.schema != SELECTION_INDEX_SCHEMA
             || value.schema_version != 1
-            || value.selections.windows(2).any(|pair| pair[0] >= pair[1])
+            || value
+                .selections
+                .windows(2)
+                .any(|pair| pair[0].selection_key >= pair[1].selection_key)
         {
             return Err(ControlManifestError::UnsupportedRecord);
         }

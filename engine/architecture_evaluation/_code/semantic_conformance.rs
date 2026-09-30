@@ -33,7 +33,7 @@ pub const SEMANTIC_CONFORMANCE_SCHEMA: &str = "urn:fortress:schema:v7:semantic-c
 /// Canonical semantic-conformance projection schema version.
 pub const SEMANTIC_CONFORMANCE_SCHEMA_VERSION: u16 = 7;
 /// Semantic version of the evaluator.
-pub const SEMANTIC_CONFORMANCE_VERSION: &str = "5.0.0";
+pub const SEMANTIC_CONFORMANCE_VERSION: &str = "5.1.0";
 /// Stable evaluator identity used in canonical findings.
 pub const SEMANTIC_CONFORMANCE_EVALUATOR_ID: &str = "fortress-semantic-conformance";
 /// Stable reason for governed source that produced no PSM symbols.
@@ -379,6 +379,74 @@ fn reverse_opaque_reachability(
                 .entry(cause.clone())
                 .or_default()
                 .extend(reasons.iter().cloned());
+            if let Some(parents) = callers.get(&entry) {
+                queue.extend(parents.iter().cloned());
+            }
+        }
+    }
+    reachable
+}
+
+#[derive(Clone, Default)]
+struct NegativeClaimSupport {
+    refs: BTreeSet<String>,
+    assumptions: BTreeSet<String>,
+}
+
+fn summary_proof_support(
+    psm: &ProgramSemanticModel,
+    state_effect: &StateEffectAnalysisModel,
+) -> BTreeMap<String, NegativeClaimSupport> {
+    let mut callers = BTreeMap::<String, BTreeSet<String>>::new();
+    for call in psm.calls() {
+        if call.state() == CallResolutionState::ResolvedStatic
+            && let Some(callee) = call.callee()
+        {
+            callers
+                .entry(callee.into())
+                .or_default()
+                .insert(call.caller().into());
+        }
+    }
+    let mut reachable = BTreeMap::<String, NegativeClaimSupport>::new();
+    for summary in state_effect.summaries() {
+        let mut support = NegativeClaimSupport::default();
+        for evidence in summary.operation_summaries() {
+            let outcome = evidence.outcome();
+            if !outcome.is_sufficient() {
+                continue;
+            }
+            support.refs.insert(format!(
+                "operation_summary_evidence:v1:{}",
+                evidence.digest()
+            ));
+            support.refs.insert(format!(
+                "operation_summary_catalog:v1:{}",
+                outcome.catalog_digest
+            ));
+            support
+                .refs
+                .extend(evidence.observation_refs().iter().cloned());
+            support.refs.extend(outcome.premise_refs.iter().cloned());
+            support.refs.extend(outcome.assumption_refs.iter().cloned());
+            support
+                .assumptions
+                .extend(outcome.assumption_refs.iter().cloned());
+        }
+        if support.refs.is_empty() {
+            continue;
+        }
+        let mut queue = VecDeque::from([summary.symbol().to_owned()]);
+        let mut visited = BTreeSet::new();
+        while let Some(entry) = queue.pop_front() {
+            if !visited.insert(entry.clone()) {
+                continue;
+            }
+            let entry_support = reachable.entry(entry.clone()).or_default();
+            entry_support.refs.extend(support.refs.iter().cloned());
+            entry_support
+                .assumptions
+                .extend(support.assumptions.iter().cloned());
             if let Some(parents) = callers.get(&entry) {
                 queue.extend(parents.iter().cloned());
             }
@@ -1283,6 +1351,7 @@ pub fn evaluate_semantic_conformance_with_scopes(
         };
         for reason in summary.uncertainty().iter().filter(|reason| {
             reason.starts_with("opaque_call:")
+                || reason.starts_with("operation_summary:")
                 || reason.starts_with("unclassified_external_operation:")
                 || reason.starts_with("unsupported_construct:")
                 || reason.starts_with("analyser_limit:")
@@ -1344,7 +1413,20 @@ pub fn evaluate_semantic_conformance_with_scopes(
                 operation.occurrence_key(),
             ));
     }
-    let reachable_opaque = reverse_opaque_reachability(psm, &opaque_by_symbol);
+    let has_authored_policy = ccg
+        .modules()
+        .values()
+        .any(|module| module.contract().semantic_policy().is_some());
+    let reachable_opaque = if has_authored_policy {
+        reverse_opaque_reachability(psm, &opaque_by_symbol)
+    } else {
+        BTreeMap::new()
+    };
+    let summary_support = if has_authored_policy {
+        summary_proof_support(psm, state_effect)
+    } else {
+        BTreeMap::new()
+    };
     for observations in by_module.values_mut() {
         observations.sort();
         observations.dedup();
@@ -1405,6 +1487,8 @@ pub fn evaluate_semantic_conformance_with_scopes(
                 &mut observations,
                 &opaque,
                 &reachable_opaque,
+                &summary_support,
+                symbols_by_module.get(module_id).map_or(&[], Vec::as_slice),
                 &scopes_by_target,
                 &source_path_by_symbol,
                 &coverage,
@@ -1536,6 +1620,8 @@ fn apply_policy(
     observations: &mut [ModuleEffectObservation],
     opaque: &BTreeMap<String, BTreeSet<String>>,
     reachable_opaque: &BTreeMap<String, BTreeMap<String, BTreeSet<String>>>,
+    summary_support: &BTreeMap<String, NegativeClaimSupport>,
+    module_entries: &[String],
     scopes: &BTreeMap<(&str, PolicyTargetKind, &str), &AuthoredClaimScope>,
     source_path_by_symbol: &BTreeMap<String, String>,
     coverage: &SemanticSourceCoverage,
@@ -1652,7 +1738,7 @@ fn apply_policy(
             })
             .collect::<Vec<_>>();
         let evidence_provenance = EvidenceProvenanceSummary::from_observations(&matching);
-        let proof_graph = (disposition == PolicyDisposition::Deny)
+        let mut proof_graph = (disposition == PolicyDisposition::Deny)
             .then(|| claim_proof_graph(&instance, &matching))
             .flatten();
         let mut claim_defeater_refs = Vec::new();
@@ -1707,6 +1793,15 @@ fn apply_policy(
         }
         for (symbol, reasons) in opaque {
             for reason in reasons {
+                if let Some(bounded) = reason.strip_prefix("operation_summary:bounded:") {
+                    let effect = bounded.split(':').next().unwrap_or_default();
+                    if policy.decision(effect).is_none_or(|decision| {
+                        decision.governing_target_kind != Some(target_kind)
+                            || decision.governing_target.as_deref() != Some(target.as_str())
+                    }) {
+                        continue;
+                    }
+                }
                 insert_defeater(
                     defeaters,
                     &mut claim_defeater_refs,
@@ -1868,9 +1963,33 @@ fn apply_policy(
                 },
             )
             .collect::<Vec<_>>();
-        let proof_refs = proof_graph
+        let mut negative_support = NegativeClaimSupport::default();
+        if conformance == Some(SemanticConformanceState::NoSupportedViolation) {
+            for entry in selected_scope.map_or(module_entries, |scope| &scope.entry_symbols) {
+                if let Some(support) = summary_support.get(entry) {
+                    negative_support.refs.extend(support.refs.iter().cloned());
+                    negative_support
+                        .assumptions
+                        .extend(support.assumptions.iter().cloned());
+                }
+            }
+            negative_support.refs.extend([
+                format!("claim_universe:v1:{universe_digest}"),
+                format!("program_context:v1:{context_digest}"),
+                format!("program_semantic_model:{psm_digest}"),
+                format!("state_effect_analysis:{state_effect_digest}"),
+            ]);
+            proof_graph = Some(negative_claim_proof_graph(
+                &instance,
+                &negative_support.refs,
+            ));
+        }
+        let mut proof_refs = proof_graph
             .as_ref()
             .map_or_else(Vec::new, |graph| vec![graph.root_node_id.clone()]);
+        proof_refs.extend(negative_support.refs.iter().cloned());
+        proof_refs.sort();
+        proof_refs.dedup();
         let mut reason_codes = claim_defeater_refs
             .iter()
             .filter_map(|id| defeaters.get(id))
@@ -1881,6 +2000,12 @@ fn apply_policy(
         if selected_scope.is_some() {
             reason_codes.push("AUTHORED_SCOPE".into());
             reason_codes.sort();
+        }
+        if !negative_support.assumptions.is_empty() {
+            reason_codes.push("ACCEPTED_SUMMARY_ASSUMPTION".into());
+            reason_codes.extend(negative_support.assumptions);
+            reason_codes.sort();
+            reason_codes.dedup();
         }
         conclusions.push(SemanticPolicyConclusion {
             id: claim_id,
@@ -2086,6 +2211,32 @@ fn claim_proof_graph(
     let graph = ProofGraph::new(root, nodes.into_values().collect());
     debug_assert_eq!(graph.is_satisfied(&known_refs, &known_refs), Ok(true));
     Some(graph)
+}
+
+fn negative_claim_proof_graph(instance: &ClaimInstance, refs: &BTreeSet<String>) -> ProofGraph {
+    let root = format!(
+        "claim_negative_proof:v1:sha256:{:x}",
+        Sha256::digest(
+            serde_json::to_vec(&(instance.id(), refs)).expect("negative claim support serializes")
+        )
+    );
+    let graph = ProofGraph::new(
+        root.clone(),
+        vec![ProofExpression {
+            node_id: root,
+            operator: ProofOperator::All,
+            required_refs: refs
+                .iter()
+                .map(|id| {
+                    EvidenceReference::new(id.clone())
+                        .expect("validated negative claim evidence identity")
+                })
+                .collect(),
+            children: Vec::new(),
+        }],
+    );
+    debug_assert_eq!(graph.is_satisfied(refs, refs), Ok(true));
+    graph
 }
 
 fn insert_defeater(

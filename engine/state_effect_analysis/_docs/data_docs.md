@@ -2,7 +2,7 @@
 
 ## Role
 
-The Module owns schemas defining its distributed authored contracts and deterministic derived output plus the two draft Standard rules that govern supported state and effect contradictions.
+The Module owns schemas defining its distributed authored contracts, operation-summary grammar, and deterministic derived output plus the two draft Standard rules that govern supported state and effect contradictions.
 
 ## Origin
 
@@ -10,7 +10,7 @@ Schemas and rule records are specification-authored Fortress engineering authori
 
 ## Semantics
 
-The Data defines State Contract v1, State/Effect Analysis v1 output, PROGRAM-STATE-001, and PROGRAM-EFFECT-001 without containing generated analysis results.
+The Data defines State Contract v1, historical and current State/Effect Analysis output, Operation Summary Catalog v1 grammar, PROGRAM-STATE-001, and PROGRAM-EFFECT-001 without containing generated analysis results. Standard Registry supplies the installed catalog authority consumed under this grammar.
 
 ## Validity
 
@@ -21,6 +21,10 @@ Each JSON document must satisfy canonical serialization, schema identity, closed
 Files change deliberately when supported state/effect semantics or the draft Standard evolves and are reviewed with matching Code, contracts, tests, and generated Info.
 
 ## Files
+
+### [`operation_summary_schema_v1.json`](../_data/operation_summary_schema_v1.json)
+
+Defines the closed Operation Summary Catalog v1 wire grammar and the constraints required before a catalog can supply effect authority.
 
 ### [`program_effect_rule.json`](../_data/program_effect_rule.json)
 
@@ -48,4 +52,8 @@ Defines retained deterministic State/Effect Analysis v3 output whose direct and 
 
 ### [`state_effect_schema_v4.json`](../_data/state_effect_schema_v4.json)
 
-Defines current deterministic State/Effect Analysis v4 output whose direct and transitive evidence carries the stable underlying operation-site identity independently of causal paths and source coordinates.
+Defines retained deterministic State/Effect Analysis v4 output whose direct and transitive evidence carries the stable underlying operation-site identity independently of causal paths and source coordinates.
+
+### [`state_effect_schema_v5.json`](../_data/state_effect_schema_v5.json)
+
+Defines current deterministic State/Effect Analysis v5 output with the exact operation-summary catalog digest and per-site selected authority, context observations, upper bounds, premise and assumption references, and explicit unresolved reasons.

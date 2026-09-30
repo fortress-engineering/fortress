@@ -42,7 +42,7 @@ fn fortress_audit_evaluates_the_modeled_flow_without_certification_claims() {
     assert!(behavior.applicable());
     assert_eq!(behavior.finding_count(), 0);
     assert!(behavior.detail().contains("1 coherent"));
-    assert!(result.is_success());
+    assert!(result.is_success(), "self-audit failed: {result:#?}");
     let realized =
         compile_repository_realized_bfg(repository_root()).expect("self Realized BFG compiles");
     let flow = realized

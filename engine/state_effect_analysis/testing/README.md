@@ -12,7 +12,7 @@ Exercise State Contract validation, typestate classification and transition comp
 
 ### Includes
 
-Positive and negative synthetic PSM fixtures, State and Function Contract fixtures, deterministic summaries and artifacts, exact normalized findings, and live self-analysis execution.
+Positive and negative synthetic PSM fixtures, State and Function Contract fixtures, deterministic summaries and artifacts, exact normalized findings, retained operation-summary research comparisons, and live self-analysis execution.
 
 ### Excludes
 

@@ -1,0 +1,3679 @@
+{
+  "$schema": "urn:fortress:schema:v1:operation-summary-catalog",
+  "schema_version": 1,
+  "id": "fortress-installed-operation-summaries",
+  "producer_version": "operation-summaries-v1.0",
+  "summaries": [
+    {
+      "id": "operation:core::panicking::panic",
+      "operation_selector": "core::panicking::panic",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "may_panic"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:getrandom::fill",
+      "operation_selector": "getrandom::fill",
+      "toolchain_or_package_source_digest": "sha256:899def5c37c4fd7b2664648c28120ecec138e4d395b459e5ca34f9cce2dd77fd",
+      "supported_versions": [
+        "0.3.4"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "random.read"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:getrandom-0.3.4"
+      ]
+    },
+    {
+      "id": "operation:getrandom::getrandom",
+      "operation_selector": "getrandom::getrandom",
+      "toolchain_or_package_source_digest": "sha256:ff2abc00be7fca6ebc474524697ae276ad847ad0a6b3faa4bcb027e9a4614ad0",
+      "supported_versions": [
+        "0.2.17"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "random.read"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "retained-legacy-observation:getrandom-0.2"
+      ]
+    },
+    {
+      "id": "operation:getrandom::u32",
+      "operation_selector": "getrandom::u32",
+      "toolchain_or_package_source_digest": "sha256:899def5c37c4fd7b2664648c28120ecec138e4d395b459e5ca34f9cce2dd77fd",
+      "supported_versions": [
+        "0.3.4"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "random.read"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:getrandom-0.3.4"
+      ]
+    },
+    {
+      "id": "operation:getrandom::u64",
+      "operation_selector": "getrandom::u64",
+      "toolchain_or_package_source_digest": "sha256:899def5c37c4fd7b2664648c28120ecec138e4d395b459e5ca34f9cce2dd77fd",
+      "supported_versions": [
+        "0.3.4"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "random.read"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:getrandom-0.3.4"
+      ]
+    },
+    {
+      "id": "operation:rand::random",
+      "operation_selector": "rand::random",
+      "toolchain_or_package_source_digest": "sha256:b9ef1d0d795eb7d84685bca4f72f3649f064e6641543d3a8c415898726a57b41",
+      "supported_versions": [
+        "0.9.5"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "random.read"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "retained-legacy-observation:rand-no-qualified-subset"
+      ]
+    },
+    {
+      "id": "operation:rust_method::Option::expect",
+      "operation_selector": "rust_method::Option::expect",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "may_panic"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [
+        "drop:generic_arguments"
+      ],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::Option::is_some_and:u8",
+      "operation_selector": "rust_method::Option::is_some_and",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [
+        "T=u8"
+      ],
+      "observed_effects": [],
+      "effect_upper_bound": {
+        "state": "KNOWN",
+        "effects": []
+      },
+      "callback_dependencies": [
+        "callback:argument:0"
+      ],
+      "destructor_dependencies": [
+        "drop:callback:argument:0"
+      ],
+      "completeness": "PARTIAL",
+      "authority_class": "DERIVED",
+      "qualification_refs": [
+        "qualification:callback-effectful-body",
+        "qualification:callback-unknown-body",
+        "source:rust-1.97.1-option",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::Option::unwrap",
+      "operation_selector": "rust_method::Option::unwrap",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "may_panic"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [
+        "drop:generic_arguments"
+      ],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::Option::unwrap_unchecked",
+      "operation_selector": "rust_method::Option::unwrap_unchecked",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "unsafe_execution"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [
+        "drop:generic_arguments"
+      ],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::Result::expect",
+      "operation_selector": "rust_method::Result::expect",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "may_panic"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [
+        "drop:generic_arguments"
+      ],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::Result::unwrap",
+      "operation_selector": "rust_method::Result::unwrap",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "may_panic"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [
+        "drop:generic_arguments"
+      ],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::Result::unwrap_err",
+      "operation_selector": "rust_method::Result::unwrap_err",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "may_panic"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [
+        "drop:generic_arguments"
+      ],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::Result::unwrap_err_unchecked",
+      "operation_selector": "rust_method::Result::unwrap_err_unchecked",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "unsafe_execution"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [
+        "drop:generic_arguments"
+      ],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::Result::unwrap_unchecked",
+      "operation_selector": "rust_method::Result::unwrap_unchecked",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "unsafe_execution"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [
+        "drop:generic_arguments"
+      ],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::fs::File::flush",
+      "operation_selector": "rust_method::std::fs::File::flush",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "filesystem.write"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::fs::File::read",
+      "operation_selector": "rust_method::std::fs::File::read",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "filesystem.read"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::fs::File::read_exact",
+      "operation_selector": "rust_method::std::fs::File::read_exact",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "filesystem.read"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::fs::File::read_to_end",
+      "operation_selector": "rust_method::std::fs::File::read_to_end",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "filesystem.read"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::fs::File::read_to_string",
+      "operation_selector": "rust_method::std::fs::File::read_to_string",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "filesystem.read"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::fs::File::set_len",
+      "operation_selector": "rust_method::std::fs::File::set_len",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "filesystem.write"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::fs::File::set_permissions",
+      "operation_selector": "rust_method::std::fs::File::set_permissions",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "filesystem.write"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::fs::File::sync_all",
+      "operation_selector": "rust_method::std::fs::File::sync_all",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "filesystem.write"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::fs::File::sync_data",
+      "operation_selector": "rust_method::std::fs::File::sync_data",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "filesystem.write"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::fs::File::write",
+      "operation_selector": "rust_method::std::fs::File::write",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "filesystem.write"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::fs::File::write_all",
+      "operation_selector": "rust_method::std::fs::File::write_all",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "filesystem.write"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::fs::OpenOptions::access_mode",
+      "operation_selector": "rust_method::std::fs::OpenOptions::access_mode",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::fs::OpenOptions::append",
+      "operation_selector": "rust_method::std::fs::OpenOptions::append",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::fs::OpenOptions::attributes",
+      "operation_selector": "rust_method::std::fs::OpenOptions::attributes",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::fs::OpenOptions::create",
+      "operation_selector": "rust_method::std::fs::OpenOptions::create",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::fs::OpenOptions::create_new",
+      "operation_selector": "rust_method::std::fs::OpenOptions::create_new",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::fs::OpenOptions::custom_flags",
+      "operation_selector": "rust_method::std::fs::OpenOptions::custom_flags",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::fs::OpenOptions::mode",
+      "operation_selector": "rust_method::std::fs::OpenOptions::mode",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::fs::OpenOptions::open[read]",
+      "operation_selector": "rust_method::std::fs::OpenOptions::open[read]",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "filesystem.read"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [
+        "trait:argument:0:AsRef<Path>"
+      ],
+      "destructor_dependencies": [
+        "drop:argument:0"
+      ],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::fs::OpenOptions::open[read_write]",
+      "operation_selector": "rust_method::std::fs::OpenOptions::open[read_write]",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "filesystem.read",
+        "filesystem.write"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [
+        "trait:argument:0:AsRef<Path>"
+      ],
+      "destructor_dependencies": [
+        "drop:argument:0"
+      ],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::fs::OpenOptions::open[write]",
+      "operation_selector": "rust_method::std::fs::OpenOptions::open[write]",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "filesystem.write"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [
+        "trait:argument:0:AsRef<Path>"
+      ],
+      "destructor_dependencies": [
+        "drop:argument:0"
+      ],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::fs::OpenOptions::read",
+      "operation_selector": "rust_method::std::fs::OpenOptions::read",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::fs::OpenOptions::security_qos_flags",
+      "operation_selector": "rust_method::std::fs::OpenOptions::security_qos_flags",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::fs::OpenOptions::share_mode",
+      "operation_selector": "rust_method::std::fs::OpenOptions::share_mode",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::fs::OpenOptions::truncate",
+      "operation_selector": "rust_method::std::fs::OpenOptions::truncate",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::fs::OpenOptions::write",
+      "operation_selector": "rust_method::std::fs::OpenOptions::write",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::net::TcpListener::accept",
+      "operation_selector": "rust_method::std::net::TcpListener::accept",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "network.listen"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::net::TcpListener::incoming",
+      "operation_selector": "rust_method::std::net::TcpListener::incoming",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "network.listen"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::net::TcpStream::flush",
+      "operation_selector": "rust_method::std::net::TcpStream::flush",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "network.io"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::net::TcpStream::read",
+      "operation_selector": "rust_method::std::net::TcpStream::read",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "network.io"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::net::TcpStream::read_exact",
+      "operation_selector": "rust_method::std::net::TcpStream::read_exact",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "network.io"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::net::TcpStream::read_to_end",
+      "operation_selector": "rust_method::std::net::TcpStream::read_to_end",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "network.io"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::net::TcpStream::read_to_string",
+      "operation_selector": "rust_method::std::net::TcpStream::read_to_string",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "network.io"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::net::TcpStream::write",
+      "operation_selector": "rust_method::std::net::TcpStream::write",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "network.io"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::net::TcpStream::write_all",
+      "operation_selector": "rust_method::std::net::TcpStream::write_all",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "network.io"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::net::UdpSocket::recv",
+      "operation_selector": "rust_method::std::net::UdpSocket::recv",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "network.io"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::net::UdpSocket::recv_from",
+      "operation_selector": "rust_method::std::net::UdpSocket::recv_from",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "network.io"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::net::UdpSocket::send",
+      "operation_selector": "rust_method::std::net::UdpSocket::send",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "network.io"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::net::UdpSocket::send_to",
+      "operation_selector": "rust_method::std::net::UdpSocket::send_to",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "network.io"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::process::Command::arg",
+      "operation_selector": "rust_method::std::process::Command::arg",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::process::Command::args",
+      "operation_selector": "rust_method::std::process::Command::args",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::process::Command::current_dir",
+      "operation_selector": "rust_method::std::process::Command::current_dir",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::process::Command::env",
+      "operation_selector": "rust_method::std::process::Command::env",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::process::Command::env_clear",
+      "operation_selector": "rust_method::std::process::Command::env_clear",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::process::Command::env_remove",
+      "operation_selector": "rust_method::std::process::Command::env_remove",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::process::Command::gid",
+      "operation_selector": "rust_method::std::process::Command::gid",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::process::Command::output",
+      "operation_selector": "rust_method::std::process::Command::output",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "process.spawn"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::process::Command::spawn",
+      "operation_selector": "rust_method::std::process::Command::spawn",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "process.spawn"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::process::Command::status",
+      "operation_selector": "rust_method::std::process::Command::status",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "process.spawn"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::process::Command::stderr",
+      "operation_selector": "rust_method::std::process::Command::stderr",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::process::Command::stdin",
+      "operation_selector": "rust_method::std::process::Command::stdin",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::process::Command::stdout",
+      "operation_selector": "rust_method::std::process::Command::stdout",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::process::Command::uid",
+      "operation_selector": "rust_method::std::process::Command::uid",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::time::Instant::elapsed",
+      "operation_selector": "rust_method::std::time::Instant::elapsed",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "time.monotonic_read"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_method::std::time::SystemTime::elapsed",
+      "operation_selector": "rust_method::std::time::SystemTime::elapsed",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "time.wall_read"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_prelude::Box",
+      "operation_selector": "rust_prelude::Box",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_prelude::Err",
+      "operation_selector": "rust_prelude::Err",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_prelude::None",
+      "operation_selector": "rust_prelude::None",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_prelude::Ok",
+      "operation_selector": "rust_prelude::Ok",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_prelude::Some",
+      "operation_selector": "rust_prelude::Some",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:rust_type::Command::new",
+      "operation_selector": "rust_type::Command::new",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [
+        "trait:argument:0:AsRef<OsStr>"
+      ],
+      "destructor_dependencies": [
+        "drop:argument:0"
+      ],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:std::env::args",
+      "operation_selector": "std::env::args",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "environment.read"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:std::env::args_os",
+      "operation_selector": "std::env::args_os",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "environment.read"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:std::env::current_dir",
+      "operation_selector": "std::env::current_dir",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "environment.read"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:std::env::current_exe",
+      "operation_selector": "std::env::current_exe",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "environment.read"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:std::env::home_dir",
+      "operation_selector": "std::env::home_dir",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "environment.read"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:std::env::remove_var",
+      "operation_selector": "std::env::remove_var",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "environment.write"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:std::env::set_current_dir",
+      "operation_selector": "std::env::set_current_dir",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "environment.write"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:std::env::set_var",
+      "operation_selector": "std::env::set_var",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "environment.write"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:std::env::temp_dir",
+      "operation_selector": "std::env::temp_dir",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "environment.read"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:std::env::var",
+      "operation_selector": "std::env::var",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "environment.read"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:std::env::var_os",
+      "operation_selector": "std::env::var_os",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "environment.read"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:std::env::vars",
+      "operation_selector": "std::env::vars",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "environment.read"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:std::env::vars_os",
+      "operation_selector": "std::env::vars_os",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "environment.read"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:std::fs::File::create",
+      "operation_selector": "std::fs::File::create",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "filesystem.write"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:std::fs::File::create_new",
+      "operation_selector": "std::fs::File::create_new",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "filesystem.write"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:std::fs::File::open",
+      "operation_selector": "std::fs::File::open",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "filesystem.read"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [
+        "trait:argument:0:AsRef<Path>"
+      ],
+      "destructor_dependencies": [
+        "drop:argument:0"
+      ],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:std::fs::OpenOptions::new",
+      "operation_selector": "std::fs::OpenOptions::new",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [],
+      "effect_upper_bound": {
+        "state": "KNOWN",
+        "effects": []
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "COMPLETE",
+      "authority_class": "QUALIFIED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "qualification:constructor-linux",
+        "qualification:constructor-windows",
+        "source:rust-1.97.1-fs",
+        "source:rust-1.97.1-unix-fs",
+        "source:rust-1.97.1-windows-fs",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:std::fs::canonicalize",
+      "operation_selector": "std::fs::canonicalize",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "filesystem.read"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:std::fs::copy",
+      "operation_selector": "std::fs::copy",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "filesystem.read",
+        "filesystem.write"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:std::fs::create_dir",
+      "operation_selector": "std::fs::create_dir",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "filesystem.write"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:std::fs::create_dir_all",
+      "operation_selector": "std::fs::create_dir_all",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "filesystem.write"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:std::fs::hard_link",
+      "operation_selector": "std::fs::hard_link",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "filesystem.write"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:std::fs::metadata",
+      "operation_selector": "std::fs::metadata",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "filesystem.read"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:std::fs::read",
+      "operation_selector": "std::fs::read",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "filesystem.read"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [
+        "trait:argument:0:AsRef<Path>"
+      ],
+      "destructor_dependencies": [
+        "drop:argument:0"
+      ],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:std::fs::read_dir",
+      "operation_selector": "std::fs::read_dir",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "filesystem.read"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:std::fs::read_link",
+      "operation_selector": "std::fs::read_link",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "filesystem.read"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:std::fs::read_to_string",
+      "operation_selector": "std::fs::read_to_string",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "filesystem.read"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [
+        "trait:argument:0:AsRef<Path>"
+      ],
+      "destructor_dependencies": [
+        "drop:argument:0"
+      ],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:std::fs::remove_dir",
+      "operation_selector": "std::fs::remove_dir",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "filesystem.write"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:std::fs::remove_dir_all",
+      "operation_selector": "std::fs::remove_dir_all",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "filesystem.write"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:std::fs::remove_file",
+      "operation_selector": "std::fs::remove_file",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "filesystem.write"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:std::fs::rename",
+      "operation_selector": "std::fs::rename",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "filesystem.write"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:std::fs::set_permissions",
+      "operation_selector": "std::fs::set_permissions",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "filesystem.write"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:std::fs::symlink_metadata",
+      "operation_selector": "std::fs::symlink_metadata",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "filesystem.read"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:std::fs::write",
+      "operation_selector": "std::fs::write",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "filesystem.write"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [
+        "trait:argument:0:AsRef<Path>",
+        "trait:argument:1:AsRef<[u8]>"
+      ],
+      "destructor_dependencies": [
+        "drop:argument:0",
+        "drop:argument:1"
+      ],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:std::mem::drop:u8",
+      "operation_selector": "std::mem::drop",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [
+        "T=u8"
+      ],
+      "observed_effects": [],
+      "effect_upper_bound": {
+        "state": "KNOWN",
+        "effects": []
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [
+        "drop:argument:0"
+      ],
+      "completeness": "COMPLETE",
+      "authority_class": "QUALIFIED",
+      "qualification_refs": [
+        "qualification:drop-primitive-with-premise",
+        "source:rust-1.97.1-mem",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:std::net::TcpListener::bind",
+      "operation_selector": "std::net::TcpListener::bind",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "network.listen"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:std::net::TcpStream::connect",
+      "operation_selector": "std::net::TcpStream::connect",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "network.connect"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:std::net::TcpStream::connect_timeout",
+      "operation_selector": "std::net::TcpStream::connect_timeout",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "network.connect"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:std::panic::panic_any",
+      "operation_selector": "std::panic::panic_any",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "may_panic"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:std::panic::resume_unwind",
+      "operation_selector": "std::panic::resume_unwind",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "may_panic"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:std::process::Command::new",
+      "operation_selector": "std::process::Command::new",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [
+        "trait:argument:0:AsRef<OsStr>"
+      ],
+      "destructor_dependencies": [
+        "drop:argument:0"
+      ],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:std::process::Command::output",
+      "operation_selector": "std::process::Command::output",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "process.spawn"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:std::process::Command::spawn",
+      "operation_selector": "std::process::Command::spawn",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "process.spawn"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:std::process::Command::status",
+      "operation_selector": "std::process::Command::status",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "process.spawn"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:std::time::Instant::now",
+      "operation_selector": "std::time::Instant::now",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "time.monotonic_read"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    },
+    {
+      "id": "operation:std::time::SystemTime::now",
+      "operation_selector": "std::time::SystemTime::now",
+      "toolchain_or_package_source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "supported_versions": [
+        "1.97.1"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "x86_64-pc-windows-msvc",
+          "x86_64-unknown-linux-gnu"
+        ],
+        "features": []
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "time.wall_read"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "legacy-classifier:c0de98bfd0bb33e0473212c361c5369263bfbefd30303d44e0f55e1932b1ab2a",
+        "source:rust-src-1.97.1"
+      ]
+    }
+  ]
+}

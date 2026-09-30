@@ -36,4 +36,4 @@ Binds exact Standard, project, ownership, selected profile and governance identi
 
 ### [`control_layout.rs`](../_code/control_layout.rs)
 
-Loads the fixed root-only control registry, classifies exact active authority and immutable generation members, exposes the shared artifact dataset, and rejects unregistered control paths.
+Loads the current fixed root-only control registry, admits only exact registered-role parent directories and the closed generation directory grammar, classifies exact active authority and immutable generation members, exposes the shared artifact dataset, and rejects unregistered control paths. Parent-directory admission does not authorize arbitrary descendants. The exact effect-summary authority path is source-bound; historical v1 layout parsing retains its original roles and byte digest.

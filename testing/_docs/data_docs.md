@@ -33,3 +33,5 @@ Pins three positive workload shapes and four negative controls with exact source
 ### [`regression_ledger.json`](../_data/regression_ledger.json)
 
 Records case output hashes, distinct source site counts separately from propagated path counts, fixed controls, unsupported boundaries, pending dependent work, and the unreproduced original population.
+
+Current raw output pins were reviewed after replay with semantic-conformance producer 5.1.0 and State/Effect schema v5. The seven authored controls retain their source, policy, expected verdict, finding-count, and historical-reproduction oracles. New output identities bind the installed operation catalog and explicit summary opacity; successful negative results also bind their complete proof premises. An observed external effect remains a positive witness without becoming a complete effect upper bound.

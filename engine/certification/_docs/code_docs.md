@@ -24,4 +24,4 @@ Implements Evidence Graph including the dedicated defeater evidence class, certi
 
 ### [`control_manifest.rs`](../_code/control_manifest.rs)
 
-Validates immutable assessment generation manifests and exact selection indexes, including safe members, logical external artifacts, canonical ordering, and content-addressed generation identity.
+Validates immutable assessment generation manifests and exact selection indexes, including safe members, logical external artifacts, canonical ordering, and content-addressed generation identity. Selection keys must be strictly increasing: two generations cannot compete for one context, while independent contexts may share a generation. Current manifest v2 requires control layout v2, while retained manifest v1 requires its original layout v1; mismatched pairs are invalid.

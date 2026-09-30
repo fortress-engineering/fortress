@@ -40,6 +40,52 @@ class DerivedArtifactStorageTests(unittest.TestCase):
     def test_shared_control_registry_matches_python_contract(self) -> None:
         quality.validate_control_artifact_registry(ROOT)
 
+    def test_current_generation_binds_layout_and_manifest_v2(self) -> None:
+        certificate = self.certificate("sha256:" + "a" * 64)
+        certificate["source"]["file_count"] = 1
+        pending = {
+            logical_path: b"canonical projection\n"
+            for _, logical_path, storage in quality.ARTIFACTS
+            if storage == quality.TRACKED_EVIDENCE
+        }
+        manifest = quality.build_generation_manifest(ROOT, certificate, b"{}\n", pending)
+        self.assertEqual(manifest["$schema"], "urn:fortress:derived:v2:assessment-generation-manifest")
+        self.assertEqual(manifest["schema_version"], 2)
+        self.assertEqual(
+            manifest["control_layout"],
+            {"id": "fortress-control-layout-v2", "digest": quality.control_layout_digest(ROOT)},
+        )
+
+    def test_historical_manifest_cannot_become_current_by_selection(self) -> None:
+        base = self.workspace("historical-selection")
+        root = base / "repository"
+        manifest = {
+            "$schema": "urn:fortress:derived:v1:assessment-generation-manifest",
+            "schema_version": 1,
+            "generation_kind": "LOCAL_QUALITY",
+            "project": "PF-FORTRESS",
+            "profile": quality.PROFILE_ID,
+            "selection_key": quality.selection_key(),
+            "source": {"fingerprint": "sha256:" + "a" * 64, "file_count": 1},
+            "control_layout": {"id": "fortress-control-layout-v1", "digest": "sha256:" + "b" * 64},
+            "artifacts": [],
+        }
+        generation_id = quality.manifest_digest(manifest)
+        generation = root / quality.GENERATIONS_PATH / generation_id.removeprefix("sha256:")
+        generation.mkdir(parents=True)
+        (generation / "manifest.json").write_bytes(quality.canonical_pretty_json(manifest))
+        (root / quality.CURRENT_INDEX_PATH).write_bytes(
+            quality.canonical_pretty_json(
+                {
+                    "$schema": "urn:fortress:derived:v1:assessment-selection-index",
+                    "schema_version": 1,
+                    "selections": [{"selection_key": quality.selection_key(), "generation_digest": generation_id}],
+                }
+            )
+        )
+        with self.assertRaisesRegex(quality.CertificateError, "identity is unsupported"):
+            quality.load_selected_generation(root)
+
     def test_fingerprint_binds_ignored_governance_and_excludes_evidence(self) -> None:
         base = self.workspace("fingerprint-partition")
         root = base / "repository"
@@ -252,15 +298,49 @@ class DerivedArtifactStorageTests(unittest.TestCase):
             [item["selection_key"] for item in document["selections"]],
             sorted([other_key, quality.selection_key()]),
         )
+        self.assertEqual(
+            quality.selection_entries(document),
+            {other_key: "sha256:" + "2" * 64, quality.selection_key(): "sha256:" + "3" * 64},
+        )
+        other = {"selection_key": other_key, "generation_digest": "sha256:" + "2" * 64}
+        local = {"selection_key": quality.selection_key(), "generation_digest": "sha256:" + "3" * 64}
+        cases = {
+            "duplicate unrelated context": [other, {**other, "generation_digest": local["generation_digest"]}, local],
+            "duplicate requested context": [other, local, {**local, "generation_digest": other["generation_digest"]}],
+            "reverse key order": [local, other],
+            "invalid unrelated digest": [{**other, "generation_digest": "sha256:invalid"}, local],
+            "extra unrelated field": [{**other, "extra": "invalid"}, local],
+            "nonobject entry": [None, local],
+        }
+        for label, entries in cases.items():
+            with self.subTest(label=label):
+                malformed = {**document, "selections": entries}
+                current.write_bytes(quality.canonical_pretty_json(malformed))
+                with self.assertRaisesRegex(quality.CertificateError, "selection index"):
+                    quality.updated_selection_index(root, local["generation_digest"])
+                with self.assertRaisesRegex(quality.CertificateError, "selection index"):
+                    quality.load_selected_generation(root)
+        current.write_bytes(updated)
+        with self.assertRaisesRegex(quality.CertificateError, "new generation digest"):
+            quality.updated_selection_index(root, "sha256:invalid")
+        shared = {**document, "selections": [other, {**local, "generation_digest": other["generation_digest"]}]}
+        self.assertEqual(set(quality.selection_entries(shared).values()), {other["generation_digest"]})
+        self.assertEqual(quality.selection_entries({**document, "selections": []}), {})
+        for malformed_version in (True, 1.0):
+            with self.subTest(schema_version=malformed_version):
+                with self.assertRaisesRegex(quality.CertificateError, "selection index"):
+                    quality.selection_entries({**document, "schema_version": malformed_version})
 
     def test_legacy_outputs_migrate_byte_exact_without_becoming_current(self) -> None:
         base = self.workspace("legacy-migration")
         root = base / "repository"
         (root / ".git").mkdir(parents=True)
-        layout_source = MODULE_PATH.parents[2] / "project_model" / "_data" / "control_layout_v1.json"
-        layout_target = root / "engine/project_model/_data/control_layout_v1.json"
-        layout_target.parent.mkdir(parents=True)
-        shutil.copyfile(layout_source, layout_target)
+        for version in (1, 2):
+            layout_name = f"control_layout_v{version}.json"
+            layout_source = MODULE_PATH.parents[2] / "project_model" / "_data" / layout_name
+            layout_target = root / "engine/project_model/_data" / layout_name
+            layout_target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(layout_source, layout_target)
         for _, target in migration.INPUT_MOVES:
             path = root / target
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -291,6 +371,9 @@ class DerivedArtifactStorageTests(unittest.TestCase):
         generation = root / quality.GENERATIONS_PATH / report["historical_generation"].removeprefix("sha256:")
         manifest = json.loads((generation / "manifest.json").read_text(encoding="utf-8"))
         self.assertEqual(manifest["generation_kind"], "HISTORICAL_MIGRATION")
+        self.assertEqual(manifest["$schema"], "urn:fortress:derived:v1:assessment-generation-manifest")
+        self.assertEqual(manifest["schema_version"], 1)
+        self.assertEqual(manifest["control_layout"]["id"], "fortress-control-layout-v1")
         for identifier, old_name, member, *_ in migration.OUTPUTS:
             self.assertFalse((root / old_name).exists())
             self.assertEqual((generation / member).read_bytes(), payloads[identifier])

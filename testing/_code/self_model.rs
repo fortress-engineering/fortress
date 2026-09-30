@@ -161,7 +161,12 @@ fn live_contract_v2_v3_ecosystem_resolves_completely() {
     assert_eq!(resolved.modules().len(), 43);
     assert_eq!(resolved.capabilities().len(), 21);
     assert_eq!(resolved.features().len(), 22);
-    assert_eq!(resolved.requirements().len(), 111);
+    assert_eq!(resolved.requirements().len(), 112);
+    assert!(
+        resolved
+            .requirements()
+            .contains_key("AF-STATE-EFFECT-ANALYSIS-0001-R06")
+    );
     assert_eq!(resolved.guarantees().len(), 10);
     assert_eq!(resolved.checkpoints().len(), 10);
     assert_eq!(resolved.direct_requirements().len(), 176);

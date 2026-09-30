@@ -4,7 +4,7 @@ use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use fortress_core::audit::compile_repository_bfg;
+use fortress_core::audit::{compile_repository_bfg, prepare_repository_certification_source};
 use fortress_core::behavioral_semantics::{
     BFG_UNSUPPORTED_SEMANTICS, BehavioralModelingState, compile_intended_bfg,
     evaluate_behavioral_semantics,
@@ -12,7 +12,12 @@ use fortress_core::behavioral_semantics::{
 use fortress_core::contract_coherency::{
     ContractCoherencyGraph, ContractStandardIndex, ModuleContract, compile_contract_coherency_graph,
 };
+use fortress_core::control_layout::{CONTROL_LAYOUT_SOURCE, LEGACY_CONTROL_LAYOUT_SOURCE};
+use fortress_core::control_manifest::{
+    ArtifactStorage, AssessmentGenerationManifest, AssessmentSelectionIndex,
+};
 use serde_json::{Value, json};
+use sha2::{Digest, Sha256};
 
 const FEATURE: &str = "AF-BFG-FEATURE-0001";
 const REQUIREMENT: &str = "AF-BFG-FEATURE-0001-R01";
@@ -22,28 +27,194 @@ fn repository_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
-fn selected_live_bfg(root: &Path) -> Option<Vec<u8>> {
-    let evidence = root.join("__fortress/evidence");
-    let index: Value =
-        serde_json::from_slice(&fs::read(evidence.join("current.json")).ok()?).ok()?;
-    for selection in index["selections"].as_array()? {
-        let digest = selection["generation_digest"]
-            .as_str()?
-            .strip_prefix("sha256:")?;
-        let generation = evidence.join("generations").join(digest);
-        let manifest: Value =
-            serde_json::from_slice(&fs::read(generation.join("manifest.json")).ok()?).ok()?;
-        if manifest["generation_kind"] != "LOCAL_QUALITY" {
-            continue;
-        }
-        let member = manifest["artifacts"]
-            .as_array()?
-            .iter()
-            .find(|artifact| artifact["id"] == "bfg")?["storage"]["member_name"]
-            .as_str()?;
-        return fs::read(generation.join(member)).ok();
+#[derive(Debug, Eq, PartialEq)]
+enum SelectedBfgSubject {
+    Current,
+    StaleSource,
+    RetainedLayout,
+}
+
+fn digest(bytes: &[u8]) -> String {
+    format!("sha256:{:x}", Sha256::digest(bytes))
+}
+
+fn local_selection_key() -> String {
+    let source = json!({
+        "project": "PF-FORTRESS",
+        "profile": "fortress-complete-local-v1",
+        "scope": "repository",
+        "context_family": "native-static",
+    })
+    .to_string();
+    digest(
+        &fortress_core::wire::canonicalize_public_json(&source).expect("selection canonicalizes"),
+    )
+}
+
+fn validate_selected_bfg(
+    manifest: &AssessmentGenerationManifest,
+    bytes: &[u8],
+    current_source: &str,
+    current_bfg: &[u8],
+) -> Result<SelectedBfgSubject, String> {
+    // Inspect the serialization of an already strictly validated owner record.
+    let view = serde_json::to_value(manifest).map_err(|error| error.to_string())?;
+    if view["generation_kind"] != "LOCAL_QUALITY"
+        || view["project"] != "PF-FORTRESS"
+        || view["profile"] != "fortress-complete-local-v1"
+        || view["selection_key"] != local_selection_key()
+    {
+        return Err("selected generation has a different assessment context".into());
     }
-    None
+    let layout_source = match view["control_layout"]["id"].as_str() {
+        Some("fortress-control-layout-v1") => LEGACY_CONTROL_LAYOUT_SOURCE,
+        Some("fortress-control-layout-v2") => CONTROL_LAYOUT_SOURCE,
+        _ => return Err("selected generation has an unsupported layout".into()),
+    };
+    if view["control_layout"]["digest"] != digest(layout_source.as_bytes()) {
+        return Err("selected layout digest does not match its registry".into());
+    }
+    let artifacts = view["artifacts"]
+        .as_array()
+        .expect("validated artifact array");
+    let bfg = artifacts
+        .iter()
+        .find(|artifact| artifact["id"] == "bfg")
+        .ok_or("selected BFG descriptor is missing")?;
+    if bfg["content_digest"] != digest(bytes)
+        || bfg["byte_count"].as_u64() != Some(bytes.len() as u64)
+    {
+        return Err("selected BFG bytes do not match their descriptor".into());
+    }
+    let payload: Value = fortress_core::wire::parse_public_json(
+        std::str::from_utf8(bytes).map_err(|error| error.to_string())?,
+    )
+    .map_err(|error| error.to_string())?;
+    let ccg = artifacts
+        .iter()
+        .find(|artifact| artifact["id"] == "ccg")
+        .ok_or("selected CCG descriptor is missing")?;
+    if payload["source_ccg_digest"] != ccg["content_digest"] {
+        return Err("selected BFG is not bound to its generation's CCG".into());
+    }
+    if view["source"]["fingerprint"] != current_source {
+        return Ok(SelectedBfgSubject::StaleSource);
+    }
+    if view["control_layout"]["id"] != "fortress-control-layout-v2" {
+        return Ok(SelectedBfgSubject::RetainedLayout);
+    }
+    if bytes != current_bfg {
+        return Err("current selected BFG differs from the independently compiled bytes".into());
+    }
+    Ok(SelectedBfgSubject::Current)
+}
+
+fn selected_live_bfg(
+    root: &Path,
+    current_source: &str,
+    current_bfg: &[u8],
+) -> Result<SelectedBfgSubject, String> {
+    let evidence = root.join("__fortress/evidence");
+    let index_source =
+        fs::read_to_string(evidence.join("current.json")).map_err(|error| error.to_string())?;
+    let index = AssessmentSelectionIndex::from_json_str(&index_source)
+        .map_err(|error| error.to_string())?;
+    let selected_digest = index
+        .generation(&local_selection_key())
+        .ok_or("exact local-quality selection is missing")?;
+    let generation = evidence.join("generations").join(
+        selected_digest
+            .strip_prefix("sha256:")
+            .expect("validated digest"),
+    );
+    let source =
+        fs::read_to_string(generation.join("manifest.json")).map_err(|error| error.to_string())?;
+    let manifest =
+        AssessmentGenerationManifest::from_json_str(&source).map_err(|error| error.to_string())?;
+    if manifest
+        .generation_digest()
+        .map_err(|error| error.to_string())?
+        != selected_digest
+    {
+        return Err("selected generation manifest does not match its digest".into());
+    }
+    let artifact = manifest
+        .artifacts()
+        .iter()
+        .find(|artifact| artifact.id() == "bfg")
+        .ok_or("selected BFG descriptor is missing")?;
+    let ArtifactStorage::Included { member_name } = artifact.storage() else {
+        return Err("selected BFG must be an included generation member".into());
+    };
+    let bytes = fs::read(generation.join(member_name)).map_err(|error| error.to_string())?;
+    validate_selected_bfg(&manifest, &bytes, current_source, current_bfg)
+}
+
+fn selected_bfg_subject_controls(bytes: &[u8]) {
+    let current_source = format!("sha256:{}", "a".repeat(64));
+    let stale_source = format!("sha256:{}", "b".repeat(64));
+    let payload: Value = serde_json::from_slice(bytes).expect("current BFG parses");
+    let mut fixture = json!({
+        "$schema": "urn:fortress:derived:v2:assessment-generation-manifest",
+        "schema_version": 2,
+        "generation_kind": "LOCAL_QUALITY",
+        "project": "PF-FORTRESS",
+        "profile": "fortress-complete-local-v1",
+        "selection_key": local_selection_key(),
+        "source": {"fingerprint": current_source, "file_count": 1},
+        "control_layout": {
+            "id": "fortress-control-layout-v2",
+            "digest": digest(CONTROL_LAYOUT_SOURCE.as_bytes()),
+        },
+        "artifacts": [{
+            "id": "bfg", "producer_id": "behavioral_semantics",
+            "schema_ref": "urn:fortress:derived:v1:behavioral-flow-graph",
+            "producer_semantic_version": "1.0.0",
+            "content_digest": digest(bytes), "byte_count": bytes.len(),
+            "disposition": "REQUIRED",
+            "storage": {"kind": "INCLUDED", "member_name": "behavioral_flow_graph.json"},
+        }, {
+            "id": "ccg", "producer_id": "contract_coherency",
+            "schema_ref": "urn:fortress:derived:v1:contract-coherency-graph",
+            "producer_semantic_version": "1.0.0",
+            "content_digest": payload["source_ccg_digest"], "byte_count": 1,
+            "disposition": "REQUIRED",
+            "storage": {"kind": "INCLUDED", "member_name": "ccg.json"},
+        }],
+    });
+    let parse = |value: &Value| {
+        AssessmentGenerationManifest::from_json_str(&value.to_string())
+            .expect("selected generation fixture validates")
+    };
+    let current = parse(&fixture);
+    assert_eq!(
+        validate_selected_bfg(&current, bytes, &current_source, bytes),
+        Ok(SelectedBfgSubject::Current)
+    );
+    assert!(validate_selected_bfg(&current, bytes, &current_source, b"different").is_err());
+    assert_eq!(
+        validate_selected_bfg(&current, bytes, &stale_source, b"different"),
+        Ok(SelectedBfgSubject::StaleSource)
+    );
+    assert!(validate_selected_bfg(&current, b"corrupt", &stale_source, bytes).is_err());
+    fixture["artifacts"][0]["storage"]["member_name"] = json!("../escape.json");
+    assert!(AssessmentGenerationManifest::from_json_str(&fixture.to_string()).is_err());
+    fixture["artifacts"][0]["storage"]["member_name"] = json!("behavioral_flow_graph.json");
+    fixture["artifacts"][0]["byte_count"] = json!(bytes.len() + 1);
+    assert!(validate_selected_bfg(&parse(&fixture), bytes, &stale_source, bytes).is_err());
+    fixture["artifacts"][0]["byte_count"] = json!(bytes.len());
+    fixture["control_layout"]["digest"] = json!(stale_source);
+    assert!(validate_selected_bfg(&parse(&fixture), bytes, &stale_source, bytes).is_err());
+    fixture["control_layout"] = json!({
+        "id": "fortress-control-layout-v1",
+        "digest": digest(LEGACY_CONTROL_LAYOUT_SOURCE.as_bytes()),
+    });
+    fixture["$schema"] = json!("urn:fortress:derived:v1:assessment-generation-manifest");
+    fixture["schema_version"] = json!(1);
+    assert_eq!(
+        validate_selected_bfg(&parse(&fixture), bytes, &current_source, b"different"),
+        Ok(SelectedBfgSubject::RetainedLayout)
+    );
 }
 
 fn has_historical_generation(root: &Path) -> bool {
@@ -537,9 +708,13 @@ fn live_fortress_bfg_is_coherent_deterministic_and_fresh() {
     assert_eq!(first.summary().modeled_features(), 1);
     assert_eq!(first.summary().incoherent_features(), 0);
     assert!(first.violations().is_empty());
+    selected_bfg_subject_controls(first_bytes.as_bytes());
     if root.join("__fortress/evidence/current.json").is_file() {
-        let selected = selected_live_bfg(&root).expect("exact selected local-quality BFG reads");
-        assert_eq!(first_bytes.as_bytes(), selected);
+        let source = prepare_repository_certification_source(&root)
+            .expect("current exact certification subject prepares");
+        let subject = selected_live_bfg(&root, &source.digest, first_bytes.as_bytes())
+            .expect("exact selected local-quality BFG is intact and reconciles with its subject");
+        eprintln!("selected behavioral evidence subject: {subject:?}");
     } else {
         assert!(has_historical_generation(&root));
     }

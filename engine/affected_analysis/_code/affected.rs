@@ -20,7 +20,7 @@ pub const AFFECTED_ANALYSIS_SCHEMA: &str = "urn:fortress:schema:v1:affected-anal
 /// Canonical affected-analysis schema version.
 pub const AFFECTED_ANALYSIS_SCHEMA_VERSION: u16 = 1;
 /// Semantic implementation version for dependency and cache interpretation.
-pub const AFFECTED_ANALYSIS_VERSION: &str = "1.2.0";
+pub const AFFECTED_ANALYSIS_VERSION: &str = "1.3.0";
 /// Stable affected dependency resolver identity.
 pub const AFFECTED_ANALYZER_ID: &str = "fortress-affected-analysis";
 
@@ -46,6 +46,8 @@ pub enum AuthorityInputKind {
     SourceResponsibility,
     /// State Contract authority.
     StateContract,
+    /// Exact operation-summary selections, assumptions, or installed catalog authority.
+    EffectSummary,
     /// Information-flow policy authority.
     InformationFlowPolicy,
     /// Environment Contract authority.
@@ -70,6 +72,10 @@ pub fn classify_authority_path(path: &str) -> AuthorityInputKind {
         AuthorityInputKind::FunctionContract
     } else if is_distributed_data_authority(path, "state_contracts.json") {
         AuthorityInputKind::StateContract
+    } else if path == "__fortress/governance/effect_summaries/catalog.json"
+        || path == "engine/standard_registry/_data/operation_summaries_v1.json"
+    {
+        AuthorityInputKind::EffectSummary
     } else if path == "__fortress/governance/information_flow_policy.json"
         || path.ends_with("/_data/information_flow_policy.json")
     {

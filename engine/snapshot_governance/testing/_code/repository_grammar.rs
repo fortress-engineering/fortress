@@ -39,7 +39,8 @@ fn fortress_documentation_is_complete_synchronized_and_deterministic() {
     );
     assert_eq!(first, second);
     assert_eq!(first.summary().modules_inspected(), 43);
-    assert_eq!(first.summary().markdown_files_inspected(), 136);
+    // The State/Effect Testing Data asset has its required companion documentation.
+    assert_eq!(first.summary().markdown_files_inspected(), 137);
     assert_eq!(
         first.summary().code_bijection().0,
         first.summary().code_bijection().1

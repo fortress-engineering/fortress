@@ -102,6 +102,21 @@
             "T-AF-STATE-EFFECT-ANALYSIS-0001-R05-010",
             "T-AF-STATE-EFFECT-ANALYSIS-0001-R05-011"
           ]
+        },
+        {
+          "id": "AF-STATE-EFFECT-ANALYSIS-0001-R06",
+          "statement": "State and Effect Analysis validates versioned operation-summary catalogs, rejects overlapping exact selectors, binds source, version, target, features and type arguments before applying complete qualified upper bounds, composes evidenced callback and destructor premises, and preserves selected authority, assumptions and unresolved coverage so observed or incomplete facts cannot silently discharge negative effect claims.",
+          "tests": [
+            "T-AF-STATE-EFFECT-ANALYSIS-0001-R06-001",
+            "T-AF-STATE-EFFECT-ANALYSIS-0001-R06-002",
+            "T-AF-STATE-EFFECT-ANALYSIS-0001-R06-003",
+            "T-AF-STATE-EFFECT-ANALYSIS-0001-R06-004",
+            "T-AF-STATE-EFFECT-ANALYSIS-0001-R06-005",
+            "T-AF-STATE-EFFECT-ANALYSIS-0001-R06-006",
+            "T-AF-STATE-EFFECT-ANALYSIS-0001-R06-007",
+            "T-AF-STATE-EFFECT-ANALYSIS-0001-R06-008",
+            "T-AF-STATE-EFFECT-ANALYSIS-0001-R06-009"
+          ]
         }
       ]
     }

@@ -97,6 +97,10 @@ name = "state_effect_analysis"
 path = "../state_effect_analysis/testing/_code/state_effect_analysis.rs"
 
 [[test]]
+name = "operation_summary"
+path = "../state_effect_analysis/testing/_code/operation_summary.rs"
+
+[[test]]
 name = "repo_module_001"
 path = "../snapshot_governance/testing/_code/repo_module_001.rs"
 

@@ -30,9 +30,17 @@ Defines the version-one machine representation and validation boundary for chang
 
 Defines the fixed root, active roles, source bindings, manifest member, and closed artifact registry.
 
+### [`control_layout_schema_v2.json`](../_data/control_layout_schema_v2.json)
+
+Defines the current fixed control layout with the exact source-bound effect-summary authority role and closed artifact registry.
+
 ### [`control_layout_v1.json`](../_data/control_layout_v1.json)
 
-Provides the authoritative cross-adapter `__fortress` layout and artifact-role dataset.
+Retains the historical cross-adapter `__fortress` layout and artifact-role dataset without reinterpreting existing generation bindings.
+
+### [`control_layout_v2.json`](../_data/control_layout_v2.json)
+
+Provides the current cross-adapter `__fortress` layout and registers `__fortress/governance/effect_summaries/catalog.json` as required source authority owned by State and Effect Analysis.
 
 ### [`filing_profile_schema_v2.json`](../_data/filing_profile_schema_v2.json)
 

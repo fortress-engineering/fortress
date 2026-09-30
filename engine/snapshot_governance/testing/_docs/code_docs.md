@@ -28,7 +28,7 @@ Runs the complete self-audit and asserts every implemented applicable rule passe
 
 ### [`derived_artifact_storage.py`](../_code/derived_artifact_storage.py)
 
-Verifies the complete projection-storage registry, subject-addressed external cache boundary, prior-certificate and Cargo-lock preservation through injected gate failures, leased materialization, scoped cleanup, and distinct missing, current, stale, and invalid materialization states without executing semantic generators.
+Verifies the complete projection-storage registry, subject-addressed external cache boundary, prior-certificate and Cargo-lock preservation through injected gate failures, leased materialization, scoped cleanup, and distinct missing, current, stale, and invalid materialization states without executing semantic generators. Both selection readers and publishers reject competing context keys, reverse ordering, invalid unrelated digests, extra fields, and malformed entries; valid unrelated contexts, shared generations, and empty bootstrap indexes retain their defined meaning.
 
 ### [`execution_storage.py`](../_code/execution_storage.py)
 

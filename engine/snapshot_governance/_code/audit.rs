@@ -43,8 +43,8 @@ use crate::contract_coherency::{
     LogicalModuleContractSource, compile_contract_coherency_graph_with_logical_modules,
 };
 use crate::control_layout::{
-    ControlLayout, ControlRole, EVIDENCE_ROOT, LEGACY_PROJECT_CONFIGURATION_PATH,
-    PROJECT_CONFIGURATION_PATH,
+    ControlLayout, ControlRole, EFFECT_SUMMARY_AUTHORITY_PATH, EVIDENCE_ROOT,
+    LEGACY_PROJECT_CONFIGURATION_PATH, PROJECT_CONFIGURATION_PATH,
 };
 use crate::documentation::{
     DocumentationEvaluationError, code_file_responsibilities, evaluate_repository_documentation,
@@ -110,8 +110,8 @@ use crate::source_architecture::{
 };
 use crate::standard::{StandardBundle, StandardLoadError, installed_standard_manifest};
 use crate::state_effect_analysis::{
-    StateContractError, StateContractSource, StateEffectAnalysisError,
-    StateEffectAnalysisEvaluation, analyze_state_effects, load_state_contracts,
+    OperationSummaryCatalog, StateContractError, StateContractSource, StateEffectAnalysisError,
+    StateEffectAnalysisEvaluation, analyze_state_effects_with_summaries, load_state_contracts,
 };
 
 /// Current stable machine-readable snapshot audit schema family.
@@ -1220,14 +1220,35 @@ fn analyze_observation_state_effect(
         .unwrap_or_default();
     let state_contracts =
         load_state_contracts(psm, state_sources).map_err(AuditError::StateContracts)?;
-    analyze_state_effects(
+    let summary_catalog = operation_summary_catalog(&prepared.observed_files)?;
+    analyze_state_effects_with_summaries(
         psm,
         &semantic,
         &state_contracts,
         &contracts,
         prepared.standard.bundle.edition(),
+        &summary_catalog,
+        &BTreeMap::new(),
     )
     .map_err(AuditError::StateEffectAnalysis)
+}
+
+fn operation_summary_catalog(
+    files: &BTreeMap<String, Vec<u8>>,
+) -> Result<OperationSummaryCatalog, AuditError> {
+    let installed =
+        OperationSummaryCatalog::from_json_str(crate::standard::installed_operation_summaries())
+            .map_err(StateEffectAnalysisError::OperationSummary)
+            .map_err(AuditError::StateEffectAnalysis)?;
+    let Some(bytes) = files.get(EFFECT_SUMMARY_AUTHORITY_PATH) else {
+        return Ok(installed);
+    };
+    let source = std::str::from_utf8(bytes)
+        .map_err(|_| AuditError::NonUtf8(EFFECT_SUMMARY_AUTHORITY_PATH.into()))?;
+    installed
+        .with_assumed_catalog(source)
+        .map_err(StateEffectAnalysisError::OperationSummary)
+        .map_err(AuditError::StateEffectAnalysis)
 }
 
 #[allow(clippy::too_many_lines)]
@@ -2248,7 +2269,7 @@ fn certification_artifacts(
         ),
         (
             "state_effect",
-            "urn:fortress:schema:v4:state-effect-analysis",
+            crate::state_effect_analysis::STATE_EFFECT_ANALYSIS_SCHEMA,
             "_info/state_effect_analysis.json",
             stack
                 .models
@@ -2647,6 +2668,26 @@ fn certification_trusted_assertions(
             });
         }
     }
+    for summary in stack.models.state_effect.model().summaries() {
+        for evidence in summary.operation_summaries() {
+            let outcome = evidence.outcome();
+            if !outcome.is_sufficient() || outcome.assumption_refs.is_empty() {
+                continue;
+            }
+            assertions.push(crate::certification::TrustedAssertionInput {
+                subject: evidence.operation_site_id().into(),
+                kind: "effect_summary_assumption".into(),
+                provenance: serde_json::to_string(&serde_json::json!({
+                    "catalog_digest": outcome.catalog_digest,
+                    "summary_id": outcome.selected_summary_id,
+                    "assumption_refs": outcome.assumption_refs,
+                    "context_observation_refs": evidence.observation_refs(),
+                }))
+                .map_err(CertificationError::Json)
+                .map_err(AuditError::Certification)?,
+            });
+        }
+    }
     assertions.sort_by(|left, right| left.subject.cmp(&right.subject));
     Ok(assertions)
 }
@@ -2751,12 +2792,15 @@ fn compile_analysis_models_from_observed(
     let state_sources = state_contract_sources(ccg, &prepared.observed_files)?;
     let state_contracts =
         load_state_contracts(&psm, state_sources).map_err(AuditError::StateContracts)?;
-    let state_effect = analyze_state_effects(
+    let summary_catalog = operation_summary_catalog(&prepared.observed_files)?;
+    let state_effect = analyze_state_effects_with_summaries(
         &psm,
         &semantic,
         &state_contracts,
         &contracts,
         prepared.standard.bundle.edition(),
+        &summary_catalog,
+        &BTreeMap::new(),
     )
     .map_err(AuditError::StateEffectAnalysis)?;
     let policy =
@@ -3217,6 +3261,13 @@ fn build_affected_snapshot(
         Vec::new(),
     )?);
 
+    units.push(affected_unit(
+        "authority:installed-operation-summaries",
+        AffectedUnitKind::AuthorityInput,
+        crate::standard::installed_operation_summaries_digest(),
+        Vec::new(),
+    )?);
+
     let ownership_by_path = prepared
         .ownerships
         .iter()
@@ -3292,7 +3343,20 @@ fn build_affected_snapshot(
     );
     let effect_symbols = summaries_by_symbol.keys().copied().collect::<BTreeSet<_>>();
     for (symbol, summaries) in summaries_by_symbol {
-        let mut dependencies = vec![format!("symbol:{symbol}")];
+        let mut dependencies = vec![
+            format!("symbol:{symbol}"),
+            "authority:installed-operation-summaries".into(),
+        ];
+        dependencies.extend(
+            prepared
+                .observed_files
+                .keys()
+                .filter(|path| {
+                    crate::affected_analysis::classify_authority_path(path)
+                        == crate::affected_analysis::AuthorityInputKind::EffectSummary
+                })
+                .map(|path| format!("authority:{path}")),
+        );
         for call in calls_by_caller.get(symbol).into_iter().flatten() {
             dependencies.push(format!("call:{}", call.id()));
             if let Some(callee) = call
@@ -3509,6 +3573,8 @@ fn build_affected_snapshot(
     };
     let function_contract_units =
         authority_units(crate::affected_analysis::AuthorityInputKind::FunctionContract);
+    let summary_authority_units =
+        authority_units(crate::affected_analysis::AuthorityInputKind::EffectSummary);
     let state_contract_units =
         authority_units(crate::affected_analysis::AuthorityInputKind::StateContract);
     let information_flow_policy_units =
@@ -3556,6 +3622,8 @@ fn build_affected_snapshot(
             ProjectionKind::StateEffect => {
                 let mut value = vec!["projection:semantic".into()];
                 value.extend(state_contract_units.clone());
+                value.extend(summary_authority_units.clone());
+                value.push("authority:installed-operation-summaries".into());
                 value
             }
             ProjectionKind::InformationFlow => {
@@ -3760,6 +3828,23 @@ fn projection_dependencies_from_files(
                 .map_err(|error| AuditError::AffectedAnalysis(error.to_string().into()))?,
         );
     }
+    if matches!(
+        kind,
+        ProjectionKind::StateEffect
+            | ProjectionKind::SemanticConformance
+            | ProjectionKind::InformationFlow
+            | ProjectionKind::Environmental
+            | ProjectionKind::RealizedBfg
+            | ProjectionKind::Audit
+    ) {
+        dependencies.push(
+            ProjectionDependency::new(
+                "standard:installed-operation-summaries",
+                crate::standard::installed_operation_summaries_digest(),
+            )
+            .map_err(|error| AuditError::AffectedAnalysis(error.to_string().into()))?,
+        );
+    }
     if projection_uses_standard(kind) {
         dependencies.push(
             ProjectionDependency::new(
@@ -3829,6 +3914,7 @@ fn projection_file_digest(
                 | crate::affected_analysis::AuthorityInputKind::ModuleContract
                 | crate::affected_analysis::AuthorityInputKind::FunctionContract
                 | crate::affected_analysis::AuthorityInputKind::StateContract
+                | crate::affected_analysis::AuthorityInputKind::EffectSummary
         ),
         ProjectionKind::SemanticConformance => matches!(
             authority,
@@ -3838,6 +3924,7 @@ fn projection_file_digest(
                 | crate::affected_analysis::AuthorityInputKind::ModuleContract
                 | crate::affected_analysis::AuthorityInputKind::FunctionContract
                 | crate::affected_analysis::AuthorityInputKind::StateContract
+                | crate::affected_analysis::AuthorityInputKind::EffectSummary
         ),
         ProjectionKind::InformationFlow => matches!(
             authority,
@@ -3847,6 +3934,7 @@ fn projection_file_digest(
                 | crate::affected_analysis::AuthorityInputKind::ModuleContract
                 | crate::affected_analysis::AuthorityInputKind::FunctionContract
                 | crate::affected_analysis::AuthorityInputKind::StateContract
+                | crate::affected_analysis::AuthorityInputKind::EffectSummary
                 | crate::affected_analysis::AuthorityInputKind::InformationFlowPolicy
         ),
         ProjectionKind::Environmental => !matches!(
@@ -4162,7 +4250,7 @@ fn validate_control_namespace(root: &Path) -> Result<(), AuditError> {
                 ));
             }
             if metadata.is_dir() {
-                if !valid_control_directory(&relative) {
+                if !layout.allows_directory(&relative) {
                     return Err(AuditError::ProjectAuthority(
                         format!("unregistered control directory `{relative}`").into(),
                     ));
@@ -4185,21 +4273,6 @@ fn validate_control_namespace(root: &Path) -> Result<(), AuditError> {
         }
     }
     Ok(())
-}
-
-fn valid_control_directory(path: &str) -> bool {
-    matches!(
-        path,
-        "__fortress/governance" | "__fortress/evidence" | "__fortress/evidence/generations"
-    ) || path
-        .strip_prefix("__fortress/evidence/generations/")
-        .is_some_and(|digest| {
-            !digest.contains('/')
-                && digest.len() == 64
-                && digest
-                    .bytes()
-                    .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
-        })
 }
 
 fn logical_contract_sources(project: &ProjectConfiguration) -> Vec<LogicalModuleContractSource> {

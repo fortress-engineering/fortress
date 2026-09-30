@@ -28,4 +28,4 @@ Implements deterministic value-domain subset, intersection, join, difference, bo
 
 ### [`semantic.rs`](../_code/semantic.rs)
 
-Interprets PSM control/value facts, derives recursive summaries, checks contracts and partial operations, records coverage, serializes derived Info, and normalizes PROGRAM-DOMAIN-001 findings.
+Interprets PSM control/value facts, derives recursive summaries, checks contracts and partial operations, records coverage, serializes derived Info, and normalizes PROGRAM-DOMAIN-001 findings. Caller-indexed call views retain every call in its original PSM order, preserving first-match resolution while avoiding repeated scans of unrelated calls.

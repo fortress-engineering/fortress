@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v2:control-layout",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "schema_version", "id", "root", "config", "roles", "manifest_member", "artifact_registry"],
+  "properties": {
+    "$schema": { "const": "urn:fortress:schema:v2:control-layout" },
+    "schema_version": { "const": 2 },
+    "id": { "const": "fortress-control-layout-v2" },
+    "root": { "const": "__fortress" },
+    "config": { "const": "__fortress/.fsconfig" },
+    "roles": {
+      "type": "array", "minItems": 5, "items": { "$ref": "#/$defs/role" },
+      "contains": {
+        "type": "object",
+        "properties": {
+          "path": { "const": "__fortress/governance/effect_summaries/catalog.json" },
+          "role": { "const": "EFFECT_SUMMARY_AUTHORITY" },
+          "owner": { "const": "state_effect_analysis" },
+          "source_binding": { "const": "REQUIRED" }
+        },
+        "required": ["path", "role", "owner", "source_binding"]
+      }
+    },
+    "manifest_member": { "$ref": "#/$defs/manifest" },
+    "artifact_registry": { "type": "array", "minItems": 15, "items": { "$ref": "#/$defs/artifact" } }
+  },
+  "$defs": {
+    "role": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "role", "owner", "source_binding"],
+      "properties": {
+        "path": { "type": "string", "pattern": "^__fortress/" },
+        "role": { "enum": ["PROJECT_CONFIGURATION", "FINDING_GOVERNANCE", "GLOBAL_INFORMATION_FLOW_POLICY", "EFFECT_SUMMARY_AUTHORITY", "ASSESSMENT_SELECTION_INDEX"] },
+        "owner": { "type": "string", "minLength": 1 },
+        "source_binding": { "enum": ["REQUIRED", "NONRECURSIVE"] }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "role": { "const": "EFFECT_SUMMARY_AUTHORITY" } } },
+          "then": {
+            "properties": {
+              "path": { "const": "__fortress/governance/effect_summaries/catalog.json" },
+              "owner": { "const": "state_effect_analysis" },
+              "source_binding": { "const": "REQUIRED" }
+            }
+          }
+        }
+      ]
+    },
+    "manifest": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "owner"],
+      "properties": {
+        "name": { "const": "manifest.json" },
+        "owner": { "type": "string", "minLength": 1 }
+      }
+    },
+    "artifact": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "logical_path", "owner", "schema_ref", "producer_semantic_version", "production_group", "storage"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+        "logical_path": { "type": "string", "pattern": "^_info/[a-z][a-z0-9_]*\\.json$" },
+        "owner": { "type": "string", "minLength": 1 },
+        "schema_ref": { "type": "string", "minLength": 1 },
+        "producer_semantic_version": { "type": "string", "minLength": 1 },
+        "production_group": { "enum": ["SEMANTIC", "CERTIFICATION", "CERTIFICATE"] },
+        "storage": { "enum": ["INCLUDED", "EXTERNAL_MATERIALIZATION"] },
+        "member_name": { "type": "string", "pattern": "^[a-z][a-z0-9_]*\\.json$" }
+      },
+      "allOf": [
+        { "if": { "properties": { "storage": { "const": "INCLUDED" } } }, "then": { "required": ["member_name"] }, "else": { "not": { "required": ["member_name"] } } }
+      ]
+    }
+  }
+}

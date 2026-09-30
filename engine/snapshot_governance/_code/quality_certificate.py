@@ -45,7 +45,7 @@ LEGACY_CONFIG_PATH = "_data/project.json"
 EVIDENCE_ROOT = "__fortress/evidence"
 CURRENT_INDEX_PATH = "__fortress/evidence/current.json"
 GENERATIONS_PATH = "__fortress/evidence/generations"
-CONTROL_LAYOUT_PATH = "engine/project_model/_data/control_layout_v1.json"
+CONTROL_LAYOUT_PATH = "engine/project_model/_data/control_layout_v2.json"
 CERTIFICATE_ID = "quality-certificate"
 CERTIFICATE_MEMBER = "quality_certificate.json"
 SCHEMA_ID = "urn:fortress:derived:v3:local-quality-certificate"
@@ -311,7 +311,7 @@ def selection_key() -> str:
 
 def control_layout_digest(root: Path) -> str:
     """Bind publications to the installed declarative role registry."""
-    path = root / "engine/project_model/_data/control_layout_v1.json"
+    path = root / CONTROL_LAYOUT_PATH
     return sha256_bytes(path.read_bytes())
 
 
@@ -376,8 +376,8 @@ def build_generation_manifest(
     )
     descriptors.sort(key=lambda item: item["id"])
     return {
-        "$schema": "urn:fortress:derived:v1:assessment-generation-manifest",
-        "schema_version": 1,
+        "$schema": "urn:fortress:derived:v2:assessment-generation-manifest",
+        "schema_version": 2,
         "generation_kind": "LOCAL_QUALITY",
         "project": "PF-FORTRESS",
         "profile": PROFILE_ID,
@@ -387,7 +387,7 @@ def build_generation_manifest(
             "file_count": certificate["source"]["file_count"],
         },
         "control_layout": {
-            "id": "fortress-control-layout-v1",
+            "id": "fortress-control-layout-v2",
             "digest": control_layout_digest(root),
         },
         "artifacts": descriptors,
@@ -397,6 +397,33 @@ def build_generation_manifest(
 def canonical_pretty_json(value: dict[str, Any]) -> bytes:
     """Serialize repository records as deterministic UTF-8/LF pretty JSON."""
     return (json.dumps(value, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
+
+
+def selection_entries(document: Any) -> dict[str, str]:
+    """Validate the closed index and its strictly ordered context-to-generation map."""
+    if (
+        not isinstance(document, dict)
+        or set(document) != {"$schema", "schema_version", "selections"}
+        or document["$schema"] != "urn:fortress:derived:v1:assessment-selection-index"
+        or document["schema_version"] != 1
+        or type(document["schema_version"]) is not int
+        or not isinstance(document["selections"], list)
+    ):
+        raise CertificateError("current selection index shape is unsupported")
+    selections: dict[str, str] = {}
+    prior = None
+    for item in document["selections"]:
+        if not isinstance(item, dict) or set(item) != {"selection_key", "generation_digest"}:
+            raise CertificateError("current selection index contains invalid entries")
+        for value in item.values():
+            if not isinstance(value, str) or re.fullmatch(r"sha256:[0-9a-f]{64}", value) is None:
+                raise CertificateError("current selection index contains invalid digests")
+        key = item["selection_key"]
+        if prior is not None and key <= prior:
+            raise CertificateError("current selection index keys are not strictly increasing")
+        selections[key] = item["generation_digest"]
+        prior = key
+    return selections
 
 
 def updated_selection_index(root: Path, generation_digest: str) -> tuple[bytes | None, bytes]:
@@ -416,15 +443,9 @@ def updated_selection_index(root: Path, generation_digest: str) -> tuple[bytes |
             raise CertificateError(f"current selection index is invalid: {error}") from error
         if canonical_pretty_json(document) != old:
             raise CertificateError("current selection index bytes are noncanonical")
-        if set(document) != {"$schema", "schema_version", "selections"} or document["$schema"] != "urn:fortress:derived:v1:assessment-selection-index" or document["schema_version"] != 1 or not isinstance(document["selections"], list):
-            raise CertificateError("current selection index shape is unsupported")
-    selections = {
-        item["selection_key"]: item["generation_digest"]
-        for item in document["selections"]
-        if isinstance(item, dict) and set(item) == {"selection_key", "generation_digest"}
-    }
-    if len(selections) != len(document["selections"]):
-        raise CertificateError("current selection index contains invalid or duplicate entries")
+    selections = selection_entries(document)
+    if not isinstance(generation_digest, str) or re.fullmatch(r"sha256:[0-9a-f]{64}", generation_digest) is None:
+        raise CertificateError("new generation digest is invalid")
     selections[selection_key()] = generation_digest
     document["selections"] = [
         {"selection_key": key, "generation_digest": selections[key]}
@@ -936,17 +957,10 @@ def load_selected_generation(
         raise CertificateError(f"cannot load {CURRENT_INDEX_PATH}: {error}") from error
     if canonical_pretty_json(index) != index_bytes:
         raise CertificateError("current selection index bytes are noncanonical")
-    if set(index) != {"$schema", "schema_version", "selections"} or index["$schema"] != "urn:fortress:derived:v1:assessment-selection-index" or index["schema_version"] != 1 or not isinstance(index["selections"], list):
-        raise CertificateError("current selection index shape is unsupported")
-    matches = [
-        item for item in index["selections"]
-        if isinstance(item, dict) and item.get("selection_key") == selection_key()
-    ]
-    if len(matches) != 1:
+    selections = selection_entries(index)
+    generation_id = selections.get(selection_key())
+    if generation_id is None:
         raise CertificateError("current selection is missing or ambiguous")
-    generation_id = matches[0].get("generation_digest")
-    if not isinstance(generation_id, str) or re.fullmatch(r"sha256:[0-9a-f]{64}", generation_id) is None:
-        raise CertificateError("selected generation digest is invalid")
     generation_root = root / GENERATIONS_PATH / generation_id.removeprefix("sha256:")
     manifest_path = generation_root / "manifest.json"
     try:
@@ -966,9 +980,9 @@ def load_selected_generation(
         },
         "generation manifest",
     )
-    if manifest["$schema"] != "urn:fortress:derived:v1:assessment-generation-manifest" or manifest["schema_version"] != 1 or manifest["generation_kind"] != "LOCAL_QUALITY" or manifest["project"] != "PF-FORTRESS" or manifest["profile"] != PROFILE_ID or manifest["selection_key"] != selection_key():
+    if manifest["$schema"] != "urn:fortress:derived:v2:assessment-generation-manifest" or manifest["schema_version"] != 2 or manifest["generation_kind"] != "LOCAL_QUALITY" or manifest["project"] != "PF-FORTRESS" or manifest["profile"] != PROFILE_ID or manifest["selection_key"] != selection_key():
         raise CertificateError("selected generation manifest identity is unsupported")
-    if manifest["control_layout"] != {"id": "fortress-control-layout-v1", "digest": control_layout_digest(root)}:
+    if manifest["control_layout"] != {"id": "fortress-control-layout-v2", "digest": control_layout_digest(root)}:
         raise CertificateError("selected generation control layout is stale or invalid")
     descriptors = manifest.get("artifacts")
     if not isinstance(descriptors, list) or not descriptors:

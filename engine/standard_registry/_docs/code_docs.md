@@ -24,7 +24,7 @@ Validates canonical stable entity and rule identities under the registered Fortr
 
 ### [`standard.rs`](../_code/standard.rs)
 
-Loads the exact draft manifest and complete rule-document bundle, validates canonical implication/conflict metadata, and rejects registry disagreement or inherently unsatisfiable rule logic.
+Loads the exact draft manifest and complete rule-document bundle, validates canonical implication/conflict metadata, and rejects registry disagreement or inherently unsatisfiable rule logic. Supplies the directly owned installed operation-summary catalog bytes and digest through the public provider; State and Effect Analysis owns their interpretation, and the registry imports no evaluator.
 
 ### [`profile.rs`](../_code/profile.rs)
 

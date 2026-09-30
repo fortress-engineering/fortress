@@ -21,3 +21,7 @@ Assertions compare exact classifications, findings, coverage, provenance, and ca
 ### [`state_effect_analysis.rs`](../_code/state_effect_analysis.rs)
 
 Verifies contract ownership, typestate behavior, refined operation classification, capability expressibility, panic and unsafe structure, causal effect closure, policy compatibility, uncertainty, deterministic output, and live self-analysis.
+
+### [`operation_summary.rs`](../_code/operation_summary.rs)
+
+Verifies exact-context effect authority, callback and destructor premises, conflict rejection, disclosed assumptions, unsupported coverage, and the retained comparison of authored, source-derived, and qualified hybrid summaries. The Standard public provider supplies the installed catalog; the comparison fixture is directly owned Testing Data.

@@ -529,6 +529,7 @@ fn deleting_cache_changes_runtime_state_not_canonical_output() {
 /// `T-AF-AFFECTED-ANALYSIS-0001-R03-004`
 /// Fortress requirement: AF-AFFECTED-ANALYSIS-0001-R03
 #[test]
+#[allow(clippy::too_many_lines)]
 fn repository_projection_keys_bind_only_semantically_relevant_authority() {
     let root = temporary_root("repository-keys");
     fs::create_dir_all(root.join("_data/logical_modules/worker")).expect("fixture directories");
@@ -619,6 +620,105 @@ fn repository_projection_keys_bind_only_semantically_relevant_authority() {
             .to_owned();
     assert_eq!(psm_before, psm_after);
     assert_ne!(conformance_before, conformance_after);
+
+    let projection_key = |kind| {
+        prepare_repository_projection_cache(&root, kind)
+            .expect("stabilized repository projection")
+            .key()
+            .clone()
+    };
+    let psm_before_summary = projection_key(ProjectionKind::Psm);
+    let effect_before_summary = projection_key(ProjectionKind::StateEffect);
+    let claim_before_summary = projection_key(ProjectionKind::SemanticConformance);
+    let summary_path = root.join("__fortress/governance/effect_summaries/catalog.json");
+    fs::create_dir_all(summary_path.parent().unwrap()).expect("summary authority directory");
+    let mut summary_authority = serde_json::json!({
+        "$schema": "urn:fortress:schema:v1:operation-summary-catalog",
+        "schema_version": 1,
+        "id": "fixture-local-operation-summaries",
+        "producer_version": "1.0.0",
+        "summaries": [{
+            "id": "fixture-assumed-operation",
+            "operation_selector": "fixture_dependency::execute",
+            "toolchain_or_package_source_digest": digest("exact fixture dependency source"),
+            "supported_versions": ["1.0.0"],
+            "target_features_constraints": { "targets": ["x86_64-unknown-linux-gnu"], "features": [] },
+            "type_constraints": [],
+            "observed_effects": [],
+            "effect_upper_bound": { "state": "KNOWN", "effects": [] },
+            "callback_dependencies": [],
+            "destructor_dependencies": [],
+            "completeness": "COMPLETE",
+            "authority_class": "ASSUMED",
+            "qualification_refs": []
+        }]
+    });
+    fs::write(&summary_path, summary_authority.to_string()).expect("local assumption authority");
+    let effect_prepared = prepare_repository_projection_cache(&root, ProjectionKind::StateEffect)
+        .expect("summary-bound effect key");
+    let effect_before_change = effect_prepared.key().clone();
+    let effect_model = effect_prepared
+        .compile_state_effect()
+        .expect("local summary loader");
+    assert!(
+        !effect_model
+            .model()
+            .operation_summary_catalog_digest()
+            .is_empty()
+    );
+    assert_eq!(psm_before_summary, projection_key(ProjectionKind::Psm));
+    assert_ne!(effect_before_summary, effect_before_change);
+    assert_ne!(
+        claim_before_summary,
+        projection_key(ProjectionKind::SemanticConformance)
+    );
+    assert!(
+        effect_before_change
+            .dependencies()
+            .iter()
+            .any(|dependency| {
+                dependency.id() == "repository:__fortress/governance/effect_summaries/catalog.json"
+            })
+    );
+    assert!(
+        !psm_before_summary
+            .dependencies()
+            .iter()
+            .any(|dependency| { dependency.id().contains("effect_summaries") })
+    );
+
+    // Change only admitted assumption bytes; both real dependent keys move,
+    // while the unrelated parse computation stays reusable.
+    let claim_before_change = projection_key(ProjectionKind::SemanticConformance);
+    summary_authority["summaries"][0]["effect_upper_bound"]["effects"] =
+        serde_json::json!(["network.io"]);
+    fs::write(&summary_path, summary_authority.to_string()).expect("changed summary authority");
+    assert_eq!(psm_before_summary, projection_key(ProjectionKind::Psm));
+    assert_ne!(
+        effect_before_change,
+        projection_key(ProjectionKind::StateEffect)
+    );
+    assert_ne!(
+        claim_before_change,
+        projection_key(ProjectionKind::SemanticConformance)
+    );
+
+    // A syntactically qualified local record cannot confer installed authority.
+    summary_authority["summaries"][0]["authority_class"] = serde_json::json!("QUALIFIED");
+    summary_authority["summaries"][0]["qualification_refs"] =
+        serde_json::json!(["fixture:purported-qualification"]);
+    fs::write(&summary_path, summary_authority.to_string()).expect("untrusted authority label");
+    assert!(
+        prepare_repository_projection_cache(&root, ProjectionKind::StateEffect)
+            .and_then(|prepared| prepared.compile_state_effect())
+            .is_err()
+    );
+    fs::write(&summary_path, [0xff, 0xfe]).expect("invalid local UTF-8 authority");
+    assert!(
+        prepare_repository_projection_cache(&root, ProjectionKind::StateEffect)
+            .and_then(|prepared| prepared.compile_state_effect())
+            .is_err()
+    );
     fs::remove_dir_all(&root).expect("remove isolated repository");
 }
 

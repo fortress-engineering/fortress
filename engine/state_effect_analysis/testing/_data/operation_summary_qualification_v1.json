@@ -1,0 +1,1101 @@
+{
+  "$schema": "urn:fortress:test:v1:operation-summary-qualification",
+  "schema_version": 1,
+  "id": "bounded-operation-summary-comparison",
+  "evidence_kind": "SOURCE_REVIEW_AND_EXECUTABLE_CONTROLS",
+  "decision": "QUALIFIED_HYBRID_WITH_EXPLICIT_OPACITY",
+  "interpretation": "These are retained exact-source review and deterministic fixture controls, not measured ecosystem effect completeness, independent precision, recall, or a statistical population study.",
+  "premise_authority_scope": "The u8 destructor premise is externally established by review of the exact unshadowed fixture and bound to its source/context. PSM final-segment type normalization alone cannot establish primitive identity. The production helper proves only actual unit syntax. Local callback bodies remain unknown until expansion and type authority are retained; the source-derived comparison uses explicit reviewed premises rather than automatic callback certification.",
+  "strategies": [
+    {
+      "id": "AUTHORED",
+      "description": "Retained spelling table supplies a proposed bound from direct observed facts and intentionally ignores callbacks, Drop, and configuration; negative controls expose its inadequacy."
+    },
+    {
+      "id": "SOURCE_DERIVED",
+      "description": "Reviewed source shapes compose exact callback/Drop premises and reject incompatible source/context; an unqualified producer cannot discharge a claim."
+    },
+    {
+      "id": "QUALIFIED_HYBRID",
+      "description": "Installed qualified entries require exact source/version/target/features/type bindings and all evidence premises; every unsupported or insufficient subset remains unknown."
+    }
+  ],
+  "sources": [
+    {
+      "id": "getrandom-0.3.4",
+      "source_digest": "sha256:899def5c37c4fd7b2664648c28120ecec138e4d395b459e5ca34f9cce2dd77fd",
+      "git_commit": "38e4ad38309a85b56eef4fc759535ccfc322ba9a",
+      "url": "https://docs.rs/getrandom/0.3.4/src/getrandom/lib.rs.html",
+      "file_digest": "sha256:f7628991475fd0ef00ec841ee3d28c2e6e2309d0e5c528dd9e6d8044ab296e66",
+      "reviewed_line_boundaries": [
+        66,
+        72,
+        97,
+        110
+      ]
+    },
+    {
+      "id": "getrandom-0.3.4-backends",
+      "source_digest": "sha256:61f8d982cd502f3229f49bef2f9b40e181c7c16fb41d029aa2e77f32b10c10a6",
+      "git_blob_sha1": "991d413b5deb3798166f9b9046ea4efaa57f9f02",
+      "url": "https://github.com/rust-random/getrandom/blob/38e4ad38309a85b56eef4fc759535ccfc322ba9a/src/backends.rs",
+      "reviewed_line_boundaries": [
+        11,
+        13,
+        94,
+        121
+      ]
+    },
+    {
+      "id": "rust-1.97.1-fs",
+      "source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "git_blob_sha1": "0dd250acff8378dc1aa59f63d7e3a37e5b1369e3",
+      "url": "https://github.com/rust-lang/rust/blob/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library/std/src/fs.rs",
+      "reviewed_line_boundaries": [
+        341,
+        350,
+        420,
+        425,
+        1644,
+        1646,
+        1867,
+        1873
+      ],
+      "file_digest": "sha256:50e3ed9eeb546023b0f6ac074c27d3718221e022cdf450f529466c336ddaec56",
+      "source_artifact_ref": "rust-src-1.97.1"
+    },
+    {
+      "id": "rust-1.97.1-mem",
+      "source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "git_blob_sha1": "62c612e7ba2a65bb1645faaa669abd2a1d35a6c2",
+      "url": "https://github.com/rust-lang/rust/blob/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library/core/src/mem/mod.rs",
+      "reviewed_line_boundaries": [
+        1000,
+        1004
+      ],
+      "file_digest": "sha256:9f450467849a7e829d2f57fe826518b7334df8a8eb206052d571ad7b5d018b9e",
+      "source_artifact_ref": "rust-src-1.97.1"
+    },
+    {
+      "id": "rust-1.97.1-option",
+      "source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "git_blob_sha1": "02cd88a6a4340c85db924aba7968bb1e3679e3cb",
+      "url": "https://github.com/rust-lang/rust/blob/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library/core/src/option.rs",
+      "reviewed_line_boundaries": [
+        658,
+        663,
+        1125,
+        1130,
+        1157,
+        1165
+      ],
+      "file_digest": "sha256:ddba805a572e9cdbae5c1809bec07b36afdabd67a918bbccc7dab4cfe27cf067",
+      "source_artifact_ref": "rust-src-1.97.1"
+    },
+    {
+      "id": "rust-1.97.1-process",
+      "source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "git_blob_sha1": "0b8db439a63707214f5e0f9b60d80dd93145e7b7",
+      "url": "https://github.com/rust-lang/rust/blob/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library/std/src/process.rs",
+      "reviewed_line_boundaries": [
+        694,
+        696
+      ],
+      "file_digest": "sha256:6ae9f15d6cf8fa07f9ebd96d7956dc98ed75dac004a17891fb17b5c7c2f0c3f3",
+      "source_artifact_ref": "rust-src-1.97.1"
+    },
+    {
+      "id": "rust-1.97.1-unix-fs",
+      "source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "git_blob_sha1": "a7cb9ebad314e9038b25b64b565ad3ea64293119",
+      "url": "https://github.com/rust-lang/rust/blob/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library/std/src/sys/fs/unix.rs",
+      "reviewed_line_boundaries": [
+        1239,
+        1252
+      ],
+      "file_digest": "sha256:02bd45fd5f2e9d8b08122630f8febf15354c1784c7f6550d8cfbfb967cebf30d",
+      "source_artifact_ref": "rust-src-1.97.1"
+    },
+    {
+      "id": "rust-1.97.1-windows-fs",
+      "source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "git_blob_sha1": "e0b02670264d964b89e7ba54d6fd36505f9ed1cd",
+      "url": "https://github.com/rust-lang/rust/blob/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library/std/src/sys/fs/windows.rs",
+      "reviewed_line_boundaries": [
+        194,
+        213
+      ],
+      "file_digest": "sha256:e0b12fd31934868d41edbfca86005b31daa9384442b82014e901b30b7c5835c0",
+      "source_artifact_ref": "rust-src-1.97.1"
+    },
+    {
+      "id": "rust-src-1.97.1",
+      "artifact_kind": "OFFICIAL_RUST_SOURCE_ARCHIVE",
+      "source_digest": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae",
+      "version": "1.97.1",
+      "git_commit": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
+      "url": "https://static.rust-lang.org/dist/2026-07-16/rust-src-1.97.1.tar.gz",
+      "authority_record": "installed-rustup-distribution-manifest:pkg.rust-src.target.*",
+      "authority_record_digest": "sha256:09cbf0ad7b7e084e3bf1131c6bd970ad34c29c9fcdc8db1f7836463b7322e69a",
+      "authority_scope": "The installed official distribution manifest pins the complete source archive checksum and version. This review did not freshly download or hash the archive bytes; callers must independently establish this exact full-source identity. File hashes locate reviewed evidence and are not acceptable substitute bindings."
+    }
+  ],
+  "impact_selection": {
+    "source_fingerprint": "sha256:43fc4e2063539a39ea2d972e6ab9125609a28060f882a91db68b0644a4e2d379",
+    "retained_state_effect_digest": "sha256:2bb2890ffae9ed770e70878dd04a02f688362015e5c0f9198184542cc89328c0",
+    "artifact_role": "state-effect",
+    "site_population": "Retained operation classification sites for the qualified Fortress self-repository; counts are source observations, not ecosystem coverage or accuracy metrics.",
+    "operation_site_counts": [
+      {
+        "operation": "getrandom::fill",
+        "count": 1
+      },
+      {
+        "operation": "rust_method::Option::is_some_and",
+        "count": 16
+      },
+      {
+        "operation": "rust_method::Option::map",
+        "count": 53
+      },
+      {
+        "operation": "std::fs::OpenOptions::new",
+        "count": 4
+      },
+      {
+        "operation": "std::fs::read",
+        "count": 33
+      }
+    ],
+    "dependency_selection": "getrandom 0.3.4 fill is the single directly observed random-source dependency operation. Legacy getrandom 0.2 and rand facts are preserved only as unqualified historical observations; unrelated high-volume dependency calls remain unsupported."
+  },
+  "cases": [
+    {
+      "id": "callback-effectful-body",
+      "operation": "rust_method::Option::is_some_and",
+      "source_refs": [
+        "source:rust-1.97.1-option"
+      ],
+      "source_shape": "CALLBACK_PARAMETER",
+      "source_base_effects": [],
+      "source_dependencies": [
+        "callback:argument:0",
+        "drop:callback:argument:0"
+      ],
+      "source_complete": true,
+      "source": "fn callback(value: u8) -> bool { let _ = std::fs::write(\"out\", b\"changed\"); value > 0 }\nfn candidate(value: Option<u8>) { let _ = value.is_some_and(callback); }\n",
+      "context": {
+        "source_digest": {
+          "state": "KNOWN",
+          "value": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae"
+        },
+        "version": {
+          "state": "KNOWN",
+          "value": "1.97.1"
+        },
+        "target": {
+          "state": "KNOWN",
+          "value": "x86_64-pc-windows-msvc"
+        },
+        "features": {
+          "state": "KNOWN",
+          "value": []
+        },
+        "type_bindings": {
+          "state": "KNOWN",
+          "value": [
+            "T=u8"
+          ]
+        }
+      },
+      "premises": {
+        "callback:argument:0": {
+          "bound": {
+            "state": "KNOWN",
+            "effects": [
+              "filesystem.write"
+            ]
+          },
+          "refs": [
+            "source-fixture:callback:filesystem.write"
+          ]
+        },
+        "drop:callback:argument:0": {
+          "bound": {
+            "state": "KNOWN",
+            "effects": []
+          },
+          "refs": [
+            "source-fixture:callback:function-item:no-captures"
+          ]
+        }
+      },
+      "expected_authored_bound": {
+        "state": "KNOWN",
+        "effects": []
+      },
+      "expected_source_derived_bound": {
+        "state": "KNOWN",
+        "effects": [
+          "filesystem.write"
+        ]
+      },
+      "expected_hybrid_bound": {
+        "state": "UNKNOWN"
+      },
+      "required_positive_effects": [
+        "filesystem.write"
+      ],
+      "known_negative_effects": [],
+      "interpretation": "Source-derived dependency composition preserves the effectful callback; this catalog subset is not promoted to complete qualified authority."
+    },
+    {
+      "id": "callback-unknown-body",
+      "operation": "rust_method::Option::is_some_and",
+      "source_refs": [
+        "source:rust-1.97.1-option"
+      ],
+      "source_shape": "CALLBACK_PARAMETER",
+      "source_base_effects": [],
+      "source_dependencies": [
+        "callback:argument:0",
+        "drop:callback:argument:0"
+      ],
+      "source_complete": true,
+      "source": "fn candidate(value: Option<u8>, callback: fn(u8) -> bool) { let _ = value.is_some_and(callback); }\n",
+      "context": {
+        "source_digest": {
+          "state": "KNOWN",
+          "value": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae"
+        },
+        "version": {
+          "state": "KNOWN",
+          "value": "1.97.1"
+        },
+        "target": {
+          "state": "KNOWN",
+          "value": "x86_64-pc-windows-msvc"
+        },
+        "features": {
+          "state": "KNOWN",
+          "value": []
+        },
+        "type_bindings": {
+          "state": "KNOWN",
+          "value": [
+            "T=u8"
+          ]
+        }
+      },
+      "premises": {},
+      "expected_authored_bound": {
+        "state": "KNOWN",
+        "effects": []
+      },
+      "expected_source_derived_bound": {
+        "state": "UNKNOWN"
+      },
+      "expected_hybrid_bound": {
+        "state": "UNKNOWN"
+      },
+      "required_positive_effects": [],
+      "known_negative_effects": [],
+      "interpretation": "An unavailable callback target and callback Drop premise remain unknown."
+    },
+    {
+      "id": "constructor-linux",
+      "operation": "std::fs::OpenOptions::new",
+      "source_refs": [
+        "source:rust-1.97.1-fs"
+      ],
+      "source_shape": "SCALAR_CONSTRUCTOR",
+      "source_base_effects": [],
+      "source_dependencies": [],
+      "source_complete": true,
+      "source": "fn candidate() { let _ = std::fs::OpenOptions::new(); }\n",
+      "context": {
+        "source_digest": {
+          "state": "KNOWN",
+          "value": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae"
+        },
+        "version": {
+          "state": "KNOWN",
+          "value": "1.97.1"
+        },
+        "target": {
+          "state": "KNOWN",
+          "value": "x86_64-unknown-linux-gnu"
+        },
+        "features": {
+          "state": "KNOWN",
+          "value": []
+        },
+        "type_bindings": {
+          "state": "KNOWN",
+          "value": []
+        }
+      },
+      "premises": {},
+      "expected_authored_bound": {
+        "state": "KNOWN",
+        "effects": []
+      },
+      "expected_source_derived_bound": {
+        "state": "KNOWN",
+        "effects": []
+      },
+      "expected_hybrid_bound": {
+        "state": "KNOWN",
+        "effects": []
+      },
+      "required_positive_effects": [],
+      "known_negative_effects": [
+        "filesystem.read",
+        "filesystem.write",
+        "process.spawn"
+      ],
+      "interpretation": "Source review accounts for this exact non-generic constructor on the reviewed target."
+    },
+    {
+      "id": "constructor-unknown-context",
+      "operation": "std::fs::OpenOptions::new",
+      "source_refs": [
+        "source:rust-1.97.1-fs"
+      ],
+      "source_shape": "SCALAR_CONSTRUCTOR",
+      "source_base_effects": [],
+      "source_dependencies": [],
+      "source_complete": true,
+      "source": "fn candidate() { let _ = std::fs::OpenOptions::new(); }\n",
+      "context": {
+        "source_digest": {
+          "state": "UNKNOWN"
+        },
+        "version": {
+          "state": "UNKNOWN"
+        },
+        "target": {
+          "state": "UNKNOWN"
+        },
+        "features": {
+          "state": "UNKNOWN"
+        },
+        "type_bindings": {
+          "state": "UNKNOWN"
+        }
+      },
+      "premises": {},
+      "expected_authored_bound": {
+        "state": "KNOWN",
+        "effects": []
+      },
+      "expected_source_derived_bound": {
+        "state": "UNKNOWN"
+      },
+      "expected_hybrid_bound": {
+        "state": "UNKNOWN"
+      },
+      "required_positive_effects": [],
+      "known_negative_effects": [],
+      "interpretation": "Default repository analysis cannot synthesize exact context from operation spelling."
+    },
+    {
+      "id": "constructor-unreviewed-features",
+      "operation": "std::fs::OpenOptions::new",
+      "source_refs": [
+        "source:rust-1.97.1-fs"
+      ],
+      "source_shape": "SCALAR_CONSTRUCTOR",
+      "source_base_effects": [],
+      "source_dependencies": [],
+      "source_complete": true,
+      "source": "fn candidate() { let _ = std::fs::OpenOptions::new(); }\n",
+      "context": {
+        "source_digest": {
+          "state": "KNOWN",
+          "value": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae"
+        },
+        "version": {
+          "state": "KNOWN",
+          "value": "1.97.1"
+        },
+        "target": {
+          "state": "KNOWN",
+          "value": "x86_64-pc-windows-msvc"
+        },
+        "features": {
+          "state": "KNOWN",
+          "value": [
+            "unreviewed-feature"
+          ]
+        },
+        "type_bindings": {
+          "state": "KNOWN",
+          "value": []
+        }
+      },
+      "premises": {},
+      "expected_authored_bound": {
+        "state": "KNOWN",
+        "effects": []
+      },
+      "expected_source_derived_bound": {
+        "state": "UNKNOWN"
+      },
+      "expected_hybrid_bound": {
+        "state": "UNKNOWN"
+      },
+      "required_positive_effects": [],
+      "known_negative_effects": [],
+      "interpretation": "Feature drift cannot inherit the original bound."
+    },
+    {
+      "id": "constructor-unreviewed-target",
+      "operation": "std::fs::OpenOptions::new",
+      "source_refs": [
+        "source:rust-1.97.1-fs"
+      ],
+      "source_shape": "SCALAR_CONSTRUCTOR",
+      "source_base_effects": [],
+      "source_dependencies": [],
+      "source_complete": true,
+      "source": "fn candidate() { let _ = std::fs::OpenOptions::new(); }\n",
+      "context": {
+        "source_digest": {
+          "state": "KNOWN",
+          "value": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae"
+        },
+        "version": {
+          "state": "KNOWN",
+          "value": "1.97.1"
+        },
+        "target": {
+          "state": "KNOWN",
+          "value": "wasm32-unknown-unknown"
+        },
+        "features": {
+          "state": "KNOWN",
+          "value": []
+        },
+        "type_bindings": {
+          "state": "KNOWN",
+          "value": []
+        }
+      },
+      "premises": {},
+      "expected_authored_bound": {
+        "state": "KNOWN",
+        "effects": []
+      },
+      "expected_source_derived_bound": {
+        "state": "UNKNOWN"
+      },
+      "expected_hybrid_bound": {
+        "state": "UNKNOWN"
+      },
+      "required_positive_effects": [],
+      "known_negative_effects": [],
+      "interpretation": "Unreviewed target remains outside the qualified subset."
+    },
+    {
+      "id": "constructor-windows",
+      "operation": "std::fs::OpenOptions::new",
+      "source_refs": [
+        "source:rust-1.97.1-fs"
+      ],
+      "source_shape": "SCALAR_CONSTRUCTOR",
+      "source_base_effects": [],
+      "source_dependencies": [],
+      "source_complete": true,
+      "source": "fn candidate() { let _ = std::fs::OpenOptions::new(); }\n",
+      "context": {
+        "source_digest": {
+          "state": "KNOWN",
+          "value": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae"
+        },
+        "version": {
+          "state": "KNOWN",
+          "value": "1.97.1"
+        },
+        "target": {
+          "state": "KNOWN",
+          "value": "x86_64-pc-windows-msvc"
+        },
+        "features": {
+          "state": "KNOWN",
+          "value": []
+        },
+        "type_bindings": {
+          "state": "KNOWN",
+          "value": []
+        }
+      },
+      "premises": {},
+      "expected_authored_bound": {
+        "state": "KNOWN",
+        "effects": []
+      },
+      "expected_source_derived_bound": {
+        "state": "KNOWN",
+        "effects": []
+      },
+      "expected_hybrid_bound": {
+        "state": "KNOWN",
+        "effects": []
+      },
+      "required_positive_effects": [],
+      "known_negative_effects": [
+        "filesystem.read",
+        "filesystem.write",
+        "process.spawn"
+      ],
+      "interpretation": "Source review accounts for this exact non-generic constructor on the reviewed target."
+    },
+    {
+      "id": "constructor-wrong-source",
+      "operation": "std::fs::OpenOptions::new",
+      "source_refs": [
+        "source:rust-1.97.1-fs"
+      ],
+      "source_shape": "SCALAR_CONSTRUCTOR",
+      "source_base_effects": [],
+      "source_dependencies": [],
+      "source_complete": true,
+      "source": "fn candidate() { let _ = std::fs::OpenOptions::new(); }\n",
+      "context": {
+        "source_digest": {
+          "state": "KNOWN",
+          "value": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+        },
+        "version": {
+          "state": "KNOWN",
+          "value": "1.97.1"
+        },
+        "target": {
+          "state": "KNOWN",
+          "value": "x86_64-pc-windows-msvc"
+        },
+        "features": {
+          "state": "KNOWN",
+          "value": []
+        },
+        "type_bindings": {
+          "state": "KNOWN",
+          "value": []
+        }
+      },
+      "premises": {},
+      "expected_authored_bound": {
+        "state": "KNOWN",
+        "effects": []
+      },
+      "expected_source_derived_bound": {
+        "state": "UNKNOWN"
+      },
+      "expected_hybrid_bound": {
+        "state": "UNKNOWN"
+      },
+      "required_positive_effects": [],
+      "known_negative_effects": [],
+      "interpretation": "A matching operation name and version do not establish reviewed source bytes."
+    },
+    {
+      "id": "constructor-wrong-version",
+      "operation": "std::fs::OpenOptions::new",
+      "source_refs": [
+        "source:rust-1.97.1-fs"
+      ],
+      "source_shape": "SCALAR_CONSTRUCTOR",
+      "source_base_effects": [],
+      "source_dependencies": [],
+      "source_complete": true,
+      "source": "fn candidate() { let _ = std::fs::OpenOptions::new(); }\n",
+      "context": {
+        "source_digest": {
+          "state": "KNOWN",
+          "value": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae"
+        },
+        "version": {
+          "state": "KNOWN",
+          "value": "1.98.1"
+        },
+        "target": {
+          "state": "KNOWN",
+          "value": "x86_64-pc-windows-msvc"
+        },
+        "features": {
+          "state": "KNOWN",
+          "value": []
+        },
+        "type_bindings": {
+          "state": "KNOWN",
+          "value": []
+        }
+      },
+      "premises": {},
+      "expected_authored_bound": {
+        "state": "KNOWN",
+        "effects": []
+      },
+      "expected_source_derived_bound": {
+        "state": "UNKNOWN"
+      },
+      "expected_hybrid_bound": {
+        "state": "UNKNOWN"
+      },
+      "required_positive_effects": [],
+      "known_negative_effects": [],
+      "interpretation": "Changed toolchain version invalidates the reviewed constructor bound."
+    },
+    {
+      "id": "drop-effectful-type",
+      "operation": "std::mem::drop",
+      "source_refs": [
+        "source:rust-1.97.1-mem"
+      ],
+      "source_shape": "DESTRUCTOR_PARAMETER",
+      "source_base_effects": [],
+      "source_dependencies": [
+        "drop:argument:0"
+      ],
+      "source_complete": true,
+      "source": "struct Writer;\nimpl Drop for Writer { fn drop(&mut self) { let _ = std::fs::write(\"out\", b\"changed\"); } }\nfn candidate(value: Writer) { std::mem::drop(value); }\n",
+      "context": {
+        "source_digest": {
+          "state": "KNOWN",
+          "value": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae"
+        },
+        "version": {
+          "state": "KNOWN",
+          "value": "1.97.1"
+        },
+        "target": {
+          "state": "KNOWN",
+          "value": "x86_64-pc-windows-msvc"
+        },
+        "features": {
+          "state": "KNOWN",
+          "value": []
+        },
+        "type_bindings": {
+          "state": "KNOWN",
+          "value": [
+            "T=Writer"
+          ]
+        }
+      },
+      "premises": {
+        "drop:argument:0": {
+          "bound": {
+            "state": "KNOWN",
+            "effects": [
+              "filesystem.write"
+            ]
+          },
+          "refs": [
+            "source-fixture:Writer:Drop::drop:filesystem.write"
+          ]
+        }
+      },
+      "expected_authored_bound": {
+        "state": "KNOWN",
+        "effects": []
+      },
+      "expected_source_derived_bound": {
+        "state": "UNKNOWN"
+      },
+      "expected_hybrid_bound": {
+        "state": "UNKNOWN"
+      },
+      "required_positive_effects": [
+        "filesystem.write"
+      ],
+      "known_negative_effects": [],
+      "interpretation": "The selected production primitive subset does not generalize to a local type with an effectful destructor."
+    },
+    {
+      "id": "drop-primitive-with-premise",
+      "operation": "std::mem::drop",
+      "source_refs": [
+        "source:rust-1.97.1-mem"
+      ],
+      "source_shape": "DESTRUCTOR_PARAMETER",
+      "source_base_effects": [],
+      "source_dependencies": [
+        "drop:argument:0"
+      ],
+      "source_complete": true,
+      "source": "fn candidate(value: u8) { std::mem::drop(value); }\n",
+      "context": {
+        "source_digest": {
+          "state": "KNOWN",
+          "value": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae"
+        },
+        "version": {
+          "state": "KNOWN",
+          "value": "1.97.1"
+        },
+        "target": {
+          "state": "KNOWN",
+          "value": "x86_64-pc-windows-msvc"
+        },
+        "features": {
+          "state": "KNOWN",
+          "value": []
+        },
+        "type_bindings": {
+          "state": "KNOWN",
+          "value": [
+            "T=u8"
+          ]
+        }
+      },
+      "premises": {
+        "drop:argument:0": {
+          "bound": {
+            "state": "KNOWN",
+            "effects": []
+          },
+          "refs": [
+            "source-fixture:primitive:u8:no-destructor"
+          ]
+        }
+      },
+      "expected_authored_bound": {
+        "state": "KNOWN",
+        "effects": []
+      },
+      "expected_source_derived_bound": {
+        "state": "KNOWN",
+        "effects": []
+      },
+      "expected_hybrid_bound": {
+        "state": "KNOWN",
+        "effects": []
+      },
+      "required_positive_effects": [],
+      "known_negative_effects": [
+        "filesystem.read",
+        "filesystem.write"
+      ],
+      "interpretation": "External review establishes the exact unshadowed primitive type and its source/context-bound no-destructor premise, allowing conditional instantiation. PSM normalized Integer(u8) alone cannot establish this premise."
+    },
+    {
+      "id": "drop-primitive-without-premise",
+      "operation": "std::mem::drop",
+      "source_refs": [
+        "source:rust-1.97.1-mem"
+      ],
+      "source_shape": "DESTRUCTOR_PARAMETER",
+      "source_base_effects": [],
+      "source_dependencies": [
+        "drop:argument:0"
+      ],
+      "source_complete": true,
+      "source": "fn candidate(value: u8) { std::mem::drop(value); }\n",
+      "context": {
+        "source_digest": {
+          "state": "KNOWN",
+          "value": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae"
+        },
+        "version": {
+          "state": "KNOWN",
+          "value": "1.97.1"
+        },
+        "target": {
+          "state": "KNOWN",
+          "value": "x86_64-pc-windows-msvc"
+        },
+        "features": {
+          "state": "KNOWN",
+          "value": []
+        },
+        "type_bindings": {
+          "state": "KNOWN",
+          "value": [
+            "T=u8"
+          ]
+        }
+      },
+      "premises": {},
+      "expected_authored_bound": {
+        "state": "KNOWN",
+        "effects": []
+      },
+      "expected_source_derived_bound": {
+        "state": "UNKNOWN"
+      },
+      "expected_hybrid_bound": {
+        "state": "UNKNOWN"
+      },
+      "required_positive_effects": [],
+      "known_negative_effects": [],
+      "interpretation": "The literal empty function body does not replace the required Drop premise."
+    },
+    {
+      "id": "filesystem-read-conversion",
+      "operation": "std::fs::read",
+      "source_refs": [
+        "source:rust-1.97.1-fs"
+      ],
+      "source_shape": "GENERIC_CONVERSION",
+      "source_base_effects": [
+        "filesystem.read"
+      ],
+      "source_dependencies": [
+        "drop:argument:0",
+        "trait:argument:0:AsRef<Path>"
+      ],
+      "source_complete": false,
+      "source": "fn candidate(path: &str) { let _ = std::fs::read(path); }\n",
+      "context": {
+        "source_digest": {
+          "state": "KNOWN",
+          "value": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae"
+        },
+        "version": {
+          "state": "KNOWN",
+          "value": "1.97.1"
+        },
+        "target": {
+          "state": "KNOWN",
+          "value": "x86_64-pc-windows-msvc"
+        },
+        "features": {
+          "state": "KNOWN",
+          "value": []
+        },
+        "type_bindings": {
+          "state": "KNOWN",
+          "value": []
+        }
+      },
+      "premises": {},
+      "expected_authored_bound": {
+        "state": "KNOWN",
+        "effects": [
+          "filesystem.read"
+        ]
+      },
+      "expected_source_derived_bound": {
+        "state": "UNKNOWN"
+      },
+      "expected_hybrid_bound": {
+        "state": "UNKNOWN"
+      },
+      "required_positive_effects": [
+        "filesystem.read"
+      ],
+      "known_negative_effects": [],
+      "interpretation": "Historical direct filesystem-read evidence is retained while generic conversion and whole-call behavior remain partial."
+    },
+    {
+      "id": "filesystem-write-mode",
+      "operation": "rust_method::std::fs::OpenOptions::open[write]",
+      "source_refs": [
+        "source:rust-1.97.1-fs"
+      ],
+      "source_shape": "GENERIC_CONVERSION",
+      "source_base_effects": [
+        "filesystem.write"
+      ],
+      "source_dependencies": [
+        "drop:argument:0",
+        "trait:argument:0:AsRef<Path>"
+      ],
+      "source_complete": false,
+      "source": "fn candidate(path: &str) { let _ = std::fs::OpenOptions::new().write(true).open(path); }\n",
+      "context": {
+        "source_digest": {
+          "state": "KNOWN",
+          "value": "sha256:59f02b4f23fd8d7193a3cb17ea192255ccf02f1109783d7988521334891d27ae"
+        },
+        "version": {
+          "state": "KNOWN",
+          "value": "1.97.1"
+        },
+        "target": {
+          "state": "KNOWN",
+          "value": "x86_64-pc-windows-msvc"
+        },
+        "features": {
+          "state": "KNOWN",
+          "value": []
+        },
+        "type_bindings": {
+          "state": "KNOWN",
+          "value": []
+        }
+      },
+      "premises": {},
+      "expected_authored_bound": {
+        "state": "KNOWN",
+        "effects": [
+          "filesystem.write"
+        ]
+      },
+      "expected_source_derived_bound": {
+        "state": "UNKNOWN"
+      },
+      "expected_hybrid_bound": {
+        "state": "UNKNOWN"
+      },
+      "required_positive_effects": [
+        "filesystem.write"
+      ],
+      "known_negative_effects": [],
+      "interpretation": "Literal access-mode positive evidence remains, but it is not a complete generic-call bound."
+    },
+    {
+      "id": "getrandom-custom-backend",
+      "operation": "getrandom::fill",
+      "source_refs": [
+        "source:getrandom-0.3.4",
+        "source:getrandom-0.3.4-backends"
+      ],
+      "source_shape": "CONFIGURED_BACKEND",
+      "source_base_effects": [
+        "random.read"
+      ],
+      "source_dependencies": [],
+      "source_complete": false,
+      "source": "fn candidate() { let mut bytes = [0_u8; 4]; let _ = getrandom::fill(&mut bytes); }\n",
+      "context": {
+        "source_digest": {
+          "state": "KNOWN",
+          "value": "sha256:899def5c37c4fd7b2664648c28120ecec138e4d395b459e5ca34f9cce2dd77fd"
+        },
+        "version": {
+          "state": "KNOWN",
+          "value": "0.3.4"
+        },
+        "target": {
+          "state": "KNOWN",
+          "value": "x86_64-pc-windows-msvc"
+        },
+        "features": {
+          "state": "KNOWN",
+          "value": [
+            "getrandom_backend=custom"
+          ]
+        },
+        "type_bindings": {
+          "state": "KNOWN",
+          "value": []
+        }
+      },
+      "premises": {},
+      "expected_authored_bound": {
+        "state": "KNOWN",
+        "effects": [
+          "random.read"
+        ]
+      },
+      "expected_source_derived_bound": {
+        "state": "UNKNOWN"
+      },
+      "expected_hybrid_bound": {
+        "state": "UNKNOWN"
+      },
+      "required_positive_effects": [],
+      "known_negative_effects": [],
+      "interpretation": "The custom cfg selects an externally supplied function; it must remain unknown even when the API name is unchanged. This marker is a test context perturbation, not a claim that Cargo features encode backend cfg."
+    },
+    {
+      "id": "getrandom-native-backend",
+      "operation": "getrandom::fill",
+      "source_refs": [
+        "source:getrandom-0.3.4",
+        "source:getrandom-0.3.4-backends"
+      ],
+      "source_shape": "CONFIGURED_BACKEND",
+      "source_base_effects": [
+        "random.read"
+      ],
+      "source_dependencies": [],
+      "source_complete": false,
+      "source": "fn candidate() { let mut bytes = [0_u8; 4]; let _ = getrandom::fill(&mut bytes); }\n",
+      "context": {
+        "source_digest": {
+          "state": "KNOWN",
+          "value": "sha256:899def5c37c4fd7b2664648c28120ecec138e4d395b459e5ca34f9cce2dd77fd"
+        },
+        "version": {
+          "state": "KNOWN",
+          "value": "0.3.4"
+        },
+        "target": {
+          "state": "KNOWN",
+          "value": "x86_64-pc-windows-msvc"
+        },
+        "features": {
+          "state": "KNOWN",
+          "value": []
+        },
+        "type_bindings": {
+          "state": "KNOWN",
+          "value": []
+        }
+      },
+      "premises": {},
+      "expected_authored_bound": {
+        "state": "KNOWN",
+        "effects": [
+          "random.read"
+        ]
+      },
+      "expected_source_derived_bound": {
+        "state": "UNKNOWN"
+      },
+      "expected_hybrid_bound": {
+        "state": "UNKNOWN"
+      },
+      "required_positive_effects": [
+        "random.read"
+      ],
+      "known_negative_effects": [],
+      "interpretation": "Only getrandom was selected from retained repository impact; backend cfg and platform behavior prevent promotion of a whole-operation bound."
+    },
+    {
+      "id": "unsupported-package",
+      "operation": "unsupported_dependency::execute",
+      "source_refs": [],
+      "source_shape": "UNSUPPORTED",
+      "source_base_effects": [],
+      "source_dependencies": [],
+      "source_complete": false,
+      "source": "fn candidate() { unsupported_dependency::execute(); }\n",
+      "context": {
+        "source_digest": {
+          "state": "UNKNOWN"
+        },
+        "version": {
+          "state": "UNKNOWN"
+        },
+        "target": {
+          "state": "UNKNOWN"
+        },
+        "features": {
+          "state": "UNKNOWN"
+        },
+        "type_bindings": {
+          "state": "UNKNOWN"
+        }
+      },
+      "premises": {},
+      "expected_authored_bound": {
+        "state": "UNKNOWN"
+      },
+      "expected_source_derived_bound": {
+        "state": "UNKNOWN"
+      },
+      "expected_hybrid_bound": {
+        "state": "UNKNOWN"
+      },
+      "required_positive_effects": [],
+      "known_negative_effects": [],
+      "interpretation": "An unsupported package remains a coverage record with an unknown upper bound."
+    }
+  ],
+  "source_binding_scope": "All Rust-origin catalog selection and compatible contexts bind the complete pinned rust-src archive, including platform implementations and transitive library source. Individual reviewed file digests remain provenance only and cannot establish a qualified bound."
+}

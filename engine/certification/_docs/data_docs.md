@@ -24,7 +24,11 @@ Incompatible semantic changes advance schema versions rather than silently chang
 
 ### [`generation_manifest_schema_v1.json`](../_data/generation_manifest_schema_v1.json)
 
-Defines source-bound immutable generation manifests with included and external artifact descriptors.
+Retains source-bound immutable generation manifests using control layout v1 with included and external artifact descriptors.
+
+### [`generation_manifest_schema_v2.json`](../_data/generation_manifest_schema_v2.json)
+
+Defines current source-bound immutable generation manifests using control layout v2. Historical v1 manifests retain their original layout and content-address semantics; a schema/layout version mismatch is rejected.
 
 ### [`selection_index_schema_v1.json`](../_data/selection_index_schema_v1.json)
 

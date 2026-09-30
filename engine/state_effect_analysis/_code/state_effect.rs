@@ -8,6 +8,8 @@ pub(crate) const PROGRAM_EFFECT_RULE_SOURCE: &str =
 mod operation_effect;
 #[path = "state_contract.rs"]
 mod state_contract;
+#[path = "summary.rs"]
+mod summary;
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
@@ -31,6 +33,12 @@ use crate::semantic_analysis::{
 };
 use operation_effect::{OperationEffectClassification, classify_operation};
 
+pub use summary::{
+    OperationSummary, OperationSummaryCatalog, OperationSummaryError, SummaryAcceptance,
+    SummaryAuthorityClass, SummaryCompleteness, SummaryContext, SummaryEffectBound, SummaryOutcome,
+    SummaryPremise, SummaryTargetFeaturesConstraints,
+};
+
 pub use state_contract::{
     ResolvedState, ResolvedStateContracts, ResolvedStatePredicate, ResolvedStateType,
     STATE_CONTRACT_SCHEMA, STATE_CONTRACT_SCHEMA_VERSION, StateContractError, StateContractSource,
@@ -38,11 +46,11 @@ pub use state_contract::{
 };
 
 /// Canonical State & Effect Analysis schema identity.
-pub const STATE_EFFECT_ANALYSIS_SCHEMA: &str = "urn:fortress:schema:v4:state-effect-analysis";
+pub const STATE_EFFECT_ANALYSIS_SCHEMA: &str = "urn:fortress:schema:v5:state-effect-analysis";
 /// Canonical State & Effect Analysis schema version.
-pub const STATE_EFFECT_ANALYSIS_SCHEMA_VERSION: u16 = 4;
+pub const STATE_EFFECT_ANALYSIS_SCHEMA_VERSION: u16 = 5;
 /// Semantic version of the state/effect analyzer.
-pub const STATE_EFFECT_ANALYSIS_VERSION: &str = "4.3.0";
+pub const STATE_EFFECT_ANALYSIS_VERSION: &str = "5.0.0";
 /// Stable analyzer identity.
 pub const STATE_EFFECT_ANALYZER_ID: &str = "fortress-state-effect-analysis";
 /// Normative typestate rule identity.
@@ -338,10 +346,73 @@ pub struct StateEffectSummary {
     transitive_capabilities: Vec<EffectCapability>,
     effect_evidence: Vec<EffectEvidence>,
     operation_classifications: Vec<OperationClassificationEvidence>,
+    operation_summaries: Vec<OperationSummaryEvidence>,
     state_preconditions: StateEffectCoverage,
     state_postconditions: StateEffectCoverage,
     effects: StateEffectCoverage,
     uncertainty: Vec<String>,
+}
+
+/// Exact instantiated dependency authority at one PSM-established operation site.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+pub struct OperationSummaryEvidence {
+    operation_site_id: String,
+    operation: String,
+    context: SummaryContext,
+    observation_refs: Vec<String>,
+    outcome: SummaryOutcome,
+}
+
+impl OperationSummaryEvidence {
+    /// Binds actual context observations and all instantiated premise authority.
+    ///
+    /// # Panics
+    /// Panics only if the fixed in-memory evidence representation cannot serialize.
+    #[must_use]
+    pub fn digest(&self) -> String {
+        format!(
+            "sha256:{:x}",
+            Sha256::digest(serde_json::to_vec(self).expect("summary evidence serializes"))
+        )
+    }
+
+    /// Returns trusted observation references for the actual dependency configuration.
+    #[must_use]
+    pub fn observation_refs(&self) -> &[String] {
+        &self.observation_refs
+    }
+    /// Returns the PSM operation site, independent of source coordinates.
+    #[must_use]
+    pub fn operation_site_id(&self) -> &str {
+        &self.operation_site_id
+    }
+
+    /// Returns the exact external operation supplied by Program Semantics.
+    #[must_use]
+    pub fn operation(&self) -> &str {
+        &self.operation
+    }
+
+    /// Returns bound authority, disclosed assumptions, premises and unresolved reasons.
+    #[must_use]
+    pub const fn outcome(&self) -> &SummaryOutcome {
+        &self.outcome
+    }
+}
+
+/// Trusted caller inputs for one actual call-site instantiation.
+///
+/// Repository catalog bytes cannot supply these inputs or grant acceptance.
+#[derive(Clone, Debug)]
+pub struct OperationSummaryInstantiation {
+    /// Exact externally established source, version, target, features and types.
+    pub context: SummaryContext,
+    /// Canonical references establishing this actual source/configuration/type context.
+    pub context_observation_refs: Vec<String>,
+    /// Actual callback and destructor upper bounds, with their proof references.
+    pub premises: BTreeMap<String, SummaryPremise>,
+    /// Explicit profile-bound assumption acceptance, when selected by the caller.
+    pub acceptance: Option<SummaryAcceptance>,
 }
 
 impl StateEffectSummary {
@@ -403,6 +474,12 @@ impl StateEffectSummary {
     #[must_use]
     pub fn operation_classifications(&self) -> &[OperationClassificationEvidence] {
         &self.operation_classifications
+    }
+
+    /// Returns every externally resolved site's summary outcome, including no-summary opacity.
+    #[must_use]
+    pub fn operation_summaries(&self) -> &[OperationSummaryEvidence] {
+        &self.operation_summaries
     }
 
     /// Returns claim-relevant uncertainty propagated through resolved call edges.
@@ -598,6 +675,7 @@ pub struct StateEffectAnalysisModel {
     semantic_analysis_digest: String,
     state_contract_digest: String,
     function_contract_digest: String,
+    operation_summary_catalog_digest: String,
     effect_catalog: Vec<EffectDescriptor>,
     summaries: Vec<StateEffectSummary>,
     violations: Vec<StateEffectViolation>,
@@ -610,6 +688,11 @@ pub struct StateEffectAnalysisModel {
 }
 
 impl StateEffectAnalysisModel {
+    /// Returns the exact summary authority used independently of PSM identity.
+    #[must_use]
+    pub fn operation_summary_catalog_digest(&self) -> &str {
+        &self.operation_summary_catalog_digest
+    }
     /// Returns the closed ontology represented by this model.
     #[must_use]
     pub fn effect_catalog(&self) -> &[EffectDescriptor] {
@@ -697,6 +780,7 @@ struct EffectWork {
     transitive: BTreeSet<FunctionEffect>,
     evidence: BTreeMap<FunctionEffect, BTreeMap<EffectWitnessKey, EffectEvidence>>,
     operations: BTreeSet<OperationClassificationEvidence>,
+    operation_summaries: BTreeMap<String, OperationSummaryEvidence>,
     uncertain: BTreeSet<String>,
 }
 
@@ -776,6 +860,79 @@ pub fn analyze_state_effects(
     function_contracts: &ResolvedFunctionContracts,
     standard_edition: &str,
 ) -> Result<StateEffectAnalysisEvaluation, StateEffectAnalysisError> {
+    let catalog =
+        OperationSummaryCatalog::from_json_str(crate::standard::installed_operation_summaries())
+            .map_err(StateEffectAnalysisError::OperationSummary)?;
+    analyze_state_effects_with_summaries(
+        psm,
+        semantic,
+        state_contracts,
+        function_contracts,
+        standard_edition,
+        &catalog,
+        &BTreeMap::new(),
+    )
+}
+
+/// Derives state/effect facts with explicit exact-site dependency summary inputs.
+///
+/// Unspecified sites retain unknown context. Bound possibilities never become
+/// positive witnesses; a negative claim can exclude only effects outside a
+/// sufficient bound. Unsupported source facts and implicit Drop remain opaque.
+///
+/// # Errors
+/// Returns an error for malformed instantiation sites or analysis construction.
+#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
+pub fn analyze_state_effects_with_summaries(
+    psm: &ProgramSemanticModel,
+    semantic: &SemanticAnalysisEvaluation,
+    state_contracts: &ResolvedStateContracts,
+    function_contracts: &ResolvedFunctionContracts,
+    standard_edition: &str,
+    catalog: &OperationSummaryCatalog,
+    instantiations: &BTreeMap<String, OperationSummaryInstantiation>,
+) -> Result<StateEffectAnalysisEvaluation, StateEffectAnalysisError> {
+    validate_summary_authority(catalog)?;
+    let sites = psm
+        .calls()
+        .iter()
+        .filter(|call| call.state() == CallResolutionState::External)
+        .flat_map(ProgramCall::evidence)
+        .map(CallSiteEvidence::operation_site_id)
+        .collect::<BTreeSet<_>>();
+    if let Some(site) = instantiations
+        .keys()
+        .find(|site| !sites.contains(site.as_str()))
+    {
+        return Err(StateEffectAnalysisError::InvalidSummarySite(site.clone()));
+    }
+    for (site, input) in instantiations {
+        validate_summary_context(psm.program_context(), input)?;
+        let is_toolchain_operation = psm.calls().iter().any(|call| {
+            call.external_target().is_some_and(|operation| {
+                operation.starts_with("std::")
+                    || operation.starts_with("core::")
+                    || operation.starts_with("alloc::")
+            }) && call
+                .evidence()
+                .iter()
+                .any(|evidence| evidence.operation_site_id() == site)
+        });
+        if is_toolchain_operation
+            && let (
+                crate::program_semantics::ContextKnowledge::Known(actual),
+                crate::program_semantics::ContextKnowledge::Known(supplied),
+            ) = (
+                psm.program_context().toolchain_identity(),
+                &input.context.version,
+            )
+            && actual != supplied
+        {
+            return Err(StateEffectAnalysisError::InvalidSummaryContext(
+                "actual toolchain conflicts with dependency summary".into(),
+            ));
+        }
+    }
     let symbols = psm
         .symbols()
         .iter()
@@ -788,7 +945,7 @@ pub fn analyze_state_effects(
         .collect::<BTreeMap<_, _>>();
     let owner_states = owner_state_types(psm, state_contracts);
     validate_function_state_references(function_contracts, state_contracts)?;
-    let mut effect_work = direct_effects(psm, &symbols);
+    let mut effect_work = direct_effects(psm, &symbols, catalog, instantiations);
     let execution_provenance = symbols
         .iter()
         .map(|(id, symbol)| ((*id).to_owned(), symbol.execution_provenance()))
@@ -897,6 +1054,7 @@ pub fn analyze_state_effects(
                 .cloned()
                 .collect(),
             operation_classifications: work.operations.into_iter().collect(),
+            operation_summaries: work.operation_summaries.into_values().collect(),
             state_preconditions,
             state_postconditions,
             effects,
@@ -946,6 +1104,7 @@ pub fn analyze_state_effects(
         semantic_analysis_digest: semantic.model().digest()?,
         state_contract_digest: state_contracts.digest().into(),
         function_contract_digest: function_contracts.digest().into(),
+        operation_summary_catalog_digest: catalog.digest().into(),
         effect_catalog: effect_catalog(),
         summaries,
         violations,
@@ -972,7 +1131,199 @@ fn empty_effect_work() -> EffectWork {
         transitive: BTreeSet::new(),
         evidence: BTreeMap::new(),
         operations: BTreeSet::new(),
+        operation_summaries: BTreeMap::new(),
         uncertain: BTreeSet::new(),
+    }
+}
+
+fn instantiate_operation_summary(
+    psm: &ProgramSemanticModel,
+    catalog: &OperationSummaryCatalog,
+    operation: &str,
+    site: &str,
+    instantiations: &BTreeMap<String, OperationSummaryInstantiation>,
+) -> OperationSummaryEvidence {
+    if let Some(input) = instantiations.get(site) {
+        return OperationSummaryEvidence {
+            operation_site_id: site.into(),
+            operation: operation.into(),
+            context: input.context.clone(),
+            observation_refs: input.context_observation_refs.clone(),
+            outcome: catalog.resolve(
+                operation,
+                &input.context,
+                &input.premises,
+                input.acceptance.as_ref(),
+            ),
+        };
+    }
+    let context = psm.program_context();
+    let summary_context = SummaryContext {
+        // Neither authored toolchain intent nor a package name identifies the
+        // exact dependency source. Missing source observation stays unknown.
+        source_digest: crate::program_semantics::ContextKnowledge::Unknown,
+        version: if operation.starts_with("std::")
+            || operation.starts_with("core::")
+            || operation.starts_with("alloc::")
+        {
+            context.toolchain_identity().clone()
+        } else {
+            crate::program_semantics::ContextKnowledge::Unknown
+        },
+        target: context.target_platform().clone(),
+        // Repository package features do not establish dependency features.
+        features: crate::program_semantics::ContextKnowledge::Unknown,
+        type_bindings: crate::program_semantics::ContextKnowledge::Unknown,
+    };
+    let outcome = catalog.resolve(operation, &summary_context, &BTreeMap::new(), None);
+    OperationSummaryEvidence {
+        operation_site_id: site.into(),
+        operation: operation.into(),
+        context: summary_context,
+        observation_refs: Vec::new(),
+        outcome,
+    }
+}
+
+fn validate_summary_authority(
+    catalog: &OperationSummaryCatalog,
+) -> Result<(), StateEffectAnalysisError> {
+    let installed =
+        OperationSummaryCatalog::from_json_str(crate::standard::installed_operation_summaries())
+            .map_err(StateEffectAnalysisError::OperationSummary)?;
+    let retained = installed
+        .summaries()
+        .iter()
+        .all(|summary| catalog.summaries().contains(summary));
+    let additions_assumed = catalog.summaries().iter().all(|summary| {
+        installed.summaries().contains(summary)
+            || (summary.authority_class == SummaryAuthorityClass::Assumed
+                && summary.observed_effects.is_empty())
+    });
+    if !retained
+        || !additions_assumed
+        || catalog.id() != installed.id()
+        || catalog.producer_version() != installed.producer_version()
+    {
+        return Err(StateEffectAnalysisError::UnacceptedSummaryAuthority);
+    }
+    Ok(())
+}
+
+fn validate_summary_context(
+    context: &crate::program_semantics::ProgramContext,
+    input: &OperationSummaryInstantiation,
+) -> Result<(), StateEffectAnalysisError> {
+    use crate::program_semantics::ContextKnowledge;
+    let stable_text = |value: &str| {
+        !value.is_empty() && value.trim() == value && !value.chars().any(char::is_control)
+    };
+    if let ContextKnowledge::Known(digest) = &input.context.source_digest
+        && !digest.strip_prefix("sha256:").is_some_and(|suffix| {
+            suffix.len() == 64
+                && suffix
+                    .bytes()
+                    .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+        })
+    {
+        return Err(StateEffectAnalysisError::InvalidSummaryContext(
+            "actual source digest must be a canonical SHA-256 identity".into(),
+        ));
+    }
+    for (field, knowledge) in [
+        ("version", &input.context.version),
+        ("target", &input.context.target),
+    ] {
+        if let ContextKnowledge::Known(value) = knowledge
+            && !stable_text(value)
+        {
+            return Err(StateEffectAnalysisError::InvalidSummaryContext(format!(
+                "actual {field} must be a nonempty stable identity"
+            )));
+        }
+    }
+    for (field, knowledge) in [
+        ("features", &input.context.features),
+        ("type bindings", &input.context.type_bindings),
+    ] {
+        if let ContextKnowledge::Known(values) = knowledge
+            && (values.iter().any(|value| !stable_text(value))
+                || values.windows(2).any(|pair| pair[0] >= pair[1]))
+        {
+            return Err(StateEffectAnalysisError::InvalidSummaryContext(format!(
+                "actual {field} must be a canonical set of stable identities"
+            )));
+        }
+    }
+    if input.context_observation_refs.is_empty()
+        || input
+            .context_observation_refs
+            .iter()
+            .any(|reference| crate::proof::EvidenceReference::new(reference).is_err())
+        || input
+            .context_observation_refs
+            .windows(2)
+            .any(|pair| pair[0] >= pair[1])
+    {
+        return Err(StateEffectAnalysisError::InvalidSummaryContext(
+            "actual context requires canonical observation references".into(),
+        ));
+    }
+    if let (ContextKnowledge::Known(actual), ContextKnowledge::Known(supplied)) =
+        (context.target_platform(), &input.context.target)
+        && actual != supplied
+    {
+        return Err(StateEffectAnalysisError::InvalidSummaryContext(
+            "actual target conflicts with PSM".into(),
+        ));
+    }
+    Ok(())
+}
+
+/// Bounds destructor execution only for the PSM's syntactic unit type.
+///
+/// Named primitive shapes remain unknown because normalization does not prove
+/// absence of shadowing. An empty library Drop wrapper is never evidence about
+/// a caller's destructor.
+///
+/// # Panics
+/// Panics only if the fixed PSM representation cannot serialize.
+#[must_use]
+pub fn primitive_destructor_premise(psm: &ProgramSemanticModel, type_id: &str) -> SummaryPremise {
+    let known = psm.types().iter().any(|item| {
+        item.id() == type_id
+            && matches!(
+                item.semantic(),
+                crate::program_semantics::SemanticType::Unit
+            )
+    });
+    SummaryPremise {
+        bound: if known {
+            SummaryEffectBound::Known(Vec::new())
+        } else {
+            SummaryEffectBound::Unknown
+        },
+        refs: if known {
+            vec![format!(
+                "psm_primitive_drop:v1:{}:{type_id}",
+                psm.digest().expect("PSM serializes")
+            )]
+        } else {
+            Vec::new()
+        },
+    }
+}
+
+/// Retains an unknown callback bound until complete expansion authority exists.
+///
+/// PSM does not retain arbitrary function or ancestor attributes. A callback
+/// with an empty source body can acquire effects through attribute expansion,
+/// so its source structure alone cannot establish a complete upper bound.
+#[must_use]
+pub fn local_callback_premise(_psm: &ProgramSemanticModel, _symbol_id: &str) -> SummaryPremise {
+    SummaryPremise {
+        bound: SummaryEffectBound::Unknown,
+        refs: Vec::new(),
     }
 }
 
@@ -980,6 +1331,8 @@ fn empty_effect_work() -> EffectWork {
 fn direct_effects(
     psm: &ProgramSemanticModel,
     symbols: &BTreeMap<&str, &ExecutableSymbol>,
+    catalog: &OperationSummaryCatalog,
+    instantiations: &BTreeMap<String, OperationSummaryInstantiation>,
 ) -> BTreeMap<String, EffectWork> {
     let mut result = symbols
         .keys()
@@ -1089,7 +1442,38 @@ fn direct_effects(
             CallResolutionState::External => {
                 let operation = call.external_target();
                 for evidence in call.evidence() {
-                    match operation.map(classify_operation) {
+                    if let Some(operation) = operation {
+                        let summary_evidence = instantiate_operation_summary(
+                            psm,
+                            catalog,
+                            operation,
+                            evidence.operation_site_id(),
+                            instantiations,
+                        );
+                        let work = result
+                            .entry(call.caller().into())
+                            .or_insert_with(empty_effect_work);
+                        match &summary_evidence.outcome.upper_bound {
+                            SummaryEffectBound::Unknown => {
+                                work.uncertain.insert(format!(
+                                    "operation_summary:unknown:{}",
+                                    evidence.operation_site_id()
+                                ));
+                            }
+                            SummaryEffectBound::Known(effects) => {
+                                for effect in effects {
+                                    work.uncertain.insert(format!(
+                                        "operation_summary:bounded:{}:{}",
+                                        effect.stable_id(),
+                                        evidence.operation_site_id()
+                                    ));
+                                }
+                            }
+                        }
+                        work.operation_summaries
+                            .insert(evidence.operation_site_id().into(), summary_evidence);
+                    }
+                    match operation.map(|operation| classify_operation(catalog, operation)) {
                         Some(OperationEffectClassification::Supported(effects)) => {
                             result
                                 .entry(call.caller().into())
@@ -1144,10 +1528,16 @@ fn direct_effects(
                                 "exact external operation has no supported refined classification",
                                 evidence,
                             ));
-                            work.uncertain.insert(format!(
-                                "unclassified_external_operation:{}",
-                                operation.expect("external call has identity")
-                            ));
+                            if !work
+                                .operation_summaries
+                                .get(evidence.operation_site_id())
+                                .is_some_and(|record| record.outcome.is_sufficient())
+                            {
+                                work.uncertain.insert(format!(
+                                    "unclassified_external_operation:{}",
+                                    operation.expect("external call has identity")
+                                ));
+                            }
                             add_effect(
                                 &mut result,
                                 call.caller(),
@@ -1359,10 +1749,21 @@ fn close_effects(
                     }
                 }
             }
-            if !provider_summary.uncertain.is_empty() {
+            if provider_summary
+                .uncertain
+                .iter()
+                .any(|reason| !reason.starts_with("operation_summary:"))
+            {
                 changed |= consumer_summary
                     .uncertain
                     .insert("transitive_opaque_effect".into());
+            }
+            for reason in provider_summary
+                .uncertain
+                .iter()
+                .filter(|reason| reason.starts_with("operation_summary:"))
+            {
+                changed |= consumer_summary.uncertain.insert(reason.clone());
             }
         }
         if !changed || iterations > work.len().saturating_add(1) {
@@ -2304,6 +2705,14 @@ fn last_segment(value: &str) -> &str {
 /// Explains state/effect model construction failure.
 #[derive(Debug)]
 pub enum StateEffectAnalysisError {
+    /// A catalog attempted to self-promote uninstalled qualified authority.
+    UnacceptedSummaryAuthority,
+    /// Actual supplied context lacked evidence or conflicted with known PSM facts.
+    InvalidSummaryContext(String),
+    /// Installed or selected operation summary authority is invalid.
+    OperationSummary(OperationSummaryError),
+    /// A supplied instantiation does not refer to an actual external PSM site.
+    InvalidSummarySite(String),
     /// Canonical JSON serialization failed.
     Serialization(serde_json::Error),
     /// Normalized finding construction failed.
@@ -2322,6 +2731,18 @@ pub enum StateEffectAnalysisError {
 impl Display for StateEffectAnalysisError {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
         match self {
+            Self::UnacceptedSummaryAuthority => formatter.write_str(
+                "operation catalog is not accepted installed authority or disclosed assumptions",
+            ),
+            Self::InvalidSummaryContext(reason) => {
+                write!(formatter, "invalid actual summary context: {reason}")
+            }
+            Self::OperationSummary(error) => {
+                write!(formatter, "invalid operation summary authority: {error}")
+            }
+            Self::InvalidSummarySite(site) => {
+                write!(formatter, "unknown external summary site: {site}")
+            }
             Self::Serialization(error) => {
                 write!(formatter, "state/effect serialization failed: {error}")
             }
