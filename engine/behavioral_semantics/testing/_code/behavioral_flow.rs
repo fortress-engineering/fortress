@@ -71,9 +71,6 @@ fn validate_selected_bfg(
         Some("fortress-control-layout-v2") => CONTROL_LAYOUT_SOURCE,
         _ => return Err("selected generation has an unsupported layout".into()),
     };
-    if view["control_layout"]["digest"] != digest(layout_source.as_bytes()) {
-        return Err("selected layout digest does not match its registry".into());
-    }
     let artifacts = view["artifacts"]
         .as_array()
         .expect("validated artifact array");
@@ -99,6 +96,9 @@ fn validate_selected_bfg(
     }
     if view["source"]["fingerprint"] != current_source {
         return Ok(SelectedBfgSubject::StaleSource);
+    }
+    if view["control_layout"]["digest"] != digest(layout_source.as_bytes()) {
+        return Err("selected layout digest does not match its registry".into());
     }
     if view["control_layout"]["id"] != "fortress-control-layout-v2" {
         return Ok(SelectedBfgSubject::RetainedLayout);
@@ -204,7 +204,22 @@ fn selected_bfg_subject_controls(bytes: &[u8]) {
     assert!(validate_selected_bfg(&parse(&fixture), bytes, &stale_source, bytes).is_err());
     fixture["artifacts"][0]["byte_count"] = json!(bytes.len());
     fixture["control_layout"]["digest"] = json!(stale_source);
-    assert!(validate_selected_bfg(&parse(&fixture), bytes, &stale_source, bytes).is_err());
+    assert!(validate_selected_bfg(&parse(&fixture), bytes, &current_source, bytes).is_err());
+    // A prior source may bind a prior revision of the registered layout. Its
+    // intact bytes remain history; this never supplies current-source evidence.
+    fixture["source"]["fingerprint"] = json!(stale_source);
+    assert_eq!(
+        validate_selected_bfg(&parse(&fixture), bytes, &current_source, b"different"),
+        Ok(SelectedBfgSubject::StaleSource)
+    );
+    assert!(validate_selected_bfg(&parse(&fixture), b"corrupt", &current_source, bytes).is_err());
+    fixture["artifacts"][1]["content_digest"] = json!(current_source);
+    assert!(validate_selected_bfg(&parse(&fixture), bytes, &current_source, bytes).is_err());
+    fixture["artifacts"][1]["content_digest"] = payload["source_ccg_digest"].clone();
+    // An unsupported layout never receives even a historical classification.
+    fixture["control_layout"]["id"] = json!("unregistered-layout");
+    assert!(AssessmentGenerationManifest::from_json_str(&fixture.to_string()).is_err());
+    fixture["source"]["fingerprint"] = json!(current_source);
     fixture["control_layout"] = json!({
         "id": "fortress-control-layout-v1",
         "digest": digest(LEGACY_CONTROL_LAYOUT_SOURCE.as_bytes()),

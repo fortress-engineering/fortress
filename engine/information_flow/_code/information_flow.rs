@@ -254,6 +254,8 @@ impl InformationFlowCoverageSummary {
 /// Canonical deterministic Information Flow Analysis v1 derived Info.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct InformationFlowAnalysisModel {
+    #[serde(skip)]
+    digest_memo: crate::program_semantics::ModelDigestMemo,
     #[serde(rename = "$schema")]
     schema: String,
     schema_version: u16,
@@ -314,10 +316,7 @@ impl InformationFlowAnalysisModel {
     ///
     /// Returns a JSON error if serialization fails.
     pub fn digest(&self) -> Result<String, serde_json::Error> {
-        Ok(format!(
-            "sha256:{:x}",
-            Sha256::digest(self.to_canonical_json()?.as_bytes())
-        ))
+        self.digest_memo.digest(self)
     }
 }
 
@@ -485,6 +484,7 @@ pub fn analyze_information_flow(
         external_flow: InformationFlowCoverage::Unknown,
     };
     let model = InformationFlowAnalysisModel {
+        digest_memo: crate::program_semantics::ModelDigestMemo::default(),
         schema: INFORMATION_FLOW_ANALYSIS_SCHEMA.into(),
         schema_version: INFORMATION_FLOW_ANALYSIS_SCHEMA_VERSION,
         semantic_version: INFORMATION_FLOW_ANALYSIS_VERSION.into(),
@@ -676,17 +676,25 @@ fn add_parameter_identity_edges(psm: &ProgramSemanticModel, edges: &mut Vec<Flow
 }
 
 fn add_binding_identity_edges(nodes: &BTreeSet<FlowNode>, edges: &mut Vec<FlowEdge>) {
-    let bindings = nodes
+    let mut candidates = BTreeMap::<(&str, &str), Vec<&FlowNode>>::new();
+    for node in nodes
+        .iter()
+        .filter(|node| matches!(node.role.as_str(), "argument" | "expression" | "place"))
+    {
+        candidates
+            .entry((node.symbol.as_str(), node.name.as_str()))
+            .or_default()
+            .push(node);
+    }
+    for binding in nodes
         .iter()
         .filter(|node| matches!(node.role.as_str(), "binding" | "parameter"))
-        .cloned()
-        .collect::<Vec<_>>();
-    for binding in bindings {
-        for candidate in nodes.iter().filter(|candidate| {
-            candidate.symbol == binding.symbol
-                && candidate.name == binding.name
-                && matches!(candidate.role.as_str(), "argument" | "expression" | "place")
-        }) {
+    {
+        for &candidate in candidates
+            .get(&(binding.symbol.as_str(), binding.name.as_str()))
+            .into_iter()
+            .flatten()
+        {
             edges.push(FlowEdge {
                 producer: binding.clone(),
                 consumer: candidate.clone(),

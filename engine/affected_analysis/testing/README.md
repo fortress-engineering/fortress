@@ -35,3 +35,5 @@ Testing consumes the composed Engine crate boundary and participates in the cano
 ## Guarantees
 
 The suite proves that reuse requires dependency proof, that uncertainty broadens invalidation safely, and that empty-cache recomputation remains semantically identical.
+
+The `session_dependencies.rs` R05 controls exercise production owner queries and current identities, including missed lookups, body reverse closure, changed selected authority, retained availability and incomplete/unsupported input coverage. They verify invalidation decisions rather than duplicating semantic owner transfer functions.

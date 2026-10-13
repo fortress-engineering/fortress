@@ -107,6 +107,12 @@ pub fn observe_rust_source_profile(
         let bytes = files.get(path).map_or(&[][..], Vec::as_slice);
         let source = std::str::from_utf8(bytes)
             .map_err(|_| RustProfileError::NonUtf8(path.to_owned().into()))?;
+        crate::observation::input_retention::preflight_input(source.len()).map_err(|error| {
+            RustProfileError::Parse {
+                path: path.to_owned().into(),
+                detail: error.to_string().into(),
+            }
+        })?;
         let syntax = syn::parse_file(source).map_err(|error| RustProfileError::Parse {
             path: path.to_owned().into(),
             detail: error.to_string().into(),

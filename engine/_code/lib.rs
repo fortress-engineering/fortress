@@ -44,6 +44,8 @@ pub mod filing;
 pub mod finding;
 #[path = "../finding_model/_code/governance.rs"]
 pub mod finding_governance;
+#[path = "../snapshot_governance/_code/heavy_admission.rs"]
+pub mod heavy_admission;
 #[path = "../standard_registry/_code/identity.rs"]
 pub mod identity;
 #[path = "../snapshot_governance/_code/identity_migration.rs"]
@@ -70,6 +72,8 @@ pub mod project;
 pub mod proof;
 #[path = "../reference_resolution/_code/reference.rs"]
 pub mod reference_resolution;
+#[path = "../snapshot_governance/_code/resident_worker.rs"]
+mod resident_worker;
 #[path = "../snapshot_governance/_code/runtime_storage.rs"]
 pub mod runtime_storage;
 #[path = "../snapshot_governance/_code/rust_test_analyzer.rs"]
@@ -78,6 +82,8 @@ pub mod rust_test_analyzer;
 pub mod semantic_analysis;
 #[path = "../architecture_evaluation/_code/semantic_conformance.rs"]
 pub mod semantic_conformance;
+#[path = "../snapshot_governance/_code/session.rs"]
+pub mod session;
 #[path = "../snapshot_governance/_code/snapshot.rs"]
 pub mod snapshot;
 #[path = "../source_architecture/_code/source.rs"]

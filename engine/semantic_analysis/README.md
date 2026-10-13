@@ -41,3 +41,5 @@ Supplies strict JSON decoding for authored Function Contracts before semantic in
 ## Guarantees
 
 Absent preconditions admit the full static type domain; uncertainty only widens possible states; supported recursive analysis converges deterministically; authored postconditions are proved rather than trusted; findings include representable abstract counter-domains; and unsupported semantics never become evidence of safety.
+
+Prepared evaluation uses the same transfer and final proof functions as cold evaluation. Dependency-closed synchronous trajectories may be replayed, but current global iteration, widening, stopping, diagnostics and provenance remain unchanged. Operational retention limits affect work only. Parent-local R05 controls verify replay, invalidation, extension and eviction equality.

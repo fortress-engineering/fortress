@@ -24,4 +24,4 @@ Defines the language-neutral snapshot input, source observation, evidence, norma
 
 ### [`rust.rs`](../_code/rust.rs)
 
-Implements structural Cargo and Rust namespace discovery, source ownership, target classification, facade-preserving resolution, and deterministic observation normalization.
+Implements structural Cargo and Rust namespace discovery, source ownership, target classification, facade-preserving resolution, and deterministic observation normalization. Both Rust tokenization entry points invoke Repository Observation's neutral retained-input admission helper before parsing; inactive admission preserves ordinary analysis behavior.

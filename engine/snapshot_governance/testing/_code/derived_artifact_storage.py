@@ -4,10 +4,12 @@
 from __future__ import annotations
 
 import importlib.util
+import io
 import json
 import os
 from pathlib import Path
 import shutil
+import stat
 import subprocess
 import sys
 import unittest
@@ -182,7 +184,7 @@ class DerivedArtifactStorageTests(unittest.TestCase):
 
     def test_verifier_import_does_not_write_source_bytecode(self) -> None:
         base = self.workspace("import-bytecode")
-        for name in ("quality_certificate.py", "execution_storage.py"):
+        for name in ("quality_certificate.py", "execution_storage.py", "heavy_admission.py"):
             shutil.copyfile(MODULE_PATH.parent / name, base / name)
         environment = os.environ.copy()
         environment.pop("PYTHONDONTWRITEBYTECODE", None)
@@ -211,6 +213,75 @@ class DerivedArtifactStorageTests(unittest.TestCase):
         process.terminate.assert_called_once()
         workspace.record_child.assert_called_once_with(12345)
         workspace.clear_child.assert_not_called()
+
+    def test_failed_capture_preserves_assertion_and_original_failure(self) -> None:
+        output = b"completed tests\nassertion failed: retained layout\n\xff"
+        process = Mock(pid=12345, returncode=101)
+        process.communicate.return_value = (output, None)
+        process.poll.return_value = 101
+        workspace = Mock()
+        retained = io.BytesIO()
+        error_stream = io.TextIOWrapper(retained, encoding="utf-8")
+        with (
+            patch.object(quality.subprocess, "Popen", return_value=process),
+            patch.object(quality.sys, "stderr", error_stream),
+            patch.object(quality.sys, "stdout", io.StringIO()),
+        ):
+            with self.assertRaisesRegex(quality.CertificateError, "quality gate exited 101"):
+                quality.run_command(Path.cwd(), ["cargo"], {}, capture=True, workspace=workspace)
+        header, actual = retained.getvalue().split(b"\n", 1)
+        record = json.loads(header.removeprefix(b"[local-certificate-failed-capture] "))
+        self.assertEqual(actual, output)
+        self.assertEqual(record["captured_digest"], quality.sha256_bytes(output))
+        self.assertEqual(record["captured_bytes"], len(output))
+        self.assertFalse(record["truncated"])
+        self.assertFalse(record["qualification_claim"])
+        workspace.clear_child.assert_called_once_with(12345)
+
+    def test_oversized_failure_preview_is_explicitly_incomplete(self) -> None:
+        maximum = 4 * 1024**2
+        output = b"not in preview\n" + b"x" * maximum
+        retained = io.BytesIO()
+        error_stream = io.TextIOWrapper(retained, encoding="utf-8")
+        with patch.object(quality.sys, "stderr", error_stream):
+            quality.emit_failed_command_capture(output)
+        header, actual = retained.getvalue().split(b"\n", 1)
+        record = json.loads(header.removeprefix(b"[local-certificate-failed-capture] "))
+        self.assertEqual(actual, output[-maximum:])
+        self.assertEqual(record["captured_bytes"], len(output))
+        self.assertEqual(record["captured_digest"], quality.sha256_bytes(output))
+        self.assertEqual(record["preview_raw_bytes"], maximum)
+        self.assertTrue(record["truncated"])
+        self.assertFalse(record["qualification_claim"])
+
+    def test_successful_capture_returns_exact_bytes_without_failure_preview(self) -> None:
+        output = b'{"result":"PASS"}\n'
+        process = Mock(pid=12345, returncode=0)
+        process.communicate.return_value = (output, None)
+        process.poll.return_value = 0
+        with (
+            patch.object(quality.subprocess, "Popen", return_value=process),
+            patch.object(quality, "emit_failed_command_capture") as diagnostic,
+            patch.object(quality.sys, "stdout", io.StringIO()),
+        ):
+            self.assertEqual(quality.run_command(Path.cwd(), ["cargo"], {}, capture=True), output)
+        diagnostic.assert_not_called()
+
+    def test_failure_preview_error_preserves_gate_failure(self) -> None:
+        process = Mock(pid=12345, returncode=101)
+        process.communicate.return_value = (b"assertion failed\n", None)
+        process.poll.return_value = 101
+        with (
+            patch.object(quality.subprocess, "Popen", return_value=process),
+            patch.object(quality, "emit_failed_command_capture", side_effect=OSError("closed")),
+            patch.object(quality.sys, "stdout", io.StringIO()),
+        ):
+            with self.assertRaisesRegex(quality.CertificateError, "quality gate exited 101") as raised:
+                quality.run_command(ROOT, ["cargo", "test"], {}, capture=True)
+        self.assertEqual(
+            raised.exception.__notes__,
+            ["Failure capture diagnostic could not be emitted: OSError"],
+        )
 
     def test_registry_is_complete_sorted_and_authority_excluded(self) -> None:
         paths = quality.derived_artifact_paths()
@@ -452,7 +523,7 @@ class DerivedArtifactStorageTests(unittest.TestCase):
         self.assertEqual(transient.read_bytes(), b"changed")
 
     def test_compile_and_analysis_failures_preserve_prior_bytes(self) -> None:
-        for failure_call in (4, 9):
+        for failure_call in (4, 9, 10):
             with self.subTest(failure_call=failure_call):
                 base = self.workspace(f"failure-{failure_call}")
                 root = base / "repository"
@@ -472,6 +543,11 @@ class DerivedArtifactStorageTests(unittest.TestCase):
                     calls += 1
                     if calls == failure_call:
                         raise quality.CertificateError("injected gate failure")
+                    if "build" in _args[1]:
+                        workspace = _kwargs["workspace"]
+                        executable = workspace.target / "compiled-cli"
+                        executable.write_bytes(b"compiler artifact fixture")
+                        return self.compiler_report(root, executable)
                     return b""
 
                 environment = {
@@ -493,6 +569,102 @@ class DerivedArtifactStorageTests(unittest.TestCase):
                         quality.issue(root)
                 self.assertEqual(certificate.read_bytes(), b"prior certificate")
                 self.assertEqual(user_lock.read_bytes(), b"user lock")
+
+    @staticmethod
+    def compiler_report(root: Path, executable: Path) -> bytes:
+        return (
+            json.dumps({
+                "reason": "compiler-artifact",
+                "target": {"name": "fortress", "kind": ["bin"],
+                           "src_path": str(root / "cli/_code/main.rs")},
+                "executable": str(executable),
+            }) + "\n" + json.dumps({"reason": "build-finished", "success": True}) + "\n"
+        ).encode()
+
+    def compiler_fixture(self, name: str):
+        base = self.workspace(name)
+        root = base / "repository"
+        root.mkdir()
+        target = base / "compiler"
+        target.mkdir()
+        staging = base / "staging"
+        staging.mkdir()
+        executable = target / ("fortress.exe" if os.name == "nt" else "fortress")
+        executable.write_bytes(b"complete compiler artifact\n" * 4096)
+        executable.chmod(0o755)
+        workspace = Mock(target=target, staging=staging)
+        return root, executable, workspace
+
+    def test_issuer_stages_exact_compiled_bytes_without_overwriting_target(self) -> None:
+        root, executable, workspace = self.compiler_fixture("staged-compiler")
+        before = executable.read_bytes()
+        with patch.object(quality, "run_command", return_value=self.compiler_report(
+            root, executable
+        )) as build:
+            staged = quality.certification_executable(root, ["cargo", "+1.97.1"], {}, workspace)
+        self.assertEqual(staged.parent, workspace.staging)
+        self.assertEqual(staged.read_bytes(), before)
+        self.assertEqual(executable.read_bytes(), before)
+        self.assertEqual(stat.S_IMODE(staged.stat().st_mode),
+                         stat.S_IMODE(executable.stat().st_mode))
+        workspace.reserve.assert_called_once_with(len(before))
+        self.assertEqual(workspace.check_budget.call_count, 2)
+        self.assertIn("--all-features", build.call_args.args[1])
+        self.assertIn("--message-format=json-render-diagnostics", build.call_args.args[1])
+        self.assertEqual(quality.command_text([str(staged), "certify", "."]),
+                         "fortress certify .")
+
+    def test_issuer_refuses_incomplete_or_ambiguous_compiler_reports(self) -> None:
+        root, executable, workspace = self.compiler_fixture("bad-compiler-report")
+        valid = self.compiler_report(root, executable).splitlines()
+        artifact = json.loads(valid[0])
+        wrong_owner = dict(artifact, target=dict(artifact["target"], src_path=str(root / "other.rs")))
+        reports = [b"not-json\n", b"[]\n", valid[0] + b"\n",
+                   valid[0] + b'\n{"reason":"build-finished","success":false}\n',
+                   b"\n".join([valid[0], valid[0], valid[1]]),
+                   json.dumps(wrong_owner).encode() + b"\n" + valid[1]]
+        for report in reports:
+            with self.subTest(report=report):
+                with patch.object(quality, "run_command", return_value=report):
+                    with self.assertRaises(quality.CertificateError):
+                        quality.certification_executable(root, ["cargo"], {}, workspace)
+        self.assertEqual(list(workspace.staging.iterdir()), [])
+        workspace.reserve.assert_not_called()
+
+    def test_issuer_refuses_compiler_artifact_outside_owned_target(self) -> None:
+        root, executable, workspace = self.compiler_fixture("foreign-compiler")
+        outside = executable.parent.parent / "unowned-cli"
+        executable.rename(outside)
+        before = outside.read_bytes()
+        with patch.object(quality, "run_command", return_value=self.compiler_report(root, outside)):
+            with self.assertRaisesRegex(quality.CertificateError, "escapes"):
+                quality.certification_executable(root, ["cargo"], {}, workspace)
+        self.assertEqual(outside.read_bytes(), before)
+        self.assertEqual(list(workspace.staging.iterdir()), [])
+
+    def test_issuer_preserves_existing_staged_bytes_on_collision(self) -> None:
+        root, executable, workspace = self.compiler_fixture("staged-collision")
+        staged = workspace.staging / ("fortress.exe" if os.name == "nt" else "fortress")
+        staged.write_bytes(b"existing owned bytes")
+        with patch.object(quality, "run_command", return_value=self.compiler_report(root, executable)):
+            with self.assertRaises(FileExistsError):
+                quality.certification_executable(root, ["cargo"], {}, workspace)
+        self.assertEqual(staged.read_bytes(), b"existing owned bytes")
+
+    def test_issuer_refuses_compiler_artifact_growth_during_copy(self) -> None:
+        root, executable, workspace = self.compiler_fixture("compiler-growth")
+        original_open = Path.open
+
+        def growing_open(path: Path, mode: str = "r", *args, **kwargs):
+            if path == executable and mode == "rb":
+                with original_open(executable, "ab") as file:
+                    file.write(b"unexpected growth")
+            return original_open(path, mode, *args, **kwargs)
+
+        with patch.object(quality, "run_command", return_value=self.compiler_report(root, executable)):
+            with patch.object(Path, "open", growing_open):
+                with self.assertRaisesRegex(quality.CertificateError, "grew"):
+                    quality.certification_executable(root, ["cargo"], {}, workspace)
 
     def test_materialization_writes_directly_to_external_temporary_root(self) -> None:
         fingerprint = "sha256:" + "d" * 64

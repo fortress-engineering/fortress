@@ -21,3 +21,13 @@ warnings = "deny"
 [workspace.lints.clippy]
 all = "deny"
 pedantic = "deny"
+
+[profile.dev.package.fortress-core]
+opt-level = 3
+debug-assertions = true
+overflow-checks = true
+
+[profile.test.package.fortress-core]
+opt-level = 3
+debug-assertions = true
+overflow-checks = true

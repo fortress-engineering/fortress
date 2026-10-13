@@ -34,7 +34,18 @@
   ],
   "relationships": [],
   "constraints": [],
-  "guarantees": [],
+  "guarantees": [
+    {
+      "id": "GUA-EFFECT-PREPARATION-EQUIVALENCE",
+      "subject": {
+        "kind": "capability",
+        "id": "CAP-STATE-EFFECT-ANALYSIS"
+      },
+      "requirements": [
+        "AF-STATE-EFFECT-ANALYSIS-0001-R07"
+      ]
+    }
+  ],
   "features": [
     {
       "id": "AF-STATE-EFFECT-ANALYSIS-0001",
@@ -116,6 +127,19 @@
             "T-AF-STATE-EFFECT-ANALYSIS-0001-R06-007",
             "T-AF-STATE-EFFECT-ANALYSIS-0001-R06-008",
             "T-AF-STATE-EFFECT-ANALYSIS-0001-R06-009"
+          ]
+        },
+        {
+          "id": "AF-STATE-EFFECT-ANALYSIS-0001-R07",
+          "statement": "State and Effect Analysis prepares exact direct seeds and synchronous closure trajectories with current PSM, operation-summary and instantiation bindings, invalidates reverse dependents, preserves witness budgets, closure stopping and current policy/state assembly, bounds retained payloads, and rejects reserved primitive destructor premises unless they bind the current whole PSM, an existing syntactic unit type and a known empty bound; prepared and cold evaluation retain identical authority, uncertainty, assumptions, canonical bytes and typed failures.",
+          "tests": [
+            "T-AF-STATE-EFFECT-ANALYSIS-0001-R07-001",
+            "T-AF-STATE-EFFECT-ANALYSIS-0001-R07-002",
+            "T-AF-STATE-EFFECT-ANALYSIS-0001-R07-003",
+            "T-AF-STATE-EFFECT-ANALYSIS-0001-R07-004",
+            "T-AF-STATE-EFFECT-ANALYSIS-0001-R07-005",
+            "T-AF-STATE-EFFECT-ANALYSIS-0001-R07-006",
+            "T-AF-STATE-EFFECT-ANALYSIS-0001-R07-007"
           ]
         }
       ]

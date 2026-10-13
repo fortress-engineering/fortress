@@ -1175,6 +1175,12 @@ impl RustInspection<'_> {
     fn inspect_file(&mut self, path: &str, bytes: &[u8]) -> Result<(), ReferenceResolutionError> {
         let source = std::str::from_utf8(bytes)
             .map_err(|_| ReferenceResolutionError::NonUtf8(path.to_owned()))?;
+        crate::observation::input_retention::preflight_input(source.len()).map_err(|error| {
+            ReferenceResolutionError::Rust {
+                path: path.to_owned(),
+                source: syn::Error::new(proc_macro2::Span::call_site(), error.to_string()),
+            }
+        })?;
         let syntax = syn::parse_file(source).map_err(|source| ReferenceResolutionError::Rust {
             path: path.to_owned(),
             source,

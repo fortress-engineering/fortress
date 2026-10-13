@@ -5,8 +5,13 @@ use std::error::Error;
 use std::fmt::Write as _;
 use std::fmt::{self, Display, Formatter};
 use std::fs;
+use std::io::Read as _;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
+use std::time::Instant;
 
+use cpu_time::ProcessTime;
+use memory_stats::{MemoryStats, memory_stats};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
@@ -47,7 +52,8 @@ use crate::control_layout::{
     LEGACY_PROJECT_CONFIGURATION_PATH, PROJECT_CONFIGURATION_PATH,
 };
 use crate::documentation::{
-    DocumentationEvaluationError, code_file_responsibilities, evaluate_repository_documentation,
+    DocumentationEvaluationError, code_file_responsibilities,
+    evaluate_documentation_snapshot_files, evaluate_repository_documentation,
 };
 use crate::environmental_semantics::{
     EnvironmentContractError, EnvironmentContractSource, EnvironmentalAnalysisError,
@@ -73,12 +79,14 @@ use crate::information_flow::{
     InformationFlowPolicySource, analyze_information_flow, load_information_flow_policy,
 };
 use crate::observation::{
-    ObservationError, ObservationPolicy, RepositoryObservation, SourceManifest, SourceView,
+    ObservationError, ObservationLimits, ObservationPolicy, ObservedFile, RepositoryObservation,
+    SourceManifest, SourceView,
 };
 use crate::profile::{ProfileResolutionError, ResolvedProfiles, resolve_profiles};
 use crate::program_semantics::{
-    ProgramSemanticError, ProgramSemanticInput, ProgramSemanticModel,
-    compile_program_semantic_model,
+    ProgramDependencyRead, ProgramPreparationFallback, ProgramSemanticError, ProgramSemanticInput,
+    ProgramSemanticModel, ProgramSemanticPreparation, ProgramSemanticWork,
+    compile_program_semantic_model, prepare_program_semantics,
 };
 use crate::project::{
     AuthorityBinding, EvaluationKey, ProjectConfiguration, ProjectConfigurationLoadError,
@@ -92,15 +100,17 @@ use crate::rust_test_analyzer::{
 };
 use crate::semantic_analysis::{
     FunctionContractError, FunctionContractSource, ResolvedFunctionContracts,
-    SemanticAnalysisError, SemanticAnalysisEvaluation, analyze_program_domains,
+    SemanticAnalysisError, SemanticAnalysisEvaluation, SemanticAnalysisPreparation,
+    SemanticPreparationWork, analyze_program_domains, analyze_program_domains_prepared,
     load_function_contracts,
 };
 use crate::semantic_conformance::{
     SemanticConformanceError, SemanticConformanceEvaluation, evaluate_semantic_conformance,
 };
 use crate::snapshot::{
-    RepositorySnapshot, SnapshotDocuments, SnapshotError, build_repository_snapshot,
-    observe_repository_stably,
+    RepositorySnapshot, SnapshotDocuments, SnapshotError,
+    build_repository_snapshot_from_observation, observe_repository_stably,
+    observe_repository_stably_bounded,
 };
 use crate::source_architecture::{
     CodeFileResponsibility, LanguageAssignment, SourceArchitectureEvaluation,
@@ -111,7 +121,9 @@ use crate::source_architecture::{
 use crate::standard::{StandardBundle, StandardLoadError, installed_standard_manifest};
 use crate::state_effect_analysis::{
     OperationSummaryCatalog, StateContractError, StateContractSource, StateEffectAnalysisError,
-    StateEffectAnalysisEvaluation, analyze_state_effects_with_summaries, load_state_contracts,
+    StateEffectAnalysisEvaluation, StateEffectPreparation, StateEffectPreparationWork,
+    analyze_state_effects_with_summaries, analyze_state_effects_with_summaries_prepared,
+    load_state_contracts,
 };
 
 /// Current stable machine-readable snapshot audit schema family.
@@ -1085,13 +1097,10 @@ fn compile_source_architecture_from(
     ]
     .into_iter()
     .collect();
-    let psm_json = psm
-        .map(ProgramSemanticModel::to_canonical_json)
+    let psm_digest = psm
+        .map(ProgramSemanticModel::digest)
         .transpose()
         .map_err(|error| AuditError::ContractState(error.to_string().into()))?;
-    let psm_digest = psm_json
-        .as_deref()
-        .map(|value| format!("sha256:{:x}", Sha256::digest(value.as_bytes())));
     // Source Architecture binds only the authorities that can alter source
     // structure. Certification independently binds this derived result to the
     // complete exact repository snapshot.
@@ -1121,12 +1130,12 @@ fn compile_source_architecture_from(
     .map_err(AuditError::SourceArchitecture)
 }
 
-fn compile_psm_from_observed(
+fn program_input_from_observed(
     prepared: &PreparedAudit,
     ccg: &ContractCoherencyGraph,
     observation_input: ImplementationObservationInput,
     observed: &ObservedImplementation,
-) -> Result<ProgramSemanticModel, AuditError> {
+) -> ProgramSemanticInput {
     let testing_modules = ccg
         .modules()
         .iter()
@@ -1138,13 +1147,12 @@ fn compile_psm_from_observed(
             dependency.target_module().to_owned(),
         )
     });
-    compile_program_semantic_model(&ProgramSemanticInput::new(
+    ProgramSemanticInput::new(
         prepared.snapshot.project_id(),
         observation_input,
         testing_modules,
         observed_dependencies,
-    ))
-    .map_err(AuditError::ProgramSemantics)
+    )
 }
 
 fn analysis_implementation_input(prepared: &PreparedAnalysis) -> ImplementationObservationInput {
@@ -1781,14 +1789,21 @@ pub fn compile_repository_certification(
 ///
 /// Returns an audit error for invalid/stale repository semantics, invalid
 /// distributed bindings, canonical serialization, or Evidence DAG failure.
-#[allow(clippy::too_many_lines)]
 pub fn compile_repository_certification_bundle(
     root: impl AsRef<Path>,
     suite_execution: RustSuiteExecution,
 ) -> Result<RepositoryCertificationBundle, AuditError> {
     let stack = compile_certification_semantic_stack(root.as_ref())?;
+    certification_bundle_from_stack(&stack, suite_execution)
+}
+
+#[allow(clippy::too_many_lines)]
+fn certification_bundle_from_stack(
+    stack: &CertificationSemanticStack,
+    suite_execution: RustSuiteExecution,
+) -> Result<RepositoryCertificationBundle, AuditError> {
     let source_digest = certification_source_digest(&stack.observed_files);
-    let (artifacts, projections) = certification_artifacts(&stack)?;
+    let (artifacts, projections) = certification_artifacts(stack)?;
     let audit_json = stack
         .audit
         .to_json_pretty()
@@ -1843,10 +1858,10 @@ pub fn compile_repository_certification_bundle(
         })
         .collect();
     let (generated_verification, behavioral_projection, behavioral_realizations) =
-        certification_behavior_inputs(&stack)?;
+        certification_behavior_inputs(stack)?;
     let verification_bindings =
         certification_verification_bindings(&stack.ccg, &stack.observed_files, &stack.rust_tests)?;
-    let trusted_assertions = certification_trusted_assertions(&stack)?;
+    let trusted_assertions = certification_trusted_assertions(stack)?;
     let profile_bytes = stack
         .observed_files
         .get("engine/standard_registry/_data/cert_full_snapshot_v1.json")
@@ -1928,11 +1943,112 @@ struct CertificationSemanticStack {
     profiles: ResolvedProfiles,
 }
 
-#[allow(clippy::too_many_lines)]
+struct PreparedCertificationStack {
+    stack: CertificationSemanticStack,
+    preparation: ResidentPreparation,
+    work: ResidentWork,
+    dependencies: Vec<ProgramDependencyRead>,
+}
+
+/// Operational phase costs, excluded from canonical artifacts and evaluation keys.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+pub struct EvaluationPhaseMeasurement {
+    /// Stable producer phase name; no protocol or queue timing enters semantics.
+    pub phase: &'static str,
+    /// Monotonic elapsed time for this phase, in nanoseconds.
+    pub wall_time_ns: u64,
+    /// Whole-process CPU milliseconds; absent when the OS counter is unavailable.
+    /// Concurrent work in this process is included; child processes are excluded.
+    pub process_cpu_time_ms: Option<u64>,
+    /// Whole-process working set/RSS sampled before the phase, not allocation cost.
+    pub resident_bytes_before: Option<usize>,
+    /// Whole-process working set/RSS sampled after the phase, not a phase peak.
+    pub resident_bytes_after: Option<usize>,
+    /// Pagefile usage on Windows, virtual address size on Unix, before the phase.
+    pub platform_virtual_bytes_before: Option<usize>,
+    /// Pagefile usage on Windows, virtual address size on Unix, after the phase.
+    pub platform_virtual_bytes_after: Option<usize>,
+    /// Counter collection wall time, excluded from the producer phase time.
+    pub collector_wall_time_ns: u64,
+}
+
+pub(crate) struct EvaluationPhaseRecorder {
+    started: Instant,
+    cpu_ms: Option<u64>,
+    memory: Option<MemoryStats>,
+    initial_collection_ns: u64,
+    measurements: Vec<EvaluationPhaseMeasurement>,
+}
+
+impl EvaluationPhaseRecorder {
+    pub(crate) fn new() -> Self {
+        let collection_started = Instant::now();
+        let memory = memory_stats();
+        let cpu_ms = Self::cpu_time();
+        Self {
+            started: Instant::now(),
+            cpu_ms,
+            memory,
+            initial_collection_ns: nanoseconds(collection_started.elapsed()),
+            measurements: Vec::with_capacity(13),
+        }
+    }
+
+    fn cpu_time() -> Option<u64> {
+        ProcessTime::try_now()
+            .ok()
+            .and_then(|value| u64::try_from(value.as_duration().as_millis()).ok())
+    }
+
+    pub(crate) fn record(&mut self, phase: &'static str) {
+        let finished = Instant::now();
+        let cpu_ms = Self::cpu_time();
+        let memory = memory_stats();
+        let next_cpu_ms = Self::cpu_time();
+        let collector_wall_time_ns = nanoseconds(finished.elapsed())
+            .saturating_add(std::mem::take(&mut self.initial_collection_ns));
+        self.measurements.push(EvaluationPhaseMeasurement {
+            phase,
+            wall_time_ns: nanoseconds(finished.duration_since(self.started)),
+            process_cpu_time_ms: self
+                .cpu_ms
+                .zip(cpu_ms)
+                .and_then(|(before, after)| after.checked_sub(before)),
+            resident_bytes_before: self.memory.map(|value| value.physical_mem),
+            resident_bytes_after: memory.map(|value| value.physical_mem),
+            platform_virtual_bytes_before: self.memory.map(|value| value.virtual_mem),
+            platform_virtual_bytes_after: memory.map(|value| value.virtual_mem),
+            collector_wall_time_ns,
+        });
+        self.cpu_ms = next_cpu_ms;
+        self.memory = memory;
+        self.started = Instant::now();
+    }
+
+    pub(crate) fn finish(self) -> Vec<EvaluationPhaseMeasurement> {
+        self.measurements
+    }
+}
+
+fn nanoseconds(duration: std::time::Duration) -> u64 {
+    u64::try_from(duration.as_nanos()).unwrap_or(u64::MAX)
+}
+
 fn compile_certification_semantic_stack(
     root: &Path,
 ) -> Result<CertificationSemanticStack, AuditError> {
     let prepared = prepare_audit(root)?;
+    let mut measurements = EvaluationPhaseRecorder::new();
+    compile_certification_stack_from_prepared(prepared, None, &mut measurements)
+        .map(|result| result.stack)
+}
+
+#[allow(clippy::too_many_lines)]
+fn compile_certification_stack_from_prepared(
+    prepared: PreparedAudit,
+    previous: Option<&ResidentPreparation>,
+    measurements: &mut EvaluationPhaseRecorder,
+) -> Result<PreparedCertificationStack, AuditError> {
     let initial_ccg = prepared
         .ccg_compilation
         .graph()
@@ -1948,14 +2064,18 @@ fn compile_certification_semantic_stack(
         reconcile_implementation(initial_ccg, &observed, prepared.standard.bundle.edition())
             .map_err(EvaluationError::Finding)
             .map_err(AuditError::Evaluation)?;
-    let models = compile_analysis_models_from_observed(
+    measurements.record("implementation_observation");
+    let prepared_models = compile_analysis_models_prepared_from_observed(
         &prepared,
         initial_ccg,
         observation_input,
         &observed,
+        previous,
+        measurements,
     )?;
-    let documentation = evaluate_repository_documentation(
-        root,
+    let models = prepared_models.models;
+    let documentation = evaluate_documentation_snapshot_files(
+        &prepared.observed_files,
         &prepared.snapshot,
         initial_ccg,
         prepared.standard.bundle.edition(),
@@ -2067,23 +2187,29 @@ fn compile_certification_semantic_stack(
         prepared.finding_governance.as_ref(),
         prepared.standard.bundle.id(),
     )?;
-    Ok(CertificationSemanticStack {
-        observed_files: prepared.observed_files,
-        rust_tests: prepared.rust_tests,
-        standard: prepared.standard.bundle,
-        snapshot: prepared.snapshot,
-        ccg,
-        intended_bfg: behavioral_semantics.graph().clone(),
-        models,
-        realized,
-        reference_resolution,
-        source_architecture,
-        semantic_conformance,
-        evaluation,
-        audit,
-        finding_governance,
-        finding_governance_authority_digest,
-        profiles: prepared.profiles,
+    measurements.record("governance_composition");
+    Ok(PreparedCertificationStack {
+        stack: CertificationSemanticStack {
+            observed_files: prepared.observed_files,
+            rust_tests: prepared.rust_tests,
+            standard: prepared.standard.bundle,
+            snapshot: prepared.snapshot,
+            ccg,
+            intended_bfg: behavioral_semantics.graph().clone(),
+            models,
+            realized,
+            reference_resolution,
+            source_architecture,
+            semantic_conformance,
+            evaluation,
+            audit,
+            finding_governance,
+            finding_governance_authority_digest,
+            profiles: prepared.profiles,
+        },
+        preparation: prepared_models.preparation,
+        work: prepared_models.work,
+        dependencies: prepared_models.dependencies,
     })
 }
 
@@ -2763,6 +2889,244 @@ struct AnalysisModels {
     environmental: EnvironmentalAnalysisEvaluation,
 }
 
+/// Finished immutable repository evaluation, separate from coordinator caches.
+#[derive(Debug)]
+pub(crate) struct ResidentEvaluation {
+    pub(crate) source_view: SourceView,
+    pub(crate) source_manifest: SourceManifest,
+    pub(crate) evaluation_key: EvaluationKey,
+    pub(crate) affected_snapshot: AffectedSnapshot,
+    pub(crate) psm: Arc<ProgramSemanticModel>,
+    pub(crate) semantic: Arc<SemanticAnalysisEvaluation>,
+    pub(crate) state_effect: Arc<StateEffectAnalysisEvaluation>,
+    pub(crate) canonical_artifacts: BTreeMap<String, String>,
+    pub(crate) audit: AuditResult,
+    pub(crate) dependencies: Vec<ProgramDependencyRead>,
+    pub(crate) execution_evidence_present: bool,
+}
+
+/// Coordinator-only owner preparation; syntax trees never enter reader handles.
+#[derive(Debug)]
+pub(crate) struct ResidentPreparation {
+    program: Option<ProgramSemanticPreparation>,
+    semantic: Option<SemanticAnalysisPreparation>,
+    state_effect: Option<StateEffectPreparation>,
+    accounted_bytes_by_owner: [usize; 3],
+}
+
+impl ResidentPreparation {
+    pub(crate) const fn has_program_preparation(&self) -> bool {
+        self.program.is_some()
+    }
+
+    pub(crate) fn accounted_resident_bytes(&self) -> usize {
+        self.accounted_bytes_by_owner
+            .iter()
+            .copied()
+            .fold(0, usize::saturating_add)
+    }
+
+    pub(crate) const fn accounted_bytes_by_owner(&self) -> [usize; 3] {
+        self.accounted_bytes_by_owner
+    }
+
+    pub(crate) fn cached_unit_cardinality(&self) -> usize {
+        self.unit_cardinality_by_owner()
+            .into_iter()
+            .fold(0, usize::saturating_add)
+    }
+
+    fn unit_cardinality_by_owner(&self) -> [usize; 3] {
+        [
+            self.program.as_ref().map_or(0, |program| {
+                program
+                    .retained_parse_files()
+                    .saturating_mul(2)
+                    .saturating_add(program.retained_bodies().saturating_mul(2))
+                    .saturating_add(program.retained_components())
+            }),
+            self.semantic
+                .as_ref()
+                .map_or(0, SemanticAnalysisPreparation::cached_round_cardinality),
+            self.state_effect
+                .as_ref()
+                .map_or(0, StateEffectPreparation::cached_round_cardinality),
+        ]
+    }
+
+    pub(crate) const fn complete_owner_preparation(&self) -> bool {
+        self.program.is_some() && self.semantic.is_some() && self.state_effect.is_some()
+    }
+
+    pub(crate) fn retain_within_limits(&mut self, max_bytes: usize, max_units: usize) -> [bool; 3] {
+        let mut evicted = [false; 3];
+        while self.accounted_resident_bytes() > max_bytes
+            || self.cached_unit_cardinality() > max_units
+        {
+            let units = self.unit_cardinality_by_owner();
+            let owner = (0..3)
+                .filter(|index| !evicted[*index])
+                .max_by_key(|index| {
+                    if self.cached_unit_cardinality() > max_units {
+                        (units[*index], self.accounted_bytes_by_owner[*index])
+                    } else {
+                        (self.accounted_bytes_by_owner[*index], units[*index])
+                    }
+                })
+                .expect("nonempty preparation exceeding its limits");
+            match owner {
+                0 => {
+                    self.program = None;
+                }
+                1 => {
+                    self.semantic = None;
+                }
+                2 => {
+                    self.state_effect = None;
+                }
+                _ => unreachable!("fixed owner inventory"),
+            }
+            // The allocation has been dropped, not discounted. Retained owners
+            // keep their complete original charges and their own proof checks.
+            self.accounted_bytes_by_owner[owner] = 0;
+            evicted[owner] = true;
+        }
+        evicted
+    }
+}
+
+/// Actual owner work and conservative reconstruction reasons for one request.
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub(crate) struct ResidentWork {
+    pub(crate) program: ProgramSemanticWork,
+    pub(crate) semantic: SemanticPreparationWork,
+    pub(crate) state_effect: StateEffectPreparationWork,
+    pub(crate) program_fallback: Option<ProgramPreparationFallback>,
+    pub(crate) phase_measurements: Vec<EvaluationPhaseMeasurement>,
+}
+
+impl ResidentWork {
+    pub(crate) fn full_reevaluation_required(&self) -> bool {
+        self.program_fallback.is_some()
+            || self.semantic.full_reevaluation_required
+            || self.state_effect.full_reevaluation_required
+    }
+
+    pub(crate) fn fallback_reasons(&self) -> Vec<String> {
+        self.program_fallback
+            .iter()
+            .map(|reason| format!("program:{}", reason.reason()))
+            .chain(
+                self.semantic
+                    .fallback_reasons
+                    .iter()
+                    .map(|reason| format!("semantic:{reason}")),
+            )
+            .chain(
+                self.state_effect
+                    .fallback_reasons
+                    .iter()
+                    .map(|reason| format!("state_effect:{reason}")),
+            )
+            .collect()
+    }
+}
+
+/// Evaluates a private immutable view without discovery or filesystem writes.
+pub(crate) fn prepare_resident_view(
+    root: &Path,
+    view: SourceView,
+    previous: Option<&ResidentPreparation>,
+    suite_execution: Option<&RustSuiteExecution>,
+) -> Result<(ResidentEvaluation, ResidentPreparation, ResidentWork), AuditError> {
+    let mut measurements = EvaluationPhaseRecorder::new();
+    let analysis = prepare_analysis_from_view(view)?;
+    measurements.record("source_preparation");
+    prepare_resident_analysis(root, analysis, previous, suite_execution, measurements)
+}
+
+fn prepare_resident_analysis(
+    root: &Path,
+    analysis: PreparedAnalysis,
+    previous: Option<&ResidentPreparation>,
+    suite_execution: Option<&RustSuiteExecution>,
+    mut measurements: EvaluationPhaseRecorder,
+) -> Result<(ResidentEvaluation, ResidentPreparation, ResidentWork), AuditError> {
+    fn finished_is_send_sync<T: Send + Sync>() {}
+    finished_is_send_sync::<ResidentEvaluation>();
+    let audit_inputs = prepare_audit_from_analysis(root, analysis.clone())?;
+    measurements.record("audit_inputs");
+    let PreparedCertificationStack {
+        stack,
+        preparation,
+        mut work,
+        dependencies,
+    } = compile_certification_stack_from_prepared(audit_inputs, previous, &mut measurements)?;
+    let evaluation_key = prepared_evaluation_key(&analysis, &stack.models.psm)?;
+    let affected_snapshot = build_affected_snapshot(
+        &analysis,
+        &stack.models.psm,
+        &stack.models.state_effect,
+        Some(&stack.semantic_conformance),
+    )?;
+    measurements.record("dependency_snapshot");
+    let canonical_artifacts = if let Some(execution) = suite_execution {
+        let bundle = certification_bundle_from_stack(&stack, execution.clone())?;
+        let mut projections = bundle.projections;
+        for (path, canonical) in [
+            (
+                "_info/evidence_graph.json",
+                bundle.products.evidence_graph.to_json_pretty(),
+            ),
+            (
+                "_info/certification.json",
+                bundle.products.certification.to_json_pretty(),
+            ),
+            (
+                "_info/verified_behavioral_flow_graph.json",
+                bundle.products.verified_bfg.to_json_pretty(),
+            ),
+        ] {
+            projections.insert(path.into(), canonical.map_err(CertificationError::Json)?);
+        }
+        projections
+    } else {
+        certification_artifacts(&stack)?.1
+    };
+    measurements.record("canonical_serialization");
+    work.phase_measurements = measurements.measurements;
+    let AnalysisModels {
+        psm,
+        semantic,
+        state_effect,
+        ..
+    } = stack.models;
+    Ok((
+        ResidentEvaluation {
+            source_view: stack.observed_files,
+            source_manifest: analysis.source_manifest,
+            evaluation_key,
+            affected_snapshot,
+            psm: Arc::new(psm),
+            semantic: Arc::new(semantic),
+            state_effect: Arc::new(state_effect),
+            canonical_artifacts,
+            audit: stack.audit,
+            dependencies,
+            execution_evidence_present: suite_execution.is_some(),
+        },
+        preparation,
+        work,
+    ))
+}
+
+struct PreparedAnalysisModels {
+    models: AnalysisModels,
+    preparation: ResidentPreparation,
+    work: ResidentWork,
+    dependencies: Vec<ProgramDependencyRead>,
+}
+
 fn compile_analysis_models(
     prepared: &PreparedAudit,
     ccg: &ContractCoherencyGraph,
@@ -2783,26 +3147,62 @@ fn compile_analysis_models_from_observed(
     observation_input: ImplementationObservationInput,
     observed: &ObservedImplementation,
 ) -> Result<AnalysisModels, AuditError> {
-    let psm = compile_psm_from_observed(prepared, ccg, observation_input, observed)?;
+    let mut measurements = EvaluationPhaseRecorder::new();
+    compile_analysis_models_prepared_from_observed(
+        prepared,
+        ccg,
+        observation_input,
+        observed,
+        None,
+        &mut measurements,
+    )
+    .map(|result| result.models)
+}
+
+fn compile_analysis_models_prepared_from_observed(
+    prepared: &PreparedAudit,
+    ccg: &ContractCoherencyGraph,
+    observation_input: ImplementationObservationInput,
+    observed: &ObservedImplementation,
+    previous: Option<&ResidentPreparation>,
+    measurements: &mut EvaluationPhaseRecorder,
+) -> Result<PreparedAnalysisModels, AuditError> {
+    let program = prepare_program_semantics(
+        &program_input_from_observed(prepared, ccg, observation_input, observed),
+        previous.and_then(|value| value.program.as_ref()),
+    )
+    .map_err(AuditError::ProgramSemantics)?;
+    let psm = program.model;
+    measurements.record("program_semantics");
     let sources = function_contract_sources(ccg, &prepared.observed_files)?;
     let contracts: ResolvedFunctionContracts =
         load_function_contracts(&psm, sources).map_err(AuditError::FunctionContracts)?;
-    let semantic = analyze_program_domains(&psm, &contracts, prepared.standard.bundle.edition())
-        .map_err(AuditError::SemanticAnalysis)?;
+    measurements.record("function_contracts");
+    let (semantic, semantic_preparation, semantic_work) = analyze_program_domains_prepared(
+        &psm,
+        &contracts,
+        prepared.standard.bundle.edition(),
+        previous.and_then(|value| value.semantic.as_ref()),
+    )
+    .map_err(AuditError::SemanticAnalysis)?;
+    measurements.record("semantic_domains");
     let state_sources = state_contract_sources(ccg, &prepared.observed_files)?;
     let state_contracts =
         load_state_contracts(&psm, state_sources).map_err(AuditError::StateContracts)?;
     let summary_catalog = operation_summary_catalog(&prepared.observed_files)?;
-    let state_effect = analyze_state_effects_with_summaries(
-        &psm,
-        &semantic,
-        &state_contracts,
-        &contracts,
-        prepared.standard.bundle.edition(),
-        &summary_catalog,
-        &BTreeMap::new(),
-    )
-    .map_err(AuditError::StateEffectAnalysis)?;
+    let (state_effect, state_preparation, state_work) =
+        analyze_state_effects_with_summaries_prepared(
+            &psm,
+            &semantic,
+            &state_contracts,
+            &contracts,
+            prepared.standard.bundle.edition(),
+            &summary_catalog,
+            &BTreeMap::new(),
+            previous.and_then(|value| value.state_effect.as_ref()),
+        )
+        .map_err(AuditError::StateEffectAnalysis)?;
+    measurements.record("state_effects");
     let policy =
         load_information_flow_policy(information_flow_policy_sources(&prepared.observed_files)?)
             .map_err(AuditError::InformationFlowPolicy)?;
@@ -2815,6 +3215,7 @@ fn compile_analysis_models_from_observed(
         prepared.standard.bundle.edition(),
     )
     .map_err(AuditError::InformationFlowAnalysis)?;
+    measurements.record("information_flow");
     let environment_sources = environment_contract_sources(ccg, &prepared.observed_files)?;
     let environment_contracts =
         load_environment_contracts(&psm, &state_contracts, &policy, environment_sources)
@@ -2829,12 +3230,37 @@ fn compile_analysis_models_from_observed(
         prepared.standard.bundle.edition(),
     )
     .map_err(AuditError::EnvironmentalAnalysis)?;
-    Ok(AnalysisModels {
-        psm,
-        semantic,
-        state_effect,
-        information_flow,
-        environmental,
+    measurements.record("environmental_semantics");
+    // Immutable preparation is charged once through the unchanged owner methods.
+    // Rechecking retention must not serialize all retained facts again.
+    let accounted_bytes_by_owner = [
+        program.preparation.accounted_resident_bytes(),
+        semantic_preparation.accounted_resident_bytes(),
+        state_preparation.accounted_resident_bytes(),
+    ];
+    measurements.record("preparation_accounting");
+    Ok(PreparedAnalysisModels {
+        models: AnalysisModels {
+            psm,
+            semantic,
+            state_effect,
+            information_flow,
+            environmental,
+        },
+        preparation: ResidentPreparation {
+            program: Some(program.preparation),
+            semantic: Some(semantic_preparation),
+            state_effect: Some(state_preparation),
+            accounted_bytes_by_owner,
+        },
+        work: ResidentWork {
+            program: program.work,
+            semantic: semantic_work,
+            state_effect: state_work,
+            program_fallback: program.fallback,
+            phase_measurements: Vec::new(),
+        },
+        dependencies: program.dependencies,
     })
 }
 
@@ -3181,6 +3607,8 @@ enum ProjectGovernanceState {
 #[derive(Clone)]
 struct PreparedAnalysis {
     observed_files: SourceView,
+    observation: RepositoryObservation,
+    observation_policy: ObservationPolicy,
     source_manifest: SourceManifest,
     source_identity: String,
     project_state: ProjectGovernanceState,
@@ -4018,16 +4446,39 @@ const fn projection_uses_standard(kind: ProjectionKind) -> bool {
 }
 
 fn prepare_analysis(root: &Path) -> Result<PreparedAnalysis, AuditError> {
-    let project = load_project_authority(root)?;
-    let observation = observe_repository_stably(root, &project.observation_policy)
-        .map_err(AuditError::Snapshot)?;
+    let (project, observation, observed_files) = capture_resident_source(root, None)?;
+    prepare_analysis_from_observed(project, observation, observed_files)
+}
+
+fn prepare_analysis_from_view(view: SourceView) -> Result<PreparedAnalysis, AuditError> {
+    validate_control_source_paths(&view)?;
+    let project = project_authority_from_view(&view)?;
+    let observation = RepositoryObservation::from_source_view(&view, &project.observation_policy)
+        .map_err(AuditError::ObservationPolicy)?;
+    let observed_files = if observation.files().len() == view.len() {
+        view
+    } else {
+        SourceView::from_bytes(
+            observation
+                .files()
+                .iter()
+                .map(|file| (file.path().to_owned(), view[file.path()].clone())),
+        )
+        .map_err(|error| AuditError::InputMismatch(error.to_string().into()))?
+    };
+    verify_project_view_binding(&project, &observed_files)?;
+    prepare_analysis_from_observed(project, observation, observed_files)
+}
+
+fn prepare_analysis_from_observed(
+    project: LoadedProjectAuthority,
+    observation: RepositoryObservation,
+    observed_files: SourceView,
+) -> Result<PreparedAnalysis, AuditError> {
     let source_manifest =
         SourceManifest::from_observation(&observation, &project.observation_policy)
             .map_err(|error| AuditError::InputMismatch(error.to_string().into()))?;
-    let observed_files = SourceView::from_bytes(read_observed_files(root, &observation)?)
-        .map_err(|error| AuditError::InputMismatch(error.to_string().into()))?;
     let standard = load_standard(
-        root,
         &observed_files,
         project.state == ProjectGovernanceState::Declared,
     )?;
@@ -4099,6 +4550,8 @@ fn prepare_analysis(root: &Path) -> Result<PreparedAnalysis, AuditError> {
     let source_identity = certification_source_digest(&observed_files);
     Ok(PreparedAnalysis {
         observed_files,
+        observation,
+        observation_policy: project.observation_policy,
         source_manifest,
         source_identity,
         project_state: project.state,
@@ -4114,8 +4567,174 @@ fn prepare_analysis(root: &Path) -> Result<PreparedAnalysis, AuditError> {
     })
 }
 
-fn load_project_authority(root: &Path) -> Result<LoadedProjectAuthority, AuditError> {
-    validate_control_namespace(root)?;
+/// Captures a fully revalidated actual source inventory without evaluating it.
+/// Rejects oversized source inventories before allocating whole file buffers.
+pub(crate) fn observe_resident_source_bounded(
+    root: &Path,
+    max_source_bytes: usize,
+    max_files: usize,
+) -> Result<(SourceView, SourceManifest), AuditError> {
+    let (project, observation, files) =
+        capture_resident_source(root, Some((max_source_bytes, max_files)))?;
+    let manifest = SourceManifest::from_observation(&observation, &project.observation_policy)
+        .map_err(|error| AuditError::InputMismatch(error.to_string().into()))?;
+    Ok((files, manifest))
+}
+
+fn capture_resident_source(
+    root: &Path,
+    limits: Option<(usize, usize)>,
+) -> Result<(LoadedProjectAuthority, RepositoryObservation, SourceView), AuditError> {
+    let bootstrap = load_project_authority(root, limits)?;
+    let observation = if let Some((max_source_bytes, max_files)) = limits {
+        let observation_limits = ObservationLimits {
+            max_files,
+            max_entries: max_files,
+            max_source_bytes: u64::try_from(max_source_bytes).unwrap_or(u64::MAX),
+            max_path_bytes: max_files
+                .checked_mul(512)
+                .ok_or_else(|| AuditError::InputMismatch("path inventory quota overflow".into()))?,
+        };
+        observe_repository_stably_bounded(root, &bootstrap.observation_policy, &observation_limits)
+    } else {
+        observe_repository_stably(root, &bootstrap.observation_policy)
+    }
+    .map_err(AuditError::Snapshot)?;
+    if let Some((max_source_bytes, max_files)) = limits {
+        let source_bytes = observation.files().iter().try_fold(0_u64, |sum, file| {
+            sum.checked_add(file.size())
+                .ok_or_else(|| AuditError::InputMismatch("source byte count overflow".into()))
+        })?;
+        if source_bytes > u64::try_from(max_source_bytes).unwrap_or(u64::MAX)
+            || observation.files().len() > max_files
+        {
+            return Err(AuditError::ResidentSourceLimit {
+                source_bytes,
+                file_count: observation.files().len(),
+                max_source_bytes,
+                max_files,
+            });
+        }
+    }
+    let files = SourceView::from_bytes(read_observed_files(root, &observation)?)
+        .map_err(|error| AuditError::InputMismatch(error.to_string().into()))?;
+    let project = project_authority_from_view(&files)?;
+    if bootstrap.state != project.state
+        || bootstrap.detail != project.detail
+        || bootstrap.observation_policy != project.observation_policy
+        || bootstrap.document.as_ref().map(|document| &document.bytes)
+            != project.document.as_ref().map(|document| &document.bytes)
+    {
+        return Err(AuditError::InputMismatch(PROJECT_CONFIGURATION_PATH.into()));
+    }
+    verify_project_view_binding(&project, &files)?;
+    Ok((project, observation, files))
+}
+
+fn verify_project_view_binding(
+    project: &LoadedProjectAuthority,
+    files: &SourceView,
+) -> Result<(), AuditError> {
+    if let Some(document) = &project.document
+        && files.bytes(&document.path) != Some(document.bytes.as_slice())
+    {
+        return Err(AuditError::InputMismatch(document.path.clone().into()));
+    }
+    Ok(())
+}
+
+fn project_authority_from_view(files: &SourceView) -> Result<LoadedProjectAuthority, AuditError> {
+    let fallback_policy =
+        || ObservationPolicy::new([".git", EVIDENCE_ROOT]).map_err(AuditError::ObservationPolicy);
+    if files.contains_key(LEGACY_PROJECT_CONFIGURATION_PATH) {
+        return Ok(LoadedProjectAuthority {
+            state: ProjectGovernanceState::Invalid,
+            detail: Some(if files.contains_key(PROJECT_CONFIGURATION_PATH) {
+                "dual project configuration authority is invalid".into()
+            } else {
+                format!(
+                    "{LEGACY_PROJECT_CONFIGURATION_PATH} requires explicit migration to {PROJECT_CONFIGURATION_PATH}"
+                )
+            }),
+            document: None,
+            configuration: None,
+            observation_policy: fallback_policy()?,
+        });
+    }
+    let Some(bytes) = files.get(PROJECT_CONFIGURATION_PATH) else {
+        return Ok(LoadedProjectAuthority {
+            state: ProjectGovernanceState::Absent,
+            detail: Some(format!("{PROJECT_CONFIGURATION_PATH} is absent")),
+            document: None,
+            configuration: None,
+            observation_policy: fallback_policy()?,
+        });
+    };
+    let document = LoadedDocument {
+        path: PROJECT_CONFIGURATION_PATH.into(),
+        bytes: bytes.clone(),
+    };
+    match document
+        .source()
+        .map_err(|error| error.to_string())
+        .and_then(|source| {
+            ProjectConfiguration::from_json_str(source).map_err(|error| error.to_string())
+        }) {
+        Ok(configuration) => Ok(LoadedProjectAuthority {
+            state: ProjectGovernanceState::Declared,
+            detail: None,
+            document: Some(document),
+            observation_policy: control_observation_policy(&configuration)?,
+            configuration: Some(configuration),
+        }),
+        Err(detail) => Ok(LoadedProjectAuthority {
+            state: ProjectGovernanceState::Invalid,
+            detail: Some(detail),
+            document: Some(document),
+            configuration: None,
+            observation_policy: fallback_policy()?,
+        }),
+    }
+}
+
+fn validate_control_source_paths(files: &SourceView) -> Result<(), AuditError> {
+    let layout = ControlLayout::standard();
+    for path in files.keys() {
+        let root_name = path.split('/').next().unwrap_or(path);
+        if root_name.eq_ignore_ascii_case("__fortress") && root_name != "__fortress" {
+            return Err(AuditError::ProjectAuthority(
+                format!("control root `{root_name}` must use exact spelling `__fortress`").into(),
+            ));
+        }
+        if root_name != "__fortress" {
+            continue;
+        }
+        if layout
+            .resolve(path)
+            .is_none_or(|entry| entry.role() == ControlRole::Unrecognized)
+        {
+            return Err(AuditError::ProjectAuthority(
+                format!("unregistered control file `{path}`").into(),
+            ));
+        }
+        let mut directory = path.rsplit_once('/').map(|(parent, _)| parent);
+        while let Some(parent) = directory {
+            if !layout.allows_directory(parent) {
+                return Err(AuditError::ProjectAuthority(
+                    format!("unregistered control directory `{parent}`").into(),
+                ));
+            }
+            directory = parent.rsplit_once('/').map(|(ancestor, _)| ancestor);
+        }
+    }
+    Ok(())
+}
+
+fn load_project_authority(
+    root: &Path,
+    limits: Option<(usize, usize)>,
+) -> Result<LoadedProjectAuthority, AuditError> {
+    validate_control_namespace(root, limits)?;
     let project_path = root.join(PROJECT_CONFIGURATION_PATH);
     let legacy_path = root.join(LEGACY_PROJECT_CONFIGURATION_PATH);
     let current_exists = project_path.is_file();
@@ -4137,7 +4756,8 @@ fn load_project_authority(root: &Path) -> Result<LoadedProjectAuthority, AuditEr
             observation_policy: fallback_policy()?,
         });
     }
-    match fs::read(&project_path) {
+    let read = read_project_authority(&project_path, limits)?;
+    match read {
         Ok(bytes) => {
             let document = LoadedDocument {
                 path: PROJECT_CONFIGURATION_PATH.into(),
@@ -4181,6 +4801,55 @@ fn load_project_authority(root: &Path) -> Result<LoadedProjectAuthority, AuditEr
     }
 }
 
+fn read_project_authority(
+    project_path: &Path,
+    limits: Option<(usize, usize)>,
+) -> Result<std::io::Result<Vec<u8>>, AuditError> {
+    let read = if let Some((max_source_bytes, max_files)) = limits {
+        match fs::File::open(project_path) {
+            Ok(input) => {
+                let size = input
+                    .metadata()
+                    .map_err(|source| AuditError::Io {
+                        path: project_path.to_path_buf(),
+                        source,
+                    })?
+                    .len();
+                let maximum = u64::try_from(max_source_bytes).unwrap_or(u64::MAX);
+                if size > maximum || max_files == 0 {
+                    return Err(AuditError::ResidentSourceLimit {
+                        source_bytes: size,
+                        file_count: 1,
+                        max_source_bytes,
+                        max_files,
+                    });
+                }
+                let mut bytes = Vec::new();
+                input
+                    .take(maximum.saturating_add(1))
+                    .read_to_end(&mut bytes)
+                    .map_err(|source| AuditError::Io {
+                        path: project_path.to_path_buf(),
+                        source,
+                    })?;
+                if bytes.len() > max_source_bytes {
+                    return Err(AuditError::ResidentSourceLimit {
+                        source_bytes: u64::try_from(bytes.len()).unwrap_or(u64::MAX),
+                        file_count: 1,
+                        max_source_bytes,
+                        max_files,
+                    });
+                }
+                Ok(bytes)
+            }
+            Err(source) => Err(source),
+        }
+    } else {
+        fs::read(project_path)
+    };
+    Ok(read)
+}
+
 fn control_observation_policy(
     configuration: &ProjectConfiguration,
 ) -> Result<ObservationPolicy, AuditError> {
@@ -4194,7 +4863,27 @@ fn control_observation_policy(
     .map_err(AuditError::ObservationPolicy)
 }
 
-fn validate_control_namespace(root: &Path) -> Result<(), AuditError> {
+fn validate_control_namespace(
+    root: &Path,
+    limits: Option<(usize, usize)>,
+) -> Result<(), AuditError> {
+    let mut observed_entries = 0_usize;
+    let mut admit_entry = || {
+        observed_entries = observed_entries
+            .checked_add(1)
+            .ok_or_else(|| AuditError::InputMismatch("control entry count overflow".into()))?;
+        if let Some((max_source_bytes, max_files)) = limits
+            && observed_entries > max_files
+        {
+            return Err(AuditError::ResidentSourceLimit {
+                source_bytes: 0,
+                file_count: observed_entries,
+                max_source_bytes,
+                max_files,
+            });
+        }
+        Ok(())
+    };
     for entry in fs::read_dir(root).map_err(|source| AuditError::Io {
         path: root.to_path_buf(),
         source,
@@ -4203,6 +4892,7 @@ fn validate_control_namespace(root: &Path) -> Result<(), AuditError> {
             path: root.to_path_buf(),
             source,
         })?;
+        admit_entry()?;
         let name = entry.file_name();
         let name = name.to_string_lossy();
         if name.eq_ignore_ascii_case("__fortress") && name != "__fortress" {
@@ -4232,6 +4922,7 @@ fn validate_control_namespace(root: &Path) -> Result<(), AuditError> {
                 path: directory.clone(),
                 source,
             })?;
+            admit_entry()?;
             let path = entry.path();
             let metadata = fs::symlink_metadata(&path).map_err(|source| AuditError::Io {
                 path: path.clone(),
@@ -4300,7 +4991,7 @@ fn prepare_audit(root: &Path) -> Result<PreparedAudit, AuditError> {
 }
 
 fn prepare_audit_from_analysis(
-    root: &Path,
+    _root: &Path,
     analysis: PreparedAnalysis,
 ) -> Result<PreparedAudit, AuditError> {
     let project_document = analysis.project_document.ok_or_else(|| {
@@ -4356,8 +5047,17 @@ fn prepare_audit_from_analysis(
             .iter()
             .map(|document| (document.path.as_str(), document.bytes.as_slice())),
     );
-    let snapshot = build_repository_snapshot(root, &policy, ccg, &standard.bundle, &documents)
-        .map_err(AuditError::Snapshot)?;
+    if policy != analysis.observation_policy {
+        return Err(AuditError::InputMismatch(PROJECT_CONFIGURATION_PATH.into()));
+    }
+    let snapshot = build_repository_snapshot_from_observation(
+        &analysis.observation,
+        &policy,
+        ccg,
+        &standard.bundle,
+        &documents,
+    )
+    .map_err(AuditError::Snapshot)?;
     verify_loaded_inputs(
         &snapshot,
         std::iter::once(&project_document).chain(contract_documents.iter()),
@@ -4575,15 +5275,16 @@ impl LoadedDocument {
     }
 }
 
-fn read_document(root: &Path, path: &str) -> Result<LoadedDocument, AuditError> {
-    let absolute = root.join(path);
-    let bytes = fs::read(&absolute).map_err(|source| AuditError::Io {
-        path: absolute,
-        source,
-    })?;
+fn observed_document(
+    files: &BTreeMap<String, Vec<u8>>,
+    path: &str,
+) -> Result<LoadedDocument, AuditError> {
+    let bytes = files
+        .get(path)
+        .ok_or_else(|| AuditError::InputMismatch(path.into()))?;
     Ok(LoadedDocument {
         path: path.into(),
-        bytes,
+        bytes: bytes.clone(),
     })
 }
 
@@ -4595,10 +5296,37 @@ fn read_observed_files(
         .files()
         .iter()
         .map(|file| {
-            let document = read_document(root, file.path())?;
+            let document = read_observed_file(root, file)?;
             Ok((document.path, document.bytes))
         })
         .collect()
+}
+
+fn read_observed_file(root: &Path, file: &ObservedFile) -> Result<LoadedDocument, AuditError> {
+    let absolute = root.join(file.path());
+    let input = fs::File::open(&absolute).map_err(|source| AuditError::Io {
+        path: absolute.clone(),
+        source,
+    })?;
+    let mut bytes = Vec::new();
+    input
+        .take(file.size().saturating_add(1))
+        .read_to_end(&mut bytes)
+        .map_err(|source| AuditError::Io {
+            path: absolute,
+            source,
+        })?;
+    let document = LoadedDocument {
+        path: file.path().into(),
+        bytes,
+    };
+    let size = u64::try_from(document.bytes.len())
+        .map_err(|_| AuditError::InputMismatch(file.path().into()))?;
+    let digest = format!("sha256:{:x}", Sha256::digest(&document.bytes));
+    if size != file.size() || digest != file.sha256() {
+        return Err(AuditError::InputMismatch(file.path().into()));
+    }
+    Ok(document)
 }
 
 const INSTALLED_STANDARD_RULE_SOURCES: &[(&str, &str)] = &[
@@ -4697,7 +5425,6 @@ const INSTALLED_STANDARD_RULE_SOURCES: &[(&str, &str)] = &[
 ];
 
 fn load_standard(
-    root: &Path,
     observed_files: &BTreeMap<String, Vec<u8>>,
     subject_authority_enabled: bool,
 ) -> Result<LoadedStandard, AuditError> {
@@ -4728,7 +5455,7 @@ fn load_standard(
             subject_bound: false,
         });
     };
-    let manifest = read_document(root, &manifest_path)?;
+    let manifest = observed_document(observed_files, &manifest_path)?;
     let manifest_source = manifest.source()?;
     crate::wire::reject_duplicate_json_keys(manifest_source)
         .map_err(AuditError::StandardManifestIndex)?;
@@ -4737,7 +5464,7 @@ fn load_standard(
     let rules: Vec<LoadedDocument> = index
         .rules
         .iter()
-        .map(|relative| read_document(root, relative))
+        .map(|relative| observed_document(observed_files, relative))
         .collect::<Result<_, _>>()?;
     let sources: Vec<(&str, &str)> = rules
         .iter()
@@ -4820,6 +5547,17 @@ fn verify_loaded_inputs<'a>(
 /// Explains why repository audit construction could not complete.
 #[derive(Debug)]
 pub enum AuditError {
+    /// Stabilized source facts exceed the caller's operational capture limits.
+    ResidentSourceLimit {
+        /// Source bytes observed at capture preflight.
+        source_bytes: u64,
+        /// Source files observed at capture preflight.
+        file_count: usize,
+        /// Caller-authorized maximum source buffer bytes.
+        max_source_bytes: usize,
+        /// Caller-authorized maximum source file count.
+        max_files: usize,
+    },
     /// A required document could not be read.
     Io {
         /// Filesystem path used for the read.
@@ -4900,6 +5638,7 @@ pub enum AuditError {
 impl Display for AuditError {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
         match self {
+            limit @ Self::ResidentSourceLimit { .. } => fmt_source_limit(limit, formatter),
             Self::Io { path, source } => {
                 write!(formatter, "failed to read {}: {source}", path.display())
             }
@@ -4997,6 +5736,22 @@ impl Display for AuditError {
             }
         }
     }
+}
+
+fn fmt_source_limit(error: &AuditError, formatter: &mut Formatter<'_>) -> fmt::Result {
+    let AuditError::ResidentSourceLimit {
+        source_bytes,
+        file_count,
+        max_source_bytes,
+        max_files,
+    } = error
+    else {
+        return Err(fmt::Error);
+    };
+    write!(
+        formatter,
+        "resident source RESOURCE_LIMIT: {source_bytes} bytes/{file_count} files exceeds {max_source_bytes} bytes/{max_files} files"
+    )
 }
 
 impl Error for AuditError {}

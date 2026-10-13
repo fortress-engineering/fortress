@@ -21,3 +21,7 @@ A violated assertion or fixture-loading failure fails the test target and surfac
 ### [`repository_observation.rs`](../_code/repository_observation.rs)
 
 Materializes disposable fixture repositories and verifies deterministic observation facts and boundaries.
+
+### [`bounded_observation.rs`](../_code/bounded_observation.rs)
+
+Verifies R04-001 through R04-003: bounded and ordinary canonical equality for admitted inputs, source/file admission rejection before unbounded reads, and total-entry/path admission including empty-directory inventories. Resident-enabled retained-input behavior is additionally exercised through the production composition lifecycle controls.

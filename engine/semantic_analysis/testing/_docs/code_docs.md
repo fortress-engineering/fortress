@@ -21,3 +21,7 @@ Any incorrect domain operation, missed supported contradiction, false proof, own
 ### [`semantic_analysis.rs`](../_code/semantic_analysis.rs)
 
 Exercises the complete Semantic Analysis Feature across contract, lattice, flow, partial-operation, uncertainty, deterministic serialization, and live Fortress cases.
+
+### [`semantic_preparation.rs`](../_code/semantic_preparation.rs)
+
+Verifies R05-001 through R05-005: actual unchanged-round replay, reverse dependent rebuilding with disconnected reuse, extension through changed global stops and widening, conservative reconstruction after call/symbol changes, and bounded retention with cold-identical facts.

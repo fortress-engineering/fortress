@@ -91,4 +91,16 @@ impl EvaluationKey {
     pub fn program_context_digest(&self) -> &str {
         &self.program_context_digest
     }
+
+    /// Returns the exact selected authority component.
+    #[must_use]
+    pub fn authority_binding_digest(&self) -> &str {
+        &self.authority_binding_digest
+    }
+
+    /// Returns the exact immutable source-manifest component.
+    #[must_use]
+    pub fn source_manifest_digest(&self) -> &str {
+        &self.source_manifest_digest
+    }
 }

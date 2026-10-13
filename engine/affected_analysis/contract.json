@@ -72,6 +72,16 @@
         "AF-AFFECTED-ANALYSIS-0001-R03",
         "AF-AFFECTED-ANALYSIS-0001-R04"
       ]
+    },
+    {
+      "id": "GUA-RESIDENT-DEPENDENCY-COMPLETENESS",
+      "subject": {
+        "kind": "capability",
+        "id": "CAP-AFFECTED-ANALYSIS"
+      },
+      "requirements": [
+        "AF-AFFECTED-ANALYSIS-0001-R05"
+      ]
     }
   ],
   "features": [
@@ -114,6 +124,18 @@
           "tests": [
             "T-AF-AFFECTED-ANALYSIS-0001-R04-001",
             "T-AF-AFFECTED-ANALYSIS-0001-R04-002"
+          ]
+        },
+        {
+          "id": "AF-AFFECTED-ANALYSIS-0001-R05",
+          "statement": "Affected Analysis validates neutral owner dependency reads, including unsuccessful name/type/import/destructor queries, against current PSM identities and complete exact input descriptors, distinguishes selected authority from retained availability, computes current reverse invalidation deterministically, and requires full reconstruction for incomplete, unsupported or changed lookup authority without granting semantic reuse authority to the invalidation index.",
+          "tests": [
+            "T-AF-AFFECTED-ANALYSIS-0001-R05-001",
+            "T-AF-AFFECTED-ANALYSIS-0001-R05-002",
+            "T-AF-AFFECTED-ANALYSIS-0001-R05-003",
+            "T-AF-AFFECTED-ANALYSIS-0001-R05-004",
+            "T-AF-AFFECTED-ANALYSIS-0001-R05-005",
+            "T-AF-AFFECTED-ANALYSIS-0001-R05-006"
           ]
         }
       ]

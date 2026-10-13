@@ -25,3 +25,7 @@ Verifies contract ownership, typestate behavior, refined operation classificatio
 ### [`operation_summary.rs`](../_code/operation_summary.rs)
 
 Verifies exact-context effect authority, callback and destructor premises, conflict rejection, disclosed assumptions, unsupported coverage, and the retained comparison of authored, source-derived, and qualified hybrid summaries. The Standard public provider supplies the installed catalog; the comparison fixture is directly owned Testing Data.
+
+### [`effect_preparation.rs`](../_code/effect_preparation.rs)
+
+Verifies R07-001 through R07-007: direct-seed and closure replay; exact witness and reverse-dependency rebuilding; cycles and witness budgets, including converging unequal paths, repeated call sites, source-order variants and production/test/unknown execution provenance checked against the independent unprepared producer; conservative topology/inventory fallback; bounded payload retention; current authority rebinding after unrelated catalog edits; and whole-PSM primitive-premise refresh with cold/prepared rejection of stale, malformed, absent, nonunit or nonempty reserved proof claims. Nonreserved caller-established references remain accepted under the ordinary summary authority boundary.

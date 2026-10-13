@@ -77,3 +77,5 @@ Supplies causal effect and capability consequences that propagate through proven
 ## Guarantees
 
 Reuse is accepted only when generator identity, semantic-version identity, complete dependency bindings, descriptor bytes, artifact bytes, and content digest all verify. Missing, stale, or invalid material never becomes current evidence, and removing the entire cache changes runtime only.
+
+A neutral resident dependency index consumes complete owner query traces and composition-supplied resolved input roles, preserving unsuccessful lookups. It binds current PSM/input identities and reports deterministic reverse invalidation or explicit full reconstruction. Retained evidence availability remains separate from selected authority. The index cannot authorize semantic-owner reuse or reinterpret Project policy. Parent-local R05 controls verify the boundary.

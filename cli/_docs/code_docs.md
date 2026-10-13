@@ -8,6 +8,8 @@ Turn implemented Engine behavior into validated native command execution and det
 
 The native entrypoint delegates arguments to the CLI library, which resolves the command registry, validates options, invokes Engine behavior, renders the selected format, and returns a process status. Local certification runs the unfiltered Rust suite with an absolute Cargo target outside the governed repository, then emits content-addressed evidence for lightweight hosted freshness/stamp verification.
 
+The local issuer builds the CLI and runs an exact-byte copy in owned staging, leaving its compiler target available to the complete workspace/all-target/all-feature suite. The suite executes afresh; only Cargo's source, toolchain, dependency, feature and configuration fingerprinted compilation outputs can be reused. Direct execution from inside the compiler target retains an isolated child target to avoid replacing the running Windows image. Existing target paths are resolved before the repository boundary and running-image checks.
+
 ## State
 
 Command execution is process-local; repository audit state is loaded for one invocation and no persistent job state is created.

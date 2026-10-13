@@ -1,8 +1,10 @@
 //! Snapshot-bound Rust translation into language-neutral PSM facts.
 
+use std::cell::RefCell;
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::path::Path;
+use std::rc::Rc;
 use std::sync::LazyLock;
 
 use proc_macro2::Span;
@@ -27,15 +29,16 @@ use super::{
     ExecutableSymbol, ExecutableSymbolKind, ExecutionProvenance, FileCoverageRecord,
     ImplResolutionState, InterfaceType, MutationKind, NominalField, NominalType, NominalTypeKind,
     NominalVariant, OperationOutcome, PlaceResolutionState, ProgramBody, ProgramCall,
-    ProgramContext, ProgramExpression, ProgramImpl, ProgramImplKind, ProgramInputRole,
-    ProgramMatchArm, ProgramMutation, ProgramPackage, ProgramPackageContext, ProgramParameter,
-    ProgramPattern, ProgramPlace, ProgramProvenance, ProgramReceiver, ProgramSemanticError,
-    ProgramSemanticInput, ProgramSourceInput, ProgramSourceLocation, ProgramStatement,
-    ProgramTarget, ProgramType, RUST_PROGRAM_ANALYZER_ID, ResolutionAuthority, RustProgramFacts,
-    SemanticType, StateRead, SymbolBodyState, SymbolClassification, SymbolQualifiers,
-    SymbolVisibility, SyntacticOperation, TransferResolutionState, TransformationKind,
-    TypeResolution, TypeTransformation, ValueEndpoint, ValueTransfer, ValueTransferKind,
-    canonical_fact_id,
+    ProgramContext, ProgramDependencyKind, ProgramDependencyRead, ProgramDependencyResult,
+    ProgramExpression, ProgramImpl, ProgramImplKind, ProgramInputRole, ProgramMatchArm,
+    ProgramMutation, ProgramPackage, ProgramPackageContext, ProgramParameter, ProgramPattern,
+    ProgramPlace, ProgramPreparationFallback, ProgramProvenance, ProgramReceiver,
+    ProgramSemanticError, ProgramSemanticInput, ProgramSemanticWork, ProgramSourceInput,
+    ProgramSourceLocation, ProgramStatement, ProgramTarget, ProgramType, RUST_PROGRAM_ANALYZER_ID,
+    ResolutionAuthority, RustProgramFacts, SemanticType, StateRead, SymbolBodyState,
+    SymbolClassification, SymbolQualifiers, SymbolVisibility, SyntacticOperation,
+    TransferResolutionState, TransformationKind, TypeResolution, TypeTransformation, ValueEndpoint,
+    ValueTransfer, ValueTransferKind, canonical_fact_id,
 };
 
 const RUST_SIGNATURE_CATALOG_SOURCE: &str = include_str!("../_data/rust_signature_catalog_v1.json");
@@ -179,9 +182,17 @@ struct FunctionInterface {
     lifetimes: Vec<String>,
 }
 
+#[derive(Clone)]
+struct TypeContribution {
+    semantic: SemanticType,
+    spelling: String,
+}
+
 #[derive(Default)]
 struct TypeRegistry {
     types: BTreeMap<String, (SemanticType, BTreeSet<String>)>,
+    contributions: Vec<TypeContribution>,
+    recorder: DependencyRecorder,
 }
 
 impl TypeRegistry {
@@ -198,7 +209,8 @@ impl TypeRegistry {
         aliases: &BTreeMap<String, Vec<String>>,
     ) -> InterfaceType {
         let spelling = syntax.to_token_stream().to_string();
-        let semantic = resolve_semantic_aliases(normalize_type(syntax, generics), aliases);
+        let semantic =
+            resolve_semantic_aliases(normalize_type(syntax, generics), aliases, &self.recorder);
         self.register_semantic(semantic, spelling)
     }
 
@@ -209,6 +221,10 @@ impl TypeRegistry {
     ) -> InterfaceType {
         let spelling = spelling.into();
         let id = canonical_fact_id("type", &semantic);
+        self.contributions.push(TypeContribution {
+            semantic: semantic.clone(),
+            spelling: spelling.clone(),
+        });
         let resolution = if matches!(semantic, SemanticType::Unknown { .. }) {
             TypeResolution::Unsupported
         } else {
@@ -222,6 +238,29 @@ impl TypeRegistry {
         InterfaceType::new(id, spelling, resolution)
     }
 
+    fn semantic(&self, id: &str) -> Option<&SemanticType> {
+        let value = self.types.get(id).map(|(semantic, _)| semantic);
+        self.recorder.record(
+            ProgramDependencyKind::Type,
+            format!("type:{id}"),
+            value.map_or(ProgramDependencyResult::Unresolved, |_| {
+                ProgramDependencyResult::Resolved(vec![id.into()])
+            }),
+        );
+        value
+    }
+
+    fn take_contributions(&mut self) -> Vec<TypeContribution> {
+        std::mem::take(&mut self.contributions)
+    }
+
+    fn replay(&mut self, contributions: &[TypeContribution]) {
+        for contribution in contributions {
+            self.register_semantic(contribution.semantic.clone(), contribution.spelling.clone());
+        }
+        self.contributions.clear();
+    }
+
     fn finish(self) -> Vec<ProgramType> {
         self.types
             .into_iter()
@@ -232,10 +271,203 @@ impl TypeRegistry {
     }
 }
 
+#[derive(Clone, Default)]
+struct DependencyRecorder(Rc<RefCell<DependencyRecording>>);
+
+#[derive(Default)]
+struct DependencyRecording {
+    source_path: String,
+    caller: Option<String>,
+    reads: Vec<ProgramDependencyRead>,
+}
+
+impl DependencyRecorder {
+    fn begin(&self, path: &str, caller: Option<&str>) {
+        let mut recording = self.0.borrow_mut();
+        recording.source_path = path.into();
+        recording.caller = caller.map(str::to_owned);
+        recording.reads.clear();
+    }
+
+    fn record(&self, kind: ProgramDependencyKind, query: String, result: ProgramDependencyResult) {
+        let mut recording = self.0.borrow_mut();
+        let read = ProgramDependencyRead {
+            source_path: recording.source_path.clone(),
+            caller: recording.caller.clone(),
+            kind,
+            query,
+            result,
+        };
+        recording.reads.push(read);
+    }
+
+    fn finish(&self) -> Vec<ProgramDependencyRead> {
+        let mut reads = std::mem::take(&mut self.0.borrow_mut().reads);
+        reads.sort();
+        reads.dedup();
+        reads
+    }
+}
+
+#[derive(Clone)]
+struct ParsedSource {
+    bytes: Vec<u8>,
+    syntax: syn::File,
+}
+
+struct ParsePreparation<'a> {
+    previous: Option<&'a PreparedRust>,
+    sources: BTreeMap<String, Rc<ParsedSource>>,
+    parsed_files: usize,
+    reused_files: usize,
+}
+
+impl ParsePreparation<'_> {
+    fn source(
+        &mut self,
+        path: &str,
+        bytes: &[u8],
+    ) -> Result<Rc<ParsedSource>, ProgramSemanticError> {
+        if let Some(source) = self.sources.get(path) {
+            return Ok(Rc::clone(source));
+        }
+        let source = if let Some(source) = self
+            .previous
+            .and_then(|prepared| prepared.sources.get(path))
+            .filter(|source| source.bytes == bytes)
+        {
+            self.reused_files += 1;
+            Rc::clone(source)
+        } else {
+            let syntax = parse_rust(path, rust_source(path, bytes)?)?;
+            self.parsed_files += 1;
+            Rc::new(ParsedSource {
+                bytes: bytes.to_vec(),
+                syntax,
+            })
+        };
+        self.sources.insert(path.into(), Rc::clone(&source));
+        Ok(source)
+    }
+}
+
+#[derive(Clone, Default)]
+struct DeclarationUnit {
+    contexts: Vec<SourceContext>,
+    symbols: Vec<ExecutableSymbol>,
+    nominal_types: Vec<NominalType>,
+    impls: Vec<ProgramImpl>,
+    bodies: Vec<BodyFact>,
+    transfers: Vec<ValueTransfer>,
+    reexports: BTreeMap<ReexportKey, Vec<String>>,
+    types: Vec<TypeContribution>,
+    dependencies: Vec<ProgramDependencyRead>,
+}
+
+#[derive(Clone)]
+struct BodyUnit {
+    body: ProgramBody,
+    raw_calls: Vec<RawCall>,
+    inventory: Vec<SyntacticOperation>,
+    transfers: Vec<ValueTransfer>,
+    transformations: Vec<TypeTransformation>,
+    reads: Vec<StateRead>,
+    mutations: Vec<ProgramMutation>,
+    types: Vec<TypeContribution>,
+    iterations: usize,
+    dependencies: Vec<ProgramDependencyRead>,
+}
+
+#[derive(Clone)]
+struct CallerUnit {
+    calls: Vec<ProgramCall>,
+    inventory: Vec<SyntacticOperation>,
+    transfers: Vec<ValueTransfer>,
+    dependencies: Vec<ProgramDependencyRead>,
+}
+
+/// Coordinator-local syntax and fact contributions. Raw parser spans are never
+/// transferred to immutable readers or made Send through an unsafe assertion.
+#[derive(Clone)]
+pub(super) struct PreparedRust {
+    sources: BTreeMap<String, Rc<ParsedSource>>,
+    declarations: BTreeMap<String, Rc<DeclarationUnit>>,
+    bodies: BTreeMap<String, Rc<BodyUnit>>,
+    callers: BTreeMap<String, Rc<CallerUnit>>,
+    input_digests: BTreeMap<String, String>,
+    context_digest: String,
+    ownership_digest: String,
+    fixed_point_iterations: usize,
+}
+
+impl PreparedRust {
+    pub(super) fn retained_parse_files(&self) -> usize {
+        self.sources.len()
+    }
+    pub(super) fn retained_bodies(&self) -> usize {
+        self.bodies.len()
+    }
+    pub(super) fn fixed_point_iterations(&self) -> usize {
+        self.fixed_point_iterations
+    }
+
+    /// Operational retention charge, including source storage, parser/declaration
+    /// reserves and owned fact buffers. It is an estimate rather than an RSS cap;
+    /// qualification measures process peak memory separately.
+    pub(super) fn accounted_resident_bytes(&self) -> usize {
+        let source_charge = self.sources.values().fold(0usize, |charge, source| {
+            charge
+                .saturating_add(source.bytes.capacity().saturating_mul(128))
+                .saturating_add(4096)
+        });
+        let body_charge = self.bodies.values().fold(0usize, |charge, body| {
+            let facts = serde_json::to_vec(&(
+                &body.body,
+                &body.inventory,
+                &body.transfers,
+                &body.transformations,
+                &body.reads,
+                &body.mutations,
+            ))
+            .expect("retained body facts serialize")
+            .len();
+            charge
+                .saturating_add(facts.saturating_mul(8))
+                .saturating_add(
+                    body.raw_calls
+                        .capacity()
+                        .saturating_mul(std::mem::size_of::<RawCall>())
+                        .saturating_mul(8),
+                )
+                .saturating_add(body.dependencies.len().saturating_mul(1024))
+        });
+        let caller_charge = self.callers.values().fold(0usize, |charge, caller| {
+            let facts = serde_json::to_vec(&(&caller.calls, &caller.inventory, &caller.transfers))
+                .expect("retained caller facts serialize")
+                .len();
+            charge
+                .saturating_add(facts.saturating_mul(8))
+                .saturating_add(caller.dependencies.len().saturating_mul(1024))
+        });
+        source_charge
+            .saturating_add(body_charge)
+            .saturating_add(caller_charge)
+    }
+}
+
+pub(super) struct PreparedRustResult {
+    pub(super) facts: RustProgramFacts,
+    pub(super) preparation: PreparedRust,
+    pub(super) work: ProgramSemanticWork,
+    pub(super) fallback: Option<ProgramPreparationFallback>,
+    pub(super) dependencies: Vec<ProgramDependencyRead>,
+}
+
 #[allow(clippy::too_many_lines)]
-pub(super) fn analyze(
+pub(super) fn analyze_prepared(
     input: &ProgramSemanticInput,
-) -> Result<RustProgramFacts, ProgramSemanticError> {
+    previous: Option<&PreparedRust>,
+) -> Result<PreparedRustResult, ProgramSemanticError> {
     let files = verified_files(input)?;
     let source_inputs = semantic_source_inputs(&files);
     let mut packages = parse_packages(&files)?;
@@ -261,65 +493,108 @@ pub(super) fn analyze(
         input.observation().ownerships(),
     );
     let source_owners = source_owners(input.observation().ownerships());
-    let source_contexts = build_source_contexts(&packages, &files)?;
+    let mut parsing = ParsePreparation {
+        previous,
+        sources: BTreeMap::new(),
+        parsed_files: 0,
+        reused_files: 0,
+    };
+    let source_contexts = build_source_contexts(&packages, &files, &mut parsing)?;
+    let context_digest = program_context.digest();
+    let ownership_digest = canonical_fact_id(
+        "preparation_ownership",
+        &(input.observation().ownerships(), input.testing_modules()),
+    );
+    let input_digests = source_inputs
+        .iter()
+        .map(|source| (source.path.clone(), source.sha256.clone()))
+        .collect::<BTreeMap<_, _>>();
+    let fallback = preparation_fallback(
+        previous,
+        &input_digests,
+        &context_digest,
+        &ownership_digest,
+        &source_contexts,
+        &parsing.sources,
+    );
+    let reusable = previous.filter(|_| fallback.is_none());
+    let mut work = ProgramSemanticWork::default();
     let package_by_manifest: BTreeMap<&str, &CargoPackage> = packages
         .iter()
         .map(|package| (package.manifest_path.as_str(), package))
         .collect();
-    let mut registry = TypeRegistry::default();
+    let recorder = DependencyRecorder::default();
+    let mut registry = TypeRegistry {
+        recorder: recorder.clone(),
+        ..TypeRegistry::default()
+    };
     let mut symbols = Vec::new();
     let mut nominal_types = Vec::new();
     let mut impls = Vec::new();
-    let mut bodies = Vec::new();
     let mut parameter_transfers = Vec::new();
     let mut reexports = BTreeMap::new();
+    let mut declarations = BTreeMap::new();
     for (path, contexts) in &source_contexts {
-        let source = rust_source(path, files[path])?;
-        let syntax = parse_rust(path, source)?;
+        let parsed = parsing.source(path, files[path])?;
         let owner = source_owners
             .get(path)
             .ok_or_else(|| ProgramSemanticError::MissingSourceOwner(path.clone()))?;
-        for context in contexts {
-            let package = package_by_manifest[context.package_manifest.as_str()];
+        let retained = reusable
+            .and_then(|prepared| prepared.declarations.get(path))
+            .filter(|unit| unit.contexts == *contexts)
+            .filter(|_| {
+                reusable
+                    .and_then(|prepared| prepared.sources.get(path))
+                    .is_some_and(|source| source.bytes == parsed.bytes)
+            });
+        let unit = if let Some(unit) = retained {
+            work.reused_declaration_files += 1;
+            registry.replay(&unit.types);
+            Rc::clone(unit)
+        } else {
+            work.rebuilt_declaration_files += 1;
             let classification = if input.testing_modules().contains(owner) {
                 SymbolClassification::Testing
             } else {
                 SymbolClassification::Production
             };
-            let mut collection = SymbolCollection {
-                package,
-                context,
+            Rc::new(collect_declaration_unit(
+                path,
+                &parsed.syntax,
+                contexts,
                 owner,
                 classification,
-                source_path: path,
-                registry: &mut registry,
-                symbols: &mut symbols,
-                nominal_types: &mut nominal_types,
-                impls: &mut impls,
-                bodies: &mut bodies,
-                transfers: &mut parameter_transfers,
-                reexports: &mut reexports,
-            };
-            collection.collect_items(
-                &syntax.items,
-                &context.namespace,
-                &BTreeMap::new(),
-                context.execution_provenance,
-            );
-        }
+                &package_by_manifest,
+                &mut registry,
+            ))
+        };
+        symbols.extend(unit.symbols.iter().cloned());
+        nominal_types.extend(unit.nominal_types.iter().cloned());
+        impls.extend(unit.impls.iter().cloned());
+        parameter_transfers.extend(unit.transfers.iter().cloned());
+        reexports.extend(
+            unit.reexports
+                .iter()
+                .map(|(key, value)| (key.clone(), value.clone())),
+        );
+        declarations.insert(path.clone(), unit);
     }
     canonicalize_declarations(&mut symbols, &mut nominal_types, &mut impls);
-    resolve_impl_states(&mut impls, &nominal_types, &registry);
+    let declaration_reads = resolve_impl_states(&mut impls, &nominal_types, &registry);
+    let mut bodies = declarations
+        .values()
+        .flat_map(|unit| &unit.bodies)
+        .collect::<Vec<_>>();
     bodies.sort_by(|left, right| left.symbol.cmp(&right.symbol));
     bodies.dedup_by(|left, right| left.symbol == right.symbol);
-    let lookup = SymbolLookup::new(
+    let mut lookup = SymbolLookup::new(
         &symbols,
         &nominal_types,
         &packages,
         &source_owners,
         reexports,
     );
-    let mut raw_calls = Vec::new();
+    lookup.recorder = recorder.clone();
     let mut operation_inventory = Vec::new();
     let mut value_transfers = parameter_transfers;
     let mut transformations = Vec::new();
@@ -327,29 +602,76 @@ pub(super) fn analyze(
     let mut mutations = Vec::new();
     let mut program_bodies = Vec::new();
     let mut fixed_point_iterations = 1;
-    for body in &bodies {
-        program_bodies.push(lower_program_body(body));
-        let iterations = BodyAnalyzer::new(
-            body,
-            &lookup,
-            &mut registry,
-            &mut raw_calls,
-            &mut operation_inventory,
-            &mut value_transfers,
-            &mut transformations,
-            &mut state_reads,
-            &mut mutations,
-        )
-        .analyze();
-        fixed_point_iterations = fixed_point_iterations.max(iterations);
-    }
-    let calls = resolve_calls(
-        raw_calls,
-        &lookup,
-        &mut value_transfers,
-        &mut registry,
-        &mut operation_inventory,
+    let mut body_units = BTreeMap::new();
+    let mut dependencies =
+        preparation_dependencies(&source_inputs, &context_digest, &ownership_digest);
+    dependencies.extend(declaration_reads);
+    dependencies.extend(
+        declarations
+            .values()
+            .flat_map(|unit| unit.dependencies.iter().cloned()),
     );
+    for body in &bodies {
+        let retained = reusable
+            .and_then(|prepared| prepared.bodies.get(&body.symbol))
+            .filter(|_| {
+                reusable
+                    .and_then(|prepared| prepared.sources.get(&body.source_path))
+                    .is_some_and(|source| source.bytes.as_slice() == files[&body.source_path])
+            });
+        let unit = if let Some(unit) = retained {
+            work.reused_bodies += 1;
+            registry.replay(&unit.types);
+            Rc::clone(unit)
+        } else {
+            work.analyzed_bodies += 1;
+            Rc::new(analyze_body_unit(
+                body,
+                &lookup,
+                &mut registry,
+                &recorder,
+                &mut work,
+            ))
+        };
+        fixed_point_iterations = fixed_point_iterations.max(unit.iterations);
+        program_bodies.push(unit.body.clone());
+        operation_inventory.extend(unit.inventory.iter().cloned());
+        value_transfers.extend(unit.transfers.iter().cloned());
+        transformations.extend(unit.transformations.iter().cloned());
+        state_reads.extend(unit.reads.iter().cloned());
+        mutations.extend(unit.mutations.iter().cloned());
+        dependencies.extend(unit.dependencies.iter().cloned());
+        body_units.insert(body.symbol.clone(), unit);
+    }
+    let mut calls = Vec::new();
+    let mut callers = BTreeMap::new();
+    for body in &bodies {
+        let retained = reusable
+            .and_then(|prepared| prepared.callers.get(&body.symbol))
+            .filter(|_| {
+                reusable
+                    .and_then(|prepared| prepared.bodies.get(&body.symbol))
+                    .is_some_and(|unit| Rc::ptr_eq(unit, &body_units[&body.symbol]))
+            });
+        let unit = if let Some(unit) = retained {
+            work.reused_callers += 1;
+            Rc::clone(unit)
+        } else {
+            work.rebuilt_callers += 1;
+            Rc::new(resolve_caller_unit(
+                body,
+                &body_units[&body.symbol],
+                &lookup,
+                &mut registry,
+                &recorder,
+            ))
+        };
+        calls.extend(unit.calls.iter().cloned());
+        value_transfers.extend(unit.transfers.iter().cloned());
+        operation_inventory.extend(unit.inventory.iter().cloned());
+        dependencies.extend(unit.dependencies.iter().cloned());
+        callers.insert(body.symbol.clone(), unit);
+    }
     operation_inventory.sort();
     let symbol_paths = symbols
         .iter()
@@ -374,7 +696,19 @@ pub(super) fn analyze(
     state_reads.dedup();
     mutations.sort();
     mutations.dedup();
-    Ok(RustProgramFacts {
+    work.parsed_files = parsing.parsed_files;
+    work.reused_parse_files = parsing.reused_files;
+    let preparation = PreparedRust {
+        sources: parsing.sources,
+        declarations,
+        bodies: body_units,
+        callers,
+        input_digests,
+        context_digest,
+        ownership_digest,
+        fixed_point_iterations,
+    };
+    let facts = RustProgramFacts {
         source_identity,
         program_context,
         source_inputs,
@@ -393,7 +727,328 @@ pub(super) fn analyze(
         state_reads,
         mutations,
         fixed_point_iterations,
+    };
+    dependencies.sort();
+    dependencies.dedup();
+    Ok(PreparedRustResult {
+        facts,
+        preparation,
+        work,
+        fallback,
+        dependencies,
     })
+}
+
+#[allow(clippy::too_many_arguments)]
+fn collect_declaration_unit(
+    path: &str,
+    syntax: &syn::File,
+    contexts: &[SourceContext],
+    owner: &str,
+    classification: SymbolClassification,
+    packages: &BTreeMap<&str, &CargoPackage>,
+    registry: &mut TypeRegistry,
+) -> DeclarationUnit {
+    registry.recorder.begin(path, None);
+    let mut unit = DeclarationUnit {
+        contexts: contexts.to_vec(),
+        ..DeclarationUnit::default()
+    };
+    for context in contexts {
+        let mut collection = SymbolCollection {
+            package: packages[context.package_manifest.as_str()],
+            context,
+            owner,
+            classification,
+            source_path: path,
+            registry,
+            symbols: &mut unit.symbols,
+            nominal_types: &mut unit.nominal_types,
+            impls: &mut unit.impls,
+            bodies: &mut unit.bodies,
+            transfers: &mut unit.transfers,
+            reexports: &mut unit.reexports,
+        };
+        collection.collect_items(
+            &syntax.items,
+            &context.namespace,
+            &BTreeMap::new(),
+            context.execution_provenance,
+        );
+    }
+    unit.types = registry.take_contributions();
+    unit.dependencies = registry.recorder.finish();
+    unit
+}
+
+fn analyze_body_unit(
+    body: &BodyFact,
+    lookup: &SymbolLookup,
+    registry: &mut TypeRegistry,
+    recorder: &DependencyRecorder,
+    work: &mut ProgramSemanticWork,
+) -> BodyUnit {
+    recorder.begin(&body.source_path, Some(&body.symbol));
+    record_body_boundaries(body, recorder);
+    let mut unit = BodyUnit {
+        body: lower_program_body(body),
+        raw_calls: Vec::new(),
+        inventory: Vec::new(),
+        transfers: Vec::new(),
+        transformations: Vec::new(),
+        reads: Vec::new(),
+        mutations: Vec::new(),
+        types: Vec::new(),
+        iterations: 1,
+        dependencies: Vec::new(),
+    };
+    let (iterations, rounds) = BodyAnalyzer::new(
+        body,
+        lookup,
+        registry,
+        &mut unit.raw_calls,
+        &mut unit.inventory,
+        &mut unit.transfers,
+        &mut unit.transformations,
+        &mut unit.reads,
+        &mut unit.mutations,
+    )
+    .analyze();
+    unit.iterations = iterations;
+    work.type_fixed_point_rounds += rounds;
+    unit.types = registry.take_contributions();
+    for operation in &unit.inventory {
+        if operation.outcome == OperationOutcome::Unsupported {
+            recorder.record(
+                ProgramDependencyKind::Effect,
+                format!(
+                    "implicit_operation:{}:{}",
+                    operation.category, operation.reference
+                ),
+                ProgramDependencyResult::Unsupported,
+            );
+        }
+    }
+    unit.dependencies = recorder.finish();
+    unit
+}
+
+fn resolve_caller_unit(
+    body: &BodyFact,
+    body_unit: &BodyUnit,
+    lookup: &SymbolLookup,
+    registry: &mut TypeRegistry,
+    recorder: &DependencyRecorder,
+) -> CallerUnit {
+    recorder.begin(&body.source_path, Some(&body.symbol));
+    record_body_boundaries(body, recorder);
+    let mut unit = CallerUnit {
+        calls: Vec::new(),
+        inventory: Vec::new(),
+        transfers: Vec::new(),
+        dependencies: Vec::new(),
+    };
+    unit.calls = resolve_calls(
+        body_unit.raw_calls.clone(),
+        lookup,
+        &mut unit.transfers,
+        registry,
+        &mut unit.inventory,
+    );
+    unit.dependencies = recorder.finish();
+    unit
+}
+
+fn record_body_boundaries(body: &BodyFact, recorder: &DependencyRecorder) {
+    for (kind, query, binding) in [
+        (
+            ProgramDependencyKind::Source,
+            format!("source:{}", body.source_path),
+            body.source_path.clone(),
+        ),
+        (
+            ProgramDependencyKind::Context,
+            "program_context".into(),
+            body.context.package_manifest.clone(),
+        ),
+        (
+            ProgramDependencyKind::Cfg,
+            "selected_cfg".into(),
+            body.context.target_root.clone(),
+        ),
+        (
+            ProgramDependencyKind::ImportScope,
+            format!(
+                "imports:{}:{}",
+                body.context.package_name,
+                body.context.namespace.join("::")
+            ),
+            canonical_fact_id("import_scope", &body.aliases),
+        ),
+        (
+            ProgramDependencyKind::Effect,
+            "rust_signature_catalog".into(),
+            canonical_fact_id("signature_catalog", &RUST_SIGNATURE_CATALOG_SOURCE),
+        ),
+    ] {
+        recorder.record(
+            kind,
+            query,
+            ProgramDependencyResult::Resolved(vec![binding]),
+        );
+    }
+}
+
+fn preparation_dependencies(
+    sources: &[ProgramSourceInput],
+    context: &str,
+    ownership: &str,
+) -> Vec<ProgramDependencyRead> {
+    let mut result = sources
+        .iter()
+        .map(|source| ProgramDependencyRead {
+            source_path: source.path.clone(),
+            caller: None,
+            kind: ProgramDependencyKind::Source,
+            query: format!("source:{}", source.path),
+            result: ProgramDependencyResult::Resolved(vec![source.sha256.clone()]),
+        })
+        .collect::<Vec<_>>();
+    for (kind, query, digest) in [
+        (ProgramDependencyKind::Context, "program_context", context),
+        (ProgramDependencyKind::Cfg, "selected_cfg", context),
+        (
+            ProgramDependencyKind::Ownership,
+            "source_ownership",
+            ownership,
+        ),
+    ] {
+        result.push(ProgramDependencyRead {
+            source_path: String::new(),
+            caller: None,
+            kind,
+            query: query.into(),
+            result: ProgramDependencyResult::Resolved(vec![digest.into()]),
+        });
+    }
+    result
+}
+
+fn preparation_fallback(
+    previous: Option<&PreparedRust>,
+    inputs: &BTreeMap<String, String>,
+    context: &str,
+    ownership: &str,
+    contexts: &BTreeMap<String, Vec<SourceContext>>,
+    sources: &BTreeMap<String, Rc<ParsedSource>>,
+) -> Option<ProgramPreparationFallback> {
+    let previous = previous?;
+    if previous.context_digest != context {
+        return Some(ProgramPreparationFallback::ContextChanged);
+    }
+    if previous.ownership_digest != ownership {
+        return Some(ProgramPreparationFallback::OwnershipChanged);
+    }
+    if !previous.input_digests.keys().eq(inputs.keys())
+        || !previous.declarations.keys().eq(contexts.keys())
+    {
+        return Some(ProgramPreparationFallback::SourceSetChanged);
+    }
+    if contexts
+        .iter()
+        .any(|(path, contexts)| previous.declarations[path].contexts != *contexts)
+    {
+        return Some(ProgramPreparationFallback::ContextChanged);
+    }
+    let changes = inputs
+        .iter()
+        .filter(|(path, digest)| previous.input_digests[*path] != **digest)
+        .map(|(path, _)| path)
+        .collect::<Vec<_>>();
+    if changes.is_empty() {
+        return None;
+    }
+    let [path] = changes.as_slice() else {
+        return Some(ProgramPreparationFallback::UnsupportedDependency);
+    };
+    let Some((old, new)) = previous.sources.get(*path).zip(sources.get(*path)) else {
+        return Some(ProgramPreparationFallback::UnsupportedDependency);
+    };
+    if source_body_change_isolated(old, new) {
+        None
+    } else {
+        Some(ProgramPreparationFallback::DeclarationChanged)
+    }
+}
+
+struct FunctionBodyRegion {
+    range: std::ops::Range<usize>,
+    declaration: String,
+}
+
+/// Raw source outside one ordinary free-function block must match exactly.
+/// This includes imports, ancestor attributes, module paths, nominal/impl/Drop
+/// declarations, and cfg. All changed-file units are still reconstructed to
+/// refresh spans, including units whose own block is unchanged.
+fn source_body_change_isolated(old: &ParsedSource, new: &ParsedSource) -> bool {
+    let mut old_regions = Vec::new();
+    let mut new_regions = Vec::new();
+    collect_function_regions(&old.syntax.items, &mut old_regions);
+    collect_function_regions(&new.syntax.items, &mut new_regions);
+    if old_regions.len() != new_regions.len() {
+        return false;
+    }
+    let mut old_end = 0;
+    let mut new_end = 0;
+    let mut changed = 0;
+    for (old_region, new_region) in old_regions.iter().zip(&new_regions) {
+        let old_range = &old_region.range;
+        let new_range = &new_region.range;
+        if old_range.start < old_end
+            || new_range.start < new_end
+            || old_range.end > old.bytes.len()
+            || new_range.end > new.bytes.len()
+            || old_region.declaration != new_region.declaration
+            || old.bytes[old_end..old_range.start] != new.bytes[new_end..new_range.start]
+        {
+            return false;
+        }
+        if old.bytes[old_range.clone()] != new.bytes[new_range.clone()] {
+            changed += 1;
+        }
+        old_end = old_range.end;
+        new_end = new_range.end;
+    }
+    changed == 1 && old.bytes[old_end..] == new.bytes[new_end..]
+}
+
+fn collect_function_regions(items: &[Item], regions: &mut Vec<FunctionBodyRegion>) {
+    for item in items {
+        match item {
+            Item::Fn(function) => {
+                regions.push(FunctionBodyRegion {
+                    range: function.block.span().byte_range(),
+                    declaration: format!(
+                        "{} {} {}",
+                        function
+                            .attrs
+                            .iter()
+                            .map(|attribute| attribute.to_token_stream().to_string())
+                            .collect::<Vec<_>>()
+                            .join(" "),
+                        function.vis.to_token_stream(),
+                        function.sig.to_token_stream()
+                    ),
+                });
+            }
+            Item::Mod(module) => {
+                if let Some((_, items)) = &module.content {
+                    collect_function_regions(items, regions);
+                }
+            }
+            _ => {}
+        }
+    }
 }
 
 fn canonicalize_declarations(
@@ -452,7 +1107,8 @@ fn resolve_impl_states(
     impls: &mut [ProgramImpl],
     nominal_types: &[NominalType],
     registry: &TypeRegistry,
-) {
+) -> Vec<ProgramDependencyRead> {
+    let mut reads = Vec::new();
     let local = nominal_types
         .iter()
         .map(|nominal| {
@@ -463,23 +1119,33 @@ fn resolve_impl_states(
         })
         .collect::<BTreeSet<_>>();
     for implementation in impls {
-        let self_semantic = registry
-            .types
-            .get(&implementation.self_type.type_id)
-            .map(|value| &value.0);
+        registry
+            .recorder
+            .begin(implementation.provenance.path(), None);
+        let self_semantic = registry.semantic(&implementation.self_type.type_id);
         let self_local = self_semantic
             .and_then(semantic_type_name)
             .is_some_and(|name| {
-                local.contains(&(implementation.package.as_str(), simple_type_name(&name)))
+                record_nominal_lookup(
+                    &implementation.package,
+                    &name,
+                    &local,
+                    nominal_types,
+                    &registry.recorder,
+                )
             });
         let trait_local = implementation.trait_type.as_ref().is_none_or(|interface| {
             registry
-                .types
-                .get(&interface.type_id)
-                .map(|value| &value.0)
+                .semantic(&interface.type_id)
                 .and_then(semantic_type_name)
                 .is_some_and(|name| {
-                    local.contains(&(implementation.package.as_str(), simple_type_name(&name)))
+                    record_nominal_lookup(
+                        &implementation.package,
+                        &name,
+                        &local,
+                        nominal_types,
+                        &registry.recorder,
+                    )
                 })
         });
         implementation.resolution = if self_semantic
@@ -491,7 +1157,37 @@ fn resolve_impl_states(
         } else {
             ImplResolutionState::ExternalOrGeneric
         };
+        reads.extend(registry.recorder.finish());
     }
+    reads
+}
+
+fn record_nominal_lookup(
+    package: &str,
+    name: &str,
+    local: &BTreeSet<(&str, String)>,
+    nominal_types: &[NominalType],
+    recorder: &DependencyRecorder,
+) -> bool {
+    let simple = simple_type_name(name);
+    let present = local.contains(&(package, simple.clone()));
+    let ids = nominal_types
+        .iter()
+        .filter(|nominal| {
+            nominal.package == package && simple_type_name(&nominal.qualified_name) == simple
+        })
+        .map(|nominal| nominal.id.clone())
+        .collect();
+    recorder.record(
+        ProgramDependencyKind::Type,
+        format!("nominal:{package}:{simple}"),
+        if present {
+            ProgramDependencyResult::Resolved(ids)
+        } else {
+            ProgramDependencyResult::Unresolved
+        },
+    );
+    present
 }
 
 fn lower_block(body: &BodyFact, block: &Block) -> Vec<ProgramStatement> {
@@ -960,6 +1656,12 @@ fn rust_source<'a>(path: &str, bytes: &'a [u8]) -> Result<&'a str, ProgramSemant
 }
 
 fn parse_rust(path: &str, source: &str) -> Result<syn::File, ProgramSemanticError> {
+    crate::observation::input_retention::preflight_input(source.len()).map_err(|error| {
+        ProgramSemanticError::InvalidRustSource {
+            path: path.into(),
+            source: syn::Error::new(proc_macro2::Span::call_site(), error.to_string()),
+        }
+    })?;
     syn::parse_file(source).map_err(|source| ProgramSemanticError::InvalidRustSource {
         path: path.into(),
         source,
@@ -1286,6 +1988,7 @@ fn source_owners(ownerships: &[SourceOwnership]) -> BTreeMap<String, String> {
 fn build_source_contexts(
     packages: &[CargoPackage],
     files: &BTreeMap<String, &[u8]>,
+    parsing: &mut ParsePreparation<'_>,
 ) -> Result<BTreeMap<String, Vec<SourceContext>>, ProgramSemanticError> {
     let mut contexts = BTreeMap::<String, Vec<SourceContext>>::new();
     for package in packages {
@@ -1299,6 +2002,7 @@ fn build_source_contexts(
                 &target.root,
                 &[],
                 files,
+                parsing,
                 &mut contexts,
                 package,
                 target,
@@ -1317,10 +2021,12 @@ fn build_source_contexts(
     Ok(contexts)
 }
 
+#[allow(clippy::too_many_arguments)]
 fn discover_module_tree(
     path: &str,
     namespace: &[String],
     files: &BTreeMap<String, &[u8]>,
+    parsing: &mut ParsePreparation<'_>,
     contexts: &mut BTreeMap<String, Vec<SourceContext>>,
     package: &CargoPackage,
     target: &CargoTarget,
@@ -1337,10 +2043,10 @@ fn discover_module_tree(
             namespace: namespace.to_vec(),
             execution_provenance,
         });
-    let syntax = parse_rust(path, rust_source(path, files[path])?)?;
+    let parsed = parsing.source(path, files[path])?;
     let mut queue = VecDeque::new();
     collect_modules(
-        &syntax.items,
+        &parsed.syntax.items,
         path,
         path == target.root,
         namespace,
@@ -1374,6 +2080,7 @@ fn discover_module_tree(
                     &target_path,
                     &namespace,
                     files,
+                    parsing,
                     contexts,
                     package,
                     target,
@@ -2415,11 +3122,22 @@ fn normalize_type(syntax: &Type, generics: &BTreeSet<String>) -> SemanticType {
 fn resolve_semantic_aliases(
     semantic: SemanticType,
     aliases: &BTreeMap<String, Vec<String>>,
+    recorder: &DependencyRecorder,
 ) -> SemanticType {
     match semantic {
         SemanticType::Named { name, arguments } => {
             let mut segments = name.split("::").map(str::to_owned).collect::<Vec<_>>();
-            if let Some(prefix) = segments.first().and_then(|first| aliases.get(first)) {
+            let prefix = segments.first().and_then(|first| aliases.get(first));
+            if let Some(first) = segments.first() {
+                recorder.record(
+                    ProgramDependencyKind::ImportScope,
+                    format!("type_import:{first}"),
+                    prefix.map_or(ProgramDependencyResult::Unresolved, |prefix| {
+                        ProgramDependencyResult::Resolved(vec![prefix.join("::")])
+                    }),
+                );
+            }
+            if let Some(prefix) = prefix {
                 segments = prefix
                     .iter()
                     .cloned()
@@ -2430,22 +3148,22 @@ fn resolve_semantic_aliases(
                 name: segments.join("::"),
                 arguments: arguments
                     .into_iter()
-                    .map(|value| resolve_semantic_aliases(value, aliases))
+                    .map(|value| resolve_semantic_aliases(value, aliases, recorder))
                     .collect(),
             }
         }
         SemanticType::Tuple { elements } => SemanticType::Tuple {
             elements: elements
                 .into_iter()
-                .map(|value| resolve_semantic_aliases(value, aliases))
+                .map(|value| resolve_semantic_aliases(value, aliases, recorder))
                 .collect(),
         },
         SemanticType::Array { element, length } => SemanticType::Array {
-            element: Box::new(resolve_semantic_aliases(*element, aliases)),
+            element: Box::new(resolve_semantic_aliases(*element, aliases, recorder)),
             length,
         },
         SemanticType::Slice { element } => SemanticType::Slice {
-            element: Box::new(resolve_semantic_aliases(*element, aliases)),
+            element: Box::new(resolve_semantic_aliases(*element, aliases, recorder)),
         },
         SemanticType::Reference {
             mutable,
@@ -2454,25 +3172,25 @@ fn resolve_semantic_aliases(
         } => SemanticType::Reference {
             mutable,
             lifetime,
-            target: Box::new(resolve_semantic_aliases(*target, aliases)),
+            target: Box::new(resolve_semantic_aliases(*target, aliases, recorder)),
         },
         SemanticType::Pointer { mutable, target } => SemanticType::Pointer {
             mutable,
-            target: Box::new(resolve_semantic_aliases(*target, aliases)),
+            target: Box::new(resolve_semantic_aliases(*target, aliases, recorder)),
         },
         SemanticType::Option { value } => SemanticType::Option {
-            value: Box::new(resolve_semantic_aliases(*value, aliases)),
+            value: Box::new(resolve_semantic_aliases(*value, aliases, recorder)),
         },
         SemanticType::Result { success, error } => SemanticType::Result {
-            success: Box::new(resolve_semantic_aliases(*success, aliases)),
-            error: Box::new(resolve_semantic_aliases(*error, aliases)),
+            success: Box::new(resolve_semantic_aliases(*success, aliases, recorder)),
+            error: Box::new(resolve_semantic_aliases(*error, aliases, recorder)),
         },
         SemanticType::Function { parameters, result } => SemanticType::Function {
             parameters: parameters
                 .into_iter()
-                .map(|value| resolve_semantic_aliases(value, aliases))
+                .map(|value| resolve_semantic_aliases(value, aliases, recorder))
                 .collect(),
-            result: Box::new(resolve_semantic_aliases(*result, aliases)),
+            result: Box::new(resolve_semantic_aliases(*result, aliases, recorder)),
         },
         value => value,
     }
@@ -2600,6 +3318,7 @@ struct PackageLookup {
 }
 
 struct SymbolLookup {
+    recorder: DependencyRecorder,
     path_to_symbols: BTreeMap<(String, String, Vec<String>), Vec<String>>,
     methods: BTreeMap<(String, String, String), Vec<String>>,
     exact_methods: BTreeMap<(String, String, String), Vec<String>>,
@@ -2727,6 +3446,7 @@ impl SymbolLookup {
             }
         }
         Self {
+            recorder: DependencyRecorder::default(),
             path_to_symbols,
             methods,
             exact_methods,
@@ -2744,13 +3464,72 @@ impl SymbolLookup {
     }
 
     fn symbol(&self, id: &str) -> Option<&ExecutableSymbol> {
-        self.symbols.get(id)
+        let value = self.symbols.get(id);
+        self.record_ids(
+            ProgramDependencyKind::Name,
+            format!("symbol:{id}"),
+            value
+                .map(|symbol| vec![symbol.id.clone()])
+                .unwrap_or_default(),
+        );
+        value
     }
 
     fn field_type(&self, package: &str, owner: &str, field: &str) -> Option<InterfaceType> {
-        self.nominal_fields
+        let value = self
+            .nominal_fields
             .get(&(package.into(), simple_type_name(owner), field.into()))
-            .cloned()
+            .cloned();
+        self.record_ids(
+            ProgramDependencyKind::Type,
+            format!("field:{package}:{owner}:{field}"),
+            value
+                .as_ref()
+                .map(|value| vec![value.type_id.clone()])
+                .unwrap_or_default(),
+        );
+        value
+    }
+
+    fn record_ids(&self, kind: ProgramDependencyKind, query: String, mut ids: Vec<String>) {
+        ids.sort();
+        ids.dedup();
+        self.recorder.record(
+            kind,
+            query,
+            if ids.is_empty() {
+                ProgramDependencyResult::Unresolved
+            } else {
+                ProgramDependencyResult::Resolved(ids)
+            },
+        );
+    }
+
+    fn package(&self, name: &str) -> Option<&PackageLookup> {
+        let package = self.packages.get(name);
+        self.record_ids(
+            ProgramDependencyKind::Context,
+            format!("package:{name}"),
+            package.map(|_| vec![name.into()]).unwrap_or_default(),
+        );
+        package
+    }
+
+    fn dependency(&self, package: &str, alias: &str) -> Option<&DependencyResolution> {
+        let dependency = self
+            .package(package)
+            .and_then(|current| current.dependencies.get(alias));
+        self.record_ids(
+            ProgramDependencyKind::ImportScope,
+            format!("dependency:{package}:{alias}"),
+            dependency
+                .map(|value| match value {
+                    DependencyResolution::WorkspacePackage(value)
+                    | DependencyResolution::External(value) => vec![value.clone()],
+                })
+                .unwrap_or_default(),
+        );
+        dependency
     }
 
     fn is_external_owner(&self, package: &str, owner: &str) -> bool {
@@ -2759,27 +3538,53 @@ impl SymbolLookup {
         };
         matches!(first, "std" | "core" | "alloc")
             || self
-                .packages
-                .get(package)
-                .and_then(|current| current.dependencies.get(first))
+                .dependency(package, first)
                 .is_some_and(|dependency| matches!(dependency, DependencyResolution::External(_)))
     }
 
     fn has_local_drop(&self, package: &str, owner: &str) -> bool {
-        self.local_drop_types
-            .contains(&(package.to_owned(), simple_type_name(owner)))
+        let present = self
+            .local_drop_types
+            .contains(&(package.to_owned(), simple_type_name(owner)));
+        self.record_ids(
+            ProgramDependencyKind::Effect,
+            format!("drop:{package}:{}", simple_type_name(owner)),
+            if present {
+                vec![format!("{package}::{}::drop", simple_type_name(owner))]
+            } else {
+                Vec::new()
+            },
+        );
+        present
     }
 
     fn nominal_id(&self, package: &str, owner: &str) -> Option<&str> {
-        self.nominal_ids
+        let value = self
+            .nominal_ids
             .get(&(package.into(), simple_type_name(owner)))
-            .map(String::as_str)
+            .map(String::as_str);
+        self.record_ids(
+            ProgramDependencyKind::Type,
+            format!("nominal:{package}:{owner}"),
+            value.map(|id| vec![id.into()]).unwrap_or_default(),
+        );
+        value
     }
 
     fn alias_target(&self, package: &str, owner: &str) -> Option<InterfaceType> {
-        self.nominal_aliases
+        let value = self
+            .nominal_aliases
             .get(&(package.into(), simple_type_name(owner)))
-            .cloned()
+            .cloned();
+        self.record_ids(
+            ProgramDependencyKind::Type,
+            format!("type_alias:{package}:{owner}"),
+            value
+                .as_ref()
+                .map(|value| vec![value.type_id.clone()])
+                .unwrap_or_default(),
+        );
+        value
     }
 
     fn resolve_path(
@@ -2792,6 +3597,14 @@ impl SymbolLookup {
         qualified_self: bool,
     ) -> CallOutcome {
         if qualified_self {
+            self.recorder.record(
+                ProgramDependencyKind::Name,
+                format!(
+                    "qualified_path:{package}:{crate_name}:{}",
+                    segments.join("::")
+                ),
+                ProgramDependencyResult::Unsupported,
+            );
             return CallOutcome::unsupported();
         }
         let Some(first) = segments.first() else {
@@ -2802,11 +3615,13 @@ impl SymbolLookup {
                 self.resolve_method(package, owner, segments.last().map_or("", String::as_str))
             });
         }
-        let current = &self.packages[package];
-        if let Some(dependency) = current.dependencies.get(first) {
+        let current = self.package(package).expect("caller package is indexed");
+        if let Some(dependency) = self.dependency(package, first) {
             return match dependency {
                 DependencyResolution::WorkspacePackage(target_package) => {
-                    let target = &self.packages[target_package];
+                    let target = self
+                        .package(target_package)
+                        .expect("workspace dependency is indexed");
                     self.resolve_in_scope(
                         target_package,
                         &target.lib_name,
@@ -2918,12 +3733,22 @@ impl SymbolLookup {
         depth: usize,
     ) -> Vec<String> {
         if depth > 8 {
+            self.recorder.record(
+                ProgramDependencyKind::ImportScope,
+                format!("reexport_limit:{package}:{crate_name}:{}", path.join("::")),
+                ProgramDependencyResult::Unsupported,
+            );
             return Vec::new();
         }
-        if let Some(symbols) =
-            self.path_to_symbols
-                .get(&(package.into(), crate_name.into(), path.to_vec()))
-        {
+        let symbols = self
+            .path_to_symbols
+            .get(&(package.into(), crate_name.into(), path.to_vec()));
+        self.record_ids(
+            ProgramDependencyKind::Name,
+            format!("path:{package}:{crate_name}:{}", path.join("::")),
+            symbols.cloned().unwrap_or_default(),
+        );
+        if let Some(symbols) = symbols {
             return symbols.clone();
         }
         for split in (0..path.len()).rev() {
@@ -2935,7 +3760,18 @@ impl SymbolLookup {
                 namespace: namespace.clone(),
                 alias: alias.clone(),
             };
-            if let Some(target) = self.reexports.get(&key) {
+            let target = self.reexports.get(&key);
+            self.record_ids(
+                ProgramDependencyKind::ImportScope,
+                format!(
+                    "reexport:{package}:{crate_name}:{}:{alias}",
+                    namespace.join("::")
+                ),
+                target
+                    .map(|target| vec![target.join("::")])
+                    .unwrap_or_default(),
+            );
+            if let Some(target) = target {
                 let mut expanded = normalize_relative_path(&namespace, target);
                 expanded.extend_from_slice(&path[split + 1..]);
                 return self.resolve_reexport(package, crate_name, &expanded, depth + 1);
@@ -2966,6 +3802,11 @@ impl SymbolLookup {
                 .collect::<Vec<_>>();
             exact.sort();
             exact.dedup();
+            self.record_ids(
+                ProgramDependencyKind::Name,
+                format!("exact_method:{package}:{normalized_owner}:{method}"),
+                exact.clone(),
+            );
             match exact.as_slice() {
                 [callee] => return CallOutcome::resolved(callee.clone(), None),
                 [] => {}
@@ -2974,20 +3815,28 @@ impl SymbolLookup {
         }
         let key = (package.into(), simple_owner.clone(), method.into());
         let mut candidates = self.methods.get(&key).cloned().unwrap_or_default();
+        self.record_ids(
+            ProgramDependencyKind::Name,
+            format!("method:{package}:{simple_owner}:{method}"),
+            candidates.clone(),
+        );
         let mut boundary_target_module = None;
         if candidates.is_empty()
             && let Some(crate_name) = owner.split("::").next()
-            && let Some(DependencyResolution::WorkspacePackage(target_package)) = self
-                .packages
-                .get(package)
-                .and_then(|current| current.dependencies.get(crate_name))
-            && let Some(target) = self.packages.get(target_package)
+            && let Some(DependencyResolution::WorkspacePackage(target_package)) =
+                self.dependency(package, crate_name)
+            && let Some(target) = self.package(target_package)
         {
             candidates = self
                 .methods
                 .get(&(target_package.clone(), simple_owner, method.into()))
                 .cloned()
                 .unwrap_or_default();
+            self.record_ids(
+                ProgramDependencyKind::Name,
+                format!("method:{target_package}:{owner}:{method}"),
+                candidates.clone(),
+            );
             boundary_target_module.clone_from(&target.facade_owner);
         }
         match candidates.as_slice() {
@@ -3249,6 +4098,7 @@ struct BodyAnalyzer<'a> {
     write_target: bool,
     await_depth: usize,
     fixed_point_iterations: usize,
+    executed_type_rounds: usize,
     flow_depth: usize,
 }
 
@@ -3364,16 +4214,17 @@ impl<'a> BodyAnalyzer<'a> {
             write_target: false,
             await_depth: 0,
             fixed_point_iterations: 1,
+            executed_type_rounds: 1,
             flow_depth: 0,
         }
     }
 
-    fn analyze(mut self) -> usize {
+    fn analyze(mut self) -> (usize, usize) {
         if let Some(syn::Stmt::Expr(expression, None)) = self.body.block.stmts.last() {
             self.transfer_to_return(expression, expression.span());
         }
         self.visit_block(&self.body.block);
-        self.fixed_point_iterations
+        (self.fixed_point_iterations, self.executed_type_rounds)
     }
 
     fn account_implicit(&mut self, category: &str, reference: &str, span: Span) {
@@ -3432,6 +4283,7 @@ impl<'a> BodyAnalyzer<'a> {
         let baseline = self.local_types.clone();
         let mut current = baseline.clone();
         for iteration in 1..=LOCAL_TYPE_FIXED_POINT_LIMIT {
+            self.executed_type_rounds += 1;
             self.local_types.clone_from(&current);
             self.visit_block(block);
             let next = Self::join_local_types(&baseline, &self.local_types);
@@ -3461,7 +4313,19 @@ impl<'a> BodyAnalyzer<'a> {
         let Some(first) = segments.first() else {
             return Vec::new();
         };
-        self.body.aliases.get(first).map_or_else(
+        let prefix = self.body.aliases.get(first);
+        self.lookup.record_ids(
+            ProgramDependencyKind::ImportScope,
+            format!(
+                "alias:{}:{}:{first}",
+                self.package_name(),
+                self.body.context.namespace.join("::")
+            ),
+            prefix
+                .map(|value| vec![value.join("::")])
+                .unwrap_or_default(),
+        );
+        prefix.map_or_else(
             || segments.to_vec(),
             |prefix| {
                 prefix
@@ -3471,6 +4335,48 @@ impl<'a> BodyAnalyzer<'a> {
                     .collect()
             },
         )
+    }
+
+    fn local_type(&self, name: &str) -> Option<&LocalTypeKnowledge> {
+        let local = self.local_types.get(name);
+        let result = match local {
+            Some(LocalTypeKnowledge::Known(value)) => {
+                ProgramDependencyResult::Resolved(vec![value.type_id.clone()])
+            }
+            Some(LocalTypeKnowledge::FiniteAlternatives(values)) => {
+                ProgramDependencyResult::Resolved(
+                    values.iter().map(|value| value.type_id.clone()).collect(),
+                )
+            }
+            Some(LocalTypeKnowledge::Conflict) => ProgramDependencyResult::Unsupported,
+            Some(LocalTypeKnowledge::Unknown) | None => ProgramDependencyResult::Unresolved,
+        };
+        self.lookup.recorder.record(
+            ProgramDependencyKind::Type,
+            format!("local:{}:{name}", self.body.symbol),
+            result,
+        );
+        local
+    }
+
+    fn constructor_return(&self, segments: &[String]) -> Option<&'static str> {
+        let result = standard_constructor_return(segments);
+        self.lookup.record_ids(
+            ProgramDependencyKind::Type,
+            format!("constructor_signature:{}", segments.join("::")),
+            result.map(|value| vec![value.into()]).unwrap_or_default(),
+        );
+        result
+    }
+
+    fn builder_return(&self, owner: &str, method: &str) -> Option<&'static str> {
+        let result = standard_builder_return(owner, method);
+        self.lookup.record_ids(
+            ProgramDependencyKind::Type,
+            format!("builder_signature:{owner}:{method}"),
+            result.map(|value| vec![value.into()]).unwrap_or_default(),
+        );
+        result
     }
 
     fn open_options_operation(&self, expression: &Expr) -> String {
@@ -3496,7 +4402,7 @@ impl<'a> BodyAnalyzer<'a> {
                         .map(|segment| segment.ident.to_string())
                         .collect::<Vec<_>>(),
                 );
-                (standard_constructor_return(&segments) == Some("std::fs::OpenOptions"))
+                (self.constructor_return(&segments) == Some("std::fs::OpenOptions"))
                     .then(OpenOptionsAccess::default)
             }
             Expr::MethodCall(call) => {
@@ -3548,8 +4454,7 @@ impl<'a> BodyAnalyzer<'a> {
     fn path_expression_type(&mut self, value: &syn::ExprPath) -> Option<InterfaceType> {
         if value.path.segments.len() == 1
             && let Some(local) = self
-                .local_types
-                .get(&value.path.segments[0].ident.to_string())
+                .local_type(&value.path.segments[0].ident.to_string())
                 .and_then(LocalTypeKnowledge::exact)
         {
             return Some(local.clone());
@@ -3612,7 +4517,7 @@ impl<'a> BodyAnalyzer<'a> {
 
     fn reference_type(&mut self, value: &syn::ExprReference) -> Option<InterfaceType> {
         let target = self.expression_type(&value.expr)?;
-        let semantic = self.registry.types.get(&target.type_id)?.0.clone();
+        let semantic = self.registry.semantic(&target.type_id)?.clone();
         Some(self.registry.register_semantic(
             SemanticType::Reference {
                 mutable: value.mutability.is_some(),
@@ -3625,7 +4530,7 @@ impl<'a> BodyAnalyzer<'a> {
 
     fn dereference_type(&mut self, value: &syn::ExprUnary) -> Option<InterfaceType> {
         let source = self.expression_type(&value.expr)?;
-        let semantic = self.registry.types.get(&source.type_id)?.0.clone();
+        let semantic = self.registry.semantic(&source.type_id)?.clone();
         match semantic {
             SemanticType::Reference { target, .. } | SemanticType::Pointer { target, .. } => Some(
                 self.registry
@@ -3639,7 +4544,7 @@ impl<'a> BodyAnalyzer<'a> {
         let mut elements = Vec::new();
         for element in &value.elems {
             let interface = self.expression_type(element)?;
-            elements.push(self.registry.types.get(&interface.type_id)?.0.clone());
+            elements.push(self.registry.semantic(&interface.type_id)?.clone());
         }
         Some(self.registry.register_semantic(
             SemanticType::Tuple { elements },
@@ -3679,7 +4584,7 @@ impl<'a> BodyAnalyzer<'a> {
 
     fn try_expression_type(&mut self, value: &syn::ExprTry) -> Option<InterfaceType> {
         let source = self.expression_type(&value.expr)?;
-        let semantic = match self.registry.types.get(&source.type_id)?.0.clone() {
+        let semantic = match self.registry.semantic(&source.type_id)?.clone() {
             SemanticType::Result { success, .. } => *success,
             SemanticType::Option { value, .. } => *value,
             _ => return None,
@@ -3723,7 +4628,7 @@ impl<'a> BodyAnalyzer<'a> {
     }
 
     fn receiver_type_reason(&self, interface: &InterfaceType) -> Option<CallResolutionReason> {
-        let mut semantic = &self.registry.types.get(&interface.type_id)?.0;
+        let mut semantic = self.registry.semantic(&interface.type_id)?;
         if let SemanticType::Reference { target, .. } | SemanticType::Pointer { target, .. } =
             semantic
         {
@@ -3740,7 +4645,7 @@ impl<'a> BodyAnalyzer<'a> {
         if interface.rust_spelling.contains("dyn ") {
             return Some(interface.rust_spelling.clone());
         }
-        let semantic = &self.registry.types.get(&interface.type_id)?.0;
+        let semantic = self.registry.semantic(&interface.type_id)?;
         let owner = match semantic {
             SemanticType::Reference { target, .. } | SemanticType::Pointer { target, .. } => {
                 semantic_type_name(target)?
@@ -3768,7 +4673,7 @@ impl<'a> BodyAnalyzer<'a> {
         if let Some(last) = segments.last() {
             if last == "Some" {
                 let value = self.expression_type(call.args.first()?)?;
-                let semantic = self.registry.types.get(&value.type_id)?.0.clone();
+                let semantic = self.registry.semantic(&value.type_id)?.clone();
                 return Some(self.registry.register_semantic(
                     SemanticType::Option {
                         value: Box::new(semantic),
@@ -3780,7 +4685,7 @@ impl<'a> BodyAnalyzer<'a> {
                 return None;
             }
         }
-        if let Some(return_type) = standard_constructor_return(&segments) {
+        if let Some(return_type) = self.constructor_return(&segments) {
             return Some(self.registry.register_semantic(
                 SemanticType::Named {
                     name: return_type.into(),
@@ -3814,7 +4719,7 @@ impl<'a> BodyAnalyzer<'a> {
         {
             return Some(callee.return_type.clone());
         }
-        let return_type = standard_builder_return(&owner, &call.method.to_string())?;
+        let return_type = self.builder_return(&owner, &call.method.to_string())?;
         Some(self.registry.register_semantic(
             SemanticType::Named {
                 name: return_type.into(),
@@ -3829,12 +4734,7 @@ impl<'a> BodyAnalyzer<'a> {
         callee: &ExecutableSymbol,
         arguments: impl IntoIterator<Item = &'b Expr>,
     ) -> Option<InterfaceType> {
-        let return_semantic = self
-            .registry
-            .types
-            .get(&callee.return_type.type_id)?
-            .0
-            .clone();
+        let return_semantic = self.registry.semantic(&callee.return_type.type_id)?.clone();
         if matches!(&return_semantic, SemanticType::Named { name, .. } if name == "Self")
             && let Some(owner) = &callee.owner_type
         {
@@ -3850,9 +4750,7 @@ impl<'a> BodyAnalyzer<'a> {
             for (argument, parameter) in arguments.into_iter().zip(&callee.parameters) {
                 let parameter_semantic = self
                     .registry
-                    .types
-                    .get(&parameter.parameter_type.type_id)?
-                    .0
+                    .semantic(&parameter.parameter_type.type_id)?
                     .clone();
                 if parameter_semantic == (SemanticType::GenericParameter { name: name.clone() }) {
                     return self.expression_type(argument);
@@ -3955,11 +4853,8 @@ impl<'a> BodyAnalyzer<'a> {
             }
             Pat::Type(value) => self.bind_pattern_type(&value.pat, interface),
             Pat::Tuple(value) => {
-                let Some(SemanticType::Tuple { elements }) = self
-                    .registry
-                    .types
-                    .get(&interface.type_id)
-                    .map(|value| value.0.clone())
+                let Some(SemanticType::Tuple { elements }) =
+                    self.registry.semantic(&interface.type_id).cloned()
                 else {
                     return;
                 };
@@ -4436,13 +5331,10 @@ impl<'ast> Visit<'ast> for BodyAnalyzer<'_> {
                     .collect::<Vec<_>>();
                 let is_callable_binding = segments.len() == 1
                     && self
-                        .local_types
-                        .get(&segments[0])
+                        .local_type(&segments[0])
                         .and_then(LocalTypeKnowledge::exact)
-                        .and_then(|value| self.registry.types.get(&value.type_id))
-                        .is_some_and(|(semantic, _)| {
-                            matches!(semantic, SemanticType::Function { .. })
-                        });
+                        .and_then(|value| self.registry.semantic(&value.type_id))
+                        .is_some_and(|semantic| matches!(semantic, SemanticType::Function { .. }));
                 if is_callable_binding {
                     RawCallTarget::Dynamic
                 } else {
@@ -4748,6 +5640,29 @@ fn resolve_calls(
     let mut operation_ordinals = BTreeMap::<(String, String, String), usize>::new();
     for mut call in raw_calls {
         let mut outcome = resolve_call(&call, lookup);
+        let dependency = match outcome.state {
+            CallResolutionState::ResolvedStatic => outcome.callee.iter().cloned().collect(),
+            CallResolutionState::External => outcome.external_target.iter().cloned().collect(),
+            _ => Vec::new(),
+        };
+        if matches!(
+            outcome.state,
+            CallResolutionState::DynamicDispatch
+                | CallResolutionState::Unsupported
+                | CallResolutionState::Invalid
+        ) {
+            lookup.recorder.record(
+                ProgramDependencyKind::Name,
+                format!("call:{}", call.reference),
+                ProgramDependencyResult::Unsupported,
+            );
+        } else {
+            lookup.record_ids(
+                ProgramDependencyKind::Name,
+                format!("call:{}", call.reference),
+                dependency,
+            );
+        }
         outcome.candidates.sort();
         outcome.candidates.dedup();
         if let Some(callee_id) = &outcome.callee
@@ -4936,7 +5851,7 @@ fn resolve_call(call: &RawCall, lookup: &SymbolLookup) -> CallOutcome {
             .and_then(|callee| lookup.symbol(callee))
         && callee.package == call.package
         && callee.crate_name != call.crate_name
-        && let Some(package) = lookup.packages.get(&call.package)
+        && let Some(package) = lookup.package(&call.package)
         && callee.crate_name == package.lib_name
     {
         outcome

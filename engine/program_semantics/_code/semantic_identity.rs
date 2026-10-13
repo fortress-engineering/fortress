@@ -299,6 +299,12 @@ fn normalize_where(generics: &Generics, alpha: &AlphaNames) -> Vec<String> {
 }
 
 fn normalize_token_string(value: &str, alpha: &AlphaNames) -> String {
+    if crate::observation::input_retention::preflight_input(value.len()).is_err() {
+        // The enabled operational boundary rejects the entire evaluation.
+        // Preserve this infallible identity helper's ordinary parser fallback;
+        // no partially admitted identity is returned as a completed model.
+        return format!("unsupported:{value}");
+    }
     value.parse::<TokenStream>().map_or_else(
         |_| format!("unsupported:{value}"),
         |tokens| normalize_stream(tokens, alpha),

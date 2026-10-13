@@ -35,3 +35,5 @@ Supplies the exact parent capability under test and owns the Feature whose requi
 ## Guarantees
 
 Every non-infrastructure test identity maps to exactly one immediate-parent requirement; fixtures remain deterministic and contain no production contract authority.
+
+R07 controls in `effect_preparation.rs` compare exact cold/prepared seeds, closure iterations, causal witnesses, typestate/policy assembly and authority outcomes; test retention and disconnected reuse; and reject stale or inconsistent current-PSM primitive proofs without rejecting ordinary externally established references.

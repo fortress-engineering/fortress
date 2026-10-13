@@ -14,7 +14,8 @@ use sha2::{Digest, Sha256};
 
 use crate::contract_coherency::ContractCoherencyGraph;
 use crate::observation::{
-    ObservationError, ObservationPolicy, ObservedFile, RepositoryObservation, observe_repository,
+    ObservationError, ObservationLimits, ObservationPolicy, ObservedFile, RepositoryObservation,
+    observe_repository, observe_repository_bounded,
 };
 use crate::standard::StandardBundle;
 
@@ -204,7 +205,52 @@ pub fn build_repository_snapshot(
     let module_contracts =
         canonical_document_digests(&documents.module_contracts, "Module contract")?;
     let observation = observe_repository_stably(root, policy)?;
-    let repository_content_fingerprint = canonical_sha256(&observation)?;
+    assemble_repository_snapshot(
+        &observation,
+        policy,
+        contracts,
+        standard_bundle,
+        documents,
+        standard_documents,
+        module_contracts,
+    )
+}
+
+/// Builds the same snapshot from an already stabilized immutable observation.
+/// Supplied hypothetical inventories retain their status at the composition root.
+pub(crate) fn build_repository_snapshot_from_observation(
+    observation: &RepositoryObservation,
+    policy: &ObservationPolicy,
+    contracts: &ContractCoherencyGraph,
+    standard_bundle: &StandardBundle,
+    documents: &SnapshotDocuments<'_>,
+) -> Result<RepositorySnapshot, SnapshotError> {
+    let standard_documents =
+        canonical_document_digests(&documents.standard_documents, "standard input")?;
+    let module_contracts =
+        canonical_document_digests(&documents.module_contracts, "Module contract")?;
+    assemble_repository_snapshot(
+        observation,
+        policy,
+        contracts,
+        standard_bundle,
+        documents,
+        standard_documents,
+        module_contracts,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+fn assemble_repository_snapshot(
+    observation: &RepositoryObservation,
+    policy: &ObservationPolicy,
+    contracts: &ContractCoherencyGraph,
+    standard_bundle: &StandardBundle,
+    documents: &SnapshotDocuments<'_>,
+    standard_documents: Vec<SnapshotDocumentDigest>,
+    module_contracts: Vec<SnapshotDocumentDigest>,
+) -> Result<RepositorySnapshot, SnapshotError> {
+    let repository_content_fingerprint = canonical_sha256(observation)?;
 
     let standard_input_fingerprint = canonical_sha256(&standard_documents)?;
     let standard = SnapshotStandard {
@@ -431,9 +477,33 @@ pub fn observe_repository_stably_with<F>(
 where
     F: FnOnce(),
 {
-    let first = observe_repository(root, policy)?;
+    observe_repository_stably_with_limits(root, policy, after_first, None)
+}
+
+pub(crate) fn observe_repository_stably_bounded(
+    root: &Path,
+    policy: &ObservationPolicy,
+    limits: &ObservationLimits,
+) -> Result<RepositoryObservation, SnapshotError> {
+    observe_repository_stably_with_limits(root, policy, || {}, Some(limits))
+}
+
+fn observe_repository_stably_with_limits<F>(
+    root: &Path,
+    policy: &ObservationPolicy,
+    after_first: F,
+    limits: Option<&ObservationLimits>,
+) -> Result<RepositoryObservation, SnapshotError>
+where
+    F: FnOnce(),
+{
+    let observe = || match limits {
+        Some(limits) => observe_repository_bounded(root, policy, limits),
+        None => observe_repository(root, policy),
+    };
+    let first = observe()?;
     after_first();
-    let second = observe_repository(root, policy)?;
+    let second = observe()?;
     if first == second {
         return Ok(second);
     }

@@ -300,6 +300,8 @@ impl EnvironmentalCoverageSummary {
 /// Canonical Environmental Analysis v1 derived information.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct EnvironmentalAnalysisModel {
+    #[serde(skip)]
+    digest_memo: crate::program_semantics::ModelDigestMemo,
     #[serde(rename = "$schema")]
     schema: String,
     schema_version: u16,
@@ -366,10 +368,7 @@ impl EnvironmentalAnalysisModel {
     ///
     /// Returns a JSON error if serialization fails.
     pub fn digest(&self) -> Result<String, serde_json::Error> {
-        Ok(format!(
-            "sha256:{:x}",
-            Sha256::digest(self.to_canonical_json()?.as_bytes())
-        ))
+        self.digest_memo.digest(self)
     }
 }
 
@@ -734,6 +733,7 @@ pub fn analyze_environmental_semantics(
         violations: violations.len(),
     };
     let model = EnvironmentalAnalysisModel {
+        digest_memo: crate::program_semantics::ModelDigestMemo::default(),
         schema: ENVIRONMENTAL_ANALYSIS_SCHEMA.into(),
         schema_version: ENVIRONMENTAL_ANALYSIS_SCHEMA_VERSION,
         semantic_version: ENVIRONMENTAL_ANALYSIS_VERSION.into(),

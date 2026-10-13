@@ -306,6 +306,58 @@ fn propagates_assignment_and_return_flow() {
         "{:#?}",
         evaluation.findings()
     );
+    check_same_named_bindings_are_scoped();
+}
+
+fn check_same_named_bindings_are_scoped() {
+    let model = psm(
+        "fn copy(input: String) -> String { let value = input; value }\n\
+         fn unrelated(input: String) -> String { let value = input; value }\n",
+    );
+    let definitions = [("copy", "VALIDATED"), ("unrelated", "UNTRUSTED")]
+        .into_iter()
+        .map(|(name, level)| {
+            (
+                name,
+                flow(
+                    serde_json::json!([{"target":{"kind":"parameter","name":"input"},"facet":"FLOW-INTEGRITY","level":level}]),
+                    serde_json::json!([{"target":{"kind":"return"},"facet":"FLOW-INTEGRITY","minimum":"VALIDATED"}]),
+                    serde_json::json!([]),
+                    serde_json::json!([]),
+                ),
+            )
+        })
+        .collect::<Vec<_>>();
+    let contracts = load_function_contracts(
+        &model,
+        function_sources(&model, "AF-SAMPLE-0001", &definitions),
+    )
+    .expect("contracts resolve");
+    let evaluation = evaluate(&model, &policy(), &contracts).expect("flow evaluates");
+    let unrelated = model
+        .symbols()
+        .iter()
+        .find(|symbol| symbol.qualified_name().ends_with("::unrelated"))
+        .expect("unrelated symbol");
+    assert_eq!(evaluation.model().violations().len(), 1);
+    let result = json(&evaluation);
+    assert_eq!(result["violations"][0]["symbol"], unrelated.id());
+    for (name, level) in [("copy", "VALIDATED"), ("unrelated", "UNTRUSTED")] {
+        let symbol = model
+            .symbols()
+            .iter()
+            .find(|symbol| symbol.qualified_name().ends_with(&format!("::{name}")))
+            .expect("symbol");
+        let summary = result["summaries"]
+            .as_array()
+            .expect("summaries")
+            .iter()
+            .find(|summary| summary["symbol"] == symbol.id())
+            .expect("summary");
+        let labels = summary["return_labels"].as_array().expect("return labels");
+        assert!(!labels.is_empty());
+        assert!(labels.iter().all(|label| label["level"] == level));
+    }
 }
 
 /// `T-AF-INFORMATION-FLOW-0001-R02-002`

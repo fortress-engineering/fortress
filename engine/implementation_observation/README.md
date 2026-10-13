@@ -26,6 +26,12 @@ CCG compilation, dependency authorization, architecture findings, capability-to-
 
 Consumes validated logical Module contract locations and source bindings without becoming authority for Module identity or Project Filing conformance.
 
+### [Repository Observation](../repository_observation/README.md)
+
+**Types:** `depends_on`
+
+Supplies neutral retained-input admission invoked before source tokenization. The helper owns operational byte accounting; Implementation Observation retains language analysis and architectural fact ownership.
+
 ## Guarantees
 
 Equal snapshot bytes and analyzer semantics yield identically ordered observations; declared dependencies never influence what is observed; Cargo analysis territories never become authored Modules; Project Filing violations do not hide otherwise analyzable source; cross-package references preserve the package facade boundary; and mutation, unsupported semantics, and unresolved targets remain explicit.

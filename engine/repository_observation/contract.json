@@ -21,6 +21,16 @@
   "constraints": [],
   "guarantees": [
     {
+      "id": "GUA-OBSERVATION-OPERATIONAL-BOUNDS",
+      "subject": {
+        "kind": "capability",
+        "id": "CAP-REPOSITORY-OBSERVATION"
+      },
+      "requirements": [
+        "AF-REPOSITORY-OBSERVATION-0001-R04"
+      ]
+    },
+    {
       "id": "GUA-REPOSITORY-OBSERVATION-DETERMINISM",
       "subject": {
         "kind": "capability",
@@ -66,6 +76,15 @@
             "T-AF-REPOSITORY-OBSERVATION-0001-R03-003",
             "T-AF-REPOSITORY-OBSERVATION-0001-R03-004",
             "T-AF-REPOSITORY-OBSERVATION-0001-R03-005"
+          ]
+        },
+        {
+          "id": "AF-REPOSITORY-OBSERVATION-0001-R04",
+          "statement": "Repository Observation offers caller-supplied operational limits on ordinary files, total traversed entries including directories, source bytes and path bytes, rejects over-budget metadata before hashing or whole-input allocation, and returns the same canonical observation as ordinary discovery when inputs fit. Its neutral resident-enabled retained-input helper admits bytes before tokenization, records exact input counters, prevents active-budget reset and retains sticky exhaustion without acquiring language, policy, job or publication authority. Ordinary unbounded observation and inactive helper behavior preserve their existing semantics.",
+          "tests": [
+            "T-AF-REPOSITORY-OBSERVATION-0001-R04-001",
+            "T-AF-REPOSITORY-OBSERVATION-0001-R04-002",
+            "T-AF-REPOSITORY-OBSERVATION-0001-R04-003"
           ]
         }
       ]

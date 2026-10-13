@@ -35,3 +35,5 @@ Supplies the capability under test and is the immediate parent whose complete lo
 ## Guarantees
 
 Every non-infrastructure Test ID maps to exactly one Semantic Analysis requirement, fixtures assert exact semantic conclusions, and unsupported behavior remains uncertainty rather than passing evidence.
+
+The `semantic_preparation.rs` R05 controls compare every prepared evaluation with the same cold producer, including changed reverse dependencies, disconnected trajectories, changed stopping and widening rounds, graph inventory changes and owner retention limits.

@@ -346,6 +346,12 @@ fn observe_rust_source(
     if !is_canonical_relative_path(path) {
         return Err(RustAnalyzerError::InvalidPath(path.into()));
     }
+    crate::observation::input_retention::preflight_input(source.len()).map_err(|error| {
+        RustAnalyzerError::Parse {
+            path: path.into(),
+            detail: error.to_string().into(),
+        }
+    })?;
     let syntax = syn::parse_file(source).map_err(|error| RustAnalyzerError::Parse {
         path: path.into(),
         detail: error.to_string().into(),

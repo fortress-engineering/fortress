@@ -50,6 +50,12 @@ Existing symbols, nominal declarations, calls, and state-place facts are referen
 
 The canonical Project Filing model remains authoritative for governed Module ownership, Code membership, and filesystem validity. Analysis-only ownership permits observation before that conformance exists and never substitutes for it.
 
+### [Repository Observation](../repository_observation/README.md)
+
+**Types:** `depends_on`
+
+Supplies neutral retained-input admission invoked before source tokenization. The helper owns operational byte accounting; Source Architecture retains profile interpretation and source artifact ownership.
+
 ### [Standard Registry](../standard_registry/README.md)
 
 **Types:** `depends_on`

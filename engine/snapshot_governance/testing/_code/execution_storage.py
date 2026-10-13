@@ -8,7 +8,9 @@ import json
 from pathlib import Path
 import shutil
 import sys
+import stat
 import time
+from types import SimpleNamespace
 import unittest
 import uuid
 from unittest.mock import patch
@@ -21,6 +23,7 @@ from execution_storage import (  # noqa: E402
     _tree_size,
     recover_owned_orphans,
 )
+from heavy_admission import HeavyAdmissionGuard  # noqa: E402
 
 
 class ExecutionStorageTests(unittest.TestCase):
@@ -48,20 +51,77 @@ class ExecutionStorageTests(unittest.TestCase):
         target.mkdir(parents=True)
         object_file = target / "vanishing.o"
         object_file.write_bytes(b"temporary compiler object")
-        original_stat = Path.stat
-        reads = 0
+        original_stat = os.stat
 
-        def racing_stat(path: Path, *args: object, **kwargs: object) -> os.stat_result:
-            nonlocal reads
-            if path == object_file:
-                reads += 1
-                if reads == 2:
-                    object_file.unlink()
-                    raise FileNotFoundError(object_file)
-            return original_stat(path, *args, **kwargs)
+        def racing_stat(path: str, *, follow_symlinks: bool) -> os.stat_result:
+            if Path(path) == object_file:
+                self.assertFalse(follow_symlinks)
+                object_file.unlink()
+                raise FileNotFoundError(object_file)
+            return original_stat(path, follow_symlinks=follow_symlinks)
 
-        with patch.object(Path, "stat", racing_stat):
+        with patch("execution_storage.os.stat", racing_stat):
             self.assertEqual(_tree_size(target), 0)
+        self.assertFalse(object_file.exists())
+
+    def test_storage_samples_are_fresh_and_charge_each_hardlink_path(self) -> None:
+        target = self.storage / "target"
+        nested = target / "nested"
+        nested.mkdir(parents=True)
+        first = target / "first.o"
+        first.write_bytes(b"123")
+        second = nested / "second.o"
+        second.write_bytes(b"4567")
+        alias = nested / "alias.o"
+        os.link(first, alias)
+        self.assertEqual(_tree_size(target), 10)
+        first.write_bytes(b"123456")
+        self.assertEqual(_tree_size(target), 16)
+        second.unlink()
+        self.assertEqual(_tree_size(target), 12)
+        alias.unlink()
+        self.assertEqual(_tree_size(target), 6)
+        self.assertEqual(_tree_size(first), 0)
+        self.assertEqual(_tree_size(target / "absent"), 0)
+
+    def test_storage_scan_rejects_linked_root_before_traversal(self) -> None:
+        for mode, attributes in ((stat.S_IFLNK, 0), (stat.S_IFDIR, 0x400)):
+            with self.subTest(mode=mode, attributes=attributes):
+                metadata = SimpleNamespace(st_mode=mode, st_file_attributes=attributes)
+                with patch("execution_storage.os.lstat", return_value=metadata):
+                    with patch("execution_storage.os.scandir") as scan:
+                        with self.assertRaisesRegex(StorageError, "linked directory"):
+                            _tree_size(self.storage)
+                        scan.assert_not_called()
+
+    def test_storage_scan_rejects_linked_entries_without_following(self) -> None:
+        self.storage.mkdir()
+        for mode, attributes in ((stat.S_IFLNK, 0), (stat.S_IFDIR, 0x400)):
+            with self.subTest(mode=mode, attributes=attributes):
+                metadata = SimpleNamespace(st_mode=mode, st_file_attributes=attributes)
+                entry = SimpleNamespace(path=str(self.storage / "linked"))
+                with patch("execution_storage.os.scandir") as scan:
+                    scan.return_value.__enter__.return_value = [entry]
+                    with patch("execution_storage.os.stat", return_value=metadata) as read:
+                        with self.assertRaisesRegex(StorageError, "linked entry"):
+                            _tree_size(self.storage)
+                        read.assert_called_once_with(entry.path, follow_symlinks=False)
+
+    def test_storage_scan_tolerates_directory_removed_before_descent(self) -> None:
+        self.storage.mkdir()
+        nested = self.storage / "vanishing"
+        nested.mkdir()
+        original_lstat = os.lstat
+
+        def racing_lstat(path: str) -> os.stat_result:
+            if Path(path) == nested:
+                nested.rmdir()
+                raise FileNotFoundError(nested)
+            return original_lstat(path)
+
+        with patch("execution_storage.os.lstat", racing_lstat):
+            self.assertEqual(_tree_size(self.storage), 0)
+        self.assertFalse(nested.exists())
 
     def test_disk_reserve_rejects_before_source_or_evidence_mutation(self) -> None:
         source = self.root / "source.txt"
@@ -87,6 +147,45 @@ class ExecutionStorageTests(unittest.TestCase):
                     self.fail("second heavy job must not start")
             first.target.joinpath("compiler-output").write_bytes(b"owned")
         self.assertFalse(first.run_root.exists())
+
+    def test_environment_selected_temporary_directory_cannot_split_admission(self) -> None:
+        alternate = self.base / "alternate_temporary_storage"
+        alternate.mkdir()
+        first = HeavyAdmissionGuard(self.root)
+        self.addCleanup(first.close)
+        registry_path = first.path
+        with patch.dict(os.environ, {"TEMP": str(alternate), "TMP": str(alternate),
+                                     "TMPDIR": str(alternate)}):
+            with patch("tempfile.gettempdir", return_value=str(alternate)):
+                with self.assertRaises(OSError):
+                    HeavyAdmissionGuard(self.root)
+        first.close()
+        with patch.dict(os.environ, {"TEMP": str(alternate), "TMP": str(alternate),
+                                     "TMPDIR": str(alternate)}):
+            with patch("tempfile.gettempdir", return_value=str(alternate)):
+                second = HeavyAdmissionGuard(self.root)
+                try:
+                    self.assertEqual(second.path, registry_path)
+                finally:
+                    second.close()
+
+    def test_retained_target_blocks_retargeting_until_owned_cleanup_proves_absence(self) -> None:
+        with RunWorkspace(self.root, self.storage, self.policy) as first:
+            first.target.joinpath("retained_object").write_bytes(b"owned compiler bytes")
+        before = first.target.joinpath("retained_object").read_bytes()
+        relocated_storage = self.base / "relocated_storage"
+        with self.assertRaises(StorageError):
+            with RunWorkspace(self.root, relocated_storage, self.policy):
+                self.fail("retained target must remain accounted before relocation")
+        self.assertEqual(first.target.joinpath("retained_object").read_bytes(), before)
+        self.assertFalse((relocated_storage / "python" / "r").exists())
+        with RunWorkspace(self.root, self.storage,
+                          StoragePolicy(reserve_bytes=0, retention="cleanup-owned-compiler")):
+            pass
+        with self.assertRaises(FileNotFoundError):
+            first.target.lstat()
+        with RunWorkspace(self.root, relocated_storage, self.policy) as relocated:
+            self.assertNotEqual(relocated.target, first.target)
 
     def test_failure_cleanup_keeps_preexisting_user_bytes(self) -> None:
         lock = self.root / "Cargo.lock"

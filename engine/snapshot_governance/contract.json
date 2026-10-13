@@ -106,6 +106,26 @@
   "constraints": [],
   "guarantees": [
     {
+      "id": "GUA-IMMUTABLE-RESIDENT-EVALUATION",
+      "subject": {
+        "kind": "capability",
+        "id": "CAP-SNAPSHOT-GOVERNANCE"
+      },
+      "requirements": [
+        "AF-SNAPSHOT-GOVERNANCE-0001-R19"
+      ]
+    },
+    {
+      "id": "GUA-PHYSICAL-EXECUTION-EXCLUSION",
+      "subject": {
+        "kind": "capability",
+        "id": "CAP-SNAPSHOT-GOVERNANCE"
+      },
+      "requirements": [
+        "AF-SNAPSHOT-GOVERNANCE-0001-R18"
+      ]
+    },
+    {
       "id": "GUA-SNAPSHOT-DETERMINISM",
       "subject": {
         "kind": "capability",
@@ -282,7 +302,58 @@
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R17-001",
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R17-002",
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R17-003",
-            "T-AF-SNAPSHOT-GOVERNANCE-0001-R17-004"
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R17-004",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R17-005",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R17-006",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R17-007",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R17-008",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R17-009",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R17-010",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R17-011",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R17-012",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R17-013",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R17-014"
+          ]
+        },
+        {
+          "id": "AF-SNAPSHOT-GOVERNANCE-0001-R18",
+          "statement": "Snapshot Governance admits one heavy execution owner per canonical native physical repository directory across Rust and Python adapters, uses a fixed external native registry independent of temporary-environment changes, rejects linked or reparse registry components, includes retained foreign compiler targets in aggregate budgets, and preserves adapter-owned journals and targets until quiescent locked migration or owned cleanup proves safe reclamation.",
+          "tests": [
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R18-001",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R18-002",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R18-003",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R18-004",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R18-005",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R18-006",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R18-007",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R18-008",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R18-009"
+          ]
+        },
+        {
+          "id": "AF-SNAPSHOT-GOVERNANCE-0001-R19",
+          "statement": "Snapshot Governance opens and refreshes immutable resident generations from stabilized exact byte inventories through the same complete production evaluator, publishes only after full inventory and availability revalidation, supports isolated preimage-checked candidate evaluation without physical writes or actual-head publication, and distinguishes actual execution evidence from absent or stale evidence. Immutable reader pins survive refresh and close with their resource charges; cancellation, stale inputs, journal failure and resource-limit errors preserve the prior head. Missing reuse proofs require conservative full reconstruction, whose successful stabilized result may publish a new head. Dedicated parser workers enforce admission before tokenization, retain cumulative input charges until join, and rotate or evict bounded preparations without changing canonical semantics. Registered broad mutations require one thousand successful whole-bundle cold/prepared comparisons; malformed, cancelled, stale and resource failures remain separate controls. A separately executed empirical companion records actual API measurements without manufacturing successful comparisons, Test execution or qualification.",
+          "tests": [
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R19-001",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R19-002",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R19-003",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R19-004",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R19-005",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R19-006",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R19-007",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R19-008",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R19-009",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R19-010",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R19-020",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R19-021",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R19-022",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R19-023",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R19-024",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R19-025",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R19-026",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R19-027",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R19-028",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R19-029"
           ]
         }
       ]

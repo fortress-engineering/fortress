@@ -12,6 +12,8 @@ use std::path::{Component, Path, PathBuf};
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 
+#[path = "input_retention.rs"]
+pub(crate) mod input_retention;
 #[path = "source_manifest.rs"]
 mod source_manifest;
 #[path = "source_view.rs"]
@@ -22,6 +24,23 @@ pub use source_view::{CandidateChangeSet, ChangeOperation, SourceView, SourceVie
 
 /// Current supported repository observation schema family.
 pub const OBSERVATION_SCHEMA_VERSION: u16 = 1;
+
+/// Operational admission quotas for one repository observation pass.
+///
+/// These quotas constrain retained inventory and bytes read without changing
+/// the successful observation facts. Excluded directory descendants are never
+/// visited; their directory entry still counts toward entry and path quotas.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct ObservationLimits {
+    /// Maximum number of included ordinary files.
+    pub max_files: usize,
+    /// Maximum number of enumerated descendant entries, including directories.
+    pub max_entries: usize,
+    /// Maximum total content bytes across included files.
+    pub max_source_bytes: u64,
+    /// Maximum total UTF-8 bytes of enumerated repository-relative paths.
+    pub max_path_bytes: usize,
+}
 
 /// Explicit caller policy for repository paths omitted from observation.
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize)]
@@ -85,6 +104,34 @@ pub struct RepositoryObservation {
 }
 
 impl RepositoryObservation {
+    /// Projects an immutable supplied byte inventory into canonical content facts.
+    ///
+    /// This performs no filesystem discovery. The caller retains whether the
+    /// supplied inventory represents actual or hypothetical source bytes.
+    pub(crate) fn from_source_view(
+        view: &SourceView,
+        policy: &ObservationPolicy,
+    ) -> Result<Self, ObservationError> {
+        let mut files = Vec::new();
+        for (path, bytes) in view {
+            if policy.excludes(path) {
+                continue;
+            }
+            let size = u64::try_from(bytes.len())
+                .map_err(|_| ObservationError::FileSizeOverflow(path.into()))?;
+            files.push(ObservedFile {
+                path: path.clone(),
+                size,
+                sha256: format!("sha256:{:x}", Sha256::digest(bytes)),
+            });
+        }
+        Ok(Self {
+            schema_version: OBSERVATION_SCHEMA_VERSION,
+            knowledge_state: KnowledgeState::Observed,
+            files,
+        })
+    }
+
     /// Returns the observation schema family.
     #[must_use]
     pub const fn schema_version(&self) -> u16 {
@@ -182,6 +229,172 @@ pub fn observe_repository(
     })
 }
 
+/// Observes the same ordinary file facts with preallocation admission quotas.
+///
+/// Entry and path quotas apply before retaining each enumeration entry. File
+/// metadata is checked before content hashing, and content growth during reads
+/// cannot exceed the byte quota. Traversal uses bounded explicit frames rather
+/// than a recursive directory stack. The root itself is not a descendant entry.
+///
+/// # Errors
+///
+/// Returns the ordinary observation errors, or
+/// [`ObservationError::ResourceLimit`] without a partial observation when an
+/// admission quota would be exceeded.
+pub fn observe_repository_bounded(
+    root: impl AsRef<Path>,
+    policy: &ObservationPolicy,
+    limits: &ObservationLimits,
+) -> Result<RepositoryObservation, ObservationError> {
+    let root = root.as_ref();
+    let metadata = fs::symlink_metadata(root)
+        .map_err(|source| ObservationError::io("inspect root", root, source))?;
+    if !metadata.file_type().is_dir() {
+        return Err(ObservationError::RootNotDirectory(root.to_path_buf()));
+    }
+    let mut budget = ObservationBudget::new(limits);
+    let mut frames = vec![bounded_directory_entries(root, root, &mut budget)?.into_iter()];
+    let mut files = Vec::new();
+    while let Some(frame) = frames.last_mut() {
+        let Some((relative, entry)) = frame.next() else {
+            frames.pop();
+            continue;
+        };
+        if policy.excludes(&relative) {
+            continue;
+        }
+        let absolute = entry.path();
+        let file_type = entry
+            .file_type()
+            .map_err(|source| ObservationError::io("inspect entry type", &absolute, source))?;
+        if file_type.is_dir() {
+            frames.push(bounded_directory_entries(root, &absolute, &mut budget)?.into_iter());
+        } else if file_type.is_file() {
+            admit_inventory("files", &mut budget.files, limits.max_files, 1)?;
+            let file = observe_file_with_limit(
+                relative,
+                &absolute,
+                Some((budget.source_bytes, limits.max_source_bytes)),
+            )?;
+            budget.source_bytes += file.size;
+            files.push(file);
+        } else {
+            return Err(ObservationError::UnsupportedEntry(absolute));
+        }
+    }
+    files.sort_unstable_by(|left, right| left.path.cmp(&right.path));
+    Ok(RepositoryObservation {
+        schema_version: OBSERVATION_SCHEMA_VERSION,
+        knowledge_state: KnowledgeState::Observed,
+        files,
+    })
+}
+
+struct ObservationBudget<'a> {
+    limits: &'a ObservationLimits,
+    entries: usize,
+    path_bytes: usize,
+    files: usize,
+    source_bytes: u64,
+}
+
+impl<'a> ObservationBudget<'a> {
+    const fn new(limits: &'a ObservationLimits) -> Self {
+        Self {
+            limits,
+            entries: 0,
+            path_bytes: 0,
+            files: 0,
+            source_bytes: 0,
+        }
+    }
+}
+
+fn admit_inventory(
+    resource: &'static str,
+    used: &mut usize,
+    maximum: usize,
+    amount: usize,
+) -> Result<(), ObservationError> {
+    let observed = used
+        .checked_add(amount)
+        .ok_or(ObservationError::ResourceLimit {
+            resource,
+            maximum: u64::try_from(maximum).unwrap_or(u64::MAX),
+            observed: u64::MAX,
+        })?;
+    if observed > maximum {
+        return Err(ObservationError::ResourceLimit {
+            resource,
+            maximum: u64::try_from(maximum).unwrap_or(u64::MAX),
+            observed: u64::try_from(observed).unwrap_or(u64::MAX),
+        });
+    }
+    *used = observed;
+    Ok(())
+}
+
+fn bounded_directory_entries(
+    root: &Path,
+    directory: &Path,
+    budget: &mut ObservationBudget<'_>,
+) -> Result<Vec<(String, DirEntry)>, ObservationError> {
+    let entries = fs::read_dir(directory)
+        .map_err(|source| ObservationError::io("read directory", directory, source))?;
+    let mut ordered = Vec::new();
+    for entry in entries {
+        let entry = entry
+            .map_err(|source| ObservationError::io("read directory entry", directory, source))?;
+        admit_inventory("entries", &mut budget.entries, budget.limits.max_entries, 1)?;
+        let filename = entry.file_name();
+        let filename = filename
+            .to_str()
+            .ok_or_else(|| ObservationError::NonUnicodePath(entry.path()))?;
+        let parent_bytes = if directory == root {
+            0
+        } else {
+            relative_path_bytes(root, directory)?
+        };
+        let path_bytes = parent_bytes
+            .saturating_add(usize::from(parent_bytes != 0))
+            .saturating_add(filename.len());
+        admit_inventory(
+            "path_bytes",
+            &mut budget.path_bytes,
+            budget.limits.max_path_bytes,
+            path_bytes,
+        )?;
+        let absolute = entry.path();
+        ordered.push((relative_path(root, &absolute)?, entry));
+    }
+    ordered.sort_unstable_by(|left, right| left.0.cmp(&right.0));
+    Ok(ordered)
+}
+
+fn relative_path_bytes(root: &Path, path: &Path) -> Result<usize, ObservationError> {
+    let relative = path
+        .strip_prefix(root)
+        .map_err(|_| ObservationError::PathOutsideRoot(path.to_path_buf()))?;
+    let mut bytes = 0_usize;
+    let mut count = 0_usize;
+    for component in relative.components() {
+        let Component::Normal(segment) = component else {
+            return Err(ObservationError::PathOutsideRoot(path.to_path_buf()));
+        };
+        let segment = segment
+            .to_str()
+            .ok_or_else(|| ObservationError::NonUnicodePath(path.to_path_buf()))?;
+        bytes = bytes
+            .saturating_add(segment.len())
+            .saturating_add(usize::from(count != 0));
+        count += 1;
+    }
+    if count == 0 {
+        return Err(ObservationError::PathOutsideRoot(path.to_path_buf()));
+    }
+    Ok(bytes)
+}
+
 /// Explains why repository observation could not produce trustworthy facts.
 #[derive(Debug)]
 pub enum ObservationError {
@@ -197,6 +410,15 @@ pub enum ObservationError {
     UnsupportedEntry(PathBuf),
     /// Byte counting exceeded the supported `u64` observation size.
     FileSizeOverflow(PathBuf),
+    /// An operational quota prevented a complete observation.
+    ResourceLimit {
+        /// Stable quota name: `files`, `entries`, `source_bytes`, or `path_bytes`.
+        resource: &'static str,
+        /// Configured maximum for this observation pass.
+        maximum: u64,
+        /// Requested total, or `u64::MAX` if counting overflowed.
+        observed: u64,
+    },
     /// A filesystem operation failed.
     Io {
         /// Stable operation description.
@@ -262,6 +484,14 @@ impl Display for ObservationError {
                     path.display()
                 )
             }
+            Self::ResourceLimit {
+                resource,
+                maximum,
+                observed,
+            } => write!(
+                formatter,
+                "observation {resource} quota exceeded: {observed} requested, maximum {maximum}"
+            ),
             Self::Io {
                 operation,
                 path,
@@ -325,8 +555,22 @@ fn observe_file(
     relative_path: String,
     absolute_path: &Path,
 ) -> Result<ObservedFile, ObservationError> {
+    observe_file_with_limit(relative_path, absolute_path, None)
+}
+
+fn observe_file_with_limit(
+    relative_path: String,
+    absolute_path: &Path,
+    source_limit: Option<(u64, u64)>,
+) -> Result<ObservedFile, ObservationError> {
     let file = File::open(absolute_path)
         .map_err(|source| ObservationError::io("open file", absolute_path, source))?;
+    if let Some((already_read, maximum)) = source_limit {
+        let metadata = file
+            .metadata()
+            .map_err(|source| ObservationError::io("inspect file", absolute_path, source))?;
+        admit_source_bytes(already_read, metadata.len(), maximum)?;
+    }
     let mut reader = BufReader::new(file);
     let mut hasher = Sha256::new();
     let mut size = 0_u64;
@@ -339,12 +583,15 @@ fn observe_file(
         if read == 0 {
             break;
         }
-        hasher.update(&buffer[..read]);
-        let read = u64::try_from(read)
+        let read_bytes = u64::try_from(read)
             .map_err(|_| ObservationError::FileSizeOverflow(absolute_path.to_path_buf()))?;
         size = size
-            .checked_add(read)
+            .checked_add(read_bytes)
             .ok_or_else(|| ObservationError::FileSizeOverflow(absolute_path.to_path_buf()))?;
+        if let Some((already_read, maximum)) = source_limit {
+            admit_source_bytes(already_read, size, maximum)?;
+        }
+        hasher.update(&buffer[..read]);
     }
 
     Ok(ObservedFile {
@@ -352,6 +599,24 @@ fn observe_file(
         size,
         sha256: format!("sha256:{:x}", hasher.finalize()),
     })
+}
+
+fn admit_source_bytes(already_read: u64, size: u64, maximum: u64) -> Result<(), ObservationError> {
+    let observed = already_read
+        .checked_add(size)
+        .ok_or(ObservationError::ResourceLimit {
+            resource: "source_bytes",
+            maximum,
+            observed: u64::MAX,
+        })?;
+    if observed > maximum {
+        return Err(ObservationError::ResourceLimit {
+            resource: "source_bytes",
+            maximum,
+            observed,
+        });
+    }
+    Ok(())
 }
 
 fn relative_path(root: &Path, path: &Path) -> Result<String, ObservationError> {

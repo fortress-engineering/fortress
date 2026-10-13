@@ -35,3 +35,5 @@ Consumes the production analyzer and verifies exactly the Feature requirements o
 ## Guarantees
 
 Fixtures assert exact semantic outcomes and coverage states, preserve parent-local Test IDs, and do not reinterpret unsupported resolution as successful analysis.
+
+R09 preparation controls cover exact replay, shifted provenance, contribution deletion, missed lookup invalidation, conservative authority fallback, repeated operation ordinals, graph split/merge and recursion, typed error parity, and deterministic owner-level mutation comparisons through `program_preparation.rs`. Successful owner comparisons do not substitute for the complete artifact-bundle gate.

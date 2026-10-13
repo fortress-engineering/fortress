@@ -15,8 +15,11 @@ from pathlib import Path
 import secrets
 import shutil
 import socket
+import stat
 import time
 from typing import Any
+
+from heavy_admission import HeavyAdmissionGuard
 
 
 GIB = 1024**3
@@ -87,18 +90,36 @@ def _durable_write(path: Path, content: bytes) -> None:
 
 
 def _tree_size(root: Path) -> int:
-    if not root.exists():
-        return 0
     total = 0
-    for path in root.rglob("*"):
+    pending = [str(root)]
+    while pending:
+        directory = pending.pop()
         try:
-            if path.is_symlink():
-                raise StorageError(f"symbolic link in execution storage: {path}")
-            if path.is_file():
-                total += path.stat().st_size
+            metadata = os.lstat(directory)
+            if stat.S_ISLNK(metadata.st_mode) or getattr(
+                metadata, "st_file_attributes", 0
+            ) & 0x400:
+                raise StorageError(f"linked directory in execution storage: {directory}")
+            if not stat.S_ISDIR(metadata.st_mode):
+                continue
+            with os.scandir(directory) as entries:
+                for entry in entries:
+                    try:
+                        # Windows directory enumeration may retain stale sizes
+                        # for hardlink aliases. Query the current path explicitly.
+                        metadata = os.stat(entry.path, follow_symlinks=False)
+                    except FileNotFoundError:
+                        continue
+                    if stat.S_ISLNK(metadata.st_mode) or getattr(
+                        metadata, "st_file_attributes", 0
+                    ) & 0x400:
+                        raise StorageError(f"linked entry in execution storage: {entry.path}")
+                    if stat.S_ISDIR(metadata.st_mode):
+                        pending.append(entry.path)
+                    elif stat.S_ISREG(metadata.st_mode):
+                        total += metadata.st_size
         except FileNotFoundError:
-            # Compilers routinely replace incremental objects while a budget
-            # sample is walking the target. A later sample sees the new state.
+            # Compilers may replace entries or directories during a fresh sample.
             continue
     return total
 
@@ -191,14 +212,26 @@ class RunWorkspace:
         self.target = self.namespace_root / "c" / short_identity
         self.staging = self.run_root / "s"
         self._lease: Any = None
+        self._admission: HeavyAdmissionGuard | None = None
         self._journal: dict[str, Any] = {}
         self._projection_root: Path | None = None
         self._observed_peak = 0
 
-    def _lock(self) -> None:
-        self.registry.mkdir(parents=True, exist_ok=True)
-        lease = open(self.lock_path, "a+b")
+    def _lock(self, *, recovery: bool = False) -> None:
         try:
+            self._admission = HeavyAdmissionGuard(
+                self.repository, ("python", self.identity) if recovery else None
+            )
+            self._admission.validate_target("python", self.target)
+        except OSError as error:
+            if self._admission is not None:
+                self._admission.close()
+                self._admission = None
+            raise StorageError("another or unresolved adapter owns heavy admission") from error
+        lease = None
+        try:
+            self.registry.mkdir(parents=True, exist_ok=True)
+            lease = open(self.lock_path, "a+b")
             if os.name == "nt":
                 import msvcrt
 
@@ -212,12 +245,18 @@ class RunWorkspace:
 
                 fcntl.flock(lease.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
         except OSError as error:
-            lease.close()
+            if lease is not None:
+                lease.close()
+            self._admission.close()
+            self._admission = None
             raise StorageError("another heavy job owns this repository") from error
         self._lease = lease
 
     def _unlock(self) -> None:
         if self._lease is None:
+            if self._admission is not None:
+                self._admission.close()
+                self._admission = None
             return
         try:
             if os.name == "nt":
@@ -232,6 +271,12 @@ class RunWorkspace:
         finally:
             self._lease.close()
             self._lease = None
+            if self._admission is not None:
+                try:
+                    self._admission.complete_owned("python", self.identity)
+                finally:
+                    self._admission.close()
+                    self._admission = None
 
     def _save(self) -> None:
         _atomic_json(self.journal_path, self._journal)
@@ -245,7 +290,9 @@ class RunWorkspace:
             )
 
     def check_budget(self) -> None:
-        compiler_bytes = _tree_size(self.target)
+        paths = (self._admission.compiler_paths(self.target)
+                 if self._admission is not None else {self.target})
+        compiler_bytes = sum(_tree_size(path) for path in paths)
         if compiler_bytes > self.policy.compiler_budget_bytes:
             raise StorageError(
                 f"compiler target exceeded budget: {compiler_bytes} > "
@@ -321,6 +368,11 @@ class RunWorkspace:
                 "started_at": time.time(),
             }
             self._save()
+            if self._admission is None:
+                raise StorageError("missing shared heavy admission")
+            self._admission.register(
+                "python", self.identity, self.nonce, self.journal_path, self.target
+            )
             self.set_lifecycle("RUNNING")
             return self
         except BaseException:
@@ -505,7 +557,7 @@ def recover_owned_orphans(
         if allowed_publication_paths is not None
         else None
     )
-    probe._lock()
+    probe._lock(recovery=True)
     results: list[dict[str, str]] = []
     try:
         for journal_path in sorted(probe.registry.glob("*.json")):

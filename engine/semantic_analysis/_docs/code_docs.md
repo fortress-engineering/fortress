@@ -10,7 +10,7 @@ The loader validates distributed contracts against PSM ownership and types. The 
 
 ## State
 
-Analysis is stateless beyond process-local immutable indexes, evolving abstract environments, and fixed-point summaries derived from one PSM and one canonical Function Contract set.
+Canonical analysis uses process-local immutable indexes, evolving environments and fixed-point summaries from one PSM and one Function Contract set. Optional preparation retains bounded exact round payloads separately from the finished immutable evaluation.
 
 ## Failure Semantics
 
@@ -29,3 +29,5 @@ Implements deterministic value-domain subset, intersection, join, difference, bo
 ### [`semantic.rs`](../_code/semantic.rs)
 
 Interprets PSM control/value facts, derives recursive summaries, checks contracts and partial operations, records coverage, serializes derived Info, and normalizes PROGRAM-DOMAIN-001 findings. Caller-indexed call views retain every call in its original PSM order, preserving first-match resolution while avoiding repeated scans of unrelated calls.
+
+Prepared evaluation retains exact initialized and synchronous symbol-round domains under current program context, type, contract, body, caller and reverse-dependency bindings. A changed provider invalidates every dependent trajectory. Replayed units use their original round index; missing later rounds execute the same transfer, join and widening functions through the current global stop and cap. Final summaries, checks, diagnostics, headers and findings are always rebuilt from current inputs. Configurable owner retention caps bound admitted round payloads; omitted caches cause reconstruction and never change domain meaning.

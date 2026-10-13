@@ -15,6 +15,11 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
+use crate::program_semantics::{
+    CallResolutionState, ProgramDependencyKind, ProgramDependencyRead, ProgramDependencyResult,
+    ProgramSemanticModel,
+};
+
 /// Canonical affected-analysis document schema.
 pub const AFFECTED_ANALYSIS_SCHEMA: &str = "urn:fortress:schema:v1:affected-analysis";
 /// Canonical affected-analysis schema version.
@@ -352,6 +357,822 @@ impl AffectedSnapshot {
     pub fn to_canonical_json(&self) -> Result<String, serde_json::Error> {
         canonical_json(self)
     }
+}
+
+/// Neutral input classification resolved by the composition root's inventory.
+/// This type grants no authority from a path spelling or an editable record.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub enum SessionInputRole {
+    /// Current application/source subject bytes.
+    Source,
+    /// Active configuration, ownership, contracts or selected authority bytes.
+    Authority,
+    /// Retained evidence/materialization availability, outside semantic input.
+    Availability,
+    /// The inventory cannot prove a complete recognized input role.
+    Unsupported,
+}
+
+/// One exact input and its already resolved inventory role.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub struct SessionInputDescriptor {
+    path: String,
+    digest: String,
+    role: SessionInputRole,
+}
+
+impl SessionInputDescriptor {
+    /// Records one composition-root role with canonical path and exact bytes.
+    ///
+    /// # Errors
+    /// Returns an error for a malformed repository path or SHA-256 identity.
+    pub fn new(
+        path: impl Into<String>,
+        digest: impl Into<String>,
+        role: SessionInputRole,
+    ) -> Result<Self, AffectedAnalysisError> {
+        let path = path.into();
+        let digest = digest.into();
+        validate_relative_path(&path)?;
+        validate_digest(&digest)?;
+        Ok(Self { path, digest, role })
+    }
+
+    /// Returns the canonical repository path.
+    #[must_use]
+    pub fn path(&self) -> &str {
+        &self.path
+    }
+    /// Returns the exact current content identity.
+    #[must_use]
+    pub fn digest(&self) -> &str {
+        &self.digest
+    }
+    /// Returns the caller-resolved inventory role.
+    #[must_use]
+    pub const fn role(&self) -> SessionInputRole {
+        self.role
+    }
+}
+
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
+struct SessionQueryKey {
+    source_path: String,
+    caller: Option<String>,
+    kind: ProgramDependencyKind,
+    query: String,
+}
+
+/// Validated owner query traces and reverse dependencies for one generation.
+///
+/// The index identifies reconstruction candidates; the owning evaluators still
+/// prove actual reuse. It never substitutes selective safety for missing trace
+/// coverage, nor changes the existing affected-analysis wire document.
+#[derive(Clone, Debug)]
+pub struct SessionDependencyIndex {
+    source_fingerprint: String,
+    context_digest: String,
+    authority_digest: String,
+    ownership_digest: String,
+    declaration_digest: String,
+    inputs: BTreeMap<String, SessionInputDescriptor>,
+    units: BTreeMap<String, AffectedUnit>,
+    queries: BTreeMap<SessionQueryKey, BTreeSet<ProgramDependencyResult>>,
+    query_dependents: BTreeMap<(ProgramDependencyKind, String), BTreeSet<String>>,
+    provider_dependents: BTreeMap<String, BTreeSet<String>>,
+    scope_bindings: BTreeMap<SessionQueryKey, BTreeSet<ProgramDependencyResult>>,
+    coverage_reasons: BTreeSet<String>,
+}
+
+impl SessionDependencyIndex {
+    /// Builds a current index from finished owner facts and complete read traces.
+    /// Extra availability entries are permitted only as separately classified
+    /// inventory records. Missing coverage remains an explicit full fallback.
+    ///
+    /// # Errors
+    /// Returns an error for malformed identities, duplicate inventory paths or
+    /// invalid snapshot unit/dependency structure.
+    #[allow(clippy::too_many_lines)]
+    pub fn new(
+        snapshot: &AffectedSnapshot,
+        psm: &ProgramSemanticModel,
+        reads: &[ProgramDependencyRead],
+        authority_digest: &str,
+        selected_authority_paths: &BTreeSet<String>,
+        input_descriptors: &[SessionInputDescriptor],
+    ) -> Result<Self, AffectedAnalysisError> {
+        validate_digest(snapshot.source_fingerprint())?;
+        validate_digest(authority_digest)?;
+        validate_session_snapshot(snapshot)?;
+        for path in selected_authority_paths {
+            validate_relative_path(path)?;
+        }
+        let mut inputs = BTreeMap::new();
+        for descriptor in input_descriptors {
+            validate_relative_path(&descriptor.path)?;
+            validate_digest(&descriptor.digest)?;
+            if inputs
+                .insert(descriptor.path.clone(), descriptor.clone())
+                .is_some()
+            {
+                return Err(AffectedAnalysisError::DuplicateIdentity {
+                    class: "session input",
+                    identity: descriptor.path.clone(),
+                });
+            }
+        }
+        let mut index = Self {
+            source_fingerprint: snapshot.source_fingerprint.clone(),
+            context_digest: psm.program_context().digest(),
+            authority_digest: authority_digest.into(),
+            ownership_digest: String::new(),
+            declaration_digest: session_declaration_digest(psm)?,
+            inputs,
+            units: snapshot
+                .units
+                .iter()
+                .map(|unit| (unit.id.clone(), unit.clone()))
+                .collect(),
+            queries: BTreeMap::new(),
+            query_dependents: BTreeMap::new(),
+            provider_dependents: BTreeMap::new(),
+            scope_bindings: BTreeMap::new(),
+            coverage_reasons: BTreeSet::new(),
+        };
+        if snapshot.schema != AFFECTED_ANALYSIS_SCHEMA
+            || snapshot.schema_version != AFFECTED_ANALYSIS_SCHEMA_VERSION
+            || snapshot.semantic_version != AFFECTED_ANALYSIS_VERSION
+        {
+            index.incomplete("snapshot_version_unsupported".into());
+        }
+        index.validate_inventory(snapshot, selected_authority_paths, psm);
+        let symbols = psm
+            .symbols()
+            .iter()
+            .map(|symbol| (symbol.id(), symbol))
+            .collect::<BTreeMap<_, _>>();
+        for read in reads {
+            if !read.source_path.is_empty() {
+                validate_relative_path(&read.source_path)?;
+                if index
+                    .inputs
+                    .get(&read.source_path)
+                    .is_none_or(|input| input.role == SessionInputRole::Availability)
+                {
+                    index.incomplete(format!("descriptor_source_missing:{}", read.source_path));
+                }
+            } else if read.caller.is_some()
+                || !matches!(
+                    read.kind,
+                    ProgramDependencyKind::Context
+                        | ProgramDependencyKind::Cfg
+                        | ProgramDependencyKind::Ownership
+                )
+            {
+                index.incomplete("descriptor_scope_missing".into());
+            }
+            if read.query.trim().is_empty() || read.query.contains('\0') {
+                index.incomplete("descriptor_query_invalid".into());
+            }
+            let dependent = if let Some(caller) = &read.caller {
+                let id = format!("symbol:{caller}");
+                if symbols
+                    .get(caller.as_str())
+                    .is_none_or(|symbol| symbol.source_path() != read.source_path)
+                    || index
+                        .units
+                        .get(&id)
+                        .is_none_or(|unit| unit.kind != AffectedUnitKind::Symbol)
+                {
+                    index.incomplete(format!("descriptor_caller_missing:{caller}"));
+                }
+                id
+            } else if !read.source_path.is_empty() {
+                format!("authority:{}", read.source_path)
+            } else {
+                "evaluation:input-key".into()
+            };
+            if !index.units.contains_key(&dependent) {
+                index.incomplete(format!("descriptor_unit_missing:{dependent}"));
+            }
+            index.add_read(read, &dependent);
+        }
+        index.validate_coverage(psm, reads)?;
+        Ok(index)
+    }
+
+    /// Whether every required input, caller and recognized lookup has coverage.
+    /// This is trace coverage, not a claim that Rust semantics are fully known.
+    #[must_use]
+    pub fn coverage_complete(&self) -> bool {
+        self.coverage_reasons.is_empty()
+    }
+
+    /// Returns direct users of a successful or missed query, across its scopes.
+    #[must_use]
+    pub fn query_dependents(&self, kind: ProgramDependencyKind, query: &str) -> Vec<String> {
+        self.query_dependents
+            .get(&(kind, query.into()))
+            .into_iter()
+            .flatten()
+            .cloned()
+            .collect()
+    }
+
+    /// Returns direct users of an observed provider identity.
+    #[must_use]
+    pub fn provider_dependents(&self, provider: &str) -> Vec<String> {
+        self.provider_dependents
+            .get(provider)
+            .into_iter()
+            .flatten()
+            .cloned()
+            .collect()
+    }
+
+    /// Compares fresh current descriptors and computes the current reverse closure.
+    /// Selective status reports candidates only; model owners retain their own
+    /// unchanged-input and component reconstruction proof obligations.
+    #[must_use]
+    #[allow(clippy::too_many_lines)]
+    pub fn invalidate(&self, current: &Self) -> SessionInvalidation {
+        let mut reasons = self
+            .coverage_reasons
+            .union(&current.coverage_reasons)
+            .cloned()
+            .collect::<BTreeSet<_>>();
+        let mut changed = BTreeSet::new();
+        let mut availability = BTreeSet::new();
+        let paths = self
+            .inputs
+            .keys()
+            .chain(current.inputs.keys())
+            .collect::<BTreeSet<_>>();
+        for path in paths {
+            let before = self.inputs.get(path);
+            let after = current.inputs.get(path);
+            if before == after {
+                continue;
+            }
+            if before
+                .into_iter()
+                .chain(after)
+                .all(|input| input.role == SessionInputRole::Availability)
+            {
+                availability.insert(path.clone());
+            } else {
+                changed.insert(path.clone());
+                if before.into_iter().chain(after).any(|input| {
+                    matches!(
+                        input.role,
+                        SessionInputRole::Authority | SessionInputRole::Unsupported
+                    )
+                }) {
+                    reasons.insert(format!("authority_input_changed:{path}"));
+                }
+            }
+        }
+        if self.context_digest != current.context_digest {
+            reasons.insert("context_changed".into());
+        }
+        if self.authority_digest != current.authority_digest {
+            reasons.insert("authority_changed".into());
+        }
+        if self.ownership_digest != current.ownership_digest {
+            reasons.insert("ownership_changed".into());
+        }
+        if self.declaration_digest != current.declaration_digest {
+            reasons.insert("declaration_changed".into());
+        }
+        if self.scope_bindings != current.scope_bindings {
+            reasons.insert("import_scope_changed".into());
+        }
+        if self.source_fingerprint != current.source_fingerprint && changed.is_empty() {
+            reasons.insert("source_fingerprint_changed_without_input_binding".into());
+        }
+        let mut affected = changed
+            .iter()
+            .map(|path| format!("authority:{path}"))
+            .collect::<BTreeSet<_>>();
+        let keys = self
+            .queries
+            .keys()
+            .chain(current.queries.keys())
+            .collect::<BTreeSet<_>>();
+        for key in keys {
+            if self.queries.get(key) != current.queries.get(key) {
+                for index in [self, current] {
+                    affected.extend(
+                        index
+                            .query_dependents
+                            .get(&(key.kind, key.query.clone()))
+                            .into_iter()
+                            .flatten()
+                            .cloned(),
+                    );
+                }
+            }
+        }
+        for (id, unit) in &current.units {
+            if self.units.get(id) != Some(unit) {
+                affected.insert(id.clone());
+            }
+        }
+        for id in self
+            .units
+            .keys()
+            .filter(|id| !current.units.contains_key(*id))
+        {
+            affected.insert(id.clone());
+        }
+        let mut reverse = BTreeMap::<&str, Vec<&str>>::new();
+        for unit in current.units.values() {
+            for dependency in &unit.dependencies {
+                reverse.entry(dependency).or_default().push(&unit.id);
+            }
+        }
+        let mut queue = affected.iter().cloned().collect::<VecDeque<_>>();
+        while let Some(id) = queue.pop_front() {
+            for dependent in reverse.get(id.as_str()).into_iter().flatten() {
+                if affected.insert((*dependent).into()) {
+                    queue.push_back((*dependent).into());
+                }
+            }
+        }
+        let status = if !reasons.is_empty() {
+            SessionInvalidationStatus::FullReevaluationRequired
+        } else if changed.is_empty() && affected.is_empty() {
+            SessionInvalidationStatus::Unchanged
+        } else {
+            SessionInvalidationStatus::Selective
+        };
+        if status == SessionInvalidationStatus::FullReevaluationRequired {
+            affected.extend(current.units.keys().cloned());
+        }
+        SessionInvalidation {
+            status,
+            changed_inputs: changed.into_iter().collect(),
+            availability_changes: availability.into_iter().collect(),
+            affected_units: affected.into_iter().collect(),
+            reasons: reasons.into_iter().collect(),
+        }
+    }
+
+    fn incomplete(&mut self, reason: String) {
+        self.coverage_reasons.insert(reason);
+    }
+
+    fn validate_inventory(
+        &mut self,
+        snapshot: &AffectedSnapshot,
+        selected: &BTreeSet<String>,
+        psm: &ProgramSemanticModel,
+    ) {
+        for input in &snapshot.inputs {
+            match self.inputs.get(&input.path) {
+                None => self.incomplete(format!("input_descriptor_missing:{}", input.path)),
+                Some(descriptor) if descriptor.digest != input.digest => {
+                    self.incomplete(format!("input_descriptor_digest_mismatch:{}", input.path));
+                }
+                Some(descriptor) if descriptor.role == SessionInputRole::Unsupported => {
+                    self.incomplete(format!("unsupported_input_role:{}", input.path));
+                }
+                Some(descriptor)
+                    if active_authority_kind(input.kind)
+                        && descriptor.role != SessionInputRole::Authority =>
+                {
+                    self.incomplete(format!("authority_role_mismatch:{}", input.path));
+                }
+                Some(_) => {}
+            }
+        }
+        for path in selected {
+            if self
+                .inputs
+                .get(path)
+                .is_none_or(|input| input.role != SessionInputRole::Authority)
+                || !snapshot.inputs.iter().any(|input| &input.path == path)
+            {
+                self.incomplete(format!("selected_authority_binding_missing:{path}"));
+            }
+        }
+        let extra = self
+            .inputs
+            .values()
+            .filter(|input| {
+                !snapshot
+                    .inputs
+                    .iter()
+                    .any(|observed| observed.path == input.path)
+                    && input.role != SessionInputRole::Availability
+            })
+            .map(|input| input.path.clone())
+            .collect::<Vec<_>>();
+        for path in extra {
+            self.incomplete(format!("input_not_in_snapshot:{path}"));
+        }
+        for source in psm.semantic_inputs() {
+            let path = source.path();
+            if !self.inputs.get(path).is_some_and(|input| {
+                matches!(
+                    input.role,
+                    SessionInputRole::Source | SessionInputRole::Authority
+                )
+            }) {
+                self.incomplete(format!("semantic_source_binding_missing:{path}"));
+            }
+            if matches!(
+                source.role(),
+                crate::program_semantics::ProgramInputRole::RustSource
+                    | crate::program_semantics::ProgramInputRole::CargoManifest
+                    | crate::program_semantics::ProgramInputRole::CargoLock
+            ) && !snapshot
+                .inputs
+                .iter()
+                .any(|input| input.path == path && input.digest == source.sha256())
+            {
+                self.incomplete(format!("model_source_digest_mismatch:{path}"));
+            }
+        }
+    }
+
+    fn has_exact_read(
+        &self,
+        source_path: &str,
+        caller: Option<&str>,
+        kind: ProgramDependencyKind,
+        query: &str,
+        result: &ProgramDependencyResult,
+    ) -> bool {
+        let key = SessionQueryKey {
+            source_path: source_path.into(),
+            caller: caller.map(str::to_owned),
+            kind,
+            query: query.into(),
+        };
+        self.queries
+            .get(&key)
+            .is_some_and(|results| results.contains(result))
+    }
+
+    #[allow(clippy::too_many_lines)]
+    fn validate_coverage(
+        &mut self,
+        psm: &ProgramSemanticModel,
+        reads: &[ProgramDependencyRead],
+    ) -> Result<(), AffectedAnalysisError> {
+        for (kind, query) in [
+            (ProgramDependencyKind::Context, "program_context"),
+            (ProgramDependencyKind::Cfg, "selected_cfg"),
+        ] {
+            if !self.has_exact_read(
+                "",
+                None,
+                kind,
+                query,
+                &ProgramDependencyResult::Resolved(vec![self.context_digest.clone()]),
+            ) {
+                self.incomplete(format!("global_descriptor_missing:{query}"));
+            }
+        }
+        let ownership = reads
+            .iter()
+            .filter(|read| {
+                read.source_path.is_empty()
+                    && read.caller.is_none()
+                    && read.kind == ProgramDependencyKind::Ownership
+                    && read.query == "source_ownership"
+            })
+            .filter_map(|read| match &read.result {
+                ProgramDependencyResult::Resolved(values) if values.len() == 1 => {
+                    Some(values[0].clone())
+                }
+                _ => None,
+            })
+            .collect::<BTreeSet<_>>();
+        if ownership.len() == 1 {
+            self.ownership_digest = ownership.into_iter().next().expect("one ownership binding");
+            if self
+                .ownership_digest
+                .strip_prefix("preparation_ownership:")
+                .is_none_or(|digest| validate_digest(digest).is_err())
+            {
+                self.incomplete("ownership_descriptor_invalid".into());
+            }
+        } else {
+            self.incomplete("global_descriptor_missing:source_ownership".into());
+        }
+        for source in psm.semantic_inputs() {
+            let path = source.path();
+            let digest = source.sha256();
+            if !self.has_exact_read(
+                path,
+                None,
+                ProgramDependencyKind::Source,
+                &format!("source:{path}"),
+                &ProgramDependencyResult::Resolved(vec![digest.into()]),
+            ) {
+                self.incomplete(format!("source_descriptor_missing:{path}"));
+            }
+        }
+        for symbol in psm.symbols() {
+            let id = format!("symbol:{}", symbol.id());
+            let digest = serde_json::to_vec(&[symbol])
+                .map(|bytes| sha256(&bytes))
+                .map_err(AffectedAnalysisError::Serialization)?;
+            if !self
+                .units
+                .get(&id)
+                .is_some_and(|unit| unit.kind == AffectedUnitKind::Symbol && unit.digest == digest)
+            {
+                self.incomplete(format!("symbol_unit_binding_mismatch:{}", symbol.id()));
+            }
+        }
+        // Body coverage intentionally tests caller and kind only, just as the
+        // original scan did. Exact source/query/result checks remain separate.
+        let body_kinds = reads
+            .iter()
+            .filter_map(|read| read.caller.as_deref().map(|caller| (caller, read.kind)))
+            .collect::<BTreeSet<_>>();
+        for body in psm.bodies() {
+            for kind in [
+                ProgramDependencyKind::Source,
+                ProgramDependencyKind::Context,
+                ProgramDependencyKind::Cfg,
+                ProgramDependencyKind::ImportScope,
+                ProgramDependencyKind::Effect,
+            ] {
+                if !body_kinds.contains(&(body.symbol(), kind)) {
+                    self.incomplete(format!(
+                        "body_descriptor_missing:{}:{kind:?}",
+                        body.symbol()
+                    ));
+                }
+            }
+        }
+        for call in psm.calls() {
+            let result = match call.state() {
+                CallResolutionState::ResolvedStatic => ProgramDependencyResult::Resolved(
+                    call.callee().into_iter().map(str::to_owned).collect(),
+                ),
+                CallResolutionState::External => ProgramDependencyResult::Resolved(
+                    call.external_target()
+                        .into_iter()
+                        .map(str::to_owned)
+                        .collect(),
+                ),
+                CallResolutionState::Unresolved => ProgramDependencyResult::Unresolved,
+                CallResolutionState::DynamicDispatch
+                | CallResolutionState::Unsupported
+                | CallResolutionState::Invalid => ProgramDependencyResult::Unsupported,
+            };
+            for evidence in call.evidence() {
+                if !self.has_exact_read(
+                    evidence.provenance().path(),
+                    Some(call.caller()),
+                    ProgramDependencyKind::Name,
+                    &format!("call:{}", evidence.reference()),
+                    &result,
+                ) {
+                    self.incomplete(format!(
+                        "call_descriptor_missing:{}:{}",
+                        call.caller(),
+                        evidence.reference()
+                    ));
+                }
+            }
+        }
+        let symbol_ids = psm
+            .symbols()
+            .iter()
+            .map(crate::program_semantics::ExecutableSymbol::id)
+            .collect::<BTreeSet<_>>();
+        let type_ids = psm
+            .types()
+            .iter()
+            .map(crate::program_semantics::ProgramType::id)
+            .collect::<BTreeSet<_>>();
+        let external = psm
+            .calls()
+            .iter()
+            .filter_map(crate::program_semantics::ProgramCall::external_target)
+            .collect::<BTreeSet<_>>();
+        for read in reads {
+            if let ProgramDependencyResult::Resolved(providers) = &read.result {
+                let canonical = providers.iter().collect::<BTreeSet<_>>();
+                if canonical.len() != providers.len()
+                    || !providers.windows(2).all(|pair| pair[0] < pair[1])
+                {
+                    self.incomplete(format!("descriptor_providers_noncanonical:{}", read.query));
+                }
+                if read.kind == ProgramDependencyKind::Name
+                    && providers.iter().any(|id| {
+                        !symbol_ids.contains(id.as_str()) && !external.contains(id.as_str())
+                    })
+                {
+                    self.incomplete(format!("provider_binding_missing:{}", read.query));
+                }
+                if read.kind == ProgramDependencyKind::Type
+                    && (read.query.starts_with("type:")
+                        || read.query.starts_with("local:")
+                        || read.query.starts_with("field:")
+                        || read.query.starts_with("type_alias:"))
+                    && providers.iter().any(|id| !type_ids.contains(id.as_str()))
+                {
+                    self.incomplete(format!("type_provider_binding_missing:{}", read.query));
+                }
+            }
+        }
+        Ok(())
+    }
+
+    fn add_read(&mut self, read: &ProgramDependencyRead, dependent: &str) {
+        if !known_session_query(read) {
+            self.incomplete(format!("unsupported_dependency_mapping:{}", read.query));
+        }
+        let key = SessionQueryKey {
+            source_path: read.source_path.clone(),
+            caller: read.caller.clone(),
+            kind: read.kind,
+            query: read.query.clone(),
+        };
+        self.queries
+            .entry(key.clone())
+            .or_default()
+            .insert(read.result.clone());
+        self.query_dependents
+            .entry((read.kind, read.query.clone()))
+            .or_default()
+            .insert(dependent.to_owned());
+        if let ProgramDependencyResult::Resolved(providers) = &read.result {
+            if providers.is_empty()
+                || providers
+                    .iter()
+                    .any(|provider| provider.trim().is_empty() || provider.contains('\0'))
+            {
+                self.incomplete(format!("descriptor_providers_invalid:{}", read.query));
+            }
+            for provider in providers {
+                self.provider_dependents
+                    .entry(provider.clone())
+                    .or_default()
+                    .insert(dependent.to_owned());
+            }
+        }
+        if read.kind == ProgramDependencyKind::ImportScope && read.query.starts_with("imports:") {
+            self.scope_bindings
+                .entry(key)
+                .or_default()
+                .insert(read.result.clone());
+        }
+    }
+}
+
+/// Operational outcome of comparing two complete current dependency indexes.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SessionInvalidationStatus {
+    /// No current semantic input or unit changed.
+    Unchanged,
+    /// A validated current reverse closure identifies reconstruction candidates.
+    Selective,
+    /// A complete selective dependency proof is unavailable.
+    FullReevaluationRequired,
+}
+
+/// Runtime invalidation candidates and reasons, outside semantic wire identity.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SessionInvalidation {
+    status: SessionInvalidationStatus,
+    changed_inputs: Vec<String>,
+    availability_changes: Vec<String>,
+    affected_units: Vec<String>,
+    reasons: Vec<String>,
+}
+
+impl SessionInvalidation {
+    /// Returns the operational reconstruction class.
+    #[must_use]
+    pub const fn status(&self) -> SessionInvalidationStatus {
+        self.status
+    }
+    /// Returns current semantic input paths that changed, including removals.
+    #[must_use]
+    pub fn changed_inputs(&self) -> &[String] {
+        &self.changed_inputs
+    }
+    /// Returns changed retained availability paths, separately from source truth.
+    #[must_use]
+    pub fn availability_changes(&self) -> &[String] {
+        &self.availability_changes
+    }
+    /// Returns the validated current reverse closure, plus removed identities.
+    #[must_use]
+    pub fn affected_units(&self) -> &[String] {
+        &self.affected_units
+    }
+    /// Returns explicit sorted full-fallback reasons.
+    #[must_use]
+    pub fn reasons(&self) -> &[String] {
+        &self.reasons
+    }
+}
+
+fn validate_session_snapshot(snapshot: &AffectedSnapshot) -> Result<(), AffectedAnalysisError> {
+    for input in &snapshot.inputs {
+        validate_relative_path(&input.path)?;
+        validate_digest(&input.digest)?;
+    }
+    let units = snapshot
+        .units
+        .iter()
+        .map(|unit| {
+            AffectedUnit::new(
+                &unit.id,
+                unit.kind,
+                &unit.digest,
+                unit.dependencies.iter().cloned(),
+            )
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    AffectedSnapshot::new(&snapshot.source_fingerprint, snapshot.inputs.clone(), units)?;
+    Ok(())
+}
+
+fn session_declaration_digest(psm: &ProgramSemanticModel) -> Result<String, AffectedAnalysisError> {
+    let mut value = serde_json::to_value((psm.symbols(), psm.nominal_types(), psm.impls()))
+        .map_err(AffectedAnalysisError::Serialization)?;
+    strip_declaration_locations(&mut value);
+    serde_json::to_vec(&value)
+        .map(|bytes| sha256(&bytes))
+        .map_err(AffectedAnalysisError::Serialization)
+}
+
+fn strip_declaration_locations(value: &mut serde_json::Value) {
+    match value {
+        serde_json::Value::Object(fields) => {
+            fields.remove("provenance");
+            for value in fields.values_mut() {
+                strip_declaration_locations(value);
+            }
+        }
+        serde_json::Value::Array(values) => {
+            for value in values {
+                strip_declaration_locations(value);
+            }
+        }
+        _ => {}
+    }
+}
+
+fn known_session_query(read: &ProgramDependencyRead) -> bool {
+    let prefixes: &[&str] = match read.kind {
+        ProgramDependencyKind::Source => &["source:"],
+        ProgramDependencyKind::Context => &["program_context", "package:"],
+        ProgramDependencyKind::Ownership => &["source_ownership"],
+        ProgramDependencyKind::Cfg => &["selected_cfg"],
+        ProgramDependencyKind::Name => &[
+            "symbol:",
+            "path:",
+            "method:",
+            "exact_method:",
+            "qualified_path:",
+            "call:",
+        ],
+        ProgramDependencyKind::Type => &[
+            "type:",
+            "field:",
+            "nominal:",
+            "type_alias:",
+            "local:",
+            "constructor_signature:",
+            "builder_signature:",
+        ],
+        ProgramDependencyKind::ImportScope => &[
+            "imports:",
+            "alias:",
+            "type_import:",
+            "reexport:",
+            "reexport_limit:",
+            "dependency:",
+        ],
+        ProgramDependencyKind::Effect => {
+            &["rust_signature_catalog", "drop:", "implicit_operation:"]
+        }
+    };
+    prefixes.iter().any(|prefix| {
+        if prefix.ends_with(':') {
+            read.query.starts_with(prefix)
+        } else {
+            read.query == *prefix
+        }
+    })
+}
+
+fn active_authority_kind(kind: AuthorityInputKind) -> bool {
+    !matches!(
+        kind,
+        AuthorityInputKind::Source | AuthorityInputKind::RepositoryInput
+    )
 }
 
 /// Repository input change classification used only for invalidation.

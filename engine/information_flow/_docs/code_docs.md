@@ -22,6 +22,8 @@ Invalid policy or flow contracts return typed errors, supported sink contradicti
 
 Owns label propagation, interprocedural and field-flow derivation, sink checking, trusted-transition diagnostics, artifact serialization, and rule-facing findings.
 
+Binding-identity edges use a request-local borrowed index of argument, expression and place nodes keyed by the complete symbol identity and exact binding name. Matching candidates retain the original sorted-node order and both edge directions. Same-named bindings in other symbols remain separate. Every edge, propagation round, trusted transition and sink check still executes; no graph or fixed-point result is reused across analyses.
+
 ### [`policy.rs`](../_code/policy.rs)
 
 Owns canonical project policy loading, finite facet ordering, validation, and policy digest identity.

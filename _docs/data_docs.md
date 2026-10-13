@@ -36,6 +36,8 @@ Configures Cargo to keep generated lock and build state outside authored Data lo
 
 Declares the Cargo workspace members, common package metadata, Rust edition, and warnings-denied workspace lint policy.
 
+The core package uses optimization level 3 in development and test builds, with debug assertions and integer overflow checks explicitly enabled in both profiles. Test selection, full debug information, panic unwinding, features and warning policy retain their existing settings. Release benchmark settings are unchanged. This reduces analysis cost in the complete native test suite and issuer without dropping runtime correctness checks. Profile changes are configuration changes and invalidate dependent binaries and certification evidence.
+
 ### [`rust_toolchain.toml`](../_data/rust_toolchain.toml)
 
 Pins the minimum stable Rust toolchain that supports the canonical Cargo lockfile strategy.

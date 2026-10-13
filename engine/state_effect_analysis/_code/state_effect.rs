@@ -11,9 +11,11 @@ mod state_contract;
 #[path = "summary.rs"]
 mod summary;
 
+use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
+use std::sync::Arc;
 
 use serde::Serialize;
 use sha2::{Digest, Sha256};
@@ -50,7 +52,7 @@ pub const STATE_EFFECT_ANALYSIS_SCHEMA: &str = "urn:fortress:schema:v5:state-eff
 /// Canonical State & Effect Analysis schema version.
 pub const STATE_EFFECT_ANALYSIS_SCHEMA_VERSION: u16 = 5;
 /// Semantic version of the state/effect analyzer.
-pub const STATE_EFFECT_ANALYSIS_VERSION: &str = "5.0.0";
+pub const STATE_EFFECT_ANALYSIS_VERSION: &str = "5.0.1";
 /// Stable analyzer identity.
 pub const STATE_EFFECT_ANALYZER_ID: &str = "fortress-state-effect-analysis";
 /// Normative typestate rule identity.
@@ -403,7 +405,7 @@ impl OperationSummaryEvidence {
 /// Trusted caller inputs for one actual call-site instantiation.
 ///
 /// Repository catalog bytes cannot supply these inputs or grant acceptance.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
 pub struct OperationSummaryInstantiation {
     /// Exact externally established source, version, target, features and types.
     pub context: SummaryContext,
@@ -666,6 +668,8 @@ impl StateEffectCoverageSummary {
 /// Canonical State & Effect Analysis v1 derived Info.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct StateEffectAnalysisModel {
+    #[serde(skip)]
+    digest_memo: crate::program_semantics::ModelDigestMemo,
     #[serde(rename = "$schema")]
     schema: String,
     schema_version: u16,
@@ -739,10 +743,7 @@ impl StateEffectAnalysisModel {
     ///
     /// Returns a JSON error if serialization fails.
     pub fn digest(&self) -> Result<String, serde_json::Error> {
-        Ok(format!(
-            "sha256:{:x}",
-            Sha256::digest(self.to_canonical_json()?.as_bytes())
-        ))
+        self.digest_memo.digest(self)
     }
 }
 
@@ -774,14 +775,197 @@ impl StateEffectAnalysisEvaluation {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 struct EffectWork {
     direct: BTreeSet<FunctionEffect>,
     transitive: BTreeSet<FunctionEffect>,
-    evidence: BTreeMap<FunctionEffect, BTreeMap<EffectWitnessKey, EffectEvidence>>,
+    evidence: Arc<EffectEvidenceMap>,
     operations: BTreeSet<OperationClassificationEvidence>,
     operation_summaries: BTreeMap<String, OperationSummaryEvidence>,
-    uncertain: BTreeSet<String>,
+    uncertain: EffectUncertainty,
+}
+
+// Prior synchronous rounds and retained units observe immutable reasons. A
+// duplicate insertion must not detach that shared set or allocate another
+// reason; a genuine insertion first copies it for the current round.
+#[derive(Clone, Debug, Default)]
+struct EffectUncertainty(Arc<BTreeSet<String>>);
+
+impl EffectUncertainty {
+    fn insert(&mut self, reason: String) -> bool {
+        if self.0.contains(&reason) {
+            return false;
+        }
+        Arc::make_mut(&mut self.0).insert(reason)
+    }
+
+    fn insert_borrowed(&mut self, reason: &str) -> bool {
+        if self.0.contains(reason) {
+            return false;
+        }
+        Arc::make_mut(&mut self.0).insert(reason.to_owned())
+    }
+
+    fn into_values(self) -> impl Iterator<Item = String> {
+        Arc::unwrap_or_clone(self.0).into_iter()
+    }
+}
+
+impl std::ops::Deref for EffectUncertainty {
+    type Target = BTreeSet<String>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+/// Coordinator-owned direct seeds and exact closure-round trajectories.
+///
+/// Operational retention never substitutes for current canonical headers or
+/// supplied premise authority.
+#[derive(Clone, Default)]
+pub struct StateEffectPreparation {
+    binding_digest: String,
+    symbols: BTreeSet<String>,
+    edges: BTreeSet<(String, String)>,
+    units: BTreeMap<String, PreparedEffectUnit>,
+    accounted_bytes: usize,
+}
+
+impl fmt::Debug for StateEffectPreparation {
+    fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("StateEffectPreparation")
+            .field("units", &self.units.len())
+            .field("cached_round_cardinality", &self.cached_round_cardinality())
+            .field("accounted_bytes", &self.accounted_bytes)
+            .finish_non_exhaustive()
+    }
+}
+
+#[derive(Clone, Debug)]
+struct PreparedEffectUnit {
+    input_digest: String,
+    direct: Arc<EffectWork>,
+    rounds: Vec<Arc<PreparedEffectRound>>,
+}
+
+/// Operational limits on retained direct seeds and closure-round payloads.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+pub struct PreparationRetention {
+    /// Conservative accounted allocation charge, independently from RSS.
+    pub max_accounted_bytes: usize,
+    /// Maximum retained symbol-round payload cardinality.
+    pub max_round_values: usize,
+}
+
+impl Default for PreparationRetention {
+    fn default() -> Self {
+        Self {
+            max_accounted_bytes: 128 * 1024 * 1024,
+            max_round_values: 250_000,
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+struct PreparedEffectRound {
+    closure: EffectClosure,
+    changed: bool,
+}
+
+#[derive(Clone, Debug)]
+struct EffectClosure {
+    transitive: BTreeSet<FunctionEffect>,
+    evidence: Arc<EffectEvidenceMap>,
+    uncertain: EffectUncertainty,
+}
+
+// A synchronous round observes an immutable prior map. Stable rounds and
+// retained trajectories share that allocation; a changed witness copies it
+// before publication into the current round. Canonical summaries still own
+// their complete evidence, and retention charging remains conservative.
+type EffectEvidenceMap =
+    BTreeMap<FunctionEffect, BTreeMap<Arc<EffectWitnessKey>, Arc<EffectEvidence>>>;
+
+impl EffectClosure {
+    fn of(work: &EffectWork) -> Self {
+        Self {
+            transitive: work.transitive.clone(),
+            evidence: work.evidence.clone(),
+            uncertain: work.uncertain.clone(),
+        }
+    }
+
+    fn apply(&self, work: &mut EffectWork) {
+        work.transitive.clone_from(&self.transitive);
+        work.evidence.clone_from(&self.evidence);
+        work.uncertain.clone_from(&self.uncertain);
+    }
+
+    fn accounted_resident_bytes(&self) -> usize {
+        effect_payload_charge(&self.evidence, &self.uncertain)
+    }
+}
+
+fn effect_payload_charge(evidence: &EffectEvidenceMap, uncertain: &BTreeSet<String>) -> usize {
+    evidence.values().flat_map(BTreeMap::values).fold(
+        uncertain.iter().fold(512_usize, |charge, value| {
+            charge.saturating_add(value.len().saturating_mul(8).saturating_add(128))
+        }),
+        |charge, evidence| {
+            charge.saturating_add(
+                serde_json::to_vec(evidence.as_ref())
+                    .expect("effect evidence serializes")
+                    .len()
+                    .saturating_mul(8)
+                    .saturating_add(512),
+            )
+        },
+    )
+}
+
+impl StateEffectPreparation {
+    /// Returns retained symbol-round payloads, including each direct seed round.
+    #[must_use]
+    pub fn cached_round_cardinality(&self) -> usize {
+        self.units.values().map(|unit| unit.rounds.len()).sum()
+    }
+
+    /// Returns a conservative accounted allocation charge, not measured RSS.
+    #[must_use]
+    pub fn accounted_resident_bytes(&self) -> usize {
+        self.accounted_bytes
+    }
+}
+
+/// Actual direct-seed and closure work performed by one prepared request.
+#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize)]
+pub struct StateEffectPreparationWork {
+    /// Current state/policy summaries assembled through the cold producer.
+    pub final_summaries_rebuilt: usize,
+    /// Direct symbol units evaluated by the existing ordered event producer.
+    pub rebuilt_direct_units: usize,
+    /// Exact direct symbol units replayed from identical inputs.
+    pub reused_direct_units: usize,
+    /// Symbol-round closure payloads reconstructed by existing propagation.
+    pub rebuilt_closure_rounds: usize,
+    /// Exact prior symbol-round payloads and changed flags replayed.
+    pub reused_closure_rounds: usize,
+    /// Unchanged units propagated beyond their retained trajectory.
+    pub extended_closure_rounds: usize,
+    /// Static edge-rounds actually processed by closure propagation.
+    pub rebuilt_edge_rounds: usize,
+    /// Static edge-rounds whose complete consumer payload was replayed.
+    pub reused_edge_rounds: usize,
+    /// SCC-rounds containing reconstructed closure units.
+    pub rebuilt_scc_rounds: usize,
+    /// SCC-rounds entirely replayed from exact prior trajectories.
+    pub reused_scc_rounds: usize,
+    /// Prior units lacked a complete compatible dependency proof.
+    pub full_reevaluation_required: bool,
+    /// Operational explanations, excluded from canonical semantic bytes.
+    pub fallback_reasons: Vec<String>,
 }
 
 /// A bounded witness edge in the static call graph. Deeper fan-in remains
@@ -809,42 +993,180 @@ impl EffectWitnessKey {
     }
 }
 
+const TRANSITIVE_LIMIT_PER_EFFECT_AND_PROVENANCE: usize = 4;
+
 fn insert_witness(
-    witnesses: &mut BTreeMap<EffectWitnessKey, EffectEvidence>,
-    uncertain: &mut BTreeSet<String>,
+    evidence: &mut Arc<EffectEvidenceMap>,
+    uncertain: &mut EffectUncertainty,
     candidate: EffectEvidence,
 ) -> bool {
-    const TRANSITIVE_LIMIT_PER_EFFECT_AND_PROVENANCE: usize = 4;
     let key = EffectWitnessKey::of(&candidate);
-    if let Some(existing) = witnesses.get_mut(&key) {
-        if candidate < *existing {
-            *existing = candidate;
-            return true;
+    let witnesses = evidence.get(&candidate.effect);
+    if let Some(existing) = witnesses.and_then(|witnesses| witnesses.get(&key)) {
+        if candidate >= **existing {
+            return false;
         }
-        return false;
+        Arc::make_mut(evidence)
+            .entry(candidate.effect)
+            .or_default()
+            .insert(Arc::new(key), Arc::new(candidate));
+        return true;
     }
-    if candidate.kind == EffectEvidenceKind::Transitive {
-        let group = witnesses
-            .keys()
-            .filter(|existing| {
-                existing.kind == EffectEvidenceKind::Transitive
-                    && existing.entry_execution_provenance == key.entry_execution_provenance
-            })
-            .cloned()
-            .collect::<Vec<_>>();
-        if group.len() >= TRANSITIVE_LIMIT_PER_EFFECT_AND_PROVENANCE {
+    if candidate.kind == EffectEvidenceKind::Transitive
+        && let Some(witnesses) = witnesses
+    {
+        let mut group = witnesses.keys().filter(|existing| {
+            existing.kind == EffectEvidenceKind::Transitive
+                && existing.entry_execution_provenance == key.entry_execution_provenance
+        });
+        if group.clone().count() >= TRANSITIVE_LIMIT_PER_EFFECT_AND_PROVENANCE {
             let new_limit = uncertain.insert("analyser_limit:witness_budget_exhausted".into());
-            let largest = group.last().expect("nonempty capped witness group");
-            if key >= *largest {
+            let largest = group.next_back().expect("nonempty capped witness group");
+            if key >= **largest {
                 return new_limit;
             }
-            witnesses.remove(largest);
-            witnesses.insert(key, candidate);
+            let largest = largest.clone();
+            let witnesses = Arc::make_mut(evidence).entry(candidate.effect).or_default();
+            witnesses.remove(&largest);
+            witnesses.insert(Arc::new(key), Arc::new(candidate));
             return true;
         }
     }
-    witnesses.insert(key, candidate);
+    Arc::make_mut(evidence)
+        .entry(candidate.effect)
+        .or_default()
+        .insert(Arc::new(key), Arc::new(candidate));
     true
+}
+
+fn transitive_key_order(
+    key: &EffectWitnessKey,
+    item: &EffectEvidence,
+    provenance: ExecutionProvenance,
+) -> Ordering {
+    let EffectWitnessKey {
+        kind,
+        operation_site_id,
+        source_symbol,
+        first_hop,
+        entry_execution_provenance,
+        source_execution_provenance,
+    } = key;
+    (
+        *kind,
+        operation_site_id.as_str(),
+        source_symbol.as_str(),
+        first_hop.as_deref(),
+        *entry_execution_provenance,
+        *source_execution_provenance,
+    )
+        .cmp(&(
+            EffectEvidenceKind::Transitive,
+            item.operation_site_id.as_str(),
+            item.source_symbol.as_str(),
+            item.call_chain.first().map(String::as_str),
+            provenance,
+            item.source_execution_provenance,
+        ))
+}
+
+fn transitive_evidence_order(
+    item: &EffectEvidence,
+    caller: &str,
+    provenance: ExecutionProvenance,
+    existing: &EffectEvidence,
+) -> Ordering {
+    // Exhaustive destructuring prevents a new evidence field from silently
+    // escaping this borrowed comparison. Order matches EffectEvidence::Ord.
+    let EffectEvidence {
+        effect,
+        capability,
+        kind: _,
+        entry_symbol: _,
+        entry_execution_provenance: _,
+        source_symbol,
+        source_execution_provenance,
+        operation,
+        operation_site_id,
+        classification_authority,
+        path,
+        line,
+        column,
+        call_chain,
+    } = item;
+    (
+        effect,
+        capability,
+        &EffectEvidenceKind::Transitive,
+        caller,
+        &provenance,
+        source_symbol,
+        source_execution_provenance,
+    )
+        .cmp(&(
+            &existing.effect,
+            &existing.capability,
+            &existing.kind,
+            existing.entry_symbol.as_str(),
+            &existing.entry_execution_provenance,
+            &existing.source_symbol,
+            &existing.source_execution_provenance,
+        ))
+        .then_with(|| {
+            (
+                operation,
+                operation_site_id,
+                classification_authority,
+                path,
+                line,
+                column,
+            )
+                .cmp(&(
+                    &existing.operation,
+                    &existing.operation_site_id,
+                    &existing.classification_authority,
+                    &existing.path,
+                    &existing.line,
+                    &existing.column,
+                ))
+        })
+        .then_with(|| {
+            std::iter::once(caller)
+                .chain(call_chain.iter().map(String::as_str))
+                .cmp(existing.call_chain.iter().map(String::as_str))
+        })
+}
+
+fn transitive_witness_outcome_without_clone(
+    evidence: &EffectEvidenceMap,
+    uncertain: &mut EffectUncertainty,
+    item: &EffectEvidence,
+    caller: &str,
+    provenance: ExecutionProvenance,
+) -> Option<bool> {
+    let witnesses = evidence.get(&item.effect)?;
+    if let Some(existing) = witnesses
+        .iter()
+        .find(|(key, _)| transitive_key_order(key, item, provenance).is_eq())
+        .map(|(_, existing)| existing)
+    {
+        return (!transitive_evidence_order(item, caller, provenance, existing).is_lt())
+            .then_some(false);
+    }
+    let mut group = witnesses.keys().filter(|key| {
+        key.kind == EffectEvidenceKind::Transitive && key.entry_execution_provenance == provenance
+    });
+    if group.clone().count() >= TRANSITIVE_LIMIT_PER_EFFECT_AND_PROVENANCE
+        && !transitive_key_order(
+            group.next_back().expect("nonempty capped witness group"),
+            item,
+            provenance,
+        )
+        .is_gt()
+    {
+        return Some(uncertain.insert("analyser_limit:witness_budget_exhausted".into()));
+    }
+    None
 }
 
 /// Derives conservative state transitions and transitive effects.
@@ -892,6 +1214,131 @@ pub fn analyze_state_effects_with_summaries(
     catalog: &OperationSummaryCatalog,
     instantiations: &BTreeMap<String, OperationSummaryInstantiation>,
 ) -> Result<StateEffectAnalysisEvaluation, StateEffectAnalysisError> {
+    analyze_state_effects_with_summaries_core(
+        psm,
+        semantic,
+        state_contracts,
+        function_contracts,
+        standard_edition,
+        catalog,
+        instantiations,
+        |symbols, execution_provenance| {
+            let mut effect_work = direct_effects(psm, symbols, catalog, instantiations);
+            let iterations = close_effects(psm.calls(), execution_provenance, &mut effect_work);
+            Ok((effect_work, iterations))
+        },
+    )
+}
+
+/// Replays exact owner-local seeds and closure rounds with current final assembly.
+///
+/// Validation retains the cold evaluator's ordering. New global rounds execute
+/// existing closure propagation; graph changes require full reconstruction.
+///
+/// # Errors
+/// Returns the same errors as [`analyze_state_effects_with_summaries`].
+#[allow(clippy::too_many_arguments)]
+pub fn analyze_state_effects_with_summaries_prepared(
+    psm: &ProgramSemanticModel,
+    semantic: &SemanticAnalysisEvaluation,
+    state_contracts: &ResolvedStateContracts,
+    function_contracts: &ResolvedFunctionContracts,
+    standard_edition: &str,
+    catalog: &OperationSummaryCatalog,
+    instantiations: &BTreeMap<String, OperationSummaryInstantiation>,
+    previous: Option<&StateEffectPreparation>,
+) -> Result<
+    (
+        StateEffectAnalysisEvaluation,
+        StateEffectPreparation,
+        StateEffectPreparationWork,
+    ),
+    StateEffectAnalysisError,
+> {
+    analyze_state_effects_with_summaries_prepared_with_retention(
+        psm,
+        semantic,
+        state_contracts,
+        function_contracts,
+        standard_edition,
+        catalog,
+        instantiations,
+        previous,
+        PreparationRetention::default(),
+    )
+}
+
+/// Performs prepared evaluation within explicit operational retention limits.
+///
+/// # Errors
+/// Returns the same errors as [`analyze_state_effects_with_summaries`].
+///
+/// # Panics
+/// Panics only if successful internal analysis omits its owner derivation.
+#[allow(clippy::too_many_arguments)]
+pub fn analyze_state_effects_with_summaries_prepared_with_retention(
+    psm: &ProgramSemanticModel,
+    semantic: &SemanticAnalysisEvaluation,
+    state_contracts: &ResolvedStateContracts,
+    function_contracts: &ResolvedFunctionContracts,
+    standard_edition: &str,
+    catalog: &OperationSummaryCatalog,
+    instantiations: &BTreeMap<String, OperationSummaryInstantiation>,
+    previous: Option<&StateEffectPreparation>,
+    retention: PreparationRetention,
+) -> Result<
+    (
+        StateEffectAnalysisEvaluation,
+        StateEffectPreparation,
+        StateEffectPreparationWork,
+    ),
+    StateEffectAnalysisError,
+> {
+    let mut prepared = None;
+    let evaluation = analyze_state_effects_with_summaries_core(
+        psm,
+        semantic,
+        state_contracts,
+        function_contracts,
+        standard_edition,
+        catalog,
+        instantiations,
+        |symbols, execution_provenance| {
+            let (effect_work, iterations, preparation, work) = prepare_effect_work(
+                psm,
+                symbols,
+                execution_provenance,
+                catalog,
+                instantiations,
+                previous,
+                retention,
+            )?;
+            prepared = Some((preparation, work));
+            Ok((effect_work, iterations))
+        },
+    )?;
+    let (preparation, mut work) = prepared.expect("validated owner derivation executed");
+    work.final_summaries_rebuilt = psm.symbols().len();
+    Ok((evaluation, preparation, work))
+}
+
+#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
+fn analyze_state_effects_with_summaries_core(
+    psm: &ProgramSemanticModel,
+    semantic: &SemanticAnalysisEvaluation,
+    state_contracts: &ResolvedStateContracts,
+    function_contracts: &ResolvedFunctionContracts,
+    standard_edition: &str,
+    catalog: &OperationSummaryCatalog,
+    instantiations: &BTreeMap<String, OperationSummaryInstantiation>,
+    effect_deriver: impl FnOnce(
+        &BTreeMap<&str, &ExecutableSymbol>,
+        &BTreeMap<String, ExecutionProvenance>,
+    ) -> Result<
+        (BTreeMap<String, EffectWork>, usize),
+        StateEffectAnalysisError,
+    >,
+) -> Result<StateEffectAnalysisEvaluation, StateEffectAnalysisError> {
     validate_summary_authority(catalog)?;
     let sites = psm
         .calls()
@@ -933,6 +1380,7 @@ pub fn analyze_state_effects_with_summaries(
             ));
         }
     }
+    validate_psm_primitive_premises(psm, instantiations)?;
     let symbols = psm
         .symbols()
         .iter()
@@ -945,12 +1393,11 @@ pub fn analyze_state_effects_with_summaries(
         .collect::<BTreeMap<_, _>>();
     let owner_states = owner_state_types(psm, state_contracts);
     validate_function_state_references(function_contracts, state_contracts)?;
-    let mut effect_work = direct_effects(psm, &symbols, catalog, instantiations);
     let execution_provenance = symbols
         .iter()
         .map(|(id, symbol)| ((*id).to_owned(), symbol.execution_provenance()))
         .collect::<BTreeMap<_, _>>();
-    let effect_iterations = close_effects(psm.calls(), &execution_provenance, &mut effect_work);
+    let (mut effect_work, effect_iterations) = effect_deriver(&symbols, &execution_provenance)?;
     let mut violations =
         state_call_violations(psm, function_contracts, &owner_states, &symbols, &types);
     let mut summaries = Vec::new();
@@ -972,8 +1419,7 @@ pub fn analyze_state_effects_with_summaries(
             violations.extend(postcondition_violations(symbol, contract, output));
         }
         let work = effect_work
-            .get(symbol.id())
-            .cloned()
+            .remove(symbol.id())
             .unwrap_or_else(empty_effect_work);
         if let Some(contract) = contract
             && let Some(policy) = contract.effects()
@@ -1051,14 +1497,14 @@ pub fn analyze_state_effects_with_summaries(
                 .evidence
                 .values()
                 .flat_map(|witnesses| witnesses.values())
-                .cloned()
+                .map(|evidence| evidence.as_ref().clone())
                 .collect(),
             operation_classifications: work.operations.into_iter().collect(),
             operation_summaries: work.operation_summaries.into_values().collect(),
             state_preconditions,
             state_postconditions,
             effects,
-            uncertainty: work.uncertain.into_iter().collect(),
+            uncertainty: work.uncertain.into_values().collect(),
         });
     }
     summaries.sort_by(|left, right| left.symbol.cmp(&right.symbol));
@@ -1096,6 +1542,7 @@ pub fn analyze_state_effects_with_summaries(
     );
     let coverage = coverage(&summaries, state_contracts, &violations, effect_iterations);
     let model = StateEffectAnalysisModel {
+        digest_memo: crate::program_semantics::ModelDigestMemo::default(),
         schema: STATE_EFFECT_ANALYSIS_SCHEMA.into(),
         schema_version: STATE_EFFECT_ANALYSIS_SCHEMA_VERSION,
         semantic_version: STATE_EFFECT_ANALYSIS_VERSION.into(),
@@ -1129,10 +1576,10 @@ fn empty_effect_work() -> EffectWork {
     EffectWork {
         direct: BTreeSet::new(),
         transitive: BTreeSet::new(),
-        evidence: BTreeMap::new(),
+        evidence: Arc::new(BTreeMap::new()),
         operations: BTreeSet::new(),
         operation_summaries: BTreeMap::new(),
-        uncertain: BTreeSet::new(),
+        uncertain: EffectUncertainty::default(),
     }
 }
 
@@ -1280,6 +1727,55 @@ fn validate_summary_context(
     Ok(())
 }
 
+fn validate_psm_primitive_premises(
+    psm: &ProgramSemanticModel,
+    instantiations: &BTreeMap<String, OperationSummaryInstantiation>,
+) -> Result<(), StateEffectAnalysisError> {
+    let reserved = "psm_primitive_drop:";
+    if !instantiations.values().any(|input| {
+        input.premises.values().any(|premise| {
+            premise
+                .refs
+                .iter()
+                .any(|reference| reference.starts_with(reserved))
+        })
+    }) {
+        return Ok(());
+    }
+    let current_prefix = format!("psm_primitive_drop:v1:{}:", psm.digest()?);
+    let unit_types = psm
+        .types()
+        .iter()
+        .filter(|item| {
+            matches!(
+                item.semantic(),
+                crate::program_semantics::SemanticType::Unit
+            )
+        })
+        .map(ProgramType::id)
+        .collect::<BTreeSet<_>>();
+    for input in instantiations.values() {
+        for premise in input.premises.values() {
+            for reference in premise
+                .refs
+                .iter()
+                .filter(|reference| reference.starts_with(reserved))
+            {
+                let empty_bound = matches!(&premise.bound, SummaryEffectBound::Known(effects) if effects.is_empty());
+                let current_unit = reference
+                    .strip_prefix(current_prefix.as_str())
+                    .is_some_and(|type_id| unit_types.contains(type_id));
+                if !empty_bound || !current_unit {
+                    return Err(StateEffectAnalysisError::InvalidSummaryContext(
+                        "primitive destructor premise requires the current PSM, a syntactic unit type, and an empty known bound".into(),
+                    ));
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
 /// Bounds destructor execution only for the PSM's syntactic unit type.
 ///
 /// Named primitive shapes remain unknown because normalization does not prove
@@ -1334,12 +1830,29 @@ fn direct_effects(
     catalog: &OperationSummaryCatalog,
     instantiations: &BTreeMap<String, OperationSummaryInstantiation>,
 ) -> BTreeMap<String, EffectWork> {
+    direct_effects_selected(psm, symbols, catalog, instantiations, None)
+}
+
+#[allow(clippy::too_many_lines)]
+fn direct_effects_selected(
+    psm: &ProgramSemanticModel,
+    symbols: &BTreeMap<&str, &ExecutableSymbol>,
+    catalog: &OperationSummaryCatalog,
+    instantiations: &BTreeMap<String, OperationSummaryInstantiation>,
+    selected: Option<&BTreeSet<String>>,
+) -> BTreeMap<String, EffectWork> {
+    let wanted = |id: &str| selected.is_none_or(|selected| selected.contains(id));
     let mut result = symbols
         .keys()
+        .filter(|id| wanted(id))
         .map(|id| ((*id).into(), empty_effect_work()))
         .collect::<BTreeMap<_, _>>();
     let mut site_ordinals = OperationSiteOrdinals::default();
-    let mut state_reads = psm.state_reads().iter().collect::<Vec<_>>();
+    let mut state_reads = psm
+        .state_reads()
+        .iter()
+        .filter(|read| wanted(read.symbol()))
+        .collect::<Vec<_>>();
     state_reads.sort_by_key(|read| {
         (
             read.symbol(),
@@ -1368,7 +1881,11 @@ fn direct_effects(
             read.provenance().location().column(),
         );
     }
-    let mut mutations = psm.mutations().iter().collect::<Vec<_>>();
+    let mut mutations = psm
+        .mutations()
+        .iter()
+        .filter(|mutation| wanted(mutation.symbol()))
+        .collect::<Vec<_>>();
     mutations.sort_by_key(|mutation| {
         (
             mutation.symbol(),
@@ -1410,10 +1927,9 @@ fn direct_effects(
                 .insert("alias_or_unsupported_mutation".into());
         }
     }
-    for symbol in symbols
-        .values()
-        .filter(|symbol| symbol.qualifiers().is_unsafe() && symbol.has_body())
-    {
+    for symbol in symbols.values().filter(|symbol| {
+        wanted(symbol.id()) && symbol.qualifiers().is_unsafe() && symbol.has_body()
+    }) {
         let site_id = site_ordinals.next(
             symbol.id(),
             "unsafe_function_body",
@@ -1437,7 +1953,7 @@ fn direct_effects(
             .uncertain
             .insert("unsafe_alias_semantics".into());
     }
-    for call in psm.calls() {
+    for call in psm.calls().iter().filter(|call| wanted(call.caller())) {
         match call.state() {
             CallResolutionState::External => {
                 let operation = call.external_target();
@@ -1607,7 +2123,7 @@ fn direct_effects(
             CallResolutionState::ResolvedStatic => {}
         }
     }
-    for body in psm.bodies() {
+    for body in psm.bodies().iter().filter(|body| wanted(body.symbol())) {
         for site in exceptional_sites(body) {
             let site_id = site_ordinals.next(body.symbol(), "rust_structure", site.operation);
             add_effect(
@@ -1648,7 +2164,7 @@ fn add_effect(
         .or_insert_with(empty_effect_work);
     work.direct.insert(effect);
     insert_witness(
-        work.evidence.entry(effect).or_default(),
+        &mut work.evidence,
         &mut work.uncertain,
         EffectEvidence {
             effect,
@@ -1704,72 +2220,525 @@ fn close_effects(
     execution_provenance: &BTreeMap<String, ExecutionProvenance>,
     work: &mut BTreeMap<String, EffectWork>,
 ) -> usize {
-    let edges = calls
+    let edges = effect_edges(calls);
+    let mut iterations = 0;
+    loop {
+        iterations += 1;
+        let snapshot = effect_snapshot(work);
+        let changed = close_effect_round(&edges, execution_provenance, work, &snapshot, None);
+        if changed.is_empty() || iterations > work.len().saturating_add(1) {
+            return iterations;
+        }
+    }
+}
+
+fn effect_input_digest(value: &impl Serialize) -> Result<String, StateEffectAnalysisError> {
+    Ok(format!(
+        "sha256:{:x}",
+        Sha256::digest(serde_json::to_vec(value)?)
+    ))
+}
+
+fn direct_effect_charge(work: &EffectWork) -> usize {
+    let records = work
+        .operation_summaries
+        .values()
+        .map(|value| {
+            serde_json::to_vec(value)
+                .expect("operation evidence serializes")
+                .len()
+                .saturating_mul(8)
+                .saturating_add(256)
+        })
+        .chain(work.operations.iter().map(|value| {
+            serde_json::to_vec(value)
+                .expect("operation classification serializes")
+                .len()
+                .saturating_mul(8)
+                .saturating_add(256)
+        }))
+        .fold(0_usize, usize::saturating_add);
+    records
+        .saturating_add(effect_payload_charge(&work.evidence, &work.uncertain))
+        .saturating_add(512)
+}
+
+fn invalidate_effect_dependents(edges: &BTreeSet<(String, String)>, dirty: &mut BTreeSet<String>) {
+    let mut callers: BTreeMap<&str, Vec<&str>> = BTreeMap::new();
+    for (caller, callee) in edges {
+        callers.entry(callee).or_default().push(caller);
+    }
+    let mut pending = dirty.clone();
+    while let Some(provider) = pending.pop_first() {
+        for caller in callers.get(provider.as_str()).into_iter().flatten() {
+            if dirty.insert((*caller).to_owned()) {
+                pending.insert((*caller).to_owned());
+            }
+        }
+    }
+}
+
+#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
+fn prepare_effect_work(
+    psm: &ProgramSemanticModel,
+    symbols: &BTreeMap<&str, &ExecutableSymbol>,
+    execution_provenance: &BTreeMap<String, ExecutionProvenance>,
+    catalog: &OperationSummaryCatalog,
+    instantiations: &BTreeMap<String, OperationSummaryInstantiation>,
+    previous: Option<&StateEffectPreparation>,
+    retention: PreparationRetention,
+) -> Result<
+    (
+        BTreeMap<String, EffectWork>,
+        usize,
+        StateEffectPreparation,
+        StateEffectPreparationWork,
+    ),
+    StateEffectAnalysisError,
+> {
+    // Direct effects consume resolved body/call/place facts and the context,
+    // not the registry's aggregate type spellings or nominal declarations.
+    // State classification is rebuilt separately from the current registry;
+    // supplied primitive premises are validated above and bound per site.
+    let binding_digest = effect_input_digest(psm.program_context())?;
+    let symbol_ids = symbols
+        .keys()
+        .map(|id| (*id).to_owned())
+        .collect::<BTreeSet<_>>();
+    let edges = effect_edges(psm.calls());
+    let mut work = StateEffectPreparationWork::default();
+    let incomplete = psm.calls().iter().any(|call| {
+        !symbol_ids.contains(call.caller())
+            || call.callee().is_some_and(|id| !symbol_ids.contains(id))
+    }) || psm
+        .bodies()
+        .iter()
+        .any(|body| !symbol_ids.contains(body.symbol()))
+        || psm
+            .state_reads()
+            .iter()
+            .any(|read| !symbol_ids.contains(read.symbol()))
+        || psm
+            .mutations()
+            .iter()
+            .any(|mutation| !symbol_ids.contains(mutation.symbol()));
+    if incomplete {
+        work.fallback_reasons
+            .push("effect_owner_dependency_incomplete".into());
+    }
+    if let Some(previous) = previous {
+        if previous.binding_digest != binding_digest {
+            work.fallback_reasons
+                .push("effect_binding_environment_changed".into());
+        }
+        if previous.symbols != symbol_ids {
+            work.fallback_reasons
+                .push("effect_symbol_inventory_changed".into());
+        }
+        if previous.edges != edges {
+            work.fallback_reasons
+                .push("effect_call_topology_changed".into());
+        }
+    }
+    let mut accounted_bytes = binding_digest.len().saturating_mul(8).saturating_add(512);
+    for id in &symbol_ids {
+        accounted_bytes =
+            accounted_bytes.saturating_add(id.len().saturating_mul(8).saturating_add(128));
+    }
+    for (caller, callee) in &edges {
+        accounted_bytes = accounted_bytes.saturating_add(
+            (caller.len() + callee.len())
+                .saturating_mul(8)
+                .saturating_add(256),
+        );
+    }
+    if accounted_bytes > retention.max_accounted_bytes {
+        work.fallback_reasons.push("effect_retention_limit".into());
+    }
+    work.full_reevaluation_required = !work.fallback_reasons.is_empty();
+    if incomplete || accounted_bytes > retention.max_accounted_bytes {
+        let mut effect_work = direct_effects(psm, symbols, catalog, instantiations);
+        work.rebuilt_direct_units = effect_work.len();
+        let mut iterations = 0;
+        loop {
+            iterations += 1;
+            work.rebuilt_closure_rounds += effect_work.len();
+            work.rebuilt_edge_rounds += edges.len();
+            work.rebuilt_scc_rounds += psm.call_topology().strongly_connected_components().len();
+            let snapshot = effect_snapshot(&effect_work);
+            let changed = close_effect_round(
+                &edges,
+                execution_provenance,
+                &mut effect_work,
+                &snapshot,
+                None,
+            );
+            if changed.is_empty() || iterations > effect_work.len().saturating_add(1) {
+                return Ok((
+                    effect_work,
+                    iterations,
+                    StateEffectPreparation::default(),
+                    work,
+                ));
+            }
+        }
+    }
+    let reusable = previous.filter(|_| !work.full_reevaluation_required);
+    let mut reads_by_symbol: BTreeMap<&str, Vec<_>> = BTreeMap::new();
+    let mut mutations_by_symbol: BTreeMap<&str, Vec<_>> = BTreeMap::new();
+    let mut bodies_by_symbol: BTreeMap<&str, Vec<_>> = BTreeMap::new();
+    let mut calls_by_symbol: BTreeMap<&str, Vec<_>> = BTreeMap::new();
+    let mut catalog_by_operation: BTreeMap<&str, Vec<_>> = BTreeMap::new();
+    for read in psm.state_reads() {
+        reads_by_symbol.entry(read.symbol()).or_default().push(read);
+    }
+    for mutation in psm.mutations() {
+        mutations_by_symbol
+            .entry(mutation.symbol())
+            .or_default()
+            .push(mutation);
+    }
+    for body in psm.bodies() {
+        bodies_by_symbol
+            .entry(body.symbol())
+            .or_default()
+            .push(body);
+    }
+    for call in psm.calls() {
+        calls_by_symbol.entry(call.caller()).or_default().push(call);
+    }
+    for summary in catalog.summaries() {
+        catalog_by_operation
+            .entry(&summary.operation_selector)
+            .or_default()
+            .push(summary);
+    }
+    let psm_digest = psm.digest()?;
+    let mut keys = BTreeMap::new();
+    let mut rebuilt_direct = BTreeSet::new();
+    for (id, symbol) in symbols {
+        let calls = calls_by_symbol.get(id).map_or(&[][..], Vec::as_slice);
+        let operations = calls
+            .iter()
+            .filter_map(|call| call.external_target())
+            .collect::<BTreeSet<_>>();
+        let relevant_catalog = operations
+            .iter()
+            .flat_map(|operation| {
+                catalog_by_operation
+                    .get(operation)
+                    .into_iter()
+                    .flatten()
+                    .copied()
+            })
+            .collect::<Vec<_>>();
+        let sites = calls
+            .iter()
+            .flat_map(|call| call.evidence())
+            .map(CallSiteEvidence::operation_site_id)
+            .collect::<BTreeSet<_>>();
+        let inputs = sites
+            .iter()
+            .map(|site| (*site, instantiations.get(*site)))
+            .collect::<Vec<_>>();
+        let whole_psm = inputs.iter().any(|(_, input)| {
+            input.is_some_and(|input| {
+                input
+                    .premises
+                    .values()
+                    .flat_map(|premise| &premise.refs)
+                    .any(|reference| reference.starts_with("psm_primitive_drop:v1:"))
+            })
+        });
+        let input_digest = effect_input_digest(&(
+            symbol,
+            reads_by_symbol.get(id),
+            mutations_by_symbol.get(id),
+            bodies_by_symbol.get(id),
+            calls,
+            relevant_catalog,
+            catalog.id(),
+            catalog.producer_version(),
+            inputs,
+            whole_psm.then_some(&psm_digest),
+        ))?;
+        if reusable
+            .and_then(|previous| previous.units.get(*id))
+            .is_none_or(|unit| unit.input_digest != input_digest)
+        {
+            rebuilt_direct.insert((*id).to_owned());
+        }
+        keys.insert((*id).to_owned(), input_digest);
+    }
+    let mut effect_work = if rebuilt_direct.is_empty() {
+        BTreeMap::new()
+    } else {
+        direct_effects_selected(psm, symbols, catalog, instantiations, Some(&rebuilt_direct))
+    };
+    work.rebuilt_direct_units = rebuilt_direct.len();
+    for id in symbol_ids.iter().filter(|id| !rebuilt_direct.contains(*id)) {
+        let mut seed = reusable
+            .and_then(|previous| previous.units.get(id))
+            .expect("exact cached seed")
+            .direct
+            .as_ref()
+            .clone();
+        // Catalog content identity belongs to the current envelope even when
+        // unrelated selectors leave this operation's established facts intact.
+        for record in seed.operation_summaries.values_mut() {
+            record.outcome.catalog_digest = catalog.digest().into();
+        }
+        effect_work.insert(id.clone(), seed);
+        work.reused_direct_units += 1;
+    }
+    let mut dirty = rebuilt_direct;
+    invalidate_effect_dependents(&edges, &mut dirty);
+    let mut units = BTreeMap::new();
+    let mut retained_rounds = 0;
+    let mut retention_limited = false;
+    for (id, seed) in &effect_work {
+        let input_digest = keys[id].clone();
+        let metadata_charge = (id.len() + input_digest.len())
+            .saturating_mul(8)
+            .saturating_add(512);
+        let charge = metadata_charge.saturating_add(direct_effect_charge(seed));
+        if accounted_bytes.saturating_add(charge) > retention.max_accounted_bytes {
+            retention_limited = true;
+            continue;
+        }
+        accounted_bytes += charge;
+        let prior = reusable.and_then(|previous| previous.units.get(id));
+        let direct = prior
+            .filter(|unit| {
+                unit.input_digest == input_digest
+                    && unit
+                        .direct
+                        .operation_summaries
+                        .values()
+                        .all(|record| record.outcome.catalog_digest == catalog.digest())
+            })
+            .map_or_else(|| Arc::new(seed.clone()), |unit| Arc::clone(&unit.direct));
+        let mut rounds = Vec::new();
+        if let Some(prior) = prior.filter(|_| !dirty.contains(id)) {
+            for round in &prior.rounds {
+                if retained_rounds >= retention.max_round_values {
+                    retention_limited = true;
+                    break;
+                }
+                let charge = round.closure.accounted_resident_bytes().saturating_add(128);
+                if accounted_bytes.saturating_add(charge) > retention.max_accounted_bytes {
+                    retention_limited = true;
+                    break;
+                }
+                accounted_bytes += charge;
+                retained_rounds += 1;
+                rounds.push(Arc::clone(round));
+            }
+        } else {
+            let charge = (retained_rounds < retention.max_round_values).then(|| {
+                effect_payload_charge(&seed.evidence, &seed.uncertain).saturating_add(128)
+            });
+            if let Some(charge) = charge.filter(|charge| {
+                accounted_bytes.saturating_add(*charge) <= retention.max_accounted_bytes
+            }) {
+                accounted_bytes += charge;
+                retained_rounds += 1;
+                rounds.push(Arc::new(PreparedEffectRound {
+                    closure: EffectClosure::of(seed),
+                    changed: false,
+                }));
+            } else {
+                retention_limited = true;
+            }
+        }
+        units.insert(
+            id.clone(),
+            PreparedEffectUnit {
+                input_digest,
+                direct,
+                rounds,
+            },
+        );
+    }
+    let mut iterations = 0;
+    loop {
+        iterations += 1;
+        let snapshot = effect_snapshot(&effect_work);
+        let mut changed = false;
+        let mut rebuilt = BTreeSet::new();
+        for (id, current) in &mut effect_work {
+            if let Some(round) = units.get(id).and_then(|unit| unit.rounds.get(iterations)) {
+                round.closure.apply(current);
+                changed |= round.changed;
+                work.reused_closure_rounds += 1;
+            } else {
+                rebuilt.insert(id.clone());
+                work.rebuilt_closure_rounds += 1;
+                if reusable.is_some() && !dirty.contains(id) {
+                    work.extended_closure_rounds += 1;
+                }
+            }
+        }
+        for (caller, _) in &edges {
+            if rebuilt.contains(caller) {
+                work.rebuilt_edge_rounds += 1;
+            } else {
+                work.reused_edge_rounds += 1;
+            }
+        }
+        let changed_callers = close_effect_round(
+            &edges,
+            execution_provenance,
+            &mut effect_work,
+            &snapshot,
+            Some(&rebuilt),
+        );
+        changed |= !changed_callers.is_empty();
+        for id in &rebuilt {
+            if let Some(unit) = units.get_mut(id) {
+                let current = &effect_work[id];
+                let charge = (unit.rounds.len() == iterations
+                    && retained_rounds < retention.max_round_values)
+                    .then(|| {
+                        effect_payload_charge(&current.evidence, &current.uncertain)
+                            .saturating_add(128)
+                    });
+                if let Some(charge) = charge.filter(|charge| {
+                    accounted_bytes.saturating_add(*charge) <= retention.max_accounted_bytes
+                }) {
+                    accounted_bytes += charge;
+                    retained_rounds += 1;
+                    unit.rounds.push(Arc::new(PreparedEffectRound {
+                        closure: EffectClosure::of(current),
+                        changed: changed_callers.contains(id),
+                    }));
+                } else {
+                    retention_limited = true;
+                }
+            }
+        }
+        for component in psm.call_topology().strongly_connected_components() {
+            if component.symbols().iter().any(|id| rebuilt.contains(id)) {
+                work.rebuilt_scc_rounds += 1;
+            } else {
+                work.reused_scc_rounds += 1;
+            }
+        }
+        if !changed || iterations > effect_work.len().saturating_add(1) {
+            if retention_limited {
+                work.fallback_reasons.push("effect_retention_limit".into());
+            }
+            return Ok((
+                effect_work,
+                iterations,
+                StateEffectPreparation {
+                    binding_digest,
+                    symbols: symbol_ids,
+                    edges,
+                    units,
+                    accounted_bytes,
+                },
+                work,
+            ));
+        }
+    }
+}
+
+fn effect_edges(calls: &[ProgramCall]) -> BTreeSet<(String, String)> {
+    calls
         .iter()
         .filter(|call| call.state() == CallResolutionState::ResolvedStatic)
         .filter_map(|call| {
             call.callee()
                 .map(|callee| (call.caller().to_owned(), callee.to_owned()))
         })
-        .collect::<BTreeSet<_>>();
-    let mut iterations = 0;
-    loop {
-        iterations += 1;
-        let snapshot = work.clone();
+        .collect()
+}
+
+fn effect_snapshot(work: &BTreeMap<String, EffectWork>) -> BTreeMap<String, EffectClosure> {
+    work.iter()
+        .map(|(id, work)| (id.clone(), EffectClosure::of(work)))
+        .collect()
+}
+
+fn close_effect_round(
+    edges: &BTreeSet<(String, String)>,
+    execution_provenance: &BTreeMap<String, ExecutionProvenance>,
+    work: &mut BTreeMap<String, EffectWork>,
+    snapshot: &BTreeMap<String, EffectClosure>,
+    selected: Option<&BTreeSet<String>>,
+) -> BTreeSet<String> {
+    let mut changed_callers = BTreeSet::new();
+    for (caller, callee) in edges {
+        if selected.is_some_and(|selected| !selected.contains(caller)) {
+            continue;
+        }
         let mut changed = false;
-        for (caller, callee) in &edges {
-            let Some(provider_summary) = snapshot.get(callee) else {
-                continue;
-            };
-            let consumer_summary = work.entry(caller.clone()).or_insert_with(empty_effect_work);
-            for effect in &provider_summary.transitive {
-                changed |= consumer_summary.transitive.insert(*effect);
-                if let Some(items) = provider_summary.evidence.get(effect) {
-                    for item in items.values() {
-                        if item.call_chain.iter().any(|symbol| symbol == caller) {
-                            continue;
-                        }
-                        let mut derived = item.clone();
-                        derived.call_chain.insert(0, caller.clone());
-                        derived.kind = EffectEvidenceKind::Transitive;
-                        derived.entry_symbol.clone_from(caller);
-                        let caller_execution_provenance = execution_provenance
-                            .get(caller)
-                            .copied()
-                            .unwrap_or(ExecutionProvenance::Unknown);
-                        derived.entry_execution_provenance = combine_path_execution_provenance(
-                            caller_execution_provenance,
-                            derived.entry_execution_provenance,
-                        );
-                        changed |= insert_witness(
-                            consumer_summary.evidence.entry(*effect).or_default(),
-                            &mut consumer_summary.uncertain,
-                            derived,
-                        );
+        let Some(provider_summary) = snapshot.get(callee) else {
+            continue;
+        };
+        let consumer_summary = work.entry(caller.clone()).or_insert_with(empty_effect_work);
+        for effect in &provider_summary.transitive {
+            changed |= consumer_summary.transitive.insert(*effect);
+            if let Some(items) = provider_summary.evidence.get(effect) {
+                for item in items.values() {
+                    if item.call_chain.iter().any(|symbol| symbol == caller) {
+                        continue;
                     }
+                    let caller_execution_provenance = execution_provenance
+                        .get(caller)
+                        .copied()
+                        .unwrap_or(ExecutionProvenance::Unknown);
+                    let provenance = combine_path_execution_provenance(
+                        caller_execution_provenance,
+                        item.entry_execution_provenance,
+                    );
+                    if selected.is_some()
+                        && let Some(outcome) = transitive_witness_outcome_without_clone(
+                            &consumer_summary.evidence,
+                            &mut consumer_summary.uncertain,
+                            item,
+                            caller,
+                            provenance,
+                        )
+                    {
+                        changed |= outcome;
+                        continue;
+                    }
+                    let mut derived = item.as_ref().clone();
+                    derived.call_chain.insert(0, caller.clone());
+                    derived.kind = EffectEvidenceKind::Transitive;
+                    derived.entry_symbol.clone_from(caller);
+                    derived.entry_execution_provenance = provenance;
+                    changed |= insert_witness(
+                        &mut consumer_summary.evidence,
+                        &mut consumer_summary.uncertain,
+                        derived,
+                    );
                 }
             }
-            if provider_summary
-                .uncertain
-                .iter()
-                .any(|reason| !reason.starts_with("operation_summary:"))
-            {
-                changed |= consumer_summary
-                    .uncertain
-                    .insert("transitive_opaque_effect".into());
-            }
-            for reason in provider_summary
-                .uncertain
-                .iter()
-                .filter(|reason| reason.starts_with("operation_summary:"))
-            {
-                changed |= consumer_summary.uncertain.insert(reason.clone());
-            }
         }
-        if !changed || iterations > work.len().saturating_add(1) {
-            return iterations;
+        if provider_summary
+            .uncertain
+            .iter()
+            .any(|reason| !reason.starts_with("operation_summary:"))
+        {
+            changed |= consumer_summary
+                .uncertain
+                .insert_borrowed("transitive_opaque_effect");
+        }
+        for reason in provider_summary
+            .uncertain
+            .iter()
+            .filter(|reason| reason.starts_with("operation_summary:"))
+        {
+            changed |= consumer_summary.uncertain.insert_borrowed(reason);
+        }
+        if changed {
+            changed_callers.insert(caller.clone());
         }
     }
+    changed_callers
 }
 
 const fn combine_path_execution_provenance(

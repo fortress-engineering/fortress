@@ -24,4 +24,4 @@ Defines Source Artifact Model v1, universal semantic regions and coverage, Sourc
 
 ### [`rust.rs`](../_code/rust.rs)
 
-Projects Rust/Cargo source roles, declarations, visibility, trait/implementation structure, attributes, and explicit macro-expansion limitations into the registered Rust Source Profile without creating a second program-semantic model.
+Projects Rust/Cargo source roles, declarations, visibility, trait/implementation structure, attributes, and explicit macro-expansion limitations into the registered Rust Source Profile without creating a second program-semantic model. Rust tokenization invokes Repository Observation's neutral retained-input admission helper before parsing; inactive admission preserves ordinary profile observation.

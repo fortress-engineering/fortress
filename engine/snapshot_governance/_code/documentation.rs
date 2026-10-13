@@ -298,7 +298,36 @@ pub fn evaluate_repository_documentation(
         }
         files.insert(observed.path().to_owned(), bytes);
     }
-    evaluate_documentation_files_with_ccg(&files, standard_edition, Some(ccg))
+    evaluate_documentation_snapshot_files(&files, snapshot, ccg, standard_edition)
+}
+
+/// Evaluates exact immutable bytes through the same documentation producer.
+/// This boundary performs no discovery and never reads candidate bytes from disk.
+pub(crate) fn evaluate_documentation_snapshot_files(
+    files: &BTreeMap<String, Vec<u8>>,
+    snapshot: &RepositorySnapshot,
+    ccg: &ContractCoherencyGraph,
+    standard_edition: &str,
+) -> Result<DocumentationConformanceReport, DocumentationEvaluationError> {
+    if files.len() != snapshot.files().len() {
+        return Err(DocumentationEvaluationError::SnapshotMismatch(
+            "source inventory".into(),
+        ));
+    }
+    for observed in snapshot.files() {
+        let bytes = files.get(observed.path()).ok_or_else(|| {
+            DocumentationEvaluationError::SnapshotMismatch(observed.path().into())
+        })?;
+        let size = u64::try_from(bytes.len())
+            .map_err(|_| DocumentationEvaluationError::SnapshotMismatch(observed.path().into()))?;
+        let digest = format!("sha256:{:x}", Sha256::digest(bytes));
+        if size != observed.size() || digest != observed.sha256() {
+            return Err(DocumentationEvaluationError::SnapshotMismatch(
+                observed.path().into(),
+            ));
+        }
+    }
+    evaluate_documentation_files_with_ccg(files, standard_edition, Some(ccg))
         .map_err(DocumentationEvaluationError::Finding)
 }
 

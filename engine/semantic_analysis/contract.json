@@ -29,7 +29,18 @@
   ],
   "relationships": [],
   "constraints": [],
-  "guarantees": [],
+  "guarantees": [
+    {
+      "id": "GUA-DOMAIN-PREPARATION-EQUIVALENCE",
+      "subject": {
+        "kind": "capability",
+        "id": "CAP-SEMANTIC-ANALYSIS"
+      },
+      "requirements": [
+        "AF-SEMANTIC-ANALYSIS-0001-R05"
+      ]
+    }
+  ],
   "features": [
     {
       "id": "AF-SEMANTIC-ANALYSIS-0001",
@@ -71,6 +82,17 @@
           "tests": [
             "T-AF-SEMANTIC-ANALYSIS-0001-R04-001",
             "T-AF-SEMANTIC-ANALYSIS-0001-R04-002"
+          ]
+        },
+        {
+          "id": "AF-SEMANTIC-ANALYSIS-0001-R05",
+          "statement": "Semantic Analysis reuses synchronous symbol-round trajectories only under complete current type, contract, body, call and reverse-dependency bindings, extends unchanged trajectories through the current global stop and widening schedule, reconstructs changed or incomplete dependencies, and bounds retained payloads while assembling current summaries, diagnostics and provenance with byte-identical cold semantics.",
+          "tests": [
+            "T-AF-SEMANTIC-ANALYSIS-0001-R05-001",
+            "T-AF-SEMANTIC-ANALYSIS-0001-R05-002",
+            "T-AF-SEMANTIC-ANALYSIS-0001-R05-003",
+            "T-AF-SEMANTIC-ANALYSIS-0001-R05-004",
+            "T-AF-SEMANTIC-ANALYSIS-0001-R05-005"
           ]
         }
       ]

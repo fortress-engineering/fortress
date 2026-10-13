@@ -40,6 +40,12 @@ Supplies deterministic content-addressed findings for supported REPO-REFERENCE-0
 
 Supplies project-level repository interpretation while the resolver remains a derived location and projection service.
 
+### [Repository Observation](../repository_observation/README.md)
+
+**Types:** `depends_on`
+
+Supplies a neutral thread-local retained-input admission helper invoked before source tokenization. The helper owns operational byte accounting only; Reference Resolution continues to own language and reference interpretation.
+
 ### [Standard Registry](../standard_registry/README.md)
 
 **Types:** `depends_on`

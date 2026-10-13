@@ -5,7 +5,7 @@
     {
       "id": "EX-FILESYSTEM-READ-DOCUMENT",
       "actor": "ENV-LOCAL-FILESYSTEM",
-      "boundary": "rust_symbol:v2:sha256:ab6f6494b0ca3e9754c01e7892874bd0a920134627878b4339bb49da78a49250",
+      "boundary": "rust_symbol:v2:sha256:4c2b14ce1af2ded27ffa190a91bfa7f458dcf2eb0a032629ff2f22871c9fe285",
       "retry_policy": "NEVER",
       "retryable_outcomes": [],
       "idempotency": "IDEMPOTENT",
@@ -28,7 +28,7 @@
           "forbidden_effects": [],
           "resource": null,
           "handling": {
-            "continuation": "rust_symbol:v2:sha256:ab6f6494b0ca3e9754c01e7892874bd0a920134627878b4339bb49da78a49250",
+            "continuation": "rust_symbol:v2:sha256:4c2b14ce1af2ded27ffa190a91bfa7f458dcf2eb0a032629ff2f22871c9fe285",
             "terminal": true,
             "retry": false,
             "idempotency_key_parameter": null,
@@ -47,7 +47,7 @@
           "forbidden_effects": [],
           "resource": null,
           "handling": {
-            "continuation": "rust_symbol:v2:sha256:ab6f6494b0ca3e9754c01e7892874bd0a920134627878b4339bb49da78a49250",
+            "continuation": "rust_symbol:v2:sha256:4c2b14ce1af2ded27ffa190a91bfa7f458dcf2eb0a032629ff2f22871c9fe285",
             "terminal": true,
             "retry": false,
             "idempotency_key_parameter": null,

@@ -22,9 +22,11 @@ import os
 from pathlib import Path
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
+import time
 from typing import Any, Iterable, Iterator
 import uuid
 
@@ -511,10 +513,47 @@ def command_text(parts: Iterable[str]) -> str:
         displayed[0] = "cargo"
     elif displayed and Path(displayed[0]).name.lower().startswith("python"):
         displayed[0] = "python"
+    elif displayed and Path(displayed[0]).name.lower() in {"fortress", "fortress.exe"}:
+        displayed[0] = "fortress"
     for index, part in enumerate(displayed[1:], start=1):
         if Path(part).is_absolute():
             displayed[index] = "<machine-local-path>"
     return " ".join(displayed)
+
+
+def emit_failed_command_capture(output: bytes) -> None:
+    """Disclose captured failure bytes without treating a preview as evidence."""
+    maximum = 4 * 1024**2
+    tail = output[-maximum:]
+    binary = getattr(sys.stderr, "buffer", None)
+    print(
+        "[local-certificate-failed-capture] "
+        + json.dumps(
+            {
+                "captured_bytes": len(output),
+                "captured_digest": sha256_bytes(output),
+                "preview_raw_bytes": len(tail),
+                "maximum_preview_raw_bytes": maximum,
+                "truncated": len(tail) != len(output),
+                "encoding": "raw bytes" if binary is not None else "UTF-8 with backslash replacement",
+                "qualification_claim": False,
+            },
+            sort_keys=True,
+        ),
+        file=sys.stderr,
+        flush=True,
+    )
+    if binary is None:
+        sys.stderr.write(tail.decode("utf-8", errors="backslashreplace"))
+    else:
+        view = memoryview(tail)
+        offset = 0
+        while offset < len(view):
+            written = binary.write(view[offset:])
+            if written is None or written <= 0:
+                raise OSError("failed capture preview could not be written")
+            offset += written
+    sys.stderr.flush()
 
 
 def run_command(
@@ -526,6 +565,8 @@ def run_command(
     workspace: RunWorkspace | None = None,
 ) -> bytes:
     print(f"[local-certificate] {command_text(command)}", flush=True)
+    started = time.monotonic_ns()
+    supervisor_started = time.process_time_ns()
     process = subprocess.Popen(
         command,
         cwd=root,
@@ -564,10 +605,37 @@ def run_command(
             and process.poll() is not None
         ):
             workspace.clear_child(process.pid)
+        finished = time.monotonic_ns()
+        print(
+            "[local-certificate-timing] "
+            + json.dumps(
+                {
+                    "command": command_text(command),
+                    "wall_time_ns": finished - started,
+                    "started_monotonic_ns": started,
+                    "finished_monotonic_ns": finished,
+                    "supervisor_cpu_time_ns": time.process_time_ns() - supervisor_started,
+                    "cpu_scope": "issuer process only; excludes child and descendant CPU",
+                    "returncode": process.poll(),
+                    "descendants_uncertain": descendants_uncertain,
+                },
+                sort_keys=True,
+            ),
+            flush=True,
+        )
     if process.returncode != 0:
-        raise CertificateError(
+        error = CertificateError(
             f"quality gate exited {process.returncode}: {command_text(command)}"
         )
+        if capture:
+            try:
+                emit_failed_command_capture(output or b"")
+            except Exception as diagnostic_error:
+                error.add_note(
+                    "Failure capture diagnostic could not be emitted: "
+                    + type(diagnostic_error).__name__
+                )
+        raise error
     return output if capture else b""
 
 
@@ -581,6 +649,82 @@ def pass_gate(gates: list[dict[str, str]], gate_id: str, command: list[str]) -> 
     )
 
 
+def timing_checkpoint(phase: str) -> None:
+    """Expose issuer overhead boundaries without adding a semantic claim."""
+    print(
+        "[local-certificate-checkpoint] "
+        + json.dumps({"phase": phase, "monotonic_ns": time.monotonic_ns(),
+                      "supervisor_cpu_time_ns": time.process_time_ns()}, sort_keys=True),
+        flush=True,
+    )
+
+
+def certification_executable(
+    root: Path, base: list[str], environment: dict[str, str], workspace: RunWorkspace
+) -> Path:
+    """Build the real CLI and stage exact executable bytes outside Cargo's target."""
+    build = base + [
+        "build", "--quiet", "--all-features", "--manifest-path", "_data/Cargo.toml",
+        "-p", "fortress-cli", "--message-format=json-render-diagnostics",
+    ]
+    output = run_command(root, build, environment, capture=True, workspace=workspace)
+    try:
+        messages = [json.loads(line) for line in output.splitlines()]
+    except json.JSONDecodeError as error:
+        raise CertificateError("invalid CLI compiler artifact report") from error
+    if any(not isinstance(message, dict) for message in messages):
+        raise CertificateError("invalid CLI compiler artifact report")
+    binaries = []
+    for message in messages:
+        target = message.get("target", {})
+        if (
+            message.get("reason") == "compiler-artifact"
+            and isinstance(target, dict)
+            and target.get("name") == "fortress"
+            and target.get("kind") == ["bin"]
+            and Path(target.get("src_path", "")).resolve()
+            == (root / "cli/_code/main.rs").resolve()
+            and isinstance(message.get("executable"), str)
+        ):
+            binaries.append(Path(message["executable"]))
+    finished = [m for m in messages if m.get("reason") == "build-finished"]
+    if len(binaries) != 1 or len(finished) != 1 or finished[0].get("success") is not True:
+        raise CertificateError("missing or ambiguous successful CLI compiler artifact")
+    workspace.check_budget()
+    executable = binaries[0]
+    if not executable.is_absolute() or not executable.resolve(strict=True).is_relative_to(
+        workspace.target.resolve(strict=True)
+    ):
+        raise CertificateError("CLI compiler artifact escapes the owned target")
+    before = executable.lstat()
+    if not stat.S_ISREG(before.st_mode) or getattr(before, "st_file_attributes", 0) & 0x400:
+        raise CertificateError("CLI compiler artifact is linked or not a regular file")
+    workspace.reserve(before.st_size)
+    staged = workspace.staging / ("fortress.exe" if os.name == "nt" else "fortress")
+    digest = hashlib.sha256()
+    copied = 0
+    with executable.open("rb") as origin, staged.open("xb") as destination:
+        while chunk := origin.read(65536):
+            copied += len(chunk)
+            if copied > before.st_size:
+                raise CertificateError("CLI compiler artifact grew during staging")
+            destination.write(chunk)
+            digest.update(chunk)
+        after = os.fstat(origin.fileno())
+    identity = lambda m: (m.st_dev, m.st_ino, m.st_size, m.st_mtime_ns)
+    if copied != before.st_size or identity(after) != identity(before) or identity(
+        executable.lstat()
+    ) != identity(before):
+        raise CertificateError("CLI compiler artifact changed during staging")
+    staged.chmod(stat.S_IMODE(before.st_mode))
+    with staged.open("rb") as copied_file:
+        if hashlib.file_digest(copied_file, "sha256").digest() != digest.digest():
+            raise CertificateError("staged CLI differs from the compiler artifact")
+    workspace.check_budget()
+    print(f"[local-certificate] staged CLI sha256:{digest.hexdigest()}", flush=True)
+    return staged
+
+
 def issue(root: Path) -> dict[str, Any]:
     """Run a bounded issuer without changing a prior certificate on failure."""
     root = root.resolve()
@@ -590,10 +734,14 @@ def issue(root: Path) -> dict[str, Any]:
     for item in recovered:
         print(f"[local-certificate] recovery {item['status']}: {item['journal']}")
     with RunWorkspace(root, storage_root, StoragePolicy.from_environment()) as workspace:
-        return _issue(root, workspace)
+        result = _issue(root, workspace)
+        timing_checkpoint("storage_exit_start")
+    timing_checkpoint("storage_exit_finished")
+    return result
 
 
 def _issue(root: Path, workspace: RunWorkspace) -> dict[str, Any]:
+    timing_checkpoint("issuer_setup_start")
     root = root.resolve()
     if not (root / ".git").exists():
         raise CertificateError(f"not a Fortress Git repository: {root}")
@@ -617,6 +765,7 @@ def _issue(root: Path, workspace: RunWorkspace) -> dict[str, Any]:
     environment["CARGO_TARGET_DIR"] = str(workspace.target)
     if Path(environment["CARGO_TARGET_DIR"]).resolve().is_relative_to(root):
         raise CertificateError("certificate build target must remain outside the repository")
+    timing_checkpoint("issuer_setup_finished")
 
     with nullcontext(temporary_root) as temporary:
         base = cargo_base()
@@ -717,15 +866,9 @@ def _issue(root: Path, workspace: RunWorkspace) -> dict[str, Any]:
             "certification": temporary / "certification.json",
             "verified-bfg": temporary / "verified-bfg.json",
         }
-        certify = base + [
-            "run",
-            "--quiet",
-            "--all-features",
-            "--manifest-path",
-            "_data/Cargo.toml",
-            "-p",
-            "fortress-cli",
-            "--",
+        executable = certification_executable(root, base, environment, workspace)
+        certify = [
+            str(executable),
             "certify",
             ".",
             "--format",
@@ -743,6 +886,7 @@ def _issue(root: Path, workspace: RunWorkspace) -> dict[str, Any]:
         ]
         run_command(root, certify, environment, capture=True, workspace=workspace)
         remove_transient_cargo_lock(root, preexisting_lock)
+        timing_checkpoint("artifact_validation_start")
         # The certify boundary executes the canonical unfiltered workspace suite.
         # Governed generator tests prove repeatability; routine issuance binds one
         # exact semantic stack and every resulting canonical digest.
@@ -829,6 +973,7 @@ def _issue(root: Path, workspace: RunWorkspace) -> dict[str, Any]:
             raise CertificateError("self-audit from certification stack is not PASS")
         pass_gate(gates, "SELF_AUDIT", certify)
         pass_gate(gates, "AUDIT_JSON_DETERMINISM", certify)
+        timing_checkpoint("artifact_validation_finished")
 
         documentation = base + [
             "doc",
@@ -843,6 +988,7 @@ def _issue(root: Path, workspace: RunWorkspace) -> dict[str, Any]:
         run_command(root, documentation, documentation_environment, workspace=workspace)
         pass_gate(gates, "RUSTDOC", documentation)
 
+    timing_checkpoint("publication_start")
     gates.sort(key=lambda gate: gate["id"])
     artifact_records.sort(key=lambda artifact: artifact["id"])
     source_fingerprint, source_file_count = repository_fingerprint(root)
@@ -929,6 +1075,7 @@ def _issue(root: Path, workspace: RunWorkspace) -> dict[str, Any]:
         raise CertificateError("current selection index changed during publication")
     atomic_write(index_path, index_bytes)
     workspace.publish(generation_id)
+    timing_checkpoint("publication_finished")
     print(
         f"issued {CURRENT_INDEX_PATH} generation={generation_id} "
         f"certificate={document['certificate_stamp']}"

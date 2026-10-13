@@ -39,7 +39,18 @@
   ],
   "relationships": [],
   "constraints": [],
-  "guarantees": [],
+  "guarantees": [
+    {
+      "id": "GUA-PROGRAM-PREPARATION-EQUIVALENCE",
+      "subject": {
+        "kind": "capability",
+        "id": "CAP-PROGRAM-SEMANTICS"
+      },
+      "requirements": [
+        "AF-PROGRAM-SEMANTICS-0001-R09"
+      ]
+    }
+  ],
   "features": [
     {
       "id": "AF-PROGRAM-SEMANTICS-0001",
@@ -137,6 +148,20 @@
             "T-AF-PROGRAM-SEMANTICS-0001-R08-011",
             "T-AF-PROGRAM-SEMANTICS-0001-R08-012",
             "T-AF-PROGRAM-SEMANTICS-0001-R08-013"
+          ]
+        },
+        {
+          "id": "AF-PROGRAM-SEMANTICS-0001-R09",
+          "statement": "Program Semantics prepares exact immutable inputs through the same canonical producer as cold compilation, keeps syntax and reusable declaration/body/caller/graph units coordinator-local, retains successful and missed dependency queries, rebuilds every body and caller in a changed source file for current provenance, reconstructs incomplete declaration/context/ownership/import/destructor dependencies conservatively, and exposes actual work without changing model bytes, identities, coverage, or typed error precedence.",
+          "tests": [
+            "T-AF-PROGRAM-SEMANTICS-0001-R09-001",
+            "T-AF-PROGRAM-SEMANTICS-0001-R09-002",
+            "T-AF-PROGRAM-SEMANTICS-0001-R09-003",
+            "T-AF-PROGRAM-SEMANTICS-0001-R09-004",
+            "T-AF-PROGRAM-SEMANTICS-0001-R09-005",
+            "T-AF-PROGRAM-SEMANTICS-0001-R09-006",
+            "T-AF-PROGRAM-SEMANTICS-0001-R09-007",
+            "T-AF-PROGRAM-SEMANTICS-0001-R09-008"
           ]
         }
       ]

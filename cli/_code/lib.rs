@@ -931,16 +931,26 @@ fn execute_canonical_rust_suite<E: Write>(root: &PathBuf, error: &mut E) -> io::
         PathBuf::from,
     );
     let canonical_root = fs::canonicalize(root)?;
-    if !target.is_absolute() || target.starts_with(&canonical_root) {
+    let resolved_target = match fs::canonicalize(&target) {
+        Ok(path) => path,
+        Err(error) if error.kind() == io::ErrorKind::NotFound => target.clone(),
+        Err(error) => return Err(error),
+    };
+    if !target.is_absolute() || resolved_target.starts_with(&canonical_root) {
         return Err(io::Error::new(
             io::ErrorKind::InvalidInput,
             "certification Cargo target must be absolute and outside the governed repository",
         ));
     }
-    // Cargo's all-target test build can replace the CLI executable. Keep it in
-    // a supervised child target so Windows never tries to overwrite the
-    // running `fortress certify` process.
-    let suite_target = target.join("certification-tests");
+    // A staged issuer executable leaves the compiler target free for the full
+    // test build. Direct invocation inside that target still needs isolation
+    // because Windows cannot replace the running CLI image.
+    let suite_target = if fs::canonicalize(std::env::current_exe()?)?.starts_with(&resolved_target)
+    {
+        target.join("certification-tests")
+    } else {
+        target
+    };
     writeln!(
         error,
         "[fortress-certify] executing canonical local Rust suite with external build target"

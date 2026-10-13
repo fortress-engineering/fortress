@@ -14,6 +14,7 @@ mod function_contract;
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
+use std::sync::Arc;
 
 pub use domain::{IntegerInterval, SemanticDomain};
 pub use function_contract::{
@@ -279,6 +280,8 @@ impl SemanticAnalysisCoverage {
 /// Canonical Semantic Analysis v1 derived Info document.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct SemanticAnalysisModel {
+    #[serde(skip)]
+    digest_memo: crate::program_semantics::ModelDigestMemo,
     #[serde(rename = "$schema")]
     schema: String,
     schema_version: u16,
@@ -336,10 +339,7 @@ impl SemanticAnalysisModel {
     ///
     /// Returns an error when canonical serialization fails.
     pub fn digest(&self) -> Result<String, serde_json::Error> {
-        Ok(format!(
-            "sha256:{:x}",
-            Sha256::digest(self.to_canonical_json()?.as_bytes())
-        ))
+        self.digest_memo.digest(self)
     }
 }
 
@@ -356,6 +356,88 @@ struct SemanticAnalysisProvenance {
 pub struct SemanticAnalysisEvaluation {
     model: SemanticAnalysisModel,
     findings: Vec<CanonicalFinding>,
+}
+
+/// Coordinator-owned reusable domain inputs and exact synchronous trajectories.
+///
+/// This record is operational state, not a serialized semantic authority.
+#[derive(Clone, Default)]
+pub struct SemanticAnalysisPreparation {
+    binding_digest: String,
+    symbols: BTreeSet<String>,
+    edges: BTreeSet<(String, String)>,
+    units: BTreeMap<String, PreparedDomainUnit>,
+    accounted_bytes: usize,
+}
+
+impl fmt::Debug for SemanticAnalysisPreparation {
+    fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("SemanticAnalysisPreparation")
+            .field("units", &self.units.len())
+            .field("cached_round_cardinality", &self.cached_round_cardinality())
+            .field("accounted_bytes", &self.accounted_bytes)
+            .finish_non_exhaustive()
+    }
+}
+
+#[derive(Clone, Debug)]
+struct PreparedDomainUnit {
+    input_digest: String,
+    rounds: Vec<Arc<SemanticDomain>>,
+}
+
+/// Operational limits on retained owner inputs and round payloads.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+pub struct PreparationRetention {
+    /// Conservative accounted allocation charge, independently from RSS.
+    pub max_accounted_bytes: usize,
+    /// Maximum retained symbol-round payload cardinality.
+    pub max_round_values: usize,
+}
+
+impl Default for PreparationRetention {
+    fn default() -> Self {
+        Self {
+            max_accounted_bytes: 128 * 1024 * 1024,
+            max_round_values: 250_000,
+        }
+    }
+}
+
+impl SemanticAnalysisPreparation {
+    /// Returns retained symbol-round values, including each initialized round.
+    #[must_use]
+    pub fn cached_round_cardinality(&self) -> usize {
+        self.units.values().map(|unit| unit.rounds.len()).sum()
+    }
+
+    /// Returns a conservative accounted allocation charge, not measured RSS.
+    #[must_use]
+    pub fn accounted_resident_bytes(&self) -> usize {
+        self.accounted_bytes
+    }
+}
+
+/// Actual interpreter and SCC-round work performed by one prepared request.
+#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize)]
+pub struct SemanticPreparationWork {
+    /// Current final diagnostic summaries assembled through the cold producer.
+    pub final_summaries_rebuilt: usize,
+    /// Symbol-round transfers executed by the existing interpreter.
+    pub rebuilt_domain_rounds: usize,
+    /// Symbol-round values replayed from identical dependency-closed inputs.
+    pub reused_domain_rounds: usize,
+    /// Previously unchanged units interpreted beyond their retained trajectory.
+    pub extended_domain_rounds: usize,
+    /// SCC-rounds containing an executed transfer.
+    pub rebuilt_scc_rounds: usize,
+    /// SCC-rounds whose complete value set was replayed.
+    pub reused_scc_rounds: usize,
+    /// A prior preparation could not establish equivalent dependency inputs.
+    pub full_reevaluation_required: bool,
+    /// Neutral operational explanations, excluded from canonical model bytes.
+    pub fallback_reasons: Vec<String>,
 }
 
 impl SemanticAnalysisEvaluation {
@@ -385,11 +467,91 @@ pub fn analyze_program_domains(
 ) -> Result<SemanticAnalysisEvaluation, SemanticAnalysisError> {
     let context = AnalysisContext::new(psm, contracts);
     let (outputs, fixed_point_iterations) = context.derive_fixed_point();
+    assemble_program_domains(
+        psm,
+        contracts,
+        standard_edition,
+        &context,
+        &outputs,
+        fixed_point_iterations,
+    )
+}
+
+/// Uses owner-local exact inputs to replay or rebuild synchronous domain units.
+///
+/// Missing prior rounds execute the same interpreter through the current global
+/// stop. Final diagnostics, headers and findings always use current inputs.
+///
+/// # Errors
+/// Returns the same construction errors as [`analyze_program_domains`].
+pub fn analyze_program_domains_prepared(
+    psm: &ProgramSemanticModel,
+    contracts: &ResolvedFunctionContracts,
+    standard_edition: &str,
+    previous: Option<&SemanticAnalysisPreparation>,
+) -> Result<
+    (
+        SemanticAnalysisEvaluation,
+        SemanticAnalysisPreparation,
+        SemanticPreparationWork,
+    ),
+    SemanticAnalysisError,
+> {
+    analyze_program_domains_prepared_with_retention(
+        psm,
+        contracts,
+        standard_edition,
+        previous,
+        PreparationRetention::default(),
+    )
+}
+
+/// Performs prepared evaluation within explicit operational retention limits.
+///
+/// # Errors
+/// Returns the same construction errors as [`analyze_program_domains`].
+pub fn analyze_program_domains_prepared_with_retention(
+    psm: &ProgramSemanticModel,
+    contracts: &ResolvedFunctionContracts,
+    standard_edition: &str,
+    previous: Option<&SemanticAnalysisPreparation>,
+    retention: PreparationRetention,
+) -> Result<
+    (
+        SemanticAnalysisEvaluation,
+        SemanticAnalysisPreparation,
+        SemanticPreparationWork,
+    ),
+    SemanticAnalysisError,
+> {
+    let context = AnalysisContext::new(psm, contracts);
+    let (outputs, iterations, preparation, mut work) =
+        context.derive_prepared_fixed_point(psm, previous, retention)?;
+    let evaluation = assemble_program_domains(
+        psm,
+        contracts,
+        standard_edition,
+        &context,
+        &outputs,
+        iterations,
+    )?;
+    work.final_summaries_rebuilt = context.symbols.len();
+    Ok((evaluation, preparation, work))
+}
+
+fn assemble_program_domains(
+    psm: &ProgramSemanticModel,
+    contracts: &ResolvedFunctionContracts,
+    standard_edition: &str,
+    context: &AnalysisContext<'_>,
+    outputs: &BTreeMap<String, SemanticDomain>,
+    fixed_point_iterations: usize,
+) -> Result<SemanticAnalysisEvaluation, SemanticAnalysisError> {
     let mut state = AnalysisState::default();
     let mut summaries = context
         .symbols
         .values()
-        .map(|symbol| context.summarize(symbol, &outputs, &mut state))
+        .map(|symbol| context.summarize(symbol, outputs, &mut state))
         .collect::<Vec<_>>();
     summaries.sort();
     state.checks.sort();
@@ -423,6 +585,7 @@ pub fn analyze_program_domains(
         &state,
     );
     let model = SemanticAnalysisModel {
+        digest_memo: crate::program_semantics::ModelDigestMemo::default(),
         schema: SEMANTIC_ANALYSIS_SCHEMA.into(),
         schema_version: SEMANTIC_ANALYSIS_SCHEMA_VERSION,
         semantic_version: SEMANTIC_ANALYSIS_VERSION.into(),
@@ -449,6 +612,36 @@ pub fn analyze_program_domains(
         .map(|violation| finding_from_violation(violation, standard_edition))
         .collect::<Result<Vec<_>, _>>()?;
     Ok(SemanticAnalysisEvaluation { model, findings })
+}
+
+fn prepared_domain_digest(value: &impl Serialize) -> Result<String, SemanticAnalysisError> {
+    Ok(format!(
+        "sha256:{:x}",
+        Sha256::digest(serde_json::to_vec(value).map_err(SemanticAnalysisError::Serialization)?,)
+    ))
+}
+
+fn domain_round_charge(domain: &SemanticDomain) -> usize {
+    serde_json::to_vec(domain)
+        .expect("domain serializes")
+        .len()
+        .saturating_mul(8)
+        .saturating_add(512)
+}
+
+fn invalidate_domain_dependents(edges: &BTreeSet<(String, String)>, dirty: &mut BTreeSet<String>) {
+    let mut callers: BTreeMap<&str, Vec<&str>> = BTreeMap::new();
+    for (caller, callee) in edges {
+        callers.entry(callee).or_default().push(caller);
+    }
+    let mut pending = dirty.clone();
+    while let Some(provider) = pending.pop_first() {
+        for caller in callers.get(provider.as_str()).into_iter().flatten() {
+            if dirty.insert((*caller).to_owned()) {
+                pending.insert((*caller).to_owned());
+            }
+        }
+    }
 }
 
 struct AnalysisContext<'a> {
@@ -563,32 +756,13 @@ impl<'a> AnalysisContext<'a> {
     }
 
     fn derive_fixed_point(&self) -> (BTreeMap<String, SemanticDomain>, usize) {
-        let mut outputs = self
-            .symbols
-            .values()
-            .map(|symbol| {
-                let output = if self.bodies.contains_key(symbol.id()) {
-                    SemanticDomain::bottom(symbol.return_type().type_id())
-                } else {
-                    self.static_domain(symbol.return_type().type_id())
-                };
-                (symbol.id().into(), output)
-            })
-            .collect::<BTreeMap<_, _>>();
+        let mut outputs = self.initial_outputs();
         for iteration in 1..=fixed_point_iteration_limit() {
             let mut changed = false;
             let mut next = outputs.clone();
             for symbol in self.symbols.values() {
-                let mut discarded = AnalysisState::default();
-                let inferred = self.interpret_symbol(symbol, &outputs, &mut discarded);
-                let previous = outputs
-                    .get(symbol.id())
-                    .expect("every PSM symbol has an initialized summary");
-                let joined = if iteration > WIDEN_AFTER_ITERATION {
-                    previous.widen(&inferred)
-                } else {
-                    previous.join(&inferred)
-                };
+                let previous = outputs.get(symbol.id()).expect("initialized symbol");
+                let joined = self.derive_symbol_round(symbol, &outputs, iteration);
                 if &joined != previous {
                     next.insert(symbol.id().into(), joined);
                     changed = true;
@@ -600,6 +774,287 @@ impl<'a> AnalysisContext<'a> {
             }
         }
         (outputs, fixed_point_iteration_limit())
+    }
+
+    fn initial_outputs(&self) -> BTreeMap<String, SemanticDomain> {
+        self.symbols
+            .values()
+            .map(|symbol| {
+                let output = if self.bodies.contains_key(symbol.id()) {
+                    SemanticDomain::bottom(symbol.return_type().type_id())
+                } else {
+                    self.static_domain(symbol.return_type().type_id())
+                };
+                (symbol.id().into(), output)
+            })
+            .collect()
+    }
+
+    fn derive_symbol_round(
+        &self,
+        symbol: &ExecutableSymbol,
+        outputs: &BTreeMap<String, SemanticDomain>,
+        iteration: usize,
+    ) -> SemanticDomain {
+        let mut discarded = AnalysisState::default();
+        let inferred = self.interpret_symbol(symbol, outputs, &mut discarded);
+        let previous = outputs.get(symbol.id()).expect("initialized symbol");
+        if iteration > WIDEN_AFTER_ITERATION {
+            previous.widen(&inferred)
+        } else {
+            previous.join(&inferred)
+        }
+    }
+
+    #[allow(clippy::too_many_lines)]
+    fn derive_prepared_fixed_point(
+        &self,
+        psm: &ProgramSemanticModel,
+        previous: Option<&SemanticAnalysisPreparation>,
+        retention: PreparationRetention,
+    ) -> Result<
+        (
+            BTreeMap<String, SemanticDomain>,
+            usize,
+            SemanticAnalysisPreparation,
+            SemanticPreparationWork,
+        ),
+        SemanticAnalysisError,
+    > {
+        // Transfers and contract-domain resolution consume type identity and
+        // shape. Aggregate source spellings are not inputs to those functions;
+        // changing an unrelated literal must not invalidate every trajectory.
+        let type_shapes = self
+            .types
+            .iter()
+            .map(|(id, value)| (*id, value.semantic()))
+            .collect::<BTreeMap<_, _>>();
+        let binding_digest = prepared_domain_digest(&(
+            psm.program_context(),
+            &type_shapes,
+            self.contracts.digest(),
+        ))?;
+        let symbols = self
+            .symbols
+            .keys()
+            .map(|id| (*id).to_owned())
+            .collect::<BTreeSet<_>>();
+        let edges = psm
+            .calls()
+            .iter()
+            .filter(|call| call.state() == CallResolutionState::ResolvedStatic)
+            .filter_map(|call| {
+                call.callee()
+                    .map(|callee| (call.caller().to_owned(), callee.to_owned()))
+            })
+            .collect::<BTreeSet<_>>();
+        let mut work = SemanticPreparationWork::default();
+        let mut accounted_bytes = binding_digest.len().saturating_mul(8).saturating_add(512);
+        for id in &symbols {
+            accounted_bytes =
+                accounted_bytes.saturating_add(id.len().saturating_mul(8).saturating_add(128));
+        }
+        for (caller, callee) in &edges {
+            accounted_bytes = accounted_bytes.saturating_add(
+                (caller.len() + callee.len())
+                    .saturating_mul(8)
+                    .saturating_add(256),
+            );
+        }
+        if accounted_bytes > retention.max_accounted_bytes {
+            let (outputs, iterations) = self.derive_fixed_point();
+            work.full_reevaluation_required = true;
+            work.fallback_reasons.push("domain_retention_limit".into());
+            work.rebuilt_domain_rounds = self.symbols.len().saturating_mul(iterations);
+            work.rebuilt_scc_rounds = psm
+                .call_topology()
+                .strongly_connected_components()
+                .len()
+                .saturating_mul(iterations);
+            return Ok((
+                outputs,
+                iterations,
+                SemanticAnalysisPreparation::default(),
+                work,
+            ));
+        }
+        if let Some(previous) = previous {
+            if previous.binding_digest != binding_digest {
+                work.fallback_reasons
+                    .push("domain_binding_environment_changed".into());
+            }
+            if previous.symbols != symbols {
+                work.fallback_reasons
+                    .push("domain_symbol_inventory_changed".into());
+            }
+            if previous.edges != edges {
+                work.fallback_reasons
+                    .push("domain_call_topology_changed".into());
+            }
+        }
+        work.full_reevaluation_required = !work.fallback_reasons.is_empty();
+        let reusable = previous.filter(|_| !work.full_reevaluation_required);
+        let mut outputs = self.initial_outputs();
+        let mut units = BTreeMap::new();
+        let mut retained_units = BTreeSet::new();
+        let mut retained_rounds = 0;
+        let mut retention_limited = false;
+        let mut dirty = BTreeSet::new();
+        let mut local_types_by_owner: BTreeMap<&str, Vec<(&str, &str)>> = BTreeMap::new();
+        for ((owner, name), type_id) in &self.local_types {
+            local_types_by_owner
+                .entry(owner)
+                .or_default()
+                .push((name, type_id));
+        }
+        for symbol in self.symbols.values() {
+            let input_digest = prepared_domain_digest(&(
+                symbol,
+                self.bodies.get(symbol.id()),
+                self.calls_for(symbol.id()),
+                local_types_by_owner.get(symbol.id()),
+            ))?;
+            let cached = reusable
+                .and_then(|previous| previous.units.get(symbol.id()))
+                .filter(|unit| unit.input_digest == input_digest);
+            if cached.is_none() {
+                dirty.insert(symbol.id().to_owned());
+            }
+            units.insert(
+                symbol.id().to_owned(),
+                PreparedDomainUnit {
+                    input_digest,
+                    rounds: Vec::new(),
+                },
+            );
+        }
+        invalidate_domain_dependents(&edges, &mut dirty);
+        // A provider change invalidates every round of all reverse dependents.
+        for (id, unit) in &mut units {
+            let metadata_charge = (id.len() + unit.input_digest.len())
+                .saturating_mul(8)
+                .saturating_add(256);
+            if accounted_bytes.saturating_add(metadata_charge) > retention.max_accounted_bytes {
+                retention_limited = true;
+                continue;
+            }
+            accounted_bytes += metadata_charge;
+            retained_units.insert(id.clone());
+            let cached = reusable
+                .and_then(|previous| previous.units.get(id))
+                .filter(|_| !dirty.contains(id));
+            if let Some(cached) = cached {
+                for value in &cached.rounds {
+                    if retained_rounds >= retention.max_round_values {
+                        retention_limited = true;
+                        break;
+                    }
+                    let charge = domain_round_charge(value);
+                    if accounted_bytes.saturating_add(charge) > retention.max_accounted_bytes {
+                        retention_limited = true;
+                        break;
+                    }
+                    accounted_bytes += charge;
+                    retained_rounds += 1;
+                    unit.rounds.push(Arc::clone(value));
+                }
+            } else if retained_rounds < retention.max_round_values {
+                let charge = domain_round_charge(&outputs[id]);
+                if accounted_bytes.saturating_add(charge) <= retention.max_accounted_bytes {
+                    accounted_bytes += charge;
+                    retained_rounds += 1;
+                    unit.rounds.push(Arc::new(outputs[id].clone()));
+                } else {
+                    retention_limited = true;
+                }
+            } else {
+                retention_limited = true;
+            }
+        }
+        for iteration in 1..=fixed_point_iteration_limit() {
+            let mut changed = false;
+            let mut next = outputs.clone();
+            let mut rebuilt = BTreeSet::new();
+            for symbol in self.symbols.values() {
+                let previous = outputs
+                    .get(symbol.id())
+                    .expect("every PSM symbol has an initialized summary");
+                let unit = units.get_mut(symbol.id()).expect("prepared symbol");
+                let joined = if let Some(value) = unit.rounds.get(iteration) {
+                    work.reused_domain_rounds += 1;
+                    value.as_ref().clone()
+                } else {
+                    work.rebuilt_domain_rounds += 1;
+                    if reusable.is_some() && !dirty.contains(symbol.id()) {
+                        work.extended_domain_rounds += 1;
+                    }
+                    rebuilt.insert(symbol.id().to_owned());
+                    let value = self.derive_symbol_round(symbol, &outputs, iteration);
+                    if retained_units.contains(symbol.id())
+                        && unit.rounds.len() == iteration
+                        && retained_rounds < retention.max_round_values
+                    {
+                        let charge = domain_round_charge(&value);
+                        if accounted_bytes.saturating_add(charge) <= retention.max_accounted_bytes {
+                            accounted_bytes += charge;
+                            retained_rounds += 1;
+                            unit.rounds.push(Arc::new(value.clone()));
+                        } else {
+                            retention_limited = true;
+                        }
+                    } else {
+                        retention_limited = true;
+                    }
+                    value
+                };
+                if &joined != previous {
+                    next.insert(symbol.id().into(), joined);
+                    changed = true;
+                }
+            }
+            for component in psm.call_topology().strongly_connected_components() {
+                if component.symbols().iter().any(|id| rebuilt.contains(id)) {
+                    work.rebuilt_scc_rounds += 1;
+                } else {
+                    work.reused_scc_rounds += 1;
+                }
+            }
+            outputs = next;
+            if !changed {
+                units.retain(|id, _| retained_units.contains(id));
+                if retention_limited {
+                    work.fallback_reasons.push("domain_retention_limit".into());
+                }
+                return Ok((
+                    outputs,
+                    iteration,
+                    SemanticAnalysisPreparation {
+                        binding_digest,
+                        symbols,
+                        edges,
+                        units,
+                        accounted_bytes,
+                    },
+                    work,
+                ));
+            }
+        }
+        units.retain(|id, _| retained_units.contains(id));
+        if retention_limited {
+            work.fallback_reasons.push("domain_retention_limit".into());
+        }
+        Ok((
+            outputs,
+            fixed_point_iteration_limit(),
+            SemanticAnalysisPreparation {
+                binding_digest,
+                symbols,
+                edges,
+                units,
+                accounted_bytes,
+            },
+            work,
+        ))
     }
 
     #[allow(clippy::too_many_lines)]

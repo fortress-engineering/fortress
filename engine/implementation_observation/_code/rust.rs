@@ -251,6 +251,12 @@ pub fn observe_rust_implementation(
         };
         let source = std::str::from_utf8(files[&path])
             .map_err(|_| ImplementationObservationError::NonUtf8Rust(path.clone().into()))?;
+        crate::observation::input_retention::preflight_input(source.len()).map_err(|error| {
+            ImplementationObservationError::InvalidRustSource {
+                path: path.clone().into(),
+                source: syn::Error::new(Span::call_site(), error.to_string()),
+            }
+        })?;
         let syntax = syn::parse_file(source).map_err(|source| {
             ImplementationObservationError::InvalidRustSource {
                 path: path.clone().into(),
@@ -695,6 +701,12 @@ fn discover_module_tree(
         });
     let source = std::str::from_utf8(files[path])
         .map_err(|_| ImplementationObservationError::NonUtf8Rust(path.into()))?;
+    crate::observation::input_retention::preflight_input(source.len()).map_err(|error| {
+        ImplementationObservationError::InvalidRustSource {
+            path: path.into(),
+            source: syn::Error::new(Span::call_site(), error.to_string()),
+        }
+    })?;
     let syntax = syn::parse_file(source).map_err(|source| {
         ImplementationObservationError::InvalidRustSource {
             path: path.into(),

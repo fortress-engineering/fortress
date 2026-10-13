@@ -89,8 +89,36 @@ name = "program_semantics"
 path = "../program_semantics/testing/_code/program_semantics.rs"
 
 [[test]]
+name = "program_preparation"
+path = "../program_semantics/testing/_code/program_preparation.rs"
+
+[[test]]
+name = "heavy_admission"
+path = "../snapshot_governance/testing/_code/heavy_admission.rs"
+
+[[test]]
 name = "semantic_analysis"
 path = "../semantic_analysis/testing/_code/semantic_analysis.rs"
+
+[[test]]
+name = "semantic_preparation"
+path = "../semantic_analysis/testing/_code/semantic_preparation.rs"
+
+[[test]]
+name = "effect_preparation"
+path = "../state_effect_analysis/testing/_code/effect_preparation.rs"
+
+[[test]]
+name = "resident_session"
+path = "../snapshot_governance/testing/_code/resident_session.rs"
+
+[[test]]
+name = "resident_differential"
+path = "../snapshot_governance/testing/_code/resident_differential.rs"
+
+[[test]]
+name = "session_dependencies"
+path = "../affected_analysis/testing/_code/session_dependencies.rs"
 
 [[test]]
 name = "state_effect_analysis"
@@ -185,7 +213,9 @@ name = "test_boundary_001"
 path = "../snapshot_governance/testing/_code/test_boundary_001.rs"
 
 [dependencies]
+cpu-time = "=1.0.0"
 getrandom = "0.3"
+memory-stats = { version = "=1.2.0", features = ["always_use_statm"] }
 pulldown-cmark = { version = "0.13", default-features = false }
 proc-macro2 = { version = "1.0", features = ["span-locations"] }
 quote = "1.0"
@@ -195,7 +225,7 @@ serde_json = "1.0"
 serde_json_canonicalizer = "=0.3.2"
 sha2 = "0.10"
 syn = { version = "2.0", features = ["full", "visit"] }
-sysinfo = { version = "0.39", default-features = false, features = ["disk"] }
+sysinfo = { version = "0.39", default-features = false, features = ["disk", "system"] }
 toml = "0.9"
 
 [lints]
@@ -203,3 +233,14 @@ workspace = true
 
 [dev-dependencies]
 jsonschema = { version = "=0.33.0", default-features = false }
+
+[target.'cfg(windows)'.dependencies]
+winapi-util = "=0.1.11"
+
+[[test]]
+name = "bounded_observation"
+path = "../repository_observation/testing/_code/bounded_observation.rs"
+
+[[example]]
+name = "resident_benchmark"
+path = "../snapshot_governance/testing/_code/resident_benchmark.rs"

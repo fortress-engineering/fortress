@@ -35,3 +35,5 @@ Exercises the parent observation boundary across stable, excluded, and nested re
 ## Guarantees
 
 Temporary repositories are isolated, fixtures are deterministic, and no runtime material becomes governed source.
+
+R04 controls in `bounded_observation.rs` verify optional operational bounds while preserving ordinary observation facts. Source/file, directory-entry and path limits fail explicitly; fitting inputs compare with the unbounded canonical producer.

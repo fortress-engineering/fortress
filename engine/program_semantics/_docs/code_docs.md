@@ -6,6 +6,8 @@ The Code defines the language-neutral PSM and the Rust-specific translator that 
 
 ## Execution
 
+The immutable model exposes borrowed `semantic_inputs` in the same canonical provenance order and with the same path, role and digest fields as serialized PSM evidence. Consumers can validate exact input coverage without constructing a second full-model JSON representation. The borrowed descriptors carry no mutable state or reuse authority.
+
 The orchestrator verifies snapshot-bound bytes, consumes application files already partitioned by the project context, derives Cargo package and target contexts, builds a workspace-wide nominal/interface/impl index, propagates supported local static types, resolves only unique type-directed call targets, derives graph and transfer topology, assigns structurally established execution provenance, reconciles cross-Module calls with Implementation Observation, and serializes canonical output. The CONTROL role registry admits required active configuration as identity input and excludes nonrecursive or unrecognized `__fortress` payloads from application parsing. A Cargo root or an explicit source binding beneath the control root is a typed failure; an include or macro body remains an explicit coverage barrier. PSM v6 binds source, Cargo, explicit context, ownership, and stable Module-identity inputs that can alter program semantics, allowing unrelated Module policy changes to reuse identical PSM bytes while exact-snapshot certification remains independently complete.
 
 The Rust 1.97.1 signature catalog supplies exact return types only for the registered `std::process::Command` and `std::fs::OpenOptions` constructors and receiver-preserving builder methods. These signature facts are separate from State/Effect operation classification. Local bindings use the bounded `UNKNOWN`, `KNOWN`, `FINITE_ALTERNATIVES`, and `CONFLICT` lattice, join branch environments conservatively, and iterate loop environments to a fixed point with an eight-iteration cap. Exceeding the nesting or iteration cap emits a `type_worklist_limit` coverage barrier. Exact package, crate, module, and type paths select same-name methods when available; a simple name with multiple candidates remains ambiguous.
@@ -26,7 +28,7 @@ Identity deliberately excludes parameter binding names, generic/lifetime spellin
 
 ## State
 
-Analysis is stateless beyond deterministic process-local indexes built from one immutable input set.
+Canonical analysis owns deterministic process-local indexes from one immutable input set. Optional coordinator preparation retains exact reusable units between requests, separately from immutable finished models; cache eviction changes work only.
 
 ## Failure Semantics
 
@@ -50,6 +52,12 @@ Defines machine-independent package and target context with explicit known and u
 
 Constructs versioned structured Rust symbol and operation-site identities, alpha-normalizing generic/lifetime binders while retaining exact legacy token-stream aliases for explicit migration.
 
+### [`model_digest.rs`](../_code/model_digest.rs)
+
+The crate-private digest memo belongs to one completed immutable owner model. The first digest streams the unchanged pretty JSON plus trailing LF into SHA-256; subsequent readers reuse that digest for the same object. Model constructors start with empty memos, identical model clones may copy an established memo, and serialization failures are never cached. Memo population is excluded from serialization, debug output and semantic equality; every semantic field still participates in the owner's equality. Adding any model mutation requires invalidating its memo. Independent cold evaluations construct their own models and perform their own first hash. This removes repeated serialization within one evaluation without reusing analysis across source, executable, toolchain, configuration or dependency identities. The helper is provided through the existing Program Semantics dependency of downstream semantic analyzers; it does not grant a direct Project Model dependency or transfer model authority.
+
 ### [`rust.rs`](../_code/rust.rs)
 
 Translates snapshot-bound Cargo manifests and structurally parsed Rust declarations, nominal types, impls, explicit signatures, supported expression types, calls, and transfers into the language-neutral PSM. It resolves unique inherent and concrete trait implementation methods from proven receiver types, applies the bounded local type lattice and installed signature catalog, classifies known external ownership, and preserves ambiguity, dynamic dispatch, unpolled async bodies, expression and statement macros, custom dereference, destructor uncertainty, and missing type information as explicit residual states. Macro bodies are not expanded; their invocation sites remain opaque calls.
+
+Cold and prepared compilation share the final assembler. Prepared parse and declaration contributions, body facts, caller outcomes and graph units remain private to a coordinator; the finished owned PSM is `Send + Sync`. Reuse accepts unchanged input or one isolated ordinary free-function body change with exact exterior bytes and unchanged context/ownership/declarations. Every body and caller in that changed file is rebuilt to refresh shifted spans. Removed contribution spellings are not carried into a fresh type registry. Graph reuse compares complete weak-component members, edges and relevant symbol metadata, retains global Tarjan DFS-root emission order, and rebuilds split, merged or changed components. Neutral query records retain successful and missed name, type, import, cfg and destructor reads. Work counters count executed or replayed owner units; cache accounting stays outside model identity.

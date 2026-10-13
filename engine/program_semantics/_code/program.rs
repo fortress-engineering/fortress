@@ -7,10 +7,14 @@
 mod analysis_context;
 #[path = "graph.rs"]
 mod graph;
+#[path = "model_digest.rs"]
+mod model_digest;
 #[path = "rust.rs"]
 mod rust;
 #[path = "semantic_identity.rs"]
 mod semantic_identity;
+
+pub(crate) use model_digest::ModelDigestMemo;
 
 pub use analysis_context::{
     ContextKnowledge, GeneratedInput, ProgramContext, ProgramContextError, ProgramPackageContext,
@@ -23,6 +27,8 @@ pub use semantic_identity::{
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
+use std::marker::PhantomData;
+use std::rc::Rc;
 
 use serde::Serialize;
 use sha2::{Digest, Sha256};
@@ -2093,6 +2099,18 @@ impl CallTopology {
 }
 
 impl CallComponent {
+    /// Returns the canonical component identity.
+    #[must_use]
+    pub fn id(&self) -> &str {
+        &self.id
+    }
+
+    /// Returns the canonical executable identities within the component.
+    #[must_use]
+    pub fn symbols(&self) -> &[String] {
+        &self.symbols
+    }
+
     /// Returns whether this component represents direct or mutual recursion.
     #[must_use]
     pub const fn is_recursive(&self) -> bool {
@@ -2336,6 +2354,8 @@ pub struct ProgramModelProvenance {
 /// Canonical Program Semantic Model v6 document.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct ProgramSemanticModel {
+    #[serde(skip)]
+    digest_memo: crate::program_semantics::ModelDigestMemo,
     #[serde(rename = "$schema")]
     schema: String,
     schema_version: u16,
@@ -2378,6 +2398,12 @@ impl ProgramSemanticModel {
     #[must_use]
     pub fn source_identity(&self) -> &str {
         &self.source_identity
+    }
+
+    /// Returns the exact immutable input descriptors in canonical provenance order.
+    #[must_use]
+    pub fn semantic_inputs(&self) -> &[ProgramSourceInput] {
+        &self.provenance.semantic_inputs
     }
 
     /// Returns the exact frontend, package and configuration context.
@@ -2505,10 +2531,7 @@ impl ProgramSemanticModel {
     ///
     /// Returns an error when canonical serialization fails.
     pub fn digest(&self) -> Result<String, serde_json::Error> {
-        Ok(format!(
-            "sha256:{:x}",
-            Sha256::digest(self.to_canonical_json()?.as_bytes())
-        ))
+        self.digest_memo.digest(self)
     }
 }
 
@@ -2533,6 +2556,374 @@ pub(crate) struct RustProgramFacts {
     fixed_point_iterations: usize,
 }
 
+/// Actual producer work performed during one program preparation.
+///
+/// These counters are operational observations and never enter model identities.
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub struct ProgramSemanticWork {
+    /// Source files structurally parsed during this preparation.
+    pub parsed_files: usize,
+    /// Source-file parse units retained without reparsing.
+    pub reused_parse_files: usize,
+    /// Source-file declaration units rebuilt from current parse inputs.
+    pub rebuilt_declaration_files: usize,
+    /// Source-file declaration units retained without recollection.
+    pub reused_declaration_files: usize,
+    /// Executable body units analyzed from current inputs.
+    pub analyzed_bodies: usize,
+    /// Executable body units retained without body analysis.
+    pub reused_bodies: usize,
+    /// Callers whose call facts were rebuilt from current body inputs.
+    pub rebuilt_callers: usize,
+    /// Callers whose complete call facts were retained.
+    pub reused_callers: usize,
+    /// Weak connected graph units whose SCCs and reachability were recomputed.
+    pub recomputed_components: usize,
+    /// Weak connected graph units retained with unchanged complete graph inputs.
+    pub reused_components: usize,
+    /// Actual type-resolution rounds executed, excluding retained results.
+    pub type_fixed_point_rounds: usize,
+}
+
+impl ProgramSemanticWork {
+    /// Returns the source-file parse work count.
+    #[must_use]
+    pub const fn parsed_files(&self) -> usize {
+        self.parsed_files
+    }
+
+    /// Returns the number of retained source parse units.
+    #[must_use]
+    pub const fn reused_parse_files(&self) -> usize {
+        self.reused_parse_files
+    }
+
+    /// Returns the source-file declaration rebuilding count.
+    #[must_use]
+    pub const fn rebuilt_declaration_files(&self) -> usize {
+        self.rebuilt_declaration_files
+    }
+
+    /// Returns the number of retained declaration units.
+    #[must_use]
+    pub const fn reused_declaration_files(&self) -> usize {
+        self.reused_declaration_files
+    }
+
+    /// Returns the number of bodies actually analyzed.
+    #[must_use]
+    pub const fn analyzed_bodies(&self) -> usize {
+        self.analyzed_bodies
+    }
+
+    /// Returns the number of body units retained without analysis.
+    #[must_use]
+    pub const fn reused_bodies(&self) -> usize {
+        self.reused_bodies
+    }
+
+    /// Returns the number of caller units actually rebuilt.
+    #[must_use]
+    pub const fn rebuilt_callers(&self) -> usize {
+        self.rebuilt_callers
+    }
+
+    /// Returns the number of retained caller units.
+    #[must_use]
+    pub const fn reused_callers(&self) -> usize {
+        self.reused_callers
+    }
+
+    /// Returns the number of graph units recomputed from current edges.
+    #[must_use]
+    pub const fn recomputed_components(&self) -> usize {
+        self.recomputed_components
+    }
+
+    /// Returns the number of complete graph units retained.
+    #[must_use]
+    pub const fn reused_components(&self) -> usize {
+        self.reused_components
+    }
+
+    /// Returns actual type-resolution rounds executed during this preparation.
+    #[must_use]
+    pub const fn type_fixed_point_rounds(&self) -> usize {
+        self.type_fixed_point_rounds
+    }
+}
+
+/// Why reusable facts could not establish complete unchanged dependencies.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ProgramPreparationFallback {
+    /// Frontend, package, target, generated inputs or selected context changed.
+    ContextChanged,
+    /// Physical or logical source ownership or testing authority changed.
+    OwnershipChanged,
+    /// The set of observed semantic source files changed.
+    SourceSetChanged,
+    /// A declaration, interface, implementation or destructor binding changed.
+    DeclarationChanged,
+    /// An import or lexical lookup scope changed.
+    ImportScopeChanged,
+    /// Complete dependency equivalence is outside the supported reuse proof.
+    UnsupportedDependency,
+}
+
+impl ProgramPreparationFallback {
+    /// Returns the operational full-evaluation state, independent of semantic facts.
+    #[must_use]
+    pub const fn status(&self) -> &'static str {
+        "FULL_REEVALUATION_REQUIRED"
+    }
+
+    /// Returns the stable operational reason for requiring full evaluation.
+    #[must_use]
+    pub const fn reason(&self) -> &'static str {
+        match self {
+            Self::ContextChanged => "context_changed",
+            Self::OwnershipChanged => "ownership_changed",
+            Self::SourceSetChanged => "source_set_changed",
+            Self::DeclarationChanged => "declaration_changed",
+            Self::ImportScopeChanged => "import_scope_changed",
+            Self::UnsupportedDependency => "unsupported_dependency",
+        }
+    }
+}
+
+/// Neutral dependency query authority owned by Program Semantics.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub enum ProgramDependencyKind {
+    /// Exact source bytes required by a producer unit.
+    Source,
+    /// Frontend, Cargo and selected configuration context.
+    Context,
+    /// Governing physical or logical ownership and testing classification.
+    Ownership,
+    /// A successful or unsuccessful executable/name lookup.
+    Name,
+    /// A type or method-selection lookup.
+    Type,
+    /// Lexical aliases, imports and source namespace visibility.
+    ImportScope,
+    /// Conditional compilation and execution provenance.
+    Cfg,
+    /// Destructor or other implicit executable effect dependency.
+    Effect,
+}
+
+/// Result of one dependency query, including unsuccessful resolution.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub enum ProgramDependencyResult {
+    /// Canonical exact identities observed by the lookup.
+    Resolved(Vec<String>),
+    /// The lookup found no sufficiently exact current binding.
+    Unresolved,
+    /// The frontend cannot completely enumerate this query's semantics.
+    Unsupported,
+}
+
+/// One complete neutral dependency read, with misses preserved.
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
+pub struct ProgramDependencyRead {
+    /// Repository-relative source unit containing the query.
+    pub source_path: String,
+    /// Canonical caller identity when the query belongs to an executable body.
+    pub caller: Option<String>,
+    /// Authority class for the dependency query.
+    pub kind: ProgramDependencyKind,
+    /// Exact query key, including its source scope where required.
+    pub query: String,
+    /// Observed exact result, unresolved lookup or unsupported semantics.
+    pub result: ProgramDependencyResult,
+}
+
+impl ProgramDependencyRead {
+    /// Returns the repository-relative source unit containing this query.
+    #[must_use]
+    pub fn source_path(&self) -> &str {
+        &self.source_path
+    }
+
+    /// Returns the executable caller, when applicable.
+    #[must_use]
+    pub fn caller(&self) -> Option<&str> {
+        self.caller.as_deref()
+    }
+
+    /// Returns this query's neutral authority class.
+    #[must_use]
+    pub const fn kind(&self) -> ProgramDependencyKind {
+        self.kind
+    }
+
+    /// Returns the complete lookup key.
+    #[must_use]
+    pub fn query(&self) -> &str {
+        &self.query
+    }
+
+    /// Returns the exact query outcome, preserving failed lookups.
+    #[must_use]
+    pub const fn result(&self) -> &ProgramDependencyResult {
+        &self.result
+    }
+}
+
+/// Coordinator-owned parse, declaration, body and graph preparation.
+///
+/// Syntax trees remain on the coordinator thread. Only the finished owned model
+/// is shared with concurrent readers; this preparation never enters model JSON.
+pub struct ProgramSemanticPreparation {
+    rust: rust::PreparedRust,
+    graph: graph::PreparedCallTopology,
+    coordinator: PhantomData<Rc<()>>,
+}
+
+impl fmt::Debug for ProgramSemanticPreparation {
+    fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
+        formatter
+            .debug_struct("ProgramSemanticPreparation")
+            .field("retained_parse_files", &self.retained_parse_files())
+            .field("retained_bodies", &self.retained_bodies())
+            .field("retained_components", &self.retained_components())
+            .field("fixed_point_iterations", &self.fixed_point_iterations())
+            .finish_non_exhaustive()
+    }
+}
+
+impl ProgramSemanticPreparation {
+    /// Returns conservative operational allocation accounting for retained units.
+    ///
+    /// This charge is a bounded-storage input, not a measured RSS guarantee.
+    #[must_use]
+    pub fn accounted_resident_bytes(&self) -> usize {
+        self.rust
+            .accounted_resident_bytes()
+            .saturating_add(self.graph.accounted_resident_bytes())
+    }
+
+    /// Returns the actual retained source parse-unit count.
+    #[must_use]
+    pub fn retained_parse_files(&self) -> usize {
+        self.rust.retained_parse_files()
+    }
+
+    /// Returns the actual retained executable body-unit count.
+    #[must_use]
+    pub fn retained_bodies(&self) -> usize {
+        self.rust.retained_bodies()
+    }
+
+    /// Returns the actual retained weak connected graph-unit count.
+    #[must_use]
+    pub fn retained_components(&self) -> usize {
+        self.graph.retained_components()
+    }
+
+    /// Returns the retained model's bounded type-resolution iteration count.
+    #[must_use]
+    pub fn fixed_point_iterations(&self) -> usize {
+        self.rust.fixed_point_iterations()
+    }
+}
+
+/// Finished immutable model and coordinator preparation for the same exact input.
+#[derive(Debug)]
+pub struct PreparedProgramSemanticModel {
+    /// Complete owned model suitable for immutable concurrent readers.
+    pub model: ProgramSemanticModel,
+    /// Coordinator-only reusable units for a subsequent exact input.
+    pub preparation: ProgramSemanticPreparation,
+    /// Actual work performed during this preparation.
+    pub work: ProgramSemanticWork,
+    /// Explicit conservative full reconstruction, when dependency reuse was unsafe.
+    pub fallback: Option<ProgramPreparationFallback>,
+    /// Complete sorted dependency reads, including unresolved queries.
+    pub dependencies: Vec<ProgramDependencyRead>,
+}
+
+impl PreparedProgramSemanticModel {
+    /// Returns the finished owned immutable model.
+    #[must_use]
+    pub const fn model(&self) -> &ProgramSemanticModel {
+        &self.model
+    }
+
+    /// Returns coordinator-only reusable units for this exact input.
+    #[must_use]
+    pub const fn preparation(&self) -> &ProgramSemanticPreparation {
+        &self.preparation
+    }
+
+    /// Returns actual work performed during preparation.
+    #[must_use]
+    pub const fn work(&self) -> &ProgramSemanticWork {
+        &self.work
+    }
+
+    /// Returns the conservative full-reconstruction reason, when applicable.
+    #[must_use]
+    pub const fn fallback(&self) -> Option<ProgramPreparationFallback> {
+        self.fallback
+    }
+
+    /// Returns complete sorted dependency reads, including query misses.
+    #[must_use]
+    pub fn dependencies(&self) -> &[ProgramDependencyRead] {
+        &self.dependencies
+    }
+}
+
+/// Prepares one canonical model from current inputs and optional reusable units.
+///
+/// Reuse never changes facts, output schema, identities or error precedence. A
+/// missing complete dependency proof rebuilds from the unchanged cold inputs.
+///
+/// # Errors
+///
+/// Returns the same [`ProgramSemanticError`] as cold compilation of this input.
+pub fn prepare_program_semantics(
+    input: &ProgramSemanticInput,
+    previous: Option<&ProgramSemanticPreparation>,
+) -> Result<PreparedProgramSemanticModel, ProgramSemanticError> {
+    let rust::PreparedRustResult {
+        mut facts,
+        preparation,
+        mut work,
+        fallback,
+        mut dependencies,
+    } = rust::analyze_prepared(input, previous.map(|value| &value.rust))?;
+    sort_facts(&mut facts);
+    let graph = graph::prepare_call_topology(
+        &facts.symbols,
+        &facts.calls,
+        previous.map(|value| &value.graph),
+    );
+    work.recomputed_components = graph.recomputed_components;
+    work.reused_components = graph.reused_components;
+    for dependency in &mut dependencies {
+        if let ProgramDependencyResult::Resolved(identities) = &mut dependency.result {
+            identities.sort();
+            identities.dedup();
+        }
+    }
+    dependencies.sort();
+    dependencies.dedup();
+    let model = assemble_program_semantic_model(input, facts, graph.topology)?;
+    Ok(PreparedProgramSemanticModel {
+        model,
+        preparation: ProgramSemanticPreparation {
+            rust: preparation,
+            graph: graph.preparation,
+            coordinator: PhantomData,
+        },
+        work,
+        fallback,
+        dependencies,
+    })
+}
+
 /// Compiles one deterministic Rust-backed Program Semantic Model.
 ///
 /// # Errors
@@ -2540,11 +2931,13 @@ pub(crate) struct RustProgramFacts {
 /// Returns [`ProgramSemanticError`] for snapshot mutation, malformed supported
 /// input, missing physical ownership, or disagreement with Implementation
 /// Observation over a resolved cross-Module call.
-#[allow(clippy::too_many_lines)]
 pub fn compile_program_semantic_model(
     input: &ProgramSemanticInput,
 ) -> Result<ProgramSemanticModel, ProgramSemanticError> {
-    let mut facts = rust::analyze(input)?;
+    prepare_program_semantics(input, None).map(|prepared| prepared.model)
+}
+
+fn sort_facts(facts: &mut RustProgramFacts) {
     facts.packages.sort();
     facts.nominal_types.sort();
     facts.impls.sort();
@@ -2558,7 +2951,14 @@ pub fn compile_program_semantic_model(
     facts.transformations.sort();
     facts.state_reads.sort();
     facts.mutations.sort();
-    let topology = graph::derive_call_topology(&facts.symbols, &facts.calls);
+}
+
+#[allow(clippy::too_many_lines)]
+fn assemble_program_semantic_model(
+    input: &ProgramSemanticInput,
+    facts: RustProgramFacts,
+    topology: CallTopology,
+) -> Result<ProgramSemanticModel, ProgramSemanticError> {
     let governed_owners = input
         .observation()
         .ownerships()
@@ -2622,6 +3022,7 @@ pub fn compile_program_semantic_model(
     );
     let resolution_summary = resolution_summary(&facts.calls, facts.fixed_point_iterations);
     Ok(ProgramSemanticModel {
+        digest_memo: crate::program_semantics::ModelDigestMemo::default(),
         schema: PROGRAM_SEMANTIC_MODEL_SCHEMA.into(),
         schema_version: PROGRAM_SEMANTIC_MODEL_SCHEMA_VERSION,
         semantic_version: PROGRAM_SEMANTIC_MODEL_VERSION.into(),
