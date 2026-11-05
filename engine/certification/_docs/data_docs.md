@@ -28,7 +28,7 @@ Retains source-bound immutable generation manifests using control layout v1 with
 
 ### [`generation_manifest_schema_v2.json`](../_data/generation_manifest_schema_v2.json)
 
-Defines current source-bound immutable generation manifests using control layout v2. Historical v1 manifests retain their original layout and content-address semantics; a schema/layout version mismatch is rejected.
+Retains source-bound immutable generation manifests using control layout v2. Historical v1 manifests retain their original layout and content-address semantics; a schema/layout version mismatch is rejected.
 
 ### [`selection_index_schema_v1.json`](../_data/selection_index_schema_v1.json)
 
@@ -57,3 +57,19 @@ Defines distributed Testing-owned verification bindings.
 ### [`verified_bfg_schema_v1.json`](../_data/verified_bfg_schema_v1.json)
 
 Defines Verified Behavioral Flow Graph v1.
+
+### [`conformance_declaration_schema_v1.json`](../_data/conformance_declaration_schema_v1.json)
+
+Strict multidimensional raw reporting, complete manifests, proof requirements, scoped profile references, provenance and residue; no global PASS.
+
+### [`profile_assessment_schema_v1.json`](../_data/profile_assessment_schema_v1.json)
+
+Strict exact-profile sufficiency outcomes with typed blockers, declaration/obligation/acceptance bindings and explicit uncertainty.
+
+### [`state_view_schema_v1.json`](../_data/state_view_schema_v1.json)
+
+Neutral ungoverned/invalid/partial/negative/complete endpoints for later comparison. Observation survives unavailable authority.
+
+### [`generation_manifest_schema_v3.json`](../_data/generation_manifest_schema_v3.json)
+
+Layout-v3 immutable quality/application publication; APPLICATION binds exact profile/scope/context selection. Previous schema/layout assets remain immutable.

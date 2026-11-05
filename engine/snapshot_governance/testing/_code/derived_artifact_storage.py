@@ -25,6 +25,7 @@ if SPEC is None or SPEC.loader is None:
     raise RuntimeError("quality certificate module cannot be loaded")
 quality = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(quality)
+import application_assessment as application
 
 MIGRATION_PATH = MODULE_PATH.parent / "control_migration.py"
 MIGRATION_SPEC = importlib.util.spec_from_file_location(
@@ -42,7 +43,99 @@ class DerivedArtifactStorageTests(unittest.TestCase):
     def test_shared_control_registry_matches_python_contract(self) -> None:
         quality.validate_control_artifact_registry(ROOT)
 
-    def test_current_generation_binds_layout_and_manifest_v2(self) -> None:
+    def test_inconsistent_gate_contract_refuses_before_execution_or_recovery(self) -> None:
+        required = quality.REQUIRED_GATE_IDS
+        malformed = (
+            tuple(reversed(required)),
+            required + (required[-1],),
+            tuple(gate for gate in required if gate != "ARTIFACT_PROFILE_ASSESSMENT"),
+        )
+        for gates in malformed:
+            with self.subTest(gates=gates), patch.object(quality, "REQUIRED_GATE_IDS", gates), \
+                    patch.object(quality, "recover_owned_orphans") as recover, \
+                    patch.object(quality, "RunWorkspace") as workspace, \
+                    patch.object(quality, "run_command") as execute:
+                with self.assertRaises(quality.CertificateError):
+                    quality.issue(ROOT)
+                recover.assert_not_called()
+                workspace.assert_not_called()
+                execute.assert_not_called()
+
+    def test_gate_manifest_requires_each_installed_gate_exactly_once_and_passed(self) -> None:
+        gates = [dict(id=gate, status="PASS", command="independent gate command")
+                 for gate in quality.REQUIRED_GATE_IDS]
+        quality.validate_executed_gates(gates)
+        for index, gate in enumerate(gates):
+            with self.subTest(missing=gate["id"]):
+                with self.assertRaises(quality.CertificateError):
+                    quality.validate_executed_gates(gates[:index] + gates[index + 1:])
+        malformed = [
+            [], list(reversed(gates)), gates + [gates[-1]],
+            sorted(gates + [dict(id="UNREGISTERED", status="PASS", command="extra")],
+                   key=lambda gate: gate["id"]),
+        ]
+        for field, value in (("status", "FAIL"), ("command", ""), ("id", "")):
+            modified = [dict(gate) for gate in gates]
+            modified[0][field] = value
+            malformed.append(modified)
+        malformed.append([dict(gates[0], extra="unregistered")] + gates[1:])
+        for candidate in malformed:
+            with self.subTest(candidate=candidate):
+                with self.assertRaises(quality.CertificateError):
+                    quality.validate_executed_gates(candidate)
+
+    def test_negative_application_publication_preserves_quality_selection_and_replays_exactly(self) -> None:
+        base=self.workspace("negative-application")
+        root=base/"repository"
+        config=root/quality.CONFIG_PATH;config.parent.mkdir(parents=True)
+        config.write_text(json.dumps(dict(observation_exclusions=[])),encoding="utf-8")
+        index=root/quality.CURRENT_INDEX_PATH;index.parent.mkdir(parents=True)
+        quality_generation="sha256:"+"a"*64
+        prior={"$schema":"urn:fortress:derived:v1:assessment-selection-index","schema_version":1,
+            "selections":[dict(selection_key=quality.selection_key(),generation_digest=quality_generation)]}
+        index.write_bytes(quality.canonical_pretty_json(prior))
+        old=root/quality.GENERATIONS_PATH/("a"*64)/"manifest.json";old.parent.mkdir(parents=True);old.write_bytes(b"retained historical bytes")
+        declaration=dict(binding=dict(subject_ref="sha256:"+"b"*64,context_ref="sha256:"+"c"*64,authority_ref="sha256:"+"d"*64),raw_truth="SUPPORTED_VIOLATION")
+        report=dict(source_ref=declaration["binding"]["subject_ref"],application=dict(project="PF-FIXTURE",declaration=declaration,
+            assessment=dict(profile_digest="sha256:"+"e"*64,decision="NOT_SATISFIED")))
+        frozen=quality.repository_fingerprint(root)
+        workspace=Mock()
+        selected=application.publish(root,report,frozen,workspace)
+        workspace.prepare_publication.assert_called_once()
+        self.assertEqual(quality.selection_entries(json.loads(index.read_bytes()))[quality.selection_key()],quality_generation)
+        self.assertEqual(old.read_bytes(),b"retained historical bytes")
+        self.assertEqual(application.verify(root,report,frozen[1]),selected)
+        immutable=(root/quality.GENERATIONS_PATH/selected.removeprefix("sha256:")/"conformance_declaration.json")
+        immutable.write_bytes(b"altered")
+        with self.assertRaises(application.quality.CertificateError):application.verify(root,report,frozen[1])
+        immutable.write_bytes(application.canonical(declaration))
+        pointer=index.read_bytes()
+        (root/"changed.rs").write_text("changed source",encoding="utf-8")
+        with self.assertRaisesRegex(application.quality.CertificateError,"source changed"):
+            application.publish(root,report,frozen,Mock())
+        self.assertEqual(index.read_bytes(),pointer)
+
+    def test_application_selection_binds_exact_profile_scope_and_context(self) -> None:
+        context="sha256:"+"a"*64;profile="sha256:"+"b"*64
+        key=application.application_selection_key("PF-FIXTURE",profile,context)
+        self.assertNotEqual(key,quality.selection_key())
+        self.assertNotEqual(key,application.application_selection_key("PF-FIXTURE",context,profile))
+        self.assertNotEqual(key,application.application_selection_key("PF-OTHER",profile,context))
+
+    def test_atomic_publication_preserves_foreign_pending_and_cleans_owned_failure(self) -> None:
+        root=self.workspace("owned-publication")
+        target=root/"current.json";target.write_bytes(b"old index")
+        foreign=root/"current.json.pending";foreign.write_bytes(b"owner work")
+        with patch.object(quality.os,"replace",side_effect=OSError("injected replacement failure")):
+            with self.assertRaises(OSError):quality.atomic_write(target,b"new index")
+        self.assertEqual(target.read_bytes(),b"old index")
+        self.assertEqual(foreign.read_bytes(),b"owner work")
+        self.assertEqual(sorted(p.name for p in root.iterdir()),["current.json","current.json.pending"])
+        quality.atomic_write(target,b"new index")
+        self.assertEqual(target.read_bytes(),b"new index")
+        self.assertEqual(foreign.read_bytes(),b"owner work")
+
+    def test_current_generation_binds_layout_and_manifest_v3(self) -> None:
         certificate = self.certificate("sha256:" + "a" * 64)
         certificate["source"]["file_count"] = 1
         pending = {
@@ -51,11 +144,11 @@ class DerivedArtifactStorageTests(unittest.TestCase):
             if storage == quality.TRACKED_EVIDENCE
         }
         manifest = quality.build_generation_manifest(ROOT, certificate, b"{}\n", pending)
-        self.assertEqual(manifest["$schema"], "urn:fortress:derived:v2:assessment-generation-manifest")
-        self.assertEqual(manifest["schema_version"], 2)
+        self.assertEqual(manifest["$schema"], "urn:fortress:derived:v3:assessment-generation-manifest")
+        self.assertEqual(manifest["schema_version"], 3)
         self.assertEqual(
             manifest["control_layout"],
-            {"id": "fortress-control-layout-v2", "digest": quality.control_layout_digest(ROOT)},
+            {"id": "fortress-control-layout-v3", "digest": quality.control_layout_digest(ROOT)},
         )
 
     def test_historical_manifest_cannot_become_current_by_selection(self) -> None:

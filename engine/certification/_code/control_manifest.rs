@@ -9,6 +9,9 @@ use sha2::{Digest, Sha256};
 
 /// Current assessment generation manifest schema identity.
 pub const GENERATION_MANIFEST_SCHEMA: &str =
+    "urn:fortress:derived:v3:assessment-generation-manifest";
+/// Retained second edition; its bytes and digest meaning remain unchanged.
+pub const GENERATION_MANIFEST_V2_SCHEMA: &str =
     "urn:fortress:derived:v2:assessment-generation-manifest";
 /// Retained assessment generation manifest schema identity.
 pub const LEGACY_GENERATION_MANIFEST_SCHEMA: &str =
@@ -32,6 +35,53 @@ pub struct AssessmentGenerationManifest {
     artifacts: Vec<ArtifactDescriptor>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     origin_provenance: Option<Vec<OriginProvenance>>,
+    #[serde(
+        default,
+        deserialize_with = "present_selection_context",
+        skip_serializing_if = "Option::is_none"
+    )]
+    selection_context: Option<ApplicationSelectionContext>,
+}
+
+fn present_selection_context<'de, D: serde::Deserializer<'de>>(
+    deserializer: D,
+) -> Result<Option<ApplicationSelectionContext>, D::Error> {
+    ApplicationSelectionContext::deserialize(deserializer).map(Some)
+}
+
+/// Exact application profile/scope/context selection, independent of source freshness.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ApplicationSelectionContext {
+    /// Complete associated profile composition digest.
+    pub profile_digest: String,
+    /// Current contract supports an exact repository endpoint.
+    pub scope: String,
+    /// Exact `ProgramContext` identity, not merely its family.
+    pub context_ref: String,
+}
+
+impl ApplicationSelectionContext {
+    /// Recomputes the exact current-index selection key.
+    ///
+    /// # Errors
+    /// Rejects invalid identity or unsupported scope.
+    pub fn selection_key(&self, project: &str) -> Result<String, ControlManifestError> {
+        validate_digest(&self.profile_digest)?;
+        validate_digest(&self.context_ref)?;
+        if self.scope != "repository" || project.is_empty() {
+            return Err(ControlManifestError::UnsupportedRecord);
+        }
+        let bytes = serde_json_canonicalizer::to_vec(&(
+            "application-selection-v1",
+            project,
+            &self.profile_digest,
+            &self.scope,
+            &self.context_ref,
+        ))
+        .map_err(|e| ControlManifestError::Json(serde::ser::Error::custom(e)))?;
+        Ok(format!("sha256:{:x}", Sha256::digest(bytes)))
+    }
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -142,6 +192,7 @@ impl AssessmentGenerationManifest {
         &self.artifacts
     }
 
+    #[allow(clippy::too_many_lines)]
     fn validate(&self) -> Result<(), ControlManifestError> {
         let supported_layout_pair = matches!(
             (
@@ -153,17 +204,36 @@ impl AssessmentGenerationManifest {
                 LEGACY_GENERATION_MANIFEST_SCHEMA,
                 1,
                 "fortress-control-layout-v1"
-            ) | (GENERATION_MANIFEST_SCHEMA, 2, "fortress-control-layout-v2")
+            ) | (
+                GENERATION_MANIFEST_V2_SCHEMA,
+                2,
+                "fortress-control-layout-v2"
+            ) | (GENERATION_MANIFEST_SCHEMA, 3, "fortress-control-layout-v3")
         );
         if !supported_layout_pair
             || !matches!(
                 self.generation_kind.as_str(),
-                "LOCAL_QUALITY" | "HISTORICAL_MIGRATION"
+                "LOCAL_QUALITY" | "HISTORICAL_MIGRATION" | "APPLICATION"
             )
             || self.project.is_empty()
             || self.profile.is_empty()
             || self.source.file_count == 0
+            || self.source.file_count > crate::wire::MAX_EXACT_PUBLIC_INTEGER
         {
+            return Err(ControlManifestError::UnsupportedRecord);
+        }
+        if self.generation_kind == "APPLICATION" {
+            let context = self
+                .selection_context
+                .as_ref()
+                .ok_or(ControlManifestError::UnsupportedRecord)?;
+            if self.schema_version != 3
+                || self.profile != context.profile_digest
+                || self.selection_key != context.selection_key(&self.project)?
+            {
+                return Err(ControlManifestError::UnsupportedRecord);
+            }
+        } else if self.selection_context.is_some() {
             return Err(ControlManifestError::UnsupportedRecord);
         }
         for digest in [
@@ -181,6 +251,7 @@ impl AssessmentGenerationManifest {
                 || artifact.schema_ref.is_empty()
                 || artifact.producer_semantic_version.is_empty()
                 || artifact.byte_count == 0
+                || artifact.byte_count > crate::wire::MAX_EXACT_PUBLIC_INTEGER
                 || prior.is_some_and(|value| value >= artifact.id.as_str())
             {
                 return Err(ControlManifestError::InvalidArtifact(

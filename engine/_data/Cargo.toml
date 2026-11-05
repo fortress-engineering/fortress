@@ -252,3 +252,7 @@ path = "../snapshot_governance/testing/_code/resident_benchmark.rs"
 [[test]]
 name = "event_graph_paths"
 path = "../behavioral_realization/testing/_code/lib.rs"
+
+[[test]]
+name = "declaration"
+path = "../certification/testing/_code/declaration.rs"

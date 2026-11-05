@@ -5,7 +5,10 @@
     {
       "id": "CMD-CORE-HELP",
       "name": "help",
-      "aliases": ["-h", "--help"],
+      "aliases": [
+        "-h",
+        "--help"
+      ],
       "description": "List available commands or explain one registered command.",
       "owner": "TF-CLI-0001",
       "executor": "builtin-sync",
@@ -16,7 +19,10 @@
     {
       "id": "CMD-CORE-VERSION",
       "name": "version",
-      "aliases": ["-V", "--version"],
+      "aliases": [
+        "-V",
+        "--version"
+      ],
       "description": "Print the Fortress CLI implementation version.",
       "owner": "TF-CLI-0001",
       "executor": "builtin-sync",
@@ -236,7 +242,9 @@
     {
       "id": "CMD-REFERENCE-RESOLUTION",
       "name": "references",
-      "aliases": ["resolve"],
+      "aliases": [
+        "resolve"
+      ],
       "description": "Resolve stable Module identities and preview relocation-transparent path churn.",
       "owner": "TF-CLI-0001",
       "executor": "builtin-sync",
@@ -254,6 +262,39 @@
       "duration": "long",
       "resumability": "restartable",
       "certification_implications": "Rewrites only exact-snapshot unambiguous authored legacy symbol and finding references after explicit apply; it creates no semantic or certification authority."
+    },
+    {
+      "id": "CMD-APPLICATION-DECLARE",
+      "name": "declare",
+      "aliases": [],
+      "description": "Render a truthful multidimensional application declaration.",
+      "owner": "TF-CLI-0001",
+      "executor": "builtin-sync",
+      "duration": "long",
+      "resumability": "restartable",
+      "certification_implications": "Reports application semantics only; no implementation qualification or test execution is synthesized."
+    },
+    {
+      "id": "CMD-APPLICATION-ASSESS",
+      "name": "assess",
+      "aliases": [],
+      "description": "Assess exact selected application profiles without inventing test execution.",
+      "owner": "TF-CLI-0001",
+      "executor": "builtin-sync",
+      "duration": "long",
+      "resumability": "restartable",
+      "certification_implications": "Reports application semantics only; no implementation qualification or test execution is synthesized."
+    },
+    {
+      "id": "CMD-APPLICATION-STATE-VIEW",
+      "name": "state-view",
+      "aliases": [],
+      "description": "Render a neutral governed, partial, negative, invalid or ungoverned endpoint.",
+      "owner": "TF-CLI-0001",
+      "executor": "builtin-sync",
+      "duration": "long",
+      "resumability": "restartable",
+      "certification_implications": "Reports application semantics only; no implementation qualification or test execution is synthesized."
     }
   ]
 }

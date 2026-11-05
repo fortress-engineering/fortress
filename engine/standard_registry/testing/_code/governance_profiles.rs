@@ -224,6 +224,14 @@ fn module_scope_uses_stable_ids() {
         .expect("stable Module scope resolves");
     assert!(resolved.module("AF-PAYMENTS-0001").is_some());
     assert!(resolved.module("physical/path").is_none());
+    assert_eq!(resolved.references().len(), 1);
+    assert_eq!(resolved.references()[0].id, "GOV-FORTRESS-NATIVE");
+    assert_eq!(resolved.references()[0].digest, NATIVE_DIGEST);
+    let scoped = resolved.module("AF-PAYMENTS-0001").unwrap();
+    assert_eq!(scoped.references().len(), 1);
+    assert_eq!(scoped.references()[0].id, "GOV-FORTRESS-SEMANTIC");
+    assert_eq!(scoped.references()[0].digest, SEMANTIC_DIGEST);
+    assert!(scoped.semantic_scopes().contains("PROGRAM_SEMANTICS"));
 }
 
 /// `T-AF-STANDARD-REGISTRY-0001-R06-007`

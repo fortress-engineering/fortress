@@ -21,3 +21,5 @@ Any schema, contract, CCG, graph, provenance, modeling-state, determinism, fresh
 ### [`behavioral_flow.rs`](../_code/behavioral_flow.rs)
 
 Exercises canonical BFG construction, graph algorithms, distributed ownership, exact contradictions, deterministic serialization, provenance, unmodeled behavior, and live Fortress self-application. Subject controls reject different current bytes, corrupted or truncated members, unsafe member locators, and incorrect layout digests while preserving explicit stale-source and retained-layout distinctions. The final issuer remains responsible for requiring a current exact-source generation.
+
+Selected BFG controls use current layout/manifest v3 and explicitly retain the original v1 and v2 digest readers as historical selections; neither older edition becomes current merely because its BFG bytes match.

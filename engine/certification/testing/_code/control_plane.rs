@@ -50,9 +50,11 @@ fn installed_layout_has_one_fixed_config_and_closed_generation_members() {
             "bfg",
             "ccg",
             "certification",
+            "conformance-declaration",
             "environmental",
             "evidence-graph",
             "information-flow",
+            "profile-assessment",
             "psm",
             "quality-certificate",
             "realized-bfg",
@@ -203,7 +205,7 @@ fn historical_layout_retains_its_role_boundary_and_digest() {
     assert!(!historical.allows_directory("__fortress/governance/effect_summaries"));
     assert!(
         ControlLayout::from_json_str(
-            &CONTROL_LAYOUT_SOURCE.replace("\"schema_version\": 2", "\"schema_version\": 1")
+            &CONTROL_LAYOUT_SOURCE.replace("\"schema_version\": 3", "\"schema_version\": 1")
         )
         .is_err()
     );
@@ -269,6 +271,32 @@ fn generation_manifest_requires_matching_historical_or_current_layout_version() 
         .expect("historical manifest retains its original reader");
     let active = AssessmentGenerationManifest::from_json_str(&current)
         .expect("current manifest uses the current layout");
+    let third = current
+        .replace(
+            "derived:v2:assessment-generation-manifest",
+            "derived:v3:assessment-generation-manifest",
+        )
+        .replace("\"schema_version\":2", "\"schema_version\":3")
+        .replace("fortress-control-layout-v2", "fortress-control-layout-v3");
+    assert!(AssessmentGenerationManifest::from_json_str(&third).is_ok());
+    let mut value: serde_json::Value = serde_json::from_str(&third).unwrap();
+    value["generation_kind"] = serde_json::json!("APPLICATION");
+    assert!(AssessmentGenerationManifest::from_json_str(&value.to_string()).is_err());
+    let context = fortress_core::control_manifest::ApplicationSelectionContext {
+        profile_digest: DIGEST_A.into(),
+        scope: "repository".into(),
+        context_ref: DIGEST_B.into(),
+    };
+    value["selection_key"] = serde_json::json!(context.selection_key("PF-FIXTURE").unwrap());
+    value["project"] = serde_json::json!("PF-FIXTURE");
+    value["profile"] = serde_json::json!(DIGEST_A);
+    value["selection_context"] = serde_json::to_value(&context).unwrap();
+    assert!(AssessmentGenerationManifest::from_json_str(&value.to_string()).is_ok());
+    value["selection_context"]["context_ref"] = serde_json::json!(DIGEST_A);
+    assert!(AssessmentGenerationManifest::from_json_str(&value.to_string()).is_err());
+    let mut null: serde_json::Value = serde_json::from_str(&current).unwrap();
+    null["selection_context"] = serde_json::Value::Null;
+    assert!(AssessmentGenerationManifest::from_json_str(&null.to_string()).is_err());
     assert_ne!(
         retained.generation_digest().unwrap(),
         active.generation_digest().unwrap()

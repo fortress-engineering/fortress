@@ -302,6 +302,55 @@ class ExecutionStorageTests(unittest.TestCase):
         self.assertEqual(pointer.read_bytes(), b"old certificate")
         self.assertEqual(recover_owned_orphans(self.root, self.storage), [])
 
+    def test_ordinary_publication_failure_rolls_back_before_cleanup(self) -> None:
+        pointer=self.root/"current.json";pointer.write_bytes(b"old pointer")
+        existing=self.root/"old.json";existing.write_bytes(b"old qualified evidence")
+        new=self.root/"new.json"
+        workspace=RunWorkspace(self.root,self.storage,self.policy)
+        with self.assertRaisesRegex(ValueError,"injected"):
+            with workspace:
+                workspace.set_lifecycle("VALIDATING")
+                workspace.prepare_publication(pointer,b"new pointer",{existing:b"new bytes",new:b"owned new bytes"})
+                existing.write_bytes(b"new bytes");new.write_bytes(b"owned new bytes")
+                raise ValueError("injected")
+        self.assertEqual(pointer.read_bytes(),b"old pointer")
+        self.assertEqual(existing.read_bytes(),b"old qualified evidence")
+        self.assertFalse(new.exists());self.assertFalse(workspace.run_root.exists())
+        journal=json.loads(workspace.journal_path.read_text(encoding="utf-8"))
+        self.assertEqual(journal["publication_recovery_result"],"RECOVERED_ROLLBACK")
+
+    def test_ordinary_failure_after_pointer_preserves_complete_publication(self) -> None:
+        pointer=self.root/"current.json";pointer.write_bytes(b"old pointer")
+        evidence=self.root/"evidence.json"
+        workspace=RunWorkspace(self.root,self.storage,self.policy)
+        with self.assertRaisesRegex(ValueError,"injected"):
+            with workspace:
+                workspace.set_lifecycle("VALIDATING")
+                workspace.prepare_publication(pointer,b"new pointer",{evidence:b"complete evidence"})
+                evidence.write_bytes(b"complete evidence");pointer.write_bytes(b"new pointer")
+                raise ValueError("injected")
+        self.assertEqual(pointer.read_bytes(),b"new pointer")
+        self.assertEqual(evidence.read_bytes(),b"complete evidence")
+        self.assertFalse(workspace.run_root.exists())
+        journal=json.loads(workspace.journal_path.read_text(encoding="utf-8"))
+        self.assertEqual(journal["publication_recovery_result"],"RECOVERED_PUBLISHED")
+
+    def test_ordinary_failure_retains_foreign_changes_and_recovery_preimages(self) -> None:
+        pointer=self.root/"current.json";pointer.write_bytes(b"old pointer")
+        evidence=self.root/"evidence.json";evidence.write_bytes(b"old evidence")
+        workspace=RunWorkspace(self.root,self.storage,self.policy)
+        with self.assertRaises(StorageError):
+            with workspace:
+                workspace.set_lifecycle("VALIDATING")
+                workspace.prepare_publication(pointer,b"new pointer",{evidence:b"owned evidence"})
+                evidence.write_bytes(b"foreign work")
+                raise ValueError("injected")
+        self.assertEqual(evidence.read_bytes(),b"foreign work")
+        self.assertEqual(pointer.read_bytes(),b"old pointer")
+        self.assertTrue(workspace.run_root.exists())
+        journal=json.loads(workspace.journal_path.read_text(encoding="utf-8"))
+        self.assertEqual(journal["lifecycle"],"RECOVERY_REQUIRED")
+
     def test_published_pointer_survives_restart_recovery(self) -> None:
         evidence = self.root / "evidence.json"
         pointer = self.root / "certificate.json"

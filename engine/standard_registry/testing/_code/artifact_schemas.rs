@@ -47,7 +47,7 @@ fn all_current_writers_validate_against_advertised_schema() {
             .expect("artifact manifest JSON");
     assert_eq!(
         artifact_paths.len(),
-        14,
+        16,
         "all current issuer artifacts must be present"
     );
     let schemas = registered_schemas();
@@ -84,7 +84,7 @@ fn all_current_writers_validate_against_advertised_schema() {
     }
     assert_eq!(
         advertised.len(),
-        14,
+        16,
         "each emitted artifact has one distinct schema"
     );
 }

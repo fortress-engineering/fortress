@@ -1679,8 +1679,8 @@
       "schema_path": "engine/certification/_data/generation_manifest_schema_v2.json",
       "version": 2,
       "writer": {
-        "status": "ACTIVE",
-        "source": "engine/snapshot_governance/_code/quality_certificate.py"
+        "status": "RETIRED",
+        "source": "engine/certification/_code/control_manifest.rs"
       },
       "reader": {
         "status": "SUPPORTED",
@@ -1694,6 +1694,138 @@
       "content_hash_algorithm": {
         "id": "sha256-jcs-generation-manifest",
         "source": "engine/certification/_code/control_manifest.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:derived:v1:conformance-declaration",
+      "schema_path": "engine/certification/_data/conformance_declaration_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/certification/_code/declaration.rs"
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/certification/_code/declaration.rs"
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "exact-associated-authority-and-context",
+        "source": "engine/certification/_code/declaration.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-jcs-canonical-bytes",
+        "source": "engine/certification/_code/declaration.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:derived:v1:profile-assessment",
+      "schema_path": "engine/certification/_data/profile_assessment_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/certification/_code/assessment.rs"
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/certification/_code/assessment.rs"
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "exact-associated-authority-and-context",
+        "source": "engine/certification/_code/assessment.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-jcs-canonical-bytes",
+        "source": "engine/certification/_code/assessment.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:derived:v1:state-view",
+      "schema_path": "engine/certification/_data/state_view_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/snapshot_governance/_code/audit.rs"
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/snapshot_governance/_code/audit.rs"
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "exact-associated-authority-and-context",
+        "source": "engine/snapshot_governance/_code/audit.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-jcs-canonical-bytes",
+        "source": "engine/snapshot_governance/_code/audit.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v3:control-layout",
+      "schema_path": "engine/project_model/_data/control_layout_schema_v3.json",
+      "version": 3,
+      "writer": {
+        "status": "AUTHORED",
+        "source": null
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/project_model/_code/control_layout.rs"
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "literal-authored-identity-fields",
+        "source": "engine/project_model/_code/control_layout.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-exact-installed-authority-bytes",
+        "source": "engine/project_model/_code/control_layout.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:derived:v3:assessment-generation-manifest",
+      "schema_path": "engine/certification/_data/generation_manifest_schema_v3.json",
+      "version": 3,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/certification/_code/control_manifest.rs"
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/certification/_code/control_manifest.rs"
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "exact-associated-authority-and-context",
+        "source": "engine/certification/_code/control_manifest.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-jcs-canonical-bytes",
+        "source": "engine/certification/_code/control_manifest.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v1:application-assessment-policy",
+      "schema_path": "engine/standard_registry/_data/assessment_policy_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "AUTHORED",
+        "source": null
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/standard_registry/_code/profile.rs"
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "literal-authored-identity-fields",
+        "source": "engine/standard_registry/_code/profile.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-exact-installed-authority-bytes",
+        "source": "engine/standard_registry/_code/profile.rs"
       }
     }
   ]

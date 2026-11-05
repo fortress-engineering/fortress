@@ -608,6 +608,204 @@ pub fn audit_repository(root: impl AsRef<Path>) -> Result<AuditResult, AuditErro
     observation_only_audit(&prepared)
 }
 
+/// Neutral application endpoint state; validity and profile approval are distinct.
+#[derive(Clone, Copy, Debug, serde::Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum StateViewStatus {
+    /// No authored project authority exists.
+    Ungoverned,
+    /// Authored authority is present but cannot be interpreted safely.
+    Invalid,
+    /// A valid application has required uncertainty or incomplete support.
+    Partial,
+    /// A valid application has a supported required contradiction.
+    Negative,
+    /// All requirements of this exact application profile are satisfied.
+    Complete,
+}
+
+/// Neutral view suitable for later comparisons, including unapproved endpoints.
+#[derive(Clone, Debug, serde::Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct StateView {
+    /// Versioned neutral endpoint schema identity.
+    #[serde(rename = "$schema")]
+    pub schema: String,
+    /// Neutral endpoint contract version.
+    pub schema_version: u16,
+    /// Exact observed source identity, never a successful-certificate lookup.
+    pub source_ref: String,
+    /// Explicit authority/reporting endpoint state.
+    pub status: StateViewStatus,
+    /// Authority failure details without inventing conformance evidence.
+    pub detail: Option<String>,
+    /// Truthful application artifacts when governed analysis is structurally usable.
+    pub application: Option<crate::application::ApplicationAssessment>,
+}
+
+impl StateView {
+    /// Reads neutral endpoints, including unapproved and ungoverned snapshots.
+    /// Integrity and internal consistency do not authenticate the producer.
+    ///
+    /// # Errors
+    /// Rejects malformed wire data or inconsistent cross-artifact bindings.
+    pub fn from_json_str(source: &str) -> Result<Self, crate::declaration::DeclarationError> {
+        let value: Self = crate::wire::parse_public_json(source)
+            .map_err(|e| crate::declaration::DeclarationError::Invalid(e.to_string()))?;
+        value.validate()?;
+        Ok(value)
+    }
+
+    /// Returns RFC 8785 canonical bytes; no local availability enters this view.
+    ///
+    /// # Errors
+    /// Returns a public serialization error.
+    pub fn to_canonical_bytes(&self) -> Result<Vec<u8>, crate::declaration::DeclarationError> {
+        self.validate()?;
+        crate::declaration::canonical(self)
+    }
+
+    /// Checks neutral state and exact internal links; replay requires trusted authority.
+    ///
+    /// # Errors
+    /// Rejects inconsistent states, manifests or source/declaration bindings.
+    pub fn validate(&self) -> Result<(), crate::declaration::DeclarationError> {
+        if self.schema != "urn:fortress:derived:v1:state-view"
+            || self.schema_version != 1
+            || !crate::declaration::is_digest(&self.source_ref)
+        {
+            return crate::declaration::invalid("unsupported neutral endpoint");
+        }
+        if let Some(application) = &self.application {
+            application.declaration.validate()?;
+            application.assessment.validate()?;
+            crate::declaration::strictly_increasing(
+                application.evidence.iter().map(|leaf| &leaf.id),
+            )?;
+            let known = application
+                .evidence
+                .iter()
+                .map(|leaf| leaf.id.clone())
+                .collect::<BTreeSet<_>>();
+            for obligation in &application.obligations {
+                if let Some(graph) = &obligation.proof {
+                    graph.validate(&known).map_err(|e| {
+                        crate::declaration::DeclarationError::Invalid(e.to_string())
+                    })?;
+                }
+            }
+            let status = match application.assessment.decision {
+                crate::assessment::AssessmentDecision::Satisfied => StateViewStatus::Complete,
+                crate::assessment::AssessmentDecision::NotSatisfied => StateViewStatus::Negative,
+                crate::assessment::AssessmentDecision::NotEvaluable => StateViewStatus::Partial,
+                crate::assessment::AssessmentDecision::Invalid => StateViewStatus::Invalid,
+            };
+            if self.source_ref != application.declaration.binding.subject_ref
+                || self.status != status
+                || application.project.is_empty()
+                || application.assessment.binding != application.declaration.binding
+                || application.assessment.declaration_digest != application.declaration.digest()?
+                || application.assessment.obligation_manifest_digest
+                    != format!(
+                        "sha256:{:x}",
+                        Sha256::digest(crate::declaration::canonical(&application.obligations)?)
+                    )
+                || application.obligations.iter().map(|o| &o.id).ne(application
+                    .assessment
+                    .obligations
+                    .iter()
+                    .map(|o| &o.id))
+            {
+                return crate::declaration::invalid("state-view subject differs from declaration");
+            }
+        } else if !matches!(
+            self.status,
+            StateViewStatus::Ungoverned | StateViewStatus::Invalid
+        ) {
+            return crate::declaration::invalid("governed endpoint omitted its application");
+        }
+        Ok(())
+    }
+}
+
+/// Produces neutral declaration/assessment endpoints without running or inventing tests.
+///
+/// # Errors
+/// Returns observation, analysis, serialization or structural reporting failures.
+pub fn compile_repository_state_view(root: impl AsRef<Path>) -> Result<StateView, AuditError> {
+    let root = root.as_ref();
+    let (project, observation, files) = capture_resident_source(root, None)?;
+    let source_ref = certification_source_digest(&files);
+    let analysis = match prepare_analysis_from_observed(project, observation, files) {
+        Ok(analysis) => analysis,
+        Err(
+            error @ (AuditError::Project(_)
+            | AuditError::Profiles(_)
+            | AuditError::ProjectAuthority(_)
+            | AuditError::StandardManifestDiscovery(_)
+            | AuditError::StandardManifestIndex(_)
+            | AuditError::Standard(_)
+            | AuditError::ContractState(_)
+            | AuditError::ObservationPolicy(_)),
+        ) => {
+            return Ok(StateView {
+                schema: "urn:fortress:derived:v1:state-view".into(),
+                schema_version: 1,
+                source_ref,
+                status: StateViewStatus::Invalid,
+                detail: Some(error.to_string()),
+                application: None,
+            });
+        }
+        Err(error) => return Err(error),
+    };
+    let mut view = StateView {
+        schema: "urn:fortress:derived:v1:state-view".into(),
+        schema_version: 1,
+        source_ref: certification_source_digest(&analysis.observed_files),
+        status: StateViewStatus::Ungoverned,
+        detail: analysis.project_detail.clone(),
+        application: None,
+    };
+    if analysis.project_state != ProjectGovernanceState::Declared
+        || analysis.ccg().is_none()
+        || !analysis.ownership_diagnostics.is_empty()
+    {
+        if analysis.project_state != ProjectGovernanceState::Absent {
+            view.status = StateViewStatus::Invalid;
+            if view.detail.is_none() {
+                let mut reasons = analysis
+                    .ccg_compilation
+                    .violations()
+                    .iter()
+                    .map(ToString::to_string)
+                    .collect::<Vec<_>>();
+                reasons.extend(
+                    analysis
+                        .ownership_diagnostics
+                        .iter()
+                        .map(|d| d.detail().to_owned()),
+                );
+                view.detail = Some(reasons.join("; "));
+            }
+        }
+        return Ok(view);
+    }
+    let prepared = prepare_audit_from_analysis(root, analysis)?;
+    let mut measurements = EvaluationPhaseRecorder::new();
+    let stack = compile_certification_stack_from_prepared(prepared, None, &mut measurements)?.stack;
+    let (_, projections) = certification_artifacts(&stack)?;
+    let application = application_from_stack(&stack, &projections)?;
+    view.status = match application.assessment.decision {
+        crate::assessment::AssessmentDecision::Satisfied => StateViewStatus::Complete,
+        crate::assessment::AssessmentDecision::NotSatisfied => StateViewStatus::Negative,
+        crate::assessment::AssessmentDecision::NotEvaluable => StateViewStatus::Partial,
+        crate::assessment::AssessmentDecision::Invalid => StateViewStatus::Invalid,
+    };
+    view.application = Some(application);
+    Ok(view)
+}
+
 /// Compiles the canonical CCG for a stabilized repository input set.
 ///
 /// The same orchestration path used by [`audit_repository`] supplies standard,
@@ -1803,7 +2001,25 @@ fn certification_bundle_from_stack(
     suite_execution: RustSuiteExecution,
 ) -> Result<RepositoryCertificationBundle, AuditError> {
     let source_digest = certification_source_digest(&stack.observed_files);
-    let (artifacts, projections) = certification_artifacts(stack)?;
+    let (artifacts, mut projections) = certification_artifacts(stack)?;
+    let application = application_from_stack(stack, &projections)?;
+    for (path, bytes) in [
+        (
+            "_info/conformance_declaration.json",
+            application.declaration.to_canonical_bytes(),
+        ),
+        (
+            "_info/profile_assessment.json",
+            application.assessment.to_canonical_bytes(),
+        ),
+    ] {
+        let bytes = bytes.map_err(|e| AuditError::ContractState(e.to_string().into()))?;
+        projections.insert(
+            path.into(),
+            String::from_utf8(bytes)
+                .map_err(|e| AuditError::ContractState(e.to_string().into()))?,
+        );
+    }
     let audit_json = stack
         .audit
         .to_json_pretty()
@@ -2211,6 +2427,101 @@ fn compile_certification_stack_from_prepared(
         work: prepared_models.work,
         dependencies: prepared_models.dependencies,
     })
+}
+
+fn application_from_stack(
+    stack: &CertificationSemanticStack,
+    projections: &BTreeMap<String, String>,
+) -> Result<crate::application::ApplicationAssessment, AuditError> {
+    let mut scoped_profiles = stack
+        .profiles
+        .references()
+        .iter()
+        .map(|p| (None, p))
+        .collect::<Vec<_>>();
+    for (module, selection) in stack.profiles.module_overrides() {
+        scoped_profiles.extend(selection.references().iter().map(|p| (Some(module), p)));
+    }
+    let binding = crate::declaration::DeclarationBinding {
+        subject_ref: certification_source_digest(&stack.observed_files),
+        context_ref: stack.models.psm.program_context().digest(),
+        authority_ref: format!(
+            "sha256:{:x}",
+            Sha256::digest(
+                crate::declaration::canonical(&(
+                    "application-authority-v1",
+                    crate::control_layout::ControlLayout::standard().digest(),
+                    crate::profile::ApplicationAssessmentPolicy::installed()
+                        .map_err(|e| AuditError::ContractState(e.to_string().into()))?
+                        .digest(),
+                    stack.standard.digest(),
+                    scoped_profiles,
+                    stack
+                        .observed_files
+                        .get(crate::control_layout::PROJECT_CONFIGURATION_PATH)
+                        .map(|b| format!("sha256:{:x}", Sha256::digest(b))),
+                    &stack.finding_governance_authority_digest,
+                ))
+                .map_err(|e| AuditError::ContractState(e.to_string().into()))?
+            )
+        ),
+    };
+    let layout = crate::control_layout::ControlLayout::standard();
+    let artifacts = projections
+        .iter()
+        .map(|(path, bytes)| {
+            let id = layout.artifact_id_for_path(path).ok_or_else(|| {
+                AuditError::ContractState("unregistered application proof artifact".into())
+            })?;
+            Ok(crate::declaration::DeclarationArtifact {
+                id: id.into(),
+                content_digest: format!("sha256:{:x}", Sha256::digest(bytes.as_bytes())),
+                byte_count: bytes.len() as u64,
+            })
+        })
+        .collect::<Result<Vec<_>, AuditError>>()?;
+    let rules = stack
+        .evaluation
+        .rules()
+        .iter()
+        .map(|execution| crate::application::ApplicationRuleInput {
+            detail: execution.detail().into(),
+            applicability_reason: execution.applicability_reason().map(str::to_owned),
+            rule_id: execution.rule_id().into(),
+            applicable: execution.applicable(),
+            outcome: match execution.state() {
+                crate::evaluation::RuleExecutionState::Passed => {
+                    crate::application::ApplicationRuleOutcome::Passed
+                }
+                crate::evaluation::RuleExecutionState::Failed => {
+                    crate::application::ApplicationRuleOutcome::Failed
+                }
+                crate::evaluation::RuleExecutionState::Unsupported => {
+                    crate::application::ApplicationRuleOutcome::Unsupported
+                }
+                crate::evaluation::RuleExecutionState::NotApplicable => {
+                    crate::application::ApplicationRuleOutcome::NotApplicable
+                }
+            },
+            findings: stack
+                .evaluation
+                .findings()
+                .iter()
+                .filter(|f| f.rule_id() == execution.rule_id())
+                .map(|f| f.finding_id().into())
+                .collect(),
+        })
+        .collect::<Vec<_>>();
+    crate::application::compose_application(
+        stack.snapshot.project_id(),
+        binding,
+        &stack.profiles,
+        stack.semantic_conformance.model(),
+        &rules,
+        &stack.finding_governance,
+        artifacts,
+    )
+    .map_err(|e| AuditError::ContractState(e.to_string().into()))
 }
 
 fn certification_unsupported_analysis(

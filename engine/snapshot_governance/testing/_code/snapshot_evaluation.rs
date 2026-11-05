@@ -2,6 +2,7 @@
 
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::OnceLock;
 
 use fortress_core::architecture::{ArchitectureManifest, ComponentDeclaration};
 use fortress_core::audit::audit_repository;
@@ -23,6 +24,14 @@ struct ComponentWire {
 
 fn repository_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
+}
+
+// These seven read-only assertions inspect the same immutable fresh fixture.
+// Independent generator, cold/determinism, and mutation controls still execute
+// their own evaluations; this fixture does not substitute for those controls.
+fn self_audit() -> &'static fortress_core::audit::AuditResult {
+    static AUDIT: OnceLock<fortress_core::audit::AuditResult> = OnceLock::new();
+    AUDIT.get_or_init(|| audit_repository(repository_root()).expect("self audit completes"))
 }
 
 fn invalid_architecture() -> ArchitectureManifest {
@@ -49,7 +58,7 @@ fn invalid_architecture() -> ArchitectureManifest {
 /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R04
 #[test]
 fn registered_architecture_evaluator_distinguishes_pass_and_failure() {
-    let audit = audit_repository(repository_root()).expect("self audit completes");
+    let audit = self_audit();
     let execution = audit
         .rules()
         .iter()
@@ -67,7 +76,7 @@ fn registered_architecture_evaluator_distinguishes_pass_and_failure() {
 /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R04
 #[test]
 fn stable_identity_rule_uses_loaded_canonical_identity_evidence() {
-    let audit = audit_repository(repository_root()).expect("self audit completes");
+    let audit = self_audit();
     let execution = audit
         .rules()
         .iter()
@@ -82,7 +91,7 @@ fn stable_identity_rule_uses_loaded_canonical_identity_evidence() {
 /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R06
 #[test]
 fn fortress_active_requirements_have_complete_snapshot_bound_rust_evidence() {
-    let audit = audit_repository(repository_root()).expect("self audit completes");
+    let audit = self_audit();
     let execution = audit
         .rules()
         .iter()
@@ -96,7 +105,7 @@ fn fortress_active_requirements_have_complete_snapshot_bound_rust_evidence() {
 /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R11
 #[test]
 fn contract_coherency_passes_without_overclaiming_semantic_closure() {
-    let audit = audit_repository(repository_root()).expect("self audit completes");
+    let audit = self_audit();
     let execution = audit
         .rules()
         .iter()
@@ -120,7 +129,7 @@ fn contract_coherency_passes_without_overclaiming_semantic_closure() {
 /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R12
 #[test]
 fn recursive_testing_boundaries_pass_for_fortress_itself() {
-    let audit = audit_repository(repository_root()).expect("self audit completes");
+    let audit = self_audit();
     let execution = audit
         .rules()
         .iter()
@@ -134,7 +143,7 @@ fn recursive_testing_boundaries_pass_for_fortress_itself() {
 /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R04
 #[test]
 fn non_applicable_rule_has_canonical_state_and_reason() {
-    let audit = audit_repository(repository_root()).expect("self audit completes");
+    let audit = self_audit();
     let execution = audit
         .rules()
         .iter()
@@ -157,7 +166,7 @@ fn non_applicable_rule_has_canonical_state_and_reason() {
 /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R04
 #[test]
 fn canonical_audit_never_serializes_non_applicable_as_passed() {
-    let audit = audit_repository(repository_root()).expect("self audit completes");
+    let audit = self_audit();
     let document: serde_json::Value =
         serde_json::from_str(&audit.to_json_pretty().unwrap()).expect("audit JSON parses");
     let rules = document["rules"].as_array().expect("rules array");

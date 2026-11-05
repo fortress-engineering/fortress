@@ -215,6 +215,7 @@ class RunWorkspace:
         self._admission: HeavyAdmissionGuard | None = None
         self._journal: dict[str, Any] = {}
         self._projection_root: Path | None = None
+        self._publication_paths: set[Path] | None = None
         self._observed_peak = 0
 
     def _lock(self, *, recovery: bool = False) -> None:
@@ -448,6 +449,7 @@ class RunWorkspace:
             "new_pointer_digest": _digest(pointer_bytes),
             "replacements": entries,
         }
+        self._publication_paths = {pointer,*(Path(entry["path"]) for entry in entries)}
         self._save()
 
     def track_projection_root(self, path: Path) -> None:
@@ -490,6 +492,15 @@ class RunWorkspace:
                 self.set_lifecycle(
                     "CANCELLED" if exception_type is KeyboardInterrupt else "FAILED"
                 )
+            if (self._journal.get("publication_recovery") is not None
+                    and not self._journal["child_processes"]
+                    and self._journal["lifecycle"] != "RECOVERY_REQUIRED"):
+                # Live cleanup uses paths approved by prepare_publication, not
+                # an authority allowlist reconstructed from serialized claims.
+                self._journal["publication_recovery_result"] = _reconcile_publication(
+                    self._journal,self._publication_paths
+                )
+                self._save()
             staging_bytes = _tree_size(self.run_root)
             compiler_bytes = _tree_size(self.target)
             projection_bytes = (

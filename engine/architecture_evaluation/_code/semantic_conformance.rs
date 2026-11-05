@@ -677,6 +677,21 @@ impl AuthoredClaimScope {
 }
 
 impl ClaimSlot {
+    /// Returns the exact governed Module identity.
+    #[must_use]
+    pub fn module_id(&self) -> &str {
+        &self.module_id
+    }
+    /// Returns the authored scope selector without widening it.
+    #[must_use]
+    pub fn scope_selector(&self) -> &str {
+        &self.scope_selector
+    }
+    /// Returns the claim's context family.
+    #[must_use]
+    pub fn context_family(&self) -> &str {
+        &self.context_family
+    }
     /// Returns the identity paired across changes to authored disposition.
     #[must_use]
     pub fn id(&self) -> &str {
@@ -697,6 +712,26 @@ pub struct ClaimInstance {
 }
 
 impl ClaimInstance {
+    /// Returns the exact authored policy digest.
+    #[must_use]
+    pub fn policy_digest(&self) -> &str {
+        &self.policy_digest
+    }
+    /// Returns the exact claim context digest.
+    #[must_use]
+    pub fn context_digest(&self) -> &str {
+        &self.context_digest
+    }
+    /// Returns the complete governed claim universe identity.
+    #[must_use]
+    pub fn governed_universe_digest(&self) -> &str {
+        &self.governed_universe_digest
+    }
+    /// Returns the evaluator identity, without an authenticity assertion.
+    #[must_use]
+    pub fn producer_identity(&self) -> &str {
+        &self.producer_identity
+    }
     /// Returns the bound occurrence identity.
     #[must_use]
     pub fn id(&self) -> &str {
@@ -709,6 +744,19 @@ impl ClaimInstance {
 pub struct SupportedClaimPartition {
     execution_provenance: ExecutionProvenance,
     observation_refs: Vec<String>,
+}
+
+impl SupportedClaimPartition {
+    /// Returns the provenance actually established by the upstream evaluator.
+    #[must_use]
+    pub const fn execution_provenance(&self) -> ExecutionProvenance {
+        self.execution_provenance
+    }
+    /// Returns the exact supported observation identities.
+    #[must_use]
+    pub fn observation_refs(&self) -> &[String] {
+        &self.observation_refs
+    }
 }
 
 /// The raw semantic result; authorization and enforcement remain independent.
@@ -725,9 +773,36 @@ pub struct ClaimEvaluation {
     findings: Vec<String>,
     blocking_eligibility: Option<BlockingEligibility>,
     reason_codes: Vec<String>,
+    #[serde(skip)]
+    assumptions: Vec<String>,
 }
 
 impl ClaimEvaluation {
+    /// Returns actual conditional support premises, distinct from diagnostic codes.
+    #[must_use]
+    pub fn assumptions(&self) -> &[String] {
+        &self.assumptions
+    }
+    /// Returns all supported premises, including nonproduction partitions.
+    #[must_use]
+    pub fn supported_partitions(&self) -> &[SupportedClaimPartition] {
+        &self.supported_partitions
+    }
+    /// Returns exact upstream proof citations.
+    #[must_use]
+    pub fn proof_refs(&self) -> &[String] {
+        &self.proof_refs
+    }
+    /// Returns raw finding identities before enforcement governance.
+    #[must_use]
+    pub fn findings(&self) -> &[String] {
+        &self.findings
+    }
+    /// Returns explicit uncertainty and enforcement limitations.
+    #[must_use]
+    pub fn reason_codes(&self) -> &[String] {
+        &self.reason_codes
+    }
     /// Returns the witness alternatives used for a violating claim.
     #[must_use]
     pub const fn proof_graph(&self) -> Option<&ProofGraph> {
@@ -886,6 +961,28 @@ pub struct ModuleSemanticConformance {
 }
 
 impl ModuleSemanticConformance {
+    /// Compiles required reporting identities from effective authored authority,
+    /// independently of the emitted claim evaluations.
+    #[must_use]
+    pub fn required_claim_ids(&self) -> Vec<String> {
+        let mut ids = self
+            .effective_policy
+            .as_ref()
+            .into_iter()
+            .flat_map(|policy| &policy.entries)
+            .filter(|entry| entry.status != EffectivePolicyEntryStatus::Overridden)
+            .map(|entry| {
+                semantic_claim_id(
+                    &self.module,
+                    entry.target_kind,
+                    &entry.target,
+                    entry.disposition,
+                )
+            })
+            .collect::<Vec<_>>();
+        ids.sort();
+        ids
+    }
     /// Returns the compiled authored policy when one exists.
     #[must_use]
     pub const fn effective_policy(&self) -> Option<&EffectivePolicy> {
@@ -2003,7 +2100,7 @@ fn apply_policy(
         }
         if !negative_support.assumptions.is_empty() {
             reason_codes.push("ACCEPTED_SUMMARY_ASSUMPTION".into());
-            reason_codes.extend(negative_support.assumptions);
+            reason_codes.extend(negative_support.assumptions.iter().cloned());
             reason_codes.sort();
             reason_codes.dedup();
         }
@@ -2015,6 +2112,7 @@ fn apply_policy(
             slot,
             instance: instance.clone(),
             evaluation: ClaimEvaluation {
+                assumptions: negative_support.assumptions.into_iter().collect(),
                 instance_ref: instance.id().into(),
                 authorization,
                 verdict: conformance,

@@ -80,3 +80,11 @@ Identifies the exact draft standard edition and complete applicable rule-documen
 ### [`std_id_rule.json`](../_data/std_id_rule.json)
 
 Carries the draft normative rule record interpreted by the std id evaluator.
+
+### [`application_assessment_policy_v1.json`](../_data/application_assessment_policy_v1.json)
+
+Immutable application predicate mapping: selected registered checks require RULE_CHECK support; effective declared denials require conformance support; SEMANTIC-EVALUABILITY requires relevant static semantic proof, never permission counts or an empty claim universe. Unknown descriptors remain unavailable. Its exact digest joins associated scoped profile references in assessment composition identity; future changes require a new edition.
+
+### [`assessment_policy_schema_v1.json`](../_data/assessment_policy_schema_v1.json)
+
+Validates the immutable application assessment policy and its exact predicate and reporting-dimension membership mappings; unsupported descriptors remain unavailable rather than gaining implicit evaluability.

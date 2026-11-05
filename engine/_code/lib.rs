@@ -8,12 +8,16 @@
 
 #[path = "../affected_analysis/_code/affected.rs"]
 pub mod affected_analysis;
+#[path = "../certification/_code/application.rs"]
+pub mod application;
 #[path = "../architecture_evaluation/_code/architecture.rs"]
 pub mod architecture;
 #[path = "../architecture_evaluation/_code/diagnostics.rs"]
 pub mod architecture_diagnostics;
 #[path = "../architecture_evaluation/_code/realization.rs"]
 pub mod architecture_realization;
+#[path = "../certification/_code/assessment.rs"]
+pub mod assessment;
 #[path = "../snapshot_governance/_code/audit.rs"]
 pub mod audit;
 #[path = "../behavioral_realization/_code/realization.rs"]
@@ -32,6 +36,8 @@ pub mod contract_coherency;
 pub mod control_layout;
 #[path = "../certification/_code/control_manifest.rs"]
 pub mod control_manifest;
+#[path = "../certification/_code/declaration.rs"]
+pub mod declaration;
 #[path = "../snapshot_governance/_code/documentation.rs"]
 pub mod documentation;
 #[path = "../environmental_semantics/_code/environmental.rs"]

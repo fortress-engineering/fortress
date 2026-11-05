@@ -24,4 +24,22 @@ Implements Evidence Graph including the dedicated defeater evidence class, certi
 
 ### [`control_manifest.rs`](../_code/control_manifest.rs)
 
-Validates immutable assessment generation manifests and exact selection indexes, including safe members, logical external artifacts, canonical ordering, and content-addressed generation identity. Selection keys must be strictly increasing: two generations cannot compete for one context, while independent contexts may share a generation. Current manifest v2 requires control layout v2, while retained manifest v1 requires its original layout v1; mismatched pairs are invalid.
+Validates immutable assessment generation manifests and exact selection indexes, including safe members, logical external artifacts, canonical ordering, and content-addressed generation identity. Selection keys must be strictly increasing: two generations cannot compete for one context, while independent contexts may share a generation. Current manifest/layout v3 supports application and implementation-quality publications. Retained manifest/layout pairs v1/v1 and v2/v2 preserve their original meaning; mismatched pairs are invalid.
+
+### [`declaration.rs`](../_code/declaration.rs)
+
+Defines strict v1 ConformanceDeclaration reporting, complete trusted dimension/claim manifests, associated scoped profile references, raw semantic truth, exact slot/instance/context/universe identities, source coverage, provenance partitions, original proof graphs and residue. RFC 8785 bytes have no unrestricted top-level PASS and never contain local cache availability. VerificationSessionReport reports exact local materializations separately.
+
+### [`assessment.rs`](../_code/assessment.rs)
+
+Traverses every trusted required obligation. SATISFIED, NOT_SATISFIED, NOT_EVALUABLE and INVALID are distinct. A caller supplies expected authority and independently admitted payload **and metadata** identities, authentication, assumptions and assessment time. Producer names and raw payload hashes alone confer no authenticity or semantic sufficiency. Shared ALL/ANY proof structure is evaluated after exact subject/context/scope/class/predicate/trust/freshness admission. Rule checks cannot discharge Module policies; ALLOW and nonapplicability cannot discharge evaluability or DENY. Canonical assessments bind the complete obligation manifest and explicit acceptance policy. Parsing an assessment validates shape; independent replay establishes its conclusion.
+
+### [`application.rs`](../_code/application.rs)
+
+Composes existing typed semantic and rule results using Standard-owned application-assessment-policy v1. Scope references bind premises separately when call edges are shared across claims. Required claim identities come from effective authored authority, independently of result enumeration. Native profile defaults and existing full implementation qualification are unchanged. Supported static leaves are reconstructible from exact binding, raw claim and original premise; they remain UNVERIFIED local provenance. Unknown/failed applications are valid reporting results and require no fabricated RustSuiteExecution.
+
+Manifest v3 pairs with layout v3 and adds APPLICATION generations with recomputed exact profile/scope/context selection keys. Editions v1/v1 and v2/v2 retain their original bytes and digest meaning; unrelated index selections are preserved.
+
+Static premise payload identity is SHA-256 of JCS `["static-claim-premise-v1", binding, SHA256(JCS(raw_claim)), upstream_premise_ref]`. Metadata identity separately binds every evidence field. The trusted expected artifact manifest prevents omission of required immutable projections. Reporting dimension rule membership is explicit immutable Standard policy; PROGRAM_SEMANTICS remains Module policy truth, with registered semantic rule checks reported separately.
+
+Unknown, nonapplicable and authorization records emit observation-only metadata, never synthetic absence proof. Known unavailable premises have an explicit UNAVAILABLE proposition. Native semantic evidence is scoped to the complete upstream claim instance, including selector, policy, ProgramContext and governed-universe binding.

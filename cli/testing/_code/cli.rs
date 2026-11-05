@@ -14,6 +14,38 @@ use fortress_core::finding_governance::FindingGovernanceDocument;
 
 static NEXT_FIXTURE: AtomicU64 = AtomicU64::new(1);
 
+/// `T-TF-CLI-0001-R19-001`
+/// Fortress requirement: TF-CLI-0001-R19
+#[test]
+fn application_commands_render_neutral_ungoverned_endpoints_without_execution_claims() {
+    let registry = CommandRegistry::builtin();
+    for name in ["declare", "assess", "state-view"] {
+        assert!(registry.find(name).is_some());
+    }
+    let fixture = ObservationFixture::new();
+    let result = run(&["state-view", &fixture.argument(), "--format", "json"]);
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let view: serde_json::Value = serde_json::from_slice(&result.stdout).unwrap();
+    assert_eq!(view["status"], "UNGOVERNED");
+    assert!(view["application"].is_null());
+    assert!(
+        !fixture
+            .root
+            .join("__fortress/evidence/current.json")
+            .exists()
+    );
+    let assessment = run(&["assess", &fixture.argument(), "--format", "json"]);
+    assert!(!assessment.status.success());
+    assert_eq!(
+        serde_json::from_slice::<serde_json::Value>(&assessment.stdout).unwrap(),
+        view
+    );
+}
+
 fn run(arguments: &[&str]) -> Output {
     Command::new(env!("CARGO_BIN_EXE_fortress"))
         .args(arguments)

@@ -10,6 +10,27 @@ use fortress_core::identity::{StableId, StableIdError};
 
 const BUILTIN_COMMANDS: &[CommandDescriptor] = &[
     CommandDescriptor {
+        id: "CMD-APPLICATION-DECLARE",
+        name: "declare",
+        aliases: &[],
+        description: "Render a truthful multidimensional application declaration.",
+        usage: "fortress declare [path] [--format json] [--output path]",
+    },
+    CommandDescriptor {
+        id: "CMD-APPLICATION-ASSESS",
+        name: "assess",
+        aliases: &[],
+        description: "Assess exact selected application profiles without inventing test execution.",
+        usage: "fortress assess [path] [--format json] [--output path]",
+    },
+    CommandDescriptor {
+        id: "CMD-APPLICATION-STATE-VIEW",
+        name: "state-view",
+        aliases: &[],
+        description: "Render a neutral governed, partial, negative, invalid or ungoverned endpoint.",
+        usage: "fortress state-view [path] [--format json] [--output path]",
+    },
+    CommandDescriptor {
         id: "CMD-CORE-HELP",
         name: "help",
         aliases: &["-h", "--help"],

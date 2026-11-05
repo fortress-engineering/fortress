@@ -106,6 +106,9 @@ where
     };
 
     match command.id() {
+        "CMD-APPLICATION-DECLARE" | "CMD-APPLICATION-ASSESS" | "CMD-APPLICATION-STATE-VIEW" => {
+            run_application(command.name(), &arguments[1..], output, error)
+        }
         "CMD-CORE-HELP" => run_help(&registry, &arguments[1..], output, error),
         "CMD-CORE-VERSION" => run_version(&arguments[1..], output, error),
         "CMD-SNAPSHOT-AUDIT" => run_audit(&arguments[1..], output, error),
@@ -138,6 +141,50 @@ where
             Ok(EXIT_USAGE)
         }
     }
+}
+
+fn run_application<O: Write, E: Write>(
+    name: &str,
+    arguments: &[String],
+    output: &mut O,
+    error: &mut E,
+) -> io::Result<u8> {
+    let Ok((root, destination)) = parse_environmental_arguments(arguments) else {
+        writeln!(
+            error,
+            "usage: fortress {name} [path] [--format json] [--output path]"
+        )?;
+        return Ok(EXIT_USAGE);
+    };
+    let view = match fortress_core::audit::compile_repository_state_view(&root) {
+        Ok(view) => view,
+        Err(failure) => {
+            writeln!(error, "application reporting failed: {failure}")?;
+            return Ok(EXIT_USAGE);
+        }
+    };
+    let bytes = match (name, view.application.as_ref()) {
+        ("declare", Some(application)) => application
+            .declaration
+            .to_canonical_bytes()
+            .map_err(io::Error::other)?,
+        ("assess", Some(application)) => application
+            .assessment
+            .to_canonical_bytes()
+            .map_err(io::Error::other)?,
+        _ => view.to_canonical_bytes().map_err(io::Error::other)?,
+    };
+    write_projection(destination, output, &bytes)?;
+    Ok(
+        if name == "state-view"
+            || (name == "declare" && view.application.is_some())
+            || view.status == fortress_core::audit::StateViewStatus::Complete
+        {
+            EXIT_SUCCESS
+        } else {
+            EXIT_VIOLATION
+        },
+    )
 }
 
 fn run_identity_migration<O: Write, E: Write>(

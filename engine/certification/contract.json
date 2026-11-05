@@ -90,7 +90,8 @@
         "AF-CERTIFICATION-0001-R01",
         "AF-CERTIFICATION-0001-R02",
         "AF-CERTIFICATION-0001-R03",
-        "AF-CERTIFICATION-0001-R04"
+        "AF-CERTIFICATION-0001-R04",
+        "AF-CERTIFICATION-0001-R05"
       ]
     }
   ],
@@ -138,6 +139,20 @@
             "T-AF-CERTIFICATION-0001-R04-001",
             "T-AF-CERTIFICATION-0001-R04-002",
             "T-AF-CERTIFICATION-0001-R04-003"
+          ]
+        },
+        {
+          "id": "AF-CERTIFICATION-0001-R05",
+          "statement": "Application declarations preserve complete selected dimension and claim manifests, raw truth, coverage, provenance, proof algebra and residue; exact-profile sufficiency requires independently supplied authority and admitted current scoped evidence, without treating authorization, nonapplicability or local cache presence as proof.",
+          "tests": [
+            "T-AF-CERTIFICATION-0001-R05-001",
+            "T-AF-CERTIFICATION-0001-R05-002",
+            "T-AF-CERTIFICATION-0001-R05-003",
+            "T-AF-CERTIFICATION-0001-R05-004",
+            "T-AF-CERTIFICATION-0001-R05-005",
+            "T-AF-CERTIFICATION-0001-R05-006",
+            "T-AF-CERTIFICATION-0001-R05-007",
+            "T-AF-CERTIFICATION-0001-R05-008"
           ]
         }
       ]

@@ -25,3 +25,7 @@ Exercises Certification v1 conformance.
 ### [`control_plane.rs`](../_code/control_plane.rs)
 
 Exercises the fixed control layout, exact required effect-summary authority and registered parent-directory admission, rejection of unregistered governance descendants, authority-exclusion boundary, safe immutable manifest identity, matching current and historical schema/layout pairs, historical digest separation, and exact selection lookup. Selection controls reject duplicate context keys and reverse key order while accepting empty bootstrap indexes and independent contexts sharing one generation.
+
+### [`declaration.rs`](../_code/declaration.rs)
+
+Independent truth-table, omission, exact evidence admission, metadata alteration, ALL/ANY, cycle, scope placement, raw residue, cache deletion and canonical replay controls. Small real repository fixtures verify neutral absent/invalid endpoints and supported negative/unknown application reporting without test execution.

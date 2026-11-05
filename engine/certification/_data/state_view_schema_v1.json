@@ -1,0 +1,217 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v1:state-view",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "source_ref",
+    "status",
+    "detail",
+    "application"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:derived:v1:state-view"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "source_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "status": {
+      "enum": [
+        "UNGOVERNED",
+        "INVALID",
+        "PARTIAL",
+        "NEGATIVE",
+        "COMPLETE"
+      ]
+    },
+    "detail": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "application": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "declaration",
+            "assessment",
+            "evidence",
+            "obligations",
+            "project"
+          ],
+          "properties": {
+            "declaration": {
+              "$ref": "urn:fortress:derived:v1:conformance-declaration"
+            },
+            "assessment": {
+              "$ref": "urn:fortress:derived:v1:profile-assessment"
+            },
+            "evidence": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "id",
+                  "source_ref",
+                  "binding",
+                  "scope_ref",
+                  "evidence_class",
+                  "proposition",
+                  "payload_digest",
+                  "assumptions",
+                  "valid_until"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "source_ref": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "binding": {
+                    "$ref": "urn:fortress:derived:v1:conformance-declaration#/$defs/binding"
+                  },
+                  "scope_ref": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "evidence_class": {
+                    "enum": [
+                      "AUTHORITY",
+                      "OBSERVATION",
+                      "STATIC_PROOF",
+                      "EXECUTED_TEST",
+                      "EXECUTED_SCENARIO",
+                      "TRUSTED_ASSERTION",
+                      "DEFEATER",
+                      "AGGREGATE"
+                    ]
+                  },
+                  "proposition": {
+                    "enum": [
+                      "NO_SUPPORTED_VIOLATION",
+                      "SUPPORTED_VIOLATION",
+                      "EXECUTION_SUCCEEDED",
+                      "OBSERVATION_ONLY",
+                      "UNAVAILABLE"
+                    ]
+                  },
+                  "payload_digest": {
+                    "type": "string",
+                    "pattern": "^sha256:[0-9a-f]{64}$"
+                  },
+                  "assumptions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "uniqueItems": true
+                  },
+                  "valid_until": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                }
+              },
+              "uniqueItems": true
+            },
+            "obligations": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "id",
+                  "scope_ref",
+                  "predicate",
+                  "evidence_class",
+                  "authenticated_producer_required",
+                  "proof"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "scope_ref": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "predicate": {
+                    "enum": [
+                      "RULE_CHECK",
+                      "CONFORMANCE",
+                      "EVALUABILITY",
+                      "SUCCESSFUL_EXECUTION"
+                    ]
+                  },
+                  "evidence_class": {
+                    "enum": [
+                      "AUTHORITY",
+                      "OBSERVATION",
+                      "STATIC_PROOF",
+                      "EXECUTED_TEST",
+                      "EXECUTED_SCENARIO",
+                      "TRUSTED_ASSERTION",
+                      "DEFEATER",
+                      "AGGREGATE"
+                    ]
+                  },
+                  "authenticated_producer_required": {
+                    "type": "boolean"
+                  },
+                  "proof": {
+                    "anyOf": [
+                      {
+                        "$ref": "urn:fortress:schema:v1:proof-graph"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                }
+              },
+              "uniqueItems": true
+            },
+            "project": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "$defs": {}
+}

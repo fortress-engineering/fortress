@@ -15,6 +15,81 @@ use sha2::{Digest, Sha256};
 use crate::standard::StandardBundle;
 
 const INSTALLED_PROFILES: &str = include_str!("../_data/governance_profiles_v1.json");
+const APPLICATION_POLICY: &str = include_str!("../_data/application_assessment_policy_v1.json");
+
+/// Standard-owned immutable application requirement predicate mappings.
+#[derive(Clone, Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ApplicationAssessmentPolicy {
+    #[serde(rename = "$schema")]
+    schema: String,
+    schema_version: u16,
+    id: String,
+    version: String,
+    rule_predicate: ApplicationPredicate,
+    require_declared_denials: bool,
+    required_evidence: Vec<ApplicationEvidencePredicate>,
+    dimension_rule_sets: BTreeMap<String, Vec<String>>,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+enum ApplicationPredicate {
+    RuleCheck,
+    Evaluability,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ApplicationEvidencePredicate {
+    id: String,
+    semantic_scope: String,
+    evidence_class: RequiredEvidenceClass,
+    predicate: ApplicationPredicate,
+}
+
+impl ApplicationAssessmentPolicy {
+    /// Returns explicit Standard-owned rule membership for reporting dimensions.
+    #[must_use]
+    pub const fn dimension_rule_sets(&self) -> &BTreeMap<String, Vec<String>> {
+        &self.dimension_rule_sets
+    }
+    /// Loads the installed closed predicate catalog; projects cannot redefine it.
+    ///
+    /// # Errors
+    /// Rejects unsupported or malformed installed authority.
+    pub fn installed() -> Result<Self, ProfileResolutionError> {
+        let policy: Self = crate::wire::parse_public_json(APPLICATION_POLICY)
+            .map_err(|e| ProfileResolutionError::Serialization(e.to_string().into()))?;
+        if policy.schema != "urn:fortress:schema:v1:application-assessment-policy"
+            || policy.schema_version != 1
+            || policy.id != "application-assessment-policy"
+            || policy.version != "1.0.0"
+            || policy.rule_predicate != ApplicationPredicate::RuleCheck
+            || !policy.require_declared_denials
+        {
+            return Err(ProfileResolutionError::UnsupportedRegistry);
+        }
+        Ok(policy)
+    }
+
+    /// Returns the exact immutable policy authority identity.
+    #[must_use]
+    pub fn digest(&self) -> String {
+        format!("sha256:{:x}", Sha256::digest(APPLICATION_POLICY.as_bytes()))
+    }
+
+    /// Returns whether this exact descriptor has a registered evaluability predicate.
+    #[must_use]
+    pub fn requires_evaluability(&self, requirement: &RequiredEvidenceDescriptor) -> bool {
+        self.required_evidence.iter().any(|p| {
+            p.id == requirement.id
+                && p.semantic_scope == requirement.semantic_scope
+                && p.evidence_class == requirement.evidence_class
+                && p.predicate == ApplicationPredicate::Evaluability
+        })
+    }
+}
 
 /// Native governance profile used by legacy project configurations that have
 /// not yet authored explicit v4 selection authority.
@@ -207,13 +282,44 @@ impl ProfileDefinition {
 }
 
 /// One resolved Module-scoped composition keyed only by stable Module ID.
+#[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ResolvedProfileReference {
+    /// Exact installed profile identity.
+    pub id: String,
+    /// Exact installed immutable version.
+    pub version: String,
+    /// Definition digest belonging to this identity and version.
+    pub digest: String,
+}
+
+/// One resolved Module-scoped composition keyed only by stable Module ID.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ResolvedModuleProfiles {
+    declaration_scopes: BTreeSet<String>,
+    references: Vec<ResolvedProfileReference>,
+    semantic_scopes: BTreeSet<String>,
     active_rules: BTreeSet<String>,
     required_evidence: Vec<RequiredEvidenceDescriptor>,
 }
 
 impl ResolvedModuleProfiles {
+    /// Returns scopes explicitly selected at this override, excluding inheritance.
+    #[must_use]
+    pub const fn declaration_scopes(&self) -> &BTreeSet<String> {
+        &self.declaration_scopes
+    }
+    /// Returns associated immutable identities at this Module scope.
+    #[must_use]
+    pub fn references(&self) -> &[ResolvedProfileReference] {
+        &self.references
+    }
+
+    /// Returns the composed Module semantic dimension manifest.
+    #[must_use]
+    pub const fn semantic_scopes(&self) -> &BTreeSet<String> {
+        &self.semantic_scopes
+    }
     /// Returns whether a Standard rule applies to this Module.
     #[must_use]
     pub fn rule_applicable(&self, rule_id: &str) -> bool {
@@ -231,6 +337,7 @@ impl ResolvedModuleProfiles {
 /// and one project selection.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ResolvedProfiles {
+    references: Vec<ResolvedProfileReference>,
     layout_id: String,
     selected_profiles: Vec<String>,
     authority_digests: Vec<String>,
@@ -241,6 +348,23 @@ pub struct ResolvedProfiles {
 }
 
 impl ResolvedProfiles {
+    /// Returns associated project identities without zipping independent sets.
+    #[must_use]
+    pub fn references(&self) -> &[ResolvedProfileReference] {
+        &self.references
+    }
+
+    /// Returns exact Module-scoped compositions, including override placement.
+    #[must_use]
+    pub const fn module_overrides(&self) -> &BTreeMap<String, ResolvedModuleProfiles> {
+        &self.module_overrides
+    }
+
+    /// Returns the complete selected repository rule manifest.
+    #[must_use]
+    pub const fn active_rules(&self) -> &BTreeSet<String> {
+        &self.active_rules
+    }
     /// Returns the effective repository layout interpretation.
     #[must_use]
     pub fn layout_id(&self) -> &str {
@@ -403,6 +527,26 @@ pub fn resolve_profiles(
             resolved.module_overrides.insert(
                 profile_override.module.clone(),
                 ResolvedModuleProfiles {
+                    declaration_scopes: profile_override
+                        .selected_profiles
+                        .iter()
+                        .chain(&profile_override.assurance_profiles)
+                        .filter_map(|p| registry.get(&(p.id.clone(), p.version.clone())))
+                        .flat_map(|p| p.semantic_scopes.iter().cloned())
+                        .collect(),
+                    references: profile_override
+                        .selected_profiles
+                        .iter()
+                        .chain(&profile_override.assurance_profiles)
+                        .map(|p| ResolvedProfileReference {
+                            id: p.id.clone(),
+                            version: p.version.clone(),
+                            digest: p.digest.clone(),
+                        })
+                        .collect::<BTreeSet<_>>()
+                        .into_iter()
+                        .collect(),
+                    semantic_scopes: module.semantic_scopes,
                     active_rules: module.active_rules,
                     required_evidence: module.required_evidence,
                 },
@@ -537,7 +681,13 @@ fn compose_profiles(
     let mut required_evidence = BTreeSet::new();
     let mut authority_digests = Vec::new();
     let mut selected_profiles = Vec::new();
+    let mut references = BTreeSet::new();
     for profile in all {
+        references.insert(ResolvedProfileReference {
+            id: profile.id.clone(),
+            version: profile.version.clone(),
+            digest: profile.digest.clone(),
+        });
         active_rules.extend(profile.active_rules.iter().cloned());
         semantic_scopes.extend(profile.semantic_scopes.iter().cloned());
         required_evidence.extend(profile.required_evidence.iter().cloned());
@@ -552,6 +702,7 @@ fn compose_profiles(
     selected_profiles.sort();
     selected_profiles.dedup();
     Ok(ResolvedProfiles {
+        references: references.into_iter().collect(),
         layout_id: layouts.into_iter().next().expect("one layout").into(),
         selected_profiles,
         authority_digests,

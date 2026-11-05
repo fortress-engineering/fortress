@@ -39,7 +39,7 @@ fn registered_schemas_are_unique_json_schema_documents() {
         .expect("schema manifest must contain a schemas array");
     let mut identities = HashSet::with_capacity(paths.len());
 
-    assert_eq!(paths.len(), 77);
+    assert_eq!(paths.len(), 83);
     let manifest_schema =
         read_json("engine/standard_registry/_data/schema_manifest_schema_v2.json");
     jsonschema::draft202012::validate(&manifest_schema, &manifest)
@@ -284,6 +284,22 @@ fn full_snapshot_certification_profile_cannot_hide_mandatory_evidence() {
 /// Fortress requirement: AF-STANDARD-REGISTRY-0001-R03
 #[test]
 fn installed_profiles_and_active_project_selection_match_registered_schemas() {
+    let application_policy =
+        read_json("engine/standard_registry/_data/application_assessment_policy_v1.json");
+    let application_schema =
+        read_json("engine/standard_registry/_data/assessment_policy_schema_v1.json");
+    jsonschema::draft202012::validate(&application_schema, &application_policy)
+        .expect("application predicate policy validates");
+    let registry = StandardRegistry::draft_1_0();
+    for rules in application_policy["dimension_rule_sets"]
+        .as_object()
+        .unwrap()
+        .values()
+    {
+        for rule in rules.as_array().unwrap() {
+            assert!(registry.find(rule.as_str().unwrap()).is_some());
+        }
+    }
     let profile_schema =
         read_json("engine/standard_registry/_data/governance_profile_schema_v1.json");
     let profiles = read_json("engine/standard_registry/_data/governance_profiles_v1.json");

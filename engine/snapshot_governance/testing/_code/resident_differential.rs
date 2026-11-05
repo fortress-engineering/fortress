@@ -46,14 +46,16 @@ const MAX_RETAINED_REPORT_BYTES: usize = 64 * 1024 * 1024;
 const MAX_FIXTURE_CLAIM_ATTEMPTS: usize = 64;
 static NEXT: AtomicU64 = AtomicU64::new(0);
 
-const ARTIFACT_PATHS: [&str; 14] = [
+const ARTIFACT_PATHS: [&str; 16] = [
     "_info/behavioral_flow_graph.json",
     "_info/certification.json",
     "_info/component_resolution_index.json",
+    "_info/conformance_declaration.json",
     "_info/contract_coherency_graph.json",
     "_info/environmental_analysis.json",
     "_info/evidence_graph.json",
     "_info/information_flow_analysis.json",
+    "_info/profile_assessment.json",
     "_info/program_semantic_model.json",
     "_info/realized_behavioral_flow_graph.json",
     "_info/semantic_analysis.json",
@@ -75,6 +77,7 @@ const MANIFEST: &str = "[package]\nname = \"resident_corpus\"\nversion = \"0.1.0
 
 #[derive(Deserialize)]
 struct Registry {
+    canonical_members_per_case: usize,
     generator: String,
     seed: String,
     successful_comparisons: usize,
@@ -451,8 +454,8 @@ fn assert_stale_execution(generation: &Generation, suite: &RustSuiteExecution) {
     let members = generation.canonical_artifacts();
     assert_eq!(
         members.len(),
-        14,
-        "all eleven semantic and three certification members"
+        16,
+        "all eleven semantic, three certification and two application members"
     );
     assert_eq!(
         members.keys().map(String::as_str).collect::<Vec<_>>(),
@@ -939,6 +942,12 @@ impl Retention {
 
 fn registered_corpus() -> Registry {
     let registry: Registry = serde_json::from_str(REGISTRY).expect("registered mutation corpus");
+    // Preserve the accepted original population; extend only its current consumer.
+    assert_eq!(registry.canonical_members_per_case, 14);
+    assert_eq!(
+        ARTIFACT_PATHS.len(),
+        registry.canonical_members_per_case + 2
+    );
     assert_eq!(registry.successful_comparisons, 1000);
     assert_eq!(registry.cases.len(), 1000);
     assert_eq!(
@@ -1092,7 +1101,7 @@ impl CaseComparison {
         assert_eq!(
             self.warm.generation.canonical_artifacts(),
             base.canonical_artifacts(),
-            "availability is outside all 14 semantic hashes"
+            "availability is outside all 16 canonical hashes"
         );
         let path = self.operations[0]["path"].as_str().unwrap();
         assert!(
@@ -1306,7 +1315,7 @@ impl CorpusRun<'_> {
             "reused_callers":self.totals.callers, "reused_graph_components":self.totals.components,
             "reused_domain_rounds":self.totals.domain_rounds, "reused_direct_effect_units":self.totals.direct_units,
             "reused_effect_closure_rounds":self.totals.closure_rounds,
-            "canonical_members_per_case":14, "retained_bytes_before_final_record":self.retention.bytes}));
+            "canonical_members_per_case":16, "historical_session_members_per_case":14, "retained_bytes_before_final_record":self.retention.bytes}));
         eprintln!(
             "Resident differential qualification: {} ({} bytes)",
             self.retention.path.display(),

@@ -61,3 +61,11 @@ Defines operational observation policy plus a narrow stable-ID index for logical
 ### [`project_schema_v4.json`](../_data/project_schema_v4.json)
 
 Extends the same root project authority with explicit versioned governance profiles, stable Module-scoped overrides, protected coverage floors, and assurance profile selection.
+
+### [`control_layout_v3.json`](../_data/control_layout_v3.json)
+
+Current closed control registry adds two Certification-owned APPLICATION members. Editions v1/v2 remain exact historical assets, including their original SHA-256 byte identities.
+
+### [`control_layout_schema_v3.json`](../_data/control_layout_schema_v3.json)
+
+Validates the third closed control-layout edition, including its two Certification-owned application members and exact fixed role registry. Historical layout schemas remain unchanged.

@@ -17,7 +17,9 @@ pub const LEGACY_PROJECT_CONFIGURATION_PATH: &str = "_data/project.json";
 pub const EVIDENCE_ROOT: &str = "__fortress/evidence";
 
 /// Declarative layout bytes shared by all compiled adapters.
-pub const CONTROL_LAYOUT_SOURCE: &str = include_str!("../_data/control_layout_v2.json");
+pub const CONTROL_LAYOUT_SOURCE: &str = include_str!("../_data/control_layout_v3.json");
+/// Retained second layout edition; historical digest meaning is unchanged.
+pub const CONTROL_LAYOUT_V2_SOURCE: &str = include_str!("../_data/control_layout_v2.json");
 /// Retained declarative layout bytes for historical records.
 pub const LEGACY_CONTROL_LAYOUT_SOURCE: &str = include_str!("../_data/control_layout_v1.json");
 /// Exact project-local effect-summary authority location.
@@ -85,6 +87,7 @@ enum ProductionGroup {
     Semantic,
     Certification,
     Certificate,
+    Application,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
@@ -171,10 +174,10 @@ impl ControlLayout {
     /// Returns a stable digest of the exact installed registry bytes.
     #[must_use]
     pub fn digest(&self) -> String {
-        let source = if self.schema_version == 1 {
-            LEGACY_CONTROL_LAYOUT_SOURCE
-        } else {
-            CONTROL_LAYOUT_SOURCE
+        let source = match self.schema_version {
+            1 => LEGACY_CONTROL_LAYOUT_SOURCE,
+            2 => CONTROL_LAYOUT_V2_SOURCE,
+            _ => CONTROL_LAYOUT_SOURCE,
         };
         format!("sha256:{:x}", Sha256::digest(source.as_bytes()))
     }
@@ -265,6 +268,16 @@ impl ControlLayout {
             .collect()
     }
 
+    /// Resolves one exact logical output to its associated registered artifact ID.
+    #[must_use]
+    pub fn artifact_id_for_path(&self, path: &str) -> Option<&str> {
+        self.artifact_registry
+            .iter()
+            .find(|record| record.logical_path == path)
+            .map(|record| record.id.as_str())
+    }
+
+    #[allow(clippy::too_many_lines)]
     fn validate(&self) -> Result<(), ControlLayoutError> {
         let supported_version = matches!(
             (self.schema.as_str(), self.schema_version, self.id.as_str()),
@@ -276,6 +289,10 @@ impl ControlLayout {
                 "urn:fortress:schema:v2:control-layout",
                 2,
                 "fortress-control-layout-v2"
+            ) | (
+                "urn:fortress:schema:v3:control-layout",
+                3,
+                "fortress-control-layout-v3"
             )
         );
         if !supported_version
@@ -290,7 +307,7 @@ impl ControlLayout {
                 || role.owner.is_empty()
                 || !paths.insert(role.path.as_str())
                 || (role.role == ControlRole::EffectSummaryAuthority
-                    && (self.schema_version != 2
+                    && (self.schema_version < 2
                         || role.path != EFFECT_SUMMARY_AUTHORITY_PATH
                         || role.owner != "state_effect_analysis"
                         || role.source_binding != ControlSourceBinding::Required))
@@ -301,7 +318,7 @@ impl ControlLayout {
         if !paths.contains(PROJECT_CONFIGURATION_PATH) {
             return Err(ControlLayoutError::MissingConfiguration);
         }
-        if self.schema_version == 2
+        if self.schema_version >= 2
             && !self.roles.iter().any(|role| {
                 role.path == EFFECT_SUMMARY_AUTHORITY_PATH
                     && role.role == ControlRole::EffectSummaryAuthority
@@ -319,7 +336,7 @@ impl ControlLayout {
         let mut logical_paths = BTreeSet::new();
         let mut ids = BTreeSet::new();
         let mut members = BTreeSet::new();
-        let mut production_counts = [0_u8; 3];
+        let mut production_counts = [0_u8; 4];
         let mut prior_id: Option<&str> = None;
         for artifact in &self.artifact_registry {
             let common_valid = !artifact.id.is_empty()
@@ -345,6 +362,7 @@ impl ControlLayout {
                 ProductionGroup::Semantic => production_counts[0] += 1,
                 ProductionGroup::Certification => production_counts[1] += 1,
                 ProductionGroup::Certificate => production_counts[2] += 1,
+                ProductionGroup::Application => production_counts[3] += 1,
             }
             if artifact.production_group == ProductionGroup::Certificate
                 && artifact.id != "quality-certificate"
@@ -353,7 +371,15 @@ impl ControlLayout {
             }
             prior_id = Some(&artifact.id);
         }
-        if ids.len() != 15 || members.len() != 7 || production_counts != [11, 3, 1] {
+        let (expected_ids, expected_members, expected_counts) = if self.schema_version == 3 {
+            (17, 9, [11, 3, 1, 2])
+        } else {
+            (15, 7, [11, 3, 1, 0])
+        };
+        if ids.len() != expected_ids
+            || members.len() != expected_members
+            || production_counts != expected_counts
+        {
             return Err(ControlLayoutError::IncompleteArtifactRegistry);
         }
         Ok(())

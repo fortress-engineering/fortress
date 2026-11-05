@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:application-assessment-policy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "id",
+    "version",
+    "rule_predicate",
+    "require_declared_denials",
+    "required_evidence",
+    "dimension_rule_sets"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:schema:v1:application-assessment-policy"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "id": {
+      "const": "application-assessment-policy"
+    },
+    "version": {
+      "const": "1.0.0"
+    },
+    "rule_predicate": {
+      "const": "RULE_CHECK"
+    },
+    "require_declared_denials": {
+      "const": true
+    },
+    "required_evidence": {
+      "const": [
+        {
+          "id": "SEMANTIC-EVALUABILITY",
+          "semantic_scope": "PROGRAM_SEMANTICS",
+          "evidence_class": "STATIC_PROOF",
+          "predicate": "EVALUABILITY"
+        }
+      ]
+    },
+    "dimension_rule_sets": {
+      "const": {
+        "ARCHITECTURE": [
+          "ARCH-DEPENDENCY-001",
+          "ARCH-OWNERSHIP-001",
+          "ARCH-REALIZATION-001",
+          "ARCH-SEMANTIC-001",
+          "CONTRACT-COHERENCY-001",
+          "REPO-REFERENCE-001"
+        ],
+        "BEHAVIOR": [
+          "BEHAVIOR-BYPASS-001",
+          "BEHAVIOR-FLOW-001",
+          "BEHAVIOR-REALIZATION-001"
+        ],
+        "CANONICAL_FILING": [
+          "REPO-DOCS-001",
+          "REPO-MODULE-001"
+        ],
+        "PROGRAM_SEMANTICS_CHECKS": [
+          "PROGRAM-DOMAIN-001",
+          "PROGRAM-EFFECT-001",
+          "PROGRAM-ENVIRONMENT-001",
+          "PROGRAM-INFOFLOW-001",
+          "PROGRAM-RECOVERY-001",
+          "PROGRAM-RETRY-001",
+          "PROGRAM-STATE-001",
+          "SOURCE-ARTIFACT-001",
+          "SOURCE-PROFILE-001"
+        ],
+        "TEST_GOVERNANCE": [
+          "TEST-BOUNDARY-001",
+          "TEST-TRACEABILITY-001"
+        ]
+      }
+    }
+  }
+}

@@ -32,6 +32,12 @@ Provides the composed Certification library surface exercised by this independen
 
 Verifies the parent Certification Feature.
 
+### [Snapshot Governance](../../snapshot_governance/README.md)
+
+**Types:** `depends_on`
+
+Supplies neutral StateViews and actual application orchestration exercised by Certification-owned negative, uncertain and publication integration controls.
+
 ## Guarantees
 
 Negative fixtures assert normalized outcomes rather than accepting arbitrary failures.
