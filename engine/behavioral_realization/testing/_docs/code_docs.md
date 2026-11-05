@@ -21,3 +21,11 @@ Any contract, event, checkpoint, edge, decision, terminal, bypass, coverage, obl
 ### [`behavioral_realization.rs`](../_code/behavioral_realization.rs)
 
 Exercises complete realization authority, every semantic anchor class, event projection, next-checkpoint reconciliation, dominator bypasses, uncertainty, normalized findings, verification obligations, deterministic serialization, and live Fortress realization.
+
+### [`lib.rs`](../_code/lib.rs)
+
+The Cargo-declared `event_graph_paths` native test crate root imports the existing Core coverage type and compiles the actual parent-owned private index source. This preserves the existing Testing dependency and physical crate-root boundary.
+
+### [`event_graph_paths.rs`](../_code/event_graph_paths.rs)
+
+Checks 32,768 deterministic queries against an independent copy of the original string BFS, including Unicode, duplicates, cycles, multiple seeds, missing and edge-only endpoints, forbidden vertices and coverage ties. Separate controls check exact admission, refusal, empty/zero-hop behavior and arithmetic overflow before input consumption. These owner tests complement complete public realization and Session reuse/fallback controls; they do not substitute for authoritative certification.

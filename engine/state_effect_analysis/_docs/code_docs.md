@@ -8,6 +8,8 @@ The directly owned Code validates state and effect-summary authority and derives
 
 Snapshot Governance loads distributed contracts after compiling one PSM and Semantic Analysis result, then invokes the state/effect evaluator once before standard-rule dispatch and derived artifact serialization. Standard Registry supplies the installed operation-summary catalog through its public provider. Operation-summary selection binds the resolved operation to its dependency or toolchain source, version, target, features, and type arguments before a qualified upper bound is applied.
 
+When preparation is refused for retention cost but the complete owner inventory is known, synchronous closure still rebuilds every direct seed and round. It uses the existing borrowed duplicate/capped-witness checks with all owners selected, avoiding candidates that the unchanged insertion rule would reject. Incomplete ownership keeps the original unfiltered reconstruction, and the independent unprepared cold closure is unchanged. Limits, witnesses, uncertainty, iteration accounting and canonical output remain exact; refusal does not omit analysis.
+
 ## State
 
 Analysis state is process-local and immutable after construction; fixed-point work maps are deterministic and no repository state is mutated.
@@ -16,11 +18,17 @@ Synchronous closure snapshots and retained trajectories share immutable effect-e
 
 ## Failure Semantics
 
+Final field-summary assembly optionally builds one ordered, borrowed read/write index from the complete current PSM. Checked admission reserves 512 bytes per observed read or mutation and 2,048 bytes per symbol, plus the map header, within a 16 MiB scratch ceiling before allocating. These reserves cover container nodes, spare capacity and alignment; field names and symbol keys remain borrowed. Missing owners, arithmetic overflow or exceeded admission use the original complete per-symbol scan. Sorted unique owned summary fields, findings, provenance and uncertainty retain their existing semantics. The index expires within this evaluation and never enters retained preparation or result identity; existing retention charges and limits remain intact.
+
 Closure uncertainty sets are also immutable shared allocations. A repeated reason is checked before allocation or copy-on-write; a new reason detaches only the current set. Every retained position receives the existing full uncertainty charge without a sharing discount. Final summary assembly consumes each completed symbol work record and materializes its complete owned reasons, rather than cloning the record first. Cold evaluation still independently derives every seed and executes every closure round; neither sharing mechanism persists semantic results across evaluations. Cyclic fan-in and provider changes/removal are compared against the independent cold producer, and retained baseline trajectories are replayed after each branch.
 
 Invalid authored authority, overlapping summary selectors, and serialization failures return typed errors; supported contradictions become normalized findings; unknown aliases, dynamic calls, unsupported summary contexts, and opaque external behavior remain explicit coverage uncertainty. Missing callback or destructor premises cannot become an empty effect bound.
 
 ## Files
+
+### [`field_projection.rs`](../_code/field_projection.rs)
+
+Builds the optional bounded borrowed field-membership index and assembles sorted owned fields through either that index or the original complete scan. The source remains private to this owner. Its testing child compiles this same helper source in its own integration target through the existing declared verification dependency; production Code has no dependency on Testing, and no public budget control is added.
 
 ### [`operation_effect.rs`](../_code/operation_effect.rs)
 

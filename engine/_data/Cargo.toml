@@ -109,6 +109,10 @@ name = "effect_preparation"
 path = "../state_effect_analysis/testing/_code/effect_preparation.rs"
 
 [[test]]
+name = "field_projection"
+path = "../state_effect_analysis/testing/_code/lib.rs"
+
+[[test]]
 name = "resident_session"
 path = "../snapshot_governance/testing/_code/resident_session.rs"
 
@@ -244,3 +248,7 @@ path = "../repository_observation/testing/_code/bounded_observation.rs"
 [[example]]
 name = "resident_benchmark"
 path = "../snapshot_governance/testing/_code/resident_benchmark.rs"
+
+[[test]]
+name = "event_graph_paths"
+path = "../behavioral_realization/testing/_code/lib.rs"

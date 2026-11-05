@@ -11,6 +11,9 @@ mod state_contract;
 #[path = "summary.rs"]
 mod summary;
 
+#[path = "field_projection.rs"]
+mod field_projection;
+
 use std::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
@@ -33,6 +36,7 @@ use crate::semantic_analysis::{
     DomainSpecification, FunctionContract, FunctionEffect, ResolvedFunctionContracts,
     SemanticAnalysisEvaluation, SemanticDomain, resolve_domain,
 };
+use field_projection::{FIELD_PROJECTION_SCRATCH_BYTES, field_projection_index, symbol_fields};
 use operation_effect::{OperationEffectClassification, classify_operation};
 
 pub use summary::{
@@ -1400,6 +1404,7 @@ fn analyze_state_effects_with_summaries_core(
     let (mut effect_work, effect_iterations) = effect_deriver(&symbols, &execution_provenance)?;
     let mut violations =
         state_call_violations(psm, function_contracts, &owner_states, &symbols, &types);
+    let field_projection = field_projection_index(psm, &symbols, FIELD_PROJECTION_SCRATCH_BYTES);
     let mut summaries = Vec::new();
     for symbol in psm.symbols() {
         let contract = function_contracts.get(symbol.id());
@@ -1426,22 +1431,8 @@ fn analyze_state_effects_with_summaries_core(
         {
             violations.extend(effect_policy_violations(symbol, policy.allowed(), &work));
         }
-        let field_reads: Vec<String> = psm
-            .state_reads()
-            .iter()
-            .filter(|item| item.symbol() == symbol.id())
-            .filter_map(|item| item.place().field_name().map(str::to_owned))
-            .collect::<BTreeSet<_>>()
-            .into_iter()
-            .collect();
-        let field_writes: Vec<String> = psm
-            .mutations()
-            .iter()
-            .filter(|item| item.symbol() == symbol.id())
-            .filter_map(|item| item.target().field_name().map(str::to_owned))
-            .collect::<BTreeSet<_>>()
-            .into_iter()
-            .collect();
+        let [field_reads, field_writes] =
+            symbol_fields(psm, symbol.id(), field_projection.as_ref());
         let stateful = state_type.is_some() || !field_reads.is_empty() || !field_writes.is_empty();
         let state_postconditions =
             if contract.is_some_and(|value| !value.state_ensures().is_empty()) {
@@ -2371,7 +2362,7 @@ fn prepare_effect_work(
                 execution_provenance,
                 &mut effect_work,
                 &snapshot,
-                None,
+                (!incomplete).then_some(&symbol_ids),
             );
             if changed.is_empty() || iterations > effect_work.len().saturating_add(1) {
                 return Ok((

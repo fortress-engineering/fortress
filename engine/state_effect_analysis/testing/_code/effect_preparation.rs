@@ -106,6 +106,49 @@ fn prepared(
     result
 }
 
+/// `T-AF-STATE-EFFECT-ANALYSIS-0001-R07-008`
+/// Fortress requirement: AF-STATE-EFFECT-ANALYSIS-0001-R07
+#[test]
+fn absent_target_addition_rebuilds_fields_and_restores_cold_equivalence() {
+    let source = "pub struct Cell { pub value:i64 } pub fn entry(c:&mut Cell) { missing(c); }";
+    let before = psm(source);
+    let (baseline, previous, _) = prepared(&before, None);
+    let baseline_bytes = baseline
+        .model()
+        .to_canonical_json()
+        .expect("baseline bytes");
+    let previous_charge = previous.accounted_resident_bytes();
+    assert!(
+        baseline
+            .model()
+            .summaries()
+            .iter()
+            .any(|s| !s.uncertainty().is_empty())
+    );
+    let added = psm(&format!(
+        "{source} pub fn missing(c:&mut Cell) {{ c.value = c.value + 1; }}"
+    ));
+    let (changed, changed_preparation, work) = prepared(&added, Some(&previous));
+    let changed_bytes = changed.model().to_canonical_json().expect("changed bytes");
+    assert_ne!(changed_bytes, baseline_bytes);
+    assert!(work.rebuilt_direct_units > 0);
+    assert!(
+        changed_bytes.contains("owned_state_read") && changed_bytes.contains("owned_state_write")
+    );
+    let (restored, _, _) = prepared(&before, Some(&changed_preparation));
+    assert_eq!(
+        restored
+            .model()
+            .to_canonical_json()
+            .expect("restored bytes"),
+        baseline_bytes
+    );
+    assert_eq!(previous.accounted_resident_bytes(), previous_charge);
+    let (reused, _, reuse_work) = prepared(&before, Some(&previous));
+    assert_eq!(reused, baseline);
+    assert_eq!(reuse_work.rebuilt_direct_units, 0);
+}
+
 fn prepared_with_limits(
     model: &ProgramSemanticModel,
     previous: Option<&StateEffectPreparation>,

@@ -8,6 +8,9 @@ pub(crate) const BEHAVIOR_BYPASS_RULE_SOURCE: &str =
 #[path = "realization_contract.rs"]
 mod realization_contract;
 
+#[path = "event_graph.rs"]
+mod event_graph;
+
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
@@ -1320,6 +1323,7 @@ pub fn compile_realized_bfg(
         &flows,
         obligations.len(),
     );
+    drop(graph);
     Ok(RealizedBehavioralFlowGraph {
         schema: REALIZED_BFG_SCHEMA.into(),
         schema_version: REALIZED_BFG_SCHEMA_VERSION,
@@ -1358,11 +1362,43 @@ pub fn compile_realized_bfg(
 }
 
 #[derive(Clone)]
-struct EventGraph {
+enum EventGraph<'a> {
+    Indexed(event_graph::IndexedEventGraph<'a>),
+    Legacy(LegacyEventGraph),
+}
+
+impl<'a> EventGraph<'a> {
+    fn new(model: &'a ImplementationEventModel) -> Self {
+        let indexed = event_graph::IndexedEventGraph::try_new(
+            model.events().iter().map(ImplementationEvent::id),
+            model
+                .edges()
+                .iter()
+                .map(|edge| (edge.source.as_str(), edge.target.as_str(), edge.coverage)),
+            64 * 1024 * 1024,
+        );
+        indexed.map_or_else(|| Self::Legacy(LegacyEventGraph::new(model)), Self::Indexed)
+    }
+
+    fn path(
+        &self,
+        sources: &[String],
+        targets: &BTreeSet<String>,
+        forbidden: &BTreeSet<String>,
+    ) -> Option<(Vec<String>, RealizationCoverage)> {
+        match self {
+            Self::Indexed(graph) => graph.path(sources, targets, forbidden, combine_coverage),
+            Self::Legacy(graph) => graph.path(sources, targets, forbidden),
+        }
+    }
+}
+
+#[derive(Clone)]
+struct LegacyEventGraph {
     adjacency: BTreeMap<String, Vec<(String, RealizationCoverage)>>,
 }
 
-impl EventGraph {
+impl LegacyEventGraph {
     fn new(model: &ImplementationEventModel) -> Self {
         let mut adjacency = BTreeMap::<String, Vec<(String, RealizationCoverage)>>::new();
         for event in model.events() {
@@ -1438,7 +1474,7 @@ fn realize_feature(
     intended: &IntendedFeatureFlow,
     contracts: &BTreeMap<&str, &ResolvedCheckpointRealization>,
     event_model: &ImplementationEventModel,
-    graph: &EventGraph,
+    graph: &EventGraph<'_>,
     summaries: &BTreeMap<&str, &SemanticDomain>,
 ) -> (RealizedFeatureFlow, Vec<BehavioralVerificationObligation>) {
     let event_ids = event_model
@@ -1715,7 +1751,7 @@ fn classification_from_states(states: &[String]) -> TypestateClassification {
 fn derive_bypasses(
     intended: &IntendedFeatureFlow,
     checkpoint_events: &BTreeMap<String, Vec<String>>,
-    graph: &EventGraph,
+    graph: &EventGraph<'_>,
     contracts: &BTreeMap<&str, &ResolvedCheckpointRealization>,
 ) -> (Vec<BehavioralBypass>, usize, RealizationCoverage) {
     let Some(trigger) = intended.trigger_checkpoint() else {

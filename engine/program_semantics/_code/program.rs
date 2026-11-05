@@ -2934,7 +2934,10 @@ pub fn prepare_program_semantics(
 pub fn compile_program_semantic_model(
     input: &ProgramSemanticInput,
 ) -> Result<ProgramSemanticModel, ProgramSemanticError> {
-    prepare_program_semantics(input, None).map(|prepared| prepared.model)
+    let mut facts = rust::analyze_cold(input)?;
+    sort_facts(&mut facts);
+    let graph = graph::prepare_call_topology(&facts.symbols, &facts.calls, None);
+    assemble_program_semantic_model(input, facts, graph.topology)
 }
 
 fn sort_facts(facts: &mut RustProgramFacts) {

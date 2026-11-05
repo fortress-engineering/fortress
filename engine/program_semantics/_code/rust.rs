@@ -463,10 +463,24 @@ pub(super) struct PreparedRustResult {
     pub(super) dependencies: Vec<ProgramDependencyRead>,
 }
 
-#[allow(clippy::too_many_lines)]
 pub(super) fn analyze_prepared(
     input: &ProgramSemanticInput,
     previous: Option<&PreparedRust>,
+) -> Result<PreparedRustResult, ProgramSemanticError> {
+    analyze_internal(input, previous, true)
+}
+
+pub(super) fn analyze_cold(
+    input: &ProgramSemanticInput,
+) -> Result<RustProgramFacts, ProgramSemanticError> {
+    analyze_internal(input, None, false).map(|result| result.facts)
+}
+
+#[allow(clippy::too_many_lines)]
+fn analyze_internal(
+    input: &ProgramSemanticInput,
+    previous: Option<&PreparedRust>,
+    retain: bool,
 ) -> Result<PreparedRustResult, ProgramSemanticError> {
     let files = verified_files(input)?;
     let source_inputs = semantic_source_inputs(&files);
@@ -634,12 +648,14 @@ pub(super) fn analyze_prepared(
             ))
         };
         fixed_point_iterations = fixed_point_iterations.max(unit.iterations);
-        program_bodies.push(unit.body.clone());
-        operation_inventory.extend(unit.inventory.iter().cloned());
-        value_transfers.extend(unit.transfers.iter().cloned());
-        transformations.extend(unit.transformations.iter().cloned());
-        state_reads.extend(unit.reads.iter().cloned());
-        mutations.extend(unit.mutations.iter().cloned());
+        if retain {
+            program_bodies.push(unit.body.clone());
+            operation_inventory.extend(unit.inventory.iter().cloned());
+            value_transfers.extend(unit.transfers.iter().cloned());
+            transformations.extend(unit.transformations.iter().cloned());
+            state_reads.extend(unit.reads.iter().cloned());
+            mutations.extend(unit.mutations.iter().cloned());
+        }
         dependencies.extend(unit.dependencies.iter().cloned());
         body_units.insert(body.symbol.clone(), unit);
     }
@@ -666,11 +682,34 @@ pub(super) fn analyze_prepared(
                 &recorder,
             ))
         };
-        calls.extend(unit.calls.iter().cloned());
-        value_transfers.extend(unit.transfers.iter().cloned());
-        operation_inventory.extend(unit.inventory.iter().cloned());
+        if retain {
+            calls.extend(unit.calls.iter().cloned());
+            value_transfers.extend(unit.transfers.iter().cloned());
+            operation_inventory.extend(unit.inventory.iter().cloned());
+        }
         dependencies.extend(unit.dependencies.iter().cloned());
         callers.insert(body.symbol.clone(), unit);
+    }
+    if !retain {
+        // No previous preparation exists on this path. Resolve all callers
+        // before transferring their uniquely owned facts into the cold model.
+        for (_, unit) in std::mem::take(&mut body_units) {
+            let unit = Rc::try_unwrap(unit)
+                .unwrap_or_else(|_| unreachable!("cold body unexpectedly shared"));
+            program_bodies.push(unit.body);
+            operation_inventory.extend(unit.inventory);
+            value_transfers.extend(unit.transfers);
+            transformations.extend(unit.transformations);
+            state_reads.extend(unit.reads);
+            mutations.extend(unit.mutations);
+        }
+        for (_, unit) in std::mem::take(&mut callers) {
+            let unit = Rc::try_unwrap(unit)
+                .unwrap_or_else(|_| unreachable!("cold caller unexpectedly shared"));
+            calls.extend(unit.calls);
+            value_transfers.extend(unit.transfers);
+            operation_inventory.extend(unit.inventory);
+        }
     }
     operation_inventory.sort();
     let symbol_paths = symbols

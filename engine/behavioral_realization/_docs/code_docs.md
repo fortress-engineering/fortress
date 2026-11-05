@@ -25,3 +25,7 @@ Owns implementation-event derivation, coverage-aware checkpoint reachability, ne
 ### [`realization_contract.rs`](../_code/realization_contract.rs)
 
 Owns canonical distributed Behavior Realization Contract v1 parsing, complete Feature opt-in, Module-local ownership, exact semantic anchor resolution, ordering, and distributed digest identity.
+
+### [`event_graph.rs`](../_code/event_graph.rs)
+
+Provides the private borrowed numeric event index used by repeated reachability queries. Before allocating, checked arithmetic conservatively charges the complete event/edge endpoint union, adjacency, collection overhead and one complete query scratch against 64 MiB. Refusal or arithmetic overflow selects the original string graph and BFS. This is optional temporary workspace within the existing process limits; no cache or global memory limit increases. The index borrows immutable IDs, orders numeric IDs exactly as their strings, preserves tuple neighbor order and first-visited coverage, and includes edge-only endpoints. Each query creates fresh state and returns the same owned witness strings. Unknown initial endpoints retain zero-hop semantics. The index is dropped before moving the completed event model; no analysis result is reused across evaluations.

@@ -26,6 +26,8 @@ Identity deliberately excludes parameter binding names, generic/lifetime spellin
 
 **Legacy migration.** Every current executable exposes its exact-snapshot token-stream ID as a non-authoritative alias. A legacy reference resolves only when that alias maps to exactly one current symbol; successful resolution normalizes in memory and reports legacy use, while missing or ambiguous aliases fail. Ordinary audit, check, and certification never rewrite authority. The explicit identity-migration command reports and applies only reviewed, exact-snapshot, unambiguous symbol-reference and finding-governance replacements, preserves baseline/exception metadata, never adds unrelated findings, and refuses incomplete or many-to-one mappings. Historical schemas retain their historical meaning.
 
+Independent cold compilation executes the same complete Rust producer and final assembler with no previous preparation. After every caller has resolved, it consumes uniquely owned body/caller contributions into the finished model instead of copying those facts into preparation that the cold caller immediately drops. This changes temporary ownership only: all analyses, fixed-point work, dependency recording, sorting and canonical facts still execute. The prepared path retains its existing copies, units, counters and reuse validation. No parser syntax crosses threads and no cold result is supplied by a resident cache.
+
 ## State
 
 Canonical analysis owns deterministic process-local indexes from one immutable input set. Optional coordinator preparation retains exact reusable units between requests, separately from immutable finished models; cache eviction changes work only.

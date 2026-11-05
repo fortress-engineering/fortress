@@ -18,6 +18,14 @@ Assertions compare exact classifications, findings, coverage, provenance, and ca
 
 ## Files
 
+### [`lib.rs`](../_code/lib.rs)
+
+Defines the native test-harness crate root registered by the Engine Cargo manifest. This authored crate-root resolution boundary wires the parent's private aggregation source and the local controls. The existing Testing-to-parent and Testing-to-Core dependencies authorize that wiring; production has no reverse dependency on Testing.
+
+### [`field_projection.rs`](../_code/field_projection.rs)
+
+The integration target compiles the actual private aggregation helper source through the existing declared verification dependency. Fixture construction and public evaluations use the Core facade. Tests compare indexed and zero-admission assembly against the independent original scan, including duplicates, tuple fields, empty and absent symbols. They verify exact scratch admission and incomplete owner-inventory refusal. Complete public cold, freshly prepared and reused evaluations compare the entire canonical model and all findings for both a small admitted fixture and a fixture with 8,192 additional independent functions that naturally exceeds the fixed 16 MiB budget. Every resulting summary's fields are checked against independent full PSM scans. Production has no dependency on Testing and no public budget control is added. The prepared-effect tests also cover adding a formerly unresolved target, rebuilding its field effects, and restoring complete cold-equivalent baseline results without mutating prior preparation.
+
 ### [`state_effect_analysis.rs`](../_code/state_effect_analysis.rs)
 
 Verifies contract ownership, typestate behavior, refined operation classification, capability expressibility, panic and unsafe structure, causal effect closure, policy compatibility, uncertainty, deterministic output, and live self-analysis.
