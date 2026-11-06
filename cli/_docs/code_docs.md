@@ -54,7 +54,7 @@ Projects the shared inspection protocol over bounded UTF-8 JSON lines. A bounded
 
 Parses status, doctor, query, explain, author and serve options, performs explicit loading, and renders the same canonical result fields in human or JSON form. Optional timings report cold loading separately from warm query work without certification thresholds.
 
-## Governance inspection workflow
+**Governance inspection workflow**
 
 `fortress status .` separates the actual observed source and authority, selected
 historical evidence, raw dimension truth, progressive residue/enforcement, profile
@@ -99,7 +99,7 @@ no evaluator runs to fill it. Minimal support is stated only for a matching reco
 single-premise conclusion. Other proof alternatives remain visible without an
 invented minimality claim. Missing evidence is an unresolved dependency, never proof.
 
-## Protocol v1 and downstream integration
+**Protocol v1 and downstream integration**
 
 `fortress serve --stdio .` loads once, then accepts strict UTF-8 JSON lines. The core
 request, response and method DTOs are independent of stdio, IDE, MCP, LSP and agent
