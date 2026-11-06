@@ -1,4 +1,4 @@
-//! Deterministic semantic facts, derivations, and serialization for CCG v1.
+//! Deterministic semantic facts, derivations, and serialization for CCG v2.
 
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
@@ -6,17 +6,17 @@ use serde::Serialize;
 use sha2::{Digest, Sha256};
 
 use super::{
-    CcgViolation, ConstraintScope, ContractCoherencyGraph, GuaranteeSubjectKind,
-    ModuleRelationshipType, ResolvedConstraint,
+    CcgViolation, ConstraintScope, ContractCoherencyGraph, ExternalVerificationIntent,
+    GuaranteeSubjectKind, ModuleRelationshipType, ResolvedConstraint,
 };
 
 /// Canonical serialized Contract Coherency Graph schema identity.
-pub const CCG_SCHEMA: &str = "urn:fortress:schema:v1:contract-coherency-graph";
+pub const CCG_SCHEMA: &str = "urn:fortress:schema:v2:contract-coherency-graph";
 
 /// Canonical serialized Contract Coherency Graph schema version.
-pub const CCG_SCHEMA_VERSION: u16 = 1;
+pub const CCG_SCHEMA_VERSION: u16 = 2;
 
-/// Semantic classes intentionally outside CCG v1 proof authority.
+/// Semantic classes intentionally outside CCG v2 proof authority.
 pub const CCG_UNSUPPORTED_SEMANTICS: &[&str] = &[
     "arbitrary_natural_language_requirement_contradiction",
     "general_behavioral_satisfiability",
@@ -177,7 +177,7 @@ impl CcgSummary {
 }
 
 impl ContractCoherencyGraph {
-    /// Serializes CCG v1 as deterministic UTF-8-compatible pretty JSON with LF termination.
+    /// Serializes CCG v2 as deterministic UTF-8-compatible pretty JSON with LF termination.
     ///
     /// # Errors
     ///
@@ -199,7 +199,7 @@ impl ContractCoherencyGraph {
             .map(|json| format!("sha256:{:x}", Sha256::digest(json.as_bytes())))
     }
 
-    /// Returns logical status within the semantics implemented by CCG v1.
+    /// Returns logical status within the semantics implemented by CCG v2.
     #[must_use]
     pub fn coherency_status(&self) -> CcgCoherencyStatus {
         if self.coherency_findings.is_empty() {
@@ -215,7 +215,7 @@ impl ContractCoherencyGraph {
         &self.coherency_findings
     }
 
-    /// Returns explicit semantic classes CCG v1 does not prove.
+    /// Returns explicit semantic classes CCG v2 does not prove.
     #[must_use]
     pub const fn unsupported_semantics(&self) -> &'static [&'static str] {
         CCG_UNSUPPORTED_SEMANTICS
@@ -466,6 +466,8 @@ struct CcgRequirement {
     feature: String,
     statement: String,
     declared_tests: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    external_verification: Option<ExternalVerificationIntent>,
     provenance: CcgSourceProvenance,
 }
 #[derive(Serialize)]
@@ -874,6 +876,7 @@ fn requirement_facts(graph: &ContractCoherencyGraph) -> Vec<CcgRequirement> {
             feature: requirement.feature().into(),
             statement: requirement.statement().into(),
             declared_tests: requirement.tests().to_vec(),
+            external_verification: requirement.external_verification(),
             provenance: provenance(requirement.provenance()),
         })
         .collect()

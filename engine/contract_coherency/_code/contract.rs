@@ -1,4 +1,4 @@
-//! Canonical Fortress Module Contract v2/v3 loading and CCG compilation.
+//! Canonical Fortress Module Contract v2/v3/v4 loading and CCG compilation.
 //!
 //! Canonical physical containment remains authoritative for colocated Modules.
 //! Project-authorized logical contracts supply only stable contract location and
@@ -25,15 +25,18 @@ use crate::module_index::CanonicalModuleIndex;
 use crate::standard::StandardBundle;
 
 /// Exact current Module Contract schema identity.
-pub const MODULE_CONTRACT_SCHEMA: &str = "urn:fortress:schema:v3:module-contract";
+pub const MODULE_CONTRACT_SCHEMA: &str = "urn:fortress:schema:v4:module-contract";
+
+/// Retained Module Contract v3 schema identity.
+pub const MODULE_CONTRACT_SCHEMA_V3: &str = "urn:fortress:schema:v3:module-contract";
 
 /// Exact legacy Module Contract v2 schema identity.
 pub const MODULE_CONTRACT_SCHEMA_V2: &str = "urn:fortress:schema:v2:module-contract";
 
 /// Current Module Contract schema version.
-pub const MODULE_CONTRACT_SCHEMA_VERSION: u16 = 3;
+pub const MODULE_CONTRACT_SCHEMA_VERSION: u16 = 4;
 
-/// A validated canonical Module Contract v2 or v3 document.
+/// A validated canonical Module Contract v2, v3 or v4 document.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct ModuleContract {
@@ -56,7 +59,7 @@ pub struct ModuleContract {
 }
 
 impl ModuleContract {
-    /// Parses, validates, and byte-checks one canonical v2 or v3 contract.
+    /// Parses, validates, and byte-checks one canonical v2, v3 or v4 contract.
     ///
     /// # Errors
     ///
@@ -72,7 +75,7 @@ impl ModuleContract {
             .get("schema_version")
             .and_then(serde_json::Value::as_u64)
             .and_then(|value| u16::try_from(value).ok());
-        if !matches!(version, Some(2 | MODULE_CONTRACT_SCHEMA_VERSION)) {
+        if !matches!(version, Some(2 | 3 | MODULE_CONTRACT_SCHEMA_VERSION)) {
             return Err(ModuleContractLoadError::UnsupportedSchemaVersion(version));
         }
         let contract: Self =
@@ -172,6 +175,7 @@ impl ModuleContract {
     fn validate_local(&self) -> Result<(), ModuleContractModelError> {
         let expected_schema = match self.schema_version {
             2 => MODULE_CONTRACT_SCHEMA_V2,
+            3 => MODULE_CONTRACT_SCHEMA_V3,
             MODULE_CONTRACT_SCHEMA_VERSION => MODULE_CONTRACT_SCHEMA,
             version => {
                 return Err(model_error(format!(
@@ -303,9 +307,14 @@ impl ModuleContract {
             for requirement in &feature.requirements {
                 stable_id("features.requirements.id", &requirement.id)?;
                 nonempty("features.requirements.statement", &requirement.statement)?;
-                if requirement.tests.is_empty() {
+                if requirement.external_verification.is_some() && self.schema_version < 4 {
+                    return Err(model_error(
+                        "external_verification requires Module Contract v4",
+                    ));
+                }
+                if requirement.tests.is_empty() && requirement.external_verification.is_none() {
                     return Err(model_error(format!(
-                        "requirement `{}` must declare test evidence",
+                        "requirement `{}` must declare test evidence or explicit v4 external verification intent",
                         requirement.id
                     )));
                 }
@@ -818,6 +827,16 @@ pub struct ContractRequirement {
     id: String,
     statement: String,
     tests: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    external_verification: Option<ExternalVerificationIntent>,
+}
+
+/// Authored execution obligation, separate from native selector binding and results.
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum ExternalVerificationIntent {
+    /// The Requirement explicitly needs successful externally bound execution.
+    SuccessfulExecution,
 }
 
 impl ContractRequirement {
@@ -837,6 +856,12 @@ impl ContractRequirement {
     #[must_use]
     pub fn tests(&self) -> &[String] {
         &self.tests
+    }
+
+    /// Returns authored native execution intent without asserting observed support.
+    #[must_use]
+    pub const fn external_verification(&self) -> Option<ExternalVerificationIntent> {
+        self.external_verification
     }
 }
 
@@ -1775,6 +1800,7 @@ pub struct ResolvedRequirement {
     feature: String,
     statement: String,
     tests: Vec<String>,
+    external_verification: Option<ExternalVerificationIntent>,
     provenance: ContractProvenance,
 }
 
@@ -1801,6 +1827,12 @@ impl ResolvedRequirement {
     #[must_use]
     pub fn tests(&self) -> &[String] {
         &self.tests
+    }
+
+    /// Returns authored native execution intent without asserting observed support.
+    #[must_use]
+    pub const fn external_verification(&self) -> Option<ExternalVerificationIntent> {
+        self.external_verification
     }
 
     /// Returns authored source provenance.
@@ -2219,6 +2251,7 @@ impl<'a> Resolver<'a> {
                         feature: feature.id.clone(),
                         statement: requirement.statement.clone(),
                         tests: requirement.tests.clone(),
+                        external_verification: requirement.external_verification,
                         provenance: provenance(
                             contract_path,
                             format!("/features/{feature_index}/requirements/{requirement_index}"),

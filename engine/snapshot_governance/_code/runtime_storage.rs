@@ -1042,6 +1042,19 @@ impl RunWorkspace {
         write_journal(&self.journal_path, &self.journal)
     }
 
+    /// Refuse completion while any tracked child still requires closure review.
+    /// This never clears a record or infers descendant closure from a timestamp.
+    ///
+    /// # Errors
+    /// Returns an error while a direct or unresolved owned child remains recorded.
+    pub fn ensure_children_closed(&self) -> io::Result<()> {
+        if self.journal.child_processes.is_empty() {
+            Ok(())
+        } else {
+            Err(invalid("owned child closure is unresolved"))
+        }
+    }
+
     /// Mark validation complete before a caller publishes its final pointer.
     ///
     /// # Errors

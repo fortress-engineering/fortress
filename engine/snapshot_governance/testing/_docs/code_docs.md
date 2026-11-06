@@ -113,3 +113,15 @@ The companion records fixed-hardware/source/report provenance, actual owner work
 Shares the benchmark's bounded consumer snapshot with the registered reader-pin control. Checked pre-admission counts eleven boxed canonical byte/path slices, the complete retained SourceView backing and map metadata, full context allocations and temporary comparison/record copies. Context size is counted through borrowed serialization before constructing its owned JSON value; source-manifest and availability digests retain the existing exact serialization through streaming hash writers. Scalar work, reasons and proposal allocations are separately admitted by the benchmark and reported with reconstructable capacity fields. Consumer scratch remains separate from Session model accounting; both conservative estimates are distinguished from measured process RSS. No semantic model, evaluator, production limit or artifact binding changes.
 
 The declaration consumer now compares the two application products in addition to the original fourteen execution-bound members, for sixteen current canonical products in every registered differential case. The frozen SESSION population and its historical fourteen-member record remain unchanged; the current consumer reports both counts and preserves all original one thousand mutations, source/context checks and restoration controls. Sessions without supplied suite evidence retain their eleven semantic projections. This is declaration integration coverage, not reopening SESSION or certifying performance.
+
+### [`provider_ingest.rs`](../_code/provider_ingest.rs)
+
+R20 raw XML and SARIF controls preserve native identities, unknown execution, exact payloads and bounded parsing while refusing ambiguous or malformed reports.
+
+### [`provider_fixture.rs`](../_code/provider_fixture.rs)
+
+Shares an atomically claimed owned native Python repository and trusted bounded fixture runner. Original src/math_ops.py and tests/test_math.py stay in place under logical ownership; an actual unittest assertion supplies the independent mathematical expected result.
+
+R20-009 through R20-011 additionally verify exact retained replay with a project-import sentinel, actual native unittest execution only after matching trust, fresh-only assessment with incomplete environment closure, missing-cache obligations, and refusal of completion while an actual reaped child remains recorded, followed by explicit owner-confirmed closure and complete owned cleanup.
+
+R20-012 keeps an authored external obligation mandatory in the Rust-only qualification port even when a genuine observed legacy Rust Test ID is mapped and synthetic input alleges a successful suite. The synthetic record is an adversarial unit input, never actual execution evidence. Native requirement assessment through the separately trusted actual runner remains independently tested by R20-010.

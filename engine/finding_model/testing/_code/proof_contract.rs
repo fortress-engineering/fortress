@@ -12,6 +12,68 @@ fn references() -> BTreeSet<String> {
         .collect()
 }
 
+/// `T-AF-FINDING-MODEL-0001-R01-004`
+/// Fortress requirement: AF-FINDING-MODEL-0001-R01
+#[test]
+fn accepted_false_and_missing_premises_preserve_all_any_truth_tables() {
+    use fortress_core::proof::ProofState::{Refuted as F, Satisfied as T, Unknown as U};
+    use std::collections::BTreeMap;
+    let table = [
+        (T, T, T, T),
+        (T, F, F, T),
+        (T, U, U, T),
+        (F, T, F, T),
+        (F, F, F, F),
+        (F, U, F, U),
+        (U, T, U, T),
+        (U, F, F, U),
+        (U, U, U, U),
+    ];
+    for (left, right, all, any) in table {
+        let states = BTreeMap::from([("evidence:a".into(), left), ("evidence:b".into(), right)]);
+        for (operator, expected) in [(ProofOperator::All, all), (ProofOperator::Any, any)] {
+            let graph = ProofGraph::new(
+                "root",
+                vec![
+                    leaf("a", "evidence:a"),
+                    leaf("b", "evidence:b"),
+                    ProofExpression {
+                        node_id: "root".into(),
+                        operator,
+                        required_refs: vec![],
+                        children: vec!["a".into(), "b".into()],
+                    },
+                ],
+            );
+            assert_eq!(graph.evaluate(&references(), &states).unwrap(), expected);
+            let accepted = states
+                .iter()
+                .filter(|(_, state)| **state == T)
+                .map(|(id, _)| id.clone())
+                .collect();
+            assert_eq!(
+                graph.is_satisfied(&references(), &accepted).unwrap(),
+                expected == T
+            );
+        }
+    }
+    let graph = ProofGraph::new(
+        "root",
+        vec![ProofExpression {
+            node_id: "root".into(),
+            operator: ProofOperator::Leaf,
+            required_refs: vec![EvidenceReference::new("evidence:a").unwrap()],
+            children: vec![],
+        }],
+    );
+    assert_eq!(graph.evaluate(&references(), &BTreeMap::new()).unwrap(), U);
+    assert!(
+        graph
+            .evaluate(&references(), &BTreeMap::from([("foreign".into(), T)]))
+            .is_err()
+    );
+}
+
 fn leaf(id: &str, reference: &str) -> ProofExpression {
     ProofExpression {
         node_id: id.to_owned(),

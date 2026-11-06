@@ -20,4 +20,4 @@ Any accepted malformed graph or rejected valid graph fails its owning Test ID.
 
 ### [`proof_contract.rs`](../_code/proof_contract.rs)
 
-Exercises acyclicity, reference resolution, canonical ordering, and nonempty support.
+Exercises acyclicity, reference resolution, canonical ordering, and nonempty support, all nine accepted true/false/unknown pairs for both ALL and ANY, preservation of Boolean sufficiency, omitted states and foreign evidence refusal.

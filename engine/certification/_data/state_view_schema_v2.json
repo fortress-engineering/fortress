@@ -1,0 +1,335 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v2:state-view",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "source_ref",
+    "status",
+    "detail",
+    "application"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:derived:v2:state-view"
+    },
+    "schema_version": {
+      "const": 2
+    },
+    "source_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "status": {
+      "enum": [
+        "UNGOVERNED",
+        "INVALID",
+        "PARTIAL",
+        "NEGATIVE",
+        "COMPLETE"
+      ]
+    },
+    "detail": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "application": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "declaration",
+            "assessment",
+            "evidence",
+            "obligations",
+            "project",
+            "evidence_inputs"
+          ],
+          "properties": {
+            "declaration": {
+              "$ref": "urn:fortress:derived:v1:conformance-declaration"
+            },
+            "assessment": {
+              "$ref": "urn:fortress:derived:v2:profile-assessment"
+            },
+            "evidence": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "id",
+                  "source_ref",
+                  "binding",
+                  "scope_ref",
+                  "evidence_class",
+                  "proposition",
+                  "payload_digest",
+                  "assumptions",
+                  "valid_until"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "source_ref": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "binding": {
+                    "$ref": "urn:fortress:derived:v1:conformance-declaration#/$defs/binding"
+                  },
+                  "scope_ref": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "evidence_class": {
+                    "enum": [
+                      "AUTHORITY",
+                      "OBSERVATION",
+                      "STATIC_PROOF",
+                      "EXECUTED_TEST",
+                      "EXECUTED_SCENARIO",
+                      "TRUSTED_ASSERTION",
+                      "DEFEATER",
+                      "AGGREGATE"
+                    ]
+                  },
+                  "proposition": {
+                    "enum": [
+                      "NO_SUPPORTED_VIOLATION",
+                      "SUPPORTED_VIOLATION",
+                      "EXECUTION_SUCCEEDED",
+                      "OBSERVATION_ONLY",
+                      "UNAVAILABLE",
+                      "EXECUTION_FAILED"
+                    ]
+                  },
+                  "payload_digest": {
+                    "type": "string",
+                    "pattern": "^sha256:[0-9a-f]{64}$"
+                  },
+                  "assumptions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "uniqueItems": true
+                  },
+                  "valid_until": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                }
+              },
+              "uniqueItems": true
+            },
+            "obligations": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "id",
+                  "scope_ref",
+                  "predicate",
+                  "evidence_class",
+                  "authenticated_producer_required",
+                  "proof"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "scope_ref": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "predicate": {
+                    "enum": [
+                      "RULE_CHECK",
+                      "CONFORMANCE",
+                      "EVALUABILITY",
+                      "SUCCESSFUL_EXECUTION"
+                    ]
+                  },
+                  "evidence_class": {
+                    "enum": [
+                      "AUTHORITY",
+                      "OBSERVATION",
+                      "STATIC_PROOF",
+                      "EXECUTED_TEST",
+                      "EXECUTED_SCENARIO",
+                      "TRUSTED_ASSERTION",
+                      "DEFEATER",
+                      "AGGREGATE"
+                    ]
+                  },
+                  "authenticated_producer_required": {
+                    "type": "boolean"
+                  },
+                  "proof": {
+                    "anyOf": [
+                      {
+                        "$ref": "urn:fortress:schema:v1:proof-graph"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                }
+              },
+              "uniqueItems": true
+            },
+            "project": {
+              "type": "string",
+              "minLength": 1
+            },
+            "evidence_inputs": {
+              "$ref": "urn:fortress:derived:v1:evidence-input-set"
+            },
+            "provider_requirements": {
+              "type": "array",
+              "maxItems": 100000,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "requirement_id",
+                  "envelope_digest",
+                  "inventory_digest",
+                  "members",
+                  "decision",
+                  "blockers"
+                ],
+                "properties": {
+                  "requirement_id": {
+                    "type": "string",
+                    "maxLength": 65536
+                  },
+                  "envelope_digest": {
+                    "type": "string",
+                    "pattern": "^sha256:[0-9a-f]{64}$"
+                  },
+                  "inventory_digest": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^sha256:[0-9a-f]{64}$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "members": {
+                    "type": "array",
+                    "maxItems": 100000,
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "namespace",
+                        "package",
+                        "target",
+                        "qualified_name"
+                      ],
+                      "properties": {
+                        "namespace": {
+                          "enum": [
+                            "NATIVE_QUALIFIED",
+                            "GOVERNED_TEST_ID"
+                          ]
+                        },
+                        "package": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 65536
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "target": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 65536
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "qualified_name": {
+                          "type": "string",
+                          "maxLength": 65536
+                        }
+                      }
+                    }
+                  },
+                  "decision": {
+                    "enum": [
+                      "SATISFIED",
+                      "NOT_SATISFIED",
+                      "NOT_EVALUABLE",
+                      "INVALID"
+                    ]
+                  },
+                  "blockers": {
+                    "type": "array",
+                    "maxItems": 100000,
+                    "items": {
+                      "enum": [
+                        "WRONG_BINDING",
+                        "INCOMPLETE_INVENTORY",
+                        "INCOMPLETE_RUN",
+                        "WRONG_PROVIDER",
+                        "INCOMPATIBLE_EVIDENCE_CLASS",
+                        "UNTRUSTED_ENVELOPE",
+                        "PRODUCER_NOT_AUTHENTICATED",
+                        "ASSUMPTION_NOT_ACCEPTED",
+                        "FRESH_EXECUTION_REQUIRED",
+                        "STALE_EXECUTION",
+                        "SELECTOR_REQUIRES_REVIEW",
+                        "EXECUTION_FAILED"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "$defs": {}
+}

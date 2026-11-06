@@ -216,7 +216,12 @@ path = "../snapshot_governance/testing/_code/test_traceability_001.rs"
 name = "test_boundary_001"
 path = "../snapshot_governance/testing/_code/test_boundary_001.rs"
 
+[[test]]
+name = "provider"
+path = "../certification/testing/_code/provider.rs"
+
 [dependencies]
+quick-xml = { version = "=0.42.0", default-features = false }
 cpu-time = "=1.0.0"
 getrandom = "0.3"
 memory-stats = { version = "=1.2.0", features = ["always_use_statm"] }
@@ -256,3 +261,7 @@ path = "../behavioral_realization/testing/_code/lib.rs"
 [[test]]
 name = "declaration"
 path = "../certification/testing/_code/declaration.rs"
+
+[[test]]
+name = "provider_ingest"
+path = "../snapshot_governance/testing/_code/provider_ingest.rs"

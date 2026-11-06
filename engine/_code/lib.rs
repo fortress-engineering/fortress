@@ -104,3 +104,12 @@ pub mod testing_boundary;
 pub mod traceability;
 #[path = "../standard_registry/_code/wire.rs"]
 pub mod wire;
+
+#[path = "../certification/_code/provider.rs"]
+pub mod provider;
+
+#[path = "../certification/_code/provider_inputs.rs"]
+pub mod provider_inputs;
+
+#[path = "../snapshot_governance/_code/evidence_ingest.rs"]
+pub mod evidence_ingest;

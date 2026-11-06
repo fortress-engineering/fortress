@@ -73,3 +73,31 @@ Neutral ungoverned/invalid/partial/negative/complete endpoints for later compari
 ### [`generation_manifest_schema_v3.json`](../_data/generation_manifest_schema_v3.json)
 
 Layout-v3 immutable quality/application publication; APPLICATION binds exact profile/scope/context selection. Previous schema/layout assets remain immutable.
+
+### [`profile_assessment_schema_v2.json`](../_data/profile_assessment_schema_v2.json)
+
+Binds the complete selected provider input set and distinguishes accepted verification failure from a Module policy violation. The v1 reader/schema retain their original meanings and bytes.
+
+### [`provider_evidence_schema_v1.json`](../_data/provider_evidence_schema_v1.json)
+
+Closed normalized provider protocol with exact raw payload, native or governed namespace, inventory, attempts, invocation scope, producer claims and explicit unknown execution dependencies.
+
+### [`provider_bindings_schema_v1.json`](../_data/provider_bindings_schema_v1.json)
+
+Authored mappings name existing external-verification Requirements and uniquely selected original native tests; they confer no host trust.
+
+### [`evidence_inputs_schema_v1.json`](../_data/evidence_inputs_schema_v1.json)
+
+Complete selected content identities bind application source, ProgramContext and authority independently of cache availability.
+
+### [`provider_admission_schema_v1.json`](../_data/provider_admission_schema_v1.json)
+
+Explicit external host admission format. It cannot assert authentication or fresh execution; the CLI refuses physical in-candidate policy files.
+
+### [`state_view_schema_v2.json`](../_data/state_view_schema_v2.json)
+
+Current neutral endpoint with Assessment2 and exact evidence inputs; StateView1 retains only historical Assessment1 semantics.
+
+### [`generation_manifest_schema_v4.json`](../_data/generation_manifest_schema_v4.json)
+
+Current immutable generation metadata binds ControlLayout4; application selection includes the exact provider input digest. Historical generation editions retain their bytes and meanings.

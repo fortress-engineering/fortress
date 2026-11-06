@@ -69,6 +69,12 @@ pub struct ApplicationAssessment {
     pub evidence: Vec<AssessmentEvidence>,
     /// Complete expected obligations for independent replay against trusted authority.
     pub obligations: Vec<ProfileObligation>,
+    /// Exact selected provider identities; absent only in historical reporting.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub evidence_inputs: Option<crate::provider_inputs::EvidenceInputSet>,
+    /// Explicit native selection provenance, separate from software declarations.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub provider_requirements: Vec<crate::provider_inputs::ProviderRequirementReport>,
 }
 
 /// Composes application reporting from typed upstream results and selected authority.
@@ -84,6 +90,27 @@ pub fn compose_application(
     rules: &[ApplicationRuleInput],
     governance: &FindingGovernanceEvaluation,
     artifacts: Vec<DeclarationArtifact>,
+) -> Result<ApplicationAssessment, DeclarationError> {
+    compose_application_with_providers(
+        project, binding, profiles, model, rules, governance, artifacts, None,
+    )
+}
+
+/// Composes source-only declarations and separately admitted external obligations.
+/// Provider selection cannot alter raw software truth or omit existing obligations.
+///
+/// # Errors
+/// Rejects substituted provider input bindings or inconsistent evidence.
+#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
+pub fn compose_application_with_providers(
+    project: &str,
+    binding: DeclarationBinding,
+    profiles: &ResolvedProfiles,
+    model: &SemanticConformanceModel,
+    rules: &[ApplicationRuleInput],
+    governance: &FindingGovernanceEvaluation,
+    artifacts: Vec<DeclarationArtifact>,
+    providers: Option<&mut crate::provider_inputs::ApplicationProviderEvidence>,
 ) -> Result<ApplicationAssessment, DeclarationError> {
     let policy = crate::profile::ApplicationAssessmentPolicy::installed()
         .map_err(|e| DeclarationError::Invalid(e.to_string()))?;
@@ -392,6 +419,34 @@ pub fn compose_application(
         refs.sort();
         refs.dedup();
     }
+    let mut evidence_inputs = None;
+    let mut provider_requirements = Vec::new();
+    if let Some(providers) = providers {
+        if providers.input_set.binding != binding {
+            return crate::declaration::invalid("provider input binding differs from application");
+        }
+        evidence_inputs = Some(providers.input_set.clone());
+        obligations.append(&mut providers.obligations);
+        for resolution in &mut providers.resolutions {
+            provider_requirements.push(crate::provider_inputs::ProviderRequirementReport::from(
+                &*resolution,
+            ));
+            evidence.append(&mut resolution.evidence);
+            acceptance
+                .verified_payloads
+                .append(&mut resolution.acceptance.verified_payloads);
+            acceptance
+                .verified_metadata
+                .append(&mut resolution.acceptance.verified_metadata);
+            acceptance
+                .authenticated_evidence
+                .append(&mut resolution.acceptance.authenticated_evidence);
+            acceptance
+                .accepted_assumptions
+                .append(&mut resolution.acceptance.accepted_assumptions);
+        }
+        provider_requirements.sort_by(|a, b| a.requirement_id.cmp(&b.requirement_id));
+    }
     obligations.sort_by(|a, b| a.id.cmp(&b.id));
     evidence.sort_by(|a, b| a.id.cmp(&b.id));
     // A shared premise may support multiple claims with different propositions.
@@ -422,8 +477,25 @@ pub fn compose_application(
         profile_digest,
         obligations: obligations.clone(),
     };
-    let assessment = ProfileAssessment::evaluate(&declaration, &expected, &evidence, &acceptance)?;
+    let input_digest = evidence_inputs
+        .as_ref()
+        .map(crate::provider_inputs::EvidenceInputSet::digest)
+        .transpose()
+        .map_err(|e| DeclarationError::Invalid(e.to_string()))?
+        .map_or_else(
+            || crate::assessment::empty_evidence_input_digest(&expected.binding),
+            Ok,
+        )?;
+    let assessment = ProfileAssessment::evaluate_with_inputs(
+        &declaration,
+        &expected,
+        &evidence,
+        &acceptance,
+        &input_digest,
+    )?;
     Ok(ApplicationAssessment {
+        evidence_inputs,
+        provider_requirements,
         project: project.into(),
         declaration,
         assessment,

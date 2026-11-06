@@ -34,6 +34,8 @@ Verifies production Module profiles, physical LCA, Testing-topology exclusion, a
 
 Verifies Module Contract v2/v3 compatibility, explicit effect/capability policy, causal direct/transitive findings, claim-relative UNKNOWN coverage, independent panic/unsafe/residual targets, deterministic identity, and indexed 1,000-policy/10,000-effect scale.
 
+The original seven-case corpus and regression ledger remain byte-identical. Their whole-output pins use a guarded test-only historical CCG1 digest projection after independently checking the actual CCG2 input reference. Only that bound scalar is reconstructed; every verdict, finding, identity, proof, uncertainty and other provenance byte still matches the original pin. Native intent cannot use this projection, and no production historical reader is introduced. Scale populations and correctness assertions remain mandatory; elapsed-time thresholds are experimental concerns outside certification.
+
 ### [`self_architecture.rs`](../_code/self_architecture.rs)
 
 Compiles Fortress's live CCG and verifies that the parent architecture projection remains acyclic.

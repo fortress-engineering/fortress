@@ -64,8 +64,16 @@ Extends the same root project authority with explicit versioned governance profi
 
 ### [`control_layout_v3.json`](../_data/control_layout_v3.json)
 
-Current closed control registry adds two Certification-owned APPLICATION members. Editions v1/v2 remain exact historical assets, including their original SHA-256 byte identities.
+Retained third-edition closed control registry adds two Certification-owned APPLICATION members. Editions v1/v2/v3 remain exact historical assets, including their original SHA-256 byte identities.
 
 ### [`control_layout_schema_v3.json`](../_data/control_layout_schema_v3.json)
 
 Validates the third closed control-layout edition, including its two Certification-owned application members and exact fixed role registry. Historical layout schemas remain unchanged.
+
+### [`control_layout_v4.json`](../_data/control_layout_v4.json)
+
+Adds required authored verification bindings and the exact content-addressed imports/<sha256>/{envelope.json,payload.bin} grammar. Imported data is nonrecursive and never implicit authority. Every prior layout dataset is retained unchanged.
+
+### [`control_layout_schema_v4.json`](../_data/control_layout_schema_v4.json)
+
+Validates the fourth fixed control-layout edition and its closed authored role vocabulary.

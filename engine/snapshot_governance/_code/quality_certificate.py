@@ -47,7 +47,7 @@ LEGACY_CONFIG_PATH = "_data/project.json"
 EVIDENCE_ROOT = "__fortress/evidence"
 CURRENT_INDEX_PATH = "__fortress/evidence/current.json"
 GENERATIONS_PATH = "__fortress/evidence/generations"
-CONTROL_LAYOUT_PATH = "engine/project_model/_data/control_layout_v3.json"
+CONTROL_LAYOUT_PATH = "engine/project_model/_data/control_layout_v4.json"
 CERTIFICATE_ID = "quality-certificate"
 CERTIFICATE_MEMBER = "quality_certificate.json"
 SCHEMA_ID = "urn:fortress:derived:v3:local-quality-certificate"
@@ -145,6 +145,7 @@ REQUIRED_GATE_IDS = (
     "FORMAT",
     "FULL_PROFILE_CERTIFICATION",
     "PROJECT_FILING_SYSTEM",
+    "PROVIDER_EVIDENCE",
     "RUSTDOC",
     "SCHEMA_AND_STANDARD",
     "SCHEMA_ARTIFACTS",
@@ -274,20 +275,36 @@ def repository_files(root: Path) -> list[str]:
 
 
 def repository_fingerprint(root: Path) -> tuple[str, int]:
+    return repository_source_identities(root)[0]
+
+
+def repository_source_identities(root: Path) -> tuple[tuple[str, int], str]:
+    """Bind local quality and native subject domains to the same observed bytes.
+
+    The local fingerprint retains its existing path/hash framing. Native
+    Certification uses big-endian u64 byte lengths and original content.
+    These identities describe one source set but are not interchangeable.
+    """
     digest = hashlib.sha256()
+    native = hashlib.sha256()
     paths = repository_files(root)
     for relative in paths:
         path = root / Path(relative)
         if not path.is_file():
             raise CertificateError(f"certificate input is not a file: {relative}")
         content = path.read_bytes()
-        digest.update(relative.encode("utf-8"))
+        encoded_path = relative.encode("utf-8")
+        digest.update(encoded_path)
         digest.update(b"\0")
         digest.update(str(len(content)).encode("ascii"))
         digest.update(b"\0")
         digest.update(hashlib.sha256(content).digest())
         digest.update(b"\n")
-    return "sha256:" + digest.hexdigest(), len(paths)
+        native.update(len(encoded_path).to_bytes(8, "big"))
+        native.update(encoded_path)
+        native.update(len(content).to_bytes(8, "big"))
+        native.update(content)
+    return ("sha256:" + digest.hexdigest(), len(paths)), "sha256:" + native.hexdigest()
 
 
 def derived_cache_root(root: Path) -> Path:
@@ -368,9 +385,9 @@ def selection_key() -> str:
     )
 
 
-def control_layout_digest(root: Path, version: int = 3) -> str:
+def control_layout_digest(root: Path, version: int = 4) -> str:
     """Bind publications to the installed declarative role registry."""
-    if version not in (1, 2, 3):
+    if version not in (1, 2, 3, 4):
         raise CertificateError("unsupported control layout edition")
     path = root / f"engine/project_model/_data/control_layout_v{version}.json"
     return sha256_bytes(path.read_bytes())
@@ -437,8 +454,8 @@ def build_generation_manifest(
     )
     descriptors.sort(key=lambda item: item["id"])
     return {
-        "$schema": "urn:fortress:derived:v3:assessment-generation-manifest",
-        "schema_version": 3,
+        "$schema": "urn:fortress:derived:v4:assessment-generation-manifest",
+        "schema_version": 4,
         "generation_kind": "LOCAL_QUALITY",
         "project": "PF-FORTRESS",
         "profile": PROFILE_ID,
@@ -448,7 +465,7 @@ def build_generation_manifest(
             "file_count": certificate["source"]["file_count"],
         },
         "control_layout": {
-            "id": "fortress-control-layout-v3",
+            "id": "fortress-control-layout-v4",
             "digest": control_layout_digest(root),
         },
         "artifacts": descriptors,
@@ -912,6 +929,12 @@ def _issue(root: Path, workspace: RunWorkspace) -> dict[str, Any]:
             "--all-features",
             "--test",
             "self_model",
+            "--test",
+            "repository_grammar",
+            "--test",
+            "semantic_conformance",
+            "--test",
+            "cli",
         ]
         run_command(root, self_model, environment, workspace=workspace)
         pass_gate(gates, "SELF_MODEL", self_model)
@@ -926,6 +949,11 @@ def _issue(root: Path, workspace: RunWorkspace) -> dict[str, Any]:
             "verified-bfg": temporary / "verified-bfg.json",
         }
         executable = certification_executable(root, base, environment, workspace)
+        provider_replay = [sys.executable, "engine/certification/testing/_code/provider_conformance.py",
+                           "--executable", str(executable), "--workdir", str(temporary / "provider-replay"),
+                           "--report", str(temporary / "provider-replay-report.json")]
+        run_command(root, provider_replay, environment, workspace=workspace)
+        pass_gate(gates, "PROVIDER_EVIDENCE", provider_replay)
         certify = [
             str(executable),
             "certify",
@@ -1189,7 +1217,7 @@ def load_selected_generation(
         "generation manifest",
     )
     version = manifest["schema_version"]
-    if type(version) is not int or version not in ((1, 2, 3) if historical else (3,)) or manifest["$schema"] != f"urn:fortress:derived:v{version}:assessment-generation-manifest" or manifest["generation_kind"] != "LOCAL_QUALITY" or manifest["project"] != "PF-FORTRESS" or manifest["profile"] != PROFILE_ID or manifest["selection_key"] != selection_key():
+    if type(version) is not int or version not in ((1, 2, 3, 4) if historical else (4,)) or manifest["$schema"] != f"urn:fortress:derived:v{version}:assessment-generation-manifest" or manifest["generation_kind"] != "LOCAL_QUALITY" or manifest["project"] != "PF-FORTRESS" or manifest["profile"] != PROFILE_ID or manifest["selection_key"] != selection_key():
         raise CertificateError("selected generation manifest identity is unsupported")
     if manifest["control_layout"] != {"id": f"fortress-control-layout-v{version}", "digest": control_layout_digest(root, version)}:
         raise CertificateError("selected generation control layout is stale or invalid")

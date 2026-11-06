@@ -11,8 +11,10 @@ use crate::declaration::{
 };
 use crate::proof::ProofGraph;
 
-/// Initial profile-assessment schema, separate from historical certification.
-pub const ASSESSMENT_SCHEMA: &str = "urn:fortress:derived:v1:profile-assessment";
+/// Current exact-profile assessment with explicit selected evidence inputs.
+pub const ASSESSMENT_SCHEMA: &str = "urn:fortress:derived:v2:profile-assessment";
+/// Retained initial assessment meaning and byte representation.
+pub const ASSESSMENT_SCHEMA_V1: &str = "urn:fortress:derived:v1:profile-assessment";
 
 /// Closed assessment algebra; valid reporting does not imply satisfaction.
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -42,6 +44,8 @@ pub enum EvidenceProposition {
     SupportedViolation,
     /// A required verification execution completed successfully.
     ExecutionSucceeded,
+    /// Accepted required verification execution actually failed.
+    ExecutionFailed,
 }
 
 /// Immutable evidence metadata; none of its strings authenticate its producer.
@@ -166,6 +170,8 @@ pub enum AssessmentBlockerCode {
     IncompatibleEvidence,
     /// The proof graph is structurally invalid.
     InvalidProof,
+    /// Admitted current verification failed, separate from a Module policy violation.
+    ExecutionFailed,
 }
 
 /// Complete outcome of one required obligation.
@@ -201,11 +207,20 @@ pub struct ProfileAssessment {
     pub decision: AssessmentDecision,
     /// Digest of explicit time, admitted payloads, authentication and assumptions.
     pub acceptance_policy_digest: String,
+    /// Exact selected provider input set; absent only in historical v1.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub evidence_input_digest: Option<String>,
     /// Structural authority blockers also apply to an empty obligation set.
     pub blockers: Vec<AssessmentBlockerCode>,
 }
 
 impl ProfileAssessment {
+    /// Exact wire edition; historical readers never infer adjacent meanings.
+    #[must_use]
+    pub const fn schema_version(&self) -> u16 {
+        self.schema_version
+    }
+
     /// Assesses raw reporting against external authority and admitted proof leaves.
     ///
     /// # Errors
@@ -216,7 +231,32 @@ impl ProfileAssessment {
         evidence: &[AssessmentEvidence],
         acceptance: &EvidenceAcceptancePolicy,
     ) -> Result<Self, DeclarationError> {
+        Self::evaluate_with_inputs(
+            declaration,
+            expected,
+            evidence,
+            acceptance,
+            &empty_evidence_input_digest(&expected.binding)?,
+        )
+    }
+
+    /// Evaluates the complete trusted obligations against an explicit exact
+    /// provider input identity. This argument is supplied by the host, not
+    /// reconstructed from a candidate's favorable subset.
+    ///
+    /// # Errors
+    /// Rejects malformed declarations, proof identities and input-set digests.
+    pub fn evaluate_with_inputs(
+        declaration: &ConformanceDeclaration,
+        expected: &ExpectedProfileAssessment,
+        evidence: &[AssessmentEvidence],
+        acceptance: &EvidenceAcceptancePolicy,
+        evidence_input_digest: &str,
+    ) -> Result<Self, DeclarationError> {
         declaration.validate()?;
+        if !is_digest(evidence_input_digest) {
+            return crate::declaration::invalid("invalid provider input identity");
+        }
         strictly_increasing(expected.obligations.iter().map(|o| &o.id))?;
         strictly_increasing(evidence.iter().map(|e| &e.id))?;
         if !is_digest(&expected.profile_digest) {
@@ -277,7 +317,7 @@ impl ProfileAssessment {
         });
         Ok(Self {
             schema: ASSESSMENT_SCHEMA.into(),
-            schema_version: 1,
+            schema_version: 2,
             declaration_digest: declaration.digest()?,
             profile_digest: expected.profile_digest.clone(),
             binding: expected.binding.clone(),
@@ -291,6 +331,7 @@ impl ProfileAssessment {
                 "sha256:{:x}",
                 Sha256::digest(canonical(acceptance)?)
             ),
+            evidence_input_digest: Some(evidence_input_digest.to_owned()),
             blockers: if mismatch {
                 vec![AssessmentBlockerCode::TrustedManifestMismatch]
             } else {
@@ -308,7 +349,7 @@ impl ProfileAssessment {
         canonical(self)
     }
 
-    /// Reads a strict v1 assessment; integrity alone is not authority or replay.
+    /// Reads strict historical v1/current v2; integrity is not authority or replay.
     ///
     /// # Errors
     /// Rejects malformed public JSON and inconsistent aggregate decisions.
@@ -324,7 +365,25 @@ impl ProfileAssessment {
     /// # Errors
     /// Rejects malformed or inconsistent records.
     pub fn validate(&self) -> Result<(), DeclarationError> {
-        if self.schema != ASSESSMENT_SCHEMA || self.schema_version != 1 {
+        let header_valid = match self.schema_version {
+            1 => {
+                self.schema == ASSESSMENT_SCHEMA_V1
+                    && self.evidence_input_digest.is_none()
+                    && !self
+                        .blockers
+                        .contains(&AssessmentBlockerCode::ExecutionFailed)
+                    && self
+                        .obligations
+                        .iter()
+                        .all(|o| !o.blockers.contains(&AssessmentBlockerCode::ExecutionFailed))
+            }
+            2 => {
+                self.schema == ASSESSMENT_SCHEMA
+                    && self.evidence_input_digest.as_deref().is_some_and(is_digest)
+            }
+            _ => false,
+        };
+        if !header_valid {
             return crate::declaration::invalid("unsupported assessment");
         }
         for id in [
@@ -458,7 +517,7 @@ fn assess_obligation(
                 .map(crate::proof::EvidenceReference::id)
         })
         .collect::<BTreeSet<_>>();
-    let mut accepted = BTreeSet::new();
+    let mut accepted = BTreeMap::new();
     let mut rejection = AssessmentBlockerCode::RequiredEvidenceMissing;
     for leaf in evidence {
         if !required_refs.contains(leaf.id.as_str()) {
@@ -476,7 +535,10 @@ fn assess_obligation(
                 EvidenceProposition::NoSupportedViolation | EvidenceProposition::SupportedViolation
             ),
             ObligationPredicate::SuccessfulExecution => {
-                leaf.proposition == EvidenceProposition::ExecutionSucceeded
+                matches!(
+                    leaf.proposition,
+                    EvidenceProposition::ExecutionSucceeded | EvidenceProposition::ExecutionFailed
+                )
             }
         };
         let reason = if leaf.binding.context_ref != expected.binding.context_ref {
@@ -520,11 +582,35 @@ fn assess_obligation(
         if let Some(code) = reason {
             rejection = code;
         } else {
-            accepted.insert(leaf.id.clone());
+            accepted.insert(
+                leaf.id.clone(),
+                if obligation.predicate == ObligationPredicate::SuccessfulExecution
+                    && leaf.proposition == EvidenceProposition::ExecutionFailed
+                {
+                    crate::proof::ProofState::Refuted
+                } else {
+                    crate::proof::ProofState::Satisfied
+                },
+            );
         }
     }
-    if !proof.is_satisfied(known, &accepted).unwrap_or(false) {
-        return result(AssessmentDecision::NotEvaluable, Some(rejection));
+    match proof.evaluate(known, &accepted) {
+        Ok(crate::proof::ProofState::Satisfied) => {}
+        Ok(crate::proof::ProofState::Refuted) => {
+            return result(
+                AssessmentDecision::NotSatisfied,
+                Some(AssessmentBlockerCode::ExecutionFailed),
+            );
+        }
+        Ok(crate::proof::ProofState::Unknown) => {
+            return result(AssessmentDecision::NotEvaluable, Some(rejection));
+        }
+        Err(_) => {
+            return result(
+                AssessmentDecision::Invalid,
+                Some(AssessmentBlockerCode::InvalidProof),
+            );
+        }
     }
     if matches!(
         obligation.predicate,
@@ -543,4 +629,21 @@ fn assess_obligation(
             Some(AssessmentBlockerCode::RequiredEvidenceMissing),
         )
     }
+}
+
+/// Exact empty provider input identity, preserving source/context/authority binding.
+///
+/// # Errors
+/// Propagates a public canonical serialization failure.
+pub fn empty_evidence_input_digest(
+    binding: &DeclarationBinding,
+) -> Result<String, DeclarationError> {
+    Ok(format!(
+        "sha256:{:x}",
+        Sha256::digest(canonical(&(
+            "provider-evidence-input-set-v1",
+            binding,
+            Vec::<serde_json::Value>::new()
+        ))?)
+    ))
 }

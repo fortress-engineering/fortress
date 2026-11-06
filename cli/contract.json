@@ -194,7 +194,17 @@
           "id": "TF-CLI-0001-R19",
           "statement": "Declare, assess and state-view render the same Certification-owned application artifacts and neutral endpoints; a valid negative report never implies successful implementation qualification or fabricated verification execution.",
           "tests": [
-            "T-TF-CLI-0001-R19-001"
+            "T-TF-CLI-0001-R19-001",
+            "T-TF-CLI-0001-R19-002"
+          ]
+        },
+        {
+          "id": "TF-CLI-0001-R20",
+          "statement": "Native provider normalization reads bounded original JUnit or SARIF reports without project execution; explicit assessment selection cannot load host admission authority from the physical candidate repository, authenticate unsigned producer names, or manufacture fresh execution receipts.",
+          "tests": [
+            "T-TF-CLI-0001-R20-001",
+            "T-TF-CLI-0001-R20-002",
+            "T-TF-CLI-0001-R20-003"
           ]
         }
       ]

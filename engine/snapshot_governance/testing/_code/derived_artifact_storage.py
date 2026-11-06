@@ -95,10 +95,25 @@ class DerivedArtifactStorageTests(unittest.TestCase):
             "selections":[dict(selection_key=quality.selection_key(),generation_digest=quality_generation)]}
         index.write_bytes(quality.canonical_pretty_json(prior))
         old=root/quality.GENERATIONS_PATH/("a"*64)/"manifest.json";old.parent.mkdir(parents=True);old.write_bytes(b"retained historical bytes")
-        declaration=dict(binding=dict(subject_ref="sha256:"+"b"*64,context_ref="sha256:"+"c"*64,authority_ref="sha256:"+"d"*64),raw_truth="SUPPORTED_VIOLATION")
-        report=dict(source_ref=declaration["binding"]["subject_ref"],application=dict(project="PF-FIXTURE",declaration=declaration,
-            assessment=dict(profile_digest="sha256:"+"e"*64,decision="NOT_SATISFIED")))
-        frozen=quality.repository_fingerprint(root)
+        (root/"_data").mkdir()
+        (root/"_data/évidence.json").write_text('{"source":"λ"}\n',encoding="utf-8")
+        frozen,native_subject=quality.repository_source_identities(root)
+        self.assertNotEqual(frozen[0],native_subject)
+        declaration=dict(binding=dict(subject_ref=native_subject,context_ref="sha256:"+"c"*64,authority_ref="sha256:"+"d"*64),raw_truth="SUPPORTED_VIOLATION")
+        inputs={"$schema":"urn:fortress:derived:v1:evidence-input-set","schema_version":1,"binding":declaration["binding"],"selected":[]}
+        input_digest=quality.sha256_bytes(application.canonical(["provider-evidence-input-set-v1",inputs["binding"],inputs["selected"]]))
+        report=dict(source_ref=declaration["binding"]["subject_ref"],application=dict(project="PF-FIXTURE",declaration=declaration,evidence_inputs=inputs,
+            assessment=dict(binding=declaration["binding"],declaration_digest=quality.sha256_bytes(application.canonical(declaration)),
+                evidence_input_digest=input_digest,profile_digest="sha256:"+"e"*64,decision="NOT_SATISFIED")))
+        wrong=dict(report,source_ref="sha256:"+"b"*64)
+        with self.assertRaisesRegex(application.quality.CertificateError,"differs from frozen source"):
+            application.publish(root,wrong,frozen,Mock())
+        local_as_native=json.loads(json.dumps(report))
+        local_as_native["source_ref"]=frozen[0]
+        local_as_native["application"]["declaration"]["binding"]["subject_ref"]=frozen[0]
+        with self.assertRaisesRegex(application.quality.CertificateError,"differs from frozen source"):
+            application.publish(root,local_as_native,frozen,Mock())
+        self.assertEqual(json.loads(index.read_bytes()),prior)
         workspace=Mock()
         selected=application.publish(root,report,frozen,workspace)
         workspace.prepare_publication.assert_called_once()
@@ -144,11 +159,11 @@ class DerivedArtifactStorageTests(unittest.TestCase):
             if storage == quality.TRACKED_EVIDENCE
         }
         manifest = quality.build_generation_manifest(ROOT, certificate, b"{}\n", pending)
-        self.assertEqual(manifest["$schema"], "urn:fortress:derived:v3:assessment-generation-manifest")
-        self.assertEqual(manifest["schema_version"], 3)
+        self.assertEqual(manifest["$schema"], "urn:fortress:derived:v4:assessment-generation-manifest")
+        self.assertEqual(manifest["schema_version"], 4)
         self.assertEqual(
             manifest["control_layout"],
-            {"id": "fortress-control-layout-v3", "digest": quality.control_layout_digest(ROOT)},
+            {"id": "fortress-control-layout-v4", "digest": quality.control_layout_digest(ROOT)},
         )
 
     def test_historical_manifest_cannot_become_current_by_selection(self) -> None:

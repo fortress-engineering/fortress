@@ -205,7 +205,7 @@ fn historical_layout_retains_its_role_boundary_and_digest() {
     assert!(!historical.allows_directory("__fortress/governance/effect_summaries"));
     assert!(
         ControlLayout::from_json_str(
-            &CONTROL_LAYOUT_SOURCE.replace("\"schema_version\": 3", "\"schema_version\": 1")
+            &CONTROL_LAYOUT_SOURCE.replace("\"schema_version\": 4", "\"schema_version\": 1")
         )
         .is_err()
     );
@@ -286,6 +286,7 @@ fn generation_manifest_requires_matching_historical_or_current_layout_version() 
         profile_digest: DIGEST_A.into(),
         scope: "repository".into(),
         context_ref: DIGEST_B.into(),
+        evidence_input_digest: None,
     };
     value["selection_key"] = serde_json::json!(context.selection_key("PF-FIXTURE").unwrap());
     value["project"] = serde_json::json!("PF-FIXTURE");

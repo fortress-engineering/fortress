@@ -17,6 +17,101 @@ use fortress_core::finding::{
 };
 use fortress_core::profile::RequiredEvidenceDescriptor;
 
+/// `T-AF-CERTIFICATION-0001-R06-015`
+/// Fortress requirement: AF-CERTIFICATION-0001-R06
+#[test]
+fn controlled_cargo_common_reporting_preserves_original_gates_and_unknown_member_failures() {
+    use fortress_core::certification::{
+        CertificationSourceIdentity, compile_certification_with_provider,
+    };
+    use fortress_core::declaration::DeclarationBinding;
+    use fortress_core::provider::{ProviderOutcome, normalize_controlled_cargo};
+    let mut input = input();
+    let subject = format!("sha256:{}", "a".repeat(64));
+    input.source_digest = subject.clone();
+    input.suite_execution.certification_source_digest = subject.clone();
+    let source = CertificationSourceIdentity {
+        digest: subject.clone(),
+        test_inventory_digest: input.suite_execution.test_inventory_digest.clone(),
+        eligible_test_ids: input.suite_execution.eligible_test_ids.clone(),
+        ignored_test_ids: input.suite_execution.ignored_test_ids.clone(),
+    };
+    let binding = DeclarationBinding {
+        subject_ref: subject,
+        context_ref: format!("sha256:{}", "b".repeat(64)),
+        authority_ref: format!("sha256:{}", "c".repeat(64)),
+    };
+    let (envelope, _) =
+        normalize_controlled_cargo(&input.suite_execution, &source, &binding).unwrap();
+    assert!(envelope.full_success());
+    assert_eq!(envelope.authenticity, "UNVERIFIED");
+    assert!(
+        !envelope
+            .run_manifest
+            .as_ref()
+            .unwrap()
+            .execution
+            .dependencies_complete
+    );
+    let legacy = compile_certification(&input).unwrap();
+    let current =
+        compile_certification_with_provider(&input, &source, &binding, &envelope).unwrap();
+    assert_eq!(
+        legacy.certification.status(),
+        current.certification.status()
+    );
+    let graph = serde_json::to_value(&current.evidence_graph).unwrap();
+    assert!(
+        graph["nodes"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|n| n["kind"] == "controlled_cargo_provider_envelope"
+                && n["evidence_class"] == "OBSERVATION")
+    );
+    let mut forged = envelope;
+    forged.observations[0].outcome = ProviderOutcome::Unknown;
+    assert!(compile_certification_with_provider(&input, &source, &binding, &forged).is_err());
+    input.suite_execution.passed = false;
+    let (failed, _) =
+        normalize_controlled_cargo(&input.suite_execution, &source, &binding).unwrap();
+    assert!(!failed.full_success());
+    assert_eq!(failed.invocation.succeeded, Some(false));
+    assert!(
+        failed
+            .observations
+            .iter()
+            .all(|row| row.outcome == ProviderOutcome::Unknown && row.attempts.is_none())
+    );
+    assert_eq!(
+        compile_certification(&input)
+            .unwrap()
+            .certification
+            .status(),
+        compile_certification_with_provider(&input, &source, &binding, &failed)
+            .unwrap()
+            .certification
+            .status()
+    );
+}
+
+/// `T-AF-CERTIFICATION-0001-R06-016`
+/// Fortress requirement: AF-CERTIFICATION-0001-R06
+#[test]
+fn empty_declared_test_members_cannot_vacuously_verify_a_feature_requirement() {
+    let mut input = input();
+    input.requirements[0].test_ids.clear();
+    let product = compile_certification(&input).unwrap();
+    let requirement = product
+        .certification
+        .obligations()
+        .iter()
+        .find(|o| o.kind == CertificationObligationKind::FeatureRequirement)
+        .unwrap();
+    assert_eq!(requirement.status, CertificationStatus::Missing);
+    assert!(requirement.reason.contains("inventory is empty"));
+}
+
 fn input() -> CertificationInput {
     let source_digest = "sha256:subject".to_owned();
     let eligible_test_ids = vec!["T-AF-CERTIFICATION-0001-R01-001".to_owned()];

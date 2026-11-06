@@ -1,0 +1,150 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v2:profile-assessment",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "declaration_digest",
+    "profile_digest",
+    "binding",
+    "obligation_manifest_digest",
+    "acceptance_policy_digest",
+    "blockers",
+    "obligations",
+    "decision",
+    "evidence_input_digest"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:derived:v2:profile-assessment"
+    },
+    "schema_version": {
+      "const": 2
+    },
+    "declaration_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "profile_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "binding": {
+      "$ref": "#/$defs/binding"
+    },
+    "obligation_manifest_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "acceptance_policy_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "blockers": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "SUPPORTED_VIOLATION",
+          "REQUIRED_EVIDENCE_MISSING",
+          "STALE_EVIDENCE",
+          "INCOMPATIBLE_CONTEXT",
+          "UNTRUSTED_EVIDENCE",
+          "PRODUCER_NOT_AUTHENTICATED",
+          "ASSUMPTION_NOT_ACCEPTED",
+          "EVIDENCE_EXPIRED_OR_TIME_MISSING",
+          "TRUSTED_MANIFEST_MISMATCH",
+          "INCOMPATIBLE_EVIDENCE",
+          "INVALID_PROOF",
+          "EXECUTION_FAILED"
+        ]
+      },
+      "uniqueItems": true
+    },
+    "obligations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "decision",
+          "blockers"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "decision": {
+            "enum": [
+              "SATISFIED",
+              "NOT_SATISFIED",
+              "NOT_EVALUABLE",
+              "INVALID"
+            ]
+          },
+          "blockers": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "SUPPORTED_VIOLATION",
+                "REQUIRED_EVIDENCE_MISSING",
+                "STALE_EVIDENCE",
+                "INCOMPATIBLE_CONTEXT",
+                "UNTRUSTED_EVIDENCE",
+                "PRODUCER_NOT_AUTHENTICATED",
+                "ASSUMPTION_NOT_ACCEPTED",
+                "EVIDENCE_EXPIRED_OR_TIME_MISSING",
+                "TRUSTED_MANIFEST_MISMATCH",
+                "INCOMPATIBLE_EVIDENCE",
+                "INVALID_PROOF",
+                "EXECUTION_FAILED"
+              ]
+            },
+            "uniqueItems": true
+          }
+        }
+      },
+      "uniqueItems": true
+    },
+    "decision": {
+      "enum": [
+        "SATISFIED",
+        "NOT_SATISFIED",
+        "NOT_EVALUABLE",
+        "INVALID"
+      ]
+    },
+    "evidence_input_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    }
+  },
+  "$defs": {
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "subject_ref",
+        "context_ref",
+        "authority_ref"
+      ],
+      "properties": {
+        "subject_ref": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "context_ref": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "authority_ref": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      }
+    }
+  }
+}

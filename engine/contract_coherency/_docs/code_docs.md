@@ -20,8 +20,8 @@ Invalid authored facts produce sorted typed CCG violations; supported logical co
 
 ### [`contract.rs`](../_code/contract.rs)
 
-Defines canonical Module Contract v2/v3 syntax and the single repository-wide semantic compiler, preserving behavioral and semantic-policy declarations while validating only local and ecosystem declaration integrity rather than downstream conformance semantics.
+Defines canonical Module Contract v2/v3/v4 syntax and the single repository-wide semantic compiler. Native execution intent is explicit in v4; v2/v3 retain their original mandatory Test IDs. Behavioral, semantic-policy and verification intent remain authoring facts rather than observed execution or downstream conformance conclusions.
 
 ### [`graph.rs`](../_code/graph.rs)
 
-Defines CCG semantic facts, derivations, logical closure, canonical serialization, digest calculation, and unsupported-semantics reporting.
+Defines CCG v2 semantic facts, derivations, logical closure, canonical serialization, digest calculation, and unsupported-semantics reporting. Native verification intent has its own projection and never invents Test IDs or completes source-observed support.

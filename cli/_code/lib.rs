@@ -34,8 +34,10 @@ use fortress_core::finding_governance::{FINDING_GOVERNANCE_PATH, FindingGovernan
 use fortress_core::identity_migration::{
     apply_repository_identity_migration, plan_repository_identity_migration,
 };
+mod application_inputs;
 pub mod command;
 mod presentation;
+mod provider_command;
 
 use command::{CommandDescriptor, CommandRegistry};
 
@@ -111,6 +113,7 @@ where
         }
         "CMD-CORE-HELP" => run_help(&registry, &arguments[1..], output, error),
         "CMD-CORE-VERSION" => run_version(&arguments[1..], output, error),
+        "CMD-PROVIDER-EVIDENCE" => provider_command::run(&arguments[1..], output, error),
         "CMD-SNAPSHOT-AUDIT" => run_audit(&arguments[1..], output, error),
         "CMD-FINDING-CHECK" => run_check(&arguments[1..], output, error),
         "CMD-FINDING-LIST" => run_findings(&arguments[1..], output, error),
@@ -149,14 +152,21 @@ fn run_application<O: Write, E: Write>(
     output: &mut O,
     error: &mut E,
 ) -> io::Result<u8> {
-    let Ok((root, destination)) = parse_environmental_arguments(arguments) else {
+    let inputs = match application_inputs::split(arguments) {
+        Ok(inputs) => inputs,
+        Err(failure) => {
+            writeln!(error, "invalid provider inputs: {failure}")?;
+            return Ok(EXIT_USAGE);
+        }
+    };
+    let Ok((root, destination)) = parse_environmental_arguments(&inputs.arguments) else {
         writeln!(
             error,
-            "usage: fortress {name} [path] [--format json] [--output path]"
+            "usage: fortress {name} [path] [--format json] [--output path] [--evidence-inputs path] [--provider-policy host-path]"
         )?;
         return Ok(EXIT_USAGE);
     };
-    let view = match fortress_core::audit::compile_repository_state_view(&root) {
+    let view = match application_inputs::capture(&root, &inputs) {
         Ok(view) => view,
         Err(failure) => {
             writeln!(error, "application reporting failed: {failure}")?;

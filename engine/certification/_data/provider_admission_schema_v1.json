@@ -1,0 +1,411 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:host:v1:provider-admission",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "admitted_envelopes",
+    "accepted_assumptions",
+    "current_executions"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:host:v1:provider-admission"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "admitted_envelopes": {
+      "type": "array",
+      "maxItems": 1024,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^sha256:[0-9a-f]{64}$"
+      }
+    },
+    "accepted_assumptions": {
+      "type": "array",
+      "maxItems": 1024,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 65536
+      }
+    },
+    "current_executions": {
+      "type": "object",
+      "maxProperties": 1024,
+      "propertyNames": {
+        "pattern": "^sha256:[0-9a-f]{64}$"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/execution"
+      }
+    }
+  },
+  "$defs": {
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "subject_ref",
+        "context_ref",
+        "authority_ref"
+      ],
+      "properties": {
+        "subject_ref": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "context_ref": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "authority_ref": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      }
+    },
+    "key": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "namespace",
+        "package",
+        "target",
+        "qualified_name"
+      ],
+      "properties": {
+        "namespace": {
+          "enum": [
+            "NATIVE_QUALIFIED",
+            "GOVERNED_TEST_ID"
+          ]
+        },
+        "package": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 65536
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "target": {
+          "anyOf": [
+            {
+              "type": "string",
+              "maxLength": 65536
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "qualified_name": {
+          "type": "string",
+          "maxLength": 65536
+        }
+      }
+    },
+    "invocation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "succeeded",
+        "exit_code"
+      ],
+      "properties": {
+        "succeeded": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "exit_code": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": -2147483648,
+              "maximum": 2147483647
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "binary_digest",
+        "tool_digest",
+        "arguments",
+        "working_directory",
+        "inputs",
+        "environment_dependencies",
+        "dependencies_complete"
+      ],
+      "properties": {
+        "binary_digest": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "tool_digest": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "arguments": {
+          "anyOf": [
+            {
+              "type": "array",
+              "maxItems": 100000,
+              "items": {
+                "type": "string",
+                "maxLength": 65536
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "working_directory": {
+          "anyOf": [
+            {
+              "enum": [
+                "SUBJECT_ROOT"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "inputs": {
+          "type": "array",
+          "maxItems": 100000,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "digest"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "maxLength": 65536
+              },
+              "digest": {
+                "type": "string",
+                "pattern": "^sha256:[0-9a-f]{64}$"
+              }
+            }
+          }
+        },
+        "environment_dependencies": {
+          "type": "array",
+          "maxItems": 100000,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "digest"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "maxLength": 65536
+              },
+              "digest": {
+                "type": "string",
+                "pattern": "^sha256:[0-9a-f]{64}$"
+              }
+            }
+          }
+        },
+        "dependencies_complete": {
+          "type": "boolean"
+        }
+      }
+    },
+    "manifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "binding",
+        "provider",
+        "provider_version",
+        "invocation_scope",
+        "execution",
+        "inventory",
+        "inventory_complete",
+        "filters",
+        "filtering_known",
+        "attempts_complete",
+        "attempts",
+        "invocation",
+        "payload_digest",
+        "assumptions"
+      ],
+      "properties": {
+        "binding": {
+          "$ref": "#/$defs/binding"
+        },
+        "provider": {
+          "type": "string",
+          "maxLength": 65536
+        },
+        "provider_version": {
+          "type": "string",
+          "maxLength": 65536
+        },
+        "invocation_scope": {
+          "type": "string",
+          "maxLength": 65536
+        },
+        "execution": {
+          "$ref": "#/$defs/execution"
+        },
+        "inventory": {
+          "type": "array",
+          "maxItems": 100000,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "key",
+              "enabled"
+            ],
+            "properties": {
+              "key": {
+                "$ref": "#/$defs/key"
+              },
+              "enabled": {
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        "inventory_complete": {
+          "type": "boolean"
+        },
+        "filters": {
+          "type": "array",
+          "maxItems": 100000,
+          "items": {
+            "type": "string",
+            "maxLength": 65536
+          }
+        },
+        "filtering_known": {
+          "type": "boolean"
+        },
+        "attempts_complete": {
+          "type": "boolean"
+        },
+        "attempts": {
+          "type": "array",
+          "maxItems": 100000,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "key",
+              "count"
+            ],
+            "properties": {
+              "key": {
+                "$ref": "#/$defs/key"
+              },
+              "count": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              }
+            }
+          }
+        },
+        "invocation": {
+          "$ref": "#/$defs/invocation"
+        },
+        "payload_digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "assumptions": {
+          "type": "array",
+          "maxItems": 100000,
+          "items": {
+            "type": "string",
+            "maxLength": 65536
+          }
+        }
+      }
+    },
+    "requirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requirement_id",
+        "provider",
+        "invocation_scope",
+        "selectors",
+        "authenticated_producer_required"
+      ],
+      "properties": {
+        "requirement_id": {
+          "type": "string",
+          "maxLength": 65536
+        },
+        "provider": {
+          "type": "string",
+          "maxLength": 65536
+        },
+        "invocation_scope": {
+          "type": "string",
+          "maxLength": 65536
+        },
+        "selectors": {
+          "type": "array",
+          "maxItems": 10000,
+          "items": {
+            "$ref": "#/$defs/key"
+          }
+        },
+        "authenticated_producer_required": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

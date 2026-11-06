@@ -33,3 +33,11 @@ Defines canonical authored Module Contract v2 syntax.
 ### [`module_contract_schema_v3.json`](../_data/module_contract_schema_v3.json)
 
 Defines Module Contract v3 by adding explicit, closed capability/effect policy while retaining v2 as the loadable undeclared-policy form.
+
+### [`module_contract_schema_v4.json`](../_data/module_contract_schema_v4.json)
+
+Adds explicit native verification intent for real Feature Requirements. Empty legacy Test ID lists require that new intent; v2/v3 retain their original mandatory Test ID semantics. Intent neither observes execution nor establishes success.
+
+### [`graph_schema_v2.json`](../_data/graph_schema_v2.json)
+
+Projects authored external verification intent separately from declared Fortress Test IDs and source-observed support. A native intent alone never completes observed or executed coverage. The historical graph v1 schema is retained unchanged.

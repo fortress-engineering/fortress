@@ -10,25 +10,32 @@ use fortress_core::identity::{StableId, StableIdError};
 
 const BUILTIN_COMMANDS: &[CommandDescriptor] = &[
     CommandDescriptor {
+        id: "CMD-PROVIDER-EVIDENCE",
+        name: "evidence",
+        aliases: &[],
+        description: "Normalize retained JUnit or SARIF observations without executing project code.",
+        usage: "fortress evidence junit|sarif payload [--manifest path] [--output path]",
+    },
+    CommandDescriptor {
         id: "CMD-APPLICATION-DECLARE",
         name: "declare",
         aliases: &[],
         description: "Render a truthful multidimensional application declaration.",
-        usage: "fortress declare [path] [--format json] [--output path]",
+        usage: "fortress declare [path] [--format json] [--output path] [--evidence-inputs path] [--provider-policy host-path]",
     },
     CommandDescriptor {
         id: "CMD-APPLICATION-ASSESS",
         name: "assess",
         aliases: &[],
         description: "Assess exact selected application profiles without inventing test execution.",
-        usage: "fortress assess [path] [--format json] [--output path]",
+        usage: "fortress assess [path] [--format json] [--output path] [--evidence-inputs path] [--provider-policy host-path]",
     },
     CommandDescriptor {
         id: "CMD-APPLICATION-STATE-VIEW",
         name: "state-view",
         aliases: &[],
         description: "Render a neutral governed, partial, negative, invalid or ungoverned endpoint.",
-        usage: "fortress state-view [path] [--format json] [--output path]",
+        usage: "fortress state-view [path] [--format json] [--output path] [--evidence-inputs path] [--provider-policy host-path]",
     },
     CommandDescriptor {
         id: "CMD-CORE-HELP",

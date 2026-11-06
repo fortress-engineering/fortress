@@ -52,6 +52,43 @@ pub enum ProofOperator {
     Any,
 }
 
+/// Logical support supplied by an admitting caller, never inferred from absence.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ProofState {
+    /// Accepted evidence establishes the required proposition.
+    Satisfied,
+    /// Accepted evidence establishes its contradiction.
+    Refuted,
+    /// No accepted current conclusion is available.
+    Unknown,
+}
+
+fn all_states(states: impl IntoIterator<Item = ProofState>) -> ProofState {
+    let mut result = ProofState::Satisfied;
+    for state in states {
+        if state == ProofState::Refuted {
+            return ProofState::Refuted;
+        }
+        if state == ProofState::Unknown {
+            result = ProofState::Unknown;
+        }
+    }
+    result
+}
+
+fn any_states(states: impl IntoIterator<Item = ProofState>) -> ProofState {
+    let mut result = ProofState::Refuted;
+    for state in states {
+        if state == ProofState::Satisfied {
+            return ProofState::Satisfied;
+        }
+        if state == ProofState::Unknown {
+            result = ProofState::Unknown;
+        }
+    }
+    result
+}
+
 /// One named node in an acyclic shared proof graph.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -151,8 +188,27 @@ impl ProofGraph {
         known_refs: &BTreeSet<String>,
         satisfied_refs: &BTreeSet<String>,
     ) -> Result<bool, ProofValidationError> {
+        let states = satisfied_refs
+            .iter()
+            .map(|id| (id.clone(), ProofState::Satisfied))
+            .collect();
+        Ok(self.evaluate(known_refs, &states)? == ProofState::Satisfied)
+    }
+
+    /// Evaluates accepted true, accepted false and missing premises without
+    /// expanding alternatives. Mandatory references remain ALL premises even
+    /// on an ANY node; a passing alternative wins only when they also hold.
+    ///
+    /// # Errors
+    /// Rejects the same malformed graph or unknown evidence identities as the
+    /// Boolean sufficiency interface. Missing values remain unknown.
+    pub fn evaluate(
+        &self,
+        known_refs: &BTreeSet<String>,
+        evidence_states: &BTreeMap<String, ProofState>,
+    ) -> Result<ProofState, ProofValidationError> {
         self.validate(known_refs)?;
-        if let Some(unknown) = satisfied_refs.difference(known_refs).next() {
+        if let Some(unknown) = evidence_states.keys().find(|id| !known_refs.contains(*id)) {
             return Err(ProofValidationError::DanglingEvidence(unknown.clone()));
         }
         let by_id = self
@@ -175,19 +231,25 @@ impl ProofGraph {
             .iter()
             .filter_map(|(id, count)| (*count == 0).then_some(*id))
             .collect::<VecDeque<_>>();
-        let mut values = BTreeMap::<&str, bool>::new();
+        let mut values = BTreeMap::<&str, ProofState>::new();
         while let Some(id) = ready.pop_front() {
             let node = by_id[id];
-            let premises = node
-                .required_refs
-                .iter()
-                .all(|reference| satisfied_refs.contains(reference.id()));
+            let premises = all_states(node.required_refs.iter().map(|reference| {
+                evidence_states
+                    .get(reference.id())
+                    .copied()
+                    .unwrap_or(ProofState::Unknown)
+            }));
             let children = match node.operator {
-                ProofOperator::Leaf => true,
-                ProofOperator::All => node.children.iter().all(|child| values[child.as_str()]),
-                ProofOperator::Any => node.children.iter().any(|child| values[child.as_str()]),
+                ProofOperator::Leaf => ProofState::Satisfied,
+                ProofOperator::All => {
+                    all_states(node.children.iter().map(|child| values[child.as_str()]))
+                }
+                ProofOperator::Any => {
+                    any_states(node.children.iter().map(|child| values[child.as_str()]))
+                }
             };
-            values.insert(id, premises && children);
+            values.insert(id, all_states([premises, children]));
             if let Some(referrers) = parents.get(id) {
                 for parent in referrers {
                     let count = remaining

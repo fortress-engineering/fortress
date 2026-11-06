@@ -46,6 +46,110 @@ fn application_commands_render_neutral_ungoverned_endpoints_without_execution_cl
     );
 }
 
+fn native_publication_fixture(directory: &Path) -> PathBuf {
+    let root = directory.join("application");
+    for path in ["__fortress", "_data/logical_modules/native", "src"] {
+        fs::create_dir_all(root.join(path)).unwrap();
+    }
+    fs::write(
+        root.join("contract.json"),
+        module_contract("PF-FIXTURE", "Fixture"),
+    )
+    .unwrap();
+    fs::write(
+        root.join("__fortress/.fsconfig"),
+        serde_json::to_vec_pretty(&serde_json::json!({
+        "$schema":"urn:fortress:schema:v3:project-configuration","schema_version":3,
+        "observation_exclusions":[".git"],"logical_modules":[{"module":"AF-NATIVE-PUBLICATION-0001",
+        "contract":"_data/logical_modules/native/contract.json","parent":"PF-FIXTURE",
+        "bindings":[{"kind":"directory","path":"src"}]}]}))
+        .unwrap(),
+    )
+    .unwrap();
+    let contract: ModuleContract = serde_json::from_value(serde_json::json!({
+        "$schema":"urn:fortress:schema:v3:module-contract","schema_version":3,
+        "id":"AF-NATIVE-PUBLICATION-0001","display_name":"Native Publication",
+        "provides":[],"requires":[],"relationships":[],"constraints":[],"guarantees":[],
+        "features":[],"behavior":[],"semantic_policy":{"default":"UNDECLARED",
+        "capabilities":{"allow":[],"deny":[]},"effects":{"allow":[],"deny":["filesystem.write"]}}
+    }))
+    .unwrap();
+    fs::write(
+        root.join("_data/logical_modules/native/contract.json"),
+        contract.to_canonical_json().unwrap(),
+    )
+    .unwrap();
+    fs::write(root.join("Cargo.toml"),
+        "[package]\nname='native_publication'\nversion='0.1.0'\nedition='2024'\n[lib]\npath='src/évidence.rs'\n").unwrap();
+    fs::write(root.join("src/évidence.rs"),
+        "// λ remains original UTF-8 source.\npub fn denied() { let _ = std::fs::write(\"not_executed\", b\"x\"); }\n").unwrap();
+    root
+}
+
+/// `T-TF-CLI-0001-R19-002`
+/// Fortress requirement: TF-CLI-0001-R19
+#[test]
+fn native_negative_application_publishes_across_distinct_source_digest_domains() {
+    let fixture = ObservationFixture::new();
+    let root = native_publication_fixture(&fixture.root);
+    let output = run(&["state-view", root.to_str().unwrap(), "--format", "json"]);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let report: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert!(!report["application"].is_null(), "{report}");
+    assert_ne!(report["application"]["assessment"]["decision"], "SATISFIED");
+    let report_path = fixture.root.join("state-view.json");
+    fs::write(&report_path, &output.stdout).unwrap();
+    let storage = fixture.root.join("storage");
+    fs::create_dir(&storage).unwrap();
+    let product = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let script = r"
+import json,sys
+from pathlib import Path
+product,root,report_path,storage=map(Path,sys.argv[1:])
+sys.path.insert(0,str(product/'engine/snapshot_governance/_code'))
+import application_assessment as app
+from execution_storage import RunWorkspace,StoragePolicy
+quality=app.quality
+report=json.loads(report_path.read_text(encoding='utf-8'))
+frozen,native=quality.repository_source_identities(root)
+assert frozen[0]!=native and report['source_ref']==native
+pointer=root/quality.CURRENT_INDEX_PATH
+with RunWorkspace(root,storage,StoragePolicy(reserve_bytes=0,retention='cleanup-owned-compiler')) as workspace:
+    forged=json.loads(json.dumps(report))
+    forged['source_ref']=frozen[0]
+    forged['application']['declaration']['binding']['subject_ref']=frozen[0]
+    try:
+        app.publish(root,forged,frozen,workspace)
+        raise AssertionError('local digest accepted as native subject')
+    except quality.CertificateError:
+        pass
+    assert not pointer.exists() and not (root/quality.GENERATIONS_PATH).exists()
+    selected=app.publish(root,report,frozen,workspace)
+assert app.verify(root,report,frozen[1])==selected
+journal=json.loads(workspace.journal_path.read_text(encoding='utf-8'))
+assert journal['lifecycle']=='CLEANUP_COMPLETE' and journal['retained_bytes']==0
+assert journal['child_processes']==[]
+";
+    let result = Command::new(if cfg!(windows) { "python" } else { "python3" })
+        .args(["-B", "-c", script])
+        .arg(product)
+        .arg(&root)
+        .arg(report_path)
+        .arg(storage)
+        .env("PYTHONDONTWRITEBYTECODE", "1")
+        .output()
+        .unwrap();
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+}
+
 fn run(arguments: &[&str]) -> Output {
     Command::new(env!("CARGO_BIN_EXE_fortress"))
         .args(arguments)
@@ -736,6 +840,7 @@ impl ObservationFixture {
             "fortress-cli-observation-{}-{identity}",
             std::process::id()
         ));
+        fs::create_dir(&root).expect("exclusive observation fixture claim");
         fs::create_dir_all(root.join("src/runtime")).expect("source directories create");
         fs::create_dir_all(root.join("tests")).expect("test directory creates");
         fs::write(
@@ -1436,9 +1541,9 @@ fn ccg_json_is_schema_versioned_and_repeatable() {
         serde_json::from_slice(&first.stdout).expect("CCG output is JSON");
     assert_eq!(
         value["$schema"],
-        "urn:fortress:schema:v1:contract-coherency-graph"
+        "urn:fortress:schema:v2:contract-coherency-graph"
     );
-    assert_eq!(value["schema_version"], 1);
+    assert_eq!(value["schema_version"], 2);
     assert_eq!(value["coherency"]["status"], "coherent");
 }
 
@@ -1783,4 +1888,104 @@ fn certification_rejects_ambiguous_output_arguments_without_running_tests() {
     .expect("write succeeds");
     assert_eq!(status, EXIT_USAGE);
     assert!(String::from_utf8_lossy(&error).contains("usage: fortress certify"));
+}
+
+/// `T-TF-CLI-0001-R20-001`
+/// Fortress requirement: TF-CLI-0001-R20
+#[test]
+fn provider_import_is_registered_and_refuses_execution_or_ambiguous_options() {
+    assert!(
+        CommandRegistry::builtin()
+            .find("evidence")
+            .unwrap()
+            .usage()
+            .contains("--manifest")
+    );
+    for arguments in [
+        vec!["evidence"],
+        vec!["evidence", "execute", "project"],
+        vec![
+            "evidence",
+            "junit",
+            "missing",
+            "--manifest",
+            "a",
+            "--manifest",
+            "b",
+        ],
+    ] {
+        let mut output = Vec::new();
+        let mut error = Vec::new();
+        assert_eq!(
+            fortress_cli::run(arguments, &mut output, &mut error).unwrap(),
+            EXIT_USAGE
+        );
+        assert!(output.is_empty());
+        assert!(String::from_utf8_lossy(&error).contains("provider import failed"));
+    }
+}
+
+/// `T-TF-CLI-0001-R20-002`
+/// Fortress requirement: TF-CLI-0001-R20
+#[test]
+fn provider_host_policy_requires_explicit_selection_and_cannot_be_implicit() {
+    for arguments in [
+        vec!["assess", "--provider-policy", "candidate-policy.json"],
+        vec![
+            "state-view",
+            "--evidence-inputs",
+            "a",
+            "--evidence-inputs",
+            "b",
+        ],
+    ] {
+        let mut output = Vec::new();
+        let mut error = Vec::new();
+        assert_eq!(
+            fortress_cli::run(arguments, &mut output, &mut error).unwrap(),
+            EXIT_USAGE
+        );
+        assert!(output.is_empty());
+        assert!(String::from_utf8_lossy(&error).contains("invalid provider inputs"));
+    }
+}
+
+/// `T-TF-CLI-0001-R20-003`
+/// Fortress requirement: TF-CLI-0001-R20
+#[test]
+fn candidate_files_cannot_supply_host_provider_admission() {
+    use std::fs;
+    let stamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    let root = std::env::temp_dir().join(format!(
+        "fortress-cli-provider-{}-{stamp}",
+        std::process::id()
+    ));
+    fs::create_dir(&root).unwrap();
+    let selection = root.join("selection.json");
+    let policy = root.join("policy.json");
+    fs::write(&selection,serde_json::to_vec(&serde_json::json!({"$schema":"urn:fortress:derived:v1:evidence-input-set","schema_version":1,
+        "binding":{"subject_ref":format!("sha256:{}","a".repeat(64)),"context_ref":format!("sha256:{}","b".repeat(64)),"authority_ref":format!("sha256:{}","c".repeat(64))},"selected":[]})).unwrap()).unwrap();
+    fs::write(&policy, b"{}").unwrap();
+    let mut output = Vec::new();
+    let mut error = Vec::new();
+    let status = fortress_cli::run(
+        vec![
+            "assess".into(),
+            root.to_string_lossy().into_owned(),
+            "--evidence-inputs".into(),
+            selection.to_string_lossy().into_owned(),
+            "--provider-policy".into(),
+            policy.to_string_lossy().into_owned(),
+        ],
+        &mut output,
+        &mut error,
+    )
+    .unwrap();
+    fs::remove_dir_all(&root).unwrap();
+    assert_eq!(status, EXIT_USAGE);
+    assert!(output.is_empty());
+    assert!(String::from_utf8_lossy(&error).contains("outside the physical candidate repository"));
 }

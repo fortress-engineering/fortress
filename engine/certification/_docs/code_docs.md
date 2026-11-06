@@ -24,7 +24,7 @@ Implements Evidence Graph including the dedicated defeater evidence class, certi
 
 ### [`control_manifest.rs`](../_code/control_manifest.rs)
 
-Validates immutable assessment generation manifests and exact selection indexes, including safe members, logical external artifacts, canonical ordering, and content-addressed generation identity. Selection keys must be strictly increasing: two generations cannot compete for one context, while independent contexts may share a generation. Current manifest/layout v3 supports application and implementation-quality publications. Retained manifest/layout pairs v1/v1 and v2/v2 preserve their original meaning; mismatched pairs are invalid.
+Validates immutable assessment generation manifests and exact selection indexes, including safe members, logical external artifacts, canonical ordering, and content-addressed generation identity. Selection keys must be strictly increasing: two generations cannot compete for one context, while independent contexts may share a generation. Current manifest/layout v4 supports application and implementation-quality publications with exact provider input identity. Retained manifest/layout pairs v1/v1, v2/v2 and v3/v3 preserve their original meaning; mismatched pairs are invalid.
 
 ### [`declaration.rs`](../_code/declaration.rs)
 
@@ -43,3 +43,11 @@ Manifest v3 pairs with layout v3 and adds APPLICATION generations with recompute
 Static premise payload identity is SHA-256 of JCS `["static-claim-premise-v1", binding, SHA256(JCS(raw_claim)), upstream_premise_ref]`. Metadata identity separately binds every evidence field. The trusted expected artifact manifest prevents omission of required immutable projections. Reporting dimension rule membership is explicit immutable Standard policy; PROGRAM_SEMANTICS remains Module policy truth, with registered semantic rule checks reported separately.
 
 Unknown, nonapplicable and authorization records emit observation-only metadata, never synthetic absence proof. Known unavailable premises have an explicit UNAVAILABLE proposition. Native semantic evidence is scoped to the complete upstream claim instance, including selector, policy, ProgramContext and governed-universe binding.
+
+### [`provider.rs`](../_code/provider.rs)
+
+Defines context-bound unsigned provider envelopes, explicit native versus governed identity namespaces, complete inventory/retry descriptors, unique borrowed selector indexes and external host admission. Unknown execution dependencies require an actual fresh registered execution; producer names and candidate fresh markers cannot grant it. Shared proof leaves preserve known execution failure separately from software policy truth.
+
+### [`provider_inputs.rs`](../_code/provider_inputs.rs)
+
+Compile the complete native Requirement manifest, authored selectors and exact selected evidence-input set. Missing bytes never erase known obligations; the global normalized budget and single prepared provider index bound retained work.

@@ -20,4 +20,4 @@ Any missing fact, incorrect closure, imprecise violation, provenance gap, nondet
 
 ### [`contract_coherency_graph.rs`](../_code/contract_coherency_graph.rs)
 
-Provides the parent-local structural, logical, deterministic, provenance, and self-application CCG conformance suite.
+Provides the parent-local structural, logical, deterministic, provenance, and self-application CCG conformance suite, including native v4 authoring, preserved historical v2/v3 validation and refusal to infer observed execution from intent.

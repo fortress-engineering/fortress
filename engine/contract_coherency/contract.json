@@ -45,10 +45,14 @@
       "requirements": [
         {
           "id": "AF-CONTRACT-COHERENCY-0001-R01",
-          "statement": "The compiler loads canonical Module Contract v2 and recursively discovered containment into one schema-versioned CCG containing every supported semantic domain with precise source provenance.",
+          "statement": "The compiler loads canonical Module Contract v2/v3/v4 and recursively discovered containment into one schema-versioned CCG, preserving explicit native verification intent separately from observed tests and retaining precise source provenance.",
           "tests": [
             "T-AF-CONTRACT-COHERENCY-0001-R01-001",
-            "T-AF-CONTRACT-COHERENCY-0001-R01-002"
+            "T-AF-CONTRACT-COHERENCY-0001-R01-002",
+            "T-AF-CONTRACT-COHERENCY-0001-R01-003",
+            "T-AF-CONTRACT-COHERENCY-0001-R01-004",
+            "T-AF-CONTRACT-COHERENCY-0001-R01-005",
+            "T-AF-CONTRACT-COHERENCY-0001-R01-006"
           ]
         },
         {

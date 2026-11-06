@@ -37,3 +37,11 @@ Projects canonical authority, Module, coverage, authorization, conformance, and 
 Provides the native process entrypoint and delegates all command behavior to the CLI library.
 
 The native `declare`, `assess`, and `state-view` commands render Certification-owned canonical JSON application artifacts. They execute no verification provider and do not reuse a successful certificate as the endpoint. `state-view` reports missing or invalid authored authority without crossing the strict governed-analysis boundary. Assessment exit success is reserved for a satisfied exact application profile; local implementation qualification is a separate command and artifact.
+
+### [`application_inputs.rs`](../_code/application_inputs.rs)
+
+Parses explicit evidence selections and optionally injected host admission outside the physical candidate repository. No implicit policy, authentication claim, freshness marker or project execution is accepted.
+
+### [`provider_command.rs`](../_code/provider_command.rs)
+
+Normalizes bounded original JUnit or SARIF payloads through the Snapshot Governance import boundary. Canonical output reports unverified observations, not certification; original payload bytes remain available to the caller for retained replay.

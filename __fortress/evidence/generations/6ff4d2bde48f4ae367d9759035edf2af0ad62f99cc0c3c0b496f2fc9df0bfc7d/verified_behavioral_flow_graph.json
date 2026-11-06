@@ -1,0 +1,199 @@
+{
+  "$schema": "urn:fortress:schema:v1:verified-behavioral-flow-graph",
+  "schema_version": 1,
+  "project_id": "PF-FORTRESS",
+  "certification_source_digest": "sha256:c82bc8bcee40032d484958f40fae6781cf47f59660025b4595b52e4e5ca6eca6",
+  "certification_digest": "sha256:aed20d0b8f5329e7af426416d0c207631f3ab1e5509900c0ac2d66b30243948f",
+  "view": "verified",
+  "features": [
+    {
+      "feature": "AF-FORTRESS-AUDIT-0001",
+      "feature_requirement_evidence": [
+        "sha256:b582685302c4f336acf5fac2167cc1b233e492199a32bcc9f44a6fa317c587d9",
+        "sha256:fc34ce6a548a1f7ff555d3b1dd2af181da5d5a0f2fc3c6091fbf6c5133f844d5"
+      ],
+      "checkpoints": [
+        {
+          "id": "CHK-ARCHITECTURE-EVALUATED",
+          "intended": true,
+          "realized": true,
+          "verification": "VERIFIED_STATIC_AND_EXECUTED",
+          "evidence_refs": [
+            "sha256:fc34ce6a548a1f7ff555d3b1dd2af181da5d5a0f2fc3c6091fbf6c5133f844d5"
+          ]
+        },
+        {
+          "id": "CHK-AUDIT-FAILED",
+          "intended": true,
+          "realized": true,
+          "verification": "VERIFIED_STATIC_AND_EXECUTED",
+          "evidence_refs": [
+            "sha256:fc34ce6a548a1f7ff555d3b1dd2af181da5d5a0f2fc3c6091fbf6c5133f844d5"
+          ]
+        },
+        {
+          "id": "CHK-AUDIT-INTERPRETED",
+          "intended": true,
+          "realized": true,
+          "verification": "VERIFIED_STATIC_AND_EXECUTED",
+          "evidence_refs": [
+            "sha256:fc34ce6a548a1f7ff555d3b1dd2af181da5d5a0f2fc3c6091fbf6c5133f844d5"
+          ]
+        },
+        {
+          "id": "CHK-AUDIT-PASSED",
+          "intended": true,
+          "realized": true,
+          "verification": "VERIFIED_STATIC_AND_EXECUTED",
+          "evidence_refs": [
+            "sha256:fc34ce6a548a1f7ff555d3b1dd2af181da5d5a0f2fc3c6091fbf6c5133f844d5"
+          ]
+        },
+        {
+          "id": "CHK-AUDIT-REQUESTED",
+          "intended": true,
+          "realized": true,
+          "verification": "VERIFIED_STATIC_AND_EXECUTED",
+          "evidence_refs": [
+            "sha256:fc34ce6a548a1f7ff555d3b1dd2af181da5d5a0f2fc3c6091fbf6c5133f844d5"
+          ]
+        },
+        {
+          "id": "CHK-AUDIT-RESULT-CLASSIFIED",
+          "intended": true,
+          "realized": true,
+          "verification": "VERIFIED_STATIC_AND_EXECUTED",
+          "evidence_refs": [
+            "sha256:fc34ce6a548a1f7ff555d3b1dd2af181da5d5a0f2fc3c6091fbf6c5133f844d5"
+          ]
+        },
+        {
+          "id": "CHK-CONTRACT-ECOSYSTEM-COMPILED",
+          "intended": true,
+          "realized": true,
+          "verification": "VERIFIED_STATIC_AND_EXECUTED",
+          "evidence_refs": [
+            "sha256:fc34ce6a548a1f7ff555d3b1dd2af181da5d5a0f2fc3c6091fbf6c5133f844d5"
+          ]
+        },
+        {
+          "id": "CHK-IMPLEMENTATION-OBSERVED",
+          "intended": true,
+          "realized": true,
+          "verification": "VERIFIED_STATIC_AND_EXECUTED",
+          "evidence_refs": [
+            "sha256:fc34ce6a548a1f7ff555d3b1dd2af181da5d5a0f2fc3c6091fbf6c5133f844d5"
+          ]
+        },
+        {
+          "id": "CHK-REPOSITORY-STABILIZED",
+          "intended": true,
+          "realized": true,
+          "verification": "VERIFIED_STATIC_AND_EXECUTED",
+          "evidence_refs": [
+            "sha256:fc34ce6a548a1f7ff555d3b1dd2af181da5d5a0f2fc3c6091fbf6c5133f844d5"
+          ]
+        },
+        {
+          "id": "CHK-RULES-EVALUATED",
+          "intended": true,
+          "realized": true,
+          "verification": "VERIFIED_STATIC_AND_EXECUTED",
+          "evidence_refs": [
+            "sha256:fc34ce6a548a1f7ff555d3b1dd2af181da5d5a0f2fc3c6091fbf6c5133f844d5"
+          ]
+        }
+      ],
+      "edges": [
+        {
+          "id": "CHK-ARCHITECTURE-EVALUATED->CHK-RULES-EVALUATED",
+          "intended": true,
+          "realized": true,
+          "verification": "VERIFIED_STATIC_AND_EXECUTED",
+          "evidence_refs": [
+            "sha256:fc34ce6a548a1f7ff555d3b1dd2af181da5d5a0f2fc3c6091fbf6c5133f844d5"
+          ]
+        },
+        {
+          "id": "CHK-AUDIT-INTERPRETED->CHK-REPOSITORY-STABILIZED",
+          "intended": true,
+          "realized": true,
+          "verification": "VERIFIED_STATIC_AND_EXECUTED",
+          "evidence_refs": [
+            "sha256:fc34ce6a548a1f7ff555d3b1dd2af181da5d5a0f2fc3c6091fbf6c5133f844d5"
+          ]
+        },
+        {
+          "id": "CHK-AUDIT-REQUESTED->CHK-AUDIT-INTERPRETED",
+          "intended": true,
+          "realized": true,
+          "verification": "VERIFIED_STATIC_AND_EXECUTED",
+          "evidence_refs": [
+            "sha256:fc34ce6a548a1f7ff555d3b1dd2af181da5d5a0f2fc3c6091fbf6c5133f844d5"
+          ]
+        },
+        {
+          "id": "CHK-AUDIT-RESULT-CLASSIFIED->CHK-AUDIT-FAILED",
+          "intended": true,
+          "realized": true,
+          "verification": "VERIFIED_STATIC_AND_EXECUTED",
+          "evidence_refs": [
+            "sha256:fc34ce6a548a1f7ff555d3b1dd2af181da5d5a0f2fc3c6091fbf6c5133f844d5"
+          ]
+        },
+        {
+          "id": "CHK-AUDIT-RESULT-CLASSIFIED->CHK-AUDIT-PASSED",
+          "intended": true,
+          "realized": true,
+          "verification": "VERIFIED_STATIC_AND_EXECUTED",
+          "evidence_refs": [
+            "sha256:fc34ce6a548a1f7ff555d3b1dd2af181da5d5a0f2fc3c6091fbf6c5133f844d5"
+          ]
+        },
+        {
+          "id": "CHK-CONTRACT-ECOSYSTEM-COMPILED->CHK-IMPLEMENTATION-OBSERVED",
+          "intended": true,
+          "realized": true,
+          "verification": "VERIFIED_STATIC_AND_EXECUTED",
+          "evidence_refs": [
+            "sha256:fc34ce6a548a1f7ff555d3b1dd2af181da5d5a0f2fc3c6091fbf6c5133f844d5"
+          ]
+        },
+        {
+          "id": "CHK-IMPLEMENTATION-OBSERVED->CHK-ARCHITECTURE-EVALUATED",
+          "intended": true,
+          "realized": true,
+          "verification": "VERIFIED_STATIC_AND_EXECUTED",
+          "evidence_refs": [
+            "sha256:fc34ce6a548a1f7ff555d3b1dd2af181da5d5a0f2fc3c6091fbf6c5133f844d5"
+          ]
+        },
+        {
+          "id": "CHK-REPOSITORY-STABILIZED->CHK-CONTRACT-ECOSYSTEM-COMPILED",
+          "intended": true,
+          "realized": true,
+          "verification": "VERIFIED_STATIC_AND_EXECUTED",
+          "evidence_refs": [
+            "sha256:fc34ce6a548a1f7ff555d3b1dd2af181da5d5a0f2fc3c6091fbf6c5133f844d5"
+          ]
+        },
+        {
+          "id": "CHK-RULES-EVALUATED->CHK-AUDIT-RESULT-CLASSIFIED",
+          "intended": true,
+          "realized": true,
+          "verification": "VERIFIED_STATIC_AND_EXECUTED",
+          "evidence_refs": [
+            "sha256:fc34ce6a548a1f7ff555d3b1dd2af181da5d5a0f2fc3c6091fbf6c5133f844d5"
+          ]
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "VERIFIED_STATIC_AND_EXECUTED": 19
+  },
+  "provenance": [
+    "Intended, realized, and verification dimensions remain separate.",
+    "Feature Requirement tests are not attributed to exact edges without a verification binding."
+  ]
+}

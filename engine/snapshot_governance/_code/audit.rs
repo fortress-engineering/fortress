@@ -39,8 +39,7 @@ use crate::certification::{
     CertificationError, CertificationInput, CertificationProducts, CertificationProfile,
     CertificationSourceIdentity, EvidenceClass, EvidenceResult, GeneratedVerificationInput,
     GeneratedVerificationKind, RequirementEvidenceInput, RuleEvidenceInput, RustSuiteExecution,
-    StandardIdentity, VerificationBinding, certification_source_digest, compile_certification,
-    test_inventory_digest,
+    StandardIdentity, VerificationBinding, certification_source_digest, test_inventory_digest,
 };
 use crate::contract::evaluate_contract_coherency;
 use crate::contract_coherency::{
@@ -644,6 +643,58 @@ pub struct StateView {
 }
 
 impl StateView {
+    fn validate_application_inputs(
+        &self,
+        application: &crate::application::ApplicationAssessment,
+    ) -> Result<(), crate::declaration::DeclarationError> {
+        if self.schema_version == 1 {
+            if application.assessment.schema_version() != 1
+                || application.evidence_inputs.is_some()
+                || !application.provider_requirements.is_empty()
+            {
+                return crate::declaration::invalid(
+                    "historical StateView cannot reinterpret current evidence",
+                );
+            }
+        } else {
+            let inputs = application.evidence_inputs.as_ref().ok_or_else(|| {
+                crate::declaration::DeclarationError::Invalid(
+                    "current StateView omitted evidence inputs".into(),
+                )
+            })?;
+            let input_digest = inputs
+                .digest()
+                .map_err(|e| crate::declaration::DeclarationError::Invalid(e.to_string()))?;
+            if application.assessment.schema_version() != 2
+                || inputs.binding != application.declaration.binding
+                || application.assessment.evidence_input_digest.as_ref() != Some(&input_digest)
+            {
+                return crate::declaration::invalid("StateView selected evidence inputs differ");
+            }
+            crate::declaration::strictly_increasing(
+                application
+                    .provider_requirements
+                    .iter()
+                    .map(|r| &r.requirement_id),
+            )?;
+            for report in &application.provider_requirements {
+                if !inputs.selected.iter().any(|s| {
+                    s.envelope_digest == report.envelope_digest
+                        && s.inventory_digest == report.inventory_digest
+                }) || !application
+                    .obligations
+                    .iter()
+                    .any(|o| o.id == format!("external-verification:{}", report.requirement_id))
+                {
+                    return crate::declaration::invalid(
+                        "provider selection provenance differs from complete inputs",
+                    );
+                }
+            }
+        }
+        Ok(())
+    }
+
     /// Reads neutral endpoints, including unapproved and ungoverned snapshots.
     /// Integrity and internal consistency do not authenticate the producer.
     ///
@@ -670,15 +721,17 @@ impl StateView {
     /// # Errors
     /// Rejects inconsistent states, manifests or source/declaration bindings.
     pub fn validate(&self) -> Result<(), crate::declaration::DeclarationError> {
-        if self.schema != "urn:fortress:derived:v1:state-view"
-            || self.schema_version != 1
-            || !crate::declaration::is_digest(&self.source_ref)
+        if !matches!(
+            (self.schema.as_str(), self.schema_version),
+            ("urn:fortress:derived:v1:state-view", 1) | ("urn:fortress:derived:v2:state-view", 2)
+        ) || !crate::declaration::is_digest(&self.source_ref)
         {
             return crate::declaration::invalid("unsupported neutral endpoint");
         }
         if let Some(application) = &self.application {
             application.declaration.validate()?;
             application.assessment.validate()?;
+            self.validate_application_inputs(application)?;
             crate::declaration::strictly_increasing(
                 application.evidence.iter().map(|leaf| &leaf.id),
             )?;
@@ -733,6 +786,29 @@ impl StateView {
 /// # Errors
 /// Returns observation, analysis, serialization or structural reporting failures.
 pub fn compile_repository_state_view(root: impl AsRef<Path>) -> Result<StateView, AuditError> {
+    compile_repository_state_view_selected(root, None)
+}
+
+/// Assesses explicitly selected retained reports under caller-supplied host policy.
+/// Importing never executes project code, authenticates a name or selects latest green.
+///
+/// # Errors
+/// Refuses wrong bindings, substituted payloads, source drift and resource failures.
+pub fn compile_repository_state_view_with_evidence(
+    root: impl AsRef<Path>,
+    selection: &crate::provider_inputs::EvidenceInputSet,
+    policy: &mut crate::provider::ProviderAcceptancePolicy,
+) -> Result<StateView, AuditError> {
+    compile_repository_state_view_selected(root, Some((selection, policy)))
+}
+
+fn compile_repository_state_view_selected(
+    root: impl AsRef<Path>,
+    selection: Option<(
+        &crate::provider_inputs::EvidenceInputSet,
+        &mut crate::provider::ProviderAcceptancePolicy,
+    )>,
+) -> Result<StateView, AuditError> {
     let root = root.as_ref();
     let (project, observation, files) = capture_resident_source(root, None)?;
     let source_ref = certification_source_digest(&files);
@@ -749,8 +825,8 @@ pub fn compile_repository_state_view(root: impl AsRef<Path>) -> Result<StateView
             | AuditError::ObservationPolicy(_)),
         ) => {
             return Ok(StateView {
-                schema: "urn:fortress:derived:v1:state-view".into(),
-                schema_version: 1,
+                schema: "urn:fortress:derived:v2:state-view".into(),
+                schema_version: 2,
                 source_ref,
                 status: StateViewStatus::Invalid,
                 detail: Some(error.to_string()),
@@ -760,8 +836,8 @@ pub fn compile_repository_state_view(root: impl AsRef<Path>) -> Result<StateView
         Err(error) => return Err(error),
     };
     let mut view = StateView {
-        schema: "urn:fortress:derived:v1:state-view".into(),
-        schema_version: 1,
+        schema: "urn:fortress:derived:v2:state-view".into(),
+        schema_version: 2,
         source_ref: certification_source_digest(&analysis.observed_files),
         status: StateViewStatus::Ungoverned,
         detail: analysis.project_detail.clone(),
@@ -795,7 +871,31 @@ pub fn compile_repository_state_view(root: impl AsRef<Path>) -> Result<StateView
     let mut measurements = EvaluationPhaseRecorder::new();
     let stack = compile_certification_stack_from_prepared(prepared, None, &mut measurements)?.stack;
     let (_, projections) = certification_artifacts(&stack)?;
-    let application = application_from_stack(&stack, &projections)?;
+    let application = if let Some((selection, policy)) = selection {
+        let imported = crate::evidence_ingest::load_selected_provider_inputs(root, selection)
+            .map_err(|e| AuditError::ContractState(e.to_string().into()))?;
+        let application = application_from_stack_with_inputs(
+            &stack,
+            &projections,
+            Some((selection, &imported, policy)),
+        )?;
+        let (_, _, after) = capture_resident_source(root, None)?;
+        if after != stack.observed_files {
+            return Err(AuditError::ContractState(
+                "source changed during provider assessment".into(),
+            ));
+        }
+        let replay = crate::evidence_ingest::load_selected_provider_inputs(root, selection)
+            .map_err(|e| AuditError::ContractState(e.to_string().into()))?;
+        if replay != imported {
+            return Err(AuditError::ContractState(
+                "provider inputs changed during assessment".into(),
+            ));
+        }
+        application
+    } else {
+        application_from_stack(&stack, &projections)?
+    };
     view.status = match application.assessment.decision {
         crate::assessment::AssessmentDecision::Satisfied => StateViewStatus::Complete,
         crate::assessment::AssessmentDecision::NotSatisfied => StateViewStatus::Negative,
@@ -1899,15 +1999,23 @@ pub fn prepare_repository_certification_source(
     root: impl AsRef<Path>,
 ) -> Result<CertificationSourceIdentity, AuditError> {
     let prepared = prepare_audit(root.as_ref())?;
-    let digest = certification_source_digest(&prepared.observed_files);
-    let mut eligible_test_ids = prepared
-        .rust_tests
+    Ok(certification_identity_from_tests(
+        &prepared.observed_files,
+        &prepared.rust_tests,
+    ))
+}
+
+fn certification_identity_from_tests(
+    files: &SourceView,
+    tests: &[crate::rust_test_analyzer::RustTestFact],
+) -> CertificationSourceIdentity {
+    let digest = certification_source_digest(files);
+    let mut eligible_test_ids = tests
         .iter()
         .filter(|test| test.eligibility() == RustTestEligibility::Enabled)
         .map(|test| test.id().to_owned())
         .collect::<Vec<_>>();
-    let mut ignored_test_ids = prepared
-        .rust_tests
+    let mut ignored_test_ids = tests
         .iter()
         .filter(|test| test.eligibility() == RustTestEligibility::Ignored)
         .map(|test| test.id().to_owned())
@@ -1916,12 +2024,12 @@ pub fn prepare_repository_certification_source(
     eligible_test_ids.dedup();
     ignored_test_ids.sort();
     ignored_test_ids.dedup();
-    Ok(CertificationSourceIdentity {
+    CertificationSourceIdentity {
         test_inventory_digest: test_inventory_digest(&eligible_test_ids, &ignored_test_ids),
         digest,
         eligible_test_ids,
         ignored_test_ids,
-    })
+    }
 }
 
 /// All exact-snapshot semantic projections and certification products compiled
@@ -2109,7 +2217,26 @@ fn certification_bundle_from_stack(
     } else {
         BTreeSet::new()
     };
-    let products = compile_certification(&CertificationInput {
+    let provider_source =
+        certification_identity_from_tests(&stack.observed_files, &stack.rust_tests);
+    let common_provider = if suite_execution.certification_source_digest == provider_source.digest
+        && suite_execution.test_inventory_digest == provider_source.test_inventory_digest
+        && suite_execution.eligible_test_ids == provider_source.eligible_test_ids
+        && suite_execution.ignored_test_ids == provider_source.ignored_test_ids
+    {
+        Some(
+            crate::provider::normalize_controlled_cargo(
+                &suite_execution,
+                &provider_source,
+                &application.declaration.binding,
+            )
+            .map_err(|e| AuditError::ContractState(e.to_string().into()))?
+            .0,
+        )
+    } else {
+        None
+    };
+    let certification_input = CertificationInput {
         project_id: stack.snapshot.project_id().to_owned(),
         source_digest,
         standard: StandardIdentity {
@@ -2131,7 +2258,21 @@ fn certification_bundle_from_stack(
         verification_bindings,
         trusted_assertions,
         behavioral_projection,
-    })
+    };
+    let pending_native = stack
+        .ccg
+        .requirements()
+        .iter()
+        .filter(|(_, r)| r.external_verification().is_some())
+        .map(|(id, _)| id.clone())
+        .collect::<BTreeSet<_>>();
+    let products = crate::certification::compile_certification_with_pending_native(
+        &certification_input,
+        &pending_native,
+        common_provider
+            .as_ref()
+            .map(|envelope| (&provider_source, &application.declaration.binding, envelope)),
+    )
     .map_err(AuditError::Certification)?;
     Ok(RepositoryCertificationBundle {
         projections,
@@ -2433,6 +2574,20 @@ fn application_from_stack(
     stack: &CertificationSemanticStack,
     projections: &BTreeMap<String, String>,
 ) -> Result<crate::application::ApplicationAssessment, AuditError> {
+    application_from_stack_with_inputs(stack, projections, None)
+}
+
+type ApplicationProviderSelection<'a> = (
+    &'a crate::provider_inputs::EvidenceInputSet,
+    &'a BTreeMap<String, crate::provider::EvidenceEnvelope>,
+    &'a mut crate::provider::ProviderAcceptancePolicy,
+);
+
+fn application_from_stack_with_inputs(
+    stack: &CertificationSemanticStack,
+    projections: &BTreeMap<String, String>,
+    inputs: Option<ApplicationProviderSelection<'_>>,
+) -> Result<crate::application::ApplicationAssessment, AuditError> {
     let mut scoped_profiles = stack
         .profiles
         .references()
@@ -2512,7 +2667,8 @@ fn application_from_stack(
                 .collect(),
         })
         .collect::<Vec<_>>();
-    crate::application::compose_application(
+    let mut provider_inputs = application_provider_inputs(stack, &binding, inputs)?;
+    crate::application::compose_application_with_providers(
         stack.snapshot.project_id(),
         binding,
         &stack.profiles,
@@ -2520,6 +2676,48 @@ fn application_from_stack(
         &rules,
         &stack.finding_governance,
         artifacts,
+        Some(&mut provider_inputs),
+    )
+    .map_err(|e| AuditError::ContractState(e.to_string().into()))
+}
+
+fn application_provider_inputs(
+    stack: &CertificationSemanticStack,
+    binding: &crate::declaration::DeclarationBinding,
+    inputs: Option<ApplicationProviderSelection<'_>>,
+) -> Result<crate::provider_inputs::ApplicationProviderEvidence, AuditError> {
+    let external_required = stack
+        .ccg
+        .requirements()
+        .iter()
+        .filter(|(_, requirement)| requirement.external_verification().is_some())
+        .map(|(id, _)| id.clone())
+        .collect::<BTreeSet<_>>();
+    let binding_path = "__fortress/governance/verification_bindings.json";
+    let authored = if let Some(bytes) = stack.observed_files.get(binding_path) {
+        let text = std::str::from_utf8(bytes)
+            .map_err(|e| AuditError::ContractState(e.to_string().into()))?;
+        crate::provider_inputs::VerificationBindings::from_json_str(text)
+    } else {
+        crate::provider_inputs::VerificationBindings::compose(vec![])
+    }
+    .map_err(|e| AuditError::ContractState(e.to_string().into()))?;
+    let empty = crate::provider_inputs::EvidenceInputSet::compose(binding.clone(), vec![])
+        .map_err(|e| AuditError::ContractState(e.to_string().into()))?;
+    let unavailable = BTreeMap::new();
+    let mut untrusted = crate::provider::ProviderAcceptancePolicy::default();
+    let (selection, available, policy) = inputs.unwrap_or((&empty, &unavailable, &mut untrusted));
+    if selection.binding != *binding {
+        return Err(AuditError::ContractState(
+            "selected evidence has another application binding".into(),
+        ));
+    }
+    crate::provider_inputs::ApplicationProviderEvidence::prepare(
+        selection.clone(),
+        &external_required,
+        &authored,
+        available,
+        policy,
     )
     .map_err(|e| AuditError::ContractState(e.to_string().into()))
 }
@@ -2640,7 +2838,7 @@ fn certification_artifacts(
     let entries = [
         (
             "ccg",
-            "urn:fortress:schema:v1:contract-coherency-graph",
+            "urn:fortress:schema:v2:contract-coherency-graph",
             "_info/contract_coherency_graph.json",
             stack
                 .ccg

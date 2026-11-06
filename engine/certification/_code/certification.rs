@@ -867,6 +867,69 @@ pub struct CertificationProducts {
 pub fn compile_certification(
     input: &CertificationInput,
 ) -> Result<CertificationProducts, CertificationError> {
+    compile_certification_internal(input, None, &BTreeSet::new())
+}
+
+/// Adds the exact common controlled-Cargo reporting to the existing Evidence
+/// DAG without replacing any mandatory unfiltered execution or inventory gate.
+/// The additional node is an observation, never new authentication authority.
+///
+/// # Errors
+/// Rejects reporting that differs from the independently compiled source,
+/// inventory, application context or original controlled execution record.
+pub fn compile_certification_with_provider(
+    input: &CertificationInput,
+    source: &CertificationSourceIdentity,
+    binding: &crate::declaration::DeclarationBinding,
+    envelope: &crate::provider::EvidenceEnvelope,
+) -> Result<CertificationProducts, CertificationError> {
+    compile_certification_with_pending_native(
+        input,
+        &BTreeSet::new(),
+        Some((source, binding, envelope)),
+    )
+}
+
+type ControlledProviderInput<'a> = (
+    &'a CertificationSourceIdentity,
+    &'a crate::declaration::DeclarationBinding,
+    &'a crate::provider::EvidenceEnvelope,
+);
+
+// This legacy implementation-qualification port always executes the unfiltered
+// Rust suite. External native obligations belong to the application assessor;
+// absent support here must remain Missing, including mixed legacy/native intent.
+pub(crate) fn compile_certification_with_pending_native(
+    input: &CertificationInput,
+    pending: &BTreeSet<String>,
+    provider: Option<ControlledProviderInput<'_>>,
+) -> Result<CertificationProducts, CertificationError> {
+    if let Some((source, binding, envelope)) = provider {
+        if source.digest != input.source_digest || binding.subject_ref != input.source_digest {
+            return Err(CertificationError::Provider(
+                crate::provider::ProviderError::Invalid("current source differs".into()),
+            ));
+        }
+        let (expected, _) =
+            crate::provider::normalize_controlled_cargo(&input.suite_execution, source, binding)
+                .map_err(CertificationError::Provider)?;
+        if &expected != envelope {
+            return Err(CertificationError::Provider(
+                crate::provider::ProviderError::Invalid(
+                    "common envelope differs from controlled execution".into(),
+                ),
+            ));
+        }
+    }
+    compile_certification_internal(input, provider.map(|(_, _, envelope)| envelope), pending)
+}
+
+#[allow(clippy::too_many_lines)]
+fn compile_certification_internal(
+    input: &CertificationInput,
+    provider: Option<&crate::provider::EvidenceEnvelope>,
+    pending_native: &BTreeSet<String>,
+) -> Result<CertificationProducts, CertificationError> {
     input.profile.validate()?;
     input.suite_execution.validate()?;
     if !input.applicable_rules.is_empty() && !is_strictly_sorted(&input.applicable_rules) {
@@ -1096,6 +1159,22 @@ pub fn compile_certification(
         nodes.push(node);
     }
 
+    let mut suite_inputs = vec![source_ref.clone()];
+    if let Some(envelope) = provider {
+        let node = EvidenceNode::new(
+            "controlled_cargo_provider_envelope",
+            &input.project_id,
+            EvidenceResult::Observed,
+            vec![source_ref.clone()],
+            "fortress-provider-normalizer",
+            crate::provider::PROVIDER_SEMANTIC_VERSION,
+            EvidenceClass::Observation,
+            json!({"envelope":envelope,"raw_execution_record":input.suite_execution}),
+        )?;
+        suite_inputs.push(node.id.clone());
+        suite_inputs.sort();
+        nodes.push(node);
+    }
     let suite = EvidenceNode::new(
         "rust_workspace_suite_execution",
         &input.project_id,
@@ -1104,7 +1183,7 @@ pub fn compile_certification(
         } else {
             EvidenceResult::Fail
         },
-        vec![source_ref.clone()],
+        suite_inputs,
         &input.suite_execution.executor,
         &input.suite_execution.executor_version,
         EvidenceClass::ExecutedTest,
@@ -1265,6 +1344,8 @@ pub fn compile_certification(
         } else if !input.suite_execution.passed {
             CertificationStatus::Fail
         } else if !input.suite_execution.canonical_unfiltered
+            || requirement.test_ids.is_empty()
+            || pending_native.contains(&requirement.requirement_id)
             || !missing.is_empty()
             || !ignored_tests.is_empty()
         {
@@ -1281,6 +1362,8 @@ pub fn compile_certification(
             reason: match status {
                 CertificationStatus::Pass => "every declared required test is eligible and covered by the successful canonical suite".into(),
                 CertificationStatus::Fail => "the canonical required test suite failed".into(),
+                CertificationStatus::Missing if pending_native.contains(&requirement.requirement_id) => "this Rust-only qualification port lacks the required external native verification support".into(),
+                CertificationStatus::Missing if requirement.test_ids.is_empty() => "required declared test inventory is empty".into(),
                 _ => format!("missing tests: {}; ignored tests: {}", missing.join(","), ignored_tests.join(",")),
             },
         });
@@ -2106,6 +2189,8 @@ fn canonical_pretty(value: &impl Serialize) -> Result<String, serde_json::Error>
 /// Certification construction or validation error.
 #[derive(Debug)]
 pub enum CertificationError {
+    /// Common provider reporting differs from actual controlled Cargo inputs.
+    Provider(crate::provider::ProviderError),
     /// JSON serialization failed.
     Json(serde_json::Error),
     /// Canonical defeater construction failed.
@@ -2192,6 +2277,7 @@ pub enum CertificationError {
 impl Display for CertificationError {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
         match self {
+            Self::Provider(error) => write!(formatter, "provider reporting failed: {error}"),
             Self::Json(error) => write!(formatter, "certification JSON failed: {error}"),
             Self::Defeater(error) => write!(formatter, "certification defeater failed: {error}"),
             Self::EmptyNodeField => formatter.write_str(
@@ -2298,6 +2384,7 @@ impl Error for CertificationError {
         match self {
             Self::Json(error) => Some(error),
             Self::Defeater(error) => Some(error),
+            Self::Provider(error) => Some(error),
             _ => None,
         }
     }

@@ -9,6 +9,9 @@ use sha2::{Digest, Sha256};
 
 /// Current assessment generation manifest schema identity.
 pub const GENERATION_MANIFEST_SCHEMA: &str =
+    "urn:fortress:derived:v4:assessment-generation-manifest";
+/// Retained third edition, without selected provider context.
+pub const GENERATION_MANIFEST_V3_SCHEMA: &str =
     "urn:fortress:derived:v3:assessment-generation-manifest";
 /// Retained second edition; its bytes and digest meaning remain unchanged.
 pub const GENERATION_MANIFEST_V2_SCHEMA: &str =
@@ -59,6 +62,9 @@ pub struct ApplicationSelectionContext {
     pub scope: String,
     /// Exact `ProgramContext` identity, not merely its family.
     pub context_ref: String,
+    /// Exact provider selection, absent only in historical generation v3.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub evidence_input_digest: Option<String>,
 }
 
 impl ApplicationSelectionContext {
@@ -71,6 +77,19 @@ impl ApplicationSelectionContext {
         validate_digest(&self.context_ref)?;
         if self.scope != "repository" || project.is_empty() {
             return Err(ControlManifestError::UnsupportedRecord);
+        }
+        if let Some(input) = &self.evidence_input_digest {
+            validate_digest(input)?;
+            let bytes = serde_json_canonicalizer::to_vec(&(
+                "application-selection-v2",
+                project,
+                &self.profile_digest,
+                &self.scope,
+                &self.context_ref,
+                input,
+            ))
+            .map_err(|e| ControlManifestError::Json(serde::ser::Error::custom(e)))?;
+            return Ok(format!("sha256:{:x}", Sha256::digest(bytes)));
         }
         let bytes = serde_json_canonicalizer::to_vec(&(
             "application-selection-v1",
@@ -208,7 +227,11 @@ impl AssessmentGenerationManifest {
                 GENERATION_MANIFEST_V2_SCHEMA,
                 2,
                 "fortress-control-layout-v2"
-            ) | (GENERATION_MANIFEST_SCHEMA, 3, "fortress-control-layout-v3")
+            ) | (
+                GENERATION_MANIFEST_V3_SCHEMA,
+                3,
+                "fortress-control-layout-v3"
+            ) | (GENERATION_MANIFEST_SCHEMA, 4, "fortress-control-layout-v4")
         );
         if !supported_layout_pair
             || !matches!(
@@ -227,7 +250,9 @@ impl AssessmentGenerationManifest {
                 .selection_context
                 .as_ref()
                 .ok_or(ControlManifestError::UnsupportedRecord)?;
-            if self.schema_version != 3
+            if !matches!(self.schema_version, 3 | 4)
+                || (self.schema_version == 3 && context.evidence_input_digest.is_some())
+                || (self.schema_version == 4 && context.evidence_input_digest.is_none())
                 || self.profile != context.profile_digest
                 || self.selection_key != context.selection_key(&self.project)?
             {

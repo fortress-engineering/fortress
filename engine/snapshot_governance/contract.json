@@ -355,6 +355,24 @@
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R19-028",
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R19-029"
           ]
+        },
+        {
+          "id": "AF-SNAPSHOT-GOVERNANCE-0001-R20",
+          "statement": "Provider imports are bounded read-only observations whose retained payloads reproduce normalized facts; explicit physical project trust and registered exact commands precede execution, and unresolved source, input, process or storage lifecycle states cannot issue fresh execution admission.",
+          "tests": [
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R20-001",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R20-002",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R20-003",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R20-004",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R20-005",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R20-006",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R20-007",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R20-008",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R20-009",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R20-010",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R20-011",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R20-012"
+          ]
         }
       ]
     }

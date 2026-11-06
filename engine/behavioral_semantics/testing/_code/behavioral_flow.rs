@@ -13,7 +13,8 @@ use fortress_core::contract_coherency::{
     ContractCoherencyGraph, ContractStandardIndex, ModuleContract, compile_contract_coherency_graph,
 };
 use fortress_core::control_layout::{
-    CONTROL_LAYOUT_SOURCE, CONTROL_LAYOUT_V2_SOURCE, LEGACY_CONTROL_LAYOUT_SOURCE,
+    CONTROL_LAYOUT_SOURCE, CONTROL_LAYOUT_V2_SOURCE, CONTROL_LAYOUT_V3_SOURCE,
+    LEGACY_CONTROL_LAYOUT_SOURCE,
 };
 use fortress_core::control_manifest::{
     ArtifactStorage, AssessmentGenerationManifest, AssessmentSelectionIndex,
@@ -71,7 +72,8 @@ fn validate_selected_bfg(
     let layout_source = match view["control_layout"]["id"].as_str() {
         Some("fortress-control-layout-v1") => LEGACY_CONTROL_LAYOUT_SOURCE,
         Some("fortress-control-layout-v2") => CONTROL_LAYOUT_V2_SOURCE,
-        Some("fortress-control-layout-v3") => CONTROL_LAYOUT_SOURCE,
+        Some("fortress-control-layout-v3") => CONTROL_LAYOUT_V3_SOURCE,
+        Some("fortress-control-layout-v4") => CONTROL_LAYOUT_SOURCE,
         _ => return Err("selected generation has an unsupported layout".into()),
     };
     let artifacts = view["artifacts"]
@@ -103,7 +105,7 @@ fn validate_selected_bfg(
     if view["control_layout"]["digest"] != digest(layout_source.as_bytes()) {
         return Err("selected layout digest does not match its registry".into());
     }
-    if view["control_layout"]["id"] != "fortress-control-layout-v3" {
+    if view["control_layout"]["id"] != "fortress-control-layout-v4" {
         return Ok(SelectedBfgSubject::RetainedLayout);
     }
     if bytes != current_bfg {
@@ -158,15 +160,15 @@ fn selected_bfg_subject_controls(bytes: &[u8]) {
     let stale_source = format!("sha256:{}", "b".repeat(64));
     let payload: Value = serde_json::from_slice(bytes).expect("current BFG parses");
     let mut fixture = json!({
-        "$schema": "urn:fortress:derived:v3:assessment-generation-manifest",
-        "schema_version": 3,
+        "$schema": "urn:fortress:derived:v4:assessment-generation-manifest",
+        "schema_version": 4,
         "generation_kind": "LOCAL_QUALITY",
         "project": "PF-FORTRESS",
         "profile": "fortress-complete-local-v1",
         "selection_key": local_selection_key(),
         "source": {"fingerprint": current_source, "file_count": 1},
         "control_layout": {
-            "id": "fortress-control-layout-v3",
+            "id": "fortress-control-layout-v4",
             "digest": digest(CONTROL_LAYOUT_SOURCE.as_bytes()),
         },
         "artifacts": [{
@@ -178,7 +180,7 @@ fn selected_bfg_subject_controls(bytes: &[u8]) {
             "storage": {"kind": "INCLUDED", "member_name": "behavioral_flow_graph.json"},
         }, {
             "id": "ccg", "producer_id": "contract_coherency",
-            "schema_ref": "urn:fortress:derived:v1:contract-coherency-graph",
+            "schema_ref": "urn:fortress:schema:v2:contract-coherency-graph",
             "producer_semantic_version": "1.0.0",
             "content_digest": payload["source_ccg_digest"], "byte_count": 1,
             "disposition": "REQUIRED",

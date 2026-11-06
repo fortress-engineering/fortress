@@ -17,7 +17,9 @@ pub const LEGACY_PROJECT_CONFIGURATION_PATH: &str = "_data/project.json";
 pub const EVIDENCE_ROOT: &str = "__fortress/evidence";
 
 /// Declarative layout bytes shared by all compiled adapters.
-pub const CONTROL_LAYOUT_SOURCE: &str = include_str!("../_data/control_layout_v3.json");
+pub const CONTROL_LAYOUT_SOURCE: &str = include_str!("../_data/control_layout_v4.json");
+/// Retained third edition; historical artifact identities remain unchanged.
+pub const CONTROL_LAYOUT_V3_SOURCE: &str = include_str!("../_data/control_layout_v3.json");
 /// Retained second layout edition; historical digest meaning is unchanged.
 pub const CONTROL_LAYOUT_V2_SOURCE: &str = include_str!("../_data/control_layout_v2.json");
 /// Retained declarative layout bytes for historical records.
@@ -25,6 +27,8 @@ pub const LEGACY_CONTROL_LAYOUT_SOURCE: &str = include_str!("../_data/control_la
 /// Exact project-local effect-summary authority location.
 pub const EFFECT_SUMMARY_AUTHORITY_PATH: &str =
     "__fortress/governance/effect_summaries/catalog.json";
+/// Authored selectors for actual externally verified Requirements.
+pub const VERIFICATION_BINDINGS_PATH: &str = "__fortress/governance/verification_bindings.json";
 
 /// Whether a control entry participates in the current source subject.
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq)]
@@ -48,6 +52,12 @@ pub enum ControlRole {
     GlobalInformationFlowPolicy,
     /// Exact-context operation-summary selection and override authority.
     EffectSummaryAuthority,
+    /// Authored Requirement selectors, without host acceptance authority.
+    VerificationBindings,
+    /// Retained exact external provider metadata.
+    ProviderEnvelope,
+    /// Original external provider bytes.
+    ProviderPayload,
     /// Current assessment selection index.
     AssessmentSelectionIndex,
     /// Immutable assessment generation manifest.
@@ -177,6 +187,7 @@ impl ControlLayout {
         let source = match self.schema_version {
             1 => LEGACY_CONTROL_LAYOUT_SOURCE,
             2 => CONTROL_LAYOUT_V2_SOURCE,
+            3 => CONTROL_LAYOUT_V3_SOURCE,
             _ => CONTROL_LAYOUT_SOURCE,
         };
         format!("sha256:{:x}", Sha256::digest(source.as_bytes()))
@@ -199,6 +210,11 @@ impl ControlLayout {
             || path
                 .strip_prefix("__fortress/evidence/generations/")
                 .is_some_and(is_sha256_hex)
+            || (self.schema_version >= 4
+                && (path == "__fortress/evidence/imports"
+                    || path
+                        .strip_prefix("__fortress/evidence/imports/")
+                        .is_some_and(is_sha256_hex)))
     }
 
     /// Resolves a path under the control root. Paths outside return `None`.
@@ -214,6 +230,28 @@ impl ControlLayout {
                 owner: record.owner.clone(),
                 source_binding: record.source_binding,
             });
+        }
+        if self.schema_version >= 4
+            && let Some(remainder) = path.strip_prefix("__fortress/evidence/imports/")
+        {
+            let mut parts = remainder.split('/');
+            let digest = parts.next().unwrap_or_default();
+            let member = parts.next().unwrap_or_default();
+            if parts.next().is_none() && is_sha256_hex(digest) {
+                let role = match member {
+                    "envelope.json" => Some(ControlRole::ProviderEnvelope),
+                    "payload.bin" => Some(ControlRole::ProviderPayload),
+                    _ => None,
+                };
+                if let Some(role) = role {
+                    return Some(ResolvedControlEntry {
+                        path: path.into(),
+                        role,
+                        owner: "certification".into(),
+                        source_binding: ControlSourceBinding::Nonrecursive,
+                    });
+                }
+            }
         }
         if let Some(remainder) = path.strip_prefix("__fortress/evidence/generations/") {
             let mut parts = remainder.split('/');
@@ -293,6 +331,10 @@ impl ControlLayout {
                 "urn:fortress:schema:v3:control-layout",
                 3,
                 "fortress-control-layout-v3"
+            ) | (
+                "urn:fortress:schema:v4:control-layout",
+                4,
+                "fortress-control-layout-v4"
             )
         );
         if !supported_version
@@ -311,12 +353,29 @@ impl ControlLayout {
                         || role.path != EFFECT_SUMMARY_AUTHORITY_PATH
                         || role.owner != "state_effect_analysis"
                         || role.source_binding != ControlSourceBinding::Required))
+                || (role.role == ControlRole::VerificationBindings
+                    && (self.schema_version < 4
+                        || role.path != VERIFICATION_BINDINGS_PATH
+                        || role.owner != "certification"
+                        || role.source_binding != ControlSourceBinding::Required))
             {
                 return Err(ControlLayoutError::InvalidEntry(role.path.clone().into()));
             }
         }
         if !paths.contains(PROJECT_CONFIGURATION_PATH) {
             return Err(ControlLayoutError::MissingConfiguration);
+        }
+        if self.schema_version >= 4
+            && !self.roles.iter().any(|r| {
+                r.role == ControlRole::VerificationBindings
+                    && r.path == VERIFICATION_BINDINGS_PATH
+                    && r.owner == "certification"
+                    && r.source_binding == ControlSourceBinding::Required
+            })
+        {
+            return Err(ControlLayoutError::InvalidEntry(
+                VERIFICATION_BINDINGS_PATH.into(),
+            ));
         }
         if self.schema_version >= 2
             && !self.roles.iter().any(|role| {
@@ -371,7 +430,7 @@ impl ControlLayout {
             }
             prior_id = Some(&artifact.id);
         }
-        let (expected_ids, expected_members, expected_counts) = if self.schema_version == 3 {
+        let (expected_ids, expected_members, expected_counts) = if self.schema_version >= 3 {
             (17, 9, [11, 3, 1, 2])
         } else {
             (15, 7, [11, 3, 1, 0])

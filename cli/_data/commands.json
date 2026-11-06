@@ -295,6 +295,17 @@
       "duration": "long",
       "resumability": "restartable",
       "certification_implications": "Reports application semantics only; no implementation qualification or test execution is synthesized."
+    },
+    {
+      "id": "CMD-PROVIDER-EVIDENCE",
+      "name": "evidence",
+      "aliases": [],
+      "description": "Normalize retained JUnit or SARIF observations without executing project code.",
+      "owner": "TF-CLI-0001",
+      "executor": "builtin-sync",
+      "duration": "short",
+      "resumability": "restartable",
+      "certification_implications": "Read-only normalization retains unverified producer status; it neither executes project code nor grants profile approval."
     }
   ]
 }

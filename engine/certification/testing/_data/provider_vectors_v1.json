@@ -1,0 +1,1161 @@
+{
+  "protocol": "provider-normalization-controls-v1",
+  "evidence_scope": "SYNTHETIC_PROTOCOL_CONTROLS_NOT_ACTUAL_EXECUTION",
+  "oracle": "Manually specified XML and SARIF facts; independent standard-library parser; no Fortress-generated outcomes.",
+  "sampling": "Deterministic adversarial coverage, no population precision, false-positive rate or confidence interval.",
+  "vectors": [
+    {
+      "id": "junit-terminal-passed",
+      "format": "junit",
+      "raw_utf8": "<testsuite name=\"unit\" package=\"native\"><testcase classname=\"Math\" name=\"add\"></testcase></testsuite>",
+      "manifest": null,
+      "accepted": true,
+      "expected": {
+        "$schema": "urn:fortress:derived:v1:provider-evidence",
+        "schema_version": 1,
+        "normalizer_semantic_version": "1.0.0",
+        "format": "JUNIT_XML",
+        "provider": null,
+        "provider_version": null,
+        "media_type": "application/xml",
+        "payload_digest": "sha256:236072b5fbf04d88384ecd841b4df3e229448ade15a1c1eb9992a266d6593b43",
+        "run_manifest": null,
+        "observations": [
+          {
+            "key": {
+              "namespace": "NATIVE_QUALIFIED",
+              "package": "native",
+              "target": "unit",
+              "qualified_name": "Math::add"
+            },
+            "outcome": "PASSED",
+            "attempts": null,
+            "retry_metadata_present": false,
+            "finding_count": null
+          }
+        ],
+        "invocation": {
+          "succeeded": null,
+          "exit_code": null
+        },
+        "invocation_basis": "UNKNOWN",
+        "limitations": [],
+        "authenticity": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "junit-terminal-failed",
+      "format": "junit",
+      "raw_utf8": "<testsuite name=\"unit\" package=\"native\"><testcase classname=\"Math\" name=\"add\"><failure/></testcase></testsuite>",
+      "manifest": null,
+      "accepted": true,
+      "expected": {
+        "$schema": "urn:fortress:derived:v1:provider-evidence",
+        "schema_version": 1,
+        "normalizer_semantic_version": "1.0.0",
+        "format": "JUNIT_XML",
+        "provider": null,
+        "provider_version": null,
+        "media_type": "application/xml",
+        "payload_digest": "sha256:e70fed90e5b2b0cec308148ced35f68911c349a15e1c04ff4f9fb0028fc9ee0a",
+        "run_manifest": null,
+        "observations": [
+          {
+            "key": {
+              "namespace": "NATIVE_QUALIFIED",
+              "package": "native",
+              "target": "unit",
+              "qualified_name": "Math::add"
+            },
+            "outcome": "FAILED",
+            "attempts": null,
+            "retry_metadata_present": false,
+            "finding_count": null
+          }
+        ],
+        "invocation": {
+          "succeeded": null,
+          "exit_code": null
+        },
+        "invocation_basis": "UNKNOWN",
+        "limitations": [],
+        "authenticity": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "junit-terminal-failed-error",
+      "format": "junit",
+      "raw_utf8": "<testsuite name=\"unit\" package=\"native\"><testcase classname=\"Math\" name=\"add\"><error/></testcase></testsuite>",
+      "manifest": null,
+      "accepted": true,
+      "expected": {
+        "$schema": "urn:fortress:derived:v1:provider-evidence",
+        "schema_version": 1,
+        "normalizer_semantic_version": "1.0.0",
+        "format": "JUNIT_XML",
+        "provider": null,
+        "provider_version": null,
+        "media_type": "application/xml",
+        "payload_digest": "sha256:073ed446571fa66d401b9da9ba6e462ca958c0cc5d7df730e23ca2e119fd161e",
+        "run_manifest": null,
+        "observations": [
+          {
+            "key": {
+              "namespace": "NATIVE_QUALIFIED",
+              "package": "native",
+              "target": "unit",
+              "qualified_name": "Math::add"
+            },
+            "outcome": "FAILED",
+            "attempts": null,
+            "retry_metadata_present": false,
+            "finding_count": null
+          }
+        ],
+        "invocation": {
+          "succeeded": null,
+          "exit_code": null
+        },
+        "invocation_basis": "UNKNOWN",
+        "limitations": [],
+        "authenticity": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "junit-terminal-skipped",
+      "format": "junit",
+      "raw_utf8": "<testsuite name=\"unit\" package=\"native\"><testcase classname=\"Math\" name=\"add\"><skipped/></testcase></testsuite>",
+      "manifest": null,
+      "accepted": true,
+      "expected": {
+        "$schema": "urn:fortress:derived:v1:provider-evidence",
+        "schema_version": 1,
+        "normalizer_semantic_version": "1.0.0",
+        "format": "JUNIT_XML",
+        "provider": null,
+        "provider_version": null,
+        "media_type": "application/xml",
+        "payload_digest": "sha256:d05fba4beecb66b489612bfccee77b276660edd3b8888dccd63607ce14ddd903",
+        "run_manifest": null,
+        "observations": [
+          {
+            "key": {
+              "namespace": "NATIVE_QUALIFIED",
+              "package": "native",
+              "target": "unit",
+              "qualified_name": "Math::add"
+            },
+            "outcome": "SKIPPED",
+            "attempts": null,
+            "retry_metadata_present": false,
+            "finding_count": null
+          }
+        ],
+        "invocation": {
+          "succeeded": null,
+          "exit_code": null
+        },
+        "invocation_basis": "UNKNOWN",
+        "limitations": [],
+        "authenticity": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "junit-independent-complete-manifest",
+      "format": "junit",
+      "raw_utf8": "<testsuite name=\"unit\" package=\"native\"><testcase classname=\"Math\" name=\"add\"/></testsuite>",
+      "manifest": {
+        "binding": {
+          "subject_ref": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "context_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "authority_ref": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        },
+        "provider": "native",
+        "provider_version": "1",
+        "invocation_scope": "unit",
+        "execution": {
+          "binary_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "tool_digest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "arguments": [
+            "synthetic-protocol-fixture"
+          ],
+          "working_directory": "SUBJECT_ROOT",
+          "inputs": [
+            {
+              "name": "source",
+              "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "environment_dependencies": [],
+          "dependencies_complete": true
+        },
+        "inventory": [
+          {
+            "key": {
+              "namespace": "NATIVE_QUALIFIED",
+              "package": "native",
+              "target": "unit",
+              "qualified_name": "Math::add"
+            },
+            "enabled": true
+          }
+        ],
+        "inventory_complete": true,
+        "filters": [],
+        "filtering_known": true,
+        "attempts_complete": true,
+        "attempts": [
+          {
+            "key": {
+              "namespace": "NATIVE_QUALIFIED",
+              "package": "native",
+              "target": "unit",
+              "qualified_name": "Math::add"
+            },
+            "count": 1
+          }
+        ],
+        "invocation": {
+          "succeeded": true,
+          "exit_code": 0
+        },
+        "payload_digest": "sha256:6e8ec52d88ec1643cfe16d970478fb07ee48495f8db46e623233a08be78fbd61",
+        "assumptions": []
+      },
+      "accepted": true,
+      "expected": {
+        "$schema": "urn:fortress:derived:v1:provider-evidence",
+        "schema_version": 1,
+        "normalizer_semantic_version": "1.0.0",
+        "format": "JUNIT_XML",
+        "provider": "native",
+        "provider_version": "1",
+        "media_type": "application/xml",
+        "payload_digest": "sha256:6e8ec52d88ec1643cfe16d970478fb07ee48495f8db46e623233a08be78fbd61",
+        "run_manifest": {
+          "binding": {
+            "subject_ref": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "context_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "authority_ref": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+          },
+          "provider": "native",
+          "provider_version": "1",
+          "invocation_scope": "unit",
+          "execution": {
+            "binary_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+            "tool_digest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+            "arguments": [
+              "synthetic-protocol-fixture"
+            ],
+            "working_directory": "SUBJECT_ROOT",
+            "inputs": [
+              {
+                "name": "source",
+                "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            ],
+            "environment_dependencies": [],
+            "dependencies_complete": true
+          },
+          "inventory": [
+            {
+              "key": {
+                "namespace": "NATIVE_QUALIFIED",
+                "package": "native",
+                "target": "unit",
+                "qualified_name": "Math::add"
+              },
+              "enabled": true
+            }
+          ],
+          "inventory_complete": true,
+          "filters": [],
+          "filtering_known": true,
+          "attempts_complete": true,
+          "attempts": [
+            {
+              "key": {
+                "namespace": "NATIVE_QUALIFIED",
+                "package": "native",
+                "target": "unit",
+                "qualified_name": "Math::add"
+              },
+              "count": 1
+            }
+          ],
+          "invocation": {
+            "succeeded": true,
+            "exit_code": 0
+          },
+          "payload_digest": "sha256:6e8ec52d88ec1643cfe16d970478fb07ee48495f8db46e623233a08be78fbd61",
+          "assumptions": []
+        },
+        "observations": [
+          {
+            "key": {
+              "namespace": "NATIVE_QUALIFIED",
+              "package": "native",
+              "target": "unit",
+              "qualified_name": "Math::add"
+            },
+            "outcome": "PASSED",
+            "attempts": 1,
+            "retry_metadata_present": false,
+            "finding_count": null
+          }
+        ],
+        "invocation": {
+          "succeeded": true,
+          "exit_code": 0
+        },
+        "invocation_basis": "COMPANION_MANIFEST",
+        "limitations": [],
+        "authenticity": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "junit-unique-package-inference",
+      "format": "junit",
+      "raw_utf8": "<testsuite name=\"unit\"><testcase classname=\"Math\" name=\"add\"/></testsuite>",
+      "manifest": {
+        "binding": {
+          "subject_ref": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "context_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "authority_ref": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        },
+        "provider": "native",
+        "provider_version": "1",
+        "invocation_scope": "unit",
+        "execution": {
+          "binary_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "tool_digest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "arguments": [
+            "synthetic-protocol-fixture"
+          ],
+          "working_directory": "SUBJECT_ROOT",
+          "inputs": [
+            {
+              "name": "source",
+              "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "environment_dependencies": [],
+          "dependencies_complete": true
+        },
+        "inventory": [
+          {
+            "key": {
+              "namespace": "NATIVE_QUALIFIED",
+              "package": "native",
+              "target": "unit",
+              "qualified_name": "Math::add"
+            },
+            "enabled": true
+          }
+        ],
+        "inventory_complete": true,
+        "filters": [],
+        "filtering_known": true,
+        "attempts_complete": true,
+        "attempts": [
+          {
+            "key": {
+              "namespace": "NATIVE_QUALIFIED",
+              "package": "native",
+              "target": "unit",
+              "qualified_name": "Math::add"
+            },
+            "count": 1
+          }
+        ],
+        "invocation": {
+          "succeeded": true,
+          "exit_code": 0
+        },
+        "payload_digest": "sha256:1f1f8be28a85b800b4be40c81b3998cb05c76489eb52e57fd51851498f27ebec",
+        "assumptions": []
+      },
+      "accepted": true,
+      "expected": {
+        "$schema": "urn:fortress:derived:v1:provider-evidence",
+        "schema_version": 1,
+        "normalizer_semantic_version": "1.0.0",
+        "format": "JUNIT_XML",
+        "provider": "native",
+        "provider_version": "1",
+        "media_type": "application/xml",
+        "payload_digest": "sha256:1f1f8be28a85b800b4be40c81b3998cb05c76489eb52e57fd51851498f27ebec",
+        "run_manifest": {
+          "binding": {
+            "subject_ref": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "context_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "authority_ref": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+          },
+          "provider": "native",
+          "provider_version": "1",
+          "invocation_scope": "unit",
+          "execution": {
+            "binary_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+            "tool_digest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+            "arguments": [
+              "synthetic-protocol-fixture"
+            ],
+            "working_directory": "SUBJECT_ROOT",
+            "inputs": [
+              {
+                "name": "source",
+                "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            ],
+            "environment_dependencies": [],
+            "dependencies_complete": true
+          },
+          "inventory": [
+            {
+              "key": {
+                "namespace": "NATIVE_QUALIFIED",
+                "package": "native",
+                "target": "unit",
+                "qualified_name": "Math::add"
+              },
+              "enabled": true
+            }
+          ],
+          "inventory_complete": true,
+          "filters": [],
+          "filtering_known": true,
+          "attempts_complete": true,
+          "attempts": [
+            {
+              "key": {
+                "namespace": "NATIVE_QUALIFIED",
+                "package": "native",
+                "target": "unit",
+                "qualified_name": "Math::add"
+              },
+              "count": 1
+            }
+          ],
+          "invocation": {
+            "succeeded": true,
+            "exit_code": 0
+          },
+          "payload_digest": "sha256:1f1f8be28a85b800b4be40c81b3998cb05c76489eb52e57fd51851498f27ebec",
+          "assumptions": []
+        },
+        "observations": [
+          {
+            "key": {
+              "namespace": "NATIVE_QUALIFIED",
+              "package": "native",
+              "target": "unit",
+              "qualified_name": "Math::add"
+            },
+            "outcome": "PASSED",
+            "attempts": 1,
+            "retry_metadata_present": false,
+            "finding_count": null
+          }
+        ],
+        "invocation": {
+          "succeeded": true,
+          "exit_code": 0
+        },
+        "invocation_basis": "COMPANION_MANIFEST",
+        "limitations": [],
+        "authenticity": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "junit-unavailable-package",
+      "format": "junit",
+      "raw_utf8": "<testsuite name=\"unit\"><testcase classname=\"Math\" name=\"add\"/></testsuite>",
+      "manifest": null,
+      "accepted": true,
+      "expected": {
+        "$schema": "urn:fortress:derived:v1:provider-evidence",
+        "schema_version": 1,
+        "normalizer_semantic_version": "1.0.0",
+        "format": "JUNIT_XML",
+        "provider": null,
+        "provider_version": null,
+        "media_type": "application/xml",
+        "payload_digest": "sha256:1f1f8be28a85b800b4be40c81b3998cb05c76489eb52e57fd51851498f27ebec",
+        "run_manifest": null,
+        "observations": [
+          {
+            "key": {
+              "namespace": "NATIVE_QUALIFIED",
+              "package": null,
+              "target": "unit",
+              "qualified_name": "Math::add"
+            },
+            "outcome": "PASSED",
+            "attempts": null,
+            "retry_metadata_present": false,
+            "finding_count": null
+          }
+        ],
+        "invocation": {
+          "succeeded": null,
+          "exit_code": null
+        },
+        "invocation_basis": "UNKNOWN",
+        "limitations": [
+          "JUNIT_PACKAGE_UNRESOLVED"
+        ],
+        "authenticity": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "junit-count-mismatch",
+      "format": "junit",
+      "raw_utf8": "<testsuite name=\"unit\" package=\"native\" tests=\"2\"><testcase classname=\"Math\" name=\"add\"/></testsuite>",
+      "manifest": null,
+      "accepted": true,
+      "expected": {
+        "$schema": "urn:fortress:derived:v1:provider-evidence",
+        "schema_version": 1,
+        "normalizer_semantic_version": "1.0.0",
+        "format": "JUNIT_XML",
+        "provider": null,
+        "provider_version": null,
+        "media_type": "application/xml",
+        "payload_digest": "sha256:2652221a6ca89178b820cda6414a5d59b572e4df005601c2f44313099d685f8f",
+        "run_manifest": null,
+        "observations": [
+          {
+            "key": {
+              "namespace": "NATIVE_QUALIFIED",
+              "package": "native",
+              "target": "unit",
+              "qualified_name": "Math::add"
+            },
+            "outcome": "PASSED",
+            "attempts": null,
+            "retry_metadata_present": false,
+            "finding_count": null
+          }
+        ],
+        "invocation": {
+          "succeeded": null,
+          "exit_code": null
+        },
+        "invocation_basis": "UNKNOWN",
+        "limitations": [
+          "JUNIT_DECLARED_COUNT_MISMATCH:tests"
+        ],
+        "authenticity": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "junit-flaky-extension",
+      "format": "junit",
+      "raw_utf8": "<testsuite name=\"unit\" package=\"native\"><testcase classname=\"Math\" name=\"add\"><flakyFailure/></testcase></testsuite>",
+      "manifest": null,
+      "accepted": true,
+      "expected": {
+        "$schema": "urn:fortress:derived:v1:provider-evidence",
+        "schema_version": 1,
+        "normalizer_semantic_version": "1.0.0",
+        "format": "JUNIT_XML",
+        "provider": null,
+        "provider_version": null,
+        "media_type": "application/xml",
+        "payload_digest": "sha256:12cc4daa285c5bd03d496570ee50b9f9496077bc558e1ce58d285c2d794e7a19",
+        "run_manifest": null,
+        "observations": [
+          {
+            "key": {
+              "namespace": "NATIVE_QUALIFIED",
+              "package": "native",
+              "target": "unit",
+              "qualified_name": "Math::add"
+            },
+            "outcome": "UNKNOWN",
+            "attempts": null,
+            "retry_metadata_present": true,
+            "finding_count": null
+          }
+        ],
+        "invocation": {
+          "succeeded": null,
+          "exit_code": null
+        },
+        "invocation_basis": "UNKNOWN",
+        "limitations": [
+          "JUNIT_UNINTERPRETED_ELEMENT"
+        ],
+        "authenticity": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "junit-unicode-entity",
+      "format": "junit",
+      "raw_utf8": "<testsuite name=\"unit\" package=\"native\"><testcase name=\"native.é&amp;λ\"/></testsuite>",
+      "manifest": null,
+      "accepted": true,
+      "expected": {
+        "$schema": "urn:fortress:derived:v1:provider-evidence",
+        "schema_version": 1,
+        "normalizer_semantic_version": "1.0.0",
+        "format": "JUNIT_XML",
+        "provider": null,
+        "provider_version": null,
+        "media_type": "application/xml",
+        "payload_digest": "sha256:46e1d23678fbd1bbf2b464a4da4e36896731ca3f34a1473eadab8f622b7678cd",
+        "run_manifest": null,
+        "observations": [
+          {
+            "key": {
+              "namespace": "NATIVE_QUALIFIED",
+              "package": "native",
+              "target": "unit",
+              "qualified_name": "native.é&λ"
+            },
+            "outcome": "PASSED",
+            "attempts": null,
+            "retry_metadata_present": false,
+            "finding_count": null
+          }
+        ],
+        "invocation": {
+          "succeeded": null,
+          "exit_code": null
+        },
+        "invocation_basis": "UNKNOWN",
+        "limitations": [],
+        "authenticity": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "junit-no-unicode-normalization",
+      "format": "junit",
+      "raw_utf8": "<testsuite name=\"unit\" package=\"native\"><testcase name=\"e&#x301;\"/></testsuite>",
+      "manifest": null,
+      "accepted": true,
+      "expected": {
+        "$schema": "urn:fortress:derived:v1:provider-evidence",
+        "schema_version": 1,
+        "normalizer_semantic_version": "1.0.0",
+        "format": "JUNIT_XML",
+        "provider": null,
+        "provider_version": null,
+        "media_type": "application/xml",
+        "payload_digest": "sha256:509a7812ad8d6c5fb40102983af2d3448f7b0124727ef335a17c7eef13e65ecd",
+        "run_manifest": null,
+        "observations": [
+          {
+            "key": {
+              "namespace": "NATIVE_QUALIFIED",
+              "package": "native",
+              "target": "unit",
+              "qualified_name": "é"
+            },
+            "outcome": "PASSED",
+            "attempts": null,
+            "retry_metadata_present": false,
+            "finding_count": null
+          }
+        ],
+        "invocation": {
+          "succeeded": null,
+          "exit_code": null
+        },
+        "invocation_basis": "UNKNOWN",
+        "limitations": [],
+        "authenticity": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "junit-full-native-name",
+      "format": "junit",
+      "raw_utf8": "<testsuite name=\"unit\" package=\"native\"><testcase name=\"test_math.MathTests.test_add\"/></testsuite>",
+      "manifest": null,
+      "accepted": true,
+      "expected": {
+        "$schema": "urn:fortress:derived:v1:provider-evidence",
+        "schema_version": 1,
+        "normalizer_semantic_version": "1.0.0",
+        "format": "JUNIT_XML",
+        "provider": null,
+        "provider_version": null,
+        "media_type": "application/xml",
+        "payload_digest": "sha256:fdfa2948745f6e4ff90c2555edb66002b129f156f446fece1a3a8365b68d5168",
+        "run_manifest": null,
+        "observations": [
+          {
+            "key": {
+              "namespace": "NATIVE_QUALIFIED",
+              "package": "native",
+              "target": "unit",
+              "qualified_name": "test_math.MathTests.test_add"
+            },
+            "outcome": "PASSED",
+            "attempts": null,
+            "retry_metadata_present": false,
+            "finding_count": null
+          }
+        ],
+        "invocation": {
+          "succeeded": null,
+          "exit_code": null
+        },
+        "invocation_basis": "UNKNOWN",
+        "limitations": [],
+        "authenticity": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "junit-empty-no-inventory",
+      "format": "junit",
+      "raw_utf8": "<testsuites/>",
+      "manifest": null,
+      "accepted": true,
+      "expected": {
+        "$schema": "urn:fortress:derived:v1:provider-evidence",
+        "schema_version": 1,
+        "normalizer_semantic_version": "1.0.0",
+        "format": "JUNIT_XML",
+        "provider": null,
+        "provider_version": null,
+        "media_type": "application/xml",
+        "payload_digest": "sha256:14971007a6c99471a0dd7d408b2769fa55dfa8534c3d21e761a2d9f6f1ef7467",
+        "run_manifest": null,
+        "observations": [],
+        "invocation": {
+          "succeeded": null,
+          "exit_code": null
+        },
+        "invocation_basis": "UNKNOWN",
+        "limitations": [],
+        "authenticity": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "junit-suite-target-unavailable",
+      "format": "junit",
+      "raw_utf8": "<testsuite/>",
+      "manifest": null,
+      "accepted": true,
+      "expected": {
+        "$schema": "urn:fortress:derived:v1:provider-evidence",
+        "schema_version": 1,
+        "normalizer_semantic_version": "1.0.0",
+        "format": "JUNIT_XML",
+        "provider": null,
+        "provider_version": null,
+        "media_type": "application/xml",
+        "payload_digest": "sha256:55a2c4dabbdd641e56e0ce28262e1d43b8fff7534ced8580f39ba573eca56f2c",
+        "run_manifest": null,
+        "observations": [],
+        "invocation": {
+          "succeeded": null,
+          "exit_code": null
+        },
+        "invocation_basis": "UNKNOWN",
+        "limitations": [
+          "JUNIT_SUITE_TARGET_UNSPECIFIED"
+        ],
+        "authenticity": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "junit-reject-duplicate-native-id",
+      "format": "junit",
+      "raw_utf8": "<testsuite name=\"unit\" package=\"native\"><testcase name=\"a\"/><testcase name=\"a\"/></testsuite>",
+      "manifest": null,
+      "accepted": false,
+      "expected": null
+    },
+    {
+      "id": "junit-reject-duplicate-terminal",
+      "format": "junit",
+      "raw_utf8": "<testsuite name=\"unit\" package=\"native\"><testcase name=\"a\"><failure/><failure/></testcase></testsuite>",
+      "manifest": null,
+      "accepted": false,
+      "expected": null
+    },
+    {
+      "id": "junit-reject-conflicting-terminal",
+      "format": "junit",
+      "raw_utf8": "<testsuite name=\"unit\" package=\"native\"><testcase name=\"a\"><failure/><error/></testcase></testsuite>",
+      "manifest": null,
+      "accepted": false,
+      "expected": null
+    },
+    {
+      "id": "junit-reject-dtd",
+      "format": "junit",
+      "raw_utf8": "<!DOCTYPE testsuite [<!ENTITY x \"unsafe\">]><testsuite/>",
+      "manifest": null,
+      "accepted": false,
+      "expected": null
+    },
+    {
+      "id": "junit-reject-namespace",
+      "format": "junit",
+      "raw_utf8": "<testsuite xmlns=\"https://unregistered.example\"/>",
+      "manifest": null,
+      "accepted": false,
+      "expected": null
+    },
+    {
+      "id": "junit-reject-xml11",
+      "format": "junit",
+      "raw_utf8": "<?xml version=\"1.1\"?><testsuite/>",
+      "manifest": null,
+      "accepted": false,
+      "expected": null
+    },
+    {
+      "id": "junit-reject-two-roots",
+      "format": "junit",
+      "raw_utf8": "<testsuite/><testsuite/>",
+      "manifest": null,
+      "accepted": false,
+      "expected": null
+    },
+    {
+      "id": "junit-reject-depth",
+      "format": "junit",
+      "raw_utf8": "<testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites><testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites></testsuites>",
+      "manifest": null,
+      "accepted": false,
+      "expected": null
+    },
+    {
+      "id": "sarif-empty-results-no-inventory",
+      "format": "sarif",
+      "raw_utf8": "{\"version\":\"2.1.0\",\"runs\":[{\"tool\":{\"driver\":{\"name\":\"checker\",\"version\":\"1\",\"rules\":[{\"id\":\"RULE01\"}]}},\"results\":[],\"invocations\":[{\"executionSuccessful\":true,\"exitCode\":0}]}]}",
+      "manifest": null,
+      "accepted": true,
+      "expected": {
+        "$schema": "urn:fortress:derived:v1:provider-evidence",
+        "schema_version": 1,
+        "normalizer_semantic_version": "1.0.0",
+        "format": "SARIF210",
+        "provider": "checker",
+        "provider_version": "1",
+        "media_type": "application/sarif+json",
+        "payload_digest": "sha256:c4ec75b8e8fdfde5531e71a6bcff295bf29b0990b0629e952c962c7d6af935fc",
+        "run_manifest": null,
+        "observations": [],
+        "invocation": {
+          "succeeded": true,
+          "exit_code": 0
+        },
+        "invocation_basis": "PAYLOAD",
+        "limitations": [],
+        "authenticity": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "sarif-success-with-findings",
+      "format": "sarif",
+      "raw_utf8": "{\"version\":\"2.1.0\",\"runs\":[{\"tool\":{\"driver\":{\"name\":\"checker\",\"version\":\"1\",\"rules\":[{\"id\":\"RULE01\"}]}},\"results\":[{\"ruleId\":\"RULE01\",\"ruleIndex\":0}],\"invocations\":[{\"executionSuccessful\":true,\"exitCode\":0}]}]}",
+      "manifest": null,
+      "accepted": true,
+      "expected": {
+        "$schema": "urn:fortress:derived:v1:provider-evidence",
+        "schema_version": 1,
+        "normalizer_semantic_version": "1.0.0",
+        "format": "SARIF210",
+        "provider": "checker",
+        "provider_version": "1",
+        "media_type": "application/sarif+json",
+        "payload_digest": "sha256:eb069324744fa56a504c23bb158011e2d8d404788c682a8afabde907d9b9affb",
+        "run_manifest": null,
+        "observations": [
+          {
+            "key": {
+              "namespace": "NATIVE_QUALIFIED",
+              "package": "checker",
+              "target": "run:0/invocation:0",
+              "qualified_name": "RULE01"
+            },
+            "outcome": "FAILED",
+            "attempts": null,
+            "retry_metadata_present": false,
+            "finding_count": 1
+          }
+        ],
+        "invocation": {
+          "succeeded": true,
+          "exit_code": 0
+        },
+        "invocation_basis": "PAYLOAD",
+        "limitations": [],
+        "authenticity": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "sarif-exact-independent-inventory",
+      "format": "sarif",
+      "raw_utf8": "{\"version\":\"2.1.0\",\"runs\":[{\"tool\":{\"driver\":{\"name\":\"checker\",\"version\":\"1\",\"rules\":[{\"id\":\"RULE01\"}]}},\"results\":[],\"invocations\":[{\"executionSuccessful\":true,\"exitCode\":0}]}]}",
+      "manifest": {
+        "binding": {
+          "subject_ref": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "context_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "authority_ref": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        },
+        "provider": "checker",
+        "provider_version": "1",
+        "invocation_scope": "run:0/invocation:0",
+        "execution": {
+          "binary_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "tool_digest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "arguments": [
+            "synthetic-protocol-fixture"
+          ],
+          "working_directory": "SUBJECT_ROOT",
+          "inputs": [
+            {
+              "name": "source",
+              "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "environment_dependencies": [],
+          "dependencies_complete": true
+        },
+        "inventory": [
+          {
+            "key": {
+              "namespace": "NATIVE_QUALIFIED",
+              "package": "checker",
+              "target": "run:0/invocation:0",
+              "qualified_name": "RULE01"
+            },
+            "enabled": true
+          }
+        ],
+        "inventory_complete": true,
+        "filters": [],
+        "filtering_known": true,
+        "attempts_complete": true,
+        "attempts": [
+          {
+            "key": {
+              "namespace": "NATIVE_QUALIFIED",
+              "package": "checker",
+              "target": "run:0/invocation:0",
+              "qualified_name": "RULE01"
+            },
+            "count": 1
+          }
+        ],
+        "invocation": {
+          "succeeded": true,
+          "exit_code": 0
+        },
+        "payload_digest": "sha256:c4ec75b8e8fdfde5531e71a6bcff295bf29b0990b0629e952c962c7d6af935fc",
+        "assumptions": []
+      },
+      "accepted": true,
+      "expected": {
+        "$schema": "urn:fortress:derived:v1:provider-evidence",
+        "schema_version": 1,
+        "normalizer_semantic_version": "1.0.0",
+        "format": "SARIF210",
+        "provider": "checker",
+        "provider_version": "1",
+        "media_type": "application/sarif+json",
+        "payload_digest": "sha256:c4ec75b8e8fdfde5531e71a6bcff295bf29b0990b0629e952c962c7d6af935fc",
+        "run_manifest": {
+          "binding": {
+            "subject_ref": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "context_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "authority_ref": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+          },
+          "provider": "checker",
+          "provider_version": "1",
+          "invocation_scope": "run:0/invocation:0",
+          "execution": {
+            "binary_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+            "tool_digest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+            "arguments": [
+              "synthetic-protocol-fixture"
+            ],
+            "working_directory": "SUBJECT_ROOT",
+            "inputs": [
+              {
+                "name": "source",
+                "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              }
+            ],
+            "environment_dependencies": [],
+            "dependencies_complete": true
+          },
+          "inventory": [
+            {
+              "key": {
+                "namespace": "NATIVE_QUALIFIED",
+                "package": "checker",
+                "target": "run:0/invocation:0",
+                "qualified_name": "RULE01"
+              },
+              "enabled": true
+            }
+          ],
+          "inventory_complete": true,
+          "filters": [],
+          "filtering_known": true,
+          "attempts_complete": true,
+          "attempts": [
+            {
+              "key": {
+                "namespace": "NATIVE_QUALIFIED",
+                "package": "checker",
+                "target": "run:0/invocation:0",
+                "qualified_name": "RULE01"
+              },
+              "count": 1
+            }
+          ],
+          "invocation": {
+            "succeeded": true,
+            "exit_code": 0
+          },
+          "payload_digest": "sha256:c4ec75b8e8fdfde5531e71a6bcff295bf29b0990b0629e952c962c7d6af935fc",
+          "assumptions": []
+        },
+        "observations": [
+          {
+            "key": {
+              "namespace": "NATIVE_QUALIFIED",
+              "package": "checker",
+              "target": "run:0/invocation:0",
+              "qualified_name": "RULE01"
+            },
+            "outcome": "PASSED",
+            "attempts": 1,
+            "retry_metadata_present": false,
+            "finding_count": 0
+          }
+        ],
+        "invocation": {
+          "succeeded": true,
+          "exit_code": 0
+        },
+        "invocation_basis": "PAYLOAD",
+        "limitations": [],
+        "authenticity": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "sarif-unavailable-results-and-status",
+      "format": "sarif",
+      "raw_utf8": "{\"version\":\"2.1.0\",\"runs\":[{\"tool\":{\"driver\":{\"name\":\"checker\",\"version\":\"1\",\"rules\":[{\"id\":\"RULE01\"}]}},\"results\":null,\"invocations\":[{\"exitCode\":0}]}]}",
+      "manifest": null,
+      "accepted": true,
+      "expected": {
+        "$schema": "urn:fortress:derived:v1:provider-evidence",
+        "schema_version": 1,
+        "normalizer_semantic_version": "1.0.0",
+        "format": "SARIF210",
+        "provider": "checker",
+        "provider_version": "1",
+        "media_type": "application/sarif+json",
+        "payload_digest": "sha256:049e186cb5e3c4e6300ea6c8d6dfb804c10d705b951317df2c862c07955ddc5a",
+        "run_manifest": null,
+        "observations": [],
+        "invocation": {
+          "succeeded": null,
+          "exit_code": 0
+        },
+        "invocation_basis": "PAYLOAD",
+        "limitations": [
+          "SARIF_INVOCATION_STATUS_UNAVAILABLE",
+          "SARIF_RESULTS_UNAVAILABLE"
+        ],
+        "authenticity": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "sarif-configuration-error",
+      "format": "sarif",
+      "raw_utf8": "{\"version\":\"2.1.0\",\"runs\":[{\"tool\":{\"driver\":{\"name\":\"checker\",\"version\":\"1\",\"rules\":[{\"id\":\"RULE01\"}]}},\"results\":[],\"invocations\":[{\"executionSuccessful\":true,\"toolConfigurationNotifications\":[{\"level\":\"error\"}]}]}]}",
+      "manifest": null,
+      "accepted": true,
+      "expected": {
+        "$schema": "urn:fortress:derived:v1:provider-evidence",
+        "schema_version": 1,
+        "normalizer_semantic_version": "1.0.0",
+        "format": "SARIF210",
+        "provider": "checker",
+        "provider_version": "1",
+        "media_type": "application/sarif+json",
+        "payload_digest": "sha256:40686e8068a3bb5709e79ffd9ba3bc89d2506aa13c2401ca334cf77e5310c163",
+        "run_manifest": null,
+        "observations": [],
+        "invocation": {
+          "succeeded": false,
+          "exit_code": null
+        },
+        "invocation_basis": "PAYLOAD",
+        "limitations": [],
+        "authenticity": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "sarif-unavailable-run",
+      "format": "sarif",
+      "raw_utf8": "{\"version\":\"2.1.0\",\"runs\":[]}",
+      "manifest": null,
+      "accepted": true,
+      "expected": {
+        "$schema": "urn:fortress:derived:v1:provider-evidence",
+        "schema_version": 1,
+        "normalizer_semantic_version": "1.0.0",
+        "format": "SARIF210",
+        "provider": null,
+        "provider_version": null,
+        "media_type": "application/sarif+json",
+        "payload_digest": "sha256:ea470494dc97811c0be1b49b67000289db713b4af1f6c2b41b0126f52db2b86f",
+        "run_manifest": null,
+        "observations": [],
+        "invocation": {
+          "succeeded": null,
+          "exit_code": null
+        },
+        "invocation_basis": "UNKNOWN",
+        "limitations": [
+          "SARIF_RUN_UNAVAILABLE"
+        ],
+        "authenticity": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "sarif-reject-rule-id-index-conflict",
+      "format": "sarif",
+      "raw_utf8": "{\"version\":\"2.1.0\",\"runs\":[{\"tool\":{\"driver\":{\"name\":\"checker\",\"version\":\"1\",\"rules\":[{\"id\":\"RULE01\"}]}},\"results\":[{\"ruleId\":\"OTHER\",\"ruleIndex\":0}],\"invocations\":[{\"executionSuccessful\":true}]}]}",
+      "manifest": null,
+      "accepted": false,
+      "expected": null
+    },
+    {
+      "id": "sarif-reject-duplicate-key",
+      "format": "sarif",
+      "raw_utf8": "{\"version\":\"2.1.0\",\"version\":\"2.1.0\",\"runs\":[]}",
+      "manifest": null,
+      "accepted": false,
+      "expected": null
+    },
+    {
+      "id": "sarif-reject-inexact-number",
+      "format": "sarif",
+      "raw_utf8": "{\"version\":\"2.1.0\",\"runs\":[{\"tool\":{\"driver\":{\"name\":\"checker\",\"version\":\"1\",\"rules\":[{\"id\":\"RULE01\"}]}},\"results\":[{\"ruleIndex\":9007199254740992}],\"invocations\":[{\"executionSuccessful\":true}]}]}",
+      "manifest": null,
+      "accepted": false,
+      "expected": null
+    },
+    {
+      "id": "sarif-reject-multiple-runs",
+      "format": "sarif",
+      "raw_utf8": "{\"version\":\"2.1.0\",\"runs\":[{},{}]}",
+      "manifest": null,
+      "accepted": false,
+      "expected": null
+    }
+  ]
+}

@@ -28,7 +28,9 @@ def canonical(value: object) -> bytes:
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
 
 
-def application_selection_key(project: str, profile: str, context: str) -> str:
+def application_selection_key(project: str, profile: str, context: str, evidence_input: str | None = None) -> str:
+    if evidence_input is not None:
+        return quality.sha256_bytes(canonical(["application-selection-v2", project, profile, "repository", context, evidence_input]))
     return quality.sha256_bytes(canonical(["application-selection-v1", project, profile, "repository", context]))
 
 
@@ -39,7 +41,7 @@ def capture(root: Path, executable: Path, environment: dict[str, str], workspace
         raise quality.CertificateError("application report exceeds 64 MiB bound")
     content = destination.read_bytes()
     report = json.loads(content)
-    if canonical(report) != content or report.get("$schema") != "urn:fortress:derived:v1:state-view" or report.get("schema_version") != 1:
+    if canonical(report) != content or report.get("$schema") != "urn:fortress:derived:v2:state-view" or report.get("schema_version") != 2:
         raise quality.CertificateError("tool emitted an invalid/noncanonical StateView")
     application = report.get("application")
     if not isinstance(application, dict):
@@ -57,6 +59,10 @@ def generation(root: Path, report: dict, file_count: int) -> tuple[dict, dict[st
     project = application["project"]
     profile = assessment["profile_digest"]
     context = declaration["binding"]["context_ref"]
+    evidence_input = assessment["evidence_input_digest"]
+    inputs = application["evidence_inputs"]
+    if inputs["binding"] != declaration["binding"] or quality.sha256_bytes(canonical(["provider-evidence-input-set-v1", inputs["binding"], inputs["selected"]])) != evidence_input:
+        raise quality.CertificateError("application provider input binding differs")
     payloads = {
         "conformance-declaration": canonical(declaration),
         "profile-assessment": canonical(assessment),
@@ -68,18 +74,27 @@ def generation(root: Path, report: dict, file_count: int) -> tuple[dict, dict[st
             producer_semantic_version=record["producer_semantic_version"], content_digest=quality.sha256_bytes(content),
             byte_count=len(content), disposition="REQUIRED", storage=dict(kind="INCLUDED",member_name=record["member_name"])))
     manifest = {
-        "$schema":"urn:fortress:derived:v3:assessment-generation-manifest", "schema_version":3,
+        "$schema":"urn:fortress:derived:v4:assessment-generation-manifest", "schema_version":4,
         "generation_kind":"APPLICATION", "project":project, "profile":profile,
-        "selection_key":application_selection_key(project,profile,context),
-        "selection_context":dict(profile_digest=profile,scope="repository",context_ref=context),
+        "selection_key":application_selection_key(project,profile,context,evidence_input),
+        "selection_context":dict(profile_digest=profile,scope="repository",context_ref=context,evidence_input_digest=evidence_input),
         "source":dict(fingerprint=report["source_ref"],file_count=file_count),
-        "control_layout":dict(id="fortress-control-layout-v3",digest=quality.control_layout_digest(PRODUCT)),
+        "control_layout":dict(id="fortress-control-layout-v4",digest=quality.control_layout_digest(PRODUCT)),
         "artifacts":descriptors,
     }
     return manifest, payloads
 
 
 def publish(root: Path, report: dict, frozen: tuple[str,int], workspace: RunWorkspace) -> str:
+    declaration=report["application"]["declaration"]
+    assessment=report["application"]["assessment"]
+    current, native_subject = quality.repository_source_identities(root)
+    if current != frozen:
+        raise quality.CertificateError("application source changed during composition")
+    if report["source_ref"] != native_subject or declaration["binding"]["subject_ref"] != native_subject:
+        raise quality.CertificateError("application report differs from frozen source")
+    if assessment["binding"] != declaration["binding"] or assessment["declaration_digest"] != quality.sha256_bytes(canonical(declaration)):
+        raise quality.CertificateError("application report cross-artifact binding differs")
     manifest, payloads = generation(root,report,frozen[1])
     identity = quality.manifest_digest(manifest)
     directory = root / quality.GENERATIONS_PATH / identity.removeprefix("sha256:")
@@ -108,6 +123,9 @@ def publish(root: Path, report: dict, frozen: tuple[str,int], workspace: RunWork
 
 
 def verify(root: Path, report: dict, file_count: int) -> str:
+    frozen, native_subject = quality.repository_source_identities(root)
+    if frozen[1] != file_count or report["source_ref"] != native_subject or report["application"]["declaration"]["binding"]["subject_ref"] != native_subject:
+        raise quality.CertificateError("application report differs from current source")
     expected,payloads = generation(root,report,file_count)
     index_bytes = (root / quality.CURRENT_INDEX_PATH).read_bytes()
     index = json.loads(index_bytes)
@@ -124,6 +142,8 @@ def verify(root: Path, report: dict, file_count: int) -> str:
     for artifact in expected["artifacts"]:
         if (directory / artifact["storage"]["member_name"]).read_bytes() != payloads[artifact["id"]]:
             raise quality.CertificateError("application artifact differs from independently replayed result")
+    if quality.repository_fingerprint(root) != frozen:
+        raise quality.CertificateError("application source changed during verification")
     return selected
 
 
