@@ -186,6 +186,16 @@ struct AssessmentSelection {
 }
 
 impl AssessmentGenerationManifest {
+    /// Returns the generation's project identity for registered cache resolution.
+    #[must_use]
+    pub fn project(&self) -> &str {
+        &self.project
+    }
+    /// Returns the exact source subject recorded by this generation.
+    #[must_use]
+    pub fn source_ref(&self) -> &str {
+        &self.source.fingerprint
+    }
     /// Parses and validates one strict public manifest.
     ///
     /// # Errors
@@ -336,6 +346,16 @@ impl AssessmentGenerationManifest {
 }
 
 impl ArtifactDescriptor {
+    /// Returns the exact immutable payload digest.
+    #[must_use]
+    pub fn content_digest(&self) -> &str {
+        &self.content_digest
+    }
+    /// Returns the exact declared payload size.
+    #[must_use]
+    pub const fn byte_count(&self) -> u64 {
+        self.byte_count
+    }
     /// Returns the logical artifact identifier.
     #[must_use]
     pub fn id(&self) -> &str {
@@ -349,6 +369,12 @@ impl ArtifactDescriptor {
 }
 
 impl AssessmentSelectionIndex {
+    /// Returns all exact context selections without choosing a latest result.
+    pub fn selections(&self) -> impl Iterator<Item = (&str, &str)> {
+        self.selections
+            .iter()
+            .map(|item| (item.selection_key.as_str(), item.generation_digest.as_str()))
+    }
     /// Parses a strict, sorted and duplicate-free selection index.
     ///
     /// # Errors

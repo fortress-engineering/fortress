@@ -8,6 +8,8 @@ Snapshot Governance exists to answer what is true and what violates the declared
 
 Build stabilized content-addressed repository snapshots, coordinate governed conformance when authored authority exists, expose implementation observation and supported semantic analysis when it does not, analyze Rust tests without conflating existence with stable governance identity, execute implemented rules truthfully, project finding lifecycle and explicit disposition without rewriting violations, retain Architecture Evaluation diagnostics as a separate non-normative projection, orchestrate machine-readable and human repository audits, and issue or verify content-addressed local quality-gate certificates while governing deterministic projection materialization without overstating authentication.
 
+The read-only inspection facade consumes existing immutable declarations, assessments, claim/proof and CCG/reference products. It owns versioned query DTOs, explicit selection/freshness reporting, safe diagnosis, evidence-linked explanations and unapplied policy previews. It does not introduce another semantic evaluator.
+
 ## Scope
 
 ### Includes

@@ -36,8 +36,10 @@ use fortress_core::identity_migration::{
 };
 mod application_inputs;
 pub mod command;
+mod inspection;
 mod presentation;
 mod provider_command;
+pub mod rpc;
 
 use command::{CommandDescriptor, CommandRegistry};
 
@@ -108,6 +110,12 @@ where
     };
 
     match command.id() {
+        "CMD-GOVERNANCE-STATUS"
+        | "CMD-GOVERNANCE-DOCTOR"
+        | "CMD-GOVERNANCE-QUERY"
+        | "CMD-GOVERNANCE-EXPLAIN"
+        | "CMD-GOVERNANCE-AUTHOR"
+        | "CMD-GOVERNANCE-SERVE" => inspection::run(command.name(), &arguments[1..], output, error),
         "CMD-APPLICATION-DECLARE" | "CMD-APPLICATION-ASSESS" | "CMD-APPLICATION-STATE-VIEW" => {
             run_application(command.name(), &arguments[1..], output, error)
         }

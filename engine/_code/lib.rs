@@ -111,6 +111,9 @@ pub mod provider;
 #[path = "../certification/_code/provider_inputs.rs"]
 pub mod provider_inputs;
 
+#[path = "../snapshot_governance/_code/query.rs"]
+pub mod query;
+
 #[path = "../snapshot_governance/_code/evidence_ingest.rs"]
 pub mod evidence_ingest;
 

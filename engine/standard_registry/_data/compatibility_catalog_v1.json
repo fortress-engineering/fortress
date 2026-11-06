@@ -2157,6 +2157,50 @@
         "id": "sha256-jcs-canonical-bytes",
         "source": "engine/certification/_code/declaration.rs"
       }
+    },
+    {
+      "schema_id": "urn:fortress:protocol:v1:query-request",
+      "schema_path": "engine/snapshot_governance/_data/query_request_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/snapshot_governance/_code/query_protocol.rs"
+      },
+      "reader": {
+        "status": "ACTIVE",
+        "source": "engine/snapshot_governance/_code/query_protocol.rs"
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "exact-loaded-query-input-v1",
+        "source": "engine/snapshot_governance/_code/query.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "rfc8785-jcs-sha256",
+        "source": "engine/snapshot_governance/_code/query.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:protocol:v1:query-response",
+      "schema_path": "engine/snapshot_governance/_data/query_response_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/snapshot_governance/_code/query_protocol.rs"
+      },
+      "reader": {
+        "status": "ACTIVE",
+        "source": "engine/snapshot_governance/_code/query_protocol.rs"
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "exact-loaded-query-input-v1",
+        "source": "engine/snapshot_governance/_code/query.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "rfc8785-jcs-sha256",
+        "source": "engine/snapshot_governance/_code/query.rs"
+      }
     }
   ]
 }

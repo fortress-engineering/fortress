@@ -164,6 +164,55 @@ impl ResolvedControlEntry {
 }
 
 impl ControlLayout {
+    /// Returns the registered logical projection path for an artifact identity.
+    #[must_use]
+    pub fn artifact_logical_path(&self, id: &str) -> Option<&str> {
+        self.artifact_registry
+            .iter()
+            .find(|record| record.id == id)
+            .map(|record| record.logical_path.as_str())
+    }
+    /// Resolves a singleton registered role without duplicating its location.
+    #[must_use]
+    pub fn role_path(&self, role: ControlRole) -> Option<&str> {
+        self.roles
+            .iter()
+            .find(|record| record.role == role)
+            .map(|record| record.path.as_str())
+    }
+
+    /// Resolves an immutable generation member through the installed registry.
+    #[must_use]
+    pub fn generation_path(&self, digest: &str, artifact: Option<&str>) -> Option<String> {
+        let hex = digest.strip_prefix("sha256:")?;
+        if !is_sha256_hex(hex) {
+            return None;
+        }
+        let member = match artifact {
+            None => self.manifest_member.name.as_str(),
+            Some(id) => self
+                .artifact_registry
+                .iter()
+                .find(|record| record.id == id)?
+                .member_name
+                .as_deref()?,
+        };
+        let path = format!(
+            "{}/generations/{hex}/{member}",
+            self.role_path(ControlRole::AssessmentSelectionIndex)?
+                .rsplit_once('/')?
+                .0
+        );
+        self.resolve(&path)
+            .filter(|entry| {
+                matches!(
+                    entry.role(),
+                    ControlRole::GenerationManifest | ControlRole::GeneratedAssessmentPayload
+                )
+            })
+            .map(|_| path)
+    }
+
     /// Loads and validates the installed declarative registry.
     ///
     /// # Panics

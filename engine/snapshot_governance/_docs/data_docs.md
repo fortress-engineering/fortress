@@ -89,3 +89,11 @@ Carries the draft normative rule for recursive parent-local Feature verification
 ### [`traceability_rule.json`](../_data/traceability_rule.json)
 
 Carries the draft normative rule record interpreted by the traceability evaluator.
+
+### [`query_request_schema_v1.json`](../_data/query_request_schema_v1.json)
+
+Registers the transport-independent v1 method envelope with strict per-method parameter schemas, explicit state/context references and bounded pagination.
+
+### [`query_response_schema_v1.json`](../_data/query_response_schema_v1.json)
+
+Registers canonical v1 status, diagnostics, pages, explanations, proposals, lifecycle results and structured failures with exact request and loaded-state identities.

@@ -163,3 +163,27 @@ Streaming XML1.0 native-test subset with explicit unavailable package, process a
 Bounded typed SARIF2.1 single-run and single-invocation observations. Successful invocation and findings remain distinct; missing results, rules, invocation or unresolved external properties never establish absence. Imported analysis never becomes ExecutedTest evidence.
 
 `quality_certificate.py` stages both registered executables, invokes the test-owned correctness qualifier and replay, and publishes compact metadata in its separate production group. `execution_storage.py` reserves bounded external retained evidence under the active existing lease; journals record the allocation, and compiler/staging cleanup never prunes observations. Unknown history counts toward the budget and is retained on refusal.
+
+### [`query.rs`](../_code/query.rs)
+
+Owns the single immutable inspection index, state/context identity, selector ambiguity, route permission classification, bounded pages and cancellation. Loaded queries perform no semantic evaluation or state writes.
+
+### [`query_protocol.rs`](../_code/query_protocol.rs)
+
+Defines protocol v1 envelopes, strict typed method parameters, structured errors, exact canonical JSON and complete human rendering shared by CLI, future IDE and host adapters.
+
+### [`query_load.rs`](../_code/query_load.rs)
+
+Explicitly observes bounded source/authority and loads selected CONTROL generations through registered roles. Reports missing, stale, unavailable, integrity and authentication states independently, without artifact generation or repair.
+
+### [`query_explanation.rs`](../_code/query_explanation.rs)
+
+Links recorded claims, findings, obligations, defeaters, proof nodes and provenance into paged explanations. Minimal support is asserted only for recorded matching single-premise conclusions; schema-informed canonical policy previews remain unapproved proposals.
+
+The query facade contract is protocol v1 (`query_request_schema_v1.json` and
+`query_response_schema_v1.json`), with an exact immutable input identity and JCS
+response bytes. Consumers in Flow, Behavior, onboarding, Security, performance,
+IDE and host integrations must use this result contract and rerun the query/schema
+and adapter controls if it changes. Query loading is an explicit source/authority
+observation boundary; warm inspection never triggers semantic evaluation. Existing
+StateView, declaration, assessment and proof versions retain their original meaning.

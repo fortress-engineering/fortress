@@ -8,6 +8,8 @@ The CLI exists to expose implemented Fortress operations through deterministic t
 
 Own command registration, argument validation, process exit behavior, human rendering, and schema-versioned JSON rendering for version, help, raw repository audit, progressive finding checks, explicit baseline/exception mutation, Module ownership inspection, semantic inspection, and exact-snapshot local certification.
 
+Status, doctor, query, explain, author and `serve --stdio` are thin adapters over the single Snapshot Governance inspection facade. Human and JSON render the same result fields; the versioned protocol is independent of any editor, host or transport framework.
+
 ## Scope
 
 ### Includes

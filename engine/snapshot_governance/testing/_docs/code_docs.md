@@ -127,3 +127,7 @@ R20-009 through R20-011 additionally verify exact retained replay with a project
 R20-012 keeps an authored external obligation mandatory in the Rust-only qualification port even when a genuine observed legacy Rust Test ID is mapped and synthetic input alleges a successful suite. The synthetic record is an adversarial unit input, never actual execution evidence. Native requirement assessment through the separately trusted actual runner remains independently tested by R20-010.
 
 Execution-storage lifecycle controls additionally retain failed/incomplete observations outside disposable roots, refuse invalid categories and exhausted budgets, and preserve retained evidence through compiler cleanup and orphan recovery. Their assertions concern ownership and correctness, not numerical performance.
+
+### [`query.rs`](../_code/query.rs)
+
+Verifies independent raw/progressive/assurance results, freshness honesty, evidence-backed explanations, minimal-support limits, ambiguous names, route direction, permission classification, complete evidence pagination, schema and human equivalence, cancellation, malformed inputs, resource limits and doctor read-only behavior.

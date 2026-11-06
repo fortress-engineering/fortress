@@ -206,6 +206,16 @@
             "T-TF-CLI-0001-R20-002",
             "T-TF-CLI-0001-R20-003"
           ]
+        },
+        {
+          "id": "TF-CLI-0001-R21",
+          "statement": "Thin status, doctor, query, explain, author and stdio adapters share canonical query results, strict typed versioned parameters, request and state identities, cancellation, bounded framing and structured failures; human output retains every machine result field and proposals remain unapproved.",
+          "tests": [
+            "T-TF-CLI-0001-R21-001",
+            "T-TF-CLI-0001-R21-002",
+            "T-TF-CLI-0001-R21-003",
+            "T-TF-CLI-0001-R21-004"
+          ]
         }
       ]
     }

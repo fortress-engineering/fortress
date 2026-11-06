@@ -539,6 +539,9 @@ impl StandardBundle {
 pub struct StandardRule {
     id: String,
     title: String,
+    statement: String,
+    rationale: String,
+    failure_prevented: String,
     status: String,
     applicability: String,
     category: FindingCategory,
@@ -551,6 +554,21 @@ pub struct StandardRule {
 }
 
 impl StandardRule {
+    /// Returns the authored governing statement.
+    #[must_use]
+    pub fn statement(&self) -> &str {
+        &self.statement
+    }
+    /// Returns the authored rule rationale.
+    #[must_use]
+    pub fn rationale(&self) -> &str {
+        &self.rationale
+    }
+    /// Returns the failure the authored rule prevents.
+    #[must_use]
+    pub fn failure_prevented(&self) -> &str {
+        &self.failure_prevented
+    }
     /// Returns the stable rule identity.
     #[must_use]
     pub fn id(&self) -> &str {
@@ -847,11 +865,11 @@ struct StandardRuleWire {
     title: String,
     status: String,
     #[serde(rename = "statement")]
-    _statement: String,
+    statement: String,
     #[serde(rename = "rationale")]
-    _rationale: String,
+    rationale: String,
     #[serde(rename = "failure_prevented")]
-    _failure_prevented: String,
+    failure_prevented: String,
     applicability: String,
     category: FindingCategory,
     integrity_tier: u8,
@@ -915,6 +933,9 @@ fn validate_rule_wire(
     Ok(StandardRule {
         id: wire.id,
         title: wire.title,
+        statement: wire.statement,
+        rationale: wire.rationale,
+        failure_prevented: wire.failure_prevented,
         status: wire.status,
         applicability: wire.applicability,
         category: wire.category,

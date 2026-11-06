@@ -269,3 +269,7 @@ path = "../snapshot_governance/testing/_code/provider_ingest.rs"
 [[test]]
 name = "qualification_metadata"
 path = "../standard_registry/testing/_code/qualification.rs"
+
+[[test]]
+name = "governance_query"
+path = "../snapshot_governance/testing/_code/query.rs"

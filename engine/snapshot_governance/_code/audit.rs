@@ -4959,6 +4959,49 @@ fn prepare_analysis(root: &Path) -> Result<PreparedAnalysis, AuditError> {
     prepare_analysis_from_observed(project, observation, observed_files)
 }
 
+/// Prepares only existing source, authority and CCG/reference products for inspection.
+/// This explicit cold-load boundary performs no program semantic evaluation.
+pub(crate) fn prepare_query_input(
+    root: &Path,
+    max_source_bytes: usize,
+    max_files: usize,
+) -> Result<crate::query::QueryInput, AuditError> {
+    let (view, _) = observe_resident_source_bounded(root, max_source_bytes, max_files)?;
+    let source_ref = certification_source_digest(&view);
+    let prepared = match prepare_analysis_from_view(view) {
+        Ok(prepared) => prepared,
+        Err(error) => {
+            let mut input = crate::query::QueryInput::empty(source_ref);
+            input.diagnostics =
+                serde_json::json!({"input_validity":"INVALID","detail":error.to_string()});
+            input.limitations.push(
+                "Current authority could not be prepared; no favorable result is inferred.".into(),
+            );
+            return Ok(input);
+        }
+    };
+    let mut input = crate::query::QueryInput::empty(source_ref);
+    input.ccg = prepared.ccg().cloned();
+    if let Some(ccg) = prepared.ccg() {
+        input.references = Some(
+            evaluate_reference_resolution(
+                ccg,
+                &prepared.observed_files,
+                prepared.standard.bundle.edition(),
+            )
+            .map_err(AuditError::ReferenceResolution)?
+            .index()
+            .clone(),
+        );
+    }
+    input.availability["actual_profiles"] = serde_json::json!(prepared.profiles.references());
+    input.availability["actual_module_profile_overrides"] = serde_json::json!(prepared.profiles.module_overrides().iter().map(|(module,selection)|serde_json::json!({"module":module,"profiles":selection.references()})).collect::<Vec<_>>());
+    input.diagnostics = serde_json::json!({"configuration":prepared.project_state,"configuration_detail":prepared.project_detail,"input_validity":if input.ccg.is_some() {"VALID_AUTHORITY"} else {"UNAVAILABLE"},"source_files":prepared.observed_files.len(),"source_bytes":prepared.observed_files.values().map(Vec::len).sum::<usize>(),"cold_load_work":"Source observation, existing authority/CCG/reference preparation only. No semantic analysis, verification execution, cache writes or repairs."});
+    input.diagnostics["toolchain"] = query_toolchain_inputs(&prepared.observed_files);
+    input.standard = Some(prepared.standard.bundle);
+    Ok(input)
+}
+
 fn prepare_analysis_from_view(view: SourceView) -> Result<PreparedAnalysis, AuditError> {
     validate_control_source_paths(&view)?;
     let project = project_authority_from_view(&view)?;
@@ -6269,4 +6312,37 @@ impl From<CertificationError> for AuditError {
     fn from(value: CertificationError) -> Self {
         Self::Certification(value)
     }
+}
+
+fn query_toolchain_inputs(files: &SourceView) -> serde_json::Value {
+    let mut declarations = Vec::new();
+    for path in [
+        "rust-toolchain.toml",
+        "_data/rust_toolchain.toml",
+        "rust-toolchain",
+    ] {
+        let Some(bytes) = files.bytes(path) else {
+            continue;
+        };
+        let parsed = std::str::from_utf8(bytes)
+            .map_err(|error| error.to_string())
+            .and_then(|text| {
+                if path == "rust-toolchain" {
+                    Ok(serde_json::json!({"channel":text.trim()}))
+                } else {
+                    toml::from_str::<toml::Value>(text)
+                        .map(|value| serde_json::json!({"channel": value.get("toolchain").and_then(|toolchain|toolchain.get("channel")).and_then(toml::Value::as_str)}))
+                        .map_err(|error| error.to_string())
+                }
+            });
+        declarations.push(match parsed {
+            Ok(value) => {
+                serde_json::json!({"path":path,"state":"PARSED_DECLARATION","declared":value})
+            }
+            Err(error) => {
+                serde_json::json!({"path":path,"state":"INVALID_DECLARATION","reason":error})
+            }
+        });
+    }
+    serde_json::json!({"declared_inputs":declarations,"execution":"NOT_PERFORMED"})
 }

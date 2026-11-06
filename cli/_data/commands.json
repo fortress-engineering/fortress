@@ -306,6 +306,72 @@
       "duration": "short",
       "resumability": "restartable",
       "certification_implications": "Read-only normalization retains unverified producer status; it neither executes project code nor grants profile approval."
+    },
+    {
+      "id": "CMD-GOVERNANCE-STATUS",
+      "name": "status",
+      "aliases": [],
+      "description": "Inspect selected governance, source freshness and independent result dimensions.",
+      "owner": "TF-CLI-0001",
+      "executor": "builtin-sync",
+      "duration": "short",
+      "resumability": "restartable",
+      "certification_implications": "Read-only projection of existing immutable results; no verification execution, certification, authority acceptance or repair."
+    },
+    {
+      "id": "CMD-GOVERNANCE-DOCTOR",
+      "name": "doctor",
+      "aliases": [],
+      "description": "Diagnose inputs, environment, evidence and storage without running or repairing project code.",
+      "owner": "TF-CLI-0001",
+      "executor": "builtin-sync",
+      "duration": "short",
+      "resumability": "restartable",
+      "certification_implications": "Read-only projection of existing immutable results; no verification execution, certification, authority acceptance or repair."
+    },
+    {
+      "id": "CMD-GOVERNANCE-QUERY",
+      "name": "query",
+      "aliases": [],
+      "description": "Query immutable Module policy and directed governance relationships.",
+      "owner": "TF-CLI-0001",
+      "executor": "builtin-sync",
+      "duration": "short",
+      "resumability": "restartable",
+      "certification_implications": "Read-only projection of existing immutable results; no verification execution, certification, authority acceptance or repair."
+    },
+    {
+      "id": "CMD-GOVERNANCE-EXPLAIN",
+      "name": "explain",
+      "aliases": [],
+      "description": "Explain recorded findings, claims, obligations and defeaters with paged evidence.",
+      "owner": "TF-CLI-0001",
+      "executor": "builtin-sync",
+      "duration": "short",
+      "resumability": "restartable",
+      "certification_implications": "Read-only projection of existing immutable results; no verification execution, certification, authority acceptance or repair."
+    },
+    {
+      "id": "CMD-GOVERNANCE-AUTHOR",
+      "name": "author",
+      "aliases": [],
+      "description": "Preview canonical governance proposals from readable Module selectors and schema guidance.",
+      "owner": "TF-CLI-0001",
+      "executor": "builtin-sync",
+      "duration": "short",
+      "resumability": "restartable",
+      "certification_implications": "Read-only projection of existing immutable results; no verification execution, certification, authority acceptance or repair."
+    },
+    {
+      "id": "CMD-GOVERNANCE-SERVE",
+      "name": "serve",
+      "aliases": [],
+      "description": "Serve the versioned read-only inspection protocol over bounded JSON lines.",
+      "owner": "TF-CLI-0001",
+      "executor": "builtin-sync",
+      "duration": "indeterminate",
+      "resumability": "restartable",
+      "certification_implications": "Read-only projection of existing immutable results; no verification execution, certification, authority acceptance or repair."
     }
   ]
 }

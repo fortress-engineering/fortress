@@ -30,9 +30,12 @@ path = "../../testing/_code/audit_flow.rs"
 
 [dependencies]
 fortress-core = { path = "../../engine/_data" }
-
-[dev-dependencies]
 serde_json = "1.0"
+
 
 [lints]
 workspace = true
+
+[[test]]
+name = "inspection"
+path = "../testing/_code/inspection.rs"

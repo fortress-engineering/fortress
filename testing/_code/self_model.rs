@@ -161,14 +161,14 @@ fn live_contract_v2_v3_ecosystem_resolves_completely() {
     assert_eq!(resolved.modules().len(), 45);
     assert_eq!(resolved.capabilities().len(), 22);
     assert_eq!(resolved.features().len(), 23);
-    assert_eq!(resolved.requirements().len(), 127);
+    assert_eq!(resolved.requirements().len(), 129);
     assert!(
         resolved
             .requirements()
             .contains_key("AF-STATE-EFFECT-ANALYSIS-0001-R06")
     );
-    for id in ["AF-CERTIFICATION-0001-R05", "TF-CLI-0001-R19"] {
-        assert!(resolved.requirements().contains_key(id));
+    for id in REQUIRED_SELF_MODEL_REQUIREMENTS {
+        assert!(resolved.requirements().contains_key(*id));
     }
     assert_eq!(resolved.guarantees().len(), 17);
     assert_eq!(resolved.checkpoints().len(), 10);
@@ -246,3 +246,10 @@ fn real_reference_scope_has_authored_purity_and_nonvacuous_semantic_support() {
         );
     }
 }
+
+const REQUIRED_SELF_MODEL_REQUIREMENTS: &[&str] = &[
+    "AF-CERTIFICATION-0001-R05",
+    "TF-CLI-0001-R19",
+    "AF-SNAPSHOT-GOVERNANCE-0001-R21",
+    "TF-CLI-0001-R21",
+];

@@ -10,6 +10,48 @@ use fortress_core::identity::{StableId, StableIdError};
 
 const BUILTIN_COMMANDS: &[CommandDescriptor] = &[
     CommandDescriptor {
+        id: "CMD-GOVERNANCE-STATUS",
+        name: "status",
+        aliases: &[],
+        description: "Inspect selected governance, source freshness and independent result dimensions.",
+        usage: "fortress status [path] [--format human|json] [--selection key] [--state path] [--timing]",
+    },
+    CommandDescriptor {
+        id: "CMD-GOVERNANCE-DOCTOR",
+        name: "doctor",
+        aliases: &[],
+        description: "Diagnose inputs, environment, evidence and storage without running or repairing project code.",
+        usage: "fortress doctor [path] [--format human|json] [--selection key] [--state path]",
+    },
+    CommandDescriptor {
+        id: "CMD-GOVERNANCE-QUERY",
+        name: "query",
+        aliases: &[],
+        description: "Query immutable Module policy and directed governance relationships.",
+        usage: "fortress query modules|policy|dependents|routes|relationships|references [selector] [path] [--selector module] [--target selector] [--limit count] [--cursor token] [--format human|json]",
+    },
+    CommandDescriptor {
+        id: "CMD-GOVERNANCE-EXPLAIN",
+        name: "explain",
+        aliases: &[],
+        description: "Explain recorded findings, claims, obligations and defeaters with paged evidence.",
+        usage: "fortress explain reference [path] [--state path] [--selection key] [--limit count] [--cursor token] [--format human|json]",
+    },
+    CommandDescriptor {
+        id: "CMD-GOVERNANCE-AUTHOR",
+        name: "author",
+        aliases: &[],
+        description: "Preview canonical governance proposals from readable Module selectors and schema guidance.",
+        usage: "fortress author module [path] [--target effect-or-capability --disposition ALLOW|DENY] [--format human|json]",
+    },
+    CommandDescriptor {
+        id: "CMD-GOVERNANCE-SERVE",
+        name: "serve",
+        aliases: &[],
+        description: "Serve the versioned read-only inspection protocol over bounded JSON lines.",
+        usage: "fortress serve --stdio [path] [--selection key] [--state path]",
+    },
+    CommandDescriptor {
         id: "CMD-PROVIDER-EVIDENCE",
         name: "evidence",
         aliases: &[],
