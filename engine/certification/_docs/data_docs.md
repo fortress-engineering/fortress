@@ -100,4 +100,12 @@ Current neutral endpoint with Assessment2 and exact evidence inputs; StateView1 
 
 ### [`generation_manifest_schema_v4.json`](../_data/generation_manifest_schema_v4.json)
 
-Current immutable generation metadata binds ControlLayout4; application selection includes the exact provider input digest. Historical generation editions retain their bytes and meanings.
+Retained fourth-edition immutable generation metadata binds ControlLayout4; application selection includes the exact provider input digest. Historical generation editions retain their bytes and meanings.
+
+### [`generation_manifest_schema_v5.json`](../_data/generation_manifest_schema_v5.json)
+
+Current layout-v5 generation metadata preserves exact provider-aware application selection. Local quality generations additionally bind compact automated tool qualification; native application semantics do not fabricate that test-owned artifact.
+
+### [`qualification_scope_schema_v1.json`](../_data/qualification_scope_schema_v1.json)
+
+Separate exact declaration/tool-scope metadata observation. Application evidence is always false and authenticity UNVERIFIED; no application truth or proof-manifest field changes.

@@ -12,6 +12,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import secrets
 import shutil
 import socket
@@ -23,6 +24,8 @@ from heavy_admission import HeavyAdmissionGuard
 
 
 GIB = 1024**3
+RETAINED_EVIDENCE_BUDGET_BYTES = 256 * 1024**2
+MAX_RETAINED_EVIDENCE_RUN_BYTES = 80 * 1024**2
 
 
 class StorageError(RuntimeError):
@@ -217,6 +220,8 @@ class RunWorkspace:
         self._projection_root: Path | None = None
         self._publication_paths: set[Path] | None = None
         self._observed_peak = 0
+        self._retained_evidence_base = self.namespace_root / "q" / short_identity
+        self._retained_evidence: list[tuple[Path, int]] = []
 
     def _lock(self, *, recovery: bool = False) -> None:
         try:
@@ -305,10 +310,66 @@ class RunWorkspace:
             if self._projection_root is not None
             else 0
         )
+        evidence_bytes = _tree_size(self._retained_evidence_base)
+        if evidence_bytes > RETAINED_EVIDENCE_BUDGET_BYTES or any(
+            _tree_size(path) > maximum for path, maximum in self._retained_evidence
+        ):
+            raise StorageError("retained evidence exceeded its reserved budget; evidence preserved")
         self._observed_peak = max(
-            self._observed_peak, compiler_bytes + staging_bytes + projection_bytes
+            self._observed_peak, compiler_bytes + staging_bytes + projection_bytes + evidence_bytes
         )
         self.reserve()
+
+    def allocate_retained_evidence(
+        self, category: str, maximum_bytes: int = MAX_RETAINED_EVIDENCE_RUN_BYTES
+    ) -> Path:
+        """Reserve external observations that compiler/staging cleanup never deletes.
+
+        The active workspace lease serializes reservations. Unknown historical
+        bytes count against the budget and are preserved. Operational ownership
+        metadata does not authenticate a qualification conclusion.
+        """
+        if self._lease is None or self._journal.get("lease_state") != "ACTIVE":
+            raise StorageError("retained evidence requires an active workspace")
+        if type(maximum_bytes) is not int or not re.fullmatch(r"[a-z][a-z0-9-]{0,63}", category) or not (
+            1024 <= maximum_bytes <= MAX_RETAINED_EVIDENCE_RUN_BYTES
+        ):
+            raise StorageError("invalid retained evidence category or reservation")
+        current = self.storage_root
+        for component in ("python", "q", self.identity[:16]):
+            current = current / component
+            try:
+                current.mkdir()
+            except FileExistsError:
+                pass
+            metadata = current.lstat()
+            if not stat.S_ISDIR(metadata.st_mode) or stat.S_ISLNK(metadata.st_mode) or getattr(
+                metadata, "st_file_attributes", 0
+            ) & 0x400:
+                raise StorageError("linked or non-directory retained evidence ancestor")
+        if _tree_size(current) + maximum_bytes > RETAINED_EVIDENCE_BUDGET_BYTES:
+            raise StorageError("retained evidence budget exhausted; archive decision required, all evidence preserved")
+        self.reserve(maximum_bytes)
+        identifier = hashlib.sha256(
+            f"{self.identity}:{self.nonce}:{category}:{len(self._retained_evidence)}".encode()
+        ).hexdigest()
+        directory = current / identifier
+        allocation = {"directory": str(directory), "category": category, "maximum_bytes": maximum_bytes}
+        self._journal.setdefault("retained_evidence_allocations", []).append(allocation)
+        self._save()
+        directory.mkdir()
+        marker = {
+            "namespace": "python-retained-evidence-v1", "repository": str(self.repository),
+            "root_identity": self.identity, "run_nonce": self.nonce,
+            "category": category, "maximum_bytes": maximum_bytes,
+        }
+        with (directory / "owner.json").open("xb") as stream:
+            stream.write((json.dumps(marker, sort_keys=True) + "\n").encode())
+            stream.flush()
+            os.fsync(stream.fileno())
+        self._retained_evidence.append((directory, maximum_bytes))
+        self.check_budget()
+        return directory
 
     def __enter__(self) -> RunWorkspace:
         self._lock()
@@ -514,6 +575,7 @@ class RunWorkspace:
             )
             self._journal["compiler_bytes"] = compiler_bytes
             self._journal["staging_bytes"] = staging_bytes
+            self._journal["retained_evidence_bytes"] = _tree_size(self._retained_evidence_base)
             if self._projection_root is not None:
                 self._journal["projection_bytes_after"] = projection_bytes
             self._journal["disk_free_after_work"] = shutil.disk_usage(

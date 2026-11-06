@@ -1,0 +1,17 @@
+[package]
+name = "fortress-semantic-oracle"
+workspace = "../../../_data"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+autotests = false
+
+[lib]
+path = "../_code/oracle.rs"
+
+[[test]]
+name = "qualification_oracle"
+path = "../testing/_code/oracle.rs"
+
+[lints]
+workspace = true

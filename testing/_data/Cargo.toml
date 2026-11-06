@@ -1,0 +1,22 @@
+[package]
+name = "fortress-qualification"
+workspace = "../../_data"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+autotests = false
+
+[[bin]]
+name = "semantic_qualification"
+path = "../_code/semantic_qualification.rs"
+
+[dependencies]
+fortress-core = { path = "../../engine/_data" }
+fortress-semantic-oracle = { path = "../semantic_oracle/_data" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_json_canonicalizer = "0.3.2"
+sha2 = "0.10"
+
+[lints]
+workspace = true

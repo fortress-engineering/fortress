@@ -1,0 +1,52 @@
+{
+  "profile_id": "qualification-frozen-primitive-contracts-v1",
+  "authority_class": "ASSUMED",
+  "version": "1.97.1",
+  "target": "qualification-frozen-platform",
+  "type_binding": "frozen-literal-borrows-and-fresh-command",
+  "scope": "Only exact original synthetic source bytes with preregistered opcodes. Literal string and byte-slice conversions and drops have no user callbacks. A freshly constructed Command has no installed pre-exec callback. The reference operation boundary classifies direct API effects; it does not bound behavior executed by an external child, kernel hooks, allocator replacement or arbitrary upstream repository calls.",
+  "authority_limit": "Explicit accepted research premises, not independently certified Standard-library summaries. These premises condition negative conclusions and remain in their proof and reason references. Installed default summaries remain partial; removing this profile must restore uncertainty for cross-effect negatives. No default promotion or application evidence follows.",
+  "operations": [
+    {
+      "operation": "rust_method::std::process::Command::spawn",
+      "source_digest": "sha256:6ae9f15d6cf8fa07f9ebd96d7956dc98ed75dac004a17891fb17b5c7c2f0c3f3",
+      "excluded_effects": [
+        "filesystem.write"
+      ],
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "rationale": "The exact fixture immediately spawns a freshly constructed command without user hooks. This accepted direct primitive boundary records process spawning; filesystem writes performed by the eventual external child are outside it. Other effect families stay conservatively permitted."
+    },
+    {
+      "operation": "std::fs::write",
+      "source_digest": "sha256:50e3ed9eeb546023b0f6ac074c27d3718221e022cdf450f529466c336ddaec56",
+      "excluded_effects": [
+        "process.spawn"
+      ],
+      "callback_dependencies": [
+        "trait:argument:0:AsRef<Path>",
+        "trait:argument:1:AsRef<[u8]>"
+      ],
+      "destructor_dependencies": [
+        "drop:argument:0",
+        "drop:argument:1"
+      ],
+      "rationale": "The pinned fs::write source creates and writes a File. The exact fixture supplies only built-in literal borrows; user conversion and destructor code cannot introduce a spawn at this direct operation boundary. Other effect families stay conservatively permitted."
+    },
+    {
+      "operation": "std::process::Command::new",
+      "source_digest": "sha256:6ae9f15d6cf8fa07f9ebd96d7956dc98ed75dac004a17891fb17b5c7c2f0c3f3",
+      "excluded_effects": [
+        "filesystem.write",
+        "process.spawn"
+      ],
+      "callback_dependencies": [
+        "trait:argument:0:AsRef<OsStr>"
+      ],
+      "destructor_dependencies": [
+        "drop:argument:0"
+      ],
+      "rationale": "The pinned API constructs a command description from a literal borrow; process execution is performed by a later spawning operation. Other effect families stay conservatively permitted."
+    }
+  ]
+}

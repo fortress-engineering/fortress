@@ -55,3 +55,5 @@ Manual positive, negative and uncertainty protocol controls supply independent e
 ### [`provider_conformance.py`](../_code/provider_conformance.py)
 
 Runs twelve independent manual protocol controls and compares the actual native CLI against thirty-two frozen positive, negative and uncertainty XML/SARIF vectors. Each original payload must reproduce canonical metadata through the separate standard-library consumer. This mandatory correctness gate makes no performance, human-adjudication or population-precision claim.
+
+The declaration tests also require exact tool-scope metadata to remain a separately typed, unsigned observation across every application truth state. Stale tool inputs refuse observation; adding scope metadata cannot alter declaration bytes or assessment sufficiency.

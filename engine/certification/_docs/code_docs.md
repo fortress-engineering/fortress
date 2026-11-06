@@ -51,3 +51,5 @@ Defines context-bound unsigned provider envelopes, explicit native versus govern
 ### [`provider_inputs.rs`](../_code/provider_inputs.rs)
 
 Compile the complete native Requirement manifest, authored selectors and exact selected evidence-input set. Missing bytes never erase known obligations; the global normalized budget and single prepared provider index bound retained work.
+
+Declaration scope observations consume generic Standard-owned exact metadata and independently supplied current inputs. They preserve canonical declaration-v1 truth and cannot be parsed as application AssessmentEvidence. GenerationManifest5 uses ControlLayout5; retained v1-v4 readers keep their original digest meanings.

@@ -158,10 +158,10 @@ fn live_contract_v2_v3_ecosystem_resolves_completely() {
         "live CCG must be coherent: {:#?}",
         resolution.violations()
     );
-    assert_eq!(resolved.modules().len(), 43);
-    assert_eq!(resolved.capabilities().len(), 21);
-    assert_eq!(resolved.features().len(), 22);
-    assert_eq!(resolved.requirements().len(), 124);
+    assert_eq!(resolved.modules().len(), 45);
+    assert_eq!(resolved.capabilities().len(), 22);
+    assert_eq!(resolved.features().len(), 23);
+    assert_eq!(resolved.requirements().len(), 127);
     assert!(
         resolved
             .requirements()
@@ -172,8 +172,8 @@ fn live_contract_v2_v3_ecosystem_resolves_completely() {
     }
     assert_eq!(resolved.guarantees().len(), 17);
     assert_eq!(resolved.checkpoints().len(), 10);
-    assert_eq!(resolved.direct_requirements().len(), 180);
-    assert_eq!(resolved.relationships().len(), 21);
+    assert_eq!(resolved.direct_requirements().len(), 182);
+    assert_eq!(resolved.relationships().len(), 22);
     assert!(
         resolved
             .modules()
@@ -186,4 +186,63 @@ fn live_contract_v2_v3_ecosystem_resolves_completely() {
             .values()
             .all(|values| values.len() == 9)
     );
+}
+
+/// `T-AF-BOOTSTRAP-GOVERNANCE-0001-R02-002`
+/// Fortress requirement: AF-BOOTSTRAP-GOVERNANCE-0001-R02
+#[test]
+fn real_reference_scope_has_authored_purity_and_nonvacuous_semantic_support() {
+    use fortress_core::semantic_conformance::{PolicyDisposition, SemanticConformanceState};
+    let root = repository_root();
+    let source = fs::read_to_string(root.join("testing/semantic_oracle/contract.json")).unwrap();
+    let contract =
+        fortress_core::contract_coherency::ModuleContract::from_json_str(&source).unwrap();
+    let policy = contract
+        .semantic_policy()
+        .expect("pure responsibility deliberately authors policy");
+    assert_eq!(
+        policy.effects().deny(),
+        ["filesystem.write", "process.spawn"]
+    );
+    let reference =
+        fs::read_to_string(root.join("testing/semantic_oracle/_code/oracle.rs")).unwrap();
+    assert!(!reference.contains("use fortress_core"));
+    let evaluated = fortress_core::audit::compile_repository_semantic_conformance(&root).unwrap();
+    let module = evaluated
+        .model()
+        .module("AF-SEMANTIC-ORACLE-0001")
+        .expect("real owned helper scope");
+    assert_eq!(module.coverage().governed_source_files(), 1);
+    assert_eq!(module.coverage().analysed_source_files(), 1);
+    assert_eq!(module.conclusions().len(), 2);
+    let defeaters = evaluated
+        .model()
+        .defeaters()
+        .iter()
+        .filter(|defeater| module.defeater_refs().contains(&defeater.id().to_owned()))
+        .collect::<Vec<_>>();
+    for claim in module.conclusions() {
+        assert_eq!(claim.disposition(), PolicyDisposition::Deny);
+        assert_eq!(
+            claim.conformance(),
+            Some(SemanticConformanceState::NoSupportedViolation),
+            "authored purity requires complete independent semantic support: {claim:#?}; {defeaters:#?}"
+        );
+        assert_eq!(claim.coverage().ratio(), Some("1/1"));
+    }
+    for id in [
+        "TF-CLI-0001",
+        "AF-SNAPSHOT-GOVERNANCE-0001",
+        "TEST-FORTRESS-0001",
+    ] {
+        assert!(
+            evaluated
+                .model()
+                .module(id)
+                .unwrap()
+                .effective_policy()
+                .is_none(),
+            "I/O-owning responsibility stays deliberately undeclared: {id}"
+        );
+    }
 }

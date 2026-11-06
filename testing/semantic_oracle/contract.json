@@ -1,0 +1,48 @@
+{
+  "$schema": "urn:fortress:schema:v3:module-contract",
+  "schema_version": 3,
+  "id": "AF-SEMANTIC-ORACLE-0001",
+  "display_name": "Semantic Reference Oracle",
+  "provides": [
+    {
+      "id": "CAP-SEMANTIC-ORACLE",
+      "version": "0.1.0",
+      "visibility": "project"
+    }
+  ],
+  "requires": [],
+  "relationships": [],
+  "constraints": [],
+  "guarantees": [],
+  "features": [
+    {
+      "id": "AF-SEMANTIC-ORACLE-0001",
+      "version": "0.1.0",
+      "requirements": [
+        {
+          "id": "AF-SEMANTIC-ORACLE-0001-R01",
+          "statement": "The pure primitive-language reference independently interprets potential effect unions, explicit policy truth, absent subject/support and production eligibility using only integer and boolean operations without Fortress evaluator imports.",
+          "tests": [
+            "T-AF-SEMANTIC-ORACLE-0001-R01-001",
+            "T-AF-SEMANTIC-ORACLE-0001-R01-002"
+          ]
+        }
+      ]
+    }
+  ],
+  "behavior": [],
+  "semantic_policy": {
+    "default": "UNDECLARED",
+    "capabilities": {
+      "allow": [],
+      "deny": []
+    },
+    "effects": {
+      "allow": [],
+      "deny": [
+        "filesystem.write",
+        "process.spawn"
+      ]
+    }
+  }
+}

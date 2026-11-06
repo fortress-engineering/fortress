@@ -9,6 +9,9 @@ use sha2::{Digest, Sha256};
 
 /// Current assessment generation manifest schema identity.
 pub const GENERATION_MANIFEST_SCHEMA: &str =
+    "urn:fortress:derived:v5:assessment-generation-manifest";
+/// Retained fourth edition with selected provider context.
+pub const GENERATION_MANIFEST_V4_SCHEMA: &str =
     "urn:fortress:derived:v4:assessment-generation-manifest";
 /// Retained third edition, without selected provider context.
 pub const GENERATION_MANIFEST_V3_SCHEMA: &str =
@@ -231,7 +234,11 @@ impl AssessmentGenerationManifest {
                 GENERATION_MANIFEST_V3_SCHEMA,
                 3,
                 "fortress-control-layout-v3"
-            ) | (GENERATION_MANIFEST_SCHEMA, 4, "fortress-control-layout-v4")
+            ) | (
+                GENERATION_MANIFEST_V4_SCHEMA,
+                4,
+                "fortress-control-layout-v4"
+            ) | (GENERATION_MANIFEST_SCHEMA, 5, "fortress-control-layout-v5")
         );
         if !supported_layout_pair
             || !matches!(
@@ -250,9 +257,9 @@ impl AssessmentGenerationManifest {
                 .selection_context
                 .as_ref()
                 .ok_or(ControlManifestError::UnsupportedRecord)?;
-            if !matches!(self.schema_version, 3 | 4)
+            if !matches!(self.schema_version, 3..=5)
                 || (self.schema_version == 3 && context.evidence_input_digest.is_some())
-                || (self.schema_version == 4 && context.evidence_input_digest.is_none())
+                || (self.schema_version >= 4 && context.evidence_input_digest.is_none())
                 || self.profile != context.profile_digest
                 || self.selection_key != context.selection_key(&self.project)?
             {

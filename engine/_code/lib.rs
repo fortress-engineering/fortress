@@ -113,3 +113,6 @@ pub mod provider_inputs;
 
 #[path = "../snapshot_governance/_code/evidence_ingest.rs"]
 pub mod evidence_ingest;
+
+#[path = "../standard_registry/_code/qualification.rs"]
+pub mod qualification;

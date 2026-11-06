@@ -1,0 +1,43 @@
+{
+  "oracle_id": "primitive-effects-independent-reference-v1",
+  "fortress_conclusions_used_as_expected_answers": false,
+  "construction": "Primitive Rust language contracts and explicit policy truth table were authored independently, with all source cases and expected outcomes frozen before candidate scoring.",
+  "primary_api_sources": [
+    {
+      "repository": "rust-lang/rust",
+      "revision": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
+      "path": "library/std/src/fs.rs",
+      "blob_sha1": "0dd250acff8378dc1aa59f63d7e3a37e5b1369e3",
+      "content_sha256": "50e3ed9eeb546023b0f6ac074c27d3718221e022cdf450f529466c336ddaec56",
+      "bytes": 121983,
+      "url": "https://github.com/rust-lang/rust/blob/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library/std/src/fs.rs"
+    },
+    {
+      "repository": "rust-lang/rust",
+      "revision": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
+      "path": "library/std/src/process.rs",
+      "blob_sha1": "0b8db439a63707214f5e0f9b60d80dd93145e7b7",
+      "content_sha256": "6ae9f15d6cf8fa07f9ebd96d7956dc98ed75dac004a17891fb17b5c7c2f0c3f3",
+      "bytes": 93402,
+      "url": "https://github.com/rust-lang/rust/blob/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library/std/src/process.rs"
+    },
+    {
+      "repository": "rust-lang/rust",
+      "revision": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
+      "path": "library/core/src/iter/traits/iterator.rs",
+      "blob_sha1": "c5182cb3d072021ba906ef0a2dc7ea4705d825ac",
+      "content_sha256": "db43b7acc33fca53d85fef3ddea29ec9f8c1e768df428676fe2de160f21d5f6b",
+      "bytes": 144253,
+      "url": "https://github.com/rust-lang/rust/blob/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library/core/src/iter/traits/iterator.rs"
+    }
+  ],
+  "expected_meaning": [
+    "std::fs::write delegates to File creation and writing; the reference classifies a potential filesystem-write operation, not a claim that runtime I/O succeeded.",
+    "std::process::Command::spawn invokes child-process creation; builders preserve the Command receiver. This is potential process-spawn semantics, not evidence that a process actually ran.",
+    "Iterator::size_hint is an overridable method of an arbitrary implementation. No effect bound constrains that implementation; the Serde open-trait scope cannot justify universal absence of filesystem writes. This is an explicit language-contract inference, not an independent human adjudication."
+  ],
+  "literal_controls": "The separate pure reference Module imports no Fortress evaluator; 74 primitive controls are checked against preregistered literal truth. Ten unsupported/configuration/invalid controls retain independent source and capability-limit explanations; two public files retain original revision, path, bytes and notices.",
+  "compiler_research": "The retained source-identical independent rustc 1.97.1 probe accepted all 80 valid original emitted synthetic Rust sources in two contexts and rejected the two malformed sources. It never executed fixture functions. Syntax validation does not establish semantic conformance or runtime effect execution.",
+  "independence_limit": "Manual protocol construction, deterministic automation and compiler syntax checks are not independent human review, population precision, real-world false-positive estimates, confidence intervals or independent external assurance.",
+  "historical_population": "Earlier unreproduced populations remain unreproduced and unchanged."
+}

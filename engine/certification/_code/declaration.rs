@@ -658,3 +658,64 @@ impl VerificationSessionReport {
         })
     }
 }
+
+/// Separate observation of exact tool capability metadata for a declaration.
+///
+/// This record cannot satisfy an application obligation or change its truth.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+pub struct DeclarationQualificationScope {
+    #[serde(rename = "$schema")]
+    schema: String,
+    schema_version: u16,
+    /// Exact associated declaration; benchmark findings are not proof leaves.
+    pub declaration_digest: String,
+    /// Application subject, distinct from the qualification's tool source.
+    pub subject_ref: String,
+    /// Exact independently supplied qualification report bytes.
+    pub qualification_digest: String,
+    /// Exact capability envelope; no untested operation is implicitly promoted.
+    pub supported_scope_digest: String,
+    /// Scope selected by the caller, never inferred from successful outcomes.
+    pub scope_id: String,
+    /// Always tool capability metadata, never application execution evidence.
+    pub classification: String,
+    /// Always false: benchmark success is not application evidence.
+    pub application_evidence: bool,
+    /// Local hash integrity does not authenticate external assurance.
+    pub authenticity: String,
+    /// Exact current premises independently supplied by the trusted consumer.
+    pub inputs: crate::qualification::QualificationInputs,
+}
+
+impl ConformanceDeclaration {
+    /// Observes exact scope metadata without changing canonical application truth.
+    ///
+    /// The caller supplies independently admitted report bytes and current tool
+    /// identities. Equality and local PASS do not themselves authenticate a
+    /// producer, promote Standard defaults or satisfy application obligations.
+    ///
+    /// # Errors
+    /// Rejects an invalid declaration, stale identities or inflated scope claims.
+    pub fn qualification_scope(
+        &self,
+        report: &crate::qualification::QualificationManifest,
+        current: &crate::qualification::QualificationInputs,
+        scope: &crate::qualification::SupportedScope,
+    ) -> Result<DeclarationQualificationScope, String> {
+        self.validate().map_err(|e| e.to_string())?;
+        report.admit_for(current, scope)?;
+        Ok(DeclarationQualificationScope {
+            schema: "urn:fortress:derived:v1:declaration-qualification-scope".into(),
+            schema_version: 1,
+            declaration_digest: self.digest().map_err(|e| e.to_string())?,
+            subject_ref: self.binding.subject_ref.clone(),
+            qualification_digest: report.digest()?,
+            supported_scope_digest: scope.digest()?,
+            scope_id: scope.scope_id.clone(),
+            classification: "TOOL_CAPABILITY_METADATA".into(),
+            application_evidence: false,
+            authenticity: "UNVERIFIED".into(),
+            inputs: current.clone(),
+        })
+    }
+}

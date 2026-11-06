@@ -33,3 +33,7 @@ Loads content-addressed Standard-owned governance and assurance profiles, valida
 ### [`wire.rs`](../_code/wire.rs)
 
 Rejects duplicate JSON object keys before typed decoding, enforces exact public integer limits, emits RFC 8785 bytes for new public records, and resolves explicit reader-version support without altering historical model serializers.
+
+### [`qualification.rs`](../_code/qualification.rs)
+
+Defines bounded strict qualification and supported-scope metadata readers. Exact independently supplied current identities, complete controls, mutations, witnesses and uncertainty are required. Parsing is not host admission or authenticity; automated scope never promotes defaults or proves application execution.

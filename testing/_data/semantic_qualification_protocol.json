@@ -1,0 +1,84 @@
+{
+  "protocol_id": "fortress-automated-semantic-qualification-v1",
+  "protocol_version": 1,
+  "scope_id": "rust-primitive-effects-automated-v1",
+  "method": "PREREGISTERED_DETERMINISTIC_AUTOMATED_CONFORMANCE",
+  "candidate_expected_answer_source": false,
+  "independent_human_adjudication": false,
+  "human_validation": "RECOMMENDED_FUTURE_RESEARCH_NOT_PERFORMED",
+  "population_precision": null,
+  "real_world_false_positive_rate": null,
+  "statistical_confidence": null,
+  "independent_external_assurance": false,
+  "case_count": 86,
+  "synthetic_case_count": 84,
+  "public_file_scope_count": 2,
+  "source_mutation_relations": 384,
+  "source_mutation_distinct_cases": 64,
+  "source_mutation_extra_independent_samples": 0,
+  "heldout_selection": "Original synthetic freeze SHA selects 26 held-out cases before any candidate scoring; separately preregistered two data-only controls give 28. After the first scored run these are exposed holdouts. Every failed run remains retained; subsequent runs are requalification replays, never new held-out validation.",
+  "freeze_files": [
+    {
+      "path": "na_scopes_addendum.json",
+      "sha256": "8e69313ea6d19aff2d283914d1c0939069b72db184ad3a8ee7fa0d833f4c2fc3"
+    },
+    {
+      "path": "public_scopes_freeze.json",
+      "sha256": "92f610a0327648d7abbfd68521a9f93267cfff91b87cdd3cf19288dc1230c642"
+    },
+    {
+      "path": "source_mutation_relations.json",
+      "sha256": "7278f48698e06bf035b6467d3a61b7eff45691c3c47f0a128662a663081d112e"
+    },
+    {
+      "path": "synthetic_scopes_freeze.json",
+      "sha256": "e83d92ab27290061cae4e2140f1b90457bec8a9b385972e67311790087c5c5dd"
+    }
+  ],
+  "oracle_construction": [
+    "Independently authored restricted primitive-language effect union and explicit ALLOW/DENY/UNDECLARED truth table; the reference helper has no Fortress imports.",
+    "Literal expected outcomes and sources were frozen before any candidate scoring. Frozen malformed sources are independent negative inputs, never favorable absence proofs.",
+    "Pinned rustc 1.97.1 independently accepted all 80 valid emitted synthetic Rust sources in production and enabled-test/config contexts and rejected the two malformed sources; the private original receipt is retained. This establishes syntax validity, not effect truth.",
+    "Two pinned original public files and MIT notices retain Git revisions, original relative paths, Git blob SHA-1 and content SHA-256. Rust standard-library contracts independently justify the spawn witness and arbitrary Iterator uncertainty. Research wrappers do not certify the original repository or build.",
+    "All 384 one-opcode source replacements are edges among 64 independently scored frozen cases. Endpoint differences test sensitivity to actual source mutations without multiplying independent source samples.",
+    "Metadata corruption and oracle countermodels test fail-closed admission and scorer sensitivity. They are labeled harness controls, not a production-code mutation campaign."
+  ],
+  "mandatory_correctness": [
+    "All preregistered cases and denominators remain present, including unknown, nonapplicable, invalid, advisory, authorization and undeclared outcomes.",
+    "Every required supported positive, negative and public scope matches its independent expected conclusion. All remaining expected nonfavorable endpoints must also match.",
+    "A real original-source public spawn witness is mandatory; unknown paths cannot erase its raw positive. Open generic Iterator behavior must remain uncertain.",
+    "Cold, prepared, reused and foreign-context reconstruction have equal whole authoritative Program Semantics, domains, state/effects, realization, conformance, findings, coverage, proofs, provenance and canonical outputs on valid inputs.",
+    "Invalid Rust is rejected equally by cold and uncached preparation. Invalid preparations are never admitted for reuse; the report counts these separately from valid model differentials.",
+    "Zero executable coverage, absent subject, omitted claims, unresolved configuration and omitted calls never establish a favorable negative. ALLOW remains authority rather than absence evidence.",
+    "All mutation relations exercise independently scored endpoints and preserve the preregistered truth and blocking contrasts.",
+    "Exact analyzer, candidate/native source, executables, toolchain, registry, catalog, profiles, schemas, scope, contexts, protocol, corpus, oracle, held-out selection and outcome bytes are bound; changes invalidate reuse.",
+    "Every first observation and failed/incomplete run is retained before failure propagation. Qualification never retrospectively narrows the envelope or changes the expected answers.",
+    "The pure primitive reference helper's real nonzero executable scope satisfies its deliberately authored no-filesystem-write/no-process-spawn policies. Unrelated I/O-owning Modules remain undeclared.",
+    "The unchanged complete canonical correctness, full workspace, determinism, resource safety, independent 1000-case equivalence and exact-source hosted gates remain mandatory.",
+    "A registered nonrecursive failed/incomplete execution record cannot alter or improve any valid case's whole canonical semantic products, claims, findings, provenance or uncertainty. Metadata-only changes do not create semantic improvements."
+  ],
+  "performance": "Exploratory performance observations are separate research, never acceptance gates; no speedup threshold or repeated performance campaign is required.",
+  "historical_population": "Earlier unreproduced external populations remain unreproduced. This new deterministic envelope does not reconstruct or validate historical accuracy claims.",
+  "requalification_triggers": [
+    "analyzer",
+    "candidate_source",
+    "catalog",
+    "contexts",
+    "corpus",
+    "harness",
+    "heldout_selection",
+    "native_source",
+    "oracle",
+    "outcomes",
+    "profiles",
+    "protocol",
+    "registry",
+    "schemas",
+    "staged_cli",
+    "supported_scope",
+    "toolchain"
+  ],
+  "fixture_standard_edition": "1.0.0-draft.1",
+  "fixture_module_contract_version": 3,
+  "oracle_provenance": "semantic_oracle_provenance.json"
+}

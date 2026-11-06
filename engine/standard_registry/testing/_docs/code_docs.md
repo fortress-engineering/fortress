@@ -41,3 +41,7 @@ Checks duplicate-key rejection, exact public integers, optional bounds, unknown 
 ### [`std_id_001.rs`](../_code/std_id_001.rs)
 
 Exercises valid, invalid, and minimum-boundary stable identities for STD-ID-001.
+
+### [`qualification.rs`](../_code/qualification.rs)
+
+Uses independent metadata countermodels to reject every stale input, omitted case/mutation/coverage, unsupported human/statistical/external assurance claim and ambiguous record. These unit controls do not consume held-out source cases.

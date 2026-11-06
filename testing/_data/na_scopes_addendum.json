@@ -1,0 +1,60 @@
+{
+  "kind": "PRE_EVALUATION_NONAPPLICABLE_CONTROL_ADDENDUM",
+  "version": 1,
+  "created_utc": "2026-11-05T20:47:50.754122+00:00",
+  "status": "NOT_EVALUATED",
+  "prior_freeze_unchanged": "e83d92ab27290061cae4e2140f1b90457bec8a9b385972e67311790087c5c5dd",
+  "reason": "Complete explicit nonapplicable stratum before evaluation; preserve all original82 expectations and denominators.",
+  "cases": [
+    {
+      "case_id": "data-only-not-applicable-1",
+      "stratum": "KNOWN_NO_EXECUTABLE_SUBJECT",
+      "source": null,
+      "source_files": [],
+      "data_files": [
+        {
+          "path": "sample/_data/records.json",
+          "bytes": "{\"records\":[1,2,3]}\n",
+          "sha256": "97f69a527720fc7b8b731c6c48bd27bf0979bff8f883e2bce6f28f44e2155f59"
+        }
+      ],
+      "effect": "filesystem.write",
+      "disposition": "DENY",
+      "provenance": "NO_EXECUTABLE_SUBJECT",
+      "ground_truth": "NOT_APPLICABLE",
+      "expected_reporting": [
+        "NOT_APPLICABLE"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "holdout": "HELD_OUT",
+      "oracle": "Shared contract S3: no relevant executable subject yields NOT_APPLICABLE, while source with no usable support remains NOT_EVALUABLE. Data-only fixture has no Rust source, not an empty .rs file. N/A cannot discharge a required evaluative obligation.",
+      "zero_coverage_must_not_mean_no_violation": true
+    },
+    {
+      "case_id": "data-only-not-applicable-2",
+      "stratum": "KNOWN_NO_EXECUTABLE_SUBJECT",
+      "source": null,
+      "source_files": [],
+      "data_files": [
+        {
+          "path": "sample/_data/records.json",
+          "bytes": "{\"records\":[1,2,3]}\n",
+          "sha256": "97f69a527720fc7b8b731c6c48bd27bf0979bff8f883e2bce6f28f44e2155f59"
+        }
+      ],
+      "effect": "process.spawn",
+      "disposition": "DENY",
+      "provenance": "NO_EXECUTABLE_SUBJECT",
+      "ground_truth": "NOT_APPLICABLE",
+      "expected_reporting": [
+        "NOT_APPLICABLE"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "holdout": "HELD_OUT",
+      "oracle": "Shared contract S3: no relevant executable subject yields NOT_APPLICABLE, while source with no usable support remains NOT_EVALUABLE. Data-only fixture has no Rust source, not an empty .rs file. N/A cannot discharge a required evaluative obligation.",
+      "zero_coverage_must_not_mean_no_violation": true
+    }
+  ]
+}

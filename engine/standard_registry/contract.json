@@ -26,7 +26,8 @@
         "AF-STANDARD-REGISTRY-0001-R03",
         "AF-STANDARD-REGISTRY-0001-R04",
         "AF-STANDARD-REGISTRY-0001-R05",
-        "AF-STANDARD-REGISTRY-0001-R06"
+        "AF-STANDARD-REGISTRY-0001-R06",
+        "AF-STANDARD-REGISTRY-0001-R07"
       ]
     }
   ],
@@ -103,6 +104,15 @@
             "T-AF-STANDARD-REGISTRY-0001-R06-005",
             "T-AF-STANDARD-REGISTRY-0001-R06-006",
             "T-AF-STANDARD-REGISTRY-0001-R06-007"
+          ]
+        },
+        {
+          "id": "AF-STANDARD-REGISTRY-0001-R07",
+          "statement": "The pure qualification metadata reader requires exact independently supplied current tool, corpus, context and oracle identities, a complete nonvacuous automated scope, every supported control and mutation, and explicit limits without promoting defaults or asserting human, population or external assurance.",
+          "tests": [
+            "T-AF-STANDARD-REGISTRY-0001-R07-001",
+            "T-AF-STANDARD-REGISTRY-0001-R07-002",
+            "T-AF-STANDARD-REGISTRY-0001-R07-003"
           ]
         }
       ]

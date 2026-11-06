@@ -61,6 +61,7 @@ fn installed_layout_has_one_fixed_config_and_closed_generation_members() {
             "references",
             "semantic",
             "semantic-conformance",
+            "semantic-qualification",
             "source-artifacts",
             "state-effect",
             "verified-bfg",
@@ -205,7 +206,7 @@ fn historical_layout_retains_its_role_boundary_and_digest() {
     assert!(!historical.allows_directory("__fortress/governance/effect_summaries"));
     assert!(
         ControlLayout::from_json_str(
-            &CONTROL_LAYOUT_SOURCE.replace("\"schema_version\": 4", "\"schema_version\": 1")
+            &CONTROL_LAYOUT_SOURCE.replace("\"schema_version\": 5", "\"schema_version\": 1")
         )
         .is_err()
     );

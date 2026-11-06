@@ -150,7 +150,7 @@ class DerivedArtifactStorageTests(unittest.TestCase):
         self.assertEqual(target.read_bytes(),b"new index")
         self.assertEqual(foreign.read_bytes(),b"owner work")
 
-    def test_current_generation_binds_layout_and_manifest_v3(self) -> None:
+    def test_current_generation_binds_layout_and_manifest_v5(self) -> None:
         certificate = self.certificate("sha256:" + "a" * 64)
         certificate["source"]["file_count"] = 1
         pending = {
@@ -159,11 +159,11 @@ class DerivedArtifactStorageTests(unittest.TestCase):
             if storage == quality.TRACKED_EVIDENCE
         }
         manifest = quality.build_generation_manifest(ROOT, certificate, b"{}\n", pending)
-        self.assertEqual(manifest["$schema"], "urn:fortress:derived:v4:assessment-generation-manifest")
-        self.assertEqual(manifest["schema_version"], 4)
+        self.assertEqual(manifest["$schema"], "urn:fortress:derived:v5:assessment-generation-manifest")
+        self.assertEqual(manifest["schema_version"], 5)
         self.assertEqual(
             manifest["control_layout"],
-            {"id": "fortress-control-layout-v4", "digest": quality.control_layout_digest(ROOT)},
+            {"id": "fortress-control-layout-v5", "digest": quality.control_layout_digest(ROOT)},
         )
 
     def test_historical_manifest_cannot_become_current_by_selection(self) -> None:

@@ -26,12 +26,54 @@ fn repository_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
-// These seven read-only assertions inspect the same immutable fresh fixture.
+// These read-only assertions inspect the same immutable fresh fixture.
 // Independent generator, cold/determinism, and mutation controls still execute
 // their own evaluations; this fixture does not substitute for those controls.
 fn self_audit() -> &'static fortress_core::audit::AuditResult {
     static AUDIT: OnceLock<fortress_core::audit::AuditResult> = OnceLock::new();
     AUDIT.get_or_init(|| audit_repository(repository_root()).expect("self audit completes"))
+}
+
+fn no_policy_audit() -> &'static fortress_core::audit::AuditResult {
+    static AUDIT: OnceLock<fortress_core::audit::AuditResult> = OnceLock::new();
+    AUDIT.get_or_init(|| {
+        let parent = std::env::temp_dir()
+            .canonicalize()
+            .expect("temporary root resolves");
+        let root = parent.join(format!("fortress-no-policy-{}", std::process::id()));
+        fs::create_dir(&root).expect("no-policy fixture is exclusively created");
+        fs::create_dir(root.join("__fortress")).expect("fixture governance root creates");
+        fs::write(
+            root.join("__fortress/.fsconfig"),
+            concat!(
+                "{\n  \"$schema\": \"urn:fortress:schema:v3:project-configuration\",\n",
+                "  \"schema_version\": 3,\n  \"observation_exclusions\": [],\n",
+                "  \"logical_modules\": []\n}\n"
+            ),
+        )
+        .expect("fixture explicitly selects governance");
+        fs::write(
+            root.join("contract.json"),
+            concat!(
+                "{\n  \"$schema\": \"urn:fortress:schema:v2:module-contract\",\n",
+                "  \"schema_version\": 2,\n  \"id\": \"PF-NO-POLICY\",\n",
+                "  \"display_name\": \"No policy fixture\",\n",
+                "  \"ecosystem\": {\n    \"repository_grammar\": 1,\n",
+                "    \"standard\": {\n      \"id\": \"STD-FORTRESS-ENGINEERING\",\n",
+                "      \"edition\": \"1.0.0-draft.2\"\n    }\n  },\n",
+                "  \"provides\": [],\n  \"requires\": [],\n  \"relationships\": [],\n",
+                "  \"constraints\": [],\n  \"guarantees\": [],\n",
+                "  \"features\": [],\n  \"behavior\": []\n}\n"
+            ),
+        )
+        .expect("no-policy contract writes");
+        let audit = audit_repository(&root);
+        let resolved = root.canonicalize().expect("owned fixture resolves");
+        assert_eq!(resolved.parent(), Some(parent.as_path()));
+        assert_eq!(resolved.file_name(), root.file_name());
+        fs::remove_dir_all(&resolved).expect("owned no-policy fixture is removed");
+        audit.expect("no-policy audit completes")
+    })
 }
 
 fn invalid_architecture() -> ArchitectureManifest {
@@ -143,7 +185,7 @@ fn recursive_testing_boundaries_pass_for_fortress_itself() {
 /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R04
 #[test]
 fn non_applicable_rule_has_canonical_state_and_reason() {
-    let audit = self_audit();
+    let audit = no_policy_audit();
     let execution = audit
         .rules()
         .iter()
@@ -166,10 +208,11 @@ fn non_applicable_rule_has_canonical_state_and_reason() {
 /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R04
 #[test]
 fn canonical_audit_never_serializes_non_applicable_as_passed() {
-    let audit = self_audit();
+    let audit = no_policy_audit();
     let document: serde_json::Value =
         serde_json::from_str(&audit.to_json_pretty().unwrap()).expect("audit JSON parses");
     let rules = document["rules"].as_array().expect("rules array");
+    assert!(audit.summary().not_applicable() > 0);
     for rule in rules {
         if rule["applicable"] == false {
             assert_eq!(rule["state"], "NOT_APPLICABLE");

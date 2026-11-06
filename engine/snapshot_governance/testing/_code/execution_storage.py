@@ -426,5 +426,40 @@ class ExecutionStorageTests(unittest.TestCase):
             pass
 
 
+    def test_retained_observations_survive_failure_and_compiler_cleanup(self) -> None:
+        policy = StoragePolicy(reserve_bytes=0, retention="cleanup-owned-compiler")
+        workspace = RunWorkspace(self.root, self.storage, policy)
+        with self.assertRaisesRegex(RuntimeError, "scored failure"):
+            with workspace:
+                report = workspace.allocate_retained_evidence("semantic-qualification-v1")
+                (report / "observations.jsonl").write_bytes(b'{"control":"retained failure"}\n')
+                workspace.check_budget()
+                raise RuntimeError("scored failure")
+        self.assertTrue((report / "observations.jsonl").is_file())
+        self.assertFalse(workspace.run_root.exists())
+        self.assertFalse(workspace.target.exists())
+        journal = json.loads(workspace.journal_path.read_text(encoding="utf-8"))
+        self.assertGreater(journal["retained_evidence_bytes"], 0)
+        self.assertEqual(journal["retained_evidence_allocations"][0]["directory"], str(report))
+        recover_owned_orphans(self.root, self.storage)
+        self.assertTrue((report / "observations.jsonl").is_file())
+
+    def test_retention_is_exclusive_bounded_and_never_repository_staging(self) -> None:
+        with RunWorkspace(self.root, self.storage, self.policy) as workspace:
+            first = workspace.allocate_retained_evidence("semantic-qualification-v1", 2048)
+            second = workspace.allocate_retained_evidence("semantic-qualification-v1", 2048)
+            self.assertNotEqual(first, second)
+            self.assertFalse(first.is_relative_to(self.root))
+            self.assertFalse(first.is_relative_to(workspace.run_root))
+            for category in ["../escape", "", "C:/foreign"]:
+                with self.assertRaises(StorageError):
+                    workspace.allocate_retained_evidence(category)
+            with self.assertRaises(StorageError):
+                workspace.allocate_retained_evidence("too-large", 81 * 1024**2)
+            (first / "observations.jsonl").write_bytes(b"x" * 2049)
+            with self.assertRaisesRegex(StorageError, "retained evidence"):
+                workspace.check_budget()
+            self.assertTrue((first / "observations.jsonl").is_file())
+
 if __name__ == "__main__":
     unittest.main()

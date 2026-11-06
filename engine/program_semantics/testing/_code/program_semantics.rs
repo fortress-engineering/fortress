@@ -739,6 +739,11 @@ fn compound_cfg_provenance_is_conservative() {
 #[cfg(not(test))] fn non_test() {}
 #[cfg(any(all(test, unix), all(test, windows)))] fn every_branch_requires_test() {}
 #[cfg(platform(test))] fn unsupported_predicate() {}
+#[cfg(feature = "unobserved")] fn unselected_feature() {}
+#[cfg(fortress_unknown_configuration)] fn custom_configuration() {}
+#[cfg(not(feature = "unobserved"))] fn negated_feature() {}
+#[cfg(any())] fn disabled_alternative() {}
+#[cfg_attr(feature = "unobserved", cfg(test))] fn conditional_attribute() {}
 "#,
     ))
     .expect("compound cfg fixture compiles structurally");
@@ -753,7 +758,7 @@ fn compound_cfg_provenance_is_conservative() {
     );
     assert_eq!(
         provenance["sample::alternative"],
-        ExecutionProvenance::ProductionCapable
+        ExecutionProvenance::Unknown
     );
     assert_eq!(
         provenance["sample::non_test"],
@@ -767,6 +772,18 @@ fn compound_cfg_provenance_is_conservative() {
         provenance["sample::unsupported_predicate"],
         ExecutionProvenance::Unknown
     );
+    for name in [
+        "unselected_feature",
+        "custom_configuration",
+        "negated_feature",
+        "disabled_alternative",
+        "conditional_attribute",
+    ] {
+        assert_eq!(
+            provenance[format!("sample::{name}").as_str()],
+            ExecutionProvenance::Unknown
+        );
+    }
 }
 
 /// `T-AF-PROGRAM-SEMANTICS-0001-R03-007`

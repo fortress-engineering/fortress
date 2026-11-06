@@ -210,6 +210,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "fortress-qualification"
+version = "0.1.0"
+dependencies = [
+ "fortress-core",
+ "fortress-semantic-oracle",
+ "serde",
+ "serde_json",
+ "serde_json_canonicalizer",
+ "sha2",
+]
+
+[[package]]
+name = "fortress-semantic-oracle"
+version = "0.1.0"
+
+[[package]]
 name = "fraction"
 version = "0.15.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"

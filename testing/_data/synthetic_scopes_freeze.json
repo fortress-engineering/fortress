@@ -1,0 +1,1700 @@
+{
+  "kind": "PRE_EVALUATION_AUTOMATED_SYNTHETIC_FREEZE",
+  "version": 1,
+  "created_utc": "2026-11-05T19:45:47.024202+00:00",
+  "status": "NOT_EVALUATED",
+  "source_oracle": "independently authored primitive Rust semantics, explicit policy truth table and language capability limits; no Fortress API or output used in construction",
+  "effects": {
+    "1": "filesystem.write",
+    "2": "process.spawn"
+  },
+  "opcode_language": {
+    "0": "let _ = 1_u8;",
+    "1": "let _ = std::fs::write(\"not_executed\", b\"x\");",
+    "2": "let _ = std::process::Command::new(\"not_executed\").spawn();",
+    "3": "callback();"
+  },
+  "case_count": 82,
+  "cases": [
+    {
+      "case_id": "authorization-1-production",
+      "stratum": "AUTHORIZATION",
+      "source": "pub fn entry() { let _ = std::fs::write(\"not_executed\", b\"x\"); }\n",
+      "effect": "filesystem.write",
+      "disposition": "ALLOW",
+      "opcodes": [
+        1
+      ],
+      "provenance": "PRODUCTION",
+      "ground_truth": "KNOWN_EFFECT_PRESENT",
+      "expected_reporting": [
+        "AUTHORIZATION"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "authored ALLOW is authorization only and cannot prove effect absence",
+      "holdout": "HELD_OUT",
+      "source_sha256": "bbd66941453737645c0a41d2ab7d3df5c6ad81c3498cbb4bbe8450208e42e312"
+    },
+    {
+      "case_id": "authorization-1-test_only",
+      "stratum": "AUTHORIZATION",
+      "source": "#[cfg(test)]\npub fn entry() { let _ = std::fs::write(\"not_executed\", b\"x\"); }\n",
+      "effect": "filesystem.write",
+      "disposition": "ALLOW",
+      "opcodes": [
+        1
+      ],
+      "provenance": "TEST_ONLY",
+      "ground_truth": "KNOWN_EFFECT_PRESENT",
+      "expected_reporting": [
+        "AUTHORIZATION"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "authored ALLOW is authorization only and cannot prove effect absence",
+      "holdout": "HELD_OUT",
+      "source_sha256": "7d6da4e3de8d3e6a3f7815f6303a5788453e2e716255774414deda2556b145d6"
+    },
+    {
+      "case_id": "authorization-2-production",
+      "stratum": "AUTHORIZATION",
+      "source": "pub fn entry() { let _ = std::process::Command::new(\"not_executed\").spawn(); }\n",
+      "effect": "process.spawn",
+      "disposition": "ALLOW",
+      "opcodes": [
+        2
+      ],
+      "provenance": "PRODUCTION",
+      "ground_truth": "KNOWN_EFFECT_PRESENT",
+      "expected_reporting": [
+        "AUTHORIZATION"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "authored ALLOW is authorization only and cannot prove effect absence",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "68592ac1f829546c7978b0e5b6ba1379b2dc8b671a9c53c0113c6ae5682e0a0d"
+    },
+    {
+      "case_id": "authorization-2-test_only",
+      "stratum": "AUTHORIZATION",
+      "source": "#[cfg(test)]\npub fn entry() { let _ = std::process::Command::new(\"not_executed\").spawn(); }\n",
+      "effect": "process.spawn",
+      "disposition": "ALLOW",
+      "opcodes": [
+        2
+      ],
+      "provenance": "TEST_ONLY",
+      "ground_truth": "KNOWN_EFFECT_PRESENT",
+      "expected_reporting": [
+        "AUTHORIZATION"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "authored ALLOW is authorization only and cannot prove effect absence",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "d2c30d545b207ae17547f76ff8f24f5623c2987f2257742ed5a8fa32f7dc287e"
+    },
+    {
+      "case_id": "configuration-1-custom",
+      "stratum": "UNRESOLVED_CONFIGURATION",
+      "source": "#[cfg(fortress_unknown_configuration)]\npub fn entry() { let _ = std::fs::write(\"not_executed\", b\"x\"); }\n",
+      "effect": "filesystem.write",
+      "disposition": "DENY",
+      "provenance": "UNKNOWN_CONFIGURATION",
+      "ground_truth": "EFFECT_PRESENT_IF_CONFIGURATION_ENABLED",
+      "expected_reporting": [
+        "NOT_EVALUABLE",
+        "SUPPORTED_VIOLATION_ADVISORY"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": false,
+      "oracle": "unknown configuration cannot establish unconditional production support or prove absence of the conditional known effect",
+      "holdout": "HELD_OUT",
+      "source_sha256": "16183eacb463a63b759dc29663fd5d17329035a6ccca4883cea72fbaf0c7c5ec"
+    },
+    {
+      "case_id": "configuration-1-feature",
+      "stratum": "UNRESOLVED_CONFIGURATION",
+      "source": "#[cfg(feature = \"unselected_mode\")]\npub fn entry() { let _ = std::fs::write(\"not_executed\", b\"x\"); }\n",
+      "effect": "filesystem.write",
+      "disposition": "DENY",
+      "provenance": "UNKNOWN_CONFIGURATION",
+      "ground_truth": "EFFECT_PRESENT_IF_CONFIGURATION_ENABLED",
+      "expected_reporting": [
+        "NOT_EVALUABLE",
+        "SUPPORTED_VIOLATION_ADVISORY"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": false,
+      "oracle": "unknown configuration cannot establish unconditional production support or prove absence of the conditional known effect",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "60f428c72ca53598969108f4dc2e57fc91f9b3969b5ea02ba96114fdc1e4b81c"
+    },
+    {
+      "case_id": "configuration-2-custom",
+      "stratum": "UNRESOLVED_CONFIGURATION",
+      "source": "#[cfg(fortress_unknown_configuration)]\npub fn entry() { let _ = std::process::Command::new(\"not_executed\").spawn(); }\n",
+      "effect": "process.spawn",
+      "disposition": "DENY",
+      "provenance": "UNKNOWN_CONFIGURATION",
+      "ground_truth": "EFFECT_PRESENT_IF_CONFIGURATION_ENABLED",
+      "expected_reporting": [
+        "NOT_EVALUABLE",
+        "SUPPORTED_VIOLATION_ADVISORY"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": false,
+      "oracle": "unknown configuration cannot establish unconditional production support or prove absence of the conditional known effect",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "c596f54e5d4287faf25707fc740765036b67fd34535f65cd52f5bc3949b407d4"
+    },
+    {
+      "case_id": "configuration-2-feature",
+      "stratum": "UNRESOLVED_CONFIGURATION",
+      "source": "#[cfg(feature = \"unselected_mode\")]\npub fn entry() { let _ = std::process::Command::new(\"not_executed\").spawn(); }\n",
+      "effect": "process.spawn",
+      "disposition": "DENY",
+      "provenance": "UNKNOWN_CONFIGURATION",
+      "ground_truth": "EFFECT_PRESENT_IF_CONFIGURATION_ENABLED",
+      "expected_reporting": [
+        "NOT_EVALUABLE",
+        "SUPPORTED_VIOLATION_ADVISORY"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": false,
+      "oracle": "unknown configuration cannot establish unconditional production support or prove absence of the conditional known effect",
+      "holdout": "HELD_OUT",
+      "source_sha256": "6cb485964449cea8d951fae277079c54e6c2ac2bef0ca25035f7c149f9fb8f76"
+    },
+    {
+      "case_id": "failed-parse-1",
+      "stratum": "FAILED_PARSE",
+      "source": "pub fn malformed( {\n",
+      "effect": "filesystem.write",
+      "disposition": "DENY",
+      "provenance": "UNKNOWN",
+      "ground_truth": "INVALID_RUST_SOURCE",
+      "expected_reporting": [
+        "INVALID_DIAGNOSTIC",
+        "NOT_EVALUABLE"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": false,
+      "oracle": "malformed source does not support any favorable negative or executable positive proof; diagnostic rejection and explicit unknown are permitted fail-closed endpoints",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "361ce6e82f9d5f7483f89b4d74697ec0e7e50b8f227babeee48b42038fbe7a24"
+    },
+    {
+      "case_id": "failed-parse-2",
+      "stratum": "FAILED_PARSE",
+      "source": "pub fn malformed( {\n",
+      "effect": "process.spawn",
+      "disposition": "DENY",
+      "provenance": "UNKNOWN",
+      "ground_truth": "INVALID_RUST_SOURCE",
+      "expected_reporting": [
+        "INVALID_DIAGNOSTIC",
+        "NOT_EVALUABLE"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": false,
+      "oracle": "malformed source does not support any favorable negative or executable positive proof; diagnostic rejection and explicit unknown are permitted fail-closed endpoints",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "361ce6e82f9d5f7483f89b4d74697ec0e7e50b8f227babeee48b42038fbe7a24"
+    },
+    {
+      "case_id": "macro_direct-1",
+      "stratum": "UNEXPANDED_MACRO",
+      "source": "macro_rules! effect_body { () => { let _ = std::fs::write(\"not_executed\", b\"x\"); }; }\npub fn entry() { effect_body!(); }\n",
+      "effect": "filesystem.write",
+      "disposition": "DENY",
+      "provenance": "PRODUCTION",
+      "ground_truth": "SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "NOT_EVALUABLE"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": false,
+      "oracle": "Rust macro expansion contains the known effect; the current structural frontend has no qualified macro expansion, so uncertainty is mandatory and this case is excluded from supported-detection success counts but retained in every denominator",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "f2c233d8b7dd01eeee3e3b95ee7c75500854a715e0af713642db20f6b46ab0ed"
+    },
+    {
+      "case_id": "macro_direct-2",
+      "stratum": "UNEXPANDED_MACRO",
+      "source": "macro_rules! effect_body { () => { let _ = std::process::Command::new(\"not_executed\").spawn(); }; }\npub fn entry() { effect_body!(); }\n",
+      "effect": "process.spawn",
+      "disposition": "DENY",
+      "provenance": "PRODUCTION",
+      "ground_truth": "SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "NOT_EVALUABLE"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": false,
+      "oracle": "Rust macro expansion contains the known effect; the current structural frontend has no qualified macro expansion, so uncertainty is mandatory and this case is excluded from supported-detection success counts but retained in every denominator",
+      "holdout": "HELD_OUT",
+      "source_sha256": "f79e6565f3fa28fbfe0dfc43a5ab25adb0a3d9e58bc87b01b0f512ec74779dc2"
+    },
+    {
+      "case_id": "macro_nested-1",
+      "stratum": "UNEXPANDED_MACRO",
+      "source": "macro_rules! effect_body { () => { let _ = std::fs::write(\"not_executed\", b\"x\"); }; }\nmacro_rules! invoke_body { () => { effect_body!(); }; }\npub fn entry() { invoke_body!(); }\n",
+      "effect": "filesystem.write",
+      "disposition": "DENY",
+      "provenance": "PRODUCTION",
+      "ground_truth": "SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "NOT_EVALUABLE"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": false,
+      "oracle": "Rust macro expansion contains the known effect; the current structural frontend has no qualified macro expansion, so uncertainty is mandatory and this case is excluded from supported-detection success counts but retained in every denominator",
+      "holdout": "HELD_OUT",
+      "source_sha256": "2523dbb68f4f58909ed2bb5cd381392500d0c4b7a70c70dd8d476512d26fca28"
+    },
+    {
+      "case_id": "macro_nested-2",
+      "stratum": "UNEXPANDED_MACRO",
+      "source": "macro_rules! effect_body { () => { let _ = std::process::Command::new(\"not_executed\").spawn(); }; }\nmacro_rules! invoke_body { () => { effect_body!(); }; }\npub fn entry() { invoke_body!(); }\n",
+      "effect": "process.spawn",
+      "disposition": "DENY",
+      "provenance": "PRODUCTION",
+      "ground_truth": "SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "NOT_EVALUABLE"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": false,
+      "oracle": "Rust macro expansion contains the known effect; the current structural frontend has no qualified macro expansion, so uncertainty is mandatory and this case is excluded from supported-detection success counts but retained in every denominator",
+      "holdout": "HELD_OUT",
+      "source_sha256": "3200e24d90bb58ddadc7b98cef08917230388bfb388fa91066364c0074c43668"
+    },
+    {
+      "case_id": "pair-1-0-0-production",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "pub fn entry() {\n    let _ = 1_u8;\n    let _ = 1_u8;\n}\n",
+      "effect": "filesystem.write",
+      "disposition": "DENY",
+      "opcodes": [
+        0,
+        0
+      ],
+      "provenance": "PRODUCTION",
+      "ground_truth": "NO_SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "NO_SUPPORTED_VIOLATION"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "0658b17625319bad1000205570d35ad5fb4281f1221b5ef451f51418caf5fa71"
+    },
+    {
+      "case_id": "pair-1-0-0-test_only",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "#[cfg(test)]\npub fn entry() {\n    let _ = 1_u8;\n    let _ = 1_u8;\n}\n",
+      "effect": "filesystem.write",
+      "disposition": "DENY",
+      "opcodes": [
+        0,
+        0
+      ],
+      "provenance": "TEST_ONLY",
+      "ground_truth": "NO_SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "NO_SUPPORTED_VIOLATION"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "a24ba5b2cb84ead624355eaa195f076a06d9e3758e6be963ad19c68e8ed00d21"
+    },
+    {
+      "case_id": "pair-1-0-1-production",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "pub fn entry() {\n    let _ = 1_u8;\n    let _ = std::fs::write(\"not_executed\", b\"x\");\n}\n",
+      "effect": "filesystem.write",
+      "disposition": "DENY",
+      "opcodes": [
+        0,
+        1
+      ],
+      "provenance": "PRODUCTION",
+      "ground_truth": "SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "SUPPORTED_VIOLATION"
+      ],
+      "expected_blocking": true,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "HELD_OUT",
+      "source_sha256": "f4f50d6aec6bd068b20f38c82772feb506fea9b17a43473d0d141c7b5fa214fa"
+    },
+    {
+      "case_id": "pair-1-0-1-test_only",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "#[cfg(test)]\npub fn entry() {\n    let _ = 1_u8;\n    let _ = std::fs::write(\"not_executed\", b\"x\");\n}\n",
+      "effect": "filesystem.write",
+      "disposition": "DENY",
+      "opcodes": [
+        0,
+        1
+      ],
+      "provenance": "TEST_ONLY",
+      "ground_truth": "SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "SUPPORTED_VIOLATION"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "3d81e5963bc82a41a6e358490b537280ebc35741a4388261c0859d0f9361d5b3"
+    },
+    {
+      "case_id": "pair-1-0-2-production",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "pub fn entry() {\n    let _ = 1_u8;\n    let _ = std::process::Command::new(\"not_executed\").spawn();\n}\n",
+      "effect": "filesystem.write",
+      "disposition": "DENY",
+      "opcodes": [
+        0,
+        2
+      ],
+      "provenance": "PRODUCTION",
+      "ground_truth": "NO_SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "NO_SUPPORTED_VIOLATION"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "0408371b5a85f521eabdb08d8589df5359ffd38092cfda57c4efd6884b2978d0"
+    },
+    {
+      "case_id": "pair-1-0-2-test_only",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "#[cfg(test)]\npub fn entry() {\n    let _ = 1_u8;\n    let _ = std::process::Command::new(\"not_executed\").spawn();\n}\n",
+      "effect": "filesystem.write",
+      "disposition": "DENY",
+      "opcodes": [
+        0,
+        2
+      ],
+      "provenance": "TEST_ONLY",
+      "ground_truth": "NO_SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "NO_SUPPORTED_VIOLATION"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "f803baf01e155332bbeee5cc0f695c6c5b1726210162930fe3a4162f63a2b766"
+    },
+    {
+      "case_id": "pair-1-0-3-production",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "pub fn entry(callback: impl Fn()) {\n    let _ = 1_u8;\n    callback();\n}\n",
+      "effect": "filesystem.write",
+      "disposition": "DENY",
+      "opcodes": [
+        0,
+        3
+      ],
+      "provenance": "PRODUCTION",
+      "ground_truth": "NOT_EVALUABLE",
+      "expected_reporting": [
+        "NOT_EVALUABLE"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "069d951615e8868171c8fe8499541b6fe6950371921becb4d8c1aeea81e16896"
+    },
+    {
+      "case_id": "pair-1-0-3-test_only",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "#[cfg(test)]\npub fn entry(callback: impl Fn()) {\n    let _ = 1_u8;\n    callback();\n}\n",
+      "effect": "filesystem.write",
+      "disposition": "DENY",
+      "opcodes": [
+        0,
+        3
+      ],
+      "provenance": "TEST_ONLY",
+      "ground_truth": "NOT_EVALUABLE",
+      "expected_reporting": [
+        "NOT_EVALUABLE"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "21fbfcac0047ff335155a656d763096032a4ed4b3623f2a2670e942cef7b815d"
+    },
+    {
+      "case_id": "pair-1-1-0-production",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "pub fn entry() {\n    let _ = std::fs::write(\"not_executed\", b\"x\");\n    let _ = 1_u8;\n}\n",
+      "effect": "filesystem.write",
+      "disposition": "DENY",
+      "opcodes": [
+        1,
+        0
+      ],
+      "provenance": "PRODUCTION",
+      "ground_truth": "SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "SUPPORTED_VIOLATION"
+      ],
+      "expected_blocking": true,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "3827edbeed117f2313c416ecd4f9020289aaa005952c92a13394e1ef0e796dd5"
+    },
+    {
+      "case_id": "pair-1-1-0-test_only",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "#[cfg(test)]\npub fn entry() {\n    let _ = std::fs::write(\"not_executed\", b\"x\");\n    let _ = 1_u8;\n}\n",
+      "effect": "filesystem.write",
+      "disposition": "DENY",
+      "opcodes": [
+        1,
+        0
+      ],
+      "provenance": "TEST_ONLY",
+      "ground_truth": "SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "SUPPORTED_VIOLATION"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "246e616a24896b02b27beb03f327efa54eb45d6d7efb25af3acf7db51c669b9e"
+    },
+    {
+      "case_id": "pair-1-1-1-production",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "pub fn entry() {\n    let _ = std::fs::write(\"not_executed\", b\"x\");\n    let _ = std::fs::write(\"not_executed\", b\"x\");\n}\n",
+      "effect": "filesystem.write",
+      "disposition": "DENY",
+      "opcodes": [
+        1,
+        1
+      ],
+      "provenance": "PRODUCTION",
+      "ground_truth": "SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "SUPPORTED_VIOLATION"
+      ],
+      "expected_blocking": true,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "HELD_OUT",
+      "source_sha256": "ae7b5bf9432435d09f8f93a970a889e648a8e7c7563b4bed2ab8225031e6ae9c"
+    },
+    {
+      "case_id": "pair-1-1-1-test_only",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "#[cfg(test)]\npub fn entry() {\n    let _ = std::fs::write(\"not_executed\", b\"x\");\n    let _ = std::fs::write(\"not_executed\", b\"x\");\n}\n",
+      "effect": "filesystem.write",
+      "disposition": "DENY",
+      "opcodes": [
+        1,
+        1
+      ],
+      "provenance": "TEST_ONLY",
+      "ground_truth": "SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "SUPPORTED_VIOLATION"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "de5e38ca13271514f0bca7e95fd761dd62e26895b680ad14779a1ea149e59b03"
+    },
+    {
+      "case_id": "pair-1-1-2-production",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "pub fn entry() {\n    let _ = std::fs::write(\"not_executed\", b\"x\");\n    let _ = std::process::Command::new(\"not_executed\").spawn();\n}\n",
+      "effect": "filesystem.write",
+      "disposition": "DENY",
+      "opcodes": [
+        1,
+        2
+      ],
+      "provenance": "PRODUCTION",
+      "ground_truth": "SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "SUPPORTED_VIOLATION"
+      ],
+      "expected_blocking": true,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "HELD_OUT",
+      "source_sha256": "cc4b53c8ff814d2cd192992e86d1c0c63d7d8b8571a879f83c0fb44d95988ab8"
+    },
+    {
+      "case_id": "pair-1-1-2-test_only",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "#[cfg(test)]\npub fn entry() {\n    let _ = std::fs::write(\"not_executed\", b\"x\");\n    let _ = std::process::Command::new(\"not_executed\").spawn();\n}\n",
+      "effect": "filesystem.write",
+      "disposition": "DENY",
+      "opcodes": [
+        1,
+        2
+      ],
+      "provenance": "TEST_ONLY",
+      "ground_truth": "SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "SUPPORTED_VIOLATION"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "e514ebc075f050acdd028c14208516cdbcd1d77c3bb95641fc48d80c3e0a9fcc"
+    },
+    {
+      "case_id": "pair-1-1-3-production",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "pub fn entry(callback: impl Fn()) {\n    let _ = std::fs::write(\"not_executed\", b\"x\");\n    callback();\n}\n",
+      "effect": "filesystem.write",
+      "disposition": "DENY",
+      "opcodes": [
+        1,
+        3
+      ],
+      "provenance": "PRODUCTION",
+      "ground_truth": "SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "SUPPORTED_VIOLATION"
+      ],
+      "expected_blocking": true,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "81c361b1246f2805e453826f34d4d055a11cb5f059269bb05287461bc74f1621"
+    },
+    {
+      "case_id": "pair-1-1-3-test_only",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "#[cfg(test)]\npub fn entry(callback: impl Fn()) {\n    let _ = std::fs::write(\"not_executed\", b\"x\");\n    callback();\n}\n",
+      "effect": "filesystem.write",
+      "disposition": "DENY",
+      "opcodes": [
+        1,
+        3
+      ],
+      "provenance": "TEST_ONLY",
+      "ground_truth": "SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "SUPPORTED_VIOLATION"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "05d37cdf743f634efc0a4ce3c1c0c087b458c5126c69e30560b4ff1eef2b021d"
+    },
+    {
+      "case_id": "pair-1-2-0-production",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "pub fn entry() {\n    let _ = std::process::Command::new(\"not_executed\").spawn();\n    let _ = 1_u8;\n}\n",
+      "effect": "filesystem.write",
+      "disposition": "DENY",
+      "opcodes": [
+        2,
+        0
+      ],
+      "provenance": "PRODUCTION",
+      "ground_truth": "NO_SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "NO_SUPPORTED_VIOLATION"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "f8d7b2967780118cc3073320404d260f39d9a8b58384710c962e63c4618c2267"
+    },
+    {
+      "case_id": "pair-1-2-0-test_only",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "#[cfg(test)]\npub fn entry() {\n    let _ = std::process::Command::new(\"not_executed\").spawn();\n    let _ = 1_u8;\n}\n",
+      "effect": "filesystem.write",
+      "disposition": "DENY",
+      "opcodes": [
+        2,
+        0
+      ],
+      "provenance": "TEST_ONLY",
+      "ground_truth": "NO_SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "NO_SUPPORTED_VIOLATION"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "a6846612255f79c8a60c9b2fff76cc5a823127aab16b9ee3ebcfdb827cfe7081"
+    },
+    {
+      "case_id": "pair-1-2-1-production",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "pub fn entry() {\n    let _ = std::process::Command::new(\"not_executed\").spawn();\n    let _ = std::fs::write(\"not_executed\", b\"x\");\n}\n",
+      "effect": "filesystem.write",
+      "disposition": "DENY",
+      "opcodes": [
+        2,
+        1
+      ],
+      "provenance": "PRODUCTION",
+      "ground_truth": "SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "SUPPORTED_VIOLATION"
+      ],
+      "expected_blocking": true,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "d51e0c6f35e9d058f79acdc1e93ccabb6f9645adef22c0f578bd192d215e18d5"
+    },
+    {
+      "case_id": "pair-1-2-1-test_only",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "#[cfg(test)]\npub fn entry() {\n    let _ = std::process::Command::new(\"not_executed\").spawn();\n    let _ = std::fs::write(\"not_executed\", b\"x\");\n}\n",
+      "effect": "filesystem.write",
+      "disposition": "DENY",
+      "opcodes": [
+        2,
+        1
+      ],
+      "provenance": "TEST_ONLY",
+      "ground_truth": "SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "SUPPORTED_VIOLATION"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "0ecb84c77b39d16c9a41801de3c5a34ef6be201c095bd0bc3cb719b28c3f8c70"
+    },
+    {
+      "case_id": "pair-1-2-2-production",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "pub fn entry() {\n    let _ = std::process::Command::new(\"not_executed\").spawn();\n    let _ = std::process::Command::new(\"not_executed\").spawn();\n}\n",
+      "effect": "filesystem.write",
+      "disposition": "DENY",
+      "opcodes": [
+        2,
+        2
+      ],
+      "provenance": "PRODUCTION",
+      "ground_truth": "NO_SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "NO_SUPPORTED_VIOLATION"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "HELD_OUT",
+      "source_sha256": "f027d15cc029a3e72cdad615d3d523c19d14dad3b99e3a4f3b68ce50be8c64be"
+    },
+    {
+      "case_id": "pair-1-2-2-test_only",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "#[cfg(test)]\npub fn entry() {\n    let _ = std::process::Command::new(\"not_executed\").spawn();\n    let _ = std::process::Command::new(\"not_executed\").spawn();\n}\n",
+      "effect": "filesystem.write",
+      "disposition": "DENY",
+      "opcodes": [
+        2,
+        2
+      ],
+      "provenance": "TEST_ONLY",
+      "ground_truth": "NO_SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "NO_SUPPORTED_VIOLATION"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "HELD_OUT",
+      "source_sha256": "7355f7f8eb21e254387f86ca69414c12ca3a267c446be63097d8ee313d6b33e9"
+    },
+    {
+      "case_id": "pair-1-2-3-production",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "pub fn entry(callback: impl Fn()) {\n    let _ = std::process::Command::new(\"not_executed\").spawn();\n    callback();\n}\n",
+      "effect": "filesystem.write",
+      "disposition": "DENY",
+      "opcodes": [
+        2,
+        3
+      ],
+      "provenance": "PRODUCTION",
+      "ground_truth": "NOT_EVALUABLE",
+      "expected_reporting": [
+        "NOT_EVALUABLE"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "cab6100c4e9591039360fe9eb68470b847f4cde21cf96a8fa70cf76bc0cd96c9"
+    },
+    {
+      "case_id": "pair-1-2-3-test_only",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "#[cfg(test)]\npub fn entry(callback: impl Fn()) {\n    let _ = std::process::Command::new(\"not_executed\").spawn();\n    callback();\n}\n",
+      "effect": "filesystem.write",
+      "disposition": "DENY",
+      "opcodes": [
+        2,
+        3
+      ],
+      "provenance": "TEST_ONLY",
+      "ground_truth": "NOT_EVALUABLE",
+      "expected_reporting": [
+        "NOT_EVALUABLE"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "d6dc7be4cef692c399a7fb9308c33bca2d04400049f31766e09af48f233d12ba"
+    },
+    {
+      "case_id": "pair-1-3-0-production",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "pub fn entry(callback: impl Fn()) {\n    callback();\n    let _ = 1_u8;\n}\n",
+      "effect": "filesystem.write",
+      "disposition": "DENY",
+      "opcodes": [
+        3,
+        0
+      ],
+      "provenance": "PRODUCTION",
+      "ground_truth": "NOT_EVALUABLE",
+      "expected_reporting": [
+        "NOT_EVALUABLE"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "d6f939a9edb992e0409a03724858197c88d44c41dad0a807f6477c83016c1bc1"
+    },
+    {
+      "case_id": "pair-1-3-0-test_only",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "#[cfg(test)]\npub fn entry(callback: impl Fn()) {\n    callback();\n    let _ = 1_u8;\n}\n",
+      "effect": "filesystem.write",
+      "disposition": "DENY",
+      "opcodes": [
+        3,
+        0
+      ],
+      "provenance": "TEST_ONLY",
+      "ground_truth": "NOT_EVALUABLE",
+      "expected_reporting": [
+        "NOT_EVALUABLE"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "6852f72e1618d93ae6833d1b2c357d3efc402d3574bc8c6eecda5b37a055ffb2"
+    },
+    {
+      "case_id": "pair-1-3-1-production",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "pub fn entry(callback: impl Fn()) {\n    callback();\n    let _ = std::fs::write(\"not_executed\", b\"x\");\n}\n",
+      "effect": "filesystem.write",
+      "disposition": "DENY",
+      "opcodes": [
+        3,
+        1
+      ],
+      "provenance": "PRODUCTION",
+      "ground_truth": "SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "SUPPORTED_VIOLATION"
+      ],
+      "expected_blocking": true,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "48d0c37181118d258d9a7ceadaddc8882f7deb9b2f1f9c94ef9e6ca5c569f805"
+    },
+    {
+      "case_id": "pair-1-3-1-test_only",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "#[cfg(test)]\npub fn entry(callback: impl Fn()) {\n    callback();\n    let _ = std::fs::write(\"not_executed\", b\"x\");\n}\n",
+      "effect": "filesystem.write",
+      "disposition": "DENY",
+      "opcodes": [
+        3,
+        1
+      ],
+      "provenance": "TEST_ONLY",
+      "ground_truth": "SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "SUPPORTED_VIOLATION"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "5b32f1a6f5546d61423cc5667cd1a274607cfbb2c72d8e9932337e6f2cefc1b7"
+    },
+    {
+      "case_id": "pair-1-3-2-production",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "pub fn entry(callback: impl Fn()) {\n    callback();\n    let _ = std::process::Command::new(\"not_executed\").spawn();\n}\n",
+      "effect": "filesystem.write",
+      "disposition": "DENY",
+      "opcodes": [
+        3,
+        2
+      ],
+      "provenance": "PRODUCTION",
+      "ground_truth": "NOT_EVALUABLE",
+      "expected_reporting": [
+        "NOT_EVALUABLE"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "55e8bdf8150161a0fc1ca450fbf3f9d58a249a4cf7985932522262b1450f5ee5"
+    },
+    {
+      "case_id": "pair-1-3-2-test_only",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "#[cfg(test)]\npub fn entry(callback: impl Fn()) {\n    callback();\n    let _ = std::process::Command::new(\"not_executed\").spawn();\n}\n",
+      "effect": "filesystem.write",
+      "disposition": "DENY",
+      "opcodes": [
+        3,
+        2
+      ],
+      "provenance": "TEST_ONLY",
+      "ground_truth": "NOT_EVALUABLE",
+      "expected_reporting": [
+        "NOT_EVALUABLE"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "HELD_OUT",
+      "source_sha256": "b50c190f8efc585036cc1143cf20c54015ebe063b1903eb3119ac5089863f5e1"
+    },
+    {
+      "case_id": "pair-1-3-3-production",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "pub fn entry(callback: impl Fn()) {\n    callback();\n    callback();\n}\n",
+      "effect": "filesystem.write",
+      "disposition": "DENY",
+      "opcodes": [
+        3,
+        3
+      ],
+      "provenance": "PRODUCTION",
+      "ground_truth": "NOT_EVALUABLE",
+      "expected_reporting": [
+        "NOT_EVALUABLE"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "f3fda20c6d3e5d206266b1c0a644248fd987d121978f663988a3b6b7dbb3cfaa"
+    },
+    {
+      "case_id": "pair-1-3-3-test_only",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "#[cfg(test)]\npub fn entry(callback: impl Fn()) {\n    callback();\n    callback();\n}\n",
+      "effect": "filesystem.write",
+      "disposition": "DENY",
+      "opcodes": [
+        3,
+        3
+      ],
+      "provenance": "TEST_ONLY",
+      "ground_truth": "NOT_EVALUABLE",
+      "expected_reporting": [
+        "NOT_EVALUABLE"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "5fc63118d4efad1b024e3cc1ab1f1e0cb8a3b43b66c727e9601cd865f0984f89"
+    },
+    {
+      "case_id": "pair-2-0-0-production",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "pub fn entry() {\n    let _ = 1_u8;\n    let _ = 1_u8;\n}\n",
+      "effect": "process.spawn",
+      "disposition": "DENY",
+      "opcodes": [
+        0,
+        0
+      ],
+      "provenance": "PRODUCTION",
+      "ground_truth": "NO_SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "NO_SUPPORTED_VIOLATION"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "HELD_OUT",
+      "source_sha256": "0658b17625319bad1000205570d35ad5fb4281f1221b5ef451f51418caf5fa71"
+    },
+    {
+      "case_id": "pair-2-0-0-test_only",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "#[cfg(test)]\npub fn entry() {\n    let _ = 1_u8;\n    let _ = 1_u8;\n}\n",
+      "effect": "process.spawn",
+      "disposition": "DENY",
+      "opcodes": [
+        0,
+        0
+      ],
+      "provenance": "TEST_ONLY",
+      "ground_truth": "NO_SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "NO_SUPPORTED_VIOLATION"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "a24ba5b2cb84ead624355eaa195f076a06d9e3758e6be963ad19c68e8ed00d21"
+    },
+    {
+      "case_id": "pair-2-0-1-production",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "pub fn entry() {\n    let _ = 1_u8;\n    let _ = std::fs::write(\"not_executed\", b\"x\");\n}\n",
+      "effect": "process.spawn",
+      "disposition": "DENY",
+      "opcodes": [
+        0,
+        1
+      ],
+      "provenance": "PRODUCTION",
+      "ground_truth": "NO_SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "NO_SUPPORTED_VIOLATION"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "HELD_OUT",
+      "source_sha256": "f4f50d6aec6bd068b20f38c82772feb506fea9b17a43473d0d141c7b5fa214fa"
+    },
+    {
+      "case_id": "pair-2-0-1-test_only",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "#[cfg(test)]\npub fn entry() {\n    let _ = 1_u8;\n    let _ = std::fs::write(\"not_executed\", b\"x\");\n}\n",
+      "effect": "process.spawn",
+      "disposition": "DENY",
+      "opcodes": [
+        0,
+        1
+      ],
+      "provenance": "TEST_ONLY",
+      "ground_truth": "NO_SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "NO_SUPPORTED_VIOLATION"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "3d81e5963bc82a41a6e358490b537280ebc35741a4388261c0859d0f9361d5b3"
+    },
+    {
+      "case_id": "pair-2-0-2-production",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "pub fn entry() {\n    let _ = 1_u8;\n    let _ = std::process::Command::new(\"not_executed\").spawn();\n}\n",
+      "effect": "process.spawn",
+      "disposition": "DENY",
+      "opcodes": [
+        0,
+        2
+      ],
+      "provenance": "PRODUCTION",
+      "ground_truth": "SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "SUPPORTED_VIOLATION"
+      ],
+      "expected_blocking": true,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "0408371b5a85f521eabdb08d8589df5359ffd38092cfda57c4efd6884b2978d0"
+    },
+    {
+      "case_id": "pair-2-0-2-test_only",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "#[cfg(test)]\npub fn entry() {\n    let _ = 1_u8;\n    let _ = std::process::Command::new(\"not_executed\").spawn();\n}\n",
+      "effect": "process.spawn",
+      "disposition": "DENY",
+      "opcodes": [
+        0,
+        2
+      ],
+      "provenance": "TEST_ONLY",
+      "ground_truth": "SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "SUPPORTED_VIOLATION"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "HELD_OUT",
+      "source_sha256": "f803baf01e155332bbeee5cc0f695c6c5b1726210162930fe3a4162f63a2b766"
+    },
+    {
+      "case_id": "pair-2-0-3-production",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "pub fn entry(callback: impl Fn()) {\n    let _ = 1_u8;\n    callback();\n}\n",
+      "effect": "process.spawn",
+      "disposition": "DENY",
+      "opcodes": [
+        0,
+        3
+      ],
+      "provenance": "PRODUCTION",
+      "ground_truth": "NOT_EVALUABLE",
+      "expected_reporting": [
+        "NOT_EVALUABLE"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "069d951615e8868171c8fe8499541b6fe6950371921becb4d8c1aeea81e16896"
+    },
+    {
+      "case_id": "pair-2-0-3-test_only",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "#[cfg(test)]\npub fn entry(callback: impl Fn()) {\n    let _ = 1_u8;\n    callback();\n}\n",
+      "effect": "process.spawn",
+      "disposition": "DENY",
+      "opcodes": [
+        0,
+        3
+      ],
+      "provenance": "TEST_ONLY",
+      "ground_truth": "NOT_EVALUABLE",
+      "expected_reporting": [
+        "NOT_EVALUABLE"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "21fbfcac0047ff335155a656d763096032a4ed4b3623f2a2670e942cef7b815d"
+    },
+    {
+      "case_id": "pair-2-1-0-production",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "pub fn entry() {\n    let _ = std::fs::write(\"not_executed\", b\"x\");\n    let _ = 1_u8;\n}\n",
+      "effect": "process.spawn",
+      "disposition": "DENY",
+      "opcodes": [
+        1,
+        0
+      ],
+      "provenance": "PRODUCTION",
+      "ground_truth": "NO_SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "NO_SUPPORTED_VIOLATION"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "3827edbeed117f2313c416ecd4f9020289aaa005952c92a13394e1ef0e796dd5"
+    },
+    {
+      "case_id": "pair-2-1-0-test_only",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "#[cfg(test)]\npub fn entry() {\n    let _ = std::fs::write(\"not_executed\", b\"x\");\n    let _ = 1_u8;\n}\n",
+      "effect": "process.spawn",
+      "disposition": "DENY",
+      "opcodes": [
+        1,
+        0
+      ],
+      "provenance": "TEST_ONLY",
+      "ground_truth": "NO_SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "NO_SUPPORTED_VIOLATION"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "246e616a24896b02b27beb03f327efa54eb45d6d7efb25af3acf7db51c669b9e"
+    },
+    {
+      "case_id": "pair-2-1-1-production",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "pub fn entry() {\n    let _ = std::fs::write(\"not_executed\", b\"x\");\n    let _ = std::fs::write(\"not_executed\", b\"x\");\n}\n",
+      "effect": "process.spawn",
+      "disposition": "DENY",
+      "opcodes": [
+        1,
+        1
+      ],
+      "provenance": "PRODUCTION",
+      "ground_truth": "NO_SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "NO_SUPPORTED_VIOLATION"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "HELD_OUT",
+      "source_sha256": "ae7b5bf9432435d09f8f93a970a889e648a8e7c7563b4bed2ab8225031e6ae9c"
+    },
+    {
+      "case_id": "pair-2-1-1-test_only",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "#[cfg(test)]\npub fn entry() {\n    let _ = std::fs::write(\"not_executed\", b\"x\");\n    let _ = std::fs::write(\"not_executed\", b\"x\");\n}\n",
+      "effect": "process.spawn",
+      "disposition": "DENY",
+      "opcodes": [
+        1,
+        1
+      ],
+      "provenance": "TEST_ONLY",
+      "ground_truth": "NO_SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "NO_SUPPORTED_VIOLATION"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "de5e38ca13271514f0bca7e95fd761dd62e26895b680ad14779a1ea149e59b03"
+    },
+    {
+      "case_id": "pair-2-1-2-production",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "pub fn entry() {\n    let _ = std::fs::write(\"not_executed\", b\"x\");\n    let _ = std::process::Command::new(\"not_executed\").spawn();\n}\n",
+      "effect": "process.spawn",
+      "disposition": "DENY",
+      "opcodes": [
+        1,
+        2
+      ],
+      "provenance": "PRODUCTION",
+      "ground_truth": "SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "SUPPORTED_VIOLATION"
+      ],
+      "expected_blocking": true,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "cc4b53c8ff814d2cd192992e86d1c0c63d7d8b8571a879f83c0fb44d95988ab8"
+    },
+    {
+      "case_id": "pair-2-1-2-test_only",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "#[cfg(test)]\npub fn entry() {\n    let _ = std::fs::write(\"not_executed\", b\"x\");\n    let _ = std::process::Command::new(\"not_executed\").spawn();\n}\n",
+      "effect": "process.spawn",
+      "disposition": "DENY",
+      "opcodes": [
+        1,
+        2
+      ],
+      "provenance": "TEST_ONLY",
+      "ground_truth": "SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "SUPPORTED_VIOLATION"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "e514ebc075f050acdd028c14208516cdbcd1d77c3bb95641fc48d80c3e0a9fcc"
+    },
+    {
+      "case_id": "pair-2-1-3-production",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "pub fn entry(callback: impl Fn()) {\n    let _ = std::fs::write(\"not_executed\", b\"x\");\n    callback();\n}\n",
+      "effect": "process.spawn",
+      "disposition": "DENY",
+      "opcodes": [
+        1,
+        3
+      ],
+      "provenance": "PRODUCTION",
+      "ground_truth": "NOT_EVALUABLE",
+      "expected_reporting": [
+        "NOT_EVALUABLE"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "HELD_OUT",
+      "source_sha256": "81c361b1246f2805e453826f34d4d055a11cb5f059269bb05287461bc74f1621"
+    },
+    {
+      "case_id": "pair-2-1-3-test_only",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "#[cfg(test)]\npub fn entry(callback: impl Fn()) {\n    let _ = std::fs::write(\"not_executed\", b\"x\");\n    callback();\n}\n",
+      "effect": "process.spawn",
+      "disposition": "DENY",
+      "opcodes": [
+        1,
+        3
+      ],
+      "provenance": "TEST_ONLY",
+      "ground_truth": "NOT_EVALUABLE",
+      "expected_reporting": [
+        "NOT_EVALUABLE"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "HELD_OUT",
+      "source_sha256": "05d37cdf743f634efc0a4ce3c1c0c087b458c5126c69e30560b4ff1eef2b021d"
+    },
+    {
+      "case_id": "pair-2-2-0-production",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "pub fn entry() {\n    let _ = std::process::Command::new(\"not_executed\").spawn();\n    let _ = 1_u8;\n}\n",
+      "effect": "process.spawn",
+      "disposition": "DENY",
+      "opcodes": [
+        2,
+        0
+      ],
+      "provenance": "PRODUCTION",
+      "ground_truth": "SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "SUPPORTED_VIOLATION"
+      ],
+      "expected_blocking": true,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "HELD_OUT",
+      "source_sha256": "f8d7b2967780118cc3073320404d260f39d9a8b58384710c962e63c4618c2267"
+    },
+    {
+      "case_id": "pair-2-2-0-test_only",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "#[cfg(test)]\npub fn entry() {\n    let _ = std::process::Command::new(\"not_executed\").spawn();\n    let _ = 1_u8;\n}\n",
+      "effect": "process.spawn",
+      "disposition": "DENY",
+      "opcodes": [
+        2,
+        0
+      ],
+      "provenance": "TEST_ONLY",
+      "ground_truth": "SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "SUPPORTED_VIOLATION"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "a6846612255f79c8a60c9b2fff76cc5a823127aab16b9ee3ebcfdb827cfe7081"
+    },
+    {
+      "case_id": "pair-2-2-1-production",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "pub fn entry() {\n    let _ = std::process::Command::new(\"not_executed\").spawn();\n    let _ = std::fs::write(\"not_executed\", b\"x\");\n}\n",
+      "effect": "process.spawn",
+      "disposition": "DENY",
+      "opcodes": [
+        2,
+        1
+      ],
+      "provenance": "PRODUCTION",
+      "ground_truth": "SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "SUPPORTED_VIOLATION"
+      ],
+      "expected_blocking": true,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "d51e0c6f35e9d058f79acdc1e93ccabb6f9645adef22c0f578bd192d215e18d5"
+    },
+    {
+      "case_id": "pair-2-2-1-test_only",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "#[cfg(test)]\npub fn entry() {\n    let _ = std::process::Command::new(\"not_executed\").spawn();\n    let _ = std::fs::write(\"not_executed\", b\"x\");\n}\n",
+      "effect": "process.spawn",
+      "disposition": "DENY",
+      "opcodes": [
+        2,
+        1
+      ],
+      "provenance": "TEST_ONLY",
+      "ground_truth": "SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "SUPPORTED_VIOLATION"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "0ecb84c77b39d16c9a41801de3c5a34ef6be201c095bd0bc3cb719b28c3f8c70"
+    },
+    {
+      "case_id": "pair-2-2-2-production",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "pub fn entry() {\n    let _ = std::process::Command::new(\"not_executed\").spawn();\n    let _ = std::process::Command::new(\"not_executed\").spawn();\n}\n",
+      "effect": "process.spawn",
+      "disposition": "DENY",
+      "opcodes": [
+        2,
+        2
+      ],
+      "provenance": "PRODUCTION",
+      "ground_truth": "SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "SUPPORTED_VIOLATION"
+      ],
+      "expected_blocking": true,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "f027d15cc029a3e72cdad615d3d523c19d14dad3b99e3a4f3b68ce50be8c64be"
+    },
+    {
+      "case_id": "pair-2-2-2-test_only",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "#[cfg(test)]\npub fn entry() {\n    let _ = std::process::Command::new(\"not_executed\").spawn();\n    let _ = std::process::Command::new(\"not_executed\").spawn();\n}\n",
+      "effect": "process.spawn",
+      "disposition": "DENY",
+      "opcodes": [
+        2,
+        2
+      ],
+      "provenance": "TEST_ONLY",
+      "ground_truth": "SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "SUPPORTED_VIOLATION"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "7355f7f8eb21e254387f86ca69414c12ca3a267c446be63097d8ee313d6b33e9"
+    },
+    {
+      "case_id": "pair-2-2-3-production",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "pub fn entry(callback: impl Fn()) {\n    let _ = std::process::Command::new(\"not_executed\").spawn();\n    callback();\n}\n",
+      "effect": "process.spawn",
+      "disposition": "DENY",
+      "opcodes": [
+        2,
+        3
+      ],
+      "provenance": "PRODUCTION",
+      "ground_truth": "SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "SUPPORTED_VIOLATION"
+      ],
+      "expected_blocking": true,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "HELD_OUT",
+      "source_sha256": "cab6100c4e9591039360fe9eb68470b847f4cde21cf96a8fa70cf76bc0cd96c9"
+    },
+    {
+      "case_id": "pair-2-2-3-test_only",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "#[cfg(test)]\npub fn entry(callback: impl Fn()) {\n    let _ = std::process::Command::new(\"not_executed\").spawn();\n    callback();\n}\n",
+      "effect": "process.spawn",
+      "disposition": "DENY",
+      "opcodes": [
+        2,
+        3
+      ],
+      "provenance": "TEST_ONLY",
+      "ground_truth": "SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "SUPPORTED_VIOLATION"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "HELD_OUT",
+      "source_sha256": "d6dc7be4cef692c399a7fb9308c33bca2d04400049f31766e09af48f233d12ba"
+    },
+    {
+      "case_id": "pair-2-3-0-production",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "pub fn entry(callback: impl Fn()) {\n    callback();\n    let _ = 1_u8;\n}\n",
+      "effect": "process.spawn",
+      "disposition": "DENY",
+      "opcodes": [
+        3,
+        0
+      ],
+      "provenance": "PRODUCTION",
+      "ground_truth": "NOT_EVALUABLE",
+      "expected_reporting": [
+        "NOT_EVALUABLE"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "d6f939a9edb992e0409a03724858197c88d44c41dad0a807f6477c83016c1bc1"
+    },
+    {
+      "case_id": "pair-2-3-0-test_only",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "#[cfg(test)]\npub fn entry(callback: impl Fn()) {\n    callback();\n    let _ = 1_u8;\n}\n",
+      "effect": "process.spawn",
+      "disposition": "DENY",
+      "opcodes": [
+        3,
+        0
+      ],
+      "provenance": "TEST_ONLY",
+      "ground_truth": "NOT_EVALUABLE",
+      "expected_reporting": [
+        "NOT_EVALUABLE"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "6852f72e1618d93ae6833d1b2c357d3efc402d3574bc8c6eecda5b37a055ffb2"
+    },
+    {
+      "case_id": "pair-2-3-1-production",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "pub fn entry(callback: impl Fn()) {\n    callback();\n    let _ = std::fs::write(\"not_executed\", b\"x\");\n}\n",
+      "effect": "process.spawn",
+      "disposition": "DENY",
+      "opcodes": [
+        3,
+        1
+      ],
+      "provenance": "PRODUCTION",
+      "ground_truth": "NOT_EVALUABLE",
+      "expected_reporting": [
+        "NOT_EVALUABLE"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "48d0c37181118d258d9a7ceadaddc8882f7deb9b2f1f9c94ef9e6ca5c569f805"
+    },
+    {
+      "case_id": "pair-2-3-1-test_only",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "#[cfg(test)]\npub fn entry(callback: impl Fn()) {\n    callback();\n    let _ = std::fs::write(\"not_executed\", b\"x\");\n}\n",
+      "effect": "process.spawn",
+      "disposition": "DENY",
+      "opcodes": [
+        3,
+        1
+      ],
+      "provenance": "TEST_ONLY",
+      "ground_truth": "NOT_EVALUABLE",
+      "expected_reporting": [
+        "NOT_EVALUABLE"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "5b32f1a6f5546d61423cc5667cd1a274607cfbb2c72d8e9932337e6f2cefc1b7"
+    },
+    {
+      "case_id": "pair-2-3-2-production",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "pub fn entry(callback: impl Fn()) {\n    callback();\n    let _ = std::process::Command::new(\"not_executed\").spawn();\n}\n",
+      "effect": "process.spawn",
+      "disposition": "DENY",
+      "opcodes": [
+        3,
+        2
+      ],
+      "provenance": "PRODUCTION",
+      "ground_truth": "SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "SUPPORTED_VIOLATION"
+      ],
+      "expected_blocking": true,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "HELD_OUT",
+      "source_sha256": "55e8bdf8150161a0fc1ca450fbf3f9d58a249a4cf7985932522262b1450f5ee5"
+    },
+    {
+      "case_id": "pair-2-3-2-test_only",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "#[cfg(test)]\npub fn entry(callback: impl Fn()) {\n    callback();\n    let _ = std::process::Command::new(\"not_executed\").spawn();\n}\n",
+      "effect": "process.spawn",
+      "disposition": "DENY",
+      "opcodes": [
+        3,
+        2
+      ],
+      "provenance": "TEST_ONLY",
+      "ground_truth": "SUPPORTED_VIOLATION",
+      "expected_reporting": [
+        "SUPPORTED_VIOLATION"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "b50c190f8efc585036cc1143cf20c54015ebe063b1903eb3119ac5089863f5e1"
+    },
+    {
+      "case_id": "pair-2-3-3-production",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "pub fn entry(callback: impl Fn()) {\n    callback();\n    callback();\n}\n",
+      "effect": "process.spawn",
+      "disposition": "DENY",
+      "opcodes": [
+        3,
+        3
+      ],
+      "provenance": "PRODUCTION",
+      "ground_truth": "NOT_EVALUABLE",
+      "expected_reporting": [
+        "NOT_EVALUABLE"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "f3fda20c6d3e5d206266b1c0a644248fd987d121978f663988a3b6b7dbb3cfaa"
+    },
+    {
+      "case_id": "pair-2-3-3-test_only",
+      "stratum": "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+      "source": "#[cfg(test)]\npub fn entry(callback: impl Fn()) {\n    callback();\n    callback();\n}\n",
+      "effect": "process.spawn",
+      "disposition": "DENY",
+      "opcodes": [
+        3,
+        3
+      ],
+      "provenance": "TEST_ONLY",
+      "ground_truth": "NOT_EVALUABLE",
+      "expected_reporting": [
+        "NOT_EVALUABLE"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "independent restricted-language opcode union and policy truth table; a sufficient positive witness survives unrelated unknown effects",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "5fc63118d4efad1b024e3cc1ab1f1e0cb8a3b43b66c727e9601cd865f0984f89"
+    },
+    {
+      "case_id": "undeclared-1",
+      "stratum": "NO_POLICY",
+      "source": "pub fn entry() { let _ = std::fs::write(\"not_executed\", b\"x\"); }\n",
+      "effect": "filesystem.write",
+      "disposition": "UNDECLARED",
+      "provenance": "PRODUCTION",
+      "ground_truth": "KNOWN_EFFECT_PRESENT",
+      "expected_reporting": [
+        "NO_DECLARED_CLAIM"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "no effective evaluative entry creates no claim; zero claims never count as a favorable negative proof",
+      "holdout": "HELD_OUT",
+      "source_sha256": "bbd66941453737645c0a41d2ab7d3df5c6ad81c3498cbb4bbe8450208e42e312"
+    },
+    {
+      "case_id": "undeclared-2",
+      "stratum": "NO_POLICY",
+      "source": "pub fn entry() { let _ = std::process::Command::new(\"not_executed\").spawn(); }\n",
+      "effect": "process.spawn",
+      "disposition": "UNDECLARED",
+      "provenance": "PRODUCTION",
+      "ground_truth": "KNOWN_EFFECT_PRESENT",
+      "expected_reporting": [
+        "NO_DECLARED_CLAIM"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "no effective evaluative entry creates no claim; zero claims never count as a favorable negative proof",
+      "holdout": "DEVELOPMENT",
+      "source_sha256": "68592ac1f829546c7978b0e5b6ba1379b2dc8b671a9c53c0113c6ae5682e0a0d"
+    },
+    {
+      "case_id": "zero-executable-1",
+      "stratum": "ZERO_EXECUTABLE_COVERAGE",
+      "source": "pub struct Marker;\n",
+      "effect": "filesystem.write",
+      "disposition": "DENY",
+      "provenance": "PRODUCTION",
+      "ground_truth": "NO_EXECUTABLE_EFFECT_SITE",
+      "expected_reporting": [
+        "NOT_EVALUABLE"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "governed source without executable support cannot establish the scoped negative proposition",
+      "holdout": "HELD_OUT",
+      "source_sha256": "27bd787e1dbab1b7ee3c782473f6018dbd526cc6adbc22212866da5268ef5e40"
+    },
+    {
+      "case_id": "zero-executable-2",
+      "stratum": "ZERO_EXECUTABLE_COVERAGE",
+      "source": "pub struct Marker;\n",
+      "effect": "process.spawn",
+      "disposition": "DENY",
+      "provenance": "PRODUCTION",
+      "ground_truth": "NO_EXECUTABLE_EFFECT_SITE",
+      "expected_reporting": [
+        "NOT_EVALUABLE"
+      ],
+      "expected_blocking": false,
+      "required_supported_control": true,
+      "oracle": "governed source without executable support cannot establish the scoped negative proposition",
+      "holdout": "HELD_OUT",
+      "source_sha256": "27bd787e1dbab1b7ee3c782473f6018dbd526cc6adbc22212866da5268ef5e40"
+    }
+  ],
+  "human_adjudication": false,
+  "confidence_claim": null,
+  "statistical_limit": "deterministic engineering controls, correlated repeated opcode shapes and source sites; no random population sampling, real-world precision, false-positive or external-assurance estimate",
+  "self_policy_intent": {
+    "module": "testing/semantic_oracle",
+    "responsibility": "Pure reference opcode/policy semantics used by qualification; explicit integers/booleans only, no I/O, processes, clocks or mutable external state",
+    "deny": [
+      "filesystem.write",
+      "process.spawn"
+    ],
+    "rationale": "The independently specified oracle must compute expected values without consulting the evaluated repository, invoking Fortress or performing external effects. This intent is authored before candidate scoring, not inferred from a green analyzer result. Other Modules retain appropriate undeclared policies."
+  }
+}

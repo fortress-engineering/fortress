@@ -47,7 +47,7 @@ LEGACY_CONFIG_PATH = "_data/project.json"
 EVIDENCE_ROOT = "__fortress/evidence"
 CURRENT_INDEX_PATH = "__fortress/evidence/current.json"
 GENERATIONS_PATH = "__fortress/evidence/generations"
-CONTROL_LAYOUT_PATH = "engine/project_model/_data/control_layout_v4.json"
+CONTROL_LAYOUT_PATH = "engine/project_model/_data/control_layout_v5.json"
 CERTIFICATE_ID = "quality-certificate"
 CERTIFICATE_MEMBER = "quality_certificate.json"
 SCHEMA_ID = "urn:fortress:derived:v3:local-quality-certificate"
@@ -89,7 +89,7 @@ def load_installed_artifact_contract() -> tuple[
             semantic.append(artifact)
         elif record["production_group"] == "CERTIFICATION":
             certification.append(artifact)
-        elif record["production_group"] not in {"CERTIFICATE", "APPLICATION"}:
+        elif record["production_group"] not in {"CERTIFICATE", "APPLICATION", "QUALIFICATION"}:
             raise ValueError(f"unknown artifact production group: {record['production_group']}")
     return tuple(semantic), tuple(certification), metadata, records
 
@@ -104,7 +104,11 @@ APPLICATION_ARTIFACTS = tuple(
     (r["id"],r["logical_path"],TRACKED_EVIDENCE)
     for r in INSTALLED_ARTIFACT_RECORDS if r["production_group"] == "APPLICATION"
 )
-ARTIFACTS = SEMANTIC_ARTIFACTS + CERTIFICATION_ARTIFACTS + APPLICATION_ARTIFACTS
+QUALIFICATION_ARTIFACTS = tuple(
+    (r["id"],r["logical_path"],TRACKED_EVIDENCE)
+    for r in INSTALLED_ARTIFACT_RECORDS if r["production_group"] == "QUALIFICATION"
+)
+ARTIFACTS = SEMANTIC_ARTIFACTS + CERTIFICATION_ARTIFACTS + APPLICATION_ARTIFACTS + QUALIFICATION_ARTIFACTS
 
 
 def validate_control_artifact_registry(root: Path) -> None:
@@ -135,6 +139,7 @@ REQUIRED_GATE_IDS = (
     "ARTIFACT_REFERENCES",
     "ARTIFACT_SEMANTIC",
     "ARTIFACT_SEMANTIC_CONFORMANCE",
+    "ARTIFACT_SEMANTIC_QUALIFICATION",
     "ARTIFACT_SOURCE_ARTIFACTS",
     "ARTIFACT_STATE_EFFECT",
     "ARTIFACT_VERIFIED_BFG",
@@ -151,6 +156,7 @@ REQUIRED_GATE_IDS = (
     "SCHEMA_ARTIFACTS",
     "SELF_AUDIT",
     "SELF_MODEL",
+    "SEMANTIC_QUALIFICATION",
     "SOURCE_ARCHITECTURE",
     "WORKSPACE_TESTS",
 )
@@ -385,9 +391,9 @@ def selection_key() -> str:
     )
 
 
-def control_layout_digest(root: Path, version: int = 4) -> str:
+def control_layout_digest(root: Path, version: int = 5) -> str:
     """Bind publications to the installed declarative role registry."""
-    if version not in (1, 2, 3, 4):
+    if version not in (1, 2, 3, 4, 5):
         raise CertificateError("unsupported control layout edition")
     path = root / f"engine/project_model/_data/control_layout_v{version}.json"
     return sha256_bytes(path.read_bytes())
@@ -454,8 +460,8 @@ def build_generation_manifest(
     )
     descriptors.sort(key=lambda item: item["id"])
     return {
-        "$schema": "urn:fortress:derived:v4:assessment-generation-manifest",
-        "schema_version": 4,
+        "$schema": "urn:fortress:derived:v5:assessment-generation-manifest",
+        "schema_version": 5,
         "generation_kind": "LOCAL_QUALITY",
         "project": "PF-FORTRESS",
         "profile": PROFILE_ID,
@@ -465,7 +471,7 @@ def build_generation_manifest(
             "file_count": certificate["source"]["file_count"],
         },
         "control_layout": {
-            "id": "fortress-control-layout-v4",
+            "id": "fortress-control-layout-v5",
             "digest": control_layout_digest(root),
         },
         "artifacts": descriptors,
@@ -736,13 +742,20 @@ def timing_checkpoint(phase: str) -> None:
 
 
 def certification_executable(
-    root: Path, base: list[str], environment: dict[str, str], workspace: RunWorkspace
+    root: Path, base: list[str], environment: dict[str, str], workspace: RunWorkspace,
+    *, qualification: bool = False,
 ) -> Path:
-    """Build the real CLI and stage exact executable bytes outside Cargo's target."""
+    """Stage either registered executable through one checked compiler boundary."""
+    name = "semantic_qualification" if qualification else "fortress"
+    kind = "bin"
+    source = "testing/_code/semantic_qualification.rs" if qualification else "cli/_code/main.rs"
     build = base + [
         "build", "--quiet", "--all-features", "--manifest-path", "_data/Cargo.toml",
-        "-p", "fortress-cli", "--message-format=json-render-diagnostics",
+        "-p", "fortress-qualification" if qualification else "fortress-cli",
     ]
+    if qualification:
+        build += ["--bin", name]
+    build += ["--message-format=json-render-diagnostics"]
     output = run_command(root, build, environment, capture=True, workspace=workspace)
     try:
         messages = [json.loads(line) for line in output.splitlines()]
@@ -756,10 +769,10 @@ def certification_executable(
         if (
             message.get("reason") == "compiler-artifact"
             and isinstance(target, dict)
-            and target.get("name") == "fortress"
-            and target.get("kind") == ["bin"]
+            and target.get("name") == name
+            and target.get("kind") == [kind]
             and Path(target.get("src_path", "")).resolve()
-            == (root / "cli/_code/main.rs").resolve()
+            == (root / source).resolve()
             and isinstance(message.get("executable"), str)
         ):
             binaries.append(Path(message["executable"]))
@@ -776,7 +789,7 @@ def certification_executable(
     if not stat.S_ISREG(before.st_mode) or getattr(before, "st_file_attributes", 0) & 0x400:
         raise CertificateError("CLI compiler artifact is linked or not a regular file")
     workspace.reserve(before.st_size)
-    staged = workspace.staging / ("fortress.exe" if os.name == "nt" else "fortress")
+    staged = workspace.staging / (name + (".exe" if os.name == "nt" else ""))
     digest = hashlib.sha256()
     copied = 0
     with executable.open("rb") as origin, staged.open("xb") as destination:
@@ -797,8 +810,62 @@ def certification_executable(
         if hashlib.file_digest(copied_file, "sha256").digest() != digest.digest():
             raise CertificateError("staged CLI differs from the compiler artifact")
     workspace.check_budget()
-    print(f"[local-certificate] staged CLI sha256:{digest.hexdigest()}", flush=True)
+    label = "qualification driver" if qualification else "CLI"
+    print(f"[local-certificate] staged {label} sha256:{digest.hexdigest()}", flush=True)
     return staged
+
+
+def semantic_qualification(
+    root: Path, base: list[str], environment: dict[str, str], workspace: RunWorkspace,
+    executable: Path, frozen: tuple[str, int],
+) -> tuple[bytes, list[str], Path]:
+    """Invoke test-owned oracles; retain first observations outside disposable staging.
+
+    Production code supplies source/toolchain premises and owns execution only.
+    It imports no expected answer, benchmark evaluator or qualification oracle.
+    The compact resulting metadata is a separate tool artifact, not evidence
+    that this application executed optional semantic rules.
+    """
+    local, native = repository_source_identities(root)
+    if local != frozen:
+        raise CertificateError("qualification source changed before evaluation")
+    harness = certification_executable(root, base, environment, workspace, qualification=True)
+    rustc = shutil.which("rustc", path=environment.get("PATH"))
+    if rustc is None:
+        raise CertificateError("qualification requires the pinned rustc executable")
+    version = run_command(root, [rustc, "+" + TOOLCHAIN, "-vV"], environment,
+                          capture=True, workspace=workspace)
+    premises = {"candidate_source": local[0], "native_source": native,
+                "toolchain": sha256_bytes(version)}
+    premises_path = workspace.staging / "qualification-premises.json"
+    with premises_path.open("xb") as stream:
+        stream.write(canonical_payload_bytes(premises))
+    outputs = []
+    commands = []
+    for suffix in ("first", "replay"):
+        retained = workspace.allocate_retained_evidence("semantic-qualification-v1")
+        output = workspace.staging / f"semantic-qualification-{suffix}.json"
+        command = [sys.executable, "testing/_code/semantic_qualification.py", "--root", str(root),
+                   "--executable", str(harness), "--staged-cli", str(executable),
+                   "--retained-run", str(retained), "--output", str(output),
+                   "--bindings", str(premises_path)]
+        run_command(root, command, environment, workspace=workspace)
+        if output.stat().st_size > 1024 * 1024:
+            raise CertificateError("qualification metadata exceeds 1 MiB")
+        content = output.read_bytes()
+        report = json.loads(content)
+        if (report.get("$schema") != "urn:fortress:derived:v1:semantic-qualification"
+                or report.get("schema_version") != 1 or report.get("status") != "PASS"
+                or any(report.get("inputs", {}).get("identities", {}).get(k) != value
+                       for k, value in premises.items())):
+            raise CertificateError("qualification report disagrees with independent issuer premises")
+        outputs.append(content)
+        commands.append(command)
+    if outputs[0] != outputs[1]:
+        raise CertificateError("qualification replay differs; both original observations retained")
+    if repository_source_identities(root) != (local, native):
+        raise CertificateError("qualification source changed while evaluating")
+    return outputs[0], commands[0], workspace.staging / "semantic-qualification-first.json"
 
 
 def issue(root: Path) -> dict[str, Any]:
@@ -932,6 +999,8 @@ def _issue(root: Path, workspace: RunWorkspace) -> dict[str, Any]:
             "--test",
             "repository_grammar",
             "--test",
+            "reference_resolution",
+            "--test",
             "semantic_conformance",
             "--test",
             "cli",
@@ -954,6 +1023,20 @@ def _issue(root: Path, workspace: RunWorkspace) -> dict[str, Any]:
                            "--report", str(temporary / "provider-replay-report.json")]
         run_command(root, provider_replay, environment, workspace=workspace)
         pass_gate(gates, "PROVIDER_EVIDENCE", provider_replay)
+        qualification_bytes, qualification_command, qualification_path = semantic_qualification(
+            root, base, environment, workspace, executable,
+            (initial_fingerprint, initial_file_count),
+        )
+        if len(QUALIFICATION_ARTIFACTS) != 1:
+            raise CertificateError("qualification production registry is incomplete")
+        qualification_id, qualification_logical_path, qualification_storage = QUALIFICATION_ARTIFACTS[0]
+        if qualification_storage != TRACKED_EVIDENCE:
+            raise CertificateError("compact qualification metadata must remain included")
+        pending_artifacts[qualification_logical_path] = qualification_bytes
+        artifact_records.append({"id": qualification_id, "digest": sha256_bytes(qualification_bytes),
+                                 "bytes": len(qualification_bytes), "storage": qualification_storage})
+        pass_gate(gates, "SEMANTIC_QUALIFICATION", qualification_command)
+        pass_gate(gates, "ARTIFACT_SEMANTIC_QUALIFICATION", qualification_command)
         certify = [
             str(executable),
             "certify",
@@ -1026,6 +1109,7 @@ def _issue(root: Path, workspace: RunWorkspace) -> dict[str, Any]:
                 for command_name, logical_path, _ in CERTIFICATION_ARTIFACTS
             }
         )
+        artifact_files[qualification_logical_path] = str(qualification_path.resolve())
         artifact_manifest = temporary / "schema-artifacts.json"
         artifact_manifest.write_bytes(
             json.dumps(artifact_files, sort_keys=True, separators=(",", ":")).encode("utf-8")
@@ -1217,7 +1301,7 @@ def load_selected_generation(
         "generation manifest",
     )
     version = manifest["schema_version"]
-    if type(version) is not int or version not in ((1, 2, 3, 4) if historical else (4,)) or manifest["$schema"] != f"urn:fortress:derived:v{version}:assessment-generation-manifest" or manifest["generation_kind"] != "LOCAL_QUALITY" or manifest["project"] != "PF-FORTRESS" or manifest["profile"] != PROFILE_ID or manifest["selection_key"] != selection_key():
+    if type(version) is not int or version not in ((1, 2, 3, 4, 5) if historical else (5,)) or manifest["$schema"] != f"urn:fortress:derived:v{version}:assessment-generation-manifest" or manifest["generation_kind"] != "LOCAL_QUALITY" or manifest["project"] != "PF-FORTRESS" or manifest["profile"] != PROFILE_ID or manifest["selection_key"] != selection_key():
         raise CertificateError("selected generation manifest identity is unsupported")
     if manifest["control_layout"] != {"id": f"fortress-control-layout-v{version}", "digest": control_layout_digest(root, version)}:
         raise CertificateError("selected generation control layout is stale or invalid")

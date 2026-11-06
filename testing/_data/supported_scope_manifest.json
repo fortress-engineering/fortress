@@ -1,0 +1,31 @@
+{
+  "$schema": "urn:fortress:schema:v1:supported-qualification-scope",
+  "schema_version": 1,
+  "scope_id": "rust-primitive-effects-automated-v1",
+  "effects": [
+    "filesystem.write",
+    "process.spawn"
+  ],
+  "strata": [
+    "AUTHORIZATION",
+    "FAILED_PARSE",
+    "KNOWN_NO_EXECUTABLE_SUBJECT",
+    "NO_POLICY",
+    "PUBLIC_FILE_SCOPE",
+    "RESTRICTED_SUPPORTED_OPCODE_LANGUAGE",
+    "UNEXPANDED_MACRO",
+    "UNRESOLVED_CONFIGURATION",
+    "ZERO_EXECUTABLE_COVERAGE"
+  ],
+  "exclusions": [
+    "Arbitrary dynamic dispatch, unexpanded macros and unresolved configuration cannot establish complete absence; their frozen expected uncertainty is retained.",
+    "Cross-effect negative controls depend on explicit accepted research primitive bounds for exact literal-borrow and fresh-command synthetic sources. Installed default summaries remain partial; unconfigured uncertainty and assumption references are retained. Child-process behavior, kernel hooks and allocator replacement are outside that direct primitive boundary.",
+    "Deterministic fixtures and two file scopes do not establish real-world precision, false-positive rates, statistical confidence, independent human validation or external assurance.",
+    "Earlier unreproduced historical populations remain unqualified.",
+    "Effect-policy conformance is bounded to the frozen primitive-language and public-file envelope; it does not qualify general control/data flow or all Rust effects.",
+    "Held-out cases are exposed after the first scored run; failed first observations remain retained and replays are disclosed.",
+    "Pinned public source bytes are governed by research-authored wrappers at original paths, not a complete original upstream build or repository certification."
+  ],
+  "promotes_default_blocking": false,
+  "human_validation": "RECOMMENDED_FUTURE_RESEARCH_NOT_PERFORMED"
+}

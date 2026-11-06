@@ -656,3 +656,112 @@ fn native_failed_application_preserves_claims_provenance_and_repeatable_canonica
             && c.truth == DeclarationTruth::NotEvaluable
     }));
 }
+
+use fortress_core::qualification::{QualificationInputs, QualificationManifest, SupportedScope};
+use serde_json::{Value, json};
+use std::collections::BTreeMap;
+fn qualification_fixture_scope() -> SupportedScope {
+    SupportedScope::from_json_str(&json!({
+        "$schema":"urn:fortress:schema:v1:supported-qualification-scope","schema_version":1,
+        "scope_id":"fixture-scope","effects":["filesystem.write","process.spawn"],
+        "strata":["NEGATIVE","POSITIVE","UNKNOWN"],"exclusions":["No population or human validation."],
+        "promotes_default_blocking":false,"human_validation":"RECOMMENDED_FUTURE_RESEARCH_NOT_PERFORMED"
+    }).to_string()).unwrap()
+}
+
+fn qualification_fixture_record() -> (Value, QualificationInputs) {
+    let mut identities = [
+        "analyzer",
+        "candidate_source",
+        "catalog",
+        "contexts",
+        "corpus",
+        "harness",
+        "heldout_selection",
+        "native_source",
+        "oracle",
+        "outcomes",
+        "profiles",
+        "protocol",
+        "registry",
+        "schemas",
+        "staged_cli",
+        "supported_scope",
+        "toolchain",
+    ]
+    .into_iter()
+    .map(|name| (name.to_owned(), format!("sha256:{}", "a".repeat(64))))
+    .collect::<BTreeMap<_, _>>();
+    identities.insert(
+        "supported_scope".into(),
+        qualification_fixture_scope().digest().unwrap(),
+    );
+    let inputs = QualificationInputs { identities };
+    (
+        json!({"$schema":"urn:fortress:derived:v1:semantic-qualification","schema_version":1,
+        "status":"PASS","scope_id":"fixture-scope","inputs":inputs,
+        "counts":{"declared_cases":12,"completed_cases":12,"required_cases":8,"required_passed":8,"mismatches":0,
+            "positive":2,"negative":2,"conditional_negative":0,"unknown":2,"not_applicable":1,"invalid":1,"execution_failures":0,"authorization":2,"undeclared":2,
+            "distinct_source_sites":2,"claims":8,"causal_paths":5,"declared_mutations":3,"exercised_mutations":3,
+            "equal_differentials":11,"equal_metadata_controls":11,"invalid_port_equivalences":1,"external_positive_scopes":1},
+        "limitations":{"independent_human_adjudication":false,"population_precision":null,
+            "real_world_false_positive_rate":null,"statistical_confidence":null,"independent_external_assurance":false,
+            "reasons":["Automated deterministic envelope only.","No independent human validation."]}}),
+        inputs,
+    )
+}
+
+/// `T-AF-CERTIFICATION-0001-R07-001`
+/// Fortress requirement: AF-CERTIFICATION-0001-R07
+#[test]
+fn tool_qualification_scope_never_changes_application_truth_or_sufficiency() {
+    let (record, current) = qualification_fixture_record();
+    let report = QualificationManifest::from_json_str(&record.to_string()).unwrap();
+    let scope = qualification_fixture_scope();
+    for truth in [
+        DeclarationTruth::SupportedViolation,
+        DeclarationTruth::NoSupportedViolation,
+        DeclarationTruth::NotEvaluable,
+        DeclarationTruth::NotApplicable,
+        DeclarationTruth::Authorization,
+    ] {
+        let (declaration, expected, evidence, policy) = fixture(truth);
+        let before = declaration.to_canonical_bytes().unwrap();
+        let assessment =
+            ProfileAssessment::evaluate(&declaration, &expected, &evidence, &policy).unwrap();
+        let observation = declaration
+            .qualification_scope(&report, &current, &scope)
+            .unwrap();
+        assert_eq!(
+            observation.declaration_digest,
+            declaration.digest().unwrap()
+        );
+        assert_eq!(observation.subject_ref, declaration.binding.subject_ref);
+        assert_eq!(observation.classification, "TOOL_CAPABILITY_METADATA");
+        assert!(!observation.application_evidence);
+        assert_eq!(observation.authenticity, "UNVERIFIED");
+        assert_eq!(declaration.to_canonical_bytes().unwrap(), before);
+        assert_eq!(
+            ProfileAssessment::evaluate(&declaration, &expected, &evidence, &policy).unwrap(),
+            assessment
+        );
+        assert!(
+            serde_json::from_value::<AssessmentEvidence>(
+                serde_json::to_value(&observation).unwrap()
+            )
+            .is_err()
+        );
+        assert_advertised_schema(&observation);
+    }
+    let (declaration, _, _, _) = fixture(DeclarationTruth::NotEvaluable);
+    let mut stale = current;
+    stale.identities.insert(
+        "candidate_source".into(),
+        format!("sha256:{}", "f".repeat(64)),
+    );
+    assert!(
+        declaration
+            .qualification_scope(&report, &stale, &scope)
+            .is_err()
+    );
+}

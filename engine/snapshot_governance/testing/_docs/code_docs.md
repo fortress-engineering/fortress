@@ -68,7 +68,7 @@ Checks Fortress's physical repository and canonical documentation at the Snapsho
 
 ### [`snapshot_evaluation.rs`](../_code/snapshot_evaluation.rs)
 
-Verifies truthful rule dispatch, unsupported reporting, and complete self traceability inputs.
+Verifies truthful rule dispatch, unsupported reporting, and complete self traceability inputs. A separate explicitly governed fixture without semantic policy proves nonapplicability and its canonical reason without assuming Fortress itself has no policy.
 
 ### [`snapshot_primitives.rs`](../_code/snapshot_primitives.rs)
 
@@ -125,3 +125,5 @@ Shares an atomically claimed owned native Python repository and trusted bounded 
 R20-009 through R20-011 additionally verify exact retained replay with a project-import sentinel, actual native unittest execution only after matching trust, fresh-only assessment with incomplete environment closure, missing-cache obligations, and refusal of completion while an actual reaped child remains recorded, followed by explicit owner-confirmed closure and complete owned cleanup.
 
 R20-012 keeps an authored external obligation mandatory in the Rust-only qualification port even when a genuine observed legacy Rust Test ID is mapped and synthetic input alleges a successful suite. The synthetic record is an adversarial unit input, never actual execution evidence. Native requirement assessment through the separately trusted actual runner remains independently tested by R20-010.
+
+Execution-storage lifecycle controls additionally retain failed/incomplete observations outside disposable roots, refuse invalid categories and exhausted budgets, and preserve retained evidence through compiler cleanup and orphan recovery. Their assertions concern ownership and correctness, not numerical performance.

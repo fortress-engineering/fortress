@@ -1,0 +1,159 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v1:declaration-qualification-scope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "declaration_digest",
+    "subject_ref",
+    "qualification_digest",
+    "supported_scope_digest",
+    "scope_id",
+    "classification",
+    "application_evidence",
+    "authenticity",
+    "inputs"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:derived:v1:declaration-qualification-scope"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "declaration_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "subject_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "qualification_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "supported_scope_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "scope_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "classification": {
+      "const": "TOOL_CAPABILITY_METADATA"
+    },
+    "application_evidence": {
+      "const": false
+    },
+    "authenticity": {
+      "const": "UNVERIFIED"
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "identities"
+      ],
+      "properties": {
+        "identities": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "analyzer",
+            "candidate_source",
+            "catalog",
+            "contexts",
+            "corpus",
+            "harness",
+            "heldout_selection",
+            "native_source",
+            "oracle",
+            "outcomes",
+            "profiles",
+            "protocol",
+            "registry",
+            "schemas",
+            "staged_cli",
+            "supported_scope",
+            "toolchain"
+          ],
+          "properties": {
+            "analyzer": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "candidate_source": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "catalog": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "contexts": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "corpus": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "harness": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "heldout_selection": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "native_source": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "oracle": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "outcomes": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "profiles": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "protocol": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "registry": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "schemas": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "staged_cli": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "supported_scope": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "toolchain": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            }
+          }
+        }
+      }
+    }
+  }
+}

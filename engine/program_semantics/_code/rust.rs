@@ -2289,7 +2289,17 @@ fn execution_provenance(
         .iter()
         .filter(|attribute| attribute.path().is_ident("cfg"))
         .map(cfg_attribute_requirement)
-        .fold(TestRequirement::NotRequired, combine_cfg_requirements);
+        .fold(
+            if attributes
+                .iter()
+                .any(|attribute| attribute.path().is_ident("cfg_attr"))
+            {
+                TestRequirement::Unknown
+            } else {
+                TestRequirement::NotRequired
+            },
+            combine_cfg_requirements,
+        );
     match (inherited, requirement) {
         (_, TestRequirement::Required) => ExecutionProvenance::TestOnly,
         (ExecutionProvenance::Unknown, _) | (_, TestRequirement::Unknown) => {
@@ -2331,10 +2341,9 @@ fn cfg_meta_requirement(meta: &Meta) -> TestRequirement {
             if path.is_ident("test") {
                 TestRequirement::Required
             } else {
-                TestRequirement::NotRequired
+                TestRequirement::Unknown
             }
         }
-        Meta::NameValue(_) => TestRequirement::NotRequired,
         Meta::List(list) if list.path.is_ident("all") => {
             let Some(values) = cfg_list_values(list) else {
                 return TestRequirement::Unknown;
@@ -2349,7 +2358,7 @@ fn cfg_meta_requirement(meta: &Meta) -> TestRequirement {
                 return TestRequirement::Unknown;
             };
             if values.is_empty() {
-                return TestRequirement::NotRequired;
+                return TestRequirement::Unknown;
             }
             let requirements = values.iter().map(cfg_meta_requirement).collect::<Vec<_>>();
             if requirements
@@ -2364,13 +2373,16 @@ fn cfg_meta_requirement(meta: &Meta) -> TestRequirement {
             }
         }
         Meta::List(list) if list.path.is_ident("not") => {
-            if cfg_list_values(list).is_some_and(|values| values.len() == 1) {
+            if cfg_list_values(list).is_some_and(|values| {
+                values.len() == 1
+                    && matches!(values.first(), Some(Meta::Path(path)) if path.is_ident("test"))
+            }) {
                 TestRequirement::NotRequired
             } else {
                 TestRequirement::Unknown
             }
         }
-        Meta::List(_) => TestRequirement::Unknown,
+        Meta::NameValue(_) | Meta::List(_) => TestRequirement::Unknown,
     }
 }
 

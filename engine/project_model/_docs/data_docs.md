@@ -32,7 +32,7 @@ Defines the fixed root, active roles, source bindings, manifest member, and clos
 
 ### [`control_layout_schema_v2.json`](../_data/control_layout_schema_v2.json)
 
-Defines the current fixed control layout with the exact source-bound effect-summary authority role and closed artifact registry.
+Defines the retained second fixed control layout with the exact source-bound effect-summary authority role and closed artifact registry.
 
 ### [`control_layout_v1.json`](../_data/control_layout_v1.json)
 
@@ -40,7 +40,7 @@ Retains the historical cross-adapter `__fortress` layout and artifact-role datas
 
 ### [`control_layout_v2.json`](../_data/control_layout_v2.json)
 
-Provides the current cross-adapter `__fortress` layout and registers `__fortress/governance/effect_summaries/catalog.json` as required source authority owned by State and Effect Analysis.
+Retains the second cross-adapter `__fortress` layout and registers `__fortress/governance/effect_summaries/catalog.json` as required source authority owned by State and Effect Analysis.
 
 ### [`filing_profile_schema_v2.json`](../_data/filing_profile_schema_v2.json)
 
@@ -77,3 +77,11 @@ Adds required authored verification bindings and the exact content-addressed imp
 ### [`control_layout_schema_v4.json`](../_data/control_layout_schema_v4.json)
 
 Validates the fourth fixed control-layout edition and its closed authored role vocabulary.
+
+### [`control_layout_v5.json`](../_data/control_layout_v5.json)
+
+Current immutable layout adds one test-owned QUALIFICATION production member while preserving the native application/semantic product set. Compact tool metadata is durable; raw observations, bulk projections and active journals remain external.
+
+### [`control_layout_schema_v5.json`](../_data/control_layout_schema_v5.json)
+
+Validates the fifth closed control edition and the distinct QUALIFICATION production group. Every prior edition remains byte-identical and readable.

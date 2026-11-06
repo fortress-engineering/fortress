@@ -2,6 +2,8 @@
 members = [
   "../engine/_data",
   "../cli/_data",
+  "../testing/_data",
+  "../testing/semantic_oracle/_data",
 ]
 resolver = "2"
 

@@ -17,7 +17,9 @@ pub const LEGACY_PROJECT_CONFIGURATION_PATH: &str = "_data/project.json";
 pub const EVIDENCE_ROOT: &str = "__fortress/evidence";
 
 /// Declarative layout bytes shared by all compiled adapters.
-pub const CONTROL_LAYOUT_SOURCE: &str = include_str!("../_data/control_layout_v4.json");
+pub const CONTROL_LAYOUT_SOURCE: &str = include_str!("../_data/control_layout_v5.json");
+/// Retained fourth edition, including provider evidence roles.
+pub const CONTROL_LAYOUT_V4_SOURCE: &str = include_str!("../_data/control_layout_v4.json");
 /// Retained third edition; historical artifact identities remain unchanged.
 pub const CONTROL_LAYOUT_V3_SOURCE: &str = include_str!("../_data/control_layout_v3.json");
 /// Retained second layout edition; historical digest meaning is unchanged.
@@ -98,6 +100,7 @@ enum ProductionGroup {
     Certification,
     Certificate,
     Application,
+    Qualification,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
@@ -188,6 +191,7 @@ impl ControlLayout {
             1 => LEGACY_CONTROL_LAYOUT_SOURCE,
             2 => CONTROL_LAYOUT_V2_SOURCE,
             3 => CONTROL_LAYOUT_V3_SOURCE,
+            4 => CONTROL_LAYOUT_V4_SOURCE,
             _ => CONTROL_LAYOUT_SOURCE,
         };
         format!("sha256:{:x}", Sha256::digest(source.as_bytes()))
@@ -335,6 +339,10 @@ impl ControlLayout {
                 "urn:fortress:schema:v4:control-layout",
                 4,
                 "fortress-control-layout-v4"
+            ) | (
+                "urn:fortress:schema:v5:control-layout",
+                5,
+                "fortress-control-layout-v5"
             )
         );
         if !supported_version
@@ -395,7 +403,7 @@ impl ControlLayout {
         let mut logical_paths = BTreeSet::new();
         let mut ids = BTreeSet::new();
         let mut members = BTreeSet::new();
-        let mut production_counts = [0_u8; 4];
+        let mut production_counts = [0_u8; 5];
         let mut prior_id: Option<&str> = None;
         for artifact in &self.artifact_registry {
             let common_valid = !artifact.id.is_empty()
@@ -422,6 +430,7 @@ impl ControlLayout {
                 ProductionGroup::Certification => production_counts[1] += 1,
                 ProductionGroup::Certificate => production_counts[2] += 1,
                 ProductionGroup::Application => production_counts[3] += 1,
+                ProductionGroup::Qualification => production_counts[4] += 1,
             }
             if artifact.production_group == ProductionGroup::Certificate
                 && artifact.id != "quality-certificate"
@@ -430,10 +439,12 @@ impl ControlLayout {
             }
             prior_id = Some(&artifact.id);
         }
-        let (expected_ids, expected_members, expected_counts) = if self.schema_version >= 3 {
-            (17, 9, [11, 3, 1, 2])
+        let (expected_ids, expected_members, expected_counts) = if self.schema_version >= 5 {
+            (18, 10, [11, 3, 1, 2, 1])
+        } else if self.schema_version >= 3 {
+            (17, 9, [11, 3, 1, 2, 0])
         } else {
-            (15, 7, [11, 3, 1, 0])
+            (15, 7, [11, 3, 1, 0, 0])
         };
         if ids.len() != expected_ids
             || members.len() != expected_members

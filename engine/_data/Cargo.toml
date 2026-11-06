@@ -265,3 +265,7 @@ path = "../certification/testing/_code/declaration.rs"
 [[test]]
 name = "provider_ingest"
 path = "../snapshot_governance/testing/_code/provider_ingest.rs"
+
+[[test]]
+name = "qualification_metadata"
+path = "../standard_registry/testing/_code/qualification.rs"

@@ -88,3 +88,11 @@ Immutable application predicate mapping: selected registered checks require RULE
 ### [`assessment_policy_schema_v1.json`](../_data/assessment_policy_schema_v1.json)
 
 Validates the immutable application assessment policy and its exact predicate and reporting-dimension membership mappings; unsupported descriptors remain unavailable rather than gaining implicit evaluability.
+
+### [`qualification_manifest_schema_v1.json`](../_data/qualification_manifest_schema_v1.json)
+
+Closed automated qualification metadata with exact 17-input binding, independent denominators, mandatory witnesses/controls/mutations/differentials and explicit false/null human, population, confidence and external assurance claims.
+
+### [`supported_scope_schema_v1.json`](../_data/supported_scope_schema_v1.json)
+
+Closed predeclared operation/configuration/provenance envelope and limitations. Expected per-case answers stay with Testing, and default blocking promotion is always false.
