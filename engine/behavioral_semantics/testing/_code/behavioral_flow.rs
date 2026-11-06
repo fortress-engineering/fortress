@@ -14,11 +14,14 @@ use fortress_core::contract_coherency::{
 };
 use fortress_core::control_layout::{
     CONTROL_LAYOUT_SOURCE, CONTROL_LAYOUT_V2_SOURCE, CONTROL_LAYOUT_V3_SOURCE,
-    LEGACY_CONTROL_LAYOUT_SOURCE,
+    CONTROL_LAYOUT_V4_SOURCE, ControlLayout, ControlRole, LEGACY_CONTROL_LAYOUT_SOURCE,
 };
 use fortress_core::control_manifest::{
     ArtifactStorage, AssessmentGenerationManifest, AssessmentSelectionIndex,
 };
+use fortress_core::observation::ObservationPolicy;
+use fortress_core::project::ProjectConfiguration;
+use fortress_core::snapshot::observe_repository_stably;
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 
@@ -73,7 +76,8 @@ fn validate_selected_bfg(
         Some("fortress-control-layout-v1") => LEGACY_CONTROL_LAYOUT_SOURCE,
         Some("fortress-control-layout-v2") => CONTROL_LAYOUT_V2_SOURCE,
         Some("fortress-control-layout-v3") => CONTROL_LAYOUT_V3_SOURCE,
-        Some("fortress-control-layout-v4") => CONTROL_LAYOUT_SOURCE,
+        Some("fortress-control-layout-v4") => CONTROL_LAYOUT_V4_SOURCE,
+        Some("fortress-control-layout-v5") => CONTROL_LAYOUT_SOURCE,
         _ => return Err("selected generation has an unsupported layout".into()),
     };
     let artifacts = view["artifacts"]
@@ -105,7 +109,7 @@ fn validate_selected_bfg(
     if view["control_layout"]["digest"] != digest(layout_source.as_bytes()) {
         return Err("selected layout digest does not match its registry".into());
     }
-    if view["control_layout"]["id"] != "fortress-control-layout-v4" {
+    if view["control_layout"]["id"] != "fortress-control-layout-v5" {
         return Ok(SelectedBfgSubject::RetainedLayout);
     }
     if bytes != current_bfg {
@@ -160,15 +164,15 @@ fn selected_bfg_subject_controls(bytes: &[u8]) {
     let stale_source = format!("sha256:{}", "b".repeat(64));
     let payload: Value = serde_json::from_slice(bytes).expect("current BFG parses");
     let mut fixture = json!({
-        "$schema": "urn:fortress:derived:v4:assessment-generation-manifest",
-        "schema_version": 4,
+        "$schema": "urn:fortress:derived:v5:assessment-generation-manifest",
+        "schema_version": 5,
         "generation_kind": "LOCAL_QUALITY",
         "project": "PF-FORTRESS",
         "profile": "fortress-complete-local-v1",
         "selection_key": local_selection_key(),
         "source": {"fingerprint": current_source, "file_count": 1},
         "control_layout": {
-            "id": "fortress-control-layout-v4",
+            "id": "fortress-control-layout-v5",
             "digest": digest(CONTROL_LAYOUT_SOURCE.as_bytes()),
         },
         "artifacts": [{
@@ -225,26 +229,74 @@ fn selected_bfg_subject_controls(bytes: &[u8]) {
     fixture["control_layout"]["id"] = json!("unregistered-layout");
     assert!(AssessmentGenerationManifest::from_json_str(&fixture.to_string()).is_err());
     fixture["source"]["fingerprint"] = json!(current_source);
-    fixture["control_layout"] = json!({
-        "id": "fortress-control-layout-v2",
-        "digest": digest(CONTROL_LAYOUT_V2_SOURCE.as_bytes()),
-    });
-    fixture["$schema"] = json!("urn:fortress:derived:v2:assessment-generation-manifest");
-    fixture["schema_version"] = json!(2);
-    assert_eq!(
-        validate_selected_bfg(&parse(&fixture), bytes, &current_source, b"different"),
-        Ok(SelectedBfgSubject::RetainedLayout)
-    );
-    fixture["control_layout"] = json!({
-        "id": "fortress-control-layout-v1",
-        "digest": digest(LEGACY_CONTROL_LAYOUT_SOURCE.as_bytes()),
-    });
-    fixture["$schema"] = json!("urn:fortress:derived:v1:assessment-generation-manifest");
-    fixture["schema_version"] = json!(1);
-    assert_eq!(
-        validate_selected_bfg(&parse(&fixture), bytes, &current_source, b"different"),
-        Ok(SelectedBfgSubject::RetainedLayout)
-    );
+    for (version, layout_source) in [
+        (4, CONTROL_LAYOUT_V4_SOURCE),
+        (3, CONTROL_LAYOUT_V3_SOURCE),
+        (2, CONTROL_LAYOUT_V2_SOURCE),
+        (1, LEGACY_CONTROL_LAYOUT_SOURCE),
+    ] {
+        fixture["control_layout"] = json!({
+            "id": format!("fortress-control-layout-v{version}"),
+            "digest": digest(layout_source.as_bytes()),
+        });
+        fixture["$schema"] = json!(format!(
+            "urn:fortress:derived:v{version}:assessment-generation-manifest"
+        ));
+        fixture["schema_version"] = json!(version);
+        assert_eq!(
+            validate_selected_bfg(&parse(&fixture), bytes, &current_source, b"different"),
+            Ok(SelectedBfgSubject::RetainedLayout)
+        );
+        fixture["control_layout"]["digest"] = json!(stale_source);
+        assert!(validate_selected_bfg(&parse(&fixture), bytes, &current_source, bytes).is_err());
+    }
+}
+
+// LOCAL_QUALITY and native certification frame the same source bytes differently.
+// Reconstruct both identities independently so selected freshness uses its domain.
+fn live_source_identities(root: &Path) -> (String, String) {
+    let layout = ControlLayout::standard();
+    let configuration = ProjectConfiguration::from_json_str(
+        &fs::read_to_string(
+            root.join(layout.role_path(ControlRole::ProjectConfiguration).unwrap()),
+        )
+        .expect("configuration reads"),
+    )
+    .expect("configuration validates");
+    let index = layout
+        .role_path(ControlRole::AssessmentSelectionIndex)
+        .unwrap();
+    let evidence = Path::new(index).parent().unwrap().to_str().unwrap();
+    let policy = ObservationPolicy::new(
+        configuration
+            .observation_exclusions()
+            .iter()
+            .map(String::as_str)
+            .chain([".git", evidence]),
+    )
+    .expect("source policy validates");
+    let observation = observe_repository_stably(root, &policy).expect("source is stable");
+    let mut local = Sha256::new();
+    let mut native = Sha256::new();
+    for file in observation.files() {
+        let content = fs::read(root.join(file.path())).expect("observed source reads");
+        assert_eq!(content.len() as u64, file.size());
+        assert_eq!(digest(&content), file.sha256());
+        local.update(file.path().as_bytes());
+        local.update(b"\0");
+        local.update(content.len().to_string().as_bytes());
+        local.update(b"\0");
+        local.update(Sha256::digest(&content));
+        local.update(b"\n");
+        native.update((file.path().len() as u64).to_be_bytes());
+        native.update(file.path().as_bytes());
+        native.update((content.len() as u64).to_be_bytes());
+        native.update(&content);
+    }
+    (
+        format!("sha256:{:x}", local.finalize()),
+        format!("sha256:{:x}", native.finalize()),
+    )
 }
 
 fn has_historical_generation(root: &Path) -> bool {
@@ -742,7 +794,10 @@ fn live_fortress_bfg_is_coherent_deterministic_and_fresh() {
     if root.join("__fortress/evidence/current.json").is_file() {
         let source = prepare_repository_certification_source(&root)
             .expect("current exact certification subject prepares");
-        let subject = selected_live_bfg(&root, &source.digest, first_bytes.as_bytes())
+        let (local_source, native_source) = live_source_identities(&root);
+        assert_eq!(native_source, source.digest);
+        assert_ne!(local_source, native_source);
+        let subject = selected_live_bfg(&root, &local_source, first_bytes.as_bytes())
             .expect("exact selected local-quality BFG is intact and reconciles with its subject");
         eprintln!("selected behavioral evidence subject: {subject:?}");
     } else {
