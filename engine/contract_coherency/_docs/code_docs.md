@@ -25,3 +25,8 @@ Defines canonical Module Contract v2/v3/v4 syntax and the single repository-wide
 ### [`graph.rs`](../_code/graph.rs)
 
 Defines CCG v2 semantic facts, derivations, logical closure, canonical serialization, digest calculation, and unsupported-semantics reporting. Native verification intent has its own projection and never invents Test IDs or completes source-observed support.
+
+The native `module_contract_schema` metadata accessor exposes the current owned
+schema for readable authoring guidance. Clients consume that API rather than
+including a cross-Module physical schema path; canonical validation remains owned
+by `ModuleContract`.

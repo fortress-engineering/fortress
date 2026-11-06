@@ -36,6 +36,13 @@ pub const MODULE_CONTRACT_SCHEMA_V2: &str = "urn:fortress:schema:v2:module-contr
 /// Current Module Contract schema version.
 pub const MODULE_CONTRACT_SCHEMA_VERSION: u16 = 4;
 
+/// Returns current schema metadata for readable Module policy authoring.
+/// The schema remains owned by Contract Coherency rather than a client path.
+#[must_use]
+pub const fn module_contract_schema() -> &'static str {
+    include_str!("../_data/module_contract_schema_v4.json")
+}
+
 /// A validated canonical Module Contract v2, v3 or v4 document.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]

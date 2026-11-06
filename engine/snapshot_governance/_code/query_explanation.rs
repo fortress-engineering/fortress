@@ -279,10 +279,9 @@ impl QueryService {
             .as_ref()
             .and_then(|graph| graph.modules().get(&module_id))
             .ok_or_else(|| QueryError::new("UNAVAILABLE", "Module contract is unavailable"))?;
-        let schema: Value = serde_json::from_str(include_str!(
-            "../../contract_coherency/_data/module_contract_schema_v4.json"
-        ))
-        .map_err(|error| QueryError::new("INVALID_INPUT", error.to_string()))?;
+        let schema: Value =
+            serde_json::from_str(crate::contract_coherency::module_contract_schema())
+                .map_err(|error| QueryError::new("INVALID_INPUT", error.to_string()))?;
         let effects = schema
             .pointer("/$defs/effect_id/enum")
             .or_else(|| schema.pointer("/$defs/effect/enum"));
