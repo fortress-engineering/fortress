@@ -1,0 +1,318 @@
+{
+  "$schema": "urn:fortress:derived:v3:local-quality-certificate",
+  "schema_version": 3,
+  "semantic_version": "quality-certificate-v3.0",
+  "project": "PF-FORTRESS",
+  "profile": "fortress-complete-local-v1",
+  "claim": "LOCAL_QUALITY_GATES_PASS",
+  "trust": {
+    "level": "untrusted-local",
+    "tamper_evidence": "SHA-256",
+    "authenticity": "UNVERIFIED",
+    "limitation": "Digest stamps detect mutation and staleness but are not signatures; authenticated antiforgery requires an external trusted signing identity."
+  },
+  "source": {
+    "fingerprint": "sha256:c9e1c0b953a21b97825b7d5ae3db7a3ebc1b3b17eba0185a964469917f362719",
+    "file_count": 602,
+    "excluded_self": "quality-certificate",
+    "excluded_derived_artifacts": [
+      "bfg",
+      "ccg",
+      "certification",
+      "conformance-declaration",
+      "environmental",
+      "evidence-graph",
+      "information-flow",
+      "profile-assessment",
+      "psm",
+      "realized-bfg",
+      "references",
+      "semantic",
+      "semantic-conformance",
+      "semantic-qualification",
+      "source-artifacts",
+      "state-effect",
+      "verified-bfg"
+    ]
+  },
+  "toolchain": {
+    "rust": "1.97.1",
+    "cargo_config": "_data/cargo_config.toml",
+    "resolver_lockfile": "_info/Cargo.lock",
+    "build_artifacts": "external-temporary-directory",
+    "derived_projections": "external-subject-addressed-cache"
+  },
+  "gates": [
+    {
+      "id": "ARTIFACT_BFG",
+      "status": "PASS",
+      "command": "fortress certify . --format json --evidence-output <machine-local-path> --certification-output <machine-local-path> --verified-bfg-output <machine-local-path> --projection-output-dir <machine-local-path> --audit-output <machine-local-path>"
+    },
+    {
+      "id": "ARTIFACT_CCG",
+      "status": "PASS",
+      "command": "fortress certify . --format json --evidence-output <machine-local-path> --certification-output <machine-local-path> --verified-bfg-output <machine-local-path> --projection-output-dir <machine-local-path> --audit-output <machine-local-path>"
+    },
+    {
+      "id": "ARTIFACT_CERTIFICATION",
+      "status": "PASS",
+      "command": "fortress certify . --format json --evidence-output <machine-local-path> --certification-output <machine-local-path> --verified-bfg-output <machine-local-path> --projection-output-dir <machine-local-path> --audit-output <machine-local-path>"
+    },
+    {
+      "id": "ARTIFACT_CONFORMANCE_DECLARATION",
+      "status": "PASS",
+      "command": "fortress certify . --format json --evidence-output <machine-local-path> --certification-output <machine-local-path> --verified-bfg-output <machine-local-path> --projection-output-dir <machine-local-path> --audit-output <machine-local-path>"
+    },
+    {
+      "id": "ARTIFACT_ENVIRONMENTAL",
+      "status": "PASS",
+      "command": "fortress certify . --format json --evidence-output <machine-local-path> --certification-output <machine-local-path> --verified-bfg-output <machine-local-path> --projection-output-dir <machine-local-path> --audit-output <machine-local-path>"
+    },
+    {
+      "id": "ARTIFACT_EVIDENCE_GRAPH",
+      "status": "PASS",
+      "command": "fortress certify . --format json --evidence-output <machine-local-path> --certification-output <machine-local-path> --verified-bfg-output <machine-local-path> --projection-output-dir <machine-local-path> --audit-output <machine-local-path>"
+    },
+    {
+      "id": "ARTIFACT_INFORMATION_FLOW",
+      "status": "PASS",
+      "command": "fortress certify . --format json --evidence-output <machine-local-path> --certification-output <machine-local-path> --verified-bfg-output <machine-local-path> --projection-output-dir <machine-local-path> --audit-output <machine-local-path>"
+    },
+    {
+      "id": "ARTIFACT_PROFILE_ASSESSMENT",
+      "status": "PASS",
+      "command": "fortress certify . --format json --evidence-output <machine-local-path> --certification-output <machine-local-path> --verified-bfg-output <machine-local-path> --projection-output-dir <machine-local-path> --audit-output <machine-local-path>"
+    },
+    {
+      "id": "ARTIFACT_PSM",
+      "status": "PASS",
+      "command": "fortress certify . --format json --evidence-output <machine-local-path> --certification-output <machine-local-path> --verified-bfg-output <machine-local-path> --projection-output-dir <machine-local-path> --audit-output <machine-local-path>"
+    },
+    {
+      "id": "ARTIFACT_REALIZED_BFG",
+      "status": "PASS",
+      "command": "fortress certify . --format json --evidence-output <machine-local-path> --certification-output <machine-local-path> --verified-bfg-output <machine-local-path> --projection-output-dir <machine-local-path> --audit-output <machine-local-path>"
+    },
+    {
+      "id": "ARTIFACT_REFERENCES",
+      "status": "PASS",
+      "command": "fortress certify . --format json --evidence-output <machine-local-path> --certification-output <machine-local-path> --verified-bfg-output <machine-local-path> --projection-output-dir <machine-local-path> --audit-output <machine-local-path>"
+    },
+    {
+      "id": "ARTIFACT_SEMANTIC",
+      "status": "PASS",
+      "command": "fortress certify . --format json --evidence-output <machine-local-path> --certification-output <machine-local-path> --verified-bfg-output <machine-local-path> --projection-output-dir <machine-local-path> --audit-output <machine-local-path>"
+    },
+    {
+      "id": "ARTIFACT_SEMANTIC_CONFORMANCE",
+      "status": "PASS",
+      "command": "fortress certify . --format json --evidence-output <machine-local-path> --certification-output <machine-local-path> --verified-bfg-output <machine-local-path> --projection-output-dir <machine-local-path> --audit-output <machine-local-path>"
+    },
+    {
+      "id": "ARTIFACT_SEMANTIC_QUALIFICATION",
+      "status": "PASS",
+      "command": "python testing/_code/semantic_qualification.py --root <machine-local-path> --executable <machine-local-path> --staged-cli <machine-local-path> --retained-run <machine-local-path> --output <machine-local-path> --bindings <machine-local-path>"
+    },
+    {
+      "id": "ARTIFACT_SOURCE_ARTIFACTS",
+      "status": "PASS",
+      "command": "fortress certify . --format json --evidence-output <machine-local-path> --certification-output <machine-local-path> --verified-bfg-output <machine-local-path> --projection-output-dir <machine-local-path> --audit-output <machine-local-path>"
+    },
+    {
+      "id": "ARTIFACT_STATE_EFFECT",
+      "status": "PASS",
+      "command": "fortress certify . --format json --evidence-output <machine-local-path> --certification-output <machine-local-path> --verified-bfg-output <machine-local-path> --projection-output-dir <machine-local-path> --audit-output <machine-local-path>"
+    },
+    {
+      "id": "ARTIFACT_VERIFIED_BFG",
+      "status": "PASS",
+      "command": "fortress certify . --format json --evidence-output <machine-local-path> --certification-output <machine-local-path> --verified-bfg-output <machine-local-path> --projection-output-dir <machine-local-path> --audit-output <machine-local-path>"
+    },
+    {
+      "id": "AUDIT_JSON_DETERMINISM",
+      "status": "PASS",
+      "command": "fortress certify . --format json --evidence-output <machine-local-path> --certification-output <machine-local-path> --verified-bfg-output <machine-local-path> --projection-output-dir <machine-local-path> --audit-output <machine-local-path>"
+    },
+    {
+      "id": "CLIPPY",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config _data/cargo_config.toml clippy --manifest-path _data/Cargo.toml --workspace --all-targets --all-features -- -D warnings"
+    },
+    {
+      "id": "DERIVED_ARTIFACT_STORAGE",
+      "status": "PASS",
+      "command": "python engine/snapshot_governance/testing/_code/derived_artifact_storage.py"
+    },
+    {
+      "id": "EXECUTION_STORAGE",
+      "status": "PASS",
+      "command": "python engine/snapshot_governance/testing/_code/execution_storage.py"
+    },
+    {
+      "id": "FORMAT",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config _data/cargo_config.toml fmt --manifest-path _data/Cargo.toml --all --check"
+    },
+    {
+      "id": "FULL_PROFILE_CERTIFICATION",
+      "status": "PASS",
+      "command": "fortress certify . --format json --evidence-output <machine-local-path> --certification-output <machine-local-path> --verified-bfg-output <machine-local-path> --projection-output-dir <machine-local-path> --audit-output <machine-local-path>"
+    },
+    {
+      "id": "PROJECT_FILING_SYSTEM",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config _data/cargo_config.toml test --manifest-path _data/Cargo.toml --all-features --test filing_system --test repo_module_001 --test repo_docs_001"
+    },
+    {
+      "id": "PROVIDER_EVIDENCE",
+      "status": "PASS",
+      "command": "python engine/certification/testing/_code/provider_conformance.py --executable <machine-local-path> --workdir <machine-local-path> --report <machine-local-path>"
+    },
+    {
+      "id": "RUSTDOC",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config _data/cargo_config.toml doc --manifest-path _data/Cargo.toml --workspace --all-features --no-deps"
+    },
+    {
+      "id": "SCHEMA_AND_STANDARD",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config _data/cargo_config.toml test --manifest-path _data/Cargo.toml --all-features --test schema_registry"
+    },
+    {
+      "id": "SCHEMA_ARTIFACTS",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config _data/cargo_config.toml test --manifest-path _data/Cargo.toml --all-features --test artifact_schemas"
+    },
+    {
+      "id": "SELF_AUDIT",
+      "status": "PASS",
+      "command": "fortress certify . --format json --evidence-output <machine-local-path> --certification-output <machine-local-path> --verified-bfg-output <machine-local-path> --projection-output-dir <machine-local-path> --audit-output <machine-local-path>"
+    },
+    {
+      "id": "SELF_MODEL",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config _data/cargo_config.toml test --manifest-path _data/Cargo.toml --all-features --test self_model --test repository_grammar --test reference_resolution --test semantic_conformance --test cli"
+    },
+    {
+      "id": "SEMANTIC_QUALIFICATION",
+      "status": "PASS",
+      "command": "python testing/_code/semantic_qualification.py --root <machine-local-path> --executable <machine-local-path> --staged-cli <machine-local-path> --retained-run <machine-local-path> --output <machine-local-path> --bindings <machine-local-path>"
+    },
+    {
+      "id": "SOURCE_ARCHITECTURE",
+      "status": "PASS",
+      "command": "cargo +1.97.1 --config _data/cargo_config.toml test --manifest-path _data/Cargo.toml --all-features --test source_architecture"
+    },
+    {
+      "id": "WORKSPACE_TESTS",
+      "status": "PASS",
+      "command": "fortress certify . --format json --evidence-output <machine-local-path> --certification-output <machine-local-path> --verified-bfg-output <machine-local-path> --projection-output-dir <machine-local-path> --audit-output <machine-local-path>"
+    }
+  ],
+  "artifacts": [
+    {
+      "id": "bfg",
+      "digest": "sha256:88a8f07de6ea2c2613ca962d7aacebcdf7aee59021afed60e09a59f1c1bb42c9",
+      "bytes": 137217,
+      "storage": "TRACKED_EVIDENCE"
+    },
+    {
+      "id": "ccg",
+      "digest": "sha256:617359e2758a0486a7eb1b96ad0aa7df9c1123ebee48faba8d86d2b6b73b20a5",
+      "bytes": 3124027,
+      "storage": "LOCAL_MATERIALIZATION"
+    },
+    {
+      "id": "certification",
+      "digest": "sha256:c57b3dc104721dad6926315d8e60a03c7aeaf39b3dd806b928810aac613cde14",
+      "bytes": 124106,
+      "storage": "TRACKED_EVIDENCE"
+    },
+    {
+      "id": "conformance-declaration",
+      "digest": "sha256:0d1e98969395533745ad658d6f7883228e61029f9d47af043a53c01a8b7d6870",
+      "bytes": 23871,
+      "storage": "TRACKED_EVIDENCE"
+    },
+    {
+      "id": "environmental",
+      "digest": "sha256:7e3416e303537ab86b9f9976b5de52d292952ca259268e88469cb18c9df2d604",
+      "bytes": 5526,
+      "storage": "TRACKED_EVIDENCE"
+    },
+    {
+      "id": "evidence-graph",
+      "digest": "sha256:f6e371bafd25cf66a03d48974f2610ba5282ea51ac69f20c4d40f73f6767e21b",
+      "bytes": 1595084,
+      "storage": "TRACKED_EVIDENCE"
+    },
+    {
+      "id": "information-flow",
+      "digest": "sha256:a8dccdf4b613283219245fc57c8773eeac64738422060bf894068c0b1f05153f",
+      "bytes": 2387309,
+      "storage": "LOCAL_MATERIALIZATION"
+    },
+    {
+      "id": "profile-assessment",
+      "digest": "sha256:134a8384241e86453198bd689b4d586d6c5d0bf56cbfa28204dce914783ff3a6",
+      "bytes": 2806,
+      "storage": "TRACKED_EVIDENCE"
+    },
+    {
+      "id": "psm",
+      "digest": "sha256:a23821a7d7a9ec960b7f6a995c9796c88e437a36f9989d291b916315ac700b37",
+      "bytes": 286319829,
+      "storage": "LOCAL_MATERIALIZATION"
+    },
+    {
+      "id": "realized-bfg",
+      "digest": "sha256:7c2814e82dfa85e62f9282ec410f6a304d9e7e24f1416d444a24a361506a0729",
+      "bytes": 53728445,
+      "storage": "LOCAL_MATERIALIZATION"
+    },
+    {
+      "id": "references",
+      "digest": "sha256:077639099bbc189f6e711b82512d6c0e211964efbcab9116b7e3d4ab68d48444",
+      "bytes": 615920,
+      "storage": "TRACKED_EVIDENCE"
+    },
+    {
+      "id": "semantic",
+      "digest": "sha256:28b214817587933d920ecaa40a37cea7493b2e75f9655174a2a0c9e781b78c22",
+      "bytes": 9231782,
+      "storage": "LOCAL_MATERIALIZATION"
+    },
+    {
+      "id": "semantic-conformance",
+      "digest": "sha256:eb931bef5faf00f231884a74e8aaa7d7bdf0105af1ad51c72b984fdc2e054359",
+      "bytes": 68843590,
+      "storage": "LOCAL_MATERIALIZATION"
+    },
+    {
+      "id": "semantic-qualification",
+      "digest": "sha256:8d253233df811057a361968850b9ba25851b683af24e2584c78ca3f8159d4586",
+      "bytes": 3549,
+      "storage": "TRACKED_EVIDENCE"
+    },
+    {
+      "id": "source-artifacts",
+      "digest": "sha256:a99d56d223aafbb07cbc6a5dfa118cdfb05297f056ae5fb06b796e61eb4f0c6d",
+      "bytes": 31948795,
+      "storage": "LOCAL_MATERIALIZATION"
+    },
+    {
+      "id": "state-effect",
+      "digest": "sha256:6b27d81215299beb1cfddeca448a7ab0cd44ab4a191523f33f3e05d6b629e1f7",
+      "bytes": 196776299,
+      "storage": "LOCAL_MATERIALIZATION"
+    },
+    {
+      "id": "verified-bfg",
+      "digest": "sha256:d681a4e7a47e3a93a8e83b9580c1ffbc3fd504aac8dedf960bfa0fcc4f92223e",
+      "bytes": 6988,
+      "storage": "TRACKED_EVIDENCE"
+    }
+  ],
+  "audit_json_digest": "sha256:48344f14d25eca665bf9e57857f341c5cc299e7475729fcccc4f2c6bec208148",
+  "certificate_stamp": "sha256:225a4eacb4921834a49aaa00ef5f4366195cfc3c9641703397eeda8fa1203fef"
+}
