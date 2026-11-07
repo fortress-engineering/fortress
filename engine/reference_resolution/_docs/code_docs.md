@@ -21,3 +21,5 @@ Malformed understood inputs return typed errors, while machine-local persistence
 ### [`reference.rs`](../_code/reference.rs)
 
 Defines reference classes, the CCG-backed component index, Markdown/Rust/Cargo projection validation, stable native import inventory, semantic relationship deltas, normalized REPO-REFERENCE-001 findings, and indexed non-mutating relocation previews.
+
+The semantic-reference identity projection reuses the existing relocation envelope and excludes occurrence paths. It asserts no whole-program equivalence.

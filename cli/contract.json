@@ -216,6 +216,14 @@
             "T-TF-CLI-0001-R21-003",
             "T-TF-CLI-0001-R21-004"
           ]
+        },
+        {
+          "id": "TF-CLI-0001-R22",
+          "statement": "Read-only exact state capture, CLI comparison and protocol v2 transition projections use the sole State Governance comparator, preserve protocol v1, correlate exact loaded references, and never execute historical code or modify compared states.",
+          "tests": [
+            "T-TF-CLI-0001-R22-001",
+            "T-TF-CLI-0001-R22-002"
+          ]
         }
       ]
     }

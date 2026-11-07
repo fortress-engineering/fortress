@@ -172,7 +172,7 @@ fn read_requests<R: BufRead>(
             if cancel && let Some(token) = token {
                 token.store(true, Ordering::Release);
             }
-            let response = service.lifecycle_response(request.request_id,json!({"target_request_id":control.request_id,"active":token.is_some(),"cancellation_requested":cancel && token.is_some(),"state":if token.is_some(){"QUEUED_OR_RUNNING"}else{"NOT_ACTIVE"}}));
+            let response = service.lifecycle_response(request.request_id,json!({"target_request_id":control.request_id,"active":token.is_some(),"cancellation_requested":cancel && token.is_some(),"state":if token.is_some(){"QUEUED_OR_RUNNING"}else{"NOT_ACTIVE"}})).for_protocol_version(request.protocol_version);
             drop(entries);
             if sender.send(Incoming::response(response)).is_err() {
                 break;

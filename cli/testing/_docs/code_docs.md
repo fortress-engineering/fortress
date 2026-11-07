@@ -27,3 +27,7 @@ The application-publication regression captures an actual native negative StateV
 ### [`inspection.rs`](../_code/inspection.rs)
 
 Verifies exact core/RPC result equivalence, registered commands, strict version and parameter failures, bounded framing recovery, UTF-8 errors and correlated read-only lifecycle observations.
+
+### [`transitions.rs`](../_code/transitions.rs)
+
+Read-only CLI capture/comparison, exact v2 stdio references, unchanged state files and build-script nonexecution; v1 and unsupported versions remain explicit.

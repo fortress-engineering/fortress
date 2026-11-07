@@ -421,7 +421,7 @@ fn charge(budget: &mut u64, bytes: usize) -> Result<(), QueryError> {
 
 // Inspect every existing path component before opening, including Windows
 // junction/reparse boundaries. This is an optimistic read protocol, not a host lock.
-fn safe_read(root: &Path, path: &Path, maximum: u64) -> Result<Vec<u8>, QueryError> {
+pub(crate) fn safe_read(root: &Path, path: &Path, maximum: u64) -> Result<Vec<u8>, QueryError> {
     let relative = path
         .strip_prefix(root)
         .map_err(|_| QueryError::new("UNSAFE_PATH", "path escapes its supplied root"))?;

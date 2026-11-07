@@ -1,0 +1,13 @@
+{
+  "format": "finite-transition-protocol-v1",
+  "frozen_before_comparator_implementation": true,
+  "cases_digest": "sha256:8562af2167852d984442b15217a8f69ad9765ce70ad650a284bd4742dc1fa730",
+  "authority": [
+    "Shared comparison contract S6",
+    "Disposition-independent claim-slot identity H1",
+    "Missing-evidence anti-vacuity H2"
+  ],
+  "adjudication": "Expected labels assigned from the written finite partial order and temporal truth table before the production comparator exists. A separate test-owned exhaustive finite model checks the restriction order; no Fortress verdict supplies expected answers. This is controlled mathematical classification, not an empirical accuracy or human-validation claim.",
+  "order": "D_before subset D_after and A_after subset A_before means stronger restrictions; reverse means weaker; opposite changes are mixed. Only matching pinned vocabularies, scope, quantifier and context admit this relation. New/removed authored properties and evidence changes are separate facts.",
+  "causality": "Endpoint verdict changes are descriptions only. No regression/improvement or code-fix label follows from FAIL/PASS. Four-cell inputs may support only their explicitly bound contrast."
+}

@@ -162,3 +162,82 @@ input; querying an existing handle never runs hidden analysis.
 The stdio adapter cancels active work and returns if output closes. A stream owner
 must close input during shutdown so the single blocked read-only reader can release
 its immutable handle; the native process can exit on output failure.
+
+### [`transition_command.rs`](../_code/transition_command.rs)
+
+Read-only explicit state capture and comparison over the same typed query service; no approval or historical evaluator executes.
+
+**Exact state comparison**
+
+`fortress transition capture .` writes a bounded canonical comparison-state to
+stdout. Save captures outside the compared repository so an output file cannot
+change that repository's subject. Capture explicitly evaluates installed owners,
+without running project scripts or an old evaluator. Comparison of supplied files
+is read-only and uses the one State Governance comparator.
+
+```text
+fortress transition capture . > ../before-state.json
+fortress transition capture . > ../after-state.json
+fortress transition --from ../before-state.json --to ../after-state.json . --format json
+fortress transition --from generation:sha256:299aa181a09dac32ff9b36c2c5134c7060586b60b48d60cd05d866eb0dec7050 --to current .
+```
+
+The final example deliberately retains NOT_COMPARABLE dimensions when a generation
+lacks the necessary historical source/authority or complete StateView metadata.
+It preserves the original declaration and assessment; historical PASS never becomes
+current proof. `current` is an explicit bounded capture, not a latest-green lookup.
+There is no transition database or automatic durable publication.
+
+Input identities, four axes, semantic truth, coverage, evidence/assurance and finding
+dispositions remain independent. A verdict change is never labelled a regression,
+improvement or code fix. Finite policy implication requires the same vocabulary,
+quantifier, scope, context and interpretation. Guarantee implication supports only
+ALL of unchanged exact requirement definitions; prose changes are noncomparable.
+Adding or removing a property is reported separately from strengthening a promise.
+Missing findings remain not observed or incomparable; retirement observations cannot
+edit baselines. Authorization references always remain NOT_VALIDATED citations.
+
+`--limit` and `--cursor` page every delta and incomparability until next_cursor is
+null. The analysis_ref binds the entire result independently of page size. A cursor
+from another state/context is rejected. Atomic oversized rows return RESOURCE_LIMIT;
+the full bounded native compare_states API remains available. No data is silently
+truncated. Input and result documents admit 32 MiB, 50,000 total comparison records,
+eight merge parents and four counterfactual cells. Loading admits sixteen states
+and 128 MiB aggregate state bytes. Prepared comparisons are retained in a bounded
+process-local cache of at most four results and 64 MiB. Paging a retained result
+only projects immutable records; eviction never changes its content address. These
+are safety quotas, not speed guarantees.
+
+**Protocol v2 comparison and future consumers**
+
+Protocol v1 schema files and result meanings remain unchanged. Protocol v2 adds
+`transition`; existing methods are also available under v2. Begin with explicit
+preloading, then use the small `protocol` inventory to select exact state references:
+
+```text
+fortress serve --stdio . --comparison-state ../before-state.json --comparison-state ../after-state.json
+```
+
+```json
+{"protocol_version":2,"request_id":"inventory","method":"protocol","parameters":{}}
+{"protocol_version":2,"request_id":"comparison","method":"transition","parameters":{"from_state_ref":"sha256:<advertised-before>","to_state_ref":"sha256:<advertised-after>","page":{"limit":20}}}
+```
+
+Comparison requests never load files, execute endpoint analysis, repair state or
+validate grants. `comparison_context` accepts explicit evaluated common-authority
+cells and authorization citations. Large already-loaded cells can instead be named
+in `counterfactual_state_refs`. Software identity is projected from complete SUBJECT
+roles; governing identity binds complete INTENT, AUTHORITY and GOVERNANCE roles plus
+Standard, profiles, evaluator, scope and context. Original full-source and declaration
+authority references remain intact. A controlled cell must carry its original
+StateView and complete owner assets to support the contrast. Bind all projected
+subjects and governing identities exactly; missing cells
+stay incomparable, duplicate or wrong-subject cells fail, and no cell implies a
+physical cause or authenticated approval. The pure compare_merge API labels base
+and each parent independently, without choosing a causal parent.
+
+AUTHORITY, RATCHET, MIGRATE, OVERLAY and UPGRADE must consume the same versioned
+TransitionAnalysis, completeness records and Finding Model retirement observations.
+They must rerun state_transitions, transitions, query, schema and source-ownership
+integration gates if these interfaces change. This capability implements no agent
+admission, migration/upgrade workflow or deployment rollback policy.

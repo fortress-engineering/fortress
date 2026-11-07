@@ -82,6 +82,10 @@ Consumes PSM mutation facts and Semantic Analysis domains to derive conservative
 
 Provides the normative identity and registry foundation required by every capability that interprets Fortress declarations or findings.
 
+### [State Governance](../state_governance/README.md)
+
+Owns the single pure comparator and versioned, content-addressed transition model over explicitly identified immutable states.
+
 ## Coordination
 
 The immediate children collectively fulfill the Engine responsibility through the parent boundary. Their conceptual contributions compose here without restating or replacing the typed relationship graph declared by their Module contracts.

@@ -12,7 +12,7 @@ Compose the implemented core capabilities behind a stable Rust library facade wh
 
 ### Includes
 
-The crate facade, package contract, and integration of affected analysis, standard registry, finding model, contract coherency, Behavioral Semantics, Behavioral Realization, project model, repository observation, implementation observation, Program Semantics, Semantic Analysis, State and Effect Analysis, Information Flow, Environmental Semantics, Certification, architecture evaluation, and Snapshot Governance capabilities.
+The crate facade, package contract, and integration of affected analysis, standard registry, finding model, contract coherency, Behavioral Semantics, Behavioral Realization, project model, repository observation, implementation observation, Program Semantics, Semantic Analysis, State and Effect Analysis, Information Flow, Environmental Semantics, Certification, architecture evaluation, Snapshot Governance, and State Governance capabilities.
 
 ### Excludes
 
@@ -127,6 +127,12 @@ Supplies language-neutral Source Artifact Model v1 compilation, universal profil
 **Types:** `depends_on`
 
 Supplies conservative typestate transitions, transitive effect summaries, and supported state/effect contract contradiction evidence.
+
+### [State Governance](state_governance/README.md)
+
+**Types:** `depends_on`
+
+Supplies the pure, versioned comparison of two explicitly identified immutable states.
 
 ### [Standard Registry](standard_registry/README.md)
 

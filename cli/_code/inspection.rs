@@ -29,6 +29,28 @@ pub(super) fn run<O: Write, E: Write>(
             return Ok(crate::EXIT_VIOLATION);
         }
     };
+    let service = if parsed.comparison_states.is_empty() {
+        service
+    } else {
+        let states = parsed
+            .comparison_states
+            .iter()
+            .map(|reference| {
+                fortress_core::transition_load::load_comparison_state(&parsed.root, reference)
+            })
+            .collect::<Result<Vec<_>, _>>();
+        match states.map_err(|e| e.to_string()).and_then(|states| {
+            service
+                .with_comparison_states(states)
+                .map_err(|e| e.to_string())
+        }) {
+            Ok(s) => s,
+            Err(e) => {
+                writeln!(error, "comparison preload failed: {e}")?;
+                return Ok(crate::EXIT_USAGE);
+            }
+        }
+    };
     let load_duration = started.elapsed();
     if name == "serve" {
         crate::rpc::serve(
@@ -76,10 +98,12 @@ struct Parsed {
     parameters: Value,
     json: bool,
     timing: bool,
+    comparison_states: Vec<String>,
 }
 
 fn parse(name: &str, arguments: &[String]) -> Result<Parsed, String> {
     let mut options = QueryLoadOptions::default();
+    let mut comparison_states = Vec::new();
     let mut parameters = json!({});
     let mut positional = Vec::new();
     let mut json = false;
@@ -90,11 +114,23 @@ fn parse(name: &str, arguments: &[String]) -> Result<Parsed, String> {
     let mut seen_options = std::collections::BTreeSet::new();
     while index < arguments.len() {
         let arg = &arguments[index];
-        if arg.starts_with('-') && !seen_options.insert(arg) {
+        if arg.starts_with('-') && arg != "--comparison-state" && !seen_options.insert(arg) {
             return Err(format!("duplicate inspection option {arg}"));
         }
         match arg.as_str() {
             "--stdio" if name == "serve" => stdio = true,
+            "--comparison-state" if name == "serve" => {
+                index += 1;
+                comparison_states.push(
+                    arguments
+                        .get(index)
+                        .ok_or("--comparison-state requires a reference")?
+                        .clone(),
+                );
+                if comparison_states.len() > 16 {
+                    return Err("comparison preload exceeds sixteen inputs".into());
+                }
+            }
             "--timing" if name != "serve" => timing = true,
             "--format" | "--selection" | "--state" | "--target" | "--selector"
             | "--disposition" | "--limit" | "--cursor" => {
@@ -151,6 +187,7 @@ fn parse(name: &str, arguments: &[String]) -> Result<Parsed, String> {
         parameters,
         json,
         timing,
+        comparison_states,
     })
 }
 

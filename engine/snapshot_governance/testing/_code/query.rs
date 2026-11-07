@@ -246,7 +246,7 @@ fn request(method: &str, parameters: Value) -> QueryRequest {
 #[test]
 fn rpc_unknown_version_is_typed_error() {
     let mut req = request("status", json!({}));
-    req.protocol_version = 2;
+    req.protocol_version = 99;
     let response = service().execute(&req, &AtomicBool::new(false));
     assert_eq!(response.error.unwrap().code, "UNSUPPORTED_VERSION");
 }

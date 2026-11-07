@@ -116,6 +116,12 @@ impl EffectivePolicyEntry {
         self.status
     }
 
+    /// Returns all registry members selected before explicit precedence overrides.
+    #[must_use]
+    pub fn mapped_effects(&self) -> &[String] {
+        &self.mapped_effects
+    }
+
     /// Returns effects governed by the declaration after precedence.
     #[must_use]
     pub fn effective_effects(&self) -> &[String] {
@@ -132,6 +138,19 @@ pub struct EffectiveEffectDecision {
     disposition: Option<PolicyDisposition>,
 }
 
+impl EffectiveEffectDecision {
+    /// Returns the registered effect identity.
+    #[must_use]
+    pub fn effect(&self) -> &str {
+        &self.effect
+    }
+    /// Returns effective authored disposition, never an observation-derived permission.
+    #[must_use]
+    pub const fn disposition(&self) -> Option<PolicyDisposition> {
+        self.disposition
+    }
+}
+
 /// Compiled semantic policy. Unlisted members remain undeclared.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct EffectivePolicy {
@@ -145,6 +164,17 @@ impl EffectivePolicy {
     #[must_use]
     pub fn entries(&self) -> &[EffectivePolicyEntry] {
         &self.entries
+    }
+
+    /// Returns the exact finite registry identity used during policy compilation.
+    #[must_use]
+    pub fn registry_digest(&self) -> &str {
+        &self.registry_digest
+    }
+    /// Returns every registered decision, including undeclared targets.
+    #[must_use]
+    pub fn decisions(&self) -> &[EffectiveEffectDecision] {
+        &self.decisions
     }
 
     fn decision(&self, effect: &str) -> Option<&EffectiveEffectDecision> {
@@ -2468,7 +2498,12 @@ fn policy_disposition(
     }
 }
 
-fn compile_effective_policy(
+/// Compiles authored precedence against an explicitly supplied owner effect registry.
+/// This is the existing policy compiler, independent of observed implementation.
+/// # Panics
+/// Panics if the typed effect catalog cannot serialize; registered descriptors contain only infallible scalar fields.
+#[must_use]
+pub fn compile_effective_policy(
     policy: &ModuleSemanticPolicy,
     catalog: &[EffectDescriptor],
 ) -> EffectivePolicy {

@@ -3730,3 +3730,9 @@ impl From<FindingError> for StateEffectAnalysisError {
         Self::Finding(value)
     }
 }
+
+/// Returns the registered finite effect vocabulary without executing analysis.
+#[must_use]
+pub fn registered_effect_catalog() -> Vec<EffectDescriptor> {
+    effect_catalog()
+}

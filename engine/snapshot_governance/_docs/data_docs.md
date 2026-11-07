@@ -97,3 +97,11 @@ Registers the transport-independent v1 method envelope with strict per-method pa
 ### [`query_response_schema_v1.json`](../_data/query_response_schema_v1.json)
 
 Registers canonical v1 status, diagnostics, pages, explanations, proposals, lifecycle results and structured failures with exact request and loaded-state identities.
+
+### [`query_request_schema_v2.json`](../_data/query_request_schema_v2.json)
+
+Adds exact-state transition requests while retaining v1 readers unchanged.
+
+### [`query_response_schema_v2.json`](../_data/query_response_schema_v2.json)
+
+Versioned transition summary and complete paged result envelope.

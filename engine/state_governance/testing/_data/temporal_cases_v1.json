@@ -1,0 +1,301 @@
+{
+  "format": "finite-transition-cases-v1",
+  "universe": [
+    "fs.read",
+    "fs.write"
+  ],
+  "cases": [
+    {
+      "id": "unchanged",
+      "before_denied": [],
+      "after_denied": [],
+      "before_allowed": [],
+      "after_allowed": [],
+      "expected": "UNCHANGED"
+    },
+    {
+      "id": "deny_to_allow",
+      "before_denied": [
+        "fs.write"
+      ],
+      "after_denied": [],
+      "before_allowed": [],
+      "after_allowed": [
+        "fs.write"
+      ],
+      "expected": "WEAKENED"
+    },
+    {
+      "id": "allow_to_deny",
+      "before_denied": [],
+      "after_denied": [
+        "fs.write"
+      ],
+      "before_allowed": [
+        "fs.write"
+      ],
+      "after_allowed": [],
+      "expected": "STRENGTHENED"
+    },
+    {
+      "id": "deny_added",
+      "before_denied": [],
+      "after_denied": [
+        "fs.write"
+      ],
+      "before_allowed": [],
+      "after_allowed": [],
+      "expected": "STRENGTHENED"
+    },
+    {
+      "id": "deny_removed",
+      "before_denied": [
+        "fs.write"
+      ],
+      "after_denied": [],
+      "before_allowed": [],
+      "after_allowed": [],
+      "expected": "WEAKENED"
+    },
+    {
+      "id": "allow_added",
+      "before_denied": [],
+      "after_denied": [],
+      "before_allowed": [],
+      "after_allowed": [
+        "fs.write"
+      ],
+      "expected": "WEAKENED"
+    },
+    {
+      "id": "allow_removed",
+      "before_denied": [],
+      "after_denied": [],
+      "before_allowed": [
+        "fs.write"
+      ],
+      "after_allowed": [],
+      "expected": "STRENGTHENED"
+    },
+    {
+      "id": "mixed_restrictions",
+      "before_denied": [
+        "fs.read"
+      ],
+      "after_denied": [
+        "fs.write"
+      ],
+      "before_allowed": [],
+      "after_allowed": [],
+      "expected": "MIXED"
+    },
+    {
+      "id": "preserved_restriction",
+      "before_denied": [
+        "fs.write"
+      ],
+      "after_denied": [
+        "fs.write"
+      ],
+      "before_allowed": [],
+      "after_allowed": [],
+      "expected": "UNCHANGED"
+    }
+  ],
+  "temporal_cases": [
+    {
+      "id": "implementation_only",
+      "changes": [
+        "SUBJECT"
+      ],
+      "expected": [
+        "SUBJECT_CHANGED",
+        "NO_VERDICT_CAUSALITY"
+      ]
+    },
+    {
+      "id": "intent_only",
+      "changes": [
+        "INTENT"
+      ],
+      "expected": [
+        "INTENT_CHANGED",
+        "NO_CODE_FIX"
+      ]
+    },
+    {
+      "id": "authority_only",
+      "changes": [
+        "AUTHORITY"
+      ],
+      "expected": [
+        "AUTHORITY_CHANGED",
+        "NOT_COMPARABLE"
+      ]
+    },
+    {
+      "id": "governance_only",
+      "changes": [
+        "GOVERNANCE"
+      ],
+      "expected": [
+        "GOVERNANCE_CHANGED",
+        "RAW_TRUTH_PRESERVED"
+      ]
+    },
+    {
+      "id": "source_permission_comovement",
+      "changes": [
+        "SUBJECT",
+        "INTENT"
+      ],
+      "expected": [
+        "CO_MOVING_AUTHORIZATION",
+        "NOT_VALIDATED"
+      ]
+    },
+    {
+      "id": "scope_exclusion",
+      "changes": [
+        "INTENT",
+        "AUTHORITY"
+      ],
+      "expected": [
+        "SCOPE_EXCLUDED",
+        "NOT_OBSERVED"
+      ]
+    },
+    {
+      "id": "coverage_gain",
+      "changes": [
+        "AUTHORITY"
+      ],
+      "expected": [
+        "NEWLY_EVALUABLE",
+        "NO_IMPLEMENTATION_REGRESSION"
+      ]
+    },
+    {
+      "id": "coverage_loss",
+      "changes": [
+        "SUBJECT"
+      ],
+      "expected": [
+        "EVALUABILITY_LOST",
+        "NOT_OBSERVED"
+      ]
+    },
+    {
+      "id": "missing_historical_assets",
+      "changes": [],
+      "expected": [
+        "UNKNOWN",
+        "NOT_COMPARABLE"
+      ]
+    },
+    {
+      "id": "incompatible_standard",
+      "changes": [
+        "AUTHORITY"
+      ],
+      "expected": [
+        "NOT_COMPARABLE"
+      ]
+    },
+    {
+      "id": "ambiguous_identity",
+      "changes": [],
+      "expected": [
+        "IDENTITY_AMBIGUOUS",
+        "NOT_COMPARABLE"
+      ]
+    },
+    {
+      "id": "identity_relocation",
+      "changes": [],
+      "expected": [
+        "PLACEMENT_ONLY",
+        "NO_EQUIVALENCE_CLAIM"
+      ]
+    },
+    {
+      "id": "merge_parents",
+      "changes": [
+        "SUBJECT"
+      ],
+      "expected": [
+        "BASE_LABEL",
+        "PARENT_LABELS",
+        "NO_CAUSAL_PARENT"
+      ]
+    },
+    {
+      "id": "obligation_introduced",
+      "changes": [
+        "INTENT"
+      ],
+      "expected": [
+        "ADDED",
+        "NO_OBSERVED_STRENGTHENING"
+      ]
+    },
+    {
+      "id": "obligation_retired",
+      "changes": [
+        "INTENT"
+      ],
+      "expected": [
+        "REMOVED",
+        "POLICY_RETIRED"
+      ]
+    },
+    {
+      "id": "unsupported_quantifier",
+      "changes": [
+        "INTENT"
+      ],
+      "expected": [
+        "UNSUPPORTED",
+        "NOT_COMPARABLE"
+      ]
+    },
+    {
+      "id": "output_only",
+      "changes": [],
+      "expected": [
+        "STORAGE_ONLY",
+        "NO_IMPLEMENTATION_REGRESSION"
+      ]
+    },
+    {
+      "id": "counterfactual_wrong_subject",
+      "changes": [],
+      "expected": [
+        "INVALID_INPUT"
+      ]
+    },
+    {
+      "id": "counterfactual_missing_cell",
+      "changes": [
+        "SUBJECT",
+        "AUTHORITY"
+      ],
+      "expected": [
+        "NOT_COMPARABLE"
+      ]
+    },
+    {
+      "id": "all_axes",
+      "changes": [
+        "SUBJECT",
+        "INTENT",
+        "AUTHORITY",
+        "GOVERNANCE"
+      ],
+      "expected": [
+        "ALL_AXES_VISIBLE",
+        "NO_VERDICT_CAUSALITY"
+      ]
+    }
+  ]
+}

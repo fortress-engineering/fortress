@@ -132,6 +132,12 @@ Consumes one PSM- and Semantic-Analysis-backed typestate/effect evaluation so PR
 
 Consumes an exact project-bound Standard bundle when authored and validated, or the exact Standard authority installed with Fortress for analysis. Installed authority does not create project opt-in or favorable conformance.
 
+### [State Governance](../state_governance/README.md)
+
+**Types:** `depends_on`
+
+Loads exact comparison inputs and projects the pure comparator without inventing transition semantics or external authorization.
+
 ## Guarantees
 
 No wall-clock, cache location, or absolute path enters snapshot, CCG, Intended BFG, PSM, semantic-analysis, state/effect, semantic-conformance, information-flow, environmental, Realized BFG, or quality-certificate identity; repository mutation is rejected when observed bytes diverge; governed analysis products are each compiled from one exact snapshot; unimplemented or claim-not-evaluable rules remain UNSUPPORTED; a rule without a governed subject is `NOT_APPLICABLE`, never PASSED, and carries a stable reason when known; missing project authority is MISSING rather than PASS; undeclared Module policy is not applicable rather than permitted; unmodeled behavior and unknown program, information-flow, environmental, semantic-conformance, or behavioral-realization semantics are not reported as passing proof; findings never redefine rules; diagnostics never alter PASS or FAIL; audit output never claims runtime trace evidence, verified behavior, or release certification. Repository observation may precede governance resolution, but certification still requires exact authored authority and strict conformance. The local certificate binds every authoritative repository input, the complete derived-artifact registry, exact generated digests and byte sizes, tracked evidence bytes, and every passing gate. Locally materialized bulk bytes are addressed by the recorded source fingerprint; their absence is MISSING and prior-subject bytes are STALE, while lightweight certificate verification relies on durable digest evidence rather than undocumented cache state. Its digest stamp does not authenticate its issuer. Stabilization is an optimistic content protocol rather than a filesystem lock, so a malicious host or a transient mutation reverted to identical bytes remains outside its trust guarantee.

@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v1:retirement-evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "finding_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "from_state": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "to_state": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "reason": {
+      "enum": [
+        "NOT_OBSERVED",
+        "POLICY_RETIRED",
+        "SCOPE_EXCLUDED",
+        "AUTHORITY_INCOMPARABLE",
+        "IDENTITY_AMBIGUOUS",
+        "SUPPORTED_ABSENCE"
+      ]
+    },
+    "support_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 50000
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 50000
+    }
+  },
+  "required": [
+    "finding_id",
+    "from_state",
+    "to_state",
+    "reason",
+    "support_refs",
+    "limitations"
+  ]
+}

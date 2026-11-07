@@ -40,6 +40,7 @@ mod inspection;
 mod presentation;
 mod provider_command;
 pub mod rpc;
+mod transition_command;
 
 use command::{CommandDescriptor, CommandRegistry};
 
@@ -110,6 +111,7 @@ where
     };
 
     match command.id() {
+        "CMD-STATE-TRANSITION" => transition_command::run(&arguments[1..], output, error),
         "CMD-GOVERNANCE-STATUS"
         | "CMD-GOVERNANCE-DOCTOR"
         | "CMD-GOVERNANCE-QUERY"

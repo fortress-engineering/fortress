@@ -187,3 +187,11 @@ IDE and host integrations must use this result contract and rerun the query/sche
 and adapter controls if it changes. Query loading is an explicit source/authority
 observation boundary; warm inspection never triggers semantic evaluation. Existing
 StateView, declaration, assessment and proof versions retain their original meaning.
+
+### [`transition_load.rs`](../_code/transition_load.rs)
+
+Explicit bounded current capture and CONTROL generation/file loading. Source and authority assets use existing producer identities, policy compilation and reference facts; no historical evaluator executes and no compared state is modified. Missing historical metadata remains unavailable.
+
+### [`query_transition.rs`](../_code/query_transition.rs)
+
+Protocol v2 compares two explicitly preloaded states through State Governance and pages every result and incomparability. Warm requests never discover files or invoke a semantic evaluator.

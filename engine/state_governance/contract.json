@@ -1,0 +1,111 @@
+{
+  "$schema": "urn:fortress:schema:v2:module-contract",
+  "schema_version": 2,
+  "id": "AF-STATE-GOVERNANCE-0001",
+  "display_name": "State Governance",
+  "provides": [
+    {
+      "id": "CAP-STATE-GOVERNANCE",
+      "version": "0.1.0",
+      "visibility": "project"
+    }
+  ],
+  "requires": [
+    {
+      "provider": "AF-CERTIFICATION-0001",
+      "capability": "CAP-CERTIFICATION",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-FINDING-MODEL-0001",
+      "capability": "CAP-FINDING-MODEL",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-REPOSITORY-OBSERVATION-0001",
+      "capability": "CAP-REPOSITORY-OBSERVATION",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-STANDARD-REGISTRY-0001",
+      "capability": "CAP-STANDARD-REGISTRY",
+      "version": "^0.1.0"
+    }
+  ],
+  "relationships": [],
+  "constraints": [],
+  "guarantees": [],
+  "features": [
+    {
+      "id": "AF-STATE-GOVERNANCE-0001",
+      "version": "0.1.0",
+      "requirements": [
+        {
+          "id": "AF-STATE-GOVERNANCE-0001-R01",
+          "statement": "Compare subject, intent, authority and governance independently over exact immutable endpoints without verdict-only causation.",
+          "tests": [
+            "T-AF-STATE-GOVERNANCE-0001-R01-001",
+            "T-AF-STATE-GOVERNANCE-0001-R01-002",
+            "T-AF-STATE-GOVERNANCE-0001-R01-003",
+            "T-AF-STATE-GOVERNANCE-0001-R01-004",
+            "T-AF-STATE-GOVERNANCE-0001-R01-005",
+            "T-AF-STATE-GOVERNANCE-0001-R01-006"
+          ]
+        },
+        {
+          "id": "AF-STATE-GOVERNANCE-0001-R02",
+          "statement": "Compare only supported finite authored restrictions and report source-permission co-movement without granting authorization.",
+          "tests": [
+            "T-AF-STATE-GOVERNANCE-0001-R02-001",
+            "T-AF-STATE-GOVERNANCE-0001-R02-002",
+            "T-AF-STATE-GOVERNANCE-0001-R02-003",
+            "T-AF-STATE-GOVERNANCE-0001-R02-004"
+          ]
+        },
+        {
+          "id": "AF-STATE-GOVERNANCE-0001-R03",
+          "statement": "Preserve original claims, coverage, evidence sufficiency, findings and noncomparability across exact authority and context changes.",
+          "tests": [
+            "T-AF-STATE-GOVERNANCE-0001-R03-001",
+            "T-AF-STATE-GOVERNANCE-0001-R03-002",
+            "T-AF-STATE-GOVERNANCE-0001-R03-003",
+            "T-AF-STATE-GOVERNANCE-0001-R03-004",
+            "T-AF-STATE-GOVERNANCE-0001-R03-005",
+            "T-AF-STATE-GOVERNANCE-0001-R03-006"
+          ]
+        },
+        {
+          "id": "AF-STATE-GOVERNANCE-0001-R04",
+          "statement": "Pair stable semantic identities before content, preserve ambiguity and bounded relocation, and compare only supported authored guarantee conjunctions.",
+          "tests": [
+            "T-AF-STATE-GOVERNANCE-0001-R04-001",
+            "T-AF-STATE-GOVERNANCE-0001-R04-002",
+            "T-AF-STATE-GOVERNANCE-0001-R04-003",
+            "T-AF-STATE-GOVERNANCE-0001-R04-004"
+          ]
+        },
+        {
+          "id": "AF-STATE-GOVERNANCE-0001-R05",
+          "statement": "Bind explicit common-authority cells and label merge-base and parent comparisons independently without executing historical code.",
+          "tests": [
+            "T-AF-STATE-GOVERNANCE-0001-R05-001",
+            "T-AF-STATE-GOVERNANCE-0001-R05-002",
+            "T-AF-STATE-GOVERNANCE-0001-R05-003"
+          ]
+        },
+        {
+          "id": "AF-STATE-GOVERNANCE-0001-R06",
+          "statement": "Validate versioned content-addressed comparison records deterministically with strict wire decoding, resource limits, cancellation and no state mutation.",
+          "tests": [
+            "T-AF-STATE-GOVERNANCE-0001-R06-001",
+            "T-AF-STATE-GOVERNANCE-0001-R06-002",
+            "T-AF-STATE-GOVERNANCE-0001-R06-003",
+            "T-AF-STATE-GOVERNANCE-0001-R06-004",
+            "T-AF-STATE-GOVERNANCE-0001-R06-005"
+          ]
+        }
+      ]
+    }
+  ],
+  "behavior": []
+}

@@ -9,11 +9,15 @@ mod explanation;
 mod load;
 #[path = "query_protocol.rs"]
 mod protocol;
+#[path = "query_transition.rs"]
+mod transition;
 
+pub(crate) use load::safe_read;
 pub use load::{QueryLoadOptions, load_repository_query};
 pub use protocol::*;
 
 use std::collections::{BTreeMap, BTreeSet};
+use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use serde_json::{Value, json};
@@ -99,6 +103,9 @@ pub struct QueryService {
     records: Vec<QueryRecord>,
     evidence_edges: BTreeMap<String, Vec<String>>,
     index_bytes: usize,
+    comparison_states: BTreeMap<String, crate::state_governance::ComparisonState>,
+    comparison_identities: BTreeMap<String, (Option<String>, Option<String>)>,
+    comparison_cache: transition::ComparisonCache,
 }
 
 impl QueryService {
@@ -174,6 +181,9 @@ impl QueryService {
             records: Vec::new(),
             evidence_edges: BTreeMap::new(),
             index_bytes: 0,
+            comparison_states: BTreeMap::new(),
+            comparison_identities: BTreeMap::new(),
+            comparison_cache: Mutex::default(),
         };
         service.index()?;
         // Identity includes selected results, current authority, availability and diagnostics.
@@ -231,6 +241,7 @@ impl QueryService {
     pub fn execute(&self, request: &QueryRequest, cancelled: &AtomicBool) -> QueryResponse {
         let result = self.dispatch(request, cancelled);
         self.response(Some(request.request_id.clone()), result)
+            .for_protocol_version(request.protocol_version)
     }
 
     /// Constructs a bounded structured boundary failure without a successful payload.
@@ -282,10 +293,10 @@ impl QueryService {
         request: &QueryRequest,
         cancelled: &AtomicBool,
     ) -> Result<QueryPayload, QueryError> {
-        if request.protocol_version != QUERY_PROTOCOL_VERSION {
+        if ![QUERY_PROTOCOL_VERSION, 2].contains(&request.protocol_version) {
             return Err(QueryError::new(
                 "UNSUPPORTED_VERSION",
-                "only protocol_version 1 is supported",
+                "only protocol_version 1 and 2 are supported",
             ));
         }
         check_cancelled(cancelled)?;
@@ -304,10 +315,13 @@ impl QueryService {
             ));
         }
         let result = match request.operation()? {
+            QueryOperation::Transition(parameters) => {
+                QueryPayload::Transition(self.compare_transition(&parameters, cancelled)?)
+            }
             QueryOperation::Status(_) => QueryPayload::Status(self.status()),
             QueryOperation::Doctor(_) => QueryPayload::Doctor(self.input.diagnostics.clone()),
             QueryOperation::Protocol(_) => QueryPayload::Protocol(
-                json!({"methods":METHODS,"protocol_versions":[1],"max_request_bytes":MAX_REQUEST_BYTES,"max_response_bytes":MAX_RESPONSE_BYTES,"max_page_size":MAX_PAGE_SIZE,"framing":"one strict UTF-8 JSON request per LF-delimited line","mutation":false}),
+                json!({"methods":METHODS.iter().filter(|m| request.protocol_version == 2 || **m != "transition").collect::<Vec<_>>(),"protocol_versions":[1,2],"comparison_states":self.comparison_state_inventory(),"max_request_bytes":MAX_REQUEST_BYTES,"max_response_bytes":MAX_RESPONSE_BYTES,"max_page_size":MAX_PAGE_SIZE,"framing":"one strict UTF-8 JSON request per LF-delimited line","mutation":false}),
             ),
             QueryOperation::Query(parameters) => {
                 QueryPayload::Page(self.select(&parameters, cancelled)?)

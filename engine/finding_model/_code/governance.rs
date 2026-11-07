@@ -962,3 +962,39 @@ fn validate_digest(value: &str) -> Result<(), FindingGovernanceError> {
 fn is_strictly_sorted<T: Ord>(values: &[T]) -> bool {
     values.windows(2).all(|pair| pair[0] < pair[1])
 }
+
+/// Neutral reason for a comparison-derived retirement observation; never an approval.
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum RetirementReason {
+    /// Absence lacks sufficient comparable proof.
+    NotObserved,
+    /// The relevant governing policy was explicitly removed.
+    PolicyRetired,
+    /// Required scope visibility was explicitly lost.
+    ScopeExcluded,
+    /// Original and current authority cannot be compared.
+    AuthorityIncomparable,
+    /// A semantic identity has multiple candidates.
+    IdentityAmbiguous,
+    /// A complete comparable recorded absence proof is supplied.
+    SupportedAbsence,
+}
+/// Derived exact-state finding-retirement evidence for future consumers.
+/// It cannot edit a baseline, validate a grant, or rewrite historical findings.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct RetirementEvidence {
+    /// Original stable finding identity.
+    pub finding_id: String,
+    /// Exact comparison-input content address before the change.
+    pub from_state: String,
+    /// Exact comparison-input content address after the change.
+    pub to_state: String,
+    /// Supported reason or explicit uncertainty.
+    pub reason: RetirementReason,
+    /// Original owner-produced evidence citations; absence is not proof.
+    pub support_refs: Vec<String>,
+    /// Meaning and remaining authorization/trust limitations.
+    pub limitations: Vec<String>,
+}

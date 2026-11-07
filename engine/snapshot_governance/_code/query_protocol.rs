@@ -61,6 +61,13 @@ impl QueryRequest {
     /// # Errors
     /// Rejects unknown methods, extra parameters and malformed typed values.
     pub fn operation_for_adapter(&self) -> Result<QueryOperation, QueryError> {
+        if self.protocol_version == 1 && self.method == "transition" {
+            return Err(QueryError::new(
+                "UNKNOWN_METHOD",
+                "transition requires protocol version 2",
+            ));
+        }
+
         serde_json::from_value(
             serde_json::json!({"method": self.method,"parameters":self.parameters}),
         )
@@ -83,7 +90,15 @@ impl QueryRequest {
 
 /// Closed supported method registry, shared by all adapters.
 pub const METHODS: &[&str] = &[
-    "author", "cancel", "doctor", "explain", "progress", "protocol", "query", "status",
+    "author",
+    "cancel",
+    "doctor",
+    "explain",
+    "progress",
+    "protocol",
+    "query",
+    "status",
+    "transition",
 ];
 
 /// Typed method parameters independent of stdio or any editor protocol.
@@ -92,6 +107,8 @@ pub const METHODS: &[&str] = &[
 pub enum QueryOperation {
     /// Describe the protocol and operational limits.
     Protocol(EmptyParameters),
+    /// Pure comparison of two explicitly loaded immutable states, protocol v2.
+    Transition(TransitionParameters),
     /// Separate selected result truth, freshness and availability.
     Status(EmptyParameters),
     /// Inspect prepared read-only environment diagnostics.
@@ -106,6 +123,25 @@ pub enum QueryOperation {
     Cancel(ControlParameters),
     /// Inspect an active request through the adapter's registry.
     Progress(ControlParameters),
+}
+
+/// Exact comparison references and complete bounded continuation.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct TransitionParameters {
+    /// Digest advertised for an explicitly preloaded before input.
+    pub from_state_ref: String,
+    /// Digest advertised for an explicitly preloaded after input.
+    pub to_state_ref: String,
+    /// Explicit cells and approval citations, not validated grants.
+    #[serde(default)]
+    pub comparison_context: crate::state_governance::ComparisonContext,
+    /// Optional exact preloaded `StateView` cells, avoiding large inline wire payloads.
+    #[serde(default)]
+    pub counterfactual_state_refs: Vec<String>,
+    /// Paged delta records, independent of the complete result identity.
+    #[serde(default)]
+    pub page: PageParameters,
 }
 
 /// Parameterless operation; extra fields are errors.
@@ -294,6 +330,20 @@ pub enum QueryPayload {
     Authoring(Value),
     /// Protocol or lifecycle metadata.
     Protocol(Value),
+    /// Derived transition summary and complete paged deltas, protocol v2.
+    Transition(TransitionPage),
+}
+
+/// A complete result identity with bounded, lossless comparison pages.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct TransitionPage {
+    /// Content address of the entire derived analysis, independent of page size.
+    pub analysis_ref: String,
+    /// Exact endpoint identities, four axes, counts and trust limitations.
+    pub description: Value,
+    /// Every semantic, coverage, evidence, finding and incomparability record.
+    pub deltas: QueryPage,
 }
 
 /// A lossless indexed projection row, never a new evaluation result.
@@ -337,6 +387,16 @@ pub struct ExplanationPage {
 }
 
 impl QueryResponse {
+    /// Selects a supported envelope edition while preserving the underlying result.
+    #[must_use]
+    pub fn for_protocol_version(mut self, version: u16) -> Self {
+        if version == 2 {
+            self.protocol_version = 2;
+            self.schema = "urn:fortress:protocol:v2:query-response".into();
+        }
+        self
+    }
+
     /// Emits deterministic JCS bytes subject to the response byte limit.
     ///
     /// # Errors

@@ -37,3 +37,7 @@ Declares the return typestate and allowed supported effect for FindingLocation::
 ### [`state_contracts.json`](../_data/state_contracts.json)
 
 Declares mutually exclusive spanned and unspanned FindingLocation states from the span Option field.
+
+### [`retirement_evidence_schema_v1.json`](../_data/retirement_evidence_schema_v1.json)
+
+Neutral exact-transition finding-retirement observations, without baseline mutation or grant validation.

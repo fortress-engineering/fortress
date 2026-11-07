@@ -372,6 +372,17 @@
       "duration": "indeterminate",
       "resumability": "restartable",
       "certification_implications": "Read-only projection of existing immutable results; no verification execution, certification, authority acceptance or repair."
+    },
+    {
+      "id": "CMD-STATE-TRANSITION",
+      "name": "transition",
+      "aliases": [],
+      "description": "Compare exact subject, intent, authority and governance states without verdict-only causation.",
+      "owner": "TF-CLI-0001",
+      "executor": "builtin-sync",
+      "duration": "instant",
+      "resumability": "restartable",
+      "certification_implications": "Read-only derived comparison; no approval, state mutation or certification execution."
     }
   ]
 }

@@ -39,3 +39,7 @@ workspace = true
 [[test]]
 name = "inspection"
 path = "../testing/_code/inspection.rs"
+
+[[test]]
+name = "transitions"
+path = "../testing/_code/transitions.rs"

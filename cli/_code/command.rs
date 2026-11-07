@@ -10,6 +10,13 @@ use fortress_core::identity::{StableId, StableIdError};
 
 const BUILTIN_COMMANDS: &[CommandDescriptor] = &[
     CommandDescriptor {
+        id: "CMD-STATE-TRANSITION",
+        name: "transition",
+        aliases: &[],
+        description: "Compare exact subject, intent, authority and governance states without verdict-only causation.",
+        usage: "fortress transition --from file|generation:sha256:...|current --to reference [path] [--format human|json] [--limit count] [--cursor token] [--context file]; fortress transition capture [path]",
+    },
+    CommandDescriptor {
         id: "CMD-GOVERNANCE-STATUS",
         name: "status",
         aliases: &[],

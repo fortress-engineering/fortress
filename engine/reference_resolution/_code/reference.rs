@@ -412,6 +412,15 @@ impl ComponentResolutionIndex {
         &self.source_ccg_digest
     }
 
+    /// Returns existing stable relationship identities without occurrence paths.
+    #[must_use]
+    pub fn semantic_reference_identities(&self) -> BTreeSet<SemanticReferenceIdentity> {
+        self.references
+            .iter()
+            .filter_map(SemanticReferenceIdentity::from_fact)
+            .collect()
+    }
+
     /// Compares stable semantic relationships independently of physical placement.
     #[must_use]
     pub fn semantic_reference_delta(&self, newer: &Self) -> SemanticReferenceDelta {

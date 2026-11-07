@@ -29,3 +29,5 @@ Defines canonical authored baseline and finding-specific exception authority, re
 ### [`proof.rs`](../_code/proof.rs)
 
 Defines neutral evidence citations and a versioned proof graph. Structural validation rejects ungrounded or ambiguous premises, cycles, dangling references, and empty favorable support without judging claim truth. Logical evaluation distinguishes accepted refutations from unknown premises: ALL is refuted by an accepted false premise; ANY is satisfied by a complete passing alternative and refuted only when every alternative is refuted. Mandatory references apply to either operator. The Boolean API retains its meaning, and missing evidence remains unknown.
+
+RetirementReason and RetirementEvidence are neutral exact-state data for comparison consumers. They introduce no grant validation, baseline rewrite or State Governance dependency.

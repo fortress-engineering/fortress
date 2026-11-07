@@ -158,10 +158,10 @@ fn live_contract_v2_v3_ecosystem_resolves_completely() {
         "live CCG must be coherent: {:#?}",
         resolution.violations()
     );
-    assert_eq!(resolved.modules().len(), 45);
-    assert_eq!(resolved.capabilities().len(), 22);
-    assert_eq!(resolved.features().len(), 23);
-    assert_eq!(resolved.requirements().len(), 129);
+    assert_eq!(resolved.modules().len(), 47);
+    assert_eq!(resolved.capabilities().len(), 23);
+    assert_eq!(resolved.features().len(), 24);
+    assert_eq!(resolved.requirements().len(), 136);
     assert!(
         resolved
             .requirements()
@@ -172,8 +172,8 @@ fn live_contract_v2_v3_ecosystem_resolves_completely() {
     }
     assert_eq!(resolved.guarantees().len(), 17);
     assert_eq!(resolved.checkpoints().len(), 10);
-    assert_eq!(resolved.direct_requirements().len(), 182);
-    assert_eq!(resolved.relationships().len(), 22);
+    assert_eq!(resolved.direct_requirements().len(), 190);
+    assert_eq!(resolved.relationships().len(), 23);
     assert!(
         resolved
             .modules()
@@ -252,4 +252,11 @@ const REQUIRED_SELF_MODEL_REQUIREMENTS: &[&str] = &[
     "TF-CLI-0001-R19",
     "AF-SNAPSHOT-GOVERNANCE-0001-R21",
     "TF-CLI-0001-R21",
+    "AF-STATE-GOVERNANCE-0001-R01",
+    "AF-STATE-GOVERNANCE-0001-R02",
+    "AF-STATE-GOVERNANCE-0001-R03",
+    "AF-STATE-GOVERNANCE-0001-R04",
+    "AF-STATE-GOVERNANCE-0001-R05",
+    "AF-STATE-GOVERNANCE-0001-R06",
+    "TF-CLI-0001-R22",
 ];

@@ -119,3 +119,11 @@ pub mod evidence_ingest;
 
 #[path = "../standard_registry/_code/qualification.rs"]
 pub mod qualification;
+
+#[path = "../state_governance/_code/transition.rs"]
+pub mod state_governance;
+#[path = "../certification/_code/state_view.rs"]
+pub mod state_view;
+
+#[path = "../snapshot_governance/_code/transition_load.rs"]
+pub mod transition_load;
