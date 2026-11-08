@@ -4,6 +4,7 @@ use std::fs::{self, File, OpenOptions};
 use std::io::{Read, Seek, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use fortress_core::heavy_admission::DirectoryIdentity;
@@ -13,6 +14,7 @@ use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 
 struct Fixture(PathBuf);
+static NEXT_FIXTURE: AtomicU64 = AtomicU64::new(1);
 
 impl Fixture {
     fn new() -> Self {
@@ -20,10 +22,18 @@ impl Fixture {
             .duration_since(UNIX_EPOCH)
             .expect("system time")
             .as_nanos();
+        Self::at_stamp(stamp)
+    }
+
+    fn at_stamp(stamp: u128) -> Self {
+        let sequence = NEXT_FIXTURE.fetch_add(1, Ordering::Relaxed);
         let root = std::env::temp_dir().join(format!(
-            "fortress-runtime-storage-{}-{stamp}",
+            "fortress-runtime-storage-{}-{stamp}-{sequence}",
             std::process::id()
         ));
+        // Clocks need not distinguish concurrent fixtures. Never reuse an
+        // existing directory whose lease or registry another test can mutate.
+        fs::create_dir(&root).expect("exclusive fixture root");
         fs::create_dir_all(root.join("repository")).expect("test repository");
         fs::create_dir_all(root.join("storage")).expect("test storage");
         Self(root)
@@ -52,7 +62,16 @@ impl Drop for Fixture {
 /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R17
 #[test]
 fn active_runtime_target_lease_prevents_second_job() {
-    let fixture = Fixture::new();
+    let fixture = Fixture::at_stamp(0);
+    let independent = Fixture::at_stamp(0);
+    assert_ne!(
+        fixture.0, independent.0,
+        "equal clocks must not alias fixtures"
+    );
+    let independent_runtime = independent.storage();
+    let _independent_lease = independent_runtime
+        .acquire_workspace()
+        .expect("independent lease");
     let runtime = fixture.storage();
     let first = runtime.acquire_workspace().expect("first lease");
     assert!(runtime.acquire_workspace().is_err());
