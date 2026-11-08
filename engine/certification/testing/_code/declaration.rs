@@ -159,6 +159,270 @@ fn fixture(
     (declaration, expected, vec![leaf], policy)
 }
 
+/// `T-AF-CERTIFICATION-0001-R08-001`
+/// Fortress requirement: AF-CERTIFICATION-0001-R08
+#[test]
+fn independent_public_consumer_replays_original_assessment_truth_and_admission() {
+    use std::io::Write;
+    use std::process::{Command, Stdio};
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let controls = root.join("testing/_code/portable_controls.py");
+    let own = Command::new("python")
+        .args(["-I", "-B"])
+        .arg(&controls)
+        .output()
+        .unwrap();
+    assert!(
+        own.status.success(),
+        "{}",
+        String::from_utf8_lossy(&own.stderr)
+    );
+    let mut vectors = Vec::new();
+    for truth in [
+        DeclarationTruth::NoSupportedViolation,
+        DeclarationTruth::SupportedViolation,
+        DeclarationTruth::NotEvaluable,
+        DeclarationTruth::NotApplicable,
+        DeclarationTruth::Authorization,
+    ] {
+        for scenario in 0..9 {
+            let (mut declaration, mut expected, mut evidence, mut policy) = fixture(truth);
+            match scenario {
+                1 => {
+                    policy.verified_payloads.clear();
+                }
+                2 => {
+                    expected.obligations[0].authenticated_producer_required = true;
+                }
+                3 => {
+                    evidence[0].valid_until = Some(1);
+                }
+                4 => {
+                    evidence[0].binding.context_ref = digest();
+                }
+                5 => {
+                    expected.obligations[0].proof = None;
+                }
+                6 if truth == DeclarationTruth::SupportedViolation => {
+                    declaration.claims[0].findings.push("finding".into());
+                    declaration.residue_summary.accepted_baseline = vec!["finding".into()];
+                }
+                7 if truth == DeclarationTruth::SupportedViolation => {
+                    declaration.claims[0].findings.push("finding".into());
+                    declaration.residue_summary.accepted_exceptions = vec!["finding".into()];
+                }
+                8 => {
+                    expected.obligations[0].predicate = ObligationPredicate::Evaluability;
+                }
+                _ => {}
+            }
+            let assessment =
+                ProfileAssessment::evaluate(&declaration, &expected, &evidence, &policy).unwrap();
+            vectors.push(serde_json::json!({"expected":assessment.decision,"declaration":declaration,"assessment":assessment,
+                "replay":{"schema_version":1,"expected":{"artifacts":expected.artifacts,"binding":expected.binding,"dimensions":expected.dimensions,
+                    "profile_digest":expected.profile_digest,"obligations":expected.obligations},"evidence":evidence,"acceptance":policy}}));
+        }
+    }
+    let mut child = Command::new("python")
+        .args(["-I", "-B"])
+        .arg(controls)
+        .arg("--rust-vectors")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    child
+        .stdin
+        .take()
+        .unwrap()
+        .write_all(&serde_json::to_vec(&vectors).unwrap())
+        .unwrap();
+    let result = child.wait_with_output().unwrap();
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let result: serde_json::Value = serde_json::from_slice(&result.stdout).unwrap();
+    assert_eq!(result["checked"], 45);
+    assert_eq!(result["status"], "PASS");
+    assert_eq!(result["authenticity"], "UNVERIFIED");
+}
+
+/// `T-AF-CERTIFICATION-0001-R08-002`
+/// Fortress requirement: AF-CERTIFICATION-0001-R08
+#[test]
+fn compact_captured_application_bundle_is_independently_checked_without_reexecution() {
+    use fortress_core::bundle::PortableBundle;
+    use fortress_core::portable_load::{load_portable_state, write_portable_bundle};
+    use std::process::Command;
+    let source = governed_checkout();
+    let output = Checkout::new();
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let predicate = "https://example.invalid/fortress/assurance/v1";
+    for (name, code) in [
+        (
+            "negative",
+            "pub fn write() { let _ = std::fs::write(\"output\",b\"x\"); }\n",
+        ),
+        ("clean", "pub fn write() {}\n"),
+    ] {
+        source.write("sample/_code/lib.rs", code);
+        let view = fortress_core::audit::compile_repository_state_view(&source.0).unwrap();
+        let expected =
+            serde_json::to_value(view.application.as_ref().unwrap().assessment.decision).unwrap();
+        let original = view.to_canonical_bytes().unwrap();
+        let state_path = output.0.join(format!("{name}-state.json"));
+        std::fs::write(&state_path, &original).unwrap();
+        let artifacts = load_portable_state(&source.0, &state_path).unwrap();
+        let bundle = PortableBundle::assemble(artifacts.clone(), None, predicate).unwrap();
+        assert_eq!(
+            bundle.members,
+            PortableBundle::assemble(artifacts, None, predicate)
+                .unwrap()
+                .members
+        );
+        assert_advertised_schema(&bundle.manifest);
+        for artifact in &bundle.manifest.artifacts {
+            if artifact.media_type == "application/json" {
+                let value: serde_json::Value =
+                    serde_json::from_slice(&bundle.members[&artifact.member]).unwrap();
+                if value.get("$schema").is_some() {
+                    assert_advertised_schema(&value);
+                }
+            }
+        }
+        let destination = output.0.join(name);
+        write_portable_bundle(&bundle, &destination).unwrap();
+        assert_eq!(
+            write_portable_bundle(&bundle, &destination)
+                .unwrap_err()
+                .code,
+            "OUTPUT_EXISTS"
+        );
+        assert_eq!(std::fs::read(&state_path).unwrap(), original);
+        assert_eq!(
+            std::fs::read_to_string(source.0.join("sample/_code/lib.rs")).unwrap(),
+            code
+        );
+        let result = Command::new(if cfg!(windows) { "python" } else { "python3" })
+            .args(["-I", "-B"])
+            .arg(root.join("testing/_code/verify_bundle.py"))
+            .arg(&destination)
+            .args(["--predicate-type", predicate])
+            .output()
+            .unwrap();
+        assert!(
+            result.status.success(),
+            "stdout={} stderr={}",
+            String::from_utf8_lossy(&result.stdout),
+            String::from_utf8_lossy(&result.stderr)
+        );
+        let verified: serde_json::Value = serde_json::from_slice(&result.stdout).unwrap();
+        assert_eq!(verified["integrity"], "VERIFIED");
+        assert_eq!(verified["assessment_replay"], expected);
+        assert_eq!(verified["authenticity"], "UNVERIFIED");
+        assert_eq!(verified["assurance"], "UNVERIFIED");
+        assert_eq!(verified["freshness"], "UNKNOWN");
+        assert_eq!(
+            verified["certification_result_availability"],
+            "NOT_APPLICABLE_APPLICATION"
+        );
+        verify_capture_references(&root, &destination, &state_path, predicate);
+        if let Some(directory) = std::env::var_os("FORTRESS_RETAIN_BUNDLE_FIXTURES") {
+            let retain = std::path::Path::new(&directory).join(name);
+            write_portable_bundle(&bundle, &retain).unwrap();
+        }
+    }
+}
+
+/// `T-AF-CERTIFICATION-0001-R08-003`
+/// Fortress requirement: AF-CERTIFICATION-0001-R08
+#[test]
+fn omitted_tampered_wrong_context_and_forged_unsigned_bundles_are_not_admitted() {
+    deep_public_evidence_graph_uses_bounded_heap_traversal();
+    let source = governed_checkout();
+    let output = Checkout::new();
+    let view = fortress_core::audit::compile_repository_state_view(&source.0).unwrap();
+    let path = output.0.join("state.json");
+    std::fs::write(&path, view.to_canonical_bytes().unwrap()).unwrap();
+    let artifacts = fortress_core::portable_load::load_portable_state(&source.0, &path).unwrap();
+    let predicate = "https://example.invalid/fortress/assurance/v1";
+    let mut bundle =
+        fortress_core::bundle::PortableBundle::assemble(artifacts, None, predicate).unwrap();
+    let destination = output.0.join("valid");
+    fortress_core::portable_load::write_portable_bundle(&bundle, &destination).unwrap();
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let result = std::process::Command::new(if cfg!(windows) { "python" } else { "python3" })
+        .args(["-I", "-B"])
+        .arg(root.join("testing/_code/portable_controls.py"))
+        .arg("--bundle-attacks")
+        .arg(&destination)
+        .arg(predicate)
+        .output()
+        .unwrap();
+    assert!(
+        result.status.success(),
+        "stdout={} stderr={}",
+        String::from_utf8_lossy(&result.stdout),
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let result: serde_json::Value = serde_json::from_slice(&result.stdout).unwrap();
+    assert_eq!(result["checked"], 12);
+    bundle.members.insert(
+        format!("artifacts/{}é.json", "a".repeat(62)),
+        b"{}".to_vec(),
+    );
+    assert_eq!(
+        fortress_core::portable_load::write_portable_bundle(&bundle, &output.0.join("unsafe"))
+            .unwrap_err()
+            .code,
+        "UNSAFE_PATH"
+    );
+    assert!(!output.0.join("unsafe").exists());
+}
+
+fn deep_public_evidence_graph_uses_bounded_heap_traversal() {
+    use fortress_core::certification::{
+        EvidenceGraph, EvidenceNode, EvidenceResult, ProfileIdentity, StandardIdentity,
+    };
+    let mut nodes = Vec::new();
+    let mut inputs = Vec::new();
+    for index in 0..20_000 {
+        let node = EvidenceNode::new(
+            "bounded_observation",
+            format!("subject:{index}"),
+            EvidenceResult::Observed,
+            inputs,
+            "synthetic-control",
+            "1.0.0",
+            EvidenceClass::Observation,
+            serde_json::json!({"index":index}),
+        )
+        .unwrap();
+        inputs = vec![node.id().to_owned()];
+        nodes.push(node);
+    }
+    let graph = EvidenceGraph::new(
+        digest(),
+        StandardIdentity {
+            id: "STD-FIXTURE".into(),
+            edition: "fixture".into(),
+        },
+        ProfileIdentity {
+            id: "PROFILE".into(),
+            version: 1,
+        },
+        nodes,
+        inputs,
+        vec![],
+    )
+    .unwrap();
+    assert_eq!(graph.nodes().len(), 20_000);
+    graph.validate().unwrap();
+}
+
 /// `T-AF-CERTIFICATION-0001-R05-001`
 /// Fortress requirement: AF-CERTIFICATION-0001-R05
 #[test]
@@ -764,4 +1028,44 @@ fn tool_qualification_scope_never_changes_application_truth_or_sufficiency() {
             .qualification_scope(&report, &stale, &scope)
             .is_err()
     );
+}
+
+fn verify_capture_references(
+    root: &std::path::Path,
+    destination: &std::path::Path,
+    state_path: &std::path::Path,
+    predicate: &str,
+) {
+    use std::process::Command;
+    let matched = Command::new(if cfg!(windows) { "python" } else { "python3" })
+        .args(["-I", "-B"])
+        .arg(root.join("testing/_code/verify_bundle.py"))
+        .arg(destination)
+        .args(["--predicate-type", predicate, "--current-state"])
+        .arg(state_path)
+        .output()
+        .unwrap();
+    assert!(
+        matched.status.success(),
+        "{}",
+        String::from_utf8_lossy(&matched.stdout)
+    );
+    let matched: serde_json::Value = serde_json::from_slice(&matched.stdout).unwrap();
+    assert_eq!(matched["freshness"], "MATCHES_SUPPLIED_REFERENCES");
+    assert_eq!(matched["assurance"], "UNVERIFIED");
+    let stale = Command::new(if cfg!(windows) { "python" } else { "python3" })
+        .args(["-I", "-B"])
+        .arg(root.join("testing/_code/verify_bundle.py"))
+        .arg(destination)
+        .args([
+            "--predicate-type",
+            predicate,
+            "--expected-subject",
+            &digest(),
+        ])
+        .output()
+        .unwrap();
+    assert_eq!(stale.status.code(), Some(1));
+    let stale: serde_json::Value = serde_json::from_slice(&stale.stdout).unwrap();
+    assert_eq!(stale["freshness"], "STALE");
 }

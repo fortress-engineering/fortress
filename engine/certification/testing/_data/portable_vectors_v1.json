@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "scope": "SYNTHETIC_PROTOCOL_CONTROLS_NOT_EXECUTION_OR_AUTHENTICATION",
+  "cases": [
+    {"name":"clean","truth":"NO_SUPPORTED_VIOLATION","residue":"NONE","assessment":"SATISFIED","kind":"pass"},
+    {"name":"violated","truth":"SUPPORTED_VIOLATION","residue":"NONE","assessment":"NOT_SATISFIED","kind":"fail"},
+    {"name":"partial","truth":"NOT_EVALUABLE","residue":"NONE","assessment":"NOT_EVALUABLE","kind":"open"},
+    {"name":"excepted","truth":"SUPPORTED_VIOLATION","residue":"EXCEPTED","assessment":"NOT_SATISFIED","kind":"fail"},
+    {"name":"baselined","truth":"SUPPORTED_VIOLATION","residue":"BASELINED","assessment":"NOT_SATISFIED","kind":"fail"},
+    {"name":"stale","truth":"NO_SUPPORTED_VIOLATION","residue":"STALE","assessment":"NOT_EVALUABLE","kind":"pass"},
+    {"name":"unsigned","truth":"NO_SUPPORTED_VIOLATION","residue":"UNSIGNED","assessment":"SATISFIED","kind":"pass"},
+    {"name":"not-applicable","truth":"NOT_APPLICABLE","residue":"NONE","assessment":"NOT_EVALUABLE","kind":"notApplicable"},
+    {"name":"authorization-only","truth":"NOT_EVALUABLE","residue":"AUTHORIZATION_ONLY","assessment":"NOT_EVALUABLE","kind":"informational"}
+  ],
+  "canonicalization": [
+    {"value":{"z":0,"a":[true,null,"é"]},"canonical":"{\"a\":[true,null,\"é\"],\"z\":0}"},
+    {"value":{"":1,"😀":2},"canonical":"{\"😀\":2,\"\":1}"},
+    {"value":{"integer":"9007199254740993","safe":9007199254740991},"canonical":"{\"integer\":\"9007199254740993\",\"safe\":9007199254740991}"},
+    {"value":{"decomposed":"é","composed":"é"},"canonical":"{\"composed\":\"é\",\"decomposed\":\"é\"}"}
+  ],
+  "reject_json": ["{\"x\":1,\"x\":2}","9007199254740993","NaN","1e9999","\"\\ud800\""]
+}

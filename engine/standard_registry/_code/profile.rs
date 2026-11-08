@@ -17,6 +17,18 @@ use crate::standard::StandardBundle;
 const INSTALLED_PROFILES: &str = include_str!("../_data/governance_profiles_v1.json");
 const APPLICATION_POLICY: &str = include_str!("../_data/application_assessment_policy_v1.json");
 
+/// Exact installed profile catalog bytes for portable authority identification.
+#[must_use]
+pub const fn installed_profiles_source() -> &'static str {
+    INSTALLED_PROFILES
+}
+
+/// Exact installed assessment-policy bytes, without new interpretation.
+#[must_use]
+pub const fn installed_assessment_policy_source() -> &'static str {
+    APPLICATION_POLICY
+}
+
 /// Standard-owned immutable application requirement predicate mappings.
 #[derive(Clone, Debug, Deserialize)]
 #[serde(deny_unknown_fields)]

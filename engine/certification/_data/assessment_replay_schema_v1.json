@@ -1,0 +1,148 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v1:assessment-replay",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "expected",
+    "acceptance",
+    "evidence",
+    "evidence_inputs",
+    "authority_preimage",
+    "program_context_utf8",
+    "profile_layout_id",
+    "profile_override_modules"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:derived:v1:assessment-replay"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "expected": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifacts",
+        "binding",
+        "dimensions",
+        "profile_digest",
+        "obligations"
+      ],
+      "properties": {
+        "artifacts": {
+          "type": "array",
+          "maxItems": 100000,
+          "items": {
+            "$ref": "urn:fortress:derived:v1:conformance-declaration#/$defs/artifact"
+          }
+        },
+        "binding": {
+          "$ref": "urn:fortress:derived:v1:conformance-declaration#/$defs/binding"
+        },
+        "dimensions": {
+          "$ref": "urn:fortress:derived:v1:conformance-declaration#/$defs/manifest"
+        },
+        "profile_digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "obligations": {
+          "$ref": "urn:fortress:derived:v2:state-view#/properties/application/anyOf/0/properties/obligations"
+        }
+      }
+    },
+    "acceptance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "verified_payloads",
+        "verified_metadata",
+        "authenticated_evidence",
+        "accepted_assumptions",
+        "assessment_time"
+      ],
+      "properties": {
+        "verified_payloads": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          }
+        },
+        "verified_metadata": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          }
+        },
+        "authenticated_evidence": {
+          "type": "array",
+          "maxItems": 100000,
+          "items": {
+            "type": "string",
+            "maxLength": 65536
+          }
+        },
+        "accepted_assumptions": {
+          "type": "array",
+          "maxItems": 100000,
+          "items": {
+            "type": "string",
+            "maxLength": 65536
+          }
+        },
+        "assessment_time": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "evidence": {
+      "$ref": "urn:fortress:derived:v2:state-view#/properties/application/anyOf/0/properties/evidence"
+    },
+    "evidence_inputs": {
+      "anyOf": [
+        {
+          "$ref": "urn:fortress:derived:v1:evidence-input-set"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "authority_preimage": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7
+    },
+    "program_context_utf8": {
+      "type": "string",
+      "maxLength": 33554432
+    },
+    "profile_layout_id": {
+      "type": "string",
+      "maxLength": 65536
+    },
+    "profile_override_modules": {
+      "type": "array",
+      "maxItems": 100000,
+      "items": {
+        "type": "string",
+        "maxLength": 65536
+      }
+    }
+  }
+}

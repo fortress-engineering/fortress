@@ -654,8 +654,9 @@ fn compile_repository_state_view_selected(
             | AuditError::ObservationPolicy(_)),
         ) => {
             return Ok(StateView {
-                schema: "urn:fortress:derived:v2:state-view".into(),
-                schema_version: 2,
+                portable_evidence_graph: None,
+                schema: "urn:fortress:derived:v3:state-view".into(),
+                schema_version: 3,
                 source_ref,
                 status: StateViewStatus::Invalid,
                 detail: Some(error.to_string()),
@@ -665,8 +666,9 @@ fn compile_repository_state_view_selected(
         Err(error) => return Err(error),
     };
     let mut view = StateView {
-        schema: "urn:fortress:derived:v2:state-view".into(),
-        schema_version: 2,
+        portable_evidence_graph: None,
+        schema: "urn:fortress:derived:v3:state-view".into(),
+        schema_version: 3,
         source_ref: certification_source_digest(&analysis.observed_files),
         status: StateViewStatus::Ungoverned,
         detail: analysis.project_detail.clone(),
@@ -731,8 +733,109 @@ fn compile_repository_state_view_selected(
         crate::assessment::AssessmentDecision::NotEvaluable => StateViewStatus::Partial,
         crate::assessment::AssessmentDecision::Invalid => StateViewStatus::Invalid,
     };
+    view.portable_evidence_graph = Some(application_portable_graph(&stack, &application)?);
     view.application = Some(application);
     Ok(view)
+}
+
+fn application_portable_graph(
+    stack: &CertificationSemanticStack,
+    application: &crate::application::ApplicationAssessment,
+) -> Result<crate::certification::EvidenceGraph, AuditError> {
+    let audit = portable_audit(stack)?;
+    crate::certification::application_replay_graph(
+        application,
+        crate::certification::StandardIdentity {
+            id: stack.standard.id().into(),
+            edition: stack.standard.edition().into(),
+        },
+        &stack.portable_authority,
+        &audit,
+    )
+    .map_err(AuditError::Certification)
+}
+
+fn portable_audit(stack: &CertificationSemanticStack) -> Result<serde_json::Value, AuditError> {
+    let mut audit = serde_json::to_value(&stack.audit)
+        .map_err(CertificationError::Json)
+        .map_err(AuditError::Certification)?;
+    let mut references = BTreeMap::<String, BTreeSet<String>>::new();
+    let mut observations = BTreeMap::new();
+    let mut reference_count = 0usize;
+    let mut omitted_count = 0usize;
+    let mut trace_bytes = 0usize;
+    for module in stack.semantic_conformance.model().modules() {
+        let mut needed = BTreeSet::new();
+        for conclusion in module.conclusions() {
+            let evaluation = conclusion.evaluation();
+            for finding in evaluation.findings() {
+                for partition in evaluation.supported_partitions() {
+                    let admitted = partition
+                        .observation_refs()
+                        .len()
+                        .min(50_000 - reference_count);
+                    let selected = &partition.observation_refs()[..admitted];
+                    references
+                        .entry(finding.clone())
+                        .or_default()
+                        .extend(selected.iter().cloned());
+                    needed.extend(selected.iter().cloned());
+                    reference_count += admitted;
+                    omitted_count += partition.observation_refs().len() - admitted;
+                }
+            }
+        }
+        if needed.is_empty() {
+            continue;
+        }
+        for observation in module.observations() {
+            let id = observation.evidence_ref();
+            if needed.contains(&id) && observations.len() < 10_000 {
+                let mut value = serde_json::to_value(observation)
+                    .map_err(CertificationError::Json)
+                    .map_err(AuditError::Certification)?;
+                value["call_chain_display"] = serde_json::json!(
+                    observation
+                        .call_chain()
+                        .iter()
+                        .map(|symbol| stack
+                            .semantic_conformance
+                            .symbol_display_name(symbol)
+                            .unwrap_or(symbol))
+                        .collect::<Vec<_>>()
+                );
+                let bytes = serde_json::to_vec(&value)
+                    .map_err(CertificationError::Json)
+                    .map_err(AuditError::Certification)?
+                    .len();
+                if trace_bytes + bytes <= 16 * 1024 * 1024 {
+                    trace_bytes += bytes;
+                    observations.insert(id, value);
+                }
+            }
+        }
+    }
+    let missing = references
+        .values()
+        .flatten()
+        .filter(|r| !observations.contains_key(*r))
+        .cloned()
+        .collect::<BTreeSet<_>>();
+    let traces = references
+        .into_iter()
+        .map(|(finding, refs)| {
+            (
+                finding,
+                refs.iter()
+                    .filter_map(|r| observations.get(r).cloned())
+                    .collect::<Vec<_>>(),
+            )
+        })
+        .collect::<BTreeMap<_, _>>();
+    audit["portable_traces"] = serde_json::json!(traces);
+    audit["portable_trace_losses"] = serde_json::json!({"missing_observation_refs":missing,"omitted_reference_count":omitted_count,
+        "scope":"BOUNDED_PRESENTATION_ONLY_ORIGINAL_PROOF_ALTERNATIVES_REMAIN_IN_DECLARATION"});
+    Ok(audit)
 }
 
 /// Compiles the canonical CCG for a stabilized repository input set.
@@ -2095,7 +2198,7 @@ fn certification_bundle_from_stack(
         .filter(|(_, r)| r.external_verification().is_some())
         .map(|(id, _)| id.clone())
         .collect::<BTreeSet<_>>();
-    let products = crate::certification::compile_certification_with_pending_native(
+    let mut products = crate::certification::compile_certification_with_pending_native(
         &certification_input,
         &pending_native,
         common_provider
@@ -2103,6 +2206,13 @@ fn certification_bundle_from_stack(
             .map(|envelope| (&provider_source, &application.declaration.binding, envelope)),
     )
     .map_err(AuditError::Certification)?;
+    products
+        .retain_assessment_replay(
+            &application,
+            &stack.portable_authority,
+            &portable_audit(stack)?,
+        )
+        .map_err(AuditError::Certification)?;
     Ok(RepositoryCertificationBundle {
         projections,
         audit_json,
@@ -2111,6 +2221,7 @@ fn certification_bundle_from_stack(
 }
 
 struct CertificationSemanticStack {
+    portable_authority: serde_json::Value,
     observed_files: SourceView,
     rust_tests: Vec<crate::rust_test_analyzer::RustTestFact>,
     standard: StandardBundle,
@@ -2376,6 +2487,27 @@ fn compile_certification_stack_from_prepared(
     measurements.record("governance_composition");
     Ok(PreparedCertificationStack {
         stack: CertificationSemanticStack {
+            portable_authority: serde_json::json!({
+                "$schema": "urn:fortress:derived:v1:portable-authority",
+                "schema_version": 1,
+                "standard_digest": prepared.standard.bundle.digest(),
+                "manifest_utf8": prepared.standard.manifest.source()?,
+                "rules": prepared.standard.rules.iter().map(|document| {
+                    Ok(serde_json::json!({"path": document.path, "utf8": document.source()?}))
+                }).collect::<Result<Vec<_>, AuditError>>()?,
+                "profile_catalog_utf8": crate::profile::installed_profiles_source(),
+                "assessment_policy_utf8": crate::profile::installed_assessment_policy_source(),
+                "control_layout_utf8": crate::control_layout::ControlLayout::standard().authority_source(),
+                "finding_governance_utf8": prepared.finding_governance.as_ref().map(FindingGovernanceDocument::to_canonical_json)
+                    .transpose().map_err(CertificationError::Json).map_err(AuditError::Certification)?,
+                "external_requirements": ccg.requirements().iter().filter_map(|(id,r)|r.external_verification().map(|_|id)).collect::<BTreeSet<_>>(),
+                "verification_bindings_utf8": crate::control_layout::ControlLayout::standard().role_path(crate::control_layout::ControlRole::VerificationBindings)
+                    .and_then(|path| prepared.observed_files.get(path)).map(|bytes|std::str::from_utf8(bytes))
+                    .transpose().map_err(|e| AuditError::ContractState(e.to_string().into()))?,
+                "selected_profiles": prepared.profiles.references(),
+                "module_profiles": prepared.profiles.module_overrides().iter()
+                    .map(|(module, p)| (module, p.references())).collect::<BTreeMap<_, _>>(),
+            }),
             observed_files: prepared.observed_files,
             rust_tests: prepared.rust_tests,
             standard: prepared.standard.bundle,
@@ -2417,36 +2549,15 @@ fn application_from_stack_with_inputs(
     projections: &BTreeMap<String, String>,
     inputs: Option<ApplicationProviderSelection<'_>>,
 ) -> Result<crate::application::ApplicationAssessment, AuditError> {
-    let mut scoped_profiles = stack
-        .profiles
-        .references()
-        .iter()
-        .map(|p| (None, p))
-        .collect::<Vec<_>>();
-    for (module, selection) in stack.profiles.module_overrides() {
-        scoped_profiles.extend(selection.references().iter().map(|p| (Some(module), p)));
-    }
+    let authority_preimage = application_authority_preimage(stack)?;
     let binding = crate::declaration::DeclarationBinding {
         subject_ref: certification_source_digest(&stack.observed_files),
         context_ref: stack.models.psm.program_context().digest(),
         authority_ref: format!(
             "sha256:{:x}",
             Sha256::digest(
-                crate::declaration::canonical(&(
-                    "application-authority-v1",
-                    crate::control_layout::ControlLayout::standard().digest(),
-                    crate::profile::ApplicationAssessmentPolicy::installed()
-                        .map_err(|e| AuditError::ContractState(e.to_string().into()))?
-                        .digest(),
-                    stack.standard.digest(),
-                    scoped_profiles,
-                    stack
-                        .observed_files
-                        .get(crate::control_layout::PROJECT_CONFIGURATION_PATH)
-                        .map(|b| format!("sha256:{:x}", Sha256::digest(b))),
-                    &stack.finding_governance_authority_digest,
-                ))
-                .map_err(|e| AuditError::ContractState(e.to_string().into()))?
+                crate::declaration::canonical(&authority_preimage)
+                    .map_err(|e| AuditError::ContractState(e.to_string().into()))?
             )
         ),
     };
@@ -2497,7 +2608,7 @@ fn application_from_stack_with_inputs(
         })
         .collect::<Vec<_>>();
     let mut provider_inputs = application_provider_inputs(stack, &binding, inputs)?;
-    crate::application::compose_application_with_providers(
+    let mut application = crate::application::compose_application_with_providers(
         stack.snapshot.project_id(),
         binding,
         &stack.profiles,
@@ -2507,7 +2618,16 @@ fn application_from_stack_with_inputs(
         artifacts,
         Some(&mut provider_inputs),
     )
-    .map_err(|e| AuditError::ContractState(e.to_string().into()))
+    .map_err(|e| AuditError::ContractState(e.to_string().into()))?;
+    if let Some(replay) = &mut application.portable_replay {
+        replay["authority_preimage"] = authority_preimage;
+        replay["program_context_utf8"] =
+            serde_json::json!(stack.models.psm.program_context().to_canonical_json());
+        replay["profile_layout_id"] = serde_json::json!(stack.profiles.layout_id());
+        replay["profile_override_modules"] =
+            serde_json::json!(stack.profiles.module_overrides().keys().collect::<Vec<_>>());
+    }
+    Ok(application)
 }
 
 fn application_provider_inputs(
@@ -6202,4 +6322,32 @@ pub(crate) fn prepare_comparison_assets(
             .map_or(&[][..], |p| p.ownerships.as_slice()),
     )
     .map_err(|e| AuditError::InputMismatch(e.to_string().into()))
+}
+
+fn application_authority_preimage(
+    stack: &CertificationSemanticStack,
+) -> Result<serde_json::Value, AuditError> {
+    let mut scoped_profiles = stack
+        .profiles
+        .references()
+        .iter()
+        .map(|p| (None, p))
+        .collect::<Vec<_>>();
+    for (module, selection) in stack.profiles.module_overrides() {
+        scoped_profiles.extend(selection.references().iter().map(|p| (Some(module), p)));
+    }
+    Ok(serde_json::json!([
+        "application-authority-v1",
+        crate::control_layout::ControlLayout::standard().digest(),
+        crate::profile::ApplicationAssessmentPolicy::installed()
+            .map_err(|e| AuditError::ContractState(e.to_string().into()))?
+            .digest(),
+        stack.standard.digest(),
+        scoped_profiles,
+        stack
+            .observed_files
+            .get(crate::control_layout::PROJECT_CONFIGURATION_PATH)
+            .map(|b| format!("sha256:{:x}", Sha256::digest(b))),
+        &stack.finding_governance_authority_digest,
+    ]))
 }

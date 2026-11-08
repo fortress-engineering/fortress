@@ -41,7 +41,7 @@ def capture(root: Path, executable: Path, environment: dict[str, str], workspace
         raise quality.CertificateError("application report exceeds 64 MiB bound")
     content = destination.read_bytes()
     report = json.loads(content)
-    if canonical(report) != content or report.get("$schema") != "urn:fortress:derived:v2:state-view" or report.get("schema_version") != 2:
+    if canonical(report) != content or (report.get("$schema"),report.get("schema_version")) not in [("urn:fortress:derived:v2:state-view",2),("urn:fortress:derived:v3:state-view",3)]:
         raise quality.CertificateError("tool emitted an invalid/noncanonical StateView")
     application = report.get("application")
     if not isinstance(application, dict):
@@ -67,6 +67,11 @@ def generation(root: Path, report: dict, file_count: int) -> tuple[dict, dict[st
         "conformance-declaration": canonical(declaration),
         "profile-assessment": canonical(assessment),
     }
+    if report.get("schema_version") == 3:
+        graph = report.get("portable_evidence_graph")
+        if not isinstance(graph,dict) or graph.get("subject") != report["source_ref"]:
+            raise quality.CertificateError("portable application graph missing or bound to another source")
+        payloads["evidence-graph"] = canonical(graph)
     descriptors = []
     for identifier, content in sorted(payloads.items()):
         record = next(r for r in quality.INSTALLED_ARTIFACT_RECORDS if r["id"] == identifier)

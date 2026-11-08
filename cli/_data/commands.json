@@ -383,6 +383,28 @@
       "duration": "instant",
       "resumability": "restartable",
       "certification_implications": "Read-only derived comparison; no approval, state mutation or certification execution."
+    },
+    {
+      "id": "CMD-PORTABLE-BUNDLE",
+      "name": "bundle",
+      "aliases": [],
+      "description": "Export registered portable evidence or verify it independently offline, without authentication claims.",
+      "owner": "TF-CLI-0001",
+      "executor": "builtin-sync",
+      "duration": "short",
+      "resumability": "restartable",
+      "certification_implications": "Read-only inspection or explicit new-output export; no authentication, execution or authorization authority."
+    },
+    {
+      "id": "CMD-PORTABLE-SARIF",
+      "name": "sarif",
+      "aliases": [],
+      "description": "Project retained findings and scoped claims into SARIF 2.1.0 with explicit presentation losses.",
+      "owner": "TF-CLI-0001",
+      "executor": "builtin-sync",
+      "duration": "short",
+      "resumability": "restartable",
+      "certification_implications": "Read-only inspection or explicit new-output export; no authentication, execution or authorization authority."
     }
   ]
 }

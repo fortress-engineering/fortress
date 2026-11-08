@@ -33,3 +33,7 @@ Defines the version-one machine contract for command declarations.
 ### [`commands.json`](../_data/commands.json)
 
 Declares the exact implemented command instances exposed by the native registry.
+
+### [`offline_verifier_v1.txt`](../_data/offline_verifier_v1.txt)
+
+Embeds the exact standalone public Python consumer from Testing as an immutable CLI resource. Regenerate this byte-for-byte copy from `testing/_code/verify_bundle.py` when that consumer changes. The CLI regression gate rejects drift; the adapter executes these reviewed bytes in isolated Python, never a candidate repository script. This resource introduces no second implementation or authority.

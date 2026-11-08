@@ -195,3 +195,7 @@ Explicit bounded current capture and CONTROL generation/file loading. Source and
 ### [`query_transition.rs`](../_code/query_transition.rs)
 
 Protocol v2 compares two explicitly preloaded states through State Governance and pages every result and incomparability. Warm requests never discover files or invoke a semantic evaluator.
+
+### [`portable_load.rs`](../_code/portable_load.rs)
+
+Loads an exact registered CONTROL generation, an unambiguous current selection, or an explicitly supplied StateView3. It verifies original member identities and uses registered provider roles for the selected evidence closure. It never scans for newest files, invokes analysis to format export, executes project scripts, repairs caches or overwrites an output directory. Existing historical inputs remain unchanged. Explicit export writes only a new checked directory; offline verification reads supplied portable bytes independently.

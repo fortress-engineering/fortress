@@ -109,3 +109,31 @@ Current layout-v5 generation metadata preserves exact provider-aware application
 ### [`qualification_scope_schema_v1.json`](../_data/qualification_scope_schema_v1.json)
 
 Separate exact declaration/tool-scope metadata observation. Application evidence is always false and authenticity UNVERIFIED; no application truth or proof-manifest field changes.
+
+### [`state_view_schema_v3.json`](../_data/state_view_schema_v3.json)
+
+Versioned public portable-evidence contract. Its exact registered identity, strict fields, independent reader and compatibility are recorded in the shared schema catalog. Historical schemas retain their prior semantics.
+
+### [`assessment_replay_schema_v1.json`](../_data/assessment_replay_schema_v1.json)
+
+Versioned public portable-evidence contract. Its exact registered identity, strict fields, independent reader and compatibility are recorded in the shared schema catalog. Historical schemas retain their prior semantics.
+
+### [`portable_authority_schema_v1.json`](../_data/portable_authority_schema_v1.json)
+
+Versioned public portable-evidence contract. Its exact registered identity, strict fields, independent reader and compatibility are recorded in the shared schema catalog. Historical schemas retain their prior semantics.
+
+### [`portable_bundle_schema_v1.json`](../_data/portable_bundle_schema_v1.json)
+
+Versioned public portable-evidence contract. Its exact registered identity, strict fields, independent reader and compatibility are recorded in the shared schema catalog. Historical schemas retain their prior semantics.
+
+### [`assurance_statement_schema_v1.json`](../_data/assurance_statement_schema_v1.json)
+
+Versioned public portable-evidence contract. Its exact registered identity, strict fields, independent reader and compatibility are recorded in the shared schema catalog. Historical schemas retain their prior semantics.
+
+### [`portable_verification_schema_v1.json`](../_data/portable_verification_schema_v1.json)
+
+Versioned public portable-evidence contract. Its exact registered identity, strict fields, independent reader and compatibility are recorded in the shared schema catalog. Historical schemas retain their prior semantics.
+
+### [`projection_loss_schema_v1.json`](../_data/projection_loss_schema_v1.json)
+
+Versioned public portable-evidence contract. Its exact registered identity, strict fields, independent reader and compatibility are recorded in the shared schema catalog. Historical schemas retain their prior semantics.

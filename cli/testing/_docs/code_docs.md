@@ -31,3 +31,7 @@ Verifies exact core/RPC result equivalence, registered commands, strict version 
 ### [`transitions.rs`](../_code/transitions.rs)
 
 Read-only CLI capture/comparison, exact v2 stdio references, unchanged state files and build-script nonexecution; v1 and unsupported versions remain explicit.
+
+### [`portable.rs`](../_code/portable.rs)
+
+Challenges deterministic SARIF mappings, exact property/identity round trips, scoped truth and residue, observed path direction, Unicode locations, malformed paths and read-only verification. Explicit research runs may retain exact synthetic producer fixtures in a caller-supplied new output directory; canonical qualification otherwise uses disposable test storage.

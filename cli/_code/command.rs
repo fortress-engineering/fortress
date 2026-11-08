@@ -10,6 +10,20 @@ use fortress_core::identity::{StableId, StableIdError};
 
 const BUILTIN_COMMANDS: &[CommandDescriptor] = &[
     CommandDescriptor {
+        id: "CMD-PORTABLE-BUNDLE",
+        name: "bundle",
+        aliases: &[],
+        description: "Export registered portable evidence or verify it independently offline, without authentication claims.",
+        usage: "fortress bundle export [path] --output new-directory --predicate-type URI [--state file|--generation sha256:...|--selection key]; fortress bundle verify bundle --predicate-type URI [--current-state file|--expected-subject digest --expected-context digest --expected-authority digest --expected-profile digest] [--format human|json]",
+    },
+    CommandDescriptor {
+        id: "CMD-PORTABLE-SARIF",
+        name: "sarif",
+        aliases: &[],
+        description: "Project retained findings and scoped claims into SARIF 2.1.0 with explicit presentation losses.",
+        usage: "fortress sarif [path] [--state file|--generation sha256:...|--selection key|--audit file [--declaration file] [--authority file]] [--output new-file]",
+    },
+    CommandDescriptor {
         id: "CMD-STATE-TRANSITION",
         name: "transition",
         aliases: &[],

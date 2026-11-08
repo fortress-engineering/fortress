@@ -37,9 +37,11 @@ use fortress_core::identity_migration::{
 mod application_inputs;
 pub mod command;
 mod inspection;
+mod portable_command;
 mod presentation;
 mod provider_command;
 pub mod rpc;
+pub mod sarif;
 mod transition_command;
 
 use command::{CommandDescriptor, CommandRegistry};
@@ -111,6 +113,9 @@ where
     };
 
     match command.id() {
+        "CMD-PORTABLE-BUNDLE" | "CMD-PORTABLE-SARIF" => {
+            portable_command::run(command.name(), &arguments[1..], output, error)
+        }
         "CMD-STATE-TRANSITION" => transition_command::run(&arguments[1..], output, error),
         "CMD-GOVERNANCE-STATUS"
         | "CMD-GOVERNANCE-DOCTOR"

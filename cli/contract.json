@@ -224,6 +224,15 @@
             "T-TF-CLI-0001-R22-001",
             "T-TF-CLI-0001-R22-002"
           ]
+        },
+        {
+          "id": "TF-CLI-0001-R23",
+          "statement": "SARIF 2.1.0 faithfully projects retained normalized finding identities, scoped truth, provenance, ordered observations and independent governance dispositions with explicit presentation losses; portable export and isolated offline verification expose equivalent human/JSON results, refuse unsafe or ambiguous input and never execute project code or imply unsigned approval.",
+          "tests": [
+            "T-TF-CLI-0001-R23-001",
+            "T-TF-CLI-0001-R23-002",
+            "T-TF-CLI-0001-R23-003"
+          ]
         }
       ]
     }

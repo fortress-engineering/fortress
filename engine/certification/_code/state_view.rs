@@ -24,6 +24,9 @@ pub enum StateViewStatus {
 #[derive(Clone, Debug, serde::Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct StateView {
+    /// Original offline replay observation, present only in neutral endpoint v3.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub portable_evidence_graph: Option<crate::certification::EvidenceGraph>,
     /// Versioned neutral endpoint schema identity.
     #[serde(rename = "$schema")]
     pub schema: String,
@@ -120,10 +123,25 @@ impl StateView {
     pub fn validate(&self) -> Result<(), crate::declaration::DeclarationError> {
         if !matches!(
             (self.schema.as_str(), self.schema_version),
-            ("urn:fortress:derived:v1:state-view", 1) | ("urn:fortress:derived:v2:state-view", 2)
+            ("urn:fortress:derived:v1:state-view", 1)
+                | ("urn:fortress:derived:v2:state-view", 2)
+                | ("urn:fortress:derived:v3:state-view", 3)
         ) || !crate::declaration::is_digest(&self.source_ref)
         {
             return crate::declaration::invalid("unsupported neutral endpoint");
+        }
+        if self.schema_version < 3 && self.portable_evidence_graph.is_some() {
+            return crate::declaration::invalid(
+                "historical endpoint cannot acquire portable evidence",
+            );
+        }
+        if let Some(graph) = &self.portable_evidence_graph {
+            graph
+                .validate()
+                .map_err(|e| crate::declaration::DeclarationError::Invalid(e.to_string()))?;
+            if graph.subject() != self.source_ref || self.application.is_none() {
+                return crate::declaration::invalid("portable graph belongs to another endpoint");
+            }
         }
         if let Some(application) = &self.application {
             application.declaration.validate()?;

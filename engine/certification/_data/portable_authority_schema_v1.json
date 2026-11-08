@@ -1,0 +1,158 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v1:portable-authority",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "standard_digest",
+    "manifest_utf8",
+    "rules",
+    "profile_catalog_utf8",
+    "assessment_policy_utf8",
+    "control_layout_utf8",
+    "finding_governance_utf8",
+    "external_requirements",
+    "verification_bindings_utf8",
+    "selected_profiles",
+    "module_profiles"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:derived:v1:portable-authority"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "standard_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "manifest_utf8": {
+      "type": "string",
+      "maxLength": 65536
+    },
+    "rules": {
+      "type": "array",
+      "maxItems": 100000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "utf8"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "maxLength": 65536
+          },
+          "utf8": {
+            "type": "string",
+            "maxLength": 65536
+          }
+        }
+      }
+    },
+    "profile_catalog_utf8": {
+      "type": "string",
+      "maxLength": 65536
+    },
+    "assessment_policy_utf8": {
+      "type": "string",
+      "maxLength": 65536
+    },
+    "control_layout_utf8": {
+      "type": "string",
+      "maxLength": 65536
+    },
+    "finding_governance_utf8": {
+      "anyOf": [
+        {
+          "type": "string",
+          "maxLength": 33554432
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "external_requirements": {
+      "type": "array",
+      "maxItems": 100000,
+      "items": {
+        "type": "string",
+        "maxLength": 65536
+      }
+    },
+    "verification_bindings_utf8": {
+      "anyOf": [
+        {
+          "type": "string",
+          "maxLength": 33554432
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "selected_profiles": {
+      "type": "array",
+      "maxItems": 100000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "version",
+          "digest"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 65536
+          },
+          "version": {
+            "type": "string",
+            "maxLength": 65536
+          },
+          "digest": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          }
+        }
+      }
+    },
+    "module_profiles": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "maxItems": 100000,
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "version",
+            "digest"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "maxLength": 65536
+            },
+            "version": {
+              "type": "string",
+              "maxLength": 65536
+            },
+            "digest": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            }
+          }
+        }
+      }
+    }
+  }
+}

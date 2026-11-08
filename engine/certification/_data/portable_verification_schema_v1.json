@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v1:portable-verification",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "integrity",
+    "authenticity",
+    "assurance",
+    "freshness",
+    "errors"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "integrity": {
+      "enum": [
+        "VERIFIED",
+        "INCOMPLETE",
+        "INVALID"
+      ]
+    },
+    "authenticity": {
+      "const": "UNVERIFIED"
+    },
+    "assurance": {
+      "const": "UNVERIFIED"
+    },
+    "certification_result_availability": {
+      "enum": [
+        "INCLUDED",
+        "NOT_APPLICABLE_APPLICATION",
+        "UNAVAILABLE"
+      ]
+    },
+    "materialization_dependencies": {
+      "type": "array",
+      "maxItems": 100000,
+      "items": {
+        "$ref": "urn:fortress:derived:v1:conformance-declaration#/$defs/artifact"
+      }
+    },
+    "reference_state_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "assessment_replay": {
+      "enum": [
+        "SATISFIED",
+        "NOT_SATISFIED",
+        "NOT_EVALUABLE",
+        "INVALID",
+        "UNAVAILABLE"
+      ]
+    },
+    "freshness": {
+      "enum": [
+        "UNKNOWN",
+        "STALE",
+        "MATCHES_SUPPLIED_REFERENCES",
+        "PARTIAL_REFERENCE_MATCH"
+      ]
+    },
+    "binding": {
+      "$ref": "urn:fortress:derived:v1:conformance-declaration#/$defs/binding"
+    },
+    "profile_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "manifest_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "verification_scope": {
+      "const": "PUBLIC_BYTES_REFERENCES_AND_DECLARED_PROOF_ALGEBRA"
+    },
+    "unavailable": {
+      "type": "array",
+      "maxItems": 100000,
+      "items": {
+        "type": "string",
+        "maxLength": 65536
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "maxItems": 100000,
+      "items": {
+        "type": "string",
+        "maxLength": 65536
+      }
+    },
+    "unproven": {
+      "type": "array",
+      "maxItems": 100000,
+      "items": {
+        "type": "string",
+        "maxLength": 65536
+      }
+    },
+    "errors": {
+      "type": "array",
+      "maxItems": 100000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "maxLength": 65536
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 65536
+          }
+        }
+      }
+    }
+  }
+}

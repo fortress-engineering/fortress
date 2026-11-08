@@ -213,6 +213,24 @@ impl ControlLayout {
             .map(|_| path)
     }
 
+    /// Resolves an exact immutable provider import through its registered role.
+    #[must_use]
+    pub fn provider_path(&self, digest: &str, role: ControlRole) -> Option<String> {
+        let hex = digest.strip_prefix("sha256:")?;
+        if !is_sha256_hex(hex) {
+            return None;
+        }
+        let member = match role {
+            ControlRole::ProviderEnvelope => "envelope.json",
+            ControlRole::ProviderPayload => "payload.bin",
+            _ => return None,
+        };
+        let path = format!("__fortress/evidence/imports/{hex}/{member}");
+        self.resolve(&path)
+            .filter(|entry| entry.role() == role)
+            .map(|_| path)
+    }
+
     /// Loads and validates the installed declarative registry.
     ///
     /// # Panics
@@ -236,14 +254,22 @@ impl ControlLayout {
     /// Returns a stable digest of the exact installed registry bytes.
     #[must_use]
     pub fn digest(&self) -> String {
-        let source = match self.schema_version {
+        format!(
+            "sha256:{:x}",
+            Sha256::digest(self.authority_source().as_bytes())
+        )
+    }
+
+    /// Exact registered layout bytes used for portable authority verification.
+    #[must_use]
+    pub fn authority_source(&self) -> &'static str {
+        match self.schema_version {
             1 => LEGACY_CONTROL_LAYOUT_SOURCE,
             2 => CONTROL_LAYOUT_V2_SOURCE,
             3 => CONTROL_LAYOUT_V3_SOURCE,
             4 => CONTROL_LAYOUT_V4_SOURCE,
             _ => CONTROL_LAYOUT_SOURCE,
-        };
-        format!("sha256:{:x}", Sha256::digest(source.as_bytes()))
+        }
     }
 
     /// Returns whether a directory is needed by a registered role or generation.

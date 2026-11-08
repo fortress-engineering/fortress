@@ -37,3 +37,11 @@ Owns independent fixture admission, primitive-reference comparison, all 86 prere
 ### [`qualification_controls.py`](../_code/qualification_controls.py)
 
 Eight independent harness countermodels reject all-absence/all-violation answers, missing witnesses/proofs/cases, incorrect test-only enforcement, unequal ports/metadata and duplicate or foreign observations. They are scorer sensitivity controls, not production-code mutation statistics or held-out candidate evaluations.
+
+### [`verify_bundle.py`](../_code/verify_bundle.py)
+
+Standalone offline public consumer implemented with Python's standard library. Copy this single file to a consumer machine and run `python -I -B verify_bundle.py BUNDLE --predicate-type OWNER_URI`. It has no Fortress imports, Rust types, network client or project execution path. It independently checks JCS, byte identities, required artifacts, graph coherence, static and provider premises, exact bindings and conditional ALL/ANY profile replay. Integrity, conditional replay, unauthenticated provenance, unproven semantics/execution and independently supplied current references are separate fields. Exit 0 means complete consistent integrity with no detected supplied-reference mismatch, never assurance approval; exit 1 means incomplete or stale; exit 2 means invalid/unsupported input.
+
+### [`portable_controls.py`](../_code/portable_controls.py)
+
+Independent truth tables, RFC canonicalization facts, public parser/provider vectors and archive/path/resource attacks. Native regression tests feed original Rust-produced assessment records to this separate consumer and compare all declared outcomes. Actual consumer and development-machine performance observations remain diagnostic research records, separate from certification thresholds.

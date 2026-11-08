@@ -102,6 +102,7 @@ fn application_fixture(violation: bool) -> QueryInput {
     let inputs =
         fortress_core::provider_inputs::EvidenceInputSet::compose(binding.clone(), vec![]).unwrap();
     let app = fortress_core::application::ApplicationAssessment {
+        portable_replay: None,
         project: "test-project".into(),
         declaration,
         assessment,
@@ -160,6 +161,7 @@ fn wrap_application(
     };
     let mut input = QueryInput::empty(binding.subject_ref.clone());
     input.state_view = Some(fortress_core::audit::StateView {
+        portable_evidence_graph: None,
         schema: "urn:fortress:derived:v2:state-view".into(),
         schema_version: 2,
         source_ref: binding.subject_ref,

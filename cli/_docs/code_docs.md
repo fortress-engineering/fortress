@@ -241,3 +241,11 @@ TransitionAnalysis, completeness records and Finding Model retirement observatio
 They must rerun state_transitions, transitions, query, schema and source-ownership
 integration gates if these interfaces change. This capability implements no agent
 admission, migration/upgrade workflow or deployment rollback policy.
+
+### [`portable_command.rs`](../_code/portable_command.rs)
+
+Thin `bundle export`, `bundle verify` and `sarif` adapters. Export requires an explicit new destination and predicate URI. Verification streams the embedded independent standard-library Python consumer to an isolated interpreter; it never imports or executes candidate project code. Human and JSON output render the same verification record, including uncertainty, unavailable dependencies and errors.
+
+### [`sarif.rs`](../_code/sarif.rs)
+
+SARIF 2.1.0 maps supported violations to fail, scoped absence to pass, uncertainty to open, nonapplicability to notApplicable and authorization-only records to informational. A normalized FAIL finding justifies warning as the existence of a problem; no serious/minor severity or blocking eligibility is inferred from integrity tiers. Native identities, raw findings, claim scope, governance, provenance and original coordinates remain properties. Ordered observed call paths use codeFlows. Baselines and exceptions do not erase raw contradictions or become SARIF permission. Empty results never mean all claims passed. Microsoft SARIF Viewer 3.4.5 maps open to warning and pass/nonapplicability/informational to note; the versioned loss report discloses that presentation cannot enforce Fortress assurance or freshness.

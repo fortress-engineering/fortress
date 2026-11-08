@@ -23,6 +23,7 @@ fn state() -> ComparisonState {
         schema_version: 1,
         source_ref: Some(d(1)),
         view: Some(StateView {
+            portable_evidence_graph: None,
             schema: "urn:fortress:derived:v2:state-view".into(),
             schema_version: 2,
             source_ref: d(1),
@@ -177,6 +178,7 @@ fn app_state(truth: DeclarationTruth, context: u8, authority: u8) -> ComparisonS
     let inputs =
         fortress_core::provider_inputs::EvidenceInputSet::compose(binding, vec![]).unwrap();
     let app = ApplicationAssessment {
+        portable_replay: None,
         project: "fixture".into(),
         declaration,
         assessment,

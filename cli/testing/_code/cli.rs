@@ -14,6 +14,46 @@ use fortress_core::finding_governance::FindingGovernanceDocument;
 
 static NEXT_FIXTURE: AtomicU64 = AtomicU64::new(1);
 
+/// `T-TF-CLI-0001-R23-003`
+/// Fortress requirement: TF-CLI-0001-R23
+#[test]
+fn isolated_offline_verifier_reports_identical_human_and_json_errors_without_writes() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    assert_eq!(
+        fs::read(root.join("testing/_code/verify_bundle.py")).unwrap(),
+        fs::read(root.join("cli/_data/offline_verifier_v1.txt")).unwrap(),
+        "regenerate the CLI resource from the independently maintained public consumer"
+    );
+    let fixture = ObservationFixture::new();
+    let bundle = fixture.root.join("portable");
+    fs::create_dir(&bundle).unwrap();
+    let path = bundle.join("manifest.json");
+    let bytes = br#"{"$schema":"urn:fortress:schema:v1:portable-bundle","schema_version":99}"#;
+    fs::write(&path, bytes).unwrap();
+    let mut records = Vec::new();
+    for format in ["json", "human"] {
+        let output = run(&[
+            "bundle",
+            "verify",
+            bundle.to_str().unwrap(),
+            "--predicate-type",
+            "https://example.invalid/fortress/assurance/v1",
+            "--format",
+            format,
+        ]);
+        assert_eq!(output.status.code(), Some(2));
+        let start = output.stdout.iter().position(|b| *b == b'{').unwrap();
+        let record: serde_json::Value = serde_json::from_slice(&output.stdout[start..]).unwrap();
+        assert_eq!(record["integrity"], "INVALID");
+        assert_eq!(record["authenticity"], "UNVERIFIED");
+        assert_eq!(record["errors"][0]["code"], "UNSUPPORTED_VERSION");
+        records.push(record);
+        assert_eq!(fs::read(&path).unwrap(), bytes);
+        assert_eq!(fs::read_dir(&bundle).unwrap().count(), 1);
+    }
+    assert_eq!(records[0], records[1]);
+}
+
 /// `T-TF-CLI-0001-R19-001`
 /// Fortress requirement: TF-CLI-0001-R19
 #[test]

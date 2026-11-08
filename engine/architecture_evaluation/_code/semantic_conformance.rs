@@ -509,6 +509,12 @@ pub struct ModuleEffectObservation {
 }
 
 impl ModuleEffectObservation {
+    /// Existing immutable observation identity used by claim proof partitions.
+    /// This accessor does not derive new call paths or permission.
+    #[must_use]
+    pub fn evidence_ref(&self) -> String {
+        observation_ref(self)
+    }
     /// Returns the stable effect identity.
     #[must_use]
     pub const fn effect(&self) -> FunctionEffect {

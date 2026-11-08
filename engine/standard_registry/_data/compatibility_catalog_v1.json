@@ -1965,12 +1965,12 @@
       "schema_path": "engine/certification/_data/state_view_schema_v2.json",
       "version": 2,
       "writer": {
-        "status": "ACTIVE",
-        "source": "engine/snapshot_governance/_code/audit.rs"
+        "status": "RETIRED",
+        "source": null
       },
       "reader": {
         "status": "SUPPORTED",
-        "source": "engine/snapshot_governance/_code/audit.rs"
+        "source": "engine/certification/_code/state_view.rs"
       },
       "migration": "NOT_APPLICABLE",
       "identity_algorithm": {
@@ -2310,6 +2310,160 @@
       "content_hash_algorithm": {
         "id": "rfc8785-jcs-sha256",
         "source": "engine/state_governance/_code/transition.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:derived:v3:state-view",
+      "schema_path": "engine/certification/_data/state_view_schema_v3.json",
+      "version": 3,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/snapshot_governance/_code/audit.rs"
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/certification/_code/state_view.rs"
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "rfc8785-jcs-sha256-v1",
+        "source": "engine/certification/_code/state_view.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:derived:v1:assessment-replay",
+      "schema_path": "engine/certification/_data/assessment_replay_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/certification/_code/application.rs"
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "testing/_code/verify_bundle.py"
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "rfc8785-jcs-sha256-v1",
+        "source": "testing/_code/verify_bundle.py"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:derived:v1:portable-authority",
+      "schema_path": "engine/certification/_data/portable_authority_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/snapshot_governance/_code/audit.rs"
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "testing/_code/verify_bundle.py"
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "rfc8785-jcs-sha256-v1",
+        "source": "testing/_code/verify_bundle.py"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v1:portable-bundle",
+      "schema_path": "engine/certification/_data/portable_bundle_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/certification/_code/bundle.rs"
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "testing/_code/verify_bundle.py"
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "rfc8785-jcs-sha256-v1",
+        "source": "testing/_code/verify_bundle.py"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v1:assurance-statement",
+      "schema_path": "engine/certification/_data/assurance_statement_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/certification/_code/bundle.rs"
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "testing/_code/verify_bundle.py"
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "rfc8785-jcs-sha256-v1",
+        "source": "testing/_code/verify_bundle.py"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:derived:v1:portable-verification",
+      "schema_path": "engine/certification/_data/portable_verification_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "testing/_code/verify_bundle.py"
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "testing/_code/verify_bundle.py"
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "rfc8785-jcs-sha256-v1",
+        "source": "testing/_code/verify_bundle.py"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v1:projection-loss-report",
+      "schema_path": "engine/certification/_data/projection_loss_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "cli/_code/sarif.rs"
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "cli/_code/sarif.rs"
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "rfc8785-jcs-sha256-v1",
+        "source": "cli/_code/sarif.rs"
       }
     }
   ]

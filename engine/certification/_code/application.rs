@@ -59,6 +59,10 @@ pub enum ApplicationRuleOutcome {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct ApplicationAssessment {
+    /// Original assessment inputs retained for offline algebra replay. Historical
+    /// reporting without these inputs remains explicitly incomplete.
+    #[serde(skip)]
+    pub portable_replay: Option<serde_json::Value>,
     /// Stable project identity supplied by the compiled authored root authority.
     pub project: String,
     /// Complete truthful reporting, even for a failing application.
@@ -494,6 +498,20 @@ pub fn compose_application_with_providers(
         &input_digest,
     )?;
     Ok(ApplicationAssessment {
+        portable_replay: Some(serde_json::json!({
+            "$schema": "urn:fortress:derived:v1:assessment-replay",
+            "schema_version": 1,
+            "expected": {
+                "artifacts": expected.artifacts,
+                "binding": expected.binding,
+                "dimensions": expected.dimensions,
+                "profile_digest": expected.profile_digest,
+                "obligations": expected.obligations,
+            },
+            "acceptance": acceptance,
+            "evidence": evidence,
+            "evidence_inputs": evidence_inputs,
+        })),
         evidence_inputs,
         provider_requirements,
         project: project.into(),

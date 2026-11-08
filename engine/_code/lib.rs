@@ -26,6 +26,8 @@ pub mod behavioral_realization;
 pub mod behavioral_semantics;
 #[path = "../snapshot_governance/_code/bootstrap.rs"]
 pub mod bootstrap;
+#[path = "../certification/_code/bundle.rs"]
+pub mod bundle;
 #[path = "../certification/_code/certification.rs"]
 pub mod certification;
 #[path = "../snapshot_governance/_code/contract.rs"]
@@ -68,6 +70,10 @@ pub mod observation;
 pub mod ownership;
 #[path = "../snapshot_governance/_code/placement.rs"]
 pub mod placement;
+#[path = "../certification/_code/portable.rs"]
+pub mod portable;
+#[path = "../snapshot_governance/_code/portable_load.rs"]
+pub mod portable_load;
 #[path = "../standard_registry/_code/profile.rs"]
 pub mod profile;
 #[path = "../program_semantics/_code/program.rs"]

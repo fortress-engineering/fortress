@@ -483,6 +483,7 @@ fn retain_pair(
             .map_err(|e| error("INVALID_INPUT", e.to_string()))?;
         state.source_ref = Some(declaration.binding.subject_ref.clone());
         state.retained_application = Some(crate::application::ApplicationAssessment {
+            portable_replay: None,
             project: project.into(),
             declaration,
             assessment,

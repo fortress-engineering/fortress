@@ -183,6 +183,15 @@
           "tests": [
             "T-AF-CERTIFICATION-0001-R07-001"
           ]
+        },
+        {
+          "id": "AF-CERTIFICATION-0001-R08",
+          "statement": "Portable evidence retains exact source/context/profile/authority bindings, complete required proof and payload identities, historical bytes, defeaters, uncertainty and materialization dependencies. Public JCS digests and unsigned in-toto statements support bounded independent offline integrity and conditional assessment replay without semantic analysis, execution, authentication or implicit freshness.",
+          "tests": [
+            "T-AF-CERTIFICATION-0001-R08-001",
+            "T-AF-CERTIFICATION-0001-R08-002",
+            "T-AF-CERTIFICATION-0001-R08-003"
+          ]
         }
       ]
     }

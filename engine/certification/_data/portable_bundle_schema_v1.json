@@ -1,0 +1,179 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:portable-bundle",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "binding",
+    "generation_ref",
+    "declaration_digest",
+    "assessment_digest",
+    "profile_digest",
+    "certification_result_availability",
+    "artifacts",
+    "authority_assets",
+    "required_nodes",
+    "required_payloads",
+    "optional_projection_refs",
+    "materialization_dependencies",
+    "unavailable",
+    "projection_losses"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:schema:v1:portable-bundle"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "binding": {
+      "$ref": "urn:fortress:derived:v1:conformance-declaration#/$defs/binding"
+    },
+    "generation_ref": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "declaration_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "assessment_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "profile_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "certification_result_availability": {
+      "enum": [
+        "INCLUDED",
+        "NOT_APPLICABLE_APPLICATION",
+        "UNAVAILABLE"
+      ]
+    },
+    "artifacts": {
+      "type": "array",
+      "maxItems": 128,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "member",
+          "wire_digest",
+          "jcs_digest",
+          "media_type",
+          "byte_count",
+          "schema",
+          "required"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 65536
+          },
+          "member": {
+            "type": "string",
+            "pattern": "^artifacts/[0-9a-f]{64}\\.(json|bin)$"
+          },
+          "wire_digest": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          },
+          "jcs_digest": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^sha256:[0-9a-f]{64}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "media_type": {
+            "enum": [
+              "application/json",
+              "application/octet-stream"
+            ]
+          },
+          "byte_count": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 33554432
+          },
+          "schema": {
+            "type": "string",
+            "maxLength": 65536
+          },
+          "required": {
+            "const": true
+          }
+        }
+      }
+    },
+    "authority_assets": {
+      "type": "array",
+      "maxItems": 100000,
+      "items": {
+        "type": "string",
+        "maxLength": 65536
+      }
+    },
+    "required_nodes": {
+      "type": "array",
+      "maxItems": 100000,
+      "items": {
+        "type": "string",
+        "pattern": "^sha256:[0-9a-f]{64}$"
+      }
+    },
+    "required_payloads": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^sha256:[0-9a-f]{64}$"
+      }
+    },
+    "optional_projection_refs": {
+      "type": "array",
+      "maxItems": 100000,
+      "items": {
+        "$ref": "urn:fortress:derived:v1:conformance-declaration#/$defs/artifact"
+      }
+    },
+    "materialization_dependencies": {
+      "type": "array",
+      "maxItems": 100000,
+      "items": {
+        "$ref": "urn:fortress:derived:v1:conformance-declaration#/$defs/artifact"
+      }
+    },
+    "unavailable": {
+      "type": "array",
+      "maxItems": 100000,
+      "items": {
+        "type": "string",
+        "maxLength": 65536
+      }
+    },
+    "projection_losses": {
+      "type": "array",
+      "maxItems": 100000,
+      "items": {
+        "type": "string",
+        "maxLength": 65536
+      }
+    }
+  }
+}

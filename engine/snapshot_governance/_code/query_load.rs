@@ -98,6 +98,7 @@ pub fn load_repository_query(
         input.observed_routes.clear();
         input.availability["control_generation_applicability"] = json!("HISTORY_ONLY");
         input.state_view = Some(view);
+        retain_state_graph(&mut input)?;
         input.availability["selection_source"] = json!("EXPLICIT_STATE_VIEW");
         input.availability["evidence_state"] = json!("SELECTED");
         input.availability["proof_metadata"] = json!("COMPLETE_STATE_VIEW");
@@ -237,6 +238,7 @@ fn load_retained_products(
         let assessment = crate::assessment::ProfileAssessment::from_json_str(text(assessment)?)
             .map_err(|error| QueryError::new("INVALID_INPUT", error.to_string()))?;
         input.retained_application = Some(crate::application::ApplicationAssessment {
+            portable_replay: None,
             project: "retained-generation".into(),
             declaration,
             assessment,
@@ -246,7 +248,6 @@ fn load_retained_products(
             provider_requirements: Vec::new(),
         });
         input.availability["proof_metadata"] = json!("PARTIAL_RETAINED_PAIR");
-        input.limitations.push("This generation retains declaration/assessment results but not the complete StateView evidence-admission and obligation manifest. Explanations disclose unresolved references. Supply an existing --state StateView for complete recorded metadata.".into());
     }
     if let Some(bytes) = payloads.get("evidence-graph") {
         let graph: Value = crate::wire::parse_public_json(text(bytes)?)
@@ -262,7 +263,85 @@ fn load_retained_products(
         if let Some(nodes) = graph["nodes"].as_array() {
             input.evidence_nodes.clone_from(nodes);
         }
+        retain_replay_records(input, &graph)?;
     }
+    if input
+        .retained_application
+        .as_ref()
+        .is_some_and(|a| a.portable_replay.is_none())
+    {
+        input.limitations.push("This generation retains declaration/assessment results but not the complete StateView evidence-admission and obligation manifest. Explanations disclose unresolved references. Supply an existing --state StateView for complete recorded metadata.".into());
+    }
+    Ok(())
+}
+
+fn retain_replay_records(input: &mut QueryInput, graph: &Value) -> Result<(), QueryError> {
+    let validated: crate::certification::EvidenceGraph = serde_json::from_value(graph.clone())
+        .map_err(|e| QueryError::new("INVALID_INPUT", e.to_string()))?;
+    validated
+        .validate()
+        .map_err(|e| QueryError::new("INTEGRITY_ERROR", e.to_string()))?;
+    let nodes = graph["nodes"]
+        .as_array()
+        .ok_or_else(|| QueryError::new("INVALID_INPUT", "evidence nodes absent"))?;
+    let replays = nodes
+        .iter()
+        .filter(|n| n["kind"] == "assessment_replay")
+        .collect::<Vec<_>>();
+    let [node] = replays.as_slice() else {
+        return if replays.is_empty() {
+            Ok(())
+        } else {
+            Err(QueryError::new(
+                "INVALID_INPUT",
+                "ambiguous replay observations",
+            ))
+        };
+    };
+    let replay = &node["payload"]["replay"];
+    let app = if let Some(app) = input.retained_application.as_mut() {
+        app
+    } else if let Some(app) = input
+        .state_view
+        .as_mut()
+        .and_then(|v| v.application.as_mut())
+    {
+        app
+    } else {
+        return Err(QueryError::new(
+            "INVALID_INPUT",
+            "replay has no retained declaration",
+        ));
+    };
+    let hash = |v: &Value| -> Result<String, QueryError> {
+        crate::portable::canonical(v)
+            .map(|b| crate::portable::digest(&b))
+            .map_err(|e| QueryError::new(&e.code, e.message))
+    };
+    if replay["schema_version"] != 1
+        || replay["expected"]["binding"]
+            != serde_json::to_value(&app.declaration.binding)
+                .map_err(|e| QueryError::new("INVALID_INPUT", e.to_string()))?
+        || hash(&replay["expected"]["obligations"])? != app.assessment.obligation_manifest_digest
+        || hash(&replay["acceptance"])? != app.assessment.acceptance_policy_digest
+    {
+        return Err(QueryError::new(
+            "INTEGRITY_ERROR",
+            "retained replay differs from original assessment",
+        ));
+    }
+    app.evidence = serde_json::from_value(replay["evidence"].clone())
+        .map_err(|e| QueryError::new("INVALID_INPUT", e.to_string()))?;
+    app.obligations = serde_json::from_value(replay["expected"]["obligations"].clone())
+        .map_err(|e| QueryError::new("INVALID_INPUT", e.to_string()))?;
+    app.evidence_inputs = serde_json::from_value(replay["evidence_inputs"].clone())
+        .map_err(|e| QueryError::new("INVALID_INPUT", e.to_string()))?;
+    app.portable_replay = Some(replay.clone());
+    if let Some(findings) = node["payload"]["audit"]["findings"].as_array() {
+        input.findings.clone_from(findings);
+    }
+    input.evidence_nodes.clone_from(nodes);
+    input.availability["proof_metadata"] = json!("RETAINED_REPLAY_INPUTS");
     Ok(())
 }
 
@@ -542,4 +621,17 @@ fn probe_history(root: &Path, layout: &ControlLayout, selected_manifest: &str) -
             .cmp(&right["generation_digest"].as_str())
     });
     json!({"selected_generation":"AVAILABLE","selected_manifest":selected_manifest,"retained_generations":generations,"retention":"UNCHANGED"})
+}
+
+fn retain_state_graph(input: &mut QueryInput) -> Result<(), QueryError> {
+    if let Some(graph) = input
+        .state_view
+        .as_ref()
+        .and_then(|v| v.portable_evidence_graph.as_ref())
+    {
+        let graph = serde_json::to_value(graph)
+            .map_err(|e| QueryError::new("INVALID_INPUT", e.to_string()))?;
+        retain_replay_records(input, &graph)?;
+    }
+    Ok(())
 }

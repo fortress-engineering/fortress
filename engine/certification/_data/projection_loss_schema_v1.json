@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:projection-loss-report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "losses",
+    "gate_authority"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "losses": {
+      "type": "array",
+      "maxItems": 100000,
+      "items": {
+        "type": "string",
+        "maxLength": 65536
+      }
+    },
+    "gate_authority": {
+      "const": "NONE"
+    }
+  }
+}

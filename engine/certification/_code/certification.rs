@@ -857,6 +857,90 @@ pub struct CertificationProducts {
     pub verified_bfg: VerifiedBehavioralFlowGraph,
 }
 
+impl CertificationProducts {
+    /// Retains original assessment inputs as a non-authoritative observation.
+    /// This changes the graph's content identity, never its obligation decisions
+    /// or historical root. It does not authenticate producer assertions.
+    ///
+    /// # Errors
+    /// Rejects malformed bindings, duplicate semantic nodes or invalid graphs.
+    pub fn retain_assessment_replay(
+        &mut self,
+        application: &crate::application::ApplicationAssessment,
+        authority: &Value,
+        audit: &Value,
+    ) -> Result<(), CertificationError> {
+        if application.declaration.binding.subject_ref != self.evidence_graph.subject {
+            return Err(CertificationError::InvalidSuiteExecution);
+        }
+        let Some(replay) = &application.portable_replay else {
+            return Ok(());
+        };
+        let mut nodes = self.evidence_graph.nodes.clone();
+        nodes.push(EvidenceNode::new(
+            "assessment_replay",
+            &self.evidence_graph.subject,
+            EvidenceResult::Observed,
+            Vec::new(),
+            "fortress-certification",
+            CERTIFICATION_SEMANTIC_VERSION,
+            EvidenceClass::Observation,
+            json!({"replay": replay, "authority": authority, "audit": audit}),
+        )?);
+        self.evidence_graph = EvidenceGraph::new(
+            &self.evidence_graph.subject,
+            self.evidence_graph.standard.clone(),
+            self.evidence_graph.profile.clone(),
+            nodes,
+            self.evidence_graph.root_obligations.clone(),
+            self.evidence_graph.provenance.clone(),
+        )?;
+        self.certification.evidence_graph_digest =
+            digest_bytes(self.evidence_graph.to_json_pretty()?.as_bytes());
+        Ok(())
+    }
+}
+
+/// Retains application assessment inputs without manufacturing implementation
+/// certification, execution evidence or producer authentication.
+/// # Errors
+/// Rejects absent replay data, invalid graph identities or serialization.
+pub fn application_replay_graph(
+    application: &crate::application::ApplicationAssessment,
+    standard: StandardIdentity,
+    authority: &Value,
+    audit: &Value,
+) -> Result<EvidenceGraph, CertificationError> {
+    let replay = application
+        .portable_replay
+        .as_ref()
+        .ok_or(CertificationError::InvalidSuiteExecution)?;
+    let node = EvidenceNode::new(
+        "assessment_replay",
+        &application.declaration.binding.subject_ref,
+        EvidenceResult::Observed,
+        Vec::new(),
+        "fortress-certification",
+        CERTIFICATION_SEMANTIC_VERSION,
+        EvidenceClass::Observation,
+        json!({"replay": replay, "authority": authority, "audit": audit}),
+    )?;
+    EvidenceGraph::new(
+        &application.declaration.binding.subject_ref,
+        standard,
+        ProfileIdentity {
+            id: application.assessment.profile_digest.clone(),
+            version: 1,
+        },
+        vec![node],
+        Vec::new(),
+        vec![
+            "Application reporting only; no implementation certification or execution is asserted."
+                .into(),
+        ],
+    )
+}
+
 /// Compiles the Evidence DAG, certification aggregate, and Verified BFG.
 ///
 /// # Errors
@@ -1975,30 +2059,30 @@ fn validate_acyclic(nodes: &[EvidenceNode]) -> Result<(), CertificationError> {
     let mut temporary = BTreeSet::new();
     let mut permanent = BTreeSet::new();
     for id in by_id.keys().copied() {
-        visit_evidence_node(id, &by_id, &mut temporary, &mut permanent)?;
-    }
-    Ok(())
-}
-
-fn visit_evidence_node<'a>(
-    id: &'a str,
-    by_id: &BTreeMap<&'a str, &'a EvidenceNode>,
-    temporary: &mut BTreeSet<&'a str>,
-    permanent: &mut BTreeSet<&'a str>,
-) -> Result<(), CertificationError> {
-    if permanent.contains(id) {
-        return Ok(());
-    }
-    if !temporary.insert(id) {
-        return Err(CertificationError::Cycle(id.into()));
-    }
-    if let Some(node) = by_id.get(id) {
-        for input in &node.inputs {
-            visit_evidence_node(input, by_id, temporary, permanent)?;
+        if permanent.contains(id) {
+            continue;
+        }
+        temporary.insert(id);
+        let mut stack = vec![(id, 0usize)];
+        while let Some((current, next)) = stack.last_mut() {
+            let current = *current;
+            if let Some(child) = by_id.get(current).and_then(|node| node.inputs.get(*next)) {
+                *next += 1;
+                let child = child.as_str();
+                if permanent.contains(child) {
+                    continue;
+                }
+                if !temporary.insert(child) {
+                    return Err(CertificationError::Cycle(child.into()));
+                }
+                stack.push((child, 0));
+            } else {
+                temporary.remove(current);
+                permanent.insert(current);
+                stack.pop();
+            }
         }
     }
-    temporary.remove(id);
-    permanent.insert(id);
     Ok(())
 }
 
