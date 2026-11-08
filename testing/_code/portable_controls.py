@@ -36,6 +36,36 @@ def cell(truth="NO_SUPPORTED_VIOLATION", predicate="CONFORMANCE", authenticated=
 
 
 class PortableControls(unittest.TestCase):
+    def test_native_authority_summary_and_required_edges_are_consistent(self):
+        def fixture(omit_edge=False):
+            def node(kind, subject, category, inputs, payload):
+                body=dict(kind=kind,subject=subject,result="PASS",inputs=sorted(inputs),producer="fixture",producer_semantic_version="1.0.0",evidence_class=category,payload=consumer.legacy_json(payload))
+                identity=consumer.sha(json.dumps(body,ensure_ascii=False,separators=(",", ":")).encode())
+                return dict(id=identity,**body)
+            standard=dict(id="fixture",edition="v1");profile=dict(id="full",version=1)
+            source=node("certification_source_snapshot","project","OBSERVATION",[],dict(certification_source_digest=D))
+            standard_node=node("standard","fixture","AUTHORITY",[source['id']],dict(edition="v1"))
+            definition={"$schema":"urn:fortress:schema:v1:certification-profile","schema_version":1,"id":"full",**{key:True for key in "require_all_applicable_rules require_all_requirement_tests require_behavioral_realization require_generated_verification require_current_artifacts".split()}}
+            profile_node=node("certification_profile","full","AUTHORITY",[standard_node['id']],definition)
+            leaf=node("rule_check","rule","STATIC_PROOF",[],{})
+            obligation=dict(kind="STANDARD_RULE",subject="rule",required_evidence_classes=["STATIC_PROOF"],evidence_refs=[leaf['id']],status="PASS",reason="fixture")
+            wrapper=node("certification_obligation:standardrule","rule","AGGREGATE",[profile_node['id']] if omit_edge else [leaf['id'],profile_node['id']],obligation)
+            root=node("certification_root","project","AGGREGATE",[wrapper['id']],dict(certification_source_digest=D,standard=standard,profile="full",trusted_assertion_dependencies=[]))
+            nodes=sorted([leaf,wrapper,root,source,standard_node,profile_node],key=lambda n:n['id'])
+            coverage={key:sum(n['evidence_class'].lower()==key for n in nodes) for key in ['authority','observation','static_proof','executed_test','executed_scenario','trusted_assertion','defeater','aggregate']}
+            graph={"$schema":"urn:fortress:schema:v2:evidence-graph","schema_version":2,"subject":D,"standard":standard,"profile":profile,"nodes":nodes,"root_obligations":sorted([root['id'],wrapper['id']]),"coverage":coverage,"provenance":[]}
+            certificate={"$schema":"urn:fortress:schema:v1:certification-result","schema_version":1,"profile":profile,"subject":D,"status":"PASS","certification_digest":root['id'],"evidence_graph_digest":consumer.sha(consumer.canonical(graph)),"obligations":[obligation],"summary":dict(obligations=1,**{'pass':1,'fail':0,'stale':0,'missing':0,'invalid':0,'trusted_assertions':0}),"trusted_assertion_dependencies":[]}
+            return graph,certificate
+        def check(graph,certificate):
+            data=consumer.canonical(graph);certificate['evidence_graph_digest']=consumer.sha(data)
+            return consumer.graph_check(graph,certificate,data,dict(subject_ref=D,context_ref=D,authority_ref=D))
+        graph,certificate=fixture();self.assertEqual(len(check(graph,certificate)),6)
+        for change in [lambda g,c:g.update(standard=dict(id="altered",edition="v1")),lambda g,c:c['summary'].update(obligations=0),lambda g,c:c.update(trusted_assertion_dependencies=["omitted"])]:
+            graph,certificate=fixture();change(graph,certificate)
+            with self.assertRaises(consumer.Invalid):check(graph,certificate)
+        graph,certificate=fixture(True)
+        with self.assertRaises(consumer.Invalid):check(graph,certificate)
+
     def test_public_provider_vectors_match_independent_raw_replay(self):
         vectors=json.loads((ROOT/'engine/certification/testing/_data/provider_vectors_v1.json').read_text(encoding='utf-8'))
         checked=0
@@ -193,6 +223,21 @@ def bundle_attacks(path, predicate):
     run_attack(lambda f,m,s:m.update(unrecognized_authority='APPROVED'))
     run_attack(lambda f,m,s:m.update(required_nodes=[]))
     run_attack(lambda f,m,s:m.update(required_payloads={}))
+    def altered_standard(files, manifest, statement):
+        def artifact(role):
+            return next(a for a in manifest['artifacts'] if a['id']==role)
+        def replace(role, value):
+            row=artifact(role);files.pop(row['member'])
+            data=consumer.canonical(value);identity=consumer.sha(data)
+            row.update(member='artifacts/'+identity[7:]+'.json',wire_digest=identity,jcs_digest=identity,byte_count=len(data))
+            files[row['member']]=data
+        graph=consumer.parse(files[artifact('evidence-graph')['member']])
+        graph['standard']['edition']='unsupported-altered-authority'
+        replace('evidence-graph',graph)
+        if any(a['id']=='state-view' for a in manifest['artifacts']):
+            state=consumer.parse(files[artifact('state-view')['member']]);state['portable_evidence_graph']=graph
+            replace('state-view',state)
+    run_attack(altered_standard)
     print(json.dumps({'checked':count,'status':'PASS','original_manifest_digest':baseline['manifest_digest'],'authenticity':'UNVERIFIED'}))
 
 

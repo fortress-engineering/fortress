@@ -369,7 +369,7 @@ fn omitted_tampered_wrong_context_and_forged_unsigned_bundles_are_not_admitted()
         String::from_utf8_lossy(&result.stderr)
     );
     let result: serde_json::Value = serde_json::from_slice(&result.stdout).unwrap();
-    assert_eq!(result["checked"], 12);
+    assert_eq!(result["checked"], 13);
     bundle.members.insert(
         format!("artifacts/{}é.json", "a".repeat(62)),
         b"{}".to_vec(),

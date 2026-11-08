@@ -232,6 +232,9 @@ def legacy_json(value):
 
 def graph_check(graph, certification, graph_bytes, binding):
     closed(graph, "$schema schema_version subject standard profile nodes root_obligations coverage provenance")
+    closed(graph["standard"], "id edition")
+    closed(graph["profile"], "id version")
+    require(edition(graph["profile"], range(1, 65536), "version"), "UNSUPPORTED_VERSION", "unsupported native profile edition")
     require(graph["schema_version"] == 2 and graph["$schema"] == "urn:fortress:schema:v2:evidence-graph", "UNSUPPORTED_VERSION", "unsupported Evidence DAG edition")
     require(graph["subject"] == binding["subject_ref"], "BINDING_MISMATCH", "graph subject differs")
     if certification is not None:
@@ -258,15 +261,21 @@ def graph_check(graph, certification, graph_bytes, binding):
     topological(dependencies)
     ordered(graph["root_obligations"])
     require(all(i in by_id for i in graph["root_obligations"]), "MISSING_REFERENCE", "missing graph root")
+    closed(graph["coverage"], "authority observation static_proof executed_test executed_scenario trusted_assertion defeater aggregate")
     counts = {k: sum(n["evidence_class"].lower() == k for n in nodes) for k in graph["coverage"]}
-    require(counts == graph["coverage"], "INCONSISTENT_RESULT", "graph coverage differs")
+    require(counts == graph["coverage"] and all(type(v) is int for v in graph["coverage"].values()), "INCONSISTENT_RESULT", "graph coverage differs")
     if certification is None:
         require(not graph["root_obligations"] and all(n["kind"] == "assessment_replay" and n["evidence_class"] == "OBSERVATION" for n in nodes),
                 "INVALID_GRAPH", "application reporting cannot masquerade as implementation certification")
         return by_id
-    require(edition(certification, [1]) and certification["certification_digest"] in graph["root_obligations"], "INVALID_CERTIFICATION", "certification root absent")
+    closed(certification, "$schema schema_version profile subject status certification_digest evidence_graph_digest obligations summary trusted_assertion_dependencies")
+    require(edition(certification, [1]) and certification["$schema"] == "urn:fortress:schema:v1:certification-result"
+            and certification["certification_digest"] in graph["root_obligations"], "INVALID_CERTIFICATION", "certification root absent")
     root = by_id[certification["certification_digest"]]
     require(root["kind"] == "certification_root" and root["payload"]["certification_source_digest"] == binding["subject_ref"], "BINDING_MISMATCH", "root context differs")
+    require(root["payload"]["standard"] == graph["standard"] and root["payload"]["profile"] == graph["profile"]["id"],
+            "BINDING_MISMATCH", "native root authority differs from graph")
+    profile_node = native_authority_nodes(nodes, graph, root, binding)
     states = []
     obligation_ids=set()
     for obligation in certification["obligations"]:
@@ -288,7 +297,40 @@ def graph_check(graph, certification, graph_bytes, binding):
     require(graph["root_obligations"] == sorted([root["id"],*[n["id"] for n in wrappers]])
             and {n["id"] for n in wrappers} <= set(root["inputs"]),"MISSING_REFERENCE","certification root support differs")
     require(all(n["result"] == result_for[n["payload"]["status"]] for n in wrappers),"INCONSISTENT_RESULT","obligation node verdict differs")
+    require(all(set(n["payload"]["evidence_refs"]) | {profile_node} <= set(n["inputs"]) for n in wrappers), "MISSING_REFERENCE", "obligation support or authority edge omitted")
+    trusted = root["payload"]["trusted_assertion_dependencies"]
+    require(len(trusted) == len(set(trusted)) and all(ref in by_id and by_id[ref]["evidence_class"] == "TRUSTED_ASSERTION" for ref in trusted),
+            "MISSING_REFERENCE", "trusted assertion dependency differs")
+    require(set(root["inputs"]) == {n["id"] for n in wrappers} | set(trusted)
+            and certification["trusted_assertion_dependencies"] == [by_id[ref]["subject"] for ref in trusted],
+            "MISSING_REFERENCE", "certification trust closure differs")
+    summary = {state.lower(): states.count(state) for state in ["PASS", "FAIL", "STALE", "MISSING", "INVALID"]}
+    summary.update(obligations=len(states), trusted_assertions=len(trusted))
+    require(certification["summary"] == summary and all(type(v) is int for v in certification["summary"].values()),
+            "INCONSISTENT_RESULT", "certification summary differs")
     return by_id
+
+
+def native_authority_nodes(nodes, graph, root, binding):
+    """Bind the original native profile and Standard through their source edges."""
+    def only(kind):
+        matches=[n for n in nodes if n["kind"]==kind]
+        require(len(matches)==1,"MISSING_REFERENCE","native authority node missing or ambiguous: "+kind)
+        return matches[0]
+    source=only("certification_source_snapshot");standard=only("standard");profile=only("certification_profile")
+    require(source["evidence_class"]=="OBSERVATION" and source["subject"]==root["subject"]
+            and source["payload"]["certification_source_digest"]==binding["subject_ref"],"BINDING_MISMATCH","native source authority differs")
+    require(standard["evidence_class"]==profile["evidence_class"]=="AUTHORITY" and standard["subject"]==graph["standard"]["id"]
+            and standard["payload"]["edition"]==graph["standard"]["edition"] and source["id"] in standard["inputs"]
+            and standard["id"] in profile["inputs"],"BINDING_MISMATCH","native authority dependency differs")
+    definition=profile["payload"]
+    flags="require_all_applicable_rules require_all_requirement_tests require_behavioral_realization require_generated_verification require_current_artifacts".split()
+    closed(definition,"$schema schema_version id "+" ".join(flags))
+    require(edition(definition,[1]) and definition["$schema"]=="urn:fortress:schema:v1:certification-profile"
+            and graph["profile"]==dict(id=definition["id"],version=definition["schema_version"])
+            and profile["subject"]==definition["id"] and all(type(definition[k]) is bool for k in flags),"BINDING_MISMATCH","native profile definition differs")
+    require(definition["id"]!="CERT-FULL-SNAPSHOT-V1" or all(definition[k] for k in flags),"INVALID_PROFILE","native full profile weakened")
+    return profile["id"]
 
 
 def topological(dependencies):
@@ -1206,6 +1248,9 @@ def verify(path, predicate_type, expected_binding=None, expected_profile=None):
             unavailable.append("implementation certification unavailable")
         if "evidence-graph" in artifacts:
             by_id = graph_check(artifacts["evidence-graph"], artifacts.get("certification"), raw["evidence-graph"], binding)
+            if certification_availability == "NOT_APPLICABLE_APPLICATION":
+                require(artifacts["evidence-graph"]["profile"] == dict(id=manifest["profile_digest"],version=1),
+                        "BINDING_MISMATCH", "application graph profile differs")
             require(sorted(by_id) == manifest["required_nodes"], "MISSING_REFERENCE", "required node inventory differs")
             replays = [n for n in by_id.values() if n["kind"] == "assessment_replay"]
             if replays:
@@ -1239,6 +1284,10 @@ def verify(path, predicate_type, expected_binding=None, expected_profile=None):
             unavailable.append("original authority assets unavailable")
         elif "assessment-replay" in artifacts:
             authority_check(artifacts["authority-assets"], artifacts["assessment-replay"], declaration, assessment)
+            if "evidence-graph" in artifacts:
+                standard = parse(artifacts["authority-assets"]["manifest_utf8"].encode())
+                require(artifacts["evidence-graph"]["standard"] == {k: standard[k] for k in ["id", "edition"]},
+                        "BINDING_MISMATCH", "Evidence DAG Standard differs from original authority")
         freshness = "UNKNOWN"
         if expected_binding or expected_profile:
             supplied = expected_binding or {}
