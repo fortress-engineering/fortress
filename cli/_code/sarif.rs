@@ -209,14 +209,30 @@ fn projection_losses(findings: &[Value]) -> Value {
 }
 
 fn code_flows(value: &Value) -> Result<Option<Value>, PortableError> {
-    let Some(traces) = value.as_array() else {
+    if value.is_null() {
         return Ok(None);
-    };
+    }
+    let traces = value
+        .as_array()
+        .ok_or_else(|| failure("INVALID_TRACE", "trace inventory must be an array"))?;
     let mut flows = Vec::new();
     for trace in traces {
         let chain = trace["call_chain"]
             .as_array()
             .ok_or_else(|| failure("INVALID_TRACE", "ordered call chain missing"))?;
+        let displays = trace.get("call_chain_display");
+        if chain.iter().any(|s| s.as_str().is_none_or(str::is_empty))
+            || displays.is_some_and(|d| {
+                d.as_array().is_none_or(|d| {
+                    d.len() != chain.len() || d.iter().any(|s| s.as_str().is_none_or(str::is_empty))
+                })
+            })
+        {
+            return Err(failure(
+                "INVALID_TRACE",
+                "call path labels must be nonempty strings",
+            ));
+        }
         let steps = chain.iter().enumerate().map(|(index, symbol)| {
             let display = trace["call_chain_display"].get(index).unwrap_or(symbol);
             json!({"executionOrder":index,"location":{"message":{"text":display},

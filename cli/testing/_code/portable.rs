@@ -202,6 +202,34 @@ fn malformed_and_adversarial_portable_inputs_fail_without_repair_or_analysis() {
         "UNAVAILABLE"
     );
     let mut malicious = audit(true);
+    for invalid in [json!([123]), json!([""]), json!([null])] {
+        let mut trace = audit(true);
+        let id = trace["findings"][0]["finding_id"]
+            .as_str()
+            .unwrap()
+            .to_owned();
+        trace["portable_traces"][&id][0]["call_chain"] = invalid;
+        assert_eq!(
+            fortress_cli::sarif::export(&trace, &Value::Null, None)
+                .unwrap_err()
+                .code,
+            "INVALID_TRACE"
+        );
+    }
+    for invalid in [json!([123]), json!(["only one"]), json!("invalid")] {
+        let mut trace = audit(true);
+        let id = trace["findings"][0]["finding_id"]
+            .as_str()
+            .unwrap()
+            .to_owned();
+        trace["portable_traces"][&id][0]["call_chain_display"] = invalid;
+        assert_eq!(
+            fortress_cli::sarif::export(&trace, &Value::Null, None)
+                .unwrap_err()
+                .code,
+            "INVALID_TRACE"
+        );
+    }
     for path in [
         "../secret",
         "C:/secret",
