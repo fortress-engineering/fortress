@@ -249,3 +249,7 @@ Thin `bundle export`, `bundle verify` and `sarif` adapters. Export requires an e
 ### [`sarif.rs`](../_code/sarif.rs)
 
 SARIF 2.1.0 maps supported violations to fail, scoped absence to pass, uncertainty to open, nonapplicability to notApplicable and authorization-only records to informational. A normalized FAIL finding justifies warning as the existence of a problem; no serious/minor severity or blocking eligibility is inferred from integrity tiers. Native identities, raw findings, claim scope, governance, provenance and original coordinates remain properties. Ordered observed call paths use codeFlows. Baselines and exceptions do not erase raw contradictions or become SARIF permission. Empty results never mean all claims passed. Microsoft SARIF Viewer 3.4.5 maps open to warning and pass/nonapplicability/informational to note; the versioned loss report discloses that presentation cannot enforce Fortress assurance or freshness.
+
+### [`authority_command.rs`](../_code/authority_command.rs)
+
+Read-only protected-authority composition and explanation; repository assertions cannot supply a trusted validator.

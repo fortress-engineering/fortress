@@ -1,0 +1,32 @@
+{
+  "$schema": "urn:fortress:schema:v2:module-contract",
+  "schema_version": 2,
+  "id": "TEST-DEVELOPMENT-GOVERNANCE-0001",
+  "display_name": "Development Governance Testing",
+  "provides": [],
+  "requires": [
+    {
+      "provider": "AF-CORE-0001",
+      "capability": "CAP-FORTRESS-ENGINE",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-DEVELOPMENT-GOVERNANCE-0001",
+      "capability": "CAP-DEVELOPMENT-GOVERNANCE",
+      "version": "^0.1.0"
+    }
+  ],
+  "relationships": [
+    {
+      "type": "verifies",
+      "target": "AF-DEVELOPMENT-GOVERNANCE-0001",
+      "subjects": [
+        "AF-DEVELOPMENT-GOVERNANCE-0001"
+      ]
+    }
+  ],
+  "constraints": [],
+  "guarantees": [],
+  "features": [],
+  "behavior": []
+}

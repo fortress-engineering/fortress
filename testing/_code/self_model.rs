@@ -158,10 +158,10 @@ fn live_contract_v2_v3_ecosystem_resolves_completely() {
         "live CCG must be coherent: {:#?}",
         resolution.violations()
     );
-    assert_eq!(resolved.modules().len(), 47);
-    assert_eq!(resolved.capabilities().len(), 23);
-    assert_eq!(resolved.features().len(), 24);
-    assert_eq!(resolved.requirements().len(), 138);
+    assert_eq!(resolved.modules().len(), 49);
+    assert_eq!(resolved.capabilities().len(), 24);
+    assert_eq!(resolved.features().len(), 25);
+    assert_eq!(resolved.requirements().len(), 140);
     assert!(
         resolved
             .requirements()
@@ -172,8 +172,8 @@ fn live_contract_v2_v3_ecosystem_resolves_completely() {
     }
     assert_eq!(resolved.guarantees().len(), 17);
     assert_eq!(resolved.checkpoints().len(), 10);
-    assert_eq!(resolved.direct_requirements().len(), 190);
-    assert_eq!(resolved.relationships().len(), 23);
+    assert_eq!(resolved.direct_requirements().len(), 199);
+    assert_eq!(resolved.relationships().len(), 24);
     assert!(
         resolved
             .modules()

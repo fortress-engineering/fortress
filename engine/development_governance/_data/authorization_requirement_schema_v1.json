@@ -1,0 +1,79 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "proposal_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "base_rule": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "action": {
+      "enum": [
+        "CREATE",
+        "REPLACE",
+        "DELETE",
+        "MOVE"
+      ]
+    },
+    "class": {
+      "enum": [
+        "MODULE_INTENT",
+        "STANDARD",
+        "PROFILE",
+        "OWNERSHIP_SCOPE",
+        "FINDING_GOVERNANCE",
+        "REQUIRED_EVIDENCE",
+        "IDENTITY_MIGRATION",
+        "ASSESSOR_TRUST",
+        "PROVIDER_TRUST",
+        "SCHEMA_COMPATIBILITY",
+        "PROTECTED_CONFIGURATION",
+        "EVIDENCE_SELECTION",
+        "EVIDENCE_PUBLICATION",
+        "RELEASE_POLICY",
+        "UNKNOWN_CONTROL"
+      ]
+    },
+    "path": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "scope": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "issuer_policy_ref": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "id",
+    "proposal_ref",
+    "base_rule",
+    "action",
+    "class",
+    "path",
+    "scope",
+    "issuer_policy_ref"
+  ],
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v1:authorization-requirement"
+}

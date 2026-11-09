@@ -3,6 +3,8 @@
 //! Loading is explicit. Formatting and querying never invoke a semantic evaluator,
 //! repair state, execute a project command, or grant authority to a proposal.
 
+#[path = "query_authority.rs"]
+mod authority;
 #[path = "query_explanation.rs"]
 mod explanation;
 #[path = "query_load.rs"]

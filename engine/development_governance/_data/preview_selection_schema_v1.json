@@ -1,0 +1,100 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "base_state_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "base_authority_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "root_policy_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "require_assurance": {
+      "type": "boolean"
+    },
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          },
+          "classes": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "MODULE_INTENT",
+                "STANDARD",
+                "PROFILE",
+                "OWNERSHIP_SCOPE",
+                "FINDING_GOVERNANCE",
+                "REQUIRED_EVIDENCE",
+                "IDENTITY_MIGRATION",
+                "ASSESSOR_TRUST",
+                "PROVIDER_TRUST",
+                "SCHEMA_COMPATIBILITY",
+                "PROTECTED_CONFIGURATION",
+                "EVIDENCE_SELECTION",
+                "EVIDENCE_PUBLICATION",
+                "RELEASE_POLICY",
+                "UNKNOWN_CONTROL"
+              ]
+            },
+            "maxItems": 15,
+            "uniqueItems": true,
+            "minItems": 1
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "CREATE",
+                "REPLACE",
+                "DELETE",
+                "MOVE"
+              ]
+            },
+            "maxItems": 4,
+            "uniqueItems": true,
+            "minItems": 1
+          },
+          "scope": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          },
+          "issuer_policy_ref": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          }
+        },
+        "required": [
+          "id",
+          "classes",
+          "actions",
+          "scope",
+          "issuer_policy_ref"
+        ]
+      },
+      "maxItems": 50000
+    }
+  },
+  "required": [
+    "base_state_ref",
+    "base_authority_ref",
+    "root_policy_ref",
+    "require_assurance",
+    "rules"
+  ],
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:authority-preview-selection"
+}

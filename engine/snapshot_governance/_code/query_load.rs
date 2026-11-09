@@ -24,6 +24,8 @@ pub struct QueryLoadOptions {
     pub selection_key: Option<String>,
     /// Explicit already-produced `StateView`, read without regeneration.
     pub state_path: Option<PathBuf>,
+    /// Explicit nonauthoritative change-decision receipts for paged explanations.
+    pub decision_paths: Vec<PathBuf>,
     /// Maximum authoritative source bytes admitted before whole-file retention.
     pub max_source_bytes: usize,
     /// Maximum source inventory entries.
@@ -35,6 +37,7 @@ impl Default for QueryLoadOptions {
         Self {
             selection_key: None,
             state_path: None,
+            decision_paths: Vec::new(),
             max_source_bytes: 128 * 1024 * 1024,
             max_files: 50_000,
         }
@@ -147,7 +150,8 @@ pub fn load_repository_query(
         json!(disk.map(sysinfo::Disk::available_space));
     input.diagnostics["storage"]["disk_read_only"] = json!(disk.map(sysinfo::Disk::is_read_only));
     input.diagnostics["evidence"] = input.availability.clone();
-    QueryService::new(input)
+    let decisions = load_decision_receipts(root, &options.decision_paths, &mut budget)?;
+    QueryService::new(input)?.with_change_decisions(decisions)
 }
 
 fn load_selection(
@@ -634,4 +638,36 @@ fn retain_state_graph(input: &mut QueryInput) -> Result<(), QueryError> {
         retain_replay_records(input, &graph)?;
     }
     Ok(())
+}
+
+fn load_decision_receipts(
+    root: &Path,
+    paths: &[PathBuf],
+    budget: &mut u64,
+) -> Result<Vec<crate::development_governance::ChangeDecision>, QueryError> {
+    if paths.len() > 16 {
+        return Err(QueryError::new(
+            "RESOURCE_LIMIT",
+            "at most sixteen decision receipts",
+        ));
+    }
+    let mut decisions = Vec::new();
+    for path in paths {
+        let absolute = if path.is_absolute() {
+            path.clone()
+        } else {
+            root.join(path)
+        };
+        let anchor = absolute
+            .ancestors()
+            .last()
+            .ok_or_else(|| QueryError::new("UNSAFE_PATH", "decision path has no root"))?;
+        let bytes = safe_read(anchor, &absolute, MAX_FILE_BYTES)?;
+        charge(budget, bytes.len())?;
+        decisions.push(
+            crate::development_governance::ChangeDecision::from_json_str(text(&bytes)?)
+                .map_err(|e| QueryError::new(&e.code, e.message))?,
+        );
+    }
+    Ok(decisions)
 }

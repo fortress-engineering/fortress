@@ -86,6 +86,11 @@ Provides the normative identity and registry foundation required by every capabi
 
 Owns the single pure comparator and versioned, content-addressed transition model over explicitly identified immutable states.
 
+
+### [Development Governance](../development_governance/README.md)
+
+Owns protected-authority decisions and exact-proposal external grant boundaries.
+
 ## Coordination
 
 The immediate children collectively fulfill the Engine responsibility through the parent boundary. Their conceptual contributions compose here without restating or replacing the typed relationship graph declared by their Module contracts.

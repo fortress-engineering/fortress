@@ -140,6 +140,12 @@ Supplies the pure, versioned comparison of two explicitly identified immutable s
 
 Supplies stable identities and the exact draft standard bundle interpreted by the Engine.
 
+### [Development Governance](development_governance/README.md)
+
+**Types:** `depends_on`
+
+Supplies pure protected-authority decisions under an explicit trusted original base selection.
+
 ## Guarantees
 
 The Engine forbids unsafe code, denies warnings and broken documentation, preserves provider independence, and exposes child behavior without inventing a parallel source taxonomy.

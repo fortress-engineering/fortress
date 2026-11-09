@@ -53,3 +53,15 @@ python -I -B testing/_code/verify_bundle.py portable-evidence --predicate-type h
 Choose an owner-controlled predicate URI explicitly; no public namespace or issuer is assumed. `--generation` and `--selection` are exact alternatives, and `--state` admits an explicitly captured StateView3. Ambiguity, missing historical metadata and unsupported versions are errors or incomplete results, never latest-PASS fallbacks. Independently supplied `--expected-subject`, `--expected-context`, `--expected-authority` and `--expected-profile` distinguish reference agreement from unknown current freshness. Integrity verification does not authenticate a producer or prove execution, semantics or authorization. SARIF is a lossy finding/diagnostic view, with no assurance gate authority.
 
 Capture state files outside the observed repository to avoid changing the subject while capturing it. `--current-state` compares independently supplied original references without running capture or analysis; it is mutually exclusive with individual expected references. `sarif --audit` projects explicit retained diagnostics; optional matching declaration and authority files add claims and rule metadata. Missing declarations never imply passing claims. Output destinations must be new; commands do not overwrite evidence or repair inputs.
+
+Protected authority inspection uses `authority capture`, `authority preview --from snapshot --to snapshot --base-selection file`, and `authority inspect --decision file`. Preview has no external authorization mechanism or write mediation. Explicit selection is required; owner-approved public defaults are not inferred.
+
+`explain <decision-digest> --decision <receipt>` and `serve --stdio --decision <receipt>`
+preload up to sixteen immutable decision receipts into the existing paged explanation
+service. The existing v1/v2 protocol, request IDs, cancellation and bounded cursors
+are unchanged. Reading a receipt performs no grant verification or semantic analysis;
+recorded approval and host-coverage claims remain unverified provenance.
+
+A successful preview exit means the report was rendered. It does not authorize
+application, publication or installation; those require the independently trusted
+host context and all reported decision premises.

@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "basis": "S7 and AUTHORITY: unknown, unavailable, conflicting, invalid and unsupported external authorization never become permission.",
+  "cases": [
+    {"state": "MISSING", "disposition": "REQUIRE_AUTHORIZATION"},
+    {"state": "INVALID", "disposition": "REQUIRE_AUTHORIZATION"},
+    {"state": "UNSUPPORTED", "disposition": "REQUIRE_AUTHORIZATION"},
+    {"state": "CONFLICTING", "disposition": "REQUIRE_AUTHORIZATION"},
+    {"state": "UNAVAILABLE", "disposition": "REQUIRE_AUTHORIZATION"}
+  ]
+}

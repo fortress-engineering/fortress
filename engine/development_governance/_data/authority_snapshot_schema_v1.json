@@ -1,0 +1,41 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:derived:v1:authority-snapshot"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "state": {
+      "$ref": "urn:fortress:derived:v1:comparison-state"
+    },
+    "files": {
+      "type": "object",
+      "maxProperties": 50000,
+      "propertyNames": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 4096
+      },
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "maxItems": 33554432
+      }
+    }
+  },
+  "required": [
+    "$schema",
+    "schema_version",
+    "state",
+    "files"
+  ],
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v1:authority-snapshot"
+}

@@ -10,6 +10,13 @@ use fortress_core::identity::{StableId, StableIdError};
 
 const BUILTIN_COMMANDS: &[CommandDescriptor] = &[
     CommandDescriptor {
+        id: "CMD-PROTECTED-AUTHORITY",
+        name: "authority",
+        aliases: &[],
+        description: "Preview protected authority changes against explicitly selected base policy without granting permission or claiming host enforcement.",
+        usage: "fortress authority capture [path]; fortress authority preview --from snapshot --to snapshot --base-selection file [--format human|json]; fortress authority inspect --decision file [--format human|json]",
+    },
+    CommandDescriptor {
         id: "CMD-PORTABLE-BUNDLE",
         name: "bundle",
         aliases: &[],
@@ -56,7 +63,7 @@ const BUILTIN_COMMANDS: &[CommandDescriptor] = &[
         name: "explain",
         aliases: &[],
         description: "Explain recorded findings, claims, obligations and defeaters with paged evidence.",
-        usage: "fortress explain reference [path] [--state path] [--selection key] [--limit count] [--cursor token] [--format human|json]",
+        usage: "fortress explain reference [path] [--state path] [--selection key] [--decision receipt] [--limit count] [--cursor token] [--format human|json]",
     },
     CommandDescriptor {
         id: "CMD-GOVERNANCE-AUTHOR",
@@ -70,7 +77,7 @@ const BUILTIN_COMMANDS: &[CommandDescriptor] = &[
         name: "serve",
         aliases: &[],
         description: "Serve the versioned read-only inspection protocol over bounded JSON lines.",
-        usage: "fortress serve --stdio [path] [--selection key] [--state path]",
+        usage: "fortress serve --stdio [path] [--selection key] [--state path] [--decision receipt]",
     },
     CommandDescriptor {
         id: "CMD-PROVIDER-EVIDENCE",

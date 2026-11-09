@@ -405,6 +405,17 @@
       "duration": "short",
       "resumability": "restartable",
       "certification_implications": "Read-only inspection or explicit new-output export; no authentication, execution or authorization authority."
+    },
+    {
+      "id": "CMD-PROTECTED-AUTHORITY",
+      "name": "authority",
+      "aliases": [],
+      "description": "Preview protected authority changes against explicitly selected base policy without granting permission or claiming host enforcement.",
+      "owner": "TF-CLI-0001",
+      "executor": "builtin-sync",
+      "duration": "short",
+      "resumability": "restartable",
+      "certification_implications": "Read-only preview; no repository-supplied grant, external approval, host mediation or provider enforcement is inferred."
     }
   ]
 }

@@ -35,6 +35,7 @@ use fortress_core::identity_migration::{
     apply_repository_identity_migration, plan_repository_identity_migration,
 };
 mod application_inputs;
+mod authority_command;
 pub mod command;
 mod inspection;
 mod portable_command;
@@ -117,6 +118,7 @@ where
             portable_command::run(command.name(), &arguments[1..], output, error)
         }
         "CMD-STATE-TRANSITION" => transition_command::run(&arguments[1..], output, error),
+        "CMD-PROTECTED-AUTHORITY" => authority_command::run(&arguments[1..], output, error),
         "CMD-GOVERNANCE-STATUS"
         | "CMD-GOVERNANCE-DOCTOR"
         | "CMD-GOVERNANCE-QUERY"

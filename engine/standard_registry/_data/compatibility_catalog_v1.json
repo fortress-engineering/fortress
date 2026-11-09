@@ -2465,6 +2465,116 @@
         "id": "rfc8785-jcs-sha256-v1",
         "source": "cli/_code/sarif.rs"
       }
+    },
+    {
+      "schema_id": "urn:fortress:derived:v1:change-decision",
+      "schema_path": "engine/development_governance/_data/change_decision_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/development_governance/_code/decision.rs"
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/development_governance/_code/decision.rs"
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "exact-proposal-base-authority-v1",
+        "source": "engine/development_governance/_code/decision.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "rfc8785-jcs-sha256-v1",
+        "source": "engine/development_governance/_code/decision.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:derived:v1:validated-grant-receipt",
+      "schema_path": "engine/development_governance/_data/validated_grant_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/development_governance/_code/authority.rs"
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "exact-proposal-base-authority-v1",
+        "source": "engine/development_governance/_code/authority.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "rfc8785-jcs-sha256-v1",
+        "source": "engine/development_governance/_code/authority.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:derived:v1:authorization-requirement",
+      "schema_path": "engine/development_governance/_data/authorization_requirement_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/development_governance/_code/decision.rs"
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "exact-proposal-base-authority-v1",
+        "source": "engine/development_governance/_code/decision.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "rfc8785-jcs-sha256-v1",
+        "source": "engine/development_governance/_code/decision.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:derived:v1:authority-snapshot",
+      "schema_path": "engine/development_governance/_data/authority_snapshot_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/snapshot_governance/_code/authority_load.rs"
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/snapshot_governance/_code/authority_load.rs"
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "exact-proposal-base-authority-v1",
+        "source": "engine/snapshot_governance/_code/authority_load.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "rfc8785-jcs-sha256-v1",
+        "source": "engine/snapshot_governance/_code/authority_load.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v1:authority-preview-selection",
+      "schema_path": "engine/development_governance/_data/preview_selection_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "cli/_code/authority_command.rs"
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "cli/_code/authority_command.rs"
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "exact-proposal-base-authority-v1",
+        "source": "cli/_code/authority_command.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "rfc8785-jcs-sha256-v1",
+        "source": "cli/_code/authority_command.rs"
+      }
     }
   ]
 }

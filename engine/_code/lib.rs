@@ -133,3 +133,10 @@ pub mod state_view;
 
 #[path = "../snapshot_governance/_code/transition_load.rs"]
 pub mod transition_load;
+
+#[path = "../snapshot_governance/_code/authority_load.rs"]
+pub mod authority_load;
+#[path = "../project_model/_code/authority_roles.rs"]
+pub mod authority_roles;
+#[path = "../development_governance/_code/authority.rs"]
+pub mod development_governance;

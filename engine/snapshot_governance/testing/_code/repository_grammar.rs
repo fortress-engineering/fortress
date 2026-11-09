@@ -38,9 +38,9 @@ fn fortress_documentation_is_complete_synchronized_and_deterministic() {
         first.findings()
     );
     assert_eq!(first, second);
-    assert_eq!(first.summary().modules_inspected(), 47);
-    // State Governance and its Testing Module add seven canonical documents.
-    assert_eq!(first.summary().markdown_files_inspected(), 152);
+    assert_eq!(first.summary().modules_inspected(), 49);
+    // Development Governance and its Testing Module add seven canonical documents.
+    assert_eq!(first.summary().markdown_files_inspected(), 159);
     assert_eq!(
         first.summary().code_bijection().0,
         first.summary().code_bijection().1

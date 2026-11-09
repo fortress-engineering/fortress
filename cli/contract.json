@@ -233,6 +233,14 @@
             "T-TF-CLI-0001-R23-002",
             "T-TF-CLI-0001-R23-003"
           ]
+        },
+        {
+          "id": "TF-CLI-0001-R24",
+          "statement": "Preview exact protected-authority proposals through the shared read-only services, require explicit base selection, preserve human and JSON decisions, and never promote repository approvals or serialized receipts into trusted grants.",
+          "tests": [
+            "T-TF-CLI-0001-R24-001",
+            "T-TF-CLI-0001-R24-002"
+          ]
         }
       ]
     }

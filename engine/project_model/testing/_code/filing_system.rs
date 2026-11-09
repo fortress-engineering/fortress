@@ -695,7 +695,7 @@ fn live_fortress_filing_model_is_valid_and_deterministic() {
     let second = analyze_project_filing_system(&paths, &standard());
     assert_eq!(first, second);
     assert!(first.is_valid(), "{:?}", first.violations());
-    assert_eq!(first.modules().len(), 47);
+    assert_eq!(first.modules().len(), 49);
     assert_eq!(first.inventory().entries().len(), paths.len());
 }
 

@@ -35,3 +35,7 @@ Read-only CLI capture/comparison, exact v2 stdio references, unchanged state fil
 ### [`portable.rs`](../_code/portable.rs)
 
 Challenges deterministic SARIF mappings, exact property/identity round trips, scoped truth and residue, observed path direction, Unicode locations, malformed paths and read-only verification. Explicit research runs may retain exact synthetic producer fixtures in a caller-supplied new output directory; canonical qualification otherwise uses disposable test storage.
+
+### [`authority.rs`](../_code/authority.rs)
+
+Verifies exact preview and receipt inspection, paged explanations, malformed options, unverified local approvals and build-script nonexecution.

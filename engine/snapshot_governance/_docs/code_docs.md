@@ -199,3 +199,11 @@ Protocol v2 compares two explicitly preloaded states through State Governance an
 ### [`portable_load.rs`](../_code/portable_load.rs)
 
 Loads an exact registered CONTROL generation, an unambiguous current selection, or an explicitly supplied StateView3. It verifies original member identities and uses registered provider roles for the selected evidence closure. It never scans for newest files, invokes analysis to format export, executes project scripts, repairs caches or overwrites an output directory. Existing historical inputs remain unchanged. Explicit export writes only a new checked directory; offline verification reads supplied portable bytes independently.
+
+### [`authority_load.rs`](../_code/authority_load.rs)
+
+Read-only protected-authority composition and explanation; repository assertions cannot supply a trusted validator.
+
+### [`query_authority.rs`](../_code/query_authority.rs)
+
+Read-only protected-authority composition and explanation; repository assertions cannot supply a trusted validator.

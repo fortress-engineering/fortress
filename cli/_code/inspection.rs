@@ -114,11 +114,18 @@ fn parse(name: &str, arguments: &[String]) -> Result<Parsed, String> {
     let mut seen_options = std::collections::BTreeSet::new();
     while index < arguments.len() {
         let arg = &arguments[index];
-        if arg.starts_with('-') && arg != "--comparison-state" && !seen_options.insert(arg) {
+        if arg.starts_with('-')
+            && !matches!(arg.as_str(), "--comparison-state" | "--decision")
+            && !seen_options.insert(arg)
+        {
             return Err(format!("duplicate inspection option {arg}"));
         }
         match arg.as_str() {
             "--stdio" if name == "serve" => stdio = true,
+            "--decision" if matches!(name, "serve" | "explain") => {
+                index += 1;
+                push_decision_path(&mut options, arguments.get(index))?;
+            }
             "--comparison-state" if name == "serve" => {
                 index += 1;
                 comparison_states.push(
@@ -189,6 +196,15 @@ fn parse(name: &str, arguments: &[String]) -> Result<Parsed, String> {
         timing,
         comparison_states,
     })
+}
+fn push_decision_path(options: &mut QueryLoadOptions, path: Option<&String>) -> Result<(), String> {
+    options.decision_paths.push(PathBuf::from(
+        path.ok_or("--decision requires a receipt path")?,
+    ));
+    if options.decision_paths.len() > 16 {
+        return Err("decision preload exceeds sixteen inputs".into());
+    }
+    Ok(())
 }
 
 fn finish_parameters(
