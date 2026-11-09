@@ -116,7 +116,9 @@ impl PreparedChange {
             return Err(error("RESOURCE_LIMIT", "too many protected roles"));
         }
         for role in &base_roles {
-            if !crate::observation::is_canonical_relative_path(&role.path) || role.scope.is_empty()
+            if !crate::observation::is_canonical_relative_path(&role.path)
+                || !valid_text(&role.path)
+                || !valid_text(&role.scope)
             {
                 return Err(error("INVALID_INPUT", "invalid protected scope/path"));
             }
@@ -187,6 +189,14 @@ impl PreparedChange {
     /// # Errors
     /// Refuses excessive serialization.
     pub fn digest(&self) -> Result<String, TransitionError> {
+        if self.authorization_references.len() > 64
+            || self.authorization_references.iter().any(|s| !valid_text(s))
+        {
+            return Err(error(
+                "RESOURCE_LIMIT",
+                "authorization citations exceed existing context admission",
+            ));
+        }
         digest(self)
     }
 }
@@ -251,13 +261,16 @@ impl TrustedBasePolicy {
         }
         for r in &rules {
             check_digest(&r.issuer_policy_ref)?;
-            if r.id.is_empty()
-                || r.scope.is_empty()
+            if !valid_text(&r.id)
+                || !valid_text(&r.scope)
                 || r.classes.is_empty()
                 || r.actions.is_empty()
                 || !ids.insert(r.id.clone())
             {
-                return Err(error("AMBIGUOUS_AUTHORITY", "empty or duplicate base rule"));
+                return Err(error(
+                    "AMBIGUOUS_AUTHORITY",
+                    "empty, oversized or duplicate base rule",
+                ));
             }
             for c in &r.classes {
                 for a in &r.actions {
@@ -492,6 +505,9 @@ pub(crate) fn error(code: &str, message: impl Into<String>) -> TransitionError {
         code: code.into(),
         message: message.into(),
     }
+}
+pub(crate) fn valid_text(value: &str) -> bool {
+    !value.is_empty() && value.len() <= 4096
 }
 pub(crate) fn check_digest(id: &str) -> Result<(), TransitionError> {
     if id.len() != 71

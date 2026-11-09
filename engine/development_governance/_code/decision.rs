@@ -191,6 +191,7 @@ impl ChangeDecision {
         Ok(value)
     }
     fn validate(&self) -> Result<(), TransitionError> {
+        validate_text_fields(self)?;
         if self.schema != "urn:fortress:derived:v1:change-decision"
             || self.schema_version != 1
             || self.receipt_semantics != "PROVENANCE_ONLY_NOT_TRANSFERABLE"
@@ -577,7 +578,7 @@ fn validate_grant(r: &GrantRequest, validator: &impl GrantValidator) -> GrantChe
         && a.class == r.requirement.class
         && a.scope == r.requirement.scope
         && Some(&a.issuer_policy_ref) == r.requirement.issuer_policy_ref.as_ref()
-        && !a.issuer.is_empty()
+        && super::valid_text(&a.issuer)
         && check_digest(&a.verifier_ref).is_ok()
         && a.expires_at
             .is_none_or(|expiry| r.time.is_some_and(|now| now < expiry));
@@ -698,6 +699,12 @@ fn prepare_requirements(
             requirements.push(r);
         }
     }
+    if requirements.len() > crate::state_governance::MAX_TRANSITION_RECORDS {
+        return Err(error(
+            "RESOURCE_LIMIT",
+            "protected requirement union exceeds schema admission",
+        ));
+    }
     requirements.sort_by(|a, b| a.id.cmp(&b.id));
     requirements.dedup_by(|a, b| a.id == b.id);
     Ok(requirements)
@@ -734,8 +741,10 @@ fn validate_recorded_authorization(
             | "UNAVAILABLE"
             | "VERIFIED"
             | "QUALIFICATION_REQUIRED"
-    ) || r.scope.is_empty()
-        || r.base_rule.is_empty()
+    ) || !super::valid_text(&r.scope)
+        || !super::valid_text(&r.base_rule)
+        || !super::valid_text(&r.path)
+        || !super::valid_text(&a.reason)
         || !crate::observation::is_canonical_relative_path(&r.path)
     {
         return Err(error(
@@ -775,7 +784,7 @@ fn validate_recorded_authorization(
         || assertion.class != r.class
         || assertion.scope != r.scope
         || Some(&assertion.issuer_policy_ref) != r.issuer_policy_ref.as_ref()
-        || assertion.issuer.is_empty()
+        || !super::valid_text(&assertion.issuer)
         || assertion
             .expires_at
             .is_some_and(|expiry| d.evaluation_time.is_none_or(|now| now >= expiry))
@@ -800,6 +809,36 @@ fn validate_recorded_authorization(
                 "recorded qualification belongs to another candidate",
             ));
         }
+    }
+    Ok(())
+}
+
+fn validate_text_fields(d: &ChangeDecision) -> Result<(), TransitionError> {
+    for dimension in [
+        &d.semantic_enforcement,
+        &d.assurance_requirements,
+        &d.protected_authority,
+        &d.host_coverage,
+    ] {
+        if !super::valid_text(&dimension.state)
+            || dimension.reasons.len() > crate::state_governance::MAX_TRANSITION_RECORDS
+            || dimension.reasons.iter().any(|s| !super::valid_text(s))
+        {
+            return Err(error(
+                "INVALID_INPUT",
+                "decision text exceeds its public schema admission",
+            ));
+        }
+    }
+    if d.authorization_references.len() > 64
+        || d.authorization_references
+            .iter()
+            .any(|s| !super::valid_text(s))
+    {
+        return Err(error(
+            "RESOURCE_LIMIT",
+            "authorization citations exceed existing context admission",
+        ));
     }
     Ok(())
 }

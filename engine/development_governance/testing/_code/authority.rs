@@ -732,7 +732,7 @@ fn public_schema_and_canonical_digest_are_independently_reproducible() {
         &std::fs::read(root.join("engine/standard_registry/_data/schema_manifest.json")).unwrap(),
     )
     .unwrap();
-    let resources = manifest["schemas"]
+    let documents = manifest["schemas"]
         .as_array()
         .unwrap()
         .iter()
@@ -740,17 +740,22 @@ fn public_schema_and_canonical_digest_are_independently_reproducible() {
             let schema: serde_json::Value =
                 serde_json::from_slice(&std::fs::read(root.join(path.as_str().unwrap())).unwrap())
                     .unwrap();
-            (
-                schema["$id"].as_str().unwrap().to_owned(),
-                jsonschema::Resource::from_contents(schema).unwrap(),
-            )
+            schema
         })
         .collect::<Vec<_>>();
-    let schema: serde_json::Value =
-        serde_json::from_str(include_str!("../../_data/change_decision_schema_v1.json")).unwrap();
+    let schema = documents
+        .iter()
+        .find(|s| s["$id"] == "urn:fortress:derived:v1:change-decision")
+        .unwrap();
+    let resources = documents.iter().map(|s| {
+        (
+            s["$id"].as_str().unwrap().to_owned(),
+            jsonschema::Resource::from_contents(s.clone()).unwrap(),
+        )
+    });
     let validator = jsonschema::options()
-        .with_resources(resources.into_iter())
-        .build(&schema)
+        .with_resources(resources)
+        .build(schema)
         .unwrap();
     validator
         .validate(&serde_json::to_value(value).unwrap())
@@ -1031,6 +1036,40 @@ fn result_digest_resource_limits_and_duplicate_rule_sets_are_strict() {
     );
     let rule = serde_json::json!({"id":"owner","classes":["STANDARD","STANDARD"],"actions":["REPLACE"],"scope":"project","issuer_policy_ref":d(7)});
     assert!(serde_json::from_value::<AuthorizationRule>(rule).is_err());
+    let p = proposal(Some(ProtectedClass::ModuleIntent));
+    for length in [4096, 4097, 5000] {
+        let mut rules = policy(&p, false).rules().to_vec();
+        rules[0].id = "x".repeat(length);
+        let selected = TrustedBasePolicy::from_host(
+            p.base_state_ref(),
+            p.base_authority_ref().unwrap(),
+            d(8),
+            false,
+            rules,
+        );
+        assert_eq!(selected.is_ok(), length == 4096);
+    }
+    let pol = policy(&p, false);
+    let requirement = inspect(&p, false).requirements[0].clone();
+    let mut assertion = HostAssertion::for_request(
+        &GrantRequest::new(&p, &pol, &requirement, None),
+        "issuer",
+        d(11),
+        None,
+        None,
+    );
+    assertion.issuer = "x".repeat(4097);
+    let result = evaluate_change(
+        &p,
+        &pol,
+        &UnmediatedHost,
+        &Host {
+            assertion: Some(assertion),
+        },
+        None,
+    )
+    .unwrap();
+    assert_eq!(result.authorization[0].state, "INVALID");
 }
 
 /// `T-AF-DEVELOPMENT-GOVERNANCE-0001-R01-026`

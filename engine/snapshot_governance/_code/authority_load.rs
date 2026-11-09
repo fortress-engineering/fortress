@@ -60,6 +60,7 @@ impl AuthoritySnapshot {
         }
         self.state.validate()?;
         if self.files.len() > crate::state_governance::MAX_TRANSITION_RECORDS
+            || self.files.keys().any(|p| p.len() > 4096)
             || self
                 .files
                 .values()
