@@ -1,0 +1,80 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "origin",
+    "adjudication",
+    "cases"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:test:v1:declared-flow-corpus"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "origin": {
+      "const": "AUTHORED_STANDALONE_EXTERNAL_CONSUMER_CONTROLS"
+    },
+    "adjudication": {
+      "type": "string"
+    },
+    "cases": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "source",
+          "sink",
+          "transform",
+          "oracle",
+          "verdict"
+        ],
+        "properties": {
+          "id": {
+            "enum": [
+              "credential_to_log",
+              "sanitized_to_telemetry",
+              "unresolved_alias",
+              "unrelated_flow",
+              "lying_sanitizer"
+            ]
+          },
+          "source": {
+            "type": "string",
+            "maxLength": 4096
+          },
+          "sink": {
+            "type": "string"
+          },
+          "transform": {
+            "type": "boolean"
+          },
+          "oracle": {
+            "enum": [
+              "IDENTITY",
+              "ZERO",
+              "BOTH_CALLBACKS"
+            ]
+          },
+          "verdict": {
+            "enum": [
+              "SUPPORTED_VIOLATION",
+              "NO_SUPPORTED_VIOLATION",
+              "NOT_EVALUABLE"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:test:v1:declared-flow-corpus",
+  "title": "Frozen bounded declared-flow source controls v1"
+}

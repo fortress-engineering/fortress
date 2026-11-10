@@ -17,6 +17,24 @@ impl QueryService {
             return Ok(());
         };
         for claim in &app.declaration.claims {
+            if claim.id.starts_with("rule:flow_claim:")
+                && let Some(rule) = &claim.rule_result
+            {
+                let flow: Value = crate::wire::parse_public_json(&rule.detail)
+                    .map_err(|e| QueryError::new("INVALID_INPUT", e.to_string()))?;
+                crate::information_flow::validate_operation_claim_projection(
+                    &flow,
+                    &app.declaration.binding.context_ref,
+                )
+                .map_err(|e| QueryError::new("INVALID_INPUT", e.to_string()))?;
+                for record in flow["defeater_records"].as_array().into_iter().flatten() {
+                    let id = record["id"].as_str().ok_or_else(|| {
+                        QueryError::new("INVALID_INPUT", "flow defeater identity absent")
+                    })?;
+                    self.add_record("defeater", id, &claim.id, record.clone())?;
+                }
+                self.add_record("flow_scope", format!("{}:scope", claim.id), &claim.id, flow)?;
+            }
             let mut value = serde_json::to_value(claim)
                 .map_err(|error| QueryError::new("INVALID_INPUT", error.to_string()))?;
             if let Some(detail) = &claim.semantic_claim {
@@ -138,8 +156,10 @@ impl QueryService {
             .enumerate()
             .filter(|(_, record)| {
                 references.contains(&record.id)
-                    || (matches!(record.kind.as_str(), "proof_node" | "provenance")
-                        && references.contains(&record.scope_ref))
+                    || (matches!(
+                        record.kind.as_str(),
+                        "proof_node" | "provenance" | "flow_scope"
+                    ) && references.contains(&record.scope_ref))
             })
             .map(|(index, _)| index)
             .collect::<Vec<_>>();
@@ -163,13 +183,7 @@ impl QueryService {
         let mut rules = BTreeSet::new();
         for claim in &claims {
             if claim.rule_result.is_some() {
-                rules.insert(
-                    claim
-                        .scope_ref
-                        .strip_prefix("rule:")
-                        .unwrap_or(&claim.scope_ref)
-                        .to_owned(),
-                );
+                rules.insert(governing_rule_id(claim).to_owned());
             }
             if claim.semantic_claim.is_some() {
                 rules.insert("ARCH-SEMANTIC-001".into());
@@ -372,6 +386,9 @@ fn minimal_support(
 ) -> Value {
     if claims.len() == 1 {
         let claim = claims[0];
+        if claim.id.starts_with("rule:flow_claim:") {
+            return json!({"basis":"NOT_ESTABLISHED","refs":claim.proof_refs,"limitations":"The scoped flow result retains representative provenance and all reported defeaters. No independently minimal data-flow proof is asserted."});
+        }
         if claim.proof_refs.len() == 1
             && dependencies_available
             && claim.semantic_claim.is_none()
@@ -400,5 +417,16 @@ fn minimal_support(
         }
     } else {
         json!({"basis":"NOT_ESTABLISHED","refs":[],"limitations":"Multiple or unavailable upstream conclusions; no joint minimum is asserted."})
+    }
+}
+
+fn governing_rule_id(claim: &crate::declaration::DeclarationClaim) -> &str {
+    if claim.id.starts_with("rule:flow_claim:") {
+        "PROGRAM-INFOFLOW-001"
+    } else {
+        claim
+            .scope_ref
+            .strip_prefix("rule:")
+            .unwrap_or(&claim.scope_ref)
     }
 }

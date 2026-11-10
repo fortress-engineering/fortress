@@ -575,6 +575,42 @@ pub fn resolve_profiles(
 fn load_registry(
     standard: &StandardBundle,
 ) -> Result<BTreeMap<(String, String), ProfileDefinition>, ProfileResolutionError> {
+    let registry = installed_registry()?;
+    let standard_rules = standard
+        .rules()
+        .iter()
+        .map(super::standard::StandardRule::id)
+        .collect::<BTreeSet<_>>();
+    for profile in registry.values() {
+        for rule in &profile.active_rules {
+            if !standard_rules.contains(rule.as_str()) {
+                return Err(ProfileResolutionError::UnknownRule(rule.clone().into()));
+            }
+        }
+    }
+    Ok(registry)
+}
+
+/// Returns one exact installed profile reference for an unapplied authoring proposal.
+/// It neither selects that profile nor grants permission to change authority.
+///
+/// # Errors
+/// Rejects invalid installed definitions, digest mismatches or duplicate identities.
+pub fn installed_profile_reference(
+    id: &str,
+    version: &str,
+) -> Result<Option<ResolvedProfileReference>, ProfileResolutionError> {
+    Ok(installed_registry()?
+        .remove(&(id.into(), version.into()))
+        .map(|profile| ResolvedProfileReference {
+            id: profile.id,
+            version: profile.version,
+            digest: profile.digest,
+        }))
+}
+
+fn installed_registry()
+-> Result<BTreeMap<(String, String), ProfileDefinition>, ProfileResolutionError> {
     crate::wire::reject_duplicate_json_keys(INSTALLED_PROFILES)
         .map_err(ProfileResolutionError::Json)?;
     let document: ProfileDocument =
@@ -584,11 +620,6 @@ fn load_registry(
     {
         return Err(ProfileResolutionError::UnsupportedRegistry);
     }
-    let standard_rules = standard
-        .rules()
-        .iter()
-        .map(super::standard::StandardRule::id)
-        .collect::<BTreeSet<_>>();
     let mut registry = BTreeMap::new();
     for profile in document.profiles {
         if profile.computed_digest()? != profile.digest {
@@ -599,11 +630,6 @@ fn load_registry(
         reject_noncanonical_list(&profile.active_rules, &profile.id)?;
         reject_noncanonical_list(&profile.semantic_scopes, &profile.id)?;
         reject_noncanonical_list(&profile.conflicts, &profile.id)?;
-        for rule in &profile.active_rules {
-            if !standard_rules.contains(rule.as_str()) {
-                return Err(ProfileResolutionError::UnknownRule(rule.clone().into()));
-            }
-        }
         let key = (profile.id.clone(), profile.version.clone());
         if registry.insert(key, profile).is_some() {
             return Err(ProfileResolutionError::DuplicateDefinition);

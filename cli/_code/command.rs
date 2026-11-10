@@ -77,7 +77,7 @@ const BUILTIN_COMMANDS: &[CommandDescriptor] = &[
         name: "serve",
         aliases: &[],
         description: "Serve the versioned read-only inspection protocol over bounded JSON lines.",
-        usage: "fortress serve --stdio [path] [--selection key] [--state path] [--decision receipt]",
+        usage: "fortress serve --stdio [path] [--selection key] [--state path] [--decision receipt] [--flow-authoring]",
     },
     CommandDescriptor {
         id: "CMD-PROVIDER-EVIDENCE",
@@ -231,7 +231,14 @@ const BUILTIN_COMMANDS: &[CommandDescriptor] = &[
         name: "information-flow",
         aliases: &[],
         description: "Compile and render deterministic information-flow analysis.",
-        usage: "fortress information-flow [path] [--format json] [--output path]",
+        usage: "fortress information-flow [path] [--format human|json] [--output path]",
+    },
+    CommandDescriptor {
+        id: "CMD-FLOW-AUTHOR",
+        name: "flow-author",
+        aliases: &[],
+        description: "Preview a bounded operation source/sink policy using readable names.",
+        usage: "fortress flow-author [path] --source NAME --sink NAME --facet ID --level LEVEL --bound LEVEL [--parameter N] [--format human|json]",
     },
     CommandDescriptor {
         id: "CMD-ENVIRONMENTAL-ANALYSIS",

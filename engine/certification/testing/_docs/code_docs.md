@@ -28,7 +28,7 @@ Exercises the fixed control layout, exact required effect-summary authority and 
 
 ### [`declaration.rs`](../_code/declaration.rs)
 
-Independent truth-table, omission, exact evidence admission, metadata alteration, ALL/ANY, cycle, scope placement, raw residue, cache deletion and canonical replay controls. Small real repository fixtures verify neutral absent/invalid endpoints and supported negative/unknown application reporting without test execution.
+Independent truth-table, omission, exact evidence admission, metadata alteration, ALL/ANY, cycle, scope placement, raw residue, cache deletion and canonical replay controls. Small real repository fixtures verify neutral absent/invalid endpoints and supported negative/unknown application reporting without test execution. Selected FLOW cases preserve per-sink truth and uncertainty through native declarations, read-only explanations, portable schemas and an independent offline verifier.
 
 ### [`provider.rs`](../_code/provider.rs)
 

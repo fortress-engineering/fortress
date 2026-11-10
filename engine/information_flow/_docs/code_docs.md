@@ -27,3 +27,7 @@ Binding-identity edges use a request-local borrowed index of argument, expressio
 ### [`policy.rs`](../_code/policy.rs)
 
 Owns canonical project policy loading, finite facet ordering, validation, and policy digest identity.
+
+### [`operation.rs`](../_code/operation.rs)
+
+Defines strict bounded operation declarations, exact context/name/slot binding, finite-facet source and transform lowering, per-sink coverage and canonical defeaters, explicit profile scope, and read-only authoring previews. It reuses the parent propagation algebra and PSM facts. Declared transformation trust remains conditional and cannot self-authenticate.

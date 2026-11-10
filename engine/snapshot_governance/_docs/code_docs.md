@@ -24,6 +24,10 @@ Performs read-only repository discovery, compiles exact-source-bound reviewed au
 
 ### [`audit.rs`](../_code/audit.rs)
 
+**Declared flow composition**
+
+Audit supplies existing profile scopes and registered global policy to Information Flow. Certification receives owner-produced sink conclusions without evaluating them; EXPLAIN indexes their canonical defeaters and coverage. Query v3 adds flow_author over explicitly preloaded immutable PSM/policy context. The shared human renderer preserves every machine field. No query formatting path initiates semantic analysis or accepts a proposal.
+
 Orchestrates declaration loading, stabilized snapshot construction, shared CCG, Intended BFG, implementation observation, PSM, semantic-domain, state/effect, Module semantic-conformance, information-flow, environmental, Behavioral Realization, and Reference Resolution analysis, rule execution, and deterministic audit v5 rendering that leads with raw conformance, progressive enforcement where applicable, foundational authority state, and explicit unavailable-evaluation reasons while keeping normative findings, non-normative architecture diagnostics, and unsupported analysis distinct.
 
 ### [`contract.rs`](../_code/contract.rs)

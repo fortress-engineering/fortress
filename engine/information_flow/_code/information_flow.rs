@@ -6,6 +6,13 @@ pub(crate) const PROGRAM_INFOFLOW_RULE_SOURCE: &str =
 #[path = "policy.rs"]
 mod policy;
 
+#[path = "operation.rs"]
+mod operation;
+pub use operation::{
+    FLOW_CLAIM_SCHEMA, FLOW_PROFILE_ID, FlowAuthorParameters, FlowSelection,
+    preview_operation_policy, validate_operation_claim_projection,
+};
+
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
@@ -36,15 +43,21 @@ pub use policy::{
 
 /// Canonical Information Flow Analysis schema identity.
 pub const INFORMATION_FLOW_ANALYSIS_SCHEMA: &str =
-    "urn:fortress:schema:v1:information-flow-analysis";
+    "urn:fortress:schema:v2:information-flow-analysis";
 /// Canonical Information Flow Analysis schema version.
-pub const INFORMATION_FLOW_ANALYSIS_SCHEMA_VERSION: u16 = 1;
+pub const INFORMATION_FLOW_ANALYSIS_SCHEMA_VERSION: u16 = 2;
 /// Semantic version of the information-flow analyzer.
-pub const INFORMATION_FLOW_ANALYSIS_VERSION: &str = "1.0.0";
+pub const INFORMATION_FLOW_ANALYSIS_VERSION: &str = "2.0.0";
 /// Stable analyzer identity.
 pub const INFORMATION_FLOW_ANALYZER_ID: &str = "fortress-information-flow";
 /// Normative information-flow rule identity.
 pub const PROGRAM_INFOFLOW_RULE_ID: &str = "PROGRAM-INFOFLOW-001";
+
+/// Public operation-policy schema guidance, independent of source preparation.
+#[must_use]
+pub const fn information_flow_policy_schema() -> &'static str {
+    include_str!("../_data/flow_policy_schema_v2.json")
+}
 
 const UNSUPPORTED_SEMANTICS: &[&str] = &[
     "arbitrary_heap_alias_information_flow",
@@ -120,6 +133,8 @@ struct FlowEdge {
 
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 struct LabelFact {
+    supported_witness: bool,
+    production_witness: bool,
     facet: String,
     level: String,
     authority: FlowAuthority,
@@ -193,6 +208,7 @@ pub struct InformationFlowViolation {
     path: String,
     line: u32,
     column: u32,
+    advisory: bool,
 }
 
 /// One function's compositional information-flow summary.
@@ -272,9 +288,28 @@ pub struct InformationFlowAnalysisModel {
     trusted_transition_diagnostics: Vec<TrustedTransitionDiagnostic>,
     coverage: InformationFlowCoverageSummary,
     unsupported_semantics: Vec<String>,
+    operation_profile_selected: bool,
+    operation_claims: Vec<operation::OperationClaim>,
 }
 
 impl InformationFlowAnalysisModel {
+    /// Returns whether an explicitly selected operation claim remains unevaluable.
+    #[must_use]
+    pub fn has_unevaluable_operations(&self) -> bool {
+        self.operation_claims
+            .iter()
+            .any(operation::OperationClaim::is_unevaluable)
+    }
+
+    /// Returns whether an authored declaration governs any sink.
+    #[must_use]
+    pub fn has_applicable_sinks(&self) -> bool {
+        self.coverage.declared_sinks > 0
+            || self
+                .operation_claims
+                .iter()
+                .any(operation::OperationClaim::is_applicable)
+    }
     /// Returns supported contradictions.
     #[must_use]
     pub fn violations(&self) -> &[InformationFlowViolation] {
@@ -356,8 +391,63 @@ pub fn analyze_information_flow(
     contracts: &ResolvedFunctionContracts,
     standard_edition: &str,
 ) -> Result<InformationFlowEvaluation, InformationFlowAnalysisError> {
+    analyze_information_flow_with_profile(
+        psm,
+        semantic,
+        state_effect,
+        policy,
+        contracts,
+        standard_edition,
+        false,
+    )
+}
+
+/// Evaluates the bounded operation envelope only under explicit profile selection.
+/// Classification declarations and trusted transformations remain authored assumptions.
+///
+/// # Errors
+/// Rejects stale, ambiguous, unsupported or malformed bindings without selecting a fallback.
+#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
+pub fn analyze_information_flow_with_profile(
+    psm: &ProgramSemanticModel,
+    semantic: &SemanticAnalysisEvaluation,
+    state_effect: &StateEffectAnalysisEvaluation,
+    policy: &InformationFlowPolicy,
+    contracts: &ResolvedFunctionContracts,
+    standard_edition: &str,
+    operation_profile_selected: bool,
+) -> Result<InformationFlowEvaluation, InformationFlowAnalysisError> {
+    analyze_information_flow_with_selection(
+        psm,
+        semantic,
+        state_effect,
+        policy,
+        contracts,
+        standard_edition,
+        &FlowSelection {
+            project: operation_profile_selected,
+            modules: BTreeSet::new(),
+        },
+    )
+}
+
+/// Evaluates declared sinks within existing project or Module profile selections.
+///
+/// # Errors
+/// Rejects invalid authority, bindings, policy or bounded propagation inputs.
+#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
+pub fn analyze_information_flow_with_selection(
+    psm: &ProgramSemanticModel,
+    semantic: &SemanticAnalysisEvaluation,
+    state_effect: &StateEffectAnalysisEvaluation,
+    policy: &InformationFlowPolicy,
+    contracts: &ResolvedFunctionContracts,
+    standard_edition: &str,
+    selection: &FlowSelection,
+) -> Result<InformationFlowEvaluation, InformationFlowAnalysisError> {
+    let operation_profile_selected = selection.project || !selection.modules.is_empty();
     validate_contract_policy(policy, contracts)?;
-    let (mut edges, field_edge_count) = flow_edges(psm);
+    let (mut edges, field_edge_count) = flow_edges(psm, true);
     edges.sort();
     edges.dedup();
     let mut facts: BTreeMap<FlowNode, BTreeMap<String, BTreeSet<LabelFact>>> = BTreeMap::new();
@@ -375,6 +465,8 @@ pub fn analyze_information_flow(
                 &mut facts,
                 node,
                 LabelFact {
+                    supported_witness: true,
+                    production_witness: true,
                     facet: source.facet().into(),
                     level: source.level().into(),
                     authority: FlowAuthority::ContractSource,
@@ -389,6 +481,8 @@ pub fn analyze_information_flow(
                 &mut facts,
                 node,
                 LabelFact {
+                    supported_witness: true,
+                    production_witness: true,
                     facet: ensure.facet().into(),
                     level: ensure.level().into(),
                     authority: FlowAuthority::ContractSource,
@@ -405,6 +499,15 @@ pub fn analyze_information_flow(
             diagnostics.push(trusted_transition_diagnostic(contract, transform));
         }
     }
+    let mut operation_facts = facts.clone();
+    let mut operation_barriers = barriers.clone();
+    operation::seed(
+        psm,
+        policy,
+        &mut operation_facts,
+        &mut operation_barriers,
+        operation_profile_selected,
+    )?;
     diagnostics.sort();
     diagnostics.dedup();
 
@@ -421,6 +524,89 @@ pub fn analyze_information_flow(
 
     let (mut violations, sink_checks, unknown_sinks, declared_sinks) =
         check_sinks(psm, policy, contracts, &facts);
+    // Reuse the same finite algebra with the stricter declared-operation envelope.
+    // Legacy Function Contract conclusions keep their original propagation inputs.
+    let mut converged = false;
+    if operation_profile_selected && !policy.sinks.is_empty() {
+        let qualities = operation::qualities(psm);
+        operation::qualify_seeds(&mut operation_facts, &qualities);
+        let (mut operation_edges, _) = flow_edges(psm, false);
+        for edge in &mut operation_edges {
+            if edge.kind == "psm:returntoconsumer"
+                && psm
+                    .calls()
+                    .iter()
+                    .filter(|call| call.callee() == Some(edge.producer.symbol.as_str()))
+                    .map(|call| call.evidence().len())
+                    .sum::<usize>()
+                    > 1
+            {
+                edge.kind = "opaque_shared_call_context".into();
+            }
+        }
+        operation_edges.sort();
+        operation_edges.dedup();
+
+        let mut budget = operation::FactBudget::new(&operation_facts)?;
+        let operation_limit = operation_edges
+            .len()
+            .saturating_add(policy.transforms.len())
+            .saturating_add(contracts.len())
+            .clamp(16, 8192);
+        for _ in 0..operation_limit {
+            let mut changed = propagate_edges_using(
+                &operation_edges,
+                &operation_barriers,
+                &mut operation_facts,
+                Some(&qualities),
+                &mut |facts, node, fact| budget.insert(facts, node, fact),
+            )?;
+            if operation_profile_selected {
+                changed |= operation::transform(psm, policy, &mut operation_facts, &mut budget)?;
+            }
+            changed |= apply_trusted_transitions_using(
+                contracts,
+                &mut operation_facts,
+                &mut |facts, node, mut fact| {
+                    fact.chain.push(format!(
+                        "DECLARED_ASSUMPTION:legacy_function_contract:{}",
+                        contracts.digest()
+                    ));
+                    budget.insert(facts, node, fact)
+                },
+            )?;
+            if !changed {
+                converged = true;
+                break;
+            }
+        }
+    }
+    let (operation_claims, operation_violations) = operation::claims(
+        psm,
+        policy,
+        &operation_facts,
+        selection,
+        converged,
+        standard_edition,
+    )?;
+    let operation_sinks = operation_claims
+        .iter()
+        .filter(|claim| claim.is_applicable())
+        .count();
+    let declared_sinks = declared_sinks + operation_sinks;
+    let sink_checks = sink_checks + operation_sinks;
+    let unknown_sinks = unknown_sinks
+        + operation_claims
+            .iter()
+            .filter(|claim| claim.is_unevaluable())
+            .count();
+    let classified_sources = classified_sources
+        + if operation_profile_selected {
+            policy.sources.len()
+        } else {
+            0
+        };
+    violations.extend(operation_violations);
     violations.sort();
     violations.dedup();
     let findings = violations
@@ -503,6 +689,8 @@ pub fn analyze_information_flow(
             .iter()
             .map(|value| (*value).into())
             .collect(),
+        operation_profile_selected,
+        operation_claims,
     };
     Ok(InformationFlowEvaluation { model, findings })
 }
@@ -603,23 +791,31 @@ fn target_node(symbol: &str, target: &InformationFlowTarget) -> FlowNode {
 fn insert_fact(
     facts: &mut BTreeMap<FlowNode, BTreeMap<String, BTreeSet<LabelFact>>>,
     node: FlowNode,
-    fact: LabelFact,
+    mut fact: LabelFact,
 ) -> bool {
     let existing = facts
         .entry(node)
         .or_default()
         .entry(fact.facet.clone())
         .or_default();
-    if existing
+    if let Some(previous) = existing
         .iter()
-        .any(|candidate| candidate.level == fact.level && candidate.origin == fact.origin)
+        .find(|candidate| candidate.level == fact.level && candidate.origin == fact.origin)
+        .cloned()
     {
-        return false;
+        if (previous.production_witness || !fact.production_witness)
+            && (previous.supported_witness || !fact.supported_witness)
+        {
+            return false;
+        }
+        fact.supported_witness |= previous.supported_witness;
+        fact.production_witness |= previous.production_witness;
+        existing.remove(&previous);
     }
     existing.insert(fact)
 }
 
-fn flow_edges(psm: &ProgramSemanticModel) -> (Vec<FlowEdge>, usize) {
+fn flow_edges(psm: &ProgramSemanticModel, legacy_body_projection: bool) -> (Vec<FlowEdge>, usize) {
     let mut edges = psm
         .value_transfers()
         .iter()
@@ -639,8 +835,10 @@ fn flow_edges(psm: &ProgramSemanticModel) -> (Vec<FlowEdge>, usize) {
     }
     add_parameter_identity_edges(psm, &mut edges);
     add_binding_identity_edges(&nodes, &mut edges);
-    for body in psm.bodies() {
-        body_edges(body, body.statements(), &mut edges);
+    if legacy_body_projection {
+        for body in psm.bodies() {
+            body_edges(body, body.statements(), &mut edges);
+        }
     }
     let field_edges = add_field_edges(psm, &mut edges);
     (edges, field_edges)
@@ -942,6 +1140,26 @@ fn propagate_edges(
     barriers: &BTreeSet<(FlowNode, String)>,
     facts: &mut BTreeMap<FlowNode, BTreeMap<String, BTreeSet<LabelFact>>>,
 ) -> bool {
+    propagate_edges_using(edges, barriers, facts, None, &mut |facts, node, fact| {
+        Ok(insert_fact(facts, node, fact))
+    })
+    .expect("unbounded legacy inserter cannot fail")
+}
+
+fn propagate_edges_using<I>(
+    edges: &[FlowEdge],
+    barriers: &BTreeSet<(FlowNode, String)>,
+    facts: &mut BTreeMap<FlowNode, BTreeMap<String, BTreeSet<LabelFact>>>,
+    qualities: Option<&BTreeMap<String, (bool, bool, bool)>>,
+    insert: &mut I,
+) -> Result<bool, InformationFlowAnalysisError>
+where
+    I: FnMut(
+        &mut BTreeMap<FlowNode, BTreeMap<String, BTreeSet<LabelFact>>>,
+        FlowNode,
+        LabelFact,
+    ) -> Result<bool, InformationFlowAnalysisError>,
+{
     let snapshot = facts.clone();
     let mut changed = false;
     for edge in edges {
@@ -954,22 +1172,62 @@ fn propagate_edges(
             }
             for source in source_facts {
                 let mut propagated = source.clone();
+                if let Some(qualities) = qualities {
+                    let producer = qualities
+                        .get(&edge.producer.symbol)
+                        .copied()
+                        .unwrap_or_default();
+                    let consumer = qualities
+                        .get(&edge.consumer.symbol)
+                        .copied()
+                        .unwrap_or_default();
+                    let supported = producer.0
+                        && (consumer.0 || (consumer.2 && edge.consumer.role == "parameter"))
+                        && !edge.kind.starts_with("psm:field_");
+                    propagated.supported_witness &= supported;
+                    propagated.production_witness &= supported && producer.1 && consumer.1;
+                }
                 propagated.authority = FlowAuthority::ProvenPropagation;
+                let kind = if edge.kind == "opaque_shared_call_context"
+                    && source.authority == FlowAuthority::ContractSource
+                {
+                    "psm:returntoconsumer"
+                } else {
+                    &edge.kind
+                };
                 propagated.chain.push(format!(
                     "{}:{}:{}:{}",
-                    edge.kind, edge.path, edge.line, edge.column
+                    kind, edge.path, edge.line, edge.column
                 ));
-                changed |= insert_fact(facts, edge.consumer.clone(), propagated);
+                changed |= insert(facts, edge.consumer.clone(), propagated)?;
             }
         }
     }
-    changed
+    Ok(changed)
 }
 
 fn apply_trusted_transitions(
     contracts: &ResolvedFunctionContracts,
     facts: &mut BTreeMap<FlowNode, BTreeMap<String, BTreeSet<LabelFact>>>,
 ) -> bool {
+    apply_trusted_transitions_using(contracts, facts, &mut |facts, node, fact| {
+        Ok(insert_fact(facts, node, fact))
+    })
+    .expect("unbounded legacy inserter cannot fail")
+}
+
+fn apply_trusted_transitions_using<I>(
+    contracts: &ResolvedFunctionContracts,
+    facts: &mut BTreeMap<FlowNode, BTreeMap<String, BTreeSet<LabelFact>>>,
+    insert: &mut I,
+) -> Result<bool, InformationFlowAnalysisError>
+where
+    I: FnMut(
+        &mut BTreeMap<FlowNode, BTreeMap<String, BTreeSet<LabelFact>>>,
+        FlowNode,
+        LabelFact,
+    ) -> Result<bool, InformationFlowAnalysisError>,
+{
     let snapshot = facts.clone();
     let mut changed = false;
     for contract in contracts.contracts() {
@@ -1002,21 +1260,23 @@ fn apply_trusted_transitions(
                     transform.from(),
                     transform.to()
                 ));
-                changed |= insert_fact(
+                changed |= insert(
                     facts,
                     output.clone(),
                     LabelFact {
+                        supported_witness: false,
+                        production_witness: false,
                         facet: transform.facet().into(),
                         level: transform.to().into(),
                         authority,
                         origin: source.origin,
                         chain,
                     },
-                );
+                )?;
             }
         }
     }
-    changed
+    Ok(changed)
 }
 
 fn check_sinks(
@@ -1151,6 +1411,7 @@ fn information_flow_violation(
         path: provenance.path().into(),
         line: provenance.location().line(),
         column: provenance.location().column(),
+        advisory: false,
     }
 }
 
@@ -1331,7 +1592,7 @@ fn finding(
         )?)
         .with_symbol(&violation.symbol)?;
     let occurrence = FindingOccurrence::new(Vec::new(), location, &violation.message)?;
-    CanonicalFinding::failure(
+    let result = CanonicalFinding::failure(
         definition,
         occurrence,
         EvaluatorProvenance::new(
@@ -1339,12 +1600,19 @@ fn finding(
             INFORMATION_FLOW_ANALYSIS_VERSION,
         )?,
         edition,
-    )
+    )?;
+    if violation.advisory {
+        result.with_advisory_enforcement("FLOW_EXECUTION_PROVENANCE_UNCERTAIN_OR_TEST_ONLY")
+    } else {
+        Ok(result)
+    }
 }
 
 /// Explains why information-flow analysis could not be constructed.
 #[derive(Debug)]
 pub enum InformationFlowAnalysisError {
+    /// Exact operation or context binding failed.
+    OperationBinding(String),
     /// One Function Contract references an unknown project facet.
     UnknownFacet {
         /// Contracted symbol.
@@ -1381,6 +1649,10 @@ pub enum InformationFlowAnalysisError {
 impl Display for InformationFlowAnalysisError {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
         match self {
+            Self::OperationBinding(reason) => write!(
+                formatter,
+                "information-flow operation binding failed: {reason}"
+            ),
             Self::UnknownFacet { symbol, facet } => {
                 write!(
                     formatter,

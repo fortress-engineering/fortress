@@ -5757,6 +5757,43 @@ fn resolve_calls(
                 *ordinal,
             ));
         *ordinal += 1;
+        if outcome.state == CallResolutionState::External {
+            // Exact boundary movements, without assigning security labels or assuming
+            // anything about the external operation's internal implementation.
+            for (position, argument) in call.arguments.iter().enumerate() {
+                transfers.push(make_transfer(
+                    ValueTransferKind::ArgumentToParameter,
+                    ValueEndpoint::new(
+                        call.caller.clone(),
+                        "argument",
+                        argument.label.clone(),
+                        argument.type_id.clone(),
+                    ),
+                    ValueEndpoint::new(
+                        call.evidence.operation_site_id.clone(),
+                        "parameter",
+                        format!("parameter:{position}"),
+                        None,
+                    ),
+                    TransferResolutionState::SyntaxExact,
+                    argument.provenance.clone(),
+                ));
+            }
+            if let Some(consumer) = &call.consumer {
+                transfers.push(make_transfer(
+                    ValueTransferKind::ReturnToConsumer,
+                    ValueEndpoint::new(
+                        call.evidence.operation_site_id.clone(),
+                        "return",
+                        "return",
+                        None,
+                    ),
+                    consumer.clone(),
+                    TransferResolutionState::SyntaxExact,
+                    call.evidence.provenance.clone(),
+                ));
+            }
+        }
         let category = match &call.target {
             RawCallTarget::Method { .. } => "method_call",
             RawCallTarget::Macro => "macro_invocation",

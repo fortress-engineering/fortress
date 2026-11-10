@@ -1107,14 +1107,14 @@
       "schema_path": "engine/information_flow/_data/flow_analysis_schema_v1.json",
       "version": 1,
       "writer": {
-        "status": "ACTIVE",
-        "source": "engine/information_flow/_code/information_flow.rs"
+        "status": "RETIRED",
+        "source": null
       },
       "reader": {
         "status": "UNSUPPORTED",
         "source": null
       },
-      "migration": "NOT_APPLICABLE",
+      "migration": "REQUIRED_BEFORE_USE",
       "identity_algorithm": {
         "id": "no-document-level-identity-algorithm",
         "source": null
@@ -2706,6 +2706,138 @@
       "content_hash_algorithm": {
         "id": "no-model-level-content-hash-algorithm",
         "source": null
+      }
+    },
+    {
+      "schema_id": "urn:fortress:protocol:v3:query-request",
+      "schema_path": "engine/snapshot_governance/_data/query_request_schema_v3.json",
+      "version": 3,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/snapshot_governance/_code/query_protocol.rs"
+      },
+      "reader": {
+        "status": "ACTIVE",
+        "source": "engine/snapshot_governance/_code/query_protocol.rs"
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "exact-loaded-query-input-v1",
+        "source": "engine/snapshot_governance/_code/query_protocol.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "rfc8785-jcs-sha256",
+        "source": "engine/snapshot_governance/_code/query_protocol.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:protocol:v3:query-response",
+      "schema_path": "engine/snapshot_governance/_data/query_response_schema_v3.json",
+      "version": 3,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/snapshot_governance/_code/query_protocol.rs"
+      },
+      "reader": {
+        "status": "ACTIVE",
+        "source": "engine/snapshot_governance/_code/query_protocol.rs"
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "exact-loaded-query-input-v1",
+        "source": "engine/snapshot_governance/_code/query_protocol.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "rfc8785-jcs-sha256",
+        "source": "engine/snapshot_governance/_code/query_protocol.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v2:information-flow-analysis",
+      "schema_path": "engine/information_flow/_data/flow_analysis_schema_v2.json",
+      "version": 2,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/information_flow/_code/information_flow.rs"
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-owner-canonical-json-bytes",
+        "source": "engine/information_flow/_code/information_flow.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v2:information-flow-policy",
+      "schema_path": "engine/information_flow/_data/flow_policy_schema_v2.json",
+      "version": 2,
+      "writer": {
+        "status": "AUTHORED",
+        "source": null
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/information_flow/_code/policy.rs"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "literal-authored-identity-fields",
+        "source": "engine/information_flow/_code/policy.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-exact-policy-source-bytes",
+        "source": "engine/information_flow/_code/policy.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:test:v1:declared-flow-corpus",
+      "schema_path": "engine/information_flow/testing/_data/operation_cases_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "AUTHORED",
+        "source": null
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/information_flow/testing/_code/operation_flow.rs"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "literal-authored-case-identities",
+        "source": "engine/information_flow/testing/_code/operation_flow.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-exact-fixture-source-bytes",
+        "source": "engine/information_flow/testing/_code/operation_flow.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v1:information-flow-claim",
+      "schema_path": "engine/information_flow/_data/flow_claim_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/information_flow/_code/operation.rs"
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "testing/_code/verify_bundle.py"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "flow-claim-v1-sha256-rfc8785-policy-operation-slot-facet-bound",
+        "source": "engine/information_flow/_code/operation.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-rfc8785-public-json",
+        "source": "testing/_code/verify_bundle.py"
       }
     }
   ]

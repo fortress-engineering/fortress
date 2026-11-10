@@ -16,6 +16,12 @@ Status, doctor, query, explain, author and `serve --stdio` are thin adapters ove
 
 The native process boundary, built-in command registry, CLI package and command declarations, supported audit, finding listing/checking, baseline capture/create/review/prune proposals, exception list/review/create/retire proposals, declared/logical/analysis-only Module inspection, semantic-analysis formats, local certification formats, and explicit failure behavior for malformed or unsupported input. Prune refuses to retire entries from absence alone until comparable subject, authority, and coverage evidence is available.
 
+**Declared information-flow inspection**
+
+`fortress information-flow [path] --format human|json` reports the same versioned analysis with independent applicability, findings and uncertainty. `fortress flow-author --schema` prints operation-policy guidance. A readable preview can use `fortress flow-author . --source sample::credential --sink sample::log --facet FLOW-CONFIDENTIALITY --level SECRET --bound PUBLIC --format json`; existing finite facets are required. The canonical proposal includes the current context and policy preimage; it remains UNAPPROVED.
+
+`serve --stdio --flow-authoring` explicitly preloads an immutable PSM/policy authoring context for typed RPC v3 flow_author requests. Ordinary serve does not prepare one and returns UNAVAILABLE for this method. Preparation is read-only and does not execute project code. Later queries perform no hidden semantic analysis. A declared declassifier or endorsement is a visible assumption, never automatic proof of implementation or external approval.
+
 ### Excludes
 
 Core standard or rule semantics, cryptographic attestation, hosted-provider execution, persistent jobs, and commands without real implementation.

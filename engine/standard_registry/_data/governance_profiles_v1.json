@@ -65,6 +65,21 @@
       ]
     },
     {
+      "id": "GOV-FORTRESS-DECLARED-FLOW",
+      "version": "1.0.0",
+      "digest": "sha256:29e4b797a7b08e72b49c129b2ffc45e7fb625b6516ae877ac32418b66f51ba1b",
+      "kind": "GOVERNANCE",
+      "layout_id": null,
+      "active_rules": [
+        "PROGRAM-INFOFLOW-001"
+      ],
+      "semantic_scopes": [
+        "DECLARED_FLOW"
+      ],
+      "required_evidence": [],
+      "conflicts": []
+    },
+    {
       "id": "GOV-FORTRESS-NATIVE",
       "version": "1.0.0",
       "digest": "sha256:ac541bb1e1dd0f7f6ef6c8f1c1babcbe62c9a13cc507e74ad0058454baa7c475",

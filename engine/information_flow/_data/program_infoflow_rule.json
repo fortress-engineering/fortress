@@ -7,14 +7,14 @@
   "statement": "Every supported explicit information flow MUST satisfy project-defined Function Contract source, sink, endorsement, and declassification semantics, while unknown and unsupported flow MUST remain explicit non-evidence.",
   "rationale": "Nominal, value-domain, typestate, and effect correctness do not prevent insufficiently trusted or overly confidential information from reaching a consumer that forbids it.",
   "failure_prevented": "Supported information carrying a prohibited integrity or confidentiality classification reaching a declared consumer boundary, or a security classification changing without explicit trusted-transition authority.",
-  "applicability": "Canonical project Information-Flow Policy v1 facets and Function Contract v3/v4/v5 flow declarations interpreted over supported PSM v5 value and field transfers. Unknown external, alias, and implicit-control flow remains explicit and non-passing evidence rather than automatic findings.",
+  "applicability": "Legacy finite facets and distributed Function Contracts retain their meaning. Operation Policy v2 declarations apply only to sinks in an explicitly selected GOV-FORTRESS-DECLARED-FLOW project or Module scope, bound to an exact PSM context. Unknown aliases, dispatch, implicit flows, concurrency and incomplete evidence remain explicit.",
   "category": "security",
   "integrity_tier": 3,
-  "evaluation": "Fortress validates one finite ordered project facet algebra, propagates classifications through existing PSM value and supported field flow to deterministic fixed point, checks declared sink bounds, and records endorsement and declassification as explicit trusted assertions with provenance.",
+  "evaluation": "Reuse finite facet propagation over supported PSM movements. Check operation and Function Contract bounds independently, preserve raw findings and provenance, disclose every transformation assumption and claim-relative coverage limitation. An assumed sanitizer is not implementation proof.",
   "required_capabilities": [
     "function-contract-v3",
-    "information-flow-analysis-v1",
-    "program-semantic-model-v5",
+    "information-flow-analysis-v2",
+    "program-semantic-model-v6",
     "state-effect-analysis-v1"
   ],
   "logic": {
@@ -31,6 +31,7 @@
   "exception_policy": "Unknown and unsupported flow never becomes proof. No naming convention, sanitizer heuristic, or transitive call merely authorizes an integrity increase or confidentiality decrease.",
   "introduced": "1.0.0-draft.1",
   "history": [
-    "Introduced with project-defined ordered facets, Function Contract v3 flow declarations, conservative explicit propagation, and trusted-transition diagnostics."
+    "Introduced with project-defined ordered facets, Function Contract v3 flow declarations, conservative explicit propagation, and trusted-transition diagnostics.",
+    "Added explicitly selected, exact-context operation declarations and claim-relative evidence without changing legacy Function Contract conclusions."
   ]
 }

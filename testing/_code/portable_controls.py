@@ -241,6 +241,31 @@ def bundle_attacks(path, predicate):
     print(json.dumps({'checked':count,'status':'PASS','original_manifest_digest':baseline['manifest_digest'],'authenticity':'UNVERIFIED'}))
 
 
+class DeclaredFlowCountermodels(unittest.TestCase):
+    """Public record countermodels, not target application execution evidence."""
+    def fixture(self):
+        flow=dict(schema_version=1,id="flow_claim:v1:"+D,operation="rust_symbol:v2:"+D,operation_name="sample::sink",module_id="AF-SAMPLE",slot=dict(kind="parameter",position=0),facet="FLOW-CLASS",bound="PUBLIC",verdict="NO_SUPPORTED_VIOLATION",source_refs=["source"],source_names=["sample::source"],evidence_refs=["edge"],defeaters=[],assumptions=[],reason_codes=[],defeater_records=[],findings=[],coverage=dict(scope="EXPLICIT_VALUE_TRANSFERS",source_ref=D,context_ref=D,policy_ref=D,governed_source_files=1,parsed_source_files=1,dependency_symbols=["symbol"],blocking_eligibility="NOT_APPLICABLE",unsupported=["implicit_flows"]))
+        flow["$schema"]="urn:fortress:schema:v1:information-flow-claim"
+        claim=dict(id="rule:"+flow["id"],scope_ref="rule:"+flow["id"],kind="RULE_CHECK",truth="NO_SUPPORTED_VIOLATION",findings=[],defeater_refs=[],assumptions=[],reason_codes=[],rule_result=dict(detail=json.dumps(flow)))
+        return flow,claim
+
+    def test_public_scope_binding_and_unknowns_cannot_be_favorable(self):
+        flow,claim=self.fixture()
+        consumer.verify_declared_flow_claim(claim,dict(context_ref=D))
+        mutations=[lambda f:f.update(schema_version=99),lambda f:f["coverage"].update(context_ref="sha256:"+"b"*64),lambda f:f["coverage"].update(parsed_source_files=0),lambda f:f.update(assumptions=["declared-sanitizer"]),lambda f:f.update(source_refs=[]),lambda f:f.update(evidence_refs=[])]
+        for mutate in mutations:
+            bad=copy.deepcopy(flow);mutate(bad);row=copy.deepcopy(claim);row["assumptions"]=bad["assumptions"];row["rule_result"]["detail"]=json.dumps(bad)
+            with self.assertRaises(consumer.Invalid):consumer.verify_declared_flow_claim(row,dict(context_ref=D))
+
+    def test_duplicate_fields_and_untyped_versions_are_rejected(self):
+        flow,claim=self.fixture()
+        for version in [True,1.0,"1",2]:
+            bad=copy.deepcopy(flow);bad["schema_version"]=version;row=copy.deepcopy(claim);row["rule_result"]["detail"]=json.dumps(bad)
+            with self.assertRaises(consumer.Invalid):consumer.verify_declared_flow_claim(row,dict(context_ref=D))
+        claim["rule_result"]["detail"]='{"schema_version":1,"schema_version":1}'
+        with self.assertRaises(consumer.Invalid):consumer.verify_declared_flow_claim(claim,dict(context_ref=D))
+
+
 if __name__ == "__main__":
     if len(sys.argv) == 2 and sys.argv[1] == "--rust-vectors":
         vectors = consumer.parse(sys.stdin.buffer.read(consumer.MAX_FILE + 1))

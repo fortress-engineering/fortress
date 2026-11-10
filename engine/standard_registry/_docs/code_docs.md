@@ -28,7 +28,7 @@ Loads the exact draft manifest and complete rule-document bundle, validates cano
 
 ### [`profile.rs`](../_code/profile.rs)
 
-Loads content-addressed Standard-owned governance and assurance profiles, validates exact project references, composes rule/layout/scope/evidence requirements without array precedence, rejects conflicts, and resolves Module overrides only through stable CCG identities.
+Loads content-addressed Standard-owned governance and assurance profiles, validates exact project references, composes rule/layout/scope/evidence requirements without array precedence, rejects conflicts, and resolves Module overrides only through stable CCG identities. Readable authoring obtains an exact installed profile reference through this same registry without selecting it or granting authority.
 
 ### [`wire.rs`](../_code/wire.rs)
 

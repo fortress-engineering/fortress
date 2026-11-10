@@ -116,6 +116,35 @@ pub fn compose_application_with_providers(
     artifacts: Vec<DeclarationArtifact>,
     providers: Option<&mut crate::provider_inputs::ApplicationProviderEvidence>,
 ) -> Result<ApplicationAssessment, DeclarationError> {
+    compose_application_with_flow(
+        project,
+        binding,
+        profiles,
+        model,
+        rules,
+        governance,
+        artifacts,
+        providers,
+        &[],
+    )
+}
+
+/// Composes owner-evaluated declared-boundary rule claims without evaluating flow.
+///
+/// # Errors
+/// Rejects missing selected results, malformed claims or inconsistent bindings.
+#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
+pub fn compose_application_with_flow(
+    project: &str,
+    binding: DeclarationBinding,
+    profiles: &ResolvedProfiles,
+    model: &SemanticConformanceModel,
+    rules: &[ApplicationRuleInput],
+    governance: &FindingGovernanceEvaluation,
+    artifacts: Vec<DeclarationArtifact>,
+    providers: Option<&mut crate::provider_inputs::ApplicationProviderEvidence>,
+    flow_rules: &[ApplicationRuleInput],
+) -> Result<ApplicationAssessment, DeclarationError> {
     let policy = crate::profile::ApplicationAssessmentPolicy::installed()
         .map_err(|e| DeclarationError::Invalid(e.to_string()))?;
     let mut references = Vec::new();
@@ -172,10 +201,60 @@ pub fn compose_application_with_providers(
     let mut obligations = Vec::new();
     let mut evidence = Vec::new();
     let mut acceptance = EvidenceAcceptancePolicy::default();
-    for rule in profiles.active_rules() {
-        let execution = rules.iter().find(|r| &r.rule_id == rule).ok_or_else(|| {
-            DeclarationError::Invalid(format!("selected rule result missing: {rule}"))
-        })?;
+    let flow_project = profiles
+        .references()
+        .iter()
+        .any(|p| p.id == "GOV-FORTRESS-DECLARED-FLOW");
+    let flow_modules = profiles
+        .module_overrides()
+        .iter()
+        .filter(|(_, s)| {
+            s.references()
+                .iter()
+                .any(|p| p.id == "GOV-FORTRESS-DECLARED-FLOW")
+        })
+        .map(|(id, _)| id.as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+    if !flow_project && flow_modules.is_empty() && !flow_rules.is_empty() {
+        return crate::declaration::invalid("flow claims supplied without selected profile");
+    }
+    for rule in flow_rules {
+        let flow: serde_json::Value = crate::wire::parse_public_json(&rule.detail)
+            .map_err(|e| DeclarationError::Invalid(e.to_string()))?;
+        crate::information_flow::validate_operation_claim_projection(&flow, &binding.context_ref)
+            .map_err(|e| DeclarationError::Invalid(e.to_string()))?;
+        if flow["id"] != rule.rule_id {
+            return crate::declaration::invalid(
+                "flow projection identity differs from its rule projection",
+            );
+        }
+        let module = flow["module_id"]
+            .as_str()
+            .ok_or_else(|| DeclarationError::Invalid("flow claim owner absent".into()))?;
+        let dimension = if flow_project {
+            "DECLARED_FLOW".into()
+        } else if flow_modules.contains(module) {
+            format!("MODULE:{module}:DECLARED_FLOW")
+        } else {
+            return crate::declaration::invalid("flow claim outside selected Module scope");
+        };
+        dimensions
+            .entry(dimension)
+            .or_default()
+            .push(format!("rule:{}", rule.rule_id));
+    }
+    for rule in profiles
+        .active_rules()
+        .iter()
+        .chain(flow_rules.iter().map(|r| &r.rule_id))
+    {
+        let execution = rules
+            .iter()
+            .chain(flow_rules)
+            .find(|r| &r.rule_id == rule)
+            .ok_or_else(|| {
+                DeclarationError::Invalid(format!("selected rule result missing: {rule}"))
+            })?;
         let id = format!("rule:{rule}");
         let truth = match execution.outcome {
             ApplicationRuleOutcome::Passed => DeclarationTruth::NoSupportedViolation,
@@ -187,7 +266,7 @@ pub fn compose_application_with_providers(
         let mut findings = execution.findings.clone();
         findings.sort();
         findings.dedup();
-        let claim = DeclarationClaim {
+        let mut claim = DeclarationClaim {
             rule_result: Some(crate::declaration::RuleClaimDetail {
                 outcome: execution.outcome,
                 applicable: execution.applicable,
@@ -205,6 +284,29 @@ pub fn compose_application_with_providers(
             assumptions: vec![],
             semantic_claim: None,
         };
+        if rule.starts_with("flow_claim:") {
+            let flow: serde_json::Value = crate::wire::parse_public_json(&execution.detail)
+                .map_err(|e| DeclarationError::Invalid(e.to_string()))?;
+            let strings = |key: &str| {
+                serde_json::from_value::<Vec<String>>(flow[key].clone())
+                    .map_err(|e| DeclarationError::Invalid(e.to_string()))
+            };
+            let expected = match execution.outcome {
+                ApplicationRuleOutcome::Passed => "NO_SUPPORTED_VIOLATION",
+                ApplicationRuleOutcome::Failed => "SUPPORTED_VIOLATION",
+                ApplicationRuleOutcome::Unsupported => "NOT_EVALUABLE",
+                ApplicationRuleOutcome::NotApplicable => "NOT_APPLICABLE",
+            };
+            if flow["verdict"] != expected || flow["findings"] != serde_json::json!(claim.findings)
+            {
+                return crate::declaration::invalid(
+                    "flow projection truth or findings differ from raw result",
+                );
+            }
+            claim.defeater_refs = strings("defeaters")?;
+            claim.reason_codes = strings("reason_codes")?;
+            claim.assumptions = strings("assumptions")?;
+        }
         add_static_leaves(&claim, &binding, &mut evidence, &mut acceptance)?;
         // Not applicable checks are explicitly reported but impose no fictional
         // application subject. They never satisfy a semantic evaluability obligation.

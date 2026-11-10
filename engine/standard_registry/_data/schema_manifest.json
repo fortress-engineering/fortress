@@ -125,6 +125,12 @@
     "engine/finding_model/_data/exception_review_schema_v1.json",
     "engine/snapshot_governance/_data/governance_proposal_schema_v1.json",
     "engine/snapshot_governance/_data/snapshot_audit_schema_v7.json",
-    "engine/snapshot_governance/_data/finding_lifecycle_schema_v1.json"
+    "engine/snapshot_governance/_data/finding_lifecycle_schema_v1.json",
+    "engine/information_flow/_data/flow_analysis_schema_v2.json",
+    "engine/information_flow/_data/flow_policy_schema_v2.json",
+    "engine/snapshot_governance/_data/query_request_schema_v3.json",
+    "engine/snapshot_governance/_data/query_response_schema_v3.json",
+    "engine/information_flow/testing/_data/operation_cases_schema_v1.json",
+    "engine/information_flow/_data/flow_claim_schema_v1.json"
   ]
 }

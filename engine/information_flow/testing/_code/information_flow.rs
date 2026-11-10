@@ -1,5 +1,8 @@
 //! Parent-local conformance for Information Flow.
 
+#[path = "operation_flow.rs"]
+mod operation_flow;
+
 use fortress_core::implementation_observation::{
     ImplementationObservationInput, ModuleTerritory, SnapshotBoundFile,
 };
@@ -47,7 +50,12 @@ fn policy() -> InformationFlowPolicy {
 }
 
 fn psm(source: &str) -> ProgramSemanticModel {
-    let input = ProgramSemanticInput::new(
+    compile_program_semantic_model(&program_input(source))
+        .expect("information-flow fixture PSM compiles")
+}
+
+fn program_input(source: &str) -> ProgramSemanticInput {
+    ProgramSemanticInput::new(
         "PF-FLOW-FIXTURE",
         ImplementationObservationInput::new(
             "sha256:fixture",
@@ -65,8 +73,7 @@ fn psm(source: &str) -> ProgramSemanticModel {
         ),
         Vec::<String>::new(),
         Vec::<(String, String)>::new(),
-    );
-    compile_program_semantic_model(&input).expect("information-flow fixture PSM compiles")
+    )
 }
 
 fn symbol_id(model: &ProgramSemanticModel, suffix: &str) -> String {

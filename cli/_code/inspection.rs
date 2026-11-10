@@ -51,6 +51,23 @@ pub(super) fn run<O: Write, E: Write>(
             }
         }
     };
+    let service = if parsed.flow_authoring {
+        match fortress_core::audit::prepare_repository_flow_authoring(&parsed.root)
+            .map_err(|e| e.to_string())
+            .and_then(|(psm, policy, source_ref)| {
+                service
+                    .with_flow_context(&source_ref, psm, policy)
+                    .map_err(|e| e.to_string())
+            }) {
+            Ok(service) => service,
+            Err(e) => {
+                writeln!(error, "explicit flow authoring preparation failed: {e}")?;
+                return Ok(crate::EXIT_USAGE);
+            }
+        }
+    } else {
+        service
+    };
     let load_duration = started.elapsed();
     if name == "serve" {
         crate::rpc::serve(
@@ -93,6 +110,7 @@ pub(super) fn run<O: Write, E: Write>(
 }
 
 struct Parsed {
+    flow_authoring: bool,
     root: PathBuf,
     options: QueryLoadOptions,
     parameters: Value,
@@ -109,6 +127,7 @@ fn parse(name: &str, arguments: &[String]) -> Result<Parsed, String> {
     let mut json = false;
     let mut timing = false;
     let mut stdio = false;
+    let mut flow_authoring = false;
     let mut page = json!({});
     let mut index = 0;
     let mut seen_options = std::collections::BTreeSet::new();
@@ -124,6 +143,7 @@ fn parse(name: &str, arguments: &[String]) -> Result<Parsed, String> {
             return Err(format!("duplicate inspection option {arg}"));
         }
         match arg.as_str() {
+            "--flow-authoring" if name == "serve" => flow_authoring = true,
             "--retirement" if matches!(name, "serve" | "explain") => {
                 index += 1;
                 push_retirement_path(&mut options, arguments.get(index))?;
@@ -188,6 +208,7 @@ fn parse(name: &str, arguments: &[String]) -> Result<Parsed, String> {
         .canonicalize()
         .map_err(|failure| failure.to_string())?;
     Ok(Parsed {
+        flow_authoring,
         root,
         options,
         parameters,

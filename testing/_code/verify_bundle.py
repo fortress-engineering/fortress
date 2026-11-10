@@ -451,10 +451,78 @@ def assess_obligation(obligation, declaration, expected, evidence, policy, prepa
     return result("NOT_SATISFIED", "SUPPORTED_VIOLATION") if predicate in ["RULE_CHECK", "CONFORMANCE"] and contradiction else result("SATISFIED")
 
 
+def verify_declared_flow_claim(claim, binding):
+    """Validate public scope/proof reporting, without a flow or Rust evaluator."""
+    require(isinstance(claim.get("id"), str), "INVALID_RECORD", "claim identity absent")
+    if not claim["id"].startswith("rule:flow_claim:"):
+        return
+    require(isinstance(claim.get("rule_result"), dict), "INVALID_RECORD", "flow rule projection absent")
+    detail = claim["rule_result"].get("detail")
+    require(isinstance(detail, str), "INVALID_RECORD", "flow claim projection absent")
+    flow = parse(detail.encode("utf-8"))
+    require(edition(flow, [1]) and flow.get("$schema") == "urn:fortress:schema:v1:information-flow-claim",
+            "UNSUPPORTED_VERSION", "unsupported public flow claim")
+    closed(flow, "$schema schema_version id operation operation_name module_id slot facet bound verdict source_refs source_names evidence_refs defeaters assumptions reason_codes defeater_records findings coverage")
+    require(isinstance(flow["id"], str) and re.fullmatch(r"flow_claim:v1:sha256:[0-9a-f]{64}", flow["id"]) is not None
+            and claim["id"] == "rule:" + flow["id"] and claim["scope_ref"] == claim["id"],
+            "BINDING_MISMATCH", "flow claim identity differs")
+    for name in ["operation", "operation_name", "module_id", "facet", "bound"]:
+        require(isinstance(flow[name], str) and bool(flow[name]), "INVALID_RECORD", "empty flow descriptor")
+    slot = flow["slot"]
+    require(isinstance(slot, dict), "INVALID_RECORD", "flow slot absent")
+    kind = slot.get("kind")
+    if kind == "return":
+        closed(slot, "kind")
+    elif kind == "parameter":
+        closed(slot, "kind position")
+        require(type(slot["position"]) is int and 0 <= slot["position"] <= 65535, "INVALID_RECORD", "invalid flow parameter")
+    elif kind == "field":
+        closed(slot, "kind owner field")
+        require(all(isinstance(slot[k], str) and slot[k] for k in ["owner", "field"]), "INVALID_RECORD", "invalid flow field")
+    else:
+        raise Invalid("UNSUPPORTED_VERSION", "unsupported flow slot")
+    for name in ["source_refs", "source_names", "evidence_refs", "defeaters", "assumptions", "reason_codes", "findings"]:
+        values = flow[name]
+        require(isinstance(values, list) and all(isinstance(v, str) and v for v in values), "INVALID_RECORD", "invalid flow references")
+        ordered(values)
+    coverage = flow["coverage"]
+    closed(coverage, "scope source_ref context_ref policy_ref governed_source_files parsed_source_files dependency_symbols blocking_eligibility unsupported")
+    require(coverage["scope"] == "EXPLICIT_VALUE_TRANSFERS" and coverage["context_ref"] == binding["context_ref"],
+            "BINDING_MISMATCH", "flow context or scope differs")
+    require(all(isinstance(coverage[k], str) and DIGEST.fullmatch(coverage[k]) for k in ["source_ref", "context_ref", "policy_ref"]),
+            "BINDING_MISMATCH", "invalid flow input identity")
+    require(coverage["blocking_eligibility"] in ["BLOCK_SUPPORTED", "ADVISORY_ONLY", "NOT_EVALUABLE", "NOT_APPLICABLE"],
+            "UNSUPPORTED_VERSION", "unsupported flow blocking eligibility")
+    governed, parsed = coverage["governed_source_files"], coverage["parsed_source_files"]
+    require(type(governed) is int and type(parsed) is int and 0 <= parsed <= governed <= SAFE_INTEGER,
+            "INVALID_RECORD", "invalid flow coverage counts")
+    for name in ["dependency_symbols", "unsupported"]:
+        require(isinstance(coverage[name], list) and all(isinstance(v, str) and v for v in coverage[name]), "INVALID_RECORD", "invalid flow coverage vocabulary")
+        require(len(set(coverage[name])) == len(coverage[name]), "DUPLICATE_ID", "duplicate flow coverage identity")
+    records = flow["defeater_records"]
+    require(isinstance(records, list) and all(isinstance(v, dict) and isinstance(v.get("id"), str) for v in records),
+            "INVALID_RECORD", "flow defeater records absent")
+    require(sorted(v["id"] for v in records) == flow["defeaters"], "MISSING_REFERENCE", "flow defeater closure differs")
+    require(claim["truth"] == flow["verdict"] and claim["findings"] == flow["findings"]
+            and claim["defeater_refs"] == flow["defeaters"] and claim["assumptions"] == flow["assumptions"]
+            and claim["reason_codes"] == flow["reason_codes"], "INCONSISTENT_RESULT", "flow projection reporting differs")
+    truth = flow["verdict"]
+    require(truth in ["SUPPORTED_VIOLATION", "NO_SUPPORTED_VIOLATION", "NOT_EVALUABLE", "NOT_APPLICABLE"],
+            "UNSUPPORTED_VERSION", "unsupported flow truth")
+    if truth == "NO_SUPPORTED_VIOLATION":
+        require(governed > 0 and parsed == governed and not any(flow[k] for k in ["assumptions", "defeaters", "reason_codes", "findings"])
+                and flow["source_refs"] and flow["evidence_refs"], "INCONSISTENT_RESULT", "unknown flow presented as favorable")
+    if truth == "SUPPORTED_VIOLATION":
+        require(flow["findings"] and flow["source_refs"] and flow["evidence_refs"], "MISSING_REFERENCE", "flow witness reporting incomplete")
+    if truth == "NOT_EVALUABLE":
+        require(flow["defeaters"] and flow["reason_codes"], "MISSING_REFERENCE", "flow uncertainty reporting absent")
+
+
 def replay_check(declaration, assessment, replay):
     require(edition(replay, [1]), "UNSUPPORTED_VERSION", "unsupported replay edition")
     expected, evidence, policy = replay["expected"], replay["evidence"], replay["acceptance"]
     for claim in declaration["claims"]:
+        verify_declared_flow_claim(claim, declaration["binding"])
         require(claim["truth"] in ["SUPPORTED_VIOLATION", "NO_SUPPORTED_VIOLATION", "NOT_EVALUABLE", "NOT_APPLICABLE", "AUTHORIZATION"]
                 and claim["kind"] in ["RULE_CHECK", "SEMANTIC_POLICY"], "UNSUPPORTED_VERSION", "unsupported claim semantics")
     ordered(expected["obligations"], lambda o: o["id"])

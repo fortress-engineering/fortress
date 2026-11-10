@@ -117,3 +117,11 @@ Current audit projection adds unresolved baseline identities and exception revie
 ### [`finding_lifecycle_schema_v1.json`](../_data/finding_lifecycle_schema_v1.json)
 
 Versioned read-only aggregate binds current raw/progressive projections, exact original/current states, explicit review time and comparable retirement records without changing their owners or meanings.
+
+### [`query_request_schema_v3.json`](../_data/query_request_schema_v3.json)
+
+Adds typed flow_author parameters for readable, unapproved operation-policy proposals. Versions 1 and 2 retain their meanings and reject the newer method.
+
+### [`query_response_schema_v3.json`](../_data/query_response_schema_v3.json)
+
+Preserves the existing bounded response family under protocol v3, including explicit proposal acceptance and context bindings. Source preparation remains an explicit adapter step.

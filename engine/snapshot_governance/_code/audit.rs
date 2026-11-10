@@ -75,7 +75,8 @@ use crate::implementation_observation::{
 };
 use crate::information_flow::{
     InformationFlowAnalysisError, InformationFlowEvaluation, InformationFlowPolicyError,
-    InformationFlowPolicySource, analyze_information_flow, load_information_flow_policy,
+    InformationFlowPolicySource, analyze_information_flow_with_selection,
+    load_information_flow_policy,
 };
 use crate::observation::{
     ObservationError, ObservationLimits, ObservationPolicy, ObservedFile, RepositoryObservation,
@@ -1856,7 +1857,7 @@ fn compile_semantic_conformance_from_analysis(
     .map_err(AuditError::SemanticConformance)
 }
 
-/// Compiles the repository's canonical Information Flow Analysis v1 result.
+/// Compiles the repository's canonical Information Flow Analysis v2 result.
 ///
 /// # Errors
 ///
@@ -1871,6 +1872,33 @@ pub fn compile_repository_information_flow_analysis(
         .graph()
         .ok_or_else(|| AuditError::ContractState("prepared audit did not contain a CCG".into()))?;
     compile_analysis_models(&prepared, ccg).map(|models| models.information_flow)
+}
+
+/// Explicitly prepares immutable PSM and registered root policy for authoring.
+/// This command does not execute project code, accept authority or modify files.
+///
+/// # Errors
+/// Rejects invalid source, authority or policy inputs.
+pub fn prepare_repository_flow_authoring(
+    root: impl AsRef<Path>,
+) -> Result<
+    (
+        ProgramSemanticModel,
+        crate::information_flow::InformationFlowPolicy,
+        String,
+    ),
+    AuditError,
+> {
+    let prepared = prepare_analysis(root.as_ref())?;
+    let observation_input = analysis_implementation_input(&prepared);
+    let observed = observe_rust_implementation(&observation_input)
+        .map_err(AuditError::ImplementationObservation)?;
+    let psm = compile_analysis_psm(&prepared, observation_input, &observed)?;
+    let policy =
+        load_information_flow_policy(information_flow_policy_sources(&prepared.observed_files)?)
+            .map_err(AuditError::InformationFlowPolicy)?;
+    let source_ref = certification_source_digest(&prepared.observed_files);
+    Ok((psm, policy, source_ref))
 }
 
 /// Compiles the repository's canonical Environmental Analysis v1 result.
@@ -2632,7 +2660,8 @@ fn application_from_stack_with_inputs(
         })
         .collect::<Vec<_>>();
     let mut provider_inputs = application_provider_inputs(stack, &binding, inputs)?;
-    let mut application = crate::application::compose_application_with_providers(
+    let flow_rules = flow_application_rules(stack)?;
+    let mut application = crate::application::compose_application_with_flow(
         stack.snapshot.project_id(),
         binding,
         &stack.profiles,
@@ -2641,6 +2670,7 @@ fn application_from_stack_with_inputs(
         &stack.finding_governance,
         artifacts,
         Some(&mut provider_inputs),
+        &flow_rules,
     )
     .map_err(|e| AuditError::ContractState(e.to_string().into()))?;
     if let Some(replay) = &mut application.portable_replay {
@@ -2917,7 +2947,7 @@ fn certification_artifacts(
         ),
         (
             "information_flow",
-            "urn:fortress:schema:v1:information-flow-analysis",
+            crate::information_flow::INFORMATION_FLOW_ANALYSIS_SCHEMA,
             "_info/information_flow_analysis.json",
             stack
                 .models
@@ -3688,13 +3718,14 @@ fn compile_analysis_models_prepared_from_observed(
     let policy =
         load_information_flow_policy(information_flow_policy_sources(&prepared.observed_files)?)
             .map_err(AuditError::InformationFlowPolicy)?;
-    let information_flow = analyze_information_flow(
+    let information_flow = analyze_information_flow_with_selection(
         &psm,
         &semantic,
         &state_effect,
         &policy,
         &contracts,
         prepared.standard.bundle.edition(),
+        &selected_flow_scope(&prepared.profiles),
     )
     .map_err(AuditError::InformationFlowAnalysis)?;
     measurements.record("information_flow");
@@ -3773,9 +3804,17 @@ fn environment_contract_sources(
 fn information_flow_policy_sources(
     files: &BTreeMap<String, Vec<u8>>,
 ) -> Result<Vec<InformationFlowPolicySource>, AuditError> {
+    let layout = crate::control_layout::ControlLayout::standard();
+    let policy_path = layout
+        .role_path(crate::control_layout::ControlRole::GlobalInformationFlowPolicy)
+        .ok_or_else(|| {
+            AuditError::ContractState(
+                "global information-flow policy role is not registered".into(),
+            )
+        })?;
     files
         .iter()
-        .filter(|(path, _)| path.as_str() == "__fortress/governance/information_flow_policy.json")
+        .filter(|(path, _)| path.as_str() == policy_path)
         .map(|(path, bytes)| {
             let source =
                 std::str::from_utf8(bytes).map_err(|_| AuditError::NonUtf8(path.clone().into()))?;
@@ -6498,4 +6537,62 @@ fn application_authority_preimage(
             .map(|b| format!("sha256:{:x}", Sha256::digest(b))),
         &stack.finding_governance_authority_digest,
     ]))
+}
+
+fn flow_application_rules(
+    stack: &CertificationSemanticStack,
+) -> Result<Vec<crate::application::ApplicationRuleInput>, AuditError> {
+    let flow = serde_json::to_value(stack.models.information_flow.model())
+        .map_err(|e| AuditError::ContractState(e.to_string().into()))?;
+    let result = flow["operation_claims"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter(|claim| {
+            flow["operation_profile_selected"] == true && claim["verdict"] != "NOT_APPLICABLE"
+        })
+        .map(|claim| crate::application::ApplicationRuleInput {
+            rule_id: claim["id"].as_str().unwrap_or_default().into(),
+            outcome: match claim["verdict"].as_str() {
+                Some("SUPPORTED_VIOLATION") => crate::application::ApplicationRuleOutcome::Failed,
+                Some("NO_SUPPORTED_VIOLATION") => {
+                    crate::application::ApplicationRuleOutcome::Passed
+                }
+                Some("NOT_APPLICABLE") => crate::application::ApplicationRuleOutcome::NotApplicable,
+                _ => crate::application::ApplicationRuleOutcome::Unsupported,
+            },
+            applicable: claim["verdict"] != "NOT_APPLICABLE",
+            findings: claim["findings"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .filter_map(serde_json::Value::as_str)
+                .map(str::to_owned)
+                .collect(),
+            detail: claim.to_string(),
+            applicability_reason: Some("EXACT_CONTEXT_EXPLICIT_DATA_FLOW_ONLY".into()),
+        })
+        .collect::<Vec<_>>();
+
+    Ok(result)
+}
+
+fn selected_flow_scope(profiles: &ResolvedProfiles) -> crate::information_flow::FlowSelection {
+    crate::information_flow::FlowSelection {
+        project: profiles
+            .references()
+            .iter()
+            .any(|reference| reference.id == crate::information_flow::FLOW_PROFILE_ID),
+        modules: profiles
+            .module_overrides()
+            .iter()
+            .filter(|(_, selection)| {
+                selection
+                    .references()
+                    .iter()
+                    .any(|p| p.id == crate::information_flow::FLOW_PROFILE_ID)
+            })
+            .map(|(id, _)| id.clone())
+            .collect(),
+    }
 }

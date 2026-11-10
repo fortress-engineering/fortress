@@ -883,19 +883,24 @@ fn information_flow_execution(
 ) -> (RuleExecution, Vec<CanonicalFinding>) {
     let findings = result.findings().to_vec();
     let coverage = result.model().coverage();
+    let applicable = result.model().has_applicable_sinks();
     (
         RuleExecution {
             rule_id: rule_id.into(),
-            state: if findings.is_empty() {
-                RuleExecutionState::Passed
-            } else {
+            state: if !applicable {
+                RuleExecutionState::NotApplicable
+            } else if !findings.is_empty() {
                 RuleExecutionState::Failed
+            } else if result.model().has_unevaluable_operations() {
+                RuleExecutionState::Unsupported
+            } else {
+                RuleExecutionState::Passed
             },
-            applicable: true,
-            applicability_reason: None,
+            applicable,
+            applicability_reason: (!applicable).then(|| "NO_SELECTED_DECLARED_FLOW_SINKS".into()),
             findings: findings.len(),
             detail: format!(
-                "Information Flow Analysis v1 evaluated project-defined ordered facets and produced {} supported information-flow contradiction(s); unknown and unsupported flow remains explicit.",
+                "Information Flow Analysis v2 evaluated project-defined ordered facets and produced {} supported information-flow contradiction(s); operation coverage and transformation assumptions remain explicit. This is not comprehensive information-flow security.",
                 coverage.violations(),
             ),
         },

@@ -8,6 +8,24 @@ use serde_json::{Value, json};
 fn service() -> QueryService {
     QueryService::new(QueryInput::empty(format!("sha256:{}", "a".repeat(64)))).unwrap()
 }
+
+/// `T-TF-CLI-0001-R21-005`
+/// Fortress requirement: TF-CLI-0001-R21
+#[test]
+fn flow_authoring_protocol_requires_an_explicit_immutable_context() {
+    let mut frame = request(
+        "flow",
+        "flow_author",
+        json!({"source":"source","sink":"sink","facet":"FLOW-TEST","level":"SECRET","bound":"PUBLIC"}),
+    );
+    frame["protocol_version"] = json!(3);
+    let result = run_frames(format!("{frame}\n").into_bytes());
+    assert_eq!(result[0]["protocol_version"], 3);
+    assert_eq!(result[0]["error"]["code"], "UNAVAILABLE");
+    frame["protocol_version"] = json!(2);
+    let result = run_frames(format!("{frame}\n").into_bytes());
+    assert_eq!(result[0]["error"]["code"], "UNKNOWN_METHOD");
+}
 fn request(id: &str, method: &str, parameters: Value) -> Value {
     let mut value = json!({"protocol_version":1,"request_id":id,"method":method,"state_ref":null,"context_ref":null});
     value["parameters"] = parameters;

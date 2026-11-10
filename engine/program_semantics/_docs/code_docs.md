@@ -60,6 +60,10 @@ The crate-private digest memo belongs to one completed immutable owner model. Th
 
 ### [`rust.rs`](../_code/rust.rs)
 
+**External boundary transfers**
+
+Semantic version 6.2.0 adds argument and direct return-consumer movements at resolved external operation sites. Nodes bind to existing operation-site identities, so distinct calls remain distinct. These observations assign no security labels, sanitization claims, completeness or external implementation proof. Unsupported receivers and nested/dynamic semantics remain bounded by the existing frontend.
+
 Translates snapshot-bound Cargo manifests and structurally parsed Rust declarations, nominal types, impls, explicit signatures, supported expression types, calls, and transfers into the language-neutral PSM. It resolves unique inherent and concrete trait implementation methods from proven receiver types, applies the bounded local type lattice and installed signature catalog, classifies known external ownership, and preserves ambiguity, dynamic dispatch, unpolled async bodies, expression and statement macros, custom dereference, destructor uncertainty, and missing type information as explicit residual states. Macro bodies are not expanded; their invocation sites remain opaque calls.
 
 Unresolved feature/custom cfg conditions, conditional attributes and disabled empty alternatives retain unknown execution provenance; they cannot give a positive witness production blocking authority. A syntactic test requirement remains test-only, including conjunctions that require test, while an explicit `not(test)` remains production-capable. Target selection records caller facts but does not claim that cfg selection has been applied to the AST.

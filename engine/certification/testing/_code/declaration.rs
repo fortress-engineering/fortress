@@ -267,9 +267,31 @@ fn compact_captured_application_bundle_is_independently_checked_without_reexecut
             "pub fn write() { let _ = std::fs::write(\"output\",b\"x\"); }\n",
         ),
         ("clean", "pub fn write() {}\n"),
+        (
+            "flow-violation",
+            "pub fn credential()->u8{7} pub fn log(value:u8){} pub fn send(){let value=credential();log(value);}\n",
+        ),
+        (
+            "flow-permitted",
+            "pub fn credential()->u8{7} pub fn log(value:u8){} pub fn send(){let value=credential();log(value);}\n",
+        ),
+        (
+            "flow-module",
+            "pub fn credential()->u8{7} pub fn log(value:u8){} pub fn send(){let value=credential();log(value);}\n",
+        ),
+        (
+            "flow-unknown",
+            "pub fn credential()->u8{7} pub fn log(value:u8){} pub fn send(callback:fn(u8)->u8){let value=callback(credential());log(value);}\n",
+        ),
     ] {
         source.write("sample/_code/lib.rs", code);
+        if name.starts_with("flow-") {
+            configure_flow_checkout(&source, name == "flow-permitted", name == "flow-module");
+        }
         let view = fortress_core::audit::compile_repository_state_view(&source.0).unwrap();
+        if name.starts_with("flow-") {
+            assert_flow_explanation(&view, name);
+        }
         let expected =
             serde_json::to_value(view.application.as_ref().unwrap().assessment.decision).unwrap();
         let original = view.to_canonical_bytes().unwrap();
@@ -283,16 +305,7 @@ fn compact_captured_application_bundle_is_independently_checked_without_reexecut
                 .unwrap()
                 .members
         );
-        assert_advertised_schema(&bundle.manifest);
-        for artifact in &bundle.manifest.artifacts {
-            if artifact.media_type == "application/json" {
-                let value: serde_json::Value =
-                    serde_json::from_slice(&bundle.members[&artifact.member]).unwrap();
-                if value.get("$schema").is_some() {
-                    assert_advertised_schema(&value);
-                }
-            }
-        }
+        assert_bundle_schemas(&bundle);
         let destination = output.0.join(name);
         write_portable_bundle(&bundle, &destination).unwrap();
         assert_eq!(
@@ -335,6 +348,128 @@ fn compact_captured_application_bundle_is_independently_checked_without_reexecut
             write_portable_bundle(&bundle, &retain).unwrap();
         }
     }
+}
+
+fn assert_bundle_schemas(bundle: &fortress_core::bundle::PortableBundle) {
+    assert_advertised_schema(&bundle.manifest);
+    for artifact in &bundle.manifest.artifacts {
+        if artifact.media_type == "application/json" {
+            let value: serde_json::Value =
+                serde_json::from_slice(&bundle.members[&artifact.member]).unwrap();
+            if value.get("$schema").is_some() {
+                assert_advertised_schema(&value);
+            }
+        }
+    }
+}
+
+fn configure_flow_checkout(source: &Checkout, permitted: bool, module: bool) {
+    use fortress_core::information_flow::{FlowAuthorParameters, preview_operation_policy};
+    let reference = fortress_core::profile::installed_profile_reference(
+        fortress_core::information_flow::FLOW_PROFILE_ID,
+        "1.0.0",
+    )
+    .unwrap();
+    let native =
+        fortress_core::profile::installed_profile_reference("GOV-FORTRESS-NATIVE", "1.0.0")
+            .unwrap();
+    let (selected, overrides) = if module {
+        (
+            serde_json::json!([native]),
+            serde_json::json!([{ "module":"AF-SAMPLE-0001", "selected_profiles":[reference], "assurance_profiles":[] }]),
+        )
+    } else {
+        (
+            serde_json::json!([reference, native]),
+            serde_json::json!([]),
+        )
+    };
+    source.write("__fortress/.fsconfig", &serde_json::json!({
+        "$schema":"urn:fortress:schema:v4:project-configuration","schema_version":4,
+        "observation_exclusions":[".git"],"logical_modules":[],
+        "governance":{"default_layout":"native-logical-v1","selected_profiles":selected,"module_overrides":overrides},
+        "assurance_profiles":[]
+    }).to_string());
+    let path = "__fortress/governance/information_flow_policy.json";
+    let bytes=fortress_core::information_flow::canonicalize_information_flow_policy_json("fixture", &serde_json::json!({
+        "$schema":"urn:fortress:schema:v1:information-flow-policy","schema_version":1,
+        "facets":[{"id":"FLOW-CONFIDENTIALITY","direction":"higher_is_more_restricted","levels":["PUBLIC","SECRET"]}]
+    }).to_string()).unwrap();
+    source.write(path, &bytes);
+    let (psm, policy, _) =
+        fortress_core::audit::prepare_repository_flow_authoring(&source.0).unwrap();
+    let preview = preview_operation_policy(
+        &psm,
+        &policy,
+        &FlowAuthorParameters {
+            source: "sample::credential".into(),
+            sink: "sample::log".into(),
+            facet: "FLOW-CONFIDENTIALITY".into(),
+            level: if permitted { "PUBLIC" } else { "SECRET" }.into(),
+            bound: "PUBLIC".into(),
+            parameter: 0,
+        },
+    )
+    .unwrap();
+    source.write(path, preview["canonical_policy_preview"].as_str().unwrap());
+}
+
+fn assert_flow_explanation(view: &fortress_core::audit::StateView, name: &str) {
+    use fortress_core::query::{QueryInput, QueryRequest, QueryService};
+    let application = view.application.as_ref().unwrap();
+    let claim = application
+        .declaration
+        .claims
+        .iter()
+        .find(|c| c.id.starts_with("rule:flow_claim:"))
+        .unwrap();
+    let expected = match name {
+        "flow-violation" | "flow-module" => DeclarationTruth::SupportedViolation,
+        "flow-permitted" => DeclarationTruth::NoSupportedViolation,
+        _ => DeclarationTruth::NotEvaluable,
+    };
+    assert_eq!(claim.truth, expected);
+    let dimensions = &application
+        .declaration
+        .required_dimension_manifest
+        .dimensions;
+    assert_eq!(
+        dimensions.iter().any(|d| d.id == "DECLARED_FLOW"),
+        name != "flow-module"
+    );
+    if name == "flow-module" {
+        assert!(
+            dimensions
+                .iter()
+                .any(|d| d.id == "MODULE:AF-SAMPLE-0001:DECLARED_FLOW")
+        );
+    }
+    let mut input = QueryInput::empty(view.source_ref.clone());
+    input.state_view = Some(view.clone());
+    let service = QueryService::new(input).unwrap();
+    let request = QueryRequest::from_json_str(
+        &serde_json::json!({
+            "protocol_version":3,"request_id":"flow-explanation","method":"explain",
+            "state_ref":null,"context_ref":null,"parameters":{"selector":claim.id}
+        })
+        .to_string(),
+    )
+    .unwrap();
+    let result =
+        serde_json::to_value(service.execute(&request, &std::sync::atomic::AtomicBool::new(false)))
+            .unwrap();
+    assert!(result["error"].is_null(), "{result}");
+    assert_eq!(
+        result["result"]["data"]["description"]["minimal_sufficient_evidence"]["basis"],
+        "NOT_ESTABLISHED"
+    );
+    assert!(
+        result["result"]["data"]["evidence"]["records"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|r| r["kind"] == "flow_scope")
+    );
 }
 
 /// `T-AF-CERTIFICATION-0001-R08-003`

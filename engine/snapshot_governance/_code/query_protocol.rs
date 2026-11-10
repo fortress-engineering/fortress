@@ -61,6 +61,12 @@ impl QueryRequest {
     /// # Errors
     /// Rejects unknown methods, extra parameters and malformed typed values.
     pub fn operation_for_adapter(&self) -> Result<QueryOperation, QueryError> {
+        if self.protocol_version < 3 && self.method == "flow_author" {
+            return Err(QueryError::new(
+                "UNKNOWN_METHOD",
+                "flow_author requires protocol version 3",
+            ));
+        }
         if self.protocol_version == 1 && self.method == "transition" {
             return Err(QueryError::new(
                 "UNKNOWN_METHOD",
@@ -94,6 +100,7 @@ pub const METHODS: &[&str] = &[
     "cancel",
     "doctor",
     "explain",
+    "flow_author",
     "progress",
     "protocol",
     "query",
@@ -105,6 +112,8 @@ pub const METHODS: &[&str] = &[
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(tag = "method", content = "parameters", rename_all = "snake_case")]
 pub enum QueryOperation {
+    /// Unapplied operation-policy preview from an admitted immutable PSM, v3.
+    FlowAuthor(crate::information_flow::FlowAuthorParameters),
     /// Describe the protocol and operational limits.
     Protocol(EmptyParameters),
     /// Pure comparison of two explicitly loaded immutable states, protocol v2.
@@ -390,9 +399,9 @@ impl QueryResponse {
     /// Selects a supported envelope edition while preserving the underlying result.
     #[must_use]
     pub fn for_protocol_version(mut self, version: u16) -> Self {
-        if version == 2 {
-            self.protocol_version = 2;
-            self.schema = "urn:fortress:protocol:v2:query-response".into();
+        if [2, 3].contains(&version) {
+            self.protocol_version = version;
+            self.schema = format!("urn:fortress:protocol:v{version}:query-response");
         }
         self
     }
@@ -416,38 +425,8 @@ impl QueryResponse {
     /// Renders every machine field as readable labelled prose, without recomputation.
     #[must_use]
     pub fn to_human(&self) -> String {
-        fn render(value: &Value, indent: usize, output: &mut String) {
-            use std::fmt::Write as _;
-            match value {
-                Value::Object(fields) => {
-                    for (key, value) in fields {
-                        let _ =
-                            writeln!(output, "{}{}:", " ".repeat(indent), key.replace('_', " "));
-                        render(value, indent + 2, output);
-                    }
-                }
-                Value::Array(values) if !values.is_empty() => {
-                    for value in values {
-                        render(value, indent + 2, output);
-                    }
-                }
-                _ => {
-                    let _ = writeln!(
-                        output,
-                        "{}{}",
-                        " ".repeat(indent),
-                        value
-                            .as_str()
-                            .map_or_else(|| value.to_string(), str::to_owned)
-                    );
-                }
-            }
-        }
-        let mut output = String::new();
-        if let Ok(value) = serde_json::to_value(self) {
-            render(&value, 0, &mut output);
-        }
-        output
+        serde_json::to_value(self)
+            .map_or_else(|_| String::new(), |value| render_inspection_value(&value))
     }
 }
 
@@ -461,4 +440,38 @@ pub enum SourceFreshness {
     Stale,
     /// No source-bound result is selected.
     Missing,
+}
+
+/// Renders every field of an immutable machine value without evaluation or omission.
+#[must_use]
+pub fn render_inspection_value(value: &Value) -> String {
+    fn render(value: &Value, indent: usize, output: &mut String) {
+        use std::fmt::Write as _;
+        match value {
+            Value::Object(fields) => {
+                for (key, value) in fields {
+                    let _ = writeln!(output, "{}{}:", " ".repeat(indent), key.replace('_', " "));
+                    render(value, indent + 2, output);
+                }
+            }
+            Value::Array(values) if !values.is_empty() => {
+                for value in values {
+                    render(value, indent + 2, output);
+                }
+            }
+            _ => {
+                let _ = writeln!(
+                    output,
+                    "{}{}",
+                    " ".repeat(indent),
+                    value
+                        .as_str()
+                        .map_or_else(|| value.to_string(), str::to_owned)
+                );
+            }
+        }
+    }
+    let mut output = String::new();
+    render(value, 0, &mut output);
+    output
 }

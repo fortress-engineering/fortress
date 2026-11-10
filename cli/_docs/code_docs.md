@@ -257,3 +257,7 @@ Read-only protected-authority composition and explanation; repository assertions
 ### [`finding_command.rs`](../_code/finding_command.rs)
 
 Thin read-only baseline capture/create/review/prune and exception list/review/create/retire adapters with strict selectors, explicit assessment time, matching human/JSON projections and structured errors; no proposal is automatically applied.
+
+### [`flow_command.rs`](../_code/flow_command.rs)
+
+Implements flow-author as explicit immutable source preparation followed by the shared RPC v3 flow_author facade. Schema-only guidance performs no analysis. JSON and human output render the same response, and proposals never write policy. Information-flow analysis also supports the shared field-preserving human renderer.

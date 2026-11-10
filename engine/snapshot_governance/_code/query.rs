@@ -101,6 +101,10 @@ impl QueryInput {
 
 /// One admitted immutable input, with canonical ID and readable selector indexes.
 pub struct QueryService {
+    flow_context: Option<(
+        crate::program_semantics::ProgramSemanticModel,
+        crate::information_flow::InformationFlowPolicy,
+    )>,
     input: QueryInput,
     state_ref: String,
     names: BTreeMap<String, BTreeSet<String>>,
@@ -113,6 +117,37 @@ pub struct QueryService {
 }
 
 impl QueryService {
+    /// Admits a precomputed immutable authoring context. No analysis is initiated.
+    ///
+    /// # Errors
+    /// Rejects oversized contexts or incompatible serialization.
+    pub fn with_flow_context(
+        mut self,
+        source_ref: &str,
+        psm: crate::program_semantics::ProgramSemanticModel,
+        policy: crate::information_flow::InformationFlowPolicy,
+    ) -> Result<Self, QueryError> {
+        if source_ref != self.input.source_ref {
+            return Err(QueryError::new(
+                "STATE_MISMATCH",
+                "flow authoring and query observations identify different source states",
+            ));
+        }
+        if psm.symbols().len() > 100_000 || psm.calls().len() > 100_000 {
+            return Err(QueryError::new(
+                "RESOURCE_LIMIT",
+                "flow context exceeds query admission",
+            ));
+        }
+        self.state_ref = digest(&json!([
+            self.state_ref,
+            psm.digest()
+                .map_err(|e| QueryError::new("INVALID_INPUT", e.to_string()))?,
+            policy.digest()
+        ]))?;
+        self.flow_context = Some((psm, policy));
+        Ok(self)
+    }
     /// Validates the owner-produced endpoint and indexes it once without evaluation.
     ///
     /// # Errors
@@ -179,6 +214,7 @@ impl QueryService {
             ));
         }
         let mut service = Self {
+            flow_context: None,
             input,
             state_ref: String::new(),
             names: BTreeMap::new(),
@@ -244,8 +280,16 @@ impl QueryService {
     #[must_use]
     pub fn execute(&self, request: &QueryRequest, cancelled: &AtomicBool) -> QueryResponse {
         let result = self.dispatch(request, cancelled);
-        self.response(Some(request.request_id.clone()), result)
-            .for_protocol_version(request.protocol_version)
+        let mut response = self
+            .response(Some(request.request_id.clone()), result)
+            .for_protocol_version(request.protocol_version);
+        if request.protocol_version == 3 && request.method == "flow_author" {
+            response.context_ref = self
+                .flow_context
+                .as_ref()
+                .map(|(psm, _)| psm.program_context().digest());
+        }
+        response
     }
 
     /// Constructs a bounded structured boundary failure without a successful payload.
@@ -297,13 +341,25 @@ impl QueryService {
         request: &QueryRequest,
         cancelled: &AtomicBool,
     ) -> Result<QueryPayload, QueryError> {
-        if ![QUERY_PROTOCOL_VERSION, 2].contains(&request.protocol_version) {
+        if ![QUERY_PROTOCOL_VERSION, 2, 3].contains(&request.protocol_version) {
             return Err(QueryError::new(
                 "UNSUPPORTED_VERSION",
-                "only protocol_version 1 and 2 are supported",
+                "only protocol_version 1, 2 and 3 are supported",
             ));
         }
         check_cancelled(cancelled)?;
+        let flow_context = if request.method == "flow_author" {
+            self.flow_context
+                .as_ref()
+                .map(|(psm, _)| psm.program_context().digest())
+        } else {
+            None
+        };
+        let context_ref = if request.method == "flow_author" {
+            flow_context.as_deref()
+        } else {
+            self.context_ref()
+        };
         if request
             .state_ref
             .as_deref()
@@ -311,7 +367,7 @@ impl QueryService {
             || request
                 .context_ref
                 .as_deref()
-                .is_some_and(|context| Some(context) != self.context_ref())
+                .is_some_and(|context| Some(context) != context_ref)
         {
             return Err(QueryError::new(
                 "STATE_MISMATCH",
@@ -319,13 +375,20 @@ impl QueryService {
             ));
         }
         let result = match request.operation()? {
+            QueryOperation::FlowAuthor(parameters) => {
+                let (psm,policy) = self.flow_context.as_ref().ok_or_else(||QueryError::new("UNAVAILABLE","No immutable flow authoring context was explicitly admitted. Query formatting never starts analysis."))?;
+                QueryPayload::Authoring(
+                    crate::information_flow::preview_operation_policy(psm, policy, &parameters)
+                        .map_err(|e| QueryError::new("INVALID_PROPOSAL", e.to_string()))?,
+                )
+            }
             QueryOperation::Transition(parameters) => {
                 QueryPayload::Transition(self.compare_transition(&parameters, cancelled)?)
             }
             QueryOperation::Status(_) => QueryPayload::Status(self.status()),
             QueryOperation::Doctor(_) => QueryPayload::Doctor(self.input.diagnostics.clone()),
             QueryOperation::Protocol(_) => QueryPayload::Protocol(
-                json!({"methods":METHODS.iter().filter(|m| request.protocol_version == 2 || **m != "transition").collect::<Vec<_>>(),"protocol_versions":[1,2],"comparison_states":self.comparison_state_inventory(),"max_request_bytes":MAX_REQUEST_BYTES,"max_response_bytes":MAX_RESPONSE_BYTES,"max_page_size":MAX_PAGE_SIZE,"framing":"one strict UTF-8 JSON request per LF-delimited line","mutation":false}),
+                json!({"methods":METHODS.iter().filter(|m| (request.protocol_version >= 2 || **m != "transition") && (request.protocol_version >= 3 || **m != "flow_author")).collect::<Vec<_>>(),"protocol_versions":[1,2,3],"flow_authoring_context":self.flow_context.as_ref().map(|(psm,_)|json!({"context_ref":psm.program_context().digest(),"psm_source_ref":psm.source_identity()})),"comparison_states":self.comparison_state_inventory(),"max_request_bytes":MAX_REQUEST_BYTES,"max_response_bytes":MAX_RESPONSE_BYTES,"max_page_size":MAX_PAGE_SIZE,"framing":"one strict UTF-8 JSON request per LF-delimited line","mutation":false}),
             ),
             QueryOperation::Query(parameters) => {
                 QueryPayload::Page(self.select(&parameters, cancelled)?)

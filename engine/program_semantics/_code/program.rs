@@ -42,11 +42,11 @@ pub const PROGRAM_SEMANTIC_MODEL_SCHEMA: &str = "urn:fortress:schema:v6:program-
 /// Canonical PSM document schema version.
 pub const PROGRAM_SEMANTIC_MODEL_SCHEMA_VERSION: u16 = 6;
 /// Semantic version of the language-neutral PSM compiler.
-pub const PROGRAM_SEMANTIC_MODEL_VERSION: &str = "6.1.0";
+pub const PROGRAM_SEMANTIC_MODEL_VERSION: &str = "6.2.0";
 /// Stable Rust analyzer identity.
 pub const RUST_PROGRAM_ANALYZER_ID: &str = "fortress-rust-program-semantics";
 /// Semantic version of supported Rust program analysis.
-pub const RUST_PROGRAM_ANALYZER_VERSION: &str = "6.1.0";
+pub const RUST_PROGRAM_ANALYZER_VERSION: &str = "6.2.0";
 
 const UNSUPPORTED_SEMANTICS: &[&str] = &[
     "arbitrary_dynamic_dispatch_resolution",

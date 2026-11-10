@@ -8,9 +8,9 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 /// Canonical project policy schema identity.
-pub const INFORMATION_FLOW_POLICY_SCHEMA: &str = "urn:fortress:schema:v1:information-flow-policy";
+pub const INFORMATION_FLOW_POLICY_SCHEMA: &str = "urn:fortress:schema:v2:information-flow-policy";
 /// Canonical project policy schema version.
-pub const INFORMATION_FLOW_POLICY_SCHEMA_VERSION: u16 = 1;
+pub const INFORMATION_FLOW_POLICY_SCHEMA_VERSION: u16 = 2;
 
 /// Direction that gives an ordered facet its conservative security meaning.
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd, Deserialize, Serialize)]
@@ -79,6 +79,12 @@ struct PolicyDocument {
     schema: String,
     schema_version: u16,
     facets: Vec<InformationFacet>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    sources: Option<Vec<super::operation::OperationSource>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    sinks: Option<Vec<super::operation::OperationSink>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    transforms: Option<Vec<super::operation::OperationTransform>>,
 }
 
 /// One snapshot-bound project policy source.
@@ -107,6 +113,9 @@ pub struct InformationFlowPolicy {
     by_id: BTreeMap<String, usize>,
     digest: String,
     source_path: Option<String>,
+    pub(super) sources: Vec<super::operation::OperationSource>,
+    pub(super) sinks: Vec<super::operation::OperationSink>,
+    pub(super) transforms: Vec<super::operation::OperationTransform>,
 }
 
 impl InformationFlowPolicy {
@@ -152,8 +161,17 @@ pub fn load_information_flow_policy(
                 Sha256::digest(b"absent-information-flow-policy")
             ),
             source_path: None,
+            sources: Vec::new(),
+            sinks: Vec::new(),
+            transforms: Vec::new(),
         }),
         [source] => {
+            if source.source.len() > 1_048_576 {
+                return Err(InformationFlowPolicyError::InvalidJson {
+                    path: source.path.clone(),
+                    detail: "policy exceeds 1 MiB resource limit".into(),
+                });
+            }
             if source.path != "__fortress/governance/information_flow_policy.json" {
                 return Err(InformationFlowPolicyError::NonRootPolicy(
                     source.path.clone(),
@@ -166,9 +184,7 @@ pub fn load_information_flow_policy(
                         detail: error.to_string(),
                     }
                 })?;
-            if document.schema != INFORMATION_FLOW_POLICY_SCHEMA
-                || document.schema_version != INFORMATION_FLOW_POLICY_SCHEMA_VERSION
-            {
+            if !supported_document(&document) {
                 return Err(InformationFlowPolicyError::UnsupportedSchema(
                     source.path.clone(),
                 ));
@@ -179,6 +195,25 @@ pub fn load_information_flow_policy(
                 ));
             }
             validate_facets(&document.facets, &source.path)?;
+            if document.schema_version == 2
+                && (document.facets.len() > 64
+                    || document.facets.iter().any(|v| v.levels.len() > 256))
+            {
+                return Err(InformationFlowPolicyError::InvalidJson {
+                    path: source.path.clone(),
+                    detail: "finite facet resource limit exceeded".into(),
+                });
+            }
+            super::operation::validate_declarations(
+                &document.facets,
+                document.sources.as_deref().unwrap_or_default(),
+                document.sinks.as_deref().unwrap_or_default(),
+                document.transforms.as_deref().unwrap_or_default(),
+            )
+            .map_err(|detail| InformationFlowPolicyError::InvalidJson {
+                path: source.path.clone(),
+                detail,
+            })?;
             let by_id = document
                 .facets
                 .iter()
@@ -190,6 +225,9 @@ pub fn load_information_flow_policy(
                 by_id,
                 digest: format!("sha256:{:x}", Sha256::digest(source.source.as_bytes())),
                 source_path: Some(source.path.clone()),
+                sources: document.sources.unwrap_or_default(),
+                sinks: document.sinks.unwrap_or_default(),
+                transforms: document.transforms.unwrap_or_default(),
             })
         }
         _ => Err(InformationFlowPolicyError::DuplicatePolicy(
@@ -213,7 +251,28 @@ pub fn canonicalize_information_flow_policy_json(
             detail: error.to_string(),
         }
     })?;
+    if !supported_document(&document) {
+        return Err(InformationFlowPolicyError::UnsupportedSchema(path.into()));
+    }
     canonical_document(&document)
+}
+
+fn supported_document(document: &PolicyDocument) -> bool {
+    match document.schema_version {
+        1 => {
+            document.schema == "urn:fortress:schema:v1:information-flow-policy"
+                && document.sources.is_none()
+                && document.sinks.is_none()
+                && document.transforms.is_none()
+        }
+        2 => {
+            document.schema == INFORMATION_FLOW_POLICY_SCHEMA
+                && document.sources.is_some()
+                && document.sinks.is_some()
+                && document.transforms.is_some()
+        }
+        _ => false,
+    }
 }
 
 fn validate_facets(

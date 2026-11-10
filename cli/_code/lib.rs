@@ -37,6 +37,7 @@ mod application_inputs;
 mod authority_command;
 pub mod command;
 mod finding_command;
+mod flow_command;
 mod inspection;
 mod portable_command;
 mod presentation;
@@ -114,6 +115,7 @@ where
     };
 
     match command.id() {
+        "CMD-FLOW-AUTHOR" => flow_command::run(&arguments[1..], output, error),
         "CMD-PORTABLE-BUNDLE" | "CMD-PORTABLE-SARIF" => {
             portable_command::run(command.name(), &arguments[1..], output, error)
         }
@@ -1268,7 +1270,7 @@ fn run_information_flow<O: Write, E: Write>(
     output: &mut O,
     error: &mut E,
 ) -> io::Result<u8> {
-    let (root, destination) = match parse_information_flow_arguments(arguments) {
+    let (root, destination, human) = match parse_information_flow_arguments(arguments) {
         Ok(parsed) => parsed,
         Err(message) => {
             writeln!(error, "{message}")?;
@@ -1282,10 +1284,15 @@ fn run_information_flow<O: Write, E: Write>(
             return Ok(EXIT_USAGE);
         }
     };
-    let document = evaluation
+    let mut document = evaluation
         .model()
         .to_canonical_json()
         .map_err(io::Error::other)?;
+    if human {
+        document = fortress_core::query::render_inspection_value(
+            &serde_json::from_str::<serde_json::Value>(&document).map_err(io::Error::other)?,
+        );
+    }
     if let Some(destination) = destination {
         fs::write(destination, document)?;
     } else {
@@ -1300,43 +1307,55 @@ fn run_information_flow<O: Write, E: Write>(
 
 fn parse_information_flow_arguments(
     arguments: &[String],
-) -> Result<(PathBuf, Option<PathBuf>), &'static str> {
+) -> Result<(PathBuf, Option<PathBuf>, bool), &'static str> {
     let mut root = None;
+    let mut human = false;
     let mut destination = None;
     let mut index = 0;
     while index < arguments.len() {
         let argument = &arguments[index];
         if argument == "--format" {
             index += 1;
-            if arguments.get(index).map(String::as_str) != Some("json") {
+            human = arguments.get(index).map(String::as_str) == Some("human");
+            if !matches!(
+                arguments.get(index).map(String::as_str),
+                Some("json" | "human")
+            ) {
                 return Err(
-                    "usage: fortress information-flow [path] [--format json] [--output path]",
+                    "usage: fortress information-flow [path] [--format human|json] [--output path]",
                 );
             }
         } else if let Some(value) = argument.strip_prefix("--format=") {
-            if value != "json" {
-                return Err("information-flow format must be `json`");
+            human = value == "human";
+            if !matches!(value, "json" | "human") {
+                return Err("information-flow format must be `json` or `human`");
             }
         } else if argument == "--output" {
             index += 1;
             let Some(value) = arguments.get(index) else {
                 return Err(
-                    "usage: fortress information-flow [path] [--format json] [--output path]",
+                    "usage: fortress information-flow [path] [--format human|json] [--output path]",
                 );
             };
             if destination.replace(PathBuf::from(value)).is_some() {
                 return Err(
-                    "usage: fortress information-flow [path] [--format json] [--output path]",
+                    "usage: fortress information-flow [path] [--format human|json] [--output path]",
                 );
             }
         } else if argument.starts_with('-') || root.is_some() {
-            return Err("usage: fortress information-flow [path] [--format json] [--output path]");
+            return Err(
+                "usage: fortress information-flow [path] [--format human|json] [--output path]",
+            );
         } else {
             root = Some(PathBuf::from(argument));
         }
         index += 1;
     }
-    Ok((root.unwrap_or_else(|| PathBuf::from(".")), destination))
+    Ok((
+        root.unwrap_or_else(|| PathBuf::from(".")),
+        destination,
+        human,
+    ))
 }
 
 fn run_state_effect<O: Write, E: Write>(

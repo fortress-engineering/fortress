@@ -1332,9 +1332,13 @@ fn audit_success_renders_human_snapshot_report() {
     assert!(stdout.contains("Fortress Snapshot Audit"));
     assert!(stdout.contains("Raw conformance: PASS"), "{stdout}");
     assert!(stdout.contains("Project authority: DECLARED"), "{stdout}");
-    assert!(stdout.contains("PASS: 16"), "{stdout}");
+    assert!(stdout.contains("PASS: 15"), "{stdout}");
     assert!(stdout.contains("UNSUPPORTED: 0"), "{stdout}");
-    assert!(stdout.contains("NOT_APPLICABLE: 7"), "{stdout}");
+    assert!(stdout.contains("NOT_APPLICABLE: 8"), "{stdout}");
+    assert!(
+        stdout.contains("[PROGRAM-INFOFLOW-001] NOT_APPLICABLE:"),
+        "{stdout}"
+    );
     assert!(
         stdout.contains("[ARCH-SEMANTIC-001] NOT_APPLICABLE:"),
         "{stdout}"
@@ -1759,10 +1763,21 @@ fn information_flow_json_is_schema_versioned_and_repeatable() {
         serde_json::from_slice(&first.stdout).expect("information-flow output is JSON");
     assert_eq!(
         value["$schema"],
-        "urn:fortress:schema:v1:information-flow-analysis"
+        "urn:fortress:schema:v2:information-flow-analysis"
     );
-    assert_eq!(value["schema_version"], 1);
+    assert_eq!(value["schema_version"], 2);
     assert_eq!(value["coverage"]["sink_violations"], 0);
+    let human = run_owned(&[
+        "information-flow".into(),
+        fixture.argument(),
+        "--format".into(),
+        "human".into(),
+    ]);
+    assert!(human.status.success());
+    assert_eq!(
+        String::from_utf8(human.stdout).unwrap(),
+        fortress_core::query::render_inspection_value(&value)
+    );
 }
 
 /// `T-TF-CLI-0001-R10-002`
@@ -1771,7 +1786,90 @@ fn information_flow_json_is_schema_versioned_and_repeatable() {
 fn information_flow_rejects_unsupported_formats() {
     let output = run(&["information-flow", "--format", "dot"]);
     assert_eq!(output.status.code(), Some(2));
-    assert!(String::from_utf8_lossy(&output.stderr).contains("--format json"));
+    assert!(String::from_utf8_lossy(&output.stderr).contains("--format human|json"));
+}
+
+/// `T-TF-CLI-0001-R10-003`
+/// Fortress requirement: TF-CLI-0001-R10
+#[test]
+fn readable_flow_authoring_and_stdio_do_not_execute_or_accept_project_authority() {
+    use std::io::Write as _;
+    use std::process::Stdio;
+    let fixture = ObservationFixture::new();
+    fs::write(
+        fixture.root.join("src/lib.rs"),
+        "pub fn credential()->u8{7} pub fn log(value:u8){}\n",
+    )
+    .unwrap();
+    fs::write(
+        fixture.root.join("build.rs"),
+        "fn main(){panic!(\"project build must not execute\");}\n",
+    )
+    .unwrap();
+    let governance = fixture.root.join("__fortress/governance");
+    fs::create_dir_all(&governance).unwrap();
+    let path = governance.join("information_flow_policy.json");
+    let bytes=fortress_core::information_flow::canonicalize_information_flow_policy_json("fixture",&serde_json::json!({"$schema":"urn:fortress:schema:v1:information-flow-policy","schema_version":1,"facets":[{"id":"FLOW-CONFIDENTIALITY","direction":"higher_is_more_restricted","levels":["PUBLIC","SECRET"]}]}).to_string()).unwrap();
+    fs::write(&path, &bytes).unwrap();
+    let args = [
+        "flow-author",
+        fixture.root.to_str().unwrap(),
+        "--source",
+        "ordinary::credential",
+        "--sink",
+        "ordinary::log",
+        "--facet",
+        "FLOW-CONFIDENTIALITY",
+        "--level",
+        "SECRET",
+        "--bound",
+        "PUBLIC",
+        "--format",
+    ];
+    let mut json_args = args.to_vec();
+    json_args.push("json");
+    let output = run(&json_args);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let value: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(value["protocol_version"], 3);
+    assert_eq!(value["result"]["data"]["acceptance"], "UNAPPROVED");
+    let mut human_args = args.to_vec();
+    human_args.push("human");
+    let human = run(&human_args);
+    assert!(human.status.success());
+    assert_eq!(
+        String::from_utf8(human.stdout).unwrap(),
+        fortress_core::query::render_inspection_value(&value)
+    );
+    let request = serde_json::json!({"protocol_version":3,"request_id":"source","method":"flow_author","state_ref":null,"context_ref":null,"parameters":{"source":"ordinary::credential","sink":"ordinary::log","facet":"FLOW-CONFIDENTIALITY","level":"SECRET","bound":"PUBLIC"}});
+    let mut child = Command::new(env!("CARGO_BIN_EXE_fortress"))
+        .args([
+            "serve",
+            "--stdio",
+            "--flow-authoring",
+            fixture.root.to_str().unwrap(),
+        ])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    writeln!(child.stdin.take().unwrap(), "{request}").unwrap();
+    let output = child.wait_with_output().unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let response: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(response["result"], value["result"]);
+    assert_eq!(fs::read_to_string(path).unwrap(), bytes);
+    assert!(!fixture.root.join("target").exists());
+    assert!(!fixture.root.join("__fortress/.fsconfig").exists());
 }
 
 /// `T-TF-CLI-0001-R11-001`

@@ -112,10 +112,11 @@
         },
         {
           "id": "TF-CLI-0001-R10",
-          "statement": "The native fortress information-flow command compiles one PSM-, Semantic-, and State/Effect-backed information-flow model, emits deterministic canonical JSON to standard output or a file, fails on supported sink contradictions or invalid authority, and preserves security uncertainty without implying comprehensive security proof or certification.",
+          "statement": "The native fortress information-flow command compiles one PSM-, Semantic-, and State/Effect-backed information-flow model, emits deterministic canonical JSON to standard output or a file, fails on supported sink contradictions or invalid authority, and preserves security uncertainty without implying comprehensive security proof or certification. Human output retains the same fields, and readable operation-policy authoring remains a read-only unapproved proposal with explicit context.",
           "tests": [
             "T-TF-CLI-0001-R10-001",
-            "T-TF-CLI-0001-R10-002"
+            "T-TF-CLI-0001-R10-002",
+            "T-TF-CLI-0001-R10-003"
           ]
         },
         {
@@ -216,7 +217,8 @@
             "T-TF-CLI-0001-R21-001",
             "T-TF-CLI-0001-R21-002",
             "T-TF-CLI-0001-R21-003",
-            "T-TF-CLI-0001-R21-004"
+            "T-TF-CLI-0001-R21-004",
+            "T-TF-CLI-0001-R21-005"
           ]
         },
         {

@@ -1,0 +1,412 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "protocol_version": {
+      "const": 3
+    },
+    "request_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "method": {
+      "enum": [
+        "protocol",
+        "status",
+        "doctor",
+        "query",
+        "explain",
+        "author",
+        "cancel",
+        "progress",
+        "transition",
+        "flow_author"
+      ]
+    },
+    "state_ref": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "context_ref": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "parameters": {
+      "type": "object"
+    }
+  },
+  "required": [
+    "protocol_version",
+    "request_id",
+    "method",
+    "parameters"
+  ],
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:protocol:v3:query-request",
+  "title": "Read-only governance query request v3",
+  "oneOf": [
+    {
+      "properties": {
+        "method": {
+          "const": "protocol"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {},
+          "required": []
+        }
+      }
+    },
+    {
+      "properties": {
+        "method": {
+          "const": "status"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {},
+          "required": []
+        }
+      }
+    },
+    {
+      "properties": {
+        "method": {
+          "const": "doctor"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {},
+          "required": []
+        }
+      }
+    },
+    {
+      "properties": {
+        "method": {
+          "const": "query"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "enum": [
+                "modules",
+                "policy",
+                "dependents",
+                "routes",
+                "relationships",
+                "references"
+              ]
+            },
+            "selector": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "target": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "page": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "limit": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 200,
+                  "default": 50
+                },
+                "cursor": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": []
+            }
+          },
+          "required": [
+            "kind"
+          ]
+        }
+      }
+    },
+    {
+      "properties": {
+        "method": {
+          "const": "explain"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "selector": {
+              "type": "string",
+              "minLength": 1
+            },
+            "page": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "limit": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 200,
+                  "default": 50
+                },
+                "cursor": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": []
+            }
+          },
+          "required": [
+            "selector"
+          ]
+        }
+      }
+    },
+    {
+      "properties": {
+        "method": {
+          "const": "author"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "module": {
+              "type": "string",
+              "minLength": 1
+            },
+            "target": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "disposition": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "ALLOW",
+                    "DENY"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "module"
+          ]
+        }
+      }
+    },
+    {
+      "properties": {
+        "method": {
+          "const": "cancel"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "request_id": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "request_id"
+          ]
+        }
+      }
+    },
+    {
+      "properties": {
+        "method": {
+          "const": "progress"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "request_id": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "request_id"
+          ]
+        }
+      }
+    },
+    {
+      "properties": {
+        "method": {
+          "const": "transition"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "from_state_ref": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "to_state_ref": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "comparison_context": {
+              "$ref": "urn:fortress:derived:v1:comparison-state#/$defs/ComparisonContext"
+            },
+            "page": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "limit": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 200
+                },
+                "cursor": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": []
+            },
+            "counterfactual_state_refs": {
+              "type": "array",
+              "maxItems": 4,
+              "items": {
+                "type": "string",
+                "pattern": "^sha256:[0-9a-f]{64}$"
+              }
+            }
+          },
+          "required": [
+            "from_state_ref",
+            "to_state_ref"
+          ]
+        }
+      }
+    },
+    {
+      "properties": {
+        "method": {
+          "const": "flow_author"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "source",
+            "sink",
+            "facet",
+            "level",
+            "bound"
+          ],
+          "properties": {
+            "source": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024
+            },
+            "sink": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024
+            },
+            "facet": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024
+            },
+            "level": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024
+            },
+            "bound": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024
+            },
+            "parameter": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 65535
+            }
+          }
+        }
+      }
+    }
+  ]
+}

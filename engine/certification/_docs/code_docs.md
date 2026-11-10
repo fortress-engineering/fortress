@@ -36,6 +36,10 @@ Traverses every trusted required obligation. SATISFIED, NOT_SATISFIED, NOT_EVALU
 
 ### [`application.rs`](../_code/application.rs)
 
+**Declared-flow reporting**
+
+The application composer can receive existing Information Flow per-sink rule projections with exact selected project/Module scope. It preserves raw truth, original findings, canonical defeaters and transformation assumptions in declarations and assessments, and retains the same inputs for portable replay. It does not rerun flow semantics or admit editable authorization claims.
+
 Composes existing typed semantic and rule results using Standard-owned application-assessment-policy v1. Scope references bind premises separately when call edges are shared across claims. Required claim identities come from effective authored authority, independently of result enumeration. Native profile defaults and existing full implementation qualification are unchanged. Supported static leaves are reconstructible from exact binding, raw claim and original premise; they remain UNVERIFIED local provenance. Unknown/failed applications are valid reporting results and require no fabricated RustSuiteExecution.
 
 Manifest v3 pairs with layout v3 and adds APPLICATION generations with recomputed exact profile/scope/context selection keys. Editions v1/v1 and v2/v2 retain their original bytes and digest meaning; unrelated index selections are preserved.

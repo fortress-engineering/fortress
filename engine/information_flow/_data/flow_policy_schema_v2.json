@@ -1,0 +1,295 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v2:information-flow-policy",
+  "title": "Fortress Information-Flow Policy v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "facets",
+    "sources",
+    "sinks",
+    "transforms"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:schema:v2:information-flow-policy"
+    },
+    "schema_version": {
+      "const": 2
+    },
+    "facets": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "direction",
+          "levels"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^FLOW-[A-Z0-9]+(?:-[A-Z0-9]+)*$"
+          },
+          "direction": {
+            "enum": [
+              "higher_is_stronger",
+              "higher_is_more_restricted"
+            ]
+          },
+          "levels": {
+            "type": "array",
+            "minItems": 2,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Z0-9]+(?:_[A-Z0-9]+)*$"
+            }
+          }
+        }
+      }
+    },
+    "sources": {
+      "type": "array",
+      "maxItems": 4096,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operation_selector",
+          "output_slot",
+          "facet",
+          "level"
+        ],
+        "properties": {
+          "operation_selector": {
+            "$ref": "#/$defs/selector"
+          },
+          "output_slot": {
+            "$ref": "#/$defs/slot"
+          },
+          "facet": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "level": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          }
+        }
+      }
+    },
+    "sinks": {
+      "type": "array",
+      "maxItems": 4096,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operation_selector",
+          "input_slot",
+          "facet",
+          "bound"
+        ],
+        "properties": {
+          "operation_selector": {
+            "$ref": "#/$defs/selector"
+          },
+          "input_slot": {
+            "$ref": "#/$defs/slot"
+          },
+          "facet": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "bound": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          }
+        }
+      }
+    },
+    "transforms": {
+      "type": "array",
+      "maxItems": 4096,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "operation_selector",
+          "input_to_output",
+          "classification_rule",
+          "trust_basis"
+        ],
+        "properties": {
+          "operation_selector": {
+            "$ref": "#/$defs/selector"
+          },
+          "input_to_output": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "input",
+              "output"
+            ],
+            "properties": {
+              "input": {
+                "$ref": "#/$defs/slot"
+              },
+              "output": {
+                "$ref": "#/$defs/slot"
+              }
+            }
+          },
+          "classification_rule": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind",
+              "facet",
+              "from",
+              "to"
+            ],
+            "properties": {
+              "kind": {
+                "enum": [
+                  "endorsement",
+                  "declassification"
+                ]
+              },
+              "facet": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1024
+              },
+              "from": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1024
+              },
+              "to": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1024
+              }
+            }
+          },
+          "trust_basis": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "authority_ref",
+              "rationale",
+              "state"
+            ],
+            "properties": {
+              "authority_ref": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1024
+              },
+              "rationale": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4096
+              },
+              "state": {
+                "const": "DECLARED_ASSUMPTION"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "selector": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reference",
+        "context_digest"
+      ],
+      "properties": {
+        "reference": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "context_digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      }
+    },
+    "slot": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "const": "return"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "position"
+          ],
+          "properties": {
+            "kind": {
+              "const": "parameter"
+            },
+            "position": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 65535
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "owner",
+            "field"
+          ],
+          "properties": {
+            "kind": {
+              "const": "field"
+            },
+            "owner": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024
+            },
+            "field": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024
+            }
+          }
+        }
+      ]
+    }
+  }
+}
