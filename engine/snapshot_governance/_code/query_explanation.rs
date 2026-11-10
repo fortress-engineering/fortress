@@ -101,6 +101,9 @@ impl QueryService {
         parameters: &ExplainParameters,
         cancelled: &AtomicBool,
     ) -> Result<ExplanationPage, QueryError> {
+        if let Some(explanation) = self.explain_lifecycle(parameters, cancelled)? {
+            return Ok(explanation);
+        }
         if let Some(explanation) = self.explain_change_decision(parameters, cancelled)? {
             return Ok(explanation);
         }

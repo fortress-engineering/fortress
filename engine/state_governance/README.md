@@ -62,5 +62,14 @@ narrows visibility is a scope exclusion; other scope changes remain noncomparabl
 Duplicate semantic occurrences remain ambiguous, while duplicate set members and
 malformed/tampered records are refused. Descriptive evidence or obligation changes
 never inherit authored-promise strengthening labels. Evidence is integrity-bound,
-not automatically producer-authenticated. Retirement records currently withhold any
-resolution claim when complete comparable retirement proof was not supplied.
+not automatically producer-authenticated. Legacy transition-v1 retirement observations
+withhold resolution when complete comparable retirement proof was not supplied;
+the explicit comparable retirement producer emits the separately versioned v2 record.
+
+Comparable retirement reuses the four-axis comparator and original claim slots. Rule/profile/Standard/evaluator/context changes, excluded scope, missing history and reduced coverage remain separate from remediation. Positive resolution requires the existing proof assessor to accept a current proof of the original negative proposition; no favorable conclusion follows from an absent finding ID. Complete comparable identity/source inventories may establish SUBJECT_REMOVED. Neither case grants authorization.
+
+An aggregate claim that remains violated does not supply a per-occurrence absence proof for one disappearing finding. Such residue stays unresolved until its owning evidence supports the narrower proposition. Historical observations and assessments are never rewritten. MIGRATE and ADMISSION must retain original anchors, exact reviewed identity mappings and reintroduction history, and rerun retirement/schema/authorization integration gates after interface changes.
+
+Generic rule-level claims without a narrower authored-policy projection conservatively bind the complete authored intent inventory. Changing that inventory alongside source is not sufficient evidence of remediation; even an unrelated intent change may require explicit review. Incidental JSON formatting is canonicalized, and observed source locations and diagnostic wording remain outside stable finding identity.
+
+Resolution currently admits exact-bound, unconditional native static negative proofs through the existing assessor and its ALL/ANY algebra. Conditional, unsupported, external or report-only support does not acquire retirement authority. Record count and aggregate byte admission are checked before retaining additional retirement output; exhaustion returns an explicit error without a partial favorable result or governance mutation.

@@ -1,4 +1,6 @@
 //! Frozen finite temporal classifications and adversarial immutable comparison controls.
+#[path = "retirement_cases.rs"]
+mod retirement_cases;
 use fortress_core::assessment::*;
 use fortress_core::declaration::*;
 use fortress_core::state_governance::*;

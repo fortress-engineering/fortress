@@ -115,12 +115,19 @@ fn parse(name: &str, arguments: &[String]) -> Result<Parsed, String> {
     while index < arguments.len() {
         let arg = &arguments[index];
         if arg.starts_with('-')
-            && !matches!(arg.as_str(), "--comparison-state" | "--decision")
+            && !matches!(
+                arg.as_str(),
+                "--comparison-state" | "--decision" | "--retirement"
+            )
             && !seen_options.insert(arg)
         {
             return Err(format!("duplicate inspection option {arg}"));
         }
         match arg.as_str() {
+            "--retirement" if matches!(name, "serve" | "explain") => {
+                index += 1;
+                push_retirement_path(&mut options, arguments.get(index))?;
+            }
             "--stdio" if name == "serve" => stdio = true,
             "--decision" if matches!(name, "serve" | "explain") => {
                 index += 1;
@@ -128,15 +135,7 @@ fn parse(name: &str, arguments: &[String]) -> Result<Parsed, String> {
             }
             "--comparison-state" if name == "serve" => {
                 index += 1;
-                comparison_states.push(
-                    arguments
-                        .get(index)
-                        .ok_or("--comparison-state requires a reference")?
-                        .clone(),
-                );
-                if comparison_states.len() > 16 {
-                    return Err("comparison preload exceeds sixteen inputs".into());
-                }
+                push_comparison_state(&mut comparison_states, arguments.get(index))?;
             }
             "--timing" if name != "serve" => timing = true,
             "--format" | "--selection" | "--state" | "--target" | "--selector"
@@ -196,6 +195,32 @@ fn parse(name: &str, arguments: &[String]) -> Result<Parsed, String> {
         timing,
         comparison_states,
     })
+}
+fn push_comparison_state(
+    states: &mut Vec<String>,
+    reference: Option<&String>,
+) -> Result<(), String> {
+    states.push(
+        reference
+            .ok_or("--comparison-state requires a reference")?
+            .clone(),
+    );
+    if states.len() > 16 {
+        return Err("comparison preload exceeds sixteen inputs".into());
+    }
+    Ok(())
+}
+fn push_retirement_path(
+    options: &mut QueryLoadOptions,
+    path: Option<&String>,
+) -> Result<(), String> {
+    options.retirement_paths.push(PathBuf::from(
+        path.ok_or("--retirement requires a record path")?,
+    ));
+    if options.retirement_paths.len() > 16 {
+        return Err("retirement preload exceeds sixteen inputs".into());
+    }
+    Ok(())
 }
 fn push_decision_path(options: &mut QueryLoadOptions, path: Option<&String>) -> Result<(), String> {
     options.decision_paths.push(PathBuf::from(

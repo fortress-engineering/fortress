@@ -126,7 +126,7 @@ use crate::state_effect_analysis::{
 };
 
 /// Current stable machine-readable snapshot audit schema family.
-pub const AUDIT_RESULT_SCHEMA_VERSION: u16 = 6;
+pub const AUDIT_RESULT_SCHEMA_VERSION: u16 = 7;
 
 /// Machine-local cache and exact semantic key for one repository projection.
 pub struct RepositoryProjectionCache {
@@ -457,6 +457,22 @@ impl AuditResult {
             governance.resolved_baseline_entries,
             governance.baseline_ineligible,
         );
+        let _ = writeln!(
+            output,
+            "  unresolved baseline entries: {} (comparable retirement evidence required)",
+            self.finding_governance.unresolved_baseline_entries().len()
+        );
+        for review in self.finding_governance.exception_reviews() {
+            let _ = writeln!(
+                output,
+                "  exception {}: review={}, scope={}, authorization={}, applies={}",
+                review.exception_id,
+                review.review_state,
+                review.scope_state,
+                review.authorization_state,
+                review.applicable
+            );
+        }
         output.push_str("\nArchitecture diagnostics:\n");
         if self.diagnostics.is_empty() {
             output.push_str("None\n");
@@ -2485,7 +2501,8 @@ fn compile_certification_stack_from_prepared(
         prepared.standard.bundle.id(),
     )?;
     measurements.record("governance_composition");
-    Ok(PreparedCertificationStack {
+    let lifecycle_authority = prepared.finding_governance.clone();
+    let mut completed = PreparedCertificationStack {
         stack: CertificationSemanticStack {
             portable_authority: serde_json::json!({
                 "$schema": "urn:fortress:derived:v1:portable-authority",
@@ -2528,7 +2545,14 @@ fn compile_certification_stack_from_prepared(
         preparation: prepared_models.preparation,
         work: prepared_models.work,
         dependencies: prepared_models.dependencies,
-    })
+    };
+    if let Some(authority) = lifecycle_authority
+        .as_ref()
+        .filter(|d| d.lifecycle().is_some())
+    {
+        refresh_lifecycle_governance(&mut completed.stack, authority)?;
+    }
+    Ok(completed)
 }
 
 fn application_from_stack(
@@ -3835,6 +3859,17 @@ fn audit_repository_with_prepared(
     ),
     AuditError,
 > {
+    if prepared
+        .finding_governance
+        .as_ref()
+        .is_some_and(|d| d.lifecycle().is_some())
+    {
+        let mut measurements = EvaluationPhaseRecorder::new();
+        let stack =
+            compile_certification_stack_from_prepared(prepared.clone(), None, &mut measurements)?
+                .stack;
+        return Ok((stack.audit, stack.ccg, stack.intended_bfg));
+    }
     let standard = &prepared.standard.bundle;
     let ccg = prepared
         .ccg_compilation
@@ -4042,6 +4077,7 @@ fn audit_repository_with_prepared(
     ))
 }
 
+#[derive(Clone)]
 struct PreparedAudit {
     observed_files: SourceView,
     standard: LoadedStandard,
@@ -6299,6 +6335,118 @@ fn query_toolchain_inputs(files: &SourceView) -> serde_json::Value {
 /// Explicit bounded endpoint evaluation for state comparison. No project code executes.
 pub(crate) fn compile_comparison_view(root: &Path) -> Result<StateView, AuditError> {
     compile_repository_state_view_selected(root, None, Some((32 * 1024 * 1024, 50_000)))
+}
+fn lifecycle_comparison(
+    stack: &CertificationSemanticStack,
+    ownerships: &[SourceOwnership],
+) -> Result<crate::state_governance::ComparisonState, AuditError> {
+    let application = application_from_stack(stack, &BTreeMap::new())?;
+    let status = match application.assessment.decision {
+        crate::assessment::AssessmentDecision::Satisfied => StateViewStatus::Complete,
+        crate::assessment::AssessmentDecision::NotSatisfied => StateViewStatus::Negative,
+        crate::assessment::AssessmentDecision::NotEvaluable => StateViewStatus::Partial,
+        crate::assessment::AssessmentDecision::Invalid => StateViewStatus::Invalid,
+    };
+    let view = StateView {
+        schema: "urn:fortress:derived:v3:state-view".into(),
+        schema_version: 3,
+        source_ref: application.declaration.binding.subject_ref.clone(),
+        status,
+        detail: None,
+        application: Some(application),
+        portable_evidence_graph: None,
+    };
+    let assets = crate::transition_load::assets_from_source(
+        &stack.observed_files,
+        &view,
+        Some(&stack.ccg),
+        Some(&stack.standard),
+        ownerships,
+    )
+    .map_err(|e| AuditError::InputMismatch(e.to_string().into()))?;
+    let state=crate::state_governance::ComparisonState{schema:"urn:fortress:derived:v1:comparison-state".into(),schema_version:1,source_ref:Some(view.source_ref.clone()),view:Some(view),retained_application:None,assets:Some(assets),origin_ref:None,limitations:vec!["Read-only lifecycle capture reuses existing compiled owner results; no project execution or producer authentication is inferred.".into()]};
+    state
+        .validate()
+        .map_err(|e| AuditError::InputMismatch(e.to_string().into()))?;
+    Ok(state)
+}
+fn refresh_lifecycle_governance(
+    stack: &mut CertificationSemanticStack,
+    authority: &FindingGovernanceDocument,
+) -> Result<(), AuditError> {
+    let state = lifecycle_comparison(stack, &[])?;
+    let context = crate::lifecycle_load::current_context(&state, authority, None)
+        .map_err(|e| AuditError::InputMismatch(e.to_string().into()))?;
+    let governance = crate::finding_governance::evaluate_finding_governance_in_context(
+        stack.evaluation.findings(),
+        Some(authority),
+        stack.standard.id(),
+        stack.standard.edition(),
+        &context,
+    )
+    .map_err(AuditError::FindingGovernance)?;
+    stack.audit.finding_governance = governance.clone();
+    stack.finding_governance = governance;
+    Ok(())
+}
+/// Explicit bounded current capture for reviewed lifecycle proposals, using one owner evaluation.
+/// # Errors
+/// Refuses invalid authority, unstable source or resource exhaustion; runs no project code.
+pub fn capture_finding_inputs(
+    root: &Path,
+) -> Result<
+    (
+        crate::state_governance::ComparisonState,
+        Vec<CanonicalFinding>,
+    ),
+    AuditError,
+> {
+    let captured = capture_finding_adoption(root)?;
+    Ok((captured.state, captured.findings))
+}
+/// One stabilized admission capture and its actual registered Standard metadata.
+pub struct FindingCapture {
+    /// Exact immutable comparison input.
+    pub state: crate::state_governance::ComparisonState,
+    /// Original owner-produced findings.
+    pub findings: Vec<CanonicalFinding>,
+    /// Actual selected Standard identity.
+    pub standard_id: String,
+    /// Actual selected Standard edition; never a CLI fallback.
+    pub standard_edition: String,
+}
+/// Captures adoption inputs and selected Standard metadata in one bounded evaluation.
+/// # Errors
+/// Refuses unstable source, invalid authority and resource admission failures.
+pub fn capture_finding_adoption(root: &Path) -> Result<FindingCapture, AuditError> {
+    let (project, observation, files) =
+        capture_resident_source(root, Some((32 * 1024 * 1024, 50_000)))?;
+    let analysis = prepare_analysis_from_observed(project, observation, files)?;
+    if analysis.project_state != ProjectGovernanceState::Declared
+        || analysis.ccg().is_none()
+        || !analysis.ownership_diagnostics.is_empty()
+    {
+        return Err(AuditError::ContractState(
+            "lifecycle capture requires valid declared authority".into(),
+        ));
+    }
+    let ownerships = analysis.ownerships.clone();
+    let prepared = prepare_audit_from_analysis(root, analysis)?;
+    let mut measurements = EvaluationPhaseRecorder::new();
+    let stack = compile_certification_stack_from_prepared(prepared, None, &mut measurements)?.stack;
+    let state = lifecycle_comparison(&stack, &ownerships)?;
+    let (_, _, after) = capture_resident_source(root, Some((32 * 1024 * 1024, 50_000)))?;
+    if after != stack.observed_files {
+        return Err(AuditError::InputMismatch(
+            "source changed during lifecycle capture".into(),
+        ));
+    }
+    Ok(FindingCapture {
+        state,
+        findings: stack.evaluation.findings().to_vec(),
+        standard_id: stack.standard.id().into(),
+        standard_edition: stack.standard.edition().into(),
+    })
 }
 /// Captures exact comparison assets from the same source bound by a supplied endpoint.
 pub(crate) fn prepare_comparison_assets(

@@ -29,3 +29,7 @@ Fixed controlled policy, temporal, merge and configuration expectations.
 ### [`temporal_protocol_v1.json`](../_data/temporal_protocol_v1.json)
 
 Freeze identity, independent adjudication basis and supported finite relation.
+
+### [`retirement_cases_v1.json`](../_data/retirement_cases_v1.json)
+
+Frozen independent expected meanings for present findings, supported fixes, subject removal, coverage loss, disabled rules, excluded source, analyzer changes and ambiguous subjects. Only comparable sufficient evidence permits favorable retirement.

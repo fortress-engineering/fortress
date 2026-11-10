@@ -6,7 +6,7 @@ The CLI exists to expose implemented Fortress operations through deterministic t
 
 ## Responsibility
 
-Own command registration, argument validation, process exit behavior, human rendering, and schema-versioned JSON rendering for version, help, raw repository audit, progressive finding checks, explicit baseline/exception mutation, Module ownership inspection, semantic inspection, and exact-snapshot local certification.
+Own command registration, argument validation, process exit behavior, human rendering, and schema-versioned JSON rendering for version, help, raw repository audit, progressive finding checks, reviewable baseline/exception proposals, Module ownership inspection, semantic inspection, and exact-snapshot local certification.
 
 Status, doctor, query, explain, author and `serve --stdio` are thin adapters over the single Snapshot Governance inspection facade. Human and JSON render the same result fields; the versioned protocol is independent of any editor, host or transport framework.
 
@@ -14,7 +14,7 @@ Status, doctor, query, explain, author and `serve --stdio` are thin adapters ove
 
 ### Includes
 
-The native process boundary, built-in command registry, CLI package and command declarations, supported audit, finding listing/checking, baseline creation, guarded baseline prune, exception list/create/retire, declared/logical/analysis-only Module inspection, semantic-analysis formats, local certification formats, and explicit failure behavior for malformed or unsupported input. Prune refuses to retire entries from absence alone until comparable subject, authority, and coverage evidence is available.
+The native process boundary, built-in command registry, CLI package and command declarations, supported audit, finding listing/checking, baseline capture/create/review/prune proposals, exception list/review/create/retire proposals, declared/logical/analysis-only Module inspection, semantic-analysis formats, local certification formats, and explicit failure behavior for malformed or unsupported input. Prune refuses to retire entries from absence alone until comparable subject, authority, and coverage evidence is available.
 
 ### Excludes
 
@@ -65,3 +65,21 @@ recorded approval and host-coverage claims remain unverified provenance.
 A successful preview exit means the report was rendered. It does not authorize
 application, publication or installation; those require the independently trusted
 host context and all reported decision premises.
+
+Finding lifecycle operations produce read-only proposals and reviews:
+
+```text
+fortress baseline capture .
+fortress baseline create . --format json
+fortress baseline review . --from original-state.json --to current --format json
+fortress baseline prune . --from original-state.json --to current --finding sha256:EXACT_FINDING --format json
+fortress exceptions create EX-APP-0001 sha256:EXACT_FINDING --authority owner-reference --rationale "Scoped reason" --review-at 100 --expires-at 200 . --format json
+fortress exceptions review . --to current --assessment-time 100 --format json
+fortress exceptions retire EX-APP-0001 --rationale "Explicit retirement reason" . --format json
+```
+
+Retain the captured original comparison input and proposal outside the governed source tree so saving a report does not change the compared subject. New baseline proposals bind original eligible findings and refuse replacement. Prune proposals select only supported comparable retirements and retain every unresolved entry. Review distinguishes PRESENT, RESOLVED, SUBJECT_REMOVED, NOT_OBSERVED, POLICY_RETIRED, SCOPE_EXCLUDED, AUTHORITY_INCOMPARABLE and IDENTITY_AMBIGUOUS. Explicit review time is a nonnegative exact integer; missing time never implies an unexpired exception.
+
+These commands do not write active governance. The installed CLI cannot synthesize a grant; `--apply` reports AUTHORIZATION_REQUIRED. A trusted host must consume the protected exact-postimage interface. Legacy entries without original anchors require explicit reviewed migration rather than manufactured proof. An exception proposal, local file or approval URL remains an unverified reference and does not suppress a current violation.
+
+Retained retirement records can be inspected without comparison or analysis using `fortress explain sha256:EXACT_RETIREMENT_RECORD --retirement retirement-records.json` or `fortress serve --stdio --retirement retirement-records.json`. Existing protocol versions 1 and 2 and bounded evidence paging are unchanged. Recorded outcome and authorization provenance remain visibly unverified at this inspection boundary.

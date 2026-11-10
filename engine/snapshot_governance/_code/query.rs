@@ -7,6 +7,8 @@
 mod authority;
 #[path = "query_explanation.rs"]
 mod explanation;
+#[path = "query_lifecycle.rs"]
+mod lifecycle;
 #[path = "query_load.rs"]
 mod load;
 #[path = "query_protocol.rs"]

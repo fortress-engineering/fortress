@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v1:exception-review",
+  "title": "Fortress exact exception review and authorization facts",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "exception_id",
+    "finding_id",
+    "authority_reference",
+    "review_state",
+    "scope_state",
+    "authorization_state",
+    "applicable",
+    "authorization_proposal_ref",
+    "authorization_evidence_ref"
+  ],
+  "properties": {
+    "exception_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "finding_id": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "authority_reference": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "review_state": {
+      "enum": [
+        "CURRENT",
+        "EXPIRED",
+        "REVIEW_REQUIRED",
+        "TIME_REQUIRED",
+        "RETIRED"
+      ]
+    },
+    "scope_state": {
+      "enum": [
+        "COMPARABLE",
+        "NOT_COMPARABLE",
+        "LEGACY_UNANCHORED"
+      ]
+    },
+    "authorization_state": {
+      "enum": [
+        "VERIFIED_EXTERNAL",
+        "UNVERIFIED_REFERENCE",
+        "LEGACY_REFERENCE_NOT_REVERIFIED"
+      ]
+    },
+    "applicable": {
+      "type": "boolean"
+    },
+    "authorization_proposal_ref": {
+      "oneOf": [
+        {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "authorization_evidence_ref": {
+      "oneOf": [
+        {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  }
+}

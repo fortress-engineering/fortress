@@ -1,4 +1,7 @@
 //! Authored finding baseline and exception authority plus deterministic lifecycle evaluation.
+#[path = "lifecycle.rs"]
+mod lifecycle;
+pub use lifecycle::*;
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
@@ -23,6 +26,8 @@ pub struct FindingGovernanceDocument {
     schema_version: u16,
     baseline: Option<FindingBaseline>,
     exceptions: Vec<FindingException>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    lifecycle: Option<LifecycleRecords>,
 }
 
 impl FindingGovernanceDocument {
@@ -34,6 +39,7 @@ impl FindingGovernanceDocument {
             schema_version: 1,
             baseline: None,
             exceptions: Vec::new(),
+            lifecycle: None,
         }
     }
 
@@ -43,6 +49,12 @@ impl FindingGovernanceDocument {
     ///
     /// Returns an error for malformed JSON or invalid/deduplicated authority.
     pub fn from_json_str(source: &str) -> Result<Self, FindingGovernanceError> {
+        if source.len() > MAX_GOVERNANCE_BYTES {
+            return Err(lifecycle_error(
+                "RESOURCE_LIMIT",
+                "governance byte admission exceeded",
+            ));
+        }
         crate::wire::reject_duplicate_json_keys(source).map_err(FindingGovernanceError::Json)?;
         let document: Self = serde_json::from_str(source).map_err(FindingGovernanceError::Json)?;
         document.validate()?;
@@ -55,6 +67,10 @@ impl FindingGovernanceDocument {
     ///
     /// Returns a serialization error if this validated document cannot be encoded.
     pub fn to_canonical_json(&self) -> Result<String, serde_json::Error> {
+        if self.schema_version == 2 {
+            return serde_json_canonicalizer::to_vec(self)
+                .and_then(|b| String::from_utf8(b).map_err(serde::ser::Error::custom));
+        }
         let mut output = serde_json::to_string_pretty(self)?;
         output.push('\n');
         Ok(output)
@@ -85,6 +101,12 @@ impl FindingGovernanceDocument {
     ) -> Result<BaselineMutationSummary, FindingGovernanceError> {
         if self.baseline.is_some() {
             return Err(FindingGovernanceError::BaselineAlreadyExists);
+        }
+        if self.lifecycle.is_some() {
+            return Err(lifecycle_error(
+                "ANCHOR_REQUIRED",
+                "current baseline creation requires original admission anchors",
+            ));
         }
         let ineligible = findings
             .iter()
@@ -147,6 +169,12 @@ impl FindingGovernanceDocument {
         rationale: impl Into<String>,
         findings: &[CanonicalFinding],
     ) -> Result<(), FindingGovernanceError> {
+        if self.lifecycle.is_some() {
+            return Err(lifecycle_error(
+                "REVIEW_REQUIRED",
+                "current exception creation requires an anchored review policy",
+            ));
+        }
         let finding = findings
             .iter()
             .find(|finding| finding.finding_id() == finding_id)
@@ -180,6 +208,12 @@ impl FindingGovernanceDocument {
     ///
     /// Returns an error when the exception does not exist or is already retired.
     pub fn retire_exception(&mut self, id: &str) -> Result<(), FindingGovernanceError> {
+        if self.lifecycle.is_some() {
+            return Err(lifecycle_error(
+                "REVIEW_REQUIRED",
+                "current exception retirement requires an explicit preserved rationale",
+            ));
+        }
         let exception = self
             .exceptions
             .iter_mut()
@@ -193,7 +227,12 @@ impl FindingGovernanceDocument {
     }
 
     fn validate(&self) -> Result<(), FindingGovernanceError> {
-        if self.schema != FINDING_GOVERNANCE_SCHEMA || self.schema_version != 1 {
+        if !matches!(
+            (self.schema.as_str(), self.schema_version),
+            (FINDING_GOVERNANCE_SCHEMA, 1) | (FINDING_GOVERNANCE_SCHEMA_V2, 2)
+        ) || (self.schema_version == 1 && self.lifecycle.is_some())
+            || (self.schema_version == 2 && self.lifecycle.is_none())
+        {
             return Err(FindingGovernanceError::UnsupportedSchema);
         }
         if let Some(baseline) = &self.baseline {
@@ -240,6 +279,7 @@ impl FindingGovernanceDocument {
                 ));
             }
         }
+        self.validate_lifecycle()?;
         Ok(())
     }
 }
@@ -502,7 +542,7 @@ pub struct FindingGovernanceSummary {
     pub excepted_non_blocking: usize,
     /// Current raw violations whose evidence is advisory for enforcement.
     pub advisory_non_blocking: usize,
-    /// Active baseline entries absent from current findings.
+    /// Resolutions proved by this evaluation; absence-only assessment always reports zero.
     pub resolved_baseline_entries: usize,
     /// Current findings lacking safe identity.
     pub baseline_ineligible: usize,
@@ -518,6 +558,8 @@ pub struct FindingGovernanceEvaluation {
     findings: Vec<GovernedFinding>,
     resolved_baseline_entries: Vec<String>,
     unresolved_active_exceptions: Vec<String>,
+    unresolved_baseline_entries: Vec<String>,
+    exception_reviews: Vec<ExceptionReviewResult>,
     summary: FindingGovernanceSummary,
 }
 
@@ -542,6 +584,16 @@ impl FindingGovernanceEvaluation {
     pub fn unresolved_active_exceptions(&self) -> &[String] {
         &self.unresolved_active_exceptions
     }
+    /// Baseline identities lacking comparable current retirement evidence.
+    #[must_use]
+    pub fn unresolved_baseline_entries(&self) -> &[String] {
+        &self.unresolved_baseline_entries
+    }
+    /// Independent explicit-time review, scope and authorization facts.
+    #[must_use]
+    pub fn exception_reviews(&self) -> &[ExceptionReviewResult] {
+        &self.exception_reviews
+    }
 }
 
 /// Evaluates current findings against optional authored authority.
@@ -556,6 +608,35 @@ pub fn evaluate_finding_governance(
     authority: Option<&FindingGovernanceDocument>,
     standard_id: &str,
     standard_edition: &str,
+) -> Result<FindingGovernanceEvaluation, FindingGovernanceError> {
+    evaluate_finding_governance_impl(findings, authority, standard_id, standard_edition, None)
+}
+/// Evaluates compiled meanings and explicit time without analysis or authority mutation.
+/// # Errors
+/// Refuses mismatched authority, invalid time and ambiguous semantic identities.
+pub fn evaluate_finding_governance_in_context(
+    findings: &[CanonicalFinding],
+    authority: Option<&FindingGovernanceDocument>,
+    standard_id: &str,
+    standard_edition: &str,
+    context: &LifecycleContext,
+) -> Result<FindingGovernanceEvaluation, FindingGovernanceError> {
+    context.validate(authority)?;
+    evaluate_finding_governance_impl(
+        findings,
+        authority,
+        standard_id,
+        standard_edition,
+        Some(context),
+    )
+}
+#[allow(clippy::too_many_lines)]
+fn evaluate_finding_governance_impl(
+    findings: &[CanonicalFinding],
+    authority: Option<&FindingGovernanceDocument>,
+    standard_id: &str,
+    standard_edition: &str,
+    context: Option<&LifecycleContext>,
 ) -> Result<FindingGovernanceEvaluation, FindingGovernanceError> {
     let mut current = BTreeMap::new();
     for finding in findings {
@@ -616,10 +697,38 @@ pub fn evaluate_finding_governance(
             }
         }
     }
+    let mut exception_reviews = authority.map_or_else(Vec::new, |d| review_exceptions(d, context));
+    if authority.is_some_and(|d| d.lifecycle.is_some()) {
+        for review in &mut exception_reviews {
+            if current_identity
+                .get(review.finding_id.as_str())
+                .is_none_or(|f| context.is_none_or(|c| !c.matches_finding(f)))
+            {
+                review.scope_state = "NOT_COMPARABLE".into();
+                review.applicable = false;
+            }
+        }
+    }
+    let applicable_exceptions = exception_reviews
+        .iter()
+        .filter(|r| r.applicable)
+        .map(|r| r.exception_id.as_str())
+        .collect::<BTreeSet<_>>();
     let active = baseline.map_or_else(BTreeSet::new, |value| {
         value
             .active_entries
             .iter()
+            .filter(|entry| {
+                authority.is_none_or(|d| d.lifecycle.is_none())
+                    || authority.is_some_and(|d| {
+                        context.is_some_and(|c| {
+                            c.baseline_comparable(d, &entry.finding_id)
+                                && current_identity
+                                    .get(entry.finding_id.as_str())
+                                    .is_some_and(|f| c.matches_finding(f))
+                        })
+                    })
+            })
             .map(|entry| entry.finding_id.as_str())
             .collect()
     });
@@ -637,6 +746,11 @@ pub fn evaluate_finding_governance(
             .iter()
             .filter(|value| value.state == ExceptionState::Active)
         {
+            if document.lifecycle.is_some()
+                && !applicable_exceptions.contains(exception.id.as_str())
+            {
+                continue;
+            }
             by_finding
                 .entry(&exception.finding_id)
                 .or_default()
@@ -732,27 +846,30 @@ pub fn evaluate_finding_governance(
                 (_, _, FindingDisposition::Excepted) => {
                     "active explicit exception authority".into()
                 }
-                (_, FindingLifecycle::Baselined, _) => "active legacy baseline residue".into(),
+                (_, FindingLifecycle::Baselined, _) => "accepted original baseline residue".into(),
                 (_, FindingLifecycle::Reintroduced, _) => {
                     "retired baseline violation reintroduced".into()
                 }
                 (_, FindingLifecycle::BaselineIneligible, _) => {
                     "stable semantic identity unavailable".into()
                 }
-                (_, FindingLifecycle::New, _) => "not present in active baseline".into(),
+                (_, FindingLifecycle::New, _) => "no active comparable baseline admission".into(),
             },
         });
     }
     let current_ids = current_identity.keys().copied().collect::<BTreeSet<_>>();
-    let resolved_baseline_entries = baseline.map_or_else(Vec::new, |value| {
+    let unresolved_baseline_entries = baseline.map_or_else(Vec::new, |value| {
         value
             .active_entries
             .iter()
-            .filter(|entry| !current_ids.contains(entry.finding_id.as_str()))
+            .filter(|entry| {
+                !current_ids.contains(entry.finding_id.as_str())
+                    || !active.contains(entry.finding_id.as_str())
+            })
             .map(|entry| entry.finding_id.clone())
             .collect()
     });
-    summary.resolved_baseline_entries = resolved_baseline_entries.len();
+    let resolved_baseline_entries = Vec::new();
     let unresolved_active_exceptions = authority.map_or_else(Vec::new, |document| {
         document
             .exceptions
@@ -777,6 +894,8 @@ pub fn evaluate_finding_governance(
         findings: governed,
         resolved_baseline_entries,
         unresolved_active_exceptions,
+        unresolved_baseline_entries,
+        exception_reviews,
         summary,
     })
 }
@@ -795,6 +914,13 @@ pub struct BaselineMutationSummary {
 /// Finding governance validation or mutation failure.
 #[derive(Debug)]
 pub enum FindingGovernanceError {
+    /// Versioned lifecycle safety refusal, independent from raw conformance.
+    Lifecycle {
+        /// Stable machine-readable error.
+        code: String,
+        /// Exact missing or invalid premise.
+        message: String,
+    },
     /// JSON syntax or typed shape was invalid.
     Json(serde_json::Error),
     /// Schema identity/version is unsupported.
@@ -854,6 +980,7 @@ pub enum FindingGovernanceError {
 impl Display for FindingGovernanceError {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
         match self {
+            Self::Lifecycle { code, message } => write!(formatter, "{code}: {message}"),
             Self::Json(error) => write!(formatter, "finding governance JSON is invalid: {error}"),
             Self::UnsupportedSchema => write!(
                 formatter,

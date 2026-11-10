@@ -41,3 +41,15 @@ Declares mutually exclusive spanned and unspanned FindingLocation states from th
 ### [`retirement_evidence_schema_v1.json`](../_data/retirement_evidence_schema_v1.json)
 
 Neutral exact-transition finding-retirement observations, without baseline mutation or grant validation.
+
+### [`finding_governance_schema_v2.json`](../_data/finding_governance_schema_v2.json)
+
+Current anchored authored governance, exact review policies and full original retirement history. V1 remains a historical reader; missing anchors are never invented.
+
+### [`retirement_evidence_schema_v2.json`](../_data/retirement_evidence_schema_v2.json)
+
+Comparable retirement outcomes bound to original authority, exact compared states, authored governance preimage and sufficient proof references. The v1 observation schema retains its original meaning.
+
+### [`exception_review_schema_v1.json`](../_data/exception_review_schema_v1.json)
+
+Independent review, scope, authorization provenance and enforcement applicability, with exact verified-proposal/receipt references where a trusted host supplied them.

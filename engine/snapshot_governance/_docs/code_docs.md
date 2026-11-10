@@ -207,3 +207,11 @@ Read-only protected-authority composition and explanation; repository assertions
 ### [`query_authority.rs`](../_code/query_authority.rs)
 
 Read-only protected-authority composition and explanation; repository assertions cannot supply a trusted validator.
+
+### [`lifecycle_load.rs`](../_code/lifecycle_load.rs)
+
+Loads only registered active finding authority, composes read-only lifecycle reports and maintenance proposals, and admits a postimage only through an exact process-local AUTHORITY decision with opaque grants. Returned bytes do not claim write mediation.
+
+### [`query_lifecycle.rs`](../_code/query_lifecycle.rs)
+
+Indexes already-produced comparable retirement and current authored admission/exception history for bounded, cancellable EXPLAIN paging. It never reruns analysis, validates external permission, chooses an ambiguous historical candidate, or treats recorded resolution as current repository evidence.

@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v1:finding-lifecycle",
+  "title": "Fortress immutable finding lifecycle report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "governance_ref",
+    "from_state",
+    "to_state",
+    "assessment_time",
+    "current",
+    "retirement_evidence"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:derived:v1:finding-lifecycle"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "governance_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "from_state": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "to_state": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "assessment_time": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "current": {
+      "$ref": "urn:fortress:schema:v7:snapshot-audit#/$defs/finding-governance"
+    },
+    "retirement_evidence": {
+      "type": "array",
+      "maxItems": 50000,
+      "items": {
+        "$ref": "urn:fortress:derived:v2:retirement-evidence"
+      }
+    }
+  }
+}

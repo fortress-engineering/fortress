@@ -1,5 +1,8 @@
 //! Black-box vectors for the neutral proof graph.
 
+#[path = "lifecycle.rs"]
+mod lifecycle;
+
 use fortress_core::proof::{
     EvidenceReference, ProofExpression, ProofGraph, ProofOperator, ProofValidationError,
 };

@@ -253,3 +253,7 @@ SARIF 2.1.0 maps supported violations to fail, scoped absence to pass, uncertain
 ### [`authority_command.rs`](../_code/authority_command.rs)
 
 Read-only protected-authority composition and explanation; repository assertions cannot supply a trusted validator.
+
+### [`finding_command.rs`](../_code/finding_command.rs)
+
+Thin read-only baseline capture/create/review/prune and exception list/review/create/retire adapters with strict selectors, explicit assessment time, matching human/JSON projections and structured errors; no proposal is automatically applied.

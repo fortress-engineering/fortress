@@ -535,14 +535,14 @@
       "schema_path": "engine/snapshot_governance/_data/snapshot_audit_schema_v6.json",
       "version": 6,
       "writer": {
-        "status": "ACTIVE",
-        "source": "engine/snapshot_governance/_code/audit.rs"
+        "status": "RETIRED",
+        "source": null
       },
       "reader": {
         "status": "UNSUPPORTED",
         "source": null
       },
-      "migration": "NOT_APPLICABLE",
+      "migration": "REQUIRED_BEFORE_USE",
       "identity_algorithm": {
         "id": "no-document-level-identity-algorithm",
         "source": null
@@ -2574,6 +2574,138 @@
       "content_hash_algorithm": {
         "id": "rfc8785-jcs-sha256-v1",
         "source": "cli/_code/authority_command.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v2:finding-governance",
+      "schema_path": "engine/finding_model/_data/finding_governance_schema_v2.json",
+      "version": 2,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/finding_model/_code/governance.rs"
+      },
+      "reader": {
+        "status": "ACTIVE",
+        "source": "engine/finding_model/_code/governance.rs"
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "jcs-sha256-v1",
+        "source": "engine/finding_model/_code/governance.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "rfc8785-jcs-sha256",
+        "source": "engine/finding_model/_code/governance.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:derived:v2:retirement-evidence",
+      "schema_path": "engine/finding_model/_data/retirement_evidence_schema_v2.json",
+      "version": 2,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/finding_model/_code/lifecycle.rs"
+      },
+      "reader": {
+        "status": "ACTIVE",
+        "source": "engine/finding_model/_code/lifecycle.rs"
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "jcs-sha256-v1",
+        "source": "engine/finding_model/_code/lifecycle.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "rfc8785-jcs-sha256",
+        "source": "engine/finding_model/_code/lifecycle.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:derived:v1:exception-review",
+      "schema_path": "engine/finding_model/_data/exception_review_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/finding_model/_code/lifecycle.rs"
+      },
+      "reader": {
+        "status": "TEST_ONLY",
+        "source": "engine/standard_registry/testing/_code/artifact_schemas.rs"
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "jcs-sha256-v1",
+        "source": "engine/finding_model/_code/lifecycle.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "rfc8785-jcs-sha256",
+        "source": "engine/finding_model/_code/lifecycle.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:derived:v1:governance-proposal",
+      "schema_path": "engine/snapshot_governance/_data/governance_proposal_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/snapshot_governance/_code/lifecycle_load.rs"
+      },
+      "reader": {
+        "status": "TEST_ONLY",
+        "source": "engine/standard_registry/testing/_code/artifact_schemas.rs"
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "jcs-sha256-v1",
+        "source": "engine/snapshot_governance/_code/lifecycle_load.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "rfc8785-jcs-sha256",
+        "source": "engine/snapshot_governance/_code/lifecycle_load.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v7:snapshot-audit",
+      "schema_path": "engine/snapshot_governance/_data/snapshot_audit_schema_v7.json",
+      "version": 7,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/snapshot_governance/_code/audit.rs"
+      },
+      "reader": {
+        "status": "TEST_ONLY",
+        "source": "engine/standard_registry/testing/_code/artifact_schemas.rs"
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "no-model-level-content-hash-algorithm",
+        "source": null
+      }
+    },
+    {
+      "schema_id": "urn:fortress:derived:v1:finding-lifecycle",
+      "schema_path": "engine/snapshot_governance/_data/finding_lifecycle_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/snapshot_governance/_code/lifecycle_load.rs"
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "no-model-level-content-hash-algorithm",
+        "source": null
       }
     }
   ]

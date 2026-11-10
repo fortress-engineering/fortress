@@ -26,6 +26,8 @@ pub struct QueryLoadOptions {
     pub state_path: Option<PathBuf>,
     /// Explicit nonauthoritative change-decision receipts for paged explanations.
     pub decision_paths: Vec<PathBuf>,
+    /// Explicit already-produced comparable retirement records; never triggers comparison or analysis.
+    pub retirement_paths: Vec<PathBuf>,
     /// Maximum authoritative source bytes admitted before whole-file retention.
     pub max_source_bytes: usize,
     /// Maximum source inventory entries.
@@ -38,6 +40,7 @@ impl Default for QueryLoadOptions {
             selection_key: None,
             state_path: None,
             decision_paths: Vec::new(),
+            retirement_paths: Vec::new(),
             max_source_bytes: 128 * 1024 * 1024,
             max_files: 50_000,
         }
@@ -150,8 +153,86 @@ pub fn load_repository_query(
         json!(disk.map(sysinfo::Disk::available_space));
     input.diagnostics["storage"]["disk_read_only"] = json!(disk.map(sysinfo::Disk::is_read_only));
     input.diagnostics["evidence"] = input.availability.clone();
-    let decisions = load_decision_receipts(root, &options.decision_paths, &mut budget)?;
-    QueryService::new(input)?.with_change_decisions(decisions)
+    attach_lifecycle_inputs(root, options, input, &mut budget)
+}
+
+fn attach_lifecycle_inputs(
+    root: &Path,
+    options: &QueryLoadOptions,
+    mut input: QueryInput,
+    budget: &mut u64,
+) -> Result<QueryService, QueryError> {
+    let decisions = load_decision_receipts(root, &options.decision_paths, budget)?;
+    let retirements = load_retirement_records(root, &options.retirement_paths, budget)?;
+    let authority = match crate::lifecycle_load::load_finding_authority(root) {
+        Ok(a) => Some(a),
+        Err(e) if e.code == "INVALID_INPUT" => {
+            input.availability["finding_governance"] =
+                json!({"state":"INVALID","reason":e.message});
+            input.limitations.push("Active finding governance is invalid; no authored lifecycle or permission is inferred.".into());
+            None
+        }
+        Err(e) => return Err(QueryError::new(&e.code, e.message)),
+    };
+    let service = QueryService::new(input)?
+        .with_change_decisions(decisions)?
+        .with_retirement_evidence(retirements)?;
+    match authority {
+        Some(a) => service.with_finding_authority(&a),
+        None => Ok(service),
+    }
+}
+
+fn load_retirement_records(
+    root: &Path,
+    paths: &[PathBuf],
+    budget: &mut u64,
+) -> Result<Vec<crate::finding_governance::RetirementEvidenceV2>, QueryError> {
+    if paths.len() > 16 {
+        return Err(QueryError::new(
+            "RESOURCE_LIMIT",
+            "at most sixteen retirement inputs",
+        ));
+    }
+    let mut result = Vec::new();
+    for path in paths {
+        let absolute = if path.is_absolute() {
+            path.clone()
+        } else {
+            root.join(path)
+        };
+        let anchor = absolute
+            .ancestors()
+            .last()
+            .ok_or_else(|| QueryError::new("UNSAFE_PATH", "retirement path lacks a root"))?;
+        let bytes = safe_read(
+            anchor,
+            &absolute,
+            crate::finding_governance::MAX_GOVERNANCE_BYTES as u64,
+        )?;
+        charge(budget, bytes.len())?;
+        let source = text(&bytes)?;
+        if source.trim_start().starts_with('[') {
+            let mut records: Vec<crate::finding_governance::RetirementEvidenceV2> =
+                crate::wire::parse_public_json(source)
+                    .map_err(|e| QueryError::new("INVALID_INPUT", e.to_string()))?;
+            if result.len().saturating_add(records.len())
+                > crate::finding_governance::MAX_GOVERNANCE_RECORDS
+            {
+                return Err(QueryError::new(
+                    "RESOURCE_LIMIT",
+                    "retirement aggregate record limit",
+                ));
+            }
+            result.append(&mut records);
+        } else {
+            result.push(
+                crate::finding_governance::RetirementEvidenceV2::from_json_str(source)
+                    .map_err(|e| QueryError::new("INVALID_INPUT", e.to_string()))?,
+            );
+        }
+    }
+    Ok(result)
 }
 
 fn load_selection(

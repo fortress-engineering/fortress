@@ -1,5 +1,8 @@
 //! Process-level evidence for the canonical Fortress CLI entrypoints.
 
+#[path = "finding_cases.rs"]
+mod finding_cases;
+
 use std::fmt::Write as _;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -1484,7 +1487,7 @@ fn audit_json_is_valid_and_repeatable() {
     assert_eq!(first.stdout, second.stdout);
     let value: serde_json::Value =
         serde_json::from_slice(&first.stdout).expect("audit output is JSON");
-    assert_eq!(value["schema_version"], 6);
+    assert_eq!(value["schema_version"], 7);
     assert_eq!(value["outcome"], "PASS");
     assert!(value["diagnostics"].is_array());
     assert!(value["unsupported_analysis"].is_array());

@@ -2,17 +2,17 @@
 
 ## Purpose
 
-Verify the neutral proof graph and evidence-reference boundary used by claim and certification consumers.
+Verify neutral proof, lifecycle and evidence-reference boundaries used by governance, claim and certification consumers.
 
 ## Responsibility
 
-Exercise structural proof validity, canonical set order, complete reference resolution, cycle rejection, and refusal of empty favorable support.
+Exercise structural proof validity, canonical set order, complete reference resolution, cycle rejection, refusal of empty favorable support, exact lifecycle bindings, monotonic maintenance, original history and explicit exception review.
 
 ## Scope
 
 ### Includes
 
-Black-box proof contract vectors with stable synthetic identities.
+Black-box proof and neutral lifecycle contract vectors with stable synthetic identities. Synthetic retirement records validate structure and mutation invariants without claiming semantic proof or external permission.
 
 ### Excludes
 

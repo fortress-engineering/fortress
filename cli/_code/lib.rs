@@ -30,13 +30,13 @@ use fortress_core::bootstrap::{
 };
 use fortress_core::certification::{CertificationStatus, RustSuiteExecution};
 use fortress_core::contract_coherency::CcgCoherencyStatus;
-use fortress_core::finding_governance::{FINDING_GOVERNANCE_PATH, FindingGovernanceDocument};
 use fortress_core::identity_migration::{
     apply_repository_identity_migration, plan_repository_identity_migration,
 };
 mod application_inputs;
 mod authority_command;
 pub mod command;
+mod finding_command;
 mod inspection;
 mod portable_command;
 mod presentation;
@@ -1895,232 +1895,14 @@ fn run_baseline<O: Write, E: Write>(
     output: &mut O,
     error: &mut E,
 ) -> io::Result<u8> {
-    const USAGE: &str = "usage: fortress baseline create|prune [path]";
-    let [operation, rest @ ..] = arguments else {
-        writeln!(error, "{USAGE}")?;
-        return Ok(EXIT_USAGE);
-    };
-    if !["create", "prune"].contains(&operation.as_str()) || rest.len() > 1 {
-        writeln!(error, "{USAGE}")?;
-        return Ok(EXIT_USAGE);
-    }
-    let root = rest
-        .first()
-        .map_or_else(|| PathBuf::from("."), PathBuf::from);
-    let audit = match audit_repository(&root) {
-        Ok(value) if value.is_governed() => value,
-        Ok(_) => {
-            writeln!(error, "baseline requires valid authored project governance")?;
-            return Ok(EXIT_VIOLATION);
-        }
-        Err(audit_error) => {
-            writeln!(error, "baseline evaluation failed: {audit_error}")?;
-            return Ok(EXIT_VIOLATION);
-        }
-    };
-    let mut authority = match load_finding_governance(&root) {
-        Ok(value) => value,
-        Err(message) => {
-            writeln!(error, "{message}")?;
-            return Ok(EXIT_VIOLATION);
-        }
-    };
-    let mutation = if operation == "create" {
-        authority.create_baseline(
-            audit.standard_id(),
-            audit.standard_edition(),
-            audit.findings(),
-        )
-    } else {
-        authority.prune_baseline(audit.findings())
-    };
-    let summary = match mutation {
-        Ok(value) => value,
-        Err(authority_error) => {
-            writeln!(error, "baseline mutation failed: {authority_error}")?;
-            return Ok(EXIT_VIOLATION);
-        }
-    };
-    persist_finding_governance(&root, &authority)?;
-    writeln!(
-        output,
-        "baseline {operation}: active={}, removed={}, ineligible={}",
-        summary.active, summary.removed, summary.ineligible
-    )?;
-    Ok(EXIT_SUCCESS)
+    finding_command::baseline(arguments, output, error)
 }
-
 fn run_exceptions<O: Write, E: Write>(
     arguments: &[String],
     output: &mut O,
     error: &mut E,
 ) -> io::Result<u8> {
-    let Some(operation) = arguments.first().map(String::as_str) else {
-        writeln!(error, "usage: fortress exceptions list|create|retire ...")?;
-        return Ok(EXIT_USAGE);
-    };
-    match operation {
-        "list" => {
-            if arguments.len() > 2 {
-                writeln!(error, "usage: fortress exceptions list [path]")?;
-                return Ok(EXIT_USAGE);
-            }
-            let root = arguments
-                .get(1)
-                .map_or_else(|| PathBuf::from("."), PathBuf::from);
-            let authority = match load_finding_governance(&root) {
-                Ok(value) => value,
-                Err(message) => {
-                    writeln!(error, "{message}")?;
-                    return Ok(EXIT_VIOLATION);
-                }
-            };
-            write!(
-                output,
-                "{}",
-                authority.to_canonical_json().map_err(io::Error::other)?
-            )?;
-            Ok(EXIT_SUCCESS)
-        }
-        "retire" => {
-            if !(2..=3).contains(&arguments.len()) {
-                writeln!(
-                    error,
-                    "usage: fortress exceptions retire <exception-id> [path]"
-                )?;
-                return Ok(EXIT_USAGE);
-            }
-            let root = arguments
-                .get(2)
-                .map_or_else(|| PathBuf::from("."), PathBuf::from);
-            let mut authority = match load_finding_governance(&root) {
-                Ok(value) => value,
-                Err(message) => {
-                    writeln!(error, "{message}")?;
-                    return Ok(EXIT_VIOLATION);
-                }
-            };
-            if let Err(authority_error) = authority.retire_exception(&arguments[1]) {
-                writeln!(error, "exception retirement failed: {authority_error}")?;
-                return Ok(EXIT_VIOLATION);
-            }
-            persist_finding_governance(&root, &authority)?;
-            writeln!(output, "exception {} retired", arguments[1])?;
-            Ok(EXIT_SUCCESS)
-        }
-        "create" => run_exception_create(&arguments[1..], output, error),
-        _ => {
-            writeln!(error, "usage: fortress exceptions list|create|retire ...")?;
-            Ok(EXIT_USAGE)
-        }
-    }
-}
-
-fn run_exception_create<O: Write, E: Write>(
-    arguments: &[String],
-    output: &mut O,
-    error: &mut E,
-) -> io::Result<u8> {
-    const USAGE: &str = "usage: fortress exceptions create <exception-id> <finding-id> --authority <reference> --rationale <text> [path]";
-    if arguments.len() < 6 {
-        writeln!(error, "{USAGE}")?;
-        return Ok(EXIT_USAGE);
-    }
-    let exception_id = &arguments[0];
-    let finding_id = &arguments[1];
-    let mut authority_reference = None;
-    let mut rationale = None;
-    let mut root = None;
-    let mut index = 2;
-    while index < arguments.len() {
-        match arguments[index].as_str() {
-            "--authority" | "--rationale" => {
-                let flag = arguments[index].as_str();
-                index += 1;
-                let Some(value) = arguments.get(index) else {
-                    writeln!(error, "{USAGE}")?;
-                    return Ok(EXIT_USAGE);
-                };
-                let replaced = if flag == "--authority" {
-                    authority_reference.replace(value.clone()).is_some()
-                } else {
-                    rationale.replace(value.clone()).is_some()
-                };
-                if replaced {
-                    writeln!(error, "{USAGE}")?;
-                    return Ok(EXIT_USAGE);
-                }
-            }
-            value if !value.starts_with('-') && root.is_none() => root = Some(PathBuf::from(value)),
-            _ => {
-                writeln!(error, "{USAGE}")?;
-                return Ok(EXIT_USAGE);
-            }
-        }
-        index += 1;
-    }
-    let (Some(authority_reference), Some(rationale)) = (authority_reference, rationale) else {
-        writeln!(error, "{USAGE}")?;
-        return Ok(EXIT_USAGE);
-    };
-    let root = root.unwrap_or_else(|| PathBuf::from("."));
-    let audit = match audit_repository(&root) {
-        Ok(value) if value.is_governed() => value,
-        Ok(_) => {
-            writeln!(
-                error,
-                "exception creation requires valid authored project governance"
-            )?;
-            return Ok(EXIT_VIOLATION);
-        }
-        Err(audit_error) => {
-            writeln!(error, "exception evaluation failed: {audit_error}")?;
-            return Ok(EXIT_VIOLATION);
-        }
-    };
-    let mut authority = match load_finding_governance(&root) {
-        Ok(value) => value,
-        Err(message) => {
-            writeln!(error, "{message}")?;
-            return Ok(EXIT_VIOLATION);
-        }
-    };
-    if let Err(authority_error) = authority.create_exception(
-        exception_id,
-        finding_id,
-        authority_reference,
-        rationale,
-        audit.findings(),
-    ) {
-        writeln!(error, "exception creation failed: {authority_error}")?;
-        return Ok(EXIT_VIOLATION);
-    }
-    persist_finding_governance(&root, &authority)?;
-    writeln!(output, "exception {exception_id} created for {finding_id}")?;
-    Ok(EXIT_SUCCESS)
-}
-
-fn load_finding_governance(root: &std::path::Path) -> Result<FindingGovernanceDocument, String> {
-    let path = root.join(FINDING_GOVERNANCE_PATH);
-    match fs::read_to_string(&path) {
-        Ok(source) => FindingGovernanceDocument::from_json_str(&source)
-            .map_err(|error| format!("finding governance is invalid: {error}")),
-        Err(source) if source.kind() == io::ErrorKind::NotFound => {
-            Ok(FindingGovernanceDocument::empty())
-        }
-        Err(source) => Err(format!("failed to read {}: {source}", path.display())),
-    }
-}
-
-fn persist_finding_governance(
-    root: &std::path::Path,
-    authority: &FindingGovernanceDocument,
-) -> io::Result<()> {
-    let path = root.join(FINDING_GOVERNANCE_PATH);
-    fs::write(
-        path,
-        authority.to_canonical_json().map_err(io::Error::other)?,
-    )
+    finding_command::exceptions(arguments, output, error)
 }
 
 fn run_audit<O: Write, E: Write>(

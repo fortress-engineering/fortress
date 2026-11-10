@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "purpose": "Frozen retirement meanings; favorable outcomes require comparable sufficient owner evidence.",
+  "cases": [
+    {"id":"unchanged_violation","expected":"PRESENT"},
+    {"id":"supported_fix","expected":"RESOLVED"},
+    {"id":"complete_subject_removal","expected":"SUBJECT_REMOVED"},
+    {"id":"coverage_loss","expected":"NOT_OBSERVED"},
+    {"id":"disabled_rule","expected":"POLICY_RETIRED"},
+    {"id":"excluded_source","expected":"SCOPE_EXCLUDED"},
+    {"id":"analyzer_change","expected":"AUTHORITY_INCOMPARABLE"},
+    {"id":"ambiguous_subject","expected":"IDENTITY_AMBIGUOUS"}
+  ]
+}

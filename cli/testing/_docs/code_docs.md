@@ -39,3 +39,7 @@ Challenges deterministic SARIF mappings, exact property/identity round trips, sc
 ### [`authority.rs`](../_code/authority.rs)
 
 Verifies exact preview and receipt inspection, paged explanations, malformed options, unverified local approvals and build-script nonexecution.
+
+### [`finding_cases.rs`](../_code/finding_cases.rs)
+
+Exercises read-only anchored baseline proposals, identical human/JSON proposal identities, current progressive enforcement, blocked baseline expansion, unresolved disappearance, malformed inputs and refusal of local approval flags.

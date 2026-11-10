@@ -42,3 +42,7 @@ Original claim, coverage, proof, assurance and finding projections without verdi
 ### [`identity.rs`](../_code/identity.rs)
 
 Role-partitioned software and complete governing identities keep the original aggregate declaration binding intact. This allows controlled cells to vary authority without falsifying their full repository source identity.
+
+### [`retirement.rs`](../_code/retirement.rs)
+
+Produces comparable retirement v2 from exact original/current state views, stable claim slots, complete source/authority inventories and the existing profile proof assessor. Absence, policy changes and coverage loss remain unresolved; there is no filesystem or grant validation.

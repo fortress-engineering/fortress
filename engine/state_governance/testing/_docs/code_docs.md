@@ -22,3 +22,6 @@ Any truth-table, binding, ordering, integrity, ambiguity or honesty mismatch fai
 
 Prescribed temporal cases and independent exhaustive finite-order controls.
 
+### [`retirement_cases.rs`](../_code/retirement_cases.rs)
+
+Exercises the seven RATCHET acceptance conditions, neutral model validation, legacy anchors, exact proof bindings, explicit review time, original history and reintroduction using fixed owner-produced state projections.

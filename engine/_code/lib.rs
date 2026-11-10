@@ -62,6 +62,8 @@ pub mod identity_migration;
 pub mod implementation_observation;
 #[path = "../information_flow/_code/information_flow.rs"]
 pub mod information_flow;
+#[path = "../snapshot_governance/_code/lifecycle_load.rs"]
+pub mod lifecycle_load;
 #[path = "../project_model/_code/module_index.rs"]
 pub mod module_index;
 #[path = "../repository_observation/_code/observation.rs"]

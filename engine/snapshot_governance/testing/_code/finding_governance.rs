@@ -494,7 +494,9 @@ fn combined_lifecycle_keeps_truths_orthogonal() {
     assert_eq!(result.summary().baselined_non_blocking, 1);
     assert_eq!(result.summary().excepted_non_blocking, 1);
     assert_eq!(result.summary().new_blocking, 1);
-    assert_eq!(result.summary().resolved_baseline_entries, 1);
+    assert_eq!(result.summary().resolved_baseline_entries, 0);
+    assert_eq!(result.unresolved_baseline_entries().len(), 1);
+    assert_eq!(authority.baseline().unwrap().active_entries().len(), 2);
     assert!(!result.is_success());
     assert!(
         evaluate_finding_governance(

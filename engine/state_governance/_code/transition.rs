@@ -7,10 +7,13 @@ mod comparison;
 mod identity;
 #[path = "model.rs"]
 mod model;
+#[path = "retirement.rs"]
+mod retirement;
 #[path = "validation.rs"]
 mod validation;
 pub use comparison::{compare_merge, compare_states, compare_states_cancellable};
 pub use model::*;
+pub use retirement::{assess_retirements, current_governance_anchors, finding_anchors};
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 

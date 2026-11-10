@@ -67,23 +67,25 @@
       "id": "CMD-FINDING-BASELINE",
       "name": "baseline",
       "aliases": [],
-      "description": "Create or monotonically prune authored legacy finding residue.",
+      "description": "Preview anchored baseline adoption, comparable retirement and retained lifecycle evidence.",
       "owner": "TF-CLI-0001",
       "executor": "builtin-sync",
       "duration": "short",
       "resumability": "restartable",
-      "certification_implications": "Mutates explicit reviewed governance authority only; baseline membership never changes a failed rule result into passing certification evidence."
+      "certification_implications": "Read-only proposal or explicit-time review; raw findings and active governance are unchanged. Protected application requires the existing trusted AUTHORITY boundary.",
+      "usage": "fortress baseline capture|create|review|prune [path] [--from state --to state] [--finding ID] [--format human|json]"
     },
     {
       "id": "CMD-FINDING-EXCEPTION",
       "name": "exceptions",
       "aliases": [],
-      "description": "List, create, or retire finding-specific exception authority.",
+      "description": "Inspect or propose exact finding-specific exception review and retirement.",
       "owner": "TF-CLI-0001",
       "executor": "builtin-sync",
       "duration": "short",
       "resumability": "restartable",
-      "certification_implications": "Mutates finding-specific disposition authority only; an exception remains visible and never becomes proof of conformance."
+      "certification_implications": "Read-only proposal or explicit-time review; raw findings and active governance are unchanged. Protected application requires the existing trusted AUTHORITY boundary.",
+      "usage": "fortress exceptions list|review|create|retire [exact IDs and review policy] [path] [--format human|json]"
     },
     {
       "id": "CMD-REPOSITORY-INIT",

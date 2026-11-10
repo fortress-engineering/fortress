@@ -29,3 +29,7 @@ Supplies stable entity and rule identities plus the normative rule-category voca
 ## Guarantees
 
 Equal semantic violation identity produces the same stable ID despite line, wording, checkout-root, or semantically transparent Module-location drift; equal derived limitation semantics produce the same defeater ID without coordinates or diagnostic prose; unsafe finding identity is explicitly baseline-ineligible; baseline and exception authority never converts a violation into PASS; and invalid authority fails closed.
+
+Finding governance v2 retains original admissions and complete retired-entry evidence under the single registered active authority. Baseline creation refuses replacement and maintenance cannot expand it. Only sufficient comparable RESOLVED or SUBJECT_REMOVED records may prune explicitly selected entries. Serialized records must be rederived from their authoritative compared states before use; hashes do not authenticate producers or approve governance changes.
+
+Exceptions retain their exact finding/authority anchor, rationale, grant citation and explicit review policy. A reference is not a verified grant. Current exceptions affect enforcement only with a comparable current scope, a current explicit-time review result and process-local authorization admitted through AUTHORITY. A review or expiry never changes raw FAIL. Legacy readers preserve original bytes and history; missing anchors remain unresolved and legacy assertions are visibly not reverified.

@@ -72,7 +72,7 @@ Defines the retained audit representation with an explicit `NOT_APPLICABLE` rule
 
 ### [`snapshot_audit_schema_v6.json`](../_data/snapshot_audit_schema_v6.json)
 
-Defines the current audit representation with raw finding evidence eligibility, stable eligibility reasons, and progressive-enforcement summaries that distinguish advisory non-blocking findings from baseline or exception governance.
+Defines the retained version-six audit representation with raw finding evidence eligibility, stable eligibility reasons, and progressive-enforcement summaries that distinguish advisory non-blocking findings from baseline or exception governance.
 
 ### [`snapshot_finding_schema_v2.json`](../_data/snapshot_finding_schema_v2.json)
 
@@ -105,3 +105,15 @@ Adds exact-state transition requests while retaining v1 readers unchanged.
 ### [`query_response_schema_v2.json`](../_data/query_response_schema_v2.json)
 
 Versioned transition summary and complete paged result envelope.
+
+### [`governance_proposal_schema_v1.json`](../_data/governance_proposal_schema_v1.json)
+
+Derived read-only baseline/exception maintenance proposal, original authority, compared states, retirement records and unapplied postimage; never a grant.
+
+### [`snapshot_audit_schema_v7.json`](../_data/snapshot_audit_schema_v7.json)
+
+Current audit projection adds unresolved baseline identities and exception review/authentication facts. Absent IDs no longer populate the legacy resolved count; all original raw findings and progressive fields remain visible.
+
+### [`finding_lifecycle_schema_v1.json`](../_data/finding_lifecycle_schema_v1.json)
+
+Versioned read-only aggregate binds current raw/progressive projections, exact original/current states, explicit review time and comparable retirement records without changing their owners or meanings.

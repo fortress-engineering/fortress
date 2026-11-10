@@ -525,6 +525,32 @@ fn migrate_finding_governance(
     aliases: &BTreeMap<String, CanonicalFinding>,
     replacements: &mut Vec<IdentityReferenceMigration>,
 ) -> Result<(), IdentityMigrationError> {
+    if document.get("schema_version").and_then(Value::as_u64) == Some(2) {
+        let baseline = document.get("baseline");
+        let references = baseline
+            .into_iter()
+            .flat_map(|b| {
+                ["active_entries", "retired_entries"]
+                    .into_iter()
+                    .filter_map(|k| b.get(k).and_then(Value::as_array))
+                    .flatten()
+            })
+            .chain(
+                document
+                    .get("exceptions")
+                    .and_then(Value::as_array)
+                    .into_iter()
+                    .flatten(),
+            );
+        if references
+            .filter_map(|e| e.get("finding_id").and_then(Value::as_str))
+            .any(|id| aliases.contains_key(id))
+        {
+            return Err(IdentityMigrationError::InvalidMigratedGovernance(
+                "Anchored finding history requires an explicitly reviewed anchor-aware migration; legacy alias rewriting cannot replace original admissions or retirement evidence.".into()));
+        }
+        return Ok(());
+    }
     let Some(object) = document.as_object_mut() else {
         return Err(IdentityMigrationError::InvalidMigratedGovernance(
             "root must be an object".into(),
