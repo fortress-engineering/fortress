@@ -32,7 +32,7 @@ Defines the version-one machine contract for command declarations.
 
 ### [`commands.json`](../_data/commands.json)
 
-Declares the exact implemented command instances exposed by the native registry.
+Declares the exact implemented command instances exposed by the native registry. The flow-author entry records explicit source preparation and unapplied policy proposals; it grants no authority or certification.
 
 ### [`offline_verifier_v1.txt`](../_data/offline_verifier_v1.txt)
 
