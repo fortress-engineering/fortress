@@ -24,7 +24,7 @@ Exercises complete, orphaned, overlapping, required, and minimum ownership cases
 
 ### [`audit.rs`](../_code/audit.rs)
 
-Runs the complete self-audit and asserts every implemented applicable rule passes.
+Runs the complete self-audit and asserts every implemented applicable rule passes. All registered rules remain represented; unselected bounded FLOW without applicable declarations is explicitly nonapplicable rather than counted as PASS. Raw finding, uncertainty and failure checks remain independent.
 
 ### [`derived_artifact_storage.py`](../_code/derived_artifact_storage.py)
 

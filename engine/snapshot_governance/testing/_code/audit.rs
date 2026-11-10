@@ -12,6 +12,7 @@ use fortress_core::audit::{
     compile_repository_state_effect_analysis, inspect_repository_modules,
 };
 use fortress_core::environmental_semantics::canonicalize_environment_contract_json;
+use fortress_core::evaluation::RuleExecutionState;
 use fortress_core::program_semantics::ExecutableSymbol;
 use fortress_core::semantic_analysis::canonicalize_function_contract_json;
 use fortress_core::semantic_conformance::SemanticConformanceState;
@@ -345,11 +346,25 @@ fn repository_root() -> PathBuf {
 /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R08-001`
 /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R08
 #[test]
-fn fortress_self_audit_passes_every_implemented_rule() {
+fn fortress_self_audit_distinguishes_evaluated_and_nonapplicable_rules() {
     let result = audit_repository(repository_root()).expect("Fortress self-audit completes");
     assert!(result.is_success());
-    assert_eq!(result.summary().rules_evaluated(), 23);
-    assert_eq!(result.summary().passed(), 23);
+    assert_eq!(result.rules().len(), 23);
+    assert_eq!(result.summary().rules_evaluated(), 22);
+    assert_eq!(result.summary().passed(), 22);
+    assert_eq!(result.summary().not_applicable(), 1);
+    let nonapplicable = result
+        .rules()
+        .iter()
+        .filter(|rule| !rule.applicable())
+        .collect::<Vec<_>>();
+    assert_eq!(nonapplicable.len(), 1);
+    assert_eq!(nonapplicable[0].rule_id(), "PROGRAM-INFOFLOW-001");
+    assert_eq!(nonapplicable[0].state(), RuleExecutionState::NotApplicable);
+    assert_eq!(
+        nonapplicable[0].applicability_reason(),
+        Some("NO_SELECTED_DECLARED_FLOW_SINKS")
+    );
     assert_eq!(result.summary().failed(), 0);
     assert_eq!(result.summary().unsupported(), 0);
     assert!(result.findings().is_empty());
