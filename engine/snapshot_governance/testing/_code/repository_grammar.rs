@@ -39,8 +39,9 @@ fn fortress_documentation_is_complete_synchronized_and_deterministic() {
     );
     assert_eq!(first, second);
     assert_eq!(first.summary().modules_inspected(), 49);
-    // Development Governance and its Testing Module add seven canonical documents.
-    assert_eq!(first.summary().markdown_files_inspected(), 159);
+    // FLOW source controls add one canonical Data catalog to the prior 159 documents.
+    assert!(files.contains_key("engine/information_flow/testing/_docs/data_docs.md"));
+    assert_eq!(first.summary().markdown_files_inspected(), 160);
     assert_eq!(
         first.summary().code_bijection().0,
         first.summary().code_bijection().1

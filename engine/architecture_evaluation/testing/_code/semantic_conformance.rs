@@ -11,7 +11,7 @@ use fortress_core::architecture_realization::reconcile_implementation;
 use fortress_core::contract_coherency::{
     ContractStandardIndex, ModuleContract, compile_contract_coherency_graph,
 };
-use fortress_core::finding::{DefeaterKind, DefeaterStrength};
+use fortress_core::finding::{CanonicalFinding, DefeaterKind, DefeaterStrength};
 use fortress_core::finding_governance::{
     FindingGovernanceDocument, FindingLifecycle, evaluate_finding_governance,
 };
@@ -946,13 +946,13 @@ fn fixture_count(value: &serde_json::Value) -> usize {
         .expect("fixture count fits the host")
 }
 
-// The frozen seven-case ledger binds the original CCG1 wire. Verify today's
-// exact CCG2 reference, then reconstruct only that historical reference for
-// the old whole-output pin. Every other model/finding byte remains covered.
+// The frozen seven-case ledger binds the original CCG1 wire. Verify the
+// exact CCG2 reference, then reconstruct only that historical reference.
 // This is test-only snapshot compatibility, never a production CCG1 reader.
 fn legacy_corpus_snapshot_digest(
     files: &BTreeMap<String, Vec<u8>>,
-    result: &SemanticConformanceEvaluation,
+    model: &str,
+    findings: &[CanonicalFinding],
 ) -> String {
     let standard =
         ContractStandardIndex::new("STD-FORTRESS-ENGINEERING", EDITION, ["ARCH-SEMANTIC-001"]);
@@ -980,7 +980,6 @@ fn legacy_corpus_snapshot_digest(
         .replacen("\"schema_version\": 2", "\"schema_version\": 1", 1);
     let current_digest = ccg.digest().unwrap();
     let legacy_digest = format!("sha256:{:x}", Sha256::digest(legacy_graph.as_bytes()));
-    let model = result.model().to_canonical_json().unwrap();
     let current_binding = format!("\"ccg_digest\": \"{current_digest}\"");
     assert_eq!(model.matches(&current_binding).count(), 1);
     let legacy_model = model.replacen(
@@ -988,8 +987,94 @@ fn legacy_corpus_snapshot_digest(
         &format!("\"ccg_digest\": \"{legacy_digest}\""),
         1,
     );
-    let raw = serde_json::to_vec(&(legacy_model, result.findings())).unwrap();
+    let raw = serde_json::to_vec(&(legacy_model, findings)).unwrap();
     format!("sha256:{:x}", Sha256::digest(raw))
+}
+
+// Compare every semantic field while restoring only separately pinned,
+// content-derived references. Ordering changes only for canonical hash sets.
+fn project_corpus_input_bindings(
+    value: &mut serde_json::Value,
+    bindings: &serde_json::Map<String, serde_json::Value>,
+) {
+    match value {
+        serde_json::Value::String(text) => {
+            if let Some(historical) = bindings.get(text.as_str()) {
+                *text = historical.as_str().unwrap().to_owned();
+            }
+        }
+        serde_json::Value::Array(values) => {
+            for item in values {
+                project_corpus_input_bindings(item, bindings);
+            }
+        }
+        serde_json::Value::Object(object) => {
+            for item in object.values_mut() {
+                project_corpus_input_bindings(item, bindings);
+            }
+            for key in ["inputs", "defeater_refs"] {
+                if let Some(items) = object.get_mut(key) {
+                    items
+                        .as_array_mut()
+                        .unwrap()
+                        .sort_by(|a, b| a.as_str().unwrap().cmp(b.as_str().unwrap()));
+                }
+            }
+            if let Some(items) = object.get_mut("defeaters") {
+                items
+                    .as_array_mut()
+                    .unwrap()
+                    .sort_by(|a, b| a["id"].as_str().unwrap().cmp(b["id"].as_str().unwrap()));
+            }
+        }
+        _ => {}
+    }
+}
+
+fn assert_corpus_input_binding_compatibility(
+    result: &SemanticConformanceEvaluation,
+    current_digest: &str,
+    record: &serde_json::Value,
+) {
+    assert_eq!(record["current_raw_output_digest"], current_digest);
+    let current_utf8 = result.model().to_canonical_json().unwrap();
+    let historical_utf8 = record["historical_model_utf8"].as_str().unwrap();
+    let bindings = record["current_to_historical_bindings"]
+        .as_object()
+        .unwrap();
+    assert!(!bindings.is_empty());
+    let mut historical_ids = BTreeSet::new();
+    for (current, historical) in bindings {
+        let historical = historical.as_str().unwrap();
+        let (current_prefix, current_hash) = current.rsplit_once("sha256:").unwrap();
+        let (historical_prefix, historical_hash) = historical.rsplit_once("sha256:").unwrap();
+        assert_eq!(current_prefix, historical_prefix);
+        assert!(matches!(
+            current_prefix,
+            "" | "claim_instance:v1:" | "claim_proof:v1:" | "defeater:v1:"
+        ));
+        assert_eq!(current_hash.len(), 64);
+        assert_eq!(historical_hash.len(), 64);
+        assert!(
+            current_hash
+                .bytes()
+                .chain(historical_hash.bytes())
+                .all(|byte| byte.is_ascii_hexdigit())
+        );
+        assert_ne!(current, historical);
+        assert!(current_utf8.contains(current));
+        assert!(historical_utf8.contains(historical));
+        assert!(historical_ids.insert(historical));
+        assert!(!bindings.contains_key(historical));
+    }
+    let mut current: serde_json::Value = serde_json::from_str(&current_utf8).unwrap();
+    let mut historical: serde_json::Value = serde_json::from_str(historical_utf8).unwrap();
+    project_corpus_input_bindings(&mut current, bindings);
+    project_corpus_input_bindings(&mut historical, &serde_json::Map::new());
+    assert_eq!(
+        current, historical,
+        "semantic fields changed beyond reviewed input bindings"
+    );
 }
 
 /// `T-AF-ARCHITECTURE-EVALUATION-0001-R05-005`
@@ -1007,6 +1092,50 @@ fn qualification_corpus_replays_authored_cases() {
     let ledger: serde_json::Value =
         serde_json::from_slice(&fs::read(ledger_path).expect("regression ledger reads"))
             .expect("regression ledger parses");
+    let compatibility: serde_json::Value = serde_json::from_slice(
+        &fs::read(
+            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .join("../../testing/_data/flow_compatibility_bindings_v1.json"),
+        )
+        .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(
+        compatibility["format"],
+        "semantic-corpus-input-binding-compatibility-v1"
+    );
+    assert_eq!(compatibility["schema_version"], 1);
+    assert_eq!(
+        compatibility["baseline_revision"],
+        "4f2d21d30f811d1b1328878a789822f5c1cc2afc"
+    );
+    assert_eq!(compatibility["baseline_psm_producer"], "6.1.0");
+    assert_eq!(compatibility["current_psm_producer"], "6.2.0");
+    for (path, expected) in compatibility["historical_inputs"].as_object().unwrap() {
+        let bytes = fs::read(
+            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .join("../..")
+                .join(path),
+        )
+        .unwrap();
+        assert_eq!(
+            expected.as_str().unwrap(),
+            format!("sha256:{:x}", Sha256::digest(bytes))
+        );
+    }
+    let compatibility_cases = compatibility["cases"].as_array().unwrap();
+    assert_eq!(
+        compatibility_cases.len(),
+        manifest["cases"].as_array().unwrap().len()
+    );
+    assert_eq!(
+        compatibility_cases
+            .iter()
+            .map(|case| case["case_id"].as_str().unwrap())
+            .collect::<BTreeSet<_>>()
+            .len(),
+        compatibility_cases.len()
+    );
     assert_eq!(manifest["historical_population"]["status"], "UNREPRODUCED");
     assert!(manifest["historical_population"]["original_case_count"].is_null());
     assert_eq!(ledger["upstream_reproduction"]["status"], "UNREPRODUCED");
@@ -1119,7 +1248,18 @@ fn qualification_corpus_replays_authored_cases() {
         ))
         .unwrap();
         let raw_digest = format!("sha256:{:x}", Sha256::digest(raw));
-        let legacy_digest = legacy_corpus_snapshot_digest(&files, &result);
+        let compatibility_case = compatibility_cases
+            .iter()
+            .find(|record| record["case_id"] == case["case_id"])
+            .unwrap();
+        assert_corpus_input_binding_compatibility(&result, &raw_digest, compatibility_case);
+        let legacy_digest = legacy_corpus_snapshot_digest(
+            &files,
+            compatibility_case["historical_model_utf8"]
+                .as_str()
+                .unwrap(),
+            result.findings(),
+        );
         let entry = ledger["cases"]
             .as_array()
             .unwrap()

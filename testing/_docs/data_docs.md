@@ -40,6 +40,10 @@ Records case output hashes, distinct source site counts separately from propagat
 
 Current raw output pins were reviewed after replay with semantic-conformance producer 5.1.0 and State/Effect schema v5. The seven authored controls retain their source, policy, expected verdict, finding-count, and historical-reproduction oracles. New output identities bind the installed operation catalog and explicit summary opacity; successful negative results also bind their complete proof premises. An observed external effect remains a positive witness without becoming a complete effect upper bound.
 
+### [`flow_compatibility_bindings_v1.json`](../_data/flow_compatibility_bindings_v1.json)
+
+Retains exact historical model bytes replayed from qualified baseline `4f2d21d30f811d1b1328878a789822f5c1cc2afc`, immutable corpus/ledger hashes, separately pinned current full outputs, and reviewed content-derived binding substitutions for PSM producer 6.1.0 to 6.2.0. Tests verify the original ledger pins with unchanged current findings, then compare every model field after only these exact substitutions and canonical hash-set ordering. This is test-only reference data; it neither reinterprets historical evidence nor supplies semantic authority.
+
 ### [`semantic_qualification_protocol.json`](../_data/semantic_qualification_protocol.json)
 
 Preregistered deterministic automated protocol over 86 cases, 76 required controls, 28 held-out selections and 384 source replacements among 64 cases. Exact original freeze hashes, independent provenance, all unsupported denominators and nonvacuity are mandatory. Human adjudication and population accuracy remain future unqualified research; performance is outside the verdict.
