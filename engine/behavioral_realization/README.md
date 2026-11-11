@@ -78,7 +78,7 @@ Provides exact supported typestate transitions and effect occurrences used as se
 
 Behavioral Realization never turns missing semantic coverage into realization or bypass freedom, never promotes internal helpers to behavioral checkpoints, retains derivation evidence for every realized edge and bypass, and emits canonical deterministic results without claiming runtime execution or verification evidence.
 
-## Optional bounded checkpoint governance
+**Optional bounded checkpoint governance**
 
 Compose GOV-FORTRESS-BOUNDED-BEHAVIOR with a compatible canonical or native layout profile, explicitly at project or Module scope, after reviewing its bounded claim. It is an optional add-on and does not replace mandatory layout governance. Authored CCG checkpoints and Intended BFG retain independent authority. The claim covers explicit static entry/return checkpoint order, required transitions, mandatory dominators and terminal containment in supported direct-call paths. It does not prove that a function named authorize implements authorization, that a sanitizer performs its declaration, or that a path actually executed.
 
