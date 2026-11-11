@@ -1,0 +1,252 @@
+{
+  "$schema": "urn:fortress:derived:v5:assessment-generation-manifest",
+  "schema_version": 5,
+  "generation_kind": "LOCAL_QUALITY",
+  "project": "PF-FORTRESS",
+  "profile": "fortress-complete-local-v1",
+  "selection_key": "sha256:c92e04f04a9614c5d58768e535a47e5a77abe5c010060404df38effb1c536206",
+  "source": {
+    "fingerprint": "sha256:36dd64fa14ff4e1b3d51541d8e366587e633e78cbdd06d36f136bdf59fe7fcdd",
+    "file_count": 681
+  },
+  "control_layout": {
+    "id": "fortress-control-layout-v5",
+    "digest": "sha256:31b8d6382a908919519ed526262c50bf79d5d6451231feb75bab12f1c311c0d4"
+  },
+  "artifacts": [
+    {
+      "id": "bfg",
+      "producer_id": "behavioral_semantics",
+      "schema_ref": "urn:fortress:derived:v1:behavioral-flow-graph",
+      "producer_semantic_version": "1.0.0",
+      "content_digest": "sha256:bb03d53205444c420d698686e2d99cd693b9fa080616692cda7093110a05a143",
+      "byte_count": 137357,
+      "disposition": "REQUIRED",
+      "storage": {
+        "kind": "INCLUDED",
+        "member_name": "behavioral_flow_graph.json"
+      }
+    },
+    {
+      "id": "ccg",
+      "producer_id": "contract_coherency",
+      "schema_ref": "urn:fortress:schema:v2:contract-coherency-graph",
+      "producer_semantic_version": "2.0.0",
+      "content_digest": "sha256:f17b6a555aeb5fe040a06d4e8ac0a2e30eec2b570626d18c9bb8b66c06d3d812",
+      "byte_count": 3428741,
+      "disposition": "REQUIRED",
+      "storage": {
+        "kind": "EXTERNAL_MATERIALIZATION",
+        "logical_artifact_id": "ccg"
+      }
+    },
+    {
+      "id": "certification",
+      "producer_id": "certification",
+      "schema_ref": "urn:fortress:derived:v1:certification-result",
+      "producer_semantic_version": "2.0.0",
+      "content_digest": "sha256:cef4421bcfe75b660eed9a132093028a61d8e0c706a5489e8ac429584ef12848",
+      "byte_count": 135582,
+      "disposition": "REQUIRED",
+      "storage": {
+        "kind": "INCLUDED",
+        "member_name": "certification.json"
+      }
+    },
+    {
+      "id": "conformance-declaration",
+      "producer_id": "certification",
+      "schema_ref": "urn:fortress:derived:v1:conformance-declaration",
+      "producer_semantic_version": "1.0.0",
+      "content_digest": "sha256:085c9287c073bb0e4a53974e8a28aa35908d88230cd05752668cbf1590d7e204",
+      "byte_count": 23975,
+      "disposition": "REQUIRED",
+      "storage": {
+        "kind": "INCLUDED",
+        "member_name": "conformance_declaration.json"
+      }
+    },
+    {
+      "id": "environmental",
+      "producer_id": "environmental_semantics",
+      "schema_ref": "urn:fortress:derived:v1:environmental-analysis",
+      "producer_semantic_version": "1.0.0",
+      "content_digest": "sha256:7bdf471bcfb3ebd9474e24033e9b2507fb3599fc41251d498995ff0e6ca0b332",
+      "byte_count": 5526,
+      "disposition": "REQUIRED",
+      "storage": {
+        "kind": "INCLUDED",
+        "member_name": "environmental_analysis.json"
+      }
+    },
+    {
+      "id": "evidence-graph",
+      "producer_id": "certification",
+      "schema_ref": "urn:fortress:derived:v2:evidence-graph",
+      "producer_semantic_version": "2.0.0",
+      "content_digest": "sha256:f6345f51b1e44429f46966e62690950d426023dab9dd2cd11d05a95189bb67bf",
+      "byte_count": 2012364,
+      "disposition": "REQUIRED",
+      "storage": {
+        "kind": "INCLUDED",
+        "member_name": "evidence_graph.json"
+      }
+    },
+    {
+      "id": "information-flow",
+      "producer_id": "information_flow",
+      "schema_ref": "urn:fortress:derived:v1:information-flow-analysis",
+      "producer_semantic_version": "1.0.0",
+      "content_digest": "sha256:a573cb5f2cbe85be03f1ff13733086ac05566d188b587dc98cda6121d29ded8a",
+      "byte_count": 2626524,
+      "disposition": "REQUIRED",
+      "storage": {
+        "kind": "EXTERNAL_MATERIALIZATION",
+        "logical_artifact_id": "information-flow"
+      }
+    },
+    {
+      "id": "profile-assessment",
+      "producer_id": "certification",
+      "schema_ref": "urn:fortress:derived:v2:profile-assessment",
+      "producer_semantic_version": "2.0.0",
+      "content_digest": "sha256:26d4139368b5cf393e815f7ee3a564ac5fb1393ecd30a8b95f9ce33b1b1a5230",
+      "byte_count": 2734,
+      "disposition": "REQUIRED",
+      "storage": {
+        "kind": "INCLUDED",
+        "member_name": "profile_assessment.json"
+      }
+    },
+    {
+      "id": "psm",
+      "producer_id": "program_semantics",
+      "schema_ref": "urn:fortress:derived:v6:program-semantic-model",
+      "producer_semantic_version": "6.1.0",
+      "content_digest": "sha256:2ac3e5d63f21eb3ac46290c0e9c5489e4bfe2c6bffca9d518e8ae3b85638e65f",
+      "byte_count": 347636647,
+      "disposition": "REQUIRED",
+      "storage": {
+        "kind": "EXTERNAL_MATERIALIZATION",
+        "logical_artifact_id": "psm"
+      }
+    },
+    {
+      "id": "quality-certificate",
+      "producer_id": "snapshot_governance",
+      "schema_ref": "urn:fortress:derived:v4:local-quality-certificate",
+      "producer_semantic_version": "quality-certificate-v3.0",
+      "content_digest": "sha256:a79d6fead1c262b9fc0a96a2e7c45ace6265f8231423eaa209498f24ac0bf1ea",
+      "byte_count": 14640,
+      "disposition": "REQUIRED",
+      "storage": {
+        "kind": "INCLUDED",
+        "member_name": "quality_certificate.json"
+      }
+    },
+    {
+      "id": "realized-bfg",
+      "producer_id": "behavioral_realization",
+      "schema_ref": "urn:fortress:derived:v1:realized-behavioral-flow-graph",
+      "producer_semantic_version": "1.0.0",
+      "content_digest": "sha256:d714cc4bfcf2ecac44c728ee81931078d5b8e2884f8500d95b89fce476e8b2dd",
+      "byte_count": 61756344,
+      "disposition": "REQUIRED",
+      "storage": {
+        "kind": "EXTERNAL_MATERIALIZATION",
+        "logical_artifact_id": "realized-bfg"
+      }
+    },
+    {
+      "id": "references",
+      "producer_id": "reference_resolution",
+      "schema_ref": "urn:fortress:derived:v1:component-resolution-index",
+      "producer_semantic_version": "1.0.0",
+      "content_digest": "sha256:cfdef0536e1431ffae6e0b0ea60ea764209b034f488dd60d3c7f37c9bc130597",
+      "byte_count": 692298,
+      "disposition": "REQUIRED",
+      "storage": {
+        "kind": "INCLUDED",
+        "member_name": "component_resolution_index.json"
+      }
+    },
+    {
+      "id": "semantic",
+      "producer_id": "semantic_analysis",
+      "schema_ref": "urn:fortress:derived:v2:semantic-analysis",
+      "producer_semantic_version": "2.0.0",
+      "content_digest": "sha256:ba1da17d3ec86c563b541d8958db73e232f09fb588a9cd0db40d93bb3512b808",
+      "byte_count": 10260000,
+      "disposition": "REQUIRED",
+      "storage": {
+        "kind": "EXTERNAL_MATERIALIZATION",
+        "logical_artifact_id": "semantic"
+      }
+    },
+    {
+      "id": "semantic-conformance",
+      "producer_id": "architecture_evaluation",
+      "schema_ref": "urn:fortress:derived:v7:semantic-conformance",
+      "producer_semantic_version": "5.1.0",
+      "content_digest": "sha256:17ed122e39f924a9f5b9579fba88677a55e5b23f08bf741d5902883254bf4d56",
+      "byte_count": 80920906,
+      "disposition": "REQUIRED",
+      "storage": {
+        "kind": "EXTERNAL_MATERIALIZATION",
+        "logical_artifact_id": "semantic-conformance"
+      }
+    },
+    {
+      "id": "semantic-qualification",
+      "producer_id": "testing",
+      "schema_ref": "urn:fortress:derived:v1:semantic-qualification",
+      "producer_semantic_version": "1.0.0",
+      "content_digest": "sha256:c0643b0f4fcf4b121c33b7e4b867efb50b422c28f6f85d7a29c58b683f5930a9",
+      "byte_count": 3549,
+      "disposition": "REQUIRED",
+      "storage": {
+        "kind": "INCLUDED",
+        "member_name": "semantic_qualification.json"
+      }
+    },
+    {
+      "id": "source-artifacts",
+      "producer_id": "source_architecture",
+      "schema_ref": "urn:fortress:derived:v1:source-artifact-model",
+      "producer_semantic_version": "1.0.0",
+      "content_digest": "sha256:b2433658ed3a9d362f50900bef6f4bcdce64a83c749a1684c6915a5e0afcbea6",
+      "byte_count": 36083540,
+      "disposition": "REQUIRED",
+      "storage": {
+        "kind": "EXTERNAL_MATERIALIZATION",
+        "logical_artifact_id": "source-artifacts"
+      }
+    },
+    {
+      "id": "state-effect",
+      "producer_id": "state_effect_analysis",
+      "schema_ref": "urn:fortress:derived:v5:state-effect-analysis",
+      "producer_semantic_version": "5.0.1",
+      "content_digest": "sha256:9f3e8c625f97d358c6128b466e9091782ac32b6c1dabf80248b137d8e5cd3347",
+      "byte_count": 243396062,
+      "disposition": "REQUIRED",
+      "storage": {
+        "kind": "EXTERNAL_MATERIALIZATION",
+        "logical_artifact_id": "state-effect"
+      }
+    },
+    {
+      "id": "verified-bfg",
+      "producer_id": "certification",
+      "schema_ref": "urn:fortress:derived:v1:verified-behavioral-flow-graph",
+      "producer_semantic_version": "2.0.0",
+      "content_digest": "sha256:5f260d95be1f32346fb5f65cffee6d6f9d83e3f4fe8399d3918732877cc9bfc5",
+      "byte_count": 6988,
+      "disposition": "REQUIRED",
+      "storage": {
+        "kind": "INCLUDED",
+        "member_name": "verified_behavioral_flow_graph.json"
+      }
+    }
+  ]
+}
