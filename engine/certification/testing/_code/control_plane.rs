@@ -204,12 +204,11 @@ fn historical_layout_retains_its_role_boundary_and_digest() {
     );
     assert_ne!(historical.digest(), ControlLayout::standard().digest());
     assert!(!historical.allows_directory("__fortress/governance/effect_summaries"));
-    assert!(
-        ControlLayout::from_json_str(
-            &CONTROL_LAYOUT_SOURCE.replace("\"schema_version\": 5", "\"schema_version\": 1")
-        )
-        .is_err()
-    );
+    let mut mislabeled: serde_json::Value =
+        serde_json::from_str(CONTROL_LAYOUT_SOURCE).expect("current layout parses");
+    assert_ne!(mislabeled["schema_version"], serde_json::json!(1));
+    mislabeled["schema_version"] = serde_json::json!(1);
+    assert!(ControlLayout::from_json_str(&mislabeled.to_string()).is_err());
 }
 
 fn manifest(member: &str) -> String {
