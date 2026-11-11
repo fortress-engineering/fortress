@@ -29,7 +29,7 @@ use crate::architecture_realization::{ArchitectureRealization, reconcile_impleme
 use crate::behavioral_realization::{
     BehaviorRealizationContractError, BehaviorRealizationContractSource,
     BehavioralRealizationError, BehavioralRealizationEvaluation, RealizedBehavioralFlowGraph,
-    evaluate_behavioral_realization, load_behavior_realization_contracts,
+    evaluate_behavioral_realization_with_selection, load_behavior_realization_contracts,
 };
 use crate::behavioral_semantics::{
     BehavioralSemanticsError, IntendedBehavioralFlowGraph, evaluate_behavioral_semantics,
@@ -1947,7 +1947,7 @@ pub fn compile_repository_realized_bfg(
         sources,
     )
     .map_err(AuditError::BehaviorRealizationContracts)?;
-    evaluate_behavioral_realization(
+    evaluate_behavioral_realization_with_selection(
         ccg,
         behavioral_semantics.graph(),
         &models.psm,
@@ -1957,6 +1957,7 @@ pub fn compile_repository_realized_bfg(
         models.environmental.model(),
         &contracts,
         prepared.standard.bundle.edition(),
+        &selected_behavior_scope(&prepared.profiles),
     )
     .map(|evaluation| evaluation.graph().clone())
     .map_err(AuditError::BehavioralRealization)
@@ -2443,6 +2444,7 @@ fn compile_certification_stack_from_prepared(
         &models,
         &prepared.observed_files,
         prepared.standard.bundle.edition(),
+        &prepared.profiles,
     )?;
     let reference_resolution = evaluate_reference_resolution(
         &ccg,
@@ -2661,7 +2663,8 @@ fn application_from_stack_with_inputs(
         .collect::<Vec<_>>();
     let mut provider_inputs = application_provider_inputs(stack, &binding, inputs)?;
     let flow_rules = flow_application_rules(stack)?;
-    let mut application = crate::application::compose_application_with_flow(
+    let behavior_rules = behavior_application_rules(stack);
+    let mut application = crate::application::compose_application_with_semantic_rules(
         stack.snapshot.project_id(),
         binding,
         &stack.profiles,
@@ -2671,6 +2674,7 @@ fn application_from_stack_with_inputs(
         artifacts,
         Some(&mut provider_inputs),
         &flow_rules,
+        &behavior_rules,
     )
     .map_err(|e| AuditError::ContractState(e.to_string().into()))?;
     if let Some(replay) = &mut application.portable_replay {
@@ -2798,6 +2802,7 @@ fn compile_certification_realization(
     models: &AnalysisModels,
     observed_files: &BTreeMap<String, Vec<u8>>,
     edition: &str,
+    profiles: &ResolvedProfiles,
 ) -> Result<BehavioralRealizationEvaluation, AuditError> {
     let sources = behavior_realization_contract_sources(ccg, observed_files)?;
     let contracts = load_behavior_realization_contracts(
@@ -2810,7 +2815,7 @@ fn compile_certification_realization(
         sources,
     )
     .map_err(AuditError::BehaviorRealizationContracts)?;
-    evaluate_behavioral_realization(
+    evaluate_behavioral_realization_with_selection(
         ccg,
         intended,
         psm,
@@ -2820,6 +2825,7 @@ fn compile_certification_realization(
         models.environmental.model(),
         &contracts,
         edition,
+        &selected_behavior_scope(profiles),
     )
     .map_err(AuditError::BehavioralRealization)
 }
@@ -2994,7 +3000,7 @@ fn certification_artifacts(
         ),
         (
             "realized_bfg",
-            "urn:fortress:schema:v1:realized-behavioral-flow-graph",
+            stack.realized.graph().schema(),
             "_info/realized_behavioral_flow_graph.json",
             stack
                 .realized
@@ -3974,7 +3980,7 @@ fn audit_repository_with_prepared(
             )
             .map_err(AuditError::BehaviorRealizationContracts)?;
             Some(
-                evaluate_behavioral_realization(
+                evaluate_behavioral_realization_with_selection(
                     ccg,
                     behavioral_semantics.graph(),
                     &models.psm,
@@ -3984,6 +3990,7 @@ fn audit_repository_with_prepared(
                     models.environmental.model(),
                     &contracts,
                     standard.edition(),
+                    &selected_behavior_scope(&prepared.profiles),
                 )
                 .map_err(AuditError::BehavioralRealization)?,
             )
@@ -6595,4 +6602,57 @@ fn selected_flow_scope(profiles: &ResolvedProfiles) -> crate::information_flow::
             .map(|(id, _)| id.clone())
             .collect(),
     }
+}
+
+fn selected_behavior_scope(
+    profiles: &ResolvedProfiles,
+) -> crate::behavioral_realization::BehaviorSelection {
+    crate::behavioral_realization::BehaviorSelection {
+        project: profiles
+            .references()
+            .iter()
+            .any(|p| p.id == crate::behavioral_realization::BEHAVIOR_PROFILE_ID),
+        modules: profiles
+            .module_overrides()
+            .iter()
+            .filter(|(_, s)| {
+                s.references()
+                    .iter()
+                    .any(|p| p.id == crate::behavioral_realization::BEHAVIOR_PROFILE_ID)
+            })
+            .map(|(id, _)| id.clone())
+            .collect(),
+    }
+}
+fn behavior_application_rules(
+    stack: &CertificationSemanticStack,
+) -> Vec<crate::application::ApplicationRuleInput> {
+    stack
+        .realized
+        .graph()
+        .bounded_analysis()
+        .into_iter()
+        .flat_map(crate::behavioral_realization::BoundedBehaviorEvaluation::claims)
+        .filter(|c| c["verdict"] != "NOT_APPLICABLE")
+        .map(|c| crate::application::ApplicationRuleInput {
+            rule_id: c["id"].as_str().unwrap_or_default().into(),
+            outcome: match c["verdict"].as_str() {
+                Some("SUPPORTED_VIOLATION") => crate::application::ApplicationRuleOutcome::Failed,
+                Some("NO_SUPPORTED_VIOLATION") => {
+                    crate::application::ApplicationRuleOutcome::Passed
+                }
+                _ => crate::application::ApplicationRuleOutcome::Unsupported,
+            },
+            applicable: true,
+            findings: c["findings"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .filter_map(serde_json::Value::as_str)
+                .map(str::to_owned)
+                .collect(),
+            detail: c.to_string(),
+            applicability_reason: Some("EXACT_CONTEXT_BOUNDED_STATIC_CHECKPOINTS".into()),
+        })
+        .collect()
 }

@@ -12,29 +12,44 @@ use super::{
 use crate::declaration::DeclarationTruth;
 
 impl QueryService {
+    fn index_scoped_owner_claim(
+        &mut self,
+        claim: &crate::declaration::DeclarationClaim,
+        context: &str,
+    ) -> Result<(), QueryError> {
+        let kind = if claim.id.starts_with("rule:flow_claim:") {
+            "flow_scope"
+        } else if claim.id.starts_with("rule:behavior_claim:") {
+            "behavior_scope"
+        } else {
+            return Ok(());
+        };
+        let Some(rule) = &claim.rule_result else {
+            return Ok(());
+        };
+        let value: Value = crate::wire::parse_public_json(&rule.detail)
+            .map_err(|e| QueryError::new("INVALID_INPUT", e.to_string()))?;
+        if kind == "flow_scope" {
+            crate::information_flow::validate_operation_claim_projection(&value, context)
+                .map_err(|e| QueryError::new("INVALID_INPUT", e.to_string()))?;
+        } else {
+            crate::behavioral_realization::validate_behavior_claim_projection(&value, context)
+                .map_err(|e| QueryError::new("INVALID_INPUT", e.to_string()))?;
+        }
+        for record in value["defeater_records"].as_array().into_iter().flatten() {
+            let id = record["id"].as_str().ok_or_else(|| {
+                QueryError::new("INVALID_INPUT", "owner defeater identity absent")
+            })?;
+            self.add_record("defeater", id, &claim.id, record.clone())?;
+        }
+        self.add_record(kind, format!("{}:scope", claim.id), &claim.id, value)
+    }
     pub(super) fn index_application(&mut self) -> Result<(), QueryError> {
         let Some(app) = self.application().cloned() else {
             return Ok(());
         };
         for claim in &app.declaration.claims {
-            if claim.id.starts_with("rule:flow_claim:")
-                && let Some(rule) = &claim.rule_result
-            {
-                let flow: Value = crate::wire::parse_public_json(&rule.detail)
-                    .map_err(|e| QueryError::new("INVALID_INPUT", e.to_string()))?;
-                crate::information_flow::validate_operation_claim_projection(
-                    &flow,
-                    &app.declaration.binding.context_ref,
-                )
-                .map_err(|e| QueryError::new("INVALID_INPUT", e.to_string()))?;
-                for record in flow["defeater_records"].as_array().into_iter().flatten() {
-                    let id = record["id"].as_str().ok_or_else(|| {
-                        QueryError::new("INVALID_INPUT", "flow defeater identity absent")
-                    })?;
-                    self.add_record("defeater", id, &claim.id, record.clone())?;
-                }
-                self.add_record("flow_scope", format!("{}:scope", claim.id), &claim.id, flow)?;
-            }
+            self.index_scoped_owner_claim(claim, &app.declaration.binding.context_ref)?;
             let mut value = serde_json::to_value(claim)
                 .map_err(|error| QueryError::new("INVALID_INPUT", error.to_string()))?;
             if let Some(detail) = &claim.semantic_claim {
@@ -158,7 +173,7 @@ impl QueryService {
                 references.contains(&record.id)
                     || (matches!(
                         record.kind.as_str(),
-                        "proof_node" | "provenance" | "flow_scope"
+                        "proof_node" | "provenance" | "flow_scope" | "behavior_scope"
                     ) && references.contains(&record.scope_ref))
             })
             .map(|(index, _)| index)
@@ -386,7 +401,8 @@ fn minimal_support(
 ) -> Value {
     if claims.len() == 1 {
         let claim = claims[0];
-        if claim.id.starts_with("rule:flow_claim:") {
+        if claim.id.starts_with("rule:flow_claim:") || claim.id.starts_with("rule:behavior_claim:")
+        {
             return json!({"basis":"NOT_ESTABLISHED","refs":claim.proof_refs,"limitations":"The scoped flow result retains representative provenance and all reported defeaters. No independently minimal data-flow proof is asserted."});
         }
         if claim.proof_refs.len() == 1
@@ -421,7 +437,9 @@ fn minimal_support(
 }
 
 fn governing_rule_id(claim: &crate::declaration::DeclarationClaim) -> &str {
-    if claim.id.starts_with("rule:flow_claim:") {
+    if claim.id.starts_with("rule:behavior_claim:") {
+        "BEHAVIOR-REALIZATION-001"
+    } else if claim.id.starts_with("rule:flow_claim:") {
         "PROGRAM-INFOFLOW-001"
     } else {
         claim

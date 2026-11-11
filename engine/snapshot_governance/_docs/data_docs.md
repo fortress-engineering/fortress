@@ -125,3 +125,11 @@ Adds typed flow_author parameters for readable, unapproved operation-policy prop
 ### [`query_response_schema_v3.json`](../_data/query_response_schema_v3.json)
 
 Preserves the existing bounded response family under protocol v3, including explicit proposal acceptance and context bindings. Source preparation remains an explicit adapter step.
+
+### [`query_request_schema_v4.json`](../_data/query_request_schema_v4.json)
+
+Adds the typed behavior_author preview under protocol v4 while preserving versions 1–3. An explicitly prepared immutable context is required; response formatting never starts analysis.
+
+### [`query_response_schema_v4.json`](../_data/query_response_schema_v4.json)
+
+Adds the typed behavior_author preview under protocol v4 while preserving versions 1–3. An explicitly prepared immutable context is required; response formatting never starts analysis.

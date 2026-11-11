@@ -2839,6 +2839,138 @@
         "id": "sha256-rfc8785-public-json",
         "source": "testing/_code/verify_bundle.py"
       }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v3:behavior-realization-contracts",
+      "schema_path": "engine/behavioral_realization/_data/realization_contract_schema_v3.json",
+      "version": 3,
+      "writer": {
+        "status": "AUTHORED",
+        "source": null
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/behavioral_realization/_code/realization_contract.rs"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "literal-authored-identity-fields",
+        "source": "engine/behavioral_realization/_code/realization_contract.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-distributed-exact-source-material",
+        "source": "engine/behavioral_realization/_code/realization_contract.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v1:behavior-claim",
+      "schema_path": "engine/behavioral_realization/_data/behavior_claim_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/behavioral_realization/_code/governance.rs"
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/behavioral_realization/_code/governance.rs"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "exact-context-bounded-checkpoint-v1",
+        "source": "engine/behavioral_realization/_code/governance.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-jcs-exact-inputs-v1",
+        "source": "engine/behavioral_realization/_code/governance.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v1:bounded-behavior-analysis",
+      "schema_path": "engine/behavioral_realization/_data/bounded_analysis_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/behavioral_realization/_code/governance.rs"
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "no-model-level-content-hash-algorithm",
+        "source": null
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v2:realized-behavioral-flow-graph",
+      "schema_path": "engine/behavioral_realization/_data/realized_bfg_schema_v2.json",
+      "version": 2,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/behavioral_realization/_code/governance.rs"
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-owner-canonical-json-bytes",
+        "source": "engine/behavioral_realization/_code/realization.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:protocol:v4:query-request",
+      "schema_path": "engine/snapshot_governance/_data/query_request_schema_v4.json",
+      "version": 4,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/snapshot_governance/_code/query_protocol.rs"
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/snapshot_governance/_code/query_protocol.rs"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "exact-loaded-query-input-v1",
+        "source": "engine/snapshot_governance/_code/query_protocol.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "rfc8785-jcs-sha256",
+        "source": "engine/snapshot_governance/_code/query_protocol.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:protocol:v4:query-response",
+      "schema_path": "engine/snapshot_governance/_data/query_response_schema_v4.json",
+      "version": 4,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/snapshot_governance/_code/query_protocol.rs"
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/snapshot_governance/_code/query_protocol.rs"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "exact-loaded-query-input-v1",
+        "source": "engine/snapshot_governance/_code/query_protocol.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "rfc8785-jcs-sha256",
+        "source": "engine/snapshot_governance/_code/query_protocol.rs"
+      }
     }
   ]
 }

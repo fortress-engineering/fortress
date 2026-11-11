@@ -298,6 +298,12 @@ pub struct SemanticAnalysisModel {
 }
 
 impl SemanticAnalysisModel {
+    /// Returns the exact PSM identity consumed by this immutable analysis.
+    #[must_use]
+    pub fn psm_digest(&self) -> &str {
+        &self.psm_digest
+    }
+
     /// Returns function summaries in canonical symbol order.
     #[must_use]
     pub fn summaries(&self) -> &[FunctionSemanticSummary] {

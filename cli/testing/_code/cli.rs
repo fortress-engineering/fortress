@@ -2130,3 +2130,92 @@ fn candidate_files_cannot_supply_host_provider_admission() {
     assert!(output.is_empty());
     assert!(String::from_utf8_lossy(&error).contains("outside the physical candidate repository"));
 }
+
+/// `T-TF-CLI-0001-R25-001`
+/// Fortress requirement: TF-CLI-0001-R25
+#[test]
+fn readable_behavior_authoring_and_stdio_remain_unapplied_and_read_only() {
+    use std::io::Write as _;
+    use std::process::Stdio;
+    let fixture = ObservationFixture::new();
+    fs::write(
+        fixture.root.join("src/lib.rs"),
+        "pub fn authorize(){} pub fn mutate(){} pub fn entry(){authorize();mutate();}",
+    )
+    .unwrap();
+    fs::write(
+        fixture.root.join("build.rs"),
+        "fn main(){panic!(\"project build must not execute\");}",
+    )
+    .unwrap();
+    let args = [
+        "behavior-author",
+        fixture.root.to_str().unwrap(),
+        "--feature",
+        "AF-WORKFLOW-0001",
+        "--checkpoint",
+        "CHK-START=ordinary::entry",
+        "--checkpoint",
+        "CHK-AUTH=ordinary::authorize",
+        "--checkpoint",
+        "CHK-MUTATE=ordinary::mutate",
+        "--checkpoint",
+        "CHK-END=ordinary::entry",
+        "--return",
+        "CHK-END",
+        "--format",
+    ];
+    let mut json_args = args.to_vec();
+    json_args.push("json");
+    let output = run(&json_args);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let value: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(value["protocol_version"], 4);
+    assert_eq!(value["result"]["data"]["disposition"], "PROPOSED");
+    assert_eq!(value["result"]["data"]["accepted_authority"], false);
+    let mut human_args = args.to_vec();
+    human_args.push("human");
+    let human = run(&human_args);
+    assert!(human.status.success());
+    assert_eq!(
+        String::from_utf8(human.stdout).unwrap(),
+        fortress_core::query::render_inspection_value(&value)
+    );
+    let request = serde_json::json!({"protocol_version":4,"request_id":"behavior","method":"behavior_author","state_ref":null,"context_ref":null,"parameters":{"feature":"AF-WORKFLOW-0001","checkpoints":{"CHK-START":"ordinary::entry","CHK-AUTH":"ordinary::authorize","CHK-MUTATE":"ordinary::mutate","CHK-END":"ordinary::entry"},"returns":["CHK-END"]}});
+    let mut child = Command::new(env!("CARGO_BIN_EXE_fortress"))
+        .args([
+            "serve",
+            "--stdio",
+            "--behavior-authoring",
+            fixture.root.to_str().unwrap(),
+        ])
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    writeln!(child.stdin.take().unwrap(), "{request}").unwrap();
+    let output = child.wait_with_output().unwrap();
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let response: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(response["result"], value["result"]);
+    assert!(!fixture.root.join("target").exists());
+    assert!(!fixture.root.join("__fortress/.fsconfig").exists());
+    for version in [1, 2, 3] {
+        let mut old = request.clone();
+        old["protocol_version"] = serde_json::json!(version);
+        let request = fortress_core::query::QueryRequest::from_json_str(&old.to_string()).unwrap();
+        assert_eq!(
+            request.operation_for_adapter().unwrap_err().code,
+            "UNKNOWN_METHOD"
+        );
+    }
+}

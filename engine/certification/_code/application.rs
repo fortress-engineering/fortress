@@ -145,6 +145,36 @@ pub fn compose_application_with_flow(
     providers: Option<&mut crate::provider_inputs::ApplicationProviderEvidence>,
     flow_rules: &[ApplicationRuleInput],
 ) -> Result<ApplicationAssessment, DeclarationError> {
+    compose_application_with_semantic_rules(
+        project,
+        binding,
+        profiles,
+        model,
+        rules,
+        governance,
+        artifacts,
+        providers,
+        flow_rules,
+        &[],
+    )
+}
+
+/// Composes immutable owner claims for optional FLOW and bounded BEHAVIOR scopes.
+/// # Errors
+/// Rejects unsupported projections or claims outside selected exact scopes.
+#[allow(clippy::too_many_arguments, clippy::too_many_lines)]
+pub fn compose_application_with_semantic_rules(
+    project: &str,
+    binding: DeclarationBinding,
+    profiles: &ResolvedProfiles,
+    model: &SemanticConformanceModel,
+    rules: &[ApplicationRuleInput],
+    governance: &FindingGovernanceEvaluation,
+    artifacts: Vec<DeclarationArtifact>,
+    providers: Option<&mut crate::provider_inputs::ApplicationProviderEvidence>,
+    flow_rules: &[ApplicationRuleInput],
+    behavior_rules: &[ApplicationRuleInput],
+) -> Result<ApplicationAssessment, DeclarationError> {
     let policy = crate::profile::ApplicationAssessmentPolicy::installed()
         .map_err(|e| DeclarationError::Invalid(e.to_string()))?;
     let mut references = Vec::new();
@@ -243,14 +273,70 @@ pub fn compose_application_with_flow(
             .or_default()
             .push(format!("rule:{}", rule.rule_id));
     }
+    let behavior_project = profiles
+        .references()
+        .iter()
+        .any(|p| p.id == crate::behavioral_realization::BEHAVIOR_PROFILE_ID);
+    let behavior_modules = profiles
+        .module_overrides()
+        .iter()
+        .filter(|(_, s)| {
+            s.references()
+                .iter()
+                .any(|p| p.id == crate::behavioral_realization::BEHAVIOR_PROFILE_ID)
+        })
+        .map(|(id, _)| id.as_str())
+        .collect::<std::collections::BTreeSet<_>>();
+    for rule in behavior_rules {
+        let value: serde_json::Value = crate::wire::parse_public_json(&rule.detail)
+            .map_err(|e| DeclarationError::Invalid(e.to_string()))?;
+        crate::behavioral_realization::validate_behavior_claim_projection(
+            &value,
+            &binding.context_ref,
+        )
+        .map_err(|e| DeclarationError::Invalid(e.to_string()))?;
+        for (input, artifact) in [
+            ("intended_bfg", "bfg"),
+            ("psm", "psm"),
+            ("semantic", "semantic"),
+            ("state_effect", "state-effect"),
+            ("information_flow", "information-flow"),
+            ("environmental", "environmental"),
+        ] {
+            if !artifacts
+                .iter()
+                .any(|a| a.id == artifact && value["inputs"][input] == a.content_digest)
+            {
+                return crate::declaration::invalid(
+                    "behavior input does not identify a required immutable artifact",
+                );
+            }
+        }
+        if value["id"] != rule.rule_id {
+            return crate::declaration::invalid("behavior projection identity mismatch");
+        }
+        let module = value["module_id"].as_str().unwrap_or_default();
+        let dimension = if behavior_project {
+            "BOUNDED_BEHAVIOR".into()
+        } else if behavior_modules.contains(module) {
+            format!("MODULE:{module}:BOUNDED_BEHAVIOR")
+        } else {
+            return crate::declaration::invalid("behavior claim outside selected scope");
+        };
+        dimensions
+            .entry(dimension)
+            .or_default()
+            .push(format!("rule:{}", rule.rule_id));
+    }
     for rule in profiles
         .active_rules()
         .iter()
-        .chain(flow_rules.iter().map(|r| &r.rule_id))
+        .chain(flow_rules.iter().chain(behavior_rules).map(|r| &r.rule_id))
     {
         let execution = rules
             .iter()
             .chain(flow_rules)
+            .chain(behavior_rules)
             .find(|r| &r.rule_id == rule)
             .ok_or_else(|| {
                 DeclarationError::Invalid(format!("selected rule result missing: {rule}"))
@@ -284,7 +370,7 @@ pub fn compose_application_with_flow(
             assumptions: vec![],
             semantic_claim: None,
         };
-        if rule.starts_with("flow_claim:") {
+        if rule.starts_with("flow_claim:") || rule.starts_with("behavior_claim:") {
             let flow: serde_json::Value = crate::wire::parse_public_json(&execution.detail)
                 .map_err(|e| DeclarationError::Invalid(e.to_string()))?;
             let strings = |key: &str| {

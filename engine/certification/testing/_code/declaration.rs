@@ -261,36 +261,20 @@ fn compact_captured_application_bundle_is_independently_checked_without_reexecut
     let output = Checkout::new();
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let predicate = "https://example.invalid/fortress/assurance/v1";
-    for (name, code) in [
-        (
-            "negative",
-            "pub fn write() { let _ = std::fs::write(\"output\",b\"x\"); }\n",
-        ),
-        ("clean", "pub fn write() {}\n"),
-        (
-            "flow-violation",
-            "pub fn credential()->u8{7} pub fn log(value:u8){} pub fn send(){let value=credential();log(value);}\n",
-        ),
-        (
-            "flow-permitted",
-            "pub fn credential()->u8{7} pub fn log(value:u8){} pub fn send(){let value=credential();log(value);}\n",
-        ),
-        (
-            "flow-module",
-            "pub fn credential()->u8{7} pub fn log(value:u8){} pub fn send(){let value=credential();log(value);}\n",
-        ),
-        (
-            "flow-unknown",
-            "pub fn credential()->u8{7} pub fn log(value:u8){} pub fn send(callback:fn(u8)->u8){let value=callback(credential());log(value);}\n",
-        ),
-    ] {
+    for (name, code) in portable_application_cases() {
         source.write("sample/_code/lib.rs", code);
         if name.starts_with("flow-") {
             configure_flow_checkout(&source, name == "flow-permitted", name == "flow-module");
         }
+        if name.starts_with("behavior-") {
+            configure_behavior_checkout(&source, name == "behavior-module");
+        }
         let view = fortress_core::audit::compile_repository_state_view(&source.0).unwrap();
         if name.starts_with("flow-") {
             assert_flow_explanation(&view, name);
+        }
+        if name.starts_with("behavior-") {
+            assert_behavior_explanation(&view, name);
         }
         let expected =
             serde_json::to_value(view.application.as_ref().unwrap().assessment.decision).unwrap();
@@ -348,6 +332,19 @@ fn compact_captured_application_bundle_is_independently_checked_without_reexecut
             write_portable_bundle(&bundle, &retain).unwrap();
         }
     }
+    let reference = fortress_core::profile::installed_profile_reference(
+        fortress_core::behavioral_realization::BEHAVIOR_PROFILE_ID,
+        "1.0.0",
+    )
+    .unwrap();
+    source.write("__fortress/.fsconfig",&serde_json::json!({"$schema":"urn:fortress:schema:v4:project-configuration","schema_version":4,"observation_exclusions":[".git"],"logical_modules":[],"governance":{"default_layout":"native-logical-v1","selected_profiles":[reference],"module_overrides":[]},"assurance_profiles":[]}).to_string());
+    let invalid = fortress_core::audit::compile_repository_state_view(&source.0).unwrap();
+    assert_eq!(
+        invalid.status,
+        fortress_core::audit::StateViewStatus::Invalid
+    );
+    assert!(invalid.application.is_none());
+    assert!(invalid.detail.as_deref().unwrap().contains("layout"));
 }
 
 fn assert_bundle_schemas(bundle: &fortress_core::bundle::PortableBundle) {
@@ -1203,4 +1200,141 @@ fn verify_capture_references(
     assert_eq!(stale.status.code(), Some(1));
     let stale: serde_json::Value = serde_json::from_slice(&stale.stdout).unwrap();
     assert_eq!(stale["freshness"], "STALE");
+}
+
+fn configure_behavior_checkout(source: &Checkout, module: bool) {
+    let path = source
+        .0
+        .join("__fortress/governance/information_flow_policy.json");
+    if path.exists() {
+        std::fs::remove_file(path).unwrap();
+    }
+    let reference = fortress_core::profile::installed_profile_reference(
+        fortress_core::behavioral_realization::BEHAVIOR_PROFILE_ID,
+        "1.0.0",
+    )
+    .unwrap();
+    let native =
+        fortress_core::profile::installed_profile_reference("GOV-FORTRESS-NATIVE", "1.0.0")
+            .unwrap();
+    let (selected, overrides) = if module {
+        (
+            serde_json::json!([native]),
+            serde_json::json!([{"module":"AF-SAMPLE-0001","selected_profiles":[reference],"assurance_profiles":[]}]),
+        )
+    } else {
+        (
+            serde_json::json!([reference, native]),
+            serde_json::json!([]),
+        )
+    };
+    source.write("__fortress/.fsconfig",&serde_json::json!({"$schema":"urn:fortress:schema:v4:project-configuration","schema_version":4,"observation_exclusions":[".git"],"logical_modules":[],"governance":{"default_layout":"native-logical-v1","selected_profiles":selected,"module_overrides":overrides},"assurance_profiles":[]}).to_string());
+    let mut contract: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(source.0.join("sample/contract.json")).unwrap())
+            .unwrap();
+    contract["features"] =
+        serde_json::json!([{"id":"AF-SAMPLE-0001","version":"0.1.0","requirements":[]}]);
+    contract["behavior"] = serde_json::json!([
+ {"id":"CHK-AUTH","feature":"AF-SAMPLE-0001","kind":"action","transitions":[{"target":"CHK-MUTATE"}]},
+ {"id":"CHK-END","feature":"AF-SAMPLE-0001","kind":"terminal","outcome":"complete","transitions":[]},
+ {"id":"CHK-MUTATE","feature":"AF-SAMPLE-0001","kind":"action","transitions":[{"target":"CHK-END"}]},
+ {"id":"CHK-START","feature":"AF-SAMPLE-0001","kind":"trigger","transitions":[{"target":"CHK-AUTH"}]}]);
+    let contract: fortress_core::contract_coherency::ModuleContract =
+        serde_json::from_value(contract).unwrap();
+    source.write(
+        "sample/contract.json",
+        &contract.to_canonical_json().unwrap(),
+    );
+    let (psm, _, _) = fortress_core::audit::prepare_repository_flow_authoring(&source.0).unwrap();
+    let preview = fortress_core::behavioral_realization::preview_behavior_contract(
+        &psm,
+        &fortress_core::behavioral_realization::BehaviorAuthorParameters {
+            feature: "AF-SAMPLE-0001".into(),
+            checkpoints: std::collections::BTreeMap::from([
+                ("CHK-START".into(), "sample::entry".into()),
+                ("CHK-AUTH".into(), "sample::authorize".into()),
+                ("CHK-MUTATE".into(), "sample::mutate".into()),
+                ("CHK-END".into(), "sample::entry".into()),
+            ]),
+            returns: std::collections::BTreeSet::from(["CHK-END".into()]),
+        },
+    )
+    .unwrap();
+    source.write(
+        "sample/_data/behavior_realization_contracts.json",
+        preview["canonical_preview"].as_str().unwrap(),
+    );
+}
+fn assert_behavior_explanation(view: &fortress_core::audit::StateView, name: &str) {
+    use fortress_core::query::{QueryInput, QueryRequest, QueryService};
+    let app = view.application.as_ref().unwrap();
+    let claim = app
+        .declaration
+        .claims
+        .iter()
+        .find(|c| c.id.starts_with("rule:behavior_claim:"))
+        .unwrap();
+    let expected = match name {
+        "behavior-bypass" => DeclarationTruth::SupportedViolation,
+        "behavior-unknown" => DeclarationTruth::NotEvaluable,
+        _ => DeclarationTruth::NoSupportedViolation,
+    };
+    assert_eq!(claim.truth, expected);
+    let mut input = QueryInput::empty(view.source_ref.clone());
+    input.state_view = Some(view.clone());
+    let service = QueryService::new(input).unwrap();
+    let request=QueryRequest::from_json_str(&serde_json::json!({"protocol_version":4,"request_id":"behavior","method":"explain","state_ref":null,"context_ref":null,"parameters":{"selector":claim.id}}).to_string()).unwrap();
+    let result =
+        serde_json::to_value(service.execute(&request, &std::sync::atomic::AtomicBool::new(false)))
+            .unwrap();
+    assert!(result["error"].is_null(), "{result}");
+    assert!(
+        result["result"]["data"]["evidence"]["records"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|r| r["kind"] == "behavior_scope")
+    );
+}
+
+fn portable_application_cases() -> [(&'static str, &'static str); 10] {
+    [
+        (
+            "negative",
+            "pub fn write() { let _ = std::fs::write(\"output\",b\"x\"); }\n",
+        ),
+        ("clean", "pub fn write() {}\n"),
+        (
+            "flow-violation",
+            "pub fn credential()->u8{7} pub fn log(value:u8){} pub fn send(){let value=credential();log(value);}\n",
+        ),
+        (
+            "flow-permitted",
+            "pub fn credential()->u8{7} pub fn log(value:u8){} pub fn send(){let value=credential();log(value);}\n",
+        ),
+        (
+            "flow-module",
+            "pub fn credential()->u8{7} pub fn log(value:u8){} pub fn send(){let value=credential();log(value);}\n",
+        ),
+        (
+            "flow-unknown",
+            "pub fn credential()->u8{7} pub fn log(value:u8){} pub fn send(callback:fn(u8)->u8){let value=callback(credential());log(value);}\n",
+        ),
+        (
+            "behavior-clean",
+            "pub fn authorize(){} pub fn mutate(){} pub fn entry(){authorize();mutate();}",
+        ),
+        (
+            "behavior-bypass",
+            "pub fn authorize(){} pub fn mutate(){} pub fn entry(){mutate();authorize();}",
+        ),
+        (
+            "behavior-unknown",
+            "pub fn authorize(){} pub fn mutate(){} pub fn entry(callback:fn()){authorize();callback();mutate();}",
+        ),
+        (
+            "behavior-module",
+            "pub fn authorize(){} pub fn mutate(){} pub fn entry(){authorize();mutate();}",
+        ),
+    ]
 }

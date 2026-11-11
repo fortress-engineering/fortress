@@ -321,6 +321,28 @@ pub struct EnvironmentalAnalysisModel {
 }
 
 impl EnvironmentalAnalysisModel {
+    /// Returns the immutable upstream semantic analysis digest binding.
+    #[must_use]
+    pub fn semantic_analysis_digest(&self) -> &str {
+        &self.semantic_analysis_digest
+    }
+    /// Returns the immutable upstream state effect digest binding.
+    #[must_use]
+    pub fn state_effect_digest(&self) -> &str {
+        &self.state_effect_digest
+    }
+    /// Returns the immutable upstream information flow digest binding.
+    #[must_use]
+    pub fn information_flow_digest(&self) -> &str {
+        &self.information_flow_digest
+    }
+
+    /// Returns the exact PSM identity consumed by this immutable analysis.
+    #[must_use]
+    pub fn psm_digest(&self) -> &str {
+        &self.psm_digest
+    }
+
     /// Returns compiled operation summaries.
     #[must_use]
     pub fn operations(&self) -> &[EnvironmentalOperationSummary] {

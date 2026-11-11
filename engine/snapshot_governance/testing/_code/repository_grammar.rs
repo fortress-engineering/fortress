@@ -41,7 +41,7 @@ fn fortress_documentation_is_complete_synchronized_and_deterministic() {
     assert_eq!(first.summary().modules_inspected(), 49);
     // FLOW source controls add one canonical Data catalog to the prior 159 documents.
     assert!(files.contains_key("engine/information_flow/testing/_docs/data_docs.md"));
-    assert_eq!(first.summary().markdown_files_inspected(), 160);
+    assert_eq!(first.summary().markdown_files_inspected(), 161);
     assert_eq!(
         first.summary().code_bijection().0,
         first.summary().code_bijection().1

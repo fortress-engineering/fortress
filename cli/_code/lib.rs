@@ -35,6 +35,7 @@ use fortress_core::identity_migration::{
 };
 mod application_inputs;
 mod authority_command;
+mod behavior_command;
 pub mod command;
 mod finding_command;
 mod flow_command;
@@ -115,6 +116,7 @@ where
     };
 
     match command.id() {
+        "CMD-BEHAVIOR-AUTHOR" => behavior_command::run(&arguments[1..], output, error),
         "CMD-FLOW-AUTHOR" => flow_command::run(&arguments[1..], output, error),
         "CMD-PORTABLE-BUNDLE" | "CMD-PORTABLE-SARIF" => {
             portable_command::run(command.name(), &arguments[1..], output, error)

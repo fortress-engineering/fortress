@@ -1,0 +1,68 @@
+{
+  "format": "bounded-behavior-source-addendum-v1",
+  "schema_version": 1,
+  "stage": "Supplemental controls authored after initial implementation but before any native behavioral results or compiler adjudication; original seven controls remain byte-preserved.",
+  "cases": [
+    {
+      "id": "authenticate_authorize_mutate",
+      "source": "fn authenticate(){} fn authorize(){} fn mutate(){} fn entry(){authenticate();authorize();mutate();}",
+      "source_sha256": "3e84fc39a8168d19ad1abe71b2d95f8657c8e2af95b41e5b23f90d575c6e97ca",
+      "expected_trace": [
+        "authenticate",
+        "authorize",
+        "mutate"
+      ],
+      "expected_verdict": "NO_SUPPORTED_VIOLATION",
+      "probe_symbols": [
+        "authenticate",
+        "authorize",
+        "mutate"
+      ],
+      "entry_arguments": ""
+    },
+    {
+      "id": "persist_confirm",
+      "source": "fn persist(){} fn confirm(){} fn entry(){persist();confirm();}",
+      "source_sha256": "f752ca5b9f9fb29c21c04fb2105d84ce12ae93e02bcd3eed492a2d897134b2ac",
+      "expected_trace": [
+        "persist",
+        "confirm"
+      ],
+      "expected_verdict": "NO_SUPPORTED_VIOLATION",
+      "probe_symbols": [
+        "confirm",
+        "persist"
+      ],
+      "entry_arguments": ""
+    },
+    {
+      "id": "confirm_before_persist",
+      "source": "fn persist(){} fn confirm(){} fn entry(){confirm();persist();}",
+      "source_sha256": "b285e04589d8f6d1a0fe21afd882f1126301b6ee59a394714509b04fc482d8fe",
+      "expected_trace": [
+        "confirm",
+        "persist"
+      ],
+      "expected_verdict": "SUPPORTED_VIOLATION",
+      "probe_symbols": [
+        "confirm",
+        "persist"
+      ],
+      "entry_arguments": ""
+    },
+    {
+      "id": "unknown_branch_false",
+      "source": "fn authorize(){} fn mutate(){} fn entry(flag:bool){if flag{authorize();}mutate();}",
+      "source_sha256": "1d95bae957c711931b5386bc81c8b4ab268f6f013d9d9857294b17f7c6fd301c",
+      "expected_trace": [
+        "mutate"
+      ],
+      "expected_verdict": "NOT_EVALUABLE",
+      "probe_symbols": [
+        "authorize",
+        "mutate"
+      ],
+      "entry_arguments": "false"
+    }
+  ]
+}

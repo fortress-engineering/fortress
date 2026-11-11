@@ -1582,6 +1582,11 @@ pub struct ContractCoherencyGraph {
 }
 
 impl ContractCoherencyGraph {
+    /// Returns the edition already bound by the governing Standard index.
+    #[must_use]
+    pub fn standard_edition(&self) -> &str {
+        &self.standard.edition
+    }
     /// Returns Modules keyed by stable identity.
     #[must_use]
     pub const fn modules(&self) -> &BTreeMap<String, ResolvedModule> {

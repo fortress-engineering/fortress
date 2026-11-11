@@ -29,3 +29,7 @@ The Cargo-declared `event_graph_paths` native test crate root imports the existi
 ### [`event_graph_paths.rs`](../_code/event_graph_paths.rs)
 
 Checks 32,768 deterministic queries against an independent copy of the original string BFS, including Unicode, duplicates, cycles, multiple seeds, missing and edge-only endpoints, forbidden vertices and coverage ties. Separate controls check exact admission, refusal, empty/zero-hop behavior and arithmetic overflow before input consumption. These owner tests complement complete public realization and Session reuse/fallback controls; they do not substitute for authoritative certification.
+
+### [`bounded_profile.rs`](../_code/bounded_profile.rs)
+
+Qualifies explicit checkpoint selection, coherent and reordered workflows, early returns, missing checkpoints, incomplete control/call evidence, balanced direct calls, immutable preparation equivalence, unapproved readable authoring, and tamper-resistant owner projections. Frozen source expectations are independent of producer output. Instrumented Rust source controls adjudicate finite traces separately from application execution evidence.

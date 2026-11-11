@@ -219,3 +219,5 @@ Loads only registered active finding authority, composes read-only lifecycle rep
 ### [`query_lifecycle.rs`](../_code/query_lifecycle.rs)
 
 Indexes already-produced comparable retirement and current authored admission/exception history for bounded, cancellable EXPLAIN paging. It never reruns analysis, validates external permission, chooses an ambiguous historical candidate, or treats recorded resolution as current repository evidence.
+
+Optional bounded BEHAVIOR composition resolves project/Module applicability from registered selected profiles, consumes Behavioral Realization owner claims, and carries their original findings, defeaters and limitations into declaration, assessment, EXPLAIN and portable replay. Protocol v4 authoring consumes the same explicitly admitted immutable semantic context as FLOW; it does not execute source analysis to format requests. CONTROL generation selection remains the source of retained evidence; default legacy realized output is unchanged when the optional scope is unselected.

@@ -245,6 +245,13 @@
             "T-TF-CLI-0001-R24-001",
             "T-TF-CLI-0001-R24-002"
           ]
+        },
+        {
+          "id": "TF-CLI-0001-R25",
+          "statement": "Readable bounded checkpoint authoring and protocol v4 previews render identical immutable proposals without executing project code, accepting authority or writing governance; older protocol versions reject the newer method explicitly.",
+          "tests": [
+            "T-TF-CLI-0001-R25-001"
+          ]
         }
       ]
     }

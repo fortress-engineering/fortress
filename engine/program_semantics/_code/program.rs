@@ -1501,19 +1501,29 @@ impl LegacySymbolReferenceUse {
 pub struct SymbolReferenceIndex<'a> {
     current: BTreeMap<&'a str, Vec<&'a ExecutableSymbol>>,
     legacy: BTreeMap<&'a str, Vec<&'a ExecutableSymbol>>,
+    qualified: BTreeMap<&'a str, Vec<&'a ExecutableSymbol>>,
 }
 
 impl<'a> SymbolReferenceIndex<'a> {
     fn new(symbols: &'a [ExecutableSymbol]) -> Self {
         let mut current = BTreeMap::<_, Vec<_>>::new();
         let mut legacy = BTreeMap::<_, Vec<_>>::new();
+        let mut qualified = BTreeMap::<_, Vec<_>>::new();
         for symbol in symbols {
             current.entry(symbol.id()).or_default().push(symbol);
+            qualified
+                .entry(symbol.qualified_name())
+                .or_default()
+                .push(symbol);
             for alias in symbol.legacy_ids() {
                 legacy.entry(alias.as_str()).or_default().push(symbol);
             }
         }
-        Self { current, legacy }
+        Self {
+            current,
+            legacy,
+            qualified,
+        }
     }
 
     /// Resolves a current identity or exact-snapshot legacy alias without guessing.
@@ -1535,6 +1545,24 @@ impl<'a> SymbolReferenceIndex<'a> {
             .map(|symbols| {
                 unique_reference(reference, symbols, SymbolReferenceAuthority::LegacyAlias)
             })
+            .transpose()
+    }
+
+    /// Resolves exact canonical/legacy identities or an exact qualified name.
+    /// Names do not establish permission, applicability or execution.
+    ///
+    /// # Errors
+    /// Rejects ambiguous names rather than choosing the first candidate.
+    pub fn resolve_readable(
+        &self,
+        reference: &str,
+    ) -> Result<Option<ResolvedSymbolReference<'a>>, SymbolReferenceError> {
+        if let Some(resolved) = self.resolve(reference)? {
+            return Ok(Some(resolved));
+        }
+        self.qualified
+            .get(reference)
+            .map(|symbols| unique_reference(reference, symbols, SymbolReferenceAuthority::Current))
             .transpose()
     }
 }

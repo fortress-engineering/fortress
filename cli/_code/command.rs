@@ -234,6 +234,13 @@ const BUILTIN_COMMANDS: &[CommandDescriptor] = &[
         usage: "fortress information-flow [path] [--format human|json] [--output path]",
     },
     CommandDescriptor {
+        id: "CMD-BEHAVIOR-AUTHOR",
+        name: "behavior-author",
+        aliases: &[],
+        description: "Preview unapplied readable behavioral checkpoint bindings.",
+        usage: "fortress behavior-author [path] --feature ID --checkpoint ID=NAME [--return ID] [--format human|json]",
+    },
+    CommandDescriptor {
         id: "CMD-FLOW-AUTHOR",
         name: "flow-author",
         aliases: &[],

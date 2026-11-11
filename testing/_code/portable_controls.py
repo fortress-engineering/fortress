@@ -266,6 +266,38 @@ class DeclaredFlowCountermodels(unittest.TestCase):
         with self.assertRaises(consumer.Invalid):consumer.verify_declared_flow_claim(claim,dict(context_ref=D))
 
 
+class BoundedBehaviorCountermodels(unittest.TestCase):
+    """Public record integrity controls; no source or authorization interpretation."""
+    def fixture(self):
+        inputs={k:D for k in ["intended_bfg","psm","semantic","state_effect","information_flow","environmental","realization_contracts"]}
+        identity="behavior_claim:v1:"+consumer.hashed(dict(module="AF-SAMPLE-0001",feature="AF-WORKFLOW-0001",scope="BOUNDED_CHECKPOINT_ORDER"))
+        value=dict(schema_version=1,id=identity,instance_ref="behavior_instance:v1:"+consumer.hashed(dict(id=identity,context=D,source=D,inputs=inputs)),module_id="AF-SAMPLE-0001",feature="AF-WORKFLOW-0001",context_ref=D,source_ref=D,inputs=inputs,profile="GOV-FORTRESS-BOUNDED-BEHAVIOR",verdict="NO_SUPPORTED_VIOLATION",proposition="Bounded static checkpoints",rule_id="BEHAVIOR-REALIZATION-001",reason_codes=[],assumptions=[],coverage=dict(complete=True,states=3,steps=3,completed_paths=1,reached_checkpoints=["CHK-END","CHK-START"],unsupported_anchors=[],max_states=20000,max_steps=1000000,max_frames=16,state_bytes_limit=67108864),counterexample=[],violation_scope=None,flow_provenance=dict(analysis_ref=D,claim_refs=[],assumptions=[],interpretation="CONDITIONAL_UPSTREAM_ONLY"),findings=[],defeaters=[],defeater_records=[],execution_evidence="NOT_SUPPLIED",authorization="NOT_ESTABLISHED",limitations=["Record integrity only; semantic correctness unproven."])
+        value["$schema"]="urn:fortress:schema:v1:behavior-claim"
+        row=dict(id="rule:"+identity,scope_ref="rule:"+identity,kind="RULE_CHECK",truth=value["verdict"],findings=[],defeater_refs=[],assumptions=[],reason_codes=[],rule_result=dict(detail=json.dumps(value)))
+        manifest=[dict(id=k,content_digest=D,byte_count=1) for k in ["bfg","psm","semantic","state-effect","information-flow","environmental"]]
+        return value,row,manifest
+
+    def test_behavior_integrity_is_independent_of_semantic_execution_and_authentication(self):
+        _,row,manifest=self.fixture()
+        consumer.verify_bounded_behavior_claim(row,dict(context_ref=D),manifest)
+
+    def test_missing_tampered_partial_and_forged_claims_are_not_favorable(self):
+        value,row,manifest=self.fixture()
+        mutations=[lambda v:v.update(schema_version=99),lambda v:v.update(context_ref="sha256:"+"b"*64),lambda v:v["coverage"].update(complete=False),lambda v:v["coverage"].update(completed_paths=0),lambda v:v["coverage"].update(states=1.0),lambda v:v.update(authorization="APPROVED_BY_LOCAL_FILE"),lambda v:v.update(execution_evidence="EXECUTED"),lambda v:v.update(violation_scope={}),lambda v:v["flow_provenance"].update(interpretation="PROVEN_TRANSFORMATION"),lambda v:v["inputs"].update(psm="sha256:"+"b"*64),lambda v:v.update(extra=True)]
+        for mutate in mutations:
+            bad=copy.deepcopy(value);mutate(bad);record=copy.deepcopy(row);record["rule_result"]["detail"]=json.dumps(bad)
+            with self.assertRaises(consumer.Invalid):consumer.verify_bounded_behavior_claim(record,dict(context_ref=D),manifest)
+        with self.assertRaises(consumer.Invalid):consumer.verify_bounded_behavior_claim(row,dict(context_ref=D),[])
+
+    def test_behavior_versions_and_duplicate_keys_are_strict(self):
+        value,row,manifest=self.fixture()
+        for version in [True,1.0,"1",4]:
+            bad=copy.deepcopy(value);bad["schema_version"]=version;record=copy.deepcopy(row);record["rule_result"]["detail"]=json.dumps(bad)
+            with self.assertRaises(consumer.Invalid):consumer.verify_bounded_behavior_claim(record,dict(context_ref=D),manifest)
+        row["rule_result"]["detail"]='{"schema_version":1,"schema_version":1}'
+        with self.assertRaises(consumer.Invalid):consumer.verify_bounded_behavior_claim(row,dict(context_ref=D),manifest)
+
+
 if __name__ == "__main__":
     if len(sys.argv) == 2 and sys.argv[1] == "--rust-vectors":
         vectors = consumer.parse(sys.stdin.buffer.read(consumer.MAX_FILE + 1))

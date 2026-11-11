@@ -293,6 +293,30 @@ pub struct InformationFlowAnalysisModel {
 }
 
 impl InformationFlowAnalysisModel {
+    /// Returns the immutable upstream semantic analysis digest binding.
+    #[must_use]
+    pub fn semantic_analysis_digest(&self) -> &str {
+        &self.semantic_analysis_digest
+    }
+    /// Returns the immutable upstream state effect digest binding.
+    #[must_use]
+    pub fn state_effect_digest(&self) -> &str {
+        &self.state_effect_digest
+    }
+
+    /// Returns claim identities and conditional assumptions for one exact owner.
+    /// This projection does not re-evaluate propagation or establish transformations.
+    #[must_use]
+    pub fn operation_provenance_for_module(&self, module: &str) -> (Vec<String>, Vec<String>) {
+        operation::module_provenance(&self.operation_claims, module)
+    }
+
+    /// Returns the exact PSM identity consumed by this immutable analysis.
+    #[must_use]
+    pub fn psm_digest(&self) -> &str {
+        &self.psm_digest
+    }
+
     /// Returns whether an explicitly selected operation claim remains unevaluable.
     #[must_use]
     pub fn has_unevaluable_operations(&self) -> bool {

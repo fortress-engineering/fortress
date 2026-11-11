@@ -1,0 +1,876 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:protocol:v4:query-response"
+    },
+    "protocol_version": {
+      "const": 4
+    },
+    "request_id": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "state_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "context_ref": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "result": {
+      "anyOf": [
+        {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "kind": {
+                  "const": "STATUS"
+                },
+                "data": {
+                  "type": "object"
+                }
+              },
+              "required": [
+                "kind",
+                "data"
+              ]
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "kind": {
+                  "const": "DOCTOR"
+                },
+                "data": {
+                  "type": "object"
+                }
+              },
+              "required": [
+                "kind",
+                "data"
+              ]
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "kind": {
+                  "const": "PAGE"
+                },
+                "data": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "total": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 100000
+                    },
+                    "offset": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 100000
+                    },
+                    "records": {
+                      "type": "array",
+                      "maxItems": 200,
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "kind": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "scope_ref": {
+                            "type": "string"
+                          },
+                          "value": {}
+                        },
+                        "required": [
+                          "id",
+                          "kind",
+                          "scope_ref",
+                          "value"
+                        ]
+                      }
+                    },
+                    "next_cursor": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "total",
+                    "offset",
+                    "records",
+                    "next_cursor"
+                  ]
+                }
+              },
+              "required": [
+                "kind",
+                "data"
+              ]
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "kind": {
+                  "const": "EXPLANATION"
+                },
+                "data": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "selector": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "description": {
+                      "type": "object"
+                    },
+                    "evidence": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "total": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 100000
+                        },
+                        "offset": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 100000
+                        },
+                        "records": {
+                          "type": "array",
+                          "maxItems": 200,
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "kind": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "scope_ref": {
+                                "type": "string"
+                              },
+                              "value": {}
+                            },
+                            "required": [
+                              "id",
+                              "kind",
+                              "scope_ref",
+                              "value"
+                            ]
+                          }
+                        },
+                        "next_cursor": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "total",
+                        "offset",
+                        "records",
+                        "next_cursor"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "selector",
+                    "description",
+                    "evidence"
+                  ]
+                }
+              },
+              "required": [
+                "kind",
+                "data"
+              ]
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "kind": {
+                  "const": "AUTHORING"
+                },
+                "data": {
+                  "type": "object"
+                }
+              },
+              "required": [
+                "kind",
+                "data"
+              ]
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "kind": {
+                  "const": "PROTOCOL"
+                },
+                "data": {
+                  "type": "object"
+                }
+              },
+              "required": [
+                "kind",
+                "data"
+              ]
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "kind": {
+                  "const": "TRANSITION"
+                },
+                "data": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "analysis_ref": {
+                      "type": "string",
+                      "pattern": "^sha256:[0-9a-f]{64}$"
+                    },
+                    "description": {
+                      "type": "object"
+                    },
+                    "deltas": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "total": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 100000
+                        },
+                        "offset": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 100000
+                        },
+                        "records": {
+                          "type": "array",
+                          "maxItems": 200,
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "kind": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "scope_ref": {
+                                "type": "string"
+                              },
+                              "value": {}
+                            },
+                            "required": [
+                              "id",
+                              "kind",
+                              "scope_ref",
+                              "value"
+                            ]
+                          }
+                        },
+                        "next_cursor": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "total",
+                        "offset",
+                        "records",
+                        "next_cursor"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "analysis_ref",
+                    "description",
+                    "deltas"
+                  ]
+                }
+              },
+              "required": [
+                "kind",
+                "data"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "error": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "enum": [
+                "INVALID_REQUEST",
+                "INVALID_PARAMETERS",
+                "UNKNOWN_METHOD",
+                "UNSUPPORTED_VERSION",
+                "RESOURCE_LIMIT",
+                "STATE_MISMATCH",
+                "AMBIGUOUS_SELECTOR",
+                "AMBIGUOUS_SELECTION",
+                "NOT_FOUND",
+                "UNAVAILABLE",
+                "MISSING",
+                "INVALID_INPUT",
+                "INTEGRITY_ERROR",
+                "INVALID_CURSOR",
+                "UNSAFE_PATH",
+                "UNSUPPORTED_SEMANTICS",
+                "INVALID_PROPOSAL",
+                "INVALID_RESULT",
+                "CANCELLED",
+                "ADAPTER_REQUIRED",
+                "DUPLICATE_REQUEST_ID"
+              ]
+            },
+            "message": {
+              "type": "string",
+              "minLength": 1
+            },
+            "candidates": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          "required": [
+            "code",
+            "message",
+            "candidates"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "operational_state": {
+      "enum": [
+        "COMPLETED",
+        "CANCELLED",
+        "FAILED"
+      ]
+    },
+    "actual_source_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "selected_source_ref": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "source_freshness": {
+      "enum": [
+        "FRESH",
+        "STALE",
+        "MISSING"
+      ]
+    }
+  },
+  "required": [
+    "$schema",
+    "protocol_version",
+    "request_id",
+    "state_ref",
+    "context_ref",
+    "result",
+    "error",
+    "limitations",
+    "operational_state",
+    "actual_source_ref",
+    "selected_source_ref",
+    "source_freshness"
+  ],
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:protocol:v4:query-response",
+  "title": "Read-only governance query response v3",
+  "oneOf": [
+    {
+      "properties": {
+        "result": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "kind": {
+                  "const": "STATUS"
+                },
+                "data": {
+                  "type": "object"
+                }
+              },
+              "required": [
+                "kind",
+                "data"
+              ]
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "kind": {
+                  "const": "DOCTOR"
+                },
+                "data": {
+                  "type": "object"
+                }
+              },
+              "required": [
+                "kind",
+                "data"
+              ]
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "kind": {
+                  "const": "PAGE"
+                },
+                "data": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "total": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 100000
+                    },
+                    "offset": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 100000
+                    },
+                    "records": {
+                      "type": "array",
+                      "maxItems": 200,
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "kind": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "scope_ref": {
+                            "type": "string"
+                          },
+                          "value": {}
+                        },
+                        "required": [
+                          "id",
+                          "kind",
+                          "scope_ref",
+                          "value"
+                        ]
+                      }
+                    },
+                    "next_cursor": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "total",
+                    "offset",
+                    "records",
+                    "next_cursor"
+                  ]
+                }
+              },
+              "required": [
+                "kind",
+                "data"
+              ]
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "kind": {
+                  "const": "EXPLANATION"
+                },
+                "data": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "selector": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "description": {
+                      "type": "object"
+                    },
+                    "evidence": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "total": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 100000
+                        },
+                        "offset": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 100000
+                        },
+                        "records": {
+                          "type": "array",
+                          "maxItems": 200,
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "kind": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "scope_ref": {
+                                "type": "string"
+                              },
+                              "value": {}
+                            },
+                            "required": [
+                              "id",
+                              "kind",
+                              "scope_ref",
+                              "value"
+                            ]
+                          }
+                        },
+                        "next_cursor": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "total",
+                        "offset",
+                        "records",
+                        "next_cursor"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "selector",
+                    "description",
+                    "evidence"
+                  ]
+                }
+              },
+              "required": [
+                "kind",
+                "data"
+              ]
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "kind": {
+                  "const": "AUTHORING"
+                },
+                "data": {
+                  "type": "object"
+                }
+              },
+              "required": [
+                "kind",
+                "data"
+              ]
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "kind": {
+                  "const": "PROTOCOL"
+                },
+                "data": {
+                  "type": "object"
+                }
+              },
+              "required": [
+                "kind",
+                "data"
+              ]
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "kind": {
+                  "const": "TRANSITION"
+                },
+                "data": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "analysis_ref": {
+                      "type": "string",
+                      "pattern": "^sha256:[0-9a-f]{64}$"
+                    },
+                    "description": {
+                      "type": "object"
+                    },
+                    "deltas": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "total": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 100000
+                        },
+                        "offset": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 100000
+                        },
+                        "records": {
+                          "type": "array",
+                          "maxItems": 200,
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "kind": {
+                                "type": "string",
+                                "minLength": 1
+                              },
+                              "scope_ref": {
+                                "type": "string"
+                              },
+                              "value": {}
+                            },
+                            "required": [
+                              "id",
+                              "kind",
+                              "scope_ref",
+                              "value"
+                            ]
+                          }
+                        },
+                        "next_cursor": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "minLength": 1
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "total",
+                        "offset",
+                        "records",
+                        "next_cursor"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "analysis_ref",
+                    "description",
+                    "deltas"
+                  ]
+                }
+              },
+              "required": [
+                "kind",
+                "data"
+              ]
+            }
+          ]
+        },
+        "error": {
+          "type": "null"
+        },
+        "operational_state": {
+          "const": "COMPLETED"
+        }
+      }
+    },
+    {
+      "properties": {
+        "result": {
+          "type": "null"
+        },
+        "error": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "enum": [
+                "INVALID_REQUEST",
+                "INVALID_PARAMETERS",
+                "UNKNOWN_METHOD",
+                "UNSUPPORTED_VERSION",
+                "RESOURCE_LIMIT",
+                "STATE_MISMATCH",
+                "AMBIGUOUS_SELECTOR",
+                "AMBIGUOUS_SELECTION",
+                "NOT_FOUND",
+                "UNAVAILABLE",
+                "MISSING",
+                "INVALID_INPUT",
+                "INTEGRITY_ERROR",
+                "INVALID_CURSOR",
+                "UNSAFE_PATH",
+                "UNSUPPORTED_SEMANTICS",
+                "INVALID_PROPOSAL",
+                "INVALID_RESULT",
+                "CANCELLED",
+                "ADAPTER_REQUIRED",
+                "DUPLICATE_REQUEST_ID"
+              ]
+            },
+            "message": {
+              "type": "string",
+              "minLength": 1
+            },
+            "candidates": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          "required": [
+            "code",
+            "message",
+            "candidates"
+          ]
+        },
+        "operational_state": {
+          "enum": [
+            "CANCELLED",
+            "FAILED"
+          ]
+        }
+      }
+    }
+  ]
+}

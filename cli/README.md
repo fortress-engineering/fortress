@@ -89,3 +89,13 @@ Retain the captured original comparison input and proposal outside the governed 
 These commands do not write active governance. The installed CLI cannot synthesize a grant; `--apply` reports AUTHORIZATION_REQUIRED. A trusted host must consume the protected exact-postimage interface. Legacy entries without original anchors require explicit reviewed migration rather than manufactured proof. An exception proposal, local file or approval URL remains an unverified reference and does not suppress a current violation.
 
 Retained retirement records can be inspected without comparison or analysis using `fortress explain sha256:EXACT_RETIREMENT_RECORD --retirement retirement-records.json` or `fortress serve --stdio --retirement retirement-records.json`. Existing protocol versions 1 and 2 and bounded evidence paging are unchanged. Recorded outcome and authorization provenance remain visibly unverified at this inspection boundary.
+
+Readable checkpoint proposals use the explicitly prepared immutable authoring context:
+
+```text
+fortress behavior-author --schema
+fortress behavior-author ./workflow --feature AF-WORKFLOW-0001 --checkpoint CHK-START=sample::entry --checkpoint CHK-AUTH=sample::authorize --checkpoint CHK-MUTATE=sample::mutate --checkpoint CHK-END=sample::entry --return CHK-END --format json
+fortress serve --stdio ./workflow --behavior-authoring
+```
+
+Protocol v4 adds typed behavior_author parameters (feature, checkpoints, optional returns). Versions 1–3 reject that newer method and retain existing meanings. Preparation is explicit; requests over the loaded context do not start analysis. Schema guidance does not prepare source. The preview is PROPOSED and does not accept, write or authorize a declaration. Entry/return selectors are unique qualified names or canonical symbol IDs; ambiguity is an error. Canonical v3 contracts bind the exact context and require normal Module-owned intent and coverage validation. Requirement-to-test bindings and execution evidence remain separate.

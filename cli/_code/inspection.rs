@@ -143,7 +143,7 @@ fn parse(name: &str, arguments: &[String]) -> Result<Parsed, String> {
             return Err(format!("duplicate inspection option {arg}"));
         }
         match arg.as_str() {
-            "--flow-authoring" if name == "serve" => flow_authoring = true,
+            "--flow-authoring" | "--behavior-authoring" if name == "serve" => flow_authoring = true,
             "--retirement" if matches!(name, "serve" | "explain") => {
                 index += 1;
                 push_retirement_path(&mut options, arguments.get(index))?;

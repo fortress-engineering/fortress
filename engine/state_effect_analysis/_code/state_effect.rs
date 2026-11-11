@@ -696,6 +696,18 @@ pub struct StateEffectAnalysisModel {
 }
 
 impl StateEffectAnalysisModel {
+    /// Returns the immutable upstream semantic analysis digest binding.
+    #[must_use]
+    pub fn semantic_analysis_digest(&self) -> &str {
+        &self.semantic_analysis_digest
+    }
+
+    /// Returns the exact PSM identity consumed by this immutable analysis.
+    #[must_use]
+    pub fn psm_digest(&self) -> &str {
+        &self.psm_digest
+    }
+
     /// Returns the exact summary authority used independently of PSM identity.
     #[must_use]
     pub fn operation_summary_catalog_digest(&self) -> &str {

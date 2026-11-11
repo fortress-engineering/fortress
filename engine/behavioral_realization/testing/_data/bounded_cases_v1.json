@@ -1,0 +1,74 @@
+{
+  "format": "bounded-behavior-source-controls-v1",
+  "schema_version": 1,
+  "oracle": "Authored expectations precede analysis. Independent pinned Rust compiles exact control-flow sources with separately digest-bound entry probes for otherwise empty checkpoint functions; original sources are analyzed unchanged. Probes make source-evaluation event order observable. This is not actual execution evidence for the uninstrumented application, authorization correctness, human adjudication or population accuracy.",
+  "cases": [
+    {
+      "id": "authorize_then_mutate",
+      "source": "fn authorize(){} fn mutate(){} fn entry(){authorize();mutate();}",
+      "source_sha256": "a873571e70d9e42203efd13b3d1e6ee1cddc2c9c96fda1ad0a24a1cb53e5923c",
+      "expected_trace": [
+        "authorize",
+        "mutate"
+      ],
+      "expected_verdict": "NO_SUPPORTED_VIOLATION"
+    },
+    {
+      "id": "reordered_same_calls",
+      "source": "fn authorize(){} fn mutate(){} fn entry(){mutate();authorize();}",
+      "source_sha256": "895750519b1cff8d7567da080d4ee736bbb60e5bd33633255ed1ec11e09f4ec5",
+      "expected_trace": [
+        "mutate",
+        "authorize"
+      ],
+      "expected_verdict": "SUPPORTED_VIOLATION"
+    },
+    {
+      "id": "omitted_checkpoint",
+      "source": "fn authorize(){} fn mutate(){} fn entry(){mutate();}",
+      "source_sha256": "c21f93c7324c959c934289908a929a3042dcfabddff4843ac341425941f96821",
+      "expected_trace": [
+        "mutate"
+      ],
+      "expected_verdict": "SUPPORTED_VIOLATION"
+    },
+    {
+      "id": "early_return",
+      "source": "fn authorize(){} fn mutate(){} fn entry(){authorize();return;mutate();}",
+      "source_sha256": "c267a4e146d0a829adc5665e47f3c7b948607e6fd815195f3e4400a64b01de26",
+      "expected_trace": [
+        "authorize"
+      ],
+      "expected_verdict": "SUPPORTED_VIOLATION"
+    },
+    {
+      "id": "literal_branch",
+      "source": "fn authorize(){} fn mutate(){} fn entry(){if true{authorize();}mutate();}",
+      "source_sha256": "65c94a5a48774cdc53fc652c6e5b6e75b5e4702cd017a3597ea1629b06abe343",
+      "expected_trace": [
+        "authorize",
+        "mutate"
+      ],
+      "expected_verdict": "NO_SUPPORTED_VIOLATION"
+    },
+    {
+      "id": "unknown_branch",
+      "source": "fn authorize(){} fn mutate(){} fn entry(flag:bool){if flag{authorize();}mutate();}",
+      "source_sha256": "1d95bae957c711931b5386bc81c8b4ab268f6f013d9d9857294b17f7c6fd301c",
+      "expected_trace": [
+        "authorize",
+        "mutate"
+      ],
+      "expected_verdict": "NOT_EVALUABLE"
+    },
+    {
+      "id": "unsupported_loop",
+      "source": "fn authorize(){} fn mutate(){} fn entry(){for _ in 0..0{authorize();}mutate();}",
+      "source_sha256": "14b2e6034ee50e1fd036a91525bc593ef2e4f08d83db3a99f454b68b340642a6",
+      "expected_trace": [
+        "mutate"
+      ],
+      "expected_verdict": "NOT_EVALUABLE"
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:bounded-behavior-analysis",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "semantic_version",
+    "context_ref",
+    "claims",
+    "findings"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:schema:v1:bounded-behavior-analysis"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "semantic_version": {
+      "const": "1.0.0"
+    },
+    "context_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "claims": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:fortress:schema:v1:behavior-claim"
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    }
+  }
+}

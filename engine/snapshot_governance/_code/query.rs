@@ -283,7 +283,9 @@ impl QueryService {
         let mut response = self
             .response(Some(request.request_id.clone()), result)
             .for_protocol_version(request.protocol_version);
-        if request.protocol_version == 3 && request.method == "flow_author" {
+        if request.protocol_version >= 3
+            && matches!(request.method.as_str(), "flow_author" | "behavior_author")
+        {
             response.context_ref = self
                 .flow_context
                 .as_ref()
@@ -341,21 +343,21 @@ impl QueryService {
         request: &QueryRequest,
         cancelled: &AtomicBool,
     ) -> Result<QueryPayload, QueryError> {
-        if ![QUERY_PROTOCOL_VERSION, 2, 3].contains(&request.protocol_version) {
+        if ![QUERY_PROTOCOL_VERSION, 2, 3, 4].contains(&request.protocol_version) {
             return Err(QueryError::new(
                 "UNSUPPORTED_VERSION",
-                "only protocol_version 1, 2 and 3 are supported",
+                "only protocol_version 1, 2, 3 and 4 are supported",
             ));
         }
         check_cancelled(cancelled)?;
-        let flow_context = if request.method == "flow_author" {
+        let flow_context = if matches!(request.method.as_str(), "flow_author" | "behavior_author") {
             self.flow_context
                 .as_ref()
                 .map(|(psm, _)| psm.program_context().digest())
         } else {
             None
         };
-        let context_ref = if request.method == "flow_author" {
+        let context_ref = if matches!(request.method.as_str(), "flow_author" | "behavior_author") {
             flow_context.as_deref()
         } else {
             self.context_ref()
@@ -375,6 +377,13 @@ impl QueryService {
             ));
         }
         let result = match request.operation()? {
+            QueryOperation::BehaviorAuthor(parameters) => {
+                let (psm,_)=self.flow_context.as_ref().ok_or_else(||QueryError::new("UNAVAILABLE","No immutable authoring context was explicitly admitted; formatting does not initiate analysis."))?;
+                QueryPayload::Authoring(
+                    crate::behavioral_realization::preview_behavior_contract(psm, &parameters)
+                        .map_err(|e| QueryError::new("INVALID_PROPOSAL", e.to_string()))?,
+                )
+            }
             QueryOperation::FlowAuthor(parameters) => {
                 let (psm,policy) = self.flow_context.as_ref().ok_or_else(||QueryError::new("UNAVAILABLE","No immutable flow authoring context was explicitly admitted. Query formatting never starts analysis."))?;
                 QueryPayload::Authoring(
@@ -388,7 +397,7 @@ impl QueryService {
             QueryOperation::Status(_) => QueryPayload::Status(self.status()),
             QueryOperation::Doctor(_) => QueryPayload::Doctor(self.input.diagnostics.clone()),
             QueryOperation::Protocol(_) => QueryPayload::Protocol(
-                json!({"methods":METHODS.iter().filter(|m| (request.protocol_version >= 2 || **m != "transition") && (request.protocol_version >= 3 || **m != "flow_author")).collect::<Vec<_>>(),"protocol_versions":[1,2,3],"flow_authoring_context":self.flow_context.as_ref().map(|(psm,_)|json!({"context_ref":psm.program_context().digest(),"psm_source_ref":psm.source_identity()})),"comparison_states":self.comparison_state_inventory(),"max_request_bytes":MAX_REQUEST_BYTES,"max_response_bytes":MAX_RESPONSE_BYTES,"max_page_size":MAX_PAGE_SIZE,"framing":"one strict UTF-8 JSON request per LF-delimited line","mutation":false}),
+                json!({"methods":METHODS.iter().filter(|m| (request.protocol_version >= 2 || **m != "transition") && (request.protocol_version >= 3 || **m != "flow_author") && (request.protocol_version >= 4 || **m != "behavior_author")).collect::<Vec<_>>(),"protocol_versions":[1,2,3,4],"flow_authoring_context":self.flow_context.as_ref().map(|(psm,_)|json!({"context_ref":psm.program_context().digest(),"psm_source_ref":psm.source_identity()})),"comparison_states":self.comparison_state_inventory(),"max_request_bytes":MAX_REQUEST_BYTES,"max_response_bytes":MAX_RESPONSE_BYTES,"max_page_size":MAX_PAGE_SIZE,"framing":"one strict UTF-8 JSON request per LF-delimited line","mutation":false}),
             ),
             QueryOperation::Query(parameters) => {
                 QueryPayload::Page(self.select(&parameters, cancelled)?)

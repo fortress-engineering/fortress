@@ -261,3 +261,7 @@ Thin read-only baseline capture/create/review/prune and exception list/review/cr
 ### [`flow_command.rs`](../_code/flow_command.rs)
 
 Implements flow-author as explicit immutable source preparation followed by the shared RPC v3 flow_author facade. Schema-only guidance performs no analysis. JSON and human output render the same response, and proposals never write policy. Information-flow analysis also supports the shared field-preserving human renderer.
+
+### [`behavior_command.rs`](../_code/behavior_command.rs)
+
+Implements behavior-author with schema-only guidance or explicit source preparation followed by the shared protocol v4 behavior_author query. Repeated --checkpoint ID=NAME bindings and --return ID construct an unapplied exact-context proposal. Human and JSON render the same immutable response. Nothing writes or accepts behavioral authority.

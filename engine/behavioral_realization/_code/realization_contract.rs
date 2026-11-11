@@ -25,6 +25,9 @@ pub const BEHAVIOR_REALIZATION_CONTRACT_SCHEMA_VERSION: u16 = 2;
 const LEGACY_BEHAVIOR_REALIZATION_CONTRACT_SCHEMA: &str =
     "urn:fortress:schema:v1:behavior-realization-contracts";
 const LEGACY_BEHAVIOR_REALIZATION_CONTRACT_SCHEMA_VERSION: u16 = 1;
+/// Exact-context readable checkpoint contract schema.
+pub const BOUNDED_BEHAVIOR_CONTRACT_SCHEMA: &str =
+    "urn:fortress:schema:v3:behavior-realization-contracts";
 
 /// One snapshot-bound distributed realization-contract document.
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
@@ -155,6 +158,8 @@ struct ContractDocument {
     #[serde(rename = "$schema")]
     schema: String,
     schema_version: u16,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    context_ref: Option<String>,
     features: Vec<FeatureContract>,
 }
 
@@ -205,6 +210,10 @@ impl ResolvedCheckpointRealization {
 /// Canonical validated distributed Behavior Realization Contract set.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct ResolvedBehaviorRealizationContracts {
+    #[serde(skip)]
+    admitted_context: String,
+    #[serde(skip)]
+    admitted_ccg: String,
     features: Vec<String>,
     checkpoints: Vec<ResolvedCheckpointRealization>,
     legacy_symbol_references: Vec<LegacySymbolReferenceUse>,
@@ -212,6 +221,10 @@ pub struct ResolvedBehaviorRealizationContracts {
 }
 
 impl ResolvedBehaviorRealizationContracts {
+    pub(super) fn matches_admission(&self, ccg_digest: &str, psm: &ProgramSemanticModel) -> bool {
+        self.admitted_context == psm.program_context().digest() && self.admitted_ccg == ccg_digest
+    }
+
     /// Returns opted-in Features in stable order.
     #[must_use]
     pub fn features(&self) -> &[String] {
@@ -437,19 +450,56 @@ pub fn load_behavior_realization_contracts(
     let mut checkpoints = Vec::new();
     let mut legacy_symbol_references = Vec::new();
     for source in &sources {
+        if source.source.len() > 1024 * 1024 {
+            return Err(BehaviorRealizationContractError::InvalidJson {
+                path: source.path.clone(),
+                detail: "contract resource limit exceeded".into(),
+            });
+        }
         let mut document: ContractDocument = crate::wire::parse_strict_json(&source.source)
             .map_err(|error| BehaviorRealizationContractError::InvalidJson {
                 path: source.path.clone(),
                 detail: error.to_string(),
             })?;
+        let readable =
+            document.schema == BOUNDED_BEHAVIOR_CONTRACT_SCHEMA && document.schema_version == 3;
         if !((document.schema == BEHAVIOR_REALIZATION_CONTRACT_SCHEMA
             && document.schema_version == BEHAVIOR_REALIZATION_CONTRACT_SCHEMA_VERSION)
             || (document.schema == LEGACY_BEHAVIOR_REALIZATION_CONTRACT_SCHEMA
-                && document.schema_version == LEGACY_BEHAVIOR_REALIZATION_CONTRACT_SCHEMA_VERSION))
+                && document.schema_version == LEGACY_BEHAVIOR_REALIZATION_CONTRACT_SCHEMA_VERSION)
+            || readable)
         {
             return Err(BehaviorRealizationContractError::UnsupportedSchema(
                 source.path.clone(),
             ));
+        }
+        if (readable
+            && document.context_ref.as_deref() != Some(psm.program_context().digest().as_str()))
+            || (!readable && document.context_ref.is_some())
+        {
+            return Err(BehaviorRealizationContractError::InvalidJson {
+                path: source.path.clone(),
+                detail: "checkpoint context differs from the exact PSM context".into(),
+            });
+        }
+        if readable
+            && (document.features.len() > 4096
+                || document.features.iter().any(|f| {
+                    f.feature.len() > 1024
+                        || f.checkpoints.len() > 4096
+                        || f.checkpoints.iter().any(|c| {
+                            c.checkpoint.len() > 1024
+                                || c.anchors.len() > 16
+                                || c.anchors
+                                    .iter()
+                                    .any(|a| a.symbol().is_some_and(|s| s.len() > 1024))
+                        })
+                }))
+        {
+            return Err(BehaviorRealizationContractError::InvalidJson {
+                path: source.path.clone(),
+                detail: "bounded contract resource limit".into(),
+            });
         }
         if canonical_document(&document)? != source.source {
             return Err(BehaviorRealizationContractError::NonCanonical(
@@ -472,6 +522,7 @@ pub fn load_behavior_realization_contracts(
                         &source.path,
                         &symbol_references,
                         &mut legacy_symbol_references,
+                        readable,
                     )?;
                 }
             }
@@ -562,6 +613,10 @@ pub fn load_behavior_realization_contracts(
     legacy_symbol_references.sort();
     legacy_symbol_references.dedup();
     Ok(ResolvedBehaviorRealizationContracts {
+        admitted_context: psm.program_context().digest(),
+        admitted_ccg: ccg
+            .digest()
+            .map_err(|e| BehaviorRealizationContractError::Serialization(e.to_string()))?,
         features: features.into_iter().collect(),
         checkpoints,
         legacy_symbol_references,
@@ -574,6 +629,7 @@ fn normalize_behavior_anchor_symbol(
     path: &str,
     references: &SymbolReferenceIndex<'_>,
     legacy_uses: &mut Vec<LegacySymbolReferenceUse>,
+    readable: bool,
 ) -> Result<(), BehaviorRealizationContractError> {
     let symbol = match anchor {
         BehaviorAnchor::SymbolEntry { symbol }
@@ -584,18 +640,21 @@ fn normalize_behavior_anchor_symbol(
         BehaviorAnchor::EnvironmentOutcome { .. } => return Ok(()),
     };
     let authored = symbol.clone();
-    let resolution = references
-        .resolve(&authored)
-        .map_err(
-            |error| BehaviorRealizationContractError::AmbiguousSymbolReference {
-                path: path.into(),
-                reference: authored.clone(),
-                detail: error.to_string(),
-            },
-        )?
-        .ok_or_else(|| BehaviorRealizationContractError::UnknownSymbol(authored.clone()))?;
+    let resolution = (if readable {
+        references.resolve_readable(&authored)
+    } else {
+        references.resolve(&authored)
+    })
+    .map_err(
+        |error| BehaviorRealizationContractError::AmbiguousSymbolReference {
+            path: path.into(),
+            reference: authored.clone(),
+            detail: error.to_string(),
+        },
+    )?
+    .ok_or_else(|| BehaviorRealizationContractError::UnknownSymbol(authored.clone()))?;
+    *symbol = resolution.symbol().id().into();
     if resolution.authority() == SymbolReferenceAuthority::LegacyAlias {
-        *symbol = resolution.symbol().id().into();
         legacy_uses.push(LegacySymbolReferenceUse::new(
             path,
             authored,

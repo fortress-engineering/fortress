@@ -1308,3 +1308,27 @@ fn validate_claim_coverage(
     }
     Ok((governed, parsed))
 }
+
+pub(super) fn module_provenance(
+    claims: &[OperationClaim],
+    module: &str,
+) -> (Vec<String>, Vec<String>) {
+    let selected = claims
+        .iter()
+        .filter(|c| c.module_id == module)
+        .collect::<Vec<_>>();
+    (
+        selected
+            .iter()
+            .map(|c| c.id.clone())
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .collect(),
+        selected
+            .iter()
+            .flat_map(|c| c.assumptions.iter().cloned())
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .collect(),
+    )
+}

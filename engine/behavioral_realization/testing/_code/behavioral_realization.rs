@@ -1,5 +1,8 @@
 //! Parent-local conformance for Behavioral Realization and Realized BFG v1.
 
+#[path = "bounded_profile.rs"]
+mod bounded_profile;
+
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 

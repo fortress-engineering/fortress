@@ -6,7 +6,7 @@ The Module owns schemas and normative rule Data governing authored checkpoint re
 
 ## Origin
 
-Maintainers author the schemas and draft rule records; distributed realization contracts are authored by their owning Modules, while Realized BFG output remains derived root Info.
+Maintainers author the schemas and draft rule records; distributed realization contracts are authored by their owning Modules, while Realized BFG output remains derived Info resolved through the registered CONTROL artifact role.
 
 ## Semantics
 
@@ -18,7 +18,7 @@ Every Data file is canonical JSON, schema-valid, registered exactly once, and us
 
 ## Lifecycle
 
-Schema and rule changes are reviewed with analyzer semantics and parent-local evidence; superseded representations remain only in Git history.
+Schema and rule changes are reviewed with analyzer semantics and parent-local evidence; historical public schemas retain their original meanings, and produced evidence remains in immutable CONTROL generations.
 
 ## Files
 
@@ -41,3 +41,19 @@ Defines BEHAVIOR-REALIZATION-001 checkpoint, edge, terminal, and decision realiz
 ### [`realized_bfg_schema_v1.json`](../_data/realized_bfg_schema_v1.json)
 
 Defines canonical deterministic Realized BFG v1 derived Info.
+
+### [`realization_contract_schema_v3.json`](../_data/realization_contract_schema_v3.json)
+
+Adds exact execution-context binding and readable qualified symbol selectors. Authored proposals require complete Feature checkpoint membership and Module ownership validation; v1/v2 readers retain their original meanings.
+
+### [`behavior_claim_schema_v1.json`](../_data/behavior_claim_schema_v1.json)
+
+Defines source/context/input-bound bounded static verdicts, counterexample paths, canonical defeaters, explicit coverage and conditional upstream FLOW provenance. It never represents execution or external authorization as established.
+
+### [`bounded_analysis_schema_v1.json`](../_data/bounded_analysis_schema_v1.json)
+
+Defines the immutable selected owner claim collection and original normalized findings.
+
+### [`realized_bfg_schema_v2.json`](../_data/realized_bfg_schema_v2.json)
+
+Extends the realized projection with selected bounded checkpoint claims, preserving all legacy observation fields and unsupported semantics.

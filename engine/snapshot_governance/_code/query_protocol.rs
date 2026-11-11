@@ -61,6 +61,12 @@ impl QueryRequest {
     /// # Errors
     /// Rejects unknown methods, extra parameters and malformed typed values.
     pub fn operation_for_adapter(&self) -> Result<QueryOperation, QueryError> {
+        if self.protocol_version < 4 && self.method == "behavior_author" {
+            return Err(QueryError::new(
+                "UNKNOWN_METHOD",
+                "behavior_author requires protocol version 4",
+            ));
+        }
         if self.protocol_version < 3 && self.method == "flow_author" {
             return Err(QueryError::new(
                 "UNKNOWN_METHOD",
@@ -97,6 +103,7 @@ impl QueryRequest {
 /// Closed supported method registry, shared by all adapters.
 pub const METHODS: &[&str] = &[
     "author",
+    "behavior_author",
     "cancel",
     "doctor",
     "explain",
@@ -112,6 +119,8 @@ pub const METHODS: &[&str] = &[
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(tag = "method", content = "parameters", rename_all = "snake_case")]
 pub enum QueryOperation {
+    /// Unapplied readable checkpoint preview, protocol v4.
+    BehaviorAuthor(crate::behavioral_realization::BehaviorAuthorParameters),
     /// Unapplied operation-policy preview from an admitted immutable PSM, v3.
     FlowAuthor(crate::information_flow::FlowAuthorParameters),
     /// Describe the protocol and operational limits.
@@ -399,7 +408,7 @@ impl QueryResponse {
     /// Selects a supported envelope edition while preserving the underlying result.
     #[must_use]
     pub fn for_protocol_version(mut self, version: u16) -> Self {
-        if [2, 3].contains(&version) {
+        if [2, 3, 4].contains(&version) {
             self.protocol_version = version;
             self.schema = format!("urn:fortress:protocol:v{version}:query-response");
         }

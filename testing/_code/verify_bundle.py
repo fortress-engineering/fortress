@@ -518,11 +518,69 @@ def verify_declared_flow_claim(claim, binding):
         require(flow["defeaters"] and flow["reason_codes"], "MISSING_REFERENCE", "flow uncertainty reporting absent")
 
 
+def verify_bounded_behavior_claim(claim, binding, proof_manifest):
+    """Public integrity/reporting validation; no source execution or semantic replay."""
+    if not claim["id"].startswith("rule:behavior_claim:"):
+        return
+    require(isinstance(claim.get("rule_result"),dict), "INVALID_RECORD", "behavior result missing")
+    value=parse(claim["rule_result"]["detail"].encode("utf-8"))
+    require(edition(value,[1]) and value.get("$schema")=="urn:fortress:schema:v1:behavior-claim", "UNSUPPORTED_VERSION", "unsupported behavior claim")
+    closed(value,"$schema schema_version id instance_ref module_id feature context_ref source_ref inputs profile verdict proposition rule_id reason_codes assumptions coverage counterexample violation_scope flow_provenance findings defeaters defeater_records execution_evidence authorization limitations")
+    require(all(isinstance(value[k],str) and value[k] for k in ["module_id","feature"]),"INVALID_RECORD","behavior scope absent")
+    require(all(isinstance(value[k],str) and DIGEST.fullmatch(value[k]) for k in ["context_ref","source_ref"]),"BINDING_MISMATCH","behavior subject/context absent")
+    closed(value["inputs"],"intended_bfg psm semantic state_effect information_flow environmental realization_contracts")
+    require(all(isinstance(d,str) and DIGEST.fullmatch(d) for d in value["inputs"].values()),"BINDING_MISMATCH","behavior input identities absent")
+    required_artifacts={a["id"]:a["content_digest"] for a in proof_manifest}
+    for input_id,artifact_id in [("intended_bfg","bfg"),("psm","psm"),("semantic","semantic"),("state_effect","state-effect"),("information_flow","information-flow"),("environmental","environmental")]:
+        require(required_artifacts.get(artifact_id)==value["inputs"][input_id],"BINDING_MISMATCH","behavior input does not match required artifact")
+    closed(value["coverage"],"complete states steps completed_paths reached_checkpoints unsupported_anchors max_states max_steps max_frames state_bytes_limit")
+    for field,maximum in [("states",20000),("steps",1000001),("completed_paths",20000)]:
+        require(type(value["coverage"][field]) is int and 0<=value["coverage"][field]<=maximum,"INVALID_RECORD","invalid behavior coverage count")
+    for field,expected_limit in [("max_states",20000),("max_steps",1000000),("max_frames",16),("state_bytes_limit",67108864)]:
+        require(type(value["coverage"][field]) is int and value["coverage"][field]==expected_limit,"UNSUPPORTED_VERSION","unsupported behavior resource semantics")
+    for field in ["reached_checkpoints","unsupported_anchors"]:
+        items=value["coverage"][field]
+        require(isinstance(items,list) and all(isinstance(v,str) and v for v in items),"INVALID_RECORD","invalid checkpoint coverage")
+        ordered(items)
+    closed(value["flow_provenance"],"analysis_ref claim_refs assumptions interpretation")
+    require(value["flow_provenance"]["analysis_ref"]==value["inputs"]["information_flow"] and value["flow_provenance"]["interpretation"]=="CONDITIONAL_UPSTREAM_ONLY","BINDING_MISMATCH","FLOW provenance differs")
+    for field in ["claim_refs","assumptions"]:
+        items=value["flow_provenance"][field]
+        require(isinstance(items,list) and all(isinstance(v,str) and v for v in items),"INVALID_RECORD","invalid FLOW provenance references")
+        ordered(items)
+    require(isinstance(value["counterexample"],list) and len(value["counterexample"])<=4096,"RESOURCE_LIMIT","invalid behavior counterexample")
+    require(all(isinstance(v,dict) and isinstance(v.get("event_ref"),str) and v["event_ref"] for v in value["counterexample"]),"INVALID_RECORD","invalid behavior counterexample event")
+    require(isinstance(value["violation_scope"],dict) if value["verdict"]=="SUPPORTED_VIOLATION" else value["violation_scope"] is None and not value["counterexample"],"INCONSISTENT_RESULT","behavior obligation/witness differs")
+    expected="behavior_claim:v1:"+sha(canonical({"module":value["module_id"],"feature":value["feature"],"scope":"BOUNDED_CHECKPOINT_ORDER"}))
+    instance="behavior_instance:v1:"+sha(canonical({"id":expected,"context":binding["context_ref"],"source":value["source_ref"],"inputs":value["inputs"]}))
+    require(value["id"]==expected and value["instance_ref"]==instance and claim["id"]=="rule:"+expected and claim["scope_ref"]==claim["id"] and value["context_ref"]==binding["context_ref"], "BINDING_MISMATCH", "behavior state identity differs")
+    require(value["profile"]=="GOV-FORTRESS-BOUNDED-BEHAVIOR" and value["rule_id"]=="BEHAVIOR-REALIZATION-001" and value["execution_evidence"]=="NOT_SUPPLIED" and value["authorization"]=="NOT_ESTABLISHED", "INCONSISTENT_RESULT", "behavior authority or evidence class differs")
+    for field in ["findings","defeaters","reason_codes","assumptions"]:
+        require(isinstance(value[field],list) and all(isinstance(v,str) and v for v in value[field]), "INVALID_RECORD", "invalid behavior references")
+        ordered(value[field])
+    require(sorted(v["id"] for v in value["defeater_records"])==value["defeaters"],"MISSING_REFERENCE","behavior defeater closure differs")
+    for a,b in [("truth","verdict"),("findings","findings"),("defeater_refs","defeaters"),("reason_codes","reason_codes"),("assumptions","assumptions")]:
+        require(claim[a]==value[b], "INCONSISTENT_RESULT", "behavior projection differs")
+    truth=value["verdict"]
+    require(truth in ["SUPPORTED_VIOLATION","NO_SUPPORTED_VIOLATION","NOT_EVALUABLE","NOT_APPLICABLE"],"UNSUPPORTED_VERSION","unsupported behavior truth")
+    complete=value["coverage"].get("complete")
+    require(type(complete) is bool,"INVALID_RECORD","behavior completeness absent")
+    if truth=="NO_SUPPORTED_VIOLATION":
+        require(complete and value["coverage"]["states"]>0 and value["coverage"]["completed_paths"]>0 and not any(value[f] for f in ["findings","defeaters","reason_codes"]),"INCONSISTENT_RESULT","incomplete behavior presented as favorable")
+    elif truth=="SUPPORTED_VIOLATION":
+        require(value["findings"] and value["reason_codes"],"MISSING_REFERENCE","behavior contradiction evidence absent")
+    elif truth=="NOT_EVALUABLE":
+        require(not complete and value["defeaters"] and value["reason_codes"],"MISSING_REFERENCE","behavior uncertainty absent")
+    else:
+        require(not complete and not value["findings"],"INCONSISTENT_RESULT","inapplicable behavior presented as proof")
+
+
 def replay_check(declaration, assessment, replay):
     require(edition(replay, [1]), "UNSUPPORTED_VERSION", "unsupported replay edition")
     expected, evidence, policy = replay["expected"], replay["evidence"], replay["acceptance"]
     for claim in declaration["claims"]:
         verify_declared_flow_claim(claim, declaration["binding"])
+        verify_bounded_behavior_claim(claim, declaration["binding"], declaration["proof_manifest"])
         require(claim["truth"] in ["SUPPORTED_VIOLATION", "NO_SUPPORTED_VIOLATION", "NOT_EVALUABLE", "NOT_APPLICABLE", "AUTHORIZATION"]
                 and claim["kind"] in ["RULE_CHECK", "SEMANTIC_POLICY"], "UNSUPPORTED_VERSION", "unsupported claim semantics")
     ordered(expected["obligations"], lambda o: o["id"])

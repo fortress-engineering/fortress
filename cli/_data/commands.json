@@ -209,6 +209,17 @@
       "certification_implications": "Renders supported trust/confidentiality propagation, sink contradictions, trusted transitions, and explicit uncertainty only; it is not comprehensive security proof or certification evidence."
     },
     {
+      "id": "CMD-BEHAVIOR-AUTHOR",
+      "name": "behavior-author",
+      "aliases": [],
+      "description": "Preview unapplied readable behavioral checkpoint bindings.",
+      "owner": "TF-CLI-0001",
+      "executor": "builtin-sync",
+      "duration": "short",
+      "resumability": "restartable",
+      "certification_implications": "Read-only schema guidance or explicit immutable source preparation; no project-code execution, authority acceptance, runtime execution proof or governance write."
+    },
+    {
       "id": "CMD-FLOW-AUTHOR",
       "name": "flow-author",
       "aliases": [],

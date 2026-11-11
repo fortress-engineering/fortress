@@ -11,6 +11,10 @@ mod realization_contract;
 #[path = "event_graph.rs"]
 mod event_graph;
 
+#[path = "governance.rs"]
+mod governance;
+pub use governance::*;
+
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
@@ -38,9 +42,10 @@ use crate::state_effect_analysis::{
 
 pub use realization_contract::{
     BEHAVIOR_REALIZATION_CONTRACT_SCHEMA, BEHAVIOR_REALIZATION_CONTRACT_SCHEMA_VERSION,
-    BehaviorAnchor, BehaviorRealizationContractError, BehaviorRealizationContractSource,
-    ResolvedBehaviorRealizationContracts, ResolvedCheckpointRealization,
-    canonicalize_behavior_realization_contract_json, load_behavior_realization_contracts,
+    BOUNDED_BEHAVIOR_CONTRACT_SCHEMA, BehaviorAnchor, BehaviorRealizationContractError,
+    BehaviorRealizationContractSource, ResolvedBehaviorRealizationContracts,
+    ResolvedCheckpointRealization, canonicalize_behavior_realization_contract_json,
+    load_behavior_realization_contracts,
 };
 
 /// Canonical Realized BFG v1 schema identity.
@@ -382,9 +387,22 @@ pub struct RealizedBehavioralFlowGraph {
     flows: Vec<RealizedFeatureFlow>,
     verification_obligations: Vec<BehavioralVerificationObligation>,
     unsupported_semantics: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    bounded_analysis: Option<BoundedBehaviorEvaluation>,
 }
 
 impl RealizedBehavioralFlowGraph {
+    /// Returns explicitly selected bounded claims, independently of legacy projections.
+    #[must_use]
+    pub fn bounded_analysis(&self) -> Option<&BoundedBehaviorEvaluation> {
+        self.bounded_analysis.as_ref()
+    }
+    /// Returns this graph's actual public schema identity.
+    #[must_use]
+    pub fn schema(&self) -> &str {
+        &self.schema
+    }
+
     /// Returns aggregate realization counts.
     #[must_use]
     pub const fn summary(&self) -> RealizedBfgSummary {
@@ -461,11 +479,16 @@ pub enum BehavioralRealizationError {
     Serialization(serde_json::Error),
     /// Canonical finding normalization failed.
     Finding(FindingError),
+    /// Inputs do not identify one exact semantic state.
+    InvalidBinding(String),
 }
 
 impl Display for BehavioralRealizationError {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
         match self {
+            Self::InvalidBinding(detail) => {
+                write!(formatter, "behavioral binding rejected: {detail}")
+            }
             Self::Serialization(error) => {
                 write!(formatter, "realized BFG serialization failed: {error}")
             }
@@ -479,6 +502,7 @@ impl Display for BehavioralRealizationError {
 impl Error for BehavioralRealizationError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
+            Self::InvalidBinding(_) => None,
             Self::Serialization(error) => Some(error),
             Self::Finding(error) => Some(error),
         }
@@ -497,6 +521,8 @@ struct CallSite {
     sequence: usize,
 }
 
+type CallWindow = (String, (u32, u32), Option<(u32, u32)>);
+
 #[derive(Default)]
 struct EventBuilder {
     events: BTreeMap<String, ImplementationEvent>,
@@ -504,6 +530,12 @@ struct EventBuilder {
     call_sites: BTreeMap<String, Vec<CallSite>>,
     call_cursors: BTreeMap<String, usize>,
     sequence: usize,
+    strict: bool,
+    call_window: Option<CallWindow>,
+    frames: BTreeMap<String, (String, String)>,
+    budget_bytes: usize,
+    lowering_steps: usize,
+    resource_limited: bool,
 }
 
 impl EventBuilder {
@@ -519,6 +551,19 @@ impl EventBuilder {
         coverage: RealizationCoverage,
     ) -> String {
         let id = event_id(kind, key);
+        if self.strict && !self.events.contains_key(&id) {
+            let charge = 768
+                + id.len()
+                + kind.len()
+                + symbol.map_or(0, str::len)
+                + module.len()
+                + provenance.iter().map(String::len).sum::<usize>();
+            self.budget_bytes = self.budget_bytes.saturating_add(charge.saturating_mul(2));
+            if self.budget_bytes > 48 * 1024 * 1024 {
+                self.resource_limited = true;
+                return id;
+            }
+        }
         self.events
             .entry(id.clone())
             .or_insert(ImplementationEvent {
@@ -540,16 +585,41 @@ impl EventBuilder {
         coverage: RealizationCoverage,
         derivation: impl Into<String>,
     ) {
-        self.edges.insert(ImplementationEventEdge {
+        let edge = ImplementationEventEdge {
             source: source.into(),
             target: target.into(),
             coverage,
             derivation: derivation.into(),
-        });
+        };
+        if self.strict && !self.edges.contains(&edge) {
+            self.budget_bytes = self.budget_bytes.saturating_add(
+                2 * (384 + edge.source.len() + edge.target.len() + edge.derivation.len()),
+            );
+            if self.budget_bytes > 48 * 1024 * 1024 {
+                self.resource_limited = true;
+                return;
+            }
+        }
+        self.edges.insert(edge);
     }
 
     fn consume_call(&mut self, caller: &str, reference: &str) -> Option<CallSite> {
         let sites = self.call_sites.get(caller)?;
+        if self.strict {
+            let (path, start, end) = self.call_window.as_ref()?;
+            let candidates = sites
+                .iter()
+                .enumerate()
+                .filter(|(_, site)| {
+                    site.path == *path
+                        && (site.line, site.column) >= *start
+                        && end.is_none_or(|end| (site.line, site.column) < end)
+                        && (site.reference == reference
+                            || site.reference.ends_with(&format!("::{reference}")))
+                })
+                .collect::<Vec<_>>();
+            return (candidates.len() == 1).then(|| candidates[0].1.clone());
+        }
         let cursor = self.call_cursors.entry(caller.into()).or_default();
         let index = sites
             .iter()
@@ -558,10 +628,10 @@ impl EventBuilder {
             .find(|(_, site)| {
                 site.reference == reference
                     || site.reference.ends_with(&format!("::{reference}"))
-                    || reference.ends_with(&site.reference)
+                    || (!self.strict && reference.ends_with(&site.reference))
             })
             .map(|(index, _)| index)
-            .or_else(|| (*cursor < sites.len()).then_some(*cursor))?;
+            .or_else(|| (!self.strict && *cursor < sites.len()).then_some(*cursor))?;
         *cursor = index + 1;
         Some(sites[index].clone())
     }
@@ -577,12 +647,35 @@ pub fn derive_implementation_events(
     information_flow: &InformationFlowAnalysisModel,
     environmental: &EnvironmentalAnalysisModel,
 ) -> ImplementationEventModel {
+    derive_event_model(
+        psm,
+        semantic,
+        state_effect,
+        information_flow,
+        environmental,
+        false,
+    )
+    .0
+}
+
+#[allow(clippy::too_many_lines)]
+fn derive_event_model(
+    psm: &ProgramSemanticModel,
+    semantic: &SemanticAnalysisModel,
+    state_effect: &StateEffectAnalysisModel,
+    information_flow: &InformationFlowAnalysisModel,
+    environmental: &EnvironmentalAnalysisModel,
+    strict: bool,
+) -> (ImplementationEventModel, BTreeMap<String, (String, String)>) {
     let symbols = psm
         .symbols()
         .iter()
         .map(|symbol| (symbol.id(), symbol))
         .collect::<BTreeMap<_, _>>();
-    let mut builder = EventBuilder::default();
+    let mut builder = EventBuilder {
+        strict,
+        ..EventBuilder::default()
+    };
     for symbol in psm.symbols() {
         let provenance = vec![format!(
             "{}:{}:{}",
@@ -597,7 +690,14 @@ pub fn derive_implementation_events(
             symbol.fortress_module(),
             EventAuthority::ProgramSemanticModel,
             provenance.clone(),
-            RealizationCoverage::Proven,
+            if strict
+                && symbol.execution_provenance()
+                    == crate::program_semantics::ExecutionProvenance::Unknown
+            {
+                RealizationCoverage::Partial
+            } else {
+                RealizationCoverage::Proven
+            },
         );
         builder.add_event(
             "symbol_return",
@@ -606,7 +706,14 @@ pub fn derive_implementation_events(
             symbol.fortress_module(),
             EventAuthority::ProgramSemanticModel,
             provenance,
-            RealizationCoverage::Proven,
+            if strict
+                && symbol.execution_provenance()
+                    == crate::program_semantics::ExecutionProvenance::Unknown
+            {
+                RealizationCoverage::Partial
+            } else {
+                RealizationCoverage::Proven
+            },
         );
     }
     for summary in semantic.summaries() {
@@ -665,7 +772,11 @@ pub fn derive_implementation_events(
             ))
         });
     }
-    let fallback_sites = builder.call_sites.clone();
+    let fallback_sites = if strict {
+        BTreeMap::new()
+    } else {
+        builder.call_sites.clone()
+    };
     for (caller, sites) in fallback_sites {
         let resolved = sites
             .iter()
@@ -732,15 +843,46 @@ pub fn derive_implementation_events(
     derive_state_effect_events(&mut builder, &symbols, state_effect);
     derive_information_events(&mut builder, &symbols, information_flow);
     derive_environment_events(&mut builder, &symbols, environmental);
-    ImplementationEventModel {
-        semantic_version: BEHAVIORAL_REALIZATION_VERSION.into(),
-        events: builder.events.into_values().collect(),
-        edges: builder.edges.into_iter().collect(),
-        unsupported_semantics: UNSUPPORTED_SEMANTICS
-            .iter()
-            .map(|value| (*value).into())
-            .collect(),
+    if strict {
+        builder.edges.retain(|edge| {
+            !matches!(
+                edge.derivation.as_str(),
+                "state_summary_input"
+                    | "state_summary_output"
+                    | "direct_effect"
+                    | "effect_completion"
+                    | "trusted_transition"
+                    | "trusted_transition_completion"
+                    | "environment_outcome"
+                    | "environment_outcome_completion"
+                    | "admissible_environment_outcome"
+                    | "environment_outcome_continuation"
+                    | "boolean_return_domain"
+            )
+        });
+        for event in builder.events.values_mut() {
+            if event.authority != EventAuthority::ProgramSemanticModel {
+                event.coverage = RealizationCoverage::Partial;
+            }
+        }
     }
+    let resource_limited = builder.resource_limited;
+    let mut unsupported_semantics = UNSUPPORTED_SEMANTICS
+        .iter()
+        .map(|v| (*v).into())
+        .collect::<Vec<String>>();
+    if resource_limited {
+        unsupported_semantics.push("BOUNDED_EVENT_GRAPH_RESOURCE_LIMIT".into());
+    }
+    (
+        ImplementationEventModel {
+            semantic_version: BEHAVIORAL_REALIZATION_VERSION.into(),
+            events: builder.events.into_values().collect(),
+            edges: builder.edges.into_iter().collect(),
+            unsupported_semantics,
+        },
+        builder.frames,
+    )
 }
 
 #[allow(clippy::too_many_lines)]
@@ -752,11 +894,40 @@ fn lower_block(
     mut inputs: Vec<String>,
     symbols: &BTreeMap<&str, &crate::program_semantics::ExecutableSymbol>,
 ) -> Vec<String> {
-    for statement in statements {
+    let inherited_window = builder.call_window.clone();
+    for (statement_index, statement) in statements.iter().enumerate() {
+        if builder.strict {
+            builder.lowering_steps = builder.lowering_steps.saturating_add(1);
+            if builder.lowering_steps > 1_000_000 {
+                builder.resource_limited = true;
+                break;
+            }
+        }
+        if builder.strict {
+            let provenance = statement_provenance(statement);
+            let start = provenance.location();
+            let end = statements
+                .get(statement_index + 1)
+                .map(statement_provenance)
+                .map(|p| (p.location().line(), p.location().column()))
+                .or_else(|| inherited_window.as_ref().and_then(|w| w.2));
+            builder.call_window = Some((
+                provenance.path().into(),
+                (start.line(), start.column()),
+                end,
+            ));
+        }
+        if builder.strict && (inputs.is_empty() || builder.resource_limited) {
+            break;
+        }
         inputs = match statement {
             ProgramStatement::Let { value, .. } => value.as_ref().map_or(inputs.clone(), |value| {
                 lower_expression(builder, caller, module, value, inputs.clone(), symbols)
             }),
+            ProgramStatement::Assign { value, .. } if builder.strict => {
+                let exits = lower_expression(builder, caller, module, value, inputs, symbols);
+                strict_gap(builder, caller, module, exits, "assignment_or_alias")
+            }
             ProgramStatement::Assign { value, .. } | ProgramStatement::Expression { value, .. } => {
                 lower_expression(builder, caller, module, value, inputs, symbols)
             }
@@ -807,6 +978,40 @@ fn lower_block(
                         "if_condition",
                     );
                 }
+                if builder.strict {
+                    if let ProgramExpression::Boolean { value } = condition {
+                        inputs = lower_block(
+                            builder,
+                            caller,
+                            module,
+                            if *value { then_branch } else { else_branch },
+                            vec![branch],
+                            symbols,
+                        );
+                        continue;
+                    }
+                    let gap = strict_gap(
+                        builder,
+                        caller,
+                        module,
+                        vec![branch.clone()],
+                        "unknown_branch_predicate",
+                    );
+                    let mut outputs =
+                        lower_block(builder, caller, module, then_branch, gap.clone(), symbols);
+                    outputs.extend(lower_block(
+                        builder,
+                        caller,
+                        module,
+                        else_branch,
+                        gap,
+                        symbols,
+                    ));
+                    outputs.sort();
+                    outputs.dedup();
+                    inputs = outputs;
+                    continue;
+                }
                 let mut outputs = lower_block(
                     builder,
                     caller,
@@ -833,6 +1038,17 @@ fn lower_block(
                 provenance,
             } => {
                 let value_exits = lower_expression(builder, caller, module, value, inputs, symbols);
+                let value_exits = if builder.strict {
+                    strict_gap(
+                        builder,
+                        caller,
+                        module,
+                        value_exits,
+                        "match_path_conditions",
+                    )
+                } else {
+                    value_exits
+                };
                 lower_match(
                     builder,
                     caller,
@@ -872,14 +1088,19 @@ fn lower_block(
                         "loop_entry",
                     );
                 }
-                let condition = lower_expression(
-                    builder,
-                    caller,
-                    module,
-                    value,
-                    vec![loop_head.clone()],
-                    symbols,
-                );
+                let loop_inputs = if builder.strict {
+                    strict_gap(
+                        builder,
+                        caller,
+                        module,
+                        vec![loop_head.clone()],
+                        "loop_admission_and_exit",
+                    )
+                } else {
+                    vec![loop_head.clone()]
+                };
+                let condition =
+                    lower_expression(builder, caller, module, value, loop_inputs, symbols);
                 let body_exits =
                     lower_block(builder, caller, module, body, condition.clone(), symbols);
                 for exit in body_exits {
@@ -894,7 +1115,22 @@ fn lower_block(
             }
         };
     }
+    builder.call_window = inherited_window;
     inputs
+}
+
+fn statement_provenance(
+    statement: &ProgramStatement,
+) -> &crate::program_semantics::ProgramProvenance {
+    match statement {
+        ProgramStatement::Let { provenance, .. }
+        | ProgramStatement::Assign { provenance, .. }
+        | ProgramStatement::Expression { provenance, .. }
+        | ProgramStatement::Return { provenance, .. }
+        | ProgramStatement::If { provenance, .. }
+        | ProgramStatement::Match { provenance, .. }
+        | ProgramStatement::WhileLet { provenance, .. } => provenance,
+    }
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -959,6 +1195,36 @@ fn lower_expression(
     inputs: Vec<String>,
     symbols: &BTreeMap<&str, &crate::program_semantics::ExecutableSymbol>,
 ) -> Vec<String> {
+    if builder.strict {
+        builder.lowering_steps = builder.lowering_steps.saturating_add(1);
+        if builder.lowering_steps > 1_000_000 {
+            builder.resource_limited = true;
+            return inputs;
+        }
+    }
+    if builder.strict
+        && matches!(
+            expression,
+            ProgramExpression::Unsupported { .. }
+                | ProgramExpression::Exceptional { .. }
+                | ProgramExpression::StructuralEffect { .. }
+                | ProgramExpression::Try { .. }
+                | ProgramExpression::Unary { .. }
+                | ProgramExpression::Field { .. }
+                | ProgramExpression::Reference { mutable: true, .. }
+                | ProgramExpression::Binary { .. }
+                | ProgramExpression::Construction { .. }
+                | ProgramExpression::PatternTest { .. }
+        )
+    {
+        return strict_gap(
+            builder,
+            caller,
+            module,
+            inputs,
+            "unsupported_expression_or_control",
+        );
+    }
     match expression {
         ProgramExpression::Call {
             reference,
@@ -1009,6 +1275,30 @@ fn lower_expression(
     }
 }
 
+fn strict_gap(
+    builder: &mut EventBuilder,
+    caller: &str,
+    module: &str,
+    inputs: Vec<String>,
+    reason: &str,
+) -> Vec<String> {
+    let sequence = builder.sequence;
+    builder.sequence += 1;
+    let id = builder.add_event(
+        "opaque_path",
+        &format!("{caller}:{sequence}:{reason}"),
+        Some(caller),
+        module,
+        EventAuthority::ProgramSemanticModel,
+        vec![reason.into()],
+        RealizationCoverage::Partial,
+    );
+    for input in inputs {
+        builder.add_edge(input, id.clone(), RealizationCoverage::Partial, reason);
+    }
+    vec![id]
+}
+
 fn lower_expressions(
     builder: &mut EventBuilder,
     caller: &str,
@@ -1032,7 +1322,17 @@ fn lower_call(
     symbols: &BTreeMap<&str, &crate::program_semantics::ExecutableSymbol>,
 ) -> Vec<String> {
     let Some(call) = builder.consume_call(caller, reference) else {
-        return inputs;
+        return if builder.strict {
+            strict_gap(
+                builder,
+                caller,
+                module,
+                inputs,
+                "unresolved_operation_binding",
+            )
+        } else {
+            inputs
+        };
     };
     let key = format!(
         "{}:{}:{}:{}:{}",
@@ -1076,6 +1376,11 @@ fn lower_call(
         .callee
         .filter(|value| symbols.contains_key(value.as_str()))
     {
+        if builder.strict && call.state == CallResolutionState::ResolvedStatic {
+            builder
+                .frames
+                .insert(before.clone(), (callee.clone(), after.clone()));
+        }
         builder.add_edge(
             before,
             event_id("symbol_entry", &callee),
@@ -1325,6 +1630,7 @@ pub fn compile_realized_bfg(
     );
     drop(graph);
     Ok(RealizedBehavioralFlowGraph {
+        bounded_analysis: None,
         schema: REALIZED_BFG_SCHEMA.into(),
         schema_version: REALIZED_BFG_SCHEMA_VERSION,
         semantic_version: BEHAVIORAL_REALIZATION_VERSION.into(),

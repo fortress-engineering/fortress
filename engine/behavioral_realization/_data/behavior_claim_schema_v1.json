@@ -1,0 +1,323 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:behavior-claim",
+  "title": "Bounded static checkpoint claim; not execution or authorization",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "instance_ref",
+    "module_id",
+    "feature",
+    "context_ref",
+    "source_ref",
+    "inputs",
+    "profile",
+    "verdict",
+    "proposition",
+    "rule_id",
+    "coverage",
+    "counterexample",
+    "findings",
+    "defeaters",
+    "execution_evidence",
+    "authorization",
+    "limitations",
+    "$schema",
+    "schema_version",
+    "reason_codes",
+    "assumptions",
+    "defeater_records",
+    "flow_provenance",
+    "violation_scope"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^behavior_claim:v1:sha256:[0-9a-f]{64}$"
+    },
+    "instance_ref": {
+      "type": "string",
+      "pattern": "^behavior_instance:v1:sha256:[0-9a-f]{64}$"
+    },
+    "module_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "feature": {
+      "type": "string",
+      "minLength": 1
+    },
+    "context_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "source_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "intended_bfg",
+        "psm",
+        "semantic",
+        "state_effect",
+        "information_flow",
+        "environmental",
+        "realization_contracts"
+      ],
+      "properties": {
+        "intended_bfg": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "psm": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "semantic": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "state_effect": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "information_flow": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "environmental": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "realization_contracts": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      }
+    },
+    "profile": {
+      "const": "GOV-FORTRESS-BOUNDED-BEHAVIOR"
+    },
+    "verdict": {
+      "enum": [
+        "SUPPORTED_VIOLATION",
+        "NO_SUPPORTED_VIOLATION",
+        "NOT_EVALUABLE",
+        "NOT_APPLICABLE"
+      ]
+    },
+    "proposition": {
+      "type": "string",
+      "minLength": 1
+    },
+    "rule_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "states",
+        "steps",
+        "completed_paths",
+        "max_states",
+        "max_steps",
+        "max_frames",
+        "state_bytes_limit",
+        "complete",
+        "reached_checkpoints",
+        "unsupported_anchors"
+      ],
+      "properties": {
+        "states": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "steps": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "completed_paths": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "max_states": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "max_steps": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "max_frames": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "state_bytes_limit": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "complete": {
+          "type": "boolean"
+        },
+        "reached_checkpoints": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        },
+        "unsupported_anchors": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "counterexample": {
+      "type": "array",
+      "maxItems": 20000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "event_ref",
+          "kind",
+          "symbol_ref",
+          "qualified_name"
+        ],
+        "properties": {
+          "event_ref": {
+            "type": "string",
+            "minLength": 1
+          },
+          "kind": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "symbol_ref": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "qualified_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "defeaters": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "execution_evidence": {
+      "const": "NOT_SUPPLIED"
+    },
+    "authorization": {
+      "const": "NOT_ESTABLISHED"
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "$schema": {
+      "const": "urn:fortress:schema:v1:behavior-claim"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "reason_codes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "assumptions": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "defeater_records": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "flow_provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "analysis_ref",
+        "claim_refs",
+        "assumptions",
+        "interpretation"
+      ],
+      "properties": {
+        "analysis_ref": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "claim_refs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "assumptions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "interpretation": {
+          "const": "CONDITIONAL_UPSTREAM_ONLY"
+        }
+      }
+    },
+    "violation_scope": {
+      "type": [
+        "object",
+        "null"
+      ]
+    }
+  }
+}

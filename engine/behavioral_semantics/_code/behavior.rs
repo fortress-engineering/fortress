@@ -504,6 +504,12 @@ pub struct IntendedBehavioralFlowGraph {
 }
 
 impl IntendedBehavioralFlowGraph {
+    /// Returns the immutable upstream source ccg digest binding.
+    #[must_use]
+    pub fn source_ccg_digest(&self) -> &str {
+        &self.source_ccg_digest
+    }
+
     /// Returns aggregate Feature and graph counts.
     #[must_use]
     pub const fn summary(&self) -> BfgSummary {
