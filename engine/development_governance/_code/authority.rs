@@ -1,4 +1,6 @@
 //! Pure base-bound authorization requirements and injected external trust port.
+#[path = "application_authority.rs"]
+mod application_authority;
 #[path = "decision.rs"]
 mod decision;
 pub use crate::authority_roles::ProtectedClass;
@@ -6,6 +8,7 @@ use crate::observation::{CandidateChangeSet, ChangeOperation, SourceView};
 use crate::state_governance::{
     ComparisonContext, ComparisonState, TransitionAnalysis, TransitionError, compare_states,
 };
+pub use application_authority::*;
 pub use decision::*;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
@@ -44,6 +47,19 @@ pub struct ProposedOperation {
     /// Move destination, if present.
     pub destination: Option<String>,
 }
+/// Exact physical operations and their separately evaluated observation views.
+/// The composition root supplies complete raw role inventories, including excluded inputs.
+#[derive(Clone, Copy)]
+pub struct PhysicalMigrationInputs<'a> {
+    /// Full bounded physical source scope pinned by the migration.
+    pub base: &'a SourceView,
+    /// Exact proposed physical operations and resulting bytes.
+    pub changes: &'a CandidateChangeSet,
+    /// Canonical evaluated original source after original observation policy.
+    pub evaluated_base: &'a SourceView,
+    /// Canonical evaluated target source after target observation policy.
+    pub evaluated_target: &'a SourceView,
+}
 /// Immutable prepared input. Only the existing comparator evaluates transition meaning.
 #[derive(Clone, Debug, Serialize)]
 pub struct PreparedChange {
@@ -80,7 +96,60 @@ impl PreparedChange {
         roles: (Vec<ProtectedInput>, Vec<ProtectedInput>),
         inventory_complete: bool,
     ) -> Result<Self, TransitionError> {
-        for source in [base_bytes, changes.view()] {
+        Self::new_bound(
+            base,
+            candidate,
+            context,
+            PhysicalMigrationInputs {
+                base: base_bytes,
+                changes,
+                evaluated_base: base_bytes,
+                evaluated_target: changes.view(),
+            },
+            roles,
+            inventory_complete,
+            true,
+        )
+    }
+    /// Binds exact physical migrations while retaining canonical observation/exclusion meaning.
+    /// This does not treat excluded edits as absent or change the governing authority.
+    /// # Errors
+    /// Rejects mismatched evaluated subsets, contexts, physical bytes and incomplete identities.
+    pub fn new_for_migration(
+        base: &ComparisonState,
+        candidate: &ComparisonState,
+        context: &ComparisonContext,
+        inputs: PhysicalMigrationInputs<'_>,
+        roles: (Vec<ProtectedInput>, Vec<ProtectedInput>),
+        inventory_complete: bool,
+    ) -> Result<Self, TransitionError> {
+        Self::new_bound(
+            base,
+            candidate,
+            context,
+            inputs,
+            roles,
+            inventory_complete,
+            false,
+        )
+    }
+    fn new_bound(
+        base: &ComparisonState,
+        candidate: &ComparisonState,
+        context: &ComparisonContext,
+        inputs: PhysicalMigrationInputs<'_>,
+        roles: (Vec<ProtectedInput>, Vec<ProtectedInput>),
+        inventory_complete: bool,
+        strict_original: bool,
+    ) -> Result<Self, TransitionError> {
+        let base_bytes = inputs.base;
+        let changes = inputs.changes;
+        for source in [
+            base_bytes,
+            changes.view(),
+            inputs.evaluated_base,
+            inputs.evaluated_target,
+        ] {
             if source.len() > crate::state_governance::MAX_TRANSITION_RECORDS
                 || source
                     .values()
@@ -95,10 +164,23 @@ impl PreparedChange {
         }
         let transition = compare_states(base, candidate, context)?;
         if base_bytes.digest() != changes.base_view_digest()
-            || base.source_ref.as_deref() != Some(&source_subject(base_bytes))
-            || candidate.source_ref.as_deref() != Some(&source_subject(changes.view()))
+            || base.source_ref.as_deref() != Some(&source_subject(inputs.evaluated_base))
+            || candidate.source_ref.as_deref() != Some(&source_subject(inputs.evaluated_target))
             || changes.context_digest() != transition.comparison_context
-            || candidate.governing_identity()?.as_deref() != Some(changes.target_authority_digest())
+            || (if strict_original {
+                candidate.governing_identity()?.as_deref()
+                    != Some(changes.target_authority_digest())
+            } else {
+                application_target_authority_ref(candidate)? != changes.target_authority_digest()
+            })
+            || inputs
+                .evaluated_base
+                .iter()
+                .any(|(p, b)| base_bytes.get(p) != Some(b))
+            || inputs
+                .evaluated_target
+                .iter()
+                .any(|(p, b)| changes.view().get(p) != Some(b))
         {
             return Err(error(
                 "INVALID_BINDING",
@@ -108,21 +190,7 @@ impl PreparedChange {
         if changes.operations().len() > crate::state_governance::MAX_TRANSITION_RECORDS {
             return Err(error("RESOURCE_LIMIT", "too many proposed operations"));
         }
-        let (mut base_roles, candidate_roles) = roles;
-        base_roles.extend(candidate_roles);
-        base_roles.sort();
-        base_roles.dedup();
-        if base_roles.len() > crate::state_governance::MAX_TRANSITION_RECORDS {
-            return Err(error("RESOURCE_LIMIT", "too many protected roles"));
-        }
-        for role in &base_roles {
-            if !crate::observation::is_canonical_relative_path(&role.path)
-                || !valid_text(&role.path)
-                || !valid_text(&role.scope)
-            {
-                return Err(error("INVALID_INPUT", "invalid protected scope/path"));
-            }
-        }
+        let base_roles = merge_protected_roles(roles)?;
         let operations = changes
             .operations()
             .iter()
@@ -553,4 +621,25 @@ fn strict_set<'de, T: Deserialize<'de> + Ord, D: serde::Deserializer<'de>>(
         ));
     }
     Ok(set)
+}
+
+fn merge_protected_roles(
+    roles: (Vec<ProtectedInput>, Vec<ProtectedInput>),
+) -> Result<Vec<ProtectedInput>, TransitionError> {
+    let (mut base_roles, candidate_roles) = roles;
+    base_roles.extend(candidate_roles);
+    base_roles.sort();
+    base_roles.dedup();
+    if base_roles.len() > crate::state_governance::MAX_TRANSITION_RECORDS {
+        return Err(error("RESOURCE_LIMIT", "too many protected roles"));
+    }
+    for role in &base_roles {
+        if !crate::observation::is_canonical_relative_path(&role.path)
+            || !valid_text(&role.path)
+            || !valid_text(&role.scope)
+        {
+            return Err(error("INVALID_INPUT", "invalid protected scope/path"));
+        }
+    }
+    Ok(base_roles)
 }

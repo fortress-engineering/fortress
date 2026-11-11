@@ -41,3 +41,7 @@ Public authority snapshot shape; serialized integrity is distinct from trusted e
 ### [`preview_selection_schema_v1.json`](../_data/preview_selection_schema_v1.json)
 
 Public authority preview selection shape; serialized integrity is distinct from trusted external authorization.
+
+### [`application_authority_schema_v1.json`](../_data/application_authority_schema_v1.json)
+
+Provenance-only migration authorization basis and exact decision references. Deserialization never reconstructs a process-local permission handle or validates external approval.

@@ -501,3 +501,121 @@ pub fn authorized_exception_context(
     }
     Ok(context)
 }
+
+/// Checks an owner-created lifecycle proposal against an exact migration base and target.
+/// This is read-only evidence admission, not external authorization or a write operation.
+/// # Errors
+/// Refuses stale anchors, changed unrelated inputs, forged postimages or unsupported retirements.
+pub fn migration_proposal_evidence(
+    proposal: &GovernanceProposal,
+    state: &ComparisonState,
+    before: &crate::observation::SourceView,
+    after: &crate::observation::SourceView,
+) -> Result<BTreeSet<String>, TransitionError> {
+    let governance_path = path()?;
+    let original = before
+        .bytes(&governance_path)
+        .map(|bytes| {
+            std::str::from_utf8(bytes)
+                .map_err(error)
+                .and_then(|text| FindingGovernanceDocument::from_json_str(text).map_err(error))
+        })
+        .transpose()?
+        .unwrap_or_else(FindingGovernanceDocument::empty_current);
+    if state.digest()? != proposal.current_state.digest()?
+        || original.authority_digest().map_err(error)? != proposal.original_governance_ref
+        || after.bytes(&governance_path)
+            != Some(
+                proposal
+                    .proposed_governance
+                    .to_canonical_json()
+                    .map_err(error)?
+                    .as_bytes(),
+            )
+        || before
+            .keys()
+            .chain(after.keys())
+            .any(|p| p != &governance_path && before.bytes(p) != after.bytes(p))
+    {
+        return Err(fail(
+            "STALE_GOVERNANCE",
+            "migration differs from the exact owner-reviewed lifecycle base or postimage",
+        ));
+    }
+    let evidence = if let Some(original_state) = &proposal.original_state {
+        assess_retirements(
+            original_state,
+            state,
+            &original,
+            &ComparisonContext::default(),
+        )?
+    } else {
+        vec![]
+    };
+    if crate::finding_governance::lifecycle_bytes(&evidence).map_err(error)?
+        != crate::finding_governance::lifecycle_bytes(&proposal.retirement_evidence)
+            .map_err(error)?
+    {
+        return Err(fail(
+            "RETIREMENT_EVIDENCE_REQUIRED",
+            "original owner evidence cannot be reproduced",
+        ));
+    }
+    evidence
+        .iter()
+        .filter(|e| {
+            matches!(
+                e.outcome,
+                RetirementOutcome::Resolved | RetirementOutcome::SubjectRemoved
+            )
+        })
+        .map(|e| e.digest().map_err(error))
+        .collect()
+}
+
+/// Admits identity-owner normalization without creating, retiring or expanding governance.
+/// Opaque identity plans are not deserializable grants, and current anchored meaning is immutable.
+/// # Errors
+/// Refuses stale/different edits, baseline expansion, changed Standard, and rewritten anchors.
+pub fn migration_identity_evidence(
+    plan: &crate::identity_migration::IdentityMigrationPlan,
+    source: &crate::observation::SourceView,
+    changes: &crate::observation::CandidateChangeSet,
+) -> Result<(), TransitionError> {
+    crate::identity_migration::validate_governance_migration(plan, source, changes)?;
+    let governance_path = path()?;
+    let parse = |view: &crate::observation::SourceView| {
+        let bytes = view.bytes(&governance_path).ok_or_else(|| {
+            fail(
+                "INVALID_BINDING",
+                "identity maintenance cannot create or delete finding governance",
+            )
+        })?;
+        FindingGovernanceDocument::from_json_str(std::str::from_utf8(bytes).map_err(error)?)
+            .map_err(error)
+    };
+    let original = parse(source)?;
+    let candidate = parse(changes.view())?;
+    let shape = |doc: &FindingGovernanceDocument| {
+        doc.baseline().map(|baseline| {
+            (
+                baseline.standard_id().to_owned(),
+                baseline.standard_edition().to_owned(),
+                baseline.active_entries().len(),
+                baseline.retired_entries().len(),
+            )
+        })
+    };
+    if shape(&original) != shape(&candidate)
+        || original.exceptions().len() != candidate.exceptions().len()
+        || original.lifecycle().is_some()
+            && original.authority_digest().map_err(error)?
+                != candidate.authority_digest().map_err(error)?
+    {
+        return Err(fail(
+            "ANCHOR_AWARE_MIGRATION_REQUIRED",
+            "identity normalization cannot expand baselines, change lifecycle state or replace current anchors and history",
+        ));
+    }
+    Ok(())
+}

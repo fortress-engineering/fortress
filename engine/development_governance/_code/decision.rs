@@ -488,7 +488,7 @@ fn base_assessment(
     let semantic=cell.map_or_else(||dimension("UNEVALUATED","No supported candidate assessment under the unchanged trusted base authority was supplied."),|a|{
         if !a.declaration.residue_summary.blocking_findings.is_empty(){dimension("SUPPORTED_VIOLATION","Existing base-authority declaration retains supported progressive blocking findings; authorization cannot erase them.")}
         else if a.declaration.claims.iter().any(|c|c.truth==DeclarationTruth::SupportedViolation){dimension("NO_BLOCKING_SUPPORTED_VIOLATION","Raw supported violations remain recorded; existing base-authority progressive dispositions report no blocking findings.")}
-        else if !a.declaration.dimensions.is_empty()&&a.declaration.dimensions.iter().all(|d|d.truth==DeclarationTruth::NoSupportedViolation){dimension("NO_SUPPORTED_VIOLATION","Existing exact base-authority declaration supports scoped absence; unknown and authorization-only dimensions cannot satisfy it.")}
+        else if a.declaration.dimensions.iter().any(|d|d.truth==DeclarationTruth::NoSupportedViolation)&&a.declaration.dimensions.iter().all(|d|matches!(d.truth,DeclarationTruth::NoSupportedViolation|DeclarationTruth::NotApplicable)){dimension("NO_SUPPORTED_VIOLATION","Existing exact base-authority declaration supports scoped absence in applicable dimensions. NOT_APPLICABLE dimensions remain neutral and supply no proof; an entirely nonapplicable, unknown or authorization-only declaration cannot satisfy this predicate.")}
         else {dimension("UNEVALUATED","Existing raw conformance is unknown, unsupported, nonapplicable or unevaluable; no violation is invented.")}
     });
     let assurance = if !policy.require_assurance {

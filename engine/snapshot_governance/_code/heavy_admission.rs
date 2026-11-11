@@ -109,6 +109,82 @@ fn identity_digest(platform: &str, device: u64, index: u64) -> String {
     format!("{:x}", Sha256::digest(material.as_bytes()))
 }
 
+/// Reads an ordinary file or directory identity without using its path as identity.
+/// # Errors
+/// Refuses links, reparse points, unsupported platforms and unavailable native identities.
+pub fn native_object_identity(path: &Path) -> io::Result<String> {
+    let metadata = fs::symlink_metadata(path)?;
+    if linked(&metadata) || !(metadata.is_file() || metadata.is_dir()) {
+        return Err(io::Error::other(
+            "migration object is not an ordinary file or directory",
+        ));
+    }
+    let handle = if metadata.is_dir() {
+        open_directory(path)?
+    } else {
+        File::open(path)?
+    };
+    native_key(&handle)
+}
+
+/// Establishes same-volume staging using native volume identities, never drive spelling.
+/// # Errors
+/// Refuses unavailable identities, links and unsupported platforms.
+pub fn same_native_volume(left: &Path, right: &Path) -> io::Result<bool> {
+    let a = open_directory(left)?;
+    let b = open_directory(right)?;
+    #[cfg(windows)]
+    {
+        Ok(winapi_util::file::information(&a)?.volume_serial_number()
+            == winapi_util::file::information(&b)?.volume_serial_number())
+    }
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::MetadataExt;
+        Ok(a.metadata()?.dev() == b.metadata()?.dev())
+    }
+    #[cfg(not(any(windows, unix)))]
+    {
+        let _ = (a, b);
+        Err(io::Error::other("native volume identity unavailable"))
+    }
+}
+
+/// Read-only fresh-reader guard for incomplete migration authority.
+/// Historical immutable records remain readable without this guard.
+/// # Errors
+/// Refuses APPLYING, interrupted or malformed migration ownership state.
+pub fn assert_no_incomplete_migration(repository: &Path) -> io::Result<()> {
+    let identity = DirectoryIdentity::capture(repository)?;
+    let path = fixed_anchor()
+        .join("fortress-ops")
+        .join("admission-v1")
+        .join(identity.key())
+        .join("owners.json");
+    let bytes = match read_record(&path, 16_384) {
+        Ok(bytes) => bytes,
+        Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(()),
+        Err(error) => return Err(error),
+    };
+    let registry: Registry =
+        crate::wire::parse_strict_json_bytes(&bytes).map_err(io::Error::other)?;
+    if registry.version != 1
+        || registry.native_identity != identity.key()
+        || registry.registrations.len() > 3
+    {
+        return Err(io::Error::other("invalid migration admission registry"));
+    }
+    if let Some(entry) = registry.registrations.get("migration") {
+        validate_registration("migration", entry)?;
+        if !entry.completed && !journal_finished("migration", entry)? {
+            return Err(io::Error::other(
+                "MIGRATION_IN_PROGRESS: fresh certification is unavailable until explicit recovery completes",
+            ));
+        }
+    }
+    Ok(())
+}
+
 pub(crate) fn same_file(left: &File, right: &File) -> io::Result<bool> {
     Ok(native_key(left)? == native_key(right)?)
 }
@@ -278,7 +354,7 @@ impl HeavyAdmissionGuard {
         };
         if registry.version != 1
             || registry.native_identity != directory.key()
-            || registry.registrations.len() > 2
+            || registry.registrations.len() > 3
         {
             return Err(io::Error::other("invalid admission registry identity"));
         }
@@ -538,7 +614,7 @@ fn lower_hex(value: &str, length: usize) -> bool {
 }
 
 fn validate_registration(namespace: &str, entry: &Registration) -> io::Result<()> {
-    if !matches!(namespace, "python" | "rust")
+    if !matches!(namespace, "python" | "rust" | "migration")
         || !lower_hex(&entry.root_identity, 64)
         || !lower_hex(&entry.run_nonce, 24)
     {
@@ -571,11 +647,46 @@ fn journal_finished(namespace: &str, entry: &Registration) -> io::Result<bool> {
     {
         return Err(io::Error::other("adapter journal binding mismatch"));
     }
+    let journal = if namespace == "migration" {
+        let completed = match read_record(&entry.journal_path.with_extension("complete"), 65_536) {
+            Ok(bytes) => {
+                crate::wire::parse_strict_json_bytes::<Value>(&bytes).map_err(io::Error::other)?
+            }
+            Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(false),
+            Err(error) => return Err(error),
+        };
+        for key in [
+            "version",
+            "root_identity",
+            "run_nonce",
+            "plan_ref",
+            "repository_identity",
+            "run_root",
+            "run_identity",
+        ] {
+            if completed.get(key) != journal.get(key) {
+                return Err(io::Error::other("migration completion ownership differs"));
+            }
+        }
+        completed
+    } else {
+        journal
+    };
     let empty = journal
         .get("child_processes")
         .and_then(Value::as_array)
         .is_some_and(Vec::is_empty);
     let released = journal.get("lease_state").and_then(Value::as_str) == Some("RELEASED");
+    if namespace == "migration" {
+        return Ok(empty
+            && released
+            && journal.get("lifecycle").and_then(Value::as_str)
+                == Some("COMPLETED_BYTES_VERIFIED")
+            && matches!(
+                journal.get("outcome").and_then(Value::as_str),
+                Some("COMMITTED" | "ROLLED_BACK" | "ABORTED_BEFORE_APPLY")
+            ));
+    }
     let final_state = matches!(
         journal.get("lifecycle").and_then(Value::as_str),
         Some("CLEANUP_COMPLETE" | "FAILED" | "CANCELLED")

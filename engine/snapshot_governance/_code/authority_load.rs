@@ -168,7 +168,13 @@ pub fn prepare_authority_change(
         complete,
     )
 }
-fn roles(snapshot: &AuthoritySnapshot) -> Result<Vec<ProtectedInput>, TransitionError> {
+pub(crate) fn roles(snapshot: &AuthoritySnapshot) -> Result<Vec<ProtectedInput>, TransitionError> {
+    roles_with_ownership(snapshot, &BTreeMap::new())
+}
+pub(crate) fn roles_with_ownership(
+    snapshot: &AuthoritySnapshot,
+    ownership: &BTreeMap<String, String>,
+) -> Result<Vec<ProtectedInput>, TransitionError> {
     use crate::authority_roles::{ProtectedClass, protected_input_roles, protected_owner_roles};
     let layout = crate::control_layout::ControlLayout::standard();
     let mut result = BTreeSet::new();
@@ -198,10 +204,13 @@ fn roles(snapshot: &AuthoritySnapshot) -> Result<Vec<ProtectedInput>, Transition
             classes.insert(ProtectedClass::SchemaCompatibility);
         }
         let input = by_path.get(path.as_str()).copied();
-        let scopes = input
+        let mut scopes = input
             .map(|i| i.scope_refs.clone())
             .filter(|s| !s.is_empty())
             .unwrap_or_else(|| BTreeSet::from(["project".into()]));
+        if let Some(owner) = ownership.get(path) {
+            scopes.insert(owner.clone());
+        }
         if let Some(input) = input {
             for axis in input.roles.keys() {
                 match axis {

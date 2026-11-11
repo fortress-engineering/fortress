@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v1:migration-receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "receipt_digest",
+    "plan_ref",
+    "base_state_ref",
+    "target_state_ref",
+    "actual_state_ref",
+    "actual_source_ref",
+    "transition_ref",
+    "authorization",
+    "grant_provenance",
+    "validations",
+    "operation_count",
+    "outcome",
+    "project_execution",
+    "assurance_limitations"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:derived:v1:migration-receipt"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "receipt_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "plan_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "base_state_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "target_state_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "actual_state_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "actual_source_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "transition_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "authorization": {
+      "$ref": "urn:fortress:derived:v1:application-authority"
+    },
+    "grant_provenance": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:fortress:derived:v1:validated-grant-receipt"
+      },
+      "maxItems": 1024
+    },
+    "validations": {
+      "type": "object",
+      "propertyNames": {
+        "enum": [
+          "EVALUATION_COMPLETED",
+          "GOVERNANCE_DECLARED",
+          "PROGRESSIVE_ENFORCEMENT",
+          "PROFILE_ASSURANCE",
+          "COMPARABLE_RETIREMENT"
+        ]
+      },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "state",
+          "evidence_refs",
+          "detail"
+        ],
+        "properties": {
+          "state": {
+            "enum": [
+              "SATISFIED",
+              "FAILED",
+              "NOT_EVALUABLE",
+              "NOT_APPLICABLE"
+            ]
+          },
+          "evidence_refs": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "maxItems": 1024
+          },
+          "detail": {
+            "type": "string",
+            "maxLength": 4096
+          }
+        }
+      },
+      "maxProperties": 5
+    },
+    "operation_count": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1024
+    },
+    "outcome": {
+      "enum": [
+        "APPLIED",
+        "NO_OP"
+      ]
+    },
+    "project_execution": {
+      "const": "NOT_PERFORMED_BY_MIGRATION"
+    },
+    "assurance_limitations": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 4096
+      },
+      "maxItems": 16
+    }
+  }
+}

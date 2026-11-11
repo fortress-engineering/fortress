@@ -3,15 +3,11 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
-use std::fs::{self, OpenOptions};
-use std::io::Write;
-use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
-use crate::audit::audit_repository;
 use crate::certification::certification_source_digest;
 use crate::contract_coherency::ModuleContract;
 use crate::finding_governance::{FINDING_GOVERNANCE_PATH, FindingGovernanceDocument};
@@ -19,10 +15,8 @@ use crate::implementation_observation::{
     CargoAnalysisTerritoryObservation, ImplementationObservationInput, SnapshotBoundFile,
     observe_cargo_analysis_territories,
 };
-use crate::observation::ObservationPolicy;
 use crate::project::ProjectConfiguration;
 use crate::rust_test_analyzer::observe_observed_rust_tests;
-use crate::snapshot::observe_repository_stably;
 use crate::standard::installed_standard_manifest;
 
 /// Canonical discovery-proposal schema identity.
@@ -31,8 +25,6 @@ pub const BOOTSTRAP_PROPOSAL_SCHEMA: &str = "urn:fortress:schema:v1:repository-b
 pub const BOOTSTRAP_PROPOSAL_SCHEMA_VERSION: u16 = 1;
 /// Semantic version of proposal discovery and application behavior.
 pub const BOOTSTRAP_SEMANTIC_VERSION: &str = "1.0.0";
-
-static NEXT_TRANSACTION: AtomicU64 = AtomicU64::new(1);
 
 /// Explicit caller-supplied architectural choices used during discovery.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -344,6 +336,9 @@ pub struct BootstrapApplyResult {
     blocking_findings: Option<usize>,
     strict_conformance: String,
     progressive_enforcement: String,
+    migration_plan_ref: String,
+    migration_receipt_ref: String,
+    migration_record_path: String,
 }
 
 impl BootstrapApplyResult {
@@ -461,7 +456,7 @@ pub fn discover_repository_bootstrap(
         unresolved_choices,
         predicted_legacy_residue: PredictedLegacyResidue {
             status: "EVALUATED_DURING_EXPLICIT_APPLY".into(),
-            detail: "Raw governed findings are intentionally not inferred from unapproved authority; --baseline-current evaluates them only after the reviewed authority is materialized.".into(),
+            detail: "Proposed intent remains hypothetical; --baseline-current evaluates complete immutable proposed bytes before any source mutation, then independently revalidates the actual result.".into(),
         },
     };
     proposal.proposal_digest = proposal.identity_digest()?;
@@ -512,90 +507,95 @@ pub fn apply_repository_bootstrap(
         }
     }
 
-    let mut transaction =
-        BootstrapTransaction::stage(root, &proposal.proposed_authority.artifacts)?;
-    transaction.commit()?;
-    let result = if baseline_current {
-        bootstrap_baseline(root, proposal, &mut transaction)
-    } else {
-        Ok(BootstrapApplyResult {
-            proposal_digest: proposal.proposal_digest.clone(),
-            source_fingerprint: proposal.source_fingerprint.clone(),
-            created_files: transaction.final_paths(),
-            baseline_created: false,
-            raw_findings: None,
-            baselined_findings: None,
-            baseline_ineligible_findings: None,
-            blocking_findings: None,
-            strict_conformance: "NOT_EVALUATED".into(),
-            progressive_enforcement: "NOT_EVALUATED".into(),
-        })
-    };
-    match result {
-        Ok(value) => {
-            transaction.finish();
-            Ok(value)
-        }
-        Err(error) => {
-            transaction.rollback();
-            Err(error)
-        }
-    }
+    apply_bootstrap_transaction(root, proposal, baseline_current)
 }
 
-fn bootstrap_baseline(
+fn apply_bootstrap_transaction(
     root: &Path,
     proposal: &BootstrapProposal,
-    transaction: &mut BootstrapTransaction,
+    baseline_current: bool,
 ) -> Result<BootstrapApplyResult, BootstrapError> {
-    let audit = audit_repository(root)
-        .map_err(|error| BootstrapError::GovernedEvaluation(error.to_string().into()))?;
-    if !audit.is_governed() {
-        return Err(BootstrapError::GovernedEvaluation(
-            "reviewed authority did not establish governed project state".into(),
-        ));
+    use crate::migration_adapter::{CanonicalMigrationAuthority, CanonicalMigrationEvaluator};
+    use crate::migration_governance::{
+        MigrationEvaluator, MigrationOperation, MigrationOptions, MigrationServices,
+        MigrationValidation, NoMutationFaults, apply_migration, preview_migration,
+    };
+    let evaluator = CanonicalMigrationEvaluator;
+    let before = evaluator.observe(root).map_err(BootstrapError::Migration)?;
+    let current = certification_source_digest(before.files());
+    if current != proposal.source_fingerprint {
+        return Err(BootstrapError::StaleProposal {
+            expected: proposal.source_fingerprint.clone().into(),
+            actual: current.into(),
+        });
     }
-    let mut authority = FindingGovernanceDocument::empty();
-    let mutation = authority
-        .create_baseline(
-            audit.standard_id(),
-            audit.standard_edition(),
-            audit.findings(),
-        )
-        .map_err(|error| BootstrapError::GovernedEvaluation(error.to_string().into()))?;
-    if mutation.ineligible > 0 {
-        return Err(BootstrapError::BaselineIneligible(mutation.ineligible));
-    }
-    transaction.replace_committed(
-        FINDING_GOVERNANCE_PATH,
-        authority
-            .to_canonical_json()
-            .map_err(|error| BootstrapError::Serialization(error.to_string().into()))?
-            .as_bytes(),
-    )?;
-    let classified = audit_repository(root)
-        .map_err(|error| BootstrapError::GovernedEvaluation(error.to_string().into()))?;
-    let summary = classified.finding_governance().summary();
-    if !classified.enforcement_success() {
-        return Err(BootstrapError::BlockingFindings(summary.new_blocking));
-    }
-    Ok(BootstrapApplyResult {
+    let mut operations = proposal
+        .proposed_authority
+        .artifacts
+        .iter()
+        .map(|a| MigrationOperation::CreateFile {
+            path: a.path.clone(),
+            postimage: a.bytes(),
+        })
+        .collect::<Vec<_>>();
+    let mut result = BootstrapApplyResult {
         proposal_digest: proposal.proposal_digest.clone(),
         source_fingerprint: proposal.source_fingerprint.clone(),
-        created_files: transaction.final_paths(),
-        baseline_created: true,
-        raw_findings: Some(classified.findings().len()),
-        baselined_findings: Some(summary.baselined_non_blocking),
-        baseline_ineligible_findings: Some(summary.baseline_ineligible),
-        blocking_findings: Some(summary.new_blocking),
-        strict_conformance: if classified.is_success() {
-            "PASS"
-        } else {
-            "FAIL"
-        }
-        .into(),
-        progressive_enforcement: "PASS".into(),
-    })
+        created_files: proposal
+            .proposed_authority
+            .artifacts
+            .iter()
+            .map(|a| a.path.clone())
+            .collect(),
+        baseline_created: baseline_current,
+        raw_findings: None,
+        baselined_findings: None,
+        baseline_ineligible_findings: None,
+        blocking_findings: None,
+        strict_conformance: "NOT_EVALUATED".into(),
+        progressive_enforcement: "NOT_EVALUATED".into(),
+        migration_plan_ref: String::new(),
+        migration_receipt_ref: String::new(),
+        migration_record_path: String::new(),
+    };
+    prepare_bootstrap_target(&before, &mut operations, &mut result, baseline_current)?;
+    let authority = CanonicalMigrationAuthority {
+        policy: None,
+        host: &crate::development_governance::UnmediatedHost,
+        validator: &crate::development_governance::NoGrantValidator,
+        evaluation_time: None,
+        reviewed_initial_intent_ref: Some(&proposal.proposal_digest),
+        finding_proposal: None,
+        identity_plan: None,
+    };
+    let mut options = MigrationOptions::default();
+    options
+        .validation_requirements
+        .insert(MigrationValidation::GovernanceDeclared);
+    if baseline_current {
+        options
+            .validation_requirements
+            .insert(MigrationValidation::ProgressiveEnforcement);
+    }
+    let preview = preview_migration(&evaluator, &authority, &before, operations, options)
+        .map_err(BootstrapError::Migration)?;
+    let storage =
+        crate::migration_adapter::default_migration_storage().map_err(BootstrapError::Migration)?;
+    let applied = apply_migration(
+        root,
+        &preview.plan,
+        &MigrationServices {
+            evaluator: &evaluator,
+            authority: &authority,
+            resources: &storage,
+            observer: &NoMutationFaults,
+        },
+    )
+    .map_err(BootstrapError::Migration)?;
+    result.migration_plan_ref = preview.plan.digest().into();
+    result.migration_receipt_ref = applied.receipt.digest().into();
+    result.migration_record_path = applied.record_path;
+    Ok(result)
 }
 
 fn proposed_artifacts(
@@ -674,24 +674,12 @@ fn validate_reviewed_artifacts(proposal: &BootstrapProposal) -> Result<(), Boots
 }
 
 fn observed_source(root: &Path) -> Result<(BTreeMap<String, Vec<u8>>, String), BootstrapError> {
-    let policy = ObservationPolicy::new([".git"])
-        .map_err(|error| BootstrapError::Observation(error.to_string().into()))?;
-    let observation = observe_repository_stably(root, &policy)
-        .map_err(|error| BootstrapError::Observation(error.to_string().into()))?;
-    let files = observation
-        .files()
-        .iter()
-        .map(|file| {
-            fs::read(root.join(file.path()))
-                .map(|bytes| (file.path().to_owned(), bytes))
-                .map_err(|error| BootstrapError::Io {
-                    path: file.path().into(),
-                    detail: error.to_string().into(),
-                })
-        })
-        .collect::<Result<BTreeMap<_, _>, _>>()?;
-    let digest = certification_source_digest(&files);
-    Ok((files, digest))
+    crate::heavy_admission::assert_no_incomplete_migration(root)
+        .map_err(|e| BootstrapError::Observation(e.to_string().into()))?;
+    let source = crate::audit::observe_migration_source(root)
+        .map_err(|e| BootstrapError::Observation(e.to_string().into()))?;
+    let digest = certification_source_digest(source.files());
+    Ok((source.files().clone(), digest))
 }
 
 fn snapshot_bound_files(files: &BTreeMap<String, Vec<u8>>) -> Vec<SnapshotBoundFile> {
@@ -757,128 +745,6 @@ fn installed_standard_binding() -> Result<BootstrapStandardBinding, BootstrapErr
     })
 }
 
-struct StagedArtifact {
-    relative: String,
-    temporary: PathBuf,
-    final_path: PathBuf,
-}
-
-struct BootstrapTransaction {
-    staged: Vec<StagedArtifact>,
-    created_directories: Vec<PathBuf>,
-    committed: bool,
-}
-
-impl BootstrapTransaction {
-    fn stage(root: &Path, artifacts: &[ProposedAuthorityArtifact]) -> Result<Self, BootstrapError> {
-        let identity = NEXT_TRANSACTION.fetch_add(1, Ordering::Relaxed);
-        let mut transaction = Self {
-            staged: Vec::new(),
-            created_directories: Vec::new(),
-            committed: false,
-        };
-        for artifact in artifacts {
-            let final_path = root.join(&artifact.path);
-            let parent = final_path.parent().ok_or_else(|| {
-                BootstrapError::InvalidProposal("authority path has no parent".into())
-            })?;
-            if !parent.exists() {
-                fs::create_dir_all(parent).map_err(|error| BootstrapError::Io {
-                    path: artifact.path.clone().into(),
-                    detail: error.to_string().into(),
-                })?;
-                transaction.created_directories.push(parent.to_path_buf());
-            }
-            let file_name = final_path
-                .file_name()
-                .and_then(|value| value.to_str())
-                .ok_or_else(|| BootstrapError::InvalidProposal("invalid authority name".into()))?;
-            let temporary = parent.join(format!(
-                ".{file_name}.fortress-init-{}-{identity}.tmp",
-                std::process::id()
-            ));
-            let mut file = OpenOptions::new()
-                .create_new(true)
-                .write(true)
-                .open(&temporary)
-                .map_err(|error| BootstrapError::Io {
-                    path: artifact.path.clone().into(),
-                    detail: error.to_string().into(),
-                })?;
-            file.write_all(&artifact.bytes())
-                .and_then(|()| file.sync_all())
-                .map_err(|error| BootstrapError::Io {
-                    path: artifact.path.clone().into(),
-                    detail: error.to_string().into(),
-                })?;
-            transaction.staged.push(StagedArtifact {
-                relative: artifact.path.clone(),
-                temporary,
-                final_path,
-            });
-        }
-        Ok(transaction)
-    }
-
-    fn commit(&mut self) -> Result<(), BootstrapError> {
-        for artifact in &self.staged {
-            fs::rename(&artifact.temporary, &artifact.final_path).map_err(|error| {
-                BootstrapError::Io {
-                    path: artifact.relative.clone().into(),
-                    detail: error.to_string().into(),
-                }
-            })?;
-        }
-        self.committed = true;
-        Ok(())
-    }
-
-    fn replace_committed(&mut self, relative: &str, bytes: &[u8]) -> Result<(), BootstrapError> {
-        let artifact = self
-            .staged
-            .iter()
-            .find(|artifact| artifact.relative == relative)
-            .ok_or_else(|| BootstrapError::InvalidProposal("replacement target absent".into()))?;
-        fs::write(&artifact.final_path, bytes).map_err(|error| BootstrapError::Io {
-            path: relative.into(),
-            detail: error.to_string().into(),
-        })?;
-        Ok(())
-    }
-
-    fn final_paths(&self) -> Vec<String> {
-        self.staged
-            .iter()
-            .map(|artifact| artifact.relative.clone())
-            .collect()
-    }
-
-    fn finish(&mut self) {
-        self.committed = false;
-        self.staged.clear();
-        self.created_directories.clear();
-    }
-
-    fn rollback(&mut self) {
-        for artifact in self.staged.iter().rev() {
-            let _ = fs::remove_file(&artifact.temporary);
-            let _ = fs::remove_file(&artifact.final_path);
-        }
-        for directory in self.created_directories.iter().rev() {
-            let _ = fs::remove_dir(directory);
-        }
-        self.committed = false;
-    }
-}
-
-impl Drop for BootstrapTransaction {
-    fn drop(&mut self) {
-        if !self.staged.is_empty() {
-            self.rollback();
-        }
-    }
-}
-
 fn sha256_bytes(bytes: &[u8]) -> String {
     format!("sha256:{:x}", Sha256::digest(bytes))
 }
@@ -896,6 +762,8 @@ fn is_canonical_relative_path(path: &str) -> bool {
 /// Explains why discovery or explicit application could not complete.
 #[derive(Debug)]
 pub enum BootstrapError {
+    /// Common migration refusal; retained transaction references identify explicit recovery.
+    Migration(crate::migration_governance::MigrationError),
     /// Repository observation or supported Cargo/test extraction failed.
     Observation(Box<str>),
     /// Proposal JSON, digest, or reviewed content is invalid.
@@ -933,6 +801,7 @@ pub enum BootstrapError {
 impl Display for BootstrapError {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
         match self {
+            Self::Migration(error) => Display::fmt(error, formatter),
             Self::Observation(detail) => write!(formatter, "repository discovery failed: {detail}"),
             Self::InvalidProposal(detail) => write!(formatter, "bootstrap proposal is invalid: {detail}"),
             Self::UnresolvedProposal => formatter.write_str(
@@ -949,11 +818,11 @@ impl Display for BootstrapError {
             Self::GovernedEvaluation(detail) => write!(formatter, "governed evaluation failed: {detail}"),
             Self::BaselineIneligible(count) => write!(
                 formatter,
-                "{count} current finding(s) lack safe stable identity; zero-new-red bootstrap was rolled back"
+                "{count} current finding(s) lack safe stable identity; initial bootstrap wrote no authority"
             ),
             Self::BlockingFindings(count) => write!(
                 formatter,
-                "{count} blocking finding(s) remain after baseline creation; bootstrap was rolled back"
+                "{count} blocking finding(s) remain after baseline creation; initial bootstrap wrote no authority"
             ),
             Self::Serialization(detail) => write!(formatter, "canonical serialization failed: {detail}"),
             Self::Io { path, detail } => write!(formatter, "repository I/O failed at `{path}`: {detail}"),
@@ -962,3 +831,93 @@ impl Display for BootstrapError {
 }
 
 impl Error for BootstrapError {}
+
+fn prepare_bootstrap_target(
+    before: &crate::observation::SourceView,
+    operations: &mut [crate::migration_governance::MigrationOperation],
+    result: &mut BootstrapApplyResult,
+    baseline_current: bool,
+) -> Result<(), BootstrapError> {
+    use crate::migration_governance::MigrationOperation;
+    if baseline_current {
+        let graph = crate::migration_governance::OperationGraph::compile(
+            before,
+            operations.to_vec(),
+            &BTreeMap::new(),
+        )
+        .map_err(BootstrapError::Migration)?;
+        let audit = crate::audit::audit_migration_source(graph.target())
+            .map_err(|e| BootstrapError::GovernedEvaluation(e.to_string().into()))?;
+        let mut authority = FindingGovernanceDocument::empty();
+        let mutation = authority
+            .create_baseline(
+                audit.standard_id(),
+                audit.standard_edition(),
+                audit.findings(),
+            )
+            .map_err(|e| BootstrapError::GovernedEvaluation(e.to_string().into()))?;
+        if mutation.ineligible > 0 {
+            return Err(BootstrapError::BaselineIneligible(mutation.ineligible));
+        }
+        let bytes = authority
+            .to_canonical_json()
+            .map_err(|e| BootstrapError::Serialization(e.to_string().into()))?
+            .into_bytes();
+        let selected=operations.iter_mut().find(|op|matches!(op,MigrationOperation::CreateFile{path,..} if path==FINDING_GOVERNANCE_PATH)).ok_or_else(||BootstrapError::InvalidProposal("initial finding authority absent".into()))?;
+        *selected = MigrationOperation::CreateFile {
+            path: FINDING_GOVERNANCE_PATH.into(),
+            postimage: bytes,
+        };
+        let target = crate::migration_governance::OperationGraph::compile(
+            before,
+            operations.to_vec(),
+            &BTreeMap::new(),
+        )
+        .map_err(BootstrapError::Migration)?;
+        let classified = crate::audit::audit_migration_source(target.target())
+            .map_err(|e| BootstrapError::GovernedEvaluation(e.to_string().into()))?;
+        let summary = classified.finding_governance().summary();
+        if !classified.enforcement_success() {
+            return Err(BootstrapError::BlockingFindings(summary.new_blocking));
+        }
+        result.raw_findings = Some(classified.findings().len());
+        result.baselined_findings = Some(summary.baselined_non_blocking);
+        result.baseline_ineligible_findings = Some(summary.baseline_ineligible);
+        result.blocking_findings = Some(summary.new_blocking);
+        result.strict_conformance = if classified.is_success() {
+            "PASS"
+        } else {
+            "FAIL"
+        }
+        .into();
+        result.progressive_enforcement = "PASS".into();
+    }
+    if !baseline_current {
+        let graph = crate::migration_governance::OperationGraph::compile(
+            before,
+            operations.to_vec(),
+            &BTreeMap::new(),
+        )
+        .map_err(BootstrapError::Migration)?;
+        let actual_target = crate::audit::audit_migration_source(graph.target())
+            .map_err(|e| BootstrapError::GovernedEvaluation(e.to_string().into()))?;
+        let summary = actual_target.finding_governance().summary();
+        result.raw_findings = Some(actual_target.findings().len());
+        result.baselined_findings = Some(summary.baselined_non_blocking);
+        result.baseline_ineligible_findings = Some(summary.baseline_ineligible);
+        result.blocking_findings = Some(summary.new_blocking);
+        result.strict_conformance = if actual_target.is_success() {
+            "PASS"
+        } else {
+            "FAIL"
+        }
+        .into();
+        result.progressive_enforcement = if actual_target.enforcement_success() {
+            "PASS"
+        } else {
+            "FAIL"
+        }
+        .into();
+    }
+    Ok(())
+}

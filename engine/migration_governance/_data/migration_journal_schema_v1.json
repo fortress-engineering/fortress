@@ -1,0 +1,426 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v1:migration-journal",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "plan_ref",
+    "transaction_ref",
+    "repository_identity",
+    "objects"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "plan_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "transaction_ref": {
+      "type": "string",
+      "maxLength": 4096
+    },
+    "repository_identity": {
+      "type": "string",
+      "maxLength": 4096
+    },
+    "objects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "slot",
+          "path",
+          "identity",
+          "digest",
+          "directory"
+        ],
+        "properties": {
+          "slot": {
+            "type": "string",
+            "maxLength": 4096
+          },
+          "path": {
+            "type": "string",
+            "maxLength": 4096
+          },
+          "identity": {
+            "type": "string",
+            "maxLength": 4096
+          },
+          "digest": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^sha256:[0-9a-f]{64}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "directory": {
+            "type": "boolean"
+          }
+        }
+      },
+      "maxItems": 8192
+    }
+  },
+  "$defs": {
+    "Entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sequence",
+        "previous",
+        "action"
+      ],
+      "properties": {
+        "sequence": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65536
+        },
+        "previous": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "action": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "kind"
+              ],
+              "properties": {
+                "kind": {
+                  "const": "PLAN_INTENT"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "kind"
+              ],
+              "properties": {
+                "kind": {
+                  "const": "PLAN_COMPLETE"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "kind",
+                "slot",
+                "digest",
+                "directory"
+              ],
+              "properties": {
+                "kind": {
+                  "const": "PREPARE_INTENT"
+                },
+                "slot": {
+                  "type": "string",
+                  "maxLength": 4096
+                },
+                "digest": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "pattern": "^sha256:[0-9a-f]{64}$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "directory": {
+                  "type": "boolean"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "kind",
+                "slot",
+                "identity"
+              ],
+              "properties": {
+                "kind": {
+                  "const": "PREPARE_COMPLETE"
+                },
+                "slot": {
+                  "type": "string",
+                  "maxLength": 4096
+                },
+                "identity": {
+                  "type": "string",
+                  "maxLength": 4096
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "kind",
+                "digest"
+              ],
+              "properties": {
+                "kind": {
+                  "const": "OBJECTS_PREPARED"
+                },
+                "digest": {
+                  "type": "string",
+                  "pattern": "^sha256:[0-9a-f]{64}$"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "kind",
+                "id"
+              ],
+              "properties": {
+                "kind": {
+                  "const": "STEP_INTENT"
+                },
+                "id": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 65536
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "kind",
+                "id"
+              ],
+              "properties": {
+                "kind": {
+                  "const": "STEP_COMPLETE"
+                },
+                "id": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 65536
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "kind",
+                "path",
+                "slot"
+              ],
+              "properties": {
+                "kind": {
+                  "const": "PARENT_INTENT"
+                },
+                "path": {
+                  "type": "string",
+                  "maxLength": 4096
+                },
+                "slot": {
+                  "type": "string",
+                  "maxLength": 4096
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "kind",
+                "path"
+              ],
+              "properties": {
+                "kind": {
+                  "const": "PARENT_COMPLETE"
+                },
+                "path": {
+                  "type": "string",
+                  "maxLength": 4096
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "kind"
+              ],
+              "properties": {
+                "kind": {
+                  "const": "VALIDATION_INTENT"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "kind",
+                "source_ref",
+                "state_ref"
+              ],
+              "properties": {
+                "kind": {
+                  "const": "VALIDATION_COMPLETE"
+                },
+                "source_ref": {
+                  "type": "string",
+                  "pattern": "^sha256:[0-9a-f]{64}$"
+                },
+                "state_ref": {
+                  "type": "string",
+                  "pattern": "^sha256:[0-9a-f]{64}$"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "kind",
+                "path",
+                "digest"
+              ],
+              "properties": {
+                "kind": {
+                  "const": "RECEIPT_INTENT"
+                },
+                "path": {
+                  "type": "string",
+                  "maxLength": 4096
+                },
+                "digest": {
+                  "type": "string",
+                  "pattern": "^sha256:[0-9a-f]{64}$"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "kind",
+                "path",
+                "digest"
+              ],
+              "properties": {
+                "kind": {
+                  "const": "RECEIPT_COMPLETE"
+                },
+                "path": {
+                  "type": "string",
+                  "maxLength": 4096
+                },
+                "digest": {
+                  "type": "string",
+                  "pattern": "^sha256:[0-9a-f]{64}$"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "kind",
+                "mode"
+              ],
+              "properties": {
+                "kind": {
+                  "const": "RECOVERY_INTENT"
+                },
+                "mode": {
+                  "type": "string",
+                  "maxLength": 4096
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "kind",
+                "path",
+                "action"
+              ],
+              "properties": {
+                "kind": {
+                  "const": "RECOVERY_STEP_INTENT"
+                },
+                "path": {
+                  "type": "string",
+                  "maxLength": 4096
+                },
+                "action": {
+                  "type": "string",
+                  "maxLength": 4096
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "kind",
+                "path"
+              ],
+              "properties": {
+                "kind": {
+                  "const": "RECOVERY_STEP_COMPLETE"
+                },
+                "path": {
+                  "type": "string",
+                  "maxLength": 4096
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "kind",
+                "outcome",
+                "source_ref"
+              ],
+              "properties": {
+                "kind": {
+                  "const": "RECOVERY_COMPLETE"
+                },
+                "outcome": {
+                  "type": "string",
+                  "maxLength": 4096
+                },
+                "source_ref": {
+                  "type": "string",
+                  "pattern": "^sha256:[0-9a-f]{64}$"
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

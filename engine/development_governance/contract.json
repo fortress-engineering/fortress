@@ -76,6 +76,14 @@
             "T-AF-DEVELOPMENT-GOVERNANCE-0001-R01-025",
             "T-AF-DEVELOPMENT-GOVERNANCE-0001-R01-026"
           ]
+        },
+        {
+          "id": "AF-DEVELOPMENT-GOVERNANCE-0001-R02",
+          "statement": "Expose non-transferable migration application handles only from exact existing AUTHORITY permission and independently validated grants, preserving raw truth and physical-versus-evaluated source binding.",
+          "tests": [
+            "T-AF-DEVELOPMENT-GOVERNANCE-0001-R02-001",
+            "T-AF-DEVELOPMENT-GOVERNANCE-0001-R02-002"
+          ]
         }
       ]
     }

@@ -10,6 +10,13 @@ use fortress_core::identity::{StableId, StableIdError};
 
 const BUILTIN_COMMANDS: &[CommandDescriptor] = &[
     CommandDescriptor {
+        id: "CMD-GOVERNANCE-MIGRATE",
+        name: "migrate",
+        aliases: &[],
+        description: "Preview, explicitly apply, inspect or recover exact-state journaled migration plans through the common Migration Governance engine.",
+        usage: "fortress migrate preview --operations file [--root path] [--base-selection file] [--reviewed-intent digest] [--export] [--format human|json]; fortress migrate inspect --plan file|--receipt file; fortress migrate apply --plan file [--root path] [--storage-root path]; fortress migrate recover --plan file --transaction id --direction resume|rollback [--root path] [--storage-root path]",
+    },
+    CommandDescriptor {
         id: "CMD-PROTECTED-AUTHORITY",
         name: "authority",
         aliases: &[],

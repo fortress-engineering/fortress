@@ -64,6 +64,10 @@ pub mod implementation_observation;
 pub mod information_flow;
 #[path = "../snapshot_governance/_code/lifecycle_load.rs"]
 pub mod lifecycle_load;
+#[path = "../snapshot_governance/_code/migration_adapter.rs"]
+pub mod migration_adapter;
+#[path = "../migration_governance/_code/plan.rs"]
+pub mod migration_governance;
 #[path = "../project_model/_code/module_index.rs"]
 pub mod module_index;
 #[path = "../repository_observation/_code/observation.rs"]

@@ -20,6 +20,11 @@
       "provider": "AF-CORE-0001",
       "capability": "CAP-FORTRESS-ENGINE",
       "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-MIGRATION-GOVERNANCE-0001",
+      "capability": "CAP-MIGRATION-GOVERNANCE",
+      "version": "^0.1.0"
     }
   ],
   "relationships": [],
@@ -251,6 +256,14 @@
           "statement": "Readable bounded checkpoint authoring and protocol v4 previews render identical immutable proposals without executing project code, accepting authority or writing governance; older protocol versions reject the newer method explicitly.",
           "tests": [
             "T-TF-CLI-0001-R25-001"
+          ]
+        },
+        {
+          "id": "TF-CLI-0001-R26",
+          "statement": "Expose deterministic read-only migration preview and inspection, explicit transactional application and recovery with structured errors; serialized plans and repository assertions cannot provide external grants. Human and JSON projections describe identical immutable states.",
+          "tests": [
+            "T-TF-CLI-0001-R26-001",
+            "T-TF-CLI-0001-R26-002"
           ]
         }
       ]

@@ -625,7 +625,7 @@ def authority_check(authority, replay, declaration, assessment):
     policy_bytes = authority["assessment_policy_utf8"].encode()
     require(sha(layout_bytes) == preimage[1] and sha(policy_bytes) == preimage[2], "DIGEST_MISMATCH", "layout/policy authority differs")
     layout, policy = parse(layout_bytes), parse(policy_bytes)
-    require(edition(layout, [5]) and edition(policy, [1]) and policy["id"] == "application-assessment-policy"
+    require(edition(layout, [5, 6]) and edition(policy, [1]) and policy["id"] == "application-assessment-policy"
             and policy["version"] == "1.0.0", "UNSUPPORTED_VERSION", "unsupported authority semantics")
     manifest_bytes = authority["manifest_utf8"].encode()
     manifest = parse(manifest_bytes)

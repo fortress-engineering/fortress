@@ -133,3 +133,7 @@ Adds the typed behavior_author preview under protocol v4 while preserving versio
 ### [`query_response_schema_v4.json`](../_data/query_response_schema_v4.json)
 
 Adds the typed behavior_author preview under protocol v4 while preserving versions 1–3. An explicitly prepared immutable context is required; response formatting never starts analysis.
+
+### [`identity_migration_schema_v2.json`](../_data/identity_migration_schema_v2.json)
+
+Version 2 adds the exact physical source identity required to reject stale identity migration reviews before writes. Version 1 remains a historical preview schema; executable application uses MigrationPlan v1 and the common writer.

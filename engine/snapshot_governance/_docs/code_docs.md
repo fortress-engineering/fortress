@@ -221,3 +221,16 @@ Loads only registered active finding authority, composes read-only lifecycle rep
 Indexes already-produced comparable retirement and current authored admission/exception history for bounded, cancellable EXPLAIN paging. It never reruns analysis, validates external permission, chooses an ambiguous historical candidate, or treats recorded resolution as current repository evidence.
 
 Optional bounded BEHAVIOR composition resolves project/Module applicability from registered selected profiles, consumes Behavioral Realization owner claims, and carries their original findings, defeaters and limitations into declaration, assessment, EXPLAIN and portable replay. Protocol v4 authoring consumes the same explicitly admitted immutable semantic context as FLOW; it does not execute source analysis to format requests. CONTROL generation selection remains the source of retained evidence; default legacy realized output is unchanged when the optional scope is unselected.
+
+### [`migration_adapter.rs`](../_code/migration_adapter.rs)
+
+Composes full canonical immutable evaluation and existing trusted AUTHORITY decisions. Bootstrap and identity edits enter the single Migration Governance writer; proposed evaluations never become actual-state evidence.
+
+### [`migration_storage.rs`](../_code/migration_storage.rs)
+
+Retains external same-volume staging, immutable owner records, verified terminal records and native pinned identities under the shared OPS admission registry. Incomplete runs retain all originals and prevent fresh certification.
+
+
+Migration retirement evaluation consumes an opaque RATCHET proposal and an exact pre-maintenance SourceView. The lifecycle owner rederives the original comparable proof and checks the governance-only postimage; it does not require evidence to hash a file containing that evidence. Generic authorized file replacement cannot bypass this owner admission. Critical assessor scope is resolved through canonical Module ownership over the complete physical inventory, including files excluded from semantic projections.
+
+Identity governance normalization additionally consumes the existing non-deserializable IdentityMigrationPlan through lifecycle admission. Exact source and the entire replacement set must match its producer output; baseline/exception cardinality and Standard binding are preserved, and current anchored authority cannot change. This evidence cannot provide grants or prove retirement.

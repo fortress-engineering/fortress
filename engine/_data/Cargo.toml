@@ -13,6 +13,10 @@ autotests = false
 path = "../_code/lib.rs"
 
 [[test]]
+name = "migration_governance"
+path = "../migration_governance/testing/_code/migration.rs"
+
+[[test]]
 name = "arch_dependency_001"
 path = "../architecture_evaluation/testing/_code/arch_dependency_001.rs"
 
@@ -221,6 +225,7 @@ name = "provider"
 path = "../certification/testing/_code/provider.rs"
 
 [dependencies]
+unicase = "2.9"
 quick-xml = { version = "=0.42.0", default-features = false }
 cpu-time = "=1.0.0"
 getrandom = "0.3"

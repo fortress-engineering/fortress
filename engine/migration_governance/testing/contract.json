@@ -1,0 +1,32 @@
+{
+  "$schema": "urn:fortress:schema:v2:module-contract",
+  "schema_version": 2,
+  "id": "TEST-MIGRATION-GOVERNANCE-0001",
+  "display_name": "Migration Governance Testing",
+  "provides": [],
+  "requires": [
+    {
+      "provider": "AF-CORE-0001",
+      "capability": "CAP-FORTRESS-ENGINE",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-MIGRATION-GOVERNANCE-0001",
+      "capability": "CAP-MIGRATION-GOVERNANCE",
+      "version": "^0.1.0"
+    }
+  ],
+  "relationships": [
+    {
+      "type": "verifies",
+      "target": "AF-MIGRATION-GOVERNANCE-0001",
+      "subjects": [
+        "AF-MIGRATION-GOVERNANCE-0001"
+      ]
+    }
+  ],
+  "constraints": [],
+  "guarantees": [],
+  "features": [],
+  "behavior": []
+}

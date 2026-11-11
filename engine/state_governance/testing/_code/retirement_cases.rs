@@ -1068,6 +1068,36 @@ fn lifecycle_public_schemas_and_warm_paging_preserve_the_same_records() {
         "1.0.0-draft.1",
     )
     .unwrap();
+    // Migration consumes the original pre-maintenance proof, avoiding a digest self-reference.
+    let prune =
+        fortress_core::lifecycle_load::propose_prune(&doc, &before, &after, &BTreeSet::new())
+            .unwrap();
+    let governance_path = "__fortress/governance/finding_governance.json";
+    let source = fortress_core::observation::SourceView::from_bytes([(
+        governance_path,
+        doc.to_canonical_json().unwrap().into_bytes(),
+    )])
+    .unwrap();
+    let target = fortress_core::observation::SourceView::from_bytes([(
+        governance_path,
+        prune
+            .proposed_governance()
+            .to_canonical_json()
+            .unwrap()
+            .into_bytes(),
+    )])
+    .unwrap();
+    let admitted = fortress_core::lifecycle_load::migration_proposal_evidence(
+        &prune, &after, &source, &target,
+    )
+    .unwrap();
+    assert!(admitted.contains(&reference));
+    assert!(
+        fortress_core::lifecycle_load::migration_proposal_evidence(
+            &prune, &before, &source, &target
+        )
+        .is_err()
+    );
     let report = fortress_core::lifecycle_load::assess_finding_lifecycle(
         &doc,
         &before,

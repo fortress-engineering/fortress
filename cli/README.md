@@ -40,6 +40,12 @@ Invokes the Engine for command discovery, end-to-end Snapshot Governance audit b
 
 Runs the canonical unfiltered Rust suite locally, constructs current execution evidence, and emits deterministic Evidence Graph, Certification, and Verified BFG artifacts without delegating long verification to hosted CI.
 
+### [Migration Governance](../engine/migration_governance/README.md)
+
+**Types:** `depends_on`
+
+Provides versioned explicit preview, application and recovery contracts without introducing a CLI grant validator.
+
 ## Guarantees
 
 Unsupported commands and options return non-success; audit succeeds only when every evaluated mandatory rule passes; non-applicable rules are reported separately from PASS; progressive check may accept visible baselined or explicitly excepted residue without labeling it PASS; baseline never grows during ordinary validation; semantic inspection renders authored ALLOW entries as authorizations rather than conformance results and preserves existing coverage/uncertainty boundaries; `certify` returns success only for a truthful full-profile PASS based on current local execution; JSON and human output remain deterministic; no command labels static realization as executed evidence or a digest stamp as an authenticated signature.
@@ -99,3 +105,25 @@ fortress serve --stdio ./workflow --behavior-authoring
 ```
 
 Protocol v4 adds typed behavior_author parameters (feature, checkpoints, optional returns). Versions 1–3 reject that newer method and retain existing meanings. Preparation is explicit; requests over the loaded context do not start analysis. Schema guidance does not prepare source. The preview is PROPOSED and does not accept, write or authorize a declaration. Entry/return selectors are unique qualified names or canonical symbol IDs; ambiguity is an error. Canonical v3 contracts bind the exact context and require normal Module-owned intent and coverage validation. Requirement-to-test bindings and execution evidence remain separate.
+
+
+Migration preview and inspection are read-only by default:
+
+```text
+fortress migrate preview --root ./project --operations /outside/project/operations.json --format json
+fortress migrate preview --root ./project --operations /outside/project/operations.json --export
+fortress migrate inspect --plan /outside/project/plan.json --format human
+fortress migrate apply --root ./project --plan /outside/project/plan.json --storage-root /same-volume/external/ops --format json
+fortress migrate recover --root ./project --plan /outside/project/plan.json --transaction EXACT_TRANSACTION --direction rollback --storage-root /same-volume/external/ops --format json
+fortress migrate inspect --receipt ./project/__fortress/records/migrations/EXACT_DIGEST.json --format json
+```
+
+Operations are a bounded array of `CREATE_FILE`, `REPLACE_FILE`, `MOVE_PATH`, or `DELETE_OWNED_FILE` records. Exact byte arrays and readable repository-relative paths require no manually extracted hashes. See the [operations example](../engine/migration_governance/_data/migration_operations_example_v1.json). Preview produces MigrationPlan v1 with canonical operation ordering, exact source/state references, validation facts, transition and authorization requirements. Human output renders the same retained plan. `--export` is an explicit write of the reviewed proposal to the registered proposals family; it does not apply source operations.
+
+Application is explicit, rechecks the complete reviewed target and current preimages, and reports an owned transaction reference after allocation. Recovery requires that exact plan, external storage and transaction. `resume` rechecks authorization; `rollback` verifies original bytes and preserves independent edits as conflicts. Neither mode runs project build scripts. A completed receipt is historical application evidence, not certification or present freshness; undoing a completed migration requires another reviewed plan.
+
+The installed CLI supports unprotected initially ungoverned edits, exact no-ops and the separately reviewed initial-bootstrap boundary. It has no production external grant validator. For governed application, an embedding must supply `CanonicalMigrationAuthority` with the trusted original policy and the existing independently authenticated validator. `--base-selection` is allowed only for preview, and repository-authored JSON can never configure an application grant. Finding-governance maintenance additionally requires the existing RATCHET owner's process-local `GovernanceProposal`; retirement proofs remain bound to their original pre-maintenance state. Existing `migrate-identities` previews now use identity-migration v2 with a physical source reference; its trusted-host application routes through the same writer. CONTROL layouts 1–5 and historical generation manifests remain readable; current publication uses layout/generation v6.
+
+External storage must be on the repository's native volume and outside the repository. The existing `FORTRESS_EXECUTION_STORAGE_DIR` default is reused; a cross-volume default is rejected before source mutation. Journals, locks, staging, original bytes and recovery material stay under OPS and are retained after interruption. Incomplete migration state blocks fresh native and Python current-source certification; historical/offline inspection remains available. Version 1 qualifies cooperative process-crash recovery over regular files and safe hard-link support. It does not promise filesystem-wide atomicity, arbitrary power-loss ordering, hostile-writer exclusion, ACL preservation or recursive directory transactions.
+
+For finding-governance identity normalization, a trusted embedding supplies the existing identity owner's process-local plan as `identity_plan`; lifecycle admission checks exact source and edits, preserves baseline/history structure, and forbids rewritten current anchors. It remains separate from authorization. The generic CLI accepts neither serialized identity plans as grants nor arbitrary governance replacement as normalization. Retired identity-preview v1 output must be regenerated from the exact repository before use.

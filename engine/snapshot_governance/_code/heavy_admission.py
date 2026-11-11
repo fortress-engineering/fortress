@@ -185,7 +185,7 @@ class DirectoryIdentity:
 
 
 def _validate(namespace: str, entry: dict[str, Any]) -> None:
-    if (namespace not in {"python", "rust"}
+    if (namespace not in {"python", "rust", "migration"}
             or set(entry) != {"root_identity", "run_nonce", "journal_path",
                               "compiler_path", "completed"}
             or not _hex(entry["root_identity"], 64)
@@ -209,6 +209,19 @@ def _finished(namespace: str, entry: dict[str, Any]) -> bool:
     if (journal.get("root_identity") != entry["root_identity"]
             or journal.get("run_nonce") != entry["run_nonce"]):
         raise OSError("adapter journal binding mismatch")
+    if namespace == "migration":
+        completed_path = Path(entry["journal_path"]).with_suffix(".complete")
+        if not completed_path.exists():
+            return False
+        completed = _read_json(completed_path, 65_536)
+        if any(completed.get(key) != journal.get(key) for key in
+               ("version", "root_identity", "run_nonce", "plan_ref", "repository_identity", "run_root", "run_identity")):
+            raise OSError("migration completion ownership differs")
+        journal = completed
+        return (journal.get("lease_state") == "RELEASED"
+                and journal.get("child_processes") == []
+                and journal.get("lifecycle") == "COMPLETED_BYTES_VERIFIED"
+                and journal.get("outcome") in {"COMMITTED", "ROLLED_BACK", "ABORTED_BEFORE_APPLY"})
     return (journal.get("lease_state") == "RELEASED"
             and journal.get("child_processes") == []
             and journal.get("lifecycle") in {"CLEANUP_COMPLETE", "FAILED", "CANCELLED"}
@@ -261,7 +274,7 @@ class HeavyAdmissionGuard:
                     or type(registry["version"]) is not int or registry["version"] != 1
                     or registry["native_identity"] != self.directory.key
                     or not isinstance(registry["registrations"], dict)
-                    or len(registry["registrations"]) > 2):
+                    or len(registry["registrations"]) > 3):
                 raise OSError("invalid admission registry identity")
             for namespace, entry in registry["registrations"].items():
                 if not isinstance(entry, dict):
@@ -355,3 +368,26 @@ class HeavyAdmissionGuard:
 
     def __del__(self) -> None:
         self.close()
+
+
+def assert_no_incomplete_migration(repository: Path) -> None:
+    """Read-only barrier for fresh subject verification; immutable historical reads are separate."""
+    identity = DirectoryIdentity(repository)
+    try:
+        path = _fixed_anchor() / "fortress-ops" / "admission-v1" / identity.key / "owners.json"
+        if not path.exists():
+            return
+        registry = _read_json(path, 16_384)
+        if (type(registry.get("version")) is not int or registry.get("version") != 1 or registry.get("native_identity") != identity.key
+                or not isinstance(registry.get("registrations"), dict)
+                or len(registry["registrations"]) > 3):
+            raise OSError("invalid migration admission registry")
+        entry = registry["registrations"].get("migration")
+        if entry is not None:
+            if not isinstance(entry, dict):
+                raise OSError("invalid migration admission registration")
+            _validate("migration", entry)
+            if not entry["completed"] and not _finished("migration", entry):
+                raise OSError("MIGRATION_IN_PROGRESS: fresh certification requires explicit verified recovery")
+    finally:
+        identity.close()

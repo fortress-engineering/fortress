@@ -40,6 +40,7 @@ pub mod command;
 mod finding_command;
 mod flow_command;
 mod inspection;
+mod migration_command;
 mod portable_command;
 mod presentation;
 mod provider_command;
@@ -116,6 +117,7 @@ where
     };
 
     match command.id() {
+        "CMD-GOVERNANCE-MIGRATE" => migration_command::run(&arguments[1..], output, error),
         "CMD-BEHAVIOR-AUTHOR" => behavior_command::run(&arguments[1..], output, error),
         "CMD-FLOW-AUTHOR" => flow_command::run(&arguments[1..], output, error),
         "CMD-PORTABLE-BUNDLE" | "CMD-PORTABLE-SARIF" => {

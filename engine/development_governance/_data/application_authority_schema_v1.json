@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v1:application-authority",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "kind",
+    "change_set_ref",
+    "base_state_ref",
+    "candidate_state_ref",
+    "transition_ref",
+    "governed_decision",
+    "reviewed_initial_intent_ref",
+    "semantics"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:derived:v1:application-authority"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "kind": {
+      "enum": [
+        "GOVERNED",
+        "INITIAL_ESTABLISHMENT",
+        "UNGOVERNED_UNPROTECTED",
+        "NO_SOURCE_CHANGE"
+      ]
+    },
+    "change_set_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "base_state_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "candidate_state_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "transition_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "governed_decision": {
+      "anyOf": [
+        {
+          "$ref": "urn:fortress:derived:v1:change-decision"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "reviewed_initial_intent_ref": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "semantics": {
+      "const": "PROVENANCE_ONLY_NOT_TRANSFERABLE"
+    }
+  }
+}

@@ -91,6 +91,10 @@ Owns the single pure comparator and versioned, content-addressed transition mode
 
 Owns protected-authority decisions and exact-proposal external grant boundaries.
 
+### [Migration Governance](../migration_governance/README.md)
+
+Owns one exact-state migration planner, journaled writer and conflict-preserving recovery engine through injected canonical evaluation, authority and OPS ports.
+
 ## Coordination
 
 The immediate children collectively fulfill the Engine responsibility through the parent boundary. Their conceptual contributions compose here without restating or replacing the typed relationship graph declared by their Module contracts.

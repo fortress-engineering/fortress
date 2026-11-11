@@ -1,0 +1,502 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v1:migration-plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "plan_digest",
+    "base_source_ref",
+    "target_source_ref",
+    "base_state_ref",
+    "target_state_ref",
+    "context_ref",
+    "transition_ref",
+    "authorization_decision_ref",
+    "authorization_requirement_ref",
+    "authorization",
+    "required_grants",
+    "operations",
+    "operation_graph",
+    "preconditions",
+    "inverse_expectations",
+    "options",
+    "validation_facts",
+    "evaluation_mode"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:derived:v1:migration-plan"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "plan_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "base_source_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "target_source_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "base_state_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "target_state_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "context_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "transition_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "authorization_decision_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "authorization_requirement_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "authorization": {
+      "$ref": "urn:fortress:derived:v1:application-authority"
+    },
+    "required_grants": {
+      "type": "array",
+      "items": {
+        "$ref": "urn:fortress:derived:v1:authorization-requirement"
+      },
+      "maxItems": 1024
+    },
+    "operations": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind",
+              "path",
+              "postimage"
+            ],
+            "properties": {
+              "kind": {
+                "const": "CREATE_FILE"
+              },
+              "path": {
+                "type": "string",
+                "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(/|$))[^\\x00-\\x1f]+$",
+                "maxLength": 4096
+              },
+              "postimage": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 255
+                },
+                "maxItems": 33554432
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind",
+              "path",
+              "preimage",
+              "postimage"
+            ],
+            "properties": {
+              "kind": {
+                "const": "REPLACE_FILE"
+              },
+              "path": {
+                "type": "string",
+                "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(/|$))[^\\x00-\\x1f]+$",
+                "maxLength": 4096
+              },
+              "preimage": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 255
+                },
+                "maxItems": 33554432
+              },
+              "postimage": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 255
+                },
+                "maxItems": 33554432
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind",
+              "source",
+              "destination",
+              "preimage"
+            ],
+            "properties": {
+              "kind": {
+                "const": "MOVE_PATH"
+              },
+              "source": {
+                "type": "string",
+                "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(/|$))[^\\x00-\\x1f]+$",
+                "maxLength": 4096
+              },
+              "destination": {
+                "type": "string",
+                "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(/|$))[^\\x00-\\x1f]+$",
+                "maxLength": 4096
+              },
+              "preimage": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 255
+                },
+                "maxItems": 33554432
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind",
+              "path",
+              "preimage",
+              "owner_ref"
+            ],
+            "properties": {
+              "kind": {
+                "const": "DELETE_OWNED_FILE"
+              },
+              "path": {
+                "type": "string",
+                "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(/|$))[^\\x00-\\x1f]+$",
+                "maxLength": 4096
+              },
+              "preimage": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 255
+                },
+                "maxItems": 33554432
+              },
+              "owner_ref": {
+                "type": "string",
+                "maxLength": 4096
+              }
+            }
+          }
+        ]
+      },
+      "maxItems": 1024
+    },
+    "operation_graph": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "dependencies",
+          "action"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 4096
+          },
+          "dependencies": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 4096
+            },
+            "maxItems": 4096
+          },
+          "action": {
+            "oneOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "kind",
+                  "path",
+                  "slot",
+                  "digest"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "EVACUATE"
+                  },
+                  "path": {
+                    "type": "string",
+                    "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(/|$))[^\\x00-\\x1f]+$",
+                    "maxLength": 4096
+                  },
+                  "slot": {
+                    "type": "string",
+                    "maxLength": 4096
+                  },
+                  "digest": {
+                    "type": "string",
+                    "pattern": "^sha256:[0-9a-f]{64}$"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "kind",
+                  "slot",
+                  "digest"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "STAGE"
+                  },
+                  "slot": {
+                    "type": "string",
+                    "maxLength": 4096
+                  },
+                  "digest": {
+                    "type": "string",
+                    "pattern": "^sha256:[0-9a-f]{64}$"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "kind",
+                  "path",
+                  "slot",
+                  "digest"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "INSTALL"
+                  },
+                  "path": {
+                    "type": "string",
+                    "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(/|$))[^\\x00-\\x1f]+$",
+                    "maxLength": 4096
+                  },
+                  "slot": {
+                    "type": "string",
+                    "maxLength": 4096
+                  },
+                  "digest": {
+                    "type": "string",
+                    "pattern": "^sha256:[0-9a-f]{64}$"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "maxItems": 4096
+    },
+    "preconditions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "preimage",
+          "postimage"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(/|$))[^\\x00-\\x1f]+$",
+            "maxLength": 4096
+          },
+          "preimage": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^sha256:[0-9a-f]{64}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "postimage": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^sha256:[0-9a-f]{64}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "maxItems": 2048
+    },
+    "inverse_expectations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "preimage",
+          "postimage"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(/|$))[^\\x00-\\x1f]+$",
+            "maxLength": 4096
+          },
+          "preimage": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^sha256:[0-9a-f]{64}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "postimage": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^sha256:[0-9a-f]{64}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "maxItems": 2048
+    },
+    "options": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "validation_requirements",
+        "retirement_evidence_refs",
+        "comparison_context"
+      ],
+      "properties": {
+        "validation_requirements": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "EVALUATION_COMPLETED",
+              "GOVERNANCE_DECLARED",
+              "PROGRESSIVE_ENFORCEMENT",
+              "PROFILE_ASSURANCE",
+              "COMPARABLE_RETIREMENT"
+            ]
+          },
+          "maxItems": 1024,
+          "uniqueItems": true
+        },
+        "retirement_evidence_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          },
+          "maxItems": 64,
+          "uniqueItems": true
+        },
+        "comparison_context": {
+          "$ref": "urn:fortress:derived:v1:transition-analysis#/$defs/ComparisonContext"
+        }
+      }
+    },
+    "validation_facts": {
+      "type": "object",
+      "propertyNames": {
+        "enum": [
+          "EVALUATION_COMPLETED",
+          "GOVERNANCE_DECLARED",
+          "PROGRESSIVE_ENFORCEMENT",
+          "PROFILE_ASSURANCE",
+          "COMPARABLE_RETIREMENT"
+        ]
+      },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "state",
+          "evidence_refs",
+          "detail"
+        ],
+        "properties": {
+          "state": {
+            "enum": [
+              "SATISFIED",
+              "FAILED",
+              "NOT_EVALUABLE",
+              "NOT_APPLICABLE"
+            ]
+          },
+          "evidence_refs": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "maxItems": 1024
+          },
+          "detail": {
+            "type": "string",
+            "maxLength": 4096
+          }
+        }
+      },
+      "maxProperties": 5
+    },
+    "evaluation_mode": {
+      "const": "CANONICAL_FULL"
+    }
+  }
+}

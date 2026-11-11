@@ -47,7 +47,7 @@ LEGACY_CONFIG_PATH = "_data/project.json"
 EVIDENCE_ROOT = "__fortress/evidence"
 CURRENT_INDEX_PATH = "__fortress/evidence/current.json"
 GENERATIONS_PATH = "__fortress/evidence/generations"
-CONTROL_LAYOUT_PATH = "engine/project_model/_data/control_layout_v5.json"
+CONTROL_LAYOUT_PATH = "engine/project_model/_data/control_layout_v6.json"
 CERTIFICATE_ID = "quality-certificate"
 CERTIFICATE_MEMBER = "quality_certificate.json"
 SCHEMA_ID = "urn:fortress:derived:v3:local-quality-certificate"
@@ -228,12 +228,26 @@ def derived_artifact_ids() -> tuple[str, ...]:
     return tuple(sorted(identifier for identifier, _, _ in ARTIFACTS))
 
 
+def migration_record_roots() -> set[str]:
+    """Resolve derived output families from the same installed CONTROL role registry."""
+    path = Path(__file__).resolve().parents[3] / CONTROL_LAYOUT_PATH
+    layout = json.loads(path.read_text(encoding="utf-8"))
+    return {item["path"].rsplit("/", 1)[0] for item in layout["roles"]
+            if item["role"] in {"REVIEWED_MIGRATION_PLAN", "MIGRATION_RECEIPT"}
+            and item["source_binding"] == "NONRECURSIVE"}
+
+
 def excluded_source_paths() -> set[str]:
     """Return generated paths excluded from authoritative source identity."""
-    return {EVIDENCE_ROOT}
+    return {EVIDENCE_ROOT, *migration_record_roots()}
 
 
 def repository_files(root: Path) -> list[str]:
+    from heavy_admission import assert_no_incomplete_migration
+    try:
+        assert_no_incomplete_migration(root)
+    except OSError as error:
+        raise CertificateError(str(error)) from error
     config = root / CONFIG_PATH
     legacy = root / LEGACY_CONFIG_PATH
     if legacy.is_file() and config.is_file():
@@ -250,7 +264,7 @@ def repository_files(root: Path) -> list[str]:
         for item in exclusions
     ):
         raise CertificateError("configuration observation exclusions are invalid")
-    excluded = {".git", EVIDENCE_ROOT, *exclusions}
+    excluded = {".git", *excluded_source_paths(), *exclusions}
     normalized: list[str] = []
     for directory, names, files in os.walk(root, topdown=True, followlinks=False):
         relative_directory = Path(directory).relative_to(root).as_posix()
@@ -391,9 +405,9 @@ def selection_key() -> str:
     )
 
 
-def control_layout_digest(root: Path, version: int = 5) -> str:
+def control_layout_digest(root: Path, version: int = 6) -> str:
     """Bind publications to the installed declarative role registry."""
-    if version not in (1, 2, 3, 4, 5):
+    if version not in (1, 2, 3, 4, 5, 6):
         raise CertificateError("unsupported control layout edition")
     path = root / f"engine/project_model/_data/control_layout_v{version}.json"
     return sha256_bytes(path.read_bytes())
@@ -460,8 +474,8 @@ def build_generation_manifest(
     )
     descriptors.sort(key=lambda item: item["id"])
     return {
-        "$schema": "urn:fortress:derived:v5:assessment-generation-manifest",
-        "schema_version": 5,
+        "$schema": "urn:fortress:derived:v6:assessment-generation-manifest",
+        "schema_version": 6,
         "generation_kind": "LOCAL_QUALITY",
         "project": "PF-FORTRESS",
         "profile": PROFILE_ID,
@@ -471,7 +485,7 @@ def build_generation_manifest(
             "file_count": certificate["source"]["file_count"],
         },
         "control_layout": {
-            "id": "fortress-control-layout-v5",
+            "id": "fortress-control-layout-v6",
             "digest": control_layout_digest(root),
         },
         "artifacts": descriptors,
@@ -1301,7 +1315,7 @@ def load_selected_generation(
         "generation manifest",
     )
     version = manifest["schema_version"]
-    if type(version) is not int or version not in ((1, 2, 3, 4, 5) if historical else (5,)) or manifest["$schema"] != f"urn:fortress:derived:v{version}:assessment-generation-manifest" or manifest["generation_kind"] != "LOCAL_QUALITY" or manifest["project"] != "PF-FORTRESS" or manifest["profile"] != PROFILE_ID or manifest["selection_key"] != selection_key():
+    if type(version) is not int or version not in ((1, 2, 3, 4, 5, 6) if historical else (6,)) or manifest["$schema"] != f"urn:fortress:derived:v{version}:assessment-generation-manifest" or manifest["generation_kind"] != "LOCAL_QUALITY" or manifest["project"] != "PF-FORTRESS" or manifest["profile"] != PROFILE_ID or manifest["selection_key"] != selection_key():
         raise CertificateError("selected generation manifest identity is unsupported")
     if manifest["control_layout"] != {"id": f"fortress-control-layout-v{version}", "digest": control_layout_digest(root, version)}:
         raise CertificateError("selected generation control layout is stale or invalid")

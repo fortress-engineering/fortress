@@ -17,7 +17,9 @@ pub const LEGACY_PROJECT_CONFIGURATION_PATH: &str = "_data/project.json";
 pub const EVIDENCE_ROOT: &str = "__fortress/evidence";
 
 /// Declarative layout bytes shared by all compiled adapters.
-pub const CONTROL_LAYOUT_SOURCE: &str = include_str!("../_data/control_layout_v5.json");
+pub const CONTROL_LAYOUT_SOURCE: &str = include_str!("../_data/control_layout_v6.json");
+/// Retained fifth edition; historical artifact identities remain unchanged.
+pub const CONTROL_LAYOUT_V5_SOURCE: &str = include_str!("../_data/control_layout_v5.json");
 /// Retained fourth edition, including provider evidence roles.
 pub const CONTROL_LAYOUT_V4_SOURCE: &str = include_str!("../_data/control_layout_v4.json");
 /// Retained third edition; historical artifact identities remain unchanged.
@@ -46,6 +48,10 @@ pub enum ControlSourceBinding {
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum ControlRole {
+    /// Explicitly exported reviewed migration plan; never active authority.
+    ReviewedMigrationPlan,
+    /// Immutable completed migration receipt; never present-state authority.
+    MigrationReceipt,
     /// Operational repository configuration.
     ProjectConfiguration,
     /// Finding lifecycle and exception authority.
@@ -164,6 +170,37 @@ impl ResolvedControlEntry {
 }
 
 impl ControlLayout {
+    /// Registered nonrecursive migration output roots, without excluding other control input.
+    #[must_use]
+    pub fn migration_record_roots(&self) -> Vec<&str> {
+        [
+            ControlRole::ReviewedMigrationPlan,
+            ControlRole::MigrationReceipt,
+        ]
+        .into_iter()
+        .filter_map(|role| self.role_path(role)?.rsplit_once('/').map(|pair| pair.0))
+        .collect()
+    }
+    /// Resolves an immutable reviewed plan through its registered family.
+    #[must_use]
+    pub fn migration_plan_path(&self, digest: &str) -> Option<String> {
+        self.migration_record_path(digest, ControlRole::ReviewedMigrationPlan)
+    }
+    /// Resolves an immutable completed receipt through its registered family.
+    #[must_use]
+    pub fn migration_receipt_path(&self, digest: &str) -> Option<String> {
+        self.migration_record_path(digest, ControlRole::MigrationReceipt)
+    }
+    fn migration_record_path(&self, digest: &str, role: ControlRole) -> Option<String> {
+        let hex = digest.strip_prefix("sha256:")?;
+        if !is_sha256_hex(hex) {
+            return None;
+        }
+        let path = self.role_path(role)?.replace("{sha256}", hex);
+        self.resolve(&path)
+            .filter(|entry| entry.role() == role)
+            .map(|_| path)
+    }
     /// Returns the registered logical projection path for an artifact identity.
     #[must_use]
     pub fn artifact_logical_path(&self, id: &str) -> Option<&str> {
@@ -268,6 +305,7 @@ impl ControlLayout {
             2 => CONTROL_LAYOUT_V2_SOURCE,
             3 => CONTROL_LAYOUT_V3_SOURCE,
             4 => CONTROL_LAYOUT_V4_SOURCE,
+            5 => CONTROL_LAYOUT_V5_SOURCE,
             _ => CONTROL_LAYOUT_SOURCE,
         }
     }
@@ -302,13 +340,34 @@ impl ControlLayout {
         if path != CONTROL_ROOT && !path.starts_with("__fortress/") {
             return None;
         }
-        if let Some(record) = self.roles.iter().find(|record| record.path == path) {
+        if let Some(record) = self
+            .roles
+            .iter()
+            .find(|record| record.path == path && !record.path.contains("{sha256}"))
+        {
             return Some(ResolvedControlEntry {
                 path: path.into(),
                 role: record.role,
                 owner: record.owner.clone(),
                 source_binding: record.source_binding,
             });
+        }
+        if self.schema_version >= 6 {
+            for record in &self.roles {
+                if let Some((prefix, suffix)) = record.path.split_once("{sha256}")
+                    && let Some(hex) = path
+                        .strip_prefix(prefix)
+                        .and_then(|s| s.strip_suffix(suffix))
+                    && is_sha256_hex(hex)
+                {
+                    return Some(ResolvedControlEntry {
+                        path: path.into(),
+                        role: record.role,
+                        owner: record.owner.clone(),
+                        source_binding: record.source_binding,
+                    });
+                }
+            }
         }
         if self.schema_version >= 4
             && let Some(remainder) = path.strip_prefix("__fortress/evidence/imports/")
@@ -418,6 +477,10 @@ impl ControlLayout {
                 "urn:fortress:schema:v5:control-layout",
                 5,
                 "fortress-control-layout-v5"
+            ) | (
+                "urn:fortress:schema:v6:control-layout",
+                6,
+                "fortress-control-layout-v6"
             )
         );
         if !supported_version
@@ -428,6 +491,26 @@ impl ControlLayout {
         }
         let mut paths = BTreeSet::new();
         for role in &self.roles {
+            let migration_path = match role.role {
+                ControlRole::ReviewedMigrationPlan => {
+                    Some("__fortress/proposals/migrations/{sha256}.json")
+                }
+                ControlRole::MigrationReceipt => {
+                    Some("__fortress/records/migrations/{sha256}.json")
+                }
+                _ => None,
+            };
+            if let Some(path) = migration_path {
+                if self.schema_version < 6
+                    || role.path != path
+                    || role.owner != "migration_governance"
+                    || role.source_binding != ControlSourceBinding::Nonrecursive
+                {
+                    return Err(ControlLayoutError::InvalidEntry(role.path.clone().into()));
+                }
+            } else if role.path.contains('{') || role.path.contains('}') {
+                return Err(ControlLayoutError::InvalidEntry(role.path.clone().into()));
+            }
             if !role.path.starts_with("__fortress/")
                 || role.owner.is_empty()
                 || !paths.insert(role.path.as_str())
@@ -447,6 +530,22 @@ impl ControlLayout {
         }
         if !paths.contains(PROJECT_CONFIGURATION_PATH) {
             return Err(ControlLayoutError::MissingConfiguration);
+        }
+        if self.schema_version >= 6
+            && [
+                ControlRole::ReviewedMigrationPlan,
+                ControlRole::MigrationReceipt,
+            ]
+            .iter()
+            .any(|role| {
+                self.roles
+                    .iter()
+                    .filter(|record| record.role == *role)
+                    .count()
+                    != 1
+            })
+        {
+            return Err(ControlLayoutError::UnsupportedLayout);
         }
         if self.schema_version >= 4
             && !self.roles.iter().any(|r| {

@@ -103,6 +103,8 @@ pub fn protected_input_roles(
                 roles.insert(EvidenceSelection);
             }
             ControlRole::ProviderEnvelope
+            | ControlRole::ReviewedMigrationPlan
+            | ControlRole::MigrationReceipt
             | ControlRole::ProviderPayload
             | ControlRole::GenerationManifest
             | ControlRole::GeneratedAssessmentPayload => {
@@ -155,6 +157,7 @@ pub fn protected_owner_roles(owner: &str) -> BTreeSet<ProtectedClass> {
             | "AF-SEMANTIC-ORACLE-0001"
             | "AF-STANDARD-REGISTRY-0001"
             | "AF-CERTIFICATION-0001"
+            | "AF-MIGRATION-GOVERNANCE-0001"
             | "AF-SNAPSHOT-GOVERNANCE-0001"
             | "AF-STATE-GOVERNANCE-0001"
             | "AF-DEVELOPMENT-GOVERNANCE-0001"

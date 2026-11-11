@@ -2,13 +2,12 @@
 //!
 //! Migration is exact-snapshot work. Ordinary analysis resolves unambiguous
 //! aliases without rewriting authored authority; this module is the only path
-//! that writes canonical current identities back to repository files.
+//! that proposes canonical identities; Migration Governance exclusively owns application and recovery.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
 use std::fmt::{self, Display, Formatter, Write as _};
-use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use serde::Serialize;
 use serde_json::Value;
@@ -25,9 +24,9 @@ use crate::program_semantics::{
 use crate::semantic_analysis::canonicalize_function_contract_json;
 
 /// Canonical identity-migration plan schema.
-pub const IDENTITY_MIGRATION_SCHEMA: &str = "urn:fortress:schema:v1:identity-migration";
+pub const IDENTITY_MIGRATION_SCHEMA: &str = "urn:fortress:schema:v2:identity-migration";
 /// Canonical identity-migration plan schema version.
-pub const IDENTITY_MIGRATION_SCHEMA_VERSION: u16 = 1;
+pub const IDENTITY_MIGRATION_SCHEMA_VERSION: u16 = 2;
 
 const FUNCTION_CONTRACT_FILE: &str = "function_contracts.json";
 const ENVIRONMENT_CONTRACT_FILE: &str = "environment_contracts.json";
@@ -133,6 +132,7 @@ pub struct IdentityMigrationPlan {
     schema_version: u16,
     symbol_identity_algorithm: String,
     symbol_identity_version: u16,
+    physical_source_ref: String,
     files: Vec<IdentityMigrationFile>,
     symbol_references: usize,
     semantic_finding_references: usize,
@@ -203,6 +203,8 @@ pub struct IdentityMigrationApplication {
     files_written: usize,
     symbol_references: usize,
     semantic_finding_references: usize,
+    migration_plan_ref: String,
+    migration_receipt_ref: String,
 }
 
 impl IdentityMigrationApplication {
@@ -243,6 +245,18 @@ pub fn plan_repository_identity_migration(
     root: impl AsRef<Path>,
 ) -> Result<IdentityMigrationPlan, IdentityMigrationError> {
     let root = root.as_ref();
+    let before = crate::audit::observe_migration_source(root)
+        .map_err(|e| IdentityMigrationError::Analysis(e.to_string()))?;
+    let stabilize = |plan: IdentityMigrationPlan| {
+        let actual = crate::audit::observe_migration_source(root)
+            .map_err(|e| IdentityMigrationError::Analysis(e.to_string()))?;
+        if actual != before || plan.physical_source_ref != before.digest() {
+            return Err(IdentityMigrationError::StalePlan(
+                "source changed during identity planning".into(),
+            ));
+        }
+        Ok(plan)
+    };
     let model = compile_repository_psm(root)
         .map_err(|error| IdentityMigrationError::Analysis(error.to_string()))?;
     let contract_plan = plan_identity_migration(root, &model, &[])?;
@@ -252,52 +266,118 @@ pub fn plan_repository_identity_migration(
             .iter()
             .any(|file| !file.path.ends_with(FINDING_GOVERNANCE_FILE))
     {
-        return Ok(contract_plan);
+        return stabilize(contract_plan);
     }
     let audit = audit_repository(root)
         .map_err(|error| IdentityMigrationError::Analysis(error.to_string()))?;
-    plan_identity_migration(root, &model, audit.findings())
+    stabilize(plan_identity_migration(root, &model, audit.findings())?)
 }
 
 /// Applies a previously reviewed plan only while all source digests remain exact.
 ///
 /// # Errors
 ///
-/// Returns an error when authority changed after planning or a write fails. If a
-/// write fails, already written files are restored from their exact prior bytes.
+/// Returns an error when source changed, external authorization is required or actual validation
+/// fails. Interrupted transactions retain known original bytes for explicit common-engine recovery.
 pub fn apply_repository_identity_migration(
     root: impl AsRef<Path>,
     plan: &IdentityMigrationPlan,
 ) -> Result<IdentityMigrationApplication, IdentityMigrationError> {
-    let root = root.as_ref();
-    let mut prior = Vec::new();
+    let authority = crate::migration_adapter::CanonicalMigrationAuthority {
+        policy: None,
+        host: &crate::development_governance::UnmediatedHost,
+        validator: &crate::development_governance::NoGrantValidator,
+        evaluation_time: None,
+        reviewed_initial_intent_ref: None,
+        finding_proposal: None,
+        identity_plan: Some(plan),
+    };
+    let storage = crate::migration_adapter::default_migration_storage()
+        .map_err(IdentityMigrationError::Migration)?;
+    apply_repository_identity_migration_with_services(
+        root.as_ref(),
+        plan,
+        &crate::migration_governance::MigrationServices {
+            evaluator: &crate::migration_adapter::CanonicalMigrationEvaluator,
+            authority: &authority,
+            resources: &storage,
+            observer: &crate::migration_governance::NoMutationFaults,
+        },
+    )
+}
+
+/// Compiles legacy canonicalization edits into the single exact-state transaction planner.
+/// # Errors
+/// Refuses stale whole-repository or per-file identities and unresolved existing authority.
+pub fn preview_repository_identity_migration<
+    E: crate::migration_governance::MigrationEvaluator,
+    A: crate::migration_governance::MigrationAuthority,
+>(
+    root: &Path,
+    plan: &IdentityMigrationPlan,
+    evaluator: &E,
+    authority: &A,
+) -> Result<crate::migration_governance::MigrationPreview, IdentityMigrationError> {
+    let before = evaluator
+        .observe(root)
+        .map_err(IdentityMigrationError::Migration)?;
+    if before.digest() != plan.physical_source_ref {
+        return Err(IdentityMigrationError::StalePlan(
+            "exact repository source".into(),
+        ));
+    }
+    let mut operations = vec![];
     for file in &plan.files {
-        let path = repository_path(root, &file.path)?;
-        let bytes = fs::read(&path).map_err(|source| IdentityMigrationError::Io {
-            path: file.path.clone(),
-            source,
-        })?;
-        if content_digest(&bytes) != file.before_digest {
+        let bytes = before
+            .bytes(&file.path)
+            .ok_or_else(|| IdentityMigrationError::StalePlan(file.path.clone()))?;
+        if content_digest(bytes) != file.before_digest
+            || content_digest(&file.content) != file.after_digest
+        {
             return Err(IdentityMigrationError::StalePlan(file.path.clone()));
         }
-        prior.push((path, file.path.clone(), bytes));
-    }
-    for (index, file) in plan.files.iter().enumerate() {
-        let path = &prior[index].0;
-        if let Err(source) = fs::write(path, &file.content) {
-            for (rollback_path, _, bytes) in prior.iter().take(index + 1) {
-                let _ = fs::write(rollback_path, bytes);
-            }
-            return Err(IdentityMigrationError::Io {
+        operations.push(
+            crate::migration_governance::MigrationOperation::ReplaceFile {
                 path: file.path.clone(),
-                source,
-            });
-        }
+                preimage: bytes.to_vec(),
+                postimage: file.content.clone(),
+            },
+        );
     }
+    crate::migration_governance::preview_migration(
+        evaluator,
+        authority,
+        &before,
+        operations,
+        crate::migration_governance::MigrationOptions::default(),
+    )
+    .map_err(IdentityMigrationError::Migration)
+}
+
+/// Explicit trusted-host application; serialized approvals never reconstruct grant handles.
+/// # Errors
+/// Refuses stale plans, unsupported authorization, missing grants and uncertain actual results.
+/// Post-allocation failures retain a transaction reference for common-engine recovery.
+pub fn apply_repository_identity_migration_with_services<
+    E: crate::migration_governance::MigrationEvaluator,
+    A: crate::migration_governance::MigrationAuthority,
+    R: crate::migration_governance::ResourceLeasePort,
+    O: crate::migration_governance::MutationObserver,
+>(
+    root: &Path,
+    plan: &IdentityMigrationPlan,
+    services: &crate::migration_governance::MigrationServices<'_, E, A, R, O>,
+) -> Result<IdentityMigrationApplication, IdentityMigrationError> {
+    let preview =
+        preview_repository_identity_migration(root, plan, services.evaluator, services.authority)?;
+    let applied = crate::migration_governance::apply_migration(root, &preview.plan, services)
+        .map_err(IdentityMigrationError::Migration)?;
     Ok(IdentityMigrationApplication {
         files_written: plan.files.len(),
         symbol_references: plan.symbol_references,
         semantic_finding_references: plan.semantic_finding_references,
+        migration_plan_ref: preview.plan.digest().into(),
+        migration_receipt_ref: applied.receipt.digest().into(),
     })
 }
 
@@ -308,30 +388,36 @@ fn plan_identity_migration(
 ) -> Result<IdentityMigrationPlan, IdentityMigrationError> {
     let symbols = symbol_aliases(model)?;
     let finding_aliases = finding_aliases(findings)?;
-    let mut paths = Vec::new();
-    collect_authority_files(root, root, &mut paths)?;
-    paths.sort();
+    let source = crate::audit::observe_migration_source(root)
+        .map_err(|e| IdentityMigrationError::Analysis(e.to_string()))?;
+    let governance_path = crate::control_layout::ControlLayout::standard()
+        .role_path(crate::control_layout::ControlRole::FindingGovernance)
+        .ok_or_else(|| {
+            IdentityMigrationError::Analysis(
+                "registered finding governance role unavailable".into(),
+            )
+        })?
+        .to_owned();
     let mut files = Vec::new();
     let mut symbol_references = 0;
     let mut semantic_finding_references = 0;
-    for path in paths {
-        let relative = normalized_relative(root, &path)?;
-        let bytes = fs::read(&path).map_err(|source| IdentityMigrationError::Io {
-            path: relative.clone(),
-            source,
-        })?;
-        let source = std::str::from_utf8(&bytes)
+    for (relative, bytes) in &source {
+        let filename = relative.rsplit('/').next().unwrap_or("");
+        if !matches!(
+            filename,
+            FUNCTION_CONTRACT_FILE | ENVIRONMENT_CONTRACT_FILE | REALIZATION_CONTRACT_FILE
+        ) && relative != &governance_path
+        {
+            continue;
+        }
+        let text = std::str::from_utf8(bytes)
             .map_err(|_| IdentityMigrationError::InvalidUtf8(relative.clone()))?;
-        let mut document: Value = crate::wire::parse_strict_json(source).map_err(|error| {
+        let mut document: Value = crate::wire::parse_strict_json(text).map_err(|error| {
             IdentityMigrationError::InvalidJson {
                 path: relative.clone(),
                 detail: error.to_string(),
             }
         })?;
-        let filename = path
-            .file_name()
-            .and_then(|name| name.to_str())
-            .unwrap_or("");
         let mut replacements = Vec::new();
         if filename == FINDING_GOVERNANCE_FILE {
             migrate_finding_governance(&mut document, &finding_aliases, &mut replacements)?;
@@ -345,8 +431,8 @@ fn plan_identity_migration(
             serde_json::to_string_pretty(&document)
                 .map_err(IdentityMigrationError::Serialization)?
         );
-        let content = canonical_migrated_document(filename, &relative, &draft)?.into_bytes();
-        if replacements.is_empty() && content == bytes {
+        let content = canonical_migrated_document(filename, relative, &draft)?.into_bytes();
+        if replacements.is_empty() && content.as_slice() == bytes.as_slice() {
             continue;
         }
         symbol_references += replacements
@@ -360,8 +446,8 @@ fn plan_identity_migration(
             .map(|replacement| replacement.occurrences)
             .sum::<usize>();
         files.push(IdentityMigrationFile {
-            path: relative,
-            before_digest: content_digest(&bytes),
+            path: relative.clone(),
+            before_digest: content_digest(bytes),
             after_digest: content_digest(&content),
             replacements,
             content,
@@ -372,6 +458,7 @@ fn plan_identity_migration(
         schema_version: IDENTITY_MIGRATION_SCHEMA_VERSION,
         symbol_identity_algorithm: RUST_SYMBOL_IDENTITY_ALGORITHM.into(),
         symbol_identity_version: RUST_SYMBOL_IDENTITY_VERSION,
+        physical_source_ref: source.digest().into(),
         files,
         symbol_references,
         semantic_finding_references,
@@ -726,79 +813,6 @@ fn upgrade_contract_schema(filename: &str, document: &mut Value) {
     object.insert("schema_version".into(), Value::from(version));
 }
 
-fn collect_authority_files(
-    root: &Path,
-    directory: &Path,
-    output: &mut Vec<PathBuf>,
-) -> Result<(), IdentityMigrationError> {
-    let mut entries = fs::read_dir(directory)
-        .map_err(|source| IdentityMigrationError::Io {
-            path: normalized_relative(root, directory).unwrap_or_else(|_| ".".into()),
-            source,
-        })?
-        .collect::<Result<Vec<_>, _>>()
-        .map_err(|source| IdentityMigrationError::Io {
-            path: normalized_relative(root, directory).unwrap_or_else(|_| ".".into()),
-            source,
-        })?;
-    entries.sort_by_key(fs::DirEntry::file_name);
-    for entry in entries {
-        let path = entry.path();
-        let kind = entry
-            .file_type()
-            .map_err(|source| IdentityMigrationError::Io {
-                path: normalized_relative(root, &path).unwrap_or_default(),
-                source,
-            })?;
-        if kind.is_symlink() {
-            continue;
-        }
-        if kind.is_dir() {
-            if entry.file_name() != ".git" && entry.file_name() != "target" {
-                collect_authority_files(root, &path, output)?;
-            }
-            continue;
-        }
-        let name = entry.file_name();
-        let name = name.to_string_lossy();
-        if matches!(
-            name.as_ref(),
-            FUNCTION_CONTRACT_FILE
-                | ENVIRONMENT_CONTRACT_FILE
-                | REALIZATION_CONTRACT_FILE
-                | FINDING_GOVERNANCE_FILE
-        ) {
-            output.push(path);
-        }
-    }
-    Ok(())
-}
-
-fn normalized_relative(root: &Path, path: &Path) -> Result<String, IdentityMigrationError> {
-    let relative = path
-        .strip_prefix(root)
-        .map_err(|_| IdentityMigrationError::PathEscape(path.display().to_string()))?;
-    let normalized = relative.to_string_lossy().replace('\\', "/");
-    if normalized.split('/').any(|segment| segment == "..") {
-        return Err(IdentityMigrationError::PathEscape(normalized));
-    }
-    Ok(if normalized.is_empty() {
-        ".".into()
-    } else {
-        normalized
-    })
-}
-
-fn repository_path(root: &Path, relative: &str) -> Result<PathBuf, IdentityMigrationError> {
-    if relative.starts_with('/')
-        || relative.contains('\\')
-        || relative.split('/').any(|segment| segment == "..")
-    {
-        return Err(IdentityMigrationError::PathEscape(relative.into()));
-    }
-    Ok(root.join(relative))
-}
-
 fn content_digest(bytes: &[u8]) -> String {
     format!("sha256:{:x}", Sha256::digest(bytes))
 }
@@ -806,6 +820,8 @@ fn content_digest(bytes: &[u8]) -> String {
 /// Identity migration failure.
 #[derive(Debug)]
 pub enum IdentityMigrationError {
+    /// Common transaction or external-authorization refusal, with retained recovery reference.
+    Migration(crate::migration_governance::MigrationError),
     /// Snapshot analysis could not establish exact current mappings.
     Analysis(String),
     /// Repository I/O failed.
@@ -852,6 +868,7 @@ pub enum IdentityMigrationError {
 impl Display for IdentityMigrationError {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
         match self {
+            Self::Migration(error) => Display::fmt(error, formatter),
             Self::Analysis(detail) => write!(formatter, "snapshot analysis failed: {detail}"),
             Self::Io { path, source } => write!(formatter, "I/O failed for `{path}`: {source}"),
             Self::InvalidUtf8(path) => write!(formatter, "`{path}` is not UTF-8"),
@@ -909,4 +926,38 @@ impl Error for IdentityMigrationError {
             _ => None,
         }
     }
+}
+
+/// Checks the existing identity owner's exact process-local producer output, never approval.
+pub(crate) fn validate_governance_migration(
+    plan: &IdentityMigrationPlan,
+    source: &crate::observation::SourceView,
+    changes: &crate::observation::CandidateChangeSet,
+) -> Result<(), crate::state_governance::TransitionError> {
+    let invalid = || {
+        crate::state_governance::TransitionError { code: "IDENTITY_PROPOSAL_MISMATCH".into(), message: "Identity maintenance differs from its exact owner-produced source and declaration edits.".into() }
+    };
+    if source.digest() != plan.physical_source_ref || plan.files.len() != changes.operations().len()
+    {
+        return Err(invalid());
+    }
+    for (file, operation) in plan.files.iter().zip(changes.operations()) {
+        let crate::observation::ChangeOperation::Replace {
+            path,
+            base_bytes,
+            candidate_bytes,
+        } = operation
+        else {
+            return Err(invalid());
+        };
+        if path != &file.path
+            || source.bytes(path) != Some(base_bytes.as_slice())
+            || content_digest(base_bytes) != file.before_digest
+            || candidate_bytes != &file.content
+            || content_digest(candidate_bytes) != file.after_digest
+        {
+            return Err(invalid());
+        }
+    }
+    Ok(())
 }

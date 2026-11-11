@@ -80,8 +80,16 @@ Validates the fourth fixed control-layout edition and its closed authored role v
 
 ### [`control_layout_v5.json`](../_data/control_layout_v5.json)
 
-Current immutable layout adds one test-owned QUALIFICATION production member while preserving the native application/semantic product set. Compact tool metadata is durable; raw observations, bulk projections and active journals remain external.
+Retained fifth-edition layout adds one test-owned QUALIFICATION production member while preserving the native application/semantic product set. Compact tool metadata is durable; raw observations, bulk projections and active journals remain external.
 
 ### [`control_layout_schema_v5.json`](../_data/control_layout_schema_v5.json)
 
 Validates the fifth closed control edition and the distinct QUALIFICATION production group. Every prior edition remains byte-identical and readable.
+
+### [`control_layout_v6.json`](../_data/control_layout_v6.json)
+
+Adds only closed reviewed-plan and completed-receipt output families owned by Migration Governance. These records remain nonrecursive historical/proposed data; all previous layout bytes and digests are retained.
+
+### [`control_layout_schema_v6.json`](../_data/control_layout_schema_v6.json)
+
+Closes the sixth role edition, including exact family templates, ownership and nonrecursive binding; arbitrary namespace files and literal template names are unregistered.

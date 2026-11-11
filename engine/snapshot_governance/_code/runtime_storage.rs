@@ -15,6 +15,10 @@ use sysinfo::Disks;
 
 use crate::heavy_admission::{DirectoryIdentity, HeavyAdmissionGuard};
 
+#[path = "migration_storage.rs"]
+mod migration_storage;
+pub use migration_storage::{MigrationStorage, MigrationStorageLease};
+
 const GIB: u64 = 1024 * 1024 * 1024;
 const RETIREMENT_JOURNAL_LIMIT: usize = 64 * 1024;
 const RETIREMENT_RECORD_LIMIT: usize = 1024 * 1024;
@@ -321,22 +325,39 @@ fn free_bytes(root: &Path) -> io::Result<u64> {
 }
 
 fn tree_bytes(root: &Path) -> io::Result<u64> {
-    if !root.exists() {
-        return Ok(0);
+    let metadata = match fs::symlink_metadata(root) {
+        Ok(metadata) => metadata,
+        Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(0),
+        Err(error) => return Err(error),
+    };
+    if linked(&metadata) || !metadata.is_dir() {
+        return Err(invalid("owned execution root is not an ordinary directory"));
     }
     let mut total = 0_u64;
+    let mut entries = 0usize;
     let mut pending = vec![root.to_path_buf()];
     while let Some(directory) = pending.pop() {
         for entry in fs::read_dir(directory)? {
             let entry = entry?;
+            entries += 1;
+            if entries > 1_000_000 {
+                return Err(invalid("owned storage entry admission exceeded"));
+            }
             let metadata = fs::symlink_metadata(entry.path())?;
-            if metadata.file_type().is_symlink() {
+            if linked(&metadata) {
                 return Err(invalid("symbolic link in owned execution storage"));
             }
             if metadata.is_dir() {
                 pending.push(entry.path());
+                if pending.len() > 65_536 {
+                    return Err(invalid("owned storage directory admission exceeded"));
+                }
             } else if metadata.is_file() {
-                total = total.saturating_add(metadata.len());
+                total = total
+                    .checked_add(metadata.len())
+                    .ok_or_else(|| invalid("owned storage byte count overflow"))?;
+            } else {
+                return Err(invalid("unsupported object in owned execution storage"));
             }
         }
     }

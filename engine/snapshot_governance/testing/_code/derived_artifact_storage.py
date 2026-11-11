@@ -150,7 +150,7 @@ class DerivedArtifactStorageTests(unittest.TestCase):
         self.assertEqual(target.read_bytes(),b"new index")
         self.assertEqual(foreign.read_bytes(),b"owner work")
 
-    def test_current_generation_binds_layout_and_manifest_v5(self) -> None:
+    def test_current_generation_binds_layout_and_manifest_v6(self) -> None:
         certificate = self.certificate("sha256:" + "a" * 64)
         certificate["source"]["file_count"] = 1
         pending = {
@@ -159,11 +159,11 @@ class DerivedArtifactStorageTests(unittest.TestCase):
             if storage == quality.TRACKED_EVIDENCE
         }
         manifest = quality.build_generation_manifest(ROOT, certificate, b"{}\n", pending)
-        self.assertEqual(manifest["$schema"], "urn:fortress:derived:v5:assessment-generation-manifest")
-        self.assertEqual(manifest["schema_version"], 5)
+        self.assertEqual(manifest["$schema"], "urn:fortress:derived:v6:assessment-generation-manifest")
+        self.assertEqual(manifest["schema_version"], 6)
         self.assertEqual(
             manifest["control_layout"],
-            {"id": "fortress-control-layout-v5", "digest": quality.control_layout_digest(ROOT)},
+            {"id": "fortress-control-layout-v6", "digest": quality.control_layout_digest(ROOT)},
         )
 
     def test_historical_manifest_cannot_become_current_by_selection(self) -> None:
@@ -395,7 +395,13 @@ class DerivedArtifactStorageTests(unittest.TestCase):
         paths = quality.derived_artifact_paths()
         self.assertEqual(paths, tuple(sorted(paths)))
         self.assertEqual(len(paths), len(set(paths)))
-        self.assertEqual(quality.excluded_source_paths(), {quality.EVIDENCE_ROOT})
+        self.assertEqual(quality.excluded_source_paths(), {
+            quality.EVIDENCE_ROOT,
+            "__fortress/proposals/migrations",
+            "__fortress/records/migrations",
+        })
+        self.assertNotIn("__fortress/governance/finding_governance.json", quality.excluded_source_paths())
+        self.assertNotIn("__fortress/.fsconfig", quality.excluded_source_paths())
         self.assertEqual(len(quality.derived_artifact_ids()), len(paths))
         self.assertTrue(
             all(

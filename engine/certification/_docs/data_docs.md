@@ -137,3 +137,7 @@ Versioned public portable-evidence contract. Its exact registered identity, stri
 ### [`projection_loss_schema_v1.json`](../_data/projection_loss_schema_v1.json)
 
 Versioned public portable-evidence contract. Its exact registered identity, strict fields, independent reader and compatibility are recorded in the shared schema catalog. Historical schemas retain their prior semantics.
+
+### [`generation_manifest_schema_v6.json`](../_data/generation_manifest_schema_v6.json)
+
+Binds new generations to CONTROL layout 6 while retaining each earlier generation/layout pair and the same evidence/provenance distinctions.

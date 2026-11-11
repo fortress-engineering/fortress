@@ -473,8 +473,8 @@ fn live_fortress_diagnostics_execute_repeatably_without_affecting_audit_outcome(
     let second = audit_repository(&root).expect("live audit repeats");
     println!("live architecture diagnostics: {:#?}", first.diagnostics());
 
-    assert_eq!(profiles.profiles().len(), 25);
-    assert_eq!(profiles.testing_modules().len(), 24);
+    assert_eq!(profiles.profiles().len(), 26);
+    assert_eq!(profiles.testing_modules().len(), 25);
     assert_eq!(first.is_success(), second.is_success());
     assert_eq!(first.diagnostics(), second.diagnostics());
     assert_eq!(

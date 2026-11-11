@@ -440,6 +440,17 @@
       "duration": "short",
       "resumability": "restartable",
       "certification_implications": "Read-only preview; no repository-supplied grant, external approval, host mediation or provider enforcement is inferred."
+    },
+    {
+      "id": "CMD-GOVERNANCE-MIGRATE",
+      "name": "migrate",
+      "aliases": [],
+      "description": "Preview, explicitly apply, inspect or recover exact-state journaled migration plans through the common Migration Governance engine.",
+      "owner": "TF-CLI-0001",
+      "executor": "builtin-sync",
+      "duration": "short",
+      "resumability": "restartable",
+      "certification_implications": "Fresh canonical evaluation is explicit. Application facts do not imply semantic certification, external authorization or filesystem-wide atomicity."
     }
   ]
 }

@@ -146,6 +146,12 @@ Supplies stable identities and the exact draft standard bundle interpreted by th
 
 Supplies pure protected-authority decisions under an explicit trusted original base selection.
 
+### [Migration Governance](migration_governance/README.md)
+
+**Types:** `depends_on`
+
+Provides exact-state transaction planning, application, recovery and immutable receipts.
+
 ## Guarantees
 
 The Engine forbids unsafe code, denies warnings and broken documentation, preserves provider independence, and exposes child behavior without inventing a parallel source taxonomy.

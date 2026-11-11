@@ -337,14 +337,14 @@
       "schema_path": "engine/snapshot_governance/_data/identity_migration_schema_v1.json",
       "version": 1,
       "writer": {
-        "status": "ACTIVE",
+        "status": "RETIRED",
         "source": "engine/snapshot_governance/_code/identity_migration.rs"
       },
       "reader": {
         "status": "UNSUPPORTED",
         "source": null
       },
-      "migration": "NOT_APPLICABLE",
+      "migration": "REQUIRED_BEFORE_USE",
       "identity_algorithm": {
         "id": "no-document-level-identity-algorithm",
         "source": null
@@ -2053,7 +2053,7 @@
       "schema_path": "engine/project_model/_data/control_layout_schema_v5.json",
       "version": 5,
       "writer": {
-        "status": "AUTHORED",
+        "status": "RETIRED",
         "source": "engine/project_model/_code/control_layout.rs"
       },
       "reader": {
@@ -2075,7 +2075,7 @@
       "schema_path": "engine/certification/_data/generation_manifest_schema_v5.json",
       "version": 5,
       "writer": {
-        "status": "ACTIVE",
+        "status": "RETIRED",
         "source": "engine/certification/_code/control_manifest.rs"
       },
       "reader": {
@@ -2970,6 +2970,160 @@
       "content_hash_algorithm": {
         "id": "rfc8785-jcs-sha256",
         "source": "engine/snapshot_governance/_code/query_protocol.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:derived:v1:application-authority",
+      "schema_path": "engine/development_governance/_data/application_authority_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/development_governance/_code/application_authority.rs"
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/development_governance/_code/application_authority.rs"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "versioned-explicit-identity",
+        "source": "engine/development_governance/_code/application_authority.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "rfc8785-jcs-sha256",
+        "source": "engine/development_governance/_code/application_authority.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:derived:v1:migration-journal",
+      "schema_path": "engine/migration_governance/_data/migration_journal_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/migration_governance/_code/plan.rs"
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/migration_governance/_code/plan.rs"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "rfc8785-jcs-sha256",
+        "source": "engine/migration_governance/_code/plan.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "rfc8785-jcs-sha256",
+        "source": "engine/migration_governance/_code/plan.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:derived:v1:migration-plan",
+      "schema_path": "engine/migration_governance/_data/migration_plan_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/migration_governance/_code/plan.rs"
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/migration_governance/_code/plan.rs"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "rfc8785-jcs-sha256",
+        "source": "engine/migration_governance/_code/plan.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "rfc8785-jcs-sha256",
+        "source": "engine/migration_governance/_code/plan.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:derived:v1:migration-receipt",
+      "schema_path": "engine/migration_governance/_data/migration_receipt_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/migration_governance/_code/plan.rs"
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/migration_governance/_code/plan.rs"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "rfc8785-jcs-sha256",
+        "source": "engine/migration_governance/_code/plan.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "rfc8785-jcs-sha256",
+        "source": "engine/migration_governance/_code/plan.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:derived:v6:assessment-generation-manifest",
+      "schema_path": "engine/certification/_data/generation_manifest_schema_v6.json",
+      "version": 6,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/certification/_code/control_manifest.rs"
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/certification/_code/control_manifest.rs"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "versioned-explicit-identity",
+        "source": "engine/certification/_code/control_manifest.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "rfc8785-jcs-sha256",
+        "source": "engine/certification/_code/control_manifest.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v2:identity-migration",
+      "schema_path": "engine/snapshot_governance/_data/identity_migration_schema_v2.json",
+      "version": 2,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/snapshot_governance/_code/identity_migration.rs"
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-exact-migration-input-bytes",
+        "source": "engine/snapshot_governance/_code/identity_migration.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v6:control-layout",
+      "schema_path": "engine/project_model/_data/control_layout_schema_v6.json",
+      "version": 6,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/project_model/_code/control_layout.rs"
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/project_model/_code/control_layout.rs"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "versioned-explicit-identity",
+        "source": "engine/project_model/_code/control_layout.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "rfc8785-jcs-sha256",
+        "source": "engine/project_model/_code/control_layout.rs"
       }
     }
   ]

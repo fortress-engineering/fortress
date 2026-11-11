@@ -137,6 +137,106 @@ pub struct CandidateChangeSet {
 }
 
 impl CandidateChangeSet {
+    /// Applies a simultaneous exact-byte transaction, including file-move permutations.
+    /// Existing `new` ordering and v1 identities remain unchanged.
+    ///
+    /// # Errors
+    /// Refuses duplicate consumption/production, stale preimages and overlapping
+    /// non-move operations. An occupied move destination must itself be moved.
+    pub fn new_simultaneous(
+        base: &SourceView,
+        context_digest: impl Into<String>,
+        target_authority_digest: impl Into<String>,
+        operations: impl IntoIterator<Item = ChangeOperation>,
+    ) -> Result<Self, SourceViewError> {
+        let context_digest = context_digest.into();
+        let target_authority_digest = target_authority_digest.into();
+        let operations = operations.into_iter().collect::<Vec<_>>();
+        let consumed = validate_simultaneous(base, &operations)?;
+        let mut files = base.files.as_ref().clone();
+        for path in consumed {
+            files.remove(&path);
+        }
+        let mut hasher = Sha256::new();
+        hasher.update(b"fortress-candidate-change-set-v2\0");
+        update_part(&mut hasher, base.digest.as_bytes());
+        update_part(&mut hasher, context_digest.as_bytes());
+        update_part(&mut hasher, target_authority_digest.as_bytes());
+        for operation in &operations {
+            let (kind, path, destination, before, after) = match operation {
+                ChangeOperation::Create {
+                    path,
+                    candidate_bytes,
+                } => ("create", path, None, &[][..], candidate_bytes.as_slice()),
+                ChangeOperation::Replace {
+                    path,
+                    base_bytes,
+                    candidate_bytes,
+                } => (
+                    "replace",
+                    path,
+                    None,
+                    base_bytes.as_slice(),
+                    candidate_bytes.as_slice(),
+                ),
+                ChangeOperation::Delete { path, base_bytes } => {
+                    ("delete", path, None, base_bytes.as_slice(), &[][..])
+                }
+                ChangeOperation::Move {
+                    source,
+                    destination,
+                    base_bytes,
+                } => (
+                    "move",
+                    source,
+                    Some(destination),
+                    base_bytes.as_slice(),
+                    base_bytes.as_slice(),
+                ),
+            };
+            for part in [
+                kind.as_bytes(),
+                path.as_bytes(),
+                destination.map_or(&[][..], |p| p.as_bytes()),
+                before,
+                after,
+            ] {
+                update_part(&mut hasher, part);
+            }
+            match operation {
+                ChangeOperation::Create {
+                    path,
+                    candidate_bytes,
+                }
+                | ChangeOperation::Replace {
+                    path,
+                    candidate_bytes,
+                    ..
+                } => {
+                    files.insert(path.clone(), candidate_bytes.clone());
+                }
+                ChangeOperation::Move {
+                    destination,
+                    base_bytes,
+                    ..
+                } => {
+                    files.insert(destination.clone(), base_bytes.clone());
+                }
+                ChangeOperation::Delete { .. } => {}
+            }
+        }
+        let view = SourceView::from_ordered(files);
+        update_part(&mut hasher, view.digest.as_bytes());
+        Ok(Self {
+            operations,
+            base_view_digest: base.digest.clone(),
+            context_digest,
+            target_authority_digest,
+            digest: format!("sha256:{:x}", hasher.finalize()),
+            view,
+        })
+    }
+
     /// Applies operations only to a private copy of the base source view.
     ///
     /// # Errors
@@ -313,4 +413,64 @@ fn check_preimage(
 fn update_part(hasher: &mut Sha256, bytes: &[u8]) {
     hasher.update((bytes.len() as u64).to_be_bytes());
     hasher.update(bytes);
+}
+
+fn validate_simultaneous(
+    base: &SourceView,
+    operations: &[ChangeOperation],
+) -> Result<BTreeSet<String>, SourceViewError> {
+    let mut consumed = BTreeSet::new();
+    let mut produced = BTreeSet::new();
+    let mut move_sources = BTreeSet::new();
+    let mut ordinary = BTreeSet::new();
+    for operation in operations {
+        match operation {
+            ChangeOperation::Create { path, .. } => {
+                claim_path(path, &mut produced)?;
+                ordinary.insert(path.clone());
+                if base.contains_key(path) {
+                    return Err(SourceViewError::PathExists(path.clone()));
+                }
+            }
+            ChangeOperation::Replace {
+                path, base_bytes, ..
+            } => {
+                claim_path(path, &mut consumed)?;
+                claim_path(path, &mut produced)?;
+                check_preimage(base.files(), path, base_bytes)?;
+                ordinary.insert(path.clone());
+            }
+            ChangeOperation::Delete { path, base_bytes } => {
+                claim_path(path, &mut consumed)?;
+                check_preimage(base.files(), path, base_bytes)?;
+                ordinary.insert(path.clone());
+            }
+            ChangeOperation::Move {
+                source,
+                destination,
+                base_bytes,
+            } => {
+                claim_path(source, &mut consumed)?;
+                claim_path(destination, &mut produced)?;
+                check_preimage(base.files(), source, base_bytes)?;
+                move_sources.insert(source.clone());
+            }
+        }
+    }
+    for operation in operations {
+        if let ChangeOperation::Move {
+            source,
+            destination,
+            ..
+        } = operation
+        {
+            if ordinary.contains(source) || ordinary.contains(destination) {
+                return Err(SourceViewError::ConflictingOperation(source.clone()));
+            }
+            if base.contains_key(destination) && !move_sources.contains(destination) {
+                return Err(SourceViewError::PathExists(destination.clone()));
+            }
+        }
+    }
+    Ok(consumed)
 }

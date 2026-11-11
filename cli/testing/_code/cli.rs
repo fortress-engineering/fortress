@@ -2219,3 +2219,128 @@ fn readable_behavior_authoring_and_stdio_remain_unapplied_and_read_only() {
         );
     }
 }
+
+/// `T-TF-CLI-0001-R26-001`
+/// Fortress requirement: TF-CLI-0001-R26
+#[test]
+fn migration_cli_preserves_reviewed_results_and_requires_explicit_application() {
+    let target = ObservationFixture::new();
+    let inputs = ObservationFixture::new();
+    let operations = inputs.root.join("operations.json");
+    fs::write(
+        &operations,
+        br#"[{"kind":"CREATE_FILE","path":"migration-example.txt","postimage":[65,13,10,0,255]}]"#,
+    )
+    .unwrap();
+    let arguments = [
+        "migrate",
+        "preview",
+        "--root",
+        target.root.to_str().unwrap(),
+        "--operations",
+        operations.to_str().unwrap(),
+        "--format",
+    ];
+    let first = run(&[arguments.as_slice(), &["json"]].concat());
+    assert!(
+        first.status.success(),
+        "{}",
+        String::from_utf8_lossy(&first.stderr)
+    );
+    let repeated = run(&[arguments.as_slice(), &["json"]].concat());
+    assert_eq!(first.stdout, repeated.stdout);
+    let plan = fortress_core::migration_governance::MigrationPlan::from_json_str(
+        std::str::from_utf8(&first.stdout).unwrap(),
+    )
+    .unwrap();
+    assert!(!target.root.join("migration-example.txt").exists());
+    assert!(!target.root.join("__fortress").exists());
+    let human = run(&[arguments.as_slice(), &["human"]].concat());
+    assert!(String::from_utf8_lossy(&human.stdout).contains(plan.digest()));
+    let path = inputs.root.join("plan.json");
+    fs::write(&path, &first.stdout).unwrap();
+    let inspected = run(&[
+        "migrate",
+        "inspect",
+        "--plan",
+        path.to_str().unwrap(),
+        "--format",
+        "json",
+    ]);
+    assert!(
+        inspected.status.success(),
+        "{}",
+        String::from_utf8_lossy(&inspected.stderr)
+    );
+    assert_eq!(inspected.stdout, first.stdout);
+    let storage = inputs.root.join("external-storage");
+    let applied = run(&[
+        "migrate",
+        "apply",
+        "--root",
+        target.root.to_str().unwrap(),
+        "--plan",
+        path.to_str().unwrap(),
+        "--storage-root",
+        storage.to_str().unwrap(),
+        "--format",
+        "json",
+    ]);
+    assert!(
+        applied.status.success(),
+        "{}",
+        String::from_utf8_lossy(&applied.stderr)
+    );
+    let receipt = fortress_core::migration_governance::MigrationReceipt::from_json_str(
+        std::str::from_utf8(&applied.stdout).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(receipt.plan_ref, plan.digest());
+    assert_eq!(
+        fs::read(target.root.join("migration-example.txt")).unwrap(),
+        b"A\r\n\0\xff"
+    );
+    assert_eq!(receipt.project_execution, "NOT_PERFORMED_BY_MIGRATION");
+    let stale = run(&[
+        "migrate",
+        "apply",
+        "--root",
+        target.root.to_str().unwrap(),
+        "--plan",
+        path.to_str().unwrap(),
+        "--storage-root",
+        storage.to_str().unwrap(),
+        "--format",
+        "json",
+    ]);
+    assert_eq!(stale.status.code(), Some(i32::from(EXIT_USAGE)));
+    let error: serde_json::Value = serde_json::from_slice(&stale.stderr).unwrap();
+    assert_eq!(error["code"], "STALE_REVIEWED_PLAN");
+}
+
+/// `T-TF-CLI-0001-R26-002`
+/// Fortress requirement: TF-CLI-0001-R26
+#[test]
+fn migration_cli_rejects_approval_flags_and_malformed_requests() {
+    assert!(CommandRegistry::builtin().find("migrate").is_some());
+    for arguments in [
+        vec!["migrate", "apply", "--approve", "true", "--format", "json"],
+        vec![
+            "migrate", "preview", "--export", "--export", "--format", "json",
+        ],
+        vec![
+            "migrate",
+            "recover",
+            "--base-selection",
+            "local-approval.json",
+            "--format",
+            "json",
+        ],
+    ] {
+        let output = run(&arguments);
+        assert_eq!(output.status.code(), Some(i32::from(EXIT_USAGE)));
+        let error: serde_json::Value = serde_json::from_slice(&output.stderr).unwrap();
+        assert_eq!(error["code"], "INVALID_ARGUMENT");
+        assert!(output.stdout.is_empty());
+    }
+}

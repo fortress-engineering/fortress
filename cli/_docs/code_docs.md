@@ -265,3 +265,7 @@ Implements flow-author as explicit immutable source preparation followed by the 
 ### [`behavior_command.rs`](../_code/behavior_command.rs)
 
 Implements behavior-author with schema-only guidance or explicit source preparation followed by the shared protocol v4 behavior_author query. Repeated --checkpoint ID=NAME bindings and --return ID construct an unapplied exact-context proposal. Human and JSON render the same immutable response. Nothing writes or accepts behavioral authority.
+
+### [`migration_command.rs`](../_code/migration_command.rs)
+
+Explicit migrate preview/inspect/apply/recover dispatch using the same machine-readable contracts. JSON approval assertions cannot instantiate external grant validation; protected application requires the trusted embedding port.

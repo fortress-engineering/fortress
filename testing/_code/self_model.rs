@@ -158,10 +158,10 @@ fn live_contract_v2_v3_ecosystem_resolves_completely() {
         "live CCG must be coherent: {:#?}",
         resolution.violations()
     );
-    assert_eq!(resolved.modules().len(), 49);
-    assert_eq!(resolved.capabilities().len(), 24);
-    assert_eq!(resolved.features().len(), 25);
-    assert_eq!(resolved.requirements().len(), 145);
+    assert_eq!(resolved.modules().len(), 51);
+    assert_eq!(resolved.capabilities().len(), 25);
+    assert_eq!(resolved.features().len(), 26);
+    assert_eq!(resolved.requirements().len(), 154);
     assert!(
         resolved
             .requirements()
@@ -172,8 +172,8 @@ fn live_contract_v2_v3_ecosystem_resolves_completely() {
     }
     assert_eq!(resolved.guarantees().len(), 17);
     assert_eq!(resolved.checkpoints().len(), 10);
-    assert_eq!(resolved.direct_requirements().len(), 199);
-    assert_eq!(resolved.relationships().len(), 24);
+    assert_eq!(resolved.direct_requirements().len(), 211);
+    assert_eq!(resolved.relationships().len(), 25);
     assert!(
         resolved
             .modules()
@@ -248,6 +248,15 @@ fn real_reference_scope_has_authored_purity_and_nonvacuous_semantic_support() {
 }
 
 const REQUIRED_SELF_MODEL_REQUIREMENTS: &[&str] = &[
+    "AF-MIGRATION-GOVERNANCE-0001-R01",
+    "AF-MIGRATION-GOVERNANCE-0001-R02",
+    "AF-MIGRATION-GOVERNANCE-0001-R03",
+    "AF-MIGRATION-GOVERNANCE-0001-R04",
+    "AF-MIGRATION-GOVERNANCE-0001-R05",
+    "AF-MIGRATION-GOVERNANCE-0001-R06",
+    "AF-MIGRATION-GOVERNANCE-0001-R07",
+    "AF-DEVELOPMENT-GOVERNANCE-0001-R02",
+    "TF-CLI-0001-R26",
     "AF-CERTIFICATION-0001-R05",
     "TF-CLI-0001-R19",
     "AF-SNAPSHOT-GOVERNANCE-0001-R21",

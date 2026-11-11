@@ -1143,3 +1143,232 @@ fn external_assessor_qualification_is_exact_and_local_booleans_are_not_evidence(
     )]));
     assert!(unknown.to_canonical_bytes().is_ok());
 }
+
+/// `T-AF-DEVELOPMENT-GOVERNANCE-0001-R02-001`
+/// Fortress requirement: AF-DEVELOPMENT-GOVERNANCE-0001-R02
+#[test]
+fn migration_application_handles_require_existing_exact_external_authority() {
+    use fortress_core::declaration::DeclarationTruth;
+    let mut before = snapshot(BTreeMap::from([("src/app.rs".into(), b"old".to_vec())]));
+    let mut after = snapshot(BTreeMap::from([("src/app.rs".into(), b"new".to_vec())]));
+    attach_assessment(&mut before, DeclarationTruth::NoSupportedViolation, false);
+    attach_assessment(&mut after, DeclarationTruth::SupportedViolation, false);
+    let source = SourceView::from_bytes(before.files.clone()).unwrap();
+    let target = SourceView::from_bytes(after.files.clone()).unwrap();
+    let context = ComparisonContext::default();
+    let transition = compare_states(&before.state, &after.state, &context).unwrap();
+    let changes = CandidateChangeSet::new_simultaneous(
+        &source,
+        transition.comparison_context,
+        after.state.governing_identity().unwrap().unwrap(),
+        [ChangeOperation::Replace {
+            path: "src/app.rs".into(),
+            base_bytes: b"old".to_vec(),
+            candidate_bytes: b"new".to_vec(),
+        }],
+    )
+    .unwrap();
+    let roles = vec![ProtectedInput {
+        path: "src/app.rs".into(),
+        class: ProtectedClass::ProtectedConfiguration,
+        scope: "project".into(),
+    }];
+    let prepared = PreparedChange::new_for_migration(
+        &before.state,
+        &after.state,
+        &context,
+        PhysicalMigrationInputs {
+            base: &source,
+            changes: &changes,
+            evaluated_base: &source,
+            evaluated_target: &target,
+        },
+        (roles.clone(), roles),
+        true,
+    )
+    .unwrap();
+    let policy = TrustedBasePolicy::from_host(
+        prepared.base_state_ref(),
+        prepared.base_authority_ref().unwrap(),
+        d(8),
+        false,
+        vec![AuthorizationRule {
+            id: "owner".into(),
+            classes: ProtectedClass::all().into_iter().collect(),
+            actions: BTreeSet::from([Action::Replace]),
+            scope: "project".into(),
+            issuer_policy_ref: d(7),
+        }],
+    )
+    .unwrap();
+    let absent =
+        evaluate_change_with_grants(&prepared, &policy, &UnmediatedHost, &NoGrantValidator, None)
+            .unwrap();
+    assert!(ApplicationAuthorization::from_evaluation(absent, &prepared).is_err());
+    let evaluated =
+        evaluate_change_with_grants(&prepared, &policy, &UnmediatedHost, &ExternalOwner, None)
+            .unwrap();
+    assert_eq!(evaluated.decision().disposition, Disposition::Permit);
+    let provenance =
+        ApplicationAuthorityRecord::from_decision(evaluated.decision(), &prepared).unwrap();
+    let handle = ApplicationAuthorization::from_evaluation(evaluated, &prepared).unwrap();
+    assert!(!handle.grants().is_empty());
+    assert_eq!(
+        handle.record().requirement_contract_ref().unwrap(),
+        provenance.requirement_contract_ref().unwrap()
+    );
+    let raw = &after
+        .state
+        .view
+        .as_ref()
+        .unwrap()
+        .application
+        .as_ref()
+        .unwrap()
+        .declaration
+        .claims[0];
+    assert_eq!(raw.truth, DeclarationTruth::SupportedViolation);
+    assert_eq!(
+        handle.record().semantics,
+        "PROVENANCE_ONLY_NOT_TRANSFERABLE"
+    );
+    assert_invalid_migration_projection(&before.state, &after.state, &context, &source, &changes);
+}
+
+/// `T-AF-DEVELOPMENT-GOVERNANCE-0001-R02-002`
+/// Fortress requirement: AF-DEVELOPMENT-GOVERNANCE-0001-R02
+#[test]
+fn nonapplicable_dimensions_are_neutral_without_becoming_semantic_proof() {
+    use fortress_core::declaration::{DeclarationDimension, DeclarationTruth as T};
+    for (truths, expected) in [
+        (
+            vec![T::NoSupportedViolation, T::NotApplicable],
+            Disposition::Permit,
+        ),
+        (vec![T::NotApplicable], Disposition::Unevaluated),
+        (
+            vec![T::NoSupportedViolation, T::NotEvaluable],
+            Disposition::Unevaluated,
+        ),
+    ] {
+        let mut before = snapshot(BTreeMap::from([("src/app.rs".into(), b"old".to_vec())]));
+        let mut after = snapshot(BTreeMap::from([("src/app.rs".into(), b"new".to_vec())]));
+        attach_assessment(&mut before, T::NoSupportedViolation, false);
+        attach_assessment(&mut after, T::NoSupportedViolation, false);
+        let app = after
+            .state
+            .view
+            .as_mut()
+            .unwrap()
+            .application
+            .as_mut()
+            .unwrap();
+        let initial = app.declaration.claims[0].clone();
+        app.declaration.claims.clear();
+        app.declaration.dimensions.clear();
+        app.declaration
+            .required_dimension_manifest
+            .dimensions
+            .clear();
+        for (i, truth) in truths.iter().enumerate() {
+            let id = format!("scope-{i}");
+            let mut claim = initial.clone();
+            claim.id = id.clone();
+            claim.scope_ref = id.clone();
+            claim.truth = *truth;
+            claim.rule_result.as_mut().unwrap().outcome = match truth {
+                T::NotApplicable => {
+                    fortress_core::application::ApplicationRuleOutcome::NotApplicable
+                }
+                T::NotEvaluable => fortress_core::application::ApplicationRuleOutcome::Unsupported,
+                _ => fortress_core::application::ApplicationRuleOutcome::Passed,
+            };
+            claim.rule_result.as_mut().unwrap().applicable = *truth != T::NotApplicable;
+            app.declaration.claims.push(claim);
+            app.declaration.dimensions.push(DeclarationDimension {
+                id: id.clone(),
+                claim_refs: vec![id.clone()],
+                truth: *truth,
+            });
+            app.declaration.required_dimension_manifest.dimensions.push(
+                fortress_core::declaration::RequiredDimension {
+                    id: id.clone(),
+                    claim_refs: vec![id],
+                },
+            );
+        }
+        app.assessment = fortress_core::assessment::ProfileAssessment::evaluate(
+            &app.declaration,
+            &fortress_core::assessment::ExpectedProfileAssessment {
+                artifacts: vec![],
+                binding: app.declaration.binding.clone(),
+                dimensions: app.declaration.required_dimension_manifest.clone(),
+                profile_digest: app.assessment.profile_digest.clone(),
+                obligations: vec![],
+            },
+            &[],
+            &fortress_core::assessment::EvidenceAcceptancePolicy::default(),
+        )
+        .unwrap();
+        // This independently assigned upstream fixture asserts no execution or authentication.
+        let result = snapshot_decision(&before, &after);
+        assert_eq!(result.disposition, expected, "{truths:?}");
+        assert_eq!(
+            after
+                .state
+                .view
+                .as_ref()
+                .unwrap()
+                .application
+                .as_ref()
+                .unwrap()
+                .declaration
+                .dimensions
+                .iter()
+                .map(|d| d.truth)
+                .collect::<Vec<_>>(),
+            truths
+        );
+    }
+}
+
+struct ExternalOwner;
+impl GrantValidator for ExternalOwner {
+    fn validate(&self, r: &GrantRequest) -> GrantValidation {
+        GrantValidation::Authenticated(Box::new(HostAssertion::for_request(
+            r,
+            "external-fixture-owner",
+            d(11),
+            None,
+            None,
+        )))
+    }
+}
+
+fn assert_invalid_migration_projection(
+    before: &ComparisonState,
+    after: &ComparisonState,
+    context: &ComparisonContext,
+    source: &SourceView,
+    changes: &CandidateChangeSet,
+) {
+    let mut malformed = changes.view().files().clone();
+    malformed.insert("src/app.rs".into(), b"wrong evaluated bytes".to_vec());
+    let mismatch = SourceView::from_bytes(malformed).unwrap();
+    assert!(
+        PreparedChange::new_for_migration(
+            before,
+            after,
+            context,
+            PhysicalMigrationInputs {
+                base: source,
+                changes,
+                evaluated_base: source,
+                evaluated_target: &mismatch
+            },
+            (vec![], vec![]),
+            true
+        )
+        .is_err()
+    );
+}

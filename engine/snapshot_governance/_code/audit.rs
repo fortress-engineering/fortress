@@ -5168,6 +5168,8 @@ fn capture_resident_source(
     root: &Path,
     limits: Option<(usize, usize)>,
 ) -> Result<(LoadedProjectAuthority, RepositoryObservation, SourceView), AuditError> {
+    crate::heavy_admission::assert_no_incomplete_migration(root)
+        .map_err(|e| AuditError::InputMismatch(e.to_string().into()))?;
     let bootstrap = load_project_authority(root, limits)?;
     let observation = if let Some((max_source_bytes, max_files)) = limits {
         let observation_limits = ObservationLimits {
@@ -5211,6 +5213,8 @@ fn capture_resident_source(
         return Err(AuditError::InputMismatch(PROJECT_CONFIGURATION_PATH.into()));
     }
     verify_project_view_binding(&project, &files)?;
+    crate::heavy_admission::assert_no_incomplete_migration(root)
+        .map_err(|e| AuditError::InputMismatch(e.to_string().into()))?;
     Ok((project, observation, files))
 }
 
@@ -5227,8 +5231,14 @@ fn verify_project_view_binding(
 }
 
 fn project_authority_from_view(files: &SourceView) -> Result<LoadedProjectAuthority, AuditError> {
-    let fallback_policy =
-        || ObservationPolicy::new([".git", EVIDENCE_ROOT]).map_err(AuditError::ObservationPolicy);
+    let fallback_policy = || {
+        ObservationPolicy::new(
+            [".git", EVIDENCE_ROOT]
+                .into_iter()
+                .chain(ControlLayout::standard().migration_record_roots()),
+        )
+        .map_err(AuditError::ObservationPolicy)
+    };
     if files.contains_key(LEGACY_PROJECT_CONFIGURATION_PATH) {
         return Ok(LoadedProjectAuthority {
             state: ProjectGovernanceState::Invalid,
@@ -5322,8 +5332,14 @@ fn load_project_authority(
     let legacy_path = root.join(LEGACY_PROJECT_CONFIGURATION_PATH);
     let current_exists = project_path.is_file();
     let legacy_exists = legacy_path.is_file();
-    let fallback_policy =
-        || ObservationPolicy::new([".git", EVIDENCE_ROOT]).map_err(AuditError::ObservationPolicy);
+    let fallback_policy = || {
+        ObservationPolicy::new(
+            [".git", EVIDENCE_ROOT]
+                .into_iter()
+                .chain(ControlLayout::standard().migration_record_roots()),
+        )
+        .map_err(AuditError::ObservationPolicy)
+    };
     if legacy_exists {
         return Ok(LoadedProjectAuthority {
             state: ProjectGovernanceState::Invalid,
@@ -5441,7 +5457,13 @@ fn control_observation_policy(
             .observation_exclusions()
             .iter()
             .cloned()
-            .chain([EVIDENCE_ROOT.to_owned()]),
+            .chain([EVIDENCE_ROOT.to_owned()])
+            .chain(
+                ControlLayout::standard()
+                    .migration_record_roots()
+                    .into_iter()
+                    .map(str::to_owned),
+            ),
     )
     .map_err(AuditError::ObservationPolicy)
 }
@@ -6655,4 +6677,195 @@ fn behavior_application_rules(
             applicability_reason: Some("EXACT_CONTEXT_BOUNDED_STATIC_CHECKPOINTS".into()),
         })
         .collect()
+}
+
+/// Complete immutable migration evaluation through the existing canonical owners.
+/// No source or authority is accepted by this adapter merely because it is proposed.
+pub(crate) fn evaluate_migration_source(
+    source: &SourceView,
+) -> Result<crate::migration_governance::MigrationEvaluation, AuditError> {
+    use crate::migration_governance::{
+        MigrationEvaluation, MigrationValidation as V, MigrationValidationFact as Fact,
+        MigrationValidationState as S,
+    };
+    let analysis = prepare_analysis_from_view(source.clone())?;
+    let evaluated_source = analysis.observed_files.clone();
+    let mut ownership = analysis
+        .ownerships
+        .iter()
+        .filter(|o| o.authority() == SourceOwnershipAuthority::DeclaredModule)
+        .map(|o| (o.source_path().into(), o.owner().into()))
+        .collect::<BTreeMap<String, String>>();
+    if let Some(ccg) = analysis.ccg() {
+        let paths = source.keys().cloned().collect::<Vec<_>>();
+        let architecture = ArchitectureManifest::from_ccg(ccg, &paths);
+        let resolved = crate::ownership::evaluate_file_ownership(
+            &architecture,
+            &paths,
+            analysis.standard.bundle.edition(),
+        )
+        .map_err(|e| AuditError::InputMismatch(e.to_string().into()))?;
+        if !resolved.findings().is_empty() {
+            return Err(AuditError::InputMismatch(
+                "Full physical migration input ownership is incomplete or ambiguous.".into(),
+            ));
+        }
+        for assignment in resolved.assignments() {
+            if ownership
+                .insert(assignment.path().into(), assignment.owner().into())
+                .is_some_and(|old| old != assignment.owner())
+            {
+                return Err(AuditError::InputMismatch(
+                    "conflicting canonical source ownership in migration scope".into(),
+                ));
+            }
+        }
+    }
+    let mut validations = BTreeMap::from([(
+        V::EvaluationCompleted,
+        Fact {
+            state: S::Satisfied,
+            evidence_refs: vec![],
+            detail: "Complete canonical immutable evaluation; no project code executed.".into(),
+        },
+    )]);
+    let state = if analysis.project_state == ProjectGovernanceState::Absent {
+        let subject = certification_source_digest(&evaluated_source);
+        let view = StateView {
+            schema: "urn:fortress:derived:v3:state-view".into(),
+            schema_version: 3,
+            source_ref: subject.clone(),
+            status: StateViewStatus::Ungoverned,
+            detail: analysis.project_detail.clone(),
+            application: None,
+            portable_evidence_graph: None,
+        };
+        let assets = crate::transition_load::assets_from_source(
+            &evaluated_source,
+            &view,
+            analysis.ccg(),
+            Some(&analysis.standard.bundle),
+            &analysis.ownerships,
+        )
+        .map_err(|e| AuditError::InputMismatch(e.to_string().into()))?;
+        validations.insert(
+            V::GovernanceDeclared,
+            Fact {
+                state: S::NotApplicable,
+                evidence_refs: vec![],
+                detail: "No declared governance; absence is not conformance.".into(),
+            },
+        );
+        crate::state_governance::ComparisonState {schema:"urn:fortress:derived:v1:comparison-state".into(),schema_version:1,source_ref:Some(subject),view:Some(view),retained_application:None,assets:Some(assets),origin_ref:None,limitations:vec!["Canonical ungoverned source evaluation; no execution, authentication or semantic pass inferred.".into()]}
+    } else {
+        evaluate_declared_migration(analysis, &mut validations)?
+    };
+    state
+        .validate()
+        .map_err(|e| AuditError::InputMismatch(e.to_string().into()))?;
+    let protected_inputs = crate::authority_load::roles_with_ownership(
+        &crate::authority_load::AuthoritySnapshot {
+            schema: "urn:fortress:derived:v1:authority-snapshot".into(),
+            schema_version: 1,
+            state: state.clone(),
+            files: source.files().clone(),
+        },
+        &ownership,
+    )
+    .map_err(|e| AuditError::InputMismatch(e.to_string().into()))?;
+    Ok(MigrationEvaluation {
+        state,
+        evaluated_source,
+        ownership,
+        protected_inputs,
+        validations,
+    })
+}
+
+/// Actual bounded physical source scope; candidate exclusions cannot hide migration edits.
+pub(crate) fn observe_migration_source(root: &Path) -> Result<SourceView, AuditError> {
+    let policy = crate::migration_adapter::physical_policy()
+        .map_err(|e| AuditError::InputMismatch(e.to_string().into()))?;
+    let observation = observe_repository_stably_bounded(
+        root,
+        &policy,
+        &crate::migration_adapter::physical_limits(),
+    )
+    .map_err(AuditError::Snapshot)?;
+    SourceView::from_bytes(read_observed_files(root, &observation)?)
+        .map_err(|e| AuditError::InputMismatch(e.to_string().into()))
+}
+
+/// Reuses complete canonical evaluation for initial-baseline preparation before any write.
+pub(crate) fn audit_migration_source(source: &SourceView) -> Result<AuditResult, AuditError> {
+    let analysis = prepare_analysis_from_view(source.clone())?;
+    let prepared = prepare_audit_from_analysis(Path::new("."), analysis)?;
+    let mut measurements = EvaluationPhaseRecorder::new();
+    Ok(
+        compile_certification_stack_from_prepared(prepared, None, &mut measurements)?
+            .stack
+            .audit,
+    )
+}
+
+fn evaluate_declared_migration(
+    analysis: PreparedAnalysis,
+    validations: &mut BTreeMap<
+        crate::migration_governance::MigrationValidation,
+        crate::migration_governance::MigrationValidationFact,
+    >,
+) -> Result<crate::state_governance::ComparisonState, AuditError> {
+    use crate::migration_governance::{
+        MigrationValidation as V, MigrationValidationFact as Fact, MigrationValidationState as S,
+    };
+    if analysis.project_state != ProjectGovernanceState::Declared
+        || analysis.ccg().is_none()
+        || !analysis.ownership_diagnostics.is_empty()
+    {
+        return Err(AuditError::ContractState(
+            "Migration target requires unambiguous canonical authored authority and ownership."
+                .into(),
+        ));
+    }
+    let ownerships = analysis.ownerships.clone();
+    let prepared = prepare_audit_from_analysis(Path::new("."), analysis)?;
+    let mut measurements = EvaluationPhaseRecorder::new();
+    let stack = compile_certification_stack_from_prepared(prepared, None, &mut measurements)?.stack;
+    let state = lifecycle_comparison(&stack, &ownerships)?;
+    let reference = state.source_ref.clone().into_iter().collect::<Vec<_>>();
+    validations.insert(
+        V::GovernanceDeclared,
+        Fact {
+            state: S::Satisfied,
+            evidence_refs: reference.clone(),
+            detail: "Canonical authored authority, CCG and ownership validated.".into(),
+        },
+    );
+    validations.insert(
+        V::ProgressiveEnforcement,
+        Fact {
+            state: if stack.audit.enforcement_success() {
+                S::Satisfied
+            } else {
+                S::Failed
+            },
+            evidence_refs: reference.clone(),
+            detail: "Existing finding-governance enforcement, independent of raw findings.".into(),
+        },
+    );
+    let assurance = match state
+        .view
+        .as_ref()
+        .and_then(|v| v.application.as_ref())
+        .map(|a| a.assessment.decision)
+    {
+        Some(crate::assessment::AssessmentDecision::Satisfied) => S::Satisfied,
+        Some(
+            crate::assessment::AssessmentDecision::NotSatisfied
+            | crate::assessment::AssessmentDecision::Invalid,
+        ) => S::Failed,
+        Some(crate::assessment::AssessmentDecision::NotEvaluable) | None => S::NotEvaluable,
+    };
+    validations.insert(V::ProfileAssurance, Fact { state: assurance, evidence_refs: reference, detail: "Existing Profile Assessment; supported contradiction, invalid input and unavailable support remain distinct in the retained assessment. Migration does not execute tests or invent verification evidence.".into() });
+    Ok(state)
 }
