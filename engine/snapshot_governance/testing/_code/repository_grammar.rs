@@ -39,9 +39,22 @@ fn fortress_documentation_is_complete_synchronized_and_deterministic() {
     );
     assert_eq!(first, second);
     assert_eq!(first.summary().modules_inspected(), 51);
-    // FLOW source controls add one canonical Data catalog to the prior 159 documents.
+    // MIGRATE adds six canonical documents to the qualified 161-document baseline.
     assert!(files.contains_key("engine/information_flow/testing/_docs/data_docs.md"));
-    assert_eq!(first.summary().markdown_files_inspected(), 161);
+    for path in [
+        "engine/migration_governance/README.md",
+        "engine/migration_governance/_docs/code_docs.md",
+        "engine/migration_governance/_docs/data_docs.md",
+        "engine/migration_governance/_docs/modules_docs.md",
+        "engine/migration_governance/testing/README.md",
+        "engine/migration_governance/testing/_docs/code_docs.md",
+    ] {
+        assert!(
+            files.contains_key(path),
+            "missing migration document: {path}"
+        );
+    }
+    assert_eq!(first.summary().markdown_files_inspected(), 167);
     assert_eq!(
         first.summary().code_bijection().0,
         first.summary().code_bijection().1
