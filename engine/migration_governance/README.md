@@ -14,6 +14,8 @@ Own immutable planning, deterministic operation lowering, journaled mutation, co
 
 Bounded regular-file creation, replacement, relocation and owned deletion; exact preimages/postimages; explicit graph dependencies; trusted authorization consumption; same-volume external staging; durable operation journals; cancellation, resume and rollback; actual-target validation; immutable proposal and receipt records. Directory trees are represented by reviewed file sets; arbitrary recursive directory mutation is excluded.
 
+The [operations example](_data/migration_operations_example_v1.json) shows readable paths and exact byte arrays for preview input.
+
 ### Excludes
 
 New parsers, semantic evaluators, authorization authorities, onboarding/admission/upgrade orchestration, hostile-filesystem transactions and filesystem-wide atomicity.
