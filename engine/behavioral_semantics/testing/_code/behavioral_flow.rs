@@ -14,8 +14,8 @@ use fortress_core::contract_coherency::{
 };
 use fortress_core::control_layout::{
     CONTROL_LAYOUT_SOURCE, CONTROL_LAYOUT_V2_SOURCE, CONTROL_LAYOUT_V3_SOURCE,
-    CONTROL_LAYOUT_V4_SOURCE, CONTROL_LAYOUT_V5_SOURCE, ControlLayout, ControlRole,
-    LEGACY_CONTROL_LAYOUT_SOURCE,
+    CONTROL_LAYOUT_V4_SOURCE, CONTROL_LAYOUT_V5_SOURCE, CONTROL_LAYOUT_V6_SOURCE, ControlLayout,
+    ControlRole, LEGACY_CONTROL_LAYOUT_SOURCE,
 };
 use fortress_core::control_manifest::{
     ArtifactStorage, AssessmentGenerationManifest, AssessmentSelectionIndex,
@@ -79,6 +79,7 @@ fn validate_selected_bfg(
         Some("fortress-control-layout-v3") => CONTROL_LAYOUT_V3_SOURCE,
         Some("fortress-control-layout-v4") => CONTROL_LAYOUT_V4_SOURCE,
         Some("fortress-control-layout-v5") => CONTROL_LAYOUT_V5_SOURCE,
+        Some("fortress-control-layout-v6") => CONTROL_LAYOUT_V6_SOURCE,
         Some("fortress-control-layout-v7") => CONTROL_LAYOUT_SOURCE,
         _ => return Err("selected generation has an unsupported layout".into()),
     };
@@ -232,6 +233,8 @@ fn selected_bfg_subject_controls(bytes: &[u8]) {
     assert!(AssessmentGenerationManifest::from_json_str(&fixture.to_string()).is_err());
     fixture["source"]["fingerprint"] = json!(current_source);
     for (version, layout_source) in [
+        (6, CONTROL_LAYOUT_V6_SOURCE),
+        (5, CONTROL_LAYOUT_V5_SOURCE),
         (4, CONTROL_LAYOUT_V4_SOURCE),
         (3, CONTROL_LAYOUT_V3_SOURCE),
         (2, CONTROL_LAYOUT_V2_SOURCE),
