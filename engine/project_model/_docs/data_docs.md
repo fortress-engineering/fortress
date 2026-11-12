@@ -101,3 +101,11 @@ Versioned OVERLAY interface: exact immutable proposals and actual-state separati
 ### [`control_layout_schema_v7.json`](../_data/control_layout_schema_v7.json)
 
 Versioned OVERLAY interface: exact immutable proposals and actual-state separation, original authority bindings, compatible registered CONTROL records and explicit uncertainty. Historical versions retain their original identities.
+
+### [`control_layout_v8.json`](../_data/control_layout_v8.json)
+
+Registers the closed nonrecursive reviewed onboarding proposal family owned by Snapshot Governance. Every prior layout and its content identity is retained unchanged.
+
+### [`control_layout_schema_v8.json`](../_data/control_layout_schema_v8.json)
+
+Validates the eighth closed registry edition, exact proposal family, owner and nonrecursive source binding. It does not create a competing configuration authority.

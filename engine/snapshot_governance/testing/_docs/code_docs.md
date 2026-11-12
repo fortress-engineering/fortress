@@ -135,3 +135,11 @@ Execution-storage lifecycle controls additionally retain failed/incomplete obser
 ### [`query.rs`](../_code/query.rs)
 
 Verifies independent raw/progressive/assurance results, freshness honesty, evidence-backed explanations, minimal-support limits, ambiguous names, route direction, permission classification, complete evidence pagination, schema and human equivalence, cancellation, malformed inputs, resource limits and doctor read-only behavior.
+
+### [`onboarding.rs`](../_code/onboarding.rs)
+
+Qualifies deterministic read-only discovery, native byte preservation, recursive canonical filing, exact reviewed residue, stale/tampered plans, unambiguous Module identities, unsupported profiles, forged assertions and shared cancellation/rollback. Human inspection uses already-loaded immutable evidence.
+
+Nested inline Rust modules retain their physical lookup directories through both existing observers. Authored capabilities and relationship direction remain distinct from canonical observed call identities; recognized but unevaluated declarations remain unverified and cannot be overwritten by initialization.
+
+Implicit Cargo integration targets and their cross-Module dependencies are checked against the existing PSM coherence guard, including disabled discovery and explicit targets under `autotests=false`.

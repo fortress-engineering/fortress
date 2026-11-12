@@ -9,6 +9,9 @@ use sha2::{Digest, Sha256};
 
 /// Current assessment generation manifest schema identity.
 pub const GENERATION_MANIFEST_SCHEMA: &str =
+    "urn:fortress:derived:v8:assessment-generation-manifest";
+/// Retained seventh edition with hypothetical proposal roles.
+pub const GENERATION_MANIFEST_V7_SCHEMA: &str =
     "urn:fortress:derived:v7:assessment-generation-manifest";
 /// Retained sixth edition with migration record roles.
 pub const GENERATION_MANIFEST_V6_SCHEMA: &str =
@@ -262,7 +265,11 @@ impl AssessmentGenerationManifest {
                 GENERATION_MANIFEST_V6_SCHEMA,
                 6,
                 "fortress-control-layout-v6"
-            ) | (GENERATION_MANIFEST_SCHEMA, 7, "fortress-control-layout-v7")
+            ) | (
+                GENERATION_MANIFEST_V7_SCHEMA,
+                7,
+                "fortress-control-layout-v7"
+            ) | (GENERATION_MANIFEST_SCHEMA, 8, "fortress-control-layout-v8")
         );
         if !supported_layout_pair
             || !matches!(
@@ -281,7 +288,7 @@ impl AssessmentGenerationManifest {
                 .selection_context
                 .as_ref()
                 .ok_or(ControlManifestError::UnsupportedRecord)?;
-            if !matches!(self.schema_version, 3..=7)
+            if !matches!(self.schema_version, 3..=8)
                 || (self.schema_version == 3 && context.evidence_input_digest.is_some())
                 || (self.schema_version >= 4 && context.evidence_input_digest.is_none())
                 || self.profile != context.profile_digest

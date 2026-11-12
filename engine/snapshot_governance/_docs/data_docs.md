@@ -161,3 +161,15 @@ Versioned OVERLAY interface: exact immutable proposals and actual-state separati
 ### [`governance_proposal_schema_v2.json`](../_data/governance_proposal_schema_v2.json)
 
 Current governance proposals preserve original/current endpoints through lossless comparison projections, including legacy native identities. No original schema bytes, semantic finding identities, historical verdicts or authorization proofs are rewritten.
+
+### [`bootstrap_proposal_schema_v2.json`](../_data/bootstrap_proposal_schema_v2.json)
+
+Defines the immutable reviewed onboarding record, complete source inventory, authored Module choices, selected authority, exact candidate assessment, reviewed residue origin and shared migration plan. Prediction never constitutes current certification or approval.
+
+### [`onboarding_request_schema_v1.json`](../_data/onboarding_request_schema_v1.json)
+
+Defines explicit readable native/canonical project identity, Module bindings, authored contracts, profile selections, exact canonical source operations and baseline choices. Defaults infer no permissions.
+
+### [`onboarding_result_schema_v1.json`](../_data/onboarding_result_schema_v1.json)
+
+Records verified application and receipt identities, actual governance, read-only status and doctor observations, and explicit absence of established execution certification.

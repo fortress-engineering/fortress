@@ -102,6 +102,7 @@ pub(crate) fn export_proposal_record(
         entry.role(),
         crate::control_layout::ControlRole::ReviewedMigrationPlan
             | crate::control_layout::ControlRole::HypotheticalProposal
+            | crate::control_layout::ControlRole::OnboardingProposal
     ) {
         return Err(fail(
             "UNSAFE_PATH",

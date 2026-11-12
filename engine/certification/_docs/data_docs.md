@@ -145,3 +145,7 @@ Binds new generations to CONTROL layout 6 while retaining each earlier generatio
 ### [`generation_manifest_schema_v7.json`](../_data/generation_manifest_schema_v7.json)
 
 Versioned OVERLAY interface: exact immutable proposals and actual-state separation, original authority bindings, compatible registered CONTROL records and explicit uncertainty. Historical versions retain their original identities.
+
+### [`generation_manifest_schema_v8.json`](../_data/generation_manifest_schema_v8.json)
+
+Binds newly produced assessment generations to CONTROL edition eight. Readers preserve every prior generation and original authority digest; no historical assessment is rewritten.

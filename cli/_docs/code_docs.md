@@ -322,3 +322,44 @@ Implements behavior-author with schema-only guidance or explicit source preparat
 ### [`migration_command.rs`](../_code/migration_command.rs)
 
 Explicit migrate preview/inspect/apply/recover dispatch using the same machine-readable contracts. JSON approval assertions cannot instantiate external grant validation; protected application requires the trusted embedding port.
+
+### [`onboarding_command.rs`](../_code/onboarding_command.rs)
+
+Adapts default native or explicitly selected canonical discovery, request authoring, immutable inspection, exact finding review, application and recovery. Inputs are bounded and link-safe. Discovery output is external and create-only or byte-identical; writes to a project occur exclusively through Migration Governance. No serialized grant or execution validator is installed.
+
+**Reviewed repository adoption**
+
+Existing repositories use native/logical governance by default. Discovery observes source, Cargo package boundaries, tests, supported semantic coverage, existing contracts and active governance; package boundaries are suggestions for review, not inferred responsibilities or permission. It executes no project build scripts. Module contracts remain application-owned beside their declared locations; metadata lives only in the registered control namespace. Native application preserves all original source and Cargo bytes and does not create canonical `_data` or `_info` directories.
+
+```text
+fortress init <repository> --project-id PF-MY-PROJECT --display-name "My Project" --output <external-review.json>
+fortress init inspect <repository> --proposal <external-review.json> --format human
+fortress init inspect <repository> --proposal <external-review.json> --module <readable-selector-or-stable-ID>
+fortress init review <repository> --proposal <external-review.json> --finding <explicit-finding-ID> --output <external-reviewed-residue.json>
+fortress init apply <repository> --proposal <external-reviewed-residue.json>
+fortress status <repository> --format json
+fortress doctor <repository> --format json
+```
+
+Review selects only the named eligible findings from the proposal's exact evaluated target. No `--finding` arguments means an explicit empty selection. No option silently absorbs every finding. The original unbaselined assessment remains in the immutable reviewed proposal, and raw violations remain visible independently from enforcement. Findings that lack stable eligible identities cannot enter the baseline. Application rechecks the complete reviewed source and prediction before MIGRATE writes anything. Unsupported or unavailable semantics remain uncertain; a clean enforcement disposition is not comprehensive semantic conformance.
+
+`--request <external-request.json>` supplies typed explicit choices instead of inline identity flags. Minimal native authoring is `{"schema_version":1,"project_id":"PF-MY-PROJECT","display_name":"My Project"}`. Optional governance and assurance selections use installed readable profile IDs, resolved to exact references by the registry. Explicit logical Module choices declare stable identity, display name, application-owned contract path, parent identity and existing file/directory selectors. Duplicate ownership, identity or readable selectors require resolution; ambiguous matches never choose the first candidate. Exact authored contracts and configuration may be supplied as authority files; observed dependencies never become generated ALLOW declarations.
+
+Strict adoption uses `--mode canonical` and all current canonical filing, direct lowercase snake_case child Modules, reserved Elements and documentation requirements. It creates only required missing documents, preserves existing files, and offers explicit exact-preimage source operations through the request when relocation or documentation replacement is needed. Remaining structural violations block readiness; a baseline cannot waive mandatory canonical structure. Conflicting, partial, dual or case-colliding governance requires an explicit repair proposal and the original trusted authorization boundary. The CLI contains no production grant validator and cannot turn an unsigned reference into permission.
+
+```text
+fortress init <repository> --project-id PF-MY-PROJECT --display-name "My Project" --mode canonical --output <external-canonical-review.json>
+fortress init recover <repository> --proposal <external-review.json> --transaction <retained-transaction-reference> --recovery rollback
+fortress init recover <repository> --proposal <external-review.json> --transaction <retained-transaction-reference> --recovery resume
+fortress serve <repository> --stdio --proposal <external-review.json>
+```
+
+The existing protocol v5 candidate method pages the explicitly loaded embedded hypothetical assessment; formatting or querying never starts onboarding analysis. Discovery and inspect output paths must be external, link-safe, new or byte-identical. Applied reviews are retained under the registered `__fortress/proposals/onboarding/` family and verified migration receipts under `__fortress/records/migrations/`; neither becomes active authority or current execution evidence. Active journals, staging and rollback material stay in lifecycle-managed external OPS storage. Recovery preserves independently changed bytes and reports conflict rather than overwriting them. A successful resume independently reobserves and reconciles the actual target, retains the reviewed proposal, and still establishes no runtime certification. Completed rollback explicitly verifies original bytes.
+
+Historical v1 bootstrap records retain their reader and explicit `init --legacy` adapter. Its old baseline shortcut accepts only an empty finding set; nonempty residue requires the current exact reviewed interface. This safety restriction never silently widens a baseline.
+
+**Downstream adoption interfaces**
+
+Admission and host integrations must preserve the exact base, context, candidate, original authority and reviewed intent identities and supply only independently validated scoped authorization through the existing trusted port. Upgrade tooling consumes the same migration plan, journal and recovery owner; it must not add another writer. Distribution tooling preserves public schemas and retained historical comparison projections without claiming authentication of unsigned records. Pilot studies consume the frozen pinned-repository protocol and distinguishes mechanical qualification from independent human adoption and original-policy reproduction. All consumers must preserve raw truth, enforcement, assurance and actual execution independently. These are integration contracts, not implementations of those capabilities.
+
+The current shared physical SourceView and migration boundary admits bounded regular-file content: 32 MiB of complete physical source, 50,000 files and 1,024 operations. Arbitrary symbolic-link/reparse source entries are not followed or silently repaired; unsupported physical inventory is an explicit refusal. Git worktree metadata remains excluded and actual worktrees are qualified separately. The native CLI uses one joined review worker with an 8 MiB stack; these are resource-admission limits, not latency certification criteria. Canonical source relocation and first baseline admission use separate reviewed steps so newly changed implementation cannot silently become accepted historical residue.

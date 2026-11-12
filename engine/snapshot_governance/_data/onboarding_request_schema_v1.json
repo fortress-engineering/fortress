@@ -1,0 +1,322 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:repository-onboarding-request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "mode": {
+      "enum": [
+        "NATIVE",
+        "CANONICAL"
+      ]
+    },
+    "project_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "display_name": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "governance_profiles": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 64
+    },
+    "assurance_profiles": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 64
+    },
+    "module_choices": {
+      "anyOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "module",
+              "display_name",
+              "contract",
+              "parent",
+              "bindings"
+            ],
+            "properties": {
+              "module": {
+                "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id"
+              },
+              "display_name": {
+                "type": "string"
+              },
+              "contract": {
+                "$ref": "urn:fortress:schema:v1:common#/$defs/relative-path"
+              },
+              "parent": {
+                "type": "string"
+              },
+              "bindings": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "kind",
+                    "path"
+                  ],
+                  "properties": {
+                    "kind": {
+                      "enum": [
+                        "file",
+                        "directory"
+                      ]
+                    },
+                    "path": {
+                      "$ref": "urn:fortress:schema:v1:common#/$defs/relative-path"
+                    }
+                  }
+                },
+                "maxItems": 1024
+              }
+            }
+          },
+          "maxItems": 1024
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "authority_files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "content"
+        ],
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          }
+        }
+      },
+      "maxItems": 1024
+    },
+    "source_operations": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind",
+              "path",
+              "postimage"
+            ],
+            "properties": {
+              "kind": {
+                "const": "CREATE_FILE"
+              },
+              "path": {
+                "type": "string",
+                "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(/|$))[^\\x00-\\x1f]+$",
+                "maxLength": 4096
+              },
+              "postimage": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 255
+                },
+                "maxItems": 33554432
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind",
+              "path",
+              "preimage",
+              "postimage"
+            ],
+            "properties": {
+              "kind": {
+                "const": "REPLACE_FILE"
+              },
+              "path": {
+                "type": "string",
+                "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(/|$))[^\\x00-\\x1f]+$",
+                "maxLength": 4096
+              },
+              "preimage": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 255
+                },
+                "maxItems": 33554432
+              },
+              "postimage": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 255
+                },
+                "maxItems": 33554432
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind",
+              "source",
+              "destination",
+              "preimage"
+            ],
+            "properties": {
+              "kind": {
+                "const": "MOVE_PATH"
+              },
+              "source": {
+                "type": "string",
+                "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(/|$))[^\\x00-\\x1f]+$",
+                "maxLength": 4096
+              },
+              "destination": {
+                "type": "string",
+                "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(/|$))[^\\x00-\\x1f]+$",
+                "maxLength": 4096
+              },
+              "preimage": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 255
+                },
+                "maxItems": 33554432
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind",
+              "path",
+              "preimage",
+              "owner_ref"
+            ],
+            "properties": {
+              "kind": {
+                "const": "DELETE_OWNED_FILE"
+              },
+              "path": {
+                "type": "string",
+                "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(/|$))[^\\x00-\\x1f]+$",
+                "maxLength": 4096
+              },
+              "preimage": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 255
+                },
+                "maxItems": 33554432
+              },
+              "owner_ref": {
+                "type": "string",
+                "maxLength": 4096
+              }
+            }
+          }
+        ]
+      },
+      "maxItems": 1024
+    },
+    "repair": {
+      "type": "boolean"
+    },
+    "baseline_review": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "evaluated_state_ref",
+            "finding_ids"
+          ],
+          "properties": {
+            "evaluated_state_ref": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "finding_ids": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "maxItems": 50000
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "$defs": {},
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "mode": {
+            "const": "NATIVE"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "source_operations": {
+            "maxItems": 0
+          }
+        }
+      }
+    }
+  ]
+}

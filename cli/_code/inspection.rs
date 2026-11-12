@@ -133,6 +133,17 @@ fn preload_proposals(
                 )
                 .map_err(|e| e.to_string())
                 .and_then(|value| {
+                    if value["$schema"] == fortress_core::bootstrap::ONBOARDING_PROPOSAL_SCHEMA {
+                        return fortress_core::bootstrap::OnboardingProposal::from_json_str(
+                            &value.to_string(),
+                        )
+                        .map_err(|e| e.to_string())?
+                        .assessment()
+                        .cloned()
+                        .ok_or_else(|| {
+                            "NOT_EVALUABLE: onboarding proposal has no evaluated target".into()
+                        });
+                    }
                     fortress_core::candidate::HypotheticalEvaluation::from_json_str(
                         &value.to_string(),
                     )

@@ -716,7 +716,14 @@ fn initialization_command_is_registered_and_discovery_is_read_only() {
     assert!(output.status.success());
     let proposal: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
     assert_eq!(proposal["state"], "PROPOSED");
-    assert_eq!(proposal["proposed_authority"]["state"], "UNRESOLVED");
+    assert_eq!(proposal["schema_version"], 2);
+    assert_eq!(proposal["mode"], "NATIVE");
+    assert!(
+        !proposal["unresolved_choices"]
+            .as_array()
+            .unwrap()
+            .is_empty()
+    );
     assert_eq!(fs::read(fixture.root.join("Cargo.toml")).unwrap(), before);
     assert!(!fixture.root.join("__fortress/.fsconfig").exists());
 }
@@ -749,7 +756,6 @@ fn initialization_apply_requires_reviewed_proposal_and_preserves_source() {
         fixture.argument(),
         "--proposal".into(),
         proposal_path.to_string_lossy().into_owned(),
-        "--baseline-current".into(),
     ]);
     assert!(
         apply.status.success(),
@@ -757,9 +763,14 @@ fn initialization_apply_requires_reviewed_proposal_and_preserves_source() {
         String::from_utf8_lossy(&apply.stderr)
     );
     let result: serde_json::Value = serde_json::from_slice(&apply.stdout).unwrap();
-    assert_eq!(result["baseline_created"], true);
-    assert_eq!(result["strict_conformance"], "PASS");
-    assert_eq!(result["progressive_enforcement"], "PASS");
+    assert_eq!(result["certification"], "NOT_ESTABLISHED");
+    assert_eq!(result["reconciliation"]["status"], "EXACT_MATCH_UNVERIFIED");
+    assert!(
+        result["migration_receipt_ref"]
+            .as_str()
+            .unwrap()
+            .starts_with("sha256:")
+    );
     assert_eq!(
         fs::read(fixture.root.join("src/lib.rs")).unwrap(),
         source_before
@@ -780,6 +791,57 @@ fn initialization_rejects_proposal_output_inside_subject() {
     ]);
     assert_eq!(output.status.code(), Some(i32::from(EXIT_USAGE)));
     assert!(!fixture.root.join("proposal.json").exists());
+}
+
+/// `T-TF-CLI-0001-R28-001`
+/// Fortress requirement: TF-CLI-0001-R28
+#[test]
+fn native_onboarding_human_and_json_inspect_the_same_immutable_proposal() {
+    let fixture = ObservationFixture::new();
+    let json = run(&[
+        "init",
+        &fixture.argument(),
+        "--project-id",
+        "PF-CLI-REVIEW",
+        "--display-name",
+        "CLI Review",
+    ]);
+    assert!(
+        json.status.success(),
+        "{}",
+        String::from_utf8_lossy(&json.stderr)
+    );
+    let record: serde_json::Value = serde_json::from_slice(&json.stdout).unwrap();
+    let human = run(&[
+        "init",
+        &fixture.argument(),
+        "--project-id",
+        "PF-CLI-REVIEW",
+        "--display-name",
+        "CLI Review",
+        "--format",
+        "human",
+    ]);
+    assert!(human.status.success());
+    assert!(
+        String::from_utf8_lossy(&human.stdout)
+            .contains(record["proposal_digest"].as_str().unwrap())
+    );
+    assert_eq!(record["mode"], "NATIVE");
+    assert_eq!(record["actual_state"], false);
+    assert!(!fixture.root.join("contract.json").exists());
+}
+
+/// `T-TF-CLI-0001-R28-002`
+/// Fortress requirement: TF-CLI-0001-R28
+#[test]
+fn onboarding_rejects_implicit_baselines_and_external_approval_assertions() {
+    let fixture = ObservationFixture::new();
+    let result = run(&["init", "apply", &fixture.argument(), "--baseline-current"]);
+    assert!(!result.status.success());
+    let forged = run(&["init", &fixture.argument(), "--approved", "true"]);
+    assert!(!forged.status.success());
+    assert!(!fixture.root.join("contract.json").exists());
 }
 
 /// `T-TF-CLI-0001-R15-002`

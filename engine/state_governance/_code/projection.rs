@@ -25,6 +25,7 @@ struct Projection {
 }
 impl Projection {
     fn from_state(state: &ComparisonState) -> Result<Self, String> {
+        let state = state.normalized();
         let bytes = state.to_canonical_bytes().map_err(|e| e.to_string())?;
         let text = std::str::from_utf8(&bytes).map_err(|e| e.to_string())?;
         let mut chunks = Vec::new();
@@ -74,10 +75,20 @@ impl Projection {
         let native = self.canonical_native_chunks.concat();
         let state = ComparisonState::from_json_str(&native).map_err(|e| e.to_string())?;
         let expected = Self::from_state(&state)?;
-        if serde_json::to_value(&self).map_err(|e| e.to_string())?
-            != serde_json::to_value(&expected).map_err(|e| e.to_string())?
-        {
-            return Err("Comparison projection does not preserve exact native bytes, identity and owner facts".into());
+        let supplied = serde_json::to_value(&self).map_err(|e| e.to_string())?;
+        let expected = serde_json::to_value(&expected).map_err(|e| e.to_string())?;
+        if supplied != expected {
+            let fields = supplied
+                .as_object()
+                .into_iter()
+                .flat_map(|o| o.keys())
+                .filter(|key| supplied[*key] != expected[*key])
+                .cloned()
+                .collect::<Vec<_>>();
+            return Err(format!(
+                "Comparison projection does not preserve exact native bytes, identity and owner facts: {}",
+                fields.join(", ")
+            ));
         }
         Ok(state)
     }

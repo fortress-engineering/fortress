@@ -17,6 +17,10 @@ name = "candidate"
 path = "../snapshot_governance/testing/_code/candidate.rs"
 
 [[test]]
+name = "onboarding"
+path = "../snapshot_governance/testing/_code/onboarding.rs"
+
+[[test]]
 name = "migration_governance"
 path = "../migration_governance/testing/_code/migration.rs"
 

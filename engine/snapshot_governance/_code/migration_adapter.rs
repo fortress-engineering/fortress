@@ -233,18 +233,17 @@ pub(crate) fn physical_policy() -> Result<ObservationPolicy, MigrationError> {
         .into_iter()
         .map(str::to_owned)
         .collect::<Vec<_>>();
-    for role in [
-        crate::control_layout::ControlRole::AssessmentSelectionIndex,
-        crate::control_layout::ControlRole::ReviewedMigrationPlan,
-        crate::control_layout::ControlRole::MigrationReceipt,
-        crate::control_layout::ControlRole::HypotheticalProposal,
-    ] {
-        if let Some(path) = layout
-            .role_path(role)
-            .and_then(|prepared| prepared.rsplit_once('/').map(|context| context.0))
-        {
-            excluded.push(path.into());
-        }
+    excluded.extend(
+        layout
+            .migration_record_roots()
+            .into_iter()
+            .map(str::to_owned),
+    );
+    if let Some(path) = layout
+        .role_path(crate::control_layout::ControlRole::AssessmentSelectionIndex)
+        .and_then(|prepared| prepared.rsplit_once('/').map(|context| context.0))
+    {
+        excluded.push(path.into());
     }
     ObservationPolicy::new(excluded).map_err(convert)
 }

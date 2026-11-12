@@ -6973,8 +6973,11 @@ fn evaluate_declared_migration(
         || !analysis.ownership_diagnostics.is_empty()
     {
         return Err(AuditError::ContractState(
-            "Migration target requires unambiguous canonical authored authority and ownership."
-                .into(),
+            format!("Migration target requires unambiguous canonical authored authority and ownership. {} {} {}",
+                analysis.project_detail.as_deref().unwrap_or(""),
+                analysis.ccg_compilation.violations().iter().map(ToString::to_string).collect::<Vec<_>>().join("; "),
+                analysis.ownership_diagnostics.iter().map(SourceOwnershipDiagnostic::detail).collect::<Vec<_>>().join("; ")
+            ).into(),
         ));
     }
     let ownerships = analysis.ownerships.clone();

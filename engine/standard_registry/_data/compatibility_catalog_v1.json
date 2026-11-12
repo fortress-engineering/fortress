@@ -3389,6 +3389,116 @@
         "id": "rfc8785-jcs-sha256",
         "source": "engine/migration_governance/_code/plan.rs"
       }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v8:control-layout",
+      "schema_path": "engine/project_model/_data/control_layout_schema_v8.json",
+      "version": 8,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/project_model/_code/control_layout.rs"
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/project_model/_code/control_layout.rs"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "versioned-explicit-identity",
+        "source": "engine/project_model/_code/control_layout.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "sha256",
+        "source": "engine/project_model/_code/control_layout.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:derived:v8:assessment-generation-manifest",
+      "schema_path": "engine/certification/_data/generation_manifest_schema_v8.json",
+      "version": 8,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/certification/_code/control_manifest.rs"
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/certification/_code/control_manifest.rs"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "versioned-explicit-identity",
+        "source": "engine/certification/_code/control_manifest.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "sha256",
+        "source": "engine/certification/_code/control_manifest.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v1:repository-onboarding-request",
+      "schema_path": "engine/snapshot_governance/_data/onboarding_request_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/snapshot_governance/_code/bootstrap_plan.rs"
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/snapshot_governance/_code/bootstrap_plan.rs"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "versioned-explicit-identity",
+        "source": "engine/snapshot_governance/_code/bootstrap_plan.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "rfc8785-jcs-sha256",
+        "source": "engine/snapshot_governance/_code/bootstrap_plan.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v2:repository-bootstrap-proposal",
+      "schema_path": "engine/snapshot_governance/_data/bootstrap_proposal_schema_v2.json",
+      "version": 2,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/snapshot_governance/_code/bootstrap_plan.rs"
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/snapshot_governance/_code/bootstrap_plan.rs"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "versioned-explicit-identity",
+        "source": "engine/snapshot_governance/_code/bootstrap_plan.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "rfc8785-jcs-sha256",
+        "source": "engine/snapshot_governance/_code/bootstrap_plan.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:derived:v1:repository-onboarding-result",
+      "schema_path": "engine/snapshot_governance/_data/onboarding_result_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/snapshot_governance/_code/bootstrap_plan.rs"
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/snapshot_governance/_code/bootstrap_plan.rs"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "versioned-explicit-identity",
+        "source": "engine/snapshot_governance/_code/bootstrap_plan.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "rfc8785-jcs-sha256",
+        "source": "engine/snapshot_governance/_code/bootstrap_plan.rs"
+      }
     }
   ]
 }

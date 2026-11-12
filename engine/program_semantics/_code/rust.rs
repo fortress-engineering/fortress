@@ -2097,12 +2097,13 @@ fn discover_module_tree(
             DiscoveredModule::Inline {
                 namespace,
                 items,
+                source_path,
                 execution_provenance,
             } => {
                 collect_modules(
                     &items,
-                    path,
-                    path == target.root,
+                    &source_path,
+                    false,
                     &namespace,
                     execution_provenance,
                     &mut queue,
@@ -2111,9 +2112,10 @@ fn discover_module_tree(
             DiscoveredModule::External {
                 namespace,
                 declared_path,
+                source_path,
                 execution_provenance,
             } => {
-                let target_path = resolve_module_file(path, &declared_path, files)
+                let target_path = resolve_module_file(&source_path, &declared_path, files)
                     .ok_or(ProgramSemanticError::MissingTargetSource(declared_path))?;
                 discover_module_tree(
                     &target_path,
@@ -2135,11 +2137,13 @@ enum DiscoveredModule {
     Inline {
         namespace: Vec<String>,
         items: Vec<Item>,
+        source_path: String,
         execution_provenance: ExecutionProvenance,
     },
     External {
         namespace: Vec<String>,
         declared_path: String,
+        source_path: String,
         execution_provenance: ExecutionProvenance,
     },
 }
@@ -2164,11 +2168,25 @@ fn collect_modules(
             queue.push_back(DiscoveredModule::Inline {
                 namespace: child,
                 items: items.clone(),
+                source_path: join_path(
+                    &parent_path(source_path),
+                    &format!(
+                        "{}/mod.rs",
+                        module_path_attribute(&module.attrs).unwrap_or_else(
+                            || default_module_path(
+                                source_path,
+                                &module.ident.to_string(),
+                                crate_root
+                            )
+                        )
+                    ),
+                ),
                 execution_provenance,
             });
         } else {
             queue.push_back(DiscoveredModule::External {
                 namespace: child,
+                source_path: source_path.into(),
                 declared_path: module_path_attribute(&module.attrs).unwrap_or_else(|| {
                     default_module_path(source_path, &module.ident.to_string(), crate_root)
                 }),

@@ -364,6 +364,160 @@ fn require_ungoverned(state: &ComparisonState) -> Result<(), TransitionError> {
     }
     Ok(())
 }
+
+/// Establishes reviewed Module intent and canonical structure on a completely ungoverned base.
+/// Existing protected inputs remain ineligible for this boundary. Ordinary source operations
+/// require an explicit canonical review; this is first-intent provenance, never an external grant.
+/// The original three-file establishment API keeps its narrower contract unchanged.
+/// # Errors
+/// Refuses partial/existing authority, unbound changes, new trust/schema authority, invalid Module
+/// intent, noncanonical source review, or attempts to overwrite a protected input.
+#[allow(clippy::too_many_lines)]
+pub fn authorize_reviewed_initial_establishment(
+    base: &ComparisonState,
+    target: &ComparisonState,
+    context: &ComparisonContext,
+    before: &SourceView,
+    changes: &CandidateChangeSet,
+    reviewed_intent_ref: &str,
+    canonical_source_review: bool,
+) -> Result<ApplicationAuthorization, TransitionError> {
+    check_digest(reviewed_intent_ref)?;
+    let mut record = absence_record(base, target, context, before, changes)?;
+    let Some(application) = target
+        .view
+        .as_ref()
+        .filter(|v| v.status != StateViewStatus::Invalid)
+        .and_then(|v| v.application.as_ref())
+    else {
+        return Err(error(
+            "INVALID_TARGET_AUTHORITY",
+            "first intent requires a complete valid evaluated target",
+        ));
+    };
+    if target.governing_identity()?.is_none() || changes.operations().is_empty() {
+        return Err(error(
+            "INVALID_TARGET_AUTHORITY",
+            "first intent has no governing target or changes",
+        ));
+    }
+    if canonical_source_review {
+        let manifest = serde_json::to_value(&application.declaration.required_dimension_manifest)
+            .map_err(|e| error("INVALID_INPUT", e.to_string()))?;
+        if !manifest["profiles"]
+            .as_array()
+            .is_some_and(|profiles| profiles.iter().any(|p| p["id"] == "GOV-FORTRESS-CANONICAL"))
+        {
+            return Err(error(
+                "AUTHORIZATION_REQUIRED",
+                "source relocation requires the explicitly selected canonical profile",
+            ));
+        }
+    }
+    let assets = target.assets.as_ref().ok_or_else(|| {
+        error(
+            "INVALID_TARGET_AUTHORITY",
+            "Module inventory is unavailable",
+        )
+    })?;
+    let contracts = assets
+        .entities
+        .iter()
+        .filter(|e| e.kind == "module")
+        .filter_map(|e| e.path.clone())
+        .collect::<BTreeSet<_>>();
+    if !contracts.contains("contract.json") {
+        return Err(error(
+            "INVALID_TARGET_AUTHORITY",
+            "compiled root Module identity is missing",
+        ));
+    }
+    let layout = ControlLayout::standard();
+    let configuration = layout
+        .role_path(ControlRole::ProjectConfiguration)
+        .ok_or_else(|| error("INVALID_INPUT", "configuration role unavailable"))?;
+    let governance = layout
+        .role_path(ControlRole::FindingGovernance)
+        .ok_or_else(|| error("INVALID_INPUT", "finding role unavailable"))?;
+    let mut created = contracts.clone();
+    created.insert(configuration.into());
+    created.insert(governance.into());
+    if canonical_source_review {
+        for contract in &contracts {
+            let prefix = contract.strip_suffix("contract.json").ok_or_else(|| {
+                error(
+                    "INVALID_TARGET_AUTHORITY",
+                    "compiled contract has an unsupported occurrence",
+                )
+            })?;
+            for file in [
+                "README.md",
+                "_docs/code_docs.md",
+                "_docs/data_docs.md",
+                "_docs/info_docs.md",
+                "_docs/modules_docs.md",
+            ] {
+                created.insert(format!("{prefix}{file}"));
+            }
+        }
+    }
+    let protected = |path: &str, source: &SourceView| -> Result<bool, TransitionError> {
+        let Some(bytes) = source.bytes(path) else {
+            return Ok(false);
+        };
+        let singleton = SourceView::from_bytes([(path, bytes.to_vec())])
+            .map_err(|e| error("INVALID_INPUT", e.to_string()))?;
+        Ok(has_protected_inputs(&singleton))
+    };
+    for operation in changes.operations() {
+        match operation {
+            ChangeOperation::Create { path, .. } if created.contains(path) => {}
+            ChangeOperation::Create { path, .. } if canonical_source_review => {
+                if protected(path, changes.view())? {
+                    return Err(error(
+                        "AUTHORIZATION_REQUIRED",
+                        "first intent cannot introduce trust, evaluator, Standard or schema authority",
+                    ));
+                }
+            }
+            ChangeOperation::Replace { path, .. } | ChangeOperation::Delete { path, .. }
+                if canonical_source_review =>
+            {
+                if protected(path, before)? || protected(path, changes.view())? {
+                    return Err(error(
+                        "AUTHORIZATION_REQUIRED",
+                        "first intent cannot replace existing protected authority",
+                    ));
+                }
+            }
+            ChangeOperation::Move {
+                source,
+                destination,
+                ..
+            } if canonical_source_review => {
+                if protected(source, before)? || protected(destination, changes.view())? {
+                    return Err(error(
+                        "AUTHORIZATION_REQUIRED",
+                        "canonical relocation cannot redefine a protected input",
+                    ));
+                }
+            }
+            _ => {
+                return Err(error(
+                    "AUTHORIZATION_REQUIRED",
+                    "native first intent may only create the exact reviewed Module and registered governance artifacts",
+                ));
+            }
+        }
+    }
+    record.kind = ApplicationAuthorityKind::InitialEstablishment;
+    record.reviewed_initial_intent_ref = Some(reviewed_intent_ref.into());
+    record.digest()?;
+    Ok(ApplicationAuthorization {
+        record,
+        governed: None,
+    })
+}
 fn has_protected_inputs(source: &SourceView) -> bool {
     let layout = ControlLayout::standard();
     source.iter().any(|(path, bytes)| {

@@ -92,7 +92,7 @@ Projects explicitly preloaded PROPOSED results into complete bounded JSON-pointe
 
 ### [`bootstrap.rs`](../_code/bootstrap.rs)
 
-Performs read-only repository discovery, compiles exact-source-bound reviewed authority proposals from explicit owner choices, and transactionally applies only canonical minimal governance with optional one-time delegation to finding-baseline authority.
+Retains version-one read-only discovery and minimal application compatibility. The current native/canonical review model is composed by bootstrap_plan.rs through the existing hypothetical evaluator and migration owner. Legacy baseline creation refuses nonempty residue; current admission always requires explicit exact-target selection.
 
 ### [`audit.rs`](../_code/audit.rs)
 
@@ -306,3 +306,9 @@ Retains external same-volume staging, immutable owner records, verified terminal
 Migration retirement evaluation consumes an opaque RATCHET proposal and an exact pre-maintenance SourceView. The lifecycle owner rederives the original comparable proof and checks the governance-only postimage; it does not require evidence to hash a file containing that evidence. Generic authorized file replacement cannot bypass this owner admission. Critical assessor scope is resolved through canonical Module ownership over the complete physical inventory, including files excluded from semantic projections.
 
 Identity governance normalization additionally consumes the existing non-deserializable IdentityMigrationPlan through lifecycle admission. Exact source and the entire replacement set must match its producer output; baseline/exception cardinality and Standard binding are preserved, and current anchored authority cannot change. This evidence cannot provide grants or prove retirement.
+
+### [`bootstrap_plan.rs`](../_code/bootstrap_plan.rs)
+
+Composes versioned native/logical and strict canonical onboarding from existing read-only discovery, canonical contract/profile owners, hypothetical evaluation, exact reviewed finding-baseline selection and the shared transactional migration engine. A proposal is PROPOSED, content-bound and unauthenticated. Explicit application preserves original-policy protection and independently observes the actual result; no runtime certification is inferred. Recovery delegates to the same journals and preserves independent edits.
+
+Discovery retains declared Module capabilities and outbound relationships separately from a bounded preview of canonical PSM call relationships. The call preview includes at most 1,024 existing owner records with total and truncation indicators; it never asserts complete flow coverage or permission. Other recognized intent declarations remain explicitly unverified occurrences until evaluated by their semantic owners, and existing intent requires a repair review.

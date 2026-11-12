@@ -2063,6 +2063,16 @@ impl<'a> Resolver<'a> {
         let mut loaded = BTreeMap::<String, (String, ModuleContract, String)>::new();
         for module_path in &module_paths {
             let contract_path = child_path(module_path, "contract.json");
+            // An explicitly indexed logical contract has one authored occurrence even when
+            // its application-owned location also resembles canonical physical placement.
+            // The logical pass below still checks identity, parentage and duplicate ownership.
+            if self
+                .logical_modules
+                .iter()
+                .any(|source| source.contract_path() == contract_path)
+            {
+                continue;
+            }
             let Some(bytes) = self.files.get(&contract_path) else {
                 self.violation(contract_path, "/", "canonical Module has no contract.json");
                 continue;

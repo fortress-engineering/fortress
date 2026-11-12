@@ -79,12 +79,12 @@ def generation(root: Path, report: dict, file_count: int) -> tuple[dict, dict[st
             producer_semantic_version=record["producer_semantic_version"], content_digest=quality.sha256_bytes(content),
             byte_count=len(content), disposition="REQUIRED", storage=dict(kind="INCLUDED",member_name=record["member_name"])))
     manifest = {
-        "$schema":"urn:fortress:derived:v7:assessment-generation-manifest", "schema_version":7,
+        "$schema":"urn:fortress:derived:v8:assessment-generation-manifest", "schema_version":8,
         "generation_kind":"APPLICATION", "project":project, "profile":profile,
         "selection_key":application_selection_key(project,profile,context,evidence_input),
         "selection_context":dict(profile_digest=profile,scope="repository",context_ref=context,evidence_input_digest=evidence_input),
         "source":dict(fingerprint=report["source_ref"],file_count=file_count),
-        "control_layout":dict(id="fortress-control-layout-v7",digest=quality.control_layout_digest(PRODUCT)),
+        "control_layout":dict(id="fortress-control-layout-v8",digest=quality.control_layout_digest(PRODUCT)),
         "artifacts":descriptors,
     }
     return manifest, payloads

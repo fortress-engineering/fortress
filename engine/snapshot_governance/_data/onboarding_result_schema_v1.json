@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v1:repository-onboarding-result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "proposal_digest",
+    "migration_plan_ref",
+    "migration_receipt_ref",
+    "actual_source_ref",
+    "actual_state_ref",
+    "migration_record_path",
+    "proposal_record_path",
+    "reconciliation",
+    "actual_governance",
+    "certification",
+    "inspection"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:derived:v1:repository-onboarding-result"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "proposal_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "migration_plan_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "migration_receipt_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "actual_source_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "actual_state_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "migration_record_path": {
+      "type": "string"
+    },
+    "proposal_record_path": {
+      "type": "string"
+    },
+    "reconciliation": {
+      "$ref": "urn:fortress:derived:v1:candidate-reconciliation"
+    },
+    "actual_governance": {
+      "type": "object"
+    },
+    "certification": {
+      "const": "NOT_ESTABLISHED"
+    },
+    "inspection": {
+      "type": "object"
+    }
+  }
+}

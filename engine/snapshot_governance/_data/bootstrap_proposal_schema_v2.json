@@ -1,0 +1,531 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v2:repository-bootstrap-proposal",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "semantic_version",
+    "state",
+    "actual_state",
+    "proposal_digest",
+    "mode",
+    "base_source_ref",
+    "source_fingerprint",
+    "context_ref",
+    "base_state_ref",
+    "trusted_base_authority_ref",
+    "reviewed_intent_ref",
+    "source_inventory",
+    "observed_facts",
+    "observed_program_context",
+    "existing_contracts",
+    "candidate_modules",
+    "selected_profiles",
+    "proposed_authority",
+    "operations",
+    "baseline_review",
+    "baseline_origin_assessment",
+    "predicted_findings",
+    "residue_summary",
+    "assessment",
+    "migration_plan",
+    "unresolved_choices",
+    "request",
+    "limitations"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:schema:v2:repository-bootstrap-proposal"
+    },
+    "schema_version": {
+      "const": 2
+    },
+    "semantic_version": {
+      "const": "2.0.0"
+    },
+    "state": {
+      "const": "PROPOSED"
+    },
+    "actual_state": {
+      "const": false
+    },
+    "proposal_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "mode": {
+      "enum": [
+        "NATIVE",
+        "CANONICAL"
+      ]
+    },
+    "base_source_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "source_fingerprint": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "context_ref": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "base_state_ref": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "trusted_base_authority_ref": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "reviewed_intent_ref": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "source_inventory": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "content_digest",
+          "byte_count"
+        ],
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "content_digest": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          },
+          "byte_count": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "maxItems": 50000
+    },
+    "observed_facts": {
+      "type": "object"
+    },
+    "observed_program_context": {
+      "anyOf": [
+        {
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "existing_contracts": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "maxItems": 50000
+    },
+    "candidate_modules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "choice",
+          "selector",
+          "basis",
+          "rationale",
+          "uncertainty"
+        ],
+        "properties": {
+          "choice": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "module",
+              "display_name",
+              "contract",
+              "parent",
+              "bindings"
+            ],
+            "properties": {
+              "module": {
+                "$ref": "urn:fortress:schema:v1:common#/$defs/stable-id"
+              },
+              "display_name": {
+                "type": "string"
+              },
+              "contract": {
+                "$ref": "urn:fortress:schema:v1:common#/$defs/relative-path"
+              },
+              "parent": {
+                "type": "string"
+              },
+              "bindings": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "kind",
+                    "path"
+                  ],
+                  "properties": {
+                    "kind": {
+                      "enum": [
+                        "file",
+                        "directory"
+                      ]
+                    },
+                    "path": {
+                      "$ref": "urn:fortress:schema:v1:common#/$defs/relative-path"
+                    }
+                  }
+                },
+                "maxItems": 1024
+              }
+            }
+          },
+          "selector": {
+            "type": "string"
+          },
+          "basis": {
+            "type": "string"
+          },
+          "rationale": {
+            "type": "string"
+          },
+          "uncertainty": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50000
+          }
+        }
+      },
+      "maxItems": 1024
+    },
+    "selected_profiles": {
+      "anyOf": [
+        {
+          "$ref": "urn:fortress:schema:v2:project-configuration"
+        },
+        {
+          "$ref": "urn:fortress:schema:v3:project-configuration"
+        },
+        {
+          "$ref": "urn:fortress:schema:v4:project-configuration"
+        }
+      ]
+    },
+    "proposed_authority": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "authority_kind",
+          "content",
+          "content_digest"
+        ],
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "authority_kind": {
+            "enum": [
+              "MODULE_CONTRACT",
+              "PROJECT_CONFIGURATION",
+              "FINDING_GOVERNANCE",
+              "CANONICAL_DOCUMENTATION"
+            ]
+          },
+          "content": {
+            "type": "string"
+          },
+          "content_digest": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          }
+        }
+      },
+      "maxItems": 1024
+    },
+    "operations": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind",
+              "path",
+              "postimage"
+            ],
+            "properties": {
+              "kind": {
+                "const": "CREATE_FILE"
+              },
+              "path": {
+                "type": "string",
+                "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(/|$))[^\\x00-\\x1f]+$",
+                "maxLength": 4096
+              },
+              "postimage": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 255
+                },
+                "maxItems": 33554432
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind",
+              "path",
+              "preimage",
+              "postimage"
+            ],
+            "properties": {
+              "kind": {
+                "const": "REPLACE_FILE"
+              },
+              "path": {
+                "type": "string",
+                "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(/|$))[^\\x00-\\x1f]+$",
+                "maxLength": 4096
+              },
+              "preimage": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 255
+                },
+                "maxItems": 33554432
+              },
+              "postimage": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 255
+                },
+                "maxItems": 33554432
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind",
+              "source",
+              "destination",
+              "preimage"
+            ],
+            "properties": {
+              "kind": {
+                "const": "MOVE_PATH"
+              },
+              "source": {
+                "type": "string",
+                "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(/|$))[^\\x00-\\x1f]+$",
+                "maxLength": 4096
+              },
+              "destination": {
+                "type": "string",
+                "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(/|$))[^\\x00-\\x1f]+$",
+                "maxLength": 4096
+              },
+              "preimage": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 255
+                },
+                "maxItems": 33554432
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind",
+              "path",
+              "preimage",
+              "owner_ref"
+            ],
+            "properties": {
+              "kind": {
+                "const": "DELETE_OWNED_FILE"
+              },
+              "path": {
+                "type": "string",
+                "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(/|$))[^\\x00-\\x1f]+$",
+                "maxLength": 4096
+              },
+              "preimage": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 255
+                },
+                "maxItems": 33554432
+              },
+              "owner_ref": {
+                "type": "string",
+                "maxLength": 4096
+              }
+            }
+          }
+        ]
+      },
+      "maxItems": 1024
+    },
+    "baseline_review": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "evaluated_state_ref",
+            "finding_ids"
+          ],
+          "properties": {
+            "evaluated_state_ref": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "finding_ids": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "maxItems": 50000
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "baseline_origin_assessment": {
+      "anyOf": [
+        {
+          "$ref": "urn:fortress:derived:v1:hypothetical-evaluation"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "predicted_findings": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "maxItems": 50000
+    },
+    "residue_summary": {
+      "type": "object"
+    },
+    "assessment": {
+      "anyOf": [
+        {
+          "$ref": "urn:fortress:derived:v1:hypothetical-evaluation"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "migration_plan": {
+      "anyOf": [
+        {
+          "$ref": "urn:fortress:derived:v2:migration-plan"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "unresolved_choices": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code",
+          "detail"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "detail": {
+            "type": "string"
+          }
+        }
+      },
+      "maxItems": 50000
+    },
+    "request": {
+      "$ref": "urn:fortress:schema:v1:repository-onboarding-request"
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "maxItems": 50000
+    }
+  },
+  "$defs": {}
+}

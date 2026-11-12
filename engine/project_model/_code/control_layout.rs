@@ -17,7 +17,9 @@ pub const LEGACY_PROJECT_CONFIGURATION_PATH: &str = "_data/project.json";
 pub const EVIDENCE_ROOT: &str = "__fortress/evidence";
 
 /// Declarative layout bytes shared by all compiled adapters.
-pub const CONTROL_LAYOUT_SOURCE: &str = include_str!("../_data/control_layout_v7.json");
+pub const CONTROL_LAYOUT_SOURCE: &str = include_str!("../_data/control_layout_v8.json");
+/// Retained seventh edition; hypothetical evidence identities remain unchanged.
+pub const CONTROL_LAYOUT_V7_SOURCE: &str = include_str!("../_data/control_layout_v7.json");
 /// Retained sixth edition; migration evidence identities are never rewritten.
 pub const CONTROL_LAYOUT_V6_SOURCE: &str = include_str!("../_data/control_layout_v6.json");
 /// Retained fifth edition; historical artifact identities remain unchanged.
@@ -50,6 +52,8 @@ pub enum ControlSourceBinding {
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum ControlRole {
+    /// Retained reviewed onboarding intent; never active authority or actual evidence.
+    OnboardingProposal,
     /// Retained exact hypothetical proposal; never active authority or actual evidence.
     HypotheticalProposal,
     /// Explicitly exported reviewed migration plan; never active authority.
@@ -181,6 +185,7 @@ impl ControlLayout {
             ControlRole::ReviewedMigrationPlan,
             ControlRole::MigrationReceipt,
             ControlRole::HypotheticalProposal,
+            ControlRole::OnboardingProposal,
         ]
         .into_iter()
         .filter_map(|role| self.role_path(role)?.rsplit_once('/').map(|pair| pair.0))
@@ -200,6 +205,11 @@ impl ControlLayout {
     #[must_use]
     pub fn hypothetical_proposal_path(&self, digest: &str) -> Option<String> {
         self.migration_record_path(digest, ControlRole::HypotheticalProposal)
+    }
+    /// Resolves a reviewed onboarding proposal through its nonrecursive role.
+    #[must_use]
+    pub fn onboarding_proposal_path(&self, digest: &str) -> Option<String> {
+        self.migration_record_path(digest, ControlRole::OnboardingProposal)
     }
     fn migration_record_path(&self, digest: &str, role: ControlRole) -> Option<String> {
         let hex = digest.strip_prefix("sha256:")?;
@@ -317,6 +327,7 @@ impl ControlLayout {
             4 => CONTROL_LAYOUT_V4_SOURCE,
             5 => CONTROL_LAYOUT_V5_SOURCE,
             6 => CONTROL_LAYOUT_V6_SOURCE,
+            7 => CONTROL_LAYOUT_V7_SOURCE,
             _ => CONTROL_LAYOUT_SOURCE,
         }
     }
@@ -496,6 +507,10 @@ impl ControlLayout {
                 "urn:fortress:schema:v7:control-layout",
                 7,
                 "fortress-control-layout-v7"
+            ) | (
+                "urn:fortress:schema:v8:control-layout",
+                8,
+                "fortress-control-layout-v8"
             )
         );
         if !supported_version
@@ -506,6 +521,17 @@ impl ControlLayout {
         }
         let mut paths = BTreeSet::new();
         for role in &self.roles {
+            if role.role == ControlRole::OnboardingProposal {
+                if self.schema_version < 8
+                    || role.path != "__fortress/proposals/onboarding/{sha256}.json"
+                    || role.owner != "snapshot_governance"
+                    || role.source_binding != ControlSourceBinding::Nonrecursive
+                    || !paths.insert(role.path.as_str())
+                {
+                    return Err(ControlLayoutError::InvalidEntry(role.path.clone().into()));
+                }
+                continue;
+            }
             if role.role == ControlRole::HypotheticalProposal {
                 if self.schema_version < 7
                     || role.path != "__fortress/proposals/candidates/{sha256}.json"
@@ -556,6 +582,16 @@ impl ControlLayout {
         }
         if !paths.contains(PROJECT_CONFIGURATION_PATH) {
             return Err(ControlLayoutError::MissingConfiguration);
+        }
+        if self.schema_version >= 8
+            && self
+                .roles
+                .iter()
+                .filter(|r| r.role == ControlRole::OnboardingProposal)
+                .count()
+                != 1
+        {
+            return Err(ControlLayoutError::UnsupportedLayout);
         }
         if self.schema_version >= 7
             && self

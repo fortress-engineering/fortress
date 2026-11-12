@@ -1,5 +1,9 @@
 //! Read-only repository discovery and explicit snapshot-bound governance adoption.
 
+#[path = "bootstrap_plan.rs"]
+mod plan;
+pub use plan::*;
+
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
@@ -848,6 +852,11 @@ fn prepare_bootstrap_target(
         .map_err(BootstrapError::Migration)?;
         let audit = crate::audit::audit_migration_source(graph.target())
             .map_err(|e| BootstrapError::GovernedEvaluation(e.to_string().into()))?;
+        if !audit.findings().is_empty() {
+            return Err(BootstrapError::InvalidProposal(
+                "Initial findings require an explicit selection bound to the evaluated target; use the versioned onboarding review interface.".into(),
+            ));
+        }
         let mut authority = FindingGovernanceDocument::empty();
         let mutation = authority
             .create_baseline(

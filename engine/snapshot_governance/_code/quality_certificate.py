@@ -47,7 +47,7 @@ LEGACY_CONFIG_PATH = "_data/project.json"
 EVIDENCE_ROOT = "__fortress/evidence"
 CURRENT_INDEX_PATH = "__fortress/evidence/current.json"
 GENERATIONS_PATH = "__fortress/evidence/generations"
-CONTROL_LAYOUT_PATH = "engine/project_model/_data/control_layout_v7.json"
+CONTROL_LAYOUT_PATH = "engine/project_model/_data/control_layout_v8.json"
 CERTIFICATE_ID = "quality-certificate"
 CERTIFICATE_MEMBER = "quality_certificate.json"
 SCHEMA_ID = "urn:fortress:derived:v3:local-quality-certificate"
@@ -233,7 +233,7 @@ def migration_record_roots() -> set[str]:
     path = Path(__file__).resolve().parents[3] / CONTROL_LAYOUT_PATH
     layout = json.loads(path.read_text(encoding="utf-8"))
     return {item["path"].rsplit("/", 1)[0] for item in layout["roles"]
-            if item["role"] in {"REVIEWED_MIGRATION_PLAN", "MIGRATION_RECEIPT", "HYPOTHETICAL_PROPOSAL"}
+            if item["role"] in {"REVIEWED_MIGRATION_PLAN", "MIGRATION_RECEIPT", "HYPOTHETICAL_PROPOSAL", "ONBOARDING_PROPOSAL"}
             and item["source_binding"] == "NONRECURSIVE"}
 
 
@@ -405,9 +405,9 @@ def selection_key() -> str:
     )
 
 
-def control_layout_digest(root: Path, version: int = 7) -> str:
+def control_layout_digest(root: Path, version: int = 8) -> str:
     """Bind publications to the installed declarative role registry."""
-    if version not in (1, 2, 3, 4, 5, 6, 7):
+    if version not in (1, 2, 3, 4, 5, 6, 7, 8):
         raise CertificateError("unsupported control layout edition")
     path = root / f"engine/project_model/_data/control_layout_v{version}.json"
     return sha256_bytes(path.read_bytes())
@@ -474,8 +474,8 @@ def build_generation_manifest(
     )
     descriptors.sort(key=lambda item: item["id"])
     return {
-        "$schema": "urn:fortress:derived:v7:assessment-generation-manifest",
-        "schema_version": 7,
+        "$schema": "urn:fortress:derived:v8:assessment-generation-manifest",
+        "schema_version": 8,
         "generation_kind": "LOCAL_QUALITY",
         "project": "PF-FORTRESS",
         "profile": PROFILE_ID,
@@ -485,7 +485,7 @@ def build_generation_manifest(
             "file_count": certificate["source"]["file_count"],
         },
         "control_layout": {
-            "id": "fortress-control-layout-v7",
+            "id": "fortress-control-layout-v8",
             "digest": control_layout_digest(root),
         },
         "artifacts": descriptors,
@@ -1315,7 +1315,7 @@ def load_selected_generation(
         "generation manifest",
     )
     version = manifest["schema_version"]
-    if type(version) is not int or version not in ((1, 2, 3, 4, 5, 6, 7) if historical else (7,)) or manifest["$schema"] != f"urn:fortress:derived:v{version}:assessment-generation-manifest" or manifest["generation_kind"] != "LOCAL_QUALITY" or manifest["project"] != "PF-FORTRESS" or manifest["profile"] != PROFILE_ID or manifest["selection_key"] != selection_key():
+    if type(version) is not int or version not in ((1, 2, 3, 4, 5, 6, 7, 8) if historical else (8,)) or manifest["$schema"] != f"urn:fortress:derived:v{version}:assessment-generation-manifest" or manifest["generation_kind"] != "LOCAL_QUALITY" or manifest["project"] != "PF-FORTRESS" or manifest["profile"] != PROFILE_ID or manifest["selection_key"] != selection_key():
         raise CertificateError("selected generation manifest identity is unsupported")
     if manifest["control_layout"] != {"id": f"fortress-control-layout-v{version}", "digest": control_layout_digest(root, version)}:
         raise CertificateError("selected generation control layout is stale or invalid")

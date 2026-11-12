@@ -166,6 +166,11 @@ impl HypotheticalEvaluation {
     pub fn evaluation_ref(&self) -> &str {
         &self.evaluation_ref
     }
+    /// Exact original analysis context retained by this immutable prediction.
+    #[must_use]
+    pub fn context_ref(&self) -> &str {
+        &self.context_ref
+    }
     /// Exact operation/base/context/target-authority identity used by AUTHORITY.
     #[must_use]
     pub fn candidate_digest(&self) -> &str {
@@ -649,6 +654,24 @@ impl CandidateWorkspace {
     pub const fn base_state(&self) -> &ComparisonState {
         &self.base.state
     }
+    /// Complete in-process base facts, retained only for exact-input composition.
+    pub(crate) const fn base_endpoint(&self) -> &MigrationEvaluation {
+        &self.base
+    }
+    /// Complete physical input bytes; this does not grant mutation access.
+    pub(crate) const fn physical_source(&self) -> &SourceView {
+        &self.physical_base
+    }
+    /// The already-computed immutable endpoint; actual post-write analysis never uses this accessor.
+    pub(crate) fn candidate_endpoint(
+        &self,
+        client: &str,
+        candidate: &str,
+    ) -> Option<&MigrationEvaluation> {
+        self.candidates
+            .get(&(client.into(), candidate.into()))
+            .map(|c| &c.target)
+    }
     /// Existing SESSION cancellation boundary; available to an independent host thread.
     #[must_use]
     pub fn session_control(&self) -> Option<crate::session::SessionControl> {
@@ -683,6 +706,24 @@ impl CandidateWorkspace {
         authority: &impl MigrationAuthority,
         cancelled: &AtomicBool,
     ) -> Result<HypotheticalEvaluation, MigrationError> {
+        self.evaluate_detailed(client, candidate, request, authority, cancelled)
+            .map(|(assessment, _)| assessment)
+    }
+    /// Supplies existing owner findings to another Snapshot composition path without rerunning analysis.
+    pub(crate) fn evaluate_detailed(
+        &mut self,
+        client: &str,
+        candidate: &str,
+        request: CandidateRequest,
+        authority: &impl MigrationAuthority,
+        cancelled: &AtomicBool,
+    ) -> Result<
+        (
+            HypotheticalEvaluation,
+            Option<crate::audit::CandidateOwnerFacts>,
+        ),
+        MigrationError,
+    > {
         check_cancelled(cancelled)?;
         if request.schema_version != 1 {
             return Err(error(
@@ -778,7 +819,7 @@ impl CandidateWorkspace {
                 bytes,
             },
         );
-        Ok(assessment)
+        Ok((assessment, owner_facts))
     }
     fn affected_analysis(
         &self,

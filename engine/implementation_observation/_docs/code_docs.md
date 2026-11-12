@@ -27,3 +27,7 @@ Defines the language-neutral snapshot input, source observation, evidence, norma
 ### [`rust.rs`](../_code/rust.rs)
 
 Implements structural Cargo and Rust namespace discovery, source ownership, target classification, facade-preserving resolution, and deterministic observation normalization. Both Rust tokenization entry points invoke Repository Observation's neutral retained-input admission helper before parsing; inactive admission preserves ordinary analysis behavior.
+
+Inline namespace traversal carries its physical lookup directory through nested modules and path overrides. This preserves existing source provenance and shares the same Rust module lookup rules as Program Semantics; missing source never becomes a successful observation.
+
+The supported top-level Cargo `tests/*.rs` inventory is observed when automatic test discovery is enabled, matching Program Semantics. `autotests=false` suppresses implicit roots while retaining explicitly declared test targets. This is source observation, not actual test execution or complete Cargo build reproduction.

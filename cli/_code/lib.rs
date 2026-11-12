@@ -42,6 +42,7 @@ mod finding_command;
 mod flow_command;
 mod inspection;
 mod migration_command;
+mod onboarding_command;
 mod portable_command;
 mod presentation;
 mod provider_command;
@@ -462,6 +463,26 @@ fn run_modules<O: Write, E: Write>(
 }
 
 fn run_init<O: Write, E: Write>(
+    arguments: &[String],
+    output: &mut O,
+    error: &mut E,
+) -> io::Result<u8> {
+    if arguments.first().map(String::as_str) != Some("--legacy") {
+        let normalized: Vec<_> = arguments
+            .iter()
+            .flat_map(|arg| {
+                arg.strip_prefix("--format=").map_or_else(
+                    || vec![arg.clone()],
+                    |format| vec!["--format".into(), format.into()],
+                )
+            })
+            .collect();
+        return onboarding_command::run(&normalized, output, error);
+    }
+    run_legacy_init(&arguments[1..], output, error)
+}
+
+fn run_legacy_init<O: Write, E: Write>(
     arguments: &[String],
     output: &mut O,
     error: &mut E,

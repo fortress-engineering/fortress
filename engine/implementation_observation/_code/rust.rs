@@ -39,6 +39,7 @@ struct CargoDocument {
 struct CargoPackageDocument {
     name: String,
     build: Option<CargoBuildDocument>,
+    autotests: Option<bool>,
 }
 
 #[derive(Default, Deserialize)]
@@ -461,6 +462,9 @@ fn parse_packages(
             TargetKind::Test,
             files,
         ));
+        if package.autotests.unwrap_or(true) {
+            targets.extend(implicit_test_targets(&manifest_dir, files));
+        }
         targets.extend(cargo_targets(
             &document.bench,
             &manifest_dir,
@@ -533,6 +537,24 @@ fn parse_packages(
     }
     packages.sort_by(|left, right| left.manifest_path.cmp(&right.manifest_path));
     Ok(packages)
+}
+
+fn implicit_test_targets(manifest_dir: &str, files: &BTreeMap<String, &[u8]>) -> Vec<CargoTarget> {
+    let prefix = format!("{}/", join_path(manifest_dir, "tests"));
+    files
+        .keys()
+        .filter_map(|path| {
+            let relative = path.strip_prefix(&prefix)?;
+            (!relative.contains('/')
+                && std::path::Path::new(relative)
+                    .extension()
+                    .is_some_and(|extension| extension.eq_ignore_ascii_case("rs")))
+            .then(|| CargoTarget {
+                root: path.clone(),
+                kind: TargetKind::Test,
+            })
+        })
+        .collect()
 }
 
 fn cargo_targets(
@@ -723,7 +745,11 @@ fn discover_module_tree(
     );
     while let Some(module) = queue.pop_front() {
         match module {
-            DiscoveredModule::Inline { namespace, items } => {
+            DiscoveredModule::Inline {
+                namespace,
+                items,
+                source_path,
+            } => {
                 index.insert(
                     namespace.clone(),
                     NamespaceNode {
@@ -731,14 +757,16 @@ fn discover_module_tree(
                         owner: owner.clone(),
                     },
                 );
-                collect_modules(&items, path, path == target.root, &namespace, &mut queue);
+                collect_modules(&items, &source_path, false, &namespace, &mut queue);
             }
             DiscoveredModule::External {
                 namespace,
                 declared_path,
+                source_path,
                 location,
             } => {
-                if let Some(target_path) = resolve_module_file(path, &declared_path, files) {
+                if let Some(target_path) = resolve_module_file(&source_path, &declared_path, files)
+                {
                     discover_module_tree(
                         &target_path,
                         &namespace,
@@ -771,10 +799,12 @@ enum DiscoveredModule {
     Inline {
         namespace: Vec<String>,
         items: Vec<syn::Item>,
+        source_path: String,
     },
     External {
         namespace: Vec<String>,
         declared_path: String,
+        source_path: String,
         location: SourceLocation,
     },
 }
@@ -796,6 +826,19 @@ fn collect_modules(
             queue.push_back(DiscoveredModule::Inline {
                 namespace: child,
                 items: items.clone(),
+                source_path: join_path(
+                    &parent_path(source_path),
+                    &format!(
+                        "{}/mod.rs",
+                        module_path_attribute(&module.attrs).unwrap_or_else(
+                            || default_module_path(
+                                source_path,
+                                &module.ident.to_string(),
+                                crate_root
+                            )
+                        )
+                    ),
+                ),
             });
         } else {
             let declared_path = module_path_attribute(&module.attrs).unwrap_or_else(|| {
@@ -804,6 +847,7 @@ fn collect_modules(
             queue.push_back(DiscoveredModule::External {
                 namespace: child,
                 declared_path,
+                source_path: source_path.into(),
                 location: source_location(module.ident.span()),
             });
         }

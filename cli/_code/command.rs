@@ -174,8 +174,8 @@ const BUILTIN_COMMANDS: &[CommandDescriptor] = &[
         id: "CMD-REPOSITORY-INIT",
         name: "init",
         aliases: &[],
-        description: "Discover and explicitly apply snapshot-bound minimal repository governance.",
-        usage: "fortress init [path] [--project-id ID --display-name NAME] [--format json] [--output path] | fortress init apply [path] --proposal path [--baseline-current]",
+        description: "Review native or canonical repository onboarding and explicitly apply through shared transactions.",
+        usage: "fortress init [path] [--project-id ID --display-name NAME] [--mode native|canonical] [--request path] [--format human|json] [--output path] | fortress init inspect|review|apply|recover [path] --proposal path",
     },
     CommandDescriptor {
         id: "CMD-MODULE-INSPECTION",

@@ -9,7 +9,7 @@ pub(crate) const DOCUMENTATION_RULE_SOURCE: &str = include_str!("../_data/docume
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::error::Error;
-use std::fmt::{self, Display, Formatter};
+use std::fmt::{self, Display, Formatter, Write as _};
 use std::fs;
 use std::path::{Component, Path, PathBuf};
 
@@ -46,6 +46,180 @@ const PLACEHOLDERS: [&str; 7] = [
     "to be decided",
     "placeholder",
 ];
+
+/// Constructs review-only canonical guidance using this owner's exact Module and file catalogs.
+/// Existing documents are never overwritten. Text states observation limits rather than inventing
+/// architectural promises, behavior, permission, or successful execution.
+pub(crate) fn propose_canonical_documentation(
+    files: &BTreeMap<String, Vec<u8>>,
+) -> Result<BTreeMap<String, String>, String> {
+    let paths = files.keys().cloned().collect::<BTreeSet<_>>();
+    let profiles = FilingSystemProfiles::standard();
+    let index =
+        CanonicalModuleIndex::from_paths(paths.iter().map(String::as_str), |module, name| {
+            profiles.registered_directory(module, name)
+        });
+    let contracts = proposed_documentation_contracts(files, &index)?;
+    let by_id = contracts
+        .iter()
+        .map(|(path, c)| (c.id(), (path, c.display_name())))
+        .collect::<BTreeMap<_, _>>();
+    let mut output = BTreeMap::new();
+    for (module, contract) in &contracts {
+        let readme = child_path(module, "README.md");
+        if !files.contains_key(&readme) {
+            let text = proposed_readme(module, contract, &by_id)?;
+            output.insert(readme, text);
+        }
+        for (attribute, name, title, sections) in [
+            (
+                "code",
+                "code_docs.md",
+                "Code",
+                &["Role", "Execution", "State", "Failure Semantics"][..],
+            ),
+            (
+                "data",
+                "data_docs.md",
+                "Data",
+                &["Role", "Origin", "Semantics", "Validity", "Lifecycle"][..],
+            ),
+            (
+                "info",
+                "info_docs.md",
+                "Info",
+                &["Role", "Production", "Semantics", "Lifecycle"][..],
+            ),
+        ] {
+            let element = child_path(module, physical_element(attribute));
+            let path = child_path(&child_path(module, "_docs"), name);
+            if !has_descendant(&paths, &element) || files.contains_key(&path) {
+                continue;
+            }
+            let mut text = format!("# {title}\n");
+            for section in sections {
+                let _ = write!(
+                    text,
+                    "\n## {section}\n\nThe reviewed {attribute} inventory belongs to this Module. Its contract and applicable schemas retain authority; this mechanically proposed description establishes neither behavioral guarantees nor execution evidence.\n"
+                );
+            }
+            text.push_str("\n## Files\n");
+            for entry in element_catalog_entries(&paths, &element, attribute) {
+                if entry.ends_with('/') {
+                    let _ = write!(
+                        text,
+                        "\n### `{entry}`\n\nContains the exact reviewed {attribute} scope. Individual content retains its applicable declared semantics and limitations.\n"
+                    );
+                } else {
+                    let _ = write!(
+                        text,
+                        "\n### [`{entry}`](../{}/{entry})\n\nContains this reviewed {attribute} unit. Its observed presence is distinct from authored intent, permission, and successful execution.\n",
+                        physical_element(attribute)
+                    );
+                }
+            }
+            output.insert(path, text);
+        }
+        let children = index.get(module).map_or(&[][..], |m| m.children());
+        let path = child_path(&child_path(module, "_docs"), "modules_docs.md");
+        if !children.is_empty() && !files.contains_key(&path) {
+            let mut text="# Modules\n\n## Composition\n\nThe immediate reviewed child boundaries compose this Module without replacing their independent contracts.\n\n## Modules\n".to_owned();
+            for child in children {
+                let name = contracts
+                    .get(child)
+                    .ok_or_else(|| format!("child `{child}` has no contract"))?
+                    .display_name();
+                let relative = child.strip_prefix(&format!("{module}/")).unwrap_or(child);
+                let _ = write!(
+                    text,
+                    "\n### [{name}](../{relative}/README.md)\n\nOwns the explicitly reviewed child scope. Its implementation does not define new permissions or guarantees.\n"
+                );
+            }
+            text.push_str("\n## Coordination\n\nCross-Module obligations and permitted relationships remain explicit contract authority. This catalog records containment and does not infer dependency permission.\n");
+            output.insert(path, text);
+        }
+    }
+    Ok(output)
+}
+
+fn proposed_readme(
+    module: &str,
+    contract: &ModuleContract,
+    by_id: &BTreeMap<&str, (&String, &str)>,
+) -> Result<String, String> {
+    let mut text = format!(
+        "# {}\n\n## Purpose\n\nThis Module records the explicitly reviewed architectural boundary named in its contract.\n\n## Responsibility\n\nOwn the declared source scope without inferring additional behavior or permission from its implementation.\n\n## Scope\n\n### Includes\n\nThe source and immediate child Modules admitted by the reviewed contract and current filing profile.\n\n### Excludes\n\nUnstated behavioral guarantees, external approval, and responsibilities owned by other Modules.\n\n## Relationships\n\n",
+        contract.display_name()
+    );
+    let relationships = authoritative_relationships(contract);
+    if relationships.is_empty() {
+        text.push_str("The contract declares no outbound Module relationship. Observed references do not create permission.\n\n");
+    }
+    for (id, kinds) in relationships {
+        let (target, name) = by_id
+            .get(id.as_str())
+            .ok_or_else(|| format!("reviewed relationship `{id}` has no unique target"))?;
+        let from = module
+            .split('/')
+            .filter(|p| !p.is_empty())
+            .collect::<Vec<_>>();
+        let to = target
+            .split('/')
+            .filter(|p| !p.is_empty())
+            .collect::<Vec<_>>();
+        let common = from.iter().zip(&to).take_while(|(a, b)| a == b).count();
+        let link = std::iter::repeat_n("..", from.len() - common)
+            .chain(to[common..].iter().copied())
+            .chain(["README.md"])
+            .collect::<Vec<_>>()
+            .join("/");
+        let types = kinds
+            .iter()
+            .map(|k| format!("`{}`", k.as_str()))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let _ = write!(
+            text,
+            "### [{name}]({link})\n\n**Types:** {types}\n\nThis relationship projects the reviewed contract; its rationale remains subject to owner review.\n\n"
+        );
+    }
+    text.push_str("## Guarantees\n\nOnly explicit authored guarantees govern this Module. This generated guidance establishes no implementation proof or runtime assurance.\n");
+    Ok(text)
+}
+
+fn proposed_documentation_contracts(
+    files: &BTreeMap<String, Vec<u8>>,
+    index: &CanonicalModuleIndex,
+) -> Result<BTreeMap<String, ModuleContract>, String> {
+    let contracts = index
+        .paths()
+        .into_iter()
+        .map(|module| {
+            let path = child_path(&module, "contract.json");
+            let bytes = files
+                .get(&path)
+                .ok_or_else(|| format!("canonical Module `{module}` has no reviewed contract"))?;
+            let contract = ModuleContract::from_json_str(
+                std::str::from_utf8(bytes).map_err(|e| e.to_string())?,
+            )
+            .map_err(|e| e.to_string())?;
+            Ok((module, contract))
+        })
+        .collect::<Result<BTreeMap<_, _>, String>>()?;
+    if contracts
+        .values()
+        .map(ModuleContract::id)
+        .collect::<BTreeSet<_>>()
+        .len()
+        != contracts.len()
+    {
+        return Err(
+            "IDENTITY_AMBIGUOUS: duplicate Module identity cannot be projected into documentation"
+                .into(),
+        );
+    }
+    Ok(contracts)
+}
 
 /// Extracts the canonical direct-Code-file responsibility catalog using the
 /// same structural `CommonMark` model as documentation conformance.

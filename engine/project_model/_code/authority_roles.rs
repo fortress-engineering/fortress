@@ -104,6 +104,7 @@ pub fn protected_input_roles(
             }
             ControlRole::ProviderEnvelope
             | ControlRole::HypotheticalProposal
+            | ControlRole::OnboardingProposal
             | ControlRole::ReviewedMigrationPlan
             | ControlRole::MigrationReceipt
             | ControlRole::ProviderPayload
