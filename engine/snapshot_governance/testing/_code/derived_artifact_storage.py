@@ -167,7 +167,7 @@ class DerivedArtifactStorageTests(unittest.TestCase):
                 (ROOT / "engine/project_model/_data/control_layout_v8.json").read_bytes())},
         )
         root = self.workspace("current-generation-roundtrip") / "repository"
-        for version in (6, 7):
+        for version in (6, 7, 8):
             relative = f"engine/project_model/_data/control_layout_v{version}.json"
             path = root / relative
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -189,8 +189,8 @@ class DerivedArtifactStorageTests(unittest.TestCase):
         with self.assertRaisesRegex(quality.CertificateError, "identity is unsupported"):
             quality.load_selected_generation(root)
         for historical_reader in (False, True):
-            future = {**current, "$schema": "urn:fortress:derived:v8:assessment-generation-manifest",
-                      "schema_version": 8}
+            future = {**current, "$schema": "urn:fortress:derived:v9:assessment-generation-manifest",
+                      "schema_version": 9}
             self.publish_fixture_generation(root, future, certificate_bytes, content)
             with self.assertRaisesRegex(quality.CertificateError, "identity is unsupported"):
                 quality.load_selected_generation(root, historical=historical_reader)
@@ -440,6 +440,7 @@ class DerivedArtifactStorageTests(unittest.TestCase):
             quality.EVIDENCE_ROOT,
             "__fortress/proposals/migrations",
             "__fortress/proposals/candidates",
+            "__fortress/proposals/onboarding",
             "__fortress/records/migrations",
         })
         self.assertNotIn("__fortress/governance/finding_governance.json", quality.excluded_source_paths())
