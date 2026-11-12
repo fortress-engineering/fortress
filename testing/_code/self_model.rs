@@ -161,7 +161,7 @@ fn live_contract_v2_v3_ecosystem_resolves_completely() {
     assert_eq!(resolved.modules().len(), 51);
     assert_eq!(resolved.capabilities().len(), 25);
     assert_eq!(resolved.features().len(), 26);
-    assert_eq!(resolved.requirements().len(), 156);
+    assert_eq!(resolved.requirements().len(), 158);
     assert!(
         resolved
             .requirements()
@@ -248,6 +248,8 @@ fn real_reference_scope_has_authored_purity_and_nonvacuous_semantic_support() {
 }
 
 const REQUIRED_SELF_MODEL_REQUIREMENTS: &[&str] = &[
+    "AF-SNAPSHOT-GOVERNANCE-0001-R23",
+    "TF-CLI-0001-R28",
     "AF-MIGRATION-GOVERNANCE-0001-R01",
     "AF-MIGRATION-GOVERNANCE-0001-R02",
     "AF-MIGRATION-GOVERNANCE-0001-R03",
