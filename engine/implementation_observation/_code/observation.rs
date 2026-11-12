@@ -285,6 +285,41 @@ pub fn resolve_source_ownership_with_logical_modules<'a>(
     logical_modules: &[LogicalModuleDeclaration],
     known_module_ids: &BTreeSet<String>,
 ) -> SourceOwnershipResolution {
+    resolve_binding_ownership(
+        paths,
+        physical_modules,
+        logical_modules,
+        known_module_ids,
+        true,
+    )
+}
+
+/// Resolves the same authored selectors across a complete physical inventory.
+/// Non-Rust membership is ownership intent only; it establishes no language coverage.
+/// Physical fallback for non-Rust files remains the existing Architecture owner.
+#[must_use]
+pub fn resolve_inventory_ownership_with_logical_modules<'a>(
+    paths: impl IntoIterator<Item = &'a str>,
+    physical_modules: &[ModuleTerritory],
+    logical_modules: &[LogicalModuleDeclaration],
+    known_module_ids: &BTreeSet<String>,
+) -> SourceOwnershipResolution {
+    resolve_binding_ownership(
+        paths,
+        physical_modules,
+        logical_modules,
+        known_module_ids,
+        false,
+    )
+}
+
+fn resolve_binding_ownership<'a>(
+    paths: impl IntoIterator<Item = &'a str>,
+    physical_modules: &[ModuleTerritory],
+    logical_modules: &[LogicalModuleDeclaration],
+    known_module_ids: &BTreeSet<String>,
+    rust_only: bool,
+) -> SourceOwnershipResolution {
     let mut paths = paths.into_iter().map(str::to_owned).collect::<Vec<_>>();
     paths.sort();
     paths.dedup();
@@ -307,9 +342,10 @@ pub fn resolve_source_ownership_with_logical_modules<'a>(
         .collect::<Vec<_>>();
     let mut ownerships = Vec::new();
     for path in paths.iter().filter(|path| {
-        std::path::Path::new(path)
-            .extension()
-            .is_some_and(|extension| extension.eq_ignore_ascii_case("rs"))
+        !rust_only
+            || std::path::Path::new(path)
+                .extension()
+                .is_some_and(|extension| extension.eq_ignore_ascii_case("rs"))
     }) {
         let mut candidates = logical_modules
             .iter()

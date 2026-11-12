@@ -52,13 +52,23 @@ impl AuthoritySnapshot {
         Ok(value)
     }
     fn source(&self) -> Result<SourceView, TransitionError> {
-        if self.schema != "urn:fortress:derived:v1:authority-snapshot" || self.schema_version != 1 {
+        if !matches!(
+            (self.schema.as_str(), self.schema_version),
+            ("urn:fortress:derived:v1:authority-snapshot", 1)
+                | ("urn:fortress:derived:v2:authority-snapshot", 2)
+        ) {
             return Err(fail(
                 "UNSUPPORTED_VERSION",
                 "unsupported authority snapshot",
             ));
         }
         self.state.validate()?;
+        if self.schema_version == 2 && self.state.schema_version != 2 {
+            return Err(fail(
+                "INVALID_BINDING",
+                "authority capture v2 requires a current comparison v2 endpoint; legacy snapshots retain their original version",
+            ));
+        }
         if self.files.len() > crate::state_governance::MAX_TRANSITION_RECORDS
             || self.files.keys().any(|p| p.len() > 4096)
             || self
@@ -102,8 +112,8 @@ pub fn capture_authority_snapshot(root: &Path) -> Result<AuthoritySnapshot, Tran
         }
     }
     let value = AuthoritySnapshot {
-        schema: "urn:fortress:derived:v1:authority-snapshot".into(),
-        schema_version: 1,
+        schema: "urn:fortress:derived:v2:authority-snapshot".into(),
+        schema_version: 2,
         state,
         files,
     };

@@ -93,3 +93,11 @@ Adds only closed reviewed-plan and completed-receipt output families owned by Mi
 ### [`control_layout_schema_v6.json`](../_data/control_layout_schema_v6.json)
 
 Closes the sixth role edition, including exact family templates, ownership and nonrecursive binding; arbitrary namespace files and literal template names are unregistered.
+
+### [`control_layout_v7.json`](../_data/control_layout_v7.json)
+
+Versioned OVERLAY interface: exact immutable proposals and actual-state separation, original authority bindings, compatible registered CONTROL records and explicit uncertainty. Historical versions retain their original identities.
+
+### [`control_layout_schema_v7.json`](../_data/control_layout_schema_v7.json)
+
+Versioned OVERLAY interface: exact immutable proposals and actual-state separation, original authority bindings, compatible registered CONTROL records and explicit uncertainty. Historical versions retain their original identities.

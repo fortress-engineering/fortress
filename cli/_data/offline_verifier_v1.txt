@@ -625,7 +625,7 @@ def authority_check(authority, replay, declaration, assessment):
     policy_bytes = authority["assessment_policy_utf8"].encode()
     require(sha(layout_bytes) == preimage[1] and sha(policy_bytes) == preimage[2], "DIGEST_MISMATCH", "layout/policy authority differs")
     layout, policy = parse(layout_bytes), parse(policy_bytes)
-    require(edition(layout, [5, 6]) and edition(policy, [1]) and policy["id"] == "application-assessment-policy"
+    require(edition(layout, [5, 6, 7]) and edition(policy, [1]) and policy["id"] == "application-assessment-policy"
             and policy["version"] == "1.0.0", "UNSUPPORTED_VERSION", "unsupported authority semantics")
     manifest_bytes = authority["manifest_utf8"].encode()
     manifest = parse(manifest_bytes)
@@ -1339,7 +1339,7 @@ def verify(path, predicate_type, expected_binding=None, expected_profile=None):
         if manifest["generation_ref"] is not None:
             require("control-generation" in artifacts and hashed(artifacts["control-generation"]) == manifest["generation_ref"], "DIGEST_MISMATCH", "original CONTROL generation differs")
             control = artifacts["control-generation"]
-            require(edition(control, [1, 2, 3, 4, 5]), "UNSUPPORTED_VERSION", "unsupported CONTROL generation edition")
+            require(edition(control, [1, 2, 3, 4, 5, 6, 7]), "UNSUPPORTED_VERSION", "unsupported CONTROL generation edition")
             require(control["$schema"] == "urn:fortress:derived:v" + str(control["schema_version"]) + ":assessment-generation-manifest", "UNSUPPORTED_VERSION", "CONTROL schema differs")
             original = {a["id"]: a for a in control["artifacts"]}
             for role in ["conformance-declaration", "profile-assessment", "evidence-graph", "certification", "quality-certificate", "verified-bfg"]:

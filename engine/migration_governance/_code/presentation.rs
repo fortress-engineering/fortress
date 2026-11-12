@@ -86,6 +86,28 @@ pub fn export_reviewed_migration_plan(
     let relative = crate::control_layout::ControlLayout::standard()
         .migration_plan_path(plan.digest())
         .ok_or_else(|| fail("UNAVAILABLE_ROLE", "reviewed plan role unavailable"))?;
+    export_proposal_record(repository, relative, &bytes)
+}
+
+/// Common safe immutable derived-record writer; never accepts active authority paths.
+pub(crate) fn export_proposal_record(
+    repository: &Path,
+    relative: String,
+    bytes: &[u8],
+) -> Result<String, MigrationError> {
+    let entry = crate::control_layout::ControlLayout::standard()
+        .resolve(&relative)
+        .ok_or_else(|| fail("UNAVAILABLE_ROLE", "proposal role unavailable"))?;
+    if !matches!(
+        entry.role(),
+        crate::control_layout::ControlRole::ReviewedMigrationPlan
+            | crate::control_layout::ControlRole::HypotheticalProposal
+    ) {
+        return Err(fail(
+            "UNSAFE_PATH",
+            "immutable proposal export requires a registered proposal role",
+        ));
+    }
     for (offset, _) in relative.match_indices('/') {
         let path = checked_relative(repository, &relative[..offset])?;
         match fs::create_dir(&path) {
@@ -109,7 +131,7 @@ pub fn export_reviewed_migration_plan(
         }
         return Err(fail("IMMUTABLE_RECORD_CONFLICT", relative));
     }
-    write_new(&path, &bytes)?;
+    write_new(&path, bytes)?;
     sync_directory(
         path.parent()
             .ok_or_else(|| fail("UNSAFE_PATH", "proposal parent unavailable"))?,

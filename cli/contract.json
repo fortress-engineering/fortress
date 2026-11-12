@@ -265,6 +265,14 @@
             "T-TF-CLI-0001-R26-001",
             "T-TF-CLI-0001-R26-002"
           ]
+        },
+        {
+          "id": "TF-CLI-0001-R27",
+          "statement": "Explicit read-only overlay evaluation, inspection and reconciliation share deterministic machine and human results. Protocol v5 exposes only explicitly loaded proposed results with complete bounded paging; no CLI JSON can restore grants, execution proof or actual certification and no overlay apply method exists.",
+          "tests": [
+            "T-TF-CLI-0001-R27-001",
+            "T-TF-CLI-0001-R27-002"
+          ]
         }
       ]
     }

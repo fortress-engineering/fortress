@@ -137,3 +137,27 @@ Adds the typed behavior_author preview under protocol v4 while preserving versio
 ### [`identity_migration_schema_v2.json`](../_data/identity_migration_schema_v2.json)
 
 Version 2 adds the exact physical source identity required to reject stale identity migration reviews before writes. Version 1 remains a historical preview schema; executable application uses MigrationPlan v1 and the common writer.
+
+### [`candidate_request_schema_v1.json`](../_data/candidate_request_schema_v1.json)
+
+Versioned OVERLAY interface: exact immutable proposals and actual-state separation, original authority bindings, compatible registered CONTROL records and explicit uncertainty. Historical versions retain their original identities.
+
+### [`hypothetical_evaluation_schema_v1.json`](../_data/hypothetical_evaluation_schema_v1.json)
+
+Versioned OVERLAY interface: exact immutable proposals and actual-state separation, original authority bindings, compatible registered CONTROL records and explicit uncertainty. Historical versions retain their original identities.
+
+### [`candidate_reconciliation_schema_v1.json`](../_data/candidate_reconciliation_schema_v1.json)
+
+Versioned OVERLAY interface: exact immutable proposals and actual-state separation, original authority bindings, compatible registered CONTROL records and explicit uncertainty. Historical versions retain their original identities.
+
+### [`query_request_schema_v5.json`](../_data/query_request_schema_v5.json)
+
+Versioned OVERLAY interface: exact immutable proposals and actual-state separation, original authority bindings, compatible registered CONTROL records and explicit uncertainty. Historical versions retain their original identities.
+
+### [`query_response_schema_v5.json`](../_data/query_response_schema_v5.json)
+
+Versioned OVERLAY interface: exact immutable proposals and actual-state separation, original authority bindings, compatible registered CONTROL records and explicit uncertainty. Historical versions retain their original identities.
+
+### [`governance_proposal_schema_v2.json`](../_data/governance_proposal_schema_v2.json)
+
+Current governance proposals preserve original/current endpoints through lossless comparison projections, including legacy native identities. No original schema bytes, semantic finding identities, historical verdicts or authorization proofs are rewritten.

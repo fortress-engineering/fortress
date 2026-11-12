@@ -246,7 +246,7 @@ impl QueryService {
 fn convert(error: crate::state_governance::TransitionError) -> QueryError {
     QueryError::new(error.code, error.message)
 }
-fn page_transition(
+pub(super) fn page_transition(
     records: &[QueryRecord],
     p: &PageParameters,
     signature: &str,

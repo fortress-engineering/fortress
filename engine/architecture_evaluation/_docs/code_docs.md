@@ -22,6 +22,8 @@ Invalid inputs and inability to fulfill the responsibility return explicit typed
 
 Derives physical Module ownership and component views from the canonical CCG, then evaluates its declared dependency graph without rebuilding semantic resolution.
 
+The migration/candidate adapter can explicitly exclude logical Modules from physical territory fallback. Their declaration locations do not become source territories; the existing logical source-ownership resolver supplies their bindings and rejects ambiguity. Non-Rust and excluded physical inputs retain canonical physical ownership.
+
 ### [`diagnostics.rs`](../_code/diagnostics.rs)
 
 Builds deterministic production Module profiles, computes physical lowest common ancestors, and derives non-normative scope, isolation, consumer-distribution, and facade-pressure diagnostics with content-addressed provenance.

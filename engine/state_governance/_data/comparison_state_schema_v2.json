@@ -1,0 +1,1525 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:derived:v2:comparison-state"
+    },
+    "schema_version": {
+      "const": 2
+    },
+    "source_ref": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "view": {
+      "anyOf": [
+        {
+          "$ref": "urn:fortress:derived:v1:state-view"
+        },
+        {
+          "$ref": "urn:fortress:derived:v2:state-view"
+        },
+        {
+          "$ref": "urn:fortress:derived:v3:state-view"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "retained_application": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "declaration",
+            "assessment",
+            "evidence",
+            "obligations",
+            "project"
+          ],
+          "properties": {
+            "declaration": {
+              "$ref": "urn:fortress:derived:v1:conformance-declaration"
+            },
+            "assessment": {
+              "anyOf": [
+                {
+                  "$ref": "urn:fortress:derived:v1:profile-assessment"
+                },
+                {
+                  "$ref": "urn:fortress:derived:v2:profile-assessment"
+                }
+              ]
+            },
+            "evidence": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "id",
+                  "source_ref",
+                  "binding",
+                  "scope_ref",
+                  "evidence_class",
+                  "proposition",
+                  "payload_digest",
+                  "assumptions",
+                  "valid_until"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "source_ref": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "binding": {
+                    "$ref": "urn:fortress:derived:v1:conformance-declaration#/$defs/binding"
+                  },
+                  "scope_ref": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "evidence_class": {
+                    "enum": [
+                      "AUTHORITY",
+                      "OBSERVATION",
+                      "STATIC_PROOF",
+                      "EXECUTED_TEST",
+                      "EXECUTED_SCENARIO",
+                      "TRUSTED_ASSERTION",
+                      "DEFEATER",
+                      "AGGREGATE"
+                    ]
+                  },
+                  "proposition": {
+                    "enum": [
+                      "NO_SUPPORTED_VIOLATION",
+                      "SUPPORTED_VIOLATION",
+                      "EXECUTION_SUCCEEDED",
+                      "OBSERVATION_ONLY",
+                      "UNAVAILABLE",
+                      "EXECUTION_FAILED"
+                    ]
+                  },
+                  "payload_digest": {
+                    "type": "string",
+                    "pattern": "^sha256:[0-9a-f]{64}$"
+                  },
+                  "assumptions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "uniqueItems": true
+                  },
+                  "valid_until": {
+                    "anyOf": [
+                      {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 9007199254740991
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                }
+              },
+              "uniqueItems": true
+            },
+            "obligations": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "id",
+                  "scope_ref",
+                  "predicate",
+                  "evidence_class",
+                  "authenticated_producer_required",
+                  "proof"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "scope_ref": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "predicate": {
+                    "enum": [
+                      "RULE_CHECK",
+                      "CONFORMANCE",
+                      "EVALUABILITY",
+                      "SUCCESSFUL_EXECUTION"
+                    ]
+                  },
+                  "evidence_class": {
+                    "enum": [
+                      "AUTHORITY",
+                      "OBSERVATION",
+                      "STATIC_PROOF",
+                      "EXECUTED_TEST",
+                      "EXECUTED_SCENARIO",
+                      "TRUSTED_ASSERTION",
+                      "DEFEATER",
+                      "AGGREGATE"
+                    ]
+                  },
+                  "authenticated_producer_required": {
+                    "type": "boolean"
+                  },
+                  "proof": {
+                    "anyOf": [
+                      {
+                        "$ref": "urn:fortress:schema:v1:proof-graph"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                }
+              },
+              "uniqueItems": true
+            },
+            "project": {
+              "type": "string",
+              "minLength": 1
+            },
+            "evidence_inputs": {
+              "$ref": "urn:fortress:derived:v1:evidence-input-set"
+            },
+            "provider_requirements": {
+              "type": "array",
+              "maxItems": 100000,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "requirement_id",
+                  "envelope_digest",
+                  "inventory_digest",
+                  "members",
+                  "decision",
+                  "blockers"
+                ],
+                "properties": {
+                  "requirement_id": {
+                    "type": "string",
+                    "maxLength": 65536
+                  },
+                  "envelope_digest": {
+                    "type": "string",
+                    "pattern": "^sha256:[0-9a-f]{64}$"
+                  },
+                  "inventory_digest": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^sha256:[0-9a-f]{64}$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "members": {
+                    "type": "array",
+                    "maxItems": 100000,
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "namespace",
+                        "package",
+                        "target",
+                        "qualified_name"
+                      ],
+                      "properties": {
+                        "namespace": {
+                          "enum": [
+                            "NATIVE_QUALIFIED",
+                            "GOVERNED_TEST_ID"
+                          ]
+                        },
+                        "package": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 65536
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "target": {
+                          "anyOf": [
+                            {
+                              "type": "string",
+                              "maxLength": 65536
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "qualified_name": {
+                          "type": "string",
+                          "maxLength": 65536
+                        }
+                      }
+                    }
+                  },
+                  "decision": {
+                    "enum": [
+                      "SATISFIED",
+                      "NOT_SATISFIED",
+                      "NOT_EVALUABLE",
+                      "INVALID"
+                    ]
+                  },
+                  "blockers": {
+                    "type": "array",
+                    "maxItems": 100000,
+                    "items": {
+                      "enum": [
+                        "WRONG_BINDING",
+                        "INCOMPLETE_INVENTORY",
+                        "INCOMPLETE_RUN",
+                        "WRONG_PROVIDER",
+                        "INCOMPATIBLE_EVIDENCE_CLASS",
+                        "UNTRUSTED_ENVELOPE",
+                        "PRODUCER_NOT_AUTHENTICATED",
+                        "ASSUMPTION_NOT_ACCEPTED",
+                        "FRESH_EXECUTION_REQUIRED",
+                        "STALE_EXECUTION",
+                        "SELECTOR_REQUIRES_REVIEW",
+                        "EXECUTION_FAILED"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "assets": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/StateAssets"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "origin_ref": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "limitations": {
+      "type": "array",
+      "maxItems": 50000,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 8192
+      }
+    }
+  },
+  "required": [
+    "$schema",
+    "schema_version",
+    "source_ref",
+    "view",
+    "retained_application",
+    "assets",
+    "origin_ref",
+    "limitations"
+  ],
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v2:comparison-state",
+  "$defs": {
+    "AxisInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192
+        },
+        "content_ref": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192
+        },
+        "roles": {
+          "type": "object",
+          "maxProperties": 50000,
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 8192
+          },
+          "propertyNames": {
+            "enum": [
+              "SUBJECT",
+              "INTENT",
+              "AUTHORITY",
+              "GOVERNANCE"
+            ]
+          }
+        },
+        "scope_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "maxItems": 50000,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 8192
+          }
+        }
+      },
+      "required": [
+        "id",
+        "path",
+        "content_ref",
+        "roles",
+        "scope_refs"
+      ]
+    },
+    "Entity": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192
+        },
+        "kind": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192
+        },
+        "semantic_ref": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192
+        },
+        "path": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 8192
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "promise": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Promise"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "semantic_ref",
+        "path",
+        "promise"
+      ]
+    },
+    "Promise": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "subject": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192
+        },
+        "quantifier": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192
+        },
+        "clauses": {
+          "type": "object",
+          "maxProperties": 50000,
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 8192
+          }
+        }
+      },
+      "required": [
+        "subject",
+        "quantifier",
+        "clauses"
+      ]
+    },
+    "FinitePolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192
+        },
+        "origin_ref": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192
+        },
+        "origin_kind": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192
+        },
+        "vocabulary_ref": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192
+        },
+        "scope": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192
+        },
+        "quantifier": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192
+        },
+        "context_ref": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192
+        },
+        "universe": {
+          "type": "array",
+          "maxItems": 50000,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 8192
+          },
+          "uniqueItems": true
+        },
+        "denied": {
+          "type": "array",
+          "maxItems": 50000,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 8192
+          },
+          "uniqueItems": true
+        },
+        "allowed": {
+          "type": "array",
+          "maxItems": 50000,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 8192
+          },
+          "uniqueItems": true
+        },
+        "complete": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "origin_ref",
+        "origin_kind",
+        "vocabulary_ref",
+        "scope",
+        "quantifier",
+        "context_ref",
+        "universe",
+        "denied",
+        "allowed",
+        "complete"
+      ]
+    },
+    "StateAssets": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "subject_ref": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192
+        },
+        "complete_axes": {
+          "type": "array",
+          "maxItems": 50000,
+          "items": {
+            "enum": [
+              "SUBJECT",
+              "INTENT",
+              "AUTHORITY",
+              "GOVERNANCE"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "inputs": {
+          "type": "array",
+          "maxItems": 50000,
+          "items": {
+            "$ref": "#/$defs/AxisInput"
+          }
+        },
+        "entities": {
+          "type": "array",
+          "maxItems": 50000,
+          "items": {
+            "$ref": "#/$defs/Entity"
+          }
+        },
+        "policies": {
+          "type": "array",
+          "maxItems": 50000,
+          "items": {
+            "$ref": "#/$defs/FinitePolicy"
+          }
+        },
+        "standard_ref": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 8192
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "profile_refs": {
+          "type": "array",
+          "maxItems": 50000,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 8192
+          },
+          "uniqueItems": true
+        },
+        "evaluator_ref": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 8192
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "exclusions_ref": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 8192
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reference_facts": {
+          "anyOf": [
+            {
+              "type": "array",
+              "maxItems": 50000,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 8192
+              },
+              "uniqueItems": true
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "exclusions": {
+          "anyOf": [
+            {
+              "type": "array",
+              "uniqueItems": true,
+              "maxItems": 50000,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 8192
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "subject_ref",
+        "complete_axes",
+        "inputs",
+        "entities",
+        "policies",
+        "standard_ref",
+        "profile_refs",
+        "evaluator_ref",
+        "exclusions_ref",
+        "reference_facts",
+        "exclusions"
+      ]
+    },
+    "ComparisonState": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "$schema": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192
+        },
+        "schema_version": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "source_ref": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 8192
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "view": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "$ref": "urn:fortress:derived:v1:state-view"
+                },
+                {
+                  "$ref": "urn:fortress:derived:v2:state-view"
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "retained_application": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "declaration",
+                "assessment",
+                "evidence",
+                "obligations",
+                "project"
+              ],
+              "properties": {
+                "declaration": {
+                  "$ref": "urn:fortress:derived:v1:conformance-declaration"
+                },
+                "assessment": {
+                  "anyOf": [
+                    {
+                      "$ref": "urn:fortress:derived:v1:profile-assessment"
+                    },
+                    {
+                      "$ref": "urn:fortress:derived:v2:profile-assessment"
+                    }
+                  ]
+                },
+                "evidence": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "id",
+                      "source_ref",
+                      "binding",
+                      "scope_ref",
+                      "evidence_class",
+                      "proposition",
+                      "payload_digest",
+                      "assumptions",
+                      "valid_until"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "source_ref": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "binding": {
+                        "$ref": "urn:fortress:derived:v1:conformance-declaration#/$defs/binding"
+                      },
+                      "scope_ref": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "evidence_class": {
+                        "enum": [
+                          "AUTHORITY",
+                          "OBSERVATION",
+                          "STATIC_PROOF",
+                          "EXECUTED_TEST",
+                          "EXECUTED_SCENARIO",
+                          "TRUSTED_ASSERTION",
+                          "DEFEATER",
+                          "AGGREGATE"
+                        ]
+                      },
+                      "proposition": {
+                        "enum": [
+                          "NO_SUPPORTED_VIOLATION",
+                          "SUPPORTED_VIOLATION",
+                          "EXECUTION_SUCCEEDED",
+                          "OBSERVATION_ONLY",
+                          "UNAVAILABLE",
+                          "EXECUTION_FAILED"
+                        ]
+                      },
+                      "payload_digest": {
+                        "type": "string",
+                        "pattern": "^sha256:[0-9a-f]{64}$"
+                      },
+                      "assumptions": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "uniqueItems": true
+                      },
+                      "valid_until": {
+                        "anyOf": [
+                          {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 9007199254740991
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  "uniqueItems": true
+                },
+                "obligations": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "id",
+                      "scope_ref",
+                      "predicate",
+                      "evidence_class",
+                      "authenticated_producer_required",
+                      "proof"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "scope_ref": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "predicate": {
+                        "enum": [
+                          "RULE_CHECK",
+                          "CONFORMANCE",
+                          "EVALUABILITY",
+                          "SUCCESSFUL_EXECUTION"
+                        ]
+                      },
+                      "evidence_class": {
+                        "enum": [
+                          "AUTHORITY",
+                          "OBSERVATION",
+                          "STATIC_PROOF",
+                          "EXECUTED_TEST",
+                          "EXECUTED_SCENARIO",
+                          "TRUSTED_ASSERTION",
+                          "DEFEATER",
+                          "AGGREGATE"
+                        ]
+                      },
+                      "authenticated_producer_required": {
+                        "type": "boolean"
+                      },
+                      "proof": {
+                        "anyOf": [
+                          {
+                            "$ref": "urn:fortress:schema:v1:proof-graph"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  "uniqueItems": true
+                },
+                "project": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "evidence_inputs": {
+                  "$ref": "urn:fortress:derived:v1:evidence-input-set"
+                },
+                "provider_requirements": {
+                  "type": "array",
+                  "maxItems": 100000,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "requirement_id",
+                      "envelope_digest",
+                      "inventory_digest",
+                      "members",
+                      "decision",
+                      "blockers"
+                    ],
+                    "properties": {
+                      "requirement_id": {
+                        "type": "string",
+                        "maxLength": 65536
+                      },
+                      "envelope_digest": {
+                        "type": "string",
+                        "pattern": "^sha256:[0-9a-f]{64}$"
+                      },
+                      "inventory_digest": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^sha256:[0-9a-f]{64}$"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "members": {
+                        "type": "array",
+                        "maxItems": 100000,
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "namespace",
+                            "package",
+                            "target",
+                            "qualified_name"
+                          ],
+                          "properties": {
+                            "namespace": {
+                              "enum": [
+                                "NATIVE_QUALIFIED",
+                                "GOVERNED_TEST_ID"
+                              ]
+                            },
+                            "package": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "maxLength": 65536
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "target": {
+                              "anyOf": [
+                                {
+                                  "type": "string",
+                                  "maxLength": 65536
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "qualified_name": {
+                              "type": "string",
+                              "maxLength": 65536
+                            }
+                          }
+                        }
+                      },
+                      "decision": {
+                        "enum": [
+                          "SATISFIED",
+                          "NOT_SATISFIED",
+                          "NOT_EVALUABLE",
+                          "INVALID"
+                        ]
+                      },
+                      "blockers": {
+                        "type": "array",
+                        "maxItems": 100000,
+                        "items": {
+                          "enum": [
+                            "WRONG_BINDING",
+                            "INCOMPLETE_INVENTORY",
+                            "INCOMPLETE_RUN",
+                            "WRONG_PROVIDER",
+                            "INCOMPATIBLE_EVIDENCE_CLASS",
+                            "UNTRUSTED_ENVELOPE",
+                            "PRODUCER_NOT_AUTHENTICATED",
+                            "ASSUMPTION_NOT_ACCEPTED",
+                            "FRESH_EXECUTION_REQUIRED",
+                            "STALE_EXECUTION",
+                            "SELECTOR_REQUIRES_REVIEW",
+                            "EXECUTION_FAILED"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "assets": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/StateAssets"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "origin_ref": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 8192
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "limitations": {
+          "type": "array",
+          "maxItems": 50000,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 8192
+          }
+        }
+      },
+      "required": [
+        "$schema",
+        "schema_version",
+        "source_ref",
+        "view",
+        "retained_application",
+        "assets",
+        "origin_ref",
+        "limitations"
+      ]
+    },
+    "ComparisonContext": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "authorization_refs": {
+          "type": "array",
+          "maxItems": 50000,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 8192
+          },
+          "uniqueItems": true
+        },
+        "counterfactuals": {
+          "type": "array",
+          "maxItems": 50000,
+          "items": {
+            "$ref": "#/$defs/Counterfactual"
+          }
+        }
+      },
+      "required": [
+        "authorization_refs",
+        "counterfactuals"
+      ]
+    },
+    "Counterfactual": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "subject_ref": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192
+        },
+        "authority_ref": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192
+        },
+        "view": {
+          "anyOf": [
+            {
+              "$ref": "urn:fortress:derived:v1:state-view"
+            },
+            {
+              "$ref": "urn:fortress:derived:v2:state-view"
+            },
+            {
+              "$ref": "urn:fortress:derived:v3:state-view"
+            }
+          ]
+        },
+        "assets": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/StateAssets"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "subject_ref",
+        "authority_ref",
+        "view",
+        "assets"
+      ]
+    },
+    "Delta": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "category": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192
+        },
+        "change": {
+          "enum": [
+            "UNCHANGED",
+            "ADDED",
+            "REMOVED",
+            "CHANGED",
+            "STRENGTHENED",
+            "WEAKENED",
+            "MIXED",
+            "NOT_COMPARABLE",
+            "NOT_EVALUABLE",
+            "NOT_APPLICABLE",
+            "UNKNOWN",
+            "UNSUPPORTED",
+            "NEWLY_EVALUABLE",
+            "EVALUABILITY_LOST",
+            "NOT_OBSERVED",
+            "POLICY_RETIRED",
+            "SCOPE_EXCLUDED",
+            "AUTHORITY_INCOMPARABLE",
+            "IDENTITY_AMBIGUOUS",
+            "PLACEMENT_ONLY",
+            "STORAGE_ONLY",
+            "CO_MOVING_AUTHORIZATION"
+          ]
+        },
+        "before": {
+          "anyOf": [
+            {},
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "after": {
+          "anyOf": [
+            {},
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reasons": {
+          "type": "array",
+          "maxItems": 50000,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 8192
+          }
+        }
+      },
+      "required": [
+        "category",
+        "id",
+        "change",
+        "before",
+        "after",
+        "reasons"
+      ]
+    },
+    "AxisDelta": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "axis": {
+          "enum": [
+            "SUBJECT",
+            "INTENT",
+            "AUTHORITY",
+            "GOVERNANCE"
+          ]
+        },
+        "change": {
+          "enum": [
+            "UNCHANGED",
+            "ADDED",
+            "REMOVED",
+            "CHANGED",
+            "STRENGTHENED",
+            "WEAKENED",
+            "MIXED",
+            "NOT_COMPARABLE",
+            "NOT_EVALUABLE",
+            "NOT_APPLICABLE",
+            "UNKNOWN",
+            "UNSUPPORTED",
+            "NEWLY_EVALUABLE",
+            "EVALUABILITY_LOST",
+            "NOT_OBSERVED",
+            "POLICY_RETIRED",
+            "SCOPE_EXCLUDED",
+            "AUTHORITY_INCOMPARABLE",
+            "IDENTITY_AMBIGUOUS",
+            "PLACEMENT_ONLY",
+            "STORAGE_ONLY",
+            "CO_MOVING_AUTHORIZATION"
+          ]
+        },
+        "input_ids": {
+          "type": "array",
+          "maxItems": 50000,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 8192
+          }
+        },
+        "complete": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "axis",
+        "change",
+        "input_ids",
+        "complete"
+      ]
+    },
+    "AuthorizationReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "axis": {
+          "enum": [
+            "SUBJECT",
+            "INTENT",
+            "AUTHORITY",
+            "GOVERNANCE"
+          ]
+        },
+        "base_authority_ref": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 8192
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "citations": {
+          "type": "array",
+          "maxItems": 50000,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 8192
+          },
+          "uniqueItems": true
+        },
+        "validation": {
+          "const": "NOT_VALIDATED"
+        }
+      },
+      "required": [
+        "axis",
+        "base_authority_ref",
+        "citations",
+        "validation"
+      ]
+    },
+    "TransitionAnalysis": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "$schema": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192
+        },
+        "schema_version": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65535
+        },
+        "semantic_version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192
+        },
+        "from_state": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192
+        },
+        "to_state": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192
+        },
+        "comparison_context": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192
+        },
+        "input_deltas": {
+          "type": "array",
+          "maxItems": 50000,
+          "items": {
+            "$ref": "#/$defs/AxisDelta"
+          }
+        },
+        "semantic_deltas": {
+          "type": "array",
+          "maxItems": 50000,
+          "items": {
+            "$ref": "#/$defs/Delta"
+          }
+        },
+        "coverage_deltas": {
+          "type": "array",
+          "maxItems": 50000,
+          "items": {
+            "$ref": "#/$defs/Delta"
+          }
+        },
+        "evidence_deltas": {
+          "type": "array",
+          "maxItems": 50000,
+          "items": {
+            "$ref": "#/$defs/Delta"
+          }
+        },
+        "finding_deltas": {
+          "type": "array",
+          "maxItems": 50000,
+          "items": {
+            "$ref": "#/$defs/Delta"
+          }
+        },
+        "weakenings": {
+          "type": "array",
+          "maxItems": 50000,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 8192
+          }
+        },
+        "strengthenings": {
+          "type": "array",
+          "maxItems": 50000,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 8192
+          }
+        },
+        "incomparabilities": {
+          "type": "array",
+          "maxItems": 50000,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 8192
+          }
+        },
+        "required_authorizations": {
+          "type": "array",
+          "maxItems": 50000,
+          "items": {
+            "$ref": "#/$defs/AuthorizationReference"
+          }
+        },
+        "limitations": {
+          "type": "array",
+          "maxItems": 50000,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 8192
+          }
+        },
+        "retirement_evidence": {
+          "type": "array",
+          "maxItems": 50000,
+          "items": {
+            "$ref": "urn:fortress:derived:v1:retirement-evidence"
+          }
+        }
+      },
+      "required": [
+        "$schema",
+        "schema_version",
+        "semantic_version",
+        "from_state",
+        "to_state",
+        "comparison_context",
+        "input_deltas",
+        "semantic_deltas",
+        "coverage_deltas",
+        "evidence_deltas",
+        "finding_deltas",
+        "weakenings",
+        "strengthenings",
+        "incomparabilities",
+        "required_authorizations",
+        "limitations",
+        "retirement_evidence"
+      ]
+    },
+    "ParentComparison": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192
+        },
+        "transition": {
+          "$ref": "#/$defs/TransitionAnalysis"
+        }
+      },
+      "required": [
+        "label",
+        "transition"
+      ]
+    }
+  }
+}

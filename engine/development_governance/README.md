@@ -124,3 +124,9 @@ external qualification evidence, the exact candidate, pinned original evaluator 
 original qualification policy. A boolean or candidate certificate cannot substitute
 for this separately verified provenance. The host port must authenticate its producer
 and establish its admitted qualification scope outside candidate control.
+
+**Candidate integration**
+
+OVERLAY uses the same original-policy decision and external grant boundaries. A process-local pre-write candidate permit does not replace writer mediation; candidate files, portable proposals and unsigned reconciliations cannot construct it. Assessor qualification, finding-maintenance proofs and raw semantic outcomes remain independent.
+
+Current authority-snapshot v2 captures use comparison-state v2 and its StateView v3-compatible public contract. v1 snapshots remain immutable historical inputs. This representation update does not validate external approval, change trusted policy or make serialized grants transferable.

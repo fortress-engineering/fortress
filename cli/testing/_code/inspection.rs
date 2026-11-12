@@ -9,6 +9,35 @@ fn service() -> QueryService {
     QueryService::new(QueryInput::empty(format!("sha256:{}", "a".repeat(64)))).unwrap()
 }
 
+/// `T-TF-CLI-0001-R27-002`
+/// Fortress requirement: TF-CLI-0001-R27
+#[test]
+fn candidate_rpc_v5_is_explicit_read_only_and_versioned() {
+    let mut frame = request(
+        "candidate",
+        "candidate",
+        json!({"candidate_ref":null,"page":{"limit":1}}),
+    );
+    frame["protocol_version"] = json!(5);
+    let results = run_frames(format!("{frame}\n").into_bytes());
+    assert_eq!(results[0]["protocol_version"], 5);
+    assert_eq!(
+        results[0]["result"]["data"]["description"]["analysis_initiated"],
+        false
+    );
+    assert_eq!(results[0]["result"]["data"]["evidence"]["total"], 0);
+    frame["protocol_version"] = json!(4);
+    assert_eq!(
+        run_frames(format!("{frame}\n").into_bytes())[0]["error"]["code"],
+        "UNKNOWN_METHOD"
+    );
+    frame["protocol_version"] = json!(6);
+    assert_eq!(
+        run_frames(format!("{frame}\n").into_bytes())[0]["error"]["code"],
+        "UNSUPPORTED_VERSION"
+    );
+}
+
 /// `T-TF-CLI-0001-R21-005`
 /// Fortress requirement: TF-CLI-0001-R21
 #[test]

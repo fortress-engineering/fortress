@@ -45,3 +45,7 @@ Public authority preview selection shape; serialized integrity is distinct from 
 ### [`application_authority_schema_v1.json`](../_data/application_authority_schema_v1.json)
 
 Provenance-only migration authorization basis and exact decision references. Deserialization never reconstructs a process-local permission handle or validates external approval.
+
+### [`authority_snapshot_schema_v2.json`](../_data/authority_snapshot_schema_v2.json)
+
+Current authority captures bind comparison v2; historical v1 captures remain readable with their original identities. No original schema bytes, semantic finding identities, historical verdicts or authorization proofs are rewritten.

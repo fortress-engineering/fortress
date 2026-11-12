@@ -166,7 +166,9 @@ pub struct GovernanceProposal {
     governance_path: String,
     original_governance_ref: String,
     proposed_governance: FindingGovernanceDocument,
+    #[serde(with = "crate::state_governance::projection::optional")]
     original_state: Option<ComparisonState>,
+    #[serde(with = "crate::state_governance::projection")]
     current_state: ComparisonState,
     retirement_evidence: Vec<RetirementEvidenceV2>,
     authorization: String,
@@ -230,8 +232,8 @@ fn proposal(
     evidence: Vec<RetirementEvidenceV2>,
 ) -> Result<GovernanceProposal, TransitionError> {
     let p = GovernanceProposal {
-        schema: "urn:fortress:derived:v1:governance-proposal".into(),
-        schema_version: 1,
+        schema: "urn:fortress:derived:v2:governance-proposal".into(),
+        schema_version: 2,
         operation: operation.into(),
         governance_path: path()?,
         original_governance_ref: original.authority_digest().map_err(error)?,

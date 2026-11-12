@@ -41,7 +41,7 @@ pub fn load_comparison_state(
             .map_err(|e| error("INVALID_INPUT", e.to_string()))?;
         let assets = crate::audit::prepare_comparison_assets(root, &view)
             .map_err(|e| error("INVALID_INPUT", e.to_string()))?;
-        let state=ComparisonState{schema:"urn:fortress:derived:v1:comparison-state".into(),schema_version:1,source_ref:Some(view.source_ref.clone()),view:Some(view),retained_application:None,assets:Some(assets),origin_ref:None,limitations:vec!["Explicit current capture evaluates existing installed owners without executing project build scripts or historical code.".into()]};
+        let state=ComparisonState{schema:"urn:fortress:derived:v2:comparison-state".into(),schema_version:2,source_ref:Some(view.source_ref.clone()),view:Some(view),retained_application:None,assets:Some(assets),origin_ref:None,limitations:vec!["Explicit current capture evaluates existing installed owners without executing project build scripts or historical code.".into()]};
         state.validate()?;
         return Ok(state);
     }
@@ -63,7 +63,12 @@ pub fn load_comparison_state(
     let text = std::str::from_utf8(&bytes).map_err(|e| error("INVALID_INPUT", e.to_string()))?;
     let shape: Value =
         crate::wire::parse_public_json(text).map_err(|e| error("INVALID_INPUT", e.to_string()))?;
-    if shape["$schema"] == "urn:fortress:derived:v1:comparison-state" {
+    if matches!(
+        shape["$schema"].as_str(),
+        Some(
+            "urn:fortress:derived:v1:comparison-state" | "urn:fortress:derived:v2:comparison-state"
+        )
+    ) {
         return ComparisonState::from_json_str(text);
     }
     let view = StateView::from_json_str(text).map_err(|e| error("INVALID_INPUT", e.to_string()))?;

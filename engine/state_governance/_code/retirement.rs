@@ -309,15 +309,57 @@ pub fn assess_retirements(
     governance: &FindingGovernanceDocument,
     context: &ComparisonContext,
 ) -> Result<Vec<RetirementEvidenceV2>, TransitionError> {
+    let entries = governance
+        .baseline()
+        .map(|b| {
+            b.active_entries()
+                .iter()
+                .map(|e| {
+                    (
+                        e.finding_id().to_owned(),
+                        governance
+                            .lifecycle()
+                            .and_then(|g| g.anchors.get(e.finding_id()))
+                            .cloned(),
+                    )
+                })
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_default();
+    assess_anchor_entries(before, after, entries, governance, context)
+}
+
+/// Compares exact owner-produced original findings without creating a baseline or authority.
+/// Reuses the same comparable resolution classifier as governed baseline retirement.
+/// # Errors
+/// Refuses ambiguous identities, missing original meaning and exhausted input/output admission.
+pub fn assess_original_findings(
+    before: &ComparisonState,
+    after: &ComparisonState,
+    findings: &[CanonicalFinding],
+    governance: &FindingGovernanceDocument,
+    context: &ComparisonContext,
+) -> Result<Vec<RetirementEvidenceV2>, TransitionError> {
+    let entries = finding_anchors(before, findings)?
+        .into_iter()
+        .map(|(id, anchor)| (id, Some(anchor)))
+        .collect();
+    assess_anchor_entries(before, after, entries, governance, context)
+}
+
+fn assess_anchor_entries(
+    before: &ComparisonState,
+    after: &ComparisonState,
+    entries: Vec<(String, Option<FindingAnchor>)>,
+    governance: &FindingGovernanceDocument,
+    context: &ComparisonContext,
+) -> Result<Vec<RetirementEvidenceV2>, TransitionError> {
     let governance_ref = governance.authority_digest().map_err(error)?;
     let transition = compare_states(before, after, context)?;
     let before_index = StateIndex::new(before)?;
     let after_index = StateIndex::new(after)?;
     let mut resolution_cache = None;
-    let Some(baseline) = governance.baseline() else {
-        return Ok(vec![]);
-    };
-    if baseline.active_entries().len() > MAX_TRANSITION_RECORDS {
+    if entries.len() > MAX_TRANSITION_RECORDS {
         return Err(fail(
             "RESOURCE_LIMIT",
             "retirement record admission exceeded",
@@ -326,10 +368,8 @@ pub fn assess_retirements(
     let transition_ref = transition.digest()?;
     let mut records = Vec::new();
     let mut retained_bytes = 2usize;
-    for entry in baseline.active_entries() {
-        let anchor = governance
-            .lifecycle()
-            .and_then(|g| g.anchors.get(entry.finding_id()));
+    for (finding_id, owned_anchor) in entries {
+        let anchor = owned_anchor.as_ref();
         let (outcome, proofs, reason) = classify(
             before,
             after,
@@ -339,7 +379,7 @@ pub fn assess_retirements(
             &after_index,
             &mut resolution_cache,
         )?;
-        let record=RetirementEvidenceV2{schema:"urn:fortress:derived:v2:retirement-evidence".into(),schema_version:2,finding_id:entry.finding_id().into(),original_authority_ref:anchor.map(|a|a.original_authority_ref.clone()),from_subject:before.source_ref.clone(),to_subject:after.source_ref.clone(),claim_scope_ref:anchor.map(|a|a.claim_scope_ref.clone()),comparison_basis:RetirementComparisonBasis{from_state:transition.from_state.clone(),to_state:transition.to_state.clone(),transition_ref:transition_ref.clone(),governance_ref:governance_ref.clone(),anchor_ref:anchor.map(lifecycle_digest).transpose().map_err(error)?},outcome,proof_refs:proofs,reasons:vec![reason],limitations:vec!["Derived comparison preserves original authority and raw truth. Integrity is not producer authentication or external authorization.".into(),"Mutation requires deliberate selection, exact governance preimages and the existing protected AUTHORITY boundary; serialized records are not grants.".into()]};
+        let record=RetirementEvidenceV2{schema:"urn:fortress:derived:v2:retirement-evidence".into(),schema_version:2,finding_id:finding_id.clone(),original_authority_ref:anchor.map(|a|a.original_authority_ref.clone()),from_subject:before.source_ref.clone(),to_subject:after.source_ref.clone(),claim_scope_ref:anchor.map(|a|a.claim_scope_ref.clone()),comparison_basis:RetirementComparisonBasis{from_state:transition.from_state.clone(),to_state:transition.to_state.clone(),transition_ref:transition_ref.clone(),governance_ref:governance_ref.clone(),anchor_ref:anchor.map(lifecycle_digest).transpose().map_err(error)?},outcome,proof_refs:proofs,reasons:vec![reason],limitations:vec!["Derived comparison preserves original authority and raw truth. Integrity is not producer authentication or external authorization.".into(),"Mutation requires deliberate selection, exact governance preimages and the existing protected AUTHORITY boundary; serialized records are not grants.".into()]};
         record.validate().map_err(error)?;
         let bytes = crate::finding_governance::lifecycle_bytes(&record)
             .map_err(error)?

@@ -1,0 +1,169 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v1:candidate-request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "base_source_ref",
+    "context_ref",
+    "operations",
+    "schema_version"
+  ],
+  "properties": {
+    "base_source_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "context_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "operations": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind",
+              "path",
+              "postimage"
+            ],
+            "properties": {
+              "kind": {
+                "const": "CREATE_FILE"
+              },
+              "path": {
+                "type": "string",
+                "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(/|$))[^\\x00-\\x1f]+$",
+                "maxLength": 4096
+              },
+              "postimage": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 255
+                },
+                "maxItems": 33554432
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind",
+              "path",
+              "preimage",
+              "postimage"
+            ],
+            "properties": {
+              "kind": {
+                "const": "REPLACE_FILE"
+              },
+              "path": {
+                "type": "string",
+                "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(/|$))[^\\x00-\\x1f]+$",
+                "maxLength": 4096
+              },
+              "preimage": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 255
+                },
+                "maxItems": 33554432
+              },
+              "postimage": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 255
+                },
+                "maxItems": 33554432
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind",
+              "source",
+              "destination",
+              "preimage"
+            ],
+            "properties": {
+              "kind": {
+                "const": "MOVE_PATH"
+              },
+              "source": {
+                "type": "string",
+                "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(/|$))[^\\x00-\\x1f]+$",
+                "maxLength": 4096
+              },
+              "destination": {
+                "type": "string",
+                "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(/|$))[^\\x00-\\x1f]+$",
+                "maxLength": 4096
+              },
+              "preimage": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 255
+                },
+                "maxItems": 33554432
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind",
+              "path",
+              "preimage",
+              "owner_ref"
+            ],
+            "properties": {
+              "kind": {
+                "const": "DELETE_OWNED_FILE"
+              },
+              "path": {
+                "type": "string",
+                "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(/|$))[^\\x00-\\x1f]+$",
+                "maxLength": 4096
+              },
+              "preimage": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 255
+                },
+                "maxItems": 33554432
+              },
+              "owner_ref": {
+                "type": "string",
+                "maxLength": 4096
+              }
+            }
+          }
+        ]
+      },
+      "maxItems": 1024
+    },
+    "comparison_context": {
+      "$ref": "urn:fortress:derived:v1:comparison-projection#/$defs/ComparisonContext"
+    },
+    "schema_version": {
+      "const": 1
+    }
+  }
+}

@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v1:candidate-reconciliation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "reconciliation_ref",
+    "candidate_ref",
+    "predicted_inventory_ref",
+    "observed_inventory_ref",
+    "predicted_state_ref",
+    "observed_state_ref",
+    "status",
+    "actual_state",
+    "certification_ref",
+    "reasons",
+    "limitations"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:derived:v1:candidate-reconciliation"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "reconciliation_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "candidate_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "predicted_inventory_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "observed_inventory_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "predicted_state_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "observed_state_ref": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "status": {
+      "enum": [
+        "DIVERGED",
+        "EXACT_MATCH_UNVERIFIED",
+        "VERIFIED_ACTUAL"
+      ]
+    },
+    "actual_state": {
+      "type": "boolean"
+    },
+    "certification_ref": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "reasons": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "VERIFIED_ACTUAL"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "actual_state": {
+            "const": true
+          },
+          "certification_ref": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          },
+          "observed_state_ref": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "actual_state": {
+            "const": false
+          },
+          "certification_ref": {
+            "type": "null"
+          }
+        }
+      }
+    }
+  ]
+}

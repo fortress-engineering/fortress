@@ -37,3 +37,7 @@ Prepared transaction header and known native ownership inventory. Operation JSON
 ### [`migration_operations_example_v1.json`](../_data/migration_operations_example_v1.json)
 
 An explicit creation proposal accepted by the migration preview adapter. Exact byte arrays avoid locale-dependent encoding and require no manually extracted hashes. The example grants no permission and makes no semantic claim.
+
+### [`migration_plan_schema_v2.json`](../_data/migration_plan_schema_v2.json)
+
+Current migration plans admit the versioned comparison context containing StateView v3 original-authority cells. Historical v1 plans/receipts are preserved; old reviewed plans require fresh exact revalidation and regeneration when evaluator or endpoint representation changes. No original schema bytes, semantic finding identities, historical verdicts or authorization proofs are rewritten.

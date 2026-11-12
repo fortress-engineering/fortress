@@ -17,7 +17,9 @@ pub const LEGACY_PROJECT_CONFIGURATION_PATH: &str = "_data/project.json";
 pub const EVIDENCE_ROOT: &str = "__fortress/evidence";
 
 /// Declarative layout bytes shared by all compiled adapters.
-pub const CONTROL_LAYOUT_SOURCE: &str = include_str!("../_data/control_layout_v6.json");
+pub const CONTROL_LAYOUT_SOURCE: &str = include_str!("../_data/control_layout_v7.json");
+/// Retained sixth edition; migration evidence identities are never rewritten.
+pub const CONTROL_LAYOUT_V6_SOURCE: &str = include_str!("../_data/control_layout_v6.json");
 /// Retained fifth edition; historical artifact identities remain unchanged.
 pub const CONTROL_LAYOUT_V5_SOURCE: &str = include_str!("../_data/control_layout_v5.json");
 /// Retained fourth edition, including provider evidence roles.
@@ -48,6 +50,8 @@ pub enum ControlSourceBinding {
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum ControlRole {
+    /// Retained exact hypothetical proposal; never active authority or actual evidence.
+    HypotheticalProposal,
     /// Explicitly exported reviewed migration plan; never active authority.
     ReviewedMigrationPlan,
     /// Immutable completed migration receipt; never present-state authority.
@@ -176,6 +180,7 @@ impl ControlLayout {
         [
             ControlRole::ReviewedMigrationPlan,
             ControlRole::MigrationReceipt,
+            ControlRole::HypotheticalProposal,
         ]
         .into_iter()
         .filter_map(|role| self.role_path(role)?.rsplit_once('/').map(|pair| pair.0))
@@ -190,6 +195,11 @@ impl ControlLayout {
     #[must_use]
     pub fn migration_receipt_path(&self, digest: &str) -> Option<String> {
         self.migration_record_path(digest, ControlRole::MigrationReceipt)
+    }
+    /// Resolves an explicitly retained hypothetical proposal through its nonrecursive role.
+    #[must_use]
+    pub fn hypothetical_proposal_path(&self, digest: &str) -> Option<String> {
+        self.migration_record_path(digest, ControlRole::HypotheticalProposal)
     }
     fn migration_record_path(&self, digest: &str, role: ControlRole) -> Option<String> {
         let hex = digest.strip_prefix("sha256:")?;
@@ -306,6 +316,7 @@ impl ControlLayout {
             3 => CONTROL_LAYOUT_V3_SOURCE,
             4 => CONTROL_LAYOUT_V4_SOURCE,
             5 => CONTROL_LAYOUT_V5_SOURCE,
+            6 => CONTROL_LAYOUT_V6_SOURCE,
             _ => CONTROL_LAYOUT_SOURCE,
         }
     }
@@ -481,6 +492,10 @@ impl ControlLayout {
                 "urn:fortress:schema:v6:control-layout",
                 6,
                 "fortress-control-layout-v6"
+            ) | (
+                "urn:fortress:schema:v7:control-layout",
+                7,
+                "fortress-control-layout-v7"
             )
         );
         if !supported_version
@@ -491,6 +506,17 @@ impl ControlLayout {
         }
         let mut paths = BTreeSet::new();
         for role in &self.roles {
+            if role.role == ControlRole::HypotheticalProposal {
+                if self.schema_version < 7
+                    || role.path != "__fortress/proposals/candidates/{sha256}.json"
+                    || role.owner != "snapshot_governance"
+                    || role.source_binding != ControlSourceBinding::Nonrecursive
+                    || !paths.insert(role.path.as_str())
+                {
+                    return Err(ControlLayoutError::InvalidEntry(role.path.clone().into()));
+                }
+                continue;
+            }
             let migration_path = match role.role {
                 ControlRole::ReviewedMigrationPlan => {
                     Some("__fortress/proposals/migrations/{sha256}.json")
@@ -530,6 +556,16 @@ impl ControlLayout {
         }
         if !paths.contains(PROJECT_CONFIGURATION_PATH) {
             return Err(ControlLayoutError::MissingConfiguration);
+        }
+        if self.schema_version >= 7
+            && self
+                .roles
+                .iter()
+                .filter(|r| r.role == ControlRole::HypotheticalProposal)
+                .count()
+                != 1
+        {
+            return Err(ControlLayoutError::UnsupportedLayout);
         }
         if self.schema_version >= 6
             && [

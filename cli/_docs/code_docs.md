@@ -20,6 +20,59 @@ Malformed input, unsupported operations, invalid repository state, or evaluated 
 
 ## Files
 
+### [`candidate_command.rs`](../_code/candidate_command.rs)
+
+Adapts explicit overlay base/evaluate/inspect/reconcile requests to the existing Snapshot Governance service. Human and JSON projections preserve all fields. No apply method, production grant validator or execution-assertion reader is installed; explicit export retains a non-authoritative role-resolved proposal. See [candidate examples](code_docs.md).
+
+**Hypothetical source proposals**
+
+`fortress overlay` exposes explicit read-only analysis. It never applies source edits or accepts JSON as external approval or execution evidence.
+
+```text
+fortress overlay base --root <repository> --format json
+fortress overlay evaluate --root <repository> --request <external-request.json> --format json
+fortress overlay evaluate --root <repository> --request <external-request.json> --storage-root <existing-external-OPS-root> --export --format json
+fortress overlay inspect --root <repository> --proposal <proposal.json> --format human
+fortress overlay reconcile --root <repository> --proposal <proposal.json> --format json
+```
+
+The base command explicitly evaluates and returns `base_source_ref`, `context_ref`, `base_state_ref` and `trusted_base_authority`. Copy exact base/context references into a request. Keep request files outside the compared repository; creating or changing an input request inside its physical inventory invalidates that base. Obtain exact preimage bytes through an admitted repository view; paths alone are insufficient.
+
+```json
+{
+  "schema_version": 1,
+  "base_source_ref": "sha256:<exact physical base digest>",
+  "context_ref": "sha256:<exact original context digest>",
+  "operations": [
+    {"kind":"REPLACE_FILE","path":"src/lib.rs","preimage":[47,47,32,65,10],"postimage":[47,47,32,66,10]}
+  ]
+}
+```
+
+This example replaces the exact bytes `// A\n` with `// B\n`; it is not a valid request until both digest placeholders and preimage match the actual base. Operation variants and limits are the existing MIGRATE vocabulary, documented by the public candidate-request schema. Repeat `--original-state <exact comparison-state reference>` up to sixteen times to preload original historical evidence for baseline retirement. The existing CONTROL history loader resolves each explicit reference; missing history is never reconstructed as verified. Optional `comparison_context` carries explicit comparison inputs and unverified citations. `--client` and `--candidate` select isolated buffer IDs. The default complete cold evaluator creates no runtime storage; supplying an existing external storage root enables qualified SESSION preparation.
+
+For protected governance, `--base-selection` accepts the existing preview-selection schema to describe the original policy. This CLI remains an unmediated preview with NoGrantValidator. Missing authority produces an explicit authorization error beside predicted results. No base-selection JSON can construct an authenticated grant, assessor admission or CandidateWritePermit. Production trusted hosts must use the existing AUTHORITY port and their independently established execution boundary.
+
+Both formats render the same immutable assessment fields. Every finished hypothetical result says `status: PROPOSED`, `actual_state: false`; raw conformance, enforcement, assurance and permission remain distinct. Explicit `--export` retains only a role-resolved non-authoritative proposal and reports its path. No current generation is published. Reconciliation of a retained record can establish `EXACT_MATCH_UNVERIFIED` or `DIVERGED`; it cannot restore original permission or runtime evidence from strings. Only a trusted in-process host using original-state authorization and independent current execution can request actual verification.
+
+**Read-only RPC inspection**
+
+```text
+fortress serve <repository> --stdio --proposal <proposal.json>
+```
+
+```json
+{"protocol_version":5,"request_id":"proposals","method":"candidate","state_ref":null,"context_ref":null,"parameters":{"candidate_ref":null,"page":{"limit":50}}}
+```
+
+The response lists explicitly loaded candidate `evaluation_ref` values. Request one to retrieve every original field through exact JSON pointers:
+
+```json
+{"protocol_version":5,"request_id":"details","method":"candidate","state_ref":null,"context_ref":null,"parameters":{"candidate_ref":"sha256:<loaded evaluation_ref>","page":{"limit":50,"cursor":null}}}
+```
+
+Pass the returned `next_cursor` unchanged until it is null. Paging is bound to the exact loaded proposal and service state. Responses use the existing request IDs, context/state checks, bounded frame/response sizes, structured errors, cancellation and progress protocol. Older versions explicitly reject `candidate`; later unsupported versions are rejected. No RPC method applies a proposal, executes project code, repairs state or starts expensive analysis while formatting. Evaluation is an explicit CLI or typed CandidateWorkspace operation, independent of any editor, agent host or transport framework.
+
 ### [`command.rs`](../_code/command.rs)
 
 Defines the stable built-in command registry and rejects duplicate or unimplemented command contracts.

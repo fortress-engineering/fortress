@@ -237,6 +237,7 @@ pub(crate) fn physical_policy() -> Result<ObservationPolicy, MigrationError> {
         crate::control_layout::ControlRole::AssessmentSelectionIndex,
         crate::control_layout::ControlRole::ReviewedMigrationPlan,
         crate::control_layout::ControlRole::MigrationReceipt,
+        crate::control_layout::ControlRole::HypotheticalProposal,
     ] {
         if let Some(path) = layout
             .role_path(role)

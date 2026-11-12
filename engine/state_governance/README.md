@@ -73,3 +73,11 @@ An aggregate claim that remains violated does not supply a per-occurrence absenc
 Generic rule-level claims without a narrower authored-policy projection conservatively bind the complete authored intent inventory. Changing that inventory alongside source is not sufficient evidence of remediation; even an unrelated intent change may require explicit review. Incidental JSON formatting is canonicalized, and observed source locations and diagnostic wording remain outside stable finding identity.
 
 Resolution currently admits exact-bound, unconditional native static negative proofs through the existing assessor and its ALL/ANY algebra. Conditional, unsupported, external or report-only support does not acquire retirement authority. Record count and aggregate byte admission are checked before retaining additional retirement output; exhaustion returns an explicit error without a partial favorable result or governance mutation.
+
+**Hypothetical consumers**
+
+OVERLAY supplies exact canonical endpoint facts and retains this Module's four-axis outcomes, incomparabilities and retirement evidence. No candidate verdict alone proves a regression, improvement or resolution. Full physical inventory identity remains separately visible from the semantic comparator's admitted source scope.
+
+The additive `assess_original_findings` port derives exact original finding anchors and uses the same comparable retirement classifier as baseline assessment, without creating a baseline, mutating authority or introducing a semantic evaluator. OVERLAY retains proof dependencies and unresolved outcomes beside proposed findings.
+
+Current capture writers emit comparison-state v2, whose public schema describes StateViews v1–v3 and their existing meanings. Native v1 inputs remain readable without rewriting their hashes. Lossless comparison-projection v1 exposes public owner facts and preserves canonical historical input bytes; it does not authenticate those inputs or replace the comparator.

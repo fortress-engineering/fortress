@@ -18,6 +18,10 @@ A violated assertion or fixture-loading failure fails the test target and surfac
 
 ## Files
 
+### [`candidate.rs`](../_code/candidate.rs)
+
+Qualifies exact immutable candidate operations, canonical materialization equivalence, client isolation, cancellation, stale inputs, original authority, finding lifecycle, bounded read-only RPC and post-write reconciliation. Retains 1,000 paired prepared/cold differentials and requires both selective rebuilding and full fallback without numerical performance gates.
+
 ### [`arch_ownership_001.rs`](../_code/arch_ownership_001.rs)
 
 Exercises complete, orphaned, overlapping, required, and minimum ownership cases.

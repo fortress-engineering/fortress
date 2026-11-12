@@ -46,3 +46,7 @@ Role-partitioned software and complete governing identities keep the original ag
 ### [`retirement.rs`](../_code/retirement.rs)
 
 Produces comparable retirement v2 from exact original/current state views, stable claim slots, complete source/authority inventories and the existing profile proof assessor. Absence, policy changes and coverage loss remain unresolved; there is no filesystem or grant validation.
+
+### [`projection.rs`](../_code/projection.rs)
+
+Projects exact native comparison inputs, including historical identities, through a lossless public envelope. Bounded canonical UTF-8 chunks reproduce the native digest; separately projected public StateViews v1–v3 and owner assets must match those bytes exactly. No standalone native-frame schema conformance, producer authentication or new semantic evaluation is claimed.

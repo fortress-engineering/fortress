@@ -29,3 +29,11 @@ Exact immutable input shape including explicitly absent historical assets.
 ### [`transition_analysis_schema_v1.json`](../_data/transition_analysis_schema_v1.json)
 
 Derived transition model with independent axes, evidence, uncertainty and nonvalidated authorization citations.
+
+### [`comparison_projection_schema_v1.json`](../_data/comparison_projection_schema_v1.json)
+
+Defines the lossless public candidate comparison projection. Its native identity is SHA-256 over concatenated canonical UTF-8 chunks; public owner facts are bound to the exact native input. Native comparison v1 frames can retain later StateView versions accepted by the owner even where their earlier standalone schema did not describe those versions. This envelope preserves those historical bytes and reports native standalone schema conformance as NOT_ASSERTED_NATIVE_OWNER_VALIDATED; it does not redefine the old schema or promote missing support.
+
+### [`comparison_state_schema_v2.json`](../_data/comparison_state_schema_v2.json)
+
+Current comparison inputs explicitly admit StateView v3 while retaining v1/v2 views and their original meaning. No original schema bytes, semantic finding identities, historical verdicts or authorization proofs are rewritten.

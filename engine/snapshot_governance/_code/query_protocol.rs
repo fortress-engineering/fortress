@@ -61,6 +61,33 @@ impl QueryRequest {
     /// # Errors
     /// Rejects unknown methods, extra parameters and malformed typed values.
     pub fn operation_for_adapter(&self) -> Result<QueryOperation, QueryError> {
+        if self.protocol_version < 5
+            && self.method == "transition"
+            && self
+                .parameters
+                .get("comparison_context")
+                .and_then(|c| c.get("counterfactuals"))
+                .and_then(Value::as_array)
+                .is_some_and(|cells| {
+                    cells.iter().any(|cell| {
+                        cell.get("view")
+                            .and_then(|v| v.get("schema_version"))
+                            .and_then(Value::as_u64)
+                            .is_some_and(|version| version > 2)
+                    })
+                })
+        {
+            return Err(QueryError::new(
+                "INVALID_PARAMETERS",
+                "inline StateView v3 requires protocol v5; older protocols may use explicit preloaded state references",
+            ));
+        }
+        if self.protocol_version < 5 && self.method == "candidate" {
+            return Err(QueryError::new(
+                "UNKNOWN_METHOD",
+                "candidate requires protocol version 5",
+            ));
+        }
         if self.protocol_version < 4 && self.method == "behavior_author" {
             return Err(QueryError::new(
                 "UNKNOWN_METHOD",
@@ -104,6 +131,7 @@ impl QueryRequest {
 pub const METHODS: &[&str] = &[
     "author",
     "behavior_author",
+    "candidate",
     "cancel",
     "doctor",
     "explain",
@@ -119,6 +147,8 @@ pub const METHODS: &[&str] = &[
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(tag = "method", content = "parameters", rename_all = "snake_case")]
 pub enum QueryOperation {
+    /// Inspect explicitly loaded immutable proposals, protocol v5; never initiates analysis.
+    Candidate(CandidateParameters),
     /// Unapplied readable checkpoint preview, protocol v4.
     BehaviorAuthor(crate::behavioral_realization::BehaviorAuthorParameters),
     /// Unapplied operation-policy preview from an admitted immutable PSM, v3.
@@ -141,6 +171,18 @@ pub enum QueryOperation {
     Cancel(ControlParameters),
     /// Inspect an active request through the adapter's registry.
     Progress(ControlParameters),
+}
+
+/// Exact proposed result identity and complete bounded field continuation.
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct CandidateParameters {
+    /// Explicit retained proposal identity; absent lists the loaded proposal inventory.
+    #[serde(default)]
+    pub candidate_ref: Option<String>,
+    /// All underlying original fields, including uncertainty and countervailing evidence.
+    #[serde(default)]
+    pub page: PageParameters,
 }
 
 /// Exact comparison references and complete bounded continuation.
@@ -408,7 +450,7 @@ impl QueryResponse {
     /// Selects a supported envelope edition while preserving the underlying result.
     #[must_use]
     pub fn for_protocol_version(mut self, version: u16) -> Self {
-        if [2, 3, 4].contains(&version) {
+        if [2, 3, 4, 5].contains(&version) {
             self.protocol_version = version;
             self.schema = format!("urn:fortress:protocol:v{version}:query-response");
         }

@@ -79,7 +79,7 @@ fn validate_selected_bfg(
         Some("fortress-control-layout-v3") => CONTROL_LAYOUT_V3_SOURCE,
         Some("fortress-control-layout-v4") => CONTROL_LAYOUT_V4_SOURCE,
         Some("fortress-control-layout-v5") => CONTROL_LAYOUT_V5_SOURCE,
-        Some("fortress-control-layout-v6") => CONTROL_LAYOUT_SOURCE,
+        Some("fortress-control-layout-v7") => CONTROL_LAYOUT_SOURCE,
         _ => return Err("selected generation has an unsupported layout".into()),
     };
     let artifacts = view["artifacts"]
@@ -111,7 +111,7 @@ fn validate_selected_bfg(
     if view["control_layout"]["digest"] != digest(layout_source.as_bytes()) {
         return Err("selected layout digest does not match its registry".into());
     }
-    if view["control_layout"]["id"] != "fortress-control-layout-v6" {
+    if view["control_layout"]["id"] != "fortress-control-layout-v7" {
         return Ok(SelectedBfgSubject::RetainedLayout);
     }
     if bytes != current_bfg {
@@ -166,15 +166,15 @@ fn selected_bfg_subject_controls(bytes: &[u8]) {
     let stale_source = format!("sha256:{}", "b".repeat(64));
     let payload: Value = serde_json::from_slice(bytes).expect("current BFG parses");
     let mut fixture = json!({
-        "$schema": "urn:fortress:derived:v6:assessment-generation-manifest",
-        "schema_version": 6,
+        "$schema": "urn:fortress:derived:v7:assessment-generation-manifest",
+        "schema_version": 7,
         "generation_kind": "LOCAL_QUALITY",
         "project": "PF-FORTRESS",
         "profile": "fortress-complete-local-v1",
         "selection_key": local_selection_key(),
         "source": {"fingerprint": current_source, "file_count": 1},
         "control_layout": {
-            "id": "fortress-control-layout-v6",
+            "id": "fortress-control-layout-v7",
             "digest": digest(CONTROL_LAYOUT_SOURCE.as_bytes()),
         },
         "artifacts": [{

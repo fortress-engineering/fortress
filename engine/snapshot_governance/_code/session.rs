@@ -267,6 +267,24 @@ impl fmt::Debug for Generation {
 }
 
 impl Generation {
+    /// Composes the existing canonical comparison and validation facts for exact physical inputs.
+    /// This performs no semantic reevaluation and never upgrades execution evidence.
+    /// # Errors
+    /// Refuses any difference in the complete canonically admitted source inventory.
+    pub(crate) fn candidate_endpoint(
+        &self,
+        physical: &SourceView,
+    ) -> Result<crate::audit::CandidateEndpoint, crate::audit::AuditError> {
+        crate::audit::evaluate_candidate_source(
+            physical,
+            Some((
+                self.source_view(),
+                &self.evaluation.comparison_state,
+                self.audit(),
+                &self.evaluation.affected_snapshot,
+            )),
+        )
+    }
     /// Returns the physical machine-local repository identity.
     #[must_use]
     pub fn repository_identity(&self) -> &str {
@@ -520,8 +538,18 @@ impl InputCharge {
                     sum.checked_add(bytes.len())
                         .ok_or_else(|| resource_error("artifact byte count overflow"))
                 })?;
+        let comparison_bytes = evaluation
+            .comparison_state
+            .to_canonical_bytes()
+            .map_err(|e| resource_error(&e.to_string()))?
+            .len();
         self.source_bytes
             .checked_mul(128)
+            .and_then(|bytes| {
+                comparison_bytes
+                    .checked_mul(8)
+                    .and_then(|n| bytes.checked_add(n))
+            })
             .and_then(|bytes| {
                 self.metadata_bytes
                     .checked_mul(8)
@@ -1381,6 +1409,53 @@ impl Session {
             });
         self.discard_pending()?;
         result
+    }
+
+    /// Evaluates an OVERLAY-owned complete physical inventory using qualified owner reuse.
+    /// The actual coordinator head is never changed. The caller owns the isolated result pin.
+    /// # Errors
+    /// Refuses cancellation, stale actual bases, unsafe input and exhausted admission.
+    pub fn evaluate_overlay_view(
+        &mut self,
+        expected_base: &str,
+        view: SourceView,
+    ) -> Result<SessionUpdate, SessionError> {
+        let (token, base) = self.begin()?;
+        let base =
+            base.ok_or_else(|| SessionError::new(SessionErrorKind::Closed, "no actual base"))?;
+        let (actual, availability, _capture) = self.capture()?;
+        if expected_base != base.input_revision()
+            || actual != *base.source_view()
+            || availability != base.availability
+        {
+            return Err(SessionError::new(
+                SessionErrorKind::StaleBase,
+                "overlay actual base changed",
+            ));
+        }
+        let result = self.evaluate(
+            view,
+            availability.clone(),
+            self.preparation_charge.is_some(),
+            GenerationSubject::Candidate,
+            Some(&base),
+        );
+        self.discard_pending()?;
+        let update = result?;
+        self.progress(SessionStage::ModelsPrepared);
+        self.check_cancel(token)?;
+        let (current, current_availability, _validation) = self.capture()?;
+        if current != actual
+            || current_availability != availability
+            || !same_generation(self.current()?.as_ref(), Some(&base))
+        {
+            return Err(SessionError::new(
+                SessionErrorKind::StaleBase,
+                "overlay base changed during evaluation",
+            ));
+        }
+        self.check_cancel(token)?;
+        Ok(update)
     }
 
     /// Releases a retained candidate; external pins keep their own charges.

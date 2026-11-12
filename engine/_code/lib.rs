@@ -28,6 +28,8 @@ pub mod behavioral_semantics;
 pub mod bootstrap;
 #[path = "../certification/_code/bundle.rs"]
 pub mod bundle;
+#[path = "../snapshot_governance/_code/candidate.rs"]
+pub mod candidate;
 #[path = "../certification/_code/certification.rs"]
 pub mod certification;
 #[path = "../snapshot_governance/_code/contract.rs"]

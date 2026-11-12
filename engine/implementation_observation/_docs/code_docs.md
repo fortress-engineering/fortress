@@ -20,6 +20,8 @@ Snapshot mismatches and invalid supported Cargo or Rust syntax return typed erro
 
 ### [`observation.rs`](../_code/observation.rs)
 
+The complete-inventory ownership port reuses the same authored logical-selector precedence and ambiguity checks for non-Rust files. This preserves critical assessor protection independently of language support or incidental contract placement. The existing supported Rust observation port retains its original scope; membership never implies semantic coverage.
+
 Defines the language-neutral snapshot input, source observation, evidence, normalized dependency, issue, and result contracts.
 
 ### [`rust.rs`](../_code/rust.rs)

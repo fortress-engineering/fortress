@@ -36,6 +36,7 @@ use fortress_core::identity_migration::{
 mod application_inputs;
 mod authority_command;
 mod behavior_command;
+mod candidate_command;
 pub mod command;
 mod finding_command;
 mod flow_command;
@@ -118,6 +119,7 @@ where
 
     match command.id() {
         "CMD-GOVERNANCE-MIGRATE" => migration_command::run(&arguments[1..], output, error),
+        "CMD-GOVERNANCE-OVERLAY" => candidate_command::run(&arguments[1..], output, error),
         "CMD-BEHAVIOR-AUTHOR" => behavior_command::run(&arguments[1..], output, error),
         "CMD-FLOW-AUTHOR" => flow_command::run(&arguments[1..], output, error),
         "CMD-PORTABLE-BUNDLE" | "CMD-PORTABLE-SARIF" => {

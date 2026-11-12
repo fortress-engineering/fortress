@@ -13,3 +13,7 @@ Verifies only Features introduced directly by CLI and does not claim requirement
 ## Coordination
 
 The immediate children collectively fulfill the CLI responsibility through the parent boundary. Their conceptual contributions compose here without restating or replacing the typed relationship graph declared by their Module contracts.
+
+**Candidate adapters**
+
+[Overlay CLI and RPC examples](code_docs.md) describe explicit analysis and preloaded read-only inspection. All semantic and authority ownership remains in the engine.

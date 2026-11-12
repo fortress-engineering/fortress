@@ -292,9 +292,11 @@ impl MigrationPlan {
         Ok(value)
     }
     pub(crate) fn validate(&self) -> Result<(), MigrationError> {
-        if self.schema != "urn:fortress:derived:v1:migration-plan"
-            || self.schema_version != 1
-            || self.evaluation_mode != "CANONICAL_FULL"
+        if !matches!(
+            (self.schema.as_str(), self.schema_version),
+            ("urn:fortress:derived:v1:migration-plan", 1)
+                | ("urn:fortress:derived:v2:migration-plan", 2)
+        ) || self.evaluation_mode != "CANONICAL_FULL"
         {
             return Err(fail(
                 "UNSUPPORTED_VERSION",
@@ -523,7 +525,7 @@ pub(crate) fn convert(error: crate::state_governance::TransitionError) -> Migrat
     fail(&error.code, error.message)
 }
 
-fn reuse_original_cell(
+pub(crate) fn reuse_original_cell(
     base: &ComparisonState,
     target: &ComparisonState,
     context: &mut ComparisonContext,
@@ -594,8 +596,8 @@ fn assemble_plan(
         })
         .collect();
     let mut plan = MigrationPlan {
-        schema: "urn:fortress:derived:v1:migration-plan".into(),
-        schema_version: 1,
+        schema: "urn:fortress:derived:v2:migration-plan".into(),
+        schema_version: 2,
         plan_digest: String::new(),
         base_source_ref: before.digest().into(),
         target_source_ref: graph.target().digest().into(),

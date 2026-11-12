@@ -17,6 +17,84 @@ use fortress_core::finding_governance::FindingGovernanceDocument;
 
 static NEXT_FIXTURE: AtomicU64 = AtomicU64::new(1);
 
+/// `T-TF-CLI-0001-R27-001`
+/// Fortress requirement: TF-CLI-0001-R27
+#[test]
+fn overlay_cli_preserves_source_and_shares_human_json_proposals() {
+    let fixture = ObservationFixture::new();
+    let root = fixture.argument();
+    let before = fortress_core::migration_governance::MigrationEvaluator::observe(
+        &fortress_core::migration_adapter::CanonicalMigrationEvaluator,
+        &fixture.root,
+    )
+    .unwrap();
+    let base = run(&["overlay", "base", "--root", &root, "--format", "json"]);
+    assert!(
+        base.status.success(),
+        "{}",
+        String::from_utf8_lossy(&base.stderr)
+    );
+    let base: serde_json::Value = serde_json::from_slice(&base.stdout).unwrap();
+    let path = std::env::temp_dir().join(format!(
+        "overlay-cli-request-{}-{}.json",
+        std::process::id(),
+        NEXT_FIXTURE.fetch_add(1, Ordering::Relaxed)
+    ));
+    let request = serde_json::json!({"schema_version":1,"base_source_ref":base["base_source_ref"],"context_ref":base["context_ref"],"operations":[]});
+    fs::write(&path, request.to_string()).unwrap();
+    let request_path = path.to_string_lossy().into_owned();
+    let json = run(&[
+        "overlay",
+        "evaluate",
+        "--root",
+        &root,
+        "--request",
+        &request_path,
+        "--format",
+        "json",
+    ]);
+    let human = run(&[
+        "overlay",
+        "evaluate",
+        "--root",
+        &root,
+        "--request",
+        &request_path,
+        "--format",
+        "human",
+    ]);
+    fs::remove_file(path).unwrap();
+    assert!(
+        json.status.success(),
+        "{}",
+        String::from_utf8_lossy(&json.stderr)
+    );
+    assert!(
+        human.status.success(),
+        "{}",
+        String::from_utf8_lossy(&human.stderr)
+    );
+    let value: serde_json::Value = serde_json::from_slice(&json.stdout).unwrap();
+    assert_eq!(value["status"], "PROPOSED");
+    assert_eq!(value["actual_state"], false);
+    assert_eq!(
+        String::from_utf8(human.stdout).unwrap(),
+        fortress_core::query::render_inspection_value(&value)
+    );
+    assert_eq!(
+        fortress_core::migration_governance::MigrationEvaluator::observe(
+            &fortress_core::migration_adapter::CanonicalMigrationEvaluator,
+            &fixture.root
+        )
+        .unwrap(),
+        before
+    );
+    assert_eq!(
+        run(&["overlay", "apply", "--root", &root]).status.code(),
+        Some(i32::from(EXIT_USAGE))
+    );
+}
+
 /// `T-TF-CLI-0001-R23-003`
 /// Fortress requirement: TF-CLI-0001-R23
 #[test]

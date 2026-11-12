@@ -13,3 +13,7 @@ Verifies only Features introduced directly by Snapshot Governance and does not c
 ## Coordination
 
 The immediate children collectively fulfill the Snapshot Governance responsibility through the parent boundary. Their conceptual contributions compose here without restating or replacing the typed relationship graph declared by their Module contracts.
+
+**Candidate composition**
+
+The parent owns [exact hypothetical evaluation](code_docs.md), reusing SESSION, State Governance, Development Governance and Migration Governance; it introduces no child Module, parser, evaluator, authorization system or source writer.

@@ -48,6 +48,8 @@ Provides versioned explicit preview, application and recovery contracts without 
 
 ## Guarantees
 
+The [overlay command](./_docs/code_docs.md) evaluates exact immutable proposals and inspects post-write agreement without applying source changes. RPC v5 exposes complete preloaded proposal fields with bounded paging. Hypothetical outcomes remain PROPOSED, never actual certification or permission; CLI records cannot recreate external grants or execution proof.
+
 Unsupported commands and options return non-success; audit succeeds only when every evaluated mandatory rule passes; non-applicable rules are reported separately from PASS; progressive check may accept visible baselined or explicitly excepted residue without labeling it PASS; baseline never grows during ordinary validation; semantic inspection renders authored ALLOW entries as authorizations rather than conformance results and preserves existing coverage/uncertainty boundaries; `certify` returns success only for a truthful full-profile PASS based on current local execution; JSON and human output remain deterministic; no command labels static realization as executed evidence or a digest stamp as an authenticated signature.
 
 Portable evidence commands consume already-retained products:

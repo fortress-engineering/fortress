@@ -79,3 +79,9 @@ Incomplete preparation can finish explicit recovery by verifying every original 
 ## Guarantees
 
 Preview does not mutate the repository. Applying requires exact current inputs and applicable trusted authorization. Recovery never intentionally overwrites independently changed bytes. Missing evidence, failed validation and ambiguous ownership cannot produce a successful receipt. Active migration state blocks fresh assessment until verified completion or recovery.
+
+**Hypothetical integration**
+
+OVERLAY consumes the existing operation graph, canonical evaluator and original-authority boundary for immutable predictions. MIGRATE remains the sole source writer and owner of leases, WAL, recovery and verified receipts. A candidate prediction or post-write inspection is not a migration receipt. Registered proposal exports share the existing immutable-record writer.
+
+Current MigrationPlan v2 publishes the existing operation and authorization meanings with a StateView v3-capable comparison context. v1 plans and receipts remain historical/readable. Exact reviews bind their original evaluator and endpoint identities; changing those bindings requires reviewed regeneration, never implicit plan migration or renewed permission.

@@ -773,7 +773,7 @@ fn malformed_versions_duplicate_records_and_resource_exhaustion_are_explicit() {
     let plan = f.plan();
     let mut json: serde_json::Value =
         serde_json::from_slice(&plan.to_canonical_bytes().unwrap()).unwrap();
-    json["schema_version"] = 2.into();
+    json["schema_version"] = 3.into();
     assert_eq!(
         MigrationPlan::from_json_str(&json.to_string())
             .unwrap_err()
@@ -783,6 +783,20 @@ fn malformed_versions_duplicate_records_and_resource_exhaustion_are_explicit() {
     assert!(MigrationPlan::from_json_str("{\"schema_version\":1,\"schema_version\":1}").is_err());
     let original: serde_json::Value =
         serde_json::from_slice(&plan.to_canonical_bytes().unwrap()).unwrap();
+    let mut legacy = original.clone();
+    legacy["$schema"] = "urn:fortress:derived:v1:migration-plan".into();
+    legacy["schema_version"] = 1.into();
+    legacy["plan_digest"] = "".into();
+    let preimage = fortress_core::wire::canonicalize_public_json(&legacy.to_string()).unwrap();
+    legacy["plan_digest"] = format!("sha256:{:x}", Sha256::digest(preimage)).into();
+    let legacy_bytes = fortress_core::wire::canonicalize_public_json(&legacy.to_string()).unwrap();
+    assert_eq!(
+        MigrationPlan::from_json_str(std::str::from_utf8(&legacy_bytes).unwrap())
+            .unwrap()
+            .to_canonical_bytes()
+            .unwrap(),
+        legacy_bytes
+    );
     for field in [
         "operation_graph",
         "preconditions",

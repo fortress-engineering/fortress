@@ -7,13 +7,17 @@ mod comparison;
 mod identity;
 #[path = "model.rs"]
 mod model;
+#[path = "projection.rs"]
+pub mod projection;
 #[path = "retirement.rs"]
 mod retirement;
 #[path = "validation.rs"]
 mod validation;
 pub use comparison::{compare_merge, compare_states, compare_states_cancellable};
 pub use model::*;
-pub use retirement::{assess_retirements, current_governance_anchors, finding_anchors};
+pub use retirement::{
+    assess_original_findings, assess_retirements, current_governance_anchors, finding_anchors,
+};
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 
@@ -80,8 +84,8 @@ impl ComparisonState {
     #[must_use]
     pub fn unavailable(origin_ref: Option<String>) -> Self {
         Self {
-            schema: "urn:fortress:derived:v1:comparison-state".into(),
-            schema_version: 1,
+            schema: "urn:fortress:derived:v2:comparison-state".into(),
+            schema_version: 2,
             source_ref: None,
             view: None,
             retained_application: None,

@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v2:governance-proposal",
+  "title": "Fortress read-only reviewed governance maintenance proposal",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "operation",
+    "governance_path",
+    "original_governance_ref",
+    "proposed_governance",
+    "original_state",
+    "current_state",
+    "retirement_evidence",
+    "authorization",
+    "host_coverage"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:derived:v2:governance-proposal"
+    },
+    "schema_version": {
+      "const": 2
+    },
+    "operation": {
+      "enum": [
+        "BASELINE_CREATE",
+        "BASELINE_PRUNE",
+        "EXCEPTION_CREATE",
+        "EXCEPTION_RETIRE"
+      ]
+    },
+    "governance_path": {
+      "const": "__fortress/governance/finding_governance.json"
+    },
+    "original_governance_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "proposed_governance": {
+      "oneOf": [
+        {
+          "$ref": "urn:fortress:schema:v2:finding-governance"
+        },
+        {
+          "$ref": "urn:fortress:schema:v1:finding-governance"
+        }
+      ]
+    },
+    "original_state": {
+      "anyOf": [
+        {
+          "$ref": "urn:fortress:derived:v1:comparison-projection"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "current_state": {
+      "$ref": "urn:fortress:derived:v1:comparison-projection"
+    },
+    "retirement_evidence": {
+      "type": "array",
+      "maxItems": 50000,
+      "items": {
+        "$ref": "urn:fortress:derived:v2:retirement-evidence"
+      }
+    },
+    "authorization": {
+      "const": "REQUIRE_AUTHORITY_DECISION"
+    },
+    "host_coverage": {
+      "const": "UNMEDIATED"
+    }
+  }
+}

@@ -6,7 +6,11 @@ use super::{
 use std::collections::BTreeSet;
 
 pub(super) fn validate_state(state: &ComparisonState) -> Result<(), TransitionError> {
-    if state.schema != "urn:fortress:derived:v1:comparison-state" || state.schema_version != 1 {
+    if !matches!(
+        (state.schema.as_str(), state.schema_version),
+        ("urn:fortress:derived:v1:comparison-state", 1)
+            | ("urn:fortress:derived:v2:comparison-state", 2)
+    ) {
         return Err(fail("UNSUPPORTED_VERSION", "unsupported comparison input"));
     }
     for reference in [&state.source_ref, &state.origin_ref].into_iter().flatten() {

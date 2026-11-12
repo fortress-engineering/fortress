@@ -1,0 +1,503 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v1:hypothetical-evaluation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "evaluation_ref",
+    "status",
+    "actual_state",
+    "base_generation",
+    "base_subject",
+    "candidate_digest",
+    "context_ref",
+    "trusted_base_authority",
+    "predicted_state_ref",
+    "base_inventory_ref",
+    "predicted_inventory_ref",
+    "operations",
+    "comparison_context",
+    "base_state",
+    "predicted_state",
+    "transition",
+    "change_decision",
+    "authorization_error",
+    "validation_facts",
+    "evaluation_mode",
+    "fallback_reasons",
+    "limitations",
+    "materialization_dependencies",
+    "finding_lifecycle",
+    "historical_states",
+    "affected_analysis"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:derived:v1:hypothetical-evaluation"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "evaluation_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "status": {
+      "const": "PROPOSED"
+    },
+    "actual_state": {
+      "const": false
+    },
+    "base_generation": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "base_subject": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "candidate_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "context_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "trusted_base_authority": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "predicted_state_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "base_inventory_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "predicted_inventory_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "operations": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind",
+              "path",
+              "postimage"
+            ],
+            "properties": {
+              "kind": {
+                "const": "CREATE_FILE"
+              },
+              "path": {
+                "type": "string",
+                "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(/|$))[^\\x00-\\x1f]+$",
+                "maxLength": 4096
+              },
+              "postimage": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 255
+                },
+                "maxItems": 33554432
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind",
+              "path",
+              "preimage",
+              "postimage"
+            ],
+            "properties": {
+              "kind": {
+                "const": "REPLACE_FILE"
+              },
+              "path": {
+                "type": "string",
+                "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(/|$))[^\\x00-\\x1f]+$",
+                "maxLength": 4096
+              },
+              "preimage": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 255
+                },
+                "maxItems": 33554432
+              },
+              "postimage": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 255
+                },
+                "maxItems": 33554432
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind",
+              "source",
+              "destination",
+              "preimage"
+            ],
+            "properties": {
+              "kind": {
+                "const": "MOVE_PATH"
+              },
+              "source": {
+                "type": "string",
+                "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(/|$))[^\\x00-\\x1f]+$",
+                "maxLength": 4096
+              },
+              "destination": {
+                "type": "string",
+                "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(/|$))[^\\x00-\\x1f]+$",
+                "maxLength": 4096
+              },
+              "preimage": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 255
+                },
+                "maxItems": 33554432
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind",
+              "path",
+              "preimage",
+              "owner_ref"
+            ],
+            "properties": {
+              "kind": {
+                "const": "DELETE_OWNED_FILE"
+              },
+              "path": {
+                "type": "string",
+                "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.?(/|$))[^\\x00-\\x1f]+$",
+                "maxLength": 4096
+              },
+              "preimage": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 255
+                },
+                "maxItems": 33554432
+              },
+              "owner_ref": {
+                "type": "string",
+                "maxLength": 4096
+              }
+            }
+          }
+        ]
+      },
+      "maxItems": 1024
+    },
+    "comparison_context": {
+      "$ref": "urn:fortress:derived:v1:comparison-projection#/$defs/ComparisonContext"
+    },
+    "base_state": {
+      "$ref": "urn:fortress:derived:v1:comparison-projection"
+    },
+    "predicted_state": {
+      "$ref": "urn:fortress:derived:v1:comparison-projection"
+    },
+    "transition": {
+      "$ref": "urn:fortress:derived:v1:transition-analysis"
+    },
+    "change_decision": {
+      "anyOf": [
+        {
+          "$ref": "urn:fortress:derived:v1:application-authority"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "authorization_error": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/error"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "validation_facts": {
+      "type": "object",
+      "propertyNames": {
+        "enum": [
+          "EVALUATION_COMPLETED",
+          "GOVERNANCE_DECLARED",
+          "PROGRESSIVE_ENFORCEMENT",
+          "PROFILE_ASSURANCE",
+          "COMPARABLE_RETIREMENT"
+        ]
+      },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "state",
+          "evidence_refs",
+          "detail"
+        ],
+        "properties": {
+          "state": {
+            "enum": [
+              "SATISFIED",
+              "FAILED",
+              "NOT_EVALUABLE",
+              "NOT_APPLICABLE"
+            ]
+          },
+          "evidence_refs": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "maxItems": 1024
+          },
+          "detail": {
+            "type": "string",
+            "maxLength": 4096
+          }
+        }
+      },
+      "maxProperties": 5
+    },
+    "evaluation_mode": {
+      "enum": [
+        "SELECTIVE_REBUILD",
+        "INPUT_UNCHANGED",
+        "FULL_REEVALUATION_REQUIRED"
+      ]
+    },
+    "fallback_reasons": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "materialization_dependencies": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "role",
+          "content_ref",
+          "included",
+          "requirement"
+        ],
+        "properties": {
+          "role": {
+            "enum": [
+              "COMPLETE_BASE_PHYSICAL_SOURCE",
+              "ORIGINAL_SEMANTIC_AUTHORITY",
+              "INDEPENDENT_ACTUAL_EXECUTION"
+            ]
+          },
+          "content_ref": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^sha256:[0-9a-f]{64}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "included": {
+            "const": false
+          },
+          "requirement": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "finding_lifecycle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "base_raw_findings",
+        "predicted_raw_findings",
+        "base_governance",
+        "predicted_governance",
+        "original_finding_resolution",
+        "baseline_retirement_evidence",
+        "errors",
+        "interpretation"
+      ],
+      "properties": {
+        "base_raw_findings": {
+          "anyOf": [
+            {
+              "type": "array",
+              "maxItems": 50000,
+              "items": {
+                "$ref": "urn:fortress:schema:v3:snapshot-finding"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "predicted_raw_findings": {
+          "anyOf": [
+            {
+              "type": "array",
+              "maxItems": 50000,
+              "items": {
+                "$ref": "urn:fortress:schema:v3:snapshot-finding"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "base_governance": {
+          "anyOf": [
+            {
+              "$ref": "urn:fortress:schema:v7:snapshot-audit#/$defs/finding-governance"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "predicted_governance": {
+          "anyOf": [
+            {
+              "$ref": "urn:fortress:schema:v7:snapshot-audit#/$defs/finding-governance"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "original_finding_resolution": {
+          "type": "array",
+          "maxItems": 50000,
+          "items": {
+            "$ref": "urn:fortress:derived:v2:retirement-evidence"
+          }
+        },
+        "baseline_retirement_evidence": {
+          "type": "array",
+          "maxItems": 50000,
+          "items": {
+            "$ref": "urn:fortress:derived:v2:retirement-evidence"
+          }
+        },
+        "errors": {
+          "type": "array",
+          "maxItems": 32,
+          "items": {
+            "$ref": "#/$defs/error"
+          }
+        },
+        "interpretation": {
+          "type": "string"
+        }
+      }
+    },
+    "historical_states": {
+      "type": "array",
+      "maxItems": 16,
+      "items": {
+        "$ref": "urn:fortress:derived:v1:comparison-projection"
+      }
+    },
+    "affected_analysis": {
+      "anyOf": [
+        {
+          "$ref": "urn:fortress:schema:v1:affected-analysis"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message"
+      ],
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "transaction_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -31,6 +31,16 @@ impl ArchitectureManifest {
     /// Projects dependency edges and exact observed ownership from the canonical CCG.
     #[must_use]
     pub fn from_ccg(contracts: &ContractCoherencyGraph, observed_paths: &[String]) -> Self {
+        Self::from_ccg_with_excluded_territories(contracts, observed_paths, &BTreeSet::new())
+    }
+
+    /// Projects physical territory without assigning authority to the incidental
+    /// declaration placement of explicitly logical Modules.
+    pub(crate) fn from_ccg_with_excluded_territories(
+        contracts: &ContractCoherencyGraph,
+        observed_paths: &[String],
+        excluded: &BTreeSet<&str>,
+    ) -> Self {
         let mut dependencies = BTreeMap::<String, BTreeSet<String>>::new();
         for requirement in contracts.direct_requirements() {
             dependencies
@@ -40,7 +50,7 @@ impl ArchitectureManifest {
         }
         let mut owned = BTreeMap::<String, Vec<String>>::new();
         for path in observed_paths {
-            if let Some(owner) = deepest_owner(contracts, path) {
+            if let Some(owner) = deepest_owner(contracts, path, excluded) {
                 owned.entry(owner).or_default().push(path.clone());
             }
         }
@@ -252,14 +262,19 @@ enum VisitState {
     Complete,
 }
 
-fn deepest_owner(contracts: &ContractCoherencyGraph, path: &str) -> Option<String> {
+fn deepest_owner(
+    contracts: &ContractCoherencyGraph,
+    path: &str,
+    excluded: &BTreeSet<&str>,
+) -> Option<String> {
     contracts
         .modules()
         .iter()
-        .filter(|(_, module)| {
-            module.path().is_empty()
-                || path == module.path()
-                || path.starts_with(&format!("{}/", module.path()))
+        .filter(|(id, module)| {
+            !excluded.contains(id.as_str())
+                && (module.path().is_empty()
+                    || path == module.path()
+                    || path.starts_with(&format!("{}/", module.path())))
         })
         .max_by_key(|(_, module)| module.path().len())
         .map(|(id, _)| id.clone())

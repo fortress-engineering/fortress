@@ -1150,7 +1150,7 @@ fn lifecycle_public_schemas_and_warm_paging_preserve_the_same_records() {
             serde_json::to_value(&review).unwrap(),
         ),
         (
-            "urn:fortress:derived:v1:governance-proposal",
+            "urn:fortress:derived:v2:governance-proposal",
             serde_json::to_value(&proposal).unwrap(),
         ),
         (

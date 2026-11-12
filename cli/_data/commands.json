@@ -451,6 +451,17 @@
       "duration": "short",
       "resumability": "restartable",
       "certification_implications": "Fresh canonical evaluation is explicit. Application facts do not imply semantic certification, external authorization or filesystem-wide atomicity."
+    },
+    {
+      "id": "CMD-GOVERNANCE-OVERLAY",
+      "name": "overlay",
+      "aliases": [],
+      "description": "Evaluate exact immutable proposed edits and inspect post-write agreement without writing source or granting actual certification.",
+      "owner": "TF-CLI-0001",
+      "executor": "builtin-sync",
+      "duration": "long",
+      "resumability": "restartable",
+      "certification_implications": "Explicit read-only canonical analysis; proposed results cannot satisfy actual-state evidence. Only explicit --export retains a non-authoritative proposal. No apply method or CLI grant/execution validator."
     }
   ]
 }

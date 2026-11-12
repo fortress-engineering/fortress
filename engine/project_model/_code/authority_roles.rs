@@ -103,6 +103,7 @@ pub fn protected_input_roles(
                 roles.insert(EvidenceSelection);
             }
             ControlRole::ProviderEnvelope
+            | ControlRole::HypotheticalProposal
             | ControlRole::ReviewedMigrationPlan
             | ControlRole::MigrationReceipt
             | ControlRole::ProviderPayload

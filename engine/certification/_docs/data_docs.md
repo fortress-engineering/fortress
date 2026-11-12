@@ -141,3 +141,7 @@ Versioned public portable-evidence contract. Its exact registered identity, stri
 ### [`generation_manifest_schema_v6.json`](../_data/generation_manifest_schema_v6.json)
 
 Binds new generations to CONTROL layout 6 while retaining each earlier generation/layout pair and the same evidence/provenance distinctions.
+
+### [`generation_manifest_schema_v7.json`](../_data/generation_manifest_schema_v7.json)
+
+Versioned OVERLAY interface: exact immutable proposals and actual-state separation, original authority bindings, compatible registered CONTROL records and explicit uncertainty. Historical versions retain their original identities.

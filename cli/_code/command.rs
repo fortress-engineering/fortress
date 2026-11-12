@@ -10,6 +10,13 @@ use fortress_core::identity::{StableId, StableIdError};
 
 const BUILTIN_COMMANDS: &[CommandDescriptor] = &[
     CommandDescriptor {
+        id: "CMD-GOVERNANCE-OVERLAY",
+        name: "overlay",
+        aliases: &[],
+        description: "Evaluate exact proposed source changes and inspect post-write agreement without writing source or granting actual certification.",
+        usage: "fortress overlay base --root path; fortress overlay evaluate --root path --request file [--storage-root external-path] [--base-selection file] [--original-state reference] [--export] [--format human|json]; fortress overlay inspect|reconcile --root path --proposal file [--format human|json]",
+    },
+    CommandDescriptor {
         id: "CMD-GOVERNANCE-MIGRATE",
         name: "migrate",
         aliases: &[],
@@ -84,7 +91,7 @@ const BUILTIN_COMMANDS: &[CommandDescriptor] = &[
         name: "serve",
         aliases: &[],
         description: "Serve the versioned read-only inspection protocol over bounded JSON lines.",
-        usage: "fortress serve --stdio [path] [--selection key] [--state path] [--decision receipt] [--flow-authoring]",
+        usage: "fortress serve --stdio [path] [--selection key] [--state path] [--decision receipt] [--proposal file] [--flow-authoring]",
     },
     CommandDescriptor {
         id: "CMD-PROVIDER-EVIDENCE",

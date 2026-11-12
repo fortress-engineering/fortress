@@ -69,6 +69,13 @@ pub(super) fn run<O: Write, E: Write>(
         service
     };
     let load_duration = started.elapsed();
+    let service = match preload_proposals(service, &parsed) {
+        Ok(service) => service,
+        Err(e) => {
+            writeln!(error, "explicit proposal preload failed: {e}")?;
+            return Ok(crate::EXIT_USAGE);
+        }
+    };
     if name == "serve" {
         crate::rpc::serve(
             io::BufReader::new(io::stdin()),
@@ -109,7 +116,41 @@ pub(super) fn run<O: Write, E: Write>(
     })
 }
 
+fn preload_proposals(
+    service: fortress_core::query::QueryService,
+    parsed: &Parsed,
+) -> Result<fortress_core::query::QueryService, String> {
+    Ok(if parsed.proposals.is_empty() {
+        service
+    } else {
+        let candidates = parsed
+            .proposals
+            .iter()
+            .map(|path| {
+                fortress_core::portable_load::load_portable_json(
+                    &parsed.root,
+                    std::path::Path::new(path),
+                )
+                .map_err(|e| e.to_string())
+                .and_then(|value| {
+                    fortress_core::candidate::HypotheticalEvaluation::from_json_str(
+                        &value.to_string(),
+                    )
+                    .map_err(|e| e.to_string())
+                })
+            })
+            .collect::<Result<Vec<_>, _>>();
+        match candidates.and_then(|c| service.with_candidates(c).map_err(|e| e.to_string())) {
+            Ok(service) => service,
+            Err(e) => {
+                return Err(e);
+            }
+        }
+    })
+}
+
 struct Parsed {
+    proposals: Vec<String>,
     flow_authoring: bool,
     root: PathBuf,
     options: QueryLoadOptions,
@@ -120,6 +161,7 @@ struct Parsed {
 }
 
 fn parse(name: &str, arguments: &[String]) -> Result<Parsed, String> {
+    let mut proposals = Vec::new();
     let mut options = QueryLoadOptions::default();
     let mut comparison_states = Vec::new();
     let mut parameters = json!({});
@@ -133,16 +175,20 @@ fn parse(name: &str, arguments: &[String]) -> Result<Parsed, String> {
     let mut seen_options = std::collections::BTreeSet::new();
     while index < arguments.len() {
         let arg = &arguments[index];
-        if arg.starts_with('-')
-            && !matches!(
-                arg.as_str(),
-                "--comparison-state" | "--decision" | "--retirement"
-            )
-            && !seen_options.insert(arg)
-        {
-            return Err(format!("duplicate inspection option {arg}"));
-        }
+        validate_unique_option(arg, &mut seen_options)?;
         match arg.as_str() {
+            "--proposal" if name == "serve" => {
+                index += 1;
+                proposals.push(
+                    arguments
+                        .get(index)
+                        .ok_or("--proposal requires a record path")?
+                        .clone(),
+                );
+                if proposals.len() > 16 {
+                    return Err("proposal preload exceeds sixteen inputs".into());
+                }
+            }
             "--flow-authoring" | "--behavior-authoring" if name == "serve" => flow_authoring = true,
             "--retirement" if matches!(name, "serve" | "explain") => {
                 index += 1;
@@ -201,13 +247,9 @@ fn parse(name: &str, arguments: &[String]) -> Result<Parsed, String> {
         return Err("serve requires --stdio".into());
     }
     let parameters = finish_parameters(name, &mut positional, parameters, page)?;
-    if positional.len() > 1 {
-        return Err("only one repository path is accepted".into());
-    }
-    let root = PathBuf::from(positional.pop().unwrap_or_else(|| ".".into()))
-        .canonicalize()
-        .map_err(|failure| failure.to_string())?;
+    let root = repository_argument(&mut positional)?;
     Ok(Parsed {
+        proposals,
         flow_authoring,
         root,
         options,
@@ -217,6 +259,32 @@ fn parse(name: &str, arguments: &[String]) -> Result<Parsed, String> {
         comparison_states,
     })
 }
+fn validate_unique_option<'a>(
+    arg: &'a str,
+    seen_options: &mut std::collections::BTreeSet<&'a str>,
+) -> Result<(), String> {
+    if arg.starts_with('-')
+        && !matches!(
+            arg,
+            "--comparison-state" | "--decision" | "--retirement" | "--proposal"
+        )
+        && !seen_options.insert(arg)
+    {
+        return Err(format!("duplicate inspection option {arg}"));
+    }
+    Ok(())
+}
+
+fn repository_argument(positional: &mut Vec<String>) -> Result<PathBuf, String> {
+    if positional.len() > 1 {
+        return Err("only one repository path is accepted".into());
+    }
+    let root = PathBuf::from(positional.pop().unwrap_or_else(|| ".".into()))
+        .canonicalize()
+        .map_err(|failure| failure.to_string())?;
+    Ok(root)
+}
+
 fn push_comparison_state(
     states: &mut Vec<String>,
     reference: Option<&String>,

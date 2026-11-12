@@ -150,7 +150,7 @@ class DerivedArtifactStorageTests(unittest.TestCase):
         self.assertEqual(target.read_bytes(),b"new index")
         self.assertEqual(foreign.read_bytes(),b"owner work")
 
-    def test_current_generation_binds_layout_and_manifest_v6(self) -> None:
+    def test_current_generation_binds_layout_and_manifest_v7(self) -> None:
         certificate = self.certificate("sha256:" + "a" * 64)
         certificate["source"]["file_count"] = 1
         pending = {
@@ -159,12 +159,53 @@ class DerivedArtifactStorageTests(unittest.TestCase):
             if storage == quality.TRACKED_EVIDENCE
         }
         manifest = quality.build_generation_manifest(ROOT, certificate, b"{}\n", pending)
-        self.assertEqual(manifest["$schema"], "urn:fortress:derived:v6:assessment-generation-manifest")
-        self.assertEqual(manifest["schema_version"], 6)
+        self.assertEqual(manifest["$schema"], "urn:fortress:derived:v7:assessment-generation-manifest")
+        self.assertEqual(manifest["schema_version"], 7)
         self.assertEqual(
             manifest["control_layout"],
-            {"id": "fortress-control-layout-v6", "digest": quality.control_layout_digest(ROOT)},
+            {"id": "fortress-control-layout-v7", "digest": quality.sha256_bytes(
+                (ROOT / "engine/project_model/_data/control_layout_v7.json").read_bytes())},
         )
+        root = self.workspace("current-generation-roundtrip") / "repository"
+        for version in (6, 7):
+            relative = f"engine/project_model/_data/control_layout_v{version}.json"
+            path = root / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes((ROOT / relative).read_bytes())
+        content = b"canonical projection\n"
+        certificate = self.certificate("sha256:" + "a" * 64)
+        certificate["source"]["file_count"] = 1
+        certificate["certificate_stamp"] = quality.certificate_stamp(certificate)
+        certificate_bytes = quality.canonical_pretty_json(certificate)
+        current = quality.build_generation_manifest(root, certificate, certificate_bytes, pending)
+        self.publish_fixture_generation(root, current, certificate_bytes, content)
+        self.assertEqual(quality.load_selected_generation(root)[1], certificate)
+        historical = {**current, "$schema": "urn:fortress:derived:v6:assessment-generation-manifest",
+                      "schema_version": 6, "control_layout": {
+                          "id": "fortress-control-layout-v6",
+                          "digest": quality.control_layout_digest(root, 6)}}
+        self.publish_fixture_generation(root, historical, certificate_bytes, content)
+        self.assertEqual(quality.load_selected_generation(root, historical=True)[1], certificate)
+        with self.assertRaisesRegex(quality.CertificateError, "identity is unsupported"):
+            quality.load_selected_generation(root)
+        for historical_reader in (False, True):
+            future = {**current, "$schema": "urn:fortress:derived:v8:assessment-generation-manifest",
+                      "schema_version": 8}
+            self.publish_fixture_generation(root, future, certificate_bytes, content)
+            with self.assertRaisesRegex(quality.CertificateError, "identity is unsupported"):
+                quality.load_selected_generation(root, historical=historical_reader)
+
+    def publish_fixture_generation(self, root, manifest, certificate_bytes, content):
+        generation_id = quality.manifest_digest(manifest)
+        directory = root / quality.GENERATIONS_PATH / generation_id.removeprefix("sha256:")
+        directory.mkdir(parents=True, exist_ok=True)
+        (directory / "manifest.json").write_bytes(quality.canonical_pretty_json(manifest))
+        for descriptor in manifest["artifacts"]:
+            if descriptor["storage"]["kind"] == "INCLUDED":
+                data = certificate_bytes if descriptor["id"] == quality.CERTIFICATE_ID else content
+                (directory / descriptor["storage"]["member_name"]).write_bytes(data)
+        _, index = quality.updated_selection_index(root, generation_id)
+        (root / quality.CURRENT_INDEX_PATH).write_bytes(index)
 
     def test_historical_manifest_cannot_become_current_by_selection(self) -> None:
         base = self.workspace("historical-selection")
@@ -398,6 +439,7 @@ class DerivedArtifactStorageTests(unittest.TestCase):
         self.assertEqual(quality.excluded_source_paths(), {
             quality.EVIDENCE_ROOT,
             "__fortress/proposals/migrations",
+            "__fortress/proposals/candidates",
             "__fortress/records/migrations",
         })
         self.assertNotIn("__fortress/governance/finding_governance.json", quality.excluded_source_paths())
