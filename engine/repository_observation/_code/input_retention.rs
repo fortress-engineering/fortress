@@ -57,6 +57,17 @@ pub(crate) fn current() -> Option<InputRetentionState> {
     RETENTION.with(|retention| retention.borrow().as_ref().map(|budget| budget.state))
 }
 
+/// Invalidates an enabled parser epoch when early resource admission rejects input.
+/// Rejected bytes are not charged as retained allocations. Ordinary callers have
+/// no enabled epoch and remain unaffected.
+pub(crate) fn reject_input() {
+    RETENTION.with(|retention| {
+        if let Some(budget) = retention.borrow_mut().as_mut() {
+            budget.state.exhausted = true;
+        }
+    });
+}
+
 /// Reserves an input before a producer can retain it. An inactive budget is a no-op.
 /// A separator and fixed metadata reserve prevent empty-input allocation bypass.
 pub(crate) fn preflight_input(byte_count: usize) -> Result<(), InputRetentionLimit> {

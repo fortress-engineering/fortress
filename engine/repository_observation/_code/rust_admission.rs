@@ -9,6 +9,10 @@
 /// # Errors
 /// Returns `RESOURCE_LIMIT` without a partial semantic result on exhaustion.
 pub fn admit_rust(source: &str) -> Result<(), &'static str> {
+    admit_bounded_rust(source).inspect_err(|_| super::input_retention::reject_input())
+}
+
+fn admit_bounded_rust(source: &str) -> Result<(), &'static str> {
     const LIMIT: &str = "RESOURCE_LIMIT: Rust source admission exhausted";
     let bytes = source.as_bytes();
     if bytes.len() > super::MAX_SOURCE_UNIT_BYTES {

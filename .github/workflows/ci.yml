@@ -84,3 +84,8 @@ jobs:
           --test protected_authority
           --test provider_ingest
           --test governance_query
+
+      - name: Verify parser admission and epoch recovery
+        run: |
+          cargo +1.97.1 --config _data/cargo_config.toml test --manifest-path _data/Cargo.toml --all-features -p fortress-core --test resident_session parser_admission_rejects_oversized_requests_without_publishing
+          cargo +1.97.1 --config _data/cargo_config.toml test --manifest-path _data/Cargo.toml --all-features -p fortress-core --test resident_session early_source_limits_preserve_typed_failure_and_published_generation

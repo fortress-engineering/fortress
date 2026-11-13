@@ -854,6 +854,67 @@ fn parser_admission_rejects_oversized_requests_without_publishing() {
     );
 }
 
+/// `T-AF-SNAPSHOT-GOVERNANCE-0001-R24-014`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R24
+#[test]
+fn early_source_limits_preserve_typed_failure_and_published_generation() {
+    let fixture = Fixture::new();
+    let mut session = fixture.open();
+    for source in [
+        " ".repeat(4 * 1024 * 1024 + 1),
+        format!("type X = {}u8{};", "Vec<".repeat(129), ">".repeat(129)),
+        format!("fn f() {{ {}0; }}", "1+".repeat(257)),
+    ] {
+        let prior = session.acquire_generation().expect("published generation");
+        let mut files = prior.source_view().files().clone();
+        files.insert("src/lib.rs".into(), source.into_bytes());
+        let view = fortress_core::observation::SourceView::from_bytes(files).expect("bounded view");
+        assert_eq!(
+            session
+                .evaluate_view_cold(view)
+                .expect_err("source guard")
+                .kind(),
+            SessionErrorKind::ResourceLimit
+        );
+        assert_eq!(
+            session
+                .acquire_generation()
+                .expect("prior preserved")
+                .generation_id(),
+            prior.generation_id()
+        );
+        let recovered = session
+            .refresh(&SourceDelta::default())
+            .expect("fresh epoch");
+        assert_eq!(recovered.work.program.reused_bodies, 0);
+        assert_eq!(
+            recovered.generation.canonical_artifacts(),
+            prior.canonical_artifacts()
+        );
+    }
+    // Ordinary invalid syntax remains an evaluation failure, not exhaustion.
+    let prior = session.acquire_generation().expect("published generation");
+    let mut files = prior.source_view().files().clone();
+    files.insert("src/lib.rs".into(), b"fn broken() { let = 1; }".to_vec());
+    let view =
+        fortress_core::observation::SourceView::from_bytes(files).expect("invalid syntax view");
+    assert_eq!(
+        session
+            .evaluate_view_cold(view)
+            .expect_err("invalid syntax")
+            .kind(),
+        SessionErrorKind::Evaluation
+    );
+    assert_eq!(
+        session
+            .acquire_generation()
+            .expect("prior preserved")
+            .generation_id(),
+        prior.generation_id()
+    );
+    session.close().expect("joined worker");
+}
+
 /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R19-025`
 /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R19
 #[test]
