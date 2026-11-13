@@ -147,3 +147,7 @@ Implicit Cargo integration targets and their cross-Module dependencies are check
 ### [`documentation_controls.rs`](../_code/documentation_controls.rs)
 
 Executes owning-Module adversarial controls against the existing implementation through an explicit test-only module link. Source lives directly in the Testing Element; these controls supply no production authority or alternate evaluator.
+
+### [`security_boundaries.rs`](../_code/security_boundaries.rs)
+
+Exercises global input budgets, retained physical file identity, recursion and manifest admission, read-only discovery and query loading, symlink/reparse and case barriers, mutation safety, display controls and preservation of the complete current Rust source corpus. Every resource rejection is explicit and supplies no favorable semantic evidence.

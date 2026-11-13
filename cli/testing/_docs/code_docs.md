@@ -51,3 +51,7 @@ Executes owning-Module adversarial controls against the existing implementation 
 ### [`diagnostic_controls.rs`](../_code/diagnostic_controls.rs)
 
 Executes owning-Module adversarial controls against the existing implementation through an explicit test-only module link. Source lives directly in the Testing Element; these controls supply no production authority or alternate evaluator.
+
+### [`verifier_boundary.rs`](../_code/verifier_boundary.rs)
+
+Verifies that repository-owned interpreter assertions cannot launch a project executable and that malicious error fields cannot execute terminal controls. The tests invoke only registered CLI boundaries and disposable host-owned fixtures; no approval or producer authentication is inferred.
