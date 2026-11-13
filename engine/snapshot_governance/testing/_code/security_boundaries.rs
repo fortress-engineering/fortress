@@ -4,6 +4,7 @@ use fortress_core::observation::{
     ObservationPolicy, admit_rust, observe_repository, observe_source_manifest, physical,
 };
 use fortress_core::wire::{JsonAdmissionLimits, admit_json, parse_strict_json};
+use std::fmt::Write as _;
 use std::fs;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -76,11 +77,41 @@ fn rust_recursion_and_operator_exhaustion_fail_before_semantic_parsing() {
         format!("{}0{}", "(".repeat(129), ")".repeat(129)),
         format!("fn f() {{ {}0; }}", "1+".repeat(257)),
         "/*".repeat(129),
+        "{)".repeat(129),
         format!("fn f() {{ {}0 }}", "return ".repeat(257)),
         format!("type X = {}u8{};", "Vec<".repeat(129), ">".repeat(129)),
+        format!(
+            "type X = {}u8{};",
+            "Wrapper<fn() -> ".repeat(129),
+            ">".repeat(129)
+        ),
+        format!(
+            "type X = {}u8{};",
+            "Wrapper<{0}, fn() -> ".repeat(129),
+            ">".repeat(129)
+        ),
+        format!("type X = Root<{}>;", "Wrapper<{0}>,".repeat(513)),
     ] {
         assert!(admit_rust(&source).unwrap_err().contains("RESOURCE_LIMIT"));
     }
+    // Preserve independently declared shallow generics in root and inline Modules.
+    // The original 10,000-symbol semantic identity corpus remains a separate gate.
+    let mut items = String::new();
+    for index in 0..10_000 {
+        writeln!(
+            items,
+            "fn item_{index}<T: Clone>(value: T) -> T {{ value }}"
+        )
+        .expect("write corpus");
+    }
+    for source in [items.clone(), format!("mod nested {{ {items} }}")] {
+        assert!(admit_rust(&source).is_ok());
+    }
+    let mut comparisons = String::new();
+    for index in 0..1_000 {
+        writeln!(comparisons, "fn check_{index}() {{ let _ = 0 < 1; }}").expect("write corpus");
+    }
+    assert!(admit_rust(&comparisons).is_ok());
     assert!(
         admit_rust(&format!(
             "fn f<'a>(x: &'a str) {{ let _ = r###\"{}\"###; let _ = '\\u{{28}}'; }}",

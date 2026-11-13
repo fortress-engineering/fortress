@@ -42,4 +42,4 @@ Admits ordinary file handles, rejects links and reparse metadata, and checks nat
 
 ### [`rust_admission.rs`](../_code/rust_admission.rs)
 
-Bounds source bytes, recursive delimiters, nested comments and long operator runs before the existing Rust frontends allocate recursive syntax. It skips literals for resource counting and produces no symbols, claims or competing syntax authority. Exhaustion returns an explicit resource failure.
+Bounds source bytes, recursive delimiters, nested comments and long operator runs before the existing Rust frontends allocate recursive syntax. It skips literals for resource counting and produces no symbols, claims or competing syntax authority. Exhaustion returns an explicit resource failure. Generic-angle accounting preserves enclosing depth through const blocks and ignores return/match arrows as closers. Independently closed declarations renew the syntax-region budget, so many shallow generic functions do not consume one file-wide recursion allowance.

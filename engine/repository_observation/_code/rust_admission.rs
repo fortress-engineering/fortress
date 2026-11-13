@@ -16,6 +16,7 @@ pub fn admit_rust(source: &str) -> Result<(), &'static str> {
     }
     let (mut i, mut depth, mut operators) = (0, 0_usize, 0_usize);
     let (mut angles, mut angle_depth) = (0_usize, 0_usize);
+    let mut brace_angles = Vec::new();
     while i < bytes.len() {
         if bytes[i..].starts_with(b"//") {
             i += bytes[i..]
@@ -23,22 +24,7 @@ pub fn admit_rust(source: &str) -> Result<(), &'static str> {
                 .position(|byte| *byte == b'\n')
                 .unwrap_or(bytes.len() - i);
         } else if bytes[i..].starts_with(b"/*") {
-            let mut comments = 1_usize;
-            i += 2;
-            while i < bytes.len() && comments != 0 {
-                if bytes[i..].starts_with(b"/*") {
-                    comments += 1;
-                    i += 2;
-                } else if bytes[i..].starts_with(b"*/") {
-                    comments -= 1;
-                    i += 2;
-                } else {
-                    i += 1;
-                }
-                if comments > 128 {
-                    return Err(LIMIT);
-                }
-            }
+            i = block_comment_end(bytes, i)?;
         } else if matches!(bytes[i], b'b' | b'c')
             && bytes.get(i + 1) == Some(&b'r')
             && raw_string_end(bytes, i + 1).is_some()
@@ -72,10 +58,14 @@ pub fn admit_rust(source: &str) -> Result<(), &'static str> {
                 angle_depth += 1;
                 if angles > 512 || angle_depth > 128 {
                     return Err(
-                        "RESOURCE_LIMIT: Rust angle admission exceeds 512 total or 128 nested",
+                        "RESOURCE_LIMIT: Rust angle admission exceeds 512 in one syntax region or 128 nested",
                     );
                 }
-            } else if bytes[i] == b'>' {
+            } else if bytes[i] == b'>'
+                && !i
+                    .checked_sub(1)
+                    .is_some_and(|previous| matches!(bytes[previous], b'-' | b'='))
+            {
                 angle_depth = angle_depth.saturating_sub(1);
             }
             match bytes[i] {
@@ -84,14 +74,29 @@ pub fn admit_rust(source: &str) -> Result<(), &'static str> {
                     if depth > 128 {
                         return Err(LIMIT);
                     }
+                    if bytes[i] == b'{' {
+                        brace_angles.push(angle_depth);
+                        if brace_angles.len() > 128 {
+                            return Err(LIMIT);
+                        }
+                    }
                 }
                 b')' | b']' | b'}' => {
                     depth = depth.saturating_sub(1);
+                    if bytes[i] == b'}' {
+                        angle_depth = brace_angles.pop().unwrap_or(angle_depth);
+                    }
                 }
                 _ => {}
             }
             if matches!(bytes[i], b';' | b'{' | b'}') {
                 operators = 0;
+                // A closed declaration/statement begins a new admission region.
+                // Const blocks retain their enclosing generic depth; arrows never
+                // close it. Independent shallow items do not accumulate this cap.
+                if angle_depth == 0 {
+                    angles = 0;
+                }
             } else if b"+-*/&|^=!?~.<>".contains(&bytes[i]) {
                 operators += 1;
                 if operators > 256 {
@@ -104,6 +109,25 @@ pub fn admit_rust(source: &str) -> Result<(), &'static str> {
         }
     }
     Ok(())
+}
+
+fn block_comment_end(bytes: &[u8], start: usize) -> Result<usize, &'static str> {
+    let (mut i, mut comments) = (start + 2, 1_usize);
+    while i < bytes.len() && comments != 0 {
+        if bytes[i..].starts_with(b"/*") {
+            comments += 1;
+            i += 2;
+        } else if bytes[i..].starts_with(b"*/") {
+            comments -= 1;
+            i += 2;
+        } else {
+            i += 1;
+        }
+        if comments > 128 {
+            return Err("RESOURCE_LIMIT: Rust source admission exhausted");
+        }
+    }
+    Ok(i)
 }
 
 fn quoted_end(bytes: &[u8], mut i: usize) -> usize {
