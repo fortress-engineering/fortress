@@ -319,9 +319,9 @@ Provides operational byte/JSON admission for the installed Python certificate an
 
 ### [`security_qualification.py`](../_code/security_qualification.py)
 
-Composes a versioned exact-source boundary qualification record only after the existing canonical issuer validates its complete executed gate manifest. Its public reader checks digest, source and an independently supplied required-gate list. The record remains unsigned, unauthenticated and confined to tested surfaces and host versions; it cannot prove execution to an untrusting consumer or authorize a protected change. OPS retains the compact record, source-bound control report and ownership marker outside production source. See [the threat model](code_docs.md#untrusted-input-threat-model) for risk dispositions and downstream requalification requirements.
+Composes a versioned exact-source boundary qualification record only after the existing canonical issuer validates its complete executed gate manifest. Its public reader checks digest, source and an independently supplied required-gate list. The record remains unsigned, unauthenticated and confined to tested surfaces and host versions; it cannot prove execution to an untrusting consumer or authorize a protected change. OPS retains the compact record, source-bound control report and ownership marker outside production source. See [the threat model](code_docs.md) for risk dispositions and downstream requalification requirements.
 
-#### Untrusted-input threat model
+**Untrusted-input threat model**
 
 This review covers repository observation, source and contract decoding, CONTROL,
 immutable projections, imported verification, offline portable evidence, stdio,
@@ -335,7 +335,7 @@ changes to their own governing base. The installed assessor, trusted host tool
 selection, operating system, and private operational storage are outside that
 attacker's authority. A privileged hostile operating system is unsupported.
 
-##### Boundary matrix
+**Boundary matrix**
 
 | Input and resource | Required boundary | Failure meaning |
 | --- | --- | --- |
@@ -350,7 +350,7 @@ attacker's authority. A privileged hostile operating system is unsupported.
 | Migration paths, staging and recovery | Existing leases, same-volume ownership, journaled pre/postimages and independent final reconciliation | Preserve independent edits; hold certification during incomplete migration |
 | Local stdio clients | Version negotiation, typed parameters, bounded frames/pages, cancellation | No network listener, web origin or editor-specific authority is implied |
 
-##### Supported concurrency and durability
+**Supported concurrency and durability**
 
 Cooperative Fortress writers use the established physical-identity lease. External
 edits are checked at capture, mutation and publication boundaries. Observed drift
@@ -360,7 +360,7 @@ Abrupt termination of a standalone verifier parent requires host process-tree su
 not promise cross-file atomicity, arbitrary power-loss durability, or rollback
 success without byte verification.
 
-##### Review and requalification
+**Review and requalification**
 
 Every discovered boundary defect requires an owning-Module repair and retained
 reproducer. Qualification binds exact source and tested interfaces; it is not
@@ -370,7 +370,7 @@ when changing adapters, quotas, process admission, schema retrieval, storage,
 grant provenance or physical-path behavior. Stress costs are observations;
 explicit resource-safety limits remain enforced requirements.
 
-##### Enforced admission and protected resources
+**Enforced admission and protected resources**
 
 The protected resources are host files outside the selected repository, current
 source and authority bytes, immutable historical evidence, external grants,
@@ -412,7 +412,7 @@ public-consumer controls run on the exact hosted revision. Other platforms,
 filesystems without qualified native identities, arbitrary network/device roots,
 and hostile unmediated filesystem writers are not advertised as qualified.
 
-##### Defect disposition and regression evidence
+**Defect disposition and regression evidence**
 
 | Reviewed issue | Disposition and owning regression |
 | --- | --- |
@@ -444,7 +444,7 @@ Host executable selection follows the documented absolute-path boundary of
 Windows native identifiers use the existing qualified WinAPI adapter rather
 than unstable Rust MetadataExt file-index APIs.
 
-##### Qualification record and downstream integration
+**Qualification record and downstream integration**
 
 The canonical issuer preserves every existing gate and adds SECURITY_BOUNDARIES while retaining the registered `fortress-complete-local-v1` selection family. Historical certificates remain claims about their recorded source and gate manifest; they do not assert the new `security_qualification` v1 controls. Current source verification requires the complete 34-gate manifest. No parallel selection context, certificate-format reinterpretation or historical rewrite is introduced.
 After all 34 gates pass against unchanged exact source, it emits
