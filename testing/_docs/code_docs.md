@@ -45,3 +45,7 @@ Standalone offline public consumer implemented with Python's standard library. C
 ### [`portable_controls.py`](../_code/portable_controls.py)
 
 Independent truth tables, RFC canonicalization facts, public parser/provider vectors and archive/path/resource attacks. Native regression tests feed original Rust-produced assessment records to this separate consumer and compare all declared outcomes. Actual consumer and development-machine performance observations remain diagnostic research records, separate from certification thresholds.
+
+### [`security_controls.py`](../_code/security_controls.py)
+
+Runs independent malformed JSON/ZIP, preallocation, retained-container, path ambiguity and mutation controls, plus the installed Python operational-reader and exact-source qualification integrity controls. It never extracts archives, contacts services or executes repository code. The canonical issuer retains its compact results through OPS and requires this gate in addition to every established gate.

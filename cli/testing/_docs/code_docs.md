@@ -43,3 +43,11 @@ Verifies exact preview and receipt inspection, paged explanations, malformed opt
 ### [`finding_cases.rs`](../_code/finding_cases.rs)
 
 Exercises read-only anchored baseline proposals, identical human/JSON proposal identities, current progressive enforcement, blocked baseline expansion, unresolved disappearance, malformed inputs and refusal of local approval flags.
+
+### [`verifier_process_controls.rs`](../_code/verifier_process_controls.rs)
+
+Executes owning-Module adversarial controls against the existing implementation through an explicit test-only module link. Source lives directly in the Testing Element; these controls supply no production authority or alternate evaluator.
+
+### [`diagnostic_controls.rs`](../_code/diagnostic_controls.rs)
+
+Executes owning-Module adversarial controls against the existing implementation through an explicit test-only module link. Source lives directly in the Testing Element; these controls supply no production authority or alternate evaluator.

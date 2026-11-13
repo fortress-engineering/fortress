@@ -3,14 +3,22 @@
 //! This module emits repository-relative observed facts. It does not infer or
 //! ratify architecture, ownership, language semantics, or certification state.
 
+use std::collections::BTreeSet;
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
-use std::fs::{self, DirEntry, File};
+use std::fs::{self, DirEntry};
 use std::io::{self, BufReader, Read};
 use std::path::{Component, Path, PathBuf};
 
 use serde::Serialize;
 use sha2::{Digest, Sha256};
+
+#[path = "rust_admission.rs"]
+mod rust_admission;
+pub use rust_admission::admit_rust;
+
+#[path = "physical.rs"]
+pub mod physical;
 
 #[path = "input_retention.rs"]
 pub(crate) mod input_retention;
@@ -24,6 +32,9 @@ pub use source_view::{CandidateChangeSet, ChangeOperation, SourceView, SourceVie
 
 /// Current supported repository observation schema family.
 pub const OBSERVATION_SCHEMA_VERSION: u16 = 1;
+
+/// Maximum admitted bytes in one source unit decoded by a language frontend.
+pub const MAX_SOURCE_UNIT_BYTES: usize = 4 * 1024 * 1024;
 
 /// Operational admission quotas for one repository observation pass.
 ///
@@ -211,22 +222,16 @@ pub fn observe_repository(
     root: impl AsRef<Path>,
     policy: &ObservationPolicy,
 ) -> Result<RepositoryObservation, ObservationError> {
-    let root = root.as_ref();
-    let metadata = fs::symlink_metadata(root)
-        .map_err(|source| ObservationError::io("inspect root", root, source))?;
-    if !metadata.file_type().is_dir() {
-        return Err(ObservationError::RootNotDirectory(root.to_path_buf()));
-    }
-
-    let mut files = Vec::new();
-    visit_directory(root, root, policy, &mut files)?;
-    files.sort_unstable_by(|left, right| left.path.cmp(&right.path));
-
-    Ok(RepositoryObservation {
-        schema_version: OBSERVATION_SCHEMA_VERSION,
-        knowledge_state: KnowledgeState::Observed,
-        files,
-    })
+    observe_repository_bounded(
+        root,
+        policy,
+        &ObservationLimits {
+            max_files: 100_000,
+            max_entries: 200_000,
+            max_source_bytes: 1024 * 1024 * 1024,
+            max_path_bytes: 32 * 1024 * 1024,
+        },
+    )
 }
 
 /// Observes the same ordinary file facts with preallocation admission quotas.
@@ -249,12 +254,13 @@ pub fn observe_repository_bounded(
     let root = root.as_ref();
     let metadata = fs::symlink_metadata(root)
         .map_err(|source| ObservationError::io("inspect root", root, source))?;
-    if !metadata.file_type().is_dir() {
+    if physical::linked(&metadata) || !metadata.file_type().is_dir() {
         return Err(ObservationError::RootNotDirectory(root.to_path_buf()));
     }
     let mut budget = ObservationBudget::new(limits);
     let mut frames = vec![bounded_directory_entries(root, root, &mut budget)?.into_iter()];
     let mut files = Vec::new();
+    let mut folded_paths = BTreeSet::new();
     while let Some(frame) = frames.last_mut() {
         let Some((relative, entry)) = frame.next() else {
             frames.pop();
@@ -263,11 +269,26 @@ pub fn observe_repository_bounded(
         if policy.excludes(&relative) {
             continue;
         }
+        if !folded_paths.insert(relative.to_lowercase()) {
+            return Err(ObservationError::UnsupportedEntry(entry.path()));
+        }
         let absolute = entry.path();
+        let metadata = fs::symlink_metadata(&absolute)
+            .map_err(|source| ObservationError::io("inspect entry", &absolute, source))?;
+        if physical::linked(&metadata) {
+            return Err(ObservationError::UnsupportedEntry(absolute));
+        }
         let file_type = entry
             .file_type()
             .map_err(|source| ObservationError::io("inspect entry type", &absolute, source))?;
         if file_type.is_dir() {
+            if frames.len() >= 128 {
+                return Err(ObservationError::ResourceLimit {
+                    resource: "directory_depth",
+                    maximum: 128,
+                    observed: 129,
+                });
+            }
             frames.push(bounded_directory_entries(root, &absolute, &mut budget)?.into_iter());
         } else if file_type.is_file() {
             admit_inventory("files", &mut budget.files, limits.max_files, 1)?;
@@ -514,57 +535,16 @@ impl Error for ObservationError {
     }
 }
 
-fn visit_directory(
-    root: &Path,
-    directory: &Path,
-    policy: &ObservationPolicy,
-    files: &mut Vec<ObservedFile>,
-) -> Result<(), ObservationError> {
-    let entries = fs::read_dir(directory)
-        .map_err(|source| ObservationError::io("read directory", directory, source))?;
-    let mut ordered_entries: Vec<(String, DirEntry)> = Vec::new();
-
-    for entry in entries {
-        let entry = entry
-            .map_err(|source| ObservationError::io("read directory entry", directory, source))?;
-        let relative_path = relative_path(root, &entry.path())?;
-        ordered_entries.push((relative_path, entry));
-    }
-    ordered_entries.sort_unstable_by(|left, right| left.0.cmp(&right.0));
-
-    for (relative_path, entry) in ordered_entries {
-        if policy.excludes(&relative_path) {
-            continue;
-        }
-        let absolute_path = entry.path();
-        let file_type = entry
-            .file_type()
-            .map_err(|source| ObservationError::io("inspect entry type", &absolute_path, source))?;
-        if file_type.is_dir() {
-            visit_directory(root, &absolute_path, policy, files)?;
-        } else if file_type.is_file() {
-            files.push(observe_file(relative_path, &absolute_path)?);
-        } else {
-            return Err(ObservationError::UnsupportedEntry(absolute_path));
-        }
-    }
-    Ok(())
-}
-
-fn observe_file(
-    relative_path: String,
-    absolute_path: &Path,
-) -> Result<ObservedFile, ObservationError> {
-    observe_file_with_limit(relative_path, absolute_path, None)
-}
-
 fn observe_file_with_limit(
     relative_path: String,
     absolute_path: &Path,
     source_limit: Option<(u64, u64)>,
 ) -> Result<ObservedFile, ObservationError> {
-    let file = File::open(absolute_path)
+    let file = physical::open_regular(absolute_path)
         .map_err(|source| ObservationError::io("open file", absolute_path, source))?;
+    let before = file
+        .metadata()
+        .map_err(|source| ObservationError::io("inspect file", absolute_path, source))?;
     if let Some((already_read, maximum)) = source_limit {
         let metadata = file
             .metadata()
@@ -594,6 +574,8 @@ fn observe_file_with_limit(
         hasher.update(&buffer[..read]);
     }
 
+    physical::verify_regular(absolute_path, reader.get_ref(), &before)
+        .map_err(|source| ObservationError::io("verify observed file", absolute_path, source))?;
     Ok(ObservedFile {
         path: relative_path,
         size,

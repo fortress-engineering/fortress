@@ -36,6 +36,12 @@ jobs:
           --all-features
           --test filing_system
 
+      - name: Exercise public evidence and physical boundary controls
+        run: |
+          python3 -B testing/_code/security_controls.py
+          python3 -B testing/_code/portable_controls.py
+          cargo +1.97.1 --config _data/cargo_config.toml test --manifest-path _data/Cargo.toml --all-features -p fortress-core -p fortress-cli --lib --test security_boundaries --test verifier_boundary
+
       - name: Verify passing local certificate and freshness stamps
         run: >-
           python3

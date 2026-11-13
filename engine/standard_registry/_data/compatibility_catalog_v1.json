@@ -3499,6 +3499,28 @@
         "id": "rfc8785-jcs-sha256",
         "source": "engine/snapshot_governance/_code/bootstrap_plan.rs"
       }
+    },
+    {
+      "schema_id": "urn:fortress:qualification:v1:security-boundaries",
+      "schema_path": "engine/snapshot_governance/_data/security_qualification_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/snapshot_governance/_code/security_qualification.py"
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/snapshot_governance/_code/security_qualification.py"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "security-boundary-qualification-v1",
+        "source": "engine/snapshot_governance/_code/security_qualification.py"
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-canonical-ascii-qualification-v1",
+        "source": "engine/snapshot_governance/_code/security_qualification.py"
+      }
     }
   ]
 }

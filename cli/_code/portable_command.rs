@@ -9,6 +9,9 @@ use std::path::{Path, PathBuf};
 // Immutable reviewed public-consumer bytes, never a candidate repository script.
 // This consumer contains neither expected answers nor internal Rust types.
 const VERIFIER: &str = include_str!("../_data/offline_verifier_v1.txt");
+#[path = "verifier_process.rs"]
+mod verifier_process;
+
 type Options = BTreeMap<String, String>;
 type LoadedArtifacts = (Option<String>, BTreeMap<String, Vec<u8>>);
 
@@ -104,7 +107,7 @@ fn verify(path: &Path, options: &Options) -> Result<(Value, u8), PortableError> 
     let predicate = options
         .get("--predicate-type")
         .ok_or_else(|| failure("INVALID_PARAMETERS", "--predicate-type is required"))?;
-    let mut command = std::process::Command::new(if cfg!(windows) { "python" } else { "python3" });
+    let mut command = std::process::Command::new(verifier_process::interpreter(path)?);
     command
         .args(["-I", "-B", "-"])
         .arg(path)
@@ -120,35 +123,8 @@ fn verify(path: &Path, options: &Options) -> Result<(Value, u8), PortableError> 
             command.args([part, value]);
         }
     }
-    command
-        .stdin(std::process::Stdio::piped())
-        .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::piped());
-    let mut child = command
-        .spawn()
-        .map_err(|e| failure("VERIFIER_UNAVAILABLE", e.to_string()))?;
-    child
-        .stdin
-        .take()
-        .ok_or_else(|| failure("VERIFIER_UNAVAILABLE", "verifier input unavailable"))?
-        .write_all(VERIFIER.as_bytes())
-        .map_err(|e| failure("VERIFIER_UNAVAILABLE", e.to_string()))?;
-    let result = child
-        .wait_with_output()
-        .map_err(|e| failure("VERIFIER_UNAVAILABLE", e.to_string()))?;
-    if result.stdout.is_empty() {
-        return Err(failure(
-            "VERIFIER_FAILURE",
-            String::from_utf8_lossy(&result.stderr)
-                .chars()
-                .take(1024)
-                .collect::<String>(),
-        ));
-    }
-    Ok((
-        parse(&result.stdout)?,
-        u8::try_from(result.status.code().unwrap_or(2)).unwrap_or(2),
-    ))
+    let (stdout, exit) = verifier_process::run(command, VERIFIER)?;
+    Ok((parse(&stdout)?, exit))
 }
 
 fn load(root: &Path, options: &Options) -> Result<LoadedArtifacts, PortableError> {

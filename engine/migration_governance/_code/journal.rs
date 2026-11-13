@@ -1,5 +1,5 @@
 //! Exclusively owned external write-ahead journals and injected OPS resource contracts.
-use std::fs::{self, File, OpenOptions};
+use std::fs::{self, OpenOptions};
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 
@@ -394,7 +394,8 @@ pub(crate) fn read_regular(path: &Path, limit: usize) -> Result<Vec<u8>, Migrati
     if metadata.len() > limit as u64 {
         return Err(fail("RESOURCE_LIMIT", "file exceeds admission"));
     }
-    let mut file = File::open(path).map_err(io_error)?;
+    let mut file = crate::observation::physical::open_regular(path).map_err(io_error)?;
+    let before = file.metadata().map_err(io_error)?;
     let mut bytes = vec![];
     Read::by_ref(&mut file)
         .take(limit as u64 + 1)
@@ -402,6 +403,10 @@ pub(crate) fn read_regular(path: &Path, limit: usize) -> Result<Vec<u8>, Migrati
         .map_err(io_error)?;
     if bytes.len() > limit {
         return Err(fail("RESOURCE_LIMIT", "file grew beyond admission"));
+    }
+    crate::observation::physical::verify_regular(path, &file, &before).map_err(io_error)?;
+    if bytes.len() as u64 != before.len() {
+        return Err(fail("SOURCE_DRIFT", "file changed while reading"));
     }
     Ok(bytes)
 }

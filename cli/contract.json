@@ -281,6 +281,17 @@
             "T-TF-CLI-0001-R28-001",
             "T-TF-CLI-0001-R28-002"
           ]
+        },
+        {
+          "id": "TF-CLI-0001-R29",
+          "statement": "Offline portable verification admits only absolute host interpreters outside the working and bundle trees, executes the installed consumer in isolated mode and bounds child output and duration while killing and reaping its owned child on failure. Neither the host executable nor imported evidence acquires producer authentication from this supervision.",
+          "tests": [
+            "T-TF-CLI-0001-R29-001",
+            "T-TF-CLI-0001-R29-002",
+            "T-TF-CLI-0001-R29-003",
+            "T-TF-CLI-0001-R29-004",
+            "T-TF-CLI-0001-R29-005"
+          ]
         }
       ]
     }

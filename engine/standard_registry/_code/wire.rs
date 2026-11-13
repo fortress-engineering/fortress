@@ -15,6 +15,113 @@ use serde_json::Value;
 /// Largest exact unsigned integer in the public IEEE-754 JSON interchange.
 pub const MAX_EXACT_PUBLIC_INTEGER: u64 = 9_007_199_254_740_991;
 
+/// Escapes terminal and direction-control characters in an untrusted display field.
+/// This changes presentation only; canonical source and machine values are untouched.
+#[must_use]
+pub fn readable_text(value: &str) -> String {
+    let mut output = String::new();
+    for character in value.chars() {
+        if character.is_control()
+            || matches!(character, '\u{200e}' | '\u{200f}' | '\u{202a}'..='\u{202e}' | '\u{2066}'..='\u{2069}')
+        {
+            output.extend(character.escape_default());
+        } else {
+            output.push(character);
+        }
+    }
+    output
+}
+
+/// Allocation admission for JSON, independent of the owning semantic decoder.
+#[derive(Clone, Copy, Debug)]
+pub struct JsonAdmissionLimits {
+    /// Maximum UTF-8 input bytes.
+    pub bytes: usize,
+    /// Maximum simultaneously open arrays and objects.
+    pub depth: usize,
+    /// Maximum container, key, string, and primitive tokens in the entire input.
+    pub nodes: usize,
+    /// Maximum encoded bytes in any single string or primitive token.
+    pub token_bytes: usize,
+}
+
+/// Includes large canonical projections; narrower ingress owners retain their quotas.
+pub const JSON_ADMISSION_LIMITS: JsonAdmissionLimits = JsonAdmissionLimits {
+    bytes: 512 * 1024 * 1024,
+    depth: 96,
+    nodes: 16_000_000,
+    token_bytes: 32 * 1024 * 1024,
+};
+
+/// Checks allocation budgets before a JSON library constructs strings or trees.
+///
+/// This is a resource scan, not a second JSON validator. Malformed syntax still
+/// goes to the existing strict decoder. Nothing is truncated or accepted early.
+///
+/// # Errors
+/// Returns a `RESOURCE_LIMIT` error if any admission budget is exceeded.
+pub fn admit_json(source: &[u8], limits: JsonAdmissionLimits) -> Result<(), serde_json::Error> {
+    let exhausted = || {
+        <serde_json::Error as de::Error>::custom("RESOURCE_LIMIT: JSON admission quota exceeded")
+    };
+    if source.len() > limits.bytes {
+        return Err(exhausted());
+    }
+    let (mut depth, mut nodes, mut position) = (0_usize, 0_usize, 0_usize);
+    while position < source.len() {
+        let byte = source[position];
+        if byte.is_ascii_whitespace() || matches!(byte, b',' | b':' | b'}' | b']') {
+            if matches!(byte, b'}' | b']') {
+                depth = depth.saturating_sub(1);
+            }
+            position += 1;
+            continue;
+        }
+        nodes = nodes.checked_add(1).ok_or_else(exhausted)?;
+        if nodes > limits.nodes {
+            return Err(exhausted());
+        }
+        if matches!(byte, b'{' | b'[') {
+            depth += 1;
+            if depth > limits.depth {
+                return Err(exhausted());
+            }
+            position += 1;
+        } else {
+            let start = position;
+            position += 1;
+            if byte == b'"' {
+                let mut escaped = false;
+                while position < source.len() {
+                    let next = source[position];
+                    position += 1;
+                    if !escaped && next == b'"' {
+                        break;
+                    }
+                    escaped = !escaped && next == b'\\';
+                    if position - start > limits.token_bytes {
+                        return Err(exhausted());
+                    }
+                }
+            } else {
+                while position < source.len()
+                    && !source[position].is_ascii_whitespace()
+                    && !matches!(
+                        source[position],
+                        b',' | b':' | b'}' | b']' | b'{' | b'[' | b'"'
+                    )
+                {
+                    position += 1;
+                }
+            }
+            if position - start > limits.token_bytes {
+                return Err(exhausted());
+            }
+        }
+    }
+    Ok(())
+}
+
 /// Reader decision for an exact schema version.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum VersionDecision {
@@ -108,6 +215,7 @@ pub fn parse_strict_json<T: DeserializeOwned>(source: &str) -> Result<T, WireErr
 /// Returns [`WireError`] for invalid JSON, duplicate keys, inexact integers,
 /// non-finite numbers, or model mismatch.
 pub fn parse_public_json<T: DeserializeOwned>(source: &str) -> Result<T, WireError> {
+    admit_json(source.as_bytes(), JSON_ADMISSION_LIMITS).map_err(WireError::Json)?;
     check_public_integer_tokens(source)?;
     validate_structure::<true>(source).map_err(WireError::Json)?;
     serde_json::from_str(source).map_err(WireError::Json)
@@ -185,6 +293,7 @@ pub fn reject_duplicate_json_keys(source: &str) -> Result<(), serde_json::Error>
 ///
 /// Returns a JSON error for duplicate keys or malformed input.
 pub fn reject_duplicate_json_keys_bytes(source: &[u8]) -> Result<(), serde_json::Error> {
+    admit_json(source, JSON_ADMISSION_LIMITS)?;
     let mut parser = serde_json::Deserializer::from_slice(source);
     StrictStructure::<false>::deserialize(&mut parser)?;
     parser.end()
@@ -215,6 +324,7 @@ pub fn canonicalize_public_json(source: &str) -> Result<Vec<u8>, WireError> {
 }
 
 fn validate_structure<const EXACT: bool>(source: &str) -> Result<(), serde_json::Error> {
+    admit_json(source.as_bytes(), JSON_ADMISSION_LIMITS)?;
     let mut parser = serde_json::Deserializer::from_str(source);
     StrictStructure::<EXACT>::deserialize(&mut parser)?;
     parser.end()
@@ -285,7 +395,11 @@ impl<'de, const EXACT: bool> Visitor<'de> for StructureVisitor<EXACT> {
         while let Some(key) = map.next_key::<String>()? {
             if !keys.insert(key.clone()) {
                 return Err(de::Error::custom(format!(
-                    "duplicate JSON object key `{key}`"
+                    "duplicate JSON object key `{}`",
+                    key.chars()
+                        .flat_map(char::escape_default)
+                        .take(128)
+                        .collect::<String>()
                 )));
             }
             map.next_value::<StrictStructure<EXACT>>()?;

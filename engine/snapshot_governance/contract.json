@@ -469,6 +469,25 @@
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R23-023",
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R23-024"
           ]
+        },
+        {
+          "id": "AF-SNAPSHOT-GOVERNANCE-0001-R24",
+          "statement": "Untrusted boundary admission rejects unsafe physical objects, observable source replacement, recursive or expanding input and ambiguous identities without executing repository code or elevating imported evidence into authenticated authority. Qualification is exact-source scoped and does not promise a hostile-OS sandbox.",
+          "tests": [
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R24-001",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R24-002",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R24-003",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R24-004",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R24-005",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R24-006",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R24-007",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R24-008",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R24-009",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R24-010",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R24-011",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R24-012",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R24-013"
+          ]
         }
       ]
     }

@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:qualification:v1:security-boundaries",
+  "title": "Exact-source unauthenticated security boundary qualification",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "claim",
+    "source_ref",
+    "record_id",
+    "control_report_digest",
+    "threat_model_digest",
+    "gate_ids",
+    "tested_host",
+    "surfaces",
+    "limitations",
+    "authenticity",
+    "external_protection",
+    "source_domain",
+    "threat_model_path"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:qualification:v1:security-boundaries"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "claim": {
+      "const": "TESTED_BOUNDARY_CONTROLS_PASS"
+    },
+    "source_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "record_id": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "control_report_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "threat_model_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "gate_ids": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 128,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Z_]+$"
+      }
+    },
+    "tested_host": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "os",
+        "architecture",
+        "python"
+      ],
+      "properties": {
+        "os": {
+          "enum": [
+            "win32",
+            "linux"
+          ]
+        },
+        "architecture": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[\\u0000-\\u007f]+$"
+        },
+        "python": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[\\u0000-\\u007f]+$"
+        }
+      }
+    },
+    "surfaces": {
+      "const": [
+        "AUTHORITY",
+        "CONTROL",
+        "MIGRATE",
+        "ONBOARD",
+        "OPS",
+        "OVERLAY",
+        "PARSERS",
+        "PORTABLE",
+        "PROVIDER",
+        "RPC",
+        "SNAPSHOT"
+      ]
+    },
+    "limitations": {
+      "const": [
+        "ACTIVE_HOSTILE_OS_UNSUPPORTED",
+        "ARBITRARY_POWER_LOSS_UNSUPPORTED",
+        "EXTERNAL_PROTECTION_UNVERIFIED",
+        "NO_GENERAL_SANDBOX",
+        "NO_ISSUER_AUTHENTICATION",
+        "NO_NUMERIC_PERFORMANCE_CERTIFICATION"
+      ]
+    },
+    "authenticity": {
+      "const": "UNVERIFIED"
+    },
+    "external_protection": {
+      "const": "UNVERIFIED"
+    },
+    "source_domain": {
+      "const": "QUALITY_CERTIFICATE_SOURCE_FINGERPRINT"
+    },
+    "threat_model_path": {
+      "const": "engine/snapshot_governance/_docs/code_docs.md"
+    }
+  }
+}

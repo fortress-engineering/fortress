@@ -32,7 +32,7 @@ Loads content-addressed Standard-owned governance and assurance profiles, valida
 
 ### [`wire.rs`](../_code/wire.rs)
 
-Rejects duplicate JSON object keys before typed decoding, enforces exact public integer limits, emits RFC 8785 bytes for new public records, and resolves explicit reader-version support without altering historical model serializers.
+Applies byte, depth, global token and individual-token admission before typed decoding; escapes terminal/direction controls only in readable fields. Rejects duplicate JSON object keys before typed decoding, enforces exact public integer limits, emits RFC 8785 bytes for new public records, and resolves explicit reader-version support without altering historical model serializers.
 
 ### [`qualification.rs`](../_code/qualification.rs)
 

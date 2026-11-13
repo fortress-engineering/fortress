@@ -10,7 +10,6 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use sha2::{Digest, Sha256};
 
 /// A retained native directory handle and its operational admission identity.
 #[derive(Debug)]
@@ -21,8 +20,11 @@ pub struct DirectoryIdentity {
 
 impl DirectoryIdentity {
     fn capture_registry(path: &Path) -> io::Result<Self> {
+        if linked(&fs::symlink_metadata(path)?) {
+            return Err(io::Error::other("linked admission directory"));
+        }
         let handle = open_registry_directory(path)?;
-        if !handle.metadata()?.is_dir() {
+        if linked(&handle.metadata()?) || !handle.metadata()?.is_dir() {
             return Err(io::Error::other("admission registry is not a directory"));
         }
         let key = native_key(&handle)?;
@@ -34,8 +36,11 @@ impl DirectoryIdentity {
     /// # Errors
     /// Returns an error when directory identity cannot be established.
     pub fn capture(path: &Path) -> io::Result<Self> {
+        if linked(&fs::symlink_metadata(path)?) {
+            return Err(io::Error::other("linked admission directory"));
+        }
         let handle = open_directory(path)?;
-        if !handle.metadata()?.is_dir() {
+        if linked(&handle.metadata()?) || !handle.metadata()?.is_dir() {
             return Err(io::Error::other("admission subject is not a directory"));
         }
         let key = native_key(&handle)?;
@@ -82,7 +87,7 @@ fn open_directory_with_share(path: &Path, share_mode: u32) -> io::Result<File> {
         .access_mode(0x80)
         .share_mode(share_mode)
         // FILE_FLAG_BACKUP_SEMANTICS permits an ordinary directory handle.
-        .custom_flags(0x0200_0000)
+        .custom_flags(0x0220_0000)
         .open(path)
 }
 
@@ -93,7 +98,11 @@ fn open_registry_directory(path: &Path) -> io::Result<File> {
 
 #[cfg(unix)]
 fn open_directory(path: &Path) -> io::Result<File> {
-    File::open(path)
+    use std::os::unix::fs::OpenOptionsExt;
+    OpenOptions::new()
+        .read(true)
+        .custom_flags(libc::O_NOFOLLOW | libc::O_DIRECTORY)
+        .open(path)
 }
 
 #[cfg(not(any(windows, unix)))]
@@ -102,11 +111,6 @@ fn open_directory(_path: &Path) -> io::Result<File> {
         io::ErrorKind::Unsupported,
         "native directory admission is not qualified on this platform",
     ))
-}
-
-fn identity_digest(platform: &str, device: u64, index: u64) -> String {
-    let material = format!("fortress-physical-directory-v1\0{platform}\0{device}\0{index}");
-    format!("{:x}", Sha256::digest(material.as_bytes()))
 }
 
 /// Reads an ordinary file or directory identity without using its path as identity.
@@ -122,7 +126,7 @@ pub fn native_object_identity(path: &Path) -> io::Result<String> {
     let handle = if metadata.is_dir() {
         open_directory(path)?
     } else {
-        File::open(path)?
+        crate::observation::physical::open_regular(path)?
     };
     native_key(&handle)
 }
@@ -185,35 +189,7 @@ pub fn assert_no_incomplete_migration(repository: &Path) -> io::Result<()> {
     Ok(())
 }
 
-pub(crate) fn same_file(left: &File, right: &File) -> io::Result<bool> {
-    Ok(native_key(left)? == native_key(right)?)
-}
-
-#[cfg(windows)]
-fn native_key(handle: &File) -> io::Result<String> {
-    let info = winapi_util::file::information(handle)?;
-    let device = info.volume_serial_number();
-    let index = info.file_index();
-    if device == 0 || index == 0 {
-        return Err(io::Error::other("unavailable native directory identifier"));
-    }
-    Ok(identity_digest("windows", device, index))
-}
-
-#[cfg(unix)]
-fn native_key(handle: &File) -> io::Result<String> {
-    use std::os::unix::fs::MetadataExt;
-    let metadata = handle.metadata()?;
-    Ok(identity_digest("unix", metadata.dev(), metadata.ino()))
-}
-
-#[cfg(not(any(windows, unix)))]
-fn native_key(_handle: &File) -> io::Result<String> {
-    Err(io::Error::new(
-        io::ErrorKind::Unsupported,
-        "native identity unavailable",
-    ))
-}
+pub(crate) use crate::observation::physical::{native_key, same_file};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]

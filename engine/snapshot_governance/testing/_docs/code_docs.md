@@ -143,3 +143,7 @@ Qualifies deterministic read-only discovery, native byte preservation, recursive
 Nested inline Rust modules retain their physical lookup directories through both existing observers. Authored capabilities and relationship direction remain distinct from canonical observed call identities; recognized but unevaluated declarations remain unverified and cannot be overwritten by initialization.
 
 Implicit Cargo integration targets and their cross-Module dependencies are checked against the existing PSM coherence guard, including disabled discovery and explicit targets under `autotests=false`.
+
+### [`documentation_controls.rs`](../_code/documentation_controls.rs)
+
+Executes owning-Module adversarial controls against the existing implementation through an explicit test-only module link. Source lives directly in the Testing Element; these controls supply no production authority or alternate evaluator.

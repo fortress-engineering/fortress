@@ -13,6 +13,7 @@ import os
 from pathlib import Path, PurePosixPath
 import re
 import stat
+import struct
 import sys
 import zipfile
 
@@ -20,6 +21,8 @@ sys.dont_write_bytecode = True
 MAX_FILE = 32 * 1024 * 1024
 MAX_TOTAL = 128 * 1024 * 1024
 MAX_ITEMS = 100_000
+MAX_JSON_NODES = 2_000_000
+MAX_CENTRAL_DIRECTORY = 128 * 1024
 SAFE_INTEGER = 9007199254740991
 DIGEST = re.compile(r"sha256:[0-9a-f]{64}\Z")
 MEMBER = re.compile(r"(?:manifest|statement)\.json\Z|artifacts/[0-9a-f]{64}\.(?:json|bin)\Z")
@@ -102,8 +105,41 @@ def canonical(value):
         raise Invalid("INVALID_JSON", "invalid Unicode or nesting") from error
 
 
-def parse(data):
+def preflight_json(data):
+    """Constant-stack allocation admission, followed by the existing JSON decoder."""
     require(len(data) <= MAX_FILE, "RESOURCE_LIMIT", "member exceeds 32 MiB")
+    depth = nodes = 0
+    quoted = escaped = atom = False
+    for byte in data:
+        if quoted:
+            if escaped:
+                escaped = False
+            elif byte == 92:
+                escaped = True
+            elif byte == 34:
+                quoted = False
+            continue
+        if byte == 34:
+            quoted, atom = True, False
+            nodes += 1
+        elif byte in (91, 123):
+            depth += 1
+            nodes += 1
+            atom = False
+            require(depth <= 64, "RESOURCE_LIMIT", "JSON depth exceeds 64")
+        elif byte in (93, 125):
+            depth -= 1
+            atom = False
+        elif byte in (9, 10, 13, 32, 44, 58):
+            atom = False
+        elif not atom:
+            nodes += 1
+            atom = True
+        require(nodes <= MAX_JSON_NODES, "RESOURCE_LIMIT", "JSON node admission exceeded")
+
+
+def parse(data):
+    preflight_json(data)
     def pairs(items):
         value = {}
         for key, item in items:
@@ -146,24 +182,53 @@ def no_links(path):
     return absolute
 
 
+def preflight_archive(stream):
+    """Admit ordinary single-disk, non-ZIP64 central metadata before ZipFile allocates it."""
+    size = os.fstat(stream.fileno()).st_size
+    require(size <= MAX_TOTAL, "RESOURCE_LIMIT", "archive exceeds 128 MiB")
+    stream.seek(max(0, size - 65_557))
+    tail = stream.read(65_557)
+    offset = tail.rfind(b"PK\x05\x06")
+    require(offset >= 0 and offset + 22 <= len(tail), "INVALID_ARCHIVE", "missing ZIP end record")
+    _, disk, directory_disk, local_count, count, directory_bytes, directory_offset, comment = struct.unpack_from("<4s4H2LH", tail, offset)
+    require(offset + 22 + comment == len(tail), "INVALID_ARCHIVE", "inconsistent ZIP end record")
+    require(disk == directory_disk == 0 and local_count == count, "UNSUPPORTED_ARCHIVE", "multi-disk ZIP")
+    require(count != 65_535 and directory_bytes != 0xFFFFFFFF and directory_offset != 0xFFFFFFFF,
+            "UNSUPPORTED_ARCHIVE", "ZIP64 is outside the qualified archive subset")
+    require(count <= 130 and directory_bytes <= MAX_CENTRAL_DIRECTORY, "RESOURCE_LIMIT", "ZIP central directory admission exceeded")
+    require(directory_offset + directory_bytes == size - len(tail) + offset,
+            "INVALID_ARCHIVE", "prefixed, inconsistent or ambiguous ZIP directory")
+    stream.seek(0)
+    return count
+
+
+def _archive_names(archive, expected_count):
+    entries = archive.infolist()
+    require(len(entries) == expected_count and len(entries) <= 130, "RESOURCE_LIMIT", "archive inventory differs from admitted directory")
+    names, expanded = [], 0
+    for entry in entries:
+        checked_member(entry.filename)
+        mode = entry.external_attr >> 16
+        require(not stat.S_ISLNK(mode) and (not stat.S_IFMT(mode) or stat.S_ISREG(mode)), "UNSAFE_PATH", "special archive member")
+        require(not entry.flag_bits & 1, "UNSUPPORTED_ARCHIVE", "encrypted archive")
+        require(entry.compress_type in (zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED),
+                "UNSUPPORTED_ARCHIVE", "unqualified ZIP compression")
+        require(entry.file_size <= MAX_FILE and entry.file_size <= max(1, entry.compress_size) * 1000,
+                "RESOURCE_LIMIT", "archive member expansion exceeds admission")
+        expanded += entry.file_size
+        require(expanded <= MAX_TOTAL, "RESOURCE_LIMIT", "archive expansion exceeds 128 MiB")
+        names.append(entry.filename)
+    require(len(names) == len(set(n.casefold() for n in names)), "DUPLICATE_IDENTITY", "duplicate archive member")
+    return set(names)
+
+
 def archive_names(path):
-    require(path.stat().st_size <= MAX_TOTAL, "RESOURCE_LIMIT", "archive exceeds 128 MiB")
-    with zipfile.ZipFile(path) as archive:
-        entries = archive.infolist()
-        require(len(entries) <= 130, "RESOURCE_LIMIT", "archive inventory exceeds 130")
-        names, expanded = [], 0
-        for entry in entries:
-            checked_member(entry.filename)
-            mode = entry.external_attr >> 16
-            require(not stat.S_ISLNK(mode) and (not stat.S_IFMT(mode) or stat.S_ISREG(mode)), "UNSAFE_PATH", "special archive member")
-            require(not entry.flag_bits & 1, "UNSUPPORTED_ARCHIVE", "encrypted archive")
-            require(entry.file_size <= MAX_FILE and entry.file_size <= max(1, entry.compress_size) * 1000,
-                    "RESOURCE_LIMIT", "archive member expansion exceeds admission")
-            expanded += entry.file_size
-            require(expanded <= MAX_TOTAL, "RESOURCE_LIMIT", "archive expansion exceeds 128 MiB")
-            names.append(entry.filename)
-        require(len(names) == len(set(n.casefold() for n in names)), "DUPLICATE_IDENTITY", "duplicate archive member")
-        return set(names)
+    path = no_links(path)
+    require(path.is_file(), "UNSAFE_PATH", "archive is not ordinary")
+    with path.open("rb") as stream:
+        count = preflight_archive(stream)
+        with zipfile.ZipFile(stream) as archive:
+            return _archive_names(archive, count)
 
 
 class Reader:
@@ -171,6 +236,8 @@ class Reader:
     def __init__(self, path):
         self.path = no_links(path)
         self.archive = None
+        self.container = None
+        self.container_identity = None
         self.total = 0
         self.loaded = set()
         if self.path.is_dir():
@@ -187,16 +254,41 @@ class Reader:
                 else:
                     require(child.is_file(), "UNSAFE_PATH", "unregistered directory")
                     names.append(child.name)
+            require(len(names) == len(set(n.casefold() for n in names)), "DUPLICATE_IDENTITY", "duplicate directory member")
             self.names = set(names)
         else:
-            self.names = archive_names(self.path)
-            self.archive = zipfile.ZipFile(self.path)
+            before = self.path.lstat()
+            require(stat.S_ISREG(before.st_mode), "UNSAFE_PATH", "non-file archive")
+            try:
+                self.container = self.path.open("rb")
+                after = os.fstat(self.container.fileno())
+                require(os.path.samestat(before, after), "INTEGRITY_ERROR", "archive replaced during admission")
+                self.container_identity = after
+                count = preflight_archive(self.container)
+                self.archive = zipfile.ZipFile(self.container)
+                self.names = _archive_names(self.archive, count)
+                self.check_container()
+            except BaseException:
+                self.close()
+                raise
         for name in self.names:
             checked_member(name)
 
     def close(self):
         if self.archive:
             self.archive.close()
+        if self.container:
+            self.container.close()
+
+    def check_container(self):
+        if self.container:
+            current = no_links(self.path).stat()
+            held = os.fstat(self.container.fileno())
+            before = self.container_identity
+            require(os.path.samestat(current, held) and os.path.samestat(before, held)
+                    and before.st_size == held.st_size == current.st_size
+                    and before.st_mtime_ns == held.st_mtime_ns == current.st_mtime_ns,
+                    "INTEGRITY_ERROR", "archive changed during verification")
 
     def read(self, member):
         checked_member(member)
@@ -204,18 +296,21 @@ class Reader:
         require(member not in self.loaded, "DUPLICATE_IDENTITY", "member referenced multiple times")
         self.loaded.add(member)
         if self.archive:
+            self.check_container()
             with self.archive.open(member) as stream:
                 data = stream.read(MAX_FILE + 1)
+            self.check_container()
         else:
             path = no_links(self.path / PurePosixPath(member))
             before = path.stat()
             require(stat.S_ISREG(before.st_mode) and before.st_size <= MAX_FILE, "RESOURCE_LIMIT", "invalid member size/type")
             with path.open("rb") as stream:
-                require(os.fstat(stream.fileno()).st_ino == before.st_ino, "UNSAFE_PATH", "member changed during admission")
+                require(os.path.samestat(os.fstat(stream.fileno()), before), "UNSAFE_PATH", "member changed during admission")
                 data = stream.read(MAX_FILE + 1)
                 after = os.fstat(stream.fileno())
             require(before.st_size == after.st_size and before.st_mtime_ns == after.st_mtime_ns,
                     "INTEGRITY_ERROR", "member changed during read")
+            require(os.path.samestat(after, no_links(path).stat()), "INTEGRITY_ERROR", "member replaced during read")
         self.total += len(data)
         require(len(data) <= MAX_FILE and self.total <= MAX_TOTAL, "RESOURCE_LIMIT", "bundle bytes exceed admission")
         return data

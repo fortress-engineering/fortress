@@ -252,12 +252,16 @@ pub fn observe_rust_implementation(
         };
         let source = std::str::from_utf8(files[&path])
             .map_err(|_| ImplementationObservationError::NonUtf8Rust(path.clone().into()))?;
-        crate::observation::input_retention::preflight_input(source.len()).map_err(|error| {
-            ImplementationObservationError::InvalidRustSource {
+        crate::observation::admit_rust(source)
+            .map_err(str::to_owned)
+            .and_then(|()| {
+                crate::observation::input_retention::preflight_input(source.len())
+                    .map_err(|error| error.to_string())
+            })
+            .map_err(|error| ImplementationObservationError::InvalidRustSource {
                 path: path.clone().into(),
-                source: syn::Error::new(Span::call_site(), error.to_string()),
-            }
-        })?;
+                source: syn::Error::new(Span::call_site(), error),
+            })?;
         let syntax = syn::parse_file(source).map_err(|source| {
             ImplementationObservationError::InvalidRustSource {
                 path: path.clone().into(),
@@ -410,6 +414,14 @@ fn parse_packages(
         .iter()
         .filter(|(path, _)| path.ends_with("Cargo.toml"))
     {
+        if bytes.len() > crate::observation::MAX_SOURCE_UNIT_BYTES {
+            return Err(ImplementationObservationError::InvalidCargoManifest {
+                path: path.clone().into(),
+                source: <toml::de::Error as serde::de::Error>::custom(
+                    "RESOURCE_LIMIT: Cargo manifest exceeds source-unit admission",
+                ),
+            });
+        }
         let source = std::str::from_utf8(bytes)
             .map_err(|_| ImplementationObservationError::NonUtf8Manifest(path.clone().into()))?;
         let document: CargoDocument = toml::from_str(source).map_err(|source| {
@@ -723,12 +735,16 @@ fn discover_module_tree(
         });
     let source = std::str::from_utf8(files[path])
         .map_err(|_| ImplementationObservationError::NonUtf8Rust(path.into()))?;
-    crate::observation::input_retention::preflight_input(source.len()).map_err(|error| {
-        ImplementationObservationError::InvalidRustSource {
+    crate::observation::admit_rust(source)
+        .map_err(str::to_owned)
+        .and_then(|()| {
+            crate::observation::input_retention::preflight_input(source.len())
+                .map_err(|error| error.to_string())
+        })
+        .map_err(|error| ImplementationObservationError::InvalidRustSource {
             path: path.into(),
-            source: syn::Error::new(Span::call_site(), error.to_string()),
-        }
-    })?;
+            source: syn::Error::new(Span::call_site(), error),
+        })?;
     let syntax = syn::parse_file(source).map_err(|source| {
         ImplementationObservationError::InvalidRustSource {
             path: path.into(),

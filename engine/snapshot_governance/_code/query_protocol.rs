@@ -501,7 +501,12 @@ pub fn render_inspection_value(value: &Value) -> String {
         match value {
             Value::Object(fields) => {
                 for (key, value) in fields {
-                    let _ = writeln!(output, "{}{}:", " ".repeat(indent), key.replace('_', " "));
+                    let _ = writeln!(
+                        output,
+                        "{}{}:",
+                        " ".repeat(indent),
+                        crate::wire::readable_text(&key.replace('_', " "))
+                    );
                     render(value, indent + 2, output);
                 }
             }
@@ -517,7 +522,7 @@ pub fn render_inspection_value(value: &Value) -> String {
                     " ".repeat(indent),
                     value
                         .as_str()
-                        .map_or_else(|| value.to_string(), str::to_owned)
+                        .map_or_else(|| value.to_string(), crate::wire::readable_text)
                 );
             }
         }

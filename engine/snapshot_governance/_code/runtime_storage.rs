@@ -204,7 +204,7 @@ fn ordinary_record(path: &Path, limit: usize) -> io::Result<Vec<u8>> {
     if linked(&metadata) || !metadata.is_file() {
         return Err(invalid("retirement record is not ordinary"));
     }
-    let mut file = File::open(path)?;
+    let mut file = crate::observation::physical::open_regular(path)?;
     let before = file.metadata()?;
     let mut bytes = Vec::new();
     (&mut file)
@@ -220,7 +220,7 @@ fn ordinary_record(path: &Path, limit: usize) -> io::Result<Vec<u8>> {
         .take(u64::try_from(limit).map_err(io::Error::other)? + 1)
         .read_to_end(&mut repeated)?;
     let after = fs::symlink_metadata(path)?;
-    let current = File::open(path)?;
+    let current = crate::observation::physical::open_regular(path)?;
     if linked(&after)
         || !after.is_file()
         || after.len() != before.len()
@@ -782,8 +782,9 @@ impl RuntimeStorage {
             if path.extension().is_none_or(|extension| extension != "json") {
                 continue;
             }
-            let journal: RunJournal = crate::wire::parse_strict_json_bytes(&fs::read(path)?)
-                .map_err(|_| io::Error::other("uncertain prior execution journal"))?;
+            let journal: RunJournal =
+                crate::wire::parse_strict_json_bytes(&ordinary_record(&path, 4 * 1024 * 1024)?)
+                    .map_err(|_| io::Error::other("uncertain prior execution journal"))?;
             if journal.root_identity == self.root_identity
                 && journal.run_root.exists()
                 && (journal.lease_state != "RELEASED"
@@ -832,7 +833,7 @@ impl RuntimeStorage {
         };
         if marker_path.exists() {
             let marker: TargetMarker =
-                crate::wire::parse_strict_json_bytes(&fs::read(&marker_path)?)
+                crate::wire::parse_strict_json_bytes(&ordinary_record(&marker_path, 64 * 1024)?)
                     .map_err(|_| io::Error::other("uncertain compiler target owner"))?;
             if marker != expected_marker {
                 return Err(io::Error::other("compiler target owner mismatch"));
@@ -921,7 +922,7 @@ impl RuntimeStorage {
             if path.extension().is_none_or(|extension| extension != "json") {
                 continue;
             }
-            let Ok(bytes) = fs::read(&path) else {
+            let Ok(bytes) = ordinary_record(&path, 4 * 1024 * 1024) else {
                 results.push((path, "RETAINED_UNCERTAIN".into()));
                 continue;
             };
@@ -946,7 +947,7 @@ impl RuntimeStorage {
             if !expected.exists() {
                 continue;
             }
-            let marker = fs::read(expected.join("owner.json"))
+            let marker = ordinary_record(&expected.join("owner.json"), 64 * 1024)
                 .ok()
                 .and_then(|value| crate::wire::parse_strict_json_bytes::<OwnerMarker>(&value).ok());
             if marker.is_none_or(|marker| {
@@ -1026,7 +1027,10 @@ impl RunWorkspace {
         if !path.starts_with(self.staging()) {
             return Err(invalid("owned output must be within this run's staging"));
         }
-        let actual = format!("sha256:{:x}", Sha256::digest(fs::read(&path)?));
+        let actual = format!(
+            "sha256:{:x}",
+            Sha256::digest(ordinary_record(&path, 512 * 1024 * 1024)?)
+        );
         if actual != digest {
             return Err(invalid("owned output digest mismatch"));
         }
@@ -1108,8 +1112,9 @@ impl RunWorkspace {
             let retained_compiler = if self.policy.retain_shared_compiler {
                 compiler_bytes
             } else {
-                let marker: TargetMarker = crate::wire::parse_strict_json_bytes(&fs::read(
-                    self.target.join("_owner.json"),
+                let marker: TargetMarker = crate::wire::parse_strict_json_bytes(&ordinary_record(
+                    &self.target.join("_owner.json"),
+                    64 * 1024,
                 )?)
                 .map_err(|_| io::Error::other("uncertain compiler target owner"))?;
                 if marker.root_identity != self.journal.root_identity || marker.namespace != "rust"

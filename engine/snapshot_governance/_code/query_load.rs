@@ -1,7 +1,7 @@
 //! Explicit bounded read-only CONTROL loading, separate from warm queries.
 
 use std::collections::BTreeMap;
-use std::fs::{self, File};
+use std::fs;
 use std::io::{self, Read};
 use std::path::{Component, Path, PathBuf};
 
@@ -606,7 +606,8 @@ pub(crate) fn safe_read(root: &Path, path: &Path, maximum: u64) -> Result<Vec<u8
             ));
         }
     }
-    let mut file = File::open(path).map_err(|error| read_error(&error))?;
+    let mut file =
+        crate::observation::physical::open_regular(path).map_err(|error| read_error(&error))?;
     let before = file.metadata().map_err(|error| read_error(&error))?;
     if !before.is_file() {
         return Err(QueryError::new(
@@ -634,6 +635,8 @@ pub(crate) fn safe_read(root: &Path, path: &Path, maximum: u64) -> Result<Vec<u8
             "evidence file changed size or exceeded admission",
         ));
     }
+    crate::observation::physical::verify_regular(path, &file, &before)
+        .map_err(|error| read_error(&error))?;
     Ok(bytes)
 }
 

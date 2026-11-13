@@ -1,14 +1,12 @@
 //! Portable source-entry inventory, including explicit observation barriers.
 
-use std::fs::{self, DirEntry};
+use std::fs;
 use std::path::Path;
 
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 
-use super::{
-    ObservationError, ObservationPolicy, RepositoryObservation, observe_file, relative_path,
-};
+use super::{ObservationError, ObservationPolicy, RepositoryObservation};
 
 /// One explicitly excluded source selector and its caller authority.
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
@@ -126,12 +124,18 @@ pub fn observe_source_manifest(
     let root = root.as_ref();
     let metadata = fs::symlink_metadata(root)
         .map_err(|source| ObservationError::io("inspect root", root, source))?;
-    if !metadata.file_type().is_dir() {
+    if super::physical::linked(&metadata) || !metadata.file_type().is_dir() {
         return Err(ObservationError::RootNotDirectory(root.to_path_buf()));
     }
     let exclusions = exclusion_records(policy);
     let mut entries = Vec::new();
-    visit(root, root, &exclusions, &mut entries)?;
+    let mut budget = super::ObservationBudget::new(&super::ObservationLimits {
+        max_files: 100_000,
+        max_entries: 200_000,
+        max_source_bytes: 1024 * 1024 * 1024,
+        max_path_bytes: 32 * 1024 * 1024,
+    });
+    visit(root, root, &exclusions, &mut entries, &mut budget, 0)?;
     Ok(finish(entries, exclusions))
 }
 
@@ -187,18 +191,18 @@ fn visit(
     directory: &Path,
     exclusions: &[SourceExclusion],
     entries: &mut Vec<SourceEntry>,
+    budget: &mut super::ObservationBudget<'_>,
+    depth: usize,
 ) -> Result<(), ObservationError> {
-    let read = fs::read_dir(directory)
-        .map_err(|source| ObservationError::io("read directory", directory, source))?;
-    let mut ordered = read
-        .map(|entry| {
-            let entry = entry.map_err(|source| {
-                ObservationError::io("read directory entry", directory, source)
-            })?;
-            Ok((relative_path(root, &entry.path())?, entry))
-        })
-        .collect::<Result<Vec<(String, DirEntry)>, ObservationError>>()?;
-    ordered.sort_by(|left, right| left.0.cmp(&right.0));
+    if depth >= 128 {
+        return Err(ObservationError::ResourceLimit {
+            resource: "directory_depth",
+            maximum: 128,
+            observed: 129,
+        });
+    }
+    let ordered = super::bounded_directory_entries(root, directory, budget)?;
+    let mut folded = std::collections::BTreeSet::new();
     for (path, entry) in ordered {
         if exclusions.iter().any(|item| {
             path == item.selector
@@ -208,11 +212,14 @@ fn visit(
         }) {
             continue;
         }
+        if !folded.insert(path.to_lowercase()) {
+            return Err(ObservationError::UnsupportedEntry(entry.path()));
+        }
         let absolute = entry.path();
         let metadata = fs::symlink_metadata(&absolute)
             .map_err(|source| ObservationError::io("inspect entry", &absolute, source))?;
         let file_type = metadata.file_type();
-        if file_type.is_symlink() || is_reparse_point(&metadata) {
+        if file_type.is_symlink() || super::physical::linked(&metadata) {
             let raw_target = fs::read_link(&absolute).ok();
             let target_readable = raw_target.is_some();
             let target_portable = raw_target
@@ -259,7 +266,7 @@ fn visit(
                 limitation_ref: Some(limitation.into()),
             });
         } else if file_type.is_dir() {
-            if let Err(error) = visit(root, &absolute, exclusions, entries) {
+            if let Err(error) = visit(root, &absolute, exclusions, entries, budget, depth + 1) {
                 if matches!(error, ObservationError::Io { .. }) {
                     entries.push(SourceEntry {
                         repository_relative_path: path,
@@ -276,8 +283,14 @@ fn visit(
                 }
             }
         } else if file_type.is_file() {
-            match observe_file(path.clone(), &absolute) {
+            super::admit_inventory("files", &mut budget.files, budget.limits.max_files, 1)?;
+            match super::observe_file_with_limit(
+                path.clone(),
+                &absolute,
+                Some((budget.source_bytes, budget.limits.max_source_bytes)),
+            ) {
                 Ok(file) => {
+                    budget.source_bytes += file.size();
                     if file.size() > 9_007_199_254_740_991 {
                         return Err(ObservationError::FileSizeOverflow(absolute));
                     }
@@ -309,15 +322,4 @@ fn visit(
         }
     }
     Ok(())
-}
-
-#[cfg(windows)]
-fn is_reparse_point(metadata: &fs::Metadata) -> bool {
-    use std::os::windows::fs::MetadataExt;
-    metadata.file_attributes() & 0x400 != 0
-}
-
-#[cfg(not(windows))]
-fn is_reparse_point(_metadata: &fs::Metadata) -> bool {
-    false
 }

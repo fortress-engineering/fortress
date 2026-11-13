@@ -400,9 +400,9 @@ impl AuditResult {
                 output.push_str("] [");
                 output.push_str(finding.finding_id());
                 output.push_str("] ");
-                output.push_str(location);
+                output.push_str(&crate::wire::readable_text(location));
                 output.push_str(": ");
-                output.push_str(finding.message());
+                output.push_str(&crate::wire::readable_text(finding.message()));
                 if let Some(governed) = self
                     .finding_governance
                     .findings()
@@ -439,9 +439,11 @@ impl AuditResult {
                     "- [{}] {}: {}",
                     execution.rule_id(),
                     state,
-                    execution
-                        .applicability_reason()
-                        .unwrap_or_else(|| execution.detail())
+                    crate::wire::readable_text(
+                        execution
+                            .applicability_reason()
+                            .unwrap_or_else(|| execution.detail())
+                    )
                 );
             }
         }
@@ -484,7 +486,7 @@ impl AuditResult {
                 output.push_str("] ");
                 output.push_str(diagnostic.primary_module());
                 output.push_str(": ");
-                output.push_str(diagnostic.summary());
+                output.push_str(&crate::wire::readable_text(diagnostic.summary()));
                 output.push('\n');
             }
         }
@@ -5407,9 +5409,14 @@ fn read_project_authority(
     project_path: &Path,
     limits: Option<(usize, usize)>,
 ) -> Result<std::io::Result<Vec<u8>>, AuditError> {
-    let read = if let Some((max_source_bytes, max_files)) = limits {
-        match fs::File::open(project_path) {
-            Ok(input) => {
+    let (max_source_bytes, max_files) = limits.unwrap_or((4 * 1024 * 1024, usize::MAX));
+    let read = {
+        match crate::observation::physical::open_regular(project_path) {
+            Ok(mut input) => {
+                let before = input.metadata().map_err(|source| AuditError::Io {
+                    path: project_path.to_path_buf(),
+                    source,
+                })?;
                 let size = input
                     .metadata()
                     .map_err(|source| AuditError::Io {
@@ -5427,7 +5434,7 @@ fn read_project_authority(
                     });
                 }
                 let mut bytes = Vec::new();
-                input
+                (&mut input)
                     .take(maximum.saturating_add(1))
                     .read_to_end(&mut bytes)
                     .map_err(|source| AuditError::Io {
@@ -5442,12 +5449,15 @@ fn read_project_authority(
                         max_files,
                     });
                 }
+                crate::observation::physical::verify_regular(project_path, &input, &before)
+                    .map_err(|source| AuditError::Io {
+                        path: project_path.to_path_buf(),
+                        source,
+                    })?;
                 Ok(bytes)
             }
             Err(source) => Err(source),
         }
-    } else {
-        fs::read(project_path)
     };
     Ok(read)
 }
@@ -5917,18 +5927,29 @@ fn read_observed_files(
 
 fn read_observed_file(root: &Path, file: &ObservedFile) -> Result<LoadedDocument, AuditError> {
     let absolute = root.join(file.path());
-    let input = fs::File::open(&absolute).map_err(|source| AuditError::Io {
+    let mut input =
+        crate::observation::physical::open_regular(&absolute).map_err(|source| AuditError::Io {
+            path: absolute.clone(),
+            source,
+        })?;
+    let before = input.metadata().map_err(|source| AuditError::Io {
         path: absolute.clone(),
         source,
     })?;
     let mut bytes = Vec::new();
-    input
+    (&mut input)
         .take(file.size().saturating_add(1))
         .read_to_end(&mut bytes)
         .map_err(|source| AuditError::Io {
-            path: absolute,
+            path: absolute.clone(),
             source,
         })?;
+    crate::observation::physical::verify_regular(&absolute, &input, &before).map_err(|source| {
+        AuditError::Io {
+            path: absolute,
+            source,
+        }
+    })?;
     let document = LoadedDocument {
         path: file.path().into(),
         bytes,

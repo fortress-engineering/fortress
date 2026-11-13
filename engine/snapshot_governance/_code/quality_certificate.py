@@ -33,6 +33,7 @@ import uuid
 # Verification must not create an untracked bytecode input before it checks the
 # repository fingerprint. Keep the storage adapter import side-effect free.
 sys.dont_write_bytecode = True
+from bounded_io import inventory, read_ordinary, strict_json
 from execution_storage import (
     RunWorkspace,
     StorageError,
@@ -52,7 +53,7 @@ CERTIFICATE_ID = "quality-certificate"
 CERTIFICATE_MEMBER = "quality_certificate.json"
 SCHEMA_ID = "urn:fortress:derived:v3:local-quality-certificate"
 SEMANTIC_VERSION = "quality-certificate-v3.0"
-PROFILE_ID = "fortress-complete-local-v1"
+PROFILE_ID = "fortress-complete-local-security-v1"
 TOOLCHAIN = "1.97.1"
 TRACKED_EVIDENCE = "TRACKED_EVIDENCE"
 LOCAL_MATERIALIZATION = "LOCAL_MATERIALIZATION"
@@ -67,7 +68,7 @@ def load_installed_artifact_contract() -> tuple[
     path = Path(__file__).resolve().parents[3] / CONTROL_LAYOUT_PATH
     if not path.is_file():
         return (), (), {}, []
-    layout = json.loads(path.read_text(encoding="utf-8"))
+    layout = strict_json(read_ordinary(path, 4 * 1024 * 1024))
     records = layout["artifact_registry"]
     semantic: list[tuple[str, str, str]] = []
     certification: list[tuple[str, str, str]] = []
@@ -116,7 +117,7 @@ def validate_control_artifact_registry(root: Path) -> None:
     validate_required_gate_contract()
     path = root.resolve() / CONTROL_LAYOUT_PATH
     try:
-        layout = json.loads(path.read_text(encoding="utf-8"))
+        layout = strict_json(read_ordinary(path, 4 * 1024 * 1024))
         records = layout["artifact_registry"]
     except (OSError, UnicodeDecodeError, json.JSONDecodeError, KeyError, TypeError) as error:
         raise CertificateError(f"cannot load {CONTROL_LAYOUT_PATH}: {error}") from error
@@ -154,6 +155,7 @@ REQUIRED_GATE_IDS = (
     "RUSTDOC",
     "SCHEMA_AND_STANDARD",
     "SCHEMA_ARTIFACTS",
+    "SECURITY_BOUNDARIES",
     "SELF_AUDIT",
     "SELF_MODEL",
     "SEMANTIC_QUALIFICATION",
@@ -231,7 +233,7 @@ def derived_artifact_ids() -> tuple[str, ...]:
 def migration_record_roots() -> set[str]:
     """Resolve derived output families from the same installed CONTROL role registry."""
     path = Path(__file__).resolve().parents[3] / CONTROL_LAYOUT_PATH
-    layout = json.loads(path.read_text(encoding="utf-8"))
+    layout = strict_json(read_ordinary(path, 4 * 1024 * 1024))
     return {item["path"].rsplit("/", 1)[0] for item in layout["roles"]
             if item["role"] in {"REVIEWED_MIGRATION_PLAN", "MIGRATION_RECEIPT", "HYPOTHETICAL_PROPOSAL", "ONBOARDING_PROPOSAL"}
             and item["source_binding"] == "NONRECURSIVE"}
@@ -255,7 +257,7 @@ def repository_files(root: Path) -> list[str]:
     if legacy.is_file():
         raise CertificateError(f"{LEGACY_CONFIG_PATH} requires explicit migration")
     try:
-        configuration = json.loads(config.read_text(encoding="utf-8"))
+        configuration = strict_json(read_ordinary(config, 4 * 1024 * 1024))
         exclusions = configuration["observation_exclusions"]
     except (OSError, UnicodeDecodeError, json.JSONDecodeError, KeyError, TypeError) as error:
         raise CertificateError(f"cannot load {CONFIG_PATH}: {error}") from error
@@ -265,30 +267,10 @@ def repository_files(root: Path) -> list[str]:
     ):
         raise CertificateError("configuration observation exclusions are invalid")
     excluded = {".git", *excluded_source_paths(), *exclusions}
-    normalized: list[str] = []
-    for directory, names, files in os.walk(root, topdown=True, followlinks=False):
-        relative_directory = Path(directory).relative_to(root).as_posix()
-        if relative_directory == ".":
-            relative_directory = ""
-        kept: list[str] = []
-        for name in sorted(names):
-            relative = f"{relative_directory}/{name}".strip("/")
-            absolute = Path(directory) / name
-            if absolute.is_symlink():
-                raise CertificateError(f"repository source directory is a symbolic link: {relative}")
-            if any(relative == prefix or relative.startswith(prefix + "/") for prefix in excluded):
-                continue
-            kept.append(name)
-        names[:] = kept
-        for name in sorted(files):
-            relative = f"{relative_directory}/{name}".strip("/")
-            absolute = Path(directory) / name
-            if absolute.is_symlink():
-                raise CertificateError(f"repository source file is a symbolic link: {relative}")
-            if any(relative == prefix or relative.startswith(prefix + "/") for prefix in excluded):
-                continue
-            normalized.append(relative)
-    normalized.sort()
+    try:
+        normalized = inventory(root, excluded)
+    except (OSError, UnicodeError) as error:
+        raise CertificateError(f"unsafe or exhausted source inventory: {error}") from error
     if not normalized:
         raise CertificateError("repository input set is empty")
     return normalized
@@ -308,11 +290,13 @@ def repository_source_identities(root: Path) -> tuple[tuple[str, int], str]:
     digest = hashlib.sha256()
     native = hashlib.sha256()
     paths = repository_files(root)
+    total_bytes = 0
     for relative in paths:
         path = root / Path(relative)
         if not path.is_file():
             raise CertificateError(f"certificate input is not a file: {relative}")
-        content = path.read_bytes()
+        content = read_ordinary(path, min(512 * 1024 * 1024, 1024 * 1024 * 1024 - total_bytes))
+        total_bytes += len(content)
         encoded_path = relative.encode("utf-8")
         digest.update(encoded_path)
         digest.update(b"\0")
@@ -410,7 +394,7 @@ def control_layout_digest(root: Path, version: int = 8) -> str:
     if version not in (1, 2, 3, 4, 5, 6, 7, 8):
         raise CertificateError("unsupported control layout edition")
     path = root / f"engine/project_model/_data/control_layout_v{version}.json"
-    return sha256_bytes(path.read_bytes())
+    return sha256_bytes(read_ordinary(path))
 
 
 def manifest_digest(manifest: dict[str, Any]) -> str:
@@ -527,7 +511,7 @@ def selection_entries(document: Any) -> dict[str, str]:
 def updated_selection_index(root: Path, generation_digest: str, key: str | None = None) -> tuple[bytes | None, bytes]:
     """Replace only this exact selection while preserving other contexts."""
     path = root / CURRENT_INDEX_PATH
-    old = path.read_bytes() if path.is_file() else None
+    old = read_ordinary(path) if path.is_file() else None
     if old is None:
         document: dict[str, Any] = {
             "$schema": "urn:fortress:derived:v1:assessment-selection-index",
@@ -536,7 +520,7 @@ def updated_selection_index(root: Path, generation_digest: str, key: str | None 
         }
     else:
         try:
-            document = json.loads(old.decode("utf-8"))
+            document = strict_json(old.decode("utf-8"))
         except (UnicodeDecodeError, json.JSONDecodeError) as error:
             raise CertificateError(f"current selection index is invalid: {error}") from error
         if canonical_pretty_json(document) != old:
@@ -772,7 +756,7 @@ def certification_executable(
     build += ["--message-format=json-render-diagnostics"]
     output = run_command(root, build, environment, capture=True, workspace=workspace)
     try:
-        messages = [json.loads(line) for line in output.splitlines()]
+        messages = [strict_json(line) for line in output.splitlines()]
     except json.JSONDecodeError as error:
         raise CertificateError("invalid CLI compiler artifact report") from error
     if any(not isinstance(message, dict) for message in messages):
@@ -867,7 +851,7 @@ def semantic_qualification(
         if output.stat().st_size > 1024 * 1024:
             raise CertificateError("qualification metadata exceeds 1 MiB")
         content = output.read_bytes()
-        report = json.loads(content)
+        report = strict_json(content)
         if (report.get("$schema") != "urn:fortress:derived:v1:semantic-qualification"
                 or report.get("schema_version") != 1 or report.get("status") != "PASS"
                 or any(report.get("inputs", {}).get("identities", {}).get(k) != value
@@ -1022,6 +1006,12 @@ def _issue(root: Path, workspace: RunWorkspace) -> dict[str, Any]:
         run_command(root, self_model, environment, workspace=workspace)
         pass_gate(gates, "SELF_MODEL", self_model)
 
+        security_directory = workspace.allocate_retained_evidence("security-qualification", 1024 * 1024)
+        security_controls_path = security_directory / "controls.json"
+        security_controls = [sys.executable, "testing/_code/security_controls.py", "--report", str(security_controls_path)]
+        run_command(root, security_controls, environment, workspace=workspace)
+        pass_gate(gates, "SECURITY_BOUNDARIES", security_controls)
+
         artifact_records: list[dict[str, Any]] = []
         pending_artifacts: dict[str, bytes] = {}
         projection_directory = temporary / "projections"
@@ -1141,7 +1131,7 @@ def _issue(root: Path, workspace: RunWorkspace) -> dict[str, Any]:
         run_command(root, schema_artifacts, schema_environment, workspace=workspace)
         pass_gate(gates, "SCHEMA_ARTIFACTS", schema_artifacts)
 
-        certification_document = json.loads(
+        certification_document = strict_json(
             certification_outputs["certification"].read_text(encoding="utf-8")
         )
         if (
@@ -1153,7 +1143,7 @@ def _issue(root: Path, workspace: RunWorkspace) -> dict[str, Any]:
         pass_gate(gates, "FULL_PROFILE_CERTIFICATION", certify)
 
         first_audit = audit_output.read_bytes()
-        audit_document = json.loads(first_audit)
+        audit_document = strict_json(first_audit)
         if audit_document.get("outcome") != "PASS":
             raise CertificateError("self-audit from certification stack is not PASS")
         pass_gate(gates, "SELF_AUDIT", certify)
@@ -1187,6 +1177,18 @@ def _issue(root: Path, workspace: RunWorkspace) -> dict[str, Any]:
             f"before={initial_fingerprint}/{initial_file_count} "
             f"after={source_fingerprint}/{source_file_count}"
         )
+    from security_qualification import compose as compose_security_qualification
+    security_record = compose_security_qualification(
+        source_fingerprint, [gate["id"] for gate in gates],
+        read_ordinary(security_controls_path, 64 * 1024),
+        read_ordinary(root / "engine/snapshot_governance/_docs/code_docs.md", 1024 * 1024),
+    )
+    security_record_path = security_directory / (security_record["record_id"].removeprefix("sha256:") + ".json")
+    with security_record_path.open("xb") as stream:
+        stream.write(canonical_pretty_json(security_record))
+        stream.flush()
+        os.fsync(stream.fileno())
+    print(f"security qualification {security_record['record_id']} retained={security_record_path}", flush=True)
     payload: dict[str, Any] = {
         "$schema": SCHEMA_ID,
         "schema_version": 3,
@@ -1251,13 +1253,13 @@ def _issue(root: Path, workspace: RunWorkspace) -> dict[str, Any]:
             )
     for path, content in sorted(generation_files.items(), key=lambda item: str(item[0])):
         if path.is_file():
-            if path.read_bytes() != content:
+            if read_ordinary(path) != content:
                 raise CertificateError(
                     f"immutable generation member differs: {path.relative_to(root).as_posix()}"
                 )
         else:
             atomic_write(path, content)
-    if (index_path.read_bytes() if index_path.is_file() else None) != old_index:
+    if (read_ordinary(index_path, 4 * 1024 * 1024) if index_path.is_file() else None) != old_index:
         raise CertificateError("current selection index changed during publication")
     atomic_write(index_path, index_bytes)
     workspace.publish(generation_id)
@@ -1285,8 +1287,8 @@ def load_selected_generation(
     """Resolve and validate exactly the selected immutable generation."""
     index_path = root / CURRENT_INDEX_PATH
     try:
-        index_bytes = index_path.read_bytes()
-        index = json.loads(index_bytes.decode("utf-8"))
+        index_bytes = read_ordinary(index_path, 4 * 1024 * 1024)
+        index = strict_json(index_bytes.decode("utf-8"))
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
         raise CertificateError(f"cannot load {CURRENT_INDEX_PATH}: {error}") from error
     if canonical_pretty_json(index) != index_bytes:
@@ -1298,8 +1300,8 @@ def load_selected_generation(
     generation_root = root / GENERATIONS_PATH / generation_id.removeprefix("sha256:")
     manifest_path = generation_root / "manifest.json"
     try:
-        manifest_bytes = manifest_path.read_bytes()
-        manifest = json.loads(manifest_bytes.decode("utf-8"))
+        manifest_bytes = read_ordinary(manifest_path, 4 * 1024 * 1024)
+        manifest = strict_json(manifest_bytes.decode("utf-8"))
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
         raise CertificateError(f"cannot load selected generation manifest: {error}") from error
     if canonical_pretty_json(manifest) != manifest_bytes:
@@ -1345,7 +1347,7 @@ def load_selected_generation(
                 raise CertificateError("generation member name is unsafe")
             path = generation_root / member
             try:
-                content = path.read_bytes()
+                content = read_ordinary(path)
             except OSError as error:
                 raise CertificateError(f"included generation member is missing: {member}") from error
             if len(content) != descriptor["byte_count"] or sha256_bytes(content) != descriptor["content_digest"]:
@@ -1359,8 +1361,8 @@ def load_selected_generation(
     if certificate_path is None:
         raise CertificateError("selected generation lacks the quality certificate")
     try:
-        certificate_bytes = certificate_path.read_bytes()
-        document = json.loads(certificate_bytes.decode("utf-8"))
+        certificate_bytes = read_ordinary(certificate_path, 4 * 1024 * 1024)
+        document = strict_json(certificate_bytes.decode("utf-8"))
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
         raise CertificateError(f"cannot load selected quality certificate: {error}") from error
     if not isinstance(document, dict):
@@ -1436,7 +1438,7 @@ def local_materialization_states(
             if not path.is_file():
                 state = "MISSING"
             else:
-                content = path.read_bytes()
+                content = read_ordinary(path)
                 state = (
                     "CURRENT"
                     if len(content) == artifact["bytes"]

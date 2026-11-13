@@ -5,7 +5,7 @@ mod junit_ingest;
 #[path = "sarif_ingest.rs"]
 mod sarif_ingest;
 
-use std::fs::{self, File};
+use std::fs;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 
@@ -157,6 +157,7 @@ fn read_import_member(root: &Path, relative: &str) -> Result<Option<Vec<u8>>, Pr
         bytes.len() as u64 == before.len() && file.metadata()?.len() == before.len(),
         "provider import changed during read",
     )?;
+    crate::observation::physical::verify_regular(&path, &file, &before)?;
     Ok(Some(bytes))
 }
 
@@ -486,7 +487,7 @@ pub fn execute_registered_junit(
 
 fn binary_digest(path: &Path) -> Result<String, ProviderError> {
     const LIMIT: u64 = 256 * 1024 * 1024;
-    let mut file = File::open(path)?;
+    let mut file = crate::observation::physical::open_regular(path)?;
     let before = file.metadata()?;
     ensure(before.is_file(), "registered binary is not a regular file")?;
     if before.len() > LIMIT {
@@ -515,5 +516,6 @@ fn binary_digest(path: &Path) -> Result<String, ProviderError> {
         file.metadata()?.len() == before.len() && total == before.len(),
         "registered binary changed while hashing",
     )?;
+    crate::observation::physical::verify_regular(path, &file, &before)?;
     Ok(format!("sha256:{:x}", hasher.finalize()))
 }

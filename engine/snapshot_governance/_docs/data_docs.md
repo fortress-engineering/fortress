@@ -173,3 +173,7 @@ Defines explicit readable native/canonical project identity, Module bindings, au
 ### [`onboarding_result_schema_v1.json`](../_data/onboarding_result_schema_v1.json)
 
 Records verified application and receipt identities, actual governance, read-only status and doctor observations, and explicit absence of established execution certification.
+
+### [`security_qualification_schema_v1.json`](../_data/security_qualification_schema_v1.json)
+
+Defines the exact-source boundary qualification record, required gate identities, tested host, source/control/threat-model digests and explicit unsupported threat classes. A digest establishes integrity only. External grants, current-state certification, issuer authentication and provider-enforced protection remain separate facts. No repository-local record is accepted as approval.

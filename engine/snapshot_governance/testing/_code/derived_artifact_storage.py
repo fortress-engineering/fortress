@@ -333,7 +333,7 @@ class DerivedArtifactStorageTests(unittest.TestCase):
 
     def test_verifier_import_does_not_write_source_bytecode(self) -> None:
         base = self.workspace("import-bytecode")
-        for name in ("quality_certificate.py", "execution_storage.py", "heavy_admission.py"):
+        for name in ("quality_certificate.py", "execution_storage.py", "heavy_admission.py", "bounded_io.py", "security_qualification.py"):
             shutil.copyfile(MODULE_PATH.parent / name, base / name)
         environment = os.environ.copy()
         environment.pop("PYTHONDONTWRITEBYTECODE", None)

@@ -245,7 +245,8 @@ pub fn code_file_responsibilities(
         };
         let source = std::str::from_utf8(bytes)
             .map_err(|_| format!("canonical Markdown `{documentation_path}` is not UTF-8"))?;
-        let document = MarkdownDocument::parse(source);
+        let document = MarkdownDocument::parse(source)
+            .map_err(|detail| format!("{documentation_path}: {detail}"))?;
         for heading in document
             .headings
             .iter()
@@ -852,7 +853,14 @@ impl EvaluationContext<'_> {
                 )?;
                 continue;
             };
-            self.parsed.insert(path, MarkdownDocument::parse(source));
+            match MarkdownDocument::parse(source) {
+                Ok(document) => {
+                    self.parsed.insert(path, document);
+                }
+                Err(detail) => {
+                    self.structural_finding(&path, "MARKDOWN_RESOURCE_LIMIT", detail.into())?;
+                }
+            }
         }
         Ok(())
     }
@@ -1515,7 +1523,10 @@ struct MarkdownDocument {
 
 impl MarkdownDocument {
     #[allow(clippy::too_many_lines)]
-    fn parse(source: &str) -> Self {
+    fn parse(source: &str) -> Result<Self, &'static str> {
+        if source.len() > 4 * 1024 * 1024 {
+            return Err("Markdown source exceeds 4 MiB admission");
+        }
         let mut document = Self {
             headings: Vec::new(),
             paragraphs: Vec::new(),
@@ -1528,7 +1539,35 @@ impl MarkdownDocument {
         let mut current_h3: Option<usize> = None;
         let mut list_items = Vec::new();
 
-        for event in Parser::new_ext(source, Options::all()) {
+        let (mut retained, mut depth) = (0_usize, 0_usize);
+        for (index, event) in Parser::new_ext(source, Options::all()).enumerate() {
+            let text_bytes = match &event {
+                Event::Text(text)
+                | Event::Code(text)
+                | Event::InlineHtml(text)
+                | Event::Html(text) => text.len(),
+                Event::Start(Tag::Link { dest_url, .. }) => dest_url.len(),
+                _ => 0,
+            };
+            let context_bytes =
+                if matches!(&event, Event::Start(Tag::Heading { .. } | Tag::Paragraph)) {
+                    current_h2.as_ref().map_or(0, String::len)
+                } else {
+                    0
+                };
+            retained = retained
+                .saturating_add(64)
+                .saturating_add(text_bytes.saturating_mul(4))
+                .saturating_add(context_bytes);
+            if matches!(&event, Event::Start(_)) {
+                depth += 1;
+            }
+            if matches!(&event, Event::End(_)) {
+                depth = depth.saturating_sub(1);
+            }
+            if index >= 1_000_000 || retained > 32 * 1024 * 1024 || depth > 128 {
+                return Err("Markdown event, nesting or retained-unit admission exhausted");
+            }
             match event {
                 Event::Start(Tag::Heading { level, .. }) => {
                     heading = Some(HeadingBuilder {
@@ -1628,7 +1667,7 @@ impl MarkdownDocument {
                 _ => {}
             }
         }
-        document
+        Ok(document)
     }
 
     fn section_is_substantive(&self, h2: &str) -> bool {
@@ -1952,3 +1991,7 @@ impl Error for DocumentationEvaluationError {
         }
     }
 }
+
+#[cfg(test)]
+#[path = "../testing/_code/documentation_controls.rs"]
+mod parser_controls;

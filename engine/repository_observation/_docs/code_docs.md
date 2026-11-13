@@ -35,3 +35,11 @@ Keeps exact observed bytes in an immutable view and applies ordered, preimage-ch
 Provides crate-local thread-local retained-input admission before tokenization, with exact input byte/count counters, fixed per-input metadata accounting, sticky exhaustion and rejection of active-budget reset. The helper has no language, policy, job, model or publication authority and is inactive for ordinary callers. A dedicated caller-owned thread must end before its retained input lifetime is released.
 
 Caller-supplied `ObservationLimits` bound ordinary files, all traversed entries including directories, source bytes and path bytes. `observe_repository_bounded` preflights metadata and aggregate inventory before hashing or allocating whole input buffers; admitted inputs use the same canonical fact producer as ordinary observation. Limits and rejection state are operational and never enter observation identity.
+
+### [`physical.rs`](../_code/physical.rs)
+
+Admits ordinary file handles, rejects links and reparse metadata, and checks native identity, size and modification metadata after bounded reads. Native identities remain machine-local OPS facts. Windows opens reparse objects themselves; Unix uses no-follow admission. This does not promise an atomic snapshot against a hostile operating system.
+
+### [`rust_admission.rs`](../_code/rust_admission.rs)
+
+Bounds source bytes, recursive delimiters, nested comments and long operator runs before the existing Rust frontends allocate recursive syntax. It skips literals for resource counting and produces no symbols, claims or competing syntax authority. Exhaustion returns an explicit resource failure.

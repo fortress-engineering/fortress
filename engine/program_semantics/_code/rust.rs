@@ -1695,12 +1695,16 @@ fn rust_source<'a>(path: &str, bytes: &'a [u8]) -> Result<&'a str, ProgramSemant
 }
 
 fn parse_rust(path: &str, source: &str) -> Result<syn::File, ProgramSemanticError> {
-    crate::observation::input_retention::preflight_input(source.len()).map_err(|error| {
-        ProgramSemanticError::InvalidRustSource {
+    crate::observation::admit_rust(source)
+        .map_err(str::to_owned)
+        .and_then(|()| {
+            crate::observation::input_retention::preflight_input(source.len())
+                .map_err(|error| error.to_string())
+        })
+        .map_err(|error| ProgramSemanticError::InvalidRustSource {
             path: path.into(),
-            source: syn::Error::new(proc_macro2::Span::call_site(), error.to_string()),
-        }
-    })?;
+            source: syn::Error::new(proc_macro2::Span::call_site(), error),
+        })?;
     syn::parse_file(source).map_err(|source| ProgramSemanticError::InvalidRustSource {
         path: path.into(),
         source,
@@ -1715,6 +1719,14 @@ fn parse_packages(
         .iter()
         .filter(|(path, _)| path.rsplit('/').next() == Some("Cargo.toml"))
     {
+        if bytes.len() > crate::observation::MAX_SOURCE_UNIT_BYTES {
+            return Err(ProgramSemanticError::InvalidCargoManifest {
+                path: path.clone(),
+                source: <toml::de::Error as serde::de::Error>::custom(
+                    "RESOURCE_LIMIT: Cargo manifest exceeds source-unit admission",
+                ),
+            });
+        }
         let source = std::str::from_utf8(bytes)
             .map_err(|_| ProgramSemanticError::NonUtf8Rust(path.clone()))?;
         let mut document: CargoDocument = toml::from_str(source).map_err(|source| {

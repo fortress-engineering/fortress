@@ -138,9 +138,9 @@ Projects the canonical Project Model filing analysis into REPO-MODULE-001 findin
 
 ### [`quality_certificate.py`](../_code/quality_certificate.py)
 
-Certification operations use the pinned `1.97.1` toolchain, `_data/cargo_config.toml`, `_info/Cargo.lock` and the complete `fortress-complete-local-v1` profile. Run `python engine/snapshot_governance/_code/quality_certificate.py issue .` after freezing the final candidate, then `verify .` for that same candidate. Hosted qualification checks the exact pushed revision's filing architecture and local certificate. A source, executable, toolchain, configuration, Standard, authority or dependency change invalidates any measurement or evidence whose complete binding included that input. Earlier generations remain evidence for their recorded subjects.
+Certification operations use the pinned `1.97.1` toolchain, `_data/cargo_config.toml`, `_info/Cargo.lock` and the complete `fortress-complete-local-security-v1` profile. Run `python engine/snapshot_governance/_code/quality_certificate.py issue .` after freezing the final candidate, then `verify .` for that same candidate. Hosted qualification checks the exact pushed revision's filing architecture and local certificate. A source, executable, toolchain, configuration, Standard, authority or dependency change invalidates any measurement or evidence whose complete binding included that input. Earlier generations remain evidence for their recorded subjects.
 
-The issuer's closed set has 33 gates. Seventeen validate BFG, CCG, Certification, Conformance Declaration, Environmental Analysis, Evidence Graph, Information Flow, Profile Assessment, PSM, Realized BFG, References, Semantic Analysis, Semantic Conformance, Semantic Qualification, Source Artifacts, State/Effect Analysis and Verified BFG against their registered artifact requirements. The other sixteen are `AUDIT_JSON_DETERMINISM`, `CLIPPY`, `DERIVED_ARTIFACT_STORAGE`, `EXECUTION_STORAGE`, `FORMAT`, `FULL_PROFILE_CERTIFICATION`, `PROJECT_FILING_SYSTEM`, `PROVIDER_EVIDENCE`, `RUSTDOC`, `SCHEMA_AND_STANDARD`, `SCHEMA_ARTIFACTS`, `SELF_AUDIT`, `SELF_MODEL`, `SEMANTIC_QUALIFICATION`, `SOURCE_ARCHITECTURE` and `WORKSPACE_TESTS`. Formatting and linting cover the workspace; full suite execution includes all targets and features. The single exact-snapshot certification stack consumes actual suite evidence and provides all required products. Fast development checks and benchmark comparisons cannot satisfy these gates or manufacture current suite evidence.
+The issuer's closed set has 34 gates. Seventeen validate BFG, CCG, Certification, Conformance Declaration, Environmental Analysis, Evidence Graph, Information Flow, Profile Assessment, PSM, Realized BFG, References, Semantic Analysis, Semantic Conformance, Semantic Qualification, Source Artifacts, State/Effect Analysis and Verified BFG against their registered artifact requirements. The other seventeen are `AUDIT_JSON_DETERMINISM`, `CLIPPY`, `DERIVED_ARTIFACT_STORAGE`, `EXECUTION_STORAGE`, `FORMAT`, `FULL_PROFILE_CERTIFICATION`, `PROJECT_FILING_SYSTEM`, `PROVIDER_EVIDENCE`, `RUSTDOC`, `SCHEMA_AND_STANDARD`, `SCHEMA_ARTIFACTS`, `SECURITY_BOUNDARIES`, `SELF_AUDIT`, `SELF_MODEL`, `SEMANTIC_QUALIFICATION`, `SOURCE_ARCHITECTURE` and `WORKSPACE_TESTS`. Formatting and linting cover the workspace; full suite execution includes all targets and features. The single exact-snapshot certification stack consumes actual suite evidence and provides all required products. Fast development checks and benchmark comparisons cannot satisfy these gates or manufacture current suite evidence.
 
 Before recovery or heavy execution, the issuer checks that required gate identities are sorted, unique and cover every installed artifact. Before publication, the issuer and verifier use the same complete gate-manifest validation: exactly one canonical PASS record with a nonempty command for every required gate. Missing, extra, duplicate, unsorted or failed records refuse publication and acceptance. These early integrity checks preserve full mandatory coverage.
 
@@ -150,7 +150,7 @@ Semantic qualification invokes the test-owned native qualification package and i
 
 Source identity integrity keeps two existing digest domains distinct. The local quality fingerprint hashes path/NUL/decimal-length/NUL/content-SHA256/LF; native Certification hashes big-endian u64 UTF-8 path length, path bytes, content length and original content. A single observed-byte pass computes both without a second semantic evaluator. Application publication and replay compare native subject references with the independently computed native digest and bracket the same input set with the frozen local fingerprint; they never compare these different domains as interchangeable hashes.
 
-Before starting an optional registered performance campaign, run both Python storage controls, workspace format checking and strict all-target/all-feature Clippy, then the unfiltered `behavioral_flow`, `control_plane`, filing/documentation/schema and source-architecture targets plus the changed owners' preparation and recovery targets. `behavioral_flow` exercises the selected historical generation against the independently compiled current BFG, so a stale layout, corrupt member or current-source mismatch is diagnosed before measurement. Stop on a prerequisite failure, repair it and freeze the resulting inputs before measurement. A representative `--development-probe` can inspect reuse and required fallback. These experimental runs cannot replace the final candidate's mandatory 1,000-case differential corpus, Session correctness and restoration controls, all 33 canonical gates, exact-byte certificate verification and exact-head hosted qualification. The optional 300-sample performance campaign, numerical speedups and extensive measurement repetitions are not canonical certification prerequisites.
+Before starting an optional registered performance campaign, run both Python storage controls, workspace format checking and strict all-target/all-feature Clippy, then the unfiltered `behavioral_flow`, `control_plane`, filing/documentation/schema and source-architecture targets plus the changed owners' preparation and recovery targets. `behavioral_flow` exercises the selected historical generation against the independently compiled current BFG, so a stale layout, corrupt member or current-source mismatch is diagnosed before measurement. Stop on a prerequisite failure, repair it and freeze the resulting inputs before measurement. A representative `--development-probe` can inspect reuse and required fallback. These experimental runs cannot replace the final candidate's mandatory 1,000-case differential corpus, Session correctness and restoration controls, all 34 canonical gates, exact-byte certificate verification and exact-head hosted qualification. The optional 300-sample performance campaign, numerical speedups and extensive measurement repetitions are not canonical certification prerequisites.
 
 Issuance obtains the real CLI executable from the successful pinned Cargo build's artifact report, rejects missing, ambiguous or out-of-target artifacts, and stages an exclusive exact-byte copy with its executable permissions in the owned run. This frees the same leased compiler target for the complete unfiltered suite while the staged process runs. It caches no test result, suite evidence or semantic oracle. Compiler reuse remains subject to Cargo's complete compilation fingerprints and the issuer's exact input bracket. The staged executable is budgeted and removed through normal run cleanup; direct CLI invocation inside a compiler target retains its separate suite target.
 
@@ -312,3 +312,166 @@ Identity governance normalization additionally consumes the existing non-deseria
 Composes versioned native/logical and strict canonical onboarding from existing read-only discovery, canonical contract/profile owners, hypothetical evaluation, exact reviewed finding-baseline selection and the shared transactional migration engine. A proposal is PROPOSED, content-bound and unauthenticated. Explicit application preserves original-policy protection and independently observes the actual result; no runtime certification is inferred. Recovery delegates to the same journals and preserves independent edits.
 
 Discovery retains declared Module capabilities and outbound relationships separately from a bounded preview of canonical PSM call relationships. The call preview includes at most 1,024 existing owner records with total and truncation indicators; it never asserts complete flow coverage or permission. Other recognized intent declarations remain explicitly unverified occurrences until evaluated by their semantic owners, and existing intent requires a repair review.
+
+### [`bounded_io.py`](../_code/bounded_io.py)
+
+Provides operational byte/JSON admission for the installed Python certificate and storage adapters. It retains one ordinary file identity, rejects links, checks complete bounded bytes and source drift, and rejects duplicate keys, excessive nesting, global node exhaustion and non-finite numbers before owner interpretation. It supplies no semantic or approval authority.
+
+### [`security_qualification.py`](../_code/security_qualification.py)
+
+Composes a versioned exact-source boundary qualification record only after the existing canonical issuer validates its complete executed gate manifest. Its public reader checks digest, source and an independently supplied required-gate list. The record remains unsigned, unauthenticated and confined to tested surfaces and host versions; it cannot prove execution to an untrusting consumer or authorize a protected change. OPS retains the compact record, source-bound control report and ownership marker outside production source. See [the threat model](code_docs.md#untrusted-input-threat-model) for risk dispositions and downstream requalification requirements.
+
+#### Untrusted-input threat model
+
+This review covers repository observation, source and contract decoding, CONTROL,
+immutable projections, imported verification, offline portable evidence, stdio,
+candidate evaluation, onboarding, and Migration Governance. It introduces no
+security-policy evaluator, issuer authentication, or general-purpose sandbox.
+
+An attacker may control every repository byte, filename, authored assertion,
+imported report, archive member, proposed change, and repository-local cache.
+Those inputs cannot select trusted approvers, authenticate execution, or authorize
+changes to their own governing base. The installed assessor, trusted host tool
+selection, operating system, and private operational storage are outside that
+attacker's authority. A privileged hostile operating system is unsupported.
+
+##### Boundary matrix
+
+| Input and resource | Required boundary | Failure meaning |
+| --- | --- | --- |
+| Repository files, links, case aliases and special objects | Ordinary-object checks, physical identity, bounded complete inventories, exact reobservation | Reject unsupported objects, drift, collisions or exhausted observation; no partial PASS |
+| JSON contracts, profiles, configuration and records | Byte, depth, token/node and duplicate-key admission before typed owner decoding | Explicit invalid input or RESOURCE_LIMIT; never silently truncate |
+| Rust source and test inventory | Bounded source-unit admission before existing frontends; no macro or build execution | Unsupported/exhausted source remains unevaluable |
+| XML and SARIF reports | Bounded events, attributes and records; no DTD, external resource retrieval or inferred execution | Imported observations remain distinct from authenticated provider evidence |
+| ZIP assurance bundles | Bound central-directory allocation before ZIP decoding; qualified compression only; retain one container; never extract | Unsupported archive, resource exhaustion, digest or graph failure cannot confer assurance |
+| Evidence DAGs, descriptors, current pointers and caches | Exact content, subject, context, authority, schema and dependency bindings | Missing, stale, corrupt or ambiguous evidence remains non-favorable |
+| External executables | Trusted host selection outside candidate control, absolute tool identity and bounded supervision | No project-controlled search-path executable on read-only operations |
+| Candidate policy, grant references and receipts | Original-state AUTHORITY port and exact proposal binding | Local assertions and unsigned records are not validated grants |
+| Migration paths, staging and recovery | Existing leases, same-volume ownership, journaled pre/postimages and independent final reconciliation | Preserve independent edits; hold certification during incomplete migration |
+| Local stdio clients | Version negotiation, typed parameters, bounded frames/pages, cancellation | No network listener, web origin or editor-specific authority is implied |
+
+##### Supported concurrency and durability
+
+Cooperative Fortress writers use the established physical-identity lease. External
+edits are checked at capture, mutation and publication boundaries. Observed drift
+or an unknown object is rejected. This is not a claim to detect every transient
+change by an adversary able to swap filesystem objects between system calls.
+Abrupt termination of a standalone verifier parent requires host process-tree supervision; ordinary failure cleanup owns only the reviewed consumer child, which never spawns descendants. Migration recovery qualifies process crashes and verified known images. It does
+not promise cross-file atomicity, arbitrary power-loss durability, or rollback
+success without byte verification.
+
+##### Review and requalification
+
+Every discovered boundary defect requires an owning-Module repair and retained
+reproducer. Qualification binds exact source and tested interfaces; it is not
+issuer authentication or proof that all possible attacks were enumerated.
+PERF, ADMISSION, IDE, HOSTS, DISTRIBUTE, EXTEND and RELEASE must rerun these controls
+when changing adapters, quotas, process admission, schema retrieval, storage,
+grant provenance or physical-path behavior. Stress costs are observations;
+explicit resource-safety limits remain enforced requirements.
+
+##### Enforced admission and protected resources
+
+The protected resources are host files outside the selected repository, current
+source and authority bytes, immutable historical evidence, external grants,
+execution-local staging and rollback material, retained memory and disk, process
+handles, and the truthfulness of current certification. Host-installed code and
+tool selection must be protected independently from repository contributors.
+Changing the assessor cannot supply its own original-policy approval. Registered execution authorizes an operation and bounds its supervision; it does not restrict arbitrary syscalls. Hostile project code requires independently supplied host isolation, which Fortress does not implement or claim. Documented
+GitHub protection is not evidence that provider rules are actually enforced.
+
+| Boundary | Operational limits and supported behavior |
+| --- | --- |
+| Ordinary inventory | 100,000 files, 200,000 entries, 1 GiB hashed content, 32 MiB aggregate path bytes, depth 128; explicit caller budgets may be smaller |
+| Manifest inventory | The same entry/path/file/content/depth admission, with explicit barriers for unsupported objects; no link traversal |
+| Shared Rust JSON wire | 512 MiB, 16 million global tokens including keys, depth 96, 32 MiB encoded single token; typed owners retain narrower limits |
+| Python operational records | The same bounded, reparse-rejecting ordinary inventory and 1 GiB aggregate source admission; bounded ordinary reads up to 512 MiB for large projections; selection/manifest/certificate/journal records have narrower 4 MiB admission; metadata and handle identities are rechecked |
+| Rust/TOML source frontends | 4 MiB per source unit; TOML retains its dependency recursion guard without the unbounded feature. Rust has depth 128, comment nesting 128, 256 operators or recursive keywords between structural boundaries, 512 angle openers per source and angle depth 128; conservative admission may reject otherwise valid large/complex Rust |
+| Canonical Markdown | 4 MiB input, one million events, emitted nesting 128, 32 MiB conservative retained allocation units; exhaustion produces an explicit documentation finding or reader error |
+| Offline JSON consumer | 32 MiB per artifact, depth 64, two million global tokens; strict duplicates, finite numbers and public JCS rules |
+| ZIP container | 128 MiB compressed/expanded total, 130 members, 128 KiB central metadata, 32 MiB per member, expansion ratio at most 1,000; only single-disk non-ZIP64 stored/deflated ZIP, without prefixes; never extracted |
+| XML provider | Existing 64-level, million-event, 256-attribute, 65,536-byte attribute admission; no DTD or external entity retrieval |
+| Query stdio | Existing 65,536-byte request, 1 MiB response and 200-record page bounds, typed parameters and cancellation; formatting loaded results never starts source analysis |
+| Embedded verifier | Absolute host interpreter with bounded 256 MiB pre/post content and native identity checks, isolated Python, 180-second execution budget and 1 MiB per output pipe; failure kills and reaps the owned child |
+
+These are operational allocation/count budgets, not claims about exact allocator
+RSS, worst-case latency or a general operating-system sandbox. Existing SESSION,
+provider, candidate and migration budgets continue to apply. Resource rejection
+is never partial success. Outer trusted hosts must retain their own process,
+volume and memory supervision, especially on machines unable to admit the
+largest supported canonical projections.
+
+Windows ordinary-file admission uses retained native volume/file identity,
+reparse metadata rejection and `FILE_FLAG_OPEN_REPARSE_POINT`. Unix ordinary
+file admission uses no-follow/nonblocking opens and device/inode identity;
+directory admission uses no-follow directory handles. Case-colliding inventories
+are rejected rather than choosing a favorable candidate. Native identity stays
+machine-local and does not change portable semantic or historical digest inputs.
+Windows junction and case aliases are exercised locally; Linux filesystem and
+public-consumer controls run on the exact hosted revision. Other platforms,
+filesystems without qualified native identities, arbitrary network/device roots,
+and hostile unmediated filesystem writers are not advertised as qualified.
+
+##### Defect disposition and regression evidence
+
+| Reviewed issue | Disposition and owning regression |
+| --- | --- |
+| JSON/ZIP admission after library allocation | Repaired before decoding; `security_controls.py` decoder spies and global/depth budgets; strict wire mutation and admission tests |
+| ZIP inventory and member reads from separately opened containers | Repaired with one retained handle and before/after identity, size and modification checks; resize and single-open controls |
+| Reparse repository roots and weak read identity | Repaired in Repository Observation; native same-file checks reused by OPS, MIGRATE, providers, queries and Snapshot Governance; `security_boundaries` retained-identity and junction controls |
+| Operational unbounded JSON/file reads | Repaired in certificate and storage adapters through `bounded_io.py`, including explicit reparse-root and bounded inventory admission; duplicate, nesting, non-finite, preallocation and record tests; unchanged storage/recovery corpus remains mandatory |
+| Recursive Rust input and expanding Markdown | Preflight resource admission before existing frontends, bounded Markdown event/retention handling; literal/comment/type/operator controls and explicit resource failures |
+| Terminal/direction controls in findings and inspection fields | Escaped at readable field rendering and streaming CLI diagnostics; machine values and source identities remain unchanged; adversarial presentation control |
+| Repository-local interpreter and unbounded child output/wait | Absolute host selection checks physical directory ancestry, embedded isolated consumer, bounded pipes/deadline and owned-child cleanup; CLI shadow/output/deadline controls |
+| RUSTSEC-2026-0414 and RUSTSEC-2026-0433 | Applicable high-severity `Options::all()` wikilink defects repaired by pinning pulldown-cmark 0.13.6; exact sibling-event and nested-image regressions; scanner rerun retained separately |
+| Yanked yoke-derive 0.8.3 | Lockfile moved to 0.8.4; dependency scanner observation is diagnostic and not authenticated provider execution evidence |
+| Wrong-subject/replayed imports and forged approvals | Existing provider normalization, exact execution freshness, AUTHORITY and candidate/migration adversarial tests remain mandatory; parsing never authenticates execution |
+| Hidden source/output, forged selection, cache and descriptor tamper | Existing CONTROL, artifact-storage, source-fingerprint and resident-cache controls remain mandatory; historical generations are retained and never automatically current |
+| Transaction crashes, cancellation and independent edits | Existing every-write-boundary crash, journal tamper, conflict-preserving rollback/resume, incomplete-application certification barrier and candidate post-write divergence tests remain mandatory |
+
+The independent public controls include deterministic single-byte JSON mutation,
+malformed ZIP end records, unsupported compression, path/case attacks and resource
+admission before decoder allocation. This bounded mutation corpus is targeted
+fuzzing, not evidence of exhaustive language or operating-system coverage.
+
+The dependency review uses the installed cargo-audit scanner and a retained
+RustSec database revision; it does not introduce a vulnerability scanner or
+promote scanner parsing into authenticated execution. The upstream advisories
+are [RUSTSEC-2026-0414](https://rustsec.org/advisories/RUSTSEC-2026-0414.html)
+and [RUSTSEC-2026-0433](https://rustsec.org/advisories/RUSTSEC-2026-0433.html).
+Host executable selection follows the documented absolute-path boundary of
+[Rust Command](https://doc.rust-lang.org/std/process/struct.Command.html).
+Windows native identifiers use the existing qualified WinAPI adapter rather
+than unstable Rust MetadataExt file-index APIs.
+
+##### Qualification record and downstream integration
+
+The canonical issuer preserves every existing gate and adds SECURITY_BOUNDARIES under the explicit local qualification profile `fortress-complete-local-security-v1`. The prior `fortress-complete-local-v1` profile and its historical PASS records do not assert the additional boundary controls; the certificate wire format and historical bytes remain unchanged.
+After all 34 gates pass against unchanged exact source, it emits
+`security_qualification` v1 into an exclusively owned OPS retained-evidence
+allocation. The record names its quality-certificate source-fingerprint domain (distinct from native semantic subject identity), required gates, actual host versions,
+control-report digest, threat-model digest and unsupported threats. Its identity
+is SHA-256 over sorted compact ASCII JSON excluding `record_id`; this schema
+admits no floating-point values. The public reader requires a separately supplied
+exact source and complete required-gate list. Integrity verification cannot prove
+that tests actually ran, establish issuer authenticity, confer a grant, or make
+a historical record current. A record created before final generation publication
+is insufficient without the corresponding successful exact-source certificate
+and verified publication.
+
+No new authoritative store or registry is introduced. Historical CONTROL
+selection and portable assurance semantics are unchanged. Status, doctor,
+read-only comparison, imported-bundle verification and ordinary unprotected
+inspection do not need external grants. Explicit test/provider execution remains
+registered and host-authorized; discovery never runs Cargo, build scripts,
+procedural macros, repository providers or configuration-defined commands.
+
+PERF may change implementation strategies only after proving identical canonical
+outputs and retaining all resource controls. ADMISSION, IDE and HOSTS must carry
+original authority, source/context and grant provenance, preserve cancellation,
+respect stdio quotas, and prevent project-controlled executable selection.
+DISTRIBUTE and RELEASE must package the reviewed consumer and admission helpers,
+keep integrity distinct from authenticity and requalify the actual delivered
+adapters. EXTEND must admit each new parser/provider through these controls.
+None may substitute an unsigned qualification record for provider enforcement,
+external approval, execution freshness or actual-state certification.

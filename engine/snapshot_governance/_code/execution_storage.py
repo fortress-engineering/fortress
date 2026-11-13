@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import hashlib
 import json
+from bounded_io import read_ordinary, strict_json
 import os
 from pathlib import Path
 import re
@@ -149,7 +150,7 @@ def _reconcile_publication(
         backup = Path(backup_name).resolve()
         if not backup.is_relative_to(run_root):
             raise StorageError("publication preimage escapes owned staging")
-        content = backup.read_bytes()
+        content = read_ordinary(backup)
         if _digest(content) != digest:
             raise StorageError("publication preimage digest mismatch")
         return content
@@ -160,12 +161,12 @@ def _reconcile_publication(
     previous = [
         prior_bytes(entry["backup"], entry["old_digest"]) for entry in entries
     ]
-    pointer_content = pointer.read_bytes() if pointer.is_file() else None
+    pointer_content = read_ordinary(pointer, 4 * 1024 * 1024) if pointer.is_file() else None
     pointer_digest = _digest(pointer_content) if pointer_content is not None else None
     states = []
     for entry in entries:
         path = Path(entry["path"])
-        content = path.read_bytes() if path.is_file() else None
+        content = read_ordinary(path) if path.is_file() else None
         digest = _digest(content) if content is not None else None
         if digest not in {entry["old_digest"], entry["new_digest"]}:
             raise StorageError("publication target changed outside this run")
@@ -376,7 +377,7 @@ class RunWorkspace:
         try:
             for prior_path in self.registry.glob("*.json"):
                 try:
-                    prior = json.loads(prior_path.read_text(encoding="utf-8"))
+                    prior = strict_json(read_ordinary(prior_path, 4 * 1024 * 1024))
                     if (
                         prior["root_identity"] == self.identity
                         and Path(prior["run_root"]).exists()
@@ -395,7 +396,7 @@ class RunWorkspace:
             target_marker = self.target / "_owner.json"
             if target_marker.exists():
                 try:
-                    marker = json.loads(target_marker.read_text(encoding="utf-8"))
+                    marker = strict_json(read_ordinary(target_marker, 64 * 1024))
                 except (OSError, ValueError) as error:
                     raise StorageError("uncertain compiler target owner") from error
                 if marker != {"root_identity": self.identity, "namespace": "python"}:
@@ -452,7 +453,7 @@ class RunWorkspace:
 
     def record_preexisting(self, path: Path) -> None:
         self._journal["preexisting_files"][str(path.resolve())] = (
-            hashlib.sha256(path.read_bytes()).hexdigest() if path.is_file() else None
+            hashlib.sha256(read_ordinary(path)).hexdigest() if path.is_file() else None
         )
         self._save()
 
@@ -461,7 +462,7 @@ class RunWorkspace:
         path = path.resolve()
         if not path.is_relative_to(self.staging):
             raise StorageError("owned output must remain in this run's staging")
-        if _digest(path.read_bytes()) != digest:
+        if _digest(read_ordinary(path)) != digest:
             raise StorageError("owned output digest mismatch")
         self._journal.setdefault("owned", []).append(
             {"path": str(path), "digest": digest}
@@ -487,7 +488,7 @@ class RunWorkspace:
             path = path.resolve()
             if not path.is_relative_to(self.repository):
                 raise StorageError("tracked publication path must be in the repository")
-            original = path.read_bytes() if path.is_file() else None
+            original = read_ordinary(path) if path.is_file() else None
             backup = backup_dir / f"{index:03}.bin"
             if original is not None:
                 _durable_write(backup, original)
@@ -499,7 +500,7 @@ class RunWorkspace:
                     "new_digest": _digest(content),
                 }
             )
-        old_pointer = pointer.read_bytes() if pointer.is_file() else None
+        old_pointer = read_ordinary(pointer, 4 * 1024 * 1024) if pointer.is_file() else None
         pointer_backup = backup_dir / "pointer.bin"
         if old_pointer is not None:
             _durable_write(pointer_backup, old_pointer)
@@ -635,7 +636,7 @@ def recover_owned_orphans(
     try:
         for journal_path in sorted(probe.registry.glob("*.json")):
             try:
-                journal = json.loads(journal_path.read_text(encoding="utf-8"))
+                journal = strict_json(read_ordinary(journal_path, 4 * 1024 * 1024))
                 run_root = Path(journal["run_root"]).resolve()
                 expected = probe.namespace_root / "r" / probe.identity[:16] / journal["run_nonce"]
                 if run_root != expected or journal["root_identity"] != probe.identity:
@@ -643,7 +644,7 @@ def recover_owned_orphans(
                     continue
                 if not run_root.exists():
                     continue
-                marker = json.loads((run_root / "owner.json").read_text(encoding="utf-8"))
+                marker = strict_json(read_ordinary(run_root / "owner.json", 64 * 1024))
                 if marker != {
                     "run_nonce": journal["run_nonce"],
                     "root_identity": probe.identity,

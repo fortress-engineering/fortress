@@ -37,6 +37,9 @@ mod application_inputs;
 mod authority_command;
 mod behavior_command;
 mod candidate_command;
+#[path = "diagnostics.rs"]
+mod diagnostics;
+
 pub mod command;
 mod finding_command;
 mod flow_command;
@@ -97,6 +100,19 @@ fn write_projection<O: Write>(
 ///
 /// Returns an I/O error when writing user-visible output fails.
 pub fn run<I, S, O, E>(arguments: I, output: &mut O, error: &mut E) -> io::Result<u8>
+where
+    I: IntoIterator<Item = S>,
+    S: Into<String>,
+    O: Write,
+    E: Write,
+{
+    let mut diagnostic = diagnostics::DiagnosticWriter::new(error);
+    let result = run_unfiltered(arguments, output, &mut diagnostic);
+    diagnostic.flush()?;
+    result
+}
+
+fn run_unfiltered<I, S, O, E>(arguments: I, output: &mut O, error: &mut E) -> io::Result<u8>
 where
     I: IntoIterator<Item = S>,
     S: Into<String>,

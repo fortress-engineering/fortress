@@ -238,7 +238,7 @@ quick-xml = { version = "=0.42.0", default-features = false }
 cpu-time = "=1.0.0"
 getrandom = "0.3"
 memory-stats = { version = "=1.2.0", features = ["always_use_statm"] }
-pulldown-cmark = { version = "0.13", default-features = false }
+pulldown-cmark = { version = "=0.13.6", default-features = false }
 proc-macro2 = { version = "1.0", features = ["span-locations"] }
 quote = "1.0"
 semver = "1.0"
@@ -294,3 +294,10 @@ path = "../state_governance/testing/_code/transition.rs"
 [[test]]
 name = "protected_authority"
 path = "../development_governance/testing/_code/authority.rs"
+
+[[test]]
+name = "security_boundaries"
+path = "../snapshot_governance/testing/_code/security_boundaries.rs"
+
+[target.'cfg(unix)'.dependencies]
+libc = "=0.2.189"
