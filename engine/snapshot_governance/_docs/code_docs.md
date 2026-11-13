@@ -407,8 +407,11 @@ file admission uses no-follow/nonblocking opens and device/inode identity;
 directory admission uses no-follow directory handles. Case-colliding inventories
 are rejected rather than choosing a favorable candidate. Native identity stays
 machine-local and does not change portable semantic or historical digest inputs.
-Windows junction and case aliases are exercised locally; Linux filesystem and
-public-consumer controls run on the exact hosted revision. Other platforms,
+Windows junction and case aliases are exercised locally. Linux filesystem,
+process, public-consumer, storage, transaction recovery, candidate/onboarding,
+authority, provider and read-only query controls run on the exact hosted revision.
+Hosted job deadlines are execution budgets; no latency, speedup or stress timing
+is a certification criterion. Other platforms,
 filesystems without qualified native identities, arbitrary network/device roots,
 and hostile unmediated filesystem writers are not advertised as qualified.
 

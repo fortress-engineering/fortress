@@ -47,3 +47,38 @@ jobs:
           python3
           engine/snapshot_governance/_code/quality_certificate.py
           verify .
+
+  qualify_untrusted_boundaries:
+    name: Qualify Linux repository and transaction boundaries
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CARGO_BUILD_JOBS: "1"
+      CARGO_TARGET_DIR: ${{ runner.temp }}/fortress-boundary-target
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - name: Check out exact revision
+        uses: actions/checkout@v4.3.1
+        with:
+          persist-credentials: false
+
+      - name: Exercise bounded storage and record integrity
+        run: |
+          python3 -B engine/snapshot_governance/testing/_code/execution_storage.py
+          python3 -B engine/snapshot_governance/testing/_code/derived_artifact_storage.py
+
+      - name: Exercise recovery, source reconciliation and trust boundaries
+        run: >-
+          cargo +1.97.1
+          --config _data/cargo_config.toml
+          test
+          --manifest-path _data/Cargo.toml
+          --all-features
+          -p fortress-core
+          --test bounded_observation
+          --test migration_governance
+          --test candidate
+          --test onboarding
+          --test protected_authority
+          --test provider_ingest
+          --test governance_query
