@@ -1514,7 +1514,7 @@ fn semantic_discriminator(kind: &str, target: &str) -> String {
 }
 
 #[derive(Clone, Debug)]
-pub(crate) struct MarkdownDocument {
+struct MarkdownDocument {
     headings: Vec<Heading>,
     paragraphs: Vec<Paragraph>,
     links: Vec<String>,
@@ -1523,7 +1523,7 @@ pub(crate) struct MarkdownDocument {
 
 impl MarkdownDocument {
     #[allow(clippy::too_many_lines)]
-    pub(crate) fn parse(source: &str) -> Result<Self, &'static str> {
+    fn parse(source: &str) -> Result<Self, &'static str> {
         if source.len() > 4 * 1024 * 1024 {
             return Err("Markdown source exceeds 4 MiB admission");
         }

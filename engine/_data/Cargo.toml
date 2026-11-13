@@ -301,3 +301,7 @@ path = "../snapshot_governance/testing/_code/security_boundaries.rs"
 
 [target.'cfg(unix)'.dependencies]
 libc = "=0.2.189"
+
+[[test]]
+name = "documentation_controls"
+path = "../snapshot_governance/testing/_code/documentation_controls.rs"

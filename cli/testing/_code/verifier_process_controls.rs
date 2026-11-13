@@ -1,5 +1,5 @@
 //! Owning Testing Element controls over the existing private implementation.
-use crate::verifier_process::{interpreter, run_bounded};
+use crate::verifier_process::{self, interpreter, run_bounded};
 use std::process::Command;
 use std::time::Duration;
 
@@ -14,6 +14,9 @@ fn python() -> Command {
 /// Fortress requirement: TF-CLI-0001-R29
 #[test]
 fn embedded_consumer_supervision_rejects_expanding_output() {
+    let (output, status) = verifier_process::run(python(), "print(1)\n").unwrap();
+    assert_eq!(status, 0);
+    assert_eq!(String::from_utf8(output).unwrap().trim(), "1");
     let error = run_bounded(
         python(),
         "import sys\nsys.stdout.write('x' * 2000000)\n",

@@ -40,7 +40,7 @@ jobs:
         run: |
           python3 -B testing/_code/security_controls.py
           python3 -B testing/_code/portable_controls.py
-          cargo +1.97.1 --config _data/cargo_config.toml test --manifest-path _data/Cargo.toml --all-features -p fortress-core -p fortress-cli --lib --test security_boundaries --test verifier_boundary
+          cargo +1.97.1 --config _data/cargo_config.toml test --manifest-path _data/Cargo.toml --all-features -p fortress-core -p fortress-cli --lib --test security_boundaries --test verifier_boundary --test cli_boundary_controls --test documentation_controls
 
       - name: Verify passing local certificate and freshness stamps
         run: >-
@@ -51,7 +51,9 @@ jobs:
   qualify_untrusted_boundaries:
     name: Qualify Linux repository and transaction boundaries
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # A single compiler job bounds memory; cold optimized builds need a separate
+    # operational deadline. This is not a latency certification criterion.
+    timeout-minutes: 60
     env:
       CARGO_BUILD_JOBS: "1"
       CARGO_TARGET_DIR: ${{ runner.temp }}/fortress-boundary-target

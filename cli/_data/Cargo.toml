@@ -56,3 +56,7 @@ path = "../testing/_code/authority.rs"
 [[test]]
 name = "verifier_boundary"
 path = "../testing/_code/verifier_boundary.rs"
+
+[[test]]
+name = "cli_boundary_controls"
+path = "../testing/_code/lib.rs"

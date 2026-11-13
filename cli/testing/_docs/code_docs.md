@@ -46,12 +46,16 @@ Exercises read-only anchored baseline proposals, identical human/JSON proposal i
 
 ### [`verifier_process_controls.rs`](../_code/verifier_process_controls.rs)
 
-Executes owning-Module adversarial controls against the existing implementation through an explicit test-only module link. Source lives directly in the Testing Element; these controls supply no production authority or alternate evaluator.
+Executes owning-Module adversarial controls against the existing implementation through explicit Cargo integration targets and the existing public evaluator or directly compiled adapter. Source lives directly in the Testing Element; these controls supply no production authority or alternate evaluator.
 
 ### [`diagnostic_controls.rs`](../_code/diagnostic_controls.rs)
 
-Executes owning-Module adversarial controls against the existing implementation through an explicit test-only module link. Source lives directly in the Testing Element; these controls supply no production authority or alternate evaluator.
+Executes owning-Module adversarial controls against the existing implementation through explicit Cargo integration targets and the existing public evaluator or directly compiled adapter. Source lives directly in the Testing Element; these controls supply no production authority or alternate evaluator.
 
 ### [`verifier_boundary.rs`](../_code/verifier_boundary.rs)
 
 Verifies that repository-owned interpreter assertions cannot launch a project executable and that malicious error fields cannot execute terminal controls. The tests invoke only registered CLI boundaries and disposable host-owned fixtures; no approval or producer authentication is inferred.
+
+### [`lib.rs`](../_code/lib.rs)
+
+Defines the explicit Cargo integration-test crate root, binds the existing private CLI adapters through canonical crate-root resolution, and loads directly owned boundary controls. Tests consume the existing CLI capability without introducing a dependency from production to its Testing Module.

@@ -146,7 +146,7 @@ Implicit Cargo integration targets and their cross-Module dependencies are check
 
 ### [`documentation_controls.rs`](../_code/documentation_controls.rs)
 
-Executes owning-Module adversarial controls against the existing implementation through an explicit test-only module link. Source lives directly in the Testing Element; these controls supply no production authority or alternate evaluator.
+Executes owning-Module adversarial controls against the existing implementation through explicit Cargo integration targets and the existing public evaluator or directly compiled adapter. Source lives directly in the Testing Element; these controls supply no production authority or alternate evaluator.
 
 ### [`security_boundaries.rs`](../_code/security_boundaries.rs)
 
