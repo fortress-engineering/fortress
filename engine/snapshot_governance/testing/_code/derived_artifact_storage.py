@@ -331,6 +331,11 @@ class DerivedArtifactStorageTests(unittest.TestCase):
         self.addCleanup(shutil.rmtree, base, True)
         return base
 
+    def test_boundary_qualification_preserves_the_registered_selection_family(self) -> None:
+        self.assertEqual(quality.PROFILE_ID, "fortress-complete-local-v1")
+        self.assertEqual(quality.selection_key(), "sha256:c92e04f04a9614c5d58768e535a47e5a77abe5c010060404df38effb1c536206")
+        self.assertIn("SECURITY_BOUNDARIES", quality.REQUIRED_GATE_IDS)
+
     def test_verifier_import_does_not_write_source_bytecode(self) -> None:
         base = self.workspace("import-bytecode")
         for name in ("quality_certificate.py", "execution_storage.py", "heavy_admission.py", "bounded_io.py", "security_qualification.py"):
