@@ -113,7 +113,7 @@ fn validate_selected_bfg(
     if view["control_layout"]["digest"] != digest(layout_source.as_bytes()) {
         return Err("selected layout digest does not match its registry".into());
     }
-    if view["control_layout"]["id"] != "fortress-control-layout-v7" {
+    if layout_source != ControlLayout::standard().authority_source() {
         return Ok(SelectedBfgSubject::RetainedLayout);
     }
     if bytes != current_bfg {
@@ -588,6 +588,12 @@ fn dominators_post_dominators_bytes_and_digest_are_deterministic() {
     assert_eq!(post["CHK-FLOW-START"], Some("CHK-FLOW-ACTION"));
     assert_eq!(post["CHK-FLOW-ACTION"], Some("CHK-FLOW-DONE"));
     assert_eq!(post["CHK-FLOW-DONE"], None);
+    selected_bfg_subject_controls(
+        first
+            .to_canonical_json()
+            .expect("BFG serializes")
+            .as_bytes(),
+    );
 }
 
 /// `T-AF-BEHAVIORAL-SEMANTICS-0001-R02-001`
