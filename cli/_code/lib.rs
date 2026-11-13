@@ -52,6 +52,14 @@ mod provider_command;
 pub mod rpc;
 pub mod sarif;
 mod transition_command;
+mod verifier_process;
+
+#[cfg(test)]
+#[path = "../testing/_code/diagnostic_controls.rs"]
+mod diagnostic_controls;
+#[cfg(test)]
+#[path = "../testing/_code/verifier_process_controls.rs"]
+mod verifier_process_controls;
 
 use command::{CommandDescriptor, CommandRegistry};
 

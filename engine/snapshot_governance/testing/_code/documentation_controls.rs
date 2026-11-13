@@ -1,5 +1,6 @@
 //! Owning Testing Element controls over the existing private implementation.
-use super::*;
+use crate::documentation::MarkdownDocument;
+use pulldown_cmark::{Options, Parser};
 
 /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R24-008`
 /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R24

@@ -1,5 +1,6 @@
 //! Owning Testing Element controls over the existing private implementation.
-use super::*;
+use crate::diagnostics::DiagnosticWriter;
+use std::io::Write;
 
 /// `T-TF-CLI-0001-R29-005`
 /// Fortress requirement: TF-CLI-0001-R29

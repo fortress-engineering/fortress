@@ -9,8 +9,7 @@ use std::path::{Path, PathBuf};
 // Immutable reviewed public-consumer bytes, never a candidate repository script.
 // This consumer contains neither expected answers nor internal Rust types.
 const VERIFIER: &str = include_str!("../_data/offline_verifier_v1.txt");
-#[path = "verifier_process.rs"]
-mod verifier_process;
+use crate::verifier_process;
 
 type Options = BTreeMap<String, String>;
 type LoadedArtifacts = (Option<String>, BTreeMap<String, Vec<u8>>);

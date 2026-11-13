@@ -133,7 +133,7 @@ pub(super) fn run(command: Command, script: &'static str) -> Result<(Vec<u8>, u8
     run_bounded(command, script, DEADLINE)
 }
 
-fn run_bounded(
+pub(super) fn run_bounded(
     mut command: Command,
     script: &'static str,
     deadline: Duration,
@@ -231,7 +231,3 @@ fn run_bounded(
         std::thread::sleep(Duration::from_millis(10));
     }
 }
-
-#[cfg(test)]
-#[path = "../testing/_code/verifier_process_controls.rs"]
-mod tests;

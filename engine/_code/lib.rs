@@ -148,3 +148,7 @@ pub mod authority_load;
 pub mod authority_roles;
 #[path = "../development_governance/_code/authority.rs"]
 pub mod development_governance;
+
+#[cfg(test)]
+#[path = "../snapshot_governance/testing/_code/documentation_controls.rs"]
+mod documentation_controls;

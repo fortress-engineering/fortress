@@ -1,5 +1,7 @@
 //! Owning Testing Element controls over the existing private implementation.
-use super::*;
+use crate::verifier_process::{interpreter, run_bounded};
+use std::process::Command;
+use std::time::Duration;
 
 fn python() -> Command {
     let interpreter = interpreter(&std::env::temp_dir()).expect("trusted host Python");
@@ -15,7 +17,7 @@ fn embedded_consumer_supervision_rejects_expanding_output() {
     let error = run_bounded(
         python(),
         "import sys\nsys.stdout.write('x' * 2000000)\n",
-        DEADLINE,
+        Duration::from_mins(3),
     )
     .unwrap_err();
     assert_eq!(error.code, "RESOURCE_LIMIT");

@@ -59,7 +59,3 @@ impl<W: Write> Write for DiagnosticWriter<'_, W> {
         self.inner.flush()
     }
 }
-
-#[cfg(test)]
-#[path = "../testing/_code/diagnostic_controls.rs"]
-mod tests;
