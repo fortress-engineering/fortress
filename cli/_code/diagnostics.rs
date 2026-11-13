@@ -35,7 +35,7 @@ impl<W: Write> Write for DiagnosticWriter<'_, W> {
                     self.used = 0;
                     for character in value.chars() {
                         if (character.is_control() && !matches!(character, '\n' | '\t'))
-                            || matches!(character, '\u{200e}' | '\u{200f}' | '\u{202a}'..='\u{202e}' | '\u{2066}'..='\u{2069}')
+                            || matches!(character, '\u{61c}' | '\u{200e}' | '\u{200f}' | '\u{202a}'..='\u{202e}' | '\u{2066}'..='\u{2069}')
                         {
                             write!(self.inner, "{}", character.escape_default())?;
                         } else {

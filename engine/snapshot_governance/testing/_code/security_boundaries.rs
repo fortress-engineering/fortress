@@ -231,14 +231,20 @@ fn source_admission_preserves_the_complete_current_rust_corpus() {
 /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R24
 #[test]
 fn untrusted_display_controls_cannot_rewrite_readable_inspection() {
-    let message = "violation\u{1b}[2J\r\n\u{202e}text";
-    let value = serde_json::json!({"message": message});
-    let rendered = fortress_core::query::render_inspection_value(&value);
-    assert!(!rendered.contains('\u{1b}'));
-    assert!(!rendered.contains('\r'));
-    assert!(!rendered.contains('\u{202e}'));
-    assert!(rendered.contains("\\n"));
-    assert_eq!(value["message"], message);
+    // Unicode 18.0 PropList Bidi_Control, including Arabic Letter Mark.
+    for control in [
+        '\u{61c}', '\u{200e}', '\u{200f}', '\u{202a}', '\u{202b}', '\u{202c}', '\u{202d}',
+        '\u{202e}', '\u{2066}', '\u{2067}', '\u{2068}', '\u{2069}',
+    ] {
+        let message = format!("violation\u{1b}[2J\r\n{control}text");
+        let value = serde_json::json!({"message": &message});
+        let rendered = fortress_core::query::render_inspection_value(&value);
+        assert!(!rendered.contains('\u{1b}'));
+        assert!(!rendered.contains('\r'));
+        assert!(!rendered.contains(control), "unescaped control {control:?}");
+        assert!(rendered.contains("\\n"));
+        assert_eq!(value["message"], message);
+    }
 }
 
 fn oversized_manifest_input()

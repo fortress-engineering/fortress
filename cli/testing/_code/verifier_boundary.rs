@@ -37,13 +37,19 @@ fn candidate_interpreter_assertions_cannot_execute_a_repository_tool() {
 /// Fortress requirement: TF-CLI-0001-R29
 #[test]
 fn untrusted_error_fields_cannot_execute_terminal_controls() {
-    let mut output = Vec::new();
-    let mut error = Vec::new();
-    let code = fortress_cli::run(["bad\u{1b}[2J\r\u{202e}"], &mut output, &mut error).unwrap();
-    assert_ne!(code, 0);
-    let error = String::from_utf8(error).unwrap();
-    assert!(!error.contains('\u{1b}'));
-    assert!(!error.contains('\r'));
-    assert!(!error.contains('\u{202e}'));
-    assert!(error.contains("\\u{1b}"));
+    for control in [
+        '\u{61c}', '\u{200e}', '\u{200f}', '\u{202a}', '\u{202b}', '\u{202c}', '\u{202d}',
+        '\u{202e}', '\u{2066}', '\u{2067}', '\u{2068}', '\u{2069}',
+    ] {
+        let mut output = Vec::new();
+        let mut error = Vec::new();
+        let argument = format!("bad\u{1b}[2J\r{control}");
+        let code = fortress_cli::run([argument.as_str()], &mut output, &mut error).unwrap();
+        assert_ne!(code, 0);
+        let error = String::from_utf8(error).unwrap();
+        assert!(!error.contains('\u{1b}'));
+        assert!(!error.contains('\r'));
+        assert!(!error.contains(control), "unescaped control {control:?}");
+        assert!(error.contains("\\u{1b}"));
+    }
 }
