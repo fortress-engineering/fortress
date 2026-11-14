@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import os
+import io
 import json
 from pathlib import Path
 import shutil
@@ -23,7 +24,7 @@ from execution_storage import (  # noqa: E402
     _tree_size,
     recover_owned_orphans,
 )
-from heavy_admission import HeavyAdmissionGuard  # noqa: E402
+from heavy_admission import DirectoryIdentity, HeavyAdmissionGuard  # noqa: E402
 
 
 class ExecutionStorageTests(unittest.TestCase):
@@ -35,6 +36,16 @@ class ExecutionStorageTests(unittest.TestCase):
         self.root.mkdir()
         self.storage = self.base / "storage"
         self.policy = StoragePolicy(reserve_bytes=0)
+        # Deleted disposable directories can reuse native identifiers on Unix.
+        # Keep fault-injected owner records inside a fixture-owned fixed anchor;
+        # never erase or forgive unresolved registrations in the installed one.
+        # The environment-independence control still exercises the real anchor.
+        if self._testMethodName != "test_environment_selected_temporary_directory_cannot_split_admission":
+            anchor = self.base / "native_admission"
+            anchor.mkdir()
+            fixed = patch("heavy_admission._fixed_anchor", return_value=anchor)
+            fixed.start()
+            self.addCleanup(fixed.stop)
 
     def cleanup_base(self) -> None:
         for attempt in range(5):
@@ -45,6 +56,32 @@ class ExecutionStorageTests(unittest.TestCase):
                 if attempt == 4:
                     raise
                 time.sleep(0.1)
+
+    def test_disposable_fixtures_isolate_reused_native_identifiers(self) -> None:
+        class FixtureProbe(ExecutionStorageTests):
+            def leave_uncertain_owner(self) -> None:
+                with RunWorkspace(self.root, self.storage, self.policy) as workspace:
+                    workspace.record_child(os.getpid())
+                workspace.journal_path.unlink()
+
+            def admit_independent_fixture(self) -> None:
+                with RunWorkspace(self.root, self.storage, self.policy):
+                    pass
+
+        def recycled_identifier(path: Path, deny_delete: bool = False) -> DirectoryIdentity:
+            identity = DirectoryIdentity(path, deny_delete)
+            if Path(path).name == "repository":
+                identity.key = "a" * 64  # Model reuse after the prior fixture is deleted.
+            return identity
+
+        suite = unittest.TestSuite([
+            FixtureProbe("leave_uncertain_owner"),
+            FixtureProbe("admit_independent_fixture"),
+        ])
+        with patch("heavy_admission.DirectoryIdentity", side_effect=recycled_identifier):
+            result = unittest.TextTestRunner(stream=io.StringIO()).run(suite)
+        self.assertEqual(result.testsRun, 2)
+        self.assertTrue(result.wasSuccessful(), result.errors + result.failures)
 
     def test_compiler_object_disappearing_during_budget_sample_is_tolerated(self) -> None:
         target = self.storage / "target"
@@ -233,6 +270,18 @@ class ExecutionStorageTests(unittest.TestCase):
         journal = json.loads(workspace.journal_path.read_text(encoding="utf-8"))
         self.assertEqual(journal["cleanup_status"], "RETAINED_RECOVERY_REQUIRED")
         self.assertEqual(journal["lifecycle"], "RECOVERY_REQUIRED")
+        self.assertTrue(workspace.run_root.exists())
+
+    def test_missing_owner_journal_never_authorizes_target_reuse(self) -> None:
+        with RunWorkspace(self.root, self.storage, self.policy) as workspace:
+            workspace.record_child(os.getpid())
+            owned = workspace.target / "unresolved_output"
+            owned.write_bytes(b"preserve unresolved owner bytes")
+        workspace.journal_path.unlink()  # A missing receipt is not completion.
+        with self.assertRaisesRegex(StorageError, "unresolved adapter"):
+            with RunWorkspace(self.root, self.storage, self.policy):
+                self.fail("missing owner evidence cannot authorize target reuse")
+        self.assertEqual(owned.read_bytes(), b"preserve unresolved owner bytes")
         self.assertTrue(workspace.run_root.exists())
 
     def test_report_accounts_for_owned_roots_and_cleanup(self) -> None:

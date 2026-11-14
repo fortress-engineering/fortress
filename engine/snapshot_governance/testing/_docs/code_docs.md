@@ -40,6 +40,8 @@ Issuer executable controls bind the successful CLI compiler artifact to its owne
 
 Exercises storage preflight and budgets, exclusive heavy-job leases, preservation of user bytes on failure, crash recovery before and after publication, external-mutation conflicts, active-child uncertainty, and cleanup accounting without invoking Cargo.
 
+Fault-injected owner records use fixture-owned fixed admission anchors so deleted disposable repositories cannot contaminate later fixtures through native identifier reuse. The environment-independence control retains the installed fixed anchor. Missing owner journals must still refuse reuse and preserve unresolved bytes.
+
 Budget-scan regressions exercise disappearing compiler objects and directories, fresh growth and deletion accounting, conservative charging of hardlink paths, and non-following refusal of symbolic links and Windows reparse points at the root and inside the tree.
 
 ### [`finding_governance.rs`](../_code/finding_governance.rs)

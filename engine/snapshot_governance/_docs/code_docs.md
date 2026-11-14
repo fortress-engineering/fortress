@@ -202,6 +202,8 @@ Identifies repositories through canonical/native physical directory handles and 
 
 Implements the Python adapter of the same native physical-directory admission registry and locking protocol, allowing issuance and Rust runtime evaluation to exclude competing heavy owners without placing operational state inside watched source or semantic identity.
 
+Native directory identifiers bind the retained object during admission; they are not permanent historical identities after that object and its handles disappear. Filesystems can reuse identifiers. Unresolved or missing owner journals remain a refusal to admit or reuse output, including after identifier reuse; a new path is not evidence of completion. Disposable fault-injection tests isolate their own native registries rather than relaxing this production boundary, while the environment-selector control uses the installed fixed anchor.
+
 ### [`resident_worker.rs`](../_code/resident_worker.rs)
 
 Owns the dedicated parser/cache worker and its thread lifetime. Syntax and reusable preparations remain thread-private; only completed owned models cross to the coordinator. Neutral retained-input preflight is invoked before tokenization in each participating frontend, records actual request/retained input counters and sticky epoch exhaustion, and preserves charges until thread join. An exhausted retained epoch is joined before a fresh cold retry. Candidate preparation is isolated and promoted only by the appropriate accepted lifecycle. The conservative parser allocation permit is 64 times the input-admission limit, not a hard RSS guarantee.
