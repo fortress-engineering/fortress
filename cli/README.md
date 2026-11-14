@@ -129,3 +129,11 @@ The installed CLI supports unprotected initially ungoverned edits, exact no-ops 
 External storage must be on the repository's native volume and outside the repository. The existing `FORTRESS_EXECUTION_STORAGE_DIR` default is reused; a cross-volume default is rejected before source mutation. Journals, locks, staging, original bytes and recovery material stay under OPS and are retained after interruption. Incomplete migration state blocks fresh native and Python current-source certification; historical/offline inspection remains available. Version 1 qualifies cooperative process-crash recovery over regular files and safe hard-link support. It does not promise filesystem-wide atomicity, arbitrary power-loss ordering, hostile-writer exclusion, ACL preservation or recursive directory transactions.
 
 For finding-governance identity normalization, a trusted embedding supplies the existing identity owner's process-local plan as `identity_plan`; lifecycle admission checks exact source and edits, preserves baseline/history structure, and forbids rewritten current anchors. It remains separate from authorization. The generic CLI accepts neither serialized identity plans as grants nor arbitrary governance replacement as normalization. Retired identity-preview v1 output must be regenerated from the exact repository before use.
+
+Explicit static projection construction uses a new external output directory:
+
+```text
+fortress projections ./project --output-dir /outside/project/new-projections --format json
+```
+
+The parent must exist and the destination must be new, ordinary and outside the repository. Completion publishes a versioned manifest after all canonical static members and source reobservation. Human output renders the same result. This command performs source analysis without Cargo tests, project build scripts or providers. It issues no certificate and authenticates no producer. Phase measurements are diagnostics on stderr during certification; canonical certificate bytes retain their existing meaning. Restoration checks the selected certificate and independent cold projection sets before accepting local materialization.

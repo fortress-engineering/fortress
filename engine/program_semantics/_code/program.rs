@@ -9,6 +9,8 @@ mod analysis_context;
 mod graph;
 #[path = "model_digest.rs"]
 mod model_digest;
+#[path = "reachability.rs"]
+mod reachability;
 #[path = "rust.rs"]
 mod rust;
 #[path = "semantic_identity.rs"]
@@ -2964,8 +2966,8 @@ pub fn compile_program_semantic_model(
 ) -> Result<ProgramSemanticModel, ProgramSemanticError> {
     let mut facts = rust::analyze_cold(input)?;
     sort_facts(&mut facts);
-    let graph = graph::prepare_call_topology(&facts.symbols, &facts.calls, None);
-    assemble_program_semantic_model(input, facts, graph.topology)
+    let topology = graph::compile_call_topology(&facts.symbols, &facts.calls);
+    assemble_program_semantic_model(input, facts, topology)
 }
 
 fn sort_facts(facts: &mut RustProgramFacts) {

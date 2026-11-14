@@ -173,6 +173,22 @@ pub(crate) fn assets_from_source(
     standard: Option<&crate::standard::StandardBundle>,
     ownerships: &[crate::implementation_observation::SourceOwnership],
 ) -> Result<StateAssets, TransitionError> {
+    assets_from_evaluated_source(files, view, ccg, standard, ownerships, None)
+}
+
+/// Shares only an existing owner product from the same complete immutable evaluation.
+/// This is not persistent cache admission; changed source or CCG reconstructs the owner.
+pub(crate) fn assets_from_evaluated_source(
+    files: &SourceView,
+    view: &StateView,
+    ccg: Option<&ContractCoherencyGraph>,
+    standard: Option<&crate::standard::StandardBundle>,
+    ownerships: &[crate::implementation_observation::SourceOwnership],
+    references: Option<(
+        &SourceView,
+        &crate::reference_resolution::ComponentResolutionIndex,
+    )>,
+) -> Result<StateAssets, TransitionError> {
     let mut assets = StateAssets {
         subject_ref: view.source_ref.clone(),
         complete_axes: if ccg.is_some() && view.application.is_some() {
@@ -250,23 +266,43 @@ pub(crate) fn assets_from_source(
                 add_policy(&mut assets, id, module.contract_path(), policy, view)?;
             }
         }
-        let references = crate::reference_resolution::evaluate_reference_resolution(
+        assets.reference_facts = Some(reference_facts(files, ccg, standard, references)?);
+    }
+    Ok(assets)
+}
+fn reference_facts(
+    files: &SourceView,
+    ccg: &ContractCoherencyGraph,
+    standard: Option<&crate::standard::StandardBundle>,
+    references: Option<(
+        &SourceView,
+        &crate::reference_resolution::ComponentResolutionIndex,
+    )>,
+) -> Result<BTreeSet<String>, TransitionError> {
+    let reconstructed;
+    let index = if let Some((_, index)) = references.filter(|(source, index)| {
+        *source == files
+            && ccg
+                .digest()
+                .is_ok_and(|digest| digest == index.source_ccg_digest())
+    }) {
+        index
+    } else {
+        reconstructed = crate::reference_resolution::evaluate_reference_resolution(
             ccg,
             files,
             standard.map_or("unknown", |s| s.edition()),
         )
         .map_err(|e| error("INVALID_INPUT", e.to_string()))?;
-        assets.reference_facts = Some(
-            references
-                .index()
-                .semantic_reference_identities()
-                .iter()
-                .map(hash)
-                .collect::<Result<_, _>>()?,
-        );
-    }
-    Ok(assets)
+        reconstructed.index()
+    };
+    index
+        .semantic_reference_identities()
+        .iter()
+        .map(hash)
+        .collect::<Result<_, _>>()
 }
+
 fn input_record(path: &str, bytes: &[u8]) -> Result<AxisInput, TransitionError> {
     use crate::affected_analysis::AuthorityInputKind as K;
     let kind = crate::affected_analysis::classify_authority_path(path);

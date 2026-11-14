@@ -1,4 +1,5 @@
 """Operational byte and JSON admission; no semantic or authorization decisions."""
+import hashlib
 import json
 import math
 import os
@@ -61,8 +62,8 @@ def _ordinary(info):
     return stat.S_ISREG(info.st_mode) and not getattr(info, "st_file_attributes", 0) & 0x400
 
 
-def read_ordinary(path, maximum=MAX_BYTES):
-    """Read bounded bytes from one retained ordinary file and recheck its identity."""
+def _consume_ordinary(path, maximum, consume):
+    """Share native admission and drift checks across bounded consumers."""
     path = Path(path)
     before = path.lstat()
     if not _ordinary(before) or before.st_size > maximum:
@@ -76,15 +77,60 @@ def read_ordinary(path, maximum=MAX_BYTES):
         opened = os.fstat(stream.fileno())
         if not _ordinary(opened) or not os.path.samestat(before, opened) or opened.st_size > maximum:
             raise OSError("SOURCE_DRIFT: input changed during admission")
-        data = stream.read(min(maximum, opened.st_size) + 1)
+        length, result = consume(stream, min(maximum, opened.st_size))
         after = os.fstat(stream.fileno())
         named = path.lstat()
-        if len(data) > maximum or len(data) != before.st_size or not _ordinary(named) or any(
+        if length > maximum or length != before.st_size or not _ordinary(named) or any(
             not os.path.samestat(before, info) or info.st_size != before.st_size or info.st_mtime_ns != before.st_mtime_ns
             for info in (opened, after, named)
         ):
             raise OSError("SOURCE_DRIFT or RESOURCE_LIMIT: unstable input")
-        return data
+        return result
+
+
+def read_ordinary(path, maximum=MAX_BYTES):
+    """Read bounded bytes from one retained ordinary file and recheck its identity."""
+    def collect(stream, limit):
+        data = stream.read(limit + 1)
+        return len(data), data
+    return _consume_ordinary(path, maximum, collect)
+
+
+def _stream_ordinary(path, maximum, output):
+    """Hash complete pinned bytes with at most 64 KiB of input scratch.
+
+    This establishes integrity only. It neither parses evidence nor authenticates
+    its producer, and changed or incomplete inputs never return a digest.
+    """
+    def collect(stream, limit):
+        digest = hashlib.sha256()
+        length = 0
+        remaining = limit + 1
+        while remaining:
+            chunk = stream.read(min(64 * 1024, remaining))
+            if not chunk:
+                break
+            length += len(chunk)
+            remaining -= len(chunk)
+            if output is not None and output.write(chunk) != len(chunk):
+                raise OSError("INCOMPLETE_WRITE: ordinary copy was not complete")
+            digest.update(chunk)
+        return length, (length, "sha256:" + digest.hexdigest())
+    return _consume_ordinary(path, maximum, collect)
+
+
+def hash_ordinary(path, maximum=MAX_BYTES):
+    """Hash complete pinned bytes with bounded scratch and unchanged admission."""
+    return _stream_ordinary(path, maximum, None)
+
+
+def copy_ordinary(path, output, maximum=MAX_BYTES):
+    """Transfer verified ordinary bytes to an explicitly owned caller stream.
+
+    No destination path is opened here. A failed copy supplies no favorable
+    integrity result; the caller owns partial-output recovery or publication.
+    """
+    return _stream_ordinary(path, maximum, output)
 
 
 def strict_json(source, *, maximum=MAX_BYTES, nodes=16_000_000, depth=96):

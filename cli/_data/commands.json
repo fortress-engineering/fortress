@@ -462,6 +462,17 @@
       "duration": "long",
       "resumability": "restartable",
       "certification_implications": "Explicit read-only canonical analysis; proposed results cannot satisfy actual-state evidence. Only explicit --export retains a non-authoritative proposal. No apply method or CLI grant/execution validator."
+    },
+    {
+      "id": "CMD-SNAPSHOT-PROJECTIONS",
+      "name": "projections",
+      "aliases": [],
+      "description": "Materialize complete canonical static projections once in a new external directory without executing project code or issuing certification.",
+      "owner": "TF-CLI-0001",
+      "executor": "builtin-sync",
+      "duration": "long",
+      "resumability": "restartable",
+      "certification_implications": "Static projections retain uncertainty and missing execution. Independent repeatability requires separate cold invocations; a completion marker is integrity metadata, never certification or authenticated execution."
     }
   ]
 }

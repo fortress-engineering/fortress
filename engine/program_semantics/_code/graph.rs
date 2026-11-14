@@ -3,6 +3,8 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::rc::Rc;
 
+use super::reachability::{REACHABILITY_SCRATCH_BYTES, indexed_reachability};
+
 use super::{
     CallComponent, CallResolutionState, CallTopology, CrossModuleCall, ExecutableSymbol,
     ProgramCall, canonical_fact_id, symbol_index,
@@ -64,6 +66,23 @@ pub(super) fn prepare_call_topology(
     calls: &[ProgramCall],
     previous: Option<&PreparedCallTopology>,
 ) -> PreparedCallTopologyResult {
+    build_call_topology(symbols, calls, previous, true)
+}
+
+pub(super) fn compile_call_topology(
+    symbols: &[ExecutableSymbol],
+    calls: &[ProgramCall],
+) -> CallTopology {
+    build_call_topology(symbols, calls, None, false).topology
+}
+
+#[allow(clippy::too_many_lines)]
+fn build_call_topology(
+    symbols: &[ExecutableSymbol],
+    calls: &[ProgramCall],
+    previous: Option<&PreparedCallTopology>,
+    retain: bool,
+) -> PreparedCallTopologyResult {
     let ids: BTreeSet<String> = symbols.iter().map(|symbol| symbol.id.clone()).collect();
     let mut outgoing_calls = ids
         .iter()
@@ -106,6 +125,12 @@ pub(super) fn prepare_call_topology(
             .iter()
             .map(|id| (id.clone(), adjacency.get(id).cloned().unwrap_or_default()))
             .collect::<BTreeMap<_, _>>();
+        if !retain {
+            recomputed_components += 1;
+            transitive_reachability.extend(component_reachability(&edges));
+            component_groups.extend(strongly_connected_components(&members, &edges));
+            continue;
+        }
         let symbol_metadata = members
             .iter()
             .filter_map(|id| {
@@ -124,10 +149,7 @@ pub(super) fn prepare_call_topology(
         } else {
             recomputed_components += 1;
             Rc::new(PreparedGraphUnit {
-                reachability: members
-                    .iter()
-                    .map(|id| (id.clone(), reachable_from(id, &edges)))
-                    .collect(),
+                reachability: component_reachability(&edges),
                 components: strongly_connected_components(&members, &edges),
                 adjacency: edges,
                 symbol_metadata,
@@ -258,6 +280,23 @@ fn to_vectors(values: BTreeMap<String, BTreeSet<String>>) -> BTreeMap<String, Ve
         .into_iter()
         .map(|(key, values)| (key, values.into_iter().collect()))
         .collect()
+}
+
+fn component_reachability(
+    adjacency: &BTreeMap<String, BTreeSet<String>>,
+) -> BTreeMap<String, Vec<String>> {
+    // A singleton needs no shared traversal index; keep its original direct path.
+    let indexed = if adjacency.len() > 1 {
+        indexed_reachability(adjacency, REACHABILITY_SCRATCH_BYTES)
+    } else {
+        None
+    };
+    indexed.unwrap_or_else(|| {
+        adjacency
+            .keys()
+            .map(|id| (id.clone(), reachable_from(id, adjacency)))
+            .collect()
+    })
 }
 
 fn reachable_from(origin: &str, adjacency: &BTreeMap<String, BTreeSet<String>>) -> Vec<String> {

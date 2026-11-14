@@ -75,3 +75,7 @@ All 384 directed one-opcode replacements among 64 frozen cases, including 208 re
 ### [`primitive_profile_inputs.json`](../_data/primitive_profile_inputs.json)
 
 Explicit accepted research premises for exact frozen literal-borrow and fresh-command synthetic sources, expressed through the existing assumed-summary contract. These condition cross-effect negatives; they are not certified Standard-library bounds. The driver retains the unconfigured uncertainty and assumption references. Public scopes and arbitrary user code cannot receive these premises.
+
+### [`performance_workloads.json`](../_data/performance_workloads.json)
+
+Preregisters deterministic straight-line Rust source sizes and preserves the separate 300-comparison and two 1,000-case correctness populations. Synthetic workloads measure PSM construction and canonical hashing only; they do not represent whole-repository governance, realistic call graphs or security qualification. Warm-query and evaluation sample counts describe the separate explicitly governed resident experiment, not work performed by the synthetic PSM experiment.

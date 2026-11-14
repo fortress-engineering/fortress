@@ -292,6 +292,14 @@
             "T-TF-CLI-0001-R29-004",
             "T-TF-CLI-0001-R29-005"
           ]
+        },
+        {
+          "id": "TF-CLI-0001-R30",
+          "statement": "Explicit projection materialization constructs one complete canonical static stack in a new external ordinary directory, retains exact source and member identities, publishes its completion marker last and refuses unsafe, ambiguous or pre-existing destinations. Machine and human results share one underlying projection and explicitly claim neither execution nor certification.",
+          "tests": [
+            "T-TF-CLI-0001-R30-001",
+            "T-TF-CLI-0001-R30-002"
+          ]
         }
       ]
     }

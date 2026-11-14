@@ -177,3 +177,15 @@ Records verified application and receipt identities, actual governance, read-onl
 ### [`security_qualification_schema_v1.json`](../_data/security_qualification_schema_v1.json)
 
 Defines the exact-source boundary qualification record, required gate identities, tested host, source/control/threat-model digests and explicit unsupported threat classes. A digest establishes integrity only. External grants, current-state certification, issuer authentication and provider-enforced protection remain separate facts. No repository-local record is accepted as approval.
+
+### [`projection_materialization_schema_v1.json`](../_data/projection_materialization_schema_v1.json)
+
+Defines a completed external static-projection set, exact certification-domain subject, bounded member byte identities and separate phase observations. Completion requires all members and source reobservation. Static construction establishes neither execution nor certification nor producer authentication. Restoration additionally checks the selected source-bound certificate and two independent cold sets before publishing disposable materializations.
+
+### [`performance_workloads_schema_v1.json`](../_data/performance_workloads_schema_v1.json)
+
+Bounds diagnostic workload identity, source generation, sample declarations and mandatory independent qualification populations. Testing owns the actual workload data and runner. Numerical latency requirements are explicitly absent.
+
+### [`performance_qualification_schema_v1.json`](../_data/performance_qualification_schema_v1.json)
+
+Defines the JCS-addressed, exact-source derivative record referencing the existing certificate, workload manifest and retained observations. Independent-cold and unfiltered population claims require explicit references for all three registered populations. Integrity is distinct from authenticated provenance, execution verification and reevaluated semantic correctness.

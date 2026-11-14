@@ -48,6 +48,7 @@ mod migration_command;
 mod onboarding_command;
 mod portable_command;
 mod presentation;
+mod projection_command;
 mod provider_command;
 pub mod rpc;
 pub mod sarif;
@@ -157,6 +158,7 @@ where
         "CMD-CORE-HELP" => run_help(&registry, &arguments[1..], output, error),
         "CMD-CORE-VERSION" => run_version(&arguments[1..], output, error),
         "CMD-PROVIDER-EVIDENCE" => provider_command::run(&arguments[1..], output, error),
+        "CMD-SNAPSHOT-PROJECTIONS" => projection_command::run(&arguments[1..], output, error),
         "CMD-SNAPSHOT-AUDIT" => run_audit(&arguments[1..], output, error),
         "CMD-FINDING-CHECK" => run_check(&arguments[1..], output, error),
         "CMD-FINDING-LIST" => run_findings(&arguments[1..], output, error),
@@ -920,7 +922,16 @@ fn run_certify<O: Write, E: Write>(
             return Ok(EXIT_USAGE);
         }
     };
+    let suite_started = std::time::Instant::now();
     let suite_passed = execute_canonical_rust_suite(&request.root, error)?;
+    writeln!(
+        error,
+        "[fortress-execution-phase] {}",
+        serde_json::json!({
+            "phase":"canonical_unfiltered_rust_suite", "wall_time_ns":suite_started.elapsed().as_nanos(),
+            "scope":"registered workspace/all-target/all-feature execution including its compilation and harness overhead"
+        })
+    )?;
     let after = match prepare_repository_certification_source(&request.root) {
         Ok(value) => value,
         Err(source_error) => {
@@ -961,6 +972,13 @@ fn run_certify<O: Write, E: Write>(
             return Ok(EXIT_USAGE);
         }
     };
+    for measurement in bundle.phase_measurements() {
+        writeln!(
+            error,
+            "[fortress-evaluation-phase] {}",
+            serde_json::to_string(measurement).map_err(io::Error::other)?
+        )?;
+    }
     if let Some(directory) = &request.projection_output_dir {
         for (logical_path, document) in bundle.projections() {
             let destination = directory.join(logical_path);

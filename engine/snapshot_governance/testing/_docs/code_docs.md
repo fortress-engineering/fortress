@@ -155,3 +155,7 @@ Executes owning-Module adversarial controls against the existing implementation 
 ### [`security_boundaries.rs`](../_code/security_boundaries.rs)
 
 Exercises global input budgets, retained physical file identity, recursion and manifest admission, read-only discovery and query loading, symlink/reparse and case barriers, mutation safety, display controls and preservation of the complete current Rust source corpus. Every resource rejection is explicit and supplies no favorable semantic evidence.
+
+### [`performance.rs`](../_code/performance.rs)
+
+Transient, prepared, independent cold and evicted evaluations compare complete canonical projection maps, raw audits and negative execution-dependent products. Changed source and opaque operations retain uncertainty and historical bytes. The native test also runs the isolated Python streaming and materialization controls; it supplies no benchmark or numerical performance PASS condition.

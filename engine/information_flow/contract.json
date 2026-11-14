@@ -121,6 +121,13 @@
             "T-AF-INFORMATION-FLOW-0001-R05-023",
             "T-AF-INFORMATION-FLOW-0001-R05-024"
           ]
+        },
+        {
+          "id": "AF-INFORMATION-FLOW-0001-R06",
+          "statement": "Read-only operation-claim projections expose exactly the existing immutable selected-profile fact, claim records and trust diagnostics without re-evaluating flow, changing verdicts or serializing unrelated whole-model graphs.",
+          "tests": [
+            "T-AF-INFORMATION-FLOW-0001-R06-001"
+          ]
         }
       ]
     }

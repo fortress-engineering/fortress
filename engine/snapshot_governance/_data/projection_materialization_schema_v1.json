@@ -1,0 +1,179 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:diagnostic:v1:projection-materialization",
+  "title": "Complete static projection materialization; no execution or certification",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:diagnostic:v1:projection-materialization"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "claim": {
+      "const": "STATIC_PROJECTIONS_ONLY"
+    },
+    "source_domain": {
+      "const": "CERTIFICATION_SOURCE_IDENTITY"
+    },
+    "source_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "execution": {
+      "const": "NOT_RUN"
+    },
+    "certification": {
+      "const": "NOT_ISSUED"
+    },
+    "authenticity": {
+      "const": "UNVERIFIED"
+    },
+    "complete": {
+      "const": true
+    },
+    "files": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "items": {
+        "type": "object",
+        "properties": {
+          "logical_path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          },
+          "file_name": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]+\\.json$"
+          },
+          "bytes": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 536870912
+          },
+          "digest": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          }
+        },
+        "required": [
+          "logical_path",
+          "file_name",
+          "bytes",
+          "digest"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "phase_measurements": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {
+        "type": "object",
+        "properties": {
+          "phase": {
+            "type": "string",
+            "pattern": "^[a-z_]+$"
+          },
+          "wall_time_ns": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "process_cpu_time_ms": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resident_bytes_before": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resident_bytes_after": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "platform_virtual_bytes_before": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "platform_virtual_bytes_after": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "collector_wall_time_ns": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "phase",
+          "wall_time_ns",
+          "process_cpu_time_ms",
+          "resident_bytes_before",
+          "resident_bytes_after",
+          "platform_virtual_bytes_before",
+          "platform_virtual_bytes_after",
+          "collector_wall_time_ns"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "$schema",
+    "schema_version",
+    "claim",
+    "source_domain",
+    "source_ref",
+    "execution",
+    "certification",
+    "authenticity",
+    "complete",
+    "files",
+    "phase_measurements"
+  ],
+  "additionalProperties": false
+}

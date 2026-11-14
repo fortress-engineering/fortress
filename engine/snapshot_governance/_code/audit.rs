@@ -719,7 +719,7 @@ fn compile_repository_state_view_selected(
     }
     let prepared = prepare_audit_from_analysis(root, analysis)?;
     let mut measurements = EvaluationPhaseRecorder::new();
-    let stack = compile_certification_stack_from_prepared(prepared, None, &mut measurements)?.stack;
+    let stack = compile_transient_certification_stack(prepared, &mut measurements)?;
     let (_, projections) = certification_artifacts(&stack)?;
     let application = if let Some((selection, policy)) = selection {
         let imported = crate::evidence_ingest::load_selected_provider_inputs(root, selection)
@@ -2014,12 +2014,19 @@ fn certification_identity_from_tests(
 /// All exact-snapshot semantic projections and certification products compiled
 /// from one shared semantic stack.
 pub struct RepositoryCertificationBundle {
+    phase_measurements: Vec<EvaluationPhaseMeasurement>,
     projections: BTreeMap<String, String>,
     audit_json: String,
     products: CertificationProducts,
 }
 
 impl RepositoryCertificationBundle {
+    /// Returns operational producer costs, excluded from all canonical products.
+    #[must_use]
+    pub fn phase_measurements(&self) -> &[EvaluationPhaseMeasurement] {
+        &self.phase_measurements
+    }
+
     /// Returns canonical projections keyed by repository-relative logical path.
     #[must_use]
     pub const fn projections(&self) -> &BTreeMap<String, String> {
@@ -2043,6 +2050,47 @@ impl RepositoryCertificationBundle {
     pub fn into_products(self) -> CertificationProducts {
         self.products
     }
+}
+
+/// Complete canonical static projections from one immutable source observation.
+/// This contains no new test execution or certification decision.
+pub struct RepositoryProjectionBundle {
+    /// Exact recursion-free source identity in the certification source domain.
+    pub source_ref: String,
+    /// Existing canonical logical artifact paths and complete serialized bytes.
+    pub projections: BTreeMap<String, String>,
+    /// Audit from the same semantic authorities; enforcement is not assurance.
+    pub audit_json: String,
+    /// Nonsemantic producer costs, separate from canonical artifacts.
+    pub phase_measurements: Vec<EvaluationPhaseMeasurement>,
+}
+
+/// Constructs static projections once without execution or persistent reuse.
+///
+/// Independent repeatability consumers must call this in separate cold evaluations.
+/// Absence of execution evidence is never upgraded into certification success.
+///
+/// # Errors
+/// Returns the same source, authority and producer failures as ordinary evaluation.
+pub fn compile_repository_projection_bundle(
+    root: impl AsRef<Path>,
+) -> Result<RepositoryProjectionBundle, AuditError> {
+    let mut measurements = EvaluationPhaseRecorder::new();
+    let prepared = prepare_audit(root.as_ref())?;
+    measurements.record("source_preparation");
+    let stack = compile_transient_certification_stack(prepared, &mut measurements)?;
+    let projections = certification_artifacts(&stack)?.1;
+    let audit_json = stack
+        .audit
+        .to_json_pretty()
+        .map_err(CertificationError::Json)?;
+    measurements.record("canonical_serialization");
+    Ok(RepositoryProjectionBundle {
+        source_ref: certification_source_digest(&stack.observed_files),
+        projections,
+        audit_json,
+        phase_measurements: measurements.finish(),
+    })
 }
 
 /// Compiles all semantic models once and constructs current certification products.
@@ -2078,8 +2126,14 @@ pub fn compile_repository_certification_bundle(
     root: impl AsRef<Path>,
     suite_execution: RustSuiteExecution,
 ) -> Result<RepositoryCertificationBundle, AuditError> {
-    let stack = compile_certification_semantic_stack(root.as_ref())?;
-    certification_bundle_from_stack(&stack, suite_execution)
+    let mut measurements = EvaluationPhaseRecorder::new();
+    let prepared = prepare_audit(root.as_ref())?;
+    measurements.record("source_preparation");
+    let stack = compile_transient_certification_stack(prepared, &mut measurements)?;
+    let mut bundle = certification_bundle_from_stack(&stack, suite_execution)?;
+    measurements.record("certification_products_and_serialization");
+    bundle.phase_measurements = measurements.finish();
+    Ok(bundle)
 }
 
 #[allow(clippy::too_many_lines)]
@@ -2261,6 +2315,7 @@ fn certification_bundle_from_stack(
         )
         .map_err(AuditError::Certification)?;
     Ok(RepositoryCertificationBundle {
+        phase_measurements: Vec::new(),
         projections,
         audit_json,
         products,
@@ -2378,19 +2433,18 @@ fn nanoseconds(duration: std::time::Duration) -> u64 {
     u64::try_from(duration.as_nanos()).unwrap_or(u64::MAX)
 }
 
-fn compile_certification_semantic_stack(
-    root: &Path,
+fn compile_transient_certification_stack(
+    prepared: PreparedAudit,
+    measurements: &mut EvaluationPhaseRecorder,
 ) -> Result<CertificationSemanticStack, AuditError> {
-    let prepared = prepare_audit(root)?;
-    let mut measurements = EvaluationPhaseRecorder::new();
-    compile_certification_stack_from_prepared(prepared, None, &mut measurements)
+    compile_certification_stack_from_prepared(prepared, PreparationRequest::Transient, measurements)
         .map(|result| result.stack)
 }
 
 #[allow(clippy::too_many_lines)]
 fn compile_certification_stack_from_prepared(
     prepared: PreparedAudit,
-    previous: Option<&ResidentPreparation>,
+    preparation: PreparationRequest<'_>,
     measurements: &mut EvaluationPhaseRecorder,
 ) -> Result<PreparedCertificationStack, AuditError> {
     let initial_ccg = prepared
@@ -2414,7 +2468,7 @@ fn compile_certification_stack_from_prepared(
         initial_ccg,
         observation_input,
         &observed,
-        previous,
+        preparation,
         measurements,
     )?;
     let models = prepared_models.models;
@@ -2436,6 +2490,7 @@ fn compile_certification_stack_from_prepared(
         .graph()
         .ok_or_else(|| AuditError::ContractState("CCG compilation did not produce a graph".into()))?
         .clone();
+    measurements.record("documentation_and_contract_coherency");
     let behavioral_semantics =
         evaluate_behavioral_semantics(&ccg, prepared.standard.bundle.edition())
             .map_err(AuditError::BehavioralSemantics)?;
@@ -2448,13 +2503,16 @@ fn compile_certification_stack_from_prepared(
         prepared.standard.bundle.edition(),
         &prepared.profiles,
     )?;
+    measurements.record("behavioral_realization");
     let reference_resolution = evaluate_reference_resolution(
         &ccg,
         &prepared.observed_files,
         prepared.standard.bundle.edition(),
     )
     .map_err(AuditError::ReferenceResolution)?;
+    measurements.record("reference_resolution");
     let source_architecture = compile_source_architecture_from(&prepared, &ccg, Some(&models.psm))?;
+    measurements.record("source_architecture");
     let semantic_conformance = evaluate_semantic_conformance(
         &ccg,
         &models.psm,
@@ -2464,6 +2522,7 @@ fn compile_certification_stack_from_prepared(
         prepared.standard.bundle.edition(),
     )
     .map_err(AuditError::SemanticConformance)?;
+    measurements.record("semantic_conformance");
     let evaluation_inputs = CompleteEvaluationInputs::new(
         &prepared.rust_tests,
         RepositoryEvaluationInputs::new(
@@ -2491,6 +2550,7 @@ fn compile_certification_stack_from_prepared(
         evaluation_inputs,
         &prepared.profiles,
     )?;
+    measurements.record("rule_evaluation");
     let finding_governance = evaluate_finding_governance(
         evaluation.findings(),
         prepared.finding_governance.as_ref(),
@@ -2506,6 +2566,7 @@ fn compile_certification_stack_from_prepared(
         .map_err(CertificationError::Json)
         .map_err(AuditError::Certification)?
         .map(|source| format!("sha256:{:x}", Sha256::digest(source.as_bytes())));
+    measurements.record("finding_governance");
     let architecture_diagnostics =
         derive_architecture_diagnostics(&ccg, &observed, &architecture_realization)
             .map_err(AuditError::ArchitectureDiagnostics)?;
@@ -3115,14 +3176,16 @@ fn certification_behavior_inputs(
             targets,
         });
     }
-    let environmental_value = serde_json::to_value(stack.models.environmental.model())
-        .map_err(CertificationError::Json)
-        .map_err(AuditError::Certification)?;
-    for obligation in environmental_value["failure_test_obligations"]
-        .as_array()
-        .into_iter()
-        .flatten()
-    {
+    let environmental_value = serde_json::to_value(
+        stack
+            .models
+            .environmental
+            .model()
+            .failure_test_obligations(),
+    )
+    .map_err(CertificationError::Json)
+    .map_err(AuditError::Certification)?;
+    for obligation in environmental_value.as_array().into_iter().flatten() {
         let id = required_string(obligation, "id")?;
         let provenance = required_string(obligation, "contract_provenance")?;
         let path = provenance.split('#').next().unwrap_or(&provenance);
@@ -3275,10 +3338,16 @@ fn certification_verification_bindings(
 fn certification_trusted_assertions(
     stack: &CertificationSemanticStack,
 ) -> Result<Vec<crate::certification::TrustedAssertionInput>, AuditError> {
-    let information = serde_json::to_value(stack.models.information_flow.model())
-        .map_err(CertificationError::Json)
-        .map_err(AuditError::Certification)?;
-    let mut assertions = information["trusted_transition_diagnostics"]
+    let information = serde_json::to_value(
+        stack
+            .models
+            .information_flow
+            .model()
+            .trusted_transition_diagnostics(),
+    )
+    .map_err(CertificationError::Json)
+    .map_err(AuditError::Certification)?;
+    let mut assertions = information
         .as_array()
         .into_iter()
         .flatten()
@@ -3299,10 +3368,10 @@ fn certification_trusted_assertions(
             },
         )
         .collect::<Vec<_>>();
-    let environmental = serde_json::to_value(stack.models.environmental.model())
+    let environmental = serde_json::to_value(stack.models.environmental.model().operations())
         .map_err(CertificationError::Json)
         .map_err(AuditError::Certification)?;
-    for operation in environmental["operations"].as_array().into_iter().flatten() {
+    for operation in environmental.as_array().into_iter().flatten() {
         if operation["atomicity"] == "ATOMIC" {
             assertions.push(crate::certification::TrustedAssertionInput {
                 subject: required_string(operation, "id")?,
@@ -3582,7 +3651,11 @@ fn prepare_resident_analysis(
         preparation,
         mut work,
         dependencies,
-    } = compile_certification_stack_from_prepared(audit_inputs, previous, &mut measurements)?;
+    } = compile_certification_stack_from_prepared(
+        audit_inputs,
+        PreparationRequest::Resident(previous),
+        &mut measurements,
+    )?;
     let evaluation_key = prepared_evaluation_key(&analysis, &stack.models.psm)?;
     let affected_snapshot = build_affected_snapshot(
         &analysis,
@@ -3615,8 +3688,9 @@ fn prepare_resident_analysis(
         certification_artifacts(&stack)?.1
     };
     measurements.record("canonical_serialization");
-    work.phase_measurements = measurements.measurements;
     let comparison_state = lifecycle_comparison(&stack, &analysis.ownerships)?;
+    measurements.record("comparison_state");
+    work.phase_measurements = measurements.measurements;
     let AnalysisModels {
         psm,
         semantic,
@@ -3641,6 +3715,12 @@ fn prepare_resident_analysis(
         preparation,
         work,
     ))
+}
+
+#[derive(Clone, Copy)]
+enum PreparationRequest<'a> {
+    Transient,
+    Resident(Option<&'a ResidentPreparation>),
 }
 
 struct PreparedAnalysisModels {
@@ -3676,55 +3756,104 @@ fn compile_analysis_models_from_observed(
         ccg,
         observation_input,
         observed,
-        None,
+        PreparationRequest::Transient,
         &mut measurements,
     )
     .map(|result| result.models)
 }
 
+#[allow(clippy::too_many_lines)]
 fn compile_analysis_models_prepared_from_observed(
     prepared: &PreparedAudit,
     ccg: &ContractCoherencyGraph,
     observation_input: ImplementationObservationInput,
     observed: &ObservedImplementation,
-    previous: Option<&ResidentPreparation>,
+    preparation: PreparationRequest<'_>,
     measurements: &mut EvaluationPhaseRecorder,
 ) -> Result<PreparedAnalysisModels, AuditError> {
-    let program = prepare_program_semantics(
-        &program_input_from_observed(prepared, ccg, observation_input, observed),
-        previous.and_then(|value| value.program.as_ref()),
-    )
-    .map_err(AuditError::ProgramSemantics)?;
-    let psm = program.model;
+    let input = program_input_from_observed(prepared, ccg, observation_input, observed);
+    let (psm, program_preparation, program_work, program_fallback, dependencies) = match preparation
+    {
+        PreparationRequest::Transient => (
+            compile_program_semantic_model(&input).map_err(AuditError::ProgramSemantics)?,
+            None,
+            ProgramSemanticWork::default(),
+            None,
+            Vec::new(),
+        ),
+        PreparationRequest::Resident(previous) => {
+            let result = prepare_program_semantics(
+                &input,
+                previous.and_then(|value| value.program.as_ref()),
+            )
+            .map_err(AuditError::ProgramSemantics)?;
+            (
+                result.model,
+                Some(result.preparation),
+                result.work,
+                result.fallback,
+                result.dependencies,
+            )
+        }
+    };
     measurements.record("program_semantics");
     let sources = function_contract_sources(ccg, &prepared.observed_files)?;
     let contracts: ResolvedFunctionContracts =
         load_function_contracts(&psm, sources).map_err(AuditError::FunctionContracts)?;
     measurements.record("function_contracts");
-    let (semantic, semantic_preparation, semantic_work) = analyze_program_domains_prepared(
-        &psm,
-        &contracts,
-        prepared.standard.bundle.edition(),
-        previous.and_then(|value| value.semantic.as_ref()),
-    )
-    .map_err(AuditError::SemanticAnalysis)?;
+    let (semantic, semantic_preparation, semantic_work) = match preparation {
+        PreparationRequest::Transient => (
+            analyze_program_domains(&psm, &contracts, prepared.standard.bundle.edition())
+                .map_err(AuditError::SemanticAnalysis)?,
+            None,
+            SemanticPreparationWork::default(),
+        ),
+        PreparationRequest::Resident(previous) => {
+            let (model, retained, work) = analyze_program_domains_prepared(
+                &psm,
+                &contracts,
+                prepared.standard.bundle.edition(),
+                previous.and_then(|value| value.semantic.as_ref()),
+            )
+            .map_err(AuditError::SemanticAnalysis)?;
+            (model, Some(retained), work)
+        }
+    };
     measurements.record("semantic_domains");
     let state_sources = state_contract_sources(ccg, &prepared.observed_files)?;
     let state_contracts =
         load_state_contracts(&psm, state_sources).map_err(AuditError::StateContracts)?;
     let summary_catalog = operation_summary_catalog(&prepared.observed_files)?;
-    let (state_effect, state_preparation, state_work) =
-        analyze_state_effects_with_summaries_prepared(
-            &psm,
-            &semantic,
-            &state_contracts,
-            &contracts,
-            prepared.standard.bundle.edition(),
-            &summary_catalog,
-            &BTreeMap::new(),
-            previous.and_then(|value| value.state_effect.as_ref()),
-        )
-        .map_err(AuditError::StateEffectAnalysis)?;
+    let (state_effect, state_preparation, state_work) = match preparation {
+        PreparationRequest::Transient => (
+            analyze_state_effects_with_summaries(
+                &psm,
+                &semantic,
+                &state_contracts,
+                &contracts,
+                prepared.standard.bundle.edition(),
+                &summary_catalog,
+                &BTreeMap::new(),
+            )
+            .map_err(AuditError::StateEffectAnalysis)?,
+            None,
+            StateEffectPreparationWork::default(),
+        ),
+        PreparationRequest::Resident(previous) => {
+            let (model, retained, work) = analyze_state_effects_with_summaries_prepared(
+                &psm,
+                &semantic,
+                &state_contracts,
+                &contracts,
+                prepared.standard.bundle.edition(),
+                &summary_catalog,
+                &BTreeMap::new(),
+                previous.and_then(|value| value.state_effect.as_ref()),
+            )
+            .map_err(AuditError::StateEffectAnalysis)?;
+            (model, Some(retained), work)
+        }
+    };
     measurements.record("state_effects");
     let policy =
         load_information_flow_policy(information_flow_policy_sources(&prepared.observed_files)?)
@@ -3758,9 +3887,15 @@ fn compile_analysis_models_prepared_from_observed(
     // Immutable preparation is charged once through the unchanged owner methods.
     // Rechecking retention must not serialize all retained facts again.
     let accounted_bytes_by_owner = [
-        program.preparation.accounted_resident_bytes(),
-        semantic_preparation.accounted_resident_bytes(),
-        state_preparation.accounted_resident_bytes(),
+        program_preparation
+            .as_ref()
+            .map_or(0, ProgramSemanticPreparation::accounted_resident_bytes),
+        semantic_preparation
+            .as_ref()
+            .map_or(0, SemanticAnalysisPreparation::accounted_resident_bytes),
+        state_preparation
+            .as_ref()
+            .map_or(0, StateEffectPreparation::accounted_resident_bytes),
     ];
     measurements.record("preparation_accounting");
     Ok(PreparedAnalysisModels {
@@ -3772,19 +3907,19 @@ fn compile_analysis_models_prepared_from_observed(
             environmental,
         },
         preparation: ResidentPreparation {
-            program: Some(program.preparation),
-            semantic: Some(semantic_preparation),
-            state_effect: Some(state_preparation),
+            program: program_preparation,
+            semantic: semantic_preparation,
+            state_effect: state_preparation,
             accounted_bytes_by_owner,
         },
         work: ResidentWork {
-            program: program.work,
+            program: program_work,
             semantic: semantic_work,
             state_effect: state_work,
-            program_fallback: program.fallback,
+            program_fallback,
             phase_measurements: Vec::new(),
         },
-        dependencies: program.dependencies,
+        dependencies,
     })
 }
 
@@ -3915,9 +4050,7 @@ fn audit_repository_with_prepared(
         .is_some_and(|d| d.lifecycle().is_some())
     {
         let mut measurements = EvaluationPhaseRecorder::new();
-        let stack =
-            compile_certification_stack_from_prepared(prepared.clone(), None, &mut measurements)?
-                .stack;
+        let stack = compile_transient_certification_stack(prepared.clone(), &mut measurements)?;
         return Ok((stack.audit, stack.ccg, stack.intended_bfg));
     }
     let standard = &prepared.standard.bundle;
@@ -6453,12 +6586,13 @@ fn lifecycle_comparison(
         application: Some(application),
         portable_evidence_graph: None,
     };
-    let assets = crate::transition_load::assets_from_source(
+    let assets = crate::transition_load::assets_from_evaluated_source(
         &stack.observed_files,
         &view,
         Some(&stack.ccg),
         Some(&stack.standard),
         ownerships,
+        Some((&stack.observed_files, stack.reference_resolution.index())),
     )
     .map_err(|e| AuditError::InputMismatch(e.to_string().into()))?;
     let state=crate::state_governance::ComparisonState{schema:"urn:fortress:derived:v2:comparison-state".into(),schema_version:2,source_ref:Some(view.source_ref.clone()),view:Some(view),retained_application:None,assets:Some(assets),origin_ref:None,limitations:vec!["Read-only lifecycle capture reuses existing compiled owner results; no project execution or producer authentication is inferred.".into()]};
@@ -6530,7 +6664,7 @@ pub fn capture_finding_adoption(root: &Path) -> Result<FindingCapture, AuditErro
     let ownerships = analysis.ownerships.clone();
     let prepared = prepare_audit_from_analysis(root, analysis)?;
     let mut measurements = EvaluationPhaseRecorder::new();
-    let stack = compile_certification_stack_from_prepared(prepared, None, &mut measurements)?.stack;
+    let stack = compile_transient_certification_stack(prepared, &mut measurements)?;
     let state = lifecycle_comparison(&stack, &ownerships)?;
     let (_, _, after) = capture_resident_source(root, Some((32 * 1024 * 1024, 50_000)))?;
     if after != stack.observed_files {
@@ -6600,15 +6734,17 @@ fn application_authority_preimage(
 fn flow_application_rules(
     stack: &CertificationSemanticStack,
 ) -> Result<Vec<crate::application::ApplicationRuleInput>, AuditError> {
-    let flow = serde_json::to_value(stack.models.information_flow.model())
+    let model = stack.models.information_flow.model();
+    if !model.operation_profile_selected() {
+        return Ok(Vec::new());
+    }
+    let claims = model
+        .operation_claim_projections()
+        .collect::<Result<Vec<_>, _>>()
         .map_err(|e| AuditError::ContractState(e.to_string().into()))?;
-    let result = flow["operation_claims"]
-        .as_array()
-        .into_iter()
-        .flatten()
-        .filter(|claim| {
-            flow["operation_profile_selected"] == true && claim["verdict"] != "NOT_APPLICABLE"
-        })
+    let result = claims
+        .iter()
+        .filter(|claim| claim["verdict"] != "NOT_APPLICABLE")
         .map(|claim| crate::application::ApplicationRuleInput {
             rule_id: claim["id"].as_str().unwrap_or_default().into(),
             outcome: match claim["verdict"].as_str() {
@@ -6727,6 +6863,30 @@ pub(crate) type CandidateEndpoint = (
     crate::migration_governance::MigrationEvaluation,
     Option<CandidateOwnerFacts>,
 );
+
+/// Selects the existing resident capability using preparation facts only.
+/// A joined worker preserves parser-epoch ownership; unsupported or invalid
+/// declarations retain the original canonical cold/error path.
+pub(crate) fn candidate_supports_session(source: &SourceView) -> Result<bool, AuditError> {
+    std::thread::scope(|scope| {
+        std::thread::Builder::new()
+            .name("fortress-candidate-admission".into())
+            .spawn_scoped(scope, || {
+                prepare_analysis_from_view(source.clone()).is_ok_and(|analysis| {
+                    analysis.project_state == ProjectGovernanceState::Declared
+                        && analysis.ccg().is_some()
+                        && analysis.ownership_diagnostics.is_empty()
+                })
+            })
+            .map_err(|e| {
+                AuditError::InputMismatch(
+                    format!("Candidate admission worker unavailable: {e}").into(),
+                )
+            })?
+            .join()
+            .map_err(|_| AuditError::InputMismatch("Candidate admission worker failed".into()))
+    })
+}
 
 /// Composes existing resident results only when their entire observed source is exact.
 pub(crate) fn evaluate_candidate_source(
@@ -6969,11 +7129,7 @@ pub(crate) fn audit_migration_source(source: &SourceView) -> Result<AuditResult,
     let analysis = prepare_analysis_from_view(source.clone())?;
     let prepared = prepare_audit_from_analysis(Path::new("."), analysis)?;
     let mut measurements = EvaluationPhaseRecorder::new();
-    Ok(
-        compile_certification_stack_from_prepared(prepared, None, &mut measurements)?
-            .stack
-            .audit,
-    )
+    Ok(compile_transient_certification_stack(prepared, &mut measurements)?.audit)
 }
 
 fn evaluate_declared_migration(
@@ -7005,7 +7161,7 @@ fn evaluate_declared_migration(
     let affected_inputs = analysis.clone();
     let prepared = prepare_audit_from_analysis(Path::new("."), analysis)?;
     let mut measurements = EvaluationPhaseRecorder::new();
-    let stack = compile_certification_stack_from_prepared(prepared, None, &mut measurements)?.stack;
+    let stack = compile_transient_certification_stack(prepared, &mut measurements)?;
     let state = lifecycle_comparison(&stack, &ownerships)?;
     let affected_snapshot = build_affected_snapshot(
         &affected_inputs,

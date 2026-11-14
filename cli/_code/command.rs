@@ -136,6 +136,13 @@ const BUILTIN_COMMANDS: &[CommandDescriptor] = &[
         usage: "fortress --version",
     },
     CommandDescriptor {
+        id: "CMD-SNAPSHOT-PROJECTIONS",
+        name: "projections",
+        aliases: &[],
+        description: "Materialize canonical static projections without executing project code or issuing certification.",
+        usage: "fortress projections [path] --output-dir new-external-directory [--format human|json]",
+    },
+    CommandDescriptor {
         id: "CMD-SNAPSHOT-AUDIT",
         name: "audit",
         aliases: &[],

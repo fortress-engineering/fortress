@@ -60,3 +60,7 @@ path = "../testing/_code/verifier_boundary.rs"
 [[test]]
 name = "cli_boundary_controls"
 path = "../testing/_code/lib.rs"
+
+[[test]]
+name = "projection_materialization"
+path = "../testing/_code/projections.rs"

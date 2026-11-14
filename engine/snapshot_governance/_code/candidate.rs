@@ -432,17 +432,41 @@ impl CandidateWorkspace {
         let directory =
             crate::heavy_admission::DirectoryIdentity::capture(&root).map_err(convert)?;
         let physical_base = crate::audit::observe_candidate_source(&root).map_err(convert)?;
-        let (base, base_owner_facts) =
-            crate::audit::evaluate_candidate_source(&physical_base, None).map_err(convert)?;
-        let session = if let Some((storage, options)) = resident.filter(|_| {
-            base.state
-                .view
-                .as_ref()
-                .is_some_and(|s| s.application.is_some())
-        }) {
-            Some(Session::open(&root, storage, options).map_err(|e| session_error(&e))?)
+        let mut session = match resident {
+            Some((storage, options))
+                if crate::audit::candidate_supports_session(&physical_base).map_err(convert)? =>
+            {
+                match Session::open(&root, storage, options) {
+                    Ok(session) => Some(session),
+                    Err(cause) => {
+                        // Preserve canonical input-error precedence on a failed
+                        // acceleration attempt; no failed preparation is reused.
+                        crate::audit::evaluate_candidate_source(&physical_base, None)
+                            .map_err(convert)?;
+                        return Err(session_error(&cause));
+                    }
+                }
+            }
+            _ => None,
+        };
+        let resident_endpoint = if let Some(active) = &session {
+            // Complete admitted bytes, not watcher hints or a partial digest.
+            Some(
+                active
+                    .acquire_generation()
+                    .map_err(|e| session_error(&e))?
+                    .candidate_endpoint(&physical_base),
+            )
         } else {
             None
+        };
+        let (base, base_owner_facts) = if let Some(Ok(endpoint)) = resident_endpoint {
+            endpoint
+        } else {
+            // A missing complete dependency proof reconstructs all owners.
+            // Drop the unproven resident preparation before that work.
+            session = None;
+            crate::audit::evaluate_candidate_source(&physical_base, None).map_err(convert)?
         };
         let context_ref = base
             .state

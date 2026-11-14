@@ -951,3 +951,32 @@ fn execute_source_controls(executable_source: &str, expected_output: &str) {
     );
     fs::remove_dir_all(directory).unwrap();
 }
+
+/// `T-AF-INFORMATION-FLOW-0001-R06-001`
+/// Fortress requirement: AF-INFORMATION-FLOW-0001-R06
+#[test]
+fn focused_projection_preserves_complete_original_claim_and_trust_records() {
+    let model = psm("fn log(value:u32){} fn send(){let secret=std::process::id();log(secret);}");
+    let policy = operation_policy(&model, "std::process::id", "sample::log");
+    for selected in [false, true] {
+        let result = evaluate_operations(&model, &policy, selected).unwrap();
+        let full = serde_json::to_value(result.model()).unwrap();
+        assert_eq!(
+            full["operation_profile_selected"],
+            result.model().operation_profile_selected()
+        );
+        let claims = result
+            .model()
+            .operation_claim_projections()
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap();
+        assert_eq!(
+            full["operation_claims"],
+            serde_json::to_value(claims).unwrap()
+        );
+        assert_eq!(
+            full["trusted_transition_diagnostics"],
+            serde_json::to_value(result.model().trusted_transition_diagnostics()).unwrap()
+        );
+    }
+}

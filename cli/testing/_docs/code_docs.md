@@ -59,3 +59,7 @@ Verifies that repository-owned interpreter assertions cannot launch a project ex
 ### [`lib.rs`](../_code/lib.rs)
 
 Defines the explicit Cargo integration-test crate root, binds the existing private CLI adapters through canonical crate-root resolution, and loads directly owned boundary controls. Tests consume the existing CLI capability without introducing a dependency from production to its Testing Module.
+
+### [`projections.rs`](../_code/projections.rs)
+
+Compares human and JSON external materialization with the canonical API, checks exact member bytes and verifies source preservation and build-script nonexecution. Rejects existing or internal destinations, traversal, absent parents and supported unsafe links without replacing user files.

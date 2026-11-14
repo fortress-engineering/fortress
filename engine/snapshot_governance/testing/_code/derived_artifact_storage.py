@@ -854,9 +854,19 @@ class DerivedArtifactStorageTests(unittest.TestCase):
         def generate(
             _root: Path, command: list[str], _environment: dict[str, str], **_kwargs: object
         ) -> None:
-            output = Path(command[-1])
+            self.assertEqual(command[1], "projections")
+            output = Path(command[command.index("--output-dir") + 1])
             self.assertEqual(output.parent.name, "s")
-            output.write_bytes(content)
+            output.mkdir()
+            name = Path(logical_path).name
+            (output / name).write_bytes(content)
+            record = {"$schema": "urn:fortress:diagnostic:v1:projection-materialization", "schema_version": 1,
+                "claim": "STATIC_PROJECTIONS_ONLY", "source_domain": "CERTIFICATION_SOURCE_IDENTITY",
+                "source_ref": fingerprint, "execution": "NOT_RUN", "certification": "NOT_ISSUED",
+                "authenticity": "UNVERIFIED", "complete": True,
+                "files": [{"logical_path": logical_path, "file_name": name, "bytes": len(content), "digest": quality.sha256_bytes(content)}],
+                "phase_measurements": []}
+            (output / "manifest.json").write_text(json.dumps(record), encoding="utf-8")
 
         environment = {
             "FORTRESS_DERIVED_CACHE_DIR": str(base / "cache"),
@@ -872,10 +882,14 @@ class DerivedArtifactStorageTests(unittest.TestCase):
             patch.object(quality, "SEMANTIC_ARTIFACTS", artifact_registry),
             patch.object(quality, "verify", return_value=document),
             patch.object(quality, "cargo_base", return_value=["cargo"]),
+            patch.object(quality, "certification_executable", return_value=Path("fortress")),
+            patch.object(quality, "selected_certification_subject", return_value=fingerprint),
+            patch.object(quality, "repository_fingerprint", return_value=(fingerprint, 0)),
             patch.object(quality, "run_command", side_effect=generate) as runner,
         ):
             quality.materialize(root)
             self.assertEqual(runner.call_count, 2)
+            self.assertNotEqual(runner.call_args_list[0].args[1][-1], runner.call_args_list[1].args[1][-1])
             self.assertEqual(
                 quality.cache_artifact_path(root, fingerprint, logical_path).read_bytes(),
                 content,

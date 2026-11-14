@@ -1,0 +1,66 @@
+{
+  "$schema": "urn:fortress:research:v1:performance-workloads",
+  "schema_version": 1,
+  "id": "canonical-performance-workloads-v1",
+  "numerical_performance_requirements": false,
+  "generator": "rust_straight_line_v1",
+  "required_qualification": {
+    "independent_comparisons": 300,
+    "candidate_differential_cases": 1000,
+    "resident_differential_cases": 1000
+  },
+  "workloads": [
+    {
+      "id": "small",
+      "functions": 25,
+      "lines_per_function": 20,
+      "functions_per_file": 25,
+      "approximate_lines": 500,
+      "warm_queries": 100,
+      "warm_evaluations": 10
+    },
+    {
+      "id": "medium",
+      "functions": 250,
+      "lines_per_function": 20,
+      "functions_per_file": 25,
+      "approximate_lines": 5000,
+      "warm_queries": 100,
+      "warm_evaluations": 10
+    },
+    {
+      "id": "large_50k",
+      "functions": 2500,
+      "lines_per_function": 20,
+      "functions_per_file": 25,
+      "approximate_lines": 50000,
+      "warm_queries": 100,
+      "warm_evaluations": 10
+    },
+    {
+      "id": "large_500k",
+      "functions": 25000,
+      "lines_per_function": 20,
+      "functions_per_file": 25,
+      "approximate_lines": 500000,
+      "warm_queries": 100,
+      "warm_evaluations": 10
+    },
+    {
+      "id": "large_1m",
+      "functions": 50000,
+      "lines_per_function": 20,
+      "functions_per_file": 25,
+      "approximate_lines": 1000000,
+      "warm_queries": 100,
+      "warm_evaluations": 10
+    }
+  ],
+  "limitations": [
+    "Numerical observations never certify performance.",
+    "Synthetic straight-line Rust is a declared workload, not a representative proof for arbitrary repositories, dynamic dispatch, concurrency or information-flow security.",
+    "Approximate line counts exclude Cargo and generated module declarations; record exact bytes and lines after generation.",
+    "Keep real-repository input and producer identities separate, including unsupported outcomes and operational resource refusals.",
+    "The existing 300-comparison campaign and both 1000-case corpora remain independent and unchanged."
+  ]
+}

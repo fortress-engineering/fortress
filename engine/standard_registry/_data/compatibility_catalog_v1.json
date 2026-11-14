@@ -3521,6 +3521,72 @@
         "id": "sha256-canonical-ascii-qualification-v1",
         "source": "engine/snapshot_governance/_code/security_qualification.py"
       }
+    },
+    {
+      "schema_id": "urn:fortress:diagnostic:v1:projection-materialization",
+      "schema_path": "engine/snapshot_governance/_data/projection_materialization_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "cli/_code/projection_command.rs"
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/snapshot_governance/_code/quality_certificate.py"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "explicit-source-and-projection-identities-v1",
+        "source": "cli/_code/projection_command.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-complete-canonical-member-bytes",
+        "source": "cli/_code/projection_command.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:research:v1:performance-workloads",
+      "schema_path": "engine/snapshot_governance/_data/performance_workloads_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "testing/_code/performance_runner.py"
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "testing/_code/performance_runner.py"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "named-frozen-workload-v1",
+        "source": "testing/_code/performance_runner.py"
+      },
+      "content_hash_algorithm": {
+        "id": "rfc8785-jcs-sha256",
+        "source": "testing/_code/performance_runner.py"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:qualification:v1:performance-equivalence",
+      "schema_path": "engine/snapshot_governance/_data/performance_qualification_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "testing/_code/performance_qualification.py"
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "testing/_code/performance_qualification.py"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "source-bound-performance-equivalence-v1",
+        "source": "testing/_code/performance_qualification.py"
+      },
+      "content_hash_algorithm": {
+        "id": "rfc8785-jcs-sha256",
+        "source": "testing/_code/performance_qualification.py"
+      }
     }
   ]
 }

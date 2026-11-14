@@ -305,3 +305,11 @@ libc = "=0.2.189"
 [[test]]
 name = "documentation_controls"
 path = "../snapshot_governance/testing/_code/documentation_controls.rs"
+
+[[test]]
+name = "program_reachability"
+path = "../program_semantics/testing/_code/lib.rs"
+
+[[test]]
+name = "performance_equivalence"
+path = "../snapshot_governance/testing/_code/performance.rs"

@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:research:v1:performance-workloads",
+  "title": "Diagnostic workloads and preserved independent correctness population",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:research:v1:performance-workloads"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "id": {
+      "const": "canonical-performance-workloads-v1"
+    },
+    "numerical_performance_requirements": {
+      "const": false
+    },
+    "generator": {
+      "const": "rust_straight_line_v1"
+    },
+    "required_qualification": {
+      "type": "object",
+      "properties": {
+        "independent_comparisons": {
+          "const": 300
+        },
+        "candidate_differential_cases": {
+          "const": 1000
+        },
+        "resident_differential_cases": {
+          "const": 1000
+        }
+      },
+      "required": [
+        "independent_comparisons",
+        "candidate_differential_cases",
+        "resident_differential_cases"
+      ],
+      "additionalProperties": false
+    },
+    "workloads": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 16,
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]+$"
+          },
+          "functions": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50000
+          },
+          "lines_per_function": {
+            "const": 20
+          },
+          "functions_per_file": {
+            "const": 25
+          },
+          "approximate_lines": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000000
+          },
+          "warm_queries": {
+            "const": 100
+          },
+          "warm_evaluations": {
+            "const": 10
+          }
+        },
+        "required": [
+          "id",
+          "functions",
+          "lines_per_function",
+          "functions_per_file",
+          "approximate_lines",
+          "warm_queries",
+          "warm_evaluations"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "items": {
+        "type": "string",
+        "maxLength": 1024
+      }
+    }
+  },
+  "required": [
+    "$schema",
+    "schema_version",
+    "id",
+    "numerical_performance_requirements",
+    "generator",
+    "required_qualification",
+    "workloads",
+    "limitations"
+  ],
+  "additionalProperties": false
+}

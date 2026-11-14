@@ -49,3 +49,21 @@ Independent truth tables, RFC canonicalization facts, public parser/provider vec
 ### [`security_controls.py`](../_code/security_controls.py)
 
 Runs independent malformed JSON/ZIP, preallocation, retained-container, path ambiguity and mutation controls, plus the installed Python operational-reader and exact-source qualification integrity controls. It never extracts archives, contacts services or executes repository code. The canonical issuer retains its compact results through OPS and requires this gate in addition to every established gate.
+
+### [`performance_probe.rs`](../_code/performance_probe.rs)
+
+Explicit prebuilt observer over existing production APIs. Separates PSM construction from hashing, and governed query loading from 100 complete requests per method. Resident experiments compare canonical members with independent cold reconstruction, eviction fallback and cancellation, then compare source and protected-authority candidate results with independent cold evaluation. An equal error code remains an error comparison, not canonical success. Accounted resident bytes are conservative admission charges, not measured RSS.
+
+### [`performance_runner.py`](../_code/performance_runner.py)
+
+Verifies the prebuilt observer's exact bytes, input source before and after execution, safe external destinations and bounded process duration. It never compiles, initializes governance or executes project code implicitly. New disposable synthetic fixtures contain only Cargo metadata and Rust source; each is evaluated in two independent PSM processes. An explicit governed root enables the separate resident experiment. A small independently owned supervisor root excludes unrelated compiler-store traversal from diagnostic timing. Preparation and supervision costs remain reported separately. Cancellation and uncertain descendants retain recovery state rather than asserting cleanup.
+
+### [`performance_qualification.py`](../_code/performance_qualification.py)
+
+Composes and checks the public JCS derivative record using the independent portable consumer. Exact observation and source bindings, all three fixed populations and an explicitly recorded unfiltered suite are required. A consumer must independently inspect the referenced certificate and execution reports; a producer-authored record cannot authenticate those facts. Successful checking establishes integrity only.
+
+### [`performance_controls.py`](../_code/performance_controls.py)
+
+Exercises streaming read/copy limits, source drift, exact preimage preservation, incomplete or tampered projection sets, deterministic source generation, retained correctness references and bounded process supervision. Percentile controls require at least 20 samples for p95 and 100 for p99. No numerical timing target is a test condition.
+
+Diagnostic comparisons must pin implementation and workload identities independently, record machine/toolchain conditions, include compilation and preprocessing separately, disclose competing workloads and preserve failed observations. Compare unchanged reference and proposed algorithms over the same frozen source. A selected microbenchmark, cached query or smaller population cannot establish end-to-end speedup. The registered independent cold campaign deliberately repeats expensive work and is distinct from ordinary production issuance. RSS, conservative admission accounting, compiler bytes, retained evidence and free storage are different measurements. Synthetic scaling, single-host variance and incomplete resource-limited experiments limit generalization.

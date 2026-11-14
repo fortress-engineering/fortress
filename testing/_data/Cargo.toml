@@ -20,3 +20,7 @@ sha2 = "0.10"
 
 [lints]
 workspace = true
+
+[[bin]]
+name = "performance_probe"
+path = "../_code/performance_probe.rs"

@@ -163,6 +163,15 @@
             "T-AF-PROGRAM-SEMANTICS-0001-R09-007",
             "T-AF-PROGRAM-SEMANTICS-0001-R09-008"
           ]
+        },
+        {
+          "id": "AF-PROGRAM-SEMANTICS-0001-R10",
+          "statement": "Call reachability uses bounded evaluation-local integer indexes only for complete directed components, preserves the independent original relation and canonical ordering across cycles and changed edges, and falls back to complete original traversal when scratch or dependency admission fails. Cold graph construction does not retain a duplicate reusable projection.",
+          "tests": [
+            "T-AF-PROGRAM-SEMANTICS-0001-R10-001",
+            "T-AF-PROGRAM-SEMANTICS-0001-R10-002",
+            "T-AF-PROGRAM-SEMANTICS-0001-R10-003"
+          ]
         }
       ]
     }

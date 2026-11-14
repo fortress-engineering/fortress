@@ -293,6 +293,20 @@ pub struct InformationFlowAnalysisModel {
 }
 
 impl InformationFlowAnalysisModel {
+    /// Returns the original profile-selection fact without re-evaluation.
+    #[must_use]
+    pub const fn operation_profile_selected(&self) -> bool {
+        self.operation_profile_selected
+    }
+
+    /// Serializes only the existing operation claims, in their canonical order.
+    /// No propagation, applicability, authority or evidence conclusion is changed.
+    pub fn operation_claim_projections(
+        &self,
+    ) -> impl Iterator<Item = Result<serde_json::Value, serde_json::Error>> + '_ {
+        self.operation_claims.iter().map(serde_json::to_value)
+    }
+
     /// Returns the immutable upstream semantic analysis digest binding.
     #[must_use]
     pub fn semantic_analysis_digest(&self) -> &str {
