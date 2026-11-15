@@ -14,7 +14,73 @@ use fortress_core::session::{Session, SessionOptions, SourceDelta};
 use std::fs;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
+#[path = "resident_campaign.rs"]
+mod resident_campaign;
 static NEXT: AtomicU64 = AtomicU64::new(0);
+
+/// `T-AF-SNAPSHOT-GOVERNANCE-0001-R25-007`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R25
+#[test]
+fn explicit_campaign_accounts_preserve_populations_and_production_defaults() {
+    use resident_campaign::Campaign;
+    let parse =
+        |values: &[&str]| Campaign::from_arguments(values.iter().map(|value| (*value).to_owned()));
+    let default_limit = SessionOptions::default().limits.max_accounted_bytes;
+    let baseline = parse(&[]).unwrap();
+    assert_eq!(baseline.accounted_bytes(), default_limit);
+    let configured = parse(&["--accounted-bytes", "34359738368"]).unwrap();
+    for campaign in [baseline, configured] {
+        assert!(campaign.is_full());
+        assert_eq!(campaign.actual_samples(), 100);
+        assert_eq!(campaign.expected_comparisons(), 300);
+        assert_eq!(campaign.fixture_samples(34), 34);
+        assert_eq!(campaign.fixture_samples(33), 33);
+        assert_eq!(campaign.name(), "registered_full_benchmark");
+    }
+    assert_eq!(configured.accounted_bytes(), 32 * 1024 * 1024 * 1024);
+    assert_eq!(
+        SessionOptions::default().limits.max_accounted_bytes,
+        default_limit
+    );
+    let development = parse(&["--development-probe"]).unwrap();
+    assert!(!development.is_full());
+    assert_eq!(development.expected_comparisons(), 8);
+    let fixtures = parse(&["--fixture-development-probe"]).unwrap();
+    assert!(!fixtures.is_full());
+    assert_eq!(fixtures.actual_samples(), 0);
+    assert_eq!(fixtures.fixture_samples(34), 1);
+    assert_eq!(fixtures.expected_comparisons(), 6);
+    for values in [
+        vec!["--accounted-bytes"],
+        vec!["--accounted-bytes", "0"],
+        vec!["--accounted-bytes", "68719476737"],
+        vec!["--accounted-bytes", "18446744073709551616"],
+        vec!["--accounted-bytes", "-1"],
+        vec!["--accounted-bytes", "NaN"],
+        vec!["--accounted-bytes", "1", "--accounted-bytes", "2"],
+        vec!["--development-probe", "--fixture-development-probe"],
+        vec!["--unknown"],
+    ] {
+        assert!(parse(&values).is_err(), "unexpected admission: {values:?}");
+    }
+}
+
+/// `T-AF-SNAPSHOT-GOVERNANCE-0001-R25-008`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R25
+#[test]
+fn optimized_dependency_profiles_preserve_debug_and_overflow_checks() {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let source = fs::read_to_string(root.join("_data/Cargo.toml")).unwrap();
+    let profiles = toml::from_str::<toml::Value>(&source).unwrap();
+    for profile in ["dev", "test"] {
+        for package in ["fortress-core", "serde_json", "sha2", "syn", "proc-macro2"] {
+            let configuration = &profiles["profile"][profile]["package"][package];
+            assert_eq!(configuration["opt-level"].as_integer(), Some(3));
+            assert_eq!(configuration["debug-assertions"].as_bool(), Some(true));
+            assert_eq!(configuration["overflow-checks"].as_bool(), Some(true));
+        }
+    }
+}
 struct Fixture {
     base: PathBuf,
     root: PathBuf,

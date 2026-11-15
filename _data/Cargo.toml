@@ -33,3 +33,43 @@ overflow-checks = true
 opt-level = 3
 debug-assertions = true
 overflow-checks = true
+
+[profile.dev.package.serde_json]
+opt-level = 3
+debug-assertions = true
+overflow-checks = true
+
+[profile.test.package.serde_json]
+opt-level = 3
+debug-assertions = true
+overflow-checks = true
+
+[profile.dev.package.sha2]
+opt-level = 3
+debug-assertions = true
+overflow-checks = true
+
+[profile.test.package.sha2]
+opt-level = 3
+debug-assertions = true
+overflow-checks = true
+
+[profile.dev.package.syn]
+opt-level = 3
+debug-assertions = true
+overflow-checks = true
+
+[profile.test.package.syn]
+opt-level = 3
+debug-assertions = true
+overflow-checks = true
+
+[profile.dev.package.proc-macro2]
+opt-level = 3
+debug-assertions = true
+overflow-checks = true
+
+[profile.test.package.proc-macro2]
+opt-level = 3
+debug-assertions = true
+overflow-checks = true

@@ -8,6 +8,10 @@
 #[path = "resident_comparison.rs"]
 mod resident_comparison;
 
+#[path = "resident_campaign.rs"]
+mod resident_campaign;
+use resident_campaign::Campaign;
+
 use std::collections::BTreeMap;
 use std::error::Error;
 use std::fmt::Write as _;
@@ -38,7 +42,6 @@ use resident_comparison::{
 
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
 const MAX_REPORT_BYTES: usize = 128 * 1024 * 1024;
-const ACTUAL_SAMPLES: usize = 100;
 const FIXTURE_SIZES: [(usize, usize); 3] = [(32, 34), (128, 33), (512, 33)];
 const GROUP_SIZE: usize = 16;
 const ACTUAL_PATH: &str = "engine/repository_observation/_code/observation.rs";
@@ -49,64 +52,6 @@ const COMPARISON_METRICS_COPIES: usize = 16;
 const COLLECTOR_TIMEOUT: Duration = Duration::from_secs(30);
 const COLLECTOR_REAP_TIMEOUT: Duration = Duration::from_secs(10);
 const CANCELLATION_REQUEST: &[u8] = b"fortress-resident-benchmark-cancel-v1\n";
-
-#[derive(Clone, Copy)]
-enum Campaign {
-    Full,
-    DevelopmentProbe,
-    FixtureDevelopmentProbe,
-}
-
-impl Campaign {
-    fn parse() -> Result<Self> {
-        let mut arguments = std::env::args().skip(1);
-        let campaign = match arguments.next().as_deref() {
-            None => Self::Full,
-            Some("--development-probe") => Self::DevelopmentProbe,
-            Some("--fixture-development-probe") => Self::FixtureDevelopmentProbe,
-            Some(_) => {
-                return Err(failure(
-                    "expected no arguments, --development-probe or --fixture-development-probe",
-                ));
-            }
-        };
-        if arguments.next().is_some() {
-            return Err(failure("unexpected extra benchmark argument"));
-        }
-        Ok(campaign)
-    }
-
-    const fn actual_samples(self) -> usize {
-        match self {
-            Self::Full => ACTUAL_SAMPLES,
-            Self::DevelopmentProbe => 2,
-            Self::FixtureDevelopmentProbe => 0,
-        }
-    }
-
-    const fn fixture_samples(self, full: usize) -> usize {
-        match self {
-            Self::Full => full,
-            Self::DevelopmentProbe | Self::FixtureDevelopmentProbe => 1,
-        }
-    }
-
-    const fn expected_comparisons(self) -> usize {
-        match self {
-            Self::Full => 300,
-            Self::DevelopmentProbe => 8,
-            Self::FixtureDevelopmentProbe => 6,
-        }
-    }
-
-    const fn name(self) -> &'static str {
-        match self {
-            Self::Full => "registered_full_benchmark",
-            Self::DevelopmentProbe => "development_probe_only",
-            Self::FixtureDevelopmentProbe => "fixture_development_probe_only",
-        }
-    }
-}
 
 fn failure(message: impl Into<String>) -> Box<dyn Error> {
     io::Error::other(message.into()).into()
@@ -799,18 +744,20 @@ fn work_units(work: &SessionWork) -> [(&'static str, usize); 16] {
     ]
 }
 
-fn options() -> SessionOptions {
+fn options(campaign: Campaign) -> SessionOptions {
+    let mut options = SessionOptions::default();
+    options.limits.max_accounted_bytes = campaign.accounted_bytes();
     SessionOptions {
         storage_policy: StoragePolicy {
             retain_shared_compiler: false,
             ..StoragePolicy::default()
         },
-        ..SessionOptions::default()
+        ..options
     }
 }
 
-fn limits_json() -> Value {
-    let limits = options().limits;
+fn limits_json(campaign: Campaign) -> Value {
+    let limits = options(campaign).limits;
     json!({"max_source_bytes":limits.max_source_bytes,"max_files":limits.max_files,
         "max_symbols":limits.max_symbols,"max_calls":limits.max_calls,"max_dependencies":limits.max_dependencies,
         "max_generations":limits.max_generations,"max_candidates":limits.max_candidates,
@@ -1408,6 +1355,7 @@ fn with_session<F>(
     storage: &Path,
     retention: &mut Retention,
     label: &str,
+    campaign: Campaign,
     operation: F,
 ) -> Result<()>
 where
@@ -1422,9 +1370,9 @@ where
     retention.phase(
         &active,
         "session_open",
-        &json!({"storage_root":storage,"limits":limits_json()}),
+        &json!({"storage_root":storage,"limits":limits_json(campaign)}),
     )?;
-    let mut session = match Session::open(root, storage, options()) {
+    let mut session = match Session::open(root, storage, options(campaign)) {
         Ok(session) => session,
         Err(error) => {
             let recorded = retention.document(&format!("{label}-cleanup.json"), &json!({
@@ -1492,15 +1440,22 @@ fn actual_repository(
     campaign: Campaign,
 ) -> Result<()> {
     let storage = std::env::temp_dir().join("fortress-ops");
-    with_session(root, &storage, retention, "actual", |session, retention| {
-        actual_samples(
-            session,
-            root,
-            retention,
-            measurements,
-            campaign.actual_samples(),
-        )
-    })
+    with_session(
+        root,
+        &storage,
+        retention,
+        "actual",
+        campaign,
+        |session, retention| {
+            actual_samples(
+                session,
+                root,
+                retention,
+                measurements,
+                campaign.actual_samples(),
+            )
+        },
+    )
 }
 
 struct Fixture {
@@ -1587,6 +1542,7 @@ fn fixture_workloads(
             &fixture.storage,
             retention,
             &label,
+            campaign,
             |session, retention| {
                 fixture_samples(
                     session,
@@ -1708,7 +1664,7 @@ fn run(retention: &mut Retention, campaign: Campaign) -> Result<()> {
         "observed_toolchain":observed_toolchain,
         "observed_git_head":observed_git_head,
         "observed_git_status":observed_git_status,
-        "limits":limits_json(),"actual_repository_samples":campaign.actual_samples(),
+        "limits":limits_json(campaign),"actual_repository_samples":campaign.actual_samples(),
         "campaign":campaign.name(),"authoritative_certification":false,
         "required_full_benchmark_comparisons":300,
         "fixture_sizes_and_samples":FIXTURE_SIZES,
@@ -1731,7 +1687,7 @@ fn run(retention: &mut Retention, campaign: Campaign) -> Result<()> {
             "campaign comparison/restoration population mismatch",
         ));
     }
-    if !matches!(campaign, Campaign::Full) {
+    if !campaign.is_full() {
         // A development probe that silently became all-cold cannot validate the
         // intended reuse path. Required cold fallback is checked at both ports.
         for (count, _) in FIXTURE_SIZES {
@@ -1766,8 +1722,8 @@ fn run(retention: &mut Retention, campaign: Campaign) -> Result<()> {
     report["campaign"] = json!(campaign.name());
     report["authoritative_certification"] = json!(false);
     report["required_full_benchmark_comparisons"] = json!(300);
-    report["full_benchmark_population_completed"] = json!(matches!(campaign, Campaign::Full));
-    if !matches!(campaign, Campaign::Full) {
+    report["full_benchmark_population_completed"] = json!(campaign.is_full());
+    if !campaign.is_full() {
         report["comparison_result"] = json!("DEVELOPMENT_PROBE_PASS");
     }
     report["run_wall_time_ns_before_summary_write"] = json!(elapsed(retention.started)?);
@@ -1781,7 +1737,7 @@ fn run(retention: &mut Retention, campaign: Campaign) -> Result<()> {
 
 fn main() -> Result<()> {
     let started = Instant::now();
-    let campaign = Campaign::parse()?;
+    let campaign = Campaign::from_arguments(std::env::args().skip(1))?;
     let mut retention = Retention::new(started)?;
     println!("retained benchmark directory: {}", retention.root.display());
     if let Err(error) = run(&mut retention, campaign) {

@@ -38,7 +38,7 @@ Declares the Cargo workspace members, common package metadata, Rust edition, and
 
 The Engine and CLI packages provide production surfaces. Testing owns the qualification binary and its separate pure reference-library package; their explicit native dependencies preserve Module boundaries without production imports from Testing.
 
-The core package uses optimization level 3 in development and test builds, with debug assertions and integer overflow checks explicitly enabled in both profiles. Test selection, full debug information, panic unwinding, features and warning policy retain their existing settings. Release benchmark settings are unchanged. This reduces analysis cost in the complete native test suite and issuer without dropping runtime correctness checks. Profile changes are configuration changes and invalidate dependent binaries and certification evidence.
+The core package and the JSON, SHA-256, Rust syntax and token libraries (`serde_json`, `sha2`, `syn`, `proc-macro2`) use optimization level 3 in development and test builds, with debug assertions and integer overflow checks explicitly enabled in both profiles. Test selection, debug-information settings, panic unwinding, features and warning policy retain their existing settings. Release benchmark settings are unchanged. These bounded dependency overrides target observed parsing, digest and serialization costs; compilation and runtime observations remain separate diagnostic records. Profile changes are configuration changes and invalidate dependent binaries and certification evidence.
 
 ### [`rust_toolchain.toml`](../_data/rust_toolchain.toml)
 
