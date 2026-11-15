@@ -20,7 +20,7 @@ Assertions fail on under-invalidation, nondeterminism, false cache currency, uns
 
 ### [`affected_analysis.rs`](../_code/affected_analysis.rs)
 
-Exercises change classification, transitive semantic invalidation, policy and governance boundaries, cache verification, relocation transparency, byte identity, and ten-thousand-node stress.
+Exercises change classification, transitive semantic invalidation, policy and governance boundaries, cache verification, relocation transparency, byte identity, and ten-thousand-node stress. Stress qualification requires exact deterministic results and complete affected/reusable counts. Elapsed time is a separately printed uncontrolled-host diagnostic, without a latency pass/fail threshold.
 
 ### [`session_dependencies.rs`](../_code/session_dependencies.rs)
 

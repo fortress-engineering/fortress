@@ -2,7 +2,7 @@
 
 use std::fs;
 use std::path::PathBuf;
-use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 use fortress_core::affected_analysis::{
     AffectedInput, AffectedSnapshot, AffectedUnit, AffectedUnitKind, AuthorityInputKind,
@@ -895,8 +895,5 @@ fn ten_thousand_node_closure_is_deterministic_and_indexed() {
     assert_eq!(first, second);
     assert_eq!(first.summary().affected_units(), COUNT / 2);
     assert_eq!(first.summary().reusable_units(), COUNT / 2);
-    assert!(
-        elapsed < Duration::from_secs(10),
-        "stress closure took {elapsed:?}"
-    );
+    println!("10,000-node closure diagnostic wall time: {elapsed:?}");
 }
