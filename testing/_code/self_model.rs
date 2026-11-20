@@ -161,7 +161,7 @@ fn live_contract_v2_v3_ecosystem_resolves_completely() {
     assert_eq!(resolved.modules().len(), 51);
     assert_eq!(resolved.capabilities().len(), 25);
     assert_eq!(resolved.features().len(), 26);
-    assert_eq!(resolved.requirements().len(), 164);
+    assert_eq!(resolved.requirements().len(), 165);
     assert!(
         resolved
             .requirements()
@@ -170,6 +170,8 @@ fn live_contract_v2_v3_ecosystem_resolves_completely() {
     for id in REQUIRED_SELF_MODEL_REQUIREMENTS {
         assert!(resolved.requirements().contains_key(*id));
     }
+    let admission = &resolved.requirements()["AF-SNAPSHOT-GOVERNANCE-0001-R26"];
+    assert_eq!(admission.tests().len(), 8);
     assert_eq!(resolved.guarantees().len(), 17);
     assert_eq!(resolved.checkpoints().len(), 10);
     assert_eq!(resolved.direct_requirements().len(), 211);

@@ -76,8 +76,8 @@ const BUILTIN_COMMANDS: &[CommandDescriptor] = &[
         id: "CMD-GOVERNANCE-EXPLAIN",
         name: "explain",
         aliases: &[],
-        description: "Explain recorded findings, claims, obligations and defeaters with paged evidence.",
-        usage: "fortress explain reference [path] [--state path] [--selection key] [--decision receipt] [--limit count] [--cursor token] [--format human|json]",
+        description: "Explain recorded findings, claims, obligations, proposals and defeaters with paged evidence.",
+        usage: "fortress explain reference [path] [--state path] [--selection key] [--decision receipt] [--proposal record] [--limit count] [--cursor token] [--format human|json]",
     },
     CommandDescriptor {
         id: "CMD-GOVERNANCE-AUTHOR",

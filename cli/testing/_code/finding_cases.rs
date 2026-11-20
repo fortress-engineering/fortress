@@ -2,6 +2,78 @@
 use super::{AuditFixture, ObservationFixture, fs, run};
 use serde_json::{Value, json};
 
+/// `T-TF-CLI-0001-R15-006`
+/// Fortress requirement: TF-CLI-0001-R15
+#[test]
+fn explain_loads_admission_review_without_authorizing_it() {
+    use fortress_core::finding_governance::{
+        ADMISSION_ASSESSMENT_SCHEMA, ADMISSION_REVIEW_SCHEMA, lifecycle_bytes, lifecycle_digest,
+    };
+
+    let fixture = ObservationFixture::new();
+    let storage = ObservationFixture::new();
+    let proposal = storage.root.join("admission.json");
+    let finding_id = format!("sha256:{}", "b".repeat(64));
+    let mut assessment = json!({
+        "$schema": ADMISSION_ASSESSMENT_SCHEMA,
+        "schema_version": 1, "assessment_ref": "",
+        "original": null, "target": null,
+        "transition_ref": format!("sha256:{}", "a".repeat(64)),
+        "subject_ref": null, "history_refs": [],
+        "findings": [{
+            "finding_id": finding_id, "rule_id": "PROGRAM-EFFECT-001",
+            "classification": "ORIGINAL_HISTORY_UNAVAILABLE", "introduced_scope_ref": null,
+            "scope_slot_ref": null, "anchor": null, "evidence_refs": [], "defeater_refs": [],
+            "reason": "Original historical observations are unavailable."
+        }]
+    });
+    let reference = lifecycle_digest(&assessment).unwrap();
+    assessment["assessment_ref"] = json!(reference);
+    let review_item = json!({
+        "finding_id": finding_id, "disposition": "DEFER",
+        "rationale": "Wait for comparable original evidence.", "grant_ref": null
+    });
+    let review = json!({
+        "$schema": ADMISSION_REVIEW_SCHEMA, "schema_version": 1,
+        "assessment_ref": reference, "decisions": [review_item], "expires_at": null
+    });
+    let wire = lifecycle_bytes(&json!({ "assessment": assessment, "review": review })).unwrap();
+    fs::write(&proposal, &wire).unwrap();
+    let result = run(&[
+        "explain",
+        &reference,
+        &fixture.argument(),
+        "--proposal",
+        proposal.to_str().unwrap(),
+        "--format",
+        "json",
+    ]);
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let response: Value = serde_json::from_slice(&result.stdout).unwrap();
+    let body = &response["result"]["data"];
+    assert_eq!(
+        body["description"]["recorded_result"]["authority"],
+        "NOT_VERIFIED"
+    );
+    assert!(
+        body["evidence"]["records"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|row| {
+                row["value"]["review_decision"] == review_item
+                    && row["value"]["authorization"] == "NOT_GRANTED"
+                    && row["value"]["raw_conformance"] == "FAIL"
+            })
+    );
+    assert_eq!(fs::read(proposal).unwrap(), wire);
+    assert!(!fixture.root.join("__fortress").exists());
+}
+
 /// `T-TF-CLI-0001-R15-004`
 /// Fortress requirement: TF-CLI-0001-R15
 #[test]

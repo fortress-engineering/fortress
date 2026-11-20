@@ -159,13 +159,14 @@
         },
         {
           "id": "TF-CLI-0001-R15",
-          "statement": "The CLI lists stable finding identities, preserves raw audit failure separately from progressive enforcement, and produces read-only exact-state baseline and finding-specific exception proposals. Retirement requires comparable sufficient evidence; proposals never expand an established baseline, authorize themselves or mutate governance. Review uses explicit assessment time.",
+          "statement": "The CLI lists stable finding identities, preserves raw audit failure separately from progressive enforcement, and produces read-only exact-state baseline, admission and finding-specific exception proposals. Explanation preserves the findings and limitations of a loaded proposal without establishing authorization. Retirement requires comparable sufficient evidence. Proposals never expand an established baseline, authorize themselves or mutate governance. Review uses explicit assessment time.",
           "tests": [
             "T-TF-CLI-0001-R15-001",
             "T-TF-CLI-0001-R15-002",
             "T-TF-CLI-0001-R15-003",
             "T-TF-CLI-0001-R15-004",
-            "T-TF-CLI-0001-R15-005"
+            "T-TF-CLI-0001-R15-005",
+            "T-TF-CLI-0001-R15-006"
           ]
         },
         {

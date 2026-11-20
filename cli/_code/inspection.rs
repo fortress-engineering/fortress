@@ -209,7 +209,7 @@ fn parse(name: &str, arguments: &[String]) -> Result<Parsed, String> {
         let arg = &arguments[index];
         validate_unique_option(arg, &mut seen_options)?;
         match arg.as_str() {
-            "--proposal" if name == "serve" => {
+            "--proposal" if matches!(name, "serve" | "explain") => {
                 index += 1;
                 proposals.push(
                     arguments
