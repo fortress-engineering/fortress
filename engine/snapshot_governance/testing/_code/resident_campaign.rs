@@ -1,5 +1,7 @@
 //! Bounded operational configuration for the independent comparison campaign.
 use fortress_core::session::SessionOptions;
+use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 use std::error::Error;
 use std::io;
 
@@ -9,9 +11,57 @@ const ACTUAL_SAMPLES: usize = 100;
 
 #[derive(Clone, Copy)]
 enum Kind {
-    Full,
+    Core,
+    Historical,
     Development,
     Fixtures,
+    RegisteredFixtures,
+    Endurance,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub(super) enum Scenario {
+    BaselineRefresh,
+    PathPredicateBody,
+    ReadBudgetBody,
+    InterproceduralDependency,
+    AuthorityInvalidation,
+    BaselineAfterCandidates,
+    LocalBody,
+    Signature,
+    DependencyInput,
+    UnavailablePreparation,
+    CalleeBody,
+    FilesystemEffect,
+    TransitiveInvalidation,
+    UnresolvedRelationship,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub(super) struct Selection {
+    pub(super) protocol: String,
+    pub(super) actual: Vec<Scenario>,
+    pub(super) fixture_sizes: Vec<usize>,
+    pub(super) independent: Vec<Scenario>,
+    pub(super) graph: Vec<Scenario>,
+    pub(super) lifecycle_operations: BTreeMap<String, usize>,
+    pub(super) differential_corpora: BTreeMap<String, usize>,
+}
+
+impl Selection {
+    pub(super) fn registered() -> Result<Self> {
+        Ok(serde_json::from_slice(Self::source())?)
+    }
+
+    pub(super) const fn source() -> &'static [u8] {
+        include_bytes!("../_data/resident_campaign_v2.json")
+    }
+
+    pub(super) fn core_count(&self) -> usize {
+        self.actual.len() + self.fixture_sizes.len() * (self.independent.len() + self.graph.len())
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -23,16 +73,27 @@ pub(super) struct Campaign {
 impl Campaign {
     pub(super) fn from_arguments(arguments: impl IntoIterator<Item = String>) -> Result<Self> {
         let mut arguments = arguments.into_iter();
-        let mut kind = Kind::Full;
+        let mut kind = Kind::Core;
         let mut selected_kind = false;
         let mut accounted_bytes = None;
         while let Some(argument) = arguments.next() {
             match argument.as_str() {
-                "--development-probe" | "--fixture-development-probe" if !selected_kind => {
-                    kind = if argument == "--development-probe" {
-                        Kind::Development
-                    } else {
-                        Kind::Fixtures
+                "--core"
+                | "--historical-300"
+                | "--development-probe"
+                | "--fixture-development-probe"
+                | "--registered-fixture-probe"
+                | "--endurance"
+                    if !selected_kind =>
+                {
+                    kind = match argument.as_str() {
+                        "--core" => Kind::Core,
+                        "--historical-300" => Kind::Historical,
+                        "--development-probe" => Kind::Development,
+                        "--fixture-development-probe" => Kind::Fixtures,
+                        "--registered-fixture-probe" => Kind::RegisteredFixtures,
+                        "--endurance" => Kind::Endurance,
+                        _ => unreachable!(),
                     };
                     selected_kind = true;
                 }
@@ -64,37 +125,58 @@ impl Campaign {
     }
 
     pub(super) const fn is_full(self) -> bool {
-        matches!(self.kind, Kind::Full)
+        matches!(self.kind, Kind::Core | Kind::Historical)
+    }
+
+    pub(super) const fn is_core(self) -> bool {
+        matches!(self.kind, Kind::Core)
+    }
+
+    pub(super) const fn is_endurance(self) -> bool {
+        matches!(self.kind, Kind::Endurance)
+    }
+
+    pub(super) const fn uses_registered_fixtures(self) -> bool {
+        matches!(self.kind, Kind::Core | Kind::RegisteredFixtures)
     }
 
     pub(super) const fn actual_samples(self) -> usize {
         match self.kind {
-            Kind::Full => ACTUAL_SAMPLES,
+            Kind::Core => 6,
+            Kind::Historical => ACTUAL_SAMPLES,
             Kind::Development => 2,
-            Kind::Fixtures => 0,
+            Kind::Fixtures | Kind::RegisteredFixtures | Kind::Endurance => 0,
         }
     }
 
     pub(super) const fn fixture_samples(self, full: usize) -> usize {
         match self.kind {
-            Kind::Full => full,
+            Kind::Core | Kind::RegisteredFixtures => 4,
+            Kind::Historical => full,
             Kind::Development | Kind::Fixtures => 1,
+            Kind::Endurance => 0,
         }
     }
 
     pub(super) const fn expected_comparisons(self) -> usize {
         match self.kind {
-            Kind::Full => 300,
+            Kind::Core => 30,
+            Kind::Historical => 300,
             Kind::Development => 8,
             Kind::Fixtures => 6,
+            Kind::RegisteredFixtures => 24,
+            Kind::Endurance => 0,
         }
     }
 
     pub(super) const fn name(self) -> &'static str {
         match self.kind {
-            Kind::Full => "registered_full_benchmark",
+            Kind::Core => "registered_core_equivalence_v2",
+            Kind::Historical => "historical_300_observation",
             Kind::Development => "development_probe_only",
             Kind::Fixtures => "fixture_development_probe_only",
+            Kind::RegisteredFixtures => "registered_fixture_probe_only",
+            Kind::Endurance => "registered_lifecycle_endurance_v2",
         }
     }
 }

@@ -22,21 +22,71 @@ static NEXT: AtomicU64 = AtomicU64::new(0);
 /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R25
 #[test]
 fn explicit_campaign_accounts_preserve_populations_and_production_defaults() {
-    use resident_campaign::Campaign;
+    use resident_campaign::{Campaign, Scenario, Selection};
     let parse =
         |values: &[&str]| Campaign::from_arguments(values.iter().map(|value| (*value).to_owned()));
     let default_limit = SessionOptions::default().limits.max_accounted_bytes;
     let baseline = parse(&[]).unwrap();
     assert_eq!(baseline.accounted_bytes(), default_limit);
-    let configured = parse(&["--accounted-bytes", "34359738368"]).unwrap();
+    let configured = parse(&["--core", "--accounted-bytes", "34359738368"]).unwrap();
     for campaign in [baseline, configured] {
         assert!(campaign.is_full());
-        assert_eq!(campaign.actual_samples(), 100);
-        assert_eq!(campaign.expected_comparisons(), 300);
-        assert_eq!(campaign.fixture_samples(34), 34);
-        assert_eq!(campaign.fixture_samples(33), 33);
-        assert_eq!(campaign.name(), "registered_full_benchmark");
+        assert!(campaign.is_core());
+        assert_eq!(campaign.actual_samples(), 6);
+        assert_eq!(campaign.expected_comparisons(), 30);
+        assert_eq!(campaign.fixture_samples(34), 4);
+        assert_eq!(campaign.fixture_samples(33), 4);
+        assert_eq!(campaign.name(), "registered_core_equivalence_v2");
     }
+    let selection = Selection::registered().unwrap();
+    assert_eq!(selection.core_count(), 30);
+    assert_eq!(selection.fixture_sizes, [32, 128, 512]);
+    assert_eq!(
+        selection.actual,
+        [
+            Scenario::BaselineRefresh,
+            Scenario::PathPredicateBody,
+            Scenario::ReadBudgetBody,
+            Scenario::InterproceduralDependency,
+            Scenario::AuthorityInvalidation,
+            Scenario::BaselineAfterCandidates,
+        ]
+    );
+    assert_eq!(
+        selection.independent,
+        [
+            Scenario::LocalBody,
+            Scenario::Signature,
+            Scenario::DependencyInput,
+            Scenario::UnavailablePreparation,
+        ]
+    );
+    assert_eq!(
+        selection.graph,
+        [
+            Scenario::CalleeBody,
+            Scenario::FilesystemEffect,
+            Scenario::TransitiveInvalidation,
+            Scenario::UnresolvedRelationship,
+        ]
+    );
+    assert_eq!(selection.lifecycle_operations.values().sum::<usize>(), 100);
+    assert_eq!(
+        selection.differential_corpora,
+        [("candidate".into(), 1_000), ("resident".into(), 1_000)].into()
+    );
+    let historical = parse(&["--historical-300"]).unwrap();
+    assert!(!historical.is_core());
+    assert_eq!(historical.expected_comparisons(), 300);
+    assert_eq!(historical.name(), "historical_300_observation");
+    let endurance = parse(&["--endurance"]).unwrap();
+    assert!(endurance.is_endurance());
+    assert_eq!(endurance.expected_comparisons(), 0);
+    let registered_fixtures = parse(&["--registered-fixture-probe"]).unwrap();
+    assert!(!registered_fixtures.is_core());
+    assert!(registered_fixtures.uses_registered_fixtures());
+    assert_eq!(registered_fixtures.actual_samples(), 0);
+    assert_eq!(registered_fixtures.expected_comparisons(), 24);
     assert_eq!(configured.accounted_bytes(), 32 * 1024 * 1024 * 1024);
     assert_eq!(
         SessionOptions::default().limits.max_accounted_bytes,

@@ -189,3 +189,11 @@ Bounds diagnostic workload identity, source generation, sample declarations and 
 ### [`performance_qualification_schema_v1.json`](../_data/performance_qualification_schema_v1.json)
 
 Defines the JCS-addressed, exact-source derivative record referencing the existing certificate, workload manifest and retained observations. Independent-cold and unfiltered population claims require explicit references for all three registered populations. Integrity is distinct from authenticated provenance, execution verification and reevaluated semantic correctness.
+
+### [`performance_workloads_schema_v2.json`](../_data/performance_workloads_schema_v2.json)
+
+Registers the current independent comparison, restoration, lifecycle and differential populations alongside the unchanged diagnostic workloads.
+
+### [`performance_qualification_schema_v2.json`](../_data/performance_qualification_schema_v2.json)
+
+Binds the exact selection manifest and report references for each required population to the source and certificate identities. The earlier schema remains available to readers of historical records.

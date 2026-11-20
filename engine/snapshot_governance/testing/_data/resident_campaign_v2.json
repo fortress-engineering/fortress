@@ -1,0 +1,41 @@
+{
+  "protocol": "resident-equivalence-v2",
+  "actual": [
+    "baseline_refresh",
+    "path_predicate_body",
+    "read_budget_body",
+    "interprocedural_dependency",
+    "authority_invalidation",
+    "baseline_after_candidates"
+  ],
+  "fixture_sizes": [32, 128, 512],
+  "independent": [
+    "local_body",
+    "signature",
+    "dependency_input",
+    "unavailable_preparation"
+  ],
+  "graph": [
+    "callee_body",
+    "filesystem_effect",
+    "transitive_invalidation",
+    "unresolved_relationship"
+  ],
+  "lifecycle_operations": {
+    "resident_refresh": 30,
+    "candidate_acquire": 20,
+    "candidate_release": 20,
+    "immutable_reader": 10,
+    "evict_preparation": 4,
+    "restore_preparation": 4,
+    "cancel_publication": 4,
+    "parser_rotation": 2,
+    "memory_admission": 2,
+    "storage_ownership": 2,
+    "storage_recovery": 2
+  },
+  "differential_corpora": {
+    "candidate": 1000,
+    "resident": 1000
+  }
+}

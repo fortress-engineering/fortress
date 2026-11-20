@@ -60,7 +60,7 @@ Verifies the prebuilt observer's exact bytes, input source before and after exec
 
 ### [`performance_qualification.py`](../_code/performance_qualification.py)
 
-Composes and checks the public JCS derivative record using the independent portable consumer. Exact observation and source bindings, all three fixed populations and an explicitly recorded unfiltered suite are required. A consumer must independently inspect the referenced certificate and execution reports; a producer-authored record cannot authenticate those facts. Successful checking establishes integrity only.
+Composes and checks the public JCS derivative record using the independent portable consumer. Version 2 binds the exact selection manifest and evidence for comparisons, restorations, the separate lifecycle run and both differential corpora. It requires exact-source references and an explicitly recorded unfiltered suite. Version 1 records retain their historical population. A consumer must independently inspect the referenced certificate and execution reports. Successful checking establishes record integrity.
 
 ### [`performance_controls.py`](../_code/performance_controls.py)
 

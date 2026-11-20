@@ -10,7 +10,11 @@ mod resident_comparison;
 
 #[path = "resident_campaign.rs"]
 mod resident_campaign;
-use resident_campaign::Campaign;
+#[path = "resident_endurance.rs"]
+mod resident_endurance;
+#[path = "resident_scenarios.rs"]
+mod resident_scenarios;
+use resident_campaign::{Campaign, Scenario, Selection};
 
 use std::collections::BTreeMap;
 use std::error::Error;
@@ -1187,6 +1191,7 @@ fn compare(
     active: &ActiveCase<'_>,
     retention: &mut Retention,
     measurements: &mut Measurements,
+    baseline_members: &BTreeMap<String, String>,
 ) -> Result<()> {
     let harness_started = Instant::now();
     let warm = capture_warm(session, warm, active, retention)?;
@@ -1243,11 +1248,18 @@ fn compare(
     let restoration_started = Instant::now();
     let restored = session.refresh(&SourceDelta::default())?;
     let restoration_ns = elapsed(restoration_started)?;
+    let restored_subject = context(&restored.generation);
+    if Some(&restored_subject) != active.base_subject
+        || &member_hashes(&restored.generation) != baseline_members
+    {
+        return Err(failure("restoration differs from the exact baseline"));
+    }
     retention.append(
         &json!({"case_id":active.identity,"record_kind":"untimed_actual_preparation_restoration",
         "restoration_wall_time_ns":restoration_ns,
         "disposition":format!("{:?}",restored.disposition),"reasons":restored.reasons,
-        "subject":context(&restored.generation),"actual_work":work_json(&restored.work)}),
+        "subject":restored_subject,"baseline_members":baseline_members,"baseline_match":true,
+        "actual_work":work_json(&restored.work)}),
     )?;
     let harness_ns = elapsed(harness_started)?
         .checked_sub(cold_ns)
@@ -1272,8 +1284,10 @@ fn actual_samples(
     root: &Path,
     retention: &mut Retention,
     measurements: &mut Measurements,
-    sample_count: usize,
+    campaign: Campaign,
 ) -> Result<()> {
+    let selected = Selection::registered()?;
+    let sample_count = campaign.actual_samples();
     let setup = ActiveCase {
         class: "actual_repository",
         identity: "initial",
@@ -1283,13 +1297,23 @@ fn actual_samples(
     retention.phase(&setup, "acquire_initial_generation", &json!({}))?;
     let base = session.acquire_generation()?;
     let initial_subject = context(&base);
+    let baseline_members = member_hashes(&base);
     retention.document("actual-subject.json", &initial_subject)?;
     drop(base);
     for ordinal in 0..sample_count {
-        let class = if ordinal % 2 == 0 {
-            "actual_repository_unchanged"
-        } else {
-            "actual_repository_body_candidate"
+        let scenario = selected
+            .actual
+            .get(ordinal)
+            .copied()
+            .filter(|_| campaign.is_core());
+        let class = match scenario {
+            Some(Scenario::AuthorityInvalidation) => "actual_repository_authority_candidate",
+            Some(Scenario::InterproceduralDependency) => "actual_repository_dependency_candidate",
+            Some(Scenario::BaselineRefresh | Scenario::BaselineAfterCandidates) => {
+                "actual_repository_unchanged"
+            }
+            None if ordinal % 2 == 0 => "actual_repository_unchanged",
+            _ => "actual_repository_body_candidate",
         };
         let identity = format!("actual-{ordinal:04}");
         let active = ActiveCase {
@@ -1298,7 +1322,9 @@ fn actual_samples(
             root,
             base_subject: Some(&initial_subject),
         };
-        let warm = if ordinal % 2 == 0 {
+        let warm = if let Some(scenario) = scenario {
+            evaluate_scenario(session, scenario, retention, &active)?
+        } else if ordinal % 2 == 0 {
             unchanged(session, retention, &active, "warm_api")?
         } else {
             let replacement = format!("(!value.is_empty() && false /* observed body {ordinal} */)");
@@ -1325,7 +1351,14 @@ fn actual_samples(
             drop(base);
             warm
         };
-        compare(session, warm, &active, retention, measurements)?;
+        compare(
+            session,
+            warm,
+            &active,
+            retention,
+            measurements,
+            &baseline_members,
+        )?;
         println!(
             "completed actual repository sample {}/{sample_count}",
             ordinal + 1
@@ -1340,6 +1373,32 @@ fn actual_samples(
     }
     drop(final_base);
     Ok(())
+}
+
+fn evaluate_scenario(
+    session: &mut Session,
+    scenario: Scenario,
+    retention: &mut Retention,
+    active: &ActiveCase<'_>,
+) -> Result<Warm> {
+    let baseline = session.acquire_generation()?;
+    if scenario == Scenario::UnavailablePreparation {
+        retention.phase(
+            active,
+            "force_unavailable_preparation",
+            &json!({"scenario":scenario}),
+        )?;
+        session.evict_preparation()?;
+    }
+    let mut warm = if let Some(operation) = resident_scenarios::operation(scenario) {
+        candidate(session, &baseline, operation, retention, active, "warm_api")?
+    } else {
+        unchanged(session, retention, active, "warm_api")?
+    };
+    let established = resident_scenarios::verify(scenario, &baseline, &warm)?;
+    warm.metrics.proposal["registered_scenario"] = json!(scenario);
+    warm.metrics.proposal["observed_invalidation_contract"] = json!(established);
+    Ok(warm)
 }
 
 fn error_json(error: &(dyn Error + 'static)) -> Value {
@@ -1446,15 +1505,7 @@ fn actual_repository(
         retention,
         "actual",
         campaign,
-        |session, retention| {
-            actual_samples(
-                session,
-                root,
-                retention,
-                measurements,
-                campaign.actual_samples(),
-            )
-        },
+        |session, retention| actual_samples(session, root, retention, measurements, campaign),
     )
 }
 
@@ -1465,7 +1516,7 @@ struct Fixture {
 }
 
 impl Fixture {
-    fn new(run: &Path, count: usize, graph: bool) -> Result<Self> {
+    fn new(run: &Path, count: usize, graph: bool, core: bool) -> Result<Self> {
         let kind = if graph { "graph" } else { "independent" };
         let owner = run.join(format!("fixture-{kind}-{count}"));
         fs::create_dir(&owner)?;
@@ -1483,7 +1534,14 @@ impl Fixture {
             for ordinal in group * GROUP_SIZE..((group + 1) * GROUP_SIZE).min(count) {
                 if graph {
                     let next = group * GROUP_SIZE + (ordinal + 1) % GROUP_SIZE;
-                    writeln!(source, "pub fn f{ordinal:04}() {{ f{next:04}(); }}")?;
+                    if core {
+                        writeln!(
+                            source,
+                            "pub fn f{ordinal:04}() -> u32 {{ f{next:04}(); 1 }}"
+                        )?;
+                    } else {
+                        writeln!(source, "pub fn f{ordinal:04}() {{ f{next:04}(); }}")?;
+                    }
                 } else {
                     writeln!(source, "pub fn f{ordinal:04}() -> u32 {{ 1 }}")?;
                 }
@@ -1536,7 +1594,12 @@ fn fixture_workloads(
             "create_governed_fixture",
             &json!({"functions":count,"samples":samples,"graph":graph}),
         )?;
-        let fixture = Fixture::new(&retention.root, count, graph)?;
+        let fixture = Fixture::new(
+            &retention.root,
+            count,
+            graph,
+            campaign.uses_registered_fixtures(),
+        )?;
         with_session(
             &fixture.root,
             &fixture.storage,
@@ -1549,6 +1612,7 @@ fn fixture_workloads(
                     &fixture,
                     (count, samples),
                     graph,
+                    campaign,
                     retention,
                     measurements,
                 )
@@ -1564,6 +1628,7 @@ fn fixture_samples(
     fixture: &Fixture,
     population: (usize, usize),
     graph: bool,
+    campaign: Campaign,
     retention: &mut Retention,
     measurements: &mut Measurements,
 ) -> Result<()> {
@@ -1578,11 +1643,25 @@ fn fixture_samples(
     retention.phase(&setup, "acquire_initial_generation", &json!({}))?;
     let base = session.acquire_generation()?;
     let initial_subject = context(&base);
+    let baseline_members = member_hashes(&base);
+    let selected = Selection::registered()?;
+    let scenarios = if graph {
+        selected.graph
+    } else {
+        selected.independent
+    };
+    let registered = campaign.uses_registered_fixtures();
     retention.document(&format!("fixture-{kind}-{count}-subject.json"), &json!({
             "subject":initial_subject,"generator":{"kind":kind,"function_count":count,"group_size":GROUP_SIZE},
-            "samples":samples,"expected_scope":"isolated first ordinary function body; disposition and actual owner work are observed, never prescribed"}))?;
+            "samples":samples,"registered_scenarios":if registered {scenarios.as_slice()} else {&[]}}))?;
     drop(base);
-    for ordinal in 0..samples {
+    let registered_cases = scenarios.into_iter().map(Some);
+    let cases = if registered { samples } else { 0 };
+    for (ordinal, scenario) in registered_cases
+        .take(cases)
+        .chain(std::iter::repeat_n(None, samples - cases))
+        .enumerate()
+    {
         let class = format!("fixture_{kind}_{count}");
         let identity = format!("fixture-{kind}-{count}-{ordinal:04}");
         let active = ActiveCase {
@@ -1591,6 +1670,18 @@ fn fixture_samples(
             root: &fixture.root,
             base_subject: Some(&initial_subject),
         };
+        if let Some(scenario) = scenario {
+            let warm = evaluate_scenario(session, scenario, retention, &active)?;
+            compare(
+                session,
+                warm,
+                &active,
+                retention,
+                measurements,
+                &baseline_members,
+            )?;
+            continue;
+        }
         let (needle, replacement) = if graph {
             (
                 "{ f0001(); }",
@@ -1623,7 +1714,14 @@ fn fixture_samples(
             "warm_api",
         )?;
         drop(base);
-        compare(session, warm, &active, retention, measurements)?;
+        compare(
+            session,
+            warm,
+            &active,
+            retention,
+            measurements,
+            &baseline_members,
+        )?;
     }
     retention.phase(&setup, "verify_final_subject", &initial_subject)?;
     let final_base = session.acquire_generation()?;
@@ -1633,13 +1731,17 @@ fn fixture_samples(
     Ok(())
 }
 
-fn run(retention: &mut Retention, campaign: Campaign) -> Result<()> {
-    let root = std::env::current_dir()?.canonicalize()?;
+fn record_provenance(
+    root: &Path,
+    retention: &mut Retention,
+    campaign: Campaign,
+    selection: &Selection,
+) -> Result<()> {
     retention.phase(
         &ActiveCase {
             class: "benchmark",
             identity: "setup",
-            root: &root,
+            root,
             base_subject: None,
         },
         "collect_run_provenance",
@@ -1658,22 +1760,56 @@ fn run(retention: &mut Retention, campaign: Campaign) -> Result<()> {
     let observed_toolchain = command_text("rustc", &["-vV"], retention)?;
     let observed_git_head = command_text("git", &["rev-parse", "HEAD"], retention)?;
     let observed_git_status = command_text("git", &["status", "--porcelain"], retention)?;
+    if selection.core_count() != 30
+        || selection.actual.len() != 6
+        || selection.fixture_sizes != [32, 128, 512]
+        || selection.independent.len() != 4
+        || selection.graph.len() != 4
+        || selection.lifecycle_operations.values().sum::<usize>() != 100
+        || selection
+            .differential_corpora
+            .values()
+            .copied()
+            .collect::<Vec<_>>()
+            != [1000, 1000]
+    {
+        return Err(failure(
+            "registered selection does not match the qualification population",
+        ));
+    }
+    if (campaign.is_core() || campaign.is_endurance()) && !observed_git_status.trim().is_empty() {
+        return Err(failure(
+            "registered qualification requires a clean committed source",
+        ));
+    }
     retention.document("provenance.json", &json!({
-        "format":"resident-api-empirical-comparison-v1", "hardware":hardware,
+        "format":"resident-api-empirical-comparison-v2", "hardware":hardware,
         "executable_path":executable,"executable_digest":file_digest(&executable)?,
         "observed_toolchain":observed_toolchain,
         "observed_git_head":observed_git_head,
         "observed_git_status":observed_git_status,
         "limits":limits_json(campaign),"actual_repository_samples":campaign.actual_samples(),
         "campaign":campaign.name(),"authoritative_certification":false,
-        "required_full_benchmark_comparisons":300,
-        "fixture_sizes_and_samples":FIXTURE_SIZES,
+        "required_core_equivalence_comparisons":selection.core_count(),
+        "selection_manifest_digest":digest(Selection::source()),
+        "registered_selection":selection,
+        "fixture_sizes_and_samples":FIXTURE_SIZES.map(|(size, historical)| (size, campaign.fixture_samples(historical))),
         "storage_scope":"external immutable raw records, unique run, maximum 128 MiB; runtime staging cleaned through StorageReport; records are not application source or a certification artifact",
         "scheduling":"driver must freeze source and run this prebuilt executable with no compiler or issuer; admission remains enabled",
         "cancellation":{"request_file":retention.root.join("cancel.request"),
             "exact_request":"fortress-resident-benchmark-cancel-v1\n",
             "scope":"cooperative phase/publication boundaries; an in-flight owner computation finishes before cancellation; completed evidence is preserved and the campaign remains incomplete; no prefix resume is qualified"},
     }))?;
+    Ok(())
+}
+
+fn run(retention: &mut Retention, campaign: Campaign) -> Result<()> {
+    let root = std::env::current_dir()?.canonicalize()?;
+    let selection = Selection::registered()?;
+    record_provenance(&root, retention, campaign, &selection)?;
+    if campaign.is_endurance() {
+        return resident_endurance::run(&root, retention, campaign, &selection);
+    }
     let mut measurements = Measurements::default();
     if campaign.actual_samples() > 0 {
         actual_repository(&root, retention, &mut measurements, campaign)?;
@@ -1721,9 +1857,12 @@ fn run(retention: &mut Retention, campaign: Campaign) -> Result<()> {
     let mut report = measurements.report();
     report["campaign"] = json!(campaign.name());
     report["authoritative_certification"] = json!(false);
-    report["required_full_benchmark_comparisons"] = json!(300);
-    report["full_benchmark_population_completed"] = json!(campaign.is_full());
-    if !campaign.is_full() {
+    report["required_core_equivalence_comparisons"] = json!(selection.core_count());
+    report["selection_manifest_digest"] = json!(digest(Selection::source()));
+    report["core_population_completed"] = json!(campaign.is_core());
+    if campaign.is_full() && !campaign.is_core() {
+        report["comparison_result"] = json!("HISTORICAL_OBSERVATION_PASS");
+    } else if !campaign.is_full() {
         report["comparison_result"] = json!("DEVELOPMENT_PROBE_PASS");
     }
     report["run_wall_time_ns_before_summary_write"] = json!(elapsed(retention.started)?);
@@ -1737,6 +1876,16 @@ fn run(retention: &mut Retention, campaign: Campaign) -> Result<()> {
 
 fn main() -> Result<()> {
     let started = Instant::now();
+    let mut args = std::env::args_os().skip(1);
+    if args.next().as_deref() == Some(std::ffi::OsStr::new("--owned-recovery-child")) {
+        let path = args
+            .next()
+            .ok_or_else(|| failure("missing recovery fixture"))?;
+        if args.next().is_some() {
+            return Err(failure("unexpected recovery fixture parameter"));
+        }
+        return resident_endurance::recovery_child(Path::new(&path));
+    }
     let campaign = Campaign::from_arguments(std::env::args().skip(1))?;
     let mut retention = Retention::new(started)?;
     println!("retained benchmark directory: {}", retention.root.display());

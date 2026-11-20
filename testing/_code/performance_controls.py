@@ -131,17 +131,30 @@ class Controls(unittest.TestCase):
   source="sha256:"+"a"*64;report="sha256:"+"b"*64
   observations=[{"id":name,"digest":report,"bytes":1} for name in qualification.POPULATION]
   proof={"source_ref":source,"populations":qualification.POPULATION.copy(),"unfiltered_suite":True,"independent_cold":True,"reports":{name:report for name in qualification.POPULATION}}
-  record=qualification.compose(source,report,(ROOT/"testing/_data/performance_workloads.json").read_bytes(),observations,["Uncontrolled host; claims and references remain unauthenticated."],proof)
+  manifest=(ROOT/"testing/_data/performance_workloads.json").read_bytes()
+  selection=qualification.digest((ROOT/"engine/snapshot_governance/testing/_data/resident_campaign_v2.json").read_bytes())
+  record=qualification.compose(source,report,manifest,observations,["Uncontrolled host; claims and references remain unauthenticated."],proof,selection_manifest_digest=selection)
   self.assertEqual(qualification.check(record,source)["authenticity"],"UNVERIFIED")
-  malformed=json.loads((ROOT/"testing/_data/performance_workloads.json").read_bytes());malformed["schema_version"]=2
-  with self.assertRaises(ValueError):qualification.compose(source,report,json.dumps(malformed).encode(),observations,["Unsupported manifest."],proof)
+  malformed=json.loads(manifest);malformed["schema_version"]=3
+  with self.assertRaisesRegex(ValueError,"UNSUPPORTED_VERSION"):qualification.compose(source,report,json.dumps(malformed).encode(),observations,["Unsupported manifest."],proof,selection_manifest_digest=selection)
   changed=copy.deepcopy(record);changed["numeric_performance_certification"]=True
   with self.assertRaises(ValueError):qualification.check(changed,source)
   with self.assertRaises(ValueError):qualification.check(record,"sha256:"+"c"*64)
   for field in ["independent_cold","unfiltered_suite"]:
    changed=copy.deepcopy(proof);changed[field]=False
-   with self.assertRaises(ValueError):qualification.compose(source,report,(ROOT/"testing/_data/performance_workloads.json").read_bytes(),observations,["Incomplete."],changed)
-  with self.assertRaises(ValueError):qualification.compose(source,report,(ROOT/"testing/_data/performance_workloads.json").read_bytes(),[],["Missing reports."],proof)
+   with self.assertRaisesRegex(ValueError,"INCOMPLETE_CORRECTNESS_EVIDENCE"):qualification.compose(source,report,manifest,observations,["Incomplete."],changed,selection_manifest_digest=selection)
+  for name in ["verified_baseline_restorations","lifecycle_operations"]:
+   missing=[observation for observation in observations if observation["id"]!=name]
+   with self.assertRaisesRegex(ValueError,"MISSING_INDEPENDENT_REPORT_REFERENCE"):qualification.compose(source,report,manifest,missing,["Missing reports."],proof,selection_manifest_digest=selection)
+  with self.assertRaisesRegex(ValueError,"INVALID_SELECTION_IDENTITY"):qualification.compose(source,report,manifest,observations,["Missing selection."],proof)
+  historical=json.loads(manifest)
+  historical.update({"$schema":"urn:fortress:research:v1:performance-workloads","id":"canonical-performance-workloads-v1","schema_version":1,"required_qualification":qualification.HISTORICAL_POPULATION})
+  historical_proof={**proof,"populations":qualification.HISTORICAL_POPULATION,"reports":{name:report for name in qualification.HISTORICAL_POPULATION}}
+  historical_observations=[{"id":name,"digest":report,"bytes":1} for name in historical_proof["reports"]]
+  legacy=qualification.compose(source,report,json.dumps(historical).encode(),historical_observations,["Historical record."],historical_proof)
+  self.assertEqual(legacy["schema_version"],1)
+  self.assertEqual(qualification.check(legacy,source)["integrity"],"VALID")
+  with self.assertRaisesRegex(ValueError,"INCOMPLETE_CORRECTNESS_EVIDENCE"):qualification.compose(source,report,manifest,historical_observations,["Historical record."],historical_proof,selection_manifest_digest=selection)
  def test_diagnostic_deadline_retains_uncertain_descendant_ownership(self):
   class Leaf:
    pid=1234

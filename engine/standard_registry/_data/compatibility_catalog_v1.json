@@ -3587,6 +3587,50 @@
         "id": "rfc8785-jcs-sha256",
         "source": "testing/_code/performance_qualification.py"
       }
+    },
+    {
+      "schema_id": "urn:fortress:research:v2:performance-workloads",
+      "schema_path": "engine/snapshot_governance/_data/performance_workloads_schema_v2.json",
+      "version": 2,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "testing/_code/performance_runner.py"
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "testing/_code/performance_runner.py"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "named-frozen-workload-v2",
+        "source": "testing/_code/performance_runner.py"
+      },
+      "content_hash_algorithm": {
+        "id": "rfc8785-jcs-sha256",
+        "source": "testing/_code/performance_runner.py"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:qualification:v2:performance-equivalence",
+      "schema_path": "engine/snapshot_governance/_data/performance_qualification_schema_v2.json",
+      "version": 2,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "testing/_code/performance_qualification.py"
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "testing/_code/performance_qualification.py"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "source-bound-performance-equivalence-v2",
+        "source": "testing/_code/performance_qualification.py"
+      },
+      "content_hash_algorithm": {
+        "id": "rfc8785-jcs-sha256",
+        "source": "testing/_code/performance_qualification.py"
+      }
     }
   ]
 }

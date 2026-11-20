@@ -78,4 +78,4 @@ Explicit accepted research premises for exact frozen literal-borrow and fresh-co
 
 ### [`performance_workloads.json`](../_data/performance_workloads.json)
 
-Preregisters deterministic straight-line Rust source sizes and preserves the separate 300-comparison and two 1,000-case correctness populations. Synthetic workloads measure PSM construction and canonical hashing only; they do not represent whole-repository governance, realistic call graphs or security qualification. Warm-query and evaluation sample counts describe the separate explicitly governed resident experiment, not work performed by the synthetic PSM experiment.
+Preregisters deterministic straight-line Rust source sizes and identifies the separate correctness populations. They include 30 exact independent comparisons with 30 restorations, 100 lifecycle operations and two unchanged 1,000-case corpora. Synthetic workloads measure PSM construction and canonical hashing. Whole-repository governance, connected call graphs and security qualification use their own tests. Warm-query and evaluation counts refer to the explicitly governed resident experiment.

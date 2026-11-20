@@ -7,10 +7,21 @@ import hashlib
 import re
 from verify_bundle import canonical, parse
 
-SCHEMA = "urn:fortress:qualification:v1:performance-equivalence"
-POPULATION = {"independent_comparisons": 300, "candidate_differential_cases": 1000, "resident_differential_cases": 1000}
+SCHEMA = "urn:fortress:qualification:v2:performance-equivalence"
+CORPORA = {"candidate_differential_cases": 1000, "resident_differential_cases": 1000}
+HISTORICAL_POPULATION = {"independent_comparisons": 300, **CORPORA}
+POPULATION = {
+    "independent_comparisons": 30,
+    "verified_baseline_restorations": 30,
+    "lifecycle_operations": 100,
+    **CORPORA,
+}
 FIELDS = {"$schema", "schema_version", "claim", "source_domain", "source_ref", "correctness_certificate", "workload_manifest_digest", "required_qualification", "independent_cold_proof", "unfiltered_required_suite", "numeric_performance_certification", "observations", "correctness_evidence", "limitations", "authenticity", "record_id"}
 
+def population(version):
+    if type(version) is not int or version not in (1, 2):
+        raise ValueError("UNSUPPORTED_VERSION")
+    return HISTORICAL_POPULATION if version == 1 else POPULATION
 
 
 def workload_manifest(data):
@@ -18,7 +29,11 @@ def workload_manifest(data):
         raise ValueError("RESOURCE_LIMIT: workload manifest")
     value = parse(data)
     fields = {"$schema", "schema_version", "id", "numerical_performance_requirements", "generator", "required_qualification", "workloads", "limitations"}
-    if not isinstance(value, dict) or set(value) != fields or value["$schema"] != "urn:fortress:research:v1:performance-workloads" or type(value["schema_version"]) is not int or value["schema_version"] != 1 or value["id"] != "canonical-performance-workloads-v1" or value["generator"] != "rust_straight_line_v1" or value["numerical_performance_requirements"] is not False or value["required_qualification"] != POPULATION:
+    if not isinstance(value, dict) or set(value) != fields:
+        raise ValueError("INCOMPATIBLE_WORKLOAD_MANIFEST")
+    version = value["schema_version"]
+    expected = population(version)
+    if value["$schema"] != f"urn:fortress:research:v{version}:performance-workloads" or value["id"] != f"canonical-performance-workloads-v{version}" or value["generator"] != "rust_straight_line_v1" or value["numerical_performance_requirements"] is not False or value["required_qualification"] != expected:
         raise ValueError("INCOMPATIBLE_WORKLOAD_MANIFEST")
     workloads = value["workloads"]
     if not isinstance(workloads, list) or not 3 <= len(workloads) <= 16:
@@ -51,15 +66,22 @@ def check(record, expected_source):
     A caller must separately verify the referenced certificate and raw reports;
     neither an asserted digest nor this record is authenticated execution proof.
     """
-    if not isinstance(record, dict) or set(record) != FIELDS:
+    if not isinstance(record, dict):
         raise ValueError("INVALID_RECORD: performance qualification fields")
-    if record["$schema"] != SCHEMA or type(record["schema_version"]) is not int or record["schema_version"] != 1:
+    version = record.get("schema_version")
+    expected = population(version)
+    required_fields = FIELDS if version == 1 else FIELDS | {"selection_manifest_digest"}
+    if set(record) != required_fields:
+        raise ValueError("INVALID_RECORD: performance qualification fields")
+    if record["$schema"] != f"urn:fortress:qualification:v{version}:performance-equivalence":
         raise ValueError("UNSUPPORTED_VERSION")
     if record["claim"] != "RECORDED_CORRECTNESS_EVIDENCE_AND_DIAGNOSTICS" or record["source_domain"] != "QUALITY_CERTIFICATE_SOURCE_FINGERPRINT" or record["source_ref"] != expected_source:
         raise ValueError("SOURCE_OR_CLAIM_MISMATCH")
     if any(not exact_digest(record[key]) for key in ["source_ref", "correctness_certificate", "workload_manifest_digest", "record_id"]):
         raise ValueError("INVALID_DIGEST")
-    if record["required_qualification"] != POPULATION or record["independent_cold_proof"] is not True or record["unfiltered_required_suite"] is not True:
+    if version == 2 and not exact_digest(record["selection_manifest_digest"]):
+        raise ValueError("INVALID_SELECTION_IDENTITY")
+    if record["required_qualification"] != expected or record["independent_cold_proof"] is not True or record["unfiltered_required_suite"] is not True:
         raise ValueError("INCOMPLETE_REQUIRED_CORRECTNESS")
     if record["numeric_performance_certification"] is not False or record["authenticity"] != "UNVERIFIED":
         raise ValueError("UNSUPPORTED_ASSURANCE_CLAIM")
@@ -77,10 +99,10 @@ def check(record, expected_source):
     if names != sorted(set(names)):
         raise ValueError("AMBIGUOUS_OBSERVATIONS")
     proof = record["correctness_evidence"]
-    if not isinstance(proof, dict) or set(proof) != {"source_ref", "populations", "unfiltered_suite", "independent_cold", "reports"} or proof["source_ref"] != expected_source or proof["populations"] != POPULATION or proof["unfiltered_suite"] is not True or proof["independent_cold"] is not True or not isinstance(proof["reports"], dict) or set(proof["reports"]) != set(POPULATION):
+    if not isinstance(proof, dict) or set(proof) != {"source_ref", "populations", "unfiltered_suite", "independent_cold", "reports"} or proof["source_ref"] != expected_source or proof["populations"] != expected or proof["unfiltered_suite"] is not True or proof["independent_cold"] is not True or not isinstance(proof["reports"], dict) or set(proof["reports"]) != set(expected):
         raise ValueError("INCOMPLETE_CORRECTNESS_EVIDENCE")
     observed = {o["id"]: o["digest"] for o in observations}
-    if any(not exact_digest(proof["reports"][name]) or observed.get(name) != proof["reports"][name] for name in POPULATION):
+    if any(not exact_digest(proof["reports"][name]) or observed.get(name) != proof["reports"][name] for name in expected):
         raise ValueError("MISSING_INDEPENDENT_REPORT_REFERENCE")
     limitations = record["limitations"]
     if not isinstance(limitations, list) or not 1 <= len(limitations) <= 32 or any(not isinstance(s, str) or not 1 <= len(s) <= 2048 for s in limitations):
@@ -91,16 +113,19 @@ def check(record, expected_source):
     return {"integrity": "VALID", "authenticity": "UNVERIFIED", "execution": "NOT_INDEPENDENTLY_ESTABLISHED", "semantic_correctness": "NOT_REEVALUATED", "numerical_certification": False}
 
 
-def compose(source_ref, certificate_stamp, workload_bytes, observations, limitations, correctness_evidence):
+def compose(source_ref, certificate_stamp, workload_bytes, observations, limitations, correctness_evidence, *, selection_manifest_digest=None):
     """Record already-qualified evidence references; never turn timings into gates."""
     manifest = workload_manifest(workload_bytes)
-    record = {"$schema": SCHEMA, "schema_version": 1,
+    version = manifest["schema_version"]
+    record = {"$schema": f"urn:fortress:qualification:v{version}:performance-equivalence", "schema_version": version,
         "claim": "RECORDED_CORRECTNESS_EVIDENCE_AND_DIAGNOSTICS",
         "source_domain": "QUALITY_CERTIFICATE_SOURCE_FINGERPRINT", "source_ref": source_ref,
         "correctness_certificate": certificate_stamp, "workload_manifest_digest": digest(canonical(manifest)),
-        "required_qualification": POPULATION.copy(), "independent_cold_proof": True,
+        "required_qualification": population(version).copy(), "independent_cold_proof": True,
         "unfiltered_required_suite": True, "numeric_performance_certification": False,
         "observations": sorted(observations, key=lambda o: o["id"]), "correctness_evidence": correctness_evidence, "limitations": list(limitations), "authenticity": "UNVERIFIED"}
+    if version == 2:
+        record["selection_manifest_digest"] = selection_manifest_digest
     record["record_id"] = digest(canonical(record))
     check(record, source_ref)
     return record
