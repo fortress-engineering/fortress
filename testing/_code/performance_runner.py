@@ -7,6 +7,7 @@ Numerical results never replace canonical qualification or independent corpora.
 import sys
 sys.dont_write_bytecode = True
 import argparse
+import hashlib
 import json
 from dataclasses import replace
 import os
@@ -20,12 +21,27 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "engine/snapshot_governance/_code"))
 sys.path.insert(0, str(Path(__file__).parent))
 import quality_certificate as quality
-from bounded_io import hash_ordinary, read_ordinary, strict_json
+from bounded_io import hash_ordinary, inventory, read_ordinary, strict_json
 from execution_storage import RunWorkspace, StoragePolicy
 from heavy_admission import DirectoryIdentity
 from performance_qualification import workload_manifest
 
+MAX_WORKLOAD_SOURCE_BYTES = 64 * 1024**2
+NATIVE_WORKLOAD_DOMAIN = "NATIVE_WORKLOAD_INVENTORY_V1"
 
+def native_workload_identity(root):
+    """Bind ordinary source without assuming project configuration authority."""
+    paths = inventory(root, {".git"})
+    if not paths:
+        raise ValueError("EMPTY_WORKLOAD_INVENTORY")
+    identity = hashlib.sha256(NATIVE_WORKLOAD_DOMAIN.encode("ascii") + b"\n")
+    remaining = MAX_WORKLOAD_SOURCE_BYTES
+    for relative in paths:
+        length, content = hash_ordinary(root / relative, remaining)
+        remaining -= length
+        row = json.dumps([relative, length, content], ensure_ascii=False, separators=(",", ":"))
+        identity.update(row.encode("utf-8") + b"\n")
+    return ("sha256:" + identity.hexdigest(), len(paths))
 
 def generate_fixture(root, workload):
     """Create only new disposable source; never governance or project permissions."""
@@ -49,7 +65,7 @@ def generate_fixture(root, workload):
         text = "".join(rows)
         total += len(text.encode())
         lines += text.count("\n")
-        if total > 64 * 1024**2:
+        if total > MAX_WORKLOAD_SOURCE_BYTES:
             raise ValueError("RESOURCE_LIMIT: synthetic source bytes")
         (source / (name + ".rs")).write_text(text, encoding="utf-8", newline="\n")
     text = "".join(modules)
@@ -119,27 +135,41 @@ def main():
     executable = ordinary_external(args.executable, source)
     if not executable.is_absolute() or not re.fullmatch(r"sha256:[0-9a-f]{64}", args.expected_digest) or hash_ordinary(executable, 256 * 1024**2)[1] != args.expected_digest:
         raise ValueError("UNBOUND_EXECUTABLE")
-    before = quality.repository_fingerprint(source)
+    identify_source = native_workload_identity if args.workload else quality.repository_fingerprint
+    before = identify_source(source)
     pin = DirectoryIdentity(source)
     supervisor = output / "supervisor"
     supervisor.mkdir()
     args.storage_root = ordinary_external(args.storage_root, source)
     ordinary_external(args.storage_root, ROOT)
-    runtime = ordinary_external(args.runtime_root or args.storage_root / "runtime", source)
-    ordinary_external(runtime, ROOT)
-    runtime.mkdir(parents=True, exist_ok=True)
     observations = []
-    context = {"format": "source-bound-performance-run-v1", "numeric_certification": False, "host": {"os": platform.platform(), "python": platform.python_version(), "architecture": platform.machine(), "cpu_count": os.cpu_count()}, "tool_digest": args.expected_digest, "workload_source_before": before, "preparation": preparation, "scope": "PSM_ONLY" if args.workload else "GOVERNED_RESIDENT_AND_CANDIDATE", "timeout_seconds": args.timeout_seconds, "resident_accounted_limit": args.accounted_bytes, "accounting_is_not_process_rss": True}
+    context = {
+        "format": "source-bound-performance-run-v1",
+        "numeric_certification": False,
+        "host": {"os": platform.platform(), "python": platform.python_version(),
+                 "architecture": platform.machine(), "cpu_count": os.cpu_count()},
+        "tool_digest": args.expected_digest,
+        "workload_source_before": before,
+        "workload_source_domain": NATIVE_WORKLOAD_DOMAIN if args.workload else "QUALITY_CERTIFICATE_SOURCE_FINGERPRINT",
+        "preparation": preparation,
+        "scope": "PSM_ONLY" if args.workload else "GOVERNED_RESIDENT_AND_CANDIDATE",
+        "timeout_seconds": args.timeout_seconds,
+        "resident_accounted_limit": args.accounted_bytes,
+        "accounting_is_not_process_rss": True,
+    }
     try:
         policy = replace(StoragePolicy.from_environment(), retention="cleanup-owned-compiler")
         with RunWorkspace(supervisor, args.storage_root, policy) as work:
+            runtime = ordinary_external(args.runtime_root or args.storage_root / "runtime", source)
+            ordinary_external(runtime, ROOT)
+            runtime.mkdir(exist_ok=True)
             for number in range(2 if args.workload else 1):
                 report = output / f"observation-{number}.json"
                 command = [str(executable), str(source), str(runtime), str(report), "psm" if args.workload else "resident", str(args.accounted_bytes), str(args.warm_evaluations)]
                 quality.run_command(source, command, os.environ.copy(), workspace=work, timeout_seconds=args.timeout_seconds)
                 result = strict_json(read_ordinary(report, 2 * 1024**2), maximum=2 * 1024**2)
                 observations.append(result)
-                if not pin.matches(source) or quality.repository_fingerprint(source) != before or hash_ordinary(executable, 256 * 1024**2)[1] != args.expected_digest:
+                if not pin.matches(source) or identify_source(source) != before or hash_ordinary(executable, 256 * 1024**2)[1] != args.expected_digest:
                     raise ValueError("SOURCE_OR_TOOL_DRIFT")
             if args.workload and observations[0]["psm_digest"] != observations[1]["psm_digest"]:
                 raise ValueError("INDEPENDENT_COLD_MISMATCH")
@@ -148,10 +178,17 @@ def main():
         context.update(outcome="INCOMPLETE_NO_QUALIFICATION_CLAIM", error=str(error))
         raise
     finally:
-        context["workload_source_after"] = quality.repository_fingerprint(source)
-        context["observations"] = observations
-        pin.close()
-        (output / "run.json").write_text(json.dumps(context, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
+        try:
+            context["workload_source_after"] = identify_source(source)
+            if not pin.matches(source) or context["workload_source_after"] != before:
+                raise ValueError("SOURCE_DRIFT: final workload identity")
+        except (OSError, ValueError, quality.CertificateError) as error:
+            context.update(outcome="INCOMPLETE_NO_QUALIFICATION_CLAIM", final_identity_error=str(error))
+            raise
+        finally:
+            pin.close()
+            context["observations"] = observations
+            (output / "run.json").write_text(json.dumps(context, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
     return 0
 
 

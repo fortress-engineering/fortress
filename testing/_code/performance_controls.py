@@ -127,6 +127,83 @@ class Controls(unittest.TestCase):
   for key,value in [("numerical_performance_requirements",True),("required_qualification",{}),("generator","arbitrary_code")]:
    invalid=copy.deepcopy(manifest);invalid[key]=value
    with self.assertRaises(ValueError):runner.workload_manifest(json.dumps(invalid).encode())
+ def test_synthetic_runner_admits_native_source_without_governance(self):
+  with tempfile.TemporaryDirectory() as directory:
+   base=Path(directory)
+   observer=base/"observer"
+   output=base/"output"
+   observer.write_bytes(b"pinned test observer")
+   observer_digest=qualification.digest(observer.read_bytes())
+   cases=[]
+   def observe(source,command,environment,**options):
+    self.assertEqual(command[4],"psm")
+    self.assertFalse((source/"__fortress").exists())
+    self.assertTrue((source/"Cargo.toml").is_file())
+    cases.append(runner.native_workload_identity(source))
+    Path(command[3]).write_bytes(json.dumps({"psm_digest":"sha256:"+"d"*64}).encode())
+   argv=["performance_runner.py","--executable",str(observer),"--expected-digest",observer_digest,
+         "--storage-root",str(base/"storage"),"--output-dir",str(output),"--workload","small"]
+   with (
+    patch.object(sys,"argv",argv),
+    patch.object(runner.quality,"run_command",side_effect=observe),
+    patch.object(runner.quality,"repository_fingerprint",
+                 side_effect=AssertionError("native source must not load certificate authority")),
+   ):
+    self.assertEqual(runner.main(),0)
+   report=json.loads((output/"run.json").read_bytes())
+   self.assertEqual(report["workload_source_domain"],runner.NATIVE_WORKLOAD_DOMAIN)
+   self.assertEqual(len(cases),2)
+   self.assertEqual(report["workload_source_before"],report["workload_source_after"])
+   self.assertEqual(report["workload_source_before"],list(cases[0]))
+   self.assertEqual(cases[0],cases[1])
+   self.assertFalse((output/"subject/__fortress").exists())
+
+ def test_native_workload_identity_binds_paths_and_bounded_exact_bytes(self):
+  with tempfile.TemporaryDirectory() as directory:
+   root=Path(directory)
+   source=root/"source.rs"
+   source.write_bytes(b"one")
+   initial=runner.native_workload_identity(root)
+   source.write_bytes(b"two")
+   changed=runner.native_workload_identity(root)
+   self.assertNotEqual(initial,changed)
+   source.rename(root/"renamed.rs")
+   self.assertNotEqual(changed,runner.native_workload_identity(root))
+   with patch.object(runner,"MAX_WORKLOAD_SOURCE_BYTES",2):
+    with self.assertRaisesRegex(OSError,"RESOURCE_LIMIT"):
+     runner.native_workload_identity(root)
+
+ def test_late_native_workload_drift_leaves_incomplete_observation(self):
+  with tempfile.TemporaryDirectory() as directory:
+   base=Path(directory)
+   observer=base/"observer"
+   output=base/"output"
+   observer.write_bytes(b"pinned test observer")
+   argv=["performance_runner.py","--executable",str(observer),
+         "--expected-digest",qualification.digest(observer.read_bytes()),
+         "--storage-root",str(base/"storage"),"--output-dir",str(output),"--workload","small"]
+   original=runner.native_workload_identity
+   rechecks=0
+   def identify(source):
+    nonlocal rechecks
+    rechecks+=1
+    if rechecks==4:
+     (source/"src/late.rs").write_bytes(b"late input change")
+    return original(source)
+   def observe(source,command,environment,**options):
+    Path(command[3]).write_bytes(json.dumps({"psm_digest":"sha256:"+"d"*64}).encode())
+   with (
+    patch.object(sys,"argv",argv),
+    patch.object(runner.quality,"run_command",side_effect=observe),
+    patch.object(runner,"native_workload_identity",side_effect=identify),
+   ):
+    with self.assertRaisesRegex(ValueError,"SOURCE_DRIFT"):
+     runner.main()
+   report=json.loads((output/"run.json").read_bytes())
+   self.assertEqual(report["outcome"],"INCOMPLETE_NO_QUALIFICATION_CLAIM")
+   self.assertNotEqual(report["workload_source_before"],report["workload_source_after"])
+   self.assertEqual(len(report["observations"]),2)
+
  def test_source_bound_qualification_integrity_never_authenticates_assertions(self):
   source="sha256:"+"a"*64;report="sha256:"+"b"*64
   observations=[{"id":name,"digest":report,"bytes":1} for name in qualification.POPULATION]

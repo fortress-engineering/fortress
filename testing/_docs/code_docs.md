@@ -56,7 +56,7 @@ Explicit prebuilt observer over existing production APIs. Separates PSM construc
 
 ### [`performance_runner.py`](../_code/performance_runner.py)
 
-Verifies the prebuilt observer's exact bytes, input source before and after execution, safe external destinations and bounded process duration. It never compiles, initializes governance or executes project code implicitly. New disposable synthetic fixtures contain only Cargo metadata and Rust source; each is evaluated in two independent PSM processes. An explicit governed root enables the separate resident experiment. A small independently owned supervisor root excludes unrelated compiler-store traversal from diagnostic timing. Preparation and supervision costs remain reported separately. Cancellation and uncertain descendants retain recovery state rather than asserting cleanup.
+Verifies the prebuilt observer's exact bytes, input source before and after execution, safe external destinations and bounded process duration. It never compiles, initializes governance or executes project code implicitly. New disposable synthetic fixtures contain only Cargo metadata and Rust source. Their bounded, relative-path inventory digest identifies native workload bytes in a separate domain. Each is evaluated in two independent PSM processes. An explicit governed root uses the normal certificate source fingerprint for the separate resident experiment. A small independently owned supervisor root excludes unrelated compiler-store traversal from diagnostic timing. Preparation and supervision costs remain reported separately. Cancellation and uncertain descendants retain recovery state rather than asserting cleanup.
 
 ### [`performance_qualification.py`](../_code/performance_qualification.py)
 
