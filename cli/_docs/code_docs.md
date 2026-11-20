@@ -311,6 +311,8 @@ Read-only protected-authority composition and explanation; repository assertions
 
 Thin read-only baseline capture/create/review/prune and exception list/review/create/retire adapters with strict selectors, explicit assessment time, matching human/JSON projections and structured errors; no proposal is automatically applied.
 
+`baseline admission` takes explicit immutable operations and optional original history. With a review it previews the exact governed postimage and, with an explicit base selection, the shared migration plan. The installed CLI supplies no production grant or trusted history attestation. `explain --proposal` and the same stdio query project loaded proposals or the registered current admission records without running an analyzer.
+
 ### [`flow_command.rs`](../_code/flow_command.rs)
 
 Implements flow-author as explicit immutable source preparation followed by the shared RPC v3 flow_author facade. Schema-only guidance performs no analysis. JSON and human output render the same response, and proposals never write policy. Information-flow analysis also supports the shared field-preserving human renderer.
@@ -379,7 +381,3 @@ Streams CLI diagnostics through bounded UTF-8 admission and escapes terminal, ca
 `fortress projections [path] --output-dir new-external-directory --format json` explicitly constructs one complete canonical static stack. The destination parent must exist and be ordinary; the final directory must be new and outside source. Existing paths, traversal, unsafe ancestors and observable directory or member replacement are refused. Retained native handles validate completed files, and `manifest.json` is written last. Interrupted output is incomplete and may be discarded only by its established owner. The operation is not a transaction over repository authority and does not claim protection against an actively hostile operating system or filesystem-wide atomicity.
 
 The versioned diagnostic manifest identifies the certification-source domain, exact member hashes and sizes, completion and separate producer costs. `STATIC_PROJECTIONS_ONLY`, `NOT_RUN`, `NOT_ISSUED` and `UNVERIFIED` distinguish materialization from execution, certification and authenticity. The command never runs Cargo, build scripts or repository providers. Human rendering and JSON serialize the same result; machine errors remain explicit. Issuance prints separate unfiltered-suite and producer-phase diagnostics on stderr while leaving canonical stdout and certificate products unchanged.
-
-### Pinned governance admission
-
-`baseline admission` reuses the finding lifecycle surface. It takes explicit immutable operations and optional original history. With a review it previews the exact governed postimage and, with an explicit base selection, the shared migration plan. The installed CLI supplies no production grant or trusted history attestation. `explain --proposal` and the same stdio query project loaded proposals or the registered current admission records without running an analyzer.

@@ -198,6 +198,6 @@ Registers the current independent comparison, restoration, lifecycle and differe
 
 Binds the exact selection manifest and report references for each required population to the source and certificate identities. The earlier schema remains available to readers of historical records.
 
-### `governance_proposal_schema_v3.json`
+### [`governance_proposal_schema_v3.json`](../_data/governance_proposal_schema_v3.json)
 
 Retains the existing exact maintenance proposal shape when the postimage has finding-governance v3 records. The additional admission-retirement operation keeps the original admission and attaches comparable retirement evidence. The original schema and historical proposal bytes remain valid.
