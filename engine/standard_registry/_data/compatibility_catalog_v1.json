@@ -3631,6 +3631,94 @@
         "id": "rfc8785-jcs-sha256",
         "source": "testing/_code/performance_qualification.py"
       }
+    },
+    {
+      "schema_id": "urn:fortress:derived:v1:governance-admission",
+      "schema_path": "engine/finding_model/_data/governance_admission_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/state_governance/_code/admission.rs"
+      },
+      "reader": {
+        "status": "ACTIVE",
+        "source": "engine/finding_model/_code/admission.rs"
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "jcs-sha256-v1",
+        "source": "engine/finding_model/_code/admission.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "rfc8785-jcs-sha256",
+        "source": "engine/finding_model/_code/admission.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:proposal:v1:governance-admission-review",
+      "schema_path": "engine/finding_model/_data/admission_review_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/finding_model/_code/admission.rs"
+      },
+      "reader": {
+        "status": "ACTIVE",
+        "source": "engine/finding_model/_code/admission.rs"
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "jcs-sha256-v1",
+        "source": "engine/finding_model/_code/admission.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "rfc8785-jcs-sha256",
+        "source": "engine/finding_model/_code/admission.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v3:finding-governance",
+      "schema_path": "engine/finding_model/_data/finding_governance_schema_v3.json",
+      "version": 3,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/finding_model/_code/governance.rs"
+      },
+      "reader": {
+        "status": "ACTIVE",
+        "source": "engine/finding_model/_code/governance.rs"
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "jcs-sha256-v1",
+        "source": "engine/finding_model/_code/governance.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "rfc8785-jcs-sha256",
+        "source": "engine/finding_model/_code/governance.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:derived:v3:governance-proposal",
+      "schema_path": "engine/snapshot_governance/_data/governance_proposal_schema_v3.json",
+      "version": 3,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/snapshot_governance/_code/lifecycle_load.rs"
+      },
+      "reader": {
+        "status": "SCHEMA_ONLY",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "jcs-sha256-v1",
+        "source": "engine/snapshot_governance/_code/lifecycle_load.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "rfc8785-jcs-sha256",
+        "source": "engine/snapshot_governance/_code/lifecycle_load.rs"
+      }
     }
   ]
 }

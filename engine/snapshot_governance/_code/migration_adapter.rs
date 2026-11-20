@@ -10,6 +10,7 @@ use crate::migration_governance::{
 };
 use crate::observation::{CandidateChangeSet, ObservationLimits, ObservationPolicy, SourceView};
 use crate::state_governance::ComparisonContext;
+use std::collections::BTreeSet;
 use std::path::Path;
 
 fn convert(e: impl std::fmt::Display) -> MigrationError {
@@ -224,6 +225,157 @@ impl<H: HostCoverage, V: GrantValidator> MigrationAuthority
         .map_err(authority_error)?;
         ApplicationAuthorization::from_evaluation(evaluated, &prepared).map_err(authority_error)
     }
+}
+
+/// Historical endpoints independently selected by the trusted embedding for this original state.
+/// Repository-provided records and omissions may not establish the completeness of this set.
+pub struct TrustedAdmissionHistory {
+    original_state_ref: String,
+    history_refs: BTreeSet<String>,
+}
+
+impl TrustedAdmissionHistory {
+    /// Installs the independently checked history selection. An empty set is only appropriate
+    /// when the embedding has independently established the original boundary.
+    /// # Errors
+    /// Refuses missing identities, malformed digests or exhaustive resource limits.
+    pub fn from_host(
+        original_state_ref: String,
+        history_refs: BTreeSet<String>,
+    ) -> Result<Self, MigrationError> {
+        if history_refs.len() > 64
+            || !std::iter::once(&original_state_ref)
+                .chain(&history_refs)
+                .all(|id| {
+                    id.strip_prefix("sha256:").is_some_and(|suffix| {
+                        suffix.len() == 64
+                            && suffix
+                                .bytes()
+                                .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+                    })
+                })
+        {
+            return Err(convert(
+                "trusted admission history requires bounded exact state identities",
+            ));
+        }
+        Ok(Self {
+            original_state_ref,
+            history_refs,
+        })
+    }
+}
+
+/// Applies the existing original-authority grant boundary to one owner-reviewed admission.
+/// Decision references and unsigned receipts cannot create this prepared operation or a grant.
+pub struct CanonicalAdmissionMigrationAuthority<'a, H, V> {
+    /// Standard trusted-base policy and external grant validation port.
+    pub authority: CanonicalMigrationAuthority<'a, H, V>,
+    /// Exact evaluated and explicitly reviewed finding set.
+    pub reviewed: &'a crate::migration_governance::ReviewedAdmission,
+    /// Independent history selection, required for actual authorization.
+    pub history: Option<&'a TrustedAdmissionHistory>,
+}
+
+impl<H: HostCoverage, V: GrantValidator> CanonicalAdmissionMigrationAuthority<'_, H, V> {
+    fn prepared(
+        &self,
+        base: &MigrationEvaluation,
+        target: &MigrationEvaluation,
+        source: &SourceView,
+        changes: &CandidateChangeSet,
+        context: &ComparisonContext,
+    ) -> Result<PreparedChange, MigrationError> {
+        if self.authority.finding_proposal.is_some()
+            || self.authority.identity_plan.is_some()
+            || self.authority.reviewed_initial_intent_ref.is_some()
+        {
+            return Err(convert(
+                "competing authority interpretations cannot apply admissions",
+            ));
+        }
+        self.reviewed
+            .validate_operations(base, source, changes, self.authority.evaluation_time)?;
+        CanonicalMigrationAuthority::<H, V>::prepared(base, target, source, changes, context)
+    }
+}
+
+impl<H: HostCoverage, V: GrantValidator> MigrationAuthority
+    for CanonicalAdmissionMigrationAuthority<'_, H, V>
+{
+    fn preview(
+        &self,
+        base: &MigrationEvaluation,
+        target: &MigrationEvaluation,
+        source: &SourceView,
+        changes: &CandidateChangeSet,
+        context: &ComparisonContext,
+    ) -> Result<ApplicationAuthorityRecord, MigrationError> {
+        let prepared = self.prepared(base, target, source, changes, context)?;
+        let decision = crate::development_governance::evaluate_change(
+            &prepared,
+            self.authority.policy()?,
+            self.authority.host,
+            &crate::development_governance::NoGrantValidator,
+            self.authority.evaluation_time,
+        )
+        .map_err(authority_error)?;
+        ApplicationAuthorityRecord::from_decision(&decision, &prepared).map_err(authority_error)
+    }
+
+    fn authorize(
+        &self,
+        base: &MigrationEvaluation,
+        target: &MigrationEvaluation,
+        source: &SourceView,
+        changes: &CandidateChangeSet,
+        context: &ComparisonContext,
+    ) -> Result<ApplicationAuthorization, MigrationError> {
+        let prepared = self.prepared(base, target, source, changes, context)?;
+        if self.history.is_none_or(|history| {
+            history.original_state_ref != self.reviewed.original_state_ref()
+                || &history.history_refs != self.reviewed.history_refs()
+        }) {
+            return Err(MigrationError {
+                code: "TRUSTED_HISTORY_REQUIRED".into(),
+                message: "Independently selected original authority and history are required to rule out reactivation.".into(),
+                transaction_ref: None,
+            });
+        }
+        let evaluated = evaluate_change_with_grants(
+            &prepared,
+            self.authority.policy()?,
+            self.authority.host,
+            self.authority.validator,
+            self.authority.evaluation_time,
+        )
+        .map_err(authority_error)?;
+        let authorization = ApplicationAuthorization::from_evaluation(evaluated, &prepared)
+            .map_err(authority_error)?;
+        require_finding_grant(&authorization)?;
+        Ok(authorization)
+    }
+}
+
+pub(crate) fn require_finding_grant(
+    authorization: &ApplicationAuthorization,
+) -> Result<(), MigrationError> {
+    let path = crate::migration_governance::admission_governance_path()?;
+    if !authorization.record().requirements().iter().any(|r| {
+        r.path == path
+            && r.class == crate::authority_roles::ProtectedClass::FindingGovernance
+            && authorization
+                .grants()
+                .iter()
+                .any(|g| g.assertion().requirement_ref == r.id)
+    }) {
+        return Err(MigrationError {
+            code: "AUTHORIZATION_REQUIRED".into(),
+            message: "The exact admission postimage requires an independently validated finding-governance grant.".into(),
+            transaction_ref: None,
+        });
+    }
+    Ok(())
 }
 /// Builds the physical source observation policy from registered output families only.
 pub(crate) fn physical_policy() -> Result<ObservationPolicy, MigrationError> {

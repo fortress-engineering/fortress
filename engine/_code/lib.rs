@@ -6,6 +6,8 @@
 #![forbid(unsafe_code)]
 #![deny(missing_docs, rustdoc::broken_intra_doc_links, warnings)]
 
+#[path = "../snapshot_governance/_code/admission_load.rs"]
+pub mod admission_load;
 #[path = "../affected_analysis/_code/affected.rs"]
 pub mod affected_analysis;
 #[path = "../certification/_code/application.rs"]

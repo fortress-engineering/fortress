@@ -50,3 +50,7 @@ Produces comparable retirement v2 from exact original/current state views, stabl
 ### [`projection.rs`](../_code/projection.rs)
 
 Projects exact native comparison inputs, including historical identities, through a lossless public envelope. Bounded canonical UTF-8 chunks reproduce the native digest; separately projected public StateViews v1–v3 and owner assets must match those bytes exactly. No standalone native-frame schema conformance, producer authentication or new semantic evaluation is claimed.
+
+### [`admission.rs`](../_code/admission.rs)
+
+Classifies target findings through the existing four-axis comparison, established claim records, finite effective policy and original finding anchors. It requires exact implementation equality for admission and leaves ambiguity, unknown original history, unsupported policy changes and changed coverage visible. Earlier applicable scope slots foreclose reactivation as a new admission.

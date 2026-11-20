@@ -231,9 +231,10 @@ fn proposal(
     current: ComparisonState,
     evidence: Vec<RetirementEvidenceV2>,
 ) -> Result<GovernanceProposal, TransitionError> {
+    let edition = if next.admissions().is_empty() { 2 } else { 3 };
     let p = GovernanceProposal {
-        schema: "urn:fortress:derived:v2:governance-proposal".into(),
-        schema_version: 2,
+        schema: format!("urn:fortress:derived:v{edition}:governance-proposal"),
+        schema_version: edition,
         operation: operation.into(),
         governance_path: path()?,
         original_governance_ref: original.authority_digest().map_err(error)?,
@@ -302,11 +303,30 @@ pub fn propose_prune(
         ));
     }
     let mut next = authority.clone();
-    if !eligible.is_empty() {
+    let admission = eligible
+        .iter()
+        .any(|row| authority.admissions().contains_key(&row.finding_id));
+    if admission {
+        if eligible
+            .iter()
+            .any(|row| !authority.admissions().contains_key(&row.finding_id))
+        {
+            return Err(fail(
+                "AMBIGUOUS_MAINTENANCE_PROOF",
+                "original baseline and reviewed admission retirement require separate exact proposals",
+            ));
+        }
+        next.retire_admissions_with_evidence(&eligible)
+            .map_err(error)?;
+    } else if !eligible.is_empty() {
         next.prune_with_evidence(&eligible).map_err(error)?;
     }
     proposal(
-        "BASELINE_PRUNE",
+        if admission {
+            "ADMISSION_RETIRE"
+        } else {
+            "BASELINE_PRUNE"
+        },
         authority,
         next,
         Some(before.clone()),
@@ -610,6 +630,8 @@ pub fn migration_identity_evidence(
     };
     if shape(&original) != shape(&candidate)
         || original.exceptions().len() != candidate.exceptions().len()
+        || original.admissions() != candidate.admissions()
+        || original.admission_retirements() != candidate.admission_retirements()
         || original.lifecycle().is_some()
             && original.authority_digest().map_err(error)?
                 != candidate.authority_digest().map_err(error)?

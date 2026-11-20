@@ -41,3 +41,7 @@ Compare-before-replace application, exclusively staged cycles, final actual eval
 ### [`presentation.rs`](../_code/presentation.rs)
 
 Formats already-evaluated facts and explicitly exports immutable reviewed plans under their registered CONTROL role. Formatting never invokes an evaluator.
+
+### [`admission.rs`](../_code/admission.rs)
+
+Builds one exact reviewed finding-governance postimage from independently comparable evaluated endpoints. It passes the original and reviewed authority operations to the shared migration plan and verifies complete operation equality before authorization. Existing journaling, leases, recovery, actual-state reconciliation and immutable receipts remain the only write path.

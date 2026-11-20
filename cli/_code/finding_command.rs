@@ -43,6 +43,11 @@ fn parse(args: &[String]) -> Result<Options, TransitionError> {
         "--review-at",
         "--expires-at",
         "--assessment-time",
+        "--operations",
+        "--history",
+        "--review",
+        "--base-selection",
+        "--projection",
     ];
     let mut i = 1;
     while i < args.len() {
@@ -157,6 +162,7 @@ fn baseline_execute(args: &[String], output: &mut impl Write) -> Result<(), Tran
     let o = parse(args)?;
     let root = root(&o, 0)?;
     match o.operation.as_str() {
+        "admission" => admission_preview(&o, &root, output),
         "capture" => {
             reject_unused(&o, &[])?;
             let (state, _) = fortress_core::audit::capture_finding_inputs(&root)
@@ -216,9 +222,171 @@ fn baseline_execute(args: &[String], output: &mut impl Write) -> Result<(), Tran
         }
         _ => Err(fail(
             "INVALID_INPUT",
-            "usage: fortress baseline capture|create|review|prune [path] [--from state --to state] [--finding ID] [--format human|json]",
+            "usage: fortress baseline capture|create|review|prune|admission [path] [--format human|json]",
         )),
     }
+}
+
+fn admission_preview(
+    options: &Options,
+    root: &std::path::Path,
+    output: &mut impl Write,
+) -> Result<(), TransitionError> {
+    reject_unused(
+        options,
+        &[
+            "--operations",
+            "--history",
+            "--review",
+            "--base-selection",
+            "--assessment-time",
+            "--projection",
+        ],
+    )?;
+    if !options.values.contains_key("--review")
+        && (options.values.contains_key("--base-selection")
+            || options.values.contains_key("--assessment-time"))
+    {
+        return Err(fail(
+            "INVALID_INPUT",
+            "base selection and assessment time apply to explicit review",
+        ));
+    }
+    let operations = fortress_core::wire::parse_public_json(&read_admission_input(required(
+        options,
+        "--operations",
+    )?)?)
+    .map_err(|e| fail("INVALID_INPUT", e.to_string()))?;
+    let history = admission_history(root, options.values.get("--history").map(String::as_str))?;
+    let evaluated =
+        fortress_core::admission_load::preview_repository_admission(root, operations, &history)
+            .map_err(admission_error)?;
+    let assessment = evaluated.assessment();
+    if let Some(projection) = options.values.get("--projection") {
+        if projection != "target-state" || options.values.contains_key("--review") || !options.json
+        {
+            return Err(fail(
+                "INVALID_INPUT",
+                "target-state projection requires JSON and no review",
+            ));
+        }
+        output
+            .write_all(&evaluated.pre_admission_state().to_canonical_bytes()?)
+            .map_err(|e| fail("UNAVAILABLE", e.to_string()))?;
+        return writeln!(output).map_err(|e| fail("UNAVAILABLE", e.to_string()));
+    }
+    let result = if let Some(path) = options.values.get("--review") {
+        render_admission_review(options, &evaluated, path)?
+    } else {
+        serde_json::to_value(assessment).map_err(|e| fail("INVALID_INPUT", e.to_string()))?
+    };
+    if options.json {
+        print_json(output, &result)
+    } else {
+        lifecycle_bytes(&result).map_err(|e| fail("RESOURCE_LIMIT", e.to_string()))?;
+        writeln!(
+            output,
+            "{}",
+            fortress_core::query::render_inspection_value(&result)
+        )
+        .map_err(|e| fail("UNAVAILABLE", e.to_string()))
+    }
+}
+
+fn admission_error(error: fortress_core::migration_governance::MigrationError) -> TransitionError {
+    fail(&error.code, error.message)
+}
+
+fn read_admission_input(path: &str) -> Result<String, TransitionError> {
+    super::migration_command::read(path).map_err(admission_error)
+}
+
+fn admission_history(
+    root: &std::path::Path,
+    path: Option<&str>,
+) -> Result<Vec<fortress_core::state_governance::ComparisonState>, TransitionError> {
+    let Some(path) = path else {
+        return Ok(Vec::new());
+    };
+    let references: Vec<String> =
+        fortress_core::wire::parse_public_json(&read_admission_input(path)?)
+            .map_err(|e| fail("INVALID_INPUT", e.to_string()))?;
+    if references.len() > 16 || references.iter().any(|reference| reference == "current") {
+        return Err(fail(
+            "INVALID_INPUT",
+            "history requires at most sixteen explicit immutable state references",
+        ));
+    }
+    let mut history = Vec::new();
+    let mut size = 0usize;
+    for reference in references {
+        let state = load_comparison_state(root, &reference)?;
+        size = size.saturating_add(state.to_canonical_bytes()?.len());
+        if size > 64 * 1024 * 1024 {
+            return Err(fail(
+                "RESOURCE_LIMIT",
+                "admission historical inputs exceed 64 MiB",
+            ));
+        }
+        history.push(state);
+    }
+    Ok(history)
+}
+
+fn render_admission_review(
+    options: &Options,
+    evaluated: &fortress_core::migration_governance::EvaluatedAdmission,
+    path: &str,
+) -> Result<serde_json::Value, TransitionError> {
+    use fortress_core::development_governance::{NoGrantValidator, UnmediatedHost};
+    use fortress_core::finding_governance::AdmissionReview;
+    use fortress_core::migration_adapter::{
+        CanonicalAdmissionMigrationAuthority, CanonicalMigrationAuthority,
+        CanonicalMigrationEvaluator,
+    };
+    let assessment = evaluated.assessment();
+    let review = AdmissionReview::from_json_str(&read_admission_input(path)?)
+        .map_err(|e| fail("INVALID_REVIEW", e.to_string()))?;
+    let now = time(options, "--assessment-time")?;
+    if review
+        .records(assessment, now)
+        .map_err(|e| fail("INVALID_REVIEW", e.to_string()))?
+        .is_empty()
+    {
+        return Ok(
+            serde_json::json!({"assessment": assessment, "review": review,
+            "authorization": "NOT_GRANTED", "application": "NO_ADMISSIONS_SELECTED"}),
+        );
+    }
+    let reviewed = evaluated.review(&review, now).map_err(admission_error)?;
+    let plan = if let Some(path) = options.values.get("--base-selection") {
+        let policy = super::migration_command::preview_selection(path).map_err(admission_error)?;
+        let authority = CanonicalAdmissionMigrationAuthority {
+            authority: CanonicalMigrationAuthority {
+                policy: Some(&policy),
+                host: &UnmediatedHost,
+                validator: &NoGrantValidator,
+                evaluation_time: now,
+                reviewed_initial_intent_ref: None,
+                finding_proposal: None,
+                identity_plan: None,
+            },
+            reviewed: &reviewed,
+            history: None,
+        };
+        Some(
+            reviewed
+                .preview(&CanonicalMigrationEvaluator, &authority)
+                .map_err(admission_error)?
+                .plan,
+        )
+    } else {
+        None
+    };
+    Ok(
+        serde_json::json!({"assessment": assessment, "review": review, "authorization": "NOT_GRANTED",
+        "application": "PROPOSED", "proposed_governance": reviewed.proposed_governance(), "migration_plan": plan}),
+    )
 }
 fn reject_unused(o: &Options, allowed: &[&str]) -> Result<(), TransitionError> {
     if o.values

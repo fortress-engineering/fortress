@@ -167,8 +167,8 @@ const BUILTIN_COMMANDS: &[CommandDescriptor] = &[
         id: "CMD-FINDING-BASELINE",
         name: "baseline",
         aliases: &[],
-        description: "Preview anchored baseline adoption, comparable retirement and retained lifecycle evidence.",
-        usage: "fortress baseline capture|create|review|prune [path] [--from state --to state] [--finding ID] [--format human|json]",
+        description: "Preview anchored baseline adoption, comparable retirement and reviewed governance admission.",
+        usage: "fortress baseline capture|create|review|prune|admission [path] [--from state --to state | --operations file] [--finding ID] [--format human|json]",
     },
     CommandDescriptor {
         id: "CMD-FINDING-EXCEPTION",

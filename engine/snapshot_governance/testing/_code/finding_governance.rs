@@ -11,6 +11,31 @@ use fortress_core::finding_governance::{
 };
 use fortress_core::standard::FindingCategory;
 
+/// `T-AF-SNAPSHOT-GOVERNANCE-0001-R26-005`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R26
+#[test]
+fn missing_original_authority_cannot_establish_newly_governed_residue() {
+    use fortress_core::finding_governance::AdmissionClassification;
+    use fortress_core::state_governance::{ComparisonState, classify_governance_introduction};
+
+    let raw = finding(
+        "ARCH-SEMANTIC-001",
+        "AF-CORE-0001",
+        "a/_code/a.rs",
+        "SOURCE_OPERATION",
+        "A supported violation under target authority.",
+        1,
+    );
+    let original = ComparisonState::unavailable(None);
+    let target = ComparisonState::unavailable(None);
+    let report = classify_governance_introduction(&original, &target, &[], &[raw], &[]).unwrap();
+    assert_eq!(
+        report.findings[0].classification,
+        AdmissionClassification::OriginalHistoryUnavailable
+    );
+    assert!(report.findings[0].introduced_scope_ref.is_none());
+}
+
 fn finding(
     rule: &str,
     subject: &str,

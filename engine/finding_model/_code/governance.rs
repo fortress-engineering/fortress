@@ -2,6 +2,9 @@
 #[path = "lifecycle.rs"]
 mod lifecycle;
 pub use lifecycle::*;
+#[path = "admission.rs"]
+mod admission;
+pub use admission::*;
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
@@ -28,6 +31,10 @@ pub struct FindingGovernanceDocument {
     exceptions: Vec<FindingException>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     lifecycle: Option<LifecycleRecords>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    admissions: BTreeMap<String, AdmissionRecord>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    admission_retirements: BTreeMap<String, RetirementEvidenceV2>,
 }
 
 impl FindingGovernanceDocument {
@@ -40,6 +47,8 @@ impl FindingGovernanceDocument {
             baseline: None,
             exceptions: Vec::new(),
             lifecycle: None,
+            admissions: BTreeMap::new(),
+            admission_retirements: BTreeMap::new(),
         }
     }
 
@@ -67,7 +76,7 @@ impl FindingGovernanceDocument {
     ///
     /// Returns a serialization error if this validated document cannot be encoded.
     pub fn to_canonical_json(&self) -> Result<String, serde_json::Error> {
-        if self.schema_version == 2 {
+        if self.schema_version >= 2 {
             return serde_json_canonicalizer::to_vec(self)
                 .and_then(|b| String::from_utf8(b).map_err(serde::ser::Error::custom));
         }
@@ -229,9 +238,12 @@ impl FindingGovernanceDocument {
     fn validate(&self) -> Result<(), FindingGovernanceError> {
         if !matches!(
             (self.schema.as_str(), self.schema_version),
-            (FINDING_GOVERNANCE_SCHEMA, 1) | (FINDING_GOVERNANCE_SCHEMA_V2, 2)
+            (FINDING_GOVERNANCE_SCHEMA, 1)
+                | (FINDING_GOVERNANCE_SCHEMA_V2, 2)
+                | (FINDING_GOVERNANCE_SCHEMA_V3, 3)
         ) || (self.schema_version == 1 && self.lifecycle.is_some())
-            || (self.schema_version == 2 && self.lifecycle.is_none())
+            || (self.schema_version >= 2 && self.lifecycle.is_none())
+            || ((self.schema_version == 3) == self.admissions.is_empty())
         {
             return Err(FindingGovernanceError::UnsupportedSchema);
         }
@@ -280,6 +292,7 @@ impl FindingGovernanceDocument {
             }
         }
         self.validate_lifecycle()?;
+        self.validate_admissions()?;
         Ok(())
     }
 }
@@ -377,6 +390,14 @@ pub struct RetiredBaselineEntry {
     rule_id: String,
 }
 
+impl RetiredBaselineEntry {
+    /// Returns the original finding identity retained after retirement.
+    #[must_use]
+    pub fn finding_id(&self) -> &str {
+        &self.finding_id
+    }
+}
+
 /// Active or retired explicit exception authority.
 #[derive(Clone, Debug, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(deny_unknown_fields)]
@@ -464,6 +485,8 @@ pub enum FindingDisposition {
     None,
     /// An active authored exception applies.
     Excepted,
+    /// Exact independently authorized introduction; the raw violation persists.
+    Admitted,
 }
 
 /// Whether one finding blocks progressive enforcement.
@@ -548,6 +571,14 @@ pub struct FindingGovernanceSummary {
     pub baseline_ineligible: usize,
     /// Previously pruned findings that returned.
     pub reintroduced_blocking: usize,
+    /// Explicit process-local admitted occurrences; ordinary evaluation cannot infer these.
+    #[serde(skip_serializing_if = "is_zero")]
+    pub admitted_non_blocking: usize,
+}
+
+#[allow(clippy::trivially_copy_pass_by_ref)]
+fn is_zero(value: &usize) -> bool {
+    *value == 0
 }
 
 /// Finding governance authority compatibility and enforcement projection.
@@ -764,37 +795,53 @@ fn evaluate_finding_governance_impl(
         let identity_candidates = std::iter::once(finding.finding_id())
             .chain(finding.legacy_finding_ids().iter().map(String::as_str))
             .collect::<Vec<_>>();
-        let lifecycle =
-            if finding.identity_eligibility() == FindingIdentityEligibility::BaselineIneligible {
-                summary.baseline_ineligible += 1;
-                FindingLifecycle::BaselineIneligible
-            } else if identity_candidates
-                .iter()
-                .any(|identity| active.contains(identity))
-            {
-                FindingLifecycle::Baselined
-            } else if identity_candidates
-                .iter()
-                .any(|identity| retired.contains(identity))
-            {
-                FindingLifecycle::Reintroduced
-            } else {
-                FindingLifecycle::New
-            };
+        let lifecycle = if finding.identity_eligibility()
+            == FindingIdentityEligibility::BaselineIneligible
+        {
+            summary.baseline_ineligible += 1;
+            FindingLifecycle::BaselineIneligible
+        } else if identity_candidates
+            .iter()
+            .any(|identity| active.contains(identity))
+        {
+            FindingLifecycle::Baselined
+        } else if identity_candidates.iter().any(|identity| {
+            retired.contains(identity)
+                || authority
+                    .is_some_and(|document| document.admission_retirements.contains_key(*identity))
+        }) {
+            FindingLifecycle::Reintroduced
+        } else {
+            FindingLifecycle::New
+        };
         let mut applied = identity_candidates
             .iter()
             .flat_map(|identity| exceptions.get(identity).into_iter().flatten().copied())
             .collect::<Vec<_>>();
         applied.sort_by(|left, right| left.id.cmp(&right.id));
         applied.dedup_by(|left, right| left.id == right.id);
-        let disposition = if applied.is_empty() {
-            FindingDisposition::None
-        } else {
+        let admitted = authority
+            .filter(|document| {
+                !document
+                    .admission_retirements
+                    .contains_key(finding.finding_id())
+            })
+            .and_then(|d| d.admissions().get(finding.finding_id()))
+            .is_some_and(|record| {
+                context.is_some_and(|ctx| {
+                    ctx.matches_finding(finding) && ctx.admission_applies(record)
+                })
+            });
+        let disposition = if !applied.is_empty() {
             FindingDisposition::Excepted
+        } else if admitted {
+            FindingDisposition::Admitted
+        } else {
+            FindingDisposition::None
         };
         let enforcement = if finding.enforcement_eligibility()
             == FindingEnforcementEligibility::AdvisoryOnly
-            || disposition == FindingDisposition::Excepted
+            || disposition != FindingDisposition::None
             || lifecycle == FindingLifecycle::Baselined
         {
             FindingEnforcement::NonBlocking
@@ -802,6 +849,9 @@ fn evaluate_finding_governance_impl(
             FindingEnforcement::Blocking
         };
         match (lifecycle, disposition, enforcement) {
+            (_, FindingDisposition::Admitted, FindingEnforcement::NonBlocking) => {
+                summary.admitted_non_blocking += 1;
+            }
             (_, FindingDisposition::Excepted, FindingEnforcement::NonBlocking) => {
                 summary.excepted_non_blocking += 1;
             }
@@ -846,9 +896,20 @@ fn evaluate_finding_governance_impl(
                 (_, _, FindingDisposition::Excepted) => {
                     "active explicit exception authority".into()
                 }
+                (_, _, FindingDisposition::Admitted) => {
+                    "exact independently authorized review of newly governed residue".into()
+                }
                 (_, FindingLifecycle::Baselined, _) => "accepted original baseline residue".into(),
                 (_, FindingLifecycle::Reintroduced, _) => {
-                    "retired baseline violation reintroduced".into()
+                    if authority.is_some_and(|document| {
+                        document
+                            .admission_retirements
+                            .contains_key(finding.finding_id())
+                    }) {
+                        "retired admission violation reintroduced".into()
+                    } else {
+                        "retired baseline violation reintroduced".into()
+                    }
                 }
                 (_, FindingLifecycle::BaselineIneligible, _) => {
                     "stable semantic identity unavailable".into()

@@ -2,7 +2,9 @@
 use super::{
     ExplainParameters, ExplanationPage, QueryError, QueryService, check_cancelled, digest,
 };
-use crate::finding_governance::{FindingGovernanceDocument, RetirementEvidenceV2};
+use crate::finding_governance::{
+    AdmissionAssessment, AdmissionReview, FindingGovernanceDocument, RetirementEvidenceV2,
+};
 use serde_json::json;
 use std::sync::atomic::AtomicBool;
 fn convert(e: impl std::fmt::Display) -> QueryError {
@@ -15,9 +17,57 @@ fn lifecycle_kind(kind: &str) -> bool {
             | "baseline_admission"
             | "retired_finding"
             | "exception_review_authority"
+            | "governance_admission_proposal"
+            | "governance_admission_finding"
+            | "governance_admission_review"
     )
 }
 impl QueryService {
+    /// Attaches an explicitly supplied comparison proposal without validating its producer.
+    /// # Errors
+    /// Refuses altered digest, ambiguous records and shared query limits.
+    pub fn with_governance_admission(
+        mut self,
+        proposal: &AdmissionAssessment,
+        review: Option<&AdmissionReview>,
+    ) -> Result<Self, QueryError> {
+        let id = proposal.digest().map_err(convert)?;
+        if let Some(review) = review {
+            review.validate_binding(proposal).map_err(convert)?;
+        }
+        self.add_record(
+            "governance_admission_proposal",
+            &id,
+            &id,
+            json!({
+                "original": proposal.original, "target": proposal.target,
+                "transition_ref": proposal.transition_ref, "subject_ref": proposal.subject_ref,
+                "history_refs": proposal.history_refs, "finding_count": proposal.findings.len(),
+            "authority": "NOT_VERIFIED", "progressive_treatment": "NOT_APPLIED",
+            "review_expires_at": review.and_then(|record| record.expires_at),
+            }),
+        )?;
+        for finding in &proposal.findings {
+            let row_id = format!("admission:{id}:{}", finding.finding_id);
+            let decision = review.and_then(|record| {
+                record
+                    .decisions
+                    .iter()
+                    .find(|item| item.finding_id == finding.finding_id)
+            });
+            self.add_record(
+                "governance_admission_finding",
+                row_id,
+                &id,
+                json!({
+                "finding": finding, "review_decision": decision, "raw_conformance": "FAIL",
+                    "authorization": "NOT_GRANTED",
+                }),
+            )?;
+        }
+        self.finish_lifecycle_index()?;
+        Ok(self)
+    }
     /// Adds previously produced retirement results. Favorable records remain unauthenticated.
     /// # Errors
     /// Refuses malformed records, duplicate identities and existing shared resource limits.
@@ -88,6 +138,15 @@ impl QueryService {
         for e in authority.exceptions() {
             self.add_record("exception_review_authority",format!("exception:{}",e.id()),e.finding_id(),json!({"authored_exception":e,"original_review":authority.lifecycle().and_then(|r|r.exception_reviews.get(e.id())),"current_authored_governance_ref":reference,"authorization":"UNVERIFIED_REFERENCE","current_applicability":"REQUIRES_COMPARABLE_SCOPE_AND_EXPLICIT_REVIEW_TIME","raw_conformance":"UNCHANGED"}))?;
         }
+        for (id, admission) in authority.admissions() {
+            let record_ref = admission.digest().map_err(convert)?;
+            self.add_record("governance_admission_review", format!("admission:{id}"), id, json!({
+                "admission": admission, "record_ref": record_ref, "raw_conformance": "PRESERVED",
+                    "retirement_evidence": authority.admission_retirements().get(id),
+                "authorization": "UNVERIFIED_REFERENCE", "progressive_treatment": "NOT_APPLIED",
+                "current_authored_governance_ref": reference,
+            }))?;
+        }
         if self.records.len() != start {
             self.finish_lifecycle_index()?;
         }
@@ -146,7 +205,11 @@ impl QueryService {
             .filter(|(_, r)| lifecycle_kind(&r.kind) && r.scope_ref == *scope)
             .map(|(i, _)| i)
             .collect::<Vec<_>>();
-        let description = json!({"governing_rule":"An original violation resolves only with sufficient comparable evidence of its original obligation.","rationale":"Absence, weaker policy, changed authority and lost coverage cannot prove a fix.","failure_prevented":"False baseline retirement, silent baseline growth and self-authorized exceptions.","evaluated_scope":scope,"recorded_result":record.value,"reporting_basis":"Current authored governance and supplied derived history are separate from current semantic evidence.","limitations":["Inspection neither authenticates a producer nor recreates an external grant.","A selected historical resolution is not evidence of the current repository.","Legacy entries without original anchors remain unresolved."],"remediation":"Retain original captured inputs, restore comparable authority/coverage and supply complete proof. Review protected maintenance through the existing AUTHORITY boundary."});
+        let description = if record.kind.starts_with("governance_admission_") {
+            json!({"governing_rule":"Only an exact supported violation newly governed on the same pinned implementation is eligible for explicit review.","evaluated_scope":scope,"recorded_result":record.value,"reporting_basis":"This inspection projects original comparison and review evidence without changing raw truth or enforcement.","limitations":["A proposal and checked-in review are not external authorization.","Previously governed or reintroduced findings cannot be absorbed by reactivation.","Missing historical, semantic or authority inputs prevent admission."],"remediation":"Separate unrelated source changes. Review exact eligible identities and independently validate protected application through the existing migration boundary."})
+        } else {
+            json!({"governing_rule":"An original violation resolves only with sufficient comparable evidence of its original obligation.","rationale":"Absence, weaker policy, changed authority and lost coverage cannot prove a fix.","failure_prevented":"False baseline retirement, silent baseline growth and self-authorized exceptions.","evaluated_scope":scope,"recorded_result":record.value,"reporting_basis":"Current authored governance and supplied derived history are separate from current semantic evidence.","limitations":["Inspection neither authenticates a producer nor recreates an external grant.","A selected historical resolution is not evidence of the current repository.","Legacy entries without original anchors remain unresolved."],"remediation":"Retain original captured inputs, restore comparable authority/coverage and supply complete proof. Review protected maintenance through the existing AUTHORITY boundary."})
+        };
         Ok(Some(ExplanationPage {
             selector: p.selector.clone(),
             description,

@@ -381,6 +381,7 @@ pub struct LifecycleContext {
     anchors: BTreeMap<String, FindingAnchor>,
     assessment_time: Option<u64>,
     verified_exceptions: BTreeMap<String, (String, String)>,
+    verified_admissions: BTreeMap<String, String>,
 }
 impl LifecycleContext {
     /// Composes observed current meanings and explicit assessment time, with no authorization.
@@ -414,6 +415,7 @@ impl LifecycleContext {
             anchors,
             assessment_time,
             verified_exceptions: BTreeMap::new(),
+            verified_admissions: BTreeMap::new(),
         })
     }
     pub(super) fn validate(
@@ -456,6 +458,25 @@ impl LifecycleContext {
     pub(crate) fn admit_exception(&mut self, id: &str, proposal_ref: String, receipt_ref: String) {
         self.verified_exceptions
             .insert(id.into(), (proposal_ref, receipt_ref));
+    }
+
+    pub(crate) fn admit_finding(&mut self, anchor: FindingAnchor, record_ref: String) {
+        self.verified_admissions
+            .insert(anchor.finding_id.clone(), record_ref);
+        self.anchors.insert(anchor.finding_id.clone(), anchor);
+    }
+
+    pub(super) fn admission_applies(&self, record: &super::AdmissionRecord) -> bool {
+        self.anchors
+            .get(&record.lifecycle_anchor.finding_id)
+            .is_some_and(|anchor| record.lifecycle_anchor.comparable_to(anchor))
+            && self
+                .verified_admissions
+                .get(&record.lifecycle_anchor.finding_id)
+                .is_some_and(|id| record.digest().is_ok_and(|expected| *id == expected))
+            && record
+                .expires_at
+                .is_none_or(|expiry| self.assessment_time.is_some_and(|time| time < expiry))
     }
 }
 /// Review, semantic applicability and authorization are independent facts.
@@ -551,8 +572,10 @@ impl FindingGovernanceDocument {
         d
     }
     fn upgrade_lifecycle(&mut self) -> &mut LifecycleRecords {
-        self.schema = FINDING_GOVERNANCE_SCHEMA_V2.into();
-        self.schema_version = 2;
+        if self.schema_version < 2 {
+            self.schema = FINDING_GOVERNANCE_SCHEMA_V2.into();
+            self.schema_version = 2;
+        }
         self.lifecycle.get_or_insert_with(LifecycleRecords::default)
     }
     /// Versioned records; absent legacy anchors stay absent.
@@ -587,7 +610,7 @@ impl FindingGovernanceDocument {
         findings: &[CanonicalFinding],
         anchors: BTreeMap<String, FindingAnchor>,
     ) -> Result<BaselineMutationSummary, FindingGovernanceError> {
-        if self.baseline.is_some() {
+        if self.baseline.is_some() || !self.admissions.is_empty() {
             return Err(FindingGovernanceError::BaselineAlreadyExists);
         }
         let mut next = self.clone();
@@ -825,6 +848,8 @@ impl FindingGovernanceDocument {
             .len()
             .saturating_add(r.retirements.len())
             .saturating_add(r.exception_reviews.len())
+            .saturating_add(self.admissions.len())
+            .saturating_add(self.admission_retirements.len())
             .saturating_add(self.exceptions.len())
             .saturating_add(
                 self.baseline

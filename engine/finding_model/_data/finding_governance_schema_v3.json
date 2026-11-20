@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v3:finding-governance",
+  "title": "Anchored finding governance with reviewed newly governed residue",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "baseline",
+    "exceptions",
+    "lifecycle",
+    "admissions"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:schema:v3:finding-governance"
+    },
+    "schema_version": {
+      "const": 3
+    },
+    "baseline": {
+      "$ref": "urn:fortress:schema:v2:finding-governance#/properties/baseline"
+    },
+    "exceptions": {
+      "$ref": "urn:fortress:schema:v2:finding-governance#/properties/exceptions"
+    },
+    "lifecycle": {
+      "$ref": "urn:fortress:schema:v2:finding-governance#/properties/lifecycle"
+    },
+    "admissions": {
+      "type": "object",
+      "minProperties": 1,
+      "maxProperties": 50000,
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^sha256:[0-9a-f]{64}$"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/admission"
+      }
+    },
+    "admission_retirements": {
+      "type": "object",
+      "maxProperties": 50000,
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^sha256:[0-9a-f]{64}$"
+      },
+      "additionalProperties": {
+        "$ref": "urn:fortress:derived:v2:retirement-evidence"
+      }
+    }
+  },
+  "$defs": {
+    "admission": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "record_ref",
+        "assessment_ref",
+        "review_ref",
+        "original",
+        "target",
+        "subject_ref",
+        "introduced_scope_ref",
+        "scope_slot_ref",
+        "lifecycle_anchor",
+        "rationale",
+        "grant_ref",
+        "expires_at"
+      ],
+      "properties": {
+        "record_ref": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "assessment_ref": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "review_ref": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "original": {
+          "$ref": "urn:fortress:derived:v1:governance-admission#/$defs/endpoint"
+        },
+        "target": {
+          "$ref": "urn:fortress:derived:v1:governance-admission#/$defs/endpoint"
+        },
+        "subject_ref": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "introduced_scope_ref": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "scope_slot_ref": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "lifecycle_anchor": {
+          "$ref": "urn:fortress:schema:v2:finding-governance#/$defs/anchor"
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "grant_ref": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "expires_at": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

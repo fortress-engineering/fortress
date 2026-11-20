@@ -733,6 +733,56 @@ impl CandidateWorkspace {
         self.evaluate_detailed(client, candidate, request, authority, cancelled)
             .map(|(assessment, _)| assessment)
     }
+
+    /// Explicitly evaluates admission for the same pinned base and candidate operation vocabulary.
+    /// Supplied history remains a citation; the result creates neither a workspace buffer nor a grant.
+    /// # Errors
+    /// Refuses stale base/context, cancellation, invalid source, and operation/resource conflicts.
+    pub fn preview_governance_admission(
+        &self,
+        request: CandidateRequest,
+        cancelled: &AtomicBool,
+    ) -> Result<crate::migration_governance::EvaluatedAdmission, MigrationError> {
+        check_cancelled(cancelled)?;
+        if request.schema_version != 1 {
+            return Err(error(
+                "UNSUPPORTED_VERSION",
+                "only candidate request v1 is supported",
+            ));
+        }
+        if request.base_source_ref != self.base_source_ref()
+            || request.context_ref != self.context_ref()
+            || self.observe()? != self.physical_base
+        {
+            return Err(error(
+                "STALE_BASE",
+                "admission request differs from the exact candidate base",
+            ));
+        }
+        if !request.comparison_context.counterfactuals.is_empty()
+            || !request.comparison_context.authorization_refs.is_empty()
+        {
+            return Err(error(
+                "INVALID_INPUT",
+                "admission uses canonical owner evaluation and separately selected history",
+            ));
+        }
+        let history = self.historical_states.values().cloned().collect::<Vec<_>>();
+        let result = crate::admission_load::evaluate_admission_cancellable(
+            &self.physical_base,
+            request.operations,
+            &history,
+            cancelled,
+        )?;
+        if self.observe()? != self.physical_base {
+            return Err(error(
+                "STALE_BASE",
+                "physical base changed during admission evaluation",
+            ));
+        }
+        check_cancelled(cancelled)?;
+        Ok(result)
+    }
     /// Supplies existing owner findings to another Snapshot composition path without rerunning analysis.
     pub(crate) fn evaluate_detailed(
         &mut self,

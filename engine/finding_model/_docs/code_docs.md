@@ -35,3 +35,7 @@ RetirementReason and RetirementEvidence are neutral exact-state data for compari
 ### [`lifecycle.rs`](../_code/lifecycle.rs)
 
 Owns neutral v2 admissions, comparable retirement validation, original entry history, explicit exception review/time, process-local authorization context and bounded JCS identities. No higher comparison or semantic evaluator is imported.
+
+### [`admission.rs`](../_code/admission.rs)
+
+Defines bounded comparison, review and retained residue records for newly governing requirements. It validates exact endpoint, finding, scope, evidence and review identities. Original admissions and subsequent comparable retirements remain separate from the initial baseline. A citation supplies no process-local permission.

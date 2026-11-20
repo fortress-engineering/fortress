@@ -1,4 +1,6 @@
 //! Exact hypothetical evaluation and actual-state reconciliation controls.
+#[path = "admission_cases.rs"]
+mod admission_cases;
 use fortress_core::candidate::HypotheticalEvaluation;
 use fortress_core::candidate::{CandidateRequest, CandidateWorkspace, NoActualExecution};
 use fortress_core::development_governance::{NoGrantValidator, UnmediatedHost};

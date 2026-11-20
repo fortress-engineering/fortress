@@ -6858,6 +6858,7 @@ pub(crate) struct CandidateOwnerFacts {
     pub(crate) affected_snapshot: AffectedSnapshot,
     pub(crate) governance: FindingGovernanceEvaluation,
     pub(crate) findings: Vec<CanonicalFinding>,
+    pub(crate) standard: (String, String),
 }
 pub(crate) type CandidateEndpoint = (
     crate::migration_governance::MigrationEvaluation,
@@ -6987,6 +6988,7 @@ fn evaluate_candidate_source_inner(
                 affected_snapshot: affected_snapshot.clone(),
                 governance: audit.finding_governance().clone(),
                 findings: audit.findings().to_vec(),
+                standard: (audit.standard_id().into(), audit.standard_edition().into()),
             }),
         )
     } else {
@@ -7176,6 +7178,10 @@ fn evaluate_declared_migration(
             affected_snapshot,
             governance: stack.audit.finding_governance().clone(),
             findings: stack.audit.findings().to_vec(),
+            standard: (
+                stack.audit.standard_id().into(),
+                stack.audit.standard_edition().into(),
+            ),
         }),
     ))
 }

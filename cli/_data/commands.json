@@ -67,13 +67,13 @@
       "id": "CMD-FINDING-BASELINE",
       "name": "baseline",
       "aliases": [],
-      "description": "Preview anchored baseline adoption, comparable retirement and retained lifecycle evidence.",
+      "description": "Preview anchored baseline adoption, comparable retirement and reviewed governance admission.",
       "owner": "TF-CLI-0001",
       "executor": "builtin-sync",
       "duration": "short",
       "resumability": "restartable",
       "certification_implications": "Read-only proposal or explicit-time review; raw findings and active governance are unchanged. Protected application requires the existing trusted AUTHORITY boundary.",
-      "usage": "fortress baseline capture|create|review|prune [path] [--from state --to state] [--finding ID] [--format human|json]"
+      "usage": "fortress baseline capture|create|review|prune|admission [path] [--from state --to state | --operations file] [--finding ID] [--format human|json]"
     },
     {
       "id": "CMD-FINDING-EXCEPTION",

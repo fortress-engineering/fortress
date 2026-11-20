@@ -495,3 +495,7 @@ keep integrity distinct from authenticity and requalify the actual delivered
 adapters. EXTEND must admit each new parser/provider through these controls.
 None may substitute an unsigned qualification record for provider enforcement,
 external approval, execution freshness or actual-state certification.
+
+### [`admission_load.rs`](../_code/admission_load.rs)
+
+Evaluates a proposed policy or profile change on exact immutable bytes through Snapshot Governance. It checks the independent role-partitioned subject, ownership and visibility constraints, and excludes active and historical governed identities. The existing trusted-base migration adapter requires independently selected history and grants bound to the entire reviewed postimage. Explicit in-process enforcement reobserves and compares the actual state and retains raw findings. Ordinary evaluations and query formatting have no admission side effects.

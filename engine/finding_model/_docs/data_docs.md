@@ -53,3 +53,7 @@ Comparable retirement outcomes bound to original authority, exact compared state
 ### [`exception_review_schema_v1.json`](../_data/exception_review_schema_v1.json)
 
 Independent review, scope, authorization provenance and enforcement applicability, with exact verified-proposal/receipt references where a trusted host supplied them.
+
+### `governance_admission_schema_v1.json`, `admission_review_schema_v1.json`, and `finding_governance_schema_v3.json`
+
+The assessment binds original and target states, exact source/context/authority, pinned implementation, introduced scope, witness references and findings. The review makes a distinct decision for each selected identity. Finding-governance v3 retains accepted records and retirement evidence beside unchanged baseline and exception history. The v1 and v2 formats retain their original wire contracts and behavior.

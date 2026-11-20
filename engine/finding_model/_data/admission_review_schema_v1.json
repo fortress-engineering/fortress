@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:proposal:v1:governance-admission-review",
+  "title": "Explicit finding-specific governance introduction review",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "assessment_ref",
+    "decisions",
+    "expires_at"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:proposal:v1:governance-admission-review"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "assessment_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "decisions": {
+      "type": "array",
+      "maxItems": 1024,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "finding_id",
+          "disposition",
+          "rationale",
+          "grant_ref"
+        ],
+        "properties": {
+          "finding_id": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          },
+          "disposition": {
+            "enum": [
+              "ACCEPT_EXISTING",
+              "REMEDIATE",
+              "REJECT",
+              "DEFER",
+              "UNRESOLVED"
+            ]
+          },
+          "rationale": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          },
+          "grant_ref": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4096
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "minItems": 1
+    },
+    "expires_at": {
+      "anyOf": [
+        {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  }
+}

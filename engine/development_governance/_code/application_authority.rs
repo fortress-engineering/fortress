@@ -317,6 +317,7 @@ pub fn authorize_initial_establishment(
     check_digest(reviewed_intent_ref)?;
     let mut record = absence_record(base, target, context, before, changes)?;
     let layout = ControlLayout::standard();
+    refuse_initial_admissions(changes.view(), &layout)?;
     let allowed = BTreeSet::from([
         "contract.json",
         layout
@@ -433,6 +434,7 @@ pub fn authorize_reviewed_initial_establishment(
         ));
     }
     let layout = ControlLayout::standard();
+    refuse_initial_admissions(changes.view(), &layout)?;
     let configuration = layout
         .role_path(ControlRole::ProjectConfiguration)
         .ok_or_else(|| error("INVALID_INPUT", "configuration role unavailable"))?;
@@ -517,6 +519,27 @@ pub fn authorize_reviewed_initial_establishment(
         record,
         governed: None,
     })
+}
+fn refuse_initial_admissions(
+    source: &SourceView,
+    layout: &ControlLayout,
+) -> Result<(), TransitionError> {
+    if let Some(bytes) = layout
+        .role_path(ControlRole::FindingGovernance)
+        .and_then(|path| source.bytes(path))
+    {
+        let text = std::str::from_utf8(bytes)
+            .map_err(|e| error("INVALID_TARGET_AUTHORITY", e.to_string()))?;
+        let document: serde_json::Value = crate::wire::parse_public_json(text)
+            .map_err(|e| error("INVALID_TARGET_AUTHORITY", e.to_string()))?;
+        if document.get("admissions").is_some() {
+            return Err(error(
+                "AUTHORIZATION_REQUIRED",
+                "first governance establishment cannot create records for newly introduced authority",
+            ));
+        }
+    }
+    Ok(())
 }
 fn has_protected_inputs(source: &SourceView) -> bool {
     let layout = ControlLayout::standard();

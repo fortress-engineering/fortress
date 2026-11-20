@@ -8,8 +8,12 @@ use sha2::{Digest, Sha256};
 use crate::control_layout::{ControlLayout, ControlSourceBinding};
 use crate::observation::{CandidateChangeSet, ChangeOperation, SourceView};
 
+#[path = "admission.rs"]
+mod admission;
 #[path = "journal.rs"]
 mod journal;
+pub(crate) use admission::governance_path as admission_governance_path;
+pub use admission::{EvaluatedAdmission, ReviewedAdmission};
 #[path = "model.rs"]
 mod model;
 #[path = "paths.rs"]

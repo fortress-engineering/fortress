@@ -98,6 +98,33 @@ These commands do not write active governance. The installed CLI cannot synthesi
 
 Retained retirement records can be inspected without comparison or analysis using `fortress explain sha256:EXACT_RETIREMENT_RECORD --retirement retirement-records.json` or `fortress serve --stdio --retirement retirement-records.json`. Existing protocol versions 1 and 2 and bounded evidence paging are unchanged. Recorded outcome and authorization provenance remain visibly unverified at this inspection boundary.
 
+For newly governing policy, supply an existing migration-operation array containing exact preimages and proposed authority bytes. Keep the operation, review, and report files outside the governed source tree.
+
+```text
+fortress baseline admission . --operations policy-operations.json --format json
+fortress baseline admission . --operations policy-operations.json --projection target-state --format json
+fortress baseline admission . --operations policy-operations.json --history original-states.json --review review.json --base-selection base-policy.json --format json
+fortress explain sha256:ASSESSMENT_REF . --proposal admission-assessment.json --format json
+```
+
+Each review uses the assessment's `assessment_ref`, the exact finding identity,
+one of `ACCEPT_EXISTING`, `REMEDIATE`, `REJECT`, `DEFER`, or
+`UNRESOLVED`, and a rationale. Acceptance also needs an external grant
+citation. Missing and expired time-bound reviews cannot authorize changes.
+The installed CLI returns a proposal. The migration interface requires
+independent original-history selection and authenticated grants for the exact
+reviewed operations. Ordinary inspection, audit, and certification preserve
+raw violations and cannot infer authorization from a retained review.
+
+Retain the exact `target-state` projection separately for later comparable
+retirement. `baseline prune --from <target-state-file> --to current --finding <id>`
+uses the same retirement proof rules for an admitted identity. Retirement
+preserves the original record and prevents a later occurrence from receiving
+that historical treatment. Mixed implementation and governing changes are
+ineligible for automatic admission. Changes in Standard meaning, evaluator,
+visibility, or incomplete scope remain unresolved when the existing comparison
+cannot isolate the new requirement.
+
 Readable checkpoint proposals use the explicitly prepared immutable authoring context:
 
 ```text

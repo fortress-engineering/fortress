@@ -1,0 +1,206 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v1:governance-admission",
+  "title": "Pinned governance introduction assessment",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "assessment_ref",
+    "original",
+    "target",
+    "transition_ref",
+    "subject_ref",
+    "history_refs",
+    "findings"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:derived:v1:governance-admission"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "assessment_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "original": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/endpoint"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "target": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/endpoint"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "transition_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "subject_ref": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "history_refs": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {
+        "type": "string",
+        "pattern": "^sha256:[0-9a-f]{64}$"
+      },
+      "uniqueItems": true
+    },
+    "findings": {
+      "type": "array",
+      "maxItems": 1024,
+      "items": {
+        "$ref": "#/$defs/finding"
+      }
+    }
+  },
+  "$defs": {
+    "endpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state_ref",
+        "source_ref",
+        "context_ref",
+        "authority_ref"
+      ],
+      "properties": {
+        "state_ref": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "source_ref": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "context_ref": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "authority_ref": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "finding_id",
+        "rule_id",
+        "classification",
+        "introduced_scope_ref",
+        "scope_slot_ref",
+        "anchor",
+        "evidence_refs",
+        "defeater_refs",
+        "reason"
+      ],
+      "properties": {
+        "finding_id": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "rule_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "classification": {
+          "enum": [
+            "NEWLY_GOVERNED",
+            "EXISTING_VIOLATION",
+            "IMPLEMENTATION_REGRESSION",
+            "MIXED_CHANGE",
+            "NOT_COMPARABLE",
+            "ORIGINAL_HISTORY_UNAVAILABLE",
+            "IDENTITY_AMBIGUOUS",
+            "PREVIOUSLY_GOVERNED"
+          ]
+        },
+        "introduced_scope_ref": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "scope_slot_ref": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "anchor": {
+          "anyOf": [
+            {
+              "$ref": "urn:fortress:schema:v2:finding-governance#/$defs/anchor"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence_refs": {
+          "type": "array",
+          "maxItems": 50000,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          },
+          "uniqueItems": true
+        },
+        "defeater_refs": {
+          "type": "array",
+          "maxItems": 50000,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          },
+          "uniqueItems": true
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        }
+      }
+    }
+  }
+}

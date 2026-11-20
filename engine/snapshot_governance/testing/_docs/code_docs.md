@@ -177,3 +177,7 @@ Campaign argument controls preserve the full population and production defaults,
 ### [`resident_campaign.rs`](../_code/resident_campaign.rs)
 
 Parses bounded comparison-campaign options without executing work. Its explicit allocation limit is operational configuration, independent of semantic truth, benchmark population and the production session defaults. The registered equivalence test and the separately invoked benchmark share this one configuration decoder.
+
+### [`admission_cases.rs`](../_code/admission_cases.rs)
+
+Runs canonical read-only and shared migration fixtures with independent expected results. Cases distinguish old violations, newly introduced effect requirements, mixed edits and unavailable history. Review and application controls preserve byte-exact input binding and exercise missing grants, expiry, semantic persistence and stale scope.

@@ -1,4 +1,6 @@
 //! Pure four-axis comparison of explicitly bound immutable repository states.
+#[path = "admission.rs"]
+mod admission;
 #[path = "claims.rs"]
 mod claims;
 #[path = "comparison.rs"]
@@ -13,6 +15,7 @@ pub mod projection;
 mod retirement;
 #[path = "validation.rs"]
 mod validation;
+pub use admission::classify_governance_introduction;
 pub use comparison::{compare_merge, compare_states, compare_states_cancellable};
 pub use model::*;
 pub use retirement::{

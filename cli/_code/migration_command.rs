@@ -33,11 +33,24 @@ fn error(code: &str, message: impl Into<String>) -> MigrationError {
 fn convert(e: impl std::fmt::Display) -> MigrationError {
     error("INVALID_INPUT", e.to_string())
 }
-fn read(path: &str) -> Result<String, MigrationError> {
+pub(super) fn read(path: &str) -> Result<String, MigrationError> {
     let root = std::env::current_dir().map_err(convert)?;
     let value = fortress_core::portable_load::load_portable_json(&root, Path::new(path))
         .map_err(convert)?;
     serde_json::to_string(&value).map_err(convert)
+}
+
+pub(super) fn preview_selection(path: &str) -> Result<TrustedBasePolicy, MigrationError> {
+    let selection: PreviewSelection =
+        fortress_core::wire::parse_public_json(&read(path)?).map_err(convert)?;
+    TrustedBasePolicy::from_host(
+        selection.base_state_ref,
+        selection.base_authority_ref,
+        selection.root_policy_ref,
+        selection.require_assurance,
+        selection.rules,
+    )
+    .map_err(convert)
 }
 pub(super) fn run<O: Write, E: Write>(
     args: &[String],
@@ -209,22 +222,10 @@ fn preview<O: Write>(
     human: bool,
     output: &mut O,
 ) -> Result<(), MigrationError> {
-    let selected = if let Some(path) = options.get("--base-selection") {
-        let s: PreviewSelection =
-            fortress_core::wire::parse_public_json(&read(path)?).map_err(convert)?;
-        Some(
-            TrustedBasePolicy::from_host(
-                s.base_state_ref,
-                s.base_authority_ref,
-                s.root_policy_ref,
-                s.require_assurance,
-                s.rules,
-            )
-            .map_err(convert)?,
-        )
-    } else {
-        None
-    };
+    let selected = options
+        .get("--base-selection")
+        .map(|path| preview_selection(path))
+        .transpose()?;
     let evaluator = CanonicalMigrationEvaluator;
     fortress_core::heavy_admission::assert_no_incomplete_migration(root).map_err(convert)?;
     let operations: Vec<MigrationOperation> = fortress_core::wire::parse_public_json(&read(

@@ -242,6 +242,14 @@ pub fn finding_anchors(
     state: &ComparisonState,
     findings: &[CanonicalFinding],
 ) -> Result<BTreeMap<String, FindingAnchor>, TransitionError> {
+    collect_finding_anchors(state, findings, false)
+}
+
+pub(super) fn collect_finding_anchors(
+    state: &ComparisonState,
+    findings: &[CanonicalFinding],
+    exclude_unresolved: bool,
+) -> Result<BTreeMap<String, FindingAnchor>, TransitionError> {
     state.validate()?;
     let index = StateIndex::new(state)?;
     if findings.len() > MAX_TRANSITION_RECORDS {
@@ -263,6 +271,9 @@ pub fn finding_anchors(
                     .is_some_and(|v| v.len() > 1)
             })
         {
+            if exclude_unresolved {
+                continue;
+            }
             return Err(fail(
                 "IDENTITY_AMBIGUOUS",
                 "finding must map to one original semantic obligation",
@@ -270,20 +281,30 @@ pub fn finding_anchors(
         }
         let c = candidates[0];
         if c.truth != DeclarationTruth::SupportedViolation {
+            if exclude_unresolved {
+                continue;
+            }
             return Err(fail(
                 "INVALID_INPUT",
                 "finding anchor has no original supported violation",
             ));
         }
+        let Some(meaning_ref) = index.meaning(c, f.entities())? else {
+            if exclude_unresolved {
+                continue;
+            }
+            return Err(fail(
+                "NOT_EVALUABLE",
+                "complete original authority is required",
+            ));
+        };
         let a = FindingAnchor {
             finding_id: f.finding_id().into(),
             rule_id: f.rule_id().into(),
             from_state: from.clone(),
             subject_ref: app.declaration.binding.subject_ref.clone(),
             original_authority_ref: app.declaration.binding.authority_ref.clone(),
-            meaning_ref: index
-                .meaning(c, f.entities())?
-                .ok_or_else(|| fail("NOT_EVALUABLE", "complete original authority is required"))?,
+            meaning_ref,
             claim_scope_ref: slot(c).into(),
             identity_ref: finding_semantic_ref(f).map_err(error)?,
             subject_refs: f.entities().to_vec(),
@@ -309,7 +330,7 @@ pub fn assess_retirements(
     governance: &FindingGovernanceDocument,
     context: &ComparisonContext,
 ) -> Result<Vec<RetirementEvidenceV2>, TransitionError> {
-    let entries = governance
+    let mut entries = governance
         .baseline()
         .map(|b| {
             b.active_entries()
@@ -326,6 +347,13 @@ pub fn assess_retirements(
                 .collect::<Vec<_>>()
         })
         .unwrap_or_default();
+    entries.extend(
+        governance
+            .admissions()
+            .iter()
+            .filter(|(id, _)| !governance.admission_retirements().contains_key(*id))
+            .map(|(id, record)| (id.clone(), Some(record.lifecycle_anchor.clone()))),
+    );
     assess_anchor_entries(before, after, entries, governance, context)
 }
 

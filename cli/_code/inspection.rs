@@ -123,40 +123,61 @@ fn preload_proposals(
     Ok(if parsed.proposals.is_empty() {
         service
     } else {
-        let candidates = parsed
-            .proposals
-            .iter()
-            .map(|path| {
-                fortress_core::portable_load::load_portable_json(
-                    &parsed.root,
-                    std::path::Path::new(path),
-                )
-                .map_err(|e| e.to_string())
-                .and_then(|value| {
-                    if value["$schema"] == fortress_core::bootstrap::ONBOARDING_PROPOSAL_SCHEMA {
-                        return fortress_core::bootstrap::OnboardingProposal::from_json_str(
-                            &value.to_string(),
+        let mut candidates = Vec::new();
+        let mut admissions = Vec::new();
+        for path in &parsed.proposals {
+            let value = fortress_core::portable_load::load_portable_json(
+                &parsed.root,
+                std::path::Path::new(path),
+            )
+            .map_err(|e| e.to_string())?;
+            let assessment = value.get("assessment").unwrap_or(&value);
+            if assessment["$schema"]
+                == fortress_core::finding_governance::ADMISSION_ASSESSMENT_SCHEMA
+            {
+                let admission =
+                    fortress_core::finding_governance::AdmissionAssessment::from_json_str(
+                        &assessment.to_string(),
+                    )
+                    .map_err(|e| e.to_string())?;
+                let review = value
+                    .get("review")
+                    .map(|record| {
+                        fortress_core::finding_governance::AdmissionReview::from_json_str(
+                            &record.to_string(),
                         )
+                    })
+                    .transpose()
+                    .map_err(|e| e.to_string())?;
+                admissions.push((admission, review));
+                continue;
+            }
+            if value["$schema"] == fortress_core::bootstrap::ONBOARDING_PROPOSAL_SCHEMA {
+                let candidate =
+                    fortress_core::bootstrap::OnboardingProposal::from_json_str(&value.to_string())
                         .map_err(|e| e.to_string())?
                         .assessment()
                         .cloned()
-                        .ok_or_else(|| {
-                            "NOT_EVALUABLE: onboarding proposal has no evaluated target".into()
-                        });
-                    }
+                        .ok_or("NOT_EVALUABLE: onboarding proposal has no evaluated target")?;
+                candidates.push(candidate);
+            } else {
+                candidates.push(
                     fortress_core::candidate::HypotheticalEvaluation::from_json_str(
                         &value.to_string(),
                     )
-                    .map_err(|e| e.to_string())
-                })
-            })
-            .collect::<Result<Vec<_>, _>>();
-        match candidates.and_then(|c| service.with_candidates(c).map_err(|e| e.to_string())) {
-            Ok(service) => service,
-            Err(e) => {
-                return Err(e);
+                    .map_err(|e| e.to_string())?,
+                );
             }
         }
+        let mut service = service
+            .with_candidates(candidates)
+            .map_err(|e| e.to_string())?;
+        for (admission, review) in &admissions {
+            service = service
+                .with_governance_admission(admission, review.as_ref())
+                .map_err(|e| e.to_string())?;
+        }
+        service
     })
 }
 
