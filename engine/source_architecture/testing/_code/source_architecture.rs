@@ -1005,27 +1005,34 @@ fn live_fortress_inventory_is_complete_and_rust_profile_status_is_truthful() {
         model.summary().documented_responsibilities(),
         expected.len()
     );
-    let non_rust_code = expected
+    let known_without_profile = expected
         .iter()
         .filter(|path| {
-            !Path::new(path)
-                .extension()
-                .is_some_and(|extension| extension.eq_ignore_ascii_case("rs"))
+            !Path::new(path).extension().is_some_and(|extension| {
+                extension.eq_ignore_ascii_case("rs") || extension.eq_ignore_ascii_case("ts")
+            })
         })
         .count();
-    assert_eq!(model.summary().profile_not_registered(), non_rust_code);
-    assert_eq!(model.summary().findings(), 0);
-    assert!(
-        model
-            .artifacts()
-            .iter()
-            .filter(|artifact| {
-                Path::new(artifact.path())
-                    .extension()
-                    .is_some_and(|extension| extension.eq_ignore_ascii_case("rs"))
-            })
-            .all(|artifact| artifact.profile().status() == ArchetypeResolution::Resolved)
+    assert_eq!(
+        model.summary().profile_not_registered(),
+        known_without_profile
     );
+    assert_eq!(model.summary().findings(), 0);
+    for artifact in model.artifacts() {
+        let status = match Path::new(artifact.path())
+            .extension()
+            .and_then(|extension| extension.to_str())
+        {
+            Some(extension) if extension.eq_ignore_ascii_case("rs") => {
+                ArchetypeResolution::Resolved
+            }
+            Some(extension) if extension.eq_ignore_ascii_case("ts") => {
+                ArchetypeResolution::LanguageUnknown
+            }
+            _ => ArchetypeResolution::ProfileNotRegistered,
+        };
+        assert_eq!(artifact.profile().status(), status, "{}", artifact.path());
+    }
 }
 
 fn walk_code_files(root: &Path) -> Vec<String> {

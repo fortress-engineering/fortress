@@ -22,6 +22,8 @@ Stdio negotiation starts with protocol v1 and selects the highest mutually adver
 
 Filesystem and branch notifications invalidate loaded state and clear diagnostics. Refresh reobserves source bytes. Unsupported, stale, ambiguous, missing and incomplete evidence stays visible. Unspecified column units yield a precise range only where UTF-8, Unicode scalar and UTF-16 interpretations agree. Older installed services may lack optional inventories. A cancelled or failed preview conveys no permission or actual-state verdict. If startup fails, inspect the local Fortress Output channel, verify the absolute executable and Workspace Trust settings, then refresh.
 
+Fortress inventories the adapter's TypeScript files with `LANGUAGE_UNKNOWN` in the Source Artifact Model. The locked TypeScript compiler and the desktop harness qualify the adapter within their own coverage.
+
 ## Files
 
 ### [`build.py`](../_code/build.py)
