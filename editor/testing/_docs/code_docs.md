@@ -6,7 +6,7 @@ Tests exercise the read-only transport client and real extension workflow.
 
 ## Execution
 
-Build the local VSIX using the instructions in the [Editor Module](../../_docs/code_docs.md). Run `node --test <stage>/out/testing/_code/client.js` for the client boundaries. Run `python -B editor/testing/_code/host_runner.py --editor <desktop-executable> --fortress <installed-cli> --stage <stage> --results <new-external-directory>` for the full desktop workflow. On a headless Linux test machine, pass `--xvfb` with Xvfb and xauth available.
+Build the local VSIX with `python -B editor/_code/build.py <stage> --install-tools --vsix`. Run `node --test <stage>/out/testing/_code/client.js` for the client boundaries. Run `python -B editor/testing/_code/host_runner.py --editor <desktop-executable> --fortress <installed-cli> --stage <stage> --results <new-external-directory>` for the full desktop workflow. On a headless Linux test machine, pass `--xvfb` with Xvfb and xauth available.
 
 ## State
 
