@@ -120,6 +120,33 @@ jobs:
           python3 -B editor/_code/build.py "$RUNNER_TEMP/fortress-editor-replay" --tools "$RUNNER_TEMP/fortress-editor-stage" --vsix
           cmp "$RUNNER_TEMP/fortress-editor-stage/fortress-development.vsix" "$RUNNER_TEMP/fortress-editor-replay/fortress-development.vsix"
 
+      - name: Prepare the pinned desktop fixture with renderer isolation
+        run: |
+          mkdir "$RUNNER_TEMP/fortress-vscode"
+          curl --fail --silent --show-error --location --retry 3 --max-time 600 --max-filesize 500000000 \
+            https://update.code.visualstudio.com/1.147.0/linux-x64/stable \
+            --output "$RUNNER_TEMP/fortress-vscode/editor.tar.gz"
+          echo "6fd8b14600f2a8ddb8b4833d8bf288f3dc4c34b2878d2c6c3fec7e16c81023bc  $RUNNER_TEMP/fortress-vscode/editor.tar.gz" | sha256sum --check
+          tar -xzf "$RUNNER_TEMP/fortress-vscode/editor.tar.gz" -C "$RUNNER_TEMP/fortress-vscode"
+          sudo mkdir -m 0755 /opt/fortress-desktop-fixture
+          sudo cp -R "$RUNNER_TEMP/fortress-vscode/VSCode-linux-x64/." /opt/fortress-desktop-fixture
+          editor=/opt/fortress-desktop-fixture/code
+          # Let the verified, root-owned editor create its Chromium renderer sandbox.
+          userns_restriction=/proc/sys/kernel/apparmor_restrict_unprivileged_userns
+          if [[ -r "$userns_restriction" && "$(< "$userns_restriction")" == 1 ]]; then
+            cat > "$RUNNER_TEMP/fortress-desktop-fixture.apparmor" <<'APPARMOR'
+          abi <abi/4.0>,
+          include <tunables/global>
+          profile fortress-desktop-fixture /opt/fortress-desktop-fixture/code flags=(unconfined) {
+            userns,
+          }
+          APPARMOR
+            sudo apparmor_parser -r "$RUNNER_TEMP/fortress-desktop-fixture.apparmor"
+          fi
+          "$(dirname "$editor")/bin/code" --version | tee "$RUNNER_TEMP/fortress-vscode/version.txt"
+          grep -Fx '1.147.0' "$RUNNER_TEMP/fortress-vscode/version.txt"
+          grep -Fx '8a14f0cc1b08d531eb83255ea3764ae22aa932b5' "$RUNNER_TEMP/fortress-vscode/version.txt"
+
       - name: Build the installed-service fixture
         env:
           CARGO_TARGET_DIR: ${{ runner.temp }}/fortress-editor-target
@@ -131,16 +158,6 @@ jobs:
         env:
           CARGO_TARGET_DIR: ${{ runner.temp }}/fortress-editor-target
         run: |
-          mkdir "$RUNNER_TEMP/fortress-vscode"
-          curl --fail --silent --show-error --location --retry 3 --max-time 600 --max-filesize 500000000 \
-            https://update.code.visualstudio.com/1.147.0/linux-x64/stable \
-            --output "$RUNNER_TEMP/fortress-vscode/editor.tar.gz"
-          echo "6fd8b14600f2a8ddb8b4833d8bf288f3dc4c34b2878d2c6c3fec7e16c81023bc  $RUNNER_TEMP/fortress-vscode/editor.tar.gz" | sha256sum --check
-          tar -xzf "$RUNNER_TEMP/fortress-vscode/editor.tar.gz" -C "$RUNNER_TEMP/fortress-vscode"
-          editor="$RUNNER_TEMP/fortress-vscode/VSCode-linux-x64/code"
-          "$(dirname "$editor")/bin/code" --version | tee "$RUNNER_TEMP/fortress-vscode/version.txt"
-          grep -Fx '1.147.0' "$RUNNER_TEMP/fortress-vscode/version.txt"
-          grep -Fx '8a14f0cc1b08d531eb83255ea3764ae22aa932b5' "$RUNNER_TEMP/fortress-vscode/version.txt"
-          python3 -B editor/testing/_code/host_runner.py --xvfb --editor "$editor" \
+          python3 -B editor/testing/_code/host_runner.py --xvfb --editor /opt/fortress-desktop-fixture/code \
             --fortress "$CARGO_TARGET_DIR/debug/fortress" --stage "$RUNNER_TEMP/fortress-editor-stage" \
             --results "$RUNNER_TEMP/fortress-editor-results"

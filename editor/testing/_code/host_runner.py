@@ -7,6 +7,7 @@ import os
 from pathlib import Path, PurePosixPath
 import shutil
 import subprocess
+import sys
 import zipfile
 
 
@@ -125,9 +126,16 @@ def main() -> None:
             xvfb = shutil.which("xvfb-run")
             assert xvfb
             params = [xvfb, "-a", *params]
-        with (results / (mode + ".log")).open("xb") as log:
-            subprocess.run(params, cwd=results, env=environment, stdout=log, stderr=subprocess.STDOUT,
-                           check=True, timeout=480)
+        log_path = results / (mode + ".log")
+        try:
+            with log_path.open("xb") as log:
+                subprocess.run(params, cwd=results, env=environment, stdout=log, stderr=subprocess.STDOUT,
+                               check=True, timeout=480)
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+            with log_path.open("rb") as log:
+                log.seek(max(0, log_path.stat().st_size - 8192))
+                print(f"Desktop {mode} log tail: {log.read(8192)!r}", file=sys.stderr)
+            raise
         assert json.loads(report.read_bytes())["status"] == "PASS"
     print(results)
 
