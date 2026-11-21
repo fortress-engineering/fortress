@@ -5150,6 +5150,12 @@ pub(crate) fn prepare_query_input(
         }
     };
     let mut input = crate::query::QueryInput::empty(source_ref);
+    input.observed_file_digests = prepared
+        .observation
+        .files()
+        .iter()
+        .map(|file| (file.path().to_owned(), file.sha256().to_owned()))
+        .collect();
     input.ccg = prepared.ccg().cloned();
     if let Some(ccg) = prepared.ccg() {
         input.references = Some(

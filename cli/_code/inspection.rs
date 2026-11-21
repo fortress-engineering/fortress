@@ -84,14 +84,7 @@ pub(super) fn run<O: Write, E: Write>(
         )?;
         return Ok(crate::EXIT_SUCCESS);
     }
-    let request = QueryRequest {
-        protocol_version: 1,
-        request_id: "cli".into(),
-        method: name.into(),
-        state_ref: None,
-        context_ref: None,
-        parameters: parsed.parameters,
-    };
+    let request = inspection_request(name, parsed.parameters);
     let started = std::time::Instant::now();
     let response = service.execute(&request, &AtomicBool::new(false));
     let query_duration = started.elapsed();
@@ -114,6 +107,22 @@ pub(super) fn run<O: Write, E: Write>(
     } else {
         crate::EXIT_SUCCESS
     })
+}
+
+fn inspection_request(name: &str, parameters: Value) -> QueryRequest {
+    let protocol_version = if parameters["kind"] == "findings" {
+        5
+    } else {
+        1
+    };
+    QueryRequest {
+        protocol_version,
+        request_id: "cli".into(),
+        method: name.into(),
+        state_ref: None,
+        context_ref: None,
+        parameters,
+    }
 }
 
 fn preload_proposals(
@@ -362,11 +371,15 @@ fn finish_parameters(
     if name == "query" {
         if positional.is_empty() {
             return Err(
-                "query requires modules|policy|dependents|routes|relationships|references".into(),
+                "query requires modules|policy|dependents|routes|relationships|references|findings"
+                    .into(),
             );
         }
         parameters["kind"] = json!(positional.remove(0));
-        if parameters["kind"] != "modules" && parameters.get("selector").is_none() {
+        if parameters["kind"] != "modules"
+            && parameters["kind"] != "findings"
+            && parameters.get("selector").is_none()
+        {
             if positional.is_empty() {
                 return Err("query requires a Module selector".into());
             }

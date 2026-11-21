@@ -38,7 +38,7 @@ fn fortress_documentation_is_complete_synchronized_and_deterministic() {
         first.findings()
     );
     assert_eq!(first, second);
-    assert_eq!(first.summary().modules_inspected(), 51);
+    assert_eq!(first.summary().modules_inspected(), 53);
     // MIGRATE adds six canonical documents to the qualified 161-document baseline.
     assert!(files.contains_key("engine/information_flow/testing/_docs/data_docs.md"));
     for path in [
@@ -54,7 +54,7 @@ fn fortress_documentation_is_complete_synchronized_and_deterministic() {
             "missing migration document: {path}"
         );
     }
-    assert_eq!(first.summary().markdown_files_inspected(), 167);
+    assert_eq!(first.summary().markdown_files_inspected(), 173);
     assert_eq!(
         first.summary().code_bijection().0,
         first.summary().code_bijection().1

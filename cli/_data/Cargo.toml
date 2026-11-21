@@ -64,3 +64,7 @@ path = "../testing/_code/lib.rs"
 [[test]]
 name = "projection_materialization"
 path = "../testing/_code/projections.rs"
+
+[[test]]
+name = "local_editor_adapter"
+path = "../../editor/testing/_code/local_adapter.rs"

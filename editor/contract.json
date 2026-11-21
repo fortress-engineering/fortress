@@ -1,0 +1,39 @@
+{
+  "$schema": "urn:fortress:schema:v2:module-contract",
+  "schema_version": 2,
+  "id": "TF-EDITOR-0001",
+  "display_name": "Editor",
+  "provides": [
+    {
+      "id": "CAP-FORTRESS-EDITOR",
+      "version": "0.1.0",
+      "visibility": "public"
+    }
+  ],
+  "requires": [
+    {
+      "provider": "TF-CLI-0001",
+      "capability": "CAP-FORTRESS-CLI",
+      "version": "^0.1.0"
+    }
+  ],
+  "relationships": [],
+  "constraints": [],
+  "guarantees": [],
+  "features": [
+    {
+      "id": "TF-EDITOR-0001",
+      "version": "0.1.0",
+      "requirements": [
+        {
+          "id": "TF-EDITOR-0001-R01",
+          "statement": "The local desktop adapter registers a machine-scoped executable setting, disables untrusted and virtual workspaces, and pins the dependencies used to build the local extension.",
+          "tests": [
+            "T-TF-EDITOR-0001-R01-001"
+          ]
+        }
+      ]
+    }
+  ],
+  "behavior": []
+}

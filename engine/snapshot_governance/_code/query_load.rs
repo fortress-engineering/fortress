@@ -78,6 +78,7 @@ pub fn load_repository_query(
         input.retained_application = None;
         input.evidence_nodes.clear();
         input.findings.clear();
+        input.retained_finding_dispositions.clear();
         input.defeaters.clear();
         input.observed_routes.clear();
         input.limitations.push("Selected evidence could not be fully admitted; historical PASS is not current repository proof.".into());
@@ -100,6 +101,7 @@ pub fn load_repository_query(
         input.retained_application = None;
         input.evidence_nodes.clear();
         input.findings.clear();
+        input.retained_finding_dispositions.clear();
         input.defeaters.clear();
         input.observed_routes.clear();
         input.availability["control_generation_applicability"] = json!("HISTORY_ONLY");
@@ -424,6 +426,26 @@ fn retain_replay_records(input: &mut QueryInput, graph: &Value) -> Result<(), Qu
     app.portable_replay = Some(replay.clone());
     if let Some(findings) = node["payload"]["audit"]["findings"].as_array() {
         input.findings.clone_from(findings);
+    }
+    if let Some(findings) = node["payload"]["audit"]["finding_governance"]["findings"].as_array() {
+        for finding in findings {
+            let id = finding["finding_id"].as_str().ok_or_else(|| {
+                QueryError::new(
+                    "INVALID_INPUT",
+                    "retained enforcement lacks a finding identity",
+                )
+            })?;
+            if input
+                .retained_finding_dispositions
+                .insert(id.into(), finding.clone())
+                .is_some()
+            {
+                return Err(QueryError::new(
+                    "INVALID_INPUT",
+                    "duplicate retained enforcement identity",
+                ));
+            }
+        }
     }
     input.evidence_nodes.clone_from(nodes);
     input.availability["proof_metadata"] = json!("RETAINED_REPLAY_INPUTS");

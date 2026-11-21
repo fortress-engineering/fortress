@@ -1,0 +1,57 @@
+{
+  "name": "fortress-inspection",
+  "displayName": "Fortress",
+  "description": "Inspect saved Fortress evidence and preview governed changes from VS Code.",
+  "version": "0.1.0",
+  "publisher": "fortress-development",
+  "private": true,
+  "engines": { "vscode": "^1.100.0" },
+  "categories": ["Other"],
+  "extensionKind": ["workspace"],
+  "main": "./out/_code/extension.js",
+  "activationEvents": ["onStartupFinished"],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false,
+      "description": "Fortress launches a user-selected local executable only in trusted workspaces."
+    },
+    "virtualWorkspaces": {
+      "supported": false,
+      "description": "Fortress requires ordinary local repository paths."
+    }
+  },
+  "contributes": {
+    "configuration": {
+      "title": "Fortress",
+      "properties": {
+        "fortress.executable": {
+          "type": "string",
+          "default": "",
+          "scope": "machine",
+          "description": "Absolute path to an installed Fortress executable outside opened repositories. Set this in User Settings."
+        }
+      }
+    },
+    "commands": [
+      { "command": "fortress.menu", "title": "Fortress: Repository Commands" },
+      { "command": "fortress.refresh", "title": "Fortress: Refresh Saved-Source Status" },
+      { "command": "fortress.recheck", "title": "Fortress: Recheck Saved Source" },
+      { "command": "fortress.status", "title": "Fortress: Repository Status" },
+      { "command": "fortress.doctor", "title": "Fortress: Doctor" },
+      { "command": "fortress.findings", "title": "Fortress: Browse Findings" },
+      { "command": "fortress.architecture", "title": "Fortress: Inspect Architecture and Policy" },
+      { "command": "fortress.explain", "title": "Fortress: Explain an Identity" },
+      { "command": "fortress.author", "title": "Fortress: Preview Policy and Schema Guidance" },
+      { "command": "fortress.previewBuffer", "title": "Fortress: Preview Unsaved Buffer" },
+      { "command": "fortress.inspectProposal", "title": "Fortress: Inspect Retained Proposal" },
+      { "command": "fortress.compare", "title": "Fortress: Compare Saved States" },
+      { "command": "fortress.close", "title": "Fortress: Close Repository Inspection" }
+    ]
+  },
+  "devDependencies": {
+    "@types/node": "22.15.3",
+    "@types/vscode": "1.100.0",
+    "@vscode/vsce": "3.7.1",
+    "typescript": "5.9.3"
+  }
+}

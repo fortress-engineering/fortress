@@ -70,7 +70,7 @@ const BUILTIN_COMMANDS: &[CommandDescriptor] = &[
         name: "query",
         aliases: &[],
         description: "Query immutable Module policy and directed governance relationships.",
-        usage: "fortress query modules|policy|dependents|routes|relationships|references [selector] [path] [--selector module] [--target selector] [--limit count] [--cursor token] [--format human|json]",
+        usage: "fortress query modules|policy|dependents|routes|relationships|references|findings [selector] [path] [--selector module] [--target selector] [--limit count] [--cursor token] [--format human|json]",
     },
     CommandDescriptor {
         id: "CMD-GOVERNANCE-EXPLAIN",

@@ -158,10 +158,10 @@ fn live_contract_v2_v3_ecosystem_resolves_completely() {
         "live CCG must be coherent: {:#?}",
         resolution.violations()
     );
-    assert_eq!(resolved.modules().len(), 51);
-    assert_eq!(resolved.capabilities().len(), 25);
-    assert_eq!(resolved.features().len(), 26);
-    assert_eq!(resolved.requirements().len(), 165);
+    assert_eq!(resolved.modules().len(), 53);
+    assert_eq!(resolved.capabilities().len(), 26);
+    assert_eq!(resolved.features().len(), 27);
+    assert_eq!(resolved.requirements().len(), 167);
     assert!(
         resolved
             .requirements()
@@ -174,8 +174,8 @@ fn live_contract_v2_v3_ecosystem_resolves_completely() {
     assert_eq!(admission.tests().len(), 8);
     assert_eq!(resolved.guarantees().len(), 17);
     assert_eq!(resolved.checkpoints().len(), 10);
-    assert_eq!(resolved.direct_requirements().len(), 211);
-    assert_eq!(resolved.relationships().len(), 25);
+    assert_eq!(resolved.direct_requirements().len(), 213);
+    assert_eq!(resolved.relationships().len(), 26);
     assert!(
         resolved
             .modules()
@@ -250,6 +250,8 @@ fn real_reference_scope_has_authored_purity_and_nonvacuous_semantic_support() {
 }
 
 const REQUIRED_SELF_MODEL_REQUIREMENTS: &[&str] = &[
+    "TF-EDITOR-0001-R01",
+    "AF-SNAPSHOT-GOVERNANCE-0001-R27",
     "AF-SNAPSHOT-GOVERNANCE-0001-R25",
     "AF-PROGRAM-SEMANTICS-0001-R10",
     "AF-INFORMATION-FLOW-0001-R06",

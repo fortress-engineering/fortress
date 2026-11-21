@@ -5,6 +5,74 @@ use std::sync::atomic::AtomicBool;
 use fortress_core::query::{QueryInput, QueryRequest, QueryService};
 use serde_json::{Value, json};
 
+/// `T-AF-SNAPSHOT-GOVERNANCE-0001-R27-001`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R27
+#[test]
+fn negotiated_editor_queries_preserve_findings_and_reject_module_selectors() {
+    let mut input = application_input();
+    input.findings[0]["location"] = json!({"path":"src/main.rs"});
+    input
+        .observed_file_digests
+        .insert("src/main.rs".into(), binding().authority_ref);
+    input.retained_finding_dispositions.insert(
+        "finding-one".into(),
+        json!({"finding_id":"finding-one","raw_conformance":"FAIL","enforcement":"NON_BLOCKING","lifecycle":"BASELINED"}),
+    );
+    let service = QueryService::new(input.clone()).unwrap();
+    let query = |service: &QueryService, version, parameters| {
+        service.execute(
+            &QueryRequest {
+                protocol_version: version,
+                request_id: "inspect".into(),
+                method: "query".into(),
+                state_ref: None,
+                context_ref: None,
+                parameters,
+            },
+            &AtomicBool::new(false),
+        )
+    };
+    assert!(
+        query(&service, 4, json!({"kind":"findings"}))
+            .error
+            .is_some()
+    );
+    let result = serde_json::to_value(query(&service, 5, json!({"kind":"findings"}))).unwrap();
+    let row = &result["result"]["data"]["records"][0];
+    assert_eq!(row["id"], "finding-one");
+    assert_eq!(row["value"]["finding"]["finding_id"], "finding-one");
+    assert_eq!(
+        row["value"]["recorded_enforcement"]["raw_conformance"],
+        "FAIL"
+    );
+    assert_eq!(
+        row["value"]["recorded_enforcement"]["enforcement"],
+        "NON_BLOCKING"
+    );
+    assert_eq!(
+        row["value"]["observed_file_digest"],
+        binding().authority_ref
+    );
+    let missing = query(
+        &service,
+        5,
+        json!({"kind":"findings","selector":"../outside"}),
+    );
+    assert!(missing.error.is_some());
+
+    input.source_ref = binding().authority_ref;
+    let historical = QueryService::new(input).unwrap();
+    let result = serde_json::to_value(query(&historical, 5, json!({"kind":"findings"}))).unwrap();
+    assert_eq!(result["source_freshness"], "STALE");
+    let historical_row = &result["result"]["data"]["records"][0]["value"];
+    assert!(historical_row["observed_file_digest"].is_null());
+    assert_eq!(historical_row["finding"], row["value"]["finding"]);
+    assert_eq!(
+        historical_row["recorded_enforcement"],
+        row["value"]["recorded_enforcement"]
+    );
+}
+
 fn binding() -> fortress_core::declaration::DeclarationBinding {
     fortress_core::declaration::DeclarationBinding {
         subject_ref: format!("sha256:{}", "a".repeat(64)),

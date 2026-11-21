@@ -14,6 +14,10 @@ Presents the provider-independent Engine as an honest local command surface.
 
 Combines all provider-independent Fortress capabilities into the callable core used by presentation and verification Modules.
 
+### [Editor](../editor/README.md)
+
+Presents Fortress's read-only observations, evidence and proposals through local desktop editor workflows.
+
 ### [Fortress Testing](../testing/README.md)
 
 Verifies only the bootstrap-governance and complete repository-audit Features introduced directly by the Fortress root and does not claim requirements owned by descendant Modules.

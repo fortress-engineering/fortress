@@ -62,6 +62,15 @@ impl QueryRequest {
     /// Rejects unknown methods, extra parameters and malformed typed values.
     pub fn operation_for_adapter(&self) -> Result<QueryOperation, QueryError> {
         if self.protocol_version < 5
+            && self.method == "query"
+            && self.parameters["kind"] == "findings"
+        {
+            return Err(QueryError::new(
+                "INVALID_PARAMETERS",
+                "finding inventory requires protocol version 5 and the advertised capability",
+            ));
+        }
+        if self.protocol_version < 5
             && self.method == "transition"
             && self
                 .parameters
@@ -255,6 +264,8 @@ pub struct SelectParameters {
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryKind {
+    /// Retained finding locations and independently retained enforcement records.
+    Findings,
     /// Declared canonical Module inventory.
     Modules,
     /// Authored policy with upstream effective-policy claims.

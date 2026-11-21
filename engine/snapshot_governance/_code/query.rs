@@ -53,6 +53,10 @@ pub struct QueryInput {
     pub standard: Option<StandardBundle>,
     /// Exact upstream normalized finding records, indexed by `finding_id`.
     pub findings: Vec<Value>,
+    /// Retained finding-specific enforcement, independent of raw findings.
+    pub retained_finding_dispositions: BTreeMap<String, Value>,
+    /// Observed exact per-file digests for verifying fresh navigation.
+    pub observed_file_digests: BTreeMap<String, String>,
     /// Exact upstream defeater records, indexed by id.
     pub defeaters: Vec<Value>,
     /// Original evidence graph records; no trust inferred from their strings.
@@ -91,6 +95,8 @@ impl QueryInput {
             references: None,
             standard: None,
             findings: Vec::new(),
+            retained_finding_dispositions: BTreeMap::new(),
+            observed_file_digests: BTreeMap::new(),
             defeaters: Vec::new(),
             evidence_nodes: Vec::new(),
             observed_routes: Vec::new(),
@@ -403,9 +409,13 @@ impl QueryService {
             }
             QueryOperation::Status(_) => QueryPayload::Status(self.status()),
             QueryOperation::Doctor(_) => QueryPayload::Doctor(self.input.diagnostics.clone()),
-            QueryOperation::Protocol(_) => QueryPayload::Protocol(
-                json!({"methods":METHODS.iter().filter(|m| (request.protocol_version >= 2 || **m != "transition") && (request.protocol_version >= 3 || **m != "flow_author") && (request.protocol_version >= 4 || **m != "behavior_author") && (request.protocol_version >= 5 || **m != "candidate")).collect::<Vec<_>>(),"protocol_versions":[1,2,3,4,5],"flow_authoring_context":self.flow_context.as_ref().map(|(psm,_)|json!({"context_ref":psm.program_context().digest(),"psm_source_ref":psm.source_identity()})),"comparison_states":self.comparison_state_inventory(),"max_request_bytes":MAX_REQUEST_BYTES,"max_response_bytes":MAX_RESPONSE_BYTES,"max_page_size":MAX_PAGE_SIZE,"framing":"one strict UTF-8 JSON request per LF-delimited line","mutation":false}),
-            ),
+            QueryOperation::Protocol(_) => {
+                let mut protocol = json!({"methods":METHODS.iter().filter(|m| (request.protocol_version >= 2 || **m != "transition") && (request.protocol_version >= 3 || **m != "flow_author") && (request.protocol_version >= 4 || **m != "behavior_author") && (request.protocol_version >= 5 || **m != "candidate")).collect::<Vec<_>>(),"protocol_versions":[1,2,3,4,5],"flow_authoring_context":self.flow_context.as_ref().map(|(psm,_)|json!({"context_ref":psm.program_context().digest(),"psm_source_ref":psm.source_identity()})),"comparison_states":self.comparison_state_inventory(),"max_request_bytes":MAX_REQUEST_BYTES,"max_response_bytes":MAX_RESPONSE_BYTES,"max_page_size":MAX_PAGE_SIZE,"framing":"one strict UTF-8 JSON request per LF-delimited line","mutation":false});
+                if request.protocol_version >= 5 {
+                    protocol["finding_inventory"] = json!(true);
+                }
+                QueryPayload::Protocol(protocol)
+            }
             QueryOperation::Query(parameters) => {
                 QueryPayload::Page(self.select(&parameters, cancelled)?)
             }
@@ -687,6 +697,9 @@ impl QueryService {
         parameters: &SelectParameters,
         cancelled: &AtomicBool,
     ) -> Result<QueryPage, QueryError> {
+        if matches!(parameters.kind, QueryKind::Findings) {
+            return self.select_findings(parameters, cancelled);
+        }
         let module = parameters
             .selector
             .as_deref()
@@ -716,6 +729,7 @@ impl QueryService {
         for (index, record) in self.records.iter().enumerate() {
             check_cancelled(cancelled)?;
             let matches = match parameters.kind {
+                QueryKind::Findings => unreachable!("handled before Module selection"),
                 QueryKind::Modules => {
                     record.kind == "module"
                         && module.as_ref().is_none_or(|module| record.id == *module)
@@ -766,6 +780,43 @@ impl QueryService {
             &digest(&json!({"query":parameters.kind,"module":module,"target":target}))?,
             cancelled,
         )
+    }
+
+    fn select_findings(
+        &self,
+        parameters: &SelectParameters,
+        cancelled: &AtomicBool,
+    ) -> Result<QueryPage, QueryError> {
+        if parameters.selector.is_some() || parameters.target.is_some() {
+            return Err(QueryError::new(
+                "INVALID_PARAMETERS",
+                "finding inventory takes only a page",
+            ));
+        }
+        let selected = self
+            .records
+            .iter()
+            .enumerate()
+            .filter_map(|(index, record)| (record.kind == "finding").then_some(index))
+            .collect::<Vec<_>>();
+        let mut page = self.page(&selected, &parameters.page, "findings", cancelled)?;
+        let fresh = self.selected_source_ref() == Some(self.input.source_ref.as_str());
+        for record in &mut page.records {
+            check_cancelled(cancelled)?;
+            let path_digest = fresh
+                .then(|| {
+                    record.value["location"]["path"]
+                        .as_str()
+                        .and_then(|path| self.input.observed_file_digests.get(path))
+                })
+                .flatten();
+            record.value = json!({
+                "finding": record.value,
+                "recorded_enforcement": self.input.retained_finding_dispositions.get(&record.id),
+                "observed_file_digest": path_digest
+            });
+        }
+        Ok(page)
     }
 
     fn page(

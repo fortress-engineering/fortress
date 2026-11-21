@@ -517,6 +517,13 @@
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R26-007",
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R26-008"
           ]
+        },
+        {
+          "id": "AF-SNAPSHOT-GOVERNANCE-0001-R27",
+          "statement": "Advertise the bounded finding inventory on protocol v5. Keep original findings and recorded enforcement separate, and expose source-file digests only for observations matching the selected evidence source.",
+          "tests": [
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R27-001"
+          ]
         }
       ]
     }
