@@ -16,6 +16,32 @@ use fortress_core::project::ProjectConfiguration;
 use fortress_core::rust_test_analyzer::analyze_rust_source;
 use serde_json::Value;
 
+const SELF_MODEL_RULES: [&str; 23] = [
+    "ARCH-DEPENDENCY-001",
+    "ARCH-OWNERSHIP-001",
+    "ARCH-REALIZATION-001",
+    "ARCH-SEMANTIC-001",
+    "BEHAVIOR-BYPASS-001",
+    "BEHAVIOR-FLOW-001",
+    "BEHAVIOR-REALIZATION-001",
+    "CONTRACT-COHERENCY-001",
+    "PROGRAM-DOMAIN-001",
+    "PROGRAM-EFFECT-001",
+    "PROGRAM-ENVIRONMENT-001",
+    "PROGRAM-INFOFLOW-001",
+    "PROGRAM-RECOVERY-001",
+    "PROGRAM-RETRY-001",
+    "PROGRAM-STATE-001",
+    "REPO-DOCS-001",
+    "REPO-MODULE-001",
+    "REPO-REFERENCE-001",
+    "SOURCE-ARTIFACT-001",
+    "SOURCE-PROFILE-001",
+    "STD-ID-001",
+    "TEST-BOUNDARY-001",
+    "TEST-TRACEABILITY-001",
+];
+
 /// Returns the checked-out repository root for integration fixtures.
 fn repository_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
@@ -122,31 +148,7 @@ fn live_contract_v2_v3_ecosystem_resolves_completely() {
         &ContractStandardIndex::new(
             "STD-FORTRESS-ENGINEERING",
             "1.0.0-draft.2",
-            [
-                "ARCH-DEPENDENCY-001",
-                "ARCH-OWNERSHIP-001",
-                "ARCH-REALIZATION-001",
-                "ARCH-SEMANTIC-001",
-                "BEHAVIOR-BYPASS-001",
-                "BEHAVIOR-FLOW-001",
-                "BEHAVIOR-REALIZATION-001",
-                "CONTRACT-COHERENCY-001",
-                "PROGRAM-DOMAIN-001",
-                "PROGRAM-EFFECT-001",
-                "PROGRAM-ENVIRONMENT-001",
-                "PROGRAM-INFOFLOW-001",
-                "PROGRAM-RECOVERY-001",
-                "PROGRAM-RETRY-001",
-                "PROGRAM-STATE-001",
-                "REPO-DOCS-001",
-                "REPO-MODULE-001",
-                "REPO-REFERENCE-001",
-                "SOURCE-ARTIFACT-001",
-                "SOURCE-PROFILE-001",
-                "STD-ID-001",
-                "TEST-BOUNDARY-001",
-                "TEST-TRACEABILITY-001",
-            ],
+            SELF_MODEL_RULES,
         ),
         Some(&test_facts),
     );
@@ -158,10 +160,10 @@ fn live_contract_v2_v3_ecosystem_resolves_completely() {
         "live CCG must be coherent: {:#?}",
         resolution.violations()
     );
-    assert_eq!(resolved.modules().len(), 53);
-    assert_eq!(resolved.capabilities().len(), 26);
-    assert_eq!(resolved.features().len(), 27);
-    assert_eq!(resolved.requirements().len(), 167);
+    assert_eq!(resolved.modules().len(), 55);
+    assert_eq!(resolved.capabilities().len(), 27);
+    assert_eq!(resolved.features().len(), 28);
+    assert_eq!(resolved.requirements().len(), 170);
     assert!(
         resolved
             .requirements()
@@ -172,10 +174,17 @@ fn live_contract_v2_v3_ecosystem_resolves_completely() {
     }
     let admission = &resolved.requirements()["AF-SNAPSHOT-GOVERNANCE-0001-R26"];
     assert_eq!(admission.tests().len(), 8);
+    for (requirement, count) in [
+        ("TF-AGENT-INTEGRATION-0001-R01", 6),
+        ("TF-AGENT-INTEGRATION-0001-R02", 7),
+        ("TF-AGENT-INTEGRATION-0001-R03", 2),
+    ] {
+        assert_eq!(resolved.requirements()[requirement].tests().len(), count);
+    }
     assert_eq!(resolved.guarantees().len(), 17);
     assert_eq!(resolved.checkpoints().len(), 10);
-    assert_eq!(resolved.direct_requirements().len(), 213);
-    assert_eq!(resolved.relationships().len(), 26);
+    assert_eq!(resolved.direct_requirements().len(), 222);
+    assert_eq!(resolved.relationships().len(), 27);
     assert!(
         resolved
             .modules()

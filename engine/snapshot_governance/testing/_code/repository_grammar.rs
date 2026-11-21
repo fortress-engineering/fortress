@@ -38,10 +38,15 @@ fn fortress_documentation_is_complete_synchronized_and_deterministic() {
         first.findings()
     );
     assert_eq!(first, second);
-    assert_eq!(first.summary().modules_inspected(), 53);
-    // MIGRATE adds six canonical documents to the qualified 161-document baseline.
+    assert_eq!(first.summary().modules_inspected(), 55);
     assert!(files.contains_key("engine/information_flow/testing/_docs/data_docs.md"));
     for path in [
+        "cli/agent_integration/README.md",
+        "cli/agent_integration/_docs/code_docs.md",
+        "cli/agent_integration/_docs/data_docs.md",
+        "cli/agent_integration/_docs/modules_docs.md",
+        "cli/agent_integration/testing/README.md",
+        "cli/agent_integration/testing/_docs/code_docs.md",
         "engine/migration_governance/README.md",
         "engine/migration_governance/_docs/code_docs.md",
         "engine/migration_governance/_docs/data_docs.md",
@@ -51,10 +56,10 @@ fn fortress_documentation_is_complete_synchronized_and_deterministic() {
     ] {
         assert!(
             files.contains_key(path),
-            "missing migration document: {path}"
+            "missing registered Module document: {path}"
         );
     }
-    assert_eq!(first.summary().markdown_files_inspected(), 173);
+    assert_eq!(first.summary().markdown_files_inspected(), 179);
     assert_eq!(
         first.summary().code_bijection().0,
         first.summary().code_bijection().1

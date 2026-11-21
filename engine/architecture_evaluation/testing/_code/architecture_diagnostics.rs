@@ -473,8 +473,18 @@ fn live_fortress_diagnostics_execute_repeatably_without_affecting_audit_outcome(
     let second = audit_repository(&root).expect("live audit repeats");
     println!("live architecture diagnostics: {:#?}", first.diagnostics());
 
-    assert_eq!(profiles.profiles().len(), 27);
-    assert_eq!(profiles.testing_modules().len(), 26);
+    assert_eq!(profiles.profiles().len(), 28);
+    assert!(
+        profiles
+            .profiles()
+            .contains_key("TF-AGENT-INTEGRATION-0001")
+    );
+    assert_eq!(profiles.testing_modules().len(), 27);
+    assert!(
+        profiles
+            .testing_modules()
+            .contains(&"TEST-AGENT-INTEGRATION-0001".to_owned())
+    );
     assert_eq!(first.is_success(), second.is_success());
     assert_eq!(first.diagnostics(), second.diagnostics());
     assert_eq!(
