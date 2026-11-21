@@ -155,6 +155,7 @@ test("overlapping refreshes retain the admitted result and invalidate old handle
 
 test("hostile display, paths, missing sources and workspace installers are explicit", async () => {
     assert.equal(text("a\u001b[31m\u202E\n"), "a [31m  ");
+    assert.equal(text("$(check) [reference](https://example.invalid)"), "$ (check) [reference] (https://example.invalid)");
     for (const path of ["../escape", "a/../b", "C:/file.rs", "x\\y", "a/CON.rs", "a/COM¹.rs", "a/CON .rs", "/absolute", "a//b", "command:evil"]) assert.equal(portable(path), false);
     const root = await mkdtemp(join(tmpdir(), "fortress-editor-source-"));
     const path = join(root, process.platform === "win32" ? "fortress.exe" : "fortress");

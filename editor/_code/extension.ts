@@ -466,7 +466,9 @@ class Editor {
             .flatMap(group => Array.isArray(group) ? group : [])
             .filter((value): value is string => typeof value === "string");
         const target = typeof explicit?.target === "string" ? explicit.target :
-            await vscode.window.showQuickPick(supported, { placeHolder: "Select a schema-supported effect or capability, or Escape to keep guidance" });
+            (await vscode.window.showQuickPick(supported.map(value => ({ label: text(value), value })), {
+                placeHolder: "Select a schema-supported effect or capability, or Escape to keep guidance"
+            }))?.value;
         if (!target || !current.valid()) return guidance;
         const disposition = explicit?.disposition === "ALLOW" || explicit?.disposition === "DENY" ? explicit.disposition :
             await vscode.window.showQuickPick(["ALLOW", "DENY"], { placeHolder: "Choose the proposed disposition" });

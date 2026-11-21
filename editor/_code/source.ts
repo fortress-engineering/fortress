@@ -9,7 +9,8 @@ export const digest = (value: unknown): value is string => typeof value === "str
 
 export function text(value: unknown, limit = 360): string {
     const raw = typeof value === "string" ? value : "";
-    const visible = raw.replace(/[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/gu, " ");
+    const visible = raw.replace(/[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]/gu, " ")
+        .replaceAll("$(", "$ (").replaceAll("](", "] (");
     return visible.length > limit ? visible.slice(0, limit) + " …" : visible;
 }
 
