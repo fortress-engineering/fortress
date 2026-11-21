@@ -21,6 +21,13 @@ pub(super) fn run<O: Write, E: Write>(
             return Ok(crate::EXIT_USAGE);
         }
     };
+    if parsed.transport == Some(Transport::Mcp) && !external_executable(&parsed.root)? {
+        writeln!(
+            error,
+            "MCP requires an installed executable outside the inspected repository"
+        )?;
+        return Ok(crate::EXIT_USAGE);
+    }
     let started = std::time::Instant::now();
     let service = match load_repository_query(&parsed.root, &parsed.options) {
         Ok(service) => service,
@@ -76,12 +83,8 @@ pub(super) fn run<O: Write, E: Write>(
             return Ok(crate::EXIT_USAGE);
         }
     };
-    if name == "serve" {
-        crate::rpc::serve(
-            io::BufReader::new(io::stdin()),
-            output,
-            &std::sync::Arc::new(service),
-        )?;
+    if let Some(transport) = parsed.transport {
+        run_transport(transport, service, &parsed, output)?;
         return Ok(crate::EXIT_SUCCESS);
     }
     let request = inspection_request(name, parsed.parameters);
@@ -107,6 +110,30 @@ pub(super) fn run<O: Write, E: Write>(
     } else {
         crate::EXIT_SUCCESS
     })
+}
+
+fn external_executable(root: &std::path::Path) -> io::Result<bool> {
+    let executable = std::env::current_exe()?.canonicalize()?;
+    Ok(crate::verifier_process::outside_inputs(&executable, &[root]).unwrap_or(false))
+}
+
+fn run_transport(
+    transport: Transport,
+    service: fortress_core::query::QueryService,
+    parsed: &Parsed,
+    output: &mut impl Write,
+) -> io::Result<()> {
+    let input = io::BufReader::new(io::stdin());
+    match transport {
+        Transport::Native => crate::rpc::serve(input, output, &std::sync::Arc::new(service)),
+        Transport::Mcp => crate::agent_mcp::serve(
+            input,
+            output,
+            &service,
+            &parsed.root,
+            parsed.candidate_storage.as_deref(),
+        ),
+    }
 }
 
 fn inspection_request(name: &str, parameters: Value) -> QueryRequest {
@@ -199,6 +226,14 @@ struct Parsed {
     json: bool,
     timing: bool,
     comparison_states: Vec<String>,
+    transport: Option<Transport>,
+    candidate_storage: Option<PathBuf>,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Transport {
+    Native,
+    Mcp,
 }
 
 fn parse(name: &str, arguments: &[String]) -> Result<Parsed, String> {
@@ -209,7 +244,8 @@ fn parse(name: &str, arguments: &[String]) -> Result<Parsed, String> {
     let mut positional = Vec::new();
     let mut json = false;
     let mut timing = false;
-    let mut stdio = false;
+    let mut transport = None;
+    let mut candidate_storage = None;
     let mut flow_authoring = false;
     let mut page = json!({});
     let mut index = 0;
@@ -220,22 +256,21 @@ fn parse(name: &str, arguments: &[String]) -> Result<Parsed, String> {
         match arg.as_str() {
             "--proposal" if matches!(name, "serve" | "explain") => {
                 index += 1;
-                proposals.push(
-                    arguments
-                        .get(index)
-                        .ok_or("--proposal requires a record path")?
-                        .clone(),
-                );
-                if proposals.len() > 16 {
-                    return Err("proposal preload exceeds sixteen inputs".into());
-                }
+                push_proposal(&mut proposals, arguments.get(index))?;
             }
             "--flow-authoring" | "--behavior-authoring" if name == "serve" => flow_authoring = true,
             "--retirement" if matches!(name, "serve" | "explain") => {
                 index += 1;
                 push_retirement_path(&mut options, arguments.get(index))?;
             }
-            "--stdio" if name == "serve" => stdio = true,
+            "--stdio" | "--mcp" if name == "serve" => select_transport(&mut transport, arg)?,
+            "--candidate-storage" if name == "serve" => {
+                index += 1;
+                let path = arguments
+                    .get(index)
+                    .ok_or("--candidate-storage requires an external directory")?;
+                candidate_storage = Some(PathBuf::from(path));
+            }
             "--decision" if matches!(name, "serve" | "explain") => {
                 index += 1;
                 push_decision_path(&mut options, arguments.get(index))?;
@@ -284,11 +319,10 @@ fn parse(name: &str, arguments: &[String]) -> Result<Parsed, String> {
         }
         index += 1;
     }
-    if name == "serve" && !stdio {
-        return Err("serve requires --stdio".into());
-    }
+    validate_transport(name, transport, candidate_storage.as_deref())?;
     let parameters = finish_parameters(name, &mut positional, parameters, page)?;
     let root = repository_argument(&mut positional)?;
+    let candidate_storage = validate_candidate_storage(candidate_storage.as_deref(), &root)?;
     Ok(Parsed {
         proposals,
         flow_authoring,
@@ -298,7 +332,59 @@ fn parse(name: &str, arguments: &[String]) -> Result<Parsed, String> {
         json,
         timing,
         comparison_states,
+        transport,
+        candidate_storage,
     })
+}
+
+fn select_transport(selected: &mut Option<Transport>, flag: &str) -> Result<(), String> {
+    let next = if flag == "--mcp" {
+        Transport::Mcp
+    } else {
+        Transport::Native
+    };
+    if selected.replace(next).is_some() {
+        return Err("serve requires exactly one of --stdio or --mcp".into());
+    }
+    Ok(())
+}
+
+fn validate_candidate_storage(
+    path: Option<&std::path::Path>,
+    root: &std::path::Path,
+) -> Result<Option<PathBuf>, String> {
+    let Some(path) = path else {
+        return Ok(None);
+    };
+    let path = path.canonicalize().map_err(|error| error.to_string())?;
+    if !path.is_dir() || path.starts_with(root) {
+        return Err(
+            "--candidate-storage must be an existing directory outside the repository".into(),
+        );
+    }
+    Ok(Some(path))
+}
+
+fn validate_transport(
+    command: &str,
+    transport: Option<Transport>,
+    storage: Option<&std::path::Path>,
+) -> Result<(), String> {
+    if command == "serve" && transport.is_none() {
+        return Err("serve requires exactly one of --stdio or --mcp".into());
+    }
+    if storage.is_some_and(|path| !path.is_absolute() || transport != Some(Transport::Mcp)) {
+        return Err("--candidate-storage requires --mcp and an absolute external path".into());
+    }
+    Ok(())
+}
+
+fn push_proposal(proposals: &mut Vec<String>, value: Option<&String>) -> Result<(), String> {
+    proposals.push(value.ok_or("--proposal requires a record path")?.clone());
+    if proposals.len() > 16 {
+        return Err("proposal preload exceeds sixteen inputs".into());
+    }
+    Ok(())
 }
 fn validate_unique_option<'a>(
     arg: &'a str,

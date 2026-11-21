@@ -1,5 +1,7 @@
 # Code
 
+Local agents can use [the MCP transport and exact-operation host integration](../agent_integration/_docs/code_docs.md). The installed editor continues to use the native versioned query protocol.
+
 ## Role
 
 Turn implemented Engine behavior into validated native command execution and deterministic presentation.

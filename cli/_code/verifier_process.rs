@@ -65,7 +65,7 @@ pub(super) fn interpreter(bundle: &Path) -> Result<PathBuf, PortableError> {
     ))
 }
 
-fn outside_inputs(tool: &Path, roots: &[&Path]) -> Result<bool, PortableError> {
+pub(crate) fn outside_inputs(tool: &Path, roots: &[&Path]) -> Result<bool, PortableError> {
     use fortress_core::heavy_admission::DirectoryIdentity;
     let identities = roots
         .iter()
@@ -134,12 +134,35 @@ pub(super) fn run(command: Command, script: &'static str) -> Result<(Vec<u8>, u8
 }
 
 pub(super) fn run_bounded(
-    mut command: Command,
+    command: Command,
     script: &'static str,
     deadline: Duration,
 ) -> Result<(Vec<u8>, u8), PortableError> {
+    run_checked(command, script, deadline, None)
+}
+
+pub(crate) fn run_pinned(
+    command: Command,
+    deadline: Duration,
+    executable_ref: &str,
+) -> Result<(Vec<u8>, u8), PortableError> {
+    run_checked(command, "", deadline, Some(executable_ref))
+}
+
+fn run_checked(
+    mut command: Command,
+    script: &'static str,
+    deadline: Duration,
+    executable_ref: Option<&str>,
+) -> Result<(Vec<u8>, u8), PortableError> {
     let executable = PathBuf::from(command.get_program());
     let (tool, stamp) = tool_stamp(&executable)?;
+    if executable_ref.is_some_and(|reference| reference != stamp) {
+        return Err(failure(
+            "VERIFIER_UNAVAILABLE",
+            "configured executable differs from its trusted identity",
+        ));
+    }
     command
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())

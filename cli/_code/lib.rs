@@ -33,17 +33,31 @@ use fortress_core::contract_coherency::CcgCoherencyStatus;
 use fortress_core::identity_migration::{
     apply_repository_identity_migration, plan_repository_identity_migration,
 };
+#[path = "../agent_integration/_code/capabilities.rs"]
+pub mod agent_capabilities;
+#[path = "../agent_integration/_code/mcp.rs"]
+mod agent_mcp;
+#[cfg(test)]
+#[path = "../agent_integration/testing/_code/mcp_controls.rs"]
+mod agent_mcp_controls;
 mod application_inputs;
 mod authority_command;
 mod behavior_command;
 mod candidate_command;
 #[path = "diagnostics.rs"]
 mod diagnostics;
+#[path = "../agent_integration/_code/github.rs"]
+pub mod github_rules;
+#[cfg(test)]
+#[path = "../agent_integration/testing/_code/github_controls.rs"]
+mod github_rules_controls;
 
 pub mod command;
 mod finding_command;
 mod flow_command;
 mod inspection;
+#[path = "../agent_integration/_code/mediator.rs"]
+pub mod mediator;
 mod migration_command;
 mod onboarding_command;
 mod portable_command;

@@ -39,7 +39,7 @@ fn registered_schemas_are_unique_json_schema_documents() {
         .expect("schema manifest must contain a schemas array");
     let mut identities = HashSet::with_capacity(paths.len());
 
-    assert_eq!(paths.len(), 169);
+    assert_eq!(paths.len(), 170);
     assert!(paths.iter().any(
         |path| path == "engine/snapshot_governance/_data/security_qualification_schema_v1.json"
     ));

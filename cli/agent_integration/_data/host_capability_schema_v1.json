@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v1:host-capability",
+  "title": "Fortress host capability",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "host",
+    "host_version",
+    "os",
+    "arch",
+    "query_protocols",
+    "request_schema",
+    "intercepted_operations",
+    "unmapped_routes",
+    "candidate_preview",
+    "grant_channel",
+    "decision_mapping",
+    "timeout_behavior",
+    "subagent_behavior",
+    "provider_protection"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:derived:v1:host-capability"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "host": {
+      "enum": [
+        "FORTRESS_MCP_STDIO",
+        "FORTRESS_LOCAL_MEDIATOR"
+      ]
+    },
+    "host_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "os": {
+      "type": "string",
+      "minLength": 1
+    },
+    "arch": {
+      "type": "string",
+      "minLength": 1
+    },
+    "query_protocols": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ]
+      }
+    },
+    "request_schema": {
+      "type": "string",
+      "minLength": 1
+    },
+    "intercepted_operations": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "CREATE_FILE",
+          "REPLACE_FILE",
+          "MOVE_PATH",
+          "DELETE_OWNED_FILE"
+        ]
+      }
+    },
+    "unmapped_routes": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "candidate_preview": {
+      "type": "boolean"
+    },
+    "grant_channel": {
+      "type": "string",
+      "minLength": 1
+    },
+    "decision_mapping": {
+      "type": "string",
+      "minLength": 1
+    },
+    "timeout_behavior": {
+      "type": "string",
+      "minLength": 1
+    },
+    "subagent_behavior": {
+      "type": "string",
+      "minLength": 1
+    },
+    "provider_protection": {
+      "const": "UNVERIFIED"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "host": {
+            "const": "FORTRESS_MCP_STDIO"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "intercepted_operations": {
+            "maxItems": 0
+          },
+          "grant_channel": {
+            "const": "NONE"
+          }
+        }
+      }
+    }
+  ]
+}

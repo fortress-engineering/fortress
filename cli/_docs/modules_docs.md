@@ -6,6 +6,10 @@ The CLI responsibility is decomposed where durable child boundaries have exclusi
 
 ## Modules
 
+### [Agent Integration](../agent_integration/README.md)
+
+Owns local agent protocol translation and a separate exact-operation trusted embedding.
+
 ### [CLI Testing](../testing/README.md)
 
 Verifies only Features introduced directly by CLI and does not claim requirements owned by ancestor, sibling, or descendant Modules.

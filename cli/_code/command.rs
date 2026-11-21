@@ -90,8 +90,8 @@ const BUILTIN_COMMANDS: &[CommandDescriptor] = &[
         id: "CMD-GOVERNANCE-SERVE",
         name: "serve",
         aliases: &[],
-        description: "Serve the versioned read-only inspection protocol over bounded JSON lines.",
-        usage: "fortress serve --stdio [path] [--selection key] [--state path] [--decision receipt] [--proposal file] [--flow-authoring]",
+        description: "Serve native inspection or local MCP over bounded stdio. Optional candidate analysis remains hypothetical.",
+        usage: "fortress serve --stdio|--mcp [path] [--selection key] [--state path] [--decision receipt] [--proposal file] [--comparison-state reference] [--flow-authoring] [--candidate-storage external-directory]",
     },
     CommandDescriptor {
         id: "CMD-PROVIDER-EVIDENCE",

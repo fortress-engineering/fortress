@@ -1,0 +1,80 @@
+{
+  "$schema": "urn:fortress:schema:v2:module-contract",
+  "schema_version": 2,
+  "id": "TF-AGENT-INTEGRATION-0001",
+  "display_name": "Agent Integration",
+  "provides": [
+    {
+      "id": "CAP-AGENT-INTEGRATION",
+      "version": "0.1.0",
+      "visibility": "public"
+    }
+  ],
+  "requires": [
+    {
+      "provider": "AF-CERTIFICATION-0001",
+      "capability": "CAP-CERTIFICATION",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-CORE-0001",
+      "capability": "CAP-FORTRESS-ENGINE",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-DEVELOPMENT-GOVERNANCE-0001",
+      "capability": "CAP-DEVELOPMENT-GOVERNANCE",
+      "version": "^0.1.0"
+    },
+    {
+      "provider": "AF-MIGRATION-GOVERNANCE-0001",
+      "capability": "CAP-MIGRATION-GOVERNANCE",
+      "version": "^0.1.0"
+    }
+  ],
+  "relationships": [],
+  "constraints": [],
+  "guarantees": [],
+  "features": [
+    {
+      "id": "TF-AGENT-INTEGRATION-0001",
+      "version": "0.1.0",
+      "requirements": [
+        {
+          "id": "TF-AGENT-INTEGRATION-0001-R01",
+          "statement": "The installed MCP transport preserves the native immutable query result and denies malformed, replayed, oversized or unavailable calls without granting mutation authority.",
+          "tests": [
+            "T-TF-AGENT-INTEGRATION-0001-R01-001",
+            "T-TF-AGENT-INTEGRATION-0001-R01-002",
+            "T-TF-AGENT-INTEGRATION-0001-R01-003",
+            "T-TF-AGENT-INTEGRATION-0001-R01-004",
+            "T-TF-AGENT-INTEGRATION-0001-R01-005",
+            "T-TF-AGENT-INTEGRATION-0001-R01-006"
+          ]
+        },
+        {
+          "id": "TF-AGENT-INTEGRATION-0001-R02",
+          "statement": "The local mediator applies a reviewed exact operation through the existing migration writer only when an independently selected host review and all original-policy grants remain valid.",
+          "tests": [
+            "T-TF-AGENT-INTEGRATION-0001-R02-001",
+            "T-TF-AGENT-INTEGRATION-0001-R02-002",
+            "T-TF-AGENT-INTEGRATION-0001-R02-003",
+            "T-TF-AGENT-INTEGRATION-0001-R02-004",
+            "T-TF-AGENT-INTEGRATION-0001-R02-005",
+            "T-TF-AGENT-INTEGRATION-0001-R02-006",
+            "T-TF-AGENT-INTEGRATION-0001-R02-007"
+          ]
+        },
+        {
+          "id": "TF-AGENT-INTEGRATION-0001-R03",
+          "statement": "The GitHub branch-rules observer verifies exact target identity and complete bounded inputs while separating provider configuration, per-actor enforcement, and approval.",
+          "tests": [
+            "T-TF-AGENT-INTEGRATION-0001-R03-001",
+            "T-TF-AGENT-INTEGRATION-0001-R03-002"
+          ]
+        }
+      ]
+    }
+  ],
+  "behavior": []
+}

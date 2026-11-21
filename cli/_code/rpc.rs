@@ -69,9 +69,13 @@ pub fn serve<R: BufRead + Send + 'static, O: Write>(
         .map_err(|_| io::Error::other("stdio reader panicked"))?
 }
 
-fn read_frame<R: BufRead>(input: &mut R) -> io::Result<Option<Result<Vec<u8>, QueryError>>> {
+pub(crate) fn read_frame<R: BufRead>(
+    input: &mut R,
+    strict_discard_limit: Option<usize>,
+) -> io::Result<Option<Result<Vec<u8>, QueryError>>> {
     let mut frame = Vec::new();
     let mut oversized = false;
+    let mut consumed = 0usize;
     loop {
         let bytes = input.fill_buf()?;
         if bytes.is_empty() {
@@ -81,6 +85,11 @@ fn read_frame<R: BufRead>(input: &mut R) -> io::Result<Option<Result<Vec<u8>, Qu
                         "RESOURCE_LIMIT",
                         "request frame exceeds byte limit",
                     ))
+                } else if strict_discard_limit.is_some() {
+                    Err(QueryError::new(
+                        "TRUNCATED_FRAME",
+                        "stream closed before the frame delimiter",
+                    ))
                 } else {
                     Ok(frame)
                 }
@@ -88,6 +97,13 @@ fn read_frame<R: BufRead>(input: &mut R) -> io::Result<Option<Result<Vec<u8>, Qu
         }
         let newline = bytes.iter().position(|byte| *byte == b'\n');
         let count = newline.unwrap_or(bytes.len());
+        consumed = consumed.saturating_add(count);
+        if strict_discard_limit.is_some_and(|limit| consumed > limit) {
+            return Ok(Some(Err(QueryError::new(
+                "DISCARD_LIMIT",
+                "oversized frame did not terminate within the discard bound",
+            ))));
+        }
         if !oversized {
             if count > MAX_REQUEST_BYTES.saturating_sub(frame.len()) {
                 oversized = true;
@@ -127,7 +143,7 @@ fn read_requests<R: BufRead>(
     active: &ActiveRequests,
     service: &QueryService,
 ) -> io::Result<()> {
-    while let Some(frame) = read_frame(&mut input)? {
+    while let Some(frame) = read_frame(&mut input, None)? {
         let request = match frame
             .and_then(|bytes| {
                 String::from_utf8(bytes)

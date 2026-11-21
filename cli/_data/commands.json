@@ -390,12 +390,12 @@
       "id": "CMD-GOVERNANCE-SERVE",
       "name": "serve",
       "aliases": [],
-      "description": "Serve the versioned read-only inspection protocol over bounded JSON lines.",
+      "description": "Serve native inspection or local MCP over bounded stdio. Optional candidate analysis remains hypothetical.",
       "owner": "TF-CLI-0001",
       "executor": "builtin-sync",
       "duration": "indeterminate",
       "resumability": "restartable",
-      "certification_implications": "Read-only projection of existing immutable results; no verification execution, certification, authority acceptance or repair."
+      "certification_implications": "Read-only projections or explicitly enabled hypothetical analysis. No verification execution, certification, authority acceptance or repair."
     },
     {
       "id": "CMD-STATE-TRANSITION",

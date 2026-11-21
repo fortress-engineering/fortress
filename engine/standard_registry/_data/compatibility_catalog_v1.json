@@ -3719,6 +3719,28 @@
         "id": "rfc8785-jcs-sha256",
         "source": "engine/snapshot_governance/_code/lifecycle_load.rs"
       }
+    },
+    {
+      "schema_id": "urn:fortress:derived:v1:host-capability",
+      "schema_path": "cli/agent_integration/_data/host_capability_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "cli/agent_integration/_code/capabilities.rs"
+      },
+      "reader": {
+        "status": "SCHEMA_ONLY",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "host-route-version-and-platform-v1",
+        "source": "cli/agent_integration/_code/capabilities.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "no-attestation",
+        "source": null
+      }
     }
   ]
 }

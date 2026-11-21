@@ -68,3 +68,7 @@ path = "../testing/_code/projections.rs"
 [[test]]
 name = "local_editor_adapter"
 path = "../../editor/testing/_code/local_adapter.rs"
+
+[[test]]
+name = "agent_integration"
+path = "../agent_integration/testing/_code/host.rs"

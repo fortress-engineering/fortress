@@ -30,6 +30,13 @@ fn embedded_consumer_supervision_rejects_expanding_output() {
 /// Fortress requirement: TF-CLI-0001-R29
 #[test]
 fn embedded_consumer_deadline_kills_and_reaps_owned_child() {
+    let untrusted_digest = format!("sha256:{}", "0".repeat(64));
+    let mismatch =
+        verifier_process::run_pinned(python(), Duration::from_secs(10), &untrusted_digest)
+            .unwrap_err();
+    assert_eq!(mismatch.code, "VERIFIER_UNAVAILABLE");
+    assert!(mismatch.message.contains("trusted identity"));
+
     let error = run_bounded(
         python(),
         "import time\ntime.sleep(60)\n",
