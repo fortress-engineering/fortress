@@ -100,7 +100,6 @@ jobs:
     env:
       CARGO_BUILD_JOBS: "1"
       CARGO_INCREMENTAL: "0"
-      CARGO_TARGET_DIR: ${{ runner.temp }}/fortress-editor-target
       PYTHONDONTWRITEBYTECODE: "1"
     steps:
       - name: Check out exact revision
@@ -122,11 +121,15 @@ jobs:
           cmp "$RUNNER_TEMP/fortress-editor-stage/fortress-development.vsix" "$RUNNER_TEMP/fortress-editor-replay/fortress-development.vsix"
 
       - name: Build the installed-service fixture
+        env:
+          CARGO_TARGET_DIR: ${{ runner.temp }}/fortress-editor-target
         run: >-
           cargo +1.97.1 --config _data/cargo_config.toml build --locked
           --manifest-path _data/Cargo.toml --all-features -p fortress-cli
 
       - name: Run the real desktop extension host
+        env:
+          CARGO_TARGET_DIR: ${{ runner.temp }}/fortress-editor-target
         run: |
           mkdir "$RUNNER_TEMP/fortress-vscode"
           curl --fail --silent --show-error --location --retry 3 --max-time 600 --max-filesize 500000000 \
