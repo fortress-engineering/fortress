@@ -319,6 +319,8 @@ Composes full canonical immutable evaluation and existing trusted AUTHORITY deci
 
 Retains external same-volume staging, immutable owner records, verified terminal records and native pinned identities under the shared OPS admission registry. Incomplete runs retain all originals and prevent fresh certification.
 
+Independent repositories may initialize a shared storage root concurrently. The adapter reobserves every newly created component before use and refuses links, reparse points and other unexpected filesystem objects.
+
 
 Migration retirement evaluation consumes an opaque RATCHET proposal and an exact pre-maintenance SourceView. The lifecycle owner rederives the original comparable proof and checks the governance-only postimage; it does not require evidence to hash a file containing that evidence. Generic authorized file replacement cannot bypass this owner admission. Critical assessor scope is resolved through canonical Module ownership over the complete physical inventory, including files excluded from semantic projections.
 

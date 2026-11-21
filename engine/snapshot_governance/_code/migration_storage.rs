@@ -21,11 +21,19 @@ fn checked_dir(path: &Path) -> io::Result<()> {
         return Err(io::Error::other("migration storage must be absolute"));
     }
     for ancestor in path.ancestors().collect::<Vec<_>>().into_iter().rev() {
-        match fs::symlink_metadata(ancestor) {
-            Ok(m) if m.is_dir() && !linked(&m) => {}
-            Ok(_) => return Err(io::Error::other("unsafe storage ancestor")),
-            Err(e) if e.kind() == io::ErrorKind::NotFound => fs::create_dir(ancestor)?,
-            Err(e) => return Err(e),
+        let metadata = match fs::symlink_metadata(ancestor) {
+            Err(error) if error.kind() == io::ErrorKind::NotFound => {
+                match fs::create_dir(ancestor) {
+                    Ok(()) => {}
+                    Err(error) if error.kind() == io::ErrorKind::AlreadyExists => {}
+                    Err(error) => return Err(error),
+                }
+                fs::symlink_metadata(ancestor)?
+            }
+            result => result?,
+        };
+        if !metadata.is_dir() || linked(&metadata) {
+            return Err(io::Error::other("unsafe storage ancestor"));
         }
     }
     Ok(())

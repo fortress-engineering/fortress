@@ -79,6 +79,58 @@ fn active_runtime_target_lease_prevents_second_job() {
     assert!(runtime.acquire_workspace().is_ok());
 }
 
+/// `T-AF-SNAPSHOT-GOVERNANCE-0001-R17-015`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R17
+#[test]
+fn distinct_repositories_can_initialize_one_migration_storage_root() {
+    use fortress_core::migration_governance::{MigrationResourceLease, ResourceLeasePort};
+    use fortress_core::runtime_storage::MigrationStorage;
+    use std::sync::Barrier;
+
+    let fixture = Fixture::new();
+    let shared = fixture.0.join("shared/migrations");
+    let policy = StoragePolicy {
+        reserve_bytes: 0,
+        ..StoragePolicy::default()
+    };
+    let storage = MigrationStorage::new(shared.clone(), policy.clone()).unwrap();
+    let repositories = (0..8)
+        .map(|index| {
+            let path = fixture.0.join(format!("repository-{index}"));
+            fs::create_dir(&path).unwrap();
+            path
+        })
+        .collect::<Vec<_>>();
+    let barrier = Barrier::new(repositories.len());
+    let plan = fixture_digest(b"unapplied migration plan");
+    std::thread::scope(|scope| {
+        let workers = repositories
+            .iter()
+            .map(|repository| {
+                let (storage, barrier, plan) = (&storage, &barrier, &plan);
+                scope.spawn(move || {
+                    barrier.wait();
+                    let mut lease = storage.acquire(repository, plan, 0).unwrap();
+                    lease.verify(repository).unwrap();
+                    assert_eq!(fs::read_dir(repository).unwrap().count(), 0);
+                    lease.finish("ABORTED_BEFORE_APPLY", plan).unwrap();
+                })
+            })
+            .collect::<Vec<_>>();
+        for worker in workers {
+            worker.join().unwrap();
+        }
+    });
+    assert!(shared.is_dir());
+
+    let ordinary_file = fixture.0.join("ordinary-file");
+    fs::write(&ordinary_file, b"independent bytes").unwrap();
+    let blocked = MigrationStorage::new(ordinary_file.join("nested"), policy).unwrap();
+    let error = blocked.acquire(&repositories[0], &plan, 0).err().unwrap();
+    assert_eq!(error.code, "MIGRATION_STORAGE_ERROR");
+    assert_eq!(fs::read(ordinary_file).unwrap(), b"independent bytes");
+}
+
 /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R17-002`
 /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R17
 #[test]

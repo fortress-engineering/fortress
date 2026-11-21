@@ -64,6 +64,8 @@ Verifies self-snapshot repeatability and binding to every declared draft rule.
 
 Verifies the installed Rust adapter's exclusive heavy-job lease, disk preflight, active-child retention, selected marked-target cleanup, and explicit exact-journal retirement that preserves markerless empty residue. Recovery controls cover original-byte preservation, idempotence, unexpected payloads, phase and binding conflicts, existing leases, receipt collisions and registration boundaries.
 
+Independent migration fixtures initialize one previously absent external storage root concurrently. A non-directory ancestor blocks admission and preserves its original bytes.
+
 ### [`repository_bootstrap.rs`](../_code/repository_bootstrap.rs)
 
 Verifies read-only deterministic discovery, explicit owner-choice separation, proposal digest and staleness enforcement, transactional minimal authority application, source/Cargo preservation, and truthful zero-new-red baseline behavior.
