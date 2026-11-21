@@ -14,7 +14,7 @@ The manifest declares the local desktop extension, executable setting, commands 
 
 ## Validity
 
-The staged manifest and lockfile must agree exactly. Dependencies are restored with lifecycle scripts disabled.
+The staged manifest and lockfile must agree exactly. Dependencies are restored with lifecycle scripts disabled. JavaScript uses LF line endings, and the development VSIX uses vendor-generated contents in a deterministically ordered archive with fixed entry metadata.
 
 ## Lifecycle
 

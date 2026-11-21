@@ -118,6 +118,8 @@ jobs:
         run: |
           python3 -B editor/_code/build.py "$RUNNER_TEMP/fortress-editor-stage" --install-tools --vsix
           node --test "$RUNNER_TEMP/fortress-editor-stage/out/testing/_code/client.js"
+          python3 -B editor/_code/build.py "$RUNNER_TEMP/fortress-editor-replay" --tools "$RUNNER_TEMP/fortress-editor-stage" --vsix
+          cmp "$RUNNER_TEMP/fortress-editor-stage/fortress-development.vsix" "$RUNNER_TEMP/fortress-editor-replay/fortress-development.vsix"
 
       - name: Build the installed-service fixture
         run: >-

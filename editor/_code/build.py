@@ -7,6 +7,36 @@ from pathlib import Path
 import re
 import shutil
 import subprocess
+import zipfile
+
+
+def local_vsix(destination: Path) -> None:
+    package = destination / "fortress-development.vsix"
+    intermediate = destination / "vsce-output.vsix"
+    (destination / ".vscodeignore").write_text(
+        "_code/**\ntesting/**\nout/testing/**\npackage-lock.json\ntsconfig.json\n", encoding="utf-8", newline="\n"
+    )
+    subprocess.run(
+        ["node", "node_modules/@vscode/vsce/vsce", "package", "--no-dependencies",
+         "--allow-missing-repository", "--skip-license", "--out", intermediate.name],
+        cwd=destination, check=True, timeout=90,
+    )
+    # The vendor packager supplies the VSIX manifest and contents. Only normalize
+    # the archive envelope, whose original timestamps depend on the build host.
+    with zipfile.ZipFile(intermediate) as source:
+        entries = sorted(source.infolist(), key=lambda item: item.filename)
+        if (len(entries) > 32 or len(source.namelist()) != len(set(source.namelist())) or
+                sum(entry.file_size for entry in entries) > 1024**2):
+            raise ValueError("VSIX exceeds the local package inventory limits")
+        with zipfile.ZipFile(package, "x") as output:
+            for entry in entries:
+                if entry.is_dir():
+                    continue
+                fixed = zipfile.ZipInfo(entry.filename)
+                fixed.create_system = 3
+                fixed.external_attr = 0o100644 << 16
+                output.writestr(fixed, source.read(entry))
+    intermediate.unlink()
 
 
 def main() -> None:
@@ -37,7 +67,7 @@ def main() -> None:
             shutil.copyfile(file, target / file.name)
     readme = (source / "README.md").read_text(encoding="utf-8")
     readme = re.sub(r"\[([^\]]+)\]\(\.{1,2}/[^)]+\)", r"\1", readme)
-    (destination / "README.md").write_text(readme, encoding="utf-8")
+    (destination / "README.md").write_text(readme, encoding="utf-8", newline="\n")
     if args.install_tools:
         npm = shutil.which("npm.cmd" if os.name == "nt" else "npm")
         if not npm:
@@ -59,14 +89,7 @@ def main() -> None:
         cwd=destination, check=True, timeout=90,
     )
     if args.vsix:
-        (destination / ".vscodeignore").write_text(
-            "_code/**\ntesting/**\nout/testing/**\npackage-lock.json\ntsconfig.json\n", encoding="utf-8"
-        )
-        subprocess.run(
-            ["node", "node_modules/@vscode/vsce/vsce", "package", "--no-dependencies",
-             "--allow-missing-repository", "--skip-license", "--out", "fortress-development.vsix"],
-            cwd=destination, check=True, timeout=90,
-        )
+        local_vsix(destination)
     print(destination)
 
 
