@@ -9,6 +9,11 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::mpsc::{self, Receiver};
 use std::time::{Duration, Instant};
 
+#[path = "../../_code/mcp_wire.rs"]
+mod agent_wire;
+mod github_controls;
+mod mcp_controls;
+
 static NEXT: AtomicU64 = AtomicU64::new(0);
 
 struct Client {

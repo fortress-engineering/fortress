@@ -297,7 +297,7 @@ impl GitHubCliRead {
         )
     }
 
-    fn get(&self, endpoint: &str) -> Result<ReadResponse, ProviderFailure> {
+    fn get(&self, endpoint: &str) -> Result<RulePage, ProviderFailure> {
         use std::process::Command;
         use std::time::Duration;
         if !self
@@ -343,7 +343,7 @@ impl GitHubCliRead {
         {
             return Err(ProviderFailure::Incomplete);
         }
-        decode_response(&bytes, exit)
+        decode_cli_response(&bytes, exit)
     }
 }
 
@@ -406,7 +406,7 @@ fn component(name: &str) -> bool {
             .all(|b| b.is_ascii_alphanumeric() || b"-_.".contains(&b))
 }
 
-pub(super) fn encode(branch: &str) -> String {
+fn encode(branch: &str) -> String {
     use std::fmt::Write;
     let mut result = String::with_capacity(branch.len());
     for byte in branch.bytes() {
@@ -419,18 +419,21 @@ pub(super) fn encode(branch: &str) -> String {
     result
 }
 
-pub(super) struct ReadResponse {
-    pub(super) body: Vec<u8>,
-    pub(super) next_page: Option<u16>,
-}
-impl ReadResponse {
+impl RulePage {
     fn json(&self) -> Result<Value, ProviderFailure> {
         let text = std::str::from_utf8(&self.body).map_err(|_| ProviderFailure::Incomplete)?;
         parse_public_json(text).map_err(|_| ProviderFailure::Incomplete)
     }
 }
 
-pub(super) fn decode_response(bytes: &[u8], exit: u8) -> Result<ReadResponse, ProviderFailure> {
+/// Decodes a bounded HTTP envelope from the pinned GitHub CLI read route.
+///
+/// It retains the body and, where present, a bounded numeric page parameter.
+/// The caller still checks the exact repository, branch and stable rules.
+///
+/// # Errors
+/// Returns a typed failure for malformed, unsupported or failed responses.
+pub fn decode_cli_response(bytes: &[u8], exit: u8) -> Result<RulePage, ProviderFailure> {
     let text = std::str::from_utf8(bytes).map_err(|_| ProviderFailure::Incomplete)?;
     let (headers, body) = text
         .split_once("\r\n\r\n")
@@ -475,7 +478,7 @@ pub(super) fn decode_response(bytes: &[u8], exit: u8) -> Result<ReadResponse, Pr
             }
         }
     }
-    Ok(ReadResponse {
+    Ok(RulePage {
         body: body.as_bytes().into(),
         next_page,
     })

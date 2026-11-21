@@ -37,9 +37,8 @@ use fortress_core::identity_migration::{
 pub mod agent_capabilities;
 #[path = "../agent_integration/_code/mcp.rs"]
 mod agent_mcp;
-#[cfg(test)]
-#[path = "../agent_integration/testing/_code/mcp_controls.rs"]
-mod agent_mcp_controls;
+#[path = "../agent_integration/_code/mcp_wire.rs"]
+mod agent_wire;
 mod application_inputs;
 mod authority_command;
 mod behavior_command;
@@ -48,9 +47,6 @@ mod candidate_command;
 mod diagnostics;
 #[path = "../agent_integration/_code/github.rs"]
 pub mod github_rules;
-#[cfg(test)]
-#[path = "../agent_integration/testing/_code/github_controls.rs"]
-mod github_rules_controls;
 
 pub mod command;
 mod finding_command;
@@ -67,6 +63,7 @@ mod provider_command;
 pub mod rpc;
 pub mod sarif;
 mod transition_command;
+#[path = "../agent_integration/_code/verifier_process.rs"]
 mod verifier_process;
 
 use command::{CommandDescriptor, CommandRegistry};

@@ -1,17 +1,31 @@
 # Code
 
-### [Host tests](../_code/host.rs)
+## Role
 
-Runs the installed MCP executable on a disposable repository. It checks native status parity, exact candidate preview, replay, malformed input, session renewal and refusal of public write requests. A registered Cargo build script stays unexecuted.
+These controls exercise the installed transport, independently supplied reviews and grants, and provider observation.
 
-The local mediator fixture supplies exact review and grant facts through the trusted ports. It checks byte preservation when required authorization is missing, when original policy prohibits a proposed write, and when a candidate tries to install a forged evidence selection. A separately reviewed edit proceeds with unrelated effect uncertainty intact. The tests also cover actual target divergence, revocation after mutation, and fresh review for rollback.
+## Execution
 
-The provider fixture exercises exact branch identity, unavailable and incomplete configuration, and drifting branch rules. These tests use locally established observations and confer no production provider coverage.
+Run the registered `agent_integration` Cargo target. It uses the native executable on disposable repositories and invokes the production mediator API with independently established fixture authority.
 
-### [MCP controls](../_code/mcp_controls.rs)
+## State
 
-Checks cancellation correlation and bounded termination of incomplete input.
+The tests own temporary state and fixture observations. The controlled authorization source stays outside the tested repository.
 
-### [GitHub controls](../_code/github_controls.rs)
+## Failure Semantics
 
-Checks response decoding through bounded pagination and refusal of unsupported link targets.
+An interrupted write retains its recoverable transaction. A blocked proposal preserves exact source bytes and publishes no receipt. Provider fixtures confer no production coverage.
+
+## Files
+
+### [`github_controls.rs`](../_code/github_controls.rs)
+
+Checks bounded provider response decoding and rejection of unsupported continuation links.
+
+### [`lib.rs`](../_code/lib.rs)
+
+Checks the actual executable, hypothetical previews, protected writes, proof relevance, recovery and provider observations.
+
+### [`mcp_controls.rs`](../_code/mcp_controls.rs)
+
+Checks correlated cancellation, bounded input and output framing, and queued-work admission.

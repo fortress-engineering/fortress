@@ -46,6 +46,12 @@ Runs the canonical unfiltered Rust suite locally, constructs current execution e
 
 Provides versioned explicit preview, application and recovery contracts without introducing a CLI grant validator.
 
+### [Agent Integration](agent_integration/README.md)
+
+**Types:** `depends_on`
+
+Supplies local MCP framing, the client adapter, and process supervision shared by trusted integrations.
+
 ## Guarantees
 
 The [overlay command](./_docs/code_docs.md) evaluates exact immutable proposals and inspects post-write agreement without applying source changes. RPC v5 exposes complete preloaded proposal fields with bounded paging. Hypothetical outcomes remain PROPOSED, never actual certification or permission; CLI records cannot recreate external grants or execution proof.

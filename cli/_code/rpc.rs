@@ -1,13 +1,12 @@
 //! Bounded LF-framed stdio adapter over the transport-neutral query facade.
 
+use crate::agent_wire::read_frame;
 use std::collections::BTreeMap;
 use std::io::{self, BufRead, Write};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, mpsc};
 
-use fortress_core::query::{
-    MAX_REQUEST_BYTES, QueryError, QueryOperation, QueryRequest, QueryResponse, QueryService,
-};
+use fortress_core::query::{QueryError, QueryOperation, QueryRequest, QueryResponse, QueryService};
 use serde_json::json;
 
 const MAX_ACTIVE_REQUESTS: usize = 16;
@@ -67,63 +66,6 @@ pub fn serve<R: BufRead + Send + 'static, O: Write>(
     reader
         .join()
         .map_err(|_| io::Error::other("stdio reader panicked"))?
-}
-
-pub(crate) fn read_frame<R: BufRead>(
-    input: &mut R,
-    strict_discard_limit: Option<usize>,
-) -> io::Result<Option<Result<Vec<u8>, QueryError>>> {
-    let mut frame = Vec::new();
-    let mut oversized = false;
-    let mut consumed = 0usize;
-    loop {
-        let bytes = input.fill_buf()?;
-        if bytes.is_empty() {
-            return Ok((!frame.is_empty() || oversized).then(|| {
-                if oversized {
-                    Err(QueryError::new(
-                        "RESOURCE_LIMIT",
-                        "request frame exceeds byte limit",
-                    ))
-                } else if strict_discard_limit.is_some() {
-                    Err(QueryError::new(
-                        "TRUNCATED_FRAME",
-                        "stream closed before the frame delimiter",
-                    ))
-                } else {
-                    Ok(frame)
-                }
-            }));
-        }
-        let newline = bytes.iter().position(|byte| *byte == b'\n');
-        let count = newline.unwrap_or(bytes.len());
-        consumed = consumed.saturating_add(count);
-        if strict_discard_limit.is_some_and(|limit| consumed > limit) {
-            return Ok(Some(Err(QueryError::new(
-                "DISCARD_LIMIT",
-                "oversized frame did not terminate within the discard bound",
-            ))));
-        }
-        if !oversized {
-            if count > MAX_REQUEST_BYTES.saturating_sub(frame.len()) {
-                oversized = true;
-                frame.clear();
-            } else {
-                frame.extend_from_slice(&bytes[..count]);
-            }
-        }
-        input.consume(count + usize::from(newline.is_some()));
-        if newline.is_some() {
-            return Ok(Some(if oversized {
-                Err(QueryError::new(
-                    "RESOURCE_LIMIT",
-                    "request frame exceeds byte limit",
-                ))
-            } else {
-                Ok(frame)
-            }));
-        }
-    }
 }
 
 struct CancelActive(ActiveRequests);

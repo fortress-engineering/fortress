@@ -32,6 +32,12 @@ Supplies provider-independent contract and audit types directly used to build co
 
 Exercises the parent native command surface from the process boundary.
 
+### [Agent Integration](../agent_integration/README.md)
+
+**Types:** `depends_on`
+
+Supplies the bounded process supervisor exercised by the portable verifier controls.
+
 ## Guarantees
 
 Tests isolate runtime state, require deterministic machine output, and reject false success for malformed or unsupported operations.

@@ -32,6 +32,12 @@ Checks the declared adapter behavior at its ordinary entry points.
 
 Supplies the canonical fixture observation, evaluation and transaction adapters.
 
+### [CLI](../../README.md)
+
+**Types:** `depends_on`
+
+Supplies the installed process and the public adapter surface exercised by the fixture.
+
 ## Guarantees
 
 Fixtures retain separate source, trust, and execution evidence.
