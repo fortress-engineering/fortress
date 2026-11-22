@@ -382,3 +382,28 @@ The versioned diagnostic manifest identifies the certification-source domain, ex
 ### [`upgrade_command.rs`](../_code/upgrade_command.rs)
 
 Read-only adapter for version capability discovery, current edition inspection and exact preview. Pass the existing reviewed migration plan to a trusted host for independent validation. The CLI accepts no approval certificate or serialized grant.
+
+**Upgrade a governed project**
+
+Run `fortress upgrade inspect --root PROJECT --format json` to read the exact Standard pin, physical source, canonical state and original authority. Run `fortress upgrade compatibility --from SCHEMA --to SCHEMA` to see the two exact registered capabilities. An installed runtime reader can inspect its own declared shape. Separate readable editions may be incomparable. An unregistered shape, absent reader or undeclared reverse conversion is unsupported.
+
+| Original | Proposed | Supported workflow |
+| --- | --- | --- |
+| Configuration v2 or v3 at the registered control role | Configuration v4 with original native selection | Generate an exact replacement with `upgrade preview`. It preserves logical bindings and exclusions and makes the existing native default explicit. |
+| Qualified draft Standard pin | Distinct draft edition with identical rule documents | Supply explicit exact operations for the manifest and the authored root contract's edition pin. The installed evaluator continues to bind the same rule documents. |
+| Exact current profile selections | Another installed, resolver-compatible selection | Supply an explicit configuration replacement. Review the original and target claims, evidence and assessment. |
+| A Standard with changed rule documents | Another pinned edition | Compare exact rule bytes and governing relationships. A writer plan is withheld when the installed evaluator cannot establish the new rule meaning. |
+| Legacy Rust symbols or pre-anchor finding references | Exact owner-confirmed current identities | Use the existing `identity-migrate` preview and its owner-produced migration plan. Ambiguous or anchored historical references stay original. |
+| Historical registered CONTROL layout and locator inputs | Current installed layout | Inspect through the original reader where supported. Retained generations are never rewritten or selected as evidence of a new state. |
+
+Prepare an editions JSON object with `from_bundle` and `to_bundle`, each containing the exact `standard_id`, `edition` and `release_digest` returned by discovery or independently bound to the qualified offline documents. To convert only the configuration shape, use the same edition pin on both sides and omit `--operations`. For an existing-owner identity or contract schema preview, supply --transform identity and leave out the operations file. To preview reviewed edits, supply existing MigrationOperation JSON through `--operations`. Give `--base-selection` the existing original-policy preview format used by `migrate preview`. A preview policy file cannot confer authorization. Set `preview_admission` to `true` in the editions selection to explicitly evaluate the same operations for eligibility under the existing admission model. Mixed changes and previously governed findings retain their respective limitations.
+
+```sh
+fortress upgrade inspect --root ./project --format json
+fortress upgrade compatibility --from urn:fortress:schema:v3:project-configuration --to urn:fortress:schema:v4:project-configuration
+fortress upgrade preview --root ./project --editions editions.json --base-selection original-policy.json --format json
+```
+
+Review the proposal's exact operations, historical declaration, four comparison axes, independent profile assessments and authorization requirements. A scoped trusted embedding passes the exact proposed plan to `TrustedMediator` for independent, one-use authorization and MIGRATE application. Use the existing recovery transaction ref after an interruption. Verify the resulting receipt and observe the resulting repository separately. Run new certification for the target source and authority when current assurance is required. Historical evidence remains available under its original immutable generation. There is no stable Standard publication or profile default change in this workflow.
+
+The reproducible `native_edition_upgrade_reuses_review_and_preserves_original_source` integration test demonstrates permission refusal followed by an exact independently reviewed write through the controlled host boundary.
