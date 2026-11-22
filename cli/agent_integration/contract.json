@@ -42,7 +42,7 @@
       "requirements": [
         {
           "id": "TF-AGENT-INTEGRATION-0001-R01",
-          "statement": "The installed MCP transport preserves the native immutable query result and denies malformed, replayed, oversized or unavailable calls without granting mutation authority.",
+          "statement": "The installed MCP transport advertises the available local tools, provides exact request and freshness guidance, preserves the native immutable query result, and denies malformed, replayed, oversized or unavailable calls without granting mutation authority.",
           "tests": [
             "T-TF-AGENT-INTEGRATION-0001-R01-001",
             "T-TF-AGENT-INTEGRATION-0001-R01-002",

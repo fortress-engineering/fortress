@@ -155,12 +155,18 @@ fn installed_mcp_and_native_query_preserve_the_same_status() {
     assert_eq!(tools.len(), 1);
     assert_eq!(tools[0]["name"], "fortress_inspect");
     assert_eq!(tools[0]["annotations"]["readOnlyHint"], true);
+    let instructions = tools[0]["description"].as_str().unwrap();
+    assert!(instructions.contains("method capabilities"));
+    assert!(instructions.contains("parameters.kind"));
+    assert!(instructions.contains("outer JSON-RPC ID"));
     let request =
         json!({"protocol_version":1,"request_id":"test","method":"status","parameters":{}});
     client.send(&call(3, "fortress_inspect", json!({"request":request})));
     let result = client.receive();
     assert_eq!(result["id"], 3);
     let received = &result["result"]["structuredContent"];
+    let text = result["result"]["content"][0]["text"].as_str().unwrap();
+    assert_eq!(&serde_json::from_str::<Value>(text).unwrap(), received);
     let cli = Command::new(env!("CARGO_BIN_EXE_fortress"))
         .args(["status", "--format", "json"])
         .arg(&client.root)
@@ -1125,6 +1131,21 @@ fn installed_mcp_rejects_replayed_ids_malformed_frames_and_unadvertised_writes()
 fn installed_mcp_previews_exact_candidate_without_writing_or_claiming_authority() {
     let mut client = Client::launch_mode(true);
     client.initialize();
+    client.send(&json!({"jsonrpc":"2.0","id":5,"method":"tools/list"}));
+    let listing = client.receive();
+    let tools = listing["result"]["tools"].as_array().unwrap();
+    assert_eq!(tools.len(), 3);
+    assert_eq!(tools[1]["name"], "fortress_candidate_base");
+    assert_eq!(tools[2]["name"], "fortress_evaluate_candidate");
+    assert!(
+        tools
+            .iter()
+            .all(|tool| tool["annotations"]["readOnlyHint"] == true)
+    );
+    let preparation = tools[1]["description"].as_str().unwrap();
+    assert!(preparation.contains("base_source_ref") && preparation.contains("context_ref"));
+    let evaluation = tools[2]["description"].as_str().unwrap();
+    assert!(evaluation.contains("STALE_BASE") && evaluation.contains("PROPOSED"));
     client.send(&call(2, "fortress_candidate_base", json!({})));
     let base = client.receive();
     let base = &base["result"]["structuredContent"];

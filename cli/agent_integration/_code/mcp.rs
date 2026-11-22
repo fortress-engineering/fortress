@@ -105,15 +105,15 @@ fn tool(name: &str, description: &str, schema: &Value) -> Value {
 fn list_tools(candidates: bool) -> Value {
     let mut tools = vec![tool(
         "fortress_inspect",
-        "Inspect one loaded repository with an unchanged Fortress QueryRequest (versions 1–5). Use capabilities first, then status, doctor, query, explain, transition or candidate inspection. Preserve state and context references and follow continuation cursors. Stale and unavailable evidence remain explicit. No semantic analysis or project execution is triggered.",
+        "Inspect one loaded repository with a native Fortress QueryRequest (versions 1–5). Start with method capabilities and empty parameters, then use status for source freshness and assurance. Use method query with parameters.kind (for example modules, routes or findings) and method explain with parameters.selector for evidence. Preserve state and context references and follow continuation cursors. Use MCP notifications/cancelled with the outer JSON-RPC ID. Stale or unavailable evidence does not establish current conformance. Inspection runs no project code.",
         &query_argument(),
     )];
     if candidates {
         tools.push(tool("fortress_candidate_base",
-            "Explicitly prepare the exact physical base and analysis context for an isolated candidate. This may run bounded Fortress analysis. It does not execute project code.",
+            "Call with empty arguments before evaluating a candidate. Use the returned base_source_ref and context_ref in fortress_evaluate_candidate. Preparing the physical base can run bounded Fortress analysis without executing project code.",
             &json!({"type":"object","additionalProperties":false})));
         tools.push(tool("fortress_evaluate_candidate",
-            "Evaluate a version 1 CandidateRequest with exact base identity, context and file operations. A result is hypothetical, supplies no grant and does not apply source changes. Only explicitly enabled local sessions offer this tool.",
+            "Evaluate a version 1 CandidateRequest with exact base identity, context and file operations. PROPOSED is a hypothetical result, with no permission to write or certify. For STALE_BASE, reconnect and obtain a fresh base before rebuilding the request. An oversized result requires the native overlay command and preloaded candidate inspection.",
             &candidate_argument()));
     }
     json!({"tools":tools})

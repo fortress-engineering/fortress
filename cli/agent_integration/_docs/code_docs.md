@@ -22,7 +22,26 @@ An example session sends each line after receiving the preceding reply where app
 
 `fortress_inspect` returns the unmodified native result as `structuredContent`, with the same JSON in a text item for consumers that render content blocks. The loaded snapshot and its selected evidence keep separate identities. Use native capabilities before requesting optional methods. Pass native state and context references and exact continuation cursors when paging. Supply original-state and proposal inputs through explicit host startup options where needed. These remain immutable observations. Ordinary inspection has no analysis or project execution side effect.
 
+For a local Codex workflow, register the installed executable and its argument array as an MCP stdio server using trusted client configuration. Run `tools/list` first, then call the native `capabilities` method through `fortress_inspect`. Native `cancel` and `progress` require the native transport's request registry. On MCP, send `notifications/cancelled` with the outer request ID. Check the outer JSON-RPC error and `isError`; a native finding or state mismatch can arrive inside a successful JSON-RPC response. Follow native page cursors within the same loaded state. Reopen the connection after changing the selected source or evidence, then read status again before following old references.
+
+~~~toml
+[mcp_servers.fortress]
+command = "/absolute/trusted/bin/fortress"
+args = ["serve", "--mcp", "/absolute/repository"]
+startup_timeout_sec = 120
+~~~
+
+Use the native executable and absolute paths for the host platform. The startup setting is an example client deadline.
+
+To list Modules or findings, send `method: "query"` with `parameters: {"kind":"modules","page":{"limit":10}}` or use `kind: "findings"` with protocol version 5. `kind` selects the query operation. For `kind: "routes"`, `selector` selects the consumer and `target` can narrow the result to a capability or provider. For `kind: "dependents"`, `selector` selects the provider and the results identify its consumers. To inspect evidence, send `method: "explain"` with `parameters: {"selector":"<stable finding, claim, obligation or defeater ID>"}`. A native response error identifies unsupported, unavailable, invalid, or mismatched inputs. An empty finding page only describes the selected inventory.
+
+The server opens the exact repository view before replying to `initialize`. On a large checkout or a mounted filesystem, startup can take longer than a warm query. The client should allow a bounded startup window suited to the local checkout and reuse one connection for inspection. Startup delay alone provides no evidence that the repository or the selected profile passed.
+
 To enable explicit candidate analysis, also supply `--candidate-storage /absolute/external-directory`. This enables `fortress_candidate_base` to return the exact physical base and context and `fortress_evaluate_candidate` to consume a native CandidateRequest. Use the base tool first, then send exact migration operations with preimages and proposed postimages in `request`. A stale base requires a new session and re-evaluation. Supported evaluation uses existing SESSION/OVERLAY admission and fallback. It returns an inline `PROPOSED` record or an explicit resource error. Use the native overlay command and preloaded candidate paging when a full record exceeds the inline limit. The service retains at most one prepared candidate workspace and releases each candidate buffer after evaluation. It writes no proposal or source through MCP.
+
+A practical development cycle is to inspect status, query the affected Module or finding, explain its evidence, and submit an isolated candidate using the exact observed base. Review `PROPOSED` results and unsupported scope before making an independently permitted edit. Once an edit is saved, reopen the connection to observe actual source, and independently test the result. The client may use ordinary development tools when a query cannot establish the needed fact. Its shell and editor remain outside the trusted mediator.
+
+An explicit candidate call can return `RESOURCE_LIMIT` when preparation or evaluation cannot fit the resident budget. Treat that preview as unavailable and preserve the actual repository state. In a returned proposal, finding-governance `PASS` covers the disposition of the supported findings. The progressive validation also requires declared authority and zero unsupported items, and profile assurance has separate evidence requirements. An empty raw finding set or a finding-governance `PASS` does not establish those other results.
 
 **Trusted local invocation**
 

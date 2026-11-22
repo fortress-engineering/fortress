@@ -48,4 +48,6 @@ Owns all transaction writes, exact target verification, receipts, and recovery.
 
 Agent requests cannot cross into the trusted writer. Retained evidence maintains its original source, assurance, and authority state. Trusted write coverage is limited to operations routed through the explicit embedding and only while the exact reviewed inputs and authorizations remain valid.
 
+Local client qualification covers the actual stdio protocol, immutable response parity, exact hypothetical changes, and independently asserted refusal and lifecycle cases. Development observations about these tools describe their use within the tested workflow. Comparative agent productivity remains unmeasured.
+
 See [usage and trust boundaries](_docs/code_docs.md).
