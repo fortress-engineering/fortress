@@ -842,6 +842,9 @@ mod mediation {
     /// Fortress requirement: TF-AGENT-INTEGRATION-0001-R02
     #[test]
     fn postwrite_divergence_invalidates_prediction() {
+        use fortress_core::heavy_admission::assert_no_incomplete_migration;
+        use fortress_core::migration_governance::MigrationRecoveryMode;
+
         let fixture = Owned::new();
         let selected = policy(&fixture.root);
         let review = FixtureReview::new();
@@ -867,7 +870,7 @@ mod mediation {
         let plan = host
             .preview(vec![MigrationOperation::ReplaceFile {
                 path: "src/lib.rs".into(),
-                preimage: original,
+                preimage: original.clone(),
                 postimage: replacement.clone(),
             }])
             .unwrap();
@@ -877,12 +880,42 @@ mod mediation {
             expected: replacement.clone(),
             unrelated: independent.clone(),
         }));
-        let error = host.apply(&plan, &AtomicBool::new(false)).err().unwrap();
+        let token = AtomicBool::new(false);
+        let error = host.apply(&plan, &token).err().unwrap();
         assert_eq!(error.code, "ACTUAL_TARGET_MISMATCH");
-        assert!(error.transaction_ref.is_some());
+        let transaction = error.transaction_ref.unwrap();
         assert_eq!(fs::read(&file).unwrap(), replacement);
         assert_eq!(fs::read(&independent).unwrap(), b"independent writer\n");
         assert_eq!(fs::read_dir(records).unwrap().count(), original_receipts);
+        assert!(assert_no_incomplete_migration(&fixture.root).is_err());
+
+        review.rollback.replace(Some(transaction.clone()));
+        review.explicit_review(plan.digest());
+        let rollback = MigrationRecoveryMode::Rollback;
+        assert_eq!(
+            host.recover(&plan, &transaction, rollback, &token)
+                .err()
+                .unwrap()
+                .code,
+            "RECOVERY_CONFLICT"
+        );
+        assert_eq!(fs::read(&independent).unwrap(), b"independent writer\n");
+        assert_eq!(fs::read(&file).unwrap(), replacement);
+
+        // The fixture owner keeps the independent bytes outside the source
+        // inventory and reviews recovery again before releasing the fixture.
+        let preserved = fixture.outer.join("independent.rs");
+        fs::rename(&independent, &preserved).unwrap();
+        review.explicit_review(plan.digest());
+        let recovered = host
+            .recover(&plan, &transaction, rollback, &token)
+            .unwrap()
+            .actual;
+        assert_eq!(recovered.actual_source_ref, plan.base_source_ref());
+        assert!(recovered.receipt.is_none());
+        assert_eq!(fs::read(&file).unwrap(), original);
+        assert_eq!(fs::read(&preserved).unwrap(), b"independent writer\n");
+        assert_no_incomplete_migration(&fixture.root).unwrap();
     }
 
     /// `T-TF-AGENT-INTEGRATION-0001-R02-005`
