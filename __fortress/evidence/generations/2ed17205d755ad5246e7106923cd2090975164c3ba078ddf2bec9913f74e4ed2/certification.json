@@ -1,0 +1,3520 @@
+{
+  "$schema": "urn:fortress:schema:v1:certification-result",
+  "schema_version": 1,
+  "profile": {
+    "id": "CERT-FULL-SNAPSHOT-V1",
+    "version": 1
+  },
+  "subject": "sha256:867d8a20e395685f0c658b93d137f66527910b5838e790a0a59095b6efdc4810",
+  "status": "PASS",
+  "certification_digest": "sha256:84dc37334355a817cda5a3e9373297e885aab99642b5fcfc99ed3030337ae304",
+  "evidence_graph_digest": "sha256:d1cde65b25c87b889d45aaee89b3849a144a04ea43eab88dfcc85953edeabf76",
+  "obligations": [
+    {
+      "kind": "STANDARD_RULE",
+      "subject": "ARCH-DEPENDENCY-001",
+      "required_evidence_classes": [
+        "STATIC_PROOF"
+      ],
+      "evidence_refs": [
+        "sha256:aea5f47719ad9610751a790c310804cdc6cd458128b416b8233728283e4577f0"
+      ],
+      "status": "PASS",
+      "reason": "applicable rule has current PASS proof"
+    },
+    {
+      "kind": "STANDARD_RULE",
+      "subject": "ARCH-OWNERSHIP-001",
+      "required_evidence_classes": [
+        "STATIC_PROOF"
+      ],
+      "evidence_refs": [
+        "sha256:7aa4740c6082c608e1d175fe0c87b83fdec029f4b27ce20d91e85cd5bb37e6a3"
+      ],
+      "status": "PASS",
+      "reason": "applicable rule has current PASS proof"
+    },
+    {
+      "kind": "STANDARD_RULE",
+      "subject": "ARCH-REALIZATION-001",
+      "required_evidence_classes": [
+        "STATIC_PROOF"
+      ],
+      "evidence_refs": [
+        "sha256:2ef61fa8eddde0f92834c691f3e986dfa5b65124d2e31a0f12d89a30c41ec4d3"
+      ],
+      "status": "PASS",
+      "reason": "applicable rule has current PASS proof"
+    },
+    {
+      "kind": "STANDARD_RULE",
+      "subject": "ARCH-SEMANTIC-001",
+      "required_evidence_classes": [
+        "STATIC_PROOF"
+      ],
+      "evidence_refs": [
+        "sha256:ed210d57b4a87a7032877181b79db4133e74bad00de7bc70bb3d58676cea1a42"
+      ],
+      "status": "PASS",
+      "reason": "applicable rule has current PASS proof"
+    },
+    {
+      "kind": "STANDARD_RULE",
+      "subject": "BEHAVIOR-BYPASS-001",
+      "required_evidence_classes": [
+        "STATIC_PROOF"
+      ],
+      "evidence_refs": [
+        "sha256:40904f9436bf3e9075b07dc646191c6f0b5b47e732cead404b00b2728e2690ba"
+      ],
+      "status": "PASS",
+      "reason": "applicable rule has current PASS proof"
+    },
+    {
+      "kind": "STANDARD_RULE",
+      "subject": "BEHAVIOR-FLOW-001",
+      "required_evidence_classes": [
+        "STATIC_PROOF"
+      ],
+      "evidence_refs": [
+        "sha256:4df7b60dd27fa344e3c05608816d4a3c9b30d6fc25dca6575247e28dc12c1e26"
+      ],
+      "status": "PASS",
+      "reason": "applicable rule has current PASS proof"
+    },
+    {
+      "kind": "STANDARD_RULE",
+      "subject": "BEHAVIOR-REALIZATION-001",
+      "required_evidence_classes": [
+        "STATIC_PROOF"
+      ],
+      "evidence_refs": [
+        "sha256:98fb758c5c9b1301b1da66c3cf6d29bac5888bbfb5ade38187557bedb7b90b28"
+      ],
+      "status": "PASS",
+      "reason": "applicable rule has current PASS proof"
+    },
+    {
+      "kind": "STANDARD_RULE",
+      "subject": "CONTRACT-COHERENCY-001",
+      "required_evidence_classes": [
+        "STATIC_PROOF"
+      ],
+      "evidence_refs": [
+        "sha256:52b651858e9371de24153f380e340866a65c715582c187ab4eb0d821e4076793"
+      ],
+      "status": "PASS",
+      "reason": "applicable rule has current PASS proof"
+    },
+    {
+      "kind": "STANDARD_RULE",
+      "subject": "PROGRAM-DOMAIN-001",
+      "required_evidence_classes": [
+        "STATIC_PROOF"
+      ],
+      "evidence_refs": [
+        "sha256:dd87826159333114de50c307764c76725ee9352ce2f3d6dfc51e464ecf7ed1f6"
+      ],
+      "status": "PASS",
+      "reason": "applicable rule has current PASS proof"
+    },
+    {
+      "kind": "STANDARD_RULE",
+      "subject": "PROGRAM-EFFECT-001",
+      "required_evidence_classes": [
+        "STATIC_PROOF"
+      ],
+      "evidence_refs": [
+        "sha256:2fe59222918abc59cfe0ad4c4b57d9e4879a9998ab9bf0cedf39ef2b4eb510c9"
+      ],
+      "status": "PASS",
+      "reason": "applicable rule has current PASS proof"
+    },
+    {
+      "kind": "STANDARD_RULE",
+      "subject": "PROGRAM-ENVIRONMENT-001",
+      "required_evidence_classes": [
+        "STATIC_PROOF"
+      ],
+      "evidence_refs": [
+        "sha256:c853cf52c206ba007e15fb83b89737734fd10db178a0437391ac9d5be915b7fe"
+      ],
+      "status": "PASS",
+      "reason": "applicable rule has current PASS proof"
+    },
+    {
+      "kind": "STANDARD_RULE",
+      "subject": "PROGRAM-RECOVERY-001",
+      "required_evidence_classes": [
+        "STATIC_PROOF"
+      ],
+      "evidence_refs": [
+        "sha256:ae83c13fefe61bb71de0717034168832a4ae50a1e05a69e99a8b45ba2213011b"
+      ],
+      "status": "PASS",
+      "reason": "applicable rule has current PASS proof"
+    },
+    {
+      "kind": "STANDARD_RULE",
+      "subject": "PROGRAM-RETRY-001",
+      "required_evidence_classes": [
+        "STATIC_PROOF"
+      ],
+      "evidence_refs": [
+        "sha256:eb47af2d660466e8cb72870ef041cdcaf3f8f97d53377d6f75d26c3362aca4ae"
+      ],
+      "status": "PASS",
+      "reason": "applicable rule has current PASS proof"
+    },
+    {
+      "kind": "STANDARD_RULE",
+      "subject": "PROGRAM-STATE-001",
+      "required_evidence_classes": [
+        "STATIC_PROOF"
+      ],
+      "evidence_refs": [
+        "sha256:423bf4d57fe40edb931429bcae9a375dfc5e3ac3942b36bbef734cc4ee293c4e"
+      ],
+      "status": "PASS",
+      "reason": "applicable rule has current PASS proof"
+    },
+    {
+      "kind": "STANDARD_RULE",
+      "subject": "REPO-DOCS-001",
+      "required_evidence_classes": [
+        "STATIC_PROOF"
+      ],
+      "evidence_refs": [
+        "sha256:daacdeb3ecd76dc3f2cc5f6bda70089da0976f53bd1f21e9b2b4d4937e539377"
+      ],
+      "status": "PASS",
+      "reason": "applicable rule has current PASS proof"
+    },
+    {
+      "kind": "STANDARD_RULE",
+      "subject": "REPO-MODULE-001",
+      "required_evidence_classes": [
+        "STATIC_PROOF"
+      ],
+      "evidence_refs": [
+        "sha256:f769e127b27f6ef436713e79abf42d2f5da6a31073b6600009da1aaca24425fe"
+      ],
+      "status": "PASS",
+      "reason": "applicable rule has current PASS proof"
+    },
+    {
+      "kind": "STANDARD_RULE",
+      "subject": "REPO-REFERENCE-001",
+      "required_evidence_classes": [
+        "STATIC_PROOF"
+      ],
+      "evidence_refs": [
+        "sha256:5b15194529821802e1a52625b0bc39d8ee1c89796ffc71436bc42a9452b2383a"
+      ],
+      "status": "PASS",
+      "reason": "applicable rule has current PASS proof"
+    },
+    {
+      "kind": "STANDARD_RULE",
+      "subject": "SOURCE-ARTIFACT-001",
+      "required_evidence_classes": [
+        "STATIC_PROOF"
+      ],
+      "evidence_refs": [
+        "sha256:b512d627910f95d347bffe49304ebc3574a004c7dae27fc37afc1014fcf31ae6"
+      ],
+      "status": "PASS",
+      "reason": "applicable rule has current PASS proof"
+    },
+    {
+      "kind": "STANDARD_RULE",
+      "subject": "SOURCE-PROFILE-001",
+      "required_evidence_classes": [
+        "STATIC_PROOF"
+      ],
+      "evidence_refs": [
+        "sha256:2eed53864b6f717f47d16870a94993e30441f8e2a784a5514aa004be31f46ce5"
+      ],
+      "status": "PASS",
+      "reason": "applicable rule has current PASS proof"
+    },
+    {
+      "kind": "STANDARD_RULE",
+      "subject": "STD-ID-001",
+      "required_evidence_classes": [
+        "STATIC_PROOF"
+      ],
+      "evidence_refs": [
+        "sha256:446e67e01a9f9cd8704af3db88de9f6eedb5afe887ad79348696d352559b00f0"
+      ],
+      "status": "PASS",
+      "reason": "applicable rule has current PASS proof"
+    },
+    {
+      "kind": "STANDARD_RULE",
+      "subject": "TEST-BOUNDARY-001",
+      "required_evidence_classes": [
+        "STATIC_PROOF"
+      ],
+      "evidence_refs": [
+        "sha256:a15bdb84a536c25628b5ae96b620d028b291201835346669f21946209c01ad3e"
+      ],
+      "status": "PASS",
+      "reason": "applicable rule has current PASS proof"
+    },
+    {
+      "kind": "STANDARD_RULE",
+      "subject": "TEST-TRACEABILITY-001",
+      "required_evidence_classes": [
+        "STATIC_PROOF"
+      ],
+      "evidence_refs": [
+        "sha256:dc9399417bfd5d63200f43e9abd1817a5381e2cc4418ba7650c4206738002eee"
+      ],
+      "status": "PASS",
+      "reason": "applicable rule has current PASS proof"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-AFFECTED-ANALYSIS-0001-R01",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:a0b60656da4fc42a24019c71eea9841c12add52149ea2f98a2f3860e7ca4c0db",
+        "sha256:76b8e125dfdbf7c064958754c4022d961c2daf467b5c7d0f8be4c3ca0d6b2601",
+        "sha256:3e7c63639fae255c11e86c44caeb35d7717daab36651824827bd2a14ab70c3d6"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-AFFECTED-ANALYSIS-0001-R02",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:0f134f34868a640dbfbbf1fdccfd8b8c278b9713717ecba22ea6e288f4841a3c",
+        "sha256:d95f8c23aa800d32c519cca2d2b229d65c5657232408973056e48526732f6549",
+        "sha256:3c254b956726a8fb19a118095734c161035cc8d42c2d40adb25d5d3cde53d729",
+        "sha256:c6af88a61fc2d64ab284e526d1eb4ef894ec027302fecbb97dd2e53062607a94"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-AFFECTED-ANALYSIS-0001-R03",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:aa458a6b1d0828d01853d5233be8eca9876694c42365d9b0e6d0fa5e74477dcf",
+        "sha256:ca6c1446a516242d0fa65e82c6322fc21f10e67f486cd06c4024d6a9a7938ae2",
+        "sha256:98fb5fb667de1989e4ec7c94ee9cd79e20e4cde16b4a5e02b26e8501a1a56305",
+        "sha256:5763d05465cbc512878575e1f5dbf9da4e7a5c5e5935882891f67b450daeb45f"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-AFFECTED-ANALYSIS-0001-R04",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:37a0ead4bfe88f8b786fd3f4d135969acfbc5054cd3466db13795f1d7f314446",
+        "sha256:5d0822853e9b0912679c0386df9f6f2d2c6261c5510ba81992eb6de4c88ae36e"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-AFFECTED-ANALYSIS-0001-R05",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:c783abb5adbc9b63a1b42704486d4b61ec7b9c42bdb382779cb53e2cc223a4da",
+        "sha256:dc0b998176233388002c975626b9468c056fd6cabb3d3fca556b41fff3faddaa",
+        "sha256:132d90539177e487d41afb48ae7bd55a31dfa73edd4977ddc1f43807d270b678",
+        "sha256:773d59e5508c947d84881c98bc7d4f5c2e9ce6c76af069cd1c8e4b8d0ce67769",
+        "sha256:5a3961f0cd43cf2e4c9bb5eae44e7fa9f7173c1d61b951e5c4c3c68d81e876d3",
+        "sha256:4218b35a80c662be3e758f475fd840088935a7213f1b2119448b720e88142e86"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-ARCHITECTURE-EVALUATION-0001-R01",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:3c2e61a321dd757bdcecbafee7ac897762c1329e983b3e16b748658e7fedd655"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-ARCHITECTURE-EVALUATION-0001-R02",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:28bbecf9b48dfffee4f57b3e88d169acc2991eba32fe94e78fdb6b8960c31415",
+        "sha256:af2dea89cc7abdf6c020a4da2ca65ae090c6af609ea3bd9b16a6096e219d40c9",
+        "sha256:ae1afd70735f1ed4d0f7db8abbdd330a9c713dddfaa9108b11f91c82463a9cd9",
+        "sha256:eab1077a477f7c52c41b24a58e91f071bb9813f007449a170d99fda9e5d67ac0"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-ARCHITECTURE-EVALUATION-0001-R03",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:b090408d99ecf5f708c375270911613048d1903b9e1107518b8eaf398a525bd0",
+        "sha256:c6084f738fbd8ab1e6b0dd3d40ac537823d115c782e662c249992dda6b754940",
+        "sha256:63bfe6c6d432ecfbee4c77229cf7008e9af1f9b7bf635381c03f8e875eee2d50",
+        "sha256:653f773e0c38cde90affb47b5ba9efa78a74e33be4ede3e34b33c8141777366b",
+        "sha256:d5e42324a0e1a76e82822add8e0d27ee9d4ee3a9c3a1e64ebb368167051e9f8a"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-ARCHITECTURE-EVALUATION-0001-R04",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:83b830f8fa93d5e865ec63c5752f60148a58bbff96dc98d3723637c644fadd61",
+        "sha256:f063d82495b3a14e8cfc5368538401a53ae9424def096c75c060d39a0575ba26",
+        "sha256:cd0821ed1b43d7a9158f9cf0f2f5f7a51342d0643a4d8866ff8900139663b749",
+        "sha256:dc03374c52066ae7609def8a9709d2b8243962b670a884b5dd50c5bb0a693d74",
+        "sha256:220e3426ff01f6606d535cb8a9d39d976fdfb3ff57ae6d24bc0175dd5bc49034",
+        "sha256:7b73390abeb362b4f589198580b8c528a3865d0c8eedc820cf639abca71f8004"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-ARCHITECTURE-EVALUATION-0001-R05",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:8988aa1d0b56e603912751ec70747ecf496df746839c385a9633baf063483fdb",
+        "sha256:deb5e327a11e3b80ffe80eb170b2092a3701b3641fdcd5aae838ec95eae043c6",
+        "sha256:9f6fa90f40832c88ee33fb0e79b3ba52e17514d4bf564c4fe34dfff1e89be4c2",
+        "sha256:c8a7e0b56198c63883535da87f8561f4a1ac7e8150d3ddfaf16129159b092d52",
+        "sha256:f149cdc794a4619ff69f826e4c92247029c3d62d06b775ed142db526f2b20fdf",
+        "sha256:a48cf53461cd9c7d548ba7ff8fb9177410f7a381213318055414a5c600a4d6af",
+        "sha256:44d69ce47c400fc8dce6eb6a98776f5c4b70441c675da22740e998e8acb2cfde",
+        "sha256:b35da070c36f31d15a3bff4868935de3d8b539cc810419f89bdf49d5269d1f48",
+        "sha256:761bde49ff369b16852d9502f505169b9192ee37f8855c5c32b02f20843885b5"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-ARCHITECTURE-EVALUATION-0001-R06",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:7dd50f0dba40c5cb327d84e64c3070131cf3d1d9b74f21209e13a98cddae9756",
+        "sha256:cb40c63ae289ed987bb9b59ed826c3f3f04866d49d270675cca4c3f58eed2a1c",
+        "sha256:b78c354f3b8b8bda0cdda231eb18431838f7ee7a2ef5b502dd689f46df918ae4",
+        "sha256:f5c4dc8245480fcd0f50c1ed4db8afefed3d03e4b37772f54ca51917b816f2b3",
+        "sha256:4a06b92722ae2537535246701a94a621ad99f48d94aff012bc2e03df893abec3",
+        "sha256:ba06b0efc7a6bdb3335c1874adfd394959dc71994c1767f0ec760b3d6c5c93aa",
+        "sha256:0f5b4836c8a40614839b5e79a8c403eb49c9eacfa162b9f8a684c62f37f42313",
+        "sha256:705c4412000b37686a4f6e55abcd042333c4040e0674b50d1e2c1af751c8b554",
+        "sha256:068b72f732ccea4287fc6e21c666b5c4f35e0aaac60ee13eb9c996f3da5fd619",
+        "sha256:69188d977d2c88933ffe1e70354c14dd6aa32b67658154f27017545aaffc76a7",
+        "sha256:0c8e852cbc27f50a868c8d87de451c5027ab6515bcd156efde9fbaaeb53362cb",
+        "sha256:d3c20ba6d636a7f16733ba8763c8f889d47233dc5ca9d362678168cf19c871c4",
+        "sha256:7d5b21c06e1a7e74aa09ab35b227a28bd0e5ddaa1fdfc31507b2bcc59dfafc80"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-ARCHITECTURE-EVALUATION-0001-R07",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:c93f333805f4b943cf7f4fc04e0ab224946d5382bf984d190b095c5820fc26bc",
+        "sha256:6f6a2c0ae1e19a794f22c62985737721668bfd4415fadc2842ca41803611d042",
+        "sha256:a2d5d1bbc2bccdac9ade67d96ccc896792536c7711ecb674679546c9dbb5e2cf",
+        "sha256:460ccd3c55be33b4e7a7b44d0b50ed15356f2bf0471040638671325f5f20a70e",
+        "sha256:a34bafd90b554fcff6d5bb41bc8ae5f81f9bcd73ef533d26d2aa45ee14bebfae"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-ARCHITECTURE-EVALUATION-0001-R08",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:1310a5cb7e320b1502404169dc1190509b1f30b33ca3e082007f5f9a414c6174",
+        "sha256:40ad111ecaf6b373112e475c18654a7fdd713b7ec1bacb3c36f514621fc4449e",
+        "sha256:bf1fd00769e22f69954b2859a0b0225cf3bbdcdcbb981965834c43545b0ae235",
+        "sha256:58548b026c7323b825eb516c27d6afa5042d2a83f541eec13fed1852dafe6dbc"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-BEHAVIORAL-REALIZATION-0001-R01",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:fa5b7a1661271b2283938a410574f7f2c729fde9c208cb77e89c8975af329196",
+        "sha256:04a42db71a91b133edb75ec2926a88ad65834f73964697a12b96df0105e66fde",
+        "sha256:8ea50ee9f14bdb502acac3baf5d14f92f1db524cace7cd35e4cc6e20f0e057f0",
+        "sha256:fef5845e71b4a268eeb7f2e8b97c4861df59240edf614c0037d3164fe3a5d56b",
+        "sha256:82e34c108a0e93ec469a4413481bc1119d655aedc36aca4207efbc00f81a7ea0",
+        "sha256:094c33cd319af373fa405b67ff4622e7c66980b9de680fead3ced50efc640290",
+        "sha256:a3c86e82b844a95ce73474e4e5c868c8f5c33c17eb1ee2a8ba9f5acf3596f64f",
+        "sha256:3c84eb6d2c03c92eb54984c99f345ee43982d8abfafed80ad74139436d17a7c3"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-BEHAVIORAL-REALIZATION-0001-R02",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:ce09e4e0d5580980f61acc00c7b76a16eb7fb0bc4846d0ef8212a38b3391146c",
+        "sha256:81ece9db309a515c929cba5e98bd5f84e699f92b823f672f75d88a3ef538eefc",
+        "sha256:14535bfbb779da1a1d2693c19031594e5e8275c9a5f92225b354941f74e67415",
+        "sha256:7d8dc684b9357ec75d451b232e17c32353a0da5bb09ed3caeaf18469c50838dc",
+        "sha256:d527dfcd297b34ca1f516244107fafdfafaa1e01dddf43ad08d997e3a484878d",
+        "sha256:2f995739f0da0c9c73054fa3a713c9e2cfe8c5926f0bbb37fa0d06a5a0b40c84",
+        "sha256:9647ced57e49802c28c7b1d2a94ee29eeb9c0e78b8fa1a2b5717c44bfe0a320b",
+        "sha256:f506b117f02d39c3adb3722f7b6d84f1fa86e5cfca1a756a8ec8f0559b160284",
+        "sha256:d1456dc9fbee5e601ee98dbc1098078d17021a31afd54de422efe802246e536c",
+        "sha256:ff0362c47ab18a4828a5f716c789506ac7e09e8e3e7f65427b31cf53844aa7a6",
+        "sha256:0db7663c05d58c7cfbcc588010c9a6c7fc207a6721f1d424658a556d457bfe79"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-BEHAVIORAL-REALIZATION-0001-R03",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:a58fc8c8d6ca3825e586be295ef0633c7ba75522da44ebe9016bab15f536204b",
+        "sha256:5f828e0c5fcd0652b0ab41e5750ceac8ff7d45dba68e60a1dff532c71f954054",
+        "sha256:8ccddba46bbfdd9a20940fa0930d866c55519a69b5460cae50d2e93b7da80225",
+        "sha256:e63ac5c80c1d1bd5042ce4d5c9fc7d885a5653903a362993b00db5c2154c2650",
+        "sha256:ab01a9317e10a2f3d2c02d6b0d211d0908f9956416914e23fafb3f98a7d3b0fe",
+        "sha256:f9557495b3049e2f4ae4ec5fcdca674648ceecb7f81028e4ee3c0be95e7089c0",
+        "sha256:416d09b546833f26752e6cfbdf10a59e775fcb91d40fad3a6cc0877c367d1b72",
+        "sha256:6afc79f48f51da460c687c6b4df9d8a24a77e52c8f4ecfbbe019ae793535c6c5",
+        "sha256:89d2ca65efac347d51cd73ff3e3828b71d1b2856d1dfc1ee6d5ccb57a1bd6d93"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-BEHAVIORAL-REALIZATION-0001-R04",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:e550c992e19e681988ed86603278bdee73c6c07fca8a07c65f7f2f775764eace",
+        "sha256:ab35067933261d706307f20b8db23e08f74c59ab90c9f56b9e4e826b9f9f1b8b",
+        "sha256:96c9fee6ad77f9a82cd478e4cf745f0809c4ed7daa2d90bcb92b25f3d902c39f",
+        "sha256:171ab1a09017b6c835b383c56869c8a1f0d16c42c96cae833e20a26a77a951ff",
+        "sha256:a21af81b8cb03e337538d9d942082ce1b8268e3391b4a4891505b12f0f034b84",
+        "sha256:2393775f69a0d976e9279446dfaa04f9438e98574001144c72dcb03189baf915"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-BEHAVIORAL-REALIZATION-0001-R05",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:0b80fda4c41b4b349c8de4dfc8cf60fc0ae4840acda66aeb5923a8f59ad84836",
+        "sha256:900b13dd19064593039d06e364beeef0c04d648520a878bb8c65b8a55f8e39b1",
+        "sha256:e1626f1239b93bf7b638b5efc86cc609e6e688ba73fc5c6a6f54c339cd97e31d",
+        "sha256:403598023dbc70cd7eaa3c1e2e11724fa2f17405f4a3b71d47f8195a28f24e1c",
+        "sha256:601a162436f08e5d9e99b1ce07b47a7642ac5db56f0b76b9d7889aba40bbf16a",
+        "sha256:ed9dff9975cec020341f4a49dbaee33e835fa12e2ad5bc89dd4f2ca95faf3903",
+        "sha256:64171f5dfda6094f15d78f01000fe61a8a7a9616099454053f17c5d72d37864d",
+        "sha256:c62e94675cea3885579ba19dc4ea270655d2d1d33c802984abd951c6c506ccf2",
+        "sha256:8b756381c96c79602ea03f3d6681053459b4ed44e71d47ac05ae7e5aba9ba24d",
+        "sha256:59160994a4cfda2e3249110633bf029be32551ec56fe8383c0f498f3cdab1b4c",
+        "sha256:6564d1115f019772d7450c6116bddb6d9f9b44712d1428ff6403a030a925e446",
+        "sha256:ba56a6d631ead69a41c11af954dc5f81522fd4ae7d965c2cacd5d9a99e46e59a",
+        "sha256:c1cb88ec08617af7b6a12fbc75f6e2840eaa3db8a02c606bf8cbd7ea7dd1b32e",
+        "sha256:2bbc260e84e3c2efcf5b141a36b84073f893d6a40b69afae8b6105652ad9f488",
+        "sha256:82b834ba454a53d22038f457223c5a7cfc5703f0d05d2235b9d41da2c75327f3",
+        "sha256:f795d7df75b0398b566d630b67d2bd88adfea81e225154cbf173a0dc719eb938",
+        "sha256:d57d5dfc66043cae211229d618ae056496dabd0f0c92da0c65e293311cc3cac1",
+        "sha256:9c3ae33bc4772caa3373e3d8dfbfbc89fbbc178b8b97f93114973cd0a3cab294",
+        "sha256:203c12bf11433df11ca5c970a60c87c300b5af186dfec6468862b830e6b3eaa0",
+        "sha256:65c6ecb085cb07685d5cb5c7ed8924dbed61ef6b045e8bfc56bc730b199c85f4",
+        "sha256:9e74112c1b8b9e1357ad46073df959a5be425c6f22f3b22fb9e59d4a21f9a349",
+        "sha256:f23b830cfca10b04da1d00a139a669d5d94d8e6abca3e907ee323fd313cddea2",
+        "sha256:22e18c0b6c05e036aa16b64a0cec478a5d045c961f3e17bdb270640daad22629",
+        "sha256:cfdf87851f8786f0788eadac3f557959737f0986c7a22d9a8bc65975149f17f5",
+        "sha256:c2317197a51cb695fa5bc472d26c50d858b2aa738f898de424888f588b99ba23",
+        "sha256:b5769e3a7477ecf722b30299b5fa17b6a0ea5a89e446485c077b5e49f8895d62",
+        "sha256:57dc866ec8ab8aebdfaa7eecbc3066fb32d50b138ec7692bd6f291970e171cec",
+        "sha256:e9831993e78dcb0c6842b15483f700754c68d3572bc6d76b117bfae866eb5144",
+        "sha256:0438c66f56ed688c5c96cc8c0edd0ec8f52d55071c33fed46044bdf25e9257c7",
+        "sha256:840ab17362ed6af6bdc5e3408a225891060fc5bfcb53ff33ee48f23ea4fa8885"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-BEHAVIORAL-SEMANTICS-0001-R01",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:c2d015f292d5e3d1b81e0172619fe32df61912ada4431c84e43505a9a07357c4",
+        "sha256:aa9a37ca5ce755e4433b0bf92c4bb43f7b950314c03a66ddd367a29aa73a5224",
+        "sha256:76c701378fc93e8c0196785cd1ffd456dc1a7c24a11fff99357782dda4ecf538",
+        "sha256:435afb3046755277a7e9fa1a65d93d2d2e75ae1e39b8920d09027848b627d37f"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-BEHAVIORAL-SEMANTICS-0001-R02",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:47598dfe54ccf92345bc0889a6511657912d22fcb7e4f6ac824ae29c850e7950",
+        "sha256:ece0526a9b6c0d5aca06c3a8bcf9b759f016aee78526b4d1632af123355798ff",
+        "sha256:038c5e804bffc205968be16f253e641a0d496d8f5192eb7335d7835486a4b0f3",
+        "sha256:708af548e8a91116c7b95f4fd6da3a71e9771be3a5e03aff8159ce14761aeb4b"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-BOOTSTRAP-GOVERNANCE-0001-R01",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:d31e7c343aa362c036e552c22ea81488e6fd7f21bbf45c2c24e8ae25e21a8721",
+        "sha256:37d3fc3a22b78d033a8adb846082c039f37a3d65331931e0d49706d3364a41fb",
+        "sha256:28dc314f35385354437ae8c28eaa84181504bf33ee1d25653aaa427af6505be8"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-BOOTSTRAP-GOVERNANCE-0001-R02",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:aa9e7834977b5a65888247ce19de9afab39b5470adea80c2998ac1cacdb47716",
+        "sha256:8ed862eff4f1c84ba72ec38f3811039e767be28e71c37a1506a450f3090ff226"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-CERTIFICATION-0001-R01",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:1babfc1571824049a25111dbb9d75139d13720783046dc2d2fece4fff5cecd08",
+        "sha256:8017f40545a9494cbbf388a45d480b90b567e64ab552a161842e23280aafc89b",
+        "sha256:2eff672a4718d730c362c895933acfd52a8a87c59ce3b76588f983c6f7eba30b",
+        "sha256:2b175c9f9e85fcc0efde24ba40ad0ad218f082eda5efa892f9c5249b86bc6fda",
+        "sha256:4a8f1496b615c1621947df1c694edbf4a624588fc912cf7bb145f319e1a7080c",
+        "sha256:2ef7c75cae517f520b3d65d27d2b1f1e32beeb8a50cf67e170b80ce5bb356c12",
+        "sha256:315a0e630679bdc352f6eb1dbef6ddf8dc6da94dcb310055fceca6d4e4d2fc4f"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-CERTIFICATION-0001-R02",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:b6d1d554a5d0fd17a5469e59abbb89ada1b92bd7e84f0470fc7bd4184b7388f8",
+        "sha256:9d0fe05c3cfc630037d6f0facd575bb12bf7598a8337783b8e8cafa663057e30",
+        "sha256:1492f36916d0a8ef4c3fee632dd61148da80ce072f2ef602d91fde5696a34fbe",
+        "sha256:313b551e95d5bc0686caa2ef46a1d5697637672a3695da666c07d498c26b99d1"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-CERTIFICATION-0001-R03",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:34817aace6ec61ba9b7a4af644818b8ae6ae43ecbc9b8231876fe36d8a044fa5",
+        "sha256:5166719ffa57e059beb35027a94b7e0768be1180c09d2a1ef41c0111a8debbf6",
+        "sha256:8ed007f599e892a2033d76a42a94b9f458ae5353e981ecee08259051a70e018e"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-CERTIFICATION-0001-R04",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:5f31813e763756b5c82e0f5ceb6cb755bbcb0452f9abebaa5b7c3349b4b29f85",
+        "sha256:55b46b613b3741464b7a3567e85041203faac914299fd7ffefb5326eb3167894",
+        "sha256:a5bbc02d0cab59f2126cb566aaa191786943409e618de14b567102b417cbf2b4"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-CERTIFICATION-0001-R05",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:701b6bc0873bbf1e89c27cc41c08b9f73b34f1f198765299a3b070fc82b92555",
+        "sha256:26b69c85d0614e9cb19fc5d5041795a02a23ffa17d6685aa4fd3cbbc51a1ff60",
+        "sha256:7b02e711b72818a0b235de33f61cab1262df0755cae62ab76d7f2591ff699e15",
+        "sha256:a2fd244b787b36504589b6b2e559e67c3088f9beb94d9c17aa172dec0fcc4935",
+        "sha256:5f105b74d89e35281a2616df9eba42cc47f7ae8aee3dc087b6ebc43b52219da9",
+        "sha256:834fd11b7e2a8eb010cb7dc4c665fa5da88403d4bd5f74e7c3f3141da5f4efc1",
+        "sha256:e603d8e01a9ac30da4256f51ccaf9b3fca3b6eff31859d5d14a12d50a6a6e73f",
+        "sha256:d8220184c11af7dccf95994944314bec7d7e907b568fbd99bf0b51104e9f1b66"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-CERTIFICATION-0001-R06",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:bb53191e4934065486bf5eb00abd134a93ac01a3ba42c94e851d97d43a3ed430",
+        "sha256:c1368c1316c5b11d913a821483fab514d310fbfc4d04705a59f57ed21112a3f7",
+        "sha256:a3bdfb42b3a15dabdfb58228060d4f097f0e038d43a0ac5f66d3a4b99fcee335",
+        "sha256:b25f1e7a3bec3556d3c9a2fd4d53d6d7b8475cf88744ab9df01e1db14a6e604a",
+        "sha256:cb935e58782a0ee70b5fd093b398037f9dfbb9a0344e40a0d8e5e1b95f4ed6a3",
+        "sha256:eece2e60516c3df4714611806007cf09468bfe485ca8effebd35e1829115a991",
+        "sha256:58b533ae07e2c239799c792c365de1a7375338a9dbe6c01164c3f2e08b1e7905",
+        "sha256:1fb68dbbae4052e0b3d6f1a2ef1577f401d4b89e6b15046f5ca83914f155d168",
+        "sha256:94daadc0a156ed232a1be6f7cf5f84fabbd9a2edc46d45c693f9ed15d1570aa7",
+        "sha256:b0406931bf16feb6346740452adaff0eb59f26367943ef373163d0ad8010b489",
+        "sha256:ff714ec7804fc372c2c2a7d307883b740126d3efac96b183d498f794029230ae",
+        "sha256:ef9eaa00a9ed2a698b03294ff20bfbb1497c162f24640f2b1b21768a10d8f7d6",
+        "sha256:ba245bea9a10e8d1b83076fca57d633b2abd3b656d312a3a10188a08e6dc379a",
+        "sha256:8c664ef48eacc4c3a21c7f2273cc93b836c2e8f637fbc360a2bd143c7ad23017",
+        "sha256:a9dc0c9def12f89eb3aa84c941ec19a473798bddebf665e867f9753336d5d2b8",
+        "sha256:3cae536e34af3f63a94a7630b62820dd890755b361fda4f3c4032147d705dbb8"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-CERTIFICATION-0001-R07",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:4f64268dd535820ed86ecd4bd06ffd2669826f5a2b60666bc12210adec41803c"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-CERTIFICATION-0001-R08",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:c706a2fa4fdbef814fbcbe665e3a1bd24aebac30e9e97573f8b7513472e2a67d",
+        "sha256:4087e5b9d24fbc447bc4e5c877d2b2d0c44559fe9cfeae5cd5c072e74300b986",
+        "sha256:390bb5f3e9abf03100a3863f9fb8cb4d274a1cd6e831bf37e1d42779124dfb76"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-CONTRACT-COHERENCY-0001-R01",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:1ed44e39d496c11dcdd639e19753a390da7c1afd3e640f690fd54a418ea39083",
+        "sha256:0b40ef834bddab0558c792a032af350dd07c23518fc8ae22b91ce82defbd29b7",
+        "sha256:a32401899e03d2561f6e6d079b1185bcfd8f91c6aeb81b033130c2120418336b",
+        "sha256:f0c6abdd19db0c946b8ea5098b5ba29fca001da2c5182d9cae2e99e9577591f7",
+        "sha256:876cba4be228aa93c9800c4f25ac95d0dd1faa17254167fbed50e8700ad00ca2",
+        "sha256:fde643388f657d064966bc167c28518bfc0cd00cd0d07b676375d2a4f44c9656"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-CONTRACT-COHERENCY-0001-R02",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:6fba9f61ebcaba1790d4f322cdfb180a8d0a4e50ea5808fe5be953566757427f",
+        "sha256:438f453024070e092356fb37a9d1b4b7ff6fbad4f363cf4c0f1729a6b20513a7"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-CONTRACT-COHERENCY-0001-R03",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:2ee637be577d86e9dd61dc33c2ec7a8014367411c1dfd2b35d564e57eb78cff5",
+        "sha256:8c9ad574d762debf0b9f168d36032f9b71a24d7467763d22d3ea4d2fa4ab5343"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-DEVELOPMENT-GOVERNANCE-0001-R01",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:1d0c1a466569f8aaf75d983c2b66f1966aedc0c801cca2cb44a4cb990bf49685",
+        "sha256:ff22ed6661a29d64e8dcd1ac78e2834d00397ed6751dfe1b6c7b9873dbbed974",
+        "sha256:3fa7b17eba35110883231e6afced2c746324764d27b738af9bf019da17c75644",
+        "sha256:24576a0a82221b0d2f99fd3798284da392c1e22871ed191d18b404a02fe152fe",
+        "sha256:d019d152461830ab23794978735685ddebb52cc9cfbd6234c120aa683b0bc3db",
+        "sha256:dd7685d588aecd3ee5b499d368ac50aa907c81a7579f3f8acc83459a1951e52b",
+        "sha256:6b98d96083e00e24c247ed9cb60dbf9db0a75379eb908062220d177e05f8d945",
+        "sha256:a9e5bf38da65de10c69e91c37913eacb1b08ade934508335aa9bb6fc9d874ab3",
+        "sha256:b9d7932dd011d361879d814eaa17bd11bc65502aed991f5264f09efc386a2ff3",
+        "sha256:53c69b3f91aaecdef9052114e80f8c9a21e39ac40c88fc3c0acd2a6bd36393c9",
+        "sha256:d2b82d4726aeaec22a0fbe46ded50fd70cdc9c64ea41e5a0cbd954f736ed2e27",
+        "sha256:b7fd3c9eb15076692b2ce049edb71aa6e14cfb9fc9d9f206acd936774e20a5e6",
+        "sha256:5c0f5e0049e1b1ccc6706eedca615654075cefbc68fe2d88f34417c1878ef1fb",
+        "sha256:bb12c2d3068ec48f5c33274bcab3a14d081f44bfc39d7b374de40e5cd278c5be",
+        "sha256:8b478250a268904bd9e7199361fd3cb4e91e49c87dbaeb89dfe9568a0cd5b505",
+        "sha256:bb3de0b3e1c5f62aa999850ff083570be065667b7dcaa4086a88362907a80552",
+        "sha256:8a3b74ab29904944abe9009eedf747211e7e142ffa9aaa1a6a3202965be7a7cc",
+        "sha256:0c169ce2c511f88017920e1dce4c930c4c244cf25f7dfd0768bf1aec5db14859",
+        "sha256:20443542395b49e19c1bb5d89299b529e75daf3bf3e3351bfeed16860ae8659c",
+        "sha256:1a6b17534c2031b813b2f8e657cd5d8fd9f5adbf24d3c272f834e7194225c448",
+        "sha256:366b3804c7a5a56e5ff56a55db073c4ab57fc0b76e0c2111122afb2d32a69928",
+        "sha256:e9ad0a5bade4ae84e4938ecab54f20392cf4df2e9a35d85c2b0a9febfb0d1b4a",
+        "sha256:e8f81b0c77485f98d6afc391ef71b42f7f4778636c4410203b8763af159a266e",
+        "sha256:d66e5c1fa5618c25775813cc4030cec2d4b515e271f9cec8678258a22006510f",
+        "sha256:65bc2b498f9bf87f8e66980359c280babe678d4bd9ed9e9f8b7e53b4ff5f52e1",
+        "sha256:3443c618586f0826023c0c93150cdad2cc63d07f6323ecc85244f2d24ca4ae60"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-DEVELOPMENT-GOVERNANCE-0001-R02",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:02ce98621859a19a1dff3880063b49c93c92d8d6069657de1a2c0528ba940213",
+        "sha256:38db13580bde4978c2c0ed7fe77dbcbcaf2cde6a152d9fc4305ef7f8d8f2e465"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-ENVIRONMENTAL-SEMANTICS-0001-R01",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:176d97bcc0f4a58c6a96cc63750b4a62a961025cd5aa248d682e73e6607474ce",
+        "sha256:1bce6f894d739dc91d098ad2b7a80d803a638a8ff143e1ee35845fe9e6d37d6d",
+        "sha256:cfb207ba87eb65373b8e8eea9a9e782ed76fe473fef2031582d741edb66ea0a2",
+        "sha256:3512b1da965b86a2821962931124eaeb7449c67f077a4e91a86a6397f09dab0c",
+        "sha256:53bced94a140944d6a154a967c6572267190c0fa19a9438748f2781fb3e269a9",
+        "sha256:debfd638ece10ca1af4f5f3e3fee907bf30bd4cbcbe30d8fd87f48f80881107f",
+        "sha256:b6bb3615060f7921ee08d376a2bc41d631ed87b28fb35d5be4c0ca5800cd40dd",
+        "sha256:2ab7a9481a3e41269bedfff6b6c0e5663d49dd484885d0af41ae8e847da912ff"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-ENVIRONMENTAL-SEMANTICS-0001-R02",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:1d09f52736a6eddbc7bfbd0b53e01b91586f2ba59113692c6e67d15cb8f860a2",
+        "sha256:cc0b69bf88c65b53ae3c1341047c175211a7beeaad500b688f30617e99d59636",
+        "sha256:542b4c3b9764036dc1315a3e4f169d8042aad47af6f7dcc1c4c88d69a089f8ab",
+        "sha256:10cf1570ec3e96be5849f48bf0127c8522ce9ca853bfa4c9236bdd80b1ed8c95",
+        "sha256:9c55b956b153966acbb2306b3639c893d02266930a58a5883e9cf96b35a89dff",
+        "sha256:7c4a5f5e5b928473691e28a2afbd9ee0d9ca712173103a88e4f3e3f8c89cb0e6",
+        "sha256:d3ec601ac505ae83c3a6d5198d41d37aa8aeb02e1b1bdad72bb2014ae36bcfad",
+        "sha256:333e5ac63166b2439cc804072493861f113cc1980c73a59e2d43b9617605859b",
+        "sha256:8788c24c12f9da0748bcb9a19294d745f024b2d1e3a5bdc385b77fa9e29ec189",
+        "sha256:6085965e02d61c22ea78c664bfd02bdc82186ee2a2784511a71ceb442714be03"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-ENVIRONMENTAL-SEMANTICS-0001-R03",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:80faacb17e0626d8f2035be81820fda70008da3a3b7c06272a9a59a8c667a413",
+        "sha256:c4f680ce6cfead84870666992447aebfbbf49b2b9882e8e7cac71d39fa4866dc",
+        "sha256:14e4de440e898d363a5f143466e4bc18114f7c52842d17eb965d8bf92d91de1b",
+        "sha256:504821bc68a825c2db58dbe7002d65bab41c1cde8c6da5f4607ef1374d656382",
+        "sha256:dd21e9a442e695abf0a74cbc0002af8cac2c2092ddfd9352c4c63be47be1f3ab",
+        "sha256:c6a5ba4da413dc62b954237c33f328d2ce1b6844e1ca69ad53a033613e0474c6",
+        "sha256:88106e15fc0a1d27a65e5d59cbfb5b167902455087684474d6fc8f2d2682be58",
+        "sha256:aaf2c2c5934d7445254e6e48d43bc6f8f541e34c638c1b86743578667b2c889c",
+        "sha256:0f4b8bfe68b4c3e4a1d5b0922811d7f5c55e0b4cf05099de1d917568f9cc9e43",
+        "sha256:04ed054ed4ae86bfe0e49e413a6866d5bb53ad449cd2d24b9f2266628a7f29db"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-ENVIRONMENTAL-SEMANTICS-0001-R04",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:dd5206557364a3c056202a7eb8172b42759d93fb7b1a410bdb65b4ed6aa31d05",
+        "sha256:fc54166f3a4ee5f85f4406d00f253dec09984036f04e586dd6239d8cdefb0062",
+        "sha256:81845a50e7d923b2d2f2cf4c5442534da95370e2eb2656a72586b87fc6cd5ca8",
+        "sha256:0d84c622880b65b2cc25ef3fce378afca86c2b5cf69a59224b0e7a92749cdd28"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-FINDING-MODEL-0001-R01",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:6dd34cc2a0bd692defafbfc592d7a0d1b9ade542494adce1168a24d5c257130a",
+        "sha256:6c9d8f9a9c354bceadac8285b230c450980279344249185c690b7542ed6f2a68",
+        "sha256:792a8b11868598696c0f75522a144664a7cb6fa118b1b8983f0a896924e6a03c",
+        "sha256:5486fd12ba7a579312588b19e069e28414b46adfbb3a533d90c08e29671df1ee"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-FINDING-MODEL-0001-R02",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:ca4b028007b8d2a944ef12312727b693991b86e4f78920a8f32d857e223999bd"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-FORTRESS-AUDIT-0001-R01",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:e85e4b04a85d4e1ebb6fe259c0978bfed32d4c90ff0957b4f249da76af35897f",
+        "sha256:b592e60494a747d544b8d6ccc69a26f92601e33d3de37008391422706a44b5a2"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-IMPLEMENTATION-OBSERVATION-0001-R01",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:a7cce8acfb87fdf6572092a33571100d6b118bc108fb813dbd2faead322abf1b",
+        "sha256:11330ad24f363a44bd3638f1ee3efddff1a047fc50e29c483f8511be3f193f4e"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-IMPLEMENTATION-OBSERVATION-0001-R02",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:c43734c4cb678c8fa58053df4ff47cb65cd91adb98d491d0eb182c0aa705e15d",
+        "sha256:0ddda32852c231a138d497dcbf49b54b5124ec984ef0de13a154ddc111b09e2d"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-INFORMATION-FLOW-0001-R01",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:7e46a69ad75f6e9fc70b84f6f10d26521a75a229c6d9ea6ca664d9be66ee5923",
+        "sha256:13e89428642337aff9c8568168ff8e8741c288cb74df1bbd1f4ac33bcab285cf",
+        "sha256:9c6a4c1ef088e5b9d922adaa3518806b00de311768ec364dc3157594d5bd53cd",
+        "sha256:cf122cd866364490abf10670baadf1b9da607170ec2963ffebd744cd9a94a067",
+        "sha256:e20d3fe9e0972d6979722aa9abd1f22b153254e380d42312f773819b909640fe"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-INFORMATION-FLOW-0001-R02",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:d8663a39fc23f2e3ca1126709d5d09b2f208f331eb6d4ed5c37fa7e918a1c7eb",
+        "sha256:176ad456a6786d6b4b1c24a45df6ade37a12130505e792664dbbde804243336e",
+        "sha256:8bc0b94844feb1aa334b38877621a0ae7c2048cd996ff91a43db6debc3f2939e",
+        "sha256:24cd8007250b13af6e7ceb56c24272a238d34a6107fc34426ccd0373b25fda61",
+        "sha256:f10610bfbfb71ed23e671bba65d0987bdc755fc32e53c56f3f00b8dcf0729ea6",
+        "sha256:a89b424027cfd734c4b8accdb37982454b90f1ae3abef46b70c2701fcc8fcb0c",
+        "sha256:aae7ab83a85b0f0966cfe5fb6dfc6dc5e0a5847ef73f631529e0a67fbd47621c",
+        "sha256:74bbf9b97fc7511b732b0289eeed5b64cc57bcf1b74535a2996bad95963d2307"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-INFORMATION-FLOW-0001-R03",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:a335c7fc8e33edf8e78b29877f1e4cc1d3932fb9878b17a9cf3ec03a4f95d870",
+        "sha256:7409d47405d0de198ee882fa8fbb7d607d993edcaaf6e50c84bcb393c902ea0a",
+        "sha256:848d0ba77466806769c9977ed1c5ddb56ae0e51498be1f46e8b7163d1128796c",
+        "sha256:06ae22398425f47c5ddf95f083a4d2c0d893416bffae663177790053d0a91f71",
+        "sha256:0eda4db026ff0eb008757002a58842598d2a6b5dab410b6239607b485c3c7d9b",
+        "sha256:128efe79af4cea4b80d4acade165de92fc6e5d34ee187730fe15a08dd1645180",
+        "sha256:70dfb4881dc4d53a89bebdc1be3fccdb5b8aca1e869959143d9551025f5472da"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-INFORMATION-FLOW-0001-R04",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:4538b6b51ab998da4d18f2784d6bcaaf6bbfaebe20d5b893927bf094400dcf8b",
+        "sha256:ac56516382136b3ca0e60b3c73d147f2d7d4b94614dd1816f21c2a93c04a0442",
+        "sha256:2da5f1a2921f6972055430b63f2a430029ed268582a9bf017b1e9d8bed6e10c6"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-INFORMATION-FLOW-0001-R05",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:1aaa87ee8e8024d7060bd21816fd306f659d41577a6411721820b8d7cdabfdbb",
+        "sha256:14c9df709d1db144d3bca6e0bad8455516ecd2319f2b72353a949821c8b652d4",
+        "sha256:af34d6c5c8fd584de684c27ea482a8b0719771947c538da3d1eafd20bd162473",
+        "sha256:e217d521e2953019736c10c531aa436b092b132b6905d9b14155c2c0afe547ed",
+        "sha256:0574d282a1e61e5948e7124b7473f009383a404c19a86e0cdaa8472bfaea4b17",
+        "sha256:173ea4bbc40ae953431851db2e73e8a1d86d94d37228727ea7d947223abb2cc9",
+        "sha256:51d05dfb5c70ee213059f8d6195774395e82817513cbbd7fc180a9a7452dc2e3",
+        "sha256:f882a3e0a2ff1bc06cba9e61e4b3764ffd5a751b1ee1669bb2000b1c9147bb70",
+        "sha256:113c2390614df7b0226f96883a3f8a07a023d57e3071efc0268d0afcc218a379",
+        "sha256:4486ea1363169a51f3c9ee06c66804f4f0c4262f3111397f79f920d3052881ad",
+        "sha256:9f960dc80906d3fcea9dca24a793ae3ad24b59630c6fef122dc074433ce69ca8",
+        "sha256:77e5224201dd6e9aa8bf2d273c7a2a7949ec6636a03deda9751df43e3aa701f1",
+        "sha256:de9bf7a71f3862dc7ca4c5a6c98e6b6e95dbb1d6a05eecefc79eccfb96549884",
+        "sha256:097ea2e59694eb261c632cb6692da846b274eba50e616791d923dfe0cfac6f20",
+        "sha256:5ab9dd6a7a831c9c71194175c8dd4ef6db3d1d2879296a25352a1ab6b059cb84",
+        "sha256:cf878bdc643899e80eb04c1c8ce3881ff782ae45dddbdde83ae2ef6ca632ee25",
+        "sha256:f46d2edeaa9cba5309ac466ccb18f803436615798d64dec45527481f4e32d01d",
+        "sha256:2c073e65455d834daf0869e024122324c339fb2795522fc2373a7e5d075324f0",
+        "sha256:f8d80e04c46c225949343127fadcfc66cc06c1e8bae30ca7abc68629391132ff",
+        "sha256:9ed455fd57453f44ca48f0eb05dfa82fbeede96f510dc7db08ca90ca51daa981",
+        "sha256:37ec793f0ea404ad95b5f3f630a0430b07e5da83fa603fe67b2847f2529e4fb2",
+        "sha256:de3ef3b25d93fe44198d2c06cc8e393fa63a90b60f66a237005bced69ca96716",
+        "sha256:b3ba494ed4f25b7516b26f2318b3dd3b63436248ea6029f93553894b25a2c359",
+        "sha256:632ab737c9303e8768ddd4a1d1a6793806bd8635a26cca89c18d4b78a7ba286e"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-INFORMATION-FLOW-0001-R06",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:715f69015e891715694650eb7d99210de563a5928588c49847cc2fea12d2b445"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-MIGRATION-GOVERNANCE-0001-R01",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:f9ae1fb7ada7e4072d4ade1c4dc48b5e7e39e8467da3d22d6b3427de4af64881",
+        "sha256:090e6c10f08c808e9210f207faf8d1b54267f5fc3dd6ac8d4bef080746798010",
+        "sha256:0574b372ebb0c26aebfbf5f852a7bcbcb4ed48c7b17c00d4d846380e65e2aa00",
+        "sha256:b9036e5d3a28a3e58285cee1905ddc2f1cc69d0addede9ab8316287cdf50b171"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-MIGRATION-GOVERNANCE-0001-R02",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:a4426c78e215decd2334173d87a28fa3f0f8a2e116c6b4afecadcb46b394ca61",
+        "sha256:104e8f939bbfcd606c34c69ca789a3f03237292b74b8adc2dfbea993a7574ec3",
+        "sha256:b4264ef234512d4c81154964f6a6df4674bf8b2687bae5befe41b50d6ac9f676"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-MIGRATION-GOVERNANCE-0001-R03",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:9f504ece9ce51704aa1b361f541a497e5b4cfbd83741fabbc247577912c7863d",
+        "sha256:1d10c2c34665b1cafe312a1b14a9c2b960580a5384c7886d48233035d00bf193",
+        "sha256:5d5020b688b37380d701d0e9c56a9233803e1becbf4775eee8e469c3d24e741d",
+        "sha256:89a5bf87e8e155eebf522937f5416100650dea21e0a53a4037196c401808f555"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-MIGRATION-GOVERNANCE-0001-R04",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:56905fe82cd8a58494f1240fc29e71b300cf7b39a830151090da475fec6eccbe",
+        "sha256:f986770046320cb50425cb114bbf13d67aefec7e833198080e5c5b545f249910",
+        "sha256:1eb322e0811c50e77925302f3665799dc6a9c6491f90d70cb21050b3b3c4df30",
+        "sha256:4f44a5c42a3f1cf0152ca6ac7b8e45c434753dc6f071e50ff52a53b921785fe5",
+        "sha256:a41fbaf45c45b4fa60e5a80f5d736ab6e473e489bed2a188d729baf53e4190d7"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-MIGRATION-GOVERNANCE-0001-R05",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:684864dc7639b81518d6344892cedadebaed8bd681ba811afa7a81115f6b40b3",
+        "sha256:a94812b10658c0ab87afa26aea086eb8b00791270fb673d6d4313e82e435a20d",
+        "sha256:537274f74afdc3ce6f4ce5b78dbf9d935852b7a9f24cbff41bc235d539a06984",
+        "sha256:d0a5cd89532ec6962c35ae95d9efacbdbada20754a0a16280e194d5d0157e501"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-MIGRATION-GOVERNANCE-0001-R06",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:eba42a11740d83b1e556cfe63715e7da9c32800a7664fa7b314523950a80e14f",
+        "sha256:f80a4db756ca7d53934538406a5a2ad8c84cea32474ba068fdbec2fce0ecf7b1",
+        "sha256:7c258ac84667b613c840c546d31195fd704738435ae13321ac24280f953f947f",
+        "sha256:5d04ae2dddf030a9db0ac4c3ee4bb636d5cbd09ae4fd7434b1327f9b2144cf38"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-MIGRATION-GOVERNANCE-0001-R07",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:8ccad7b24b9d87884dfd3e220fbb7059325c00fa2341138a14d18eddff310f43",
+        "sha256:d276cfa7dae8e233c2686814a30989f87bebba5593a907b10f3942c35e9e8564",
+        "sha256:8d12af96b902d7fadd16ba6ae9fd0dc95e989b2e57092e33f86ff92ccc41ddee",
+        "sha256:1a5967cc75de2871baaa0a1730b6b0dd600ff2aa473edd4817dba5ceab754947"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-MIGRATION-GOVERNANCE-0001-R08",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:d97c245bedb2ff5141ce3188001c861cdccc25a994ef6f2b69aeda9b12b54063",
+        "sha256:4419d60cd1b15ac33e246a652631ef07b2d3c01a4036e4c42a6dc50f05eea4fc",
+        "sha256:529db23e748d76d3e478c171a1c3593c8fd11a2b284615893efe785738a19401",
+        "sha256:7ebcd65af15c7dcb2dfd2325bde6184a1f2360b81477f2712123138e2253ab17",
+        "sha256:ea5a78977a5226ed17b11657bc281ec0997acbc3d79d83465109126f13eef994"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-PROGRAM-SEMANTICS-0001-R01",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:223969c1c6008f38e46e603cdfaf224db7a757f9b6f9a9eb3d568de011ef1931",
+        "sha256:d54e0ac03bbae270675330c90d0844fbeaee17770954557489d9062a2b9fc990",
+        "sha256:c2c986b870886324ffa9988610e944352df5f696b24a50dbb52d790ee80d7053",
+        "sha256:620870a9339325f6e56253922133757601a65fc5f9350c9c3aa51885b94e5dd2",
+        "sha256:b9e6a91dacafa6dfbcf316052eb29d6180a3d042db2e41b1a299d57cfd03d3c2",
+        "sha256:29f6897e30c43f08ce45e1d529c7770061a978c5347b83e34326e46c1d82ed90",
+        "sha256:7ad91b14ffef401840b632a4cf0287b7685550e978490a73d39fa5d4d6490094",
+        "sha256:5317aacccaaeed0b8581162549db20ff2b608ec7a30157704a0af2e11196eaa5"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-PROGRAM-SEMANTICS-0001-R02",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:f5f1d88babcaf86b59e065d2f7352f837f5cf282653b45a9cadf53e0a5918d6b",
+        "sha256:7f8c8efe8b21f1026d2dc8a836fd33c4654781edd9fa18788ccba01dc2989e60",
+        "sha256:da1438b9549b9653b2e882d0781c85e75806500408be78a02527efb4e84128d9"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-PROGRAM-SEMANTICS-0001-R03",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:ea24c454fc528d19693fb2aed8435755b11ae7a9a07cc7164491232c42fa4847",
+        "sha256:28756c8ce21b1638aa062c9beab9d52a34ab96a9059d0e981ae9085d50f6184c",
+        "sha256:050af79efeb767032f1a7d81b4f38a1ca79fc79bdebc4148d2c31cf9c43ec6d5",
+        "sha256:6083263461cefbc74c0325b5a83317e72a3d0f2f215e9ff1c4ac5753709f3b0d",
+        "sha256:8d679681003f645c5a463203e3a144b93a46c110d02368114d65ecc9a56ac909",
+        "sha256:630b3a8351f403ce3e1949552564a3b92f3c0eaaebb9eb8b3e5ef39d9b1dde22",
+        "sha256:5f5b31e3151ebf70cdf2727eb022439d96a90c7a900be8306d0db1617597a496"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-PROGRAM-SEMANTICS-0001-R04",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:48d98f78d5e7a48c40d5d7e1c0f23b03c2762db08430000fd559dd9152063c2b"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-PROGRAM-SEMANTICS-0001-R05",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:c17e50504911500430d5216e720275f6a17a0a4cc905ea6cf9c332da32cad3b6",
+        "sha256:11523a2dbc2454d6dac92794eebcc869441e1da5581005053d4c001b80d1f660"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-PROGRAM-SEMANTICS-0001-R06",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:f40ea31d8b9ea8e884108aa26f9f88d0401c7d2f9f5393897dc590c8d5a161da",
+        "sha256:8ab4303b4ca29e708c4aecb3a6cc99c0939b0692a5bfccb2a74739e6f0129def",
+        "sha256:ba271f6e69051c0646d8ec0a1c224ca19b5b09b5c64b23afe56f7ae257db411f",
+        "sha256:a92f48ae98df7f89ea38bfe68325d95d055e3cb4d4a28f9302d41cc212f2876b",
+        "sha256:9b1a312f6448d29331e449a68174778a40a1272587a8a2a4726e1ada32b04514",
+        "sha256:73c568903941d71b5be489a68e7c594c0e997fc3cfa789754171f1077b91bc59",
+        "sha256:9fbcb3c57940335892cb6cbfa67c8429807da05af19e1431f2b57a4c8828c6ef",
+        "sha256:20b40843a5fc29f1d0407d840a228f118b75c92b5c44dcd71ff7f1ed142e31f2",
+        "sha256:9ec406a2d12ae1e0965a3c0b09ab0f2007702c3f8b18063bdc98c64e26edebcf",
+        "sha256:4bd1f5bfc683ae5bf9f1dd0a0a9e661db7fce5283b6628a304dfe5a70102cd20"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-PROGRAM-SEMANTICS-0001-R07",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:53947494545dfe1a4281bc5dd36009b944d1e866c37e8ed21aa3218414f96fca",
+        "sha256:96b35503f9c38cbbbe8b50e020ada7232c570f2d83b14217a9122bc645b680e1"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-PROGRAM-SEMANTICS-0001-R08",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:c4dce547412f73725563cfd53ac4566f3ea7b634fb2505f8e89da30c05f78ea6",
+        "sha256:844a7c190520e06e9ee48ab9392b458f876c72ee4300440f1b9081c3fffd4ca5",
+        "sha256:005105f72d3da3c98b02da6867e6c76e058eabe7af3a421ac596576876e63761",
+        "sha256:76d3f3485ff0d17fdda3603cd376317eabb5e758ff81d9ddb5a805a7be968035",
+        "sha256:1a3beef865725ef85ee90f709893311236364fdcfbac2ea1e4ca4bdf01bee5d0",
+        "sha256:bf1b6ad3d949b91195418f6136dda4dd6d8b0f1c01839952dfb9f770d30246fa",
+        "sha256:add6c715af0c9e4053eab4f15b0041dc1a09b49617930c793a0a5d5a29587162",
+        "sha256:d39c5033829357998c9c9e97f2ece5d2c6580e1845c1c51f8ab193b382422699",
+        "sha256:416bd0f69c234bc63d4994a7417d5c36db0f4b894acc37c85d022e9d467f0d46",
+        "sha256:50455650b5ea41d6fb322a2aebde1ee82364555469092edf986c54e0759aa96c",
+        "sha256:f3bfb21e60a5660f04a8c30ed44741ea68c5c3e6469c8714718877129e78dc77",
+        "sha256:dca2e888298aea6b16707b13e617bd760a2f04af58bef63a7b9fab30a8cec874",
+        "sha256:d5e1e675f3742bcb91b1c87b59a5ca4a8b3379fc97f83dc2bf13d3eaf16e74dd"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-PROGRAM-SEMANTICS-0001-R09",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:1966b192a55f6d841178c33e231dc9a1468c33cff0c32cbfb05ddc7fd3645157",
+        "sha256:08fb779f79c967681736edd0b79d5538a46f91fc0a602c8950046715b557e888",
+        "sha256:46eb26a3abe6500fce4f0cf93a2b8c3dcfdfcc81f72faf0bcb9760735f0c302a",
+        "sha256:118a3d6526d76a588e1bc5149fa3d62688f71b0bce136bc1502d33151dcbae6b",
+        "sha256:cc53253111bf31cc63543543a92d41c8895c98e5168b94f67f0d8d3b2ae7a68e",
+        "sha256:fef2f9407881c79411ae8227eb8db4b03f10badb3dd3ea13daf3cf2ec680bcfe",
+        "sha256:f8cd5d67cbafc39fb2bb71e4a0bb38eb51b57ff0781cf06456019ac4476689c1",
+        "sha256:ea14a62bae5861bcc9a8ff126506a548512354f8106dde114dafaffbc85b19a0"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-PROGRAM-SEMANTICS-0001-R10",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:296f7ac4763c565ba7ac317bcd664cd43eec71c130144aec03a28f5c425fe6e7",
+        "sha256:464a3a256915a7769e7f218240eee63e0d34f4f4a370746df8576c4f99af5086",
+        "sha256:2e7f765ce6eab68818ed440c23cefeb6595b42ed8236b035339728f05406d23e"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-PROJECT-MODEL-0001-R01",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:3c42319f4ae831b175d081228b6f3f9854645942a7f6e4cec49db15ba20afc6a",
+        "sha256:43b07073011d0614048648f7f79fee3bf2c55a4a0d449da3b5f042a42eced0e4",
+        "sha256:e632e842ebe6963fa92bfa5158920bc9982dab431e34ce391450868a7a16f14d",
+        "sha256:3e343cebd4d25554b70be8c019d14061bbf284d9d2e7e9c13613549e2d8ca7d4",
+        "sha256:9fbb3b8a1ab648663dd1993f4e27ddac6cf8fb46b155d500a7c75e3e5d776bd2",
+        "sha256:08ba855a52b93e340d05caf05685d828cb8f273dd812942c655f5edf38247aae",
+        "sha256:532f713adcaaee785cc7e5a8c2d53b6703ffa402ace400f9412886633a5d906e"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-PROJECT-MODEL-0001-R03",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:d88e6134639d6bb5e954aceb80a459aeb070faa7acc58ab39d0cbea50677fe87"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-PROJECT-MODEL-0001-R04",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:67052c2d943a24b1e7bbfd8a8a68eef0562bbff6a4d1a65fa7d2498ed759b0ae",
+        "sha256:677f0c98b27e914012b8161678ca5617f1ea603c3c7231845662923bc2d1c699",
+        "sha256:7339b1af66f3f9d0afd9c979ae04c259e08b304991a3639cf4a086a99bd82d6f",
+        "sha256:bd7155b8076344b4c2206adc275feac1b0729ad4f2f886c7f739a730e596e092",
+        "sha256:b678b993250046feff9a384de86de5dd9122078323c588264d5ee279544fad6e",
+        "sha256:67e2a7846051301d4811130d9fac74b2812dccb87ef71ba1e87af09d0ae79a15",
+        "sha256:11c54fdc8aee734d1893779d5c92c7c912159979e1174c363fc994522f07113d",
+        "sha256:5508dc27525773ad3a5c01da1c0660220bdcf6b830e44abcbe2b6310d7c95fea",
+        "sha256:d36dfb8b757af69ad876bfb4e4d1dd102da2fef51085769bc33ccb634e4c7480",
+        "sha256:66058f9dca2b726e812f3068d889279040a15f745e3202b5f828875a30080523",
+        "sha256:8cf971563da7ce84d6ebdc5125012226fc4d441c0824209b01f1801b91a87d94",
+        "sha256:6b26f04dda9233714cf32216a2a82bb0c998e17b7e9ac4edbeb55a68de4ceb9d",
+        "sha256:157a1cd38183be76294081b697ab55a8074e745699949d6993d2d5bb7bd63eea",
+        "sha256:f9288cc1eacf5036cf959942e985e3dcbf10407552991e61a103513d765e8a6a",
+        "sha256:d63635887f68a990cf2800719e652c7e756c82f2eaca368bb67913c446b1b9c0",
+        "sha256:6d75c6da06e928adbcc55461c2f37f766f5c100302c8711166f1a213664a827c"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-PROJECT-MODEL-0001-R05",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:01b55545f0716d4324255e30c8ef0dce9df90e1d01ae158743ce18d8d184e62a"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-REFERENCE-RESOLUTION-0001-R01",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:1b3af0d45fcd7747c66251bd5b6b051a5fcf85dde9e6bd5ad2d58f094b470c1b",
+        "sha256:f7222331c925e9a6cd3a8798a6a354987ee75039e876cfbdc02bd5a9228e8940",
+        "sha256:b9f0357c2b7fb6cc7b870f45b0a7dee8c98940d16f42e379f3e5c57422687e45"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-REFERENCE-RESOLUTION-0001-R02",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:e5be35c5258f1a36ab8853244762d0c41e73ab34d62262e0f3c786eb3e72541b",
+        "sha256:c7e296ec2272930c1dbeffb0bf8ed65d9e45b03512c0aed9a2104609ff16e365",
+        "sha256:f688f62408b707c69c00573c1334dba03b4fb391540f93a7fcdf40586431d087",
+        "sha256:c070f0fdbb27aec8af7cc4a3f52883e3e1f186d8cecce95f395b69f0d9473eb0",
+        "sha256:fc7a7a99dc8c63b1f3b5335af84979ebfb03df057c0e1f36e13b7e619462dae9",
+        "sha256:b45f3cd172094392accb99aa36c867bc9e494711a07462b641081a6777dba337"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-REFERENCE-RESOLUTION-0001-R03",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:bdf437b81013994390263bf9cd57205011478a82272d56895b6390e6396fd038",
+        "sha256:4be08a95497b7b135a394ed989f0cb6600f3b5001eddc23374e195cd72fc34fb",
+        "sha256:c63a26d8403275bebe2f3625d0836cf4394ad9cf1215ace0b92628d01cfe37b8",
+        "sha256:a128745504dce65893b939fcaa4d2e3c8bcd5e6a26f68627292d7f7f64e2675d"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-REFERENCE-RESOLUTION-0001-R04",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:321e813c6e09d06510155f04f9f206e1b33473d41655de0c5b14f8068c449264",
+        "sha256:53c2271f6df8ac059b5e14620c245e86e7b8a0c790195173a96f931efeb3c068",
+        "sha256:d6d0e929b068fe48756ce12e29667a07a0eb3eb29ef7417a0da1dcc902e5338e",
+        "sha256:e71b41e856fdee85d65e704fa7f19eccda474378ab6bdb1c7728f736757bd6de",
+        "sha256:d57bddf8d3f8d377c4cfdf3bc0ff5e35cca62bcda0dbbb3d08e47631ca5c3bbb"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-REPOSITORY-OBSERVATION-0001-R01",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:2fdb7e6126254d6c38161edd8b934db2c1917d3e0229b8166e642d515e2ce460",
+        "sha256:0c41272b87536d7331a357cf9762f3b380e402e53f0df58b54334d63fd0fdbec",
+        "sha256:b8af7ca6d910be82663fbb5aa8a14295c8fda02efd543339b3a140ba9a048e04"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-REPOSITORY-OBSERVATION-0001-R02",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:d523ffe934f18b48e518678480d333e93aa825ba4569ed68b583222eb4a50713",
+        "sha256:338e84c2bb07e3bd4aa164494c5bcbb59fef760eb814d0fdac33f466aa0c9f3b",
+        "sha256:923921ca35b78c17efc03b3e67afc1e007ad7891b564a14c784f8624b5d77bdb",
+        "sha256:3519b0d90138ca2825195c27787bc385aeed654f56bc4b96412f0640c6eca1f8"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-REPOSITORY-OBSERVATION-0001-R03",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:645c19724b77e179b229603fe6b28821a7a3ec63f66d155e9bddb8847fe149ad",
+        "sha256:182111f3cbe5f3b9c72590b94326681f64061f90f56ce4ec894f0483ab129843",
+        "sha256:b2e6d7a0552f409c968ad7e75a6cc0d9772345c08b8d0cca8ddf9a084a36e281",
+        "sha256:ba51f52b98e86ff32560332ad0ea18bfb6a303df4f0a784a5796c5d7ff63c13b",
+        "sha256:41ba25e7b4ea81cb1145a43a94e36cf2ee5aa7d0a2a3b5d2898875b2e4aa0d58"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-REPOSITORY-OBSERVATION-0001-R04",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:85c142913a5e8265223a438415488e2850818e6ee0766daa36d6e6090ddf91b5",
+        "sha256:79ae94146d99f4340eea91a45ec13763762bed271e54b1a4a2e884ee2d4ce90c",
+        "sha256:95e966dc10cc1e200c26b09ebeb5e91350e15e514f833eb059edd4abc8783fd4"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-SEMANTIC-ANALYSIS-0001-R01",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:d6e92b44dcd5e875b6476b5513d47c5a5994ff3c3da473419761da780b525609",
+        "sha256:9d0b20e60437361fdf6f18ac2b4a1c82e6cf9857f1295ad6c9ea2d4b99cda9e5",
+        "sha256:b2b4f8a74dadb07c5e03347204b47ec5fde84849c8bfa5c52a69efa91e297d2d",
+        "sha256:7839e25be508b34191d0295389627510b571a4221166cfaa16018aeabc25a58a"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-SEMANTIC-ANALYSIS-0001-R02",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:e3b988eabdffa339c0e20952a34f427f095cc76ada9c1f4c46851bfcbda7ee70",
+        "sha256:fcf1a3eb4d919ab37e533fd743c6bfb1342ea0d2a6e7a6b0d61f33b63198d759",
+        "sha256:cb37ff685aa5d89f859a6a702a7c5518aed5fcdb6d722c85c1cad9bcb85a7214",
+        "sha256:e2211b6cc8aeb1460119d93252753d8fdf3663bed0df0c17cd77728b091364fc"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-SEMANTIC-ANALYSIS-0001-R03",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:5737d3e72811363410ec77fcc3fa3d230120e1c0b7b9dfd4845c87d4d1eb86d9",
+        "sha256:c0bed9b35427521a2ec470e91fa7d11c60c9b51bd7541d5452121aa2d5cd6a15",
+        "sha256:cb4d81daf87d28c176552670253fb923928100dd07f783307c872ad50923770b",
+        "sha256:2845068cec59dbdac0a5108cb59bc8d3db19734593ad93cf8d9bba3ce5f51a56"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-SEMANTIC-ANALYSIS-0001-R04",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:31da750a7d5d48cd046f54b4a025c8dfbe27945f75be667f79e90a5e924bc4d7",
+        "sha256:9f06443143c88a7ce0adb2e966fe45b1f0fd090829bea04a17eff647953fed2e"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-SEMANTIC-ANALYSIS-0001-R05",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:4b5466c79fcbcfcaec4d6d83283ff1987ac11c50a0694e3f1fe008dcf04b3135",
+        "sha256:0183c21206366cdcbf610b230ad1d520d54f734980747756468d5deaed8d2f43",
+        "sha256:3c121890805d803b4fbd8b5824aa457eb01b9ba21fdaa1aa110d33c659e0988c",
+        "sha256:86359ef8b78e0303f14dd441a5f666b25b333c0ec639f8fc2d310433e1c291a6",
+        "sha256:f0867a91f2fc93f40ba2bff9663cf50b166b526acee1cfae34b735e7db6d5262"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-SEMANTIC-ORACLE-0001-R01",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:83b032aa282bb3f8fad0a98ac61a0defa75a709ab9b88793f407aa798e75b794",
+        "sha256:d56bd45ea8345ae60610fff236d77734b1028ed2a98700d93330fd96bed2ffab"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-SNAPSHOT-GOVERNANCE-0001-R01",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:74dea3e5411e8bf383617a4211e98b306fbb6892e7269b9e887eddb3ddc539ba",
+        "sha256:6e630c0b7088e931a47add18429b8f9dd16c46fe19cfb144961eeff97af82b9a",
+        "sha256:3a4269efd1a01dac0b7057763ba732110e6c65903dd70c17fa7f08aa6b62573a",
+        "sha256:b9848f0b78ecd01e6f9457e3f935f0b4105d5c0e48cfef88e0384f402db6f516"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-SNAPSHOT-GOVERNANCE-0001-R02",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:34cb6eeec1923f50c92eec7ff83122cc0814ae77cb397843179c668a0633a499",
+        "sha256:cef75bbbb8b94c6d8077927cd3bc2ca9a76383e8ce563f6e5d9b4b1101f1dbcc",
+        "sha256:d2cd08f04719147d5843a511f7f206355f01257c7fd40c76d92d7773b8b68774"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-SNAPSHOT-GOVERNANCE-0001-R03",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:157a833338cc67f61c9e3994707a1b4e6ad86fd26de2ffe15d1fd6f474d759c1",
+        "sha256:802c0d60d8c32bc9a970f43eb99be1f8c02c3d038fc173b36b7c1d734d919567",
+        "sha256:7693545480981392e3138ffea62ca623bc74e38b4ac62ded982a9002a67572f8"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-SNAPSHOT-GOVERNANCE-0001-R04",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:61e6cd555e54a616d5f6aba98b4c0e94079892b70b35470c829506aa3527d1a3",
+        "sha256:2bb3fce4bf7ab39b63de1c2c236c7175c8d80fa18da18d7b72ba318ed2a16fff",
+        "sha256:399ef51cfe4148092fcf0d470d3bdb3b7d7030ce966276a5d8177ff146e34b66",
+        "sha256:27a426a6f6cb24a76f3556dc303ca8db96fb5d25dcae0821f4c2c23f51e03ce6",
+        "sha256:52bfe27a46f8f28ac728bd8c8c2282cc883f1ade261168b2fd1e30a6cc86c30d"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-SNAPSHOT-GOVERNANCE-0001-R05",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:d08f869bda15ff4abbc083952e185a3c9ce43f4edc153f0a05fa236435613ef6",
+        "sha256:e9f83686f8987bbe13e94b2948633728edd5a52d365e2c3c679b6dff8c0c1afb",
+        "sha256:a02917644a6b0bdd140d6de22a08f466bad433ee7f6cda4ce1d36245480411f5",
+        "sha256:63ce880f92816ca7272b1bce983b5d418aa61190a5d106326d6f702a2a222b0e"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-SNAPSHOT-GOVERNANCE-0001-R06",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:4ac6f185d4fc5ae6be780c82efb7fd4d9cff0b4a3853a17a14e9a69f815fab9d",
+        "sha256:d1bd090547a087cc3ede0609d6393435c7d7a3fb026c667bb22f3bf204e7425f",
+        "sha256:cd2b232745a0224b4ce1ccdd02a171f60d45eb1bb248639d96137a995cee4af2",
+        "sha256:c405ac5c9aca7ed1fa96c99f80fbe13bd16fe47f10f7e525a5bd627cbde37ca4",
+        "sha256:e9b0a8797cb870973d1fe24af78709cf429fe6a1cf63da27395be798ed22c80b",
+        "sha256:7c82150f5c8ec8ded7d2f7669fdd239520d0e9812d35c99ad5268d84ad403e88",
+        "sha256:01e0d0d60dfd0e6fbd9f7bbc4be2fdc0c3721b5660b4a35397ef96f223f01a39"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-SNAPSHOT-GOVERNANCE-0001-R08",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:b2d468f791655450fe8a2ce6d83784a7a7fa2b685563cd590a572f3afea4158e",
+        "sha256:3da534e8715ca0f9bf194fa7f58710efbb59f05e1862fea151da9af270d43bbc"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-SNAPSHOT-GOVERNANCE-0001-R09",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:cf9d0b01387c8eb6819be9d909fe92d50f524b13f8a7dfc0c3757da3114700dc",
+        "sha256:5efa80cca7d088df0cea50c12d2c1f062099eba24975c0a87f14c86843f47837",
+        "sha256:41f25c7db054dbf7d0b8471ebce9a27abee87aa00559856ad0ff0939f4343e6d",
+        "sha256:2e809abce583d5fc318f61419ac373716251d06003b93f1a2118153b4cf02056",
+        "sha256:f1830e841b0bfd7d477e1452ab8c2789572b9b1da733e2b0658a4611a1adb1a0",
+        "sha256:c9d8b9e08bad06a6fee7872457f69cf43f3639c69b6fe60a5b02ccec3464e90f",
+        "sha256:fac62fe636869df9f3ee69dcba3b4def7c4471c94ae38a722ec486af1266026d"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-SNAPSHOT-GOVERNANCE-0001-R10",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:674feb2872c8b72d87ad0a177b66447e6bef627d1169fd72ddd5681115658136",
+        "sha256:7de5df1c09c67f7be387e82f18a6ad05ca07e0442e2d298da9dbdfd0e9a4b945",
+        "sha256:6efd3cd3c54babe974059729c2b067b4ae6aadb8b3c33addb4d3f36a8de6c11e",
+        "sha256:63a5b313eb036fabff47971e97b666a325612cfd8d19977e27774323091b47c4",
+        "sha256:7bcccb3931a7d6fee9c9ef013715c084c5540636fc476d7cddb1cfeacbaecba6"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-SNAPSHOT-GOVERNANCE-0001-R11",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:ef6a59d2f1ea17d049d8246ad90c1769fd03c2d05ac059d8d5b2dbe11928ef93"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-SNAPSHOT-GOVERNANCE-0001-R12",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:15963ff905f7b301f962b536756736fb5cef63cae3eba712497754d2396ce433",
+        "sha256:29fa68cfde19001911e946213e71f33f91ff2daa16b07f297ff4baac60d89fd2",
+        "sha256:b8a39359d4c251dc5e46a689d543aa7af3535ba63f3ac6ffdd0eeeb724eb18ce",
+        "sha256:6f47997d2a5db81e45765a452307f4bd059f6edfb609f45f3e073933ef167726"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-SNAPSHOT-GOVERNANCE-0001-R13",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:a68a2db2762b67fdb0715c75a640f131e77c6b49cc72b200c5d7044bf611e7a8"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-SNAPSHOT-GOVERNANCE-0001-R14",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:5aad7b089e73c4cb7e07d169ebdeb37c355044fc3e151672b7e8289e04594344"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-SNAPSHOT-GOVERNANCE-0001-R15",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:b45e2448347063360dff36264fe6f8fbdcb93f8073a22c5e064f346fcd9cabc7",
+        "sha256:4de5f60aa46f5667d3dd4affa045d95bd5c3a041972b868bb508a6cc49995a93",
+        "sha256:b1529a1e4c226ebb829c2283348882ce8f0caf8480e2fab6017d5ee5c9ae79bd",
+        "sha256:c112f468af5d329fded499359b410d0d500d4341b730e1acdd83057a1666958c",
+        "sha256:34744d77dd5fcb2999b4c7d8eb521a1878b27132e1954c786ef9a3d2573c2b63",
+        "sha256:99267d4fa93c46a14bcb238f7ebc7fd4292f0bb82cb27b385b2d1a662a8beaf7",
+        "sha256:b6c99947eb2a6ff7664f32c801c36ef59c6fe5ba74623b52a68f39c18916c2b3",
+        "sha256:e79e2235f6326d1e2c84b93d9313776990b7bd50a82c72ca66949bc5c994e036"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-SNAPSHOT-GOVERNANCE-0001-R16",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:dd7d88f76d438a8885865423f32b3639b2e55ecc98d4b3924aaae0013d9ba8c0",
+        "sha256:01781ab60cae6a47091d76ec9063579e6c08c5a2ccb963a4e0657385a75a8547",
+        "sha256:e73f24d732235fde21e03484e1241f574f1a36c738f6ad78adccaea6e1b77901",
+        "sha256:dce7367ef629dfbddd6558714a724069c6a132cdc9d8a172bf024948a2defdd4",
+        "sha256:5c66f9314b9305997d7fc18ff3c83051d427873596afc28c73801d7bbd4f0b20"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-SNAPSHOT-GOVERNANCE-0001-R17",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:6de7a26e38e31f62af54fb8fdc2fa35745788c8729e607bfe163f7666f937fd5",
+        "sha256:4bc3cdf5d9b6dbcfc6d2deaa298480cfbc6e81d195aa2c7f0c7ca568d6f4726a",
+        "sha256:6332f0a52544a227a87cf24eed6ca3248a428b88cc1cc1f04e327993a634836f",
+        "sha256:4257e73331f4bf5f0d383c61de9622ed945c487d33bc0c08d5d6a60600b22f57",
+        "sha256:43a69c4027653c4326030cf68ad2fc52d8c159f7c52383f6d8c5fb0e53234b0f",
+        "sha256:0c26fe8e1588da2963d1abfd9a2baa244ce1bfaf80ecb32477999f759846c1be",
+        "sha256:1c481fc8d9075ead773da81747b22c5aa22f45ff4769922cdda769807656b26f",
+        "sha256:297926c0d7977c2e95b93af59b892147a3503cf63fa4c27c151758bd1c2d4fd0",
+        "sha256:62b6a170ac0d1f9abbb6e220e887110f2012c5c4b1ca229c8e054c439144a301",
+        "sha256:7214da2f13357b288d874724eaedef81ff6f190b03a2ccb81c7f7bf4a2869f13",
+        "sha256:ea99f96d3426c360b62db68176a3cbba2e6ae6a64a8dcbe5294cc9887281bd1b",
+        "sha256:7a1120f78df038a94bbe87f2b21876fdb2e1dc9b995545ca54a0641c892b9e63",
+        "sha256:9fcb588cbb7e9ed3557c9b5bb121e337c1dda969ac9b57a343ba6b59c6325435",
+        "sha256:6bfd9b93fc54a9a6664fd0a522a684c82ce295b71baa23a6108932e06dc6301c",
+        "sha256:2bd9cfe6c25d06478c7ff4fe51420f78dc2fc2dd57c3dd89bebd883bc98c10b2"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-SNAPSHOT-GOVERNANCE-0001-R18",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:7f5dfc2a4f2f496146dc352a33e969af7ee105f085d2cc362865b32b00bc0760",
+        "sha256:3bb5d5708507b5b5fcc16b59d4ecc27f3f938a70acf21cab14fafdf31bde4385",
+        "sha256:0f4ed79bd1324e84caf6bcef63d69d22b6e50f28508509d7f1f4953eafe2d9c5",
+        "sha256:7a47ff6318e317bed013642da3d81220109c786fd3c73f1b91dd893faa36c566",
+        "sha256:046198359df537da622e7b21e09aff2da8f3b61d935b777349752e2cf3dc3702",
+        "sha256:406690613fb2cb4ab24d6d270b3ae0b55b57072860e311fd08038d37447d5e18",
+        "sha256:4fdf508049a527dfb7f82dcc77c0ea8418bbea69b473e96a8a0fd71d00315678",
+        "sha256:039889e67403c317f6e76aef9173e08d302715910125706feb9144bc94c15f60",
+        "sha256:fb276318a61f840143aa47261e0d7c631d3dbe824dbb92dbd3cf1d8c49b5264e"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-SNAPSHOT-GOVERNANCE-0001-R19",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:3999002fe50b04f3dead6d5f3bce44f924fca930ab6f871d77e2bafdae9a6fd7",
+        "sha256:845575559cebcfed1a932a201199d1dc99f00e1e1243560db6ec53d5e30b33bd",
+        "sha256:695513573710b66a9dfae2563e936492ddbdc6d550bda89e9a1f591918bab610",
+        "sha256:832854a7dd7b4460cddaa1225c56958a04b278b3d8e369eda2c3b61260f5f315",
+        "sha256:47d7f71ed5d9c97cd600e5a6f87476049a7536a2b1b8ab0f1e8c80faf2bf7fb6",
+        "sha256:d83be9aa5a5f4f39923204b659dbe0487400e483b12892fd53e1b3bee16e524d",
+        "sha256:f03581e8354674de6da9cd29980f9b07dfa6727a3666f6d5cf2326a114cb3d3d",
+        "sha256:d16aaa881758e470714a34686c4ed457b74aa364fe145f33744173fa7c259bd7",
+        "sha256:18d2862aa633f3a1ea6125068f6684cb1dc3120e929deb5811cf5b2377f52c47",
+        "sha256:da320e346ffc29d6b8450b961116f5c02014421edff3289ae1ae43317f6130ee",
+        "sha256:a26f314071d9242e5a2fb2c97531fc362b5bd2ae0f5df928c74866caed32050e",
+        "sha256:c3b3bdd9df297b54188ea06ed637dcc5aa8108ecb8b4241bcd5ebe8e5ca7277c",
+        "sha256:2b91e21d11848a989b06812c38693c8a1562f983e238336b94a7f9ccc63caf59",
+        "sha256:6ca8e17595433e6918fb6a6c24afa6df5059069e1611ab709a439e21538bd29a",
+        "sha256:fb2c697a8482c45ce6567443a8483e5fd87ce6df0958de1dbd618d15f2788c5e",
+        "sha256:28f1edb08795157889ba87cf944202fe54fd8470a4217c48bbcf70b0b393f4e9",
+        "sha256:3aec963c32581af1fa3466aa05c06b84d999e4dbc43247c6056114313740682a",
+        "sha256:94ecf8305e87795dc64ece8e633dfe5595f564dea040ac94f53ec0b8dfe20f99",
+        "sha256:14b6596ad52283e97e0a3aa360a8c41fe43b073c2d50ce0868c4eea6adfc1041",
+        "sha256:011b2ac8c3c6fe6ca1df95c2e59f20c5dd17383d027ee475761125a35275dd09"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-SNAPSHOT-GOVERNANCE-0001-R20",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:290428b0670388971e9a0d1f59e32198e14952e8d1d49ad7b5d0ceb97a350e0b",
+        "sha256:5292a1e01a8d9d798b633145a5ec0dda873bd4a819c30853f4f014b3ec80b114",
+        "sha256:6353a7ea8e031835bf047e4d44cd82fe5c845a1389a5474afdfdf10606a37266",
+        "sha256:2b9e617ccc50a8d76365ab609f17888a037dd3fc08a539080a2e847c9d90d604",
+        "sha256:e40383d877305f99158fa201f52a7e89a6d9ed36fd03288c85bdf5d03c8cd031",
+        "sha256:04768d179219c2db0ca4fd3da7da695b5c9d05af640a37f6a912de4c3c887031",
+        "sha256:e80d3c5ec2219861b334122e21b6cf0a3526015832aed36d092cfc0cb80c7a37",
+        "sha256:f1ca5e0785af67d98b94a3d219262dc8f4aee1c0610d18e163f7025fc24997b1",
+        "sha256:5be381940e520f32af0e27222015946929e82debd8005b5103a2f7f2ff2f1161",
+        "sha256:ae2641d820b965ec6a2415ef186b173ad08b80bfa6e104ac3fde461e1d5c24e1",
+        "sha256:97ce169ee76feb1c8b2a905d11e6c7156f76ed8e5b6af4275d78ddf2bd36b65c",
+        "sha256:1d8b653174ac18aa6d914aec1decc095c5ed90732d582d6618824d541571091b"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-SNAPSHOT-GOVERNANCE-0001-R21",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:5b40ceee8d2f7b3532fbbe323b0afdb06bc94aee8490de58f6dcd88fb130a15a",
+        "sha256:5b3b697f4c1303a3378158c67a9c6d057b2be289fbd408f9ba32d2e1a0aed235",
+        "sha256:016bb23c9f07476c2080c2ee9e74f6f4d4ab8b002246a414c956a2532cb37cdc",
+        "sha256:b3b1080e115199427d1e9095387f36e89fb69bc2a5c5e21cec4742f1e7c0878b",
+        "sha256:623d7561503ed8d55c48c1f79917f23bbfb4c1ee35496c236466353affd36175",
+        "sha256:6064888315f44169cb1faec2d2ff6f7676554b29b229b8b56e8027bbd669f6da",
+        "sha256:8333ce1ef29f4a95d60c761ede5a9cff886e9868191bf6d94966f976173c2492",
+        "sha256:d47dff3100b6d2ce8da9dc6613914f4d993fc9bf026dff1c7847c48412a58074",
+        "sha256:8bdb0b8fb45d4a6bae41cb161b7b74ab41454eec6aa679b711b6dc3f14bbaf48",
+        "sha256:c51eb6d06d500e26da7911284f7fec2d101d404cbb4f08c5b20bc76f840800a4",
+        "sha256:445fe678232bf788588444a9b6b5c076231f7365a895dc6950e7997ec41bcbb8",
+        "sha256:691b9f102a62c9a3068230718cb2e140439f0a3b7725c594d5fafed1010f7900"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-SNAPSHOT-GOVERNANCE-0001-R22",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:e2a2c386ce1cd743e4ffd875692c8f3b10ceb9cc8fb71565b098d6cbbc077a97",
+        "sha256:73346f8948dee503606c79cde7feea7daf57222a09d0c6ba52a0ea4d753945ee",
+        "sha256:05bb38d034441e1e9086c47afd03ac936229aae6e825745c88ae4b3d74014955",
+        "sha256:1d801a5a70fad2d6ae71c64de44b383be3b7a788350e137f285143d910a76166",
+        "sha256:02ddbcbc14c393c063429c09d49fda2a0ece2591bc1cfedc5e02147c9be7ff1d",
+        "sha256:24bded98acd435f8001cd38b9dbca25be23736772461a118b8de0d2e3ab274e1",
+        "sha256:07ed4d065ee6cbc689cd0d30c70cdf429def0df8393a420a8a56d2dbe14b8057",
+        "sha256:e4d694368cdaa120f7b1a481df938842be6fdfbf7506635f92533db71fa3ccb2",
+        "sha256:8cae8c8dd56d1f5ad2beb9b02b8955c3a42867e3a5e8eda94568c7fa722992f8",
+        "sha256:d98220bb1241fff7ed96e74fe4151784614daf66c5592f660ef769298dc37fc8",
+        "sha256:141b933fdb405a6bfabf146eb6eeadbf655ccdbce0c0b6592be46021e03084f6",
+        "sha256:682ceb340f176d4e7986e74dd9afef51abed94063c598b01cb8ce1472eb9c4d6",
+        "sha256:f3dd9eb4e5e5f61bb1df47d1ad088b2c38c7acd07305a381a498a93384426db3",
+        "sha256:2dc8b296400782166efc33e4bca510ec9bdbb10272d7f1c70ef9d30baf4ad2d0",
+        "sha256:abe9b3f10e2256788a13f45e123502368fb4bdb849e1988baa6610c58f987a7f",
+        "sha256:7bd2974bf2a2e0fc398d23baf0f5fe2c8ffe76b6ce66f195dca3c2053d2a78b0",
+        "sha256:81c9cb683babb9eadc2ddf4b17ef3621a77f3596b9ca0ee124d1ec07bd47f1c7",
+        "sha256:f32ec72da255ae261b13c1354ab429153d73ae3b22f544a6c18254e5afcc52c7",
+        "sha256:5748d86b20e56ed23f5ff11be304e5f1773fa4edfc927daa253ac70175071db8",
+        "sha256:73c3fcd059e81ca5d23cb1c25174a6d68b07e692c1bdbc7e74cc06a45e633990",
+        "sha256:b1a077e58275a62662b76647cd15ff1107aeea2bf9f0194bbacafeb35b5d5222",
+        "sha256:03b5a7e233a88baf3e690f8813c7e83e436eb7427f4fb06a9dd76dacae4d5c9c",
+        "sha256:ccfccbb98b582fe0304eb702bb6c40672301943d409c4ae772474f8fcca45bdb",
+        "sha256:d3378b4cea26d50272a1bb6bf754cbe1ea5ab1b4fec2a08562c58204ec197cc2",
+        "sha256:b224150234354728b9f38ef15c73636daeb0c9ddd7e3badd2cbfda44a6490b11",
+        "sha256:70b1c0c3f38203f0fee944cbc0d94550c756d905c1ae1d8d11150c553fe1343c",
+        "sha256:db021811143da7b471fc91bbaf24eb02e9e1f6f7e49b666ed61e1aabfecfe219"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-SNAPSHOT-GOVERNANCE-0001-R23",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:aaf175cc931c29bc21c55ce83fb6c603cf5569a3be08da83c65c78c07455f1b0",
+        "sha256:cee8bcf03d3a668c5fb1b784288bf737bc80197b85267776a39ef5cfd29f9636",
+        "sha256:fc34750d53835f71afeb57ac695bfe9f606d90dfe929d46d4b1ae12fa5c2d7d4",
+        "sha256:dccb9cf66ac91451237f766d20184991a17c390d79ccf5687e39820f21b6947e",
+        "sha256:05b494a51e564bcc40b29478e67d25ee96541620114913c39073f35c4a12a871",
+        "sha256:2f3974e4ee4ef872bb0b556af4c8a95ddd8d0e32db85a6ae59494ff5a87abd1d",
+        "sha256:6c477696730a446fc149505ec6e034fc64dc9b87cf9b9b31f18993ae0e9ff3b4",
+        "sha256:71e897018128c5e3bb3c834028e2909f96b8c884e6ffaf403170665920af5adf",
+        "sha256:efe2ddd185a5c59a4c4b5f2f26f6d9e34a8fb64364d178938d1d1225139a75e3",
+        "sha256:284ecfe804a552efaf63f0ba68114a19d4afbcb0be60c2014e056aa56e1b7e5c",
+        "sha256:a74f4f9897f3ff3ab46216323e025f51c19fe468ab02abd984c08a293c463b52",
+        "sha256:62208c1338aff29eb97a1bc397d66f28c022b5560a595ad7f83775d6e0cbbf03",
+        "sha256:18929570089a0509e82bc569fe29576fe34aeb9575715711f734f51fee4fa57e",
+        "sha256:4a5bbf90f9e7af06c9dc3d5b849affa5a857a44411f322703ed209c54dd8762c",
+        "sha256:0fbbd5d6046af44b9c5e1843f83a31a2140db4dc94714e19530ee55bae4cbf82",
+        "sha256:391ba5fb3c5fc05bd563ab82fe8e82cb100cf6e126108518e968b9a15a39089c",
+        "sha256:37b9aeedc925082ace8ffaf4821ffd104cfe24b52578dd6e374ad39a1f0d09f1",
+        "sha256:97a6c78ff763a279f722c9e99233f90b9202ab2237c8f4f3509f15320db9dab3",
+        "sha256:beabc198bbc70414bd1367c1030e11cfcf93ea827ac17e5dc0faff73207c8ed1",
+        "sha256:36701f328d8ba75163ad84267142a5c5b5769541475a9e702f397ef4b3669166",
+        "sha256:37ff7d3909dfef1ecc6d5cf4f9c0d661c9382a687ff8eb31c22e09a6c340114d",
+        "sha256:7ea260363fef4c4109906ae2d1f393b8de1ee3da11f0bde586965e3980ac8237",
+        "sha256:92dca92899ccb0840fb609dae6af224c73187c77fd8d7a580b6245890672e47d",
+        "sha256:dc8db21f781ec7e2c5d551aec995962dea5aba3f79b1d0d893562e7f0a37649d"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-SNAPSHOT-GOVERNANCE-0001-R24",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:0ff4482cc02afdf29bf1eb682bce7823d7d4480954cc6d817fa0e606b1dcfd15",
+        "sha256:64b177f2f0d82c6caf5ea63276d8bf5bba59fa10e65f83ac29ad3ba5b8f4b2af",
+        "sha256:b1b378ac6bc8ca0bc9cb09846b3da9f0279004ecaac30217b66d40f3388ce614",
+        "sha256:02e98315a4c24e38726cc714c484c364a53454c765eadbf4a97e2e0c281963a4",
+        "sha256:6cc5fd58fec1bc0c74d83ae6a8e915d58d684b72df322eaed19cc956d6e5abcd",
+        "sha256:9e96db0736e34c66e7a2b99b934e0b47bd393b7c06f7ba294b34a53daa716293",
+        "sha256:d663b158783c5a6960b54aa0e0700211808193b07c43a3af7eb54b49760a178d",
+        "sha256:baa3cde4c60d1a0e59d56c0ceabe392a4412609efacca5211eefd9a782fb1af8",
+        "sha256:3bfb6ecfb282c4f591a7ab69c4028461ce48b754bbe416b32a0bd63f58a44ac9",
+        "sha256:15a8a91eb3fc210dc774b95e6d789ce38873fa404033816fe95390bc591855c9",
+        "sha256:e016c1e8ca40d462234a471f96b76588e9e12f6dce551080f1f27b5794a9260c",
+        "sha256:3ec6a702beca83280a7a1e08aa699ce27247d6a22cbb658c2568522d94da5fe3",
+        "sha256:60d4e9e3134f5e96013b89e23b7d31d5e528765ae7c31e0b5ff37b63a4e4cf60",
+        "sha256:a3fc85944d41367b2b4ac8e1818422f65271bef652d6b2284634e34609ff91d7"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-SNAPSHOT-GOVERNANCE-0001-R25",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:ebed64dd680154be470ec9e78e0be94f67fcc79a8113f413c501cbd99228ca5d",
+        "sha256:326629393c25c33b6e21a7aac5cfc88c2afb8a261923923e170fbb51a46870db",
+        "sha256:e518440b9c3a085a272bc5fd03c908bc7a69edeaae6a6a2e192374fc2fe6614e",
+        "sha256:ca019afee54de4286138def42b774fa01f47bcfb6c63bac06f25bb5283f14573",
+        "sha256:16d2f6891cfe8831afa095046ea4d6f94e542a6e763d88ad5ca224a7b7ec8731",
+        "sha256:ac07cf3136eea7f3179521b2a347cb6adff76f93a3513e660550e094f27ed032",
+        "sha256:ed5ff1fc8caa513f9bc22a91a8074555f5e9ae2e8a73cb5cc535f51ffbf80611",
+        "sha256:11c110faa1d21c1ce7b7f08b8bd0aa90c3500b9a254e5ce30e08beffdc6bb558"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-SNAPSHOT-GOVERNANCE-0001-R26",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:8f3706bb1d8397f5bbc916587113b7f8f539ab1a4ec62a11f02bc0c7d4286b80",
+        "sha256:091d60b329887e0f0bb42802bf546c190d15f2350d6a86a4a6671fed068953ff",
+        "sha256:437d4806e43917fbac435670f42c531cd2a4b87147025ed3c523e43736a30a9c",
+        "sha256:91e36daa886ab0677c85f8837d42ca665787cef0d6b6da050fa6f20a5a39059a",
+        "sha256:e42a4ebb0181d65c94e4d9939dc48822fa12aadff698630e8dadd89eabd0ade7",
+        "sha256:171620d0fcb4eb56c6b39b9d5bcb4911e44b05337712ac9b7fb325d6d541666d",
+        "sha256:572358a11d1695a8b6287c7d80c7d7e5c25f987e16429f73cadd1a9545d8f064",
+        "sha256:4668fbeef388842aaeaac6680cf7dfdd8fad6438f70cb62d627bec0c84fd9cfe"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-SNAPSHOT-GOVERNANCE-0001-R27",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:3b5df3541f8ea01dea1830ca8057caf3ee4798fbfe88e9378b99f6f961285f89"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-SOURCE-ARCHITECTURE-0001-R01",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:a036d9889141db366948d2631906cc89e04cf4fbe1a32b33b41c740cd0bbdf05",
+        "sha256:17a5a88f6a9b3269f4dd6e2afe07527c7c4b98a84131fbe718e3b53819cd6ddd",
+        "sha256:8b433e92c044fafad8d6a3e9e1078e08f71c76c7c61c270761c9ef3a6aecdf87"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-SOURCE-ARCHITECTURE-0001-R02",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:bdde1c962108a96b35a13f7bc1289139123bc8e96f0d756f807b9d59bbc440fb",
+        "sha256:51533e4cbb7622736b56aa919330faed2e8a6ccfc19f09dc8cd850bbfc80270b",
+        "sha256:9a417ebcedd5cb1b411c0e0931e04fad6d8f8da0e73a4b96c3c00b5b6269c01e",
+        "sha256:8bf8495b37f0d57af6297a1b9353151655b4c3bc72e7218a93e59881ebc45b41",
+        "sha256:d3b609736cd3d06e0db5a1e19dc6354ae87fb35573740b9f21b6aaa58fba31e5"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-SOURCE-ARCHITECTURE-0001-R03",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:5d17dcba084ddceb23f1204c93f23b755522031f325d6d0f7d559ebf8d5639a3",
+        "sha256:89fd15693d415f690031c02cef9aac6b89b5b5df3abe5675f868b1247b0fd641",
+        "sha256:92beecda573fdacb0b118cd763c63c7d19dcd8b382f02256f4483676f9afbaa7",
+        "sha256:1d64ef8188606d57e6723969cdfcf08b9af64ae7a62d66d2c47f408e808b82b9"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-SOURCE-ARCHITECTURE-0001-R04",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:c6be7dc5f63041c9024b1699fc58169f72e38edb03fd92abac2b3b9b4255341f",
+        "sha256:8a8dd30ab25684c8a4c2a05fc3c04d8bbd69ac45da8878bc5f606c59f81d9d0b",
+        "sha256:22c7b3ab4b4a9df0ba227a7bc5903d920999af0580446373698f362deda03eb9",
+        "sha256:48d1d77801b1e08b3d6bf9f18913573156af78be7a45c2f618f7eaa74e537888"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-STANDARD-REGISTRY-0001-R01",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:40c18e5c31ee0d980c85858f5661a77bf4ceaa997388753e1c9083a04ac02633",
+        "sha256:64dd43b95b72fd080899af0b5ffb8310a34831c866c9a2b3b23b8035b888e890",
+        "sha256:2d480cc6e6e49f6cf1841e61d55f82c4bdc43d932ef1e1b55a862d69a5398083",
+        "sha256:a523598ad53a20ba6422400172b5469e38d2de0bbb6ff1d4212c6dc5728cbd4a",
+        "sha256:14b85be9fb5ff82fce773ff4a2e68d8359f13952fb8af7f6c64696fea2798d51",
+        "sha256:1f597bc071bb8f0644ec479f6d29ebe4a59af5b6988adce7271bc1929d70c12d"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-STANDARD-REGISTRY-0001-R02",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:80813c81269f3d7d5847081be0d454d99f4203b295340ab51ab085266201ab4c",
+        "sha256:0c0a0428366af90b8ebd7adf14f04179f0562cf3cee5183ff7ec6aaa95307670"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-STANDARD-REGISTRY-0001-R03",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:b274a25216f22214d9d84aeca0c067b44345ea944b43d18ae21851ed284d09cd",
+        "sha256:111e9e2091ca11b49a59772e01db5774930d5cbf23dec652aa860893fa2e5d7a",
+        "sha256:177b622b311d7c9ba9c900d9290e7f5c79a782e667409d152b361e2d7ccd991d",
+        "sha256:c55dc5d3078495d228d067e5649a1d863b8f31113a7195f95d3cbf187449ab3c",
+        "sha256:37cc7265cdbf972a56f24d30a4ee7562e538607360468b6bd3ad38537f19ab67",
+        "sha256:4c876caa413845fe52f93de81aa0184b62887fe8b3be6169fc8e1ee631fc5513",
+        "sha256:be3bb2a22f1daf6c33e453037c9abc23c28fcf739c7a97977a0bd3f5c0bdcba7",
+        "sha256:963a83be1c133f7bf459fdded255a4b70f493e8f73d30431652156b6256b0186",
+        "sha256:87fd462b0a7b08418fa2b0a4add3a6668a7f54a4b7ca71a7f18f720f5c9745a9",
+        "sha256:77b2ed4a24d34b3488bb514c526f191d92e57cbc98b1d03ed229cb317a9a560b",
+        "sha256:ac311887f5ce20cc1fcb6c1cf3c4ba0b97154d1701c2211ba60341f9b63390f3",
+        "sha256:4d5472632613f362097fe4eea9b33d2f1bdd7cf7f9c28e6a289706afe4b056ab",
+        "sha256:a6309cacd22962993bf726b401d225a4ee5bd31b226206193b5647776aa0c067",
+        "sha256:4880053b1c4918b41f59c44eacdaffe48601fb8665e3d2a80e2528400d229825",
+        "sha256:1e758e13c57cfd85c7e97d5314a64a504a7c51ae1f76d2baba1b26666d25d494"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-STANDARD-REGISTRY-0001-R04",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:12464cfea8f9ba3c5301a794c9a0c9ca7d388e317dc8cfe6396e25c3d839fc55",
+        "sha256:90ead0ec658e9a83befab6ef107b938efbfcd7eb3446a28574fa2085305b532c",
+        "sha256:21033114057adee335285965f2968e053191c4f7d28964d6f93ef928730cfd22"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-STANDARD-REGISTRY-0001-R05",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:a6ea06763e8da55e82a13285e747de5da2c8992d2aea370094e1dc7db0107541"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-STANDARD-REGISTRY-0001-R06",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:c6bc288b885250ca4ee28e2c815cad4c5009bf9342b4e28adc95f200f66a1627",
+        "sha256:b903b0e085795b9e7226fa4eb19d73997255e73b90ca9f3bc513165186ef539e",
+        "sha256:9d8e415d9d5df54cc5e6323192b5a8bb3d84acc16b4943889158a1cfa1e0e648",
+        "sha256:855e5a35429f2de61d8c6fa9fe68afc54e72c21aeb503064ccf5266d03f8e0cf",
+        "sha256:3d4a4c8f0c945d1d79ce7dccb022c86815e8b301a6bd87dd7ec73eea40cbb858",
+        "sha256:e501e91fbf9e2916019c39e0ecddcf80915967d8ba8e95dbdc2b891502ed4405",
+        "sha256:1222bf1161f57505f918c842dc2ccbcd20766fb08adbe09aec200be0f56fdece"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-STANDARD-REGISTRY-0001-R07",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:a10fd5df6241138ac82243d71a31c74b234f786ba228438ab38873cd0bc69c5b",
+        "sha256:95ecc9b9f46ccad11b0c68244d28b1018bff302e8f0d6f61a73a48723a6131e9",
+        "sha256:22a9adb9b779ce5c42aa6496f9f81be34380be14e9a7fcbfdbb148672a55ff56"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-STATE-EFFECT-ANALYSIS-0001-R01",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:3f3715625a3764f6995acfc50004d14d83638a62d7f6220a0307dc9189782ff6",
+        "sha256:f5d0c05b1f41233353daea4967f67cd680b9eb4fdc44f297381336afafd46af5",
+        "sha256:07d51c462227459b3739c8da218598a9d8a6bcf96fb25bfb993f8479844fdb44",
+        "sha256:e2171c7570865a72963c9064116374acfb3d9053936b9ecfcfecaede3f2d6186",
+        "sha256:463d66ceb6dd2eba2a67c6c00a482b3132458a8f7ac992332f47406a5dd228cf",
+        "sha256:dd6ea7c640680d26f476d2db4c45a35cf132c5a5832e10df04f00745db91848b"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-STATE-EFFECT-ANALYSIS-0001-R02",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:368d6352685ee116784d65a81ccf9e04524cdf5645a4d5bd3e1edaca410237f0",
+        "sha256:2ead63b35a7dc2806b2ad03110de36344d68bbd5c2f2223740004651a50f2665",
+        "sha256:8f24ab234d6b75d056b5dbfd0952e51b78929b927e16fbc7bf04289afa8351c3",
+        "sha256:ea4e3478f5b11da1227eae3aac2fd6d8a4749a6ef063ece9845d0c5e5da907c0",
+        "sha256:63c63673747d7b37babd918300f38cb5b23a58fcd82592a691a10175f44381c8",
+        "sha256:9924ad4ab27f758ad458d14269be953e7221fd417fc04e8183fd3c5f15f12481",
+        "sha256:415f0ad2f785ee8d8ebad128f6c61010b9a42adc42727ca67df5e8e5f42d1d89",
+        "sha256:87e60212976fbe77f456d026d9e80989b01ae6563d5cfd8fb317682e32db05a8",
+        "sha256:5b50c785ecb044f4b0c9e771f7ddca73a2e7329fd2bfaef95a543d7ee78cde32"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-STATE-EFFECT-ANALYSIS-0001-R03",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:3ea5004cef7e01cfa504652d97bc718ded81441b5f5ac2435bd0acb14facb717",
+        "sha256:5c80786e0aedde792697935f6ace507234ba4a12345395d49840e9f47ec7b955",
+        "sha256:44e3abc688e1ac3344a247480dd670c30be2f76cd4fc9e47b324a49d37354e8a",
+        "sha256:c86de886e7de518000021c42d0bbdb22137af8ca639c24698f64b8e46ef5c03a",
+        "sha256:507cc45330440a8c28c563514d129436d0c1ef83d8b8cf7badeed12025a29d55",
+        "sha256:ff78ffecdcb8cfe226e00d7148c45c5d37393fbf57240967454888d5791d1ab1",
+        "sha256:20fd3debc0439628e3d94059ccaf836d59d63c96b78ee3b92317963c460d54a2"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-STATE-EFFECT-ANALYSIS-0001-R04",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:61de0e3aebc6d15de03a09c4b386434464822b4307da0a26ac742e5fc4896fda",
+        "sha256:b8a3d223d3723670477dfe01ce3e3456cfd51bd9d54f874824f1e6da9730b724",
+        "sha256:b5480d4a6e9933e1ba5579aa7a9c932a462a0bff1ac66d3c1a76c44d4e5a604d"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-STATE-EFFECT-ANALYSIS-0001-R05",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:ec285aa44f5a48a572c1ec75638faea9ab26afc1a95228050f43dbcb45e8ad41",
+        "sha256:800da104422e337d6c75b39d334b62e3303164289a5d36784ef94e3f9365a87e",
+        "sha256:509346227fdd9d6da92f2827440d38abedbc990254ab36da747bffdc1b144189",
+        "sha256:50f6783ef7a7619191806e2a2f0c9d6f975c31dde96d16652858fa57da2756c9",
+        "sha256:a4945749b5d5526a328ca96f3ea9255fd50eebad20a585b2a82283a2284e71cc",
+        "sha256:dc332fad833c0b8ba8f869ea8b1aef441d1183eeb134145c3ab1b8f83ce98010",
+        "sha256:ed76491606c852e3f8627e71319bdf770b2dacd46ebb9a91bde5f5b336b3841c",
+        "sha256:4dba912f547d0d76e591fdcb6ba4476ebaa87ef11a268f3376b3820b2effa897",
+        "sha256:75b68fdb5a37b9e2bcf6c88eeffb3220a7c21f99a61bf7ef7627899a3918f47f",
+        "sha256:ae33b109835a9b8ceba2c5182b55b239ef0805b54d77a043f284e5279bb2780e",
+        "sha256:0d640134ea8f88ac282a1e37330ea975f171da9b119b4b287e6fa2f6367e69c1"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-STATE-EFFECT-ANALYSIS-0001-R06",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:3880073208efdb010f5596ae4fbab250f2b920daedef93af78b0744c2d0398b7",
+        "sha256:3157bcb57bf59e81ce8870b4cafa045270d015dbc82c58184e1259d5636675fa",
+        "sha256:926c13df6b8e3c3ca9a3a26adde5ccb936f4242a49e22aa8ed2f133d6746d32c",
+        "sha256:e1cd093a34dca1317cdb5114439207a5e258f233bf534957add0a32a426eb78f",
+        "sha256:4fae94d16a684b4a7fe5711840526667ac712ef6da2c033a0a92170f2aef4b88",
+        "sha256:cef6378eee20f0ae318df5b8f54dce895d520cf1b04915e018220759f3be284e",
+        "sha256:a7d1a85144a52dfb4fdbef2ec7294af7cc6e3a993b8ba88be4734fb3af59aecd",
+        "sha256:40ce373676b89b905a9bdd1cd7691d5c1008a9a48f93ddd751df9e0bb06b9e67",
+        "sha256:15b6e15de49ac9a7c33e966a8edf69c74dc5dfcafa18bcd85d9169cb20fe960d"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-STATE-EFFECT-ANALYSIS-0001-R07",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:26967e1269a092a2f107bd859a4fba6d7b1e3f8ea14b14dc32e688dbe300e228",
+        "sha256:f0307bb4ed2d70a6454d7390ee430c5e99d2a4bfd12f5d104332d53dafb6ab1a",
+        "sha256:d6f69fe94fb27bc96b8498ce16af3519506ec5ee0e37a07d14ce47867c6bb7b2",
+        "sha256:50211ecf8fdabfbc5a1c79def04215b535dddf2d1013b667421c42e829b79dce",
+        "sha256:b52e76ae39450a8ddd9d52210728d24060c854fd0c9d8e0ff9b7c84921c350d5",
+        "sha256:92ff74b9bcac1be672c93745fa57ff512c4a16f8f65d7576d5910592389bc5c0",
+        "sha256:41e1350765f570b2d67076a18d80e5daa2b02e304d139f806af7ab30881b7043",
+        "sha256:93c45a65b327cf42fc6f59b0352b3c28584c6b711187864f7184a01769b4bc6a"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-STATE-GOVERNANCE-0001-R01",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:bbbdfc2e348efc782b0d4876799b2a1ff9cb2cd77f41a8e3ed28f87fc4e12b48",
+        "sha256:ae607b4abbd31efd60688d134259cae8f8fa45152bdcaf87fa977d99f5851818",
+        "sha256:605edce973f3cdf12fbd0e3fe9355f742f93a9aa00dac5b7171ed456176c3111",
+        "sha256:3aa9296970b5691955b772a6ae32920749c960a09e4c4f5f6ac0792ed2a76b92",
+        "sha256:7bdafdb64d3e184f252c3df2b6d7aaf20c98109753c304ad402047be801919a1",
+        "sha256:e7ab61f7a49aee84ddae9d4eac05e6196099e6795b4d3bdbe9636921d8182e38"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-STATE-GOVERNANCE-0001-R02",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:d789f4c43a7592dd3973f08a40c335db4a0b4fc5312ff737822e65c21a996234",
+        "sha256:5dc26952ee07d64b51814f26185a4ea97ca8a766e30d5ada86e3abc6a499188a",
+        "sha256:590c3d03965c25bbb14c44da7bf3f5842ea10c4b83ec55eec2cf475dd716058c",
+        "sha256:ee80d2909f9336a6144443c9aae1a58f2c2eb440103578186a679aafd21e14f7"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-STATE-GOVERNANCE-0001-R03",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:5712198739932628bba9ad412cde87ef2bc4badbeb062db3cf13ee750370809b",
+        "sha256:7fdb9cbb30dd3197a290f636d6a3856c6b2fa3ec263ef50ba418edeea40b9fe6",
+        "sha256:fb5c0722e83f93a74327ccf70416ae15b8473ed617fb909e19ce34b793ce2ccd",
+        "sha256:247b66a511be920a0e235a8f3132c1d63e5c0b3168f1fffa3ddfec340b3e19d4",
+        "sha256:6681eab88389c3a4ffc011d2812ce83130f56cdfd289b94307cef6b634ecda03",
+        "sha256:472a02b61e61dc500e7772ce064199e7b53595d1cccabb5708e4de9f7a394312"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-STATE-GOVERNANCE-0001-R04",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:d4ae9d77ee9240d4794d7eae4e836fe1f083a6a43931a8c1c6d0511d4c6e39f2",
+        "sha256:e5b71f08499f903a31c52a7cf71e43216cf6802c4aedbff5942b064c994584f1",
+        "sha256:773619f9876f68e70f15d7bf9f02f49d0fbd9c3642e7f0b9dd028931b2253b2a",
+        "sha256:601cf2d48596a1b79f9ae1a334b76d4d153fcd0702278a01cda48e21d3f814fe"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-STATE-GOVERNANCE-0001-R05",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:895dee05f025e5af156c5f4db199723445fef15b5bac2b67b7f2e34120fd55fa",
+        "sha256:a08bf632d8d2094ec137080e9dea1e7458a60ab8336d30f911977d2cec4bf3ad",
+        "sha256:770052adfd72eb7eda8f3874681ad67524a190861beb2993484a1cd28d4dd67e"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-STATE-GOVERNANCE-0001-R06",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:ffe64aff4a7207094207ea5800def322994cff20d31c53e84fd69480f8e64098",
+        "sha256:0b82ef9a727da0fdf1055bbd84919e9f5d7fbd7d4b41162b748b036c6080283e",
+        "sha256:8567048ddc6891783002a19798a5d5cd5098cb7964fd99b39a47d1d6b791a536",
+        "sha256:109bf50cbff2d927ee71031c9d5f002e7350a4338b681e09f3815d5bd57a3db4",
+        "sha256:79a0b9a622f42fbc70dc278ec659666b5beff692b30de8fa9609ac496b16c398"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "AF-STATE-GOVERNANCE-0001-R07",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:1cb232dbb7e021e6bb05bf8581161e5e22e94f73bf3ea413e2101c1c3fec040e",
+        "sha256:866ad6b710d75818ddcc59141313ac707970e99974d7c99bab2049159bca27f1",
+        "sha256:a4600a87718a64ebaac27897d810a577ebee6ffa4c2adc93e69a0c9ae6e270c5",
+        "sha256:872169a6a8881f3a051e77805747a9b7a5183560c936a4c3661bfe09eae406b7",
+        "sha256:0386697b2709c49162011e10e8a3ae33c4685d3518228f0a11db22557a0018ba",
+        "sha256:a96b3f9c5db977ef9bac205b88c6a33f8f3c71266e11944040a80f1ff159f769",
+        "sha256:23135b930cd749736196c0383d0344820489b6a4ecc53ecdfa76c95bd20cf7d5",
+        "sha256:8dc381a91475012419581de70a84b1bdd9e607d1403609d1c3d53730ca8f6358",
+        "sha256:44ae3f6f712de822bc01b5c56609db55226e0ce66d0fb4d2bdfa4280eed8217b",
+        "sha256:d7b02f6baf216340e45563304ee7582a46002babb22cb44aef749d610b2992e5",
+        "sha256:590437644231dc645bf05b3688f7ed18a8783c398c66a1e0245c3905f555212d",
+        "sha256:7aa943b05f0b5a4e2f49b4b5f3e3f224ec84da8601e04df7288033fecedd37f6",
+        "sha256:968302f13f42959167079e001613a4483c568baf0f2dd8386df7f24b5866397c"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "TF-AGENT-INTEGRATION-0001-R01",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:459cb833661dcb77a682f1957ae0fd3adc538eceb9340726666a471d9b3fb8a2",
+        "sha256:7efff83324e0b09602c5f6831fa48c43af64e43524c9310701c1f564ce61e901",
+        "sha256:8e08cd2959c9813c6c4b0ecfe73b2e475b6bc4592af5a4589d6667af3a40a763",
+        "sha256:acb8c290c3e0bb17dfb79f5fba0a35ee91f85b33e326b93a2a132df522d71795",
+        "sha256:e2a6f1e0e692d9daee1dfd08328758fc7ab503e93923892c36b0ab6f12f57af5",
+        "sha256:825d4842d5d900f710b0dd512a7931d503f7101a2a65fda3b59745e65404f086"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "TF-AGENT-INTEGRATION-0001-R02",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:a564ae3dbc4bb4a3763b490a9227ac76b8745b425138ef31d918269ae25a2ec2",
+        "sha256:76a292751a56a368c2ea4e2ed227db02131a2bb09edfa1770b3bae4428a56941",
+        "sha256:6f71b7f0c6a45c5a13cdafa06caf3631dd9c006bf6a517b673ae8a44540639a4",
+        "sha256:2183f16cd4d6fc5f1d143647ee9d8f48228363d9126c4ff005c85e93bbd2f290",
+        "sha256:05d8d2f936b9c80b7e3039ce91b4bac6431d10359f8e8402faaa5ccf0637baf0",
+        "sha256:0f2984742760c6bea3c97da63760613d34b5fea1e3face0cbbb8cd2bf38c7ea8",
+        "sha256:ececf44d3b24c7f635d29b1331e0d45f8e8b920749a8dcb8f3aa2f1c01516f02"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "TF-AGENT-INTEGRATION-0001-R03",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:cfba244c1cfb0cec2f06632121732b69d5b2516f3779c785ae258f58e82aa7fa",
+        "sha256:2868b9808d812ec6173a4b37cb03e4432d91fa887bb171b1e8d77e68da751fe0"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "TF-AGENT-INTEGRATION-0001-R04",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:45658947101f4b479d236ab84d0a7ea6b22220c03126bed8586c3fb92856cf96"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "TF-CLI-0001-R01",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:80d9be8bbdf71e85151c2196652fad968beecc6888c17c2ed30ac0b0d1484bf8",
+        "sha256:2da7cc70f824b5dc856cb76928823b6f29d0556ecc132fb14ed5d298629f576b",
+        "sha256:9a047441758c9496494293e378ece77dd9ba0b9ffc85872cfb2f9d8fe8962a0a"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "TF-CLI-0001-R02",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:c593920c1314a4eb0f8d29b5449387670842d79921cba68f609d3fc357aa26e3",
+        "sha256:de46ba53d6aa661fb77091f2588883b318698a2a90082784dee0ef7a9c3985c3"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "TF-CLI-0001-R03",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:99b1e3a505988caa65de6aec36b410afb539edcada9a7dcb9cf1be190e14567a",
+        "sha256:ea3381d79aa3bd4a2579d5ddad55703cf9c1266a5dc1ec8087d59538f2057a5e",
+        "sha256:272662c2a1b0e2dbb9da728ae23063c1f6351897e46263b29b0e7e381b109e3a",
+        "sha256:52831b1693c1b6f5eb06b75bbd98183f4fd7b9bb5ba6a5542366cb794b0d54ea"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "TF-CLI-0001-R04",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:14cf8f8aeb38d4b01d3df17fbdc6d088b56e3a80a52004138005ff47368b8a78",
+        "sha256:fd9adb45a99096f713797eb532366cf7902ebcdab62a023cfefd44c5afa7266b",
+        "sha256:ccf1413e9f4601630f349b980a2d69f1e5ab1a7ef82b451687b0bd0e808d615e",
+        "sha256:24f9fa7386e0b0396d30eb7cf10c702357d46a330333672878261e1ed22317ff",
+        "sha256:ca489529af181ea45254a3066492ea7369b01e8b3fc8721e99a489823c74055a",
+        "sha256:1602e14f85bb7848f21abedb542d264c842b4d39be1a38c1e710e40a4c1cf33f",
+        "sha256:1a6c0ba6cce2e5fd04660f69e5030dc98ee5318ee82af43c88c3ac6d2b22e48c"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "TF-CLI-0001-R05",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:bcf3496f85483a702c0696da4e433cb6f36a20e1efc40ec14774974bc7b4ae18",
+        "sha256:fe19df8126c15e96da37d0d80624722984c7f7d32b4491b422fad4893af9601f"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "TF-CLI-0001-R06",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:8bb4447c3246c3342e8c24e5eb842412de43b36bc327bda43c3eee61c5dbc13d",
+        "sha256:cf32a8f34fa86468a026609adec4a9c46a4f18abedfec0302ac0a40dbacf2bfc"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "TF-CLI-0001-R07",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:620e7cf6c81ef5a167323a38618ce910f697c605a27532f2ad790f28408dd40a",
+        "sha256:4d70a235f7189474b5bbb32e1a40072e41969d077fd49bf64dfb228e93c8fc21"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "TF-CLI-0001-R08",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:79c7bd56c1e7cf1e0f323527a849f1cd4cf14fdea52a949cf7236e38f66f91ab",
+        "sha256:dd3b786119833de19d9552c2f2e6fd478ba7887cff2c28c90c153cb996ff201f"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "TF-CLI-0001-R09",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:10b43f85ff4953c63ea5095a21e01b4b7cb239affc9cfb645f0d39f56360c050",
+        "sha256:bc27cbca772a545e49b0167339ec7b37098f594429cea97bd2c5baa9dd82ac2e"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "TF-CLI-0001-R10",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:205521d89b8969e9e3672aa4283144b5ce72e89c272d3a2084dbb3ab9a4afe92",
+        "sha256:85643521078678580f562d350538f49b27e54002dc4840e52a031af515bae20c",
+        "sha256:4d517a2f45111e58d086d0757b5d599d6e6516a797af409ccdb95ced28b16a55"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "TF-CLI-0001-R11",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:85a14a3fd15b4d2505c5e25c004ef5da1a42edd6ed729711d6ee599ac8379afe",
+        "sha256:9bb0d2ee2e45997c9de7cd669ad06336aa0f0b9b41d44d0c01f7c1e949234b86"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "TF-CLI-0001-R12",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:cd13f942b31d300161efe852de2001c77ff4f429fecf240adfa1f4ae6621f4c9",
+        "sha256:9441b6b15231e2130647bbc4d1f44314b8e23f0bb4914f6702c0fa5874d8ac13"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "TF-CLI-0001-R13",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:b4df92b646961544f7bd3515b273238e5be31c037e26a07b3493034ff636046c",
+        "sha256:41d07a179709e6a67e8d0b21f7280a0d051a7783a520111a292b84c202733b18"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "TF-CLI-0001-R14",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:210d5c6fbdc2db439d84f2a6fb0f7c70d60682d4d1f91616df1142830d06cb67",
+        "sha256:072b71a592be0e55f016c74eb3561ab631acdc411776fee9a855a0ecd42343af",
+        "sha256:da8e40fb8de668bf64815966608c5ffc36423de13684f37b1307696a86036d68"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "TF-CLI-0001-R15",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:6249c0909076ba608fc6a36b6877ceae5425de1daed711c585395c54adc46524",
+        "sha256:a8ed5cb41e0aa61aff261fe255afe6d16a8d3758f2b8522afd215636db524d53",
+        "sha256:02b924408c5627cb3c9048a1dca1c0269817393076ef143737f91f82a130cef2",
+        "sha256:8333df357299ec7c663efde7c3a942b8e7dc3480d88e263c7915fe2262db2278",
+        "sha256:e47ae0def026ac207162e8a15c05db9b8616bb5e59bb2582b99762a2fd9b5819",
+        "sha256:175c0bbb58947c62155fdc40b51d22ce8a3564f1899338b975199e9c85623b65"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "TF-CLI-0001-R16",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:1d3ac10972f6bd50ed0dae4aee4185894dddd75a2199c8ed52957acc095e24ba",
+        "sha256:7560b781cc3b72869a0a4c7b2be68cbc4f98b7612f9c07f414e5dc9d270041b9",
+        "sha256:df827dab6d7b121e838efd6d2e939833ee8d955be75d1aae7d2f2a242dd0c804"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "TF-CLI-0001-R17",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:478f26237cd63e6009f2f6f10a0d990978e0f341e5e33ff7ba6326b808f3f030",
+        "sha256:9b749dae9ed2574031d428770be693491c2b2b6147491243a9f8ab0eafc71459",
+        "sha256:84e78b4ab4efb8b8a7cc4a205124c6f49c9dc5693754341505bd504bcaeaccb2",
+        "sha256:f6e0331f77501558670e7d7a1fca2f82b93618540f0296deb6b9ba1ab762a8f2",
+        "sha256:546e34aa1863b594e52f1adcdedcf3519775c6120406036851ee777906810721",
+        "sha256:64b4c45beb82180b6deb13b50829b480c11d9b79e0ee9181c6251b87c7762f49",
+        "sha256:a9da26bb5496af63c461e6981a7e6ae0ef095d46b71bbbfefb2ea83f57b9235d"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "TF-CLI-0001-R18",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:9c6219185d563d03ffeaafb0f2d42998624fe39cc1a73e3e8aa24d4bf84ea3ee",
+        "sha256:13eac20545d472015132f833362a81bd8ab1c16cef3899c91330e5acc4e9beeb"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "TF-CLI-0001-R19",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:12168579b68069656942293b7ec62b59ac3035a07cbf11b6a93ef76a890cee1c",
+        "sha256:a97ee3dd2e1f6f02c7bc375afbb475b7e8671ed001004ed22c0470b85fc7fdb1"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "TF-CLI-0001-R20",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:ec8e0195eafa43391f99256dad673de6c5e0cfe479ba5736629c2b76f2d97378",
+        "sha256:ffb55511025c805f07bf7f957a3c137d8aa3508a4c6b9dab0a9241adaba39268",
+        "sha256:b589c1bfaf346ad9659e1fcc751a93e0b7ee43d00a6dbaacf95046b9b9175dc3"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "TF-CLI-0001-R21",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:6161e26cfabab76654c8ae400f3088ab199bcfd1e354b6e7902ba60311a574fd",
+        "sha256:1586d54bcd0e1cc6981813319e2cf00ebd809060abb2028d9d2eb42ffe08e56c",
+        "sha256:44d062a816c4391bdfba536483ec1f41f4066e78e4cbf831ae721daf880da890",
+        "sha256:af29889dc80103c41832d591db3834fe0f8e64101faa5ceabab15396af8bb748",
+        "sha256:358a3f9fe38345c13e6de98a8a14cf2f050b4091644d9a6eb580f994d3a8b4de"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "TF-CLI-0001-R22",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:16415df2af07cf5521e0d7525cd59724f1276db29b9711fd3a98e7ff691f4066",
+        "sha256:a6c851af15a877fa680ca1f6da0f6d2da3e078d35285cd679dd17a6d1f8da61e"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "TF-CLI-0001-R23",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:166070b1420ee16dea84261e9c4728c45cc29b680dee204d93cd9b396da6a0a6",
+        "sha256:7f3ba48c20445a3bfc556bf0a21a843fe295ed3919246635e650cc673d34d351",
+        "sha256:1c092eaf0590db9b30251d29745ed36157cac8012da31df43534ebdcf7a144c7"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "TF-CLI-0001-R24",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:62d662113bfccbebc362c9901b3cfd2729150b07acbc4231e3cf08facda4d121",
+        "sha256:79fb969aa1a82906e9d2db00f654560de3c94a6327ddbb9fb9233f99da86c127"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "TF-CLI-0001-R25",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:139d668aaed6879f1db5eaf3b17a6f1ac45df91b26b9b57a849e3d14fb7c3426"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "TF-CLI-0001-R26",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:a67b359cd3eedf777cfcc3c8c5e476aeeb5b78ab22dda80c475e250c4984a529",
+        "sha256:67a605415ad14f8fae8c38a3d93a64bccd20c150da93c8c60d31c9a68417748f"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "TF-CLI-0001-R27",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:49d58c1dbf78c2267ca9cddad45a9dd3c0dc936b06433b82db966777856dde6e",
+        "sha256:cbfa56ab24e41113ac1abed7a2c783e83fb28aefddbccb4aa403e4f4f641e03a"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "TF-CLI-0001-R28",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:54375e74a54675f06f3538faf8934e6865f34470e395a23523f2516a307cd8cd",
+        "sha256:882224a139baca1a05c74a0118244bc6cc6e93b282456f021c856ff4ff3dd412"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "TF-CLI-0001-R29",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:eaf090733c7157cf427eddaa3afb04624a13f1d01529702ae993608aca927c75",
+        "sha256:e4e13871289fb1155aeac740ef4985aa0b2ebdaaa6bf013c8f5cff0a3c8ad78d",
+        "sha256:e4c01f99c09e589bf08c4f8015436d5c33b9385f8c3955bdaf693a08b0b0465b",
+        "sha256:6a73c24f7f5a1b474462fd34307c45ff26a11c9358653eab21fbc5b34a7bc29c",
+        "sha256:231ba337d8c48a060d9bc44294642897ab7ba2f0b6e5f548560ca61ff09761ae"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "TF-CLI-0001-R30",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:3cc6b1c8d885ea980c58b56f41174f794f17f6db116a0863d1b5a8631255ec80",
+        "sha256:4dc7a451d0fa4722285cdb7dbb92a2966b3d9b37e2e056c60209f93109f6c1c5"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "FEATURE_REQUIREMENT",
+      "subject": "TF-EDITOR-0001-R01",
+      "required_evidence_classes": [
+        "EXECUTED_TEST"
+      ],
+      "evidence_refs": [
+        "sha256:74211b51c7a13789bb80c44a299d575c1f7ddd5dc6aa1675b16d5ac92dd84514"
+      ],
+      "status": "PASS",
+      "reason": "every declared required test is eligible and covered by the successful canonical suite"
+    },
+    {
+      "kind": "BEHAVIORAL_REALIZATION",
+      "subject": "AF-FORTRESS-AUDIT-0001",
+      "required_evidence_classes": [
+        "STATIC_PROOF"
+      ],
+      "evidence_refs": [
+        "sha256:888ab8c13aed4309ef62f8188befc036120372de14a50e1f5894eeacb7b9ed20"
+      ],
+      "status": "PASS",
+      "reason": "opted-in Feature has coherent current behavioral realization"
+    },
+    {
+      "kind": "BEHAVIORAL_VERIFICATION",
+      "subject": "OBL-BEHAVIOR-1AC080772AEA802C",
+      "required_evidence_classes": [
+        "EXECUTED_SCENARIO"
+      ],
+      "evidence_refs": [
+        "sha256:609e4a4fb7ad3160e74ea2931ab5af104060c9fdddc66cca249cc61b428631bf"
+      ],
+      "status": "PASS",
+      "reason": "distributed verification binding is covered by current executed tests"
+    },
+    {
+      "kind": "BEHAVIORAL_VERIFICATION",
+      "subject": "OBL-BEHAVIOR-1C035AD4D23684BF",
+      "required_evidence_classes": [
+        "EXECUTED_SCENARIO"
+      ],
+      "evidence_refs": [
+        "sha256:70d1831a67adb7feee68fc55cab13bf51f72c9f27f168b9d437c02bd70178895"
+      ],
+      "status": "PASS",
+      "reason": "distributed verification binding is covered by current executed tests"
+    },
+    {
+      "kind": "BEHAVIORAL_VERIFICATION",
+      "subject": "OBL-BEHAVIOR-42EC91CC4B98DDD4",
+      "required_evidence_classes": [
+        "EXECUTED_SCENARIO"
+      ],
+      "evidence_refs": [
+        "sha256:8a576af8aac1e3976f615f8f338076f31452feae57a7328954d4b942da01ca04"
+      ],
+      "status": "PASS",
+      "reason": "distributed verification binding is covered by current executed tests"
+    },
+    {
+      "kind": "BEHAVIORAL_VERIFICATION",
+      "subject": "OBL-BEHAVIOR-45F60F945F555B48",
+      "required_evidence_classes": [
+        "EXECUTED_SCENARIO"
+      ],
+      "evidence_refs": [
+        "sha256:ea6b8813eaea73b80ab4dcdd985c8f2bf8813b575aa3701a1b726751a5e13e1c"
+      ],
+      "status": "PASS",
+      "reason": "distributed verification binding is covered by current executed tests"
+    },
+    {
+      "kind": "BEHAVIORAL_VERIFICATION",
+      "subject": "OBL-BEHAVIOR-46140C2450E0D8AB",
+      "required_evidence_classes": [
+        "EXECUTED_SCENARIO"
+      ],
+      "evidence_refs": [
+        "sha256:8f8ec1eb1e1e957216005db56f660ebd43a1346e76cd14e2ff58874023090a78"
+      ],
+      "status": "PASS",
+      "reason": "distributed verification binding is covered by current executed tests"
+    },
+    {
+      "kind": "BEHAVIORAL_VERIFICATION",
+      "subject": "OBL-BEHAVIOR-756B7A45BE36AD97",
+      "required_evidence_classes": [
+        "EXECUTED_SCENARIO"
+      ],
+      "evidence_refs": [
+        "sha256:ceb2cfb106622c5db4dd9a8a744537325b7053afdffc83ca550d712d1a96db53"
+      ],
+      "status": "PASS",
+      "reason": "distributed verification binding is covered by current executed tests"
+    },
+    {
+      "kind": "BEHAVIORAL_VERIFICATION",
+      "subject": "OBL-BEHAVIOR-7719C7D5BB2BD276",
+      "required_evidence_classes": [
+        "EXECUTED_SCENARIO"
+      ],
+      "evidence_refs": [
+        "sha256:f01e8fa185300834d2c76e3165a5754975a0fa8b143852c55c51f5a0a2ed2c65"
+      ],
+      "status": "PASS",
+      "reason": "distributed verification binding is covered by current executed tests"
+    },
+    {
+      "kind": "BEHAVIORAL_VERIFICATION",
+      "subject": "OBL-BEHAVIOR-77664014FFE44C78",
+      "required_evidence_classes": [
+        "EXECUTED_SCENARIO"
+      ],
+      "evidence_refs": [
+        "sha256:8d44963e413e7921e223d167e59148a4027f975f5f45db69ae4c9c816bdbd8ee"
+      ],
+      "status": "PASS",
+      "reason": "distributed verification binding is covered by current executed tests"
+    },
+    {
+      "kind": "BEHAVIORAL_VERIFICATION",
+      "subject": "OBL-BEHAVIOR-A51E538AC74F8A3A",
+      "required_evidence_classes": [
+        "EXECUTED_SCENARIO"
+      ],
+      "evidence_refs": [
+        "sha256:e3346e9cf3075ef7838832b74a9d9e7612a85ad4ab54bee6f8e03c20a5c76304"
+      ],
+      "status": "PASS",
+      "reason": "distributed verification binding is covered by current executed tests"
+    },
+    {
+      "kind": "BEHAVIORAL_VERIFICATION",
+      "subject": "OBL-BEHAVIOR-AA4327DC8E984034",
+      "required_evidence_classes": [
+        "EXECUTED_SCENARIO"
+      ],
+      "evidence_refs": [
+        "sha256:326a8643261eb93663a477d9530bfbeaf1e46aa6841c19a4f891dcd98b249013"
+      ],
+      "status": "PASS",
+      "reason": "distributed verification binding is covered by current executed tests"
+    },
+    {
+      "kind": "BEHAVIORAL_VERIFICATION",
+      "subject": "OBL-BEHAVIOR-C524D3D9955F405C",
+      "required_evidence_classes": [
+        "EXECUTED_SCENARIO"
+      ],
+      "evidence_refs": [
+        "sha256:807d899629cd90a6ff47c7317834cb56a09300422f9e4df8965a9866511f9c89"
+      ],
+      "status": "PASS",
+      "reason": "distributed verification binding is covered by current executed tests"
+    },
+    {
+      "kind": "BEHAVIORAL_VERIFICATION",
+      "subject": "OBL-BEHAVIOR-C5738BFEC1324500",
+      "required_evidence_classes": [
+        "EXECUTED_SCENARIO"
+      ],
+      "evidence_refs": [
+        "sha256:0483bd206b550c407ec19602afba89ce85c9a5af0e6e68899ad00a471024bb3f"
+      ],
+      "status": "PASS",
+      "reason": "distributed verification binding is covered by current executed tests"
+    },
+    {
+      "kind": "BEHAVIORAL_VERIFICATION",
+      "subject": "OBL-BEHAVIOR-CF4975582712E7EB",
+      "required_evidence_classes": [
+        "EXECUTED_SCENARIO"
+      ],
+      "evidence_refs": [
+        "sha256:4083814a9682874b96c4e6242a22efb394a2d10eea1b0ca1aa6b18b7445946c0"
+      ],
+      "status": "PASS",
+      "reason": "distributed verification binding is covered by current executed tests"
+    },
+    {
+      "kind": "BEHAVIORAL_VERIFICATION",
+      "subject": "OBL-BEHAVIOR-DC171ECDF9D24918",
+      "required_evidence_classes": [
+        "EXECUTED_SCENARIO"
+      ],
+      "evidence_refs": [
+        "sha256:feb7990c74e1d920e5e77db64e1ce90b92d03e41d21c7b19f1c56b078b32e609"
+      ],
+      "status": "PASS",
+      "reason": "distributed verification binding is covered by current executed tests"
+    },
+    {
+      "kind": "BEHAVIORAL_VERIFICATION",
+      "subject": "OBL-BEHAVIOR-E4214F59A19E4B55",
+      "required_evidence_classes": [
+        "EXECUTED_SCENARIO"
+      ],
+      "evidence_refs": [
+        "sha256:1c0942901f6a3867220141b190103c216fb17d400fa504e5bc61d92f1f70e25d"
+      ],
+      "status": "PASS",
+      "reason": "distributed verification binding is covered by current executed tests"
+    },
+    {
+      "kind": "BEHAVIORAL_VERIFICATION",
+      "subject": "OBL-BEHAVIOR-E6662ECB0525C4F7",
+      "required_evidence_classes": [
+        "EXECUTED_SCENARIO"
+      ],
+      "evidence_refs": [
+        "sha256:f228c15f3b9af0fbf7081f85e9c5511d21a7dd02e8c3f95914362939bbc2207c"
+      ],
+      "status": "PASS",
+      "reason": "distributed verification binding is covered by current executed tests"
+    },
+    {
+      "kind": "BEHAVIORAL_VERIFICATION",
+      "subject": "OBL-BEHAVIOR-F396979FFE0025FA",
+      "required_evidence_classes": [
+        "EXECUTED_SCENARIO"
+      ],
+      "evidence_refs": [
+        "sha256:84fa328b7b50fc74afe0c08a5ff8ed66d26679db631f0a9cf477086891398c94"
+      ],
+      "status": "PASS",
+      "reason": "distributed verification binding is covered by current executed tests"
+    },
+    {
+      "kind": "BEHAVIORAL_VERIFICATION",
+      "subject": "OBL-BEHAVIOR-F60CC95D4C8F6DA7",
+      "required_evidence_classes": [
+        "EXECUTED_SCENARIO"
+      ],
+      "evidence_refs": [
+        "sha256:0db56f7d6c2ec88889a1f1b0dd19d7d38879fc96d9808e7bc61fbf03f51d71e1"
+      ],
+      "status": "PASS",
+      "reason": "distributed verification binding is covered by current executed tests"
+    },
+    {
+      "kind": "ENVIRONMENTAL_VERIFICATION",
+      "subject": "SCN-5A016EDD618E626E",
+      "required_evidence_classes": [
+        "EXECUTED_SCENARIO"
+      ],
+      "evidence_refs": [
+        "sha256:99b440ba1b0b69088fc759354b6450d1b375c6ac34340379418f06ff63c09375"
+      ],
+      "status": "PASS",
+      "reason": "distributed verification binding is covered by current executed tests"
+    },
+    {
+      "kind": "ENVIRONMENTAL_VERIFICATION",
+      "subject": "SCN-E881A0DBF2A76CE4",
+      "required_evidence_classes": [
+        "EXECUTED_SCENARIO"
+      ],
+      "evidence_refs": [
+        "sha256:1f830cb9a98f04277227bf8e64cebf818e817bacdb80673341a7514a9cd6b724"
+      ],
+      "status": "PASS",
+      "reason": "distributed verification binding is covered by current executed tests"
+    },
+    {
+      "kind": "ARTIFACT_FRESHNESS",
+      "subject": "ccg",
+      "required_evidence_classes": [
+        "AUTHORITY"
+      ],
+      "evidence_refs": [
+        "sha256:6cd881e4f909db3fdf57d602414d8919e443a2ae3a26e3e9dab1f9145093f3ad",
+        "sha256:417d805126cbc40d46974c5924ee5abdf890825816909254b117dcbcf13a754b"
+      ],
+      "status": "PASS",
+      "reason": "artifact was regenerated from the current certification source"
+    },
+    {
+      "kind": "ARTIFACT_FRESHNESS",
+      "subject": "environmental_analysis",
+      "required_evidence_classes": [
+        "STATIC_PROOF"
+      ],
+      "evidence_refs": [
+        "sha256:b1e0bb43f2bd58f0b00192e5b446091082972ad64ac2f0667dd19734c0848d0a",
+        "sha256:a8f058eca9e40f9611be08924b241e804243640a58a52dda5aa60c72c51892ba"
+      ],
+      "status": "PASS",
+      "reason": "artifact was regenerated from the current certification source"
+    },
+    {
+      "kind": "ARTIFACT_FRESHNESS",
+      "subject": "information_flow",
+      "required_evidence_classes": [
+        "STATIC_PROOF"
+      ],
+      "evidence_refs": [
+        "sha256:45508d39d9876e51cf3e1cb8800fd3b5f33e8d735e5dc393925330a2c3fd4bc9",
+        "sha256:f1e43b1837b15252f28d269f7ca5757208680a7c18adbc43a8723edd94fe2f4a"
+      ],
+      "status": "PASS",
+      "reason": "artifact was regenerated from the current certification source"
+    },
+    {
+      "kind": "ARTIFACT_FRESHNESS",
+      "subject": "intended_bfg",
+      "required_evidence_classes": [
+        "AUTHORITY"
+      ],
+      "evidence_refs": [
+        "sha256:f0f1bc1c8a14a23d1fb31858b51ae52ff503ea4c9bf71acac4024fdd3b8423a0",
+        "sha256:9e990e66c8c2af078059c966eb58b162cdb0e1ae6b0ac1d9fff673828955d164"
+      ],
+      "status": "PASS",
+      "reason": "artifact was regenerated from the current certification source"
+    },
+    {
+      "kind": "ARTIFACT_FRESHNESS",
+      "subject": "psm",
+      "required_evidence_classes": [
+        "OBSERVATION"
+      ],
+      "evidence_refs": [
+        "sha256:a8964bab5dbe9d52ca822b757da4ebc8be552c261ef6350bea835f98624bfb59"
+      ],
+      "status": "PASS",
+      "reason": "artifact was regenerated from the current certification source"
+    },
+    {
+      "kind": "ARTIFACT_FRESHNESS",
+      "subject": "realized_bfg",
+      "required_evidence_classes": [
+        "STATIC_PROOF"
+      ],
+      "evidence_refs": [
+        "sha256:888ab8c13aed4309ef62f8188befc036120372de14a50e1f5894eeacb7b9ed20",
+        "sha256:98509d9034159b48f6b9a23441b844e20e5d17a3d600a289d63b0f42c6dd9277"
+      ],
+      "status": "PASS",
+      "reason": "artifact was regenerated from the current certification source"
+    },
+    {
+      "kind": "ARTIFACT_FRESHNESS",
+      "subject": "reference_resolution",
+      "required_evidence_classes": [
+        "STATIC_PROOF"
+      ],
+      "evidence_refs": [
+        "sha256:a1e5c156db20ae6108f1ff5bb30c4ca6d4602a385b0d43bcaa793aab27aaf3ca"
+      ],
+      "status": "PASS",
+      "reason": "artifact was regenerated from the current certification source"
+    },
+    {
+      "kind": "ARTIFACT_FRESHNESS",
+      "subject": "semantic_analysis",
+      "required_evidence_classes": [
+        "STATIC_PROOF"
+      ],
+      "evidence_refs": [
+        "sha256:c23821f782f1d0b5088fe5d41bc0c10a183c2cfc38c21cbc6b5fa0301983035a",
+        "sha256:6def946032d2504c1272981b54d92ab26c90d82bda410af587151516794240f8"
+      ],
+      "status": "PASS",
+      "reason": "artifact was regenerated from the current certification source"
+    },
+    {
+      "kind": "ARTIFACT_FRESHNESS",
+      "subject": "semantic_conformance",
+      "required_evidence_classes": [
+        "STATIC_PROOF"
+      ],
+      "evidence_refs": [
+        "sha256:ef33424812c58a0f4c6a1a5eb66ac22913a3f92584809130b2a2b33111ede154",
+        "sha256:eb466fde66590775929e1b1d3ff62a87301cfa9f05f041dc0637158cdc23c266"
+      ],
+      "status": "PASS",
+      "reason": "artifact was regenerated from the current certification source"
+    },
+    {
+      "kind": "ARTIFACT_FRESHNESS",
+      "subject": "source_artifact_model",
+      "required_evidence_classes": [
+        "STATIC_PROOF"
+      ],
+      "evidence_refs": [
+        "sha256:aa7e9974ea7ce6fef377a861f2fb34658accaa8807e4cd362a62931a43ef6fc6",
+        "sha256:9b890ebf99c030aedab428fa458cccaec07eaec260f6d6351ac1e280689afd7c"
+      ],
+      "status": "PASS",
+      "reason": "artifact was regenerated from the current certification source"
+    },
+    {
+      "kind": "ARTIFACT_FRESHNESS",
+      "subject": "state_effect",
+      "required_evidence_classes": [
+        "STATIC_PROOF"
+      ],
+      "evidence_refs": [
+        "sha256:1fb2230c9abca6a01244f7803123b63ba2197b2ca3b346d667dad9d6b1785199",
+        "sha256:804491f422ee9e6faecfd6a9b8ed54f3ac60591684c4e674694450c706eb8360"
+      ],
+      "status": "PASS",
+      "reason": "artifact was regenerated from the current certification source"
+    }
+  ],
+  "summary": {
+    "obligations": 226,
+    "pass": 226,
+    "fail": 0,
+    "missing": 0,
+    "stale": 0,
+    "invalid": 0,
+    "trusted_assertions": 0
+  },
+  "trusted_assertion_dependencies": []
+}
