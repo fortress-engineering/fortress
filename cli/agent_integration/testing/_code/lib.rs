@@ -233,7 +233,7 @@ mod mediation {
             fs::create_dir(&root).unwrap();
             if let Some(source) = source {
                 assert!(source.bytes("Cargo.toml").is_some());
-                for (path, bytes) in source.iter() {
+                for (path, bytes) in source {
                     let destination = root.join(path);
                     fs::create_dir_all(destination.parent().unwrap()).unwrap();
                     fs::write(destination, bytes).unwrap();
@@ -415,10 +415,15 @@ mod mediation {
         .unwrap()
     }
 
-    /// `T-TF-AGENT-INTEGRATION-0001-R04-001`
-    /// Fortress requirement: TF-AGENT-INTEGRATION-0001-R04
-    #[test]
-    fn native_edition_upgrade_reuses_review_and_preserves_original_source() {
+    struct NativeUpgradeFixture {
+        proposed: fortress_core::migration_governance::upgrade::EditionUpgrade,
+        original: fortress_core::observation::SourceView,
+        original_config: Vec<u8>,
+        selected: TrustedBasePolicy,
+        state_ref: String,
+    }
+
+    fn prepare_native_upgrade(fixture: &Owned, path: &str) -> NativeUpgradeFixture {
         use fortress_core::development_governance::{NoGrantValidator, UnmediatedHost};
         use fortress_core::migration_adapter::CanonicalMigrationAuthority;
         use fortress_core::migration_governance::upgrade::UpgradeAdapter;
@@ -426,12 +431,6 @@ mod mediation {
             UpgradeOperations, inspect_upgrade_base, preview_repository_upgrade,
         };
 
-        let external = std::env::var_os("FORTRESS_UPGRADE_NATIVE_FIXTURE").map(PathBuf::from);
-        let external_snapshot = external
-            .as_ref()
-            .map(|path| CanonicalMigrationEvaluator.observe(path).unwrap());
-        let fixture = Owned::with_source(external_snapshot.as_ref());
-        let path = "__fortress/.fsconfig";
         let config = fixture.root.join(path);
         let mut legacy: Value = serde_json::from_slice(&fs::read(&config).unwrap()).unwrap();
         legacy["$schema"] = json!("urn:fortress:schema:v3:project-configuration");
@@ -456,11 +455,6 @@ mod mediation {
         let printed: serde_json::Value = serde_json::from_slice(&printed.stdout).unwrap();
         assert_eq!(printed["state_ref"], base.state_ref);
         let selected = policy_for(&fixture.root, path);
-        let review = FixtureReview::new();
-        let grants = FixtureGrant {
-            path,
-            exact: RefCell::new(None),
-        };
         let authority = CanonicalMigrationAuthority {
             policy: Some(&selected),
             host: &UnmediatedHost,
@@ -502,6 +496,40 @@ mod mediation {
         assert_eq!(proposed.operations.len(), 1);
         assert!(proposed.rules.is_empty());
         assert!(proposed.admission.is_some());
+        NativeUpgradeFixture {
+            proposed,
+            original,
+            original_config,
+            selected,
+            state_ref: base.state_ref,
+        }
+    }
+
+    /// `T-TF-AGENT-INTEGRATION-0001-R04-001`
+    /// Fortress requirement: TF-AGENT-INTEGRATION-0001-R04
+    #[test]
+    fn native_edition_upgrade_reuses_review_and_preserves_original_source() {
+        use fortress_core::upgrade_load::inspect_upgrade_base;
+
+        let external = std::env::var_os("FORTRESS_UPGRADE_NATIVE_FIXTURE").map(PathBuf::from);
+        let external_snapshot = external
+            .as_ref()
+            .map(|path| CanonicalMigrationEvaluator.observe(path).unwrap());
+        let fixture = Owned::with_source(external_snapshot.as_ref());
+        let path = "__fortress/.fsconfig";
+        let config = fixture.root.join(path);
+        let NativeUpgradeFixture {
+            proposed,
+            original,
+            original_config,
+            selected,
+            state_ref,
+        } = prepare_native_upgrade(&fixture, path);
+        let review = FixtureReview::new();
+        let grants = FixtureGrant {
+            path,
+            exact: RefCell::new(None),
+        };
         let historical = proposed
             .original
             .application
@@ -575,7 +603,7 @@ mod mediation {
         );
         assert_ne!(
             inspect_upgrade_base(&fixture.root).unwrap().state_ref,
-            base.state_ref
+            state_ref
         );
         assert!(host.apply(plan, &token).is_err());
     }

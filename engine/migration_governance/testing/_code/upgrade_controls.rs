@@ -151,6 +151,30 @@ fn bundle_digest_pins_rule_meaning_in_offline_upgrade() {
     );
 }
 
+fn retarget_root_contract(
+    physical: &fortress_core::observation::SourceView,
+    original: &fortress_core::migration_governance::upgrade::EditionPin,
+    first_target: &fortress_core::migration_governance::upgrade::EditionPin,
+) -> fortress_core::migration_governance::MigrationOperation {
+    let contract_path = "contract.json";
+    let original_contract = physical.bytes(contract_path).unwrap();
+    let contract: serde_json::Value = serde_json::from_slice(original_contract).unwrap();
+    assert_eq!(
+        contract["ecosystem"]["standard"]["edition"],
+        original.edition
+    );
+    let original_contract_text = std::str::from_utf8(original_contract).unwrap();
+    assert_eq!(original_contract_text.matches(&original.edition).count(), 1);
+    let proposed_contract =
+        original_contract_text.replace(&original.edition, &first_target.edition);
+    fortress_core::contract_coherency::ModuleContract::from_json_str(&proposed_contract).unwrap();
+    fortress_core::migration_governance::MigrationOperation::ReplaceFile {
+        path: contract_path.into(),
+        preimage: original_contract.to_vec(),
+        postimage: proposed_contract.into_bytes(),
+    }
+}
+
 /// `T-AF-MIGRATION-GOVERNANCE-0001-R08-004`
 /// Fortress requirement: AF-MIGRATION-GOVERNANCE-0001-R08
 #[test]
@@ -192,23 +216,7 @@ fn draft_upgrade_does_not_install_changed_rule_meaning_without_support() {
         postimage: new_manifest.as_bytes().to_vec(),
     };
     let first_target = EditionPin::for_standard(&parsed_standard(&new_manifest, &rules));
-    let contract_path = "contract.json";
-    let original_contract = physical.bytes(contract_path).unwrap();
-    let contract: serde_json::Value = serde_json::from_slice(original_contract).unwrap();
-    assert_eq!(
-        contract["ecosystem"]["standard"]["edition"],
-        original.edition
-    );
-    let original_contract_text = std::str::from_utf8(original_contract).unwrap();
-    assert_eq!(original_contract_text.matches(&original.edition).count(), 1);
-    let proposed_contract =
-        original_contract_text.replace(&original.edition, &first_target.edition);
-    fortress_core::contract_coherency::ModuleContract::from_json_str(&proposed_contract).unwrap();
-    let contract_operation = MigrationOperation::ReplaceFile {
-        path: contract_path.into(),
-        preimage: original_contract.to_vec(),
-        postimage: proposed_contract.into_bytes(),
-    };
+    let contract_operation = retarget_root_contract(&physical, &original, &first_target);
     let edition_selection = UpgradeAdapter {
         from_bundle: original.clone(),
         to_bundle: first_target.clone(),
@@ -272,6 +280,8 @@ fn draft_upgrade_does_not_install_changed_rule_meaning_without_support() {
 }
 
 fn validate_proposal_schema(record: &fortress_core::migration_governance::upgrade::EditionUpgrade) {
+    use sha2::Digest;
+
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let manifest: serde_json::Value = serde_json::from_slice(
         &std::fs::read(root.join("engine/standard_registry/_data/schema_manifest.json")).unwrap(),
@@ -303,7 +313,6 @@ fn validate_proposal_schema(record: &fortress_core::migration_governance::upgrad
     let mut body = payload;
     body["digest"] = serde_json::json!("");
     let jcs = serde_json_canonicalizer::to_vec(&body).unwrap();
-    use sha2::Digest;
     assert_eq!(digest, format!("sha256:{:x}", sha2::Sha256::digest(jcs)));
 }
 

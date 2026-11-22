@@ -651,40 +651,7 @@ fn migrate_finding_governance(
         .as_u64()
         .is_some_and(|version| version >= 2)
     {
-        let baseline = document.get("baseline");
-        let references = baseline
-            .into_iter()
-            .flat_map(|b| {
-                ["active_entries", "retired_entries"]
-                    .into_iter()
-                    .filter_map(|k| b.get(k).and_then(Value::as_array))
-                    .flatten()
-            })
-            .chain(
-                document
-                    .get("exceptions")
-                    .and_then(Value::as_array)
-                    .into_iter()
-                    .flatten(),
-            );
-        let admission_ids = ["admissions", "admission_retirements"]
-            .into_iter()
-            .flat_map(|key| {
-                document[key]
-                    .as_object()
-                    .into_iter()
-                    .flat_map(serde_json::Map::keys)
-                    .map(String::as_str)
-            });
-        if references
-            .filter_map(|e| e.get("finding_id").and_then(Value::as_str))
-            .chain(admission_ids)
-            .any(|id| aliases.contains_key(id))
-        {
-            return Err(IdentityMigrationError::InvalidMigratedGovernance(
-                "Anchored finding history requires an explicitly reviewed anchor-aware migration; legacy alias rewriting cannot replace original admissions or retirement evidence.".into()));
-        }
-        return Ok(());
+        return validate_anchored_governance_aliases(document, aliases);
     }
     let Some(object) = document.as_object_mut() else {
         return Err(IdentityMigrationError::InvalidMigratedGovernance(
@@ -746,6 +713,46 @@ fn migrate_finding_governance(
                 .unwrap_or_default()
                 .to_owned()
         });
+    }
+    Ok(())
+}
+
+fn validate_anchored_governance_aliases(
+    document: &Value,
+    aliases: &BTreeMap<String, CanonicalFinding>,
+) -> Result<(), IdentityMigrationError> {
+    let baseline = document.get("baseline");
+    let references = baseline
+        .into_iter()
+        .flat_map(|b| {
+            ["active_entries", "retired_entries"]
+                .into_iter()
+                .filter_map(|k| b.get(k).and_then(Value::as_array))
+                .flatten()
+        })
+        .chain(
+            document
+                .get("exceptions")
+                .and_then(Value::as_array)
+                .into_iter()
+                .flatten(),
+        );
+    let admission_ids = ["admissions", "admission_retirements"]
+        .into_iter()
+        .flat_map(|key| {
+            document[key]
+                .as_object()
+                .into_iter()
+                .flat_map(serde_json::Map::keys)
+                .map(String::as_str)
+        });
+    if references
+        .filter_map(|e| e.get("finding_id").and_then(Value::as_str))
+        .chain(admission_ids)
+        .any(|id| aliases.contains_key(id))
+    {
+        return Err(IdentityMigrationError::InvalidMigratedGovernance(
+            "Anchored finding history requires an explicitly reviewed anchor-aware migration; legacy alias rewriting cannot replace original admissions or retirement evidence.".into()));
     }
     Ok(())
 }

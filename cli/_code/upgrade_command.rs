@@ -120,91 +120,98 @@ fn execute(args: &[String], output: &mut impl Write, json: bool) -> Result<(), M
                 }
             }
         }
+        _ => preview(root, &options, required("--editions")?, output, json)?,
+    }
+    Ok(())
+}
+
+fn preview(
+    root: &Path,
+    options: &BTreeMap<&str, &str>,
+    editions: &str,
+    output: &mut impl Write,
+    json: bool,
+) -> Result<(), MigrationError> {
+    let adapter: UpgradeAdapter =
+        parse_public_json(&super::migration_command::read(editions)?).map_err(invalid)?;
+    let policy = options
+        .get("--base-selection")
+        .map(|path| super::migration_command::preview_selection(path))
+        .transpose()?;
+    let identity_plan = match options.get("--transform").copied() {
+        None => None,
+        Some("identity") if !options.contains_key("--operations") => Some(
+            fortress_core::identity_migration::plan_repository_identity_migration(root)
+                .map_err(invalid)?,
+        ),
         _ => {
-            let adapter: UpgradeAdapter =
-                parse_public_json(&super::migration_command::read(required("--editions")?)?)
-                    .map_err(invalid)?;
-            let policy = options
-                .get("--base-selection")
-                .map(|path| super::migration_command::preview_selection(path))
-                .transpose()?;
-            let identity_plan = match options.get("--transform").copied() {
-                None => None,
-                Some("identity") if !options.contains_key("--operations") => Some(
-                    fortress_core::identity_migration::plan_repository_identity_migration(root)
-                        .map_err(invalid)?,
-                ),
-                _ => {
-                    return Err(invalid(
-                        "use --transform identity without explicit operations",
-                    ));
-                }
-            };
-            let authority = CanonicalMigrationAuthority {
-                policy: policy.as_ref(),
-                host: &UnmediatedHost,
-                validator: &NoGrantValidator,
-                evaluation_time: None,
-                reviewed_initial_intent_ref: None,
-                finding_proposal: None,
-                identity_plan: identity_plan.as_ref(),
-            };
-            let operations = match (options.get("--operations"), identity_plan.as_ref()) {
-                (Some(path), _) => UpgradeOperations::Explicit(
-                    parse_public_json(&super::migration_command::read(path)?).map_err(invalid)?,
-                ),
-                (None, Some(identity)) => UpgradeOperations::Identity(identity),
-                (None, None) => UpgradeOperations::NativeConfiguration,
-            };
-            let result = preview_repository_upgrade(root, &adapter, operations, &authority)?;
-            if json {
-                output
-                    .write_all(&result.to_canonical_bytes()?)
-                    .map_err(invalid)?;
-                writeln!(output).map_err(invalid)?;
-            } else {
-                writeln!(output, "PROPOSED {}", result.digest).map_err(invalid)?;
-                writeln!(
-                    output,
-                    "{} to {}",
-                    readable_text(&result.original.pin.edition),
-                    readable_text(&result.target.pin.edition)
-                )
-                .map_err(invalid)?;
-                for axis in &result.transition.input_deltas {
-                    writeln!(
-                        output,
-                        "{:?} {:?} (complete inventory: {})",
-                        axis.axis, axis.change, axis.complete
-                    )
-                    .map_err(invalid)?;
-                }
-                for change in &result.rules {
-                    writeln!(
-                        output,
-                        "{} {} (rule logic changed: {})",
-                        change.change,
-                        readable_text(&change.id),
-                        change.logic_changed
-                    )
-                    .map_err(invalid)?;
-                }
-                if let Some(admission) = &result.admission {
-                    writeln!(
-                        output,
-                        "{} findings in the separate proposed admission assessment",
-                        admission.findings.len()
-                    )
-                    .map_err(invalid)?;
-                }
-                if let Some(plan) = &result.plan {
-                    writeln!(output, "Review exact migration plan {}", plan.digest())
-                        .map_err(invalid)?;
-                }
-                for limitation in &result.limitations {
-                    writeln!(output, "{limitation}").map_err(invalid)?;
-                }
-            }
+            return Err(invalid(
+                "use --transform identity without explicit operations",
+            ));
+        }
+    };
+    let authority = CanonicalMigrationAuthority {
+        policy: policy.as_ref(),
+        host: &UnmediatedHost,
+        validator: &NoGrantValidator,
+        evaluation_time: None,
+        reviewed_initial_intent_ref: None,
+        finding_proposal: None,
+        identity_plan: identity_plan.as_ref(),
+    };
+    let operations = match (options.get("--operations"), identity_plan.as_ref()) {
+        (Some(path), _) => UpgradeOperations::Explicit(
+            parse_public_json(&super::migration_command::read(path)?).map_err(invalid)?,
+        ),
+        (None, Some(identity)) => UpgradeOperations::Identity(identity),
+        (None, None) => UpgradeOperations::NativeConfiguration,
+    };
+    let result = preview_repository_upgrade(root, &adapter, operations, &authority)?;
+    if json {
+        output
+            .write_all(&result.to_canonical_bytes()?)
+            .map_err(invalid)?;
+        writeln!(output).map_err(invalid)?;
+    } else {
+        writeln!(output, "PROPOSED {}", result.digest).map_err(invalid)?;
+        writeln!(
+            output,
+            "{} to {}",
+            readable_text(&result.original.pin.edition),
+            readable_text(&result.target.pin.edition)
+        )
+        .map_err(invalid)?;
+        for axis in &result.transition.input_deltas {
+            writeln!(
+                output,
+                "{:?} {:?} (complete inventory: {})",
+                axis.axis, axis.change, axis.complete
+            )
+            .map_err(invalid)?;
+        }
+        for change in &result.rules {
+            writeln!(
+                output,
+                "{} {} (rule logic changed: {})",
+                change.change,
+                readable_text(&change.id),
+                change.logic_changed
+            )
+            .map_err(invalid)?;
+        }
+        if let Some(admission) = &result.admission {
+            writeln!(
+                output,
+                "{} findings in the separate proposed admission assessment",
+                admission.findings.len()
+            )
+            .map_err(invalid)?;
+        }
+        if let Some(plan) = &result.plan {
+            writeln!(output, "Review exact migration plan {}", plan.digest()).map_err(invalid)?;
+        }
+        for limitation in &result.limitations {
+            writeln!(output, "{limitation}").map_err(invalid)?;
         }
     }
     Ok(())
