@@ -20,6 +20,8 @@ mod model;
 mod paths;
 #[path = "presentation.rs"]
 mod presentation;
+#[path = "upgrade.rs"]
+pub mod upgrade;
 pub(crate) use presentation::export_proposal_record;
 pub use presentation::export_reviewed_migration_plan;
 #[path = "apply.rs"]

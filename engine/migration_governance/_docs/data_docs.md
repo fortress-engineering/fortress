@@ -41,3 +41,7 @@ An explicit creation proposal accepted by the migration preview adapter. Exact b
 ### [`migration_plan_schema_v2.json`](../_data/migration_plan_schema_v2.json)
 
 Current migration plans admit the versioned comparison context containing StateView v3 original-authority cells. Historical v1 plans/receipts are preserved; old reviewed plans require fresh exact revalidation and regeneration when evaluator or endpoint representation changes. No original schema bytes, semantic finding identities, historical verdicts or authorization proofs are rewritten.
+
+### [`edition_upgrade_schema_v1.json`](../_data/edition_upgrade_schema_v1.json)
+
+Proposed endpoint authority, compatibility, semantic comparison, optional bounded admission assessment and the sole-writer plan. The proposal digest covers RFC 8785 JSON with its own digest field empty. Historical declarations and wire identities retain their original digest algorithms. The migration plan and any later application receipt have their own identities.

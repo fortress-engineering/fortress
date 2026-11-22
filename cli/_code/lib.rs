@@ -63,6 +63,7 @@ mod provider_command;
 pub mod rpc;
 pub mod sarif;
 mod transition_command;
+mod upgrade_command;
 #[path = "../agent_integration/_code/verifier_process.rs"]
 mod verifier_process;
 
@@ -149,6 +150,7 @@ where
 
     match command.id() {
         "CMD-GOVERNANCE-MIGRATE" => migration_command::run(&arguments[1..], output, error),
+        "CMD-GOVERNANCE-UPGRADE" => upgrade_command::run(&arguments[1..], output, error),
         "CMD-GOVERNANCE-OVERLAY" => candidate_command::run(&arguments[1..], output, error),
         "CMD-BEHAVIOR-AUTHOR" => behavior_command::run(&arguments[1..], output, error),
         "CMD-FLOW-AUTHOR" => flow_command::run(&arguments[1..], output, error),

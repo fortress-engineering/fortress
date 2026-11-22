@@ -12,6 +12,9 @@ use sha2::{Digest, Sha256};
 
 use crate::identity::{RuleId, RuleIdError, StableId, StableIdError};
 
+#[path = "compatibility.rs"]
+pub mod compatibility;
+
 const INSTALLED_STANDARD_MANIFEST: &str = include_str!("../_data/standard_manifest.json");
 const INSTALLED_OPERATION_SUMMARIES: &str = include_str!("../_data/operation_summaries_v1.json");
 pub(crate) const STD_ID_RULE_SOURCE: &str = include_str!("../_data/std_id_rule.json");

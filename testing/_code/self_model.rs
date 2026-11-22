@@ -163,7 +163,7 @@ fn live_contract_v2_v3_ecosystem_resolves_completely() {
     assert_eq!(resolved.modules().len(), 55);
     assert_eq!(resolved.capabilities().len(), 27);
     assert_eq!(resolved.features().len(), 28);
-    assert_eq!(resolved.requirements().len(), 170);
+    assert_eq!(resolved.requirements().len(), 172);
     assert!(
         resolved
             .requirements()
@@ -178,6 +178,8 @@ fn live_contract_v2_v3_ecosystem_resolves_completely() {
         ("TF-AGENT-INTEGRATION-0001-R01", 6),
         ("TF-AGENT-INTEGRATION-0001-R02", 7),
         ("TF-AGENT-INTEGRATION-0001-R03", 2),
+        ("TF-AGENT-INTEGRATION-0001-R04", 1),
+        ("AF-MIGRATION-GOVERNANCE-0001-R08", 5),
     ] {
         assert_eq!(resolved.requirements()[requirement].tests().len(), count);
     }

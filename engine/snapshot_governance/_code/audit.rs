@@ -6197,6 +6197,11 @@ const INSTALLED_STANDARD_RULE_SOURCES: &[(&str, &str)] = &[
     ),
 ];
 
+/// Reloads only the Standard documents from an existing canonical evaluation's source.
+pub(crate) fn migration_standard(source: &SourceView) -> Result<StandardBundle, AuditError> {
+    load_standard(source.files(), true).map(|standard| standard.bundle)
+}
+
 fn load_standard(
     observed_files: &BTreeMap<String, Vec<u8>>,
     subject_authority_enabled: bool,

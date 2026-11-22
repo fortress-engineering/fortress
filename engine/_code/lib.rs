@@ -118,6 +118,8 @@ pub mod state_effect_analysis;
 pub mod testing_boundary;
 #[path = "../snapshot_governance/_code/traceability.rs"]
 pub mod traceability;
+#[path = "../snapshot_governance/_code/upgrade_load.rs"]
+pub mod upgrade_load;
 #[path = "../standard_registry/_code/wire.rs"]
 pub mod wire;
 

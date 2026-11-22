@@ -1791,3 +1791,5 @@ fn identity_governance_normalization_requires_opaque_owner_output_and_external_p
         current.to_canonical_json().unwrap().as_bytes()
     );
 }
+#[path = "upgrade_controls.rs"]
+mod upgrade_controls;

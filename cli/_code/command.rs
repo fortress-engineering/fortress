@@ -10,6 +10,13 @@ use fortress_core::identity::{StableId, StableIdError};
 
 const BUILTIN_COMMANDS: &[CommandDescriptor] = &[
     CommandDescriptor {
+        id: "CMD-GOVERNANCE-UPGRADE",
+        name: "upgrade",
+        aliases: &[],
+        description: "Discover exact compatibility and preview governed edition upgrades without applying them.",
+        usage: "fortress upgrade inspect [--root path] [--format human|json]; fortress upgrade compatibility --from schema --to schema [--format human|json]; fortress upgrade preview --editions file [--root path] [--operations file|--transform identity] [--base-selection file] [--format human|json]",
+    },
+    CommandDescriptor {
         id: "CMD-GOVERNANCE-OVERLAY",
         name: "overlay",
         aliases: &[],

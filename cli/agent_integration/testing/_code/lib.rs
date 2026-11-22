@@ -219,6 +219,10 @@ mod mediation {
     }
     impl Owned {
         fn new() -> Self {
+            Self::with_source(None)
+        }
+
+        fn with_source(source: Option<&fortress_core::observation::SourceView>) -> Self {
             let outer = std::env::temp_dir().join(format!(
                 "fortress-local-mediator-{}-{}",
                 std::process::id(),
@@ -227,13 +231,22 @@ mod mediation {
             fs::create_dir(&outer).unwrap();
             let root = outer.join("repository");
             fs::create_dir(&root).unwrap();
-            fs::create_dir(root.join("src")).unwrap();
-            fs::write(
-                root.join("Cargo.toml"),
-                "[package]\nname = 'mediator_fixture'\nversion = '0.1.0'\nedition = '2024'\n",
-            )
-            .unwrap();
-            fs::write(root.join("src/lib.rs"), b"pub fn value() -> u8 { 1 }\n").unwrap();
+            if let Some(source) = source {
+                assert!(source.bytes("Cargo.toml").is_some());
+                for (path, bytes) in source.iter() {
+                    let destination = root.join(path);
+                    fs::create_dir_all(destination.parent().unwrap()).unwrap();
+                    fs::write(destination, bytes).unwrap();
+                }
+            } else {
+                fs::create_dir(root.join("src")).unwrap();
+                fs::write(
+                    root.join("Cargo.toml"),
+                    "[package]\nname = 'mediator_fixture'\nversion = '0.1.0'\nedition = '2024'\n",
+                )
+                .unwrap();
+                fs::write(root.join("src/lib.rs"), b"pub fn value() -> u8 { 1 }\n").unwrap();
+            }
             let proposal = discover_repository_bootstrap(
                 &root,
                 &BootstrapDiscoveryOptions::new(
@@ -341,6 +354,7 @@ mod mediation {
     }
 
     struct FixtureGrant {
+        path: &'static str,
         exact: RefCell<Option<String>>,
     }
     impl GrantValidator for FixtureGrant {
@@ -348,7 +362,7 @@ mod mediation {
             if self.exact.borrow().as_deref() != Some(&request.proposal_ref) {
                 return GrantValidation::Missing;
             }
-            if request.requirement.path != "contract.json"
+            if request.requirement.path != self.path
                 || request.requirement.action != Action::Replace
                 || request.requirement.issuer_policy_ref.as_deref() != Some(&fixed_digest('7'))
             {
@@ -365,6 +379,10 @@ mod mediation {
     }
 
     fn policy(root: &Path) -> TrustedBasePolicy {
+        policy_for(root, "contract.json")
+    }
+
+    fn policy_for(root: &Path, path: &str) -> TrustedBasePolicy {
         let evaluator = CanonicalMigrationEvaluator;
         let observed = evaluator
             .evaluate(&evaluator.observe(root).unwrap())
@@ -372,7 +390,7 @@ mod mediation {
         let scopes = observed
             .protected_inputs
             .iter()
-            .filter(|input| input.path == "contract.json")
+            .filter(|input| input.path == path)
             .map(|input| input.scope.clone())
             .collect::<BTreeSet<_>>();
         assert!(!scopes.is_empty());
@@ -397,6 +415,171 @@ mod mediation {
         .unwrap()
     }
 
+    /// `T-TF-AGENT-INTEGRATION-0001-R04-001`
+    /// Fortress requirement: TF-AGENT-INTEGRATION-0001-R04
+    #[test]
+    fn native_edition_upgrade_reuses_review_and_preserves_original_source() {
+        use fortress_core::development_governance::{NoGrantValidator, UnmediatedHost};
+        use fortress_core::migration_adapter::CanonicalMigrationAuthority;
+        use fortress_core::migration_governance::upgrade::UpgradeAdapter;
+        use fortress_core::upgrade_load::{
+            UpgradeOperations, inspect_upgrade_base, preview_repository_upgrade,
+        };
+
+        let external = std::env::var_os("FORTRESS_UPGRADE_NATIVE_FIXTURE").map(PathBuf::from);
+        let external_snapshot = external
+            .as_ref()
+            .map(|path| CanonicalMigrationEvaluator.observe(path).unwrap());
+        let fixture = Owned::with_source(external_snapshot.as_ref());
+        let path = "__fortress/.fsconfig";
+        let config = fixture.root.join(path);
+        let mut legacy: Value = serde_json::from_slice(&fs::read(&config).unwrap()).unwrap();
+        legacy["$schema"] = json!("urn:fortress:schema:v3:project-configuration");
+        legacy["schema_version"] = json!(3);
+        legacy.as_object_mut().unwrap().remove("governance");
+        legacy.as_object_mut().unwrap().remove("assurance_profiles");
+        let original_config = serde_json::to_vec(&legacy).unwrap();
+        fs::write(&config, &original_config).unwrap();
+        let original = CanonicalMigrationEvaluator.observe(&fixture.root).unwrap();
+        let base = inspect_upgrade_base(&fixture.root).unwrap();
+        let printed = std::process::Command::new(env!("CARGO_BIN_EXE_fortress"))
+            .args(["upgrade", "inspect", "--root"])
+            .arg(&fixture.root)
+            .args(["--format", "json"])
+            .output()
+            .unwrap();
+        assert!(
+            printed.status.success(),
+            "{}",
+            String::from_utf8_lossy(&printed.stderr)
+        );
+        let printed: serde_json::Value = serde_json::from_slice(&printed.stdout).unwrap();
+        assert_eq!(printed["state_ref"], base.state_ref);
+        let selected = policy_for(&fixture.root, path);
+        let review = FixtureReview::new();
+        let grants = FixtureGrant {
+            path,
+            exact: RefCell::new(None),
+        };
+        let authority = CanonicalMigrationAuthority {
+            policy: Some(&selected),
+            host: &UnmediatedHost,
+            validator: &NoGrantValidator,
+            evaluation_time: None,
+            reviewed_initial_intent_ref: None,
+            finding_proposal: None,
+            identity_plan: None,
+        };
+        let adapter = UpgradeAdapter {
+            from_bundle: base.edition.clone(),
+            to_bundle: base.edition.clone(),
+            preview_admission: true,
+        };
+        let proposed = preview_repository_upgrade(
+            &fixture.root,
+            &adapter,
+            UpgradeOperations::NativeConfiguration,
+            &authority,
+        )
+        .unwrap();
+        let repeated = preview_repository_upgrade(
+            &fixture.root,
+            &adapter,
+            UpgradeOperations::NativeConfiguration,
+            &authority,
+        )
+        .unwrap();
+        assert_eq!(
+            proposed.to_canonical_bytes().unwrap(),
+            repeated.to_canonical_bytes().unwrap()
+        );
+        assert_eq!(
+            inspect_upgrade_base(&fixture.root).unwrap().state_ref,
+            base.state_ref
+        );
+        assert_eq!(fs::read(&config).unwrap(), original_config);
+        assert_eq!(proposed.original.profiles, proposed.target.profiles);
+        assert_eq!(proposed.operations.len(), 1);
+        assert!(proposed.rules.is_empty());
+        assert!(proposed.admission.is_some());
+        let historical = proposed
+            .original
+            .application
+            .as_ref()
+            .unwrap()
+            .declaration
+            .clone();
+        let historical_bytes = historical.to_canonical_bytes().unwrap();
+        let historical_artifact = fixture.outer.join("original-declaration.json");
+        fs::write(&historical_artifact, &historical_bytes).unwrap();
+
+        let host = TrustedMediator::from_host(
+            &fixture.root,
+            &fixed_digest('a'),
+            &selected,
+            &review,
+            &grants,
+            &fixture.storage,
+        )
+        .unwrap();
+        let token = AtomicBool::new(false);
+        let plan = proposed.plan.as_ref().unwrap();
+        assert_eq!(
+            host.apply(plan, &token).err().unwrap().code,
+            "REVIEW_REQUIRED"
+        );
+        review.explicit_review(plan.digest());
+        assert_eq!(
+            host.apply(plan, &token).err().unwrap().code,
+            "AUTHORIZATION_REQUIRED"
+        );
+        assert_eq!(fs::read(&config).unwrap(), original_config);
+        let decision = plan.authorization().governed_decision.as_ref().unwrap();
+        assert!(
+            decision
+                .requirements
+                .iter()
+                .any(|requirement| requirement.path == path)
+        );
+        grants.exact.replace(Some(decision.proposal_ref.clone()));
+        review.explicit_review(plan.digest());
+        let actual = host.apply(plan, &token).unwrap().actual;
+        assert_eq!(actual.receipt.actual_source_ref, plan.target_source_ref());
+        assert_eq!(actual.receipt.actual_state_ref, plan.target_state_ref());
+        let observed = CanonicalMigrationEvaluator.observe(&fixture.root).unwrap();
+        for (name, bytes) in original.iter().filter(|(name, _)| *name != path) {
+            assert_eq!(observed.bytes(name), Some(bytes.as_slice()), "{name}");
+        }
+        if let Some(external) = external {
+            assert_eq!(
+                CanonicalMigrationEvaluator.observe(&external).unwrap(),
+                external_snapshot.unwrap()
+            );
+        }
+        assert_ne!(fs::read(&config).unwrap(), original_config);
+        let retained = fs::read_to_string(&historical_artifact).unwrap();
+        assert_eq!(retained.as_bytes(), historical_bytes);
+        let retained =
+            fortress_core::declaration::ConformanceDeclaration::from_json_str(&retained).unwrap();
+        assert_eq!(retained, historical);
+        assert_ne!(
+            retained.binding.authority_ref,
+            proposed
+                .target
+                .application
+                .as_ref()
+                .unwrap()
+                .declaration
+                .binding
+                .authority_ref
+        );
+        assert_ne!(
+            inspect_upgrade_base(&fixture.root).unwrap().state_ref,
+            base.state_ref
+        );
+        assert!(host.apply(plan, &token).is_err());
+    }
+
     /// `T-TF-AGENT-INTEGRATION-0001-R02-001`
     /// Fortress requirement: TF-AGENT-INTEGRATION-0001-R02
     #[test]
@@ -405,6 +588,7 @@ mod mediation {
         let selected = policy(&fixture.root);
         let review = FixtureReview::new();
         let grants = FixtureGrant {
+            path: "contract.json",
             exact: RefCell::new(None),
         };
         let host = TrustedMediator::from_host(
@@ -504,6 +688,7 @@ mod mediation {
         let selected = policy(&fixture.root);
         let review = FixtureReview::new();
         let grants = FixtureGrant {
+            path: "contract.json",
             exact: RefCell::new(None),
         };
         let host = TrustedMediator::from_host(
@@ -567,6 +752,7 @@ mod mediation {
         let selected = policy(&fixture.root);
         let review = FixtureReview::new();
         let grants = FixtureGrant {
+            path: "contract.json",
             exact: RefCell::new(None),
         };
         let host = TrustedMediator::from_host(
@@ -632,6 +818,7 @@ mod mediation {
         let selected = policy(&fixture.root);
         let review = FixtureReview::new();
         let grants = FixtureGrant {
+            path: "contract.json",
             exact: RefCell::new(None),
         };
         let host = TrustedMediator::from_host(
@@ -714,6 +901,7 @@ mod mediation {
         let selected = policy(&fixture.root);
         let review = FixtureReview::new();
         let grants = FixtureGrant {
+            path: "contract.json",
             exact: RefCell::new(None),
         };
         let host = TrustedMediator::from_host(
@@ -757,6 +945,7 @@ mod mediation {
         let selected = policy(&fixture.root);
         let review = FixtureReview::new();
         let grants = FixtureGrant {
+            path: "contract.json",
             exact: RefCell::new(None),
         };
         let host = TrustedMediator::from_host(
@@ -812,6 +1001,7 @@ mod mediation {
         let selected = policy(&fixture.root);
         let review = FixtureReview::new();
         let grants = FixtureGrant {
+            path: "contract.json",
             exact: RefCell::new(None),
         };
         let host = TrustedMediator::from_host(

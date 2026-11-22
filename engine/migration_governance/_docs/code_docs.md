@@ -45,3 +45,7 @@ Formats already-evaluated facts and explicitly exports immutable reviewed plans 
 ### [`admission.rs`](../_code/admission.rs)
 
 Builds one exact reviewed finding-governance postimage from independently comparable evaluated endpoints. It passes the original and reviewed authority operations to the shared migration plan and verifies complete operation equality before authorization. Existing journaling, leases, recovery, actual-state reconciliation and immutable receipts remain the only write path.
+
+### [`upgrade.rs`](../_code/upgrade.rs)
+
+Binds independently selected Standard editions and recorded reader capabilities to canonical migration evaluations. A separate rule-document comparison retains exact rule and logic changes. A proposal includes the existing transition, original and target assessments, protected requirements, and exact migration plan. Explicit native configuration conversion preserves authored placement and selection meaning.

@@ -473,6 +473,17 @@
       "duration": "long",
       "resumability": "restartable",
       "certification_implications": "Static projections retain uncertainty and missing execution. Independent repeatability requires separate cold invocations; a completion marker is integrity metadata, never certification or authenticated execution."
+    },
+    {
+      "id": "CMD-GOVERNANCE-UPGRADE",
+      "name": "upgrade",
+      "aliases": [],
+      "description": "Discover exact compatibility and preview governed edition upgrades without applying them.",
+      "owner": "TF-CLI-0001",
+      "executor": "builtin-sync",
+      "duration": "long",
+      "resumability": "restartable",
+      "certification_implications": "Read-only preview preserves original authority and cannot supply external authorization, execution evidence, or certification."
     }
   ]
 }

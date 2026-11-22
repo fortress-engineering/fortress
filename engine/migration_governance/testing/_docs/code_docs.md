@@ -24,3 +24,7 @@ Deterministic graph and byte controls, stale reviewed plans, every-boundary inte
 
 
 The corpus additionally exercises exact external grants independently of lifecycle review, existing-owner retirement proof admission without self-reference, real legacy identity schema upgrades, native OPS reader barriers, strict canonical public structure and final path-kind validation. CLI process tests compare repeated JSON, human inspection, explicit application, exact-byte outputs and stale-plan rejection. Fault enumeration covers crash, cancellation and storage failures at every exposed mutation boundary, including interrupted recovery.
+
+### [`upgrade_controls.rs`](../_code/upgrade_controls.rs)
+
+Checks the installed reader matrix, unsupported edition routes, canonical native configuration postimages, and exact offline Standard digest bindings.

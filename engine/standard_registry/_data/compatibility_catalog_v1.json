@@ -3741,6 +3741,28 @@
         "id": "no-attestation",
         "source": null
       }
+    },
+    {
+      "schema_id": "urn:fortress:derived:v1:edition-upgrade",
+      "schema_path": "engine/migration_governance/_data/edition_upgrade_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/migration_governance/_code/upgrade.rs"
+      },
+      "reader": {
+        "status": "SCHEMA_ONLY",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "jcs-sha256-v1",
+        "source": "engine/migration_governance/_code/upgrade.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "rfc8785-jcs-sha256",
+        "source": "engine/migration_governance/_code/upgrade.rs"
+      }
     }
   ]
 }

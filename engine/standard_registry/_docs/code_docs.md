@@ -37,3 +37,7 @@ Applies byte, depth, global token and individual-token admission before typed de
 ### [`qualification.rs`](../_code/qualification.rs)
 
 Defines bounded strict qualification and supported-scope metadata readers. Exact independently supplied current identities, complete controls, mutations, witnesses and uncertainty are required. Parsing is not host admission or authenticity; automated scope never promotes defaults or proves application execution.
+
+### [`compatibility.rs`](../_code/compatibility.rs)
+
+Loads the independently installed compatibility catalog with strict decoding and unique schema identities. A registered shape, runtime reader, exact historical identity algorithm and qualified transformation are distinct capabilities.

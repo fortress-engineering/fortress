@@ -1,0 +1,306 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v1:edition-upgrade",
+  "title": "Fortress proposed edition upgrade",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "disposition",
+    "adapter_version",
+    "original",
+    "target",
+    "transition",
+    "rules",
+    "configuration_compatibility",
+    "admission",
+    "plan",
+    "digest",
+    "proposal_plan_ref",
+    "operations",
+    "required_authorization",
+    "limitations",
+    "identity_migration"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:derived:v1:edition-upgrade"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "disposition": {
+      "const": "PROPOSED"
+    },
+    "adapter_version": {
+      "const": "1.0.0"
+    },
+    "original": {
+      "$ref": "#/$defs/edition"
+    },
+    "target": {
+      "$ref": "#/$defs/edition"
+    },
+    "transition": {
+      "$ref": "urn:fortress:derived:v1:transition-analysis"
+    },
+    "plan": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "urn:fortress:derived:v2:migration-plan"
+        }
+      ]
+    },
+    "digest": {
+      "$ref": "#/$defs/digest"
+    },
+    "admission": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "urn:fortress:derived:v1:governance-admission"
+        }
+      ]
+    },
+    "configuration_compatibility": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/compatibility"
+        }
+      ]
+    },
+    "rules": {
+      "type": "array",
+      "maxItems": 2048,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "before",
+          "after",
+          "logic_changed",
+          "change",
+          "implies_added",
+          "implies_removed",
+          "conflicts_added",
+          "conflicts_removed"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "before": {
+            "$ref": "#/$defs/optional_digest"
+          },
+          "after": {
+            "$ref": "#/$defs/optional_digest"
+          },
+          "logic_changed": {
+            "type": "boolean"
+          },
+          "change": {
+            "enum": [
+              "INTRODUCED",
+              "REMOVED_FROM_EDITION",
+              "MODIFIED"
+            ]
+          },
+          "implies_added": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "implies_removed": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "conflicts_added": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "conflicts_removed": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "proposal_plan_ref": {
+      "$ref": "#/$defs/digest"
+    },
+    "operations": {
+      "$ref": "urn:fortress:derived:v2:migration-plan#/properties/operations"
+    },
+    "required_authorization": {
+      "$ref": "urn:fortress:derived:v2:migration-plan#/properties/required_grants"
+    },
+    "limitations": {
+      "type": "array",
+      "maxItems": 2,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "CHANGED_RULE_MEANING_REQUIRES_QUALIFIED_EVALUATOR",
+          "DECLARED_ENDPOINT_ASSESSMENT_UNAVAILABLE"
+        ]
+      }
+    },
+    "identity_migration": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "urn:fortress:schema:v2:identity-migration"
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "optional_digest": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/digest"
+        }
+      ]
+    },
+    "edition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "standard_id",
+        "edition",
+        "release_digest",
+        "rules",
+        "schemas",
+        "profiles",
+        "supported_reader_manifest",
+        "identity_algorithms",
+        "application"
+      ],
+      "properties": {
+        "standard_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "edition": {
+          "type": "string",
+          "minLength": 1
+        },
+        "release_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "rules": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/digest"
+          }
+        },
+        "schemas": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "profiles": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "urn:fortress:derived:v1:conformance-declaration#/properties/required_dimension_manifest"
+            }
+          ]
+        },
+        "supported_reader_manifest": {
+          "$ref": "#/$defs/digest"
+        },
+        "identity_algorithms": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "application": {
+          "$ref": "urn:fortress:derived:v2:comparison-state#/properties/retained_application"
+        }
+      }
+    },
+    "compatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "original",
+        "target",
+        "status",
+        "transform"
+      ],
+      "properties": {
+        "original": {
+          "$ref": "#/$defs/optional_catalog_entry"
+        },
+        "target": {
+          "$ref": "#/$defs/optional_catalog_entry"
+        },
+        "status": {
+          "enum": [
+            "DIRECTLY_COMPATIBLE",
+            "MIGRATION_REQUIRED",
+            "UNSUPPORTED",
+            "INCOMPARABLE",
+            "INVALID"
+          ]
+        },
+        "transform": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "optional_catalog_entry": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "urn:fortress:schema:v1:compatibility-catalog#/properties/entries/items"
+        }
+      ]
+    }
+  }
+}

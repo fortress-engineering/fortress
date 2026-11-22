@@ -72,6 +72,13 @@
             "T-TF-AGENT-INTEGRATION-0001-R03-001",
             "T-TF-AGENT-INTEGRATION-0001-R03-002"
           ]
+        },
+        {
+          "id": "TF-AGENT-INTEGRATION-0001-R04",
+          "statement": "Apply an exact reviewed supported native edition upgrade through the existing trusted mediation and migration writer while preserving original source and assessment.",
+          "tests": [
+            "T-TF-AGENT-INTEGRATION-0001-R04-001"
+          ]
         }
       ]
     }

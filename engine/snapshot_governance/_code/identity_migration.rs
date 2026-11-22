@@ -421,6 +421,15 @@ fn plan_identity_migration(
         let mut replacements = Vec::new();
         if filename == FINDING_GOVERNANCE_FILE {
             migrate_finding_governance(&mut document, &finding_aliases, &mut replacements)?;
+            if document["schema_version"]
+                .as_u64()
+                .is_some_and(|version| version >= 2)
+            {
+                FindingGovernanceDocument::from_json_str(text).map_err(|error| {
+                    IdentityMigrationError::InvalidMigratedGovernance(error.to_string())
+                })?;
+                continue;
+            }
         } else {
             migrate_symbol_fields(&mut document, None, &symbols, &mut replacements)?;
             upgrade_contract_schema(filename, &mut document);
@@ -453,6 +462,7 @@ fn plan_identity_migration(
             content,
         });
     }
+    verify_reference_correspondence(&files)?;
     Ok(IdentityMigrationPlan {
         schema: IDENTITY_MIGRATION_SCHEMA.into(),
         schema_version: IDENTITY_MIGRATION_SCHEMA_VERSION,
@@ -463,6 +473,31 @@ fn plan_identity_migration(
         symbol_references,
         semantic_finding_references,
     })
+}
+
+fn verify_reference_correspondence(
+    files: &[IdentityMigrationFile],
+) -> Result<(), IdentityMigrationError> {
+    let mut forward = BTreeMap::new();
+    let mut reverse = BTreeMap::new();
+    for reference in files.iter().flat_map(IdentityMigrationFile::replacements) {
+        let kind = reference.kind();
+        let original = reference.authored_reference();
+        let target = reference.canonical_reference();
+        if forward
+            .insert((kind, original), target)
+            .is_some_and(|prior| prior != target)
+            || reverse
+                .insert((kind, target), original)
+                .is_some_and(|prior| prior != original)
+        {
+            return Err(IdentityMigrationError::AmbiguousReference {
+                kind: "upgrade identity correspondence".into(),
+                reference: original.into(),
+            });
+        }
+    }
+    Ok(())
 }
 
 fn consolidate_replacements(
@@ -612,7 +647,10 @@ fn migrate_finding_governance(
     aliases: &BTreeMap<String, CanonicalFinding>,
     replacements: &mut Vec<IdentityReferenceMigration>,
 ) -> Result<(), IdentityMigrationError> {
-    if document.get("schema_version").and_then(Value::as_u64) == Some(2) {
+    if document["schema_version"]
+        .as_u64()
+        .is_some_and(|version| version >= 2)
+    {
         let baseline = document.get("baseline");
         let references = baseline
             .into_iter()
@@ -629,8 +667,18 @@ fn migrate_finding_governance(
                     .into_iter()
                     .flatten(),
             );
+        let admission_ids = ["admissions", "admission_retirements"]
+            .into_iter()
+            .flat_map(|key| {
+                document[key]
+                    .as_object()
+                    .into_iter()
+                    .flat_map(serde_json::Map::keys)
+                    .map(String::as_str)
+            });
         if references
             .filter_map(|e| e.get("finding_id").and_then(Value::as_str))
+            .chain(admission_ids)
             .any(|id| aliases.contains_key(id))
         {
             return Err(IdentityMigrationError::InvalidMigratedGovernance(
