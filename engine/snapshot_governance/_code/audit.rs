@@ -84,8 +84,8 @@ use crate::observation::{
 };
 use crate::profile::{ProfileResolutionError, ResolvedProfiles, resolve_profiles};
 use crate::program_semantics::{
-    ProgramDependencyRead, ProgramPreparationFallback, ProgramSemanticError, ProgramSemanticInput,
-    ProgramSemanticModel, ProgramSemanticPreparation, ProgramSemanticWork,
+    ProgramDependencyRead, ProgramInputRole, ProgramPreparationFallback, ProgramSemanticError,
+    ProgramSemanticInput, ProgramSemanticModel, ProgramSemanticPreparation, ProgramSemanticWork,
     compile_program_semantic_model, prepare_program_semantics,
 };
 use crate::project::{
@@ -125,6 +125,8 @@ use crate::state_effect_analysis::{
     analyze_state_effects_with_summaries, analyze_state_effects_with_summaries_prepared,
     load_state_contracts,
 };
+
+const RUST_SOURCE_LANGUAGE_OBSERVER: &str = "fortress-core/program-semantics-v4";
 
 /// Current stable machine-readable snapshot audit schema family.
 pub const AUDIT_RESULT_SCHEMA_VERSION: u16 = 7;
@@ -1359,19 +1361,32 @@ fn compile_source_architecture(
     let rust_profile = observe_rust_source_profile(snapshot.files, &artifacts, &cargo)
         .map_err(|error| AuditError::ContractState(error.to_string().into()))?;
     let mut observations = rust_profile.observations().to_vec();
-    if let Some(psm) = psm {
-        observations.extend(observations_from_psm(psm));
-    }
-    observations.sort();
-    observations.dedup();
-    let languages = [
-        LanguageAssignment::new("rs", "rust", "fortress-core/program-semantics-v4"),
+    let mut languages = vec![
+        LanguageAssignment::new("rs", "rust", RUST_SOURCE_LANGUAGE_OBSERVER),
         LanguageAssignment::new(
             "py",
             "python",
             "fortress-core/source-extension-observation-v1",
         ),
     ];
+    if let Some(psm) = psm {
+        languages.extend(
+            psm.semantic_inputs()
+                .iter()
+                .filter(|input| input.role() == ProgramInputRole::RustSource)
+                .map(|input| {
+                    LanguageAssignment::for_source(
+                        input.path(),
+                        input.sha256(),
+                        "rust",
+                        RUST_SOURCE_LANGUAGE_OBSERVER,
+                    )
+                }),
+        );
+        observations.extend(observations_from_psm(psm));
+    }
+    observations.sort();
+    observations.dedup();
     let available_adapters = [
         "fortress-core/program-semantics-v4".to_owned(),
         "fortress-core/rust-source-profile-v1".to_owned(),
@@ -4878,8 +4893,9 @@ fn projection_generator_version(kind: ProjectionKind) -> String {
         }
         ProjectionKind::Audit => {
             format!(
-                "{AFFECTED_ANALYSIS_VERSION}+audit-v{AUDIT_RESULT_SCHEMA_VERSION}+semantic-{}",
-                crate::semantic_analysis::SEMANTIC_ANALYSIS_VERSION
+                "{AFFECTED_ANALYSIS_VERSION}+audit-v{AUDIT_RESULT_SCHEMA_VERSION}+semantic-{}+source-{}",
+                crate::semantic_analysis::SEMANTIC_ANALYSIS_VERSION,
+                crate::source_architecture::SOURCE_ARCHITECTURE_SEMANTIC_VERSION
             )
         }
         _ => AFFECTED_ANALYSIS_VERSION.into(),

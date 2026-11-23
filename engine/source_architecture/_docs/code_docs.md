@@ -8,6 +8,13 @@ The Code owns the universal source-region vocabulary, Source Profile and archety
 
 The compiler consumes Project Filing inventory, canonical ownership, canonical `code_docs.md` responsibilities, exact bytes, profile adapter observations, and stable semantic references. The Rust adapter projects `syn` syntax and Cargo target observations without performing name, call, trait-selection, or macro-expansion semantics.
 
+An adapter can identify a language for one exact source artifact when a shared
+suffix does not establish its interpretation. The file-specific observation
+must match the admitted repository-relative path and content digest. Identical
+observations deduplicate. Conflicting or stale observations keep the language
+unresolved and record a coverage limitation. That state never assumes the
+suffix override, an available profile, or applicable semantic coverage.
+
 ## State
 
 All registries, indexes, artifact conclusions, and summary counts are process-local deterministic derivations from immutable inputs.

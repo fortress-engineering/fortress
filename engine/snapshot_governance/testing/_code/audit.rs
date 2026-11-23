@@ -102,39 +102,41 @@ fn audit_rejects_cache_entries_without_a_semantic_producer_binding() {
     repository.write("src/lib.rs", "pub fn value() {}\n");
     let current = prepare_repository_projection_cache(repository.path(), ProjectionKind::Audit)
         .expect("current audit key");
-    let prior = ProjectionCacheKey::new(
-        ProjectionKind::Audit,
-        "fortress-core/audit",
-        format!("{AFFECTED_ANALYSIS_VERSION}+audit-v{AUDIT_RESULT_SCHEMA_VERSION}"),
-        current.key().dependencies().to_vec(),
-    )
-    .expect("prior audit key");
+    let legacy = format!("{AFFECTED_ANALYSIS_VERSION}+audit-v{AUDIT_RESULT_SCHEMA_VERSION}");
+    let semantic_only = format!(
+        "{legacy}+semantic-{}",
+        fortress_core::semantic_analysis::SEMANTIC_ANALYSIS_VERSION
+    );
     let storage = TestRepository::new("audit-cache-storage");
     let cache = IncrementalProjectionCache::new(storage.path(), "cache-producer-fixture")
         .expect("independent cache");
-    cache.store(&prior, b"{}\n", 1).expect("retain prior audit");
-    assert_eq!(
-        cache.load(&prior).expect("load prior audit").state(),
-        IncrementalCacheState::ReusableCurrent
-    );
-    assert_eq!(
-        cache
-            .load(current.key())
-            .expect("load current audit")
-            .state(),
-        IncrementalCacheState::Stale
-    );
+    for version in [&legacy, &semantic_only] {
+        let prior = ProjectionCacheKey::new(
+            ProjectionKind::Audit,
+            "fortress-core/audit",
+            version,
+            current.key().dependencies().to_vec(),
+        )
+        .expect("prior audit key");
+        cache.store(&prior, b"{}\n", 1).expect("retain prior audit");
+        assert_eq!(
+            cache.load(&prior).expect("load prior audit").state(),
+            IncrementalCacheState::ReusableCurrent
+        );
+        assert_eq!(
+            cache
+                .load(current.key())
+                .expect("load current audit")
+                .state(),
+            IncrementalCacheState::Stale
+        );
+    }
     let encoded = serde_json::to_value(current.key()).expect("serialize current key");
     let version = format!(
-        "+semantic-{}",
-        fortress_core::semantic_analysis::SEMANTIC_ANALYSIS_VERSION
+        "{semantic_only}+source-{}",
+        fortress_core::source_architecture::SOURCE_ARCHITECTURE_SEMANTIC_VERSION
     );
-    assert!(
-        encoded["generator_version"]
-            .as_str()
-            .unwrap()
-            .ends_with(&version)
-    );
+    assert_eq!(encoded["generator_version"], version);
 }
 
 /// `T-LOGICAL-MODULE-INTEGRATION-001`

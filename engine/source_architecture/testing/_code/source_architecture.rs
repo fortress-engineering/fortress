@@ -1128,3 +1128,87 @@ fn ten_thousand_artifacts_remain_deterministic_and_lightweight() {
     assert_eq!(value["$schema"], SOURCE_ARTIFACT_MODEL_SCHEMA);
     assert!(value.get("bodies").is_none());
 }
+
+/// `T-AF-SOURCE-ARCHITECTURE-0001-R02-007`
+/// Fortress requirement: AF-SOURCE-ARCHITECTURE-0001-R02
+#[test]
+fn exact_language_assignments_resist_shared_suffix_conflict_and_source_drift() {
+    let mut files = fixture_files("h");
+    let path = "_code/artifact.h";
+    files.insert(
+        path.to_owned(),
+        b"#ifdef __cplusplus\nextern \"C\" int read_count(void);\n#else\nint read_count(void);\n#endif\n"
+            .to_vec(),
+    );
+    let ccg = fixture_ccg(&files);
+    let artifacts = artifact_inputs(&files, &ccg);
+    let profiles = SourceProfileRegistry::standard();
+    let declaration = observation(
+        "h",
+        SemanticRegion::Declarations,
+        RegionCoverage::Observed,
+        "native:read_count",
+    );
+    let compile = |files: &BTreeMap<String, Vec<u8>>, languages: &[LanguageAssignment]| {
+        let output = evaluate_source_architecture(&SourceArchitectureInput {
+            project_id: Some("PF-SOURCE-FIXTURE"),
+            source_identity: "sha256:fixture-source",
+            artifacts: &artifacts,
+            project_model_authority: "fixture-project-model",
+            files,
+            responsibilities: &[],
+            profiles: &profiles,
+            languages,
+            observations: std::slice::from_ref(&declaration),
+            archetype_observations: &[],
+            profile_facts: &BTreeMap::new(),
+            generated_sources: &[],
+            verification_relationships: &[],
+            available_adapters: &BTreeSet::new(),
+            psm_digest: None,
+            standard_edition: EDITION,
+        })
+        .expect("language observation remains inspectable");
+        assert!(output.findings().is_empty());
+        serde_json::to_value(&output.model().artifacts()[0]).expect("artifact JSON")
+    };
+    let suffix = LanguageAssignment::new("h", "c", "suffix-observer");
+    // Independently computed SHA-256 of the exact fixture byte string.
+    let digest = "sha256:375163af6351ca5f1ba93f58ae44a6a011caa6e4bf3af9b3b29d8462dbe40604";
+    let header = LanguageAssignment::for_source(path, digest, "cpp", "compile-context");
+    let exact = compile(&files, &[header.clone(), suffix.clone(), header.clone()]);
+    assert_eq!(exact["language"], "cpp");
+    assert_eq!(exact["language_authority"], "compile-context");
+    assert_eq!(exact["profile"]["status"], "PROFILE_NOT_REGISTERED");
+    assert_eq!(
+        exact["structural_observations"],
+        json!(["native:read_count"])
+    );
+
+    let conflicting = LanguageAssignment::for_source(path, digest, "c", "compile-context");
+    let ambiguous = compile(&files, &[header.clone(), conflicting.clone()]);
+    assert_eq!(ambiguous, compile(&files, &[conflicting, header.clone()]));
+    assert!(ambiguous["language"].is_null());
+    assert_eq!(ambiguous["structural_observations"], json!([]));
+    assert_eq!(ambiguous["profile"]["status"], "LANGUAGE_UNKNOWN");
+    assert_eq!(
+        ambiguous["profile"]["coverage_limitations"],
+        json!([
+            "language-specific archetype classification is not registered",
+            "Conflicting language assignments for this source artifact."
+        ])
+    );
+
+    files.insert(path.to_owned(), b"/* changed */\n".to_vec());
+    let stale = compile(&files, &[suffix, header]);
+    assert!(stale["language"].is_null());
+    assert_eq!(stale["structural_observations"], json!([]));
+    assert_eq!(stale["profile"]["status"], "LANGUAGE_UNKNOWN");
+    assert_eq!(
+        stale["profile"]["coverage_limitations"],
+        json!([
+            "language-specific archetype classification is not registered",
+            "A language assignment is stale or its source bytes are unavailable."
+        ])
+    );
+}

@@ -100,7 +100,7 @@ impl CodeFileResponsibility {
     }
 }
 /// Semantic implementation version of Source Architecture.
-pub const SOURCE_ARCHITECTURE_SEMANTIC_VERSION: &str = "1.1.0";
+pub const SOURCE_ARCHITECTURE_SEMANTIC_VERSION: &str = "1.2.0";
 
 const PROFILE_REMEDIATION: &str = "Correct the registered language profile so its identity, adapter, extensions, semantic-region mapping, archetypes, composition constraints, and coverage limitations conform to Source Profile v1.";
 const ARTIFACT_REMEDIATION: &str = "Document the file's single architectural responsibility in canonical code_docs.md, register or correct the applicable language profile, and align observed composition with exactly one permitted archetype without suppressing unsupported coverage.";
@@ -452,9 +452,15 @@ impl Error for SourceProfileError {
 /// Adapter-supplied language identity independent from profile registration.
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct LanguageAssignment {
-    extension: String,
+    scope: LanguageAssignmentScope,
     language: String,
     analyzer: String,
+}
+
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
+enum LanguageAssignmentScope {
+    Extension(String),
+    Source { path: String, digest: String },
 }
 
 impl LanguageAssignment {
@@ -466,11 +472,60 @@ impl LanguageAssignment {
         analyzer: impl Into<String>,
     ) -> Self {
         Self {
-            extension: extension.into(),
+            scope: LanguageAssignmentScope::Extension(extension.into()),
             language: language.into(),
             analyzer: analyzer.into(),
         }
     }
+
+    /// Attributes one exact repository-relative artifact to an observed language.
+    ///
+    /// A whole-file SHA-256 must agree with the current admitted bytes. A stale
+    /// or conflicting assignment keeps the language unresolved. A path-specific
+    /// observation can differentiate shared suffixes such as C and C++ headers.
+    #[must_use]
+    pub fn for_source(
+        path: impl Into<String>,
+        content_digest: impl Into<String>,
+        language: impl Into<String>,
+        analyzer: impl Into<String>,
+    ) -> Self {
+        Self {
+            scope: LanguageAssignmentScope::Source {
+                path: path.into(),
+                digest: content_digest.into(),
+            },
+            language: language.into(),
+            analyzer: analyzer.into(),
+        }
+    }
+}
+
+fn unique_language<'a>(
+    candidates: Option<&BTreeSet<&'a LanguageAssignment>>,
+) -> Result<Option<&'a LanguageAssignment>, &'static str> {
+    match candidates {
+        Some(candidates) if candidates.len() > 1 => {
+            Err("Conflicting language assignments for this source artifact.")
+        }
+        Some(candidates) => Ok(candidates.first().copied()),
+        None => Ok(None),
+    }
+}
+
+fn source_language<'a>(
+    candidates: &BTreeSet<&'a LanguageAssignment>,
+    actual_digest: Option<&str>,
+) -> Result<Option<&'a LanguageAssignment>, &'static str> {
+    if candidates.iter().any(|candidate| {
+        !matches!(
+            &candidate.scope,
+            LanguageAssignmentScope::Source { digest, .. } if Some(digest.as_str()) == actual_digest
+        )
+    }) {
+        return Err("A language assignment is stale or its source bytes are unavailable.");
+    }
+    unique_language(Some(candidates))
 }
 
 /// One language-neutral source observation emitted by an adapter or reused
@@ -1159,11 +1214,15 @@ pub fn evaluate_source_architecture(
     let observations = group_observations(input.observations);
     let archetype_observations = group_archetype_observations(input.archetype_observations);
     let verifications = group_verification(input.verification_relationships);
-    let language_map = input
-        .languages
-        .iter()
-        .map(|entry| (entry.extension.as_str(), entry))
-        .collect::<BTreeMap<_, _>>();
+    let mut extensions = BTreeMap::<&str, BTreeSet<&LanguageAssignment>>::new();
+    let mut sources = BTreeMap::<&str, BTreeSet<&LanguageAssignment>>::new();
+    for entry in input.languages {
+        let (index, key) = match &entry.scope {
+            LanguageAssignmentScope::Extension(extension) => (&mut extensions, extension),
+            LanguageAssignmentScope::Source { path, .. } => (&mut sources, path),
+        };
+        index.entry(key.as_str()).or_default().insert(entry);
+    }
     let mut artifacts = Vec::new();
     let mut conclusions = Vec::new();
     let mut source_inputs = input.artifacts.to_vec();
@@ -1174,7 +1233,8 @@ pub fn evaluate_source_architecture(
         let module_id = entry.owner.as_str();
         let module_relative_path = semantic_source_location(&entry.owner_relative_path);
         let artifact_id = artifact_identity(module_id, &module_relative_path);
-        let bytes = input.files.get(path).map_or(&[][..], Vec::as_slice);
+        let bytes = input.files.get(path).map(Vec::as_slice);
+        let content_digest = sha256(bytes.unwrap_or_default());
         let authored_responsibility =
             responsibilities
                 .get(path)
@@ -1183,10 +1243,19 @@ pub fn evaluate_source_architecture(
                     authority: entry.documentation_path().to_owned(),
                 });
         let extension = path.rsplit_once('.').map_or("", |(_, value)| value);
-        let language_assignment = language_map.get(extension).copied();
+        let language_result = if let Some(candidates) = sources.get(path) {
+            source_language(candidates, bytes.map(|_| content_digest.as_str()))
+        } else {
+            unique_language(extensions.get(extension))
+        };
+        let language_assignment = language_result.ok().flatten();
         let language = language_assignment.map(|entry| entry.language.clone());
         let language_authority = language_assignment.map(|entry| entry.analyzer.clone());
-        let artifact_observations = observations.get(path).cloned().unwrap_or_default();
+        let artifact_observations = if language_result.is_ok() {
+            observations.get(path).cloned().unwrap_or_default()
+        } else {
+            Vec::new()
+        };
         let mut regions = compile_regions(
             &artifact_observations,
             authored_responsibility.is_some(),
@@ -1216,7 +1285,7 @@ pub fn evaluate_source_architecture(
                 "Generated source has no exact generator identity.",
             );
         }
-        let profile = resolve_profile(
+        let mut profile = resolve_profile(
             input,
             path,
             &artifact_id,
@@ -1229,6 +1298,9 @@ pub fn evaluate_source_architecture(
             &mut regions,
             &mut conclusions,
         );
+        if let Err(reason) = language_result {
+            profile.coverage_limitations.push(reason.to_owned());
+        }
         let artifact_conclusions = conclusions
             .iter()
             .filter(|conclusion| conclusion.artifact_id == artifact_id)
@@ -1246,7 +1318,7 @@ pub fn evaluate_source_architecture(
             module_id: module_id.to_owned(),
             module_relative_path,
             ownership_authority: entry.ownership_authority,
-            content_digest: sha256(bytes),
+            content_digest,
             provenance: source_provenance,
             authored_responsibility,
             language,
