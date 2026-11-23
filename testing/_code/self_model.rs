@@ -163,7 +163,7 @@ fn live_contract_v2_v3_ecosystem_resolves_completely() {
     assert_eq!(resolved.modules().len(), 55);
     assert_eq!(resolved.capabilities().len(), 27);
     assert_eq!(resolved.features().len(), 28);
-    assert_eq!(resolved.requirements().len(), 172);
+    assert_eq!(resolved.requirements().len(), 173);
     assert!(
         resolved
             .requirements()
@@ -180,12 +180,19 @@ fn live_contract_v2_v3_ecosystem_resolves_completely() {
         ("TF-AGENT-INTEGRATION-0001-R03", 2),
         ("TF-AGENT-INTEGRATION-0001-R04", 1),
         ("AF-MIGRATION-GOVERNANCE-0001-R08", 5),
+        ("AF-CERTIFICATION-0001-R06", 17),
+        ("AF-PROJECT-MODEL-0001-R06", 1),
     ] {
         assert_eq!(resolved.requirements()[requirement].tests().len(), count);
     }
     assert_eq!(resolved.guarantees().len(), 17);
     assert_eq!(resolved.checkpoints().len(), 10);
-    assert_eq!(resolved.direct_requirements().len(), 222);
+    assert_eq!(resolved.direct_requirements().len(), 223);
+    assert!(resolved.direct_requirements().iter().any(|edge| {
+        edge.consumer() == "AF-CERTIFICATION-0001"
+            && edge.provider() == "AF-PROJECT-MODEL-0001"
+            && edge.capability() == "CAP-PROJECT-MODEL"
+    }));
     assert_eq!(resolved.relationships().len(), 27);
     assert!(
         resolved
@@ -261,6 +268,7 @@ fn real_reference_scope_has_authored_purity_and_nonvacuous_semantic_support() {
 }
 
 const REQUIRED_SELF_MODEL_REQUIREMENTS: &[&str] = &[
+    "AF-PROJECT-MODEL-0001-R06",
     "TF-EDITOR-0001-R01",
     "AF-SNAPSHOT-GOVERNANCE-0001-R27",
     "AF-SNAPSHOT-GOVERNANCE-0001-R25",
