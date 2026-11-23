@@ -22,6 +22,14 @@ Maintainers update Data through reviewed semantic changes; schema versions chang
 
 ## Files
 
+### [`layout_extension_schema_v1.json`](../_data/layout_extension_schema_v1.json)
+
+Defines the explicitly chosen native layout role description and exact filing model compatibility.
+
+### [`layout_report_schema_v1.json`](../_data/layout_report_schema_v1.json)
+
+Defines the analysis-only observation projection with applicability and barriers.
+
 ### [`change_schema_v1.json`](../_data/change_schema_v1.json)
 
 Defines the version-one machine representation and validation boundary for change records owned by this Module.

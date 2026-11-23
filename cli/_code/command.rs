@@ -101,11 +101,18 @@ const BUILTIN_COMMANDS: &[CommandDescriptor] = &[
         usage: "fortress serve --stdio|--mcp [path] [--selection key] [--state path] [--decision receipt] [--proposal file] [--comparison-state reference] [--flow-authoring] [--candidate-storage external-directory]",
     },
     CommandDescriptor {
+        id: "CMD-REPOSITORY-LAYOUT",
+        name: "layout",
+        aliases: &[],
+        description: "Inspect explicitly selected native layout annotations without changing canonical filing or ownership.",
+        usage: "fortress layout inspect path --profile file sha256:digest [--profile file sha256:digest ...]",
+    },
+    CommandDescriptor {
         id: "CMD-PROVIDER-EVIDENCE",
         name: "evidence",
         aliases: &[],
         description: "Normalize retained JUnit or SARIF observations without executing project code.",
-        usage: "fortress evidence junit|sarif payload [--manifest path] [--output path]",
+        usage: "fortress evidence junit|sarif payload [--manifest path] [--adapter path sha256:digest] [--output path]; fortress evidence collect host-registration request project-root",
     },
     CommandDescriptor {
         id: "CMD-APPLICATION-DECLARE",

@@ -22,6 +22,14 @@ Fixtures change deliberately with compatible rule clarification or an explicit s
 
 ## Files
 
+### [`layout_extension_cases_v1.json`](../_data/layout_extension_cases_v1.json)
+
+Retains independent fixture contents, role expectations and malformed profile controls.
+
+### [`layout_extension_example_v1.json`](../_data/layout_extension_example_v1.json)
+
+Declares an example with Python package source, tests and configuration.
+
 ### [`path_boundary.json`](../_data/path_boundary.json)
 
 Provides specification-authored boundary conformance data for path behavior.

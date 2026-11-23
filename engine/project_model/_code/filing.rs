@@ -14,6 +14,10 @@ use sha2::{Digest, Sha256};
 
 use crate::module_index::{CanonicalModuleIndex, RESERVED_STRUCTURAL_DIRECTORIES, is_module_name};
 
+#[path = "layout_extension.rs"]
+mod layout_extension;
+pub use layout_extension::{LayoutExtension, ObservedLayoutPath, inspect_layout_extensions};
+
 /// Current filing profile schema identity.
 pub const FILING_PROFILE_SCHEMA: &str = "urn:fortress:schema:v2:filing-system-profiles";
 /// Current filing profile schema version.
@@ -1808,4 +1812,52 @@ impl Error for FilingProfileError {
             | Self::DuplicateCodeStructure(_) => None,
         }
     }
+}
+
+/// Returns whether a path follows the portable repository-relative grammar.
+#[must_use]
+pub fn is_portable_repository_path(value: &str) -> bool {
+    !value.is_empty()
+        && !value.contains('\\')
+        && !value.starts_with('/')
+        && !value
+            .chars()
+            .any(|character| character.is_control() || "<>:\"|?*".contains(character))
+        && value.split('/').all(|segment| {
+            !segment.is_empty()
+                && segment != "."
+                && segment != ".."
+                && !segment.ends_with(' ')
+                && !segment.ends_with('.')
+                && !matches!(
+                    segment
+                        .split('.')
+                        .next()
+                        .unwrap_or_default()
+                        .to_ascii_uppercase()
+                        .as_str(),
+                    "CON"
+                        | "PRN"
+                        | "AUX"
+                        | "NUL"
+                        | "COM1"
+                        | "COM2"
+                        | "COM3"
+                        | "COM4"
+                        | "COM5"
+                        | "COM6"
+                        | "COM7"
+                        | "COM8"
+                        | "COM9"
+                        | "LPT1"
+                        | "LPT2"
+                        | "LPT3"
+                        | "LPT4"
+                        | "LPT5"
+                        | "LPT6"
+                        | "LPT7"
+                        | "LPT8"
+                        | "LPT9"
+                )
+        })
 }

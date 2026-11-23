@@ -22,6 +22,14 @@ Retain earlier freezes and explicit corrections. Revise expected semantics only 
 
 ## Files
 
+### [`evidence_adapter_cases_v1.json`](../_data/evidence_adapter_cases_v1.json)
+
+Retains frozen independent expectations for the evidence collector exchange and refusal cases.
+
+### [`evidence_adapter_example_v1.json`](../_data/evidence_adapter_example_v1.json)
+
+Describes the independent local example that returns a retained JUnit fixture.
+
 ### [`provider_vectors_v1.json`](../_data/provider_vectors_v1.json)
 
 Thirty-two manually specified XML/SARIF vectors, frozen before the first native CLI comparison at SHA-256 189a67af4dc3c6cea8a6e1b5b86dec1bd6a94c97d0066f66e6194d06b67b35a1. Positive synthetic host premises are protocol controls, not claims of actual external execution. Expected facts derive from original report syntax and the documented conservative normalization contract; no Fortress-generated verdict supplies an oracle.

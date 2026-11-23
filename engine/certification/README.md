@@ -68,6 +68,12 @@ Provides information-flow proof coverage and explicit trusted endorsement or dec
 
 Provides the observed executable semantic artifact and source-bound coverage identity.
 
+### [Project Model](../project_model/README.md)
+
+**Types:** `depends_on`
+
+Uses the closed CONTROL role vocabulary to validate extension descriptions and identify the existing immutable evidence import roles.
+
 ### [Reference Resolution](../reference_resolution/README.md)
 
 **Types:** `depends_on`

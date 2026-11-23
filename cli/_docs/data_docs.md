@@ -22,6 +22,18 @@ Maintainers update Data through reviewed semantic changes; schema versions chang
 
 ## Files
 
+### [`collector_registration_schema_v1.json`](../_data/collector_registration_schema_v1.json)
+
+Defines the local host registration, including absolute tool and script selectors and exact digests.
+
+### [`collector_report_schema_v1.json`](../_data/collector_report_schema_v1.json)
+
+Defines the typed collector projection, original bytes, normalized envelope and explicit assurance limitations.
+
+### [`extension_guide.txt`](../_data/extension_guide.txt)
+
+Describes exact local extension selection, independently executable SDK tests, and the boundary between importer output and trusted evidence admission.
+
 ### [`Cargo.toml`](../_data/Cargo.toml)
 
 Declares the fortress-cli package and explicit library, binary, and process-level verification targets.

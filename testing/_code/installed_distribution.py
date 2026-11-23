@@ -69,6 +69,69 @@ def snapshot(root):
             for p in root.rglob("*") if p.is_file()}
 
 
+def selected_external_evidence(run, exe, slot, results):
+    """Exercise a real explicitly selected import and the standalone public consumer."""
+    root = results / "external evidence project"
+    sample(root)
+    binding = json.loads(run(exe, "declare", root))["binding"]
+    authority = results / "host collector"
+    authority.mkdir()
+    sdk = slot / "share/fortress/sdk/provider"
+    adapter = sdk / "evidence_adapter_example_v1.json"
+    collector = sdk / "example_evidence_collector.py"
+    executable = Path(sys.executable).resolve(strict=True)
+
+    def write(name, value):
+        path = authority / name
+        path.write_bytes(distribution.canonical(value))
+        return path
+
+    registration = write("registration.json", {
+        "$schema": "urn:fortress:host:v1:evidence-collector-registration", "schema_version": 1,
+        "executable": str(executable), "executable_digest": "sha256:" + distribution.hash_file(executable)[1],
+        "adapter": str(adapter), "adapter_digest": "sha256:" + distribution.hash_file(adapter)[1],
+        "script": {"path": str(collector), "digest": "sha256:" + distribution.hash_file(collector)[1]},
+    })
+    request = write("request.json", {
+        "$schema": "urn:fortress:schema:v1:evidence-adapter-exchange", "schema_version": 1,
+        "request_id": "installed-example", "operation": "COLLECT", "binding": binding,
+        "invocation_scope": "parcel.unit",
+    })
+    response = json.loads(run(exe, "evidence", "collect", registration, request, root))
+    assert response["evidence_admission"] == response["producer_authenticity"] == "UNVERIFIED"
+    reported = response["result"]
+    assert reported["outcome"] == "REPORTED"
+    envelope = distribution.canonical(reported["envelope"])
+    identifier = "sha256:" + distribution.digest(envelope)
+    raw_payload = reported["raw_utf8"].encode()
+    directory = root / "__fortress/evidence/imports" / identifier.split(":")[1]
+    directory.mkdir(parents=True)
+    (directory / "envelope.json").write_bytes(envelope)
+    (directory / "payload.bin").write_bytes(raw_payload)
+    inventory = reported["envelope"]["run_manifest"]["inventory"]
+    selection = write("selection.json", {
+        "$schema": "urn:fortress:derived:v1:evidence-input-set", "schema_version": 1,
+        "binding": binding, "selected": [{"envelope_digest": identifier,
+            "payload_digest": "sha256:" + distribution.digest(raw_payload),
+            "inventory_digest": "sha256:" + distribution.digest(distribution.canonical(inventory))}],
+    })
+    state = authority / "state.json"
+    run(exe, "state-view", root, "--evidence-inputs", selection, "--output", state)
+    portable = authority / "portable"
+    predicate = "https://example.invalid/fortress/assurance/v1"
+    exported = json.loads(run(exe, "bundle", "export", root, "--state", state,
+                              "--output", portable, "--predicate-type", predicate))
+    assert {"provider-envelope:" + identifier,
+            "provider-payload:sha256:" + distribution.digest(raw_payload)} <= {
+        artifact["id"] for artifact in exported["manifest"]["artifacts"]}
+    verified = json.loads(run(sys.executable, "-I", "-B", slot/"share/verify_bundle.py", portable,
+                              "--predicate-type", predicate))
+    assert verified["integrity"] == "VERIFIED" and verified["authenticity"] == "UNVERIFIED"
+    assert json.loads(run(exe, "declare", root))["binding"] == binding
+    return {"envelope": identifier, "integrity": verified["integrity"],
+            "authenticity": verified["authenticity"]}
+
+
 def execute(package, results, history=None):
     results.mkdir()
     transfer = results / "received"
@@ -108,6 +171,22 @@ def execute(package, results, history=None):
     exe = slot / "bin" / distribution.executable_name()
     assert distribution.hash_file(exe)[1] == next(x["sha256"] for x in m["files"] if x["path"]==exe.relative_to(slot).as_posix())
     assert run(exe,"--version").decode().strip() == "fortress " + m["product_version"]
+    sdk = slot / "share/fortress/sdk"
+    extensions = {}
+    for family, example in (
+        ("layout", "layout_extension_example_v1.json"),
+        ("provider", "evidence_adapter_example_v1.json"),
+    ):
+        fixtures = sdk / family
+        report = results / f"{family}-extension-kit.json"
+        options = () if family == "layout" else ("--collector", fixtures/"example_evidence_collector.py",
+                                                 "--support", fixtures)
+        run(sys.executable, "-I", "-B", sdk/"extension_conformance.py", family, "--executable", exe,
+            "--fixtures", fixtures, "--example", fixtures/example, "--work-root", results,
+            "--report", report, *options)
+        tested = json.loads(report.read_bytes())
+        assert tested["status"] == "PASS" and tested["executable"] == "sha256:" + distribution.hash_file(exe)[1]
+        extensions[family] = tested["counts"]
     cli = json.loads(run(exe,"status","--format","json",root))
     observed = protocol(exe,root,cwd,env)
     assert cli["state_ref"] == observed["state_ref"] and cli["result"]==observed["result"]
@@ -143,6 +222,7 @@ def execute(package, results, history=None):
                                      environment=env | {"FORTRESS_VERIFIER_PYTHON":sys.executable}))
         assert checked == through_cli and checked["integrity"] == "VERIFIED" and checked["authenticity"] == "UNVERIFIED"
         evidence_state = "selected historical integrity verified and malformed or unavailable refused"
+    external_evidence = selected_external_evidence(run, exe, slot, results)
     native = results / "uninitialized project"
     (native/"src").mkdir(parents=True)
     (native/"src/lib.rs").write_bytes(b"pub fn original() -> u8 { 7 }\n")
@@ -161,7 +241,8 @@ def execute(package, results, history=None):
     (results/"result.json").write_text(json.dumps({"status":"PASS","manifest_sha256":expected,
         "source_commit":m["source_commit"],"target":m["target"],"installed_executable_sha256":distribution.hash_file(exe)[1],
         "fixture_source_ref":edition["source_ref"],"runtime_path":"isolated empty working directory",
-        "source_unchanged":True,"bootstrap_preserved_source":True,"mcp":"PASS","optional_verifier":evidence_state},indent=2),encoding="utf-8")
+        "source_unchanged":True,"bootstrap_preserved_source":True,"mcp":"PASS","optional_verifier":evidence_state,
+        "extension_kits":extensions,"external_evidence":external_evidence},indent=2),encoding="utf-8")
     return slot
 
 

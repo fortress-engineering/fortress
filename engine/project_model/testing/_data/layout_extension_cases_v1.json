@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "fixture": {
+    "pyproject.toml": "[project]\nname = \"parcel-weight\"\nversion = \"0.1.0\"\nrequires-python = \">=3.11\"\n",
+    "src/parcel_weight/__init__.py": "def grams(kilograms: int) -> int:\n    return kilograms * 1000\n",
+    "tests/test_weight.py": "from parcel_weight import grams\n\ndef test_grams():\n    assert grams(2) == 2000\n",
+    "README.md": "# Parcel weight\n\nConvert parcel weights to grams.\n",
+    "notes.txt": "An unclassified repository entry.\n"
+  },
+  "expected": {
+    "classified": {"pyproject.toml": "CONFIGURATION", "src/parcel_weight/__init__.py": "SOURCE", "tests/test_weight.py": "TEST"},
+    "unclassified": ["README.md", "notes.txt"],
+    "authority": "ANALYSIS_ONLY"
+  },
+  "negative": [
+    {"id": "version-mismatch", "field": "schema_version", "value": 2, "error": "UNSUPPORTED_LAYOUT_EXTENSION"},
+    {"id": "model-mismatch", "field": "filing_model", "value": "3.0.0", "error": "UNSUPPORTED_LAYOUT_EXTENSION"},
+    {"id": "mode-mismatch", "field": "mode", "value": "CANONICAL", "error": "UNSUPPORTED_LAYOUT_EXTENSION"},
+    {"id": "malicious-path", "entry": "src", "replacement": "../outside", "error": "INVALID_LAYOUT_ENTRY"},
+    {"id": "portable-alias", "entry": "src", "replacement": "NUL", "error": "INVALID_LAYOUT_ENTRY"},
+    {"id": "reserved-control", "entry": "src", "replacement": "__FoRtReSs", "error": "INVALID_LAYOUT_ENTRY"},
+    {"id": "reserved-element", "entry": "src", "replacement": "_code", "error": "INVALID_LAYOUT_ENTRY"},
+    {"id": "case-collision", "entry": "tests", "replacement": "SRC", "error": "CONFLICTING_LAYOUT_ENTRY"}
+  ]
+}

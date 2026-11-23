@@ -1048,6 +1048,20 @@ def _issue(root: Path, workspace: RunWorkspace) -> dict[str, Any]:
                            "--executable", str(executable), "--workdir", str(temporary / "provider-replay"),
                            "--report", str(temporary / "provider-replay-report.json")]
         run_command(root, provider_replay, environment, workspace=workspace)
+        extension_evidence = workspace.allocate_retained_evidence("extension-conformance", 2 * 1024 * 1024)
+        for family, module, example in (
+            ("layout", "project_model", "layout_extension_example_v1.json"),
+            ("provider", "certification", "evidence_adapter_example_v1.json"),
+        ):
+            fixture_root = f"engine/{module}/testing"
+            kit = [sys.executable, "-B", "testing/_code/extension_conformance.py", family,
+                   "--executable", str(executable), "--fixtures", f"{fixture_root}/_data",
+                   "--example", f"{fixture_root}/_data/{example}", "--work-root", str(temporary),
+                   "--report", str(extension_evidence / f"{family}.json")]
+            if family == "provider":
+                kit += ["--collector", f"{fixture_root}/_code/example_evidence_collector.py",
+                        "--support", f"{fixture_root}/_code"]
+            run_command(root, kit, environment, workspace=workspace)
         pass_gate(gates, "PROVIDER_EVIDENCE", provider_replay)
         qualification_bytes, qualification_command, qualification_path = semantic_qualification(
             root, base, environment, workspace, executable,

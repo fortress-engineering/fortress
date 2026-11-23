@@ -22,6 +22,14 @@ Incompatible semantic changes advance schema versions rather than silently chang
 
 ## Files
 
+### [`evidence_adapter_schema_v1.json`](../_data/evidence_adapter_schema_v1.json)
+
+Defines the exact adapter edition, claimed identity, accepted format and capability.
+
+### [`adapter_exchange_schema_v1.json`](../_data/adapter_exchange_schema_v1.json)
+
+Defines bounded requests and replies for capability negotiation, explicit collection and cancellation.
+
 ### [`generation_manifest_schema_v1.json`](../_data/generation_manifest_schema_v1.json)
 
 Retains source-bound immutable generation manifests using control layout v1 with included and external artifact descriptors.

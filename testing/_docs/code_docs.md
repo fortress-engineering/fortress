@@ -18,6 +18,10 @@ A violated assertion or fixture-loading failure fails the test target and surfac
 
 ## Files
 
+### [`extension_conformance.py`](../_code/extension_conformance.py)
+
+Runs the independent layout or evidence adapter exercise against an explicitly selected Fortress-compatible executable in owned scratch storage. The same runner and frozen controls ship with the installed SDK.
+
 ### [`build_distribution.py`](../_code/build_distribution.py)
 
 Builds locked native and editor artifacts from a clean exact commit under the existing storage owner. Produces a digest-bound portable development archive and a private desktop test driver outside the payload.

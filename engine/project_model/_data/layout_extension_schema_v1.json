@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:layout-extension",
+  "title": "Layout extension",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "id",
+    "version",
+    "filing_model",
+    "mode",
+    "ecosystem",
+    "marker",
+    "entries"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:schema:v1:layout-extension"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 96,
+      "pattern": "^[a-z][a-z0-9.-]*$"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,4})[.](0|[1-9][0-9]{0,4})[.](0|[1-9][0-9]{0,4})$"
+    },
+    "filing_model": {
+      "const": "2.0.0"
+    },
+    "mode": {
+      "const": "NATIVE_ANALYSIS"
+    },
+    "ecosystem": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 96,
+      "pattern": "^[a-z][a-z0-9.-]*$"
+    },
+    "marker": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 254
+    },
+    "entries": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 128,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "kind",
+          "role",
+          "opaque"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 254
+          },
+          "kind": {
+            "enum": [
+              "FILE",
+              "DIRECTORY"
+            ]
+          },
+          "role": {
+            "enum": [
+              "SOURCE",
+              "CONFIGURATION",
+              "DOCUMENTATION",
+              "TEST",
+              "ASSET"
+            ]
+          },
+          "opaque": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  }
+}

@@ -84,6 +84,50 @@ pub enum ControlRole {
     Unrecognized,
 }
 
+/// Closed extension registration classes. These classes cannot add paths to CONTROL.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ExtensionInputRole {
+    /// Explicit native layout definition selected for an inspection.
+    NativeLayout,
+    /// Explicit external collector description, with unverified report provenance.
+    EvidenceAdapter,
+}
+
+impl ExtensionInputRole {
+    /// Returns the exact decoder schema accepted for this external input.
+    #[must_use]
+    pub const fn schema(self) -> &'static str {
+        match self {
+            Self::NativeLayout => "urn:fortress:schema:v1:layout-extension",
+            Self::EvidenceAdapter => "urn:fortress:schema:v1:evidence-adapter",
+        }
+    }
+
+    /// Returns the maximum bytes of a definition, excluding separately admitted payloads.
+    #[must_use]
+    pub const fn definition_bytes(self) -> usize {
+        64 * 1024
+    }
+
+    /// Returns the interpretive authority available before an assessment.
+    #[must_use]
+    pub const fn authority(self) -> &'static str {
+        match self {
+            Self::NativeLayout => "ANALYSIS_ONLY",
+            Self::EvidenceAdapter => "UNVERIFIED",
+        }
+    }
+
+    /// Returns the existing lifecycle roles available for retained external evidence.
+    #[must_use]
+    pub const fn retained_roles(self) -> &'static [ControlRole] {
+        match self {
+            Self::NativeLayout => &[],
+            Self::EvidenceAdapter => &[ControlRole::ProviderEnvelope, ControlRole::ProviderPayload],
+        }
+    }
+}
+
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
 #[serde(deny_unknown_fields)]
 struct ControlRoleRecord {

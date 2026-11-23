@@ -9,6 +9,12 @@ use sha2::{Digest, Sha256};
 
 use crate::declaration::{DeclarationBinding, canonical, canonical_strings, is_digest};
 
+#[path = "provider_adapter.rs"]
+mod provider_adapter;
+pub use provider_adapter::{
+    AdapterOperation, AdapterResult, EvidenceAdapter, ProviderAdapterRequest,
+};
+
 /// Initial normalized external-provider contract.
 pub const PROVIDER_SCHEMA: &str = "urn:fortress:derived:v1:provider-evidence";
 /// Current normalization algorithm, separate from the claimed execution tool version.

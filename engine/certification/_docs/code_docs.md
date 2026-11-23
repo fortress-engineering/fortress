@@ -22,6 +22,10 @@ Missing references, digest corruption, cycles, invalid bindings, unsupported aut
 
 Implements Evidence Graph including the dedicated defeater evidence class, certification, source identity, execution evidence, affected closure, and Verified BFG semantics.
 
+### [`provider_adapter.rs`](../_code/provider_adapter.rs)
+
+Validates the versioned collector description and bounded operation exchange. Exact request correlation, accepted scope and raw content binding gate normalization through the existing provider implementation. Separate admission and freshness policy still decides evidence sufficiency.
+
 ### [`control_manifest.rs`](../_code/control_manifest.rs)
 
 Validates immutable assessment generation manifests and exact selection indexes, including safe members, logical external artifacts, canonical ordering, and content-addressed generation identity. Selection keys must be strictly increasing: two generations cannot compete for one context, while independent contexts may share a generation. Current manifest/layout v4 supports application and implementation-quality publications with exact provider input identity. Retained manifest/layout pairs v1/v1, v2/v2 and v3/v3 preserve their original meaning; mismatched pairs are invalid.

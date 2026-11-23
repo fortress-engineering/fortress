@@ -1,0 +1,15 @@
+{
+  "$schema": "urn:fortress:schema:v1:layout-extension",
+  "schema_version": 1,
+  "id": "example.python-package",
+  "version": "1.0.0",
+  "filing_model": "2.0.0",
+  "mode": "NATIVE_ANALYSIS",
+  "ecosystem": "python",
+  "marker": "pyproject.toml",
+  "entries": [
+    {"path": "pyproject.toml", "kind": "FILE", "role": "CONFIGURATION", "opaque": false},
+    {"path": "src", "kind": "DIRECTORY", "role": "SOURCE", "opaque": true},
+    {"path": "tests", "kind": "DIRECTORY", "role": "TEST", "opaque": true}
+  ]
+}

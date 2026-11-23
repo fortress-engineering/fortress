@@ -52,6 +52,7 @@ pub mod command;
 mod finding_command;
 mod flow_command;
 mod inspection;
+mod layout_command;
 #[path = "../agent_integration/_code/mediator.rs"]
 pub mod mediator;
 mod migration_command;
@@ -171,6 +172,7 @@ where
         "CMD-CORE-HELP" => run_help(&registry, &arguments[1..], output, error),
         "CMD-CORE-VERSION" => run_version(&arguments[1..], output, error),
         "CMD-PROVIDER-EVIDENCE" => provider_command::run(&arguments[1..], output, error),
+        "CMD-REPOSITORY-LAYOUT" => layout_command::run(&arguments[1..], output, error),
         "CMD-SNAPSHOT-PROJECTIONS" => projection_command::run(&arguments[1..], output, error),
         "CMD-SNAPSHOT-AUDIT" => run_audit(&arguments[1..], output, error),
         "CMD-FINDING-CHECK" => run_check(&arguments[1..], output, error),

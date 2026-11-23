@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "binding": {
+    "subject_ref": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "context_ref": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "authority_ref": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+  },
+  "operations": [
+    {"operation": "HELLO", "scope": null, "outcome": "CAPABILITIES"},
+    {"operation": "COLLECT", "scope": "parcel.unit", "outcome": "REPORTED"},
+    {"operation": "COLLECT", "scope": "unsupported.scope", "outcome": "UNAVAILABLE"},
+    {"operation": "CANCEL", "scope": "parcel.unit", "outcome": "CANCELLED"}
+  ],
+  "expected_observation": {
+    "key": {"namespace": "NATIVE_QUALIFIED", "package": "parcel", "target": "unit", "qualified_name": "test_grams"},
+    "outcome": "PASSED",
+    "attempts": null,
+    "retry_metadata_present": false,
+    "finding_count": null
+  },
+  "expected_requirement_outcome": "NOT_EVALUABLE",
+  "negative_replies": [
+    {"id": "unsupported-reply-version", "field": "protocol_version", "value": 2, "error": "UNSUPPORTED_EVIDENCE_ADAPTER_VERSION"},
+    {"id": "provider-substitution", "field": "provider", "value": "other.collector", "error": "EVIDENCE_ADAPTER_REPLY_MISMATCH"},
+    {"id": "wrong-request", "field": "request_id", "value": "different", "error": "EVIDENCE_ADAPTER_REPLY_MISMATCH"},
+    {"id": "wrong-capability", "field": "capability", "value": "ANALYSIS_REPORTS", "error": "EVIDENCE_ADAPTER_REPLY_MISMATCH"},
+    {"id": "forged-authentication", "field": "authenticity", "value": "AUTHENTICATED", "error": "unknown field"}
+  ]
+}

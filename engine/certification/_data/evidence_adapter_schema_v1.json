@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:evidence-adapter",
+  "title": "Evidence adapter",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "provider",
+    "provider_version",
+    "protocol_version",
+    "format",
+    "capability"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:schema:v1:evidence-adapter"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "provider": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[a-zA-Z0-9._:-]+$"
+    },
+    "provider_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[a-zA-Z0-9._:-]+$"
+    },
+    "protocol_version": {
+      "const": 1
+    },
+    "format": {
+      "enum": [
+        "JUNIT_XML",
+        "SARIF210"
+      ]
+    },
+    "capability": {
+      "enum": [
+        "TEST_REPORTS",
+        "ANALYSIS_REPORTS"
+      ]
+    }
+  }
+}

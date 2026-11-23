@@ -1,0 +1,139 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:evidence-collector-report",
+  "title": "Evidence collector report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "request_id",
+    "adapter_digest",
+    "request_digest",
+    "producer_authenticity",
+    "evidence_admission",
+    "result",
+    "capabilities"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:schema:v1:evidence-collector-report"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "request_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[a-zA-Z0-9._:-]+$"
+    },
+    "adapter_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "request_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "producer_authenticity": {
+      "const": "UNVERIFIED"
+    },
+    "evidence_admission": {
+      "const": "UNVERIFIED"
+    },
+    "result": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "outcome"
+          ],
+          "properties": {
+            "outcome": {
+              "enum": [
+                "CAPABILITIES",
+                "CANCELLED",
+                "UNAVAILABLE"
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "outcome",
+            "raw_utf8",
+            "envelope",
+            "retained_paths"
+          ],
+          "properties": {
+            "outcome": {
+              "const": "REPORTED"
+            },
+            "raw_utf8": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 786432
+            },
+            "envelope": {
+              "$ref": "urn:fortress:derived:v1:provider-evidence"
+            },
+            "retained_paths": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              }
+            }
+          }
+        }
+      ]
+    },
+    "capabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider",
+        "provider_version",
+        "protocol_version",
+        "format",
+        "capability"
+      ],
+      "properties": {
+        "provider": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9._:-]+$"
+        },
+        "provider_version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9._:-]+$"
+        },
+        "protocol_version": {
+          "const": 1
+        },
+        "format": {
+          "enum": [
+            "JUNIT_XML",
+            "SARIF210"
+          ]
+        },
+        "capability": {
+          "enum": [
+            "TEST_REPORTS",
+            "ANALYSIS_REPORTS"
+          ]
+        }
+      }
+    }
+  }
+}

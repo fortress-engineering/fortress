@@ -10,6 +10,8 @@ Own command registration, argument validation, process exit behavior, human rend
 
 Status, doctor, query, explain, author and `serve --stdio` are thin adapters over the single Snapshot Governance inspection facade. Human and JSON render the same result fields; the versioned protocol is independent of any editor, host or transport framework.
 
+See the [local extension guide](_data/extension_guide.txt) for explicit layout inspection, evidence adapter selection, trusted local collection, and the two independently executable conformance kits.
+
 ## Scope
 
 ### Includes

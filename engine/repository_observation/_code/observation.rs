@@ -624,47 +624,5 @@ fn relative_path(root: &Path, path: &Path) -> Result<String, ObservationError> {
 /// Returns whether a path follows the portable repository-relative grammar.
 #[must_use]
 pub fn is_canonical_relative_path(value: &str) -> bool {
-    !value.is_empty()
-        && !value.contains('\\')
-        && !value.starts_with('/')
-        && !value
-            .chars()
-            .any(|character| character.is_control() || "<>:\"|?*".contains(character))
-        && value.split('/').all(|segment| {
-            !segment.is_empty()
-                && segment != "."
-                && segment != ".."
-                && !segment.ends_with(' ')
-                && !segment.ends_with('.')
-                && !matches!(
-                    segment
-                        .split('.')
-                        .next()
-                        .unwrap_or_default()
-                        .to_ascii_uppercase()
-                        .as_str(),
-                    "CON"
-                        | "PRN"
-                        | "AUX"
-                        | "NUL"
-                        | "COM1"
-                        | "COM2"
-                        | "COM3"
-                        | "COM4"
-                        | "COM5"
-                        | "COM6"
-                        | "COM7"
-                        | "COM8"
-                        | "COM9"
-                        | "LPT1"
-                        | "LPT2"
-                        | "LPT3"
-                        | "LPT4"
-                        | "LPT5"
-                        | "LPT6"
-                        | "LPT7"
-                        | "LPT8"
-                        | "LPT9"
-                )
-        })
+    crate::filing::is_portable_repository_path(value)
 }

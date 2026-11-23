@@ -22,6 +22,10 @@ Invalid inputs and inability to fulfill the responsibility return explicit typed
 
 Compiles the canonical recursive Project Filing System, validates Standard-owned ecosystem registrations and bounded Data/Info grammar, and retains complete deterministic leaf inventory outside the CCG.
 
+### [`layout_extension.rs`](../_code/layout_extension.rs)
+
+Checks digest-pinned native profile definitions and composes disjoint root role observations using supplied physical facts. It preserves the canonical index, reports unavailable observations, and refuses attempted Module shadows.
+
 ### [`module_index.rs`](../_code/module_index.rs)
 
 Indexes every canonical Module exactly once from direct contract-marked ancestry, records physical parent and child edges, and maps semantic Elements to their reserved physical directories for all architectural consumers.

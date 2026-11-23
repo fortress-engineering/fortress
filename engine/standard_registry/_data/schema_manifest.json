@@ -3,6 +3,12 @@
   "schema_version": 2,
   "id": "fortress-schema-registry-v2",
   "schemas": [
+    "engine/project_model/_data/layout_extension_schema_v1.json",
+    "engine/project_model/_data/layout_report_schema_v1.json",
+    "engine/certification/_data/evidence_adapter_schema_v1.json",
+    "engine/certification/_data/adapter_exchange_schema_v1.json",
+    "cli/_data/collector_registration_schema_v1.json",
+    "cli/_data/collector_report_schema_v1.json",
     "engine/affected_analysis/_data/affected_analysis_schema_v1.json",
     "cli/_data/package_manifest_schema_v1.json",
     "engine/standard_registry/_data/schema_manifest_schema_v1.json",

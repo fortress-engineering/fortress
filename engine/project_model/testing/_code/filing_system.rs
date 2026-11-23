@@ -28,6 +28,55 @@ fn standard() -> FilingSystemProfiles {
     FilingSystemProfiles::standard()
 }
 
+/// `T-AF-PROJECT-MODEL-0001-R06-001`
+/// Fortress requirement: AF-PROJECT-MODEL-0001-R06
+#[test]
+fn explicit_extension_preserves_module_identity_and_no_profile_can_shadow_it() {
+    use fortress_core::filing::{LayoutExtension, ObservedLayoutPath, inspect_layout_extensions};
+    use fortress_core::portable::digest;
+
+    let bytes = include_bytes!("../_data/layout_extension_example_v1.json");
+    assert!(LayoutExtension::from_pinned_bytes(bytes, &digest(b"wrong")).is_err());
+    let profile = LayoutExtension::from_pinned_bytes(bytes, &digest(bytes)).unwrap();
+    let paths = [
+        ObservedLayoutPath {
+            path: "component/contract.json",
+            limitation: None,
+        },
+        ObservedLayoutPath {
+            path: "pyproject.toml",
+            limitation: None,
+        },
+        ObservedLayoutPath {
+            path: "src/package.py",
+            limitation: None,
+        },
+        ObservedLayoutPath {
+            path: "src/linked.py",
+            limitation: Some("SYMLINK_UNFOLLOWED"),
+        },
+    ];
+    let report =
+        inspect_layout_extensions(&paths, &digest(b"subject"), std::slice::from_ref(&profile))
+            .unwrap();
+    assert_eq!(report["authority"], "ANALYSIS_ONLY");
+    assert_eq!(
+        report["canonical_module_paths"],
+        serde_json::json!(["", "component"])
+    );
+    assert_eq!(report["entries"][2]["role"], "SOURCE");
+    assert_eq!(report["entries"][3]["state"], "NOT_OBSERVED");
+    assert!(report["entries"][3]["role"].is_null());
+    let shadow = [ObservedLayoutPath {
+        path: "src/contract.json",
+        limitation: None,
+    }];
+    assert_eq!(
+        inspect_layout_extensions(&shadow, &digest(b"subject"), &[profile]).unwrap_err(),
+        "LAYOUT_SHADOWS_CANONICAL_MODULE"
+    );
+}
+
 fn kinds(paths: &[String]) -> Vec<FilingViolationKind> {
     analyze_project_filing_system(paths, &standard())
         .violations()

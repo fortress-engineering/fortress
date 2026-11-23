@@ -84,6 +84,13 @@
           "tests": [
             "T-AF-PROJECT-MODEL-0001-R05-001"
           ]
+        },
+        {
+          "id": "AF-PROJECT-MODEL-0001-R06",
+          "statement": "Explicitly pinned native layout extensions provide deterministic annotations without changing the canonical Module index, project authority, or observation policy.",
+          "tests": [
+            "T-AF-PROJECT-MODEL-0001-R06-001"
+          ]
         }
       ]
     }

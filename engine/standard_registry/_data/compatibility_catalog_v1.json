@@ -3,6 +3,138 @@
   "schema_version": 1,
   "entries": [
     {
+      "schema_id": "urn:fortress:schema:v1:layout-extension",
+      "schema_path": "engine/project_model/_data/layout_extension_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "AUTHORED",
+        "source": null
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/project_model/_code/layout_extension.rs"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "sha256-exact-file-bytes-v1",
+        "source": "engine/project_model/_code/layout_extension.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-exact-file-bytes-v1",
+        "source": "engine/project_model/_code/layout_extension.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v1:layout-extension-report",
+      "schema_path": "engine/project_model/_data/layout_report_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/project_model/_code/layout_extension.rs"
+      },
+      "reader": {
+        "status": "SCHEMA_ONLY",
+        "source": null
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-exact-file-bytes-v1",
+        "source": null
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v1:evidence-adapter",
+      "schema_path": "engine/certification/_data/evidence_adapter_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "AUTHORED",
+        "source": null
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/certification/_code/provider_adapter.rs"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "sha256-exact-file-bytes-v1",
+        "source": "engine/certification/_code/provider_adapter.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-exact-file-bytes-v1",
+        "source": "engine/certification/_code/provider_adapter.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v1:evidence-adapter-exchange",
+      "schema_path": "engine/certification/_data/adapter_exchange_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "cli/_code/provider_collection.rs"
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "engine/certification/_code/provider_adapter.rs"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-exact-file-bytes-v1",
+        "source": "engine/certification/_code/provider_adapter.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:host:v1:evidence-collector-registration",
+      "schema_path": "cli/_data/collector_registration_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "AUTHORED",
+        "source": null
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "cli/_code/provider_collection.rs"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-exact-file-bytes-v1",
+        "source": "cli/_code/provider_collection.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:schema:v1:evidence-collector-report",
+      "schema_path": "cli/_data/collector_report_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "cli/_code/provider_collection.rs"
+      },
+      "reader": {
+        "status": "SCHEMA_ONLY",
+        "source": null
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-exact-file-bytes-v1",
+        "source": null
+      }
+    },
+    {
       "schema_id": "urn:fortress:schema:v1:package-manifest",
       "schema_path": "cli/_data/package_manifest_schema_v1.json",
       "version": 1,

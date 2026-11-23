@@ -9,6 +9,52 @@ use std::collections::{BTreeMap, BTreeSet};
 fn digest(letter: char) -> String {
     format!("sha256:{}", letter.to_string().repeat(64))
 }
+
+/// `T-AF-CERTIFICATION-0001-R06-017`
+/// Fortress requirement: AF-CERTIFICATION-0001-R06
+#[test]
+fn external_collector_metadata_cannot_self_admit_even_an_exact_report() {
+    let (envelope, selector, binding) = fixture();
+    let manifest = envelope.run_manifest.as_ref().unwrap();
+    let definition = serde_json::json!({
+        "$schema":"urn:fortress:schema:v1:evidence-adapter", "schema_version":1,
+        "provider":"native-unit-runner", "provider_version":"1.0", "protocol_version":1,
+        "format":"JUNIT_XML", "capability":"TEST_REPORTS"
+    });
+    let bytes = fortress_core::portable::canonical(&definition).unwrap();
+    let adapter =
+        EvidenceAdapter::from_pinned_bytes(&bytes, &fortress_core::portable::digest(&bytes))
+            .unwrap();
+    adapter
+        .validate_manifest(ProviderFormat::JunitXml, manifest)
+        .unwrap();
+    let result = PreparedProvider::new(
+        &envelope,
+        &binding,
+        &mut ProviderAcceptancePolicy::default(),
+    )
+    .unwrap()
+    .resolve_requirement(&selector)
+    .unwrap();
+    assert_eq!(result.decision, AssessmentDecision::NotEvaluable);
+    assert!(
+        result
+            .blockers
+            .contains(&ProviderBlocker::UntrustedEnvelope)
+    );
+    assert!(
+        result
+            .blockers
+            .contains(&ProviderBlocker::FreshExecutionRequired)
+    );
+    let mut wrong = manifest.clone();
+    wrong.provider_version = "2.0".into();
+    assert!(
+        adapter
+            .validate_manifest(ProviderFormat::JunitXml, &wrong)
+            .is_err()
+    );
+}
 fn key(package: &str, name: &str) -> InventoryKey {
     InventoryKey {
         namespace: InventoryNamespace::NativeQualified,

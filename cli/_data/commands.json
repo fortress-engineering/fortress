@@ -321,6 +321,17 @@
       "certification_implications": "Reports application semantics only; no implementation qualification or test execution is synthesized."
     },
     {
+      "id": "CMD-REPOSITORY-LAYOUT",
+      "name": "layout",
+      "aliases": [],
+      "description": "Inspect explicitly selected native layout annotations without changing canonical filing or ownership.",
+      "owner": "TF-CLI-0001",
+      "executor": "builtin-sync",
+      "duration": "short",
+      "resumability": "restartable",
+      "certification_implications": "Analysis-only annotations do not change authority, source admission, or canonical filing."
+    },
+    {
       "id": "CMD-PROVIDER-EVIDENCE",
       "name": "evidence",
       "aliases": [],

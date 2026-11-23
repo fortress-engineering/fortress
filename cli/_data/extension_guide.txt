@@ -1,0 +1,56 @@
+# Local layout and evidence extensions
+
+The candidate kit exposes two versioned data seams. It uses the installed Fortress CLI and the public schemas in `share/fortress`. These interfaces are qualified for local development. Public compatibility and redistribution remain separate owner decisions.
+
+## Native layout profile
+
+Start with `sdk/layout/layout_extension_example_v1.json` and the registered `layout-extension` schema. Choose a distinct ID, exact version and ecosystem label. Select exactly filing model 2.0.0 and mode `NATIVE_ANALYSIS`. A profile names an ordinary root marker file and declares exact root files or opaque root-directory roles. Supported roles are SOURCE, CONFIGURATION, DOCUMENTATION, TEST and ASSET. Opacity stops interpretation of additional structure inside a directory by the profile. Physical observation still accounts for its files and unsupported objects.
+
+Pin the SHA-256 of the exact definition bytes independently, then run
+
+```text
+fortress layout inspect /path/to/project --profile /path/to/layout.json sha256:<digest>
+```
+
+Use repeated `--profile file sha256:digest` flags to compose disjoint profiles. The projection is sorted by profile ID and physical path. Duplicate IDs, conflicting case-folded root paths, canonical names, Standard-owned entries and canonical Module shadows fail explicitly. Missing ecosystem markers and wrong entry kinds remain visible. Profiles cannot claim an authored Module, change its ID, add source exclusions, change the Standard or establish certification. Project contracts and Project Configuration still determine authoritative ownership. No files are implicitly discovered or registered. Replacing the selection means explicitly choosing a new file, version and digest. Removal means dropping its flag. Existing records retain their old pins.
+
+V1 accepts exact root entries and a single marker per profile. Globs, nested declarations, new filing grammars, profiles selectable for canonical conformance, arbitrary dependencies, and language semantics are outside this interface. Unknown keys and versions fail closed.
+
+## Evidence adapter
+
+Start with `sdk/provider/evidence_adapter_example_v1.json`. Describe the claimed tool identity and exact version. Protocol v1 accepts JUNIT_XML with TEST_REPORTS or SARIF210 with ANALYSIS_REPORTS. Native Cargo execution retains its existing built-in boundary. Keep the original report bytes and exact companion manifest. Use
+
+```text
+fortress evidence junit report.xml --manifest manifest.json --adapter adapter.json sha256:<digest>
+fortress evidence sarif report.sarif --manifest manifest.json --adapter adapter.json sha256:<digest>
+```
+
+The existing APIs without `--adapter` keep their original meanings. The extra pin validates format and identity agreement. The normalizer replays the original bytes. Each companion binds subject, context, authored authority, invocation scope, binary, tool, ordered arguments, relevant dependencies, inventory, filters, attempts and terminal results. Mark unavailable information explicitly with nulls and completeness flags. A passing observation with unknown dependencies, unavailable execution or incomplete inventory cannot establish successful verification.
+
+Optional collector execution requires independently trusted local host configuration. Create an `evidence-collector-registration` document outside the project. Pin the absolute executable and adapter definition by exact digest. A trusted Python-script collector additionally takes an absolute ordinary script and its digest. Use the registration only with locally reviewed programs that do not fork unmanaged children or invoke project code. Run
+
+```text
+fortress evidence collect /trusted/registration.json /trusted/request.json /path/to/project
+```
+
+Each subprocess receives one UTF-8 JSON request via stdin followed by EOF and returns one JSON reply. HELLO negotiates exact capabilities before COLLECT. A request ID correlates each reply. COLLECT binds all three declaration identities and an exact invocation scope. Use a saved declaration or independently selected state for those identities. CANCEL is a pre-dispatch withdrawal operation and returns no evidence. V1 retains no background sessions. The supervisor owns the direct child and enforces a five-second deadline per invocation and one MiB output per stream. It does not sandbox the trusted executable or verify claims about its descendants.
+
+Repository-selected tools, linked host assets, incompatible capability/version replies, unexpected terminal fields and mismatched identity, scope or payload are refused. The report returns original UTF-8 content, the existing normalized envelope and the registry-resolved locations for an explicitly selected import. It grants no admission and writes no files. An operator can retain the pair through the existing evidence input selection workflow. That workflow independently checks source binding, execution closure and host acceptance. No artifact here grants a fresh-run capability or authenticates a producer. The reference script returns retained fixture data and makes no claim to have executed a project test.
+
+## Execute the independent kits
+
+Use Python 3.11 or later and an installed Fortress executable. Substitute absolute paths for the arguments below. `SDK` is the installed `share/fortress/sdk` directory.
+
+```text
+python -B SDK/extension_conformance.py layout --executable FORTRESS --fixtures SDK/layout --example SDK/layout/layout_extension_example_v1.json --work-root SCRATCH --report layout.json
+python -B SDK/extension_conformance.py provider --executable FORTRESS --fixtures SDK/provider --example SDK/provider/evidence_adapter_example_v1.json --collector SDK/provider/example_evidence_collector.py --support SDK/provider --work-root SCRATCH --report provider.json
+```
+
+The report destination must be new. Kits use owned temporary directories and produce deterministic JSON records plus a terminal summary. The layout fixture records exact independent role expectations. The provider kit uses frozen JUnit and SARIF expectations and the independent standard-library evidence consumer to distinguish reporting from proof. The kits include deliberately incompatible definitions and subprocesses. A platform without link-fixture privileges records the unavailable case. Linux qualification exercises that case using ordinary user permissions.
+
+### Troubleshooting
+
+- Digest mismatch means the selected bytes differ from the pin. Obtain the approved copy or explicitly review a new identity.
+- A missing marker or unsupported structure means the selected layout cannot annotate that observation. Use the project-authored configuration for actual ownership and canonical conformance.
+- If a collector is unavailable, use offline evidence normalization for already retained reports. Verify the executable path and digest, protocol version, and that the trusted files live outside the governed project.
+- A successful normalized report remains unverified until a selected assessment independently establishes the necessary premises. Match the exact subject, context, authority, provider and current execution dependencies.

@@ -18,6 +18,10 @@ Any graph, digest, cycle, status, eligibility, binding, assertion, source-exclus
 
 ## Files
 
+### [`example_evidence_collector.py`](../_code/example_evidence_collector.py)
+
+Uses the documented wire protocol directly to return selected retained JUnit bytes and explicit unknown execution facts.
+
 ### [`certification.rs`](../_code/certification.rs)
 
 Exercises Certification v1 conformance.

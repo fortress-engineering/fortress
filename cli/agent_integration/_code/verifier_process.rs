@@ -138,7 +138,7 @@ pub(super) fn run_bounded(
     script: &'static str,
     deadline: Duration,
 ) -> Result<(Vec<u8>, u8), PortableError> {
-    run_checked(command, script, deadline, None)
+    run_checked(command, script.as_bytes().to_vec(), deadline, None)
 }
 
 pub(crate) fn run_pinned(
@@ -146,12 +146,21 @@ pub(crate) fn run_pinned(
     deadline: Duration,
     executable_ref: &str,
 ) -> Result<(Vec<u8>, u8), PortableError> {
-    run_checked(command, "", deadline, Some(executable_ref))
+    run_pinned_input(command, Vec::new(), deadline, executable_ref)
+}
+
+pub(crate) fn run_pinned_input(
+    command: Command,
+    input: Vec<u8>,
+    deadline: Duration,
+    executable_ref: &str,
+) -> Result<(Vec<u8>, u8), PortableError> {
+    run_checked(command, input, deadline, Some(executable_ref))
 }
 
 fn run_checked(
     mut command: Command,
-    script: &'static str,
+    input: Vec<u8>,
     deadline: Duration,
     executable_ref: Option<&str>,
 ) -> Result<(Vec<u8>, u8), PortableError> {
@@ -187,7 +196,7 @@ fn run_checked(
     let (send, receive) = mpsc::channel();
     let writer = send.clone();
     std::thread::spawn(move || {
-        let _ = writer.send((0, stdin.write_all(script.as_bytes()).map(|()| Vec::new())));
+        let _ = writer.send((0, stdin.write_all(&input).map(|()| Vec::new())));
     });
     for (id, pipe) in [
         (1, Box::new(stdout) as Box<dyn Read + Send>),

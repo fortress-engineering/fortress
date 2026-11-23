@@ -39,7 +39,7 @@ fn registered_schemas_are_unique_json_schema_documents() {
         .expect("schema manifest must contain a schemas array");
     let mut identities = HashSet::with_capacity(paths.len());
 
-    assert_eq!(paths.len(), 172);
+    assert_eq!(paths.len(), 178);
     assert!(
         paths
             .iter()
@@ -48,6 +48,13 @@ fn registered_schemas_are_unique_json_schema_documents() {
     assert!(paths.iter().any(
         |path| path == "engine/snapshot_governance/_data/security_qualification_schema_v1.json"
     ));
+    for extension in [
+        "engine/project_model/_data/layout_extension_schema_v1.json",
+        "engine/certification/_data/adapter_exchange_schema_v1.json",
+        "cli/_data/collector_report_schema_v1.json",
+    ] {
+        assert!(paths.iter().any(|path| path == extension));
+    }
     let manifest_schema =
         read_json("engine/standard_registry/_data/schema_manifest_schema_v2.json");
     jsonschema::draft202012::validate(&manifest_schema, &manifest)

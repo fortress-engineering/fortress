@@ -68,7 +68,20 @@ def source_assets():
              "engine/standard_registry/_data/cert_full_snapshot_v1.json",
              "engine/project_model/_data/filing_system_profiles.json"}
     names.update(f"engine/project_model/_data/control_layout_v{edition}.json" for edition in range(1, 9))
-    return {f"share/fortress/{name}": ROOT / name for name in sorted(names)}
+    sources = {f"share/fortress/{name}": ROOT / name for name in sorted(names)}
+    sdk = "share/fortress/sdk/"
+    sources.update({
+        sdk + "guide.md": ROOT / "cli/_data/extension_guide.txt",
+        sdk + "extension_conformance.py": ROOT / "testing/_code/extension_conformance.py",
+    })
+    for file in ("layout_extension_example_v1.json", "layout_extension_cases_v1.json"):
+        sources[sdk + "layout/" + file] = ROOT / "engine/project_model/testing/_data" / file
+    for file in ("evidence_adapter_example_v1.json", "evidence_adapter_cases_v1.json", "provider_vectors_v1.json"):
+        sources[sdk + "provider/" + file] = ROOT / "engine/certification/testing/_data" / file
+    for file in ("example_evidence_collector.py", "provider_controls.py", "provider_reference.py",
+                 "provider_xml.py", "provider_sarif.py"):
+        sources[sdk + "provider/" + file] = ROOT / "engine/certification/testing/_code" / file
+    return sources
 
 
 def package(path, members):

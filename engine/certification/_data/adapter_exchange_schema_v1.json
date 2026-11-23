@@ -1,0 +1,171 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:schema:v1:evidence-adapter-exchange",
+  "title": "Evidence adapter exchange",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "$schema",
+        "schema_version",
+        "request_id",
+        "operation",
+        "binding",
+        "invocation_scope"
+      ],
+      "properties": {
+        "$schema": {
+          "const": "urn:fortress:schema:v1:evidence-adapter-exchange"
+        },
+        "schema_version": {
+          "const": 1
+        },
+        "request_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9._:-]+$"
+        },
+        "operation": {
+          "enum": [
+            "HELLO",
+            "COLLECT",
+            "CANCEL"
+          ]
+        },
+        "binding": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "subject_ref",
+                "context_ref",
+                "authority_ref"
+              ],
+              "properties": {
+                "subject_ref": {
+                  "type": "string",
+                  "pattern": "^sha256:[0-9a-f]{64}$"
+                },
+                "context_ref": {
+                  "type": "string",
+                  "pattern": "^sha256:[0-9a-f]{64}$"
+                },
+                "authority_ref": {
+                  "type": "string",
+                  "pattern": "^sha256:[0-9a-f]{64}$"
+                }
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "invocation_scope": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[a-zA-Z0-9._:-]+$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "$schema",
+        "schema_version",
+        "request_id",
+        "provider",
+        "provider_version",
+        "protocol_version",
+        "format",
+        "capability",
+        "outcome",
+        "raw_utf8",
+        "manifest"
+      ],
+      "properties": {
+        "$schema": {
+          "const": "urn:fortress:schema:v1:evidence-adapter-exchange"
+        },
+        "schema_version": {
+          "const": 1
+        },
+        "request_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9._:-]+$"
+        },
+        "provider": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9._:-]+$"
+        },
+        "provider_version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9._:-]+$"
+        },
+        "protocol_version": {
+          "const": 1
+        },
+        "format": {
+          "enum": [
+            "JUNIT_XML",
+            "SARIF210"
+          ]
+        },
+        "capability": {
+          "enum": [
+            "TEST_REPORTS",
+            "ANALYSIS_REPORTS"
+          ]
+        },
+        "outcome": {
+          "enum": [
+            "CAPABILITIES",
+            "REPORTED",
+            "CANCELLED",
+            "UNAVAILABLE"
+          ]
+        },
+        "raw_utf8": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 786432
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "manifest": {
+          "anyOf": [
+            {
+              "$ref": "urn:fortress:derived:v1:provider-evidence#/$defs/manifest"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

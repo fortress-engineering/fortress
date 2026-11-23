@@ -21,6 +21,14 @@ Malformed input, unsupported operations, invalid repository state, or evaluated 
 
 ## Files
 
+### [`layout_command.rs`](../_code/layout_command.rs)
+
+Reads explicit digest-pinned native profile selections and supplies bounded repository observations to the Project Model projection.
+
+### [`provider_collection.rs`](../_code/provider_collection.rs)
+
+Validates external host registration, invokes one owned bounded collector at a time and prepares the existing evidence envelope without admission or project mutation.
+
 ### [`package_install.py`](../_code/package_install.py)
 
 Verifies portable development archives against independently supplied manifest digests. Installs exact inventories into immutable application slots and removes only verified owned files. The installer does not write project authority or execute the package contents.
