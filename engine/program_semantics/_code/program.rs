@@ -191,19 +191,6 @@ pub struct AnalyzerDescriptor {
     call_resolution_authority: String,
 }
 
-impl AnalyzerDescriptor {
-    pub(crate) fn rust() -> Self {
-        Self {
-            id: RUST_PROGRAM_ANALYZER_ID.into(),
-            semantic_version: RUST_PROGRAM_ANALYZER_VERSION.into(),
-            language: "rust".into(),
-            package_authority: "snapshot_bound_cargo_manifests".into(),
-            declaration_authority: "structural_ast".into(),
-            call_resolution_authority: "type_directed_structural".into(),
-        }
-    }
-}
-
 /// One governed Rust package and executable target context.
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 pub struct ProgramPackage {
@@ -2565,7 +2552,9 @@ impl ProgramSemanticModel {
     }
 }
 
-pub(crate) struct RustProgramFacts {
+/// Facts and attribution supplied together by the in-process producer.
+struct ProgramProducerFacts {
+    analyzer: AnalyzerDescriptor,
     source_identity: String,
     program_context: ProgramContext,
     source_inputs: Vec<ProgramSourceInput>,
@@ -2970,7 +2959,7 @@ pub fn compile_program_semantic_model(
     assemble_program_semantic_model(input, facts, topology)
 }
 
-fn sort_facts(facts: &mut RustProgramFacts) {
+fn sort_facts(facts: &mut ProgramProducerFacts) {
     facts.packages.sort();
     facts.nominal_types.sort();
     facts.impls.sort();
@@ -2989,7 +2978,7 @@ fn sort_facts(facts: &mut RustProgramFacts) {
 #[allow(clippy::too_many_lines)]
 fn assemble_program_semantic_model(
     input: &ProgramSemanticInput,
-    facts: RustProgramFacts,
+    facts: ProgramProducerFacts,
     topology: CallTopology,
 ) -> Result<ProgramSemanticModel, ProgramSemanticError> {
     let governed_owners = input
@@ -3054,6 +3043,7 @@ fn assemble_program_semantic_model(
         &topology,
     );
     let resolution_summary = resolution_summary(&facts.calls, facts.fixed_point_iterations);
+    let language = facts.analyzer.language.clone();
     Ok(ProgramSemanticModel {
         digest_memo: crate::program_semantics::ModelDigestMemo::default(),
         schema: PROGRAM_SEMANTIC_MODEL_SCHEMA.into(),
@@ -3062,8 +3052,8 @@ fn assemble_program_semantic_model(
         project_id: input.project_id().map(str::to_owned),
         source_identity: facts.source_identity,
         program_context: facts.program_context,
-        analyzers: vec![AnalyzerDescriptor::rust()],
-        languages: vec!["rust".into()],
+        analyzers: vec![facts.analyzer],
+        languages: vec![language],
         packages: facts.packages,
         nominal_types: facts.nominal_types,
         impls: facts.impls,

@@ -28,6 +28,8 @@ Identity deliberately excludes parameter binding names, generic/lifetime spellin
 
 Independent cold compilation executes the same complete Rust producer and final assembler with no previous preparation. After every caller has resolved, it consumes uniquely owned body/caller contributions into the finished model instead of copying those facts into preparation that the cold caller immediately drops. This changes temporary ownership only: all analyses, fixed-point work, dependency recording, sorting and canonical facts still execute. The prepared path retains its existing copies, units, counters and reuse validation. No parser syntax crosses threads and no cold result is supplied by a resident cache.
 
+The producer carries its analyzer descriptor alongside its facts in both cold and prepared analysis. The shared assembler derives the language list from that descriptor. The private boundary keeps the existing Rust v6 document, coverage, provenance, and preparation semantics.
+
 ## State
 
 Canonical analysis owns deterministic process-local indexes from one immutable input set. Optional coordinator preparation retains exact reusable units between requests, separately from immutable finished models; cache eviction changes work only.

@@ -1304,28 +1304,11 @@ fn compile_source_architecture_from(
 ) -> Result<SourceArchitectureEvaluation, AuditError> {
     let responsibilities = code_file_responsibilities(&prepared.observed_files, ccg)
         .map_err(|error| AuditError::ContractState(error.into()))?;
-    let artifacts = source_artifact_inputs(&prepared.ownerships, &responsibilities);
     let observation_input = implementation_input(
         &prepared.snapshot,
         &prepared.observed_files,
         &prepared.ownerships,
     )?;
-    let cargo = observe_cargo_analysis_territories(&observation_input)
-        .map_err(AuditError::ImplementationObservation)?;
-    let rust_profile = observe_rust_source_profile(&prepared.observed_files, &artifacts, &cargo)
-        .map_err(|error| AuditError::ContractState(error.to_string().into()))?;
-    let mut observations = rust_profile.observations().to_vec();
-    observations.extend(psm.map_or_else(Vec::new, observations_from_psm));
-    observations.sort();
-    observations.dedup();
-    let languages = [
-        LanguageAssignment::new("rs", "rust", "fortress-core/program-semantics-v4"),
-        LanguageAssignment::new(
-            "py",
-            "python",
-            "fortress-core/source-extension-observation-v1",
-        ),
-    ];
     let verification_relationships = prepared
         .rust_tests
         .iter()
@@ -1340,6 +1323,55 @@ fn compile_source_architecture_from(
             ))
         })
         .collect::<Vec<_>>();
+    compile_source_architecture(
+        &SnapshotSourceArchitecture {
+            project_id: Some(prepared.snapshot.project_id()),
+            project_model_authority: "project-model/project-filing-system-v2",
+            files: &prepared.observed_files,
+            ownerships: &prepared.ownerships,
+            standard: &prepared.standard,
+        },
+        &observation_input,
+        &responsibilities,
+        &verification_relationships,
+        psm,
+    )
+}
+
+struct SnapshotSourceArchitecture<'a> {
+    project_id: Option<&'a str>,
+    project_model_authority: &'a str,
+    files: &'a BTreeMap<String, Vec<u8>>,
+    ownerships: &'a [SourceOwnership],
+    standard: &'a LoadedStandard,
+}
+
+fn compile_source_architecture(
+    snapshot: &SnapshotSourceArchitecture<'_>,
+    observation_input: &ImplementationObservationInput,
+    responsibilities: &[CodeFileResponsibility],
+    verification_relationships: &[SourceVerificationRelationship],
+    psm: Option<&ProgramSemanticModel>,
+) -> Result<SourceArchitectureEvaluation, AuditError> {
+    let artifacts = source_artifact_inputs(snapshot.ownerships, responsibilities);
+    let cargo = observe_cargo_analysis_territories(observation_input)
+        .map_err(AuditError::ImplementationObservation)?;
+    let rust_profile = observe_rust_source_profile(snapshot.files, &artifacts, &cargo)
+        .map_err(|error| AuditError::ContractState(error.to_string().into()))?;
+    let mut observations = rust_profile.observations().to_vec();
+    if let Some(psm) = psm {
+        observations.extend(observations_from_psm(psm));
+    }
+    observations.sort();
+    observations.dedup();
+    let languages = [
+        LanguageAssignment::new("rs", "rust", "fortress-core/program-semantics-v4"),
+        LanguageAssignment::new(
+            "py",
+            "python",
+            "fortress-core/source-extension-observation-v1",
+        ),
+    ];
     let available_adapters = [
         "fortress-core/program-semantics-v4".to_owned(),
         "fortress-core/rust-source-profile-v1".to_owned(),
@@ -1354,27 +1386,27 @@ fn compile_source_architecture_from(
     // structure. Certification independently binds this derived result to the
     // complete exact repository snapshot.
     let source_identity = projection_dependency_digest(
-        &prepared.observed_files,
-        &prepared.standard,
+        snapshot.files,
+        snapshot.standard,
         ProjectionKind::SourceArtifacts,
     )?;
     evaluate_source_architecture(&SourceArchitectureInput {
-        project_id: Some(prepared.snapshot.project_id()),
+        project_id: snapshot.project_id,
         source_identity: &source_identity,
         artifacts: &artifacts,
-        project_model_authority: "project-model/project-filing-system-v2",
-        files: &prepared.observed_files,
-        responsibilities: &responsibilities,
+        project_model_authority: snapshot.project_model_authority,
+        files: snapshot.files,
+        responsibilities,
         profiles: &SourceProfileRegistry::standard(),
         languages: &languages,
         observations: &observations,
         archetype_observations: rust_profile.archetypes(),
         profile_facts: rust_profile.facts(),
         generated_sources: &[],
-        verification_relationships: &verification_relationships,
+        verification_relationships,
         available_adapters: &available_adapters,
         psm_digest: psm_digest.as_deref(),
-        standard_edition: prepared.standard.bundle.edition(),
+        standard_edition: snapshot.standard.bundle.edition(),
     })
     .map_err(AuditError::SourceArchitecture)
 }
@@ -1643,7 +1675,6 @@ fn observation_only_audit(prepared: &PreparedAnalysis) -> Result<AuditResult, Au
     })
 }
 
-#[allow(clippy::too_many_lines)]
 fn compile_analysis_source_architecture(
     prepared: &PreparedAnalysis,
     psm: Option<&ProgramSemanticModel>,
@@ -1655,24 +1686,7 @@ fn compile_analysis_source_architecture(
         .transpose()
         .map_err(|error| AuditError::ContractState(error.into()))?
         .unwrap_or_default();
-    let artifacts = source_artifact_inputs(&prepared.ownerships, &responsibilities);
     let observation_input = analysis_implementation_input(prepared);
-    let cargo = observe_cargo_analysis_territories(&observation_input)
-        .map_err(AuditError::ImplementationObservation)?;
-    let rust_profile = observe_rust_source_profile(&prepared.observed_files, &artifacts, &cargo)
-        .map_err(|error| AuditError::ContractState(error.to_string().into()))?;
-    let mut observations = rust_profile.observations().to_vec();
-    observations.extend(psm.map_or_else(Vec::new, observations_from_psm));
-    observations.sort();
-    observations.dedup();
-    let languages = [
-        LanguageAssignment::new("rs", "rust", "fortress-core/program-semantics-v4"),
-        LanguageAssignment::new(
-            "py",
-            "python",
-            "fortress-core/source-extension-observation-v1",
-        ),
-    ];
     let verification_relationships = prepared
         .rust_tests
         .iter()
@@ -1688,46 +1702,23 @@ fn compile_analysis_source_architecture(
             ))
         })
         .collect::<Vec<_>>();
-    let available_adapters = [
-        "fortress-core/program-semantics-v4".to_owned(),
-        "fortress-core/rust-source-profile-v1".to_owned(),
-    ]
-    .into_iter()
-    .collect();
-    let psm_json = psm
-        .map(ProgramSemanticModel::to_canonical_json)
-        .transpose()
-        .map_err(|error| AuditError::ContractState(error.to_string().into()))?;
-    let psm_digest = psm_json
-        .as_deref()
-        .map(|value| format!("sha256:{:x}", Sha256::digest(value.as_bytes())));
-    evaluate_source_architecture(&SourceArchitectureInput {
-        project_id: prepared.project_id(),
-        source_identity: &projection_dependency_digest(
-            &prepared.observed_files,
-            &prepared.standard,
-            ProjectionKind::SourceArtifacts,
-        )?,
-        artifacts: &artifacts,
-        project_model_authority: if governed {
-            "project-model/project-filing-system-v2"
-        } else {
-            "repository-observation/cargo-analysis-territories-v1"
+    compile_source_architecture(
+        &SnapshotSourceArchitecture {
+            project_id: prepared.project_id(),
+            project_model_authority: if governed {
+                "project-model/project-filing-system-v2"
+            } else {
+                "repository-observation/cargo-analysis-territories-v1"
+            },
+            files: &prepared.observed_files,
+            ownerships: &prepared.ownerships,
+            standard: &prepared.standard,
         },
-        files: &prepared.observed_files,
-        responsibilities: &responsibilities,
-        profiles: &SourceProfileRegistry::standard(),
-        languages: &languages,
-        observations: &observations,
-        archetype_observations: rust_profile.archetypes(),
-        profile_facts: rust_profile.facts(),
-        generated_sources: &[],
-        verification_relationships: &verification_relationships,
-        available_adapters: &available_adapters,
-        psm_digest: psm_digest.as_deref(),
-        standard_edition: prepared.standard.bundle.edition(),
-    })
-    .map_err(AuditError::SourceArchitecture)
+        &observation_input,
+        &responsibilities,
+        &verification_relationships,
+        psm,
+    )
 }
 
 fn source_artifact_inputs(

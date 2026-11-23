@@ -86,6 +86,26 @@ fn exact_preparation_reuses_owned_units_and_preserves_canonical_model() {
     finished_is_send_sync::<ProgramSemanticModel>();
     let source = two_files("fn first() {} fn second() { first(); }");
     let first = prepare_program_semantics(&source, None).expect("initial preparation compiles");
+    let document: serde_json::Value =
+        serde_json::from_str(&first.model.to_canonical_json().expect("model bytes"))
+            .expect("canonical model");
+    assert_eq!(document["languages"], serde_json::json!(["rust"]));
+    assert_eq!(
+        document["analyzers"],
+        serde_json::json!([{
+            "id": "fortress-rust-program-semantics",
+            "semantic_version": "6.2.0",
+            "language": "rust",
+            "package_authority": "snapshot_bound_cargo_manifests",
+            "declaration_authority": "structural_ast",
+            "call_resolution_authority": "type_directed_structural"
+        }])
+    );
+    assert_eq!(
+        document["program_context"]["language_frontend_id"],
+        "fortress-rust-program-semantics"
+    );
+    assert_eq!(document["program_context"]["semantic_version"], "6.2.0");
     let readers = std::thread::scope(|scope| {
         let handles = (0..4)
             .map(|_| scope.spawn(|| first.model.digest().expect("reader digest")))

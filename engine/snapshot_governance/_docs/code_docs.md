@@ -17,6 +17,13 @@ Audit cache keys include the Semantic Analysis producer version alongside the au
 
 Projection restoration runs the prebuilt `projections` adapter in two separate cold processes. Each reconstructs the full stack without reading a semantic cache. Every required static member is checked for identical bytes and the local materializations additionally match their selected certificate digests and exact native subject. Source is rechecked after each independent reconstruction. This shares computation within each run while preserving independent repeatability and the complete required population. Historical declarations and execution results are not regenerated or rewritten.
 
+Governed evaluation and analysis-only inspection share the Source Architecture
+composition. Each supplies its own project identity, ownership, responsibilities,
+and entitled verification references. The shared path supplies the installed
+language mappings, available observation adapters, and the canonical PSM digest
+when a model is available. Adding an observation adapter at this boundary does
+not establish language support or governed ownership.
+
 The Python issuer retains small durable evidence bytes while streaming large disposable projections through the existing owned atomic publisher. Shared ordinary-file admission, retained native identity, length and modification checks apply to both reads and 64 KiB hash/copy scratch. A changed preimage, short write or digest mismatch prevents replacement; ownership-checked pending cleanup preserves an existing destination. Disposable projections may be materialized before all gates finish, but the current generation pointer remains the final authority publication and no cache entry independently establishes assurance. Temporary projection files use the existing leased staging lifecycle. Verification checks complete bytes with bounded hashing rather than retaining each large JSON document.
 
 All numerical costs are diagnostic research. Required correctness, determinism, complete evidence bindings, parser and storage admission, cancellation and security controls remain gates. The registered protocol requires 30 independent comparisons, 30 exact baseline restorations, 100 separate lifecycle operations and both unchanged 1,000-case corpora. The independent cold work is reported separately from production analysis, compilation, issuance and standalone verification. No uncontrolled-host latency target is a certification requirement.

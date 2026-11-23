@@ -25,20 +25,20 @@ use crate::implementation_observation::SourceOwnership;
 
 use super::semantic_identity::{RustSymbolIdentityInput, rust_symbol_ids};
 use super::{
-    CallResolutionReason, CallResolutionState, CallSiteEvidence, ContextKnowledge,
-    ExecutableSymbol, ExecutableSymbolKind, ExecutionProvenance, FileCoverageRecord,
-    ImplResolutionState, InterfaceType, MutationKind, NominalField, NominalType, NominalTypeKind,
-    NominalVariant, OperationOutcome, PlaceResolutionState, ProgramBody, ProgramCall,
-    ProgramContext, ProgramDependencyKind, ProgramDependencyRead, ProgramDependencyResult,
-    ProgramExpression, ProgramImpl, ProgramImplKind, ProgramInputRole, ProgramMatchArm,
-    ProgramMutation, ProgramPackage, ProgramPackageContext, ProgramParameter, ProgramPattern,
-    ProgramPlace, ProgramPreparationFallback, ProgramProvenance, ProgramReceiver,
-    ProgramSemanticError, ProgramSemanticInput, ProgramSemanticWork, ProgramSourceInput,
-    ProgramSourceLocation, ProgramStatement, ProgramTarget, ProgramType, RUST_PROGRAM_ANALYZER_ID,
-    ResolutionAuthority, RustProgramFacts, SemanticType, StateRead, SymbolBodyState,
-    SymbolClassification, SymbolQualifiers, SymbolVisibility, SyntacticOperation,
-    TransferResolutionState, TransformationKind, TypeResolution, TypeTransformation, ValueEndpoint,
-    ValueTransfer, ValueTransferKind, canonical_fact_id,
+    AnalyzerDescriptor, CallResolutionReason, CallResolutionState, CallSiteEvidence,
+    ContextKnowledge, ExecutableSymbol, ExecutableSymbolKind, ExecutionProvenance,
+    FileCoverageRecord, ImplResolutionState, InterfaceType, MutationKind, NominalField,
+    NominalType, NominalTypeKind, NominalVariant, OperationOutcome, PlaceResolutionState,
+    ProgramBody, ProgramCall, ProgramContext, ProgramDependencyKind, ProgramDependencyRead,
+    ProgramDependencyResult, ProgramExpression, ProgramImpl, ProgramImplKind, ProgramInputRole,
+    ProgramMatchArm, ProgramMutation, ProgramPackage, ProgramPackageContext, ProgramParameter,
+    ProgramPattern, ProgramPlace, ProgramPreparationFallback, ProgramProducerFacts,
+    ProgramProvenance, ProgramReceiver, ProgramSemanticError, ProgramSemanticInput,
+    ProgramSemanticWork, ProgramSourceInput, ProgramSourceLocation, ProgramStatement,
+    ProgramTarget, ProgramType, RUST_PROGRAM_ANALYZER_ID, ResolutionAuthority, SemanticType,
+    StateRead, SymbolBodyState, SymbolClassification, SymbolQualifiers, SymbolVisibility,
+    SyntacticOperation, TransferResolutionState, TransformationKind, TypeResolution,
+    TypeTransformation, ValueEndpoint, ValueTransfer, ValueTransferKind, canonical_fact_id,
 };
 
 const RUST_SIGNATURE_CATALOG_SOURCE: &str = include_str!("../_data/rust_signature_catalog_v1.json");
@@ -456,7 +456,7 @@ impl PreparedRust {
 }
 
 pub(super) struct PreparedRustResult {
-    pub(super) facts: RustProgramFacts,
+    pub(super) facts: ProgramProducerFacts,
     pub(super) preparation: PreparedRust,
     pub(super) work: ProgramSemanticWork,
     pub(super) fallback: Option<ProgramPreparationFallback>,
@@ -472,7 +472,7 @@ pub(super) fn analyze_prepared(
 
 pub(super) fn analyze_cold(
     input: &ProgramSemanticInput,
-) -> Result<RustProgramFacts, ProgramSemanticError> {
+) -> Result<ProgramProducerFacts, ProgramSemanticError> {
     analyze_internal(input, None, false).map(|result| result.facts)
 }
 
@@ -747,7 +747,15 @@ fn analyze_internal(
         ownership_digest,
         fixed_point_iterations,
     };
-    let facts = RustProgramFacts {
+    let facts = ProgramProducerFacts {
+        analyzer: AnalyzerDescriptor {
+            id: RUST_PROGRAM_ANALYZER_ID.into(),
+            semantic_version: super::RUST_PROGRAM_ANALYZER_VERSION.into(),
+            language: "rust".into(),
+            package_authority: "snapshot_bound_cargo_manifests".into(),
+            declaration_authority: "structural_ast".into(),
+            call_resolution_authority: "type_directed_structural".into(),
+        },
         source_identity,
         program_context,
         source_inputs,
