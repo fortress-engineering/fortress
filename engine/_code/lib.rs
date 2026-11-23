@@ -76,6 +76,8 @@ pub mod migration_adapter;
 pub mod migration_governance;
 #[path = "../project_model/_code/module_index.rs"]
 pub mod module_index;
+#[path = "../snapshot_governance/_code/native_observation.rs"]
+mod native_observation;
 #[path = "../repository_observation/_code/observation.rs"]
 pub mod observation;
 #[path = "../snapshot_governance/_code/ownership.rs"]
@@ -94,6 +96,8 @@ pub mod program_semantics;
 pub mod project;
 #[path = "../finding_model/_code/proof.rs"]
 pub mod proof;
+#[path = "../snapshot_governance/_code/python_observation.rs"]
+pub mod python_observation;
 #[path = "../reference_resolution/_code/reference.rs"]
 pub mod reference_resolution;
 #[path = "../snapshot_governance/_code/resident_worker.rs"]

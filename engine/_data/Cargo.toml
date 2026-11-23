@@ -197,6 +197,10 @@ name = "go_observation"
 path = "../snapshot_governance/testing/_code/go_observation.rs"
 
 [[test]]
+name = "python_observation"
+path = "../snapshot_governance/testing/_code/python_observation.rs"
+
+[[test]]
 name = "snapshot_evaluation"
 path = "../snapshot_governance/testing/_code/snapshot_evaluation.rs"
 

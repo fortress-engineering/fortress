@@ -520,3 +520,13 @@ Observes exact governed endpoints and composes existing migration, Standard and 
 ### [go_observation.rs](../_code/go_observation.rs)
 
 Captures the existing bounded physical source inventory and original selected authority before passing a closed Go request to an explicit trusted host. The host selects and supervises the pinned executable. Snapshot Governance reobserves physical source and checks the native directory identity before exposing the observation. Ordinary audit, discovery, query, and candidate evaluation never launch this helper. The result remains separate from application assessment, governance decisions, and native certification.
+
+### [`native_observation.rs`](../_code/native_observation.rs)
+
+Shares exact physical capture and publication checks for explicit Go and Python observations. The capture retains the native directory identity, the complete bounded source view under the existing physical observation policy, the original selected authority, and the canonical source manifest and fingerprint. It checks for incomplete migrations before and after capture. Revalidation compares the whole current view and native directory identity before publishing any result. Registered evidence and operational records remain outside source under the existing physical policy.
+
+### [`python_observation.rs`](../_code/python_observation.rs)
+
+Accepts one physical repository path and one selected ordinary Python source entry. Original Snapshot Governance prepares existing authority without constructing a PSM. The exact EvaluationKey binds that original manifest and authority to a Python lexical context containing the selected source path, observation mode, grammar and pinned producer. An explicit trusted host receives the request and immutable file bytes. Source Architecture validates the compile-only reply; Snapshot Governance refuses stale snapshots, directory substitution, and replies bound to a different or hypothetical view before publication. Absent project authority remains the existing observed absence; malformed, ambiguous or exclusion-bearing authority prevents dispatch.
+
+The library starts no process, writes no source and makes no execution, semantic proof, or certification decision. Ordinary audit, discovery, query, and candidate evaluation do not call this entry point. Physical revalidation supplies a bounded observation check and is separate from transaction ownership and execution custody.

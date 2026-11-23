@@ -4854,10 +4854,17 @@ fn prepared_authority_binding(prepared: &PreparedAnalysis) -> Result<AuthorityBi
     ))
 }
 
+pub(crate) struct NativeObservationBinding {
+    pub(crate) source_fingerprint: String,
+    pub(crate) source_manifest_digest: String,
+    pub(crate) authority_digest: String,
+}
+
 /// Prepares exact source and the existing selected authority for native observation.
-pub(crate) fn bind_go_observation_source(
+pub(crate) fn bind_native_observation_source(
     source: &SourceView,
-) -> Result<(String, String), AuditError> {
+    language: &str,
+) -> Result<NativeObservationBinding, AuditError> {
     let prepared = prepare_analysis_from_view(source.clone())?;
     if prepared.project_state == ProjectGovernanceState::Invalid
         || (prepared.project_state == ProjectGovernanceState::Declared
@@ -4868,11 +4875,15 @@ pub(crate) fn bind_go_observation_source(
             .is_some_and(|project| !project.observation_exclusions().is_empty())
     {
         return Err(AuditError::InputMismatch(
-            "Go observation requires explicit complete original authority with no authored exclusions".into(),
+            format!("{language} observation requires explicit complete original authority with no authored exclusions").into(),
         ));
     }
-    let authority = prepared_authority_binding(&prepared)?.digest();
-    Ok((prepared.source_identity, authority))
+    let authority_digest = prepared_authority_binding(&prepared)?.digest();
+    Ok(NativeObservationBinding {
+        source_fingerprint: prepared.source_identity,
+        source_manifest_digest: prepared.source_manifest.entries_digest().to_owned(),
+        authority_digest,
+    })
 }
 
 fn affected_unit(

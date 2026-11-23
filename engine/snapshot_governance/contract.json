@@ -534,6 +534,17 @@
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R28-002",
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R28-003"
           ]
+        },
+        {
+          "id": "AF-SNAPSHOT-GOVERNANCE-0001-R29",
+          "statement": "Explicit trusted Python lexical observation binds complete physical source, scoped observation context and original selected authority before dispatch. It passes immutable selected bytes, validates exact response correlation, and refuses stale physical source or directory identity before publication without granting semantic or certification authority.",
+          "tests": [
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R29-001",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R29-002",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R29-003",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R29-004",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R29-005"
+          ]
         }
       ]
     }

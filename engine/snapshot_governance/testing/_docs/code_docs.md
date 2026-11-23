@@ -187,3 +187,7 @@ Runs canonical read-only and shared migration fixtures with independent expected
 ### [go_observation.rs](../_code/go_observation.rs)
 
 Exercises exact physical capture, native output verification, original authority bindings, schema shape, stale source, unsupported unselected context, false-PASS attempts and malformed declaration/coordinate references against a frozen independent native collector response.
+
+### [`python_observation.rs`](../_code/python_observation.rs)
+
+Checks exact retained Python source and the current canonical manifest, scoped context, and original absent or selected authority. Independently specified syntax-only replies are admitted without executing source. Controls reject ancillary or authority drift, same-byte directory replacement, unavailable original authority or authored exclusions, and candidate-bound replies. Source and unrelated files remain unchanged by the observation entry point.

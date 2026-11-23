@@ -2,9 +2,7 @@
 
 use std::path::Path;
 
-use crate::audit::{bind_go_observation_source, observe_candidate_source};
-use crate::heavy_admission::{DirectoryIdentity, assert_no_incomplete_migration};
-use crate::observation::SourceView;
+use crate::native_observation::{NativeSource, NativeSourceError};
 use crate::program_semantics::go_observation::{ExactClosedPackage, admit_go};
 
 pub use crate::program_semantics::go_observation::{
@@ -42,18 +40,12 @@ pub fn observe_go_native(
     collector: &GoCollectorPin<'_>,
     launch: impl FnOnce(&[u8]) -> Result<Vec<u8>, GoObservationError>,
 ) -> Result<GoNativeObservation, GoObservationError> {
-    let directory = DirectoryIdentity::capture(project_root).map_err(source_failure)?;
-    let source = capture(project_root)?;
-    let (source_fingerprint, authority_digest) =
-        bind_go_observation_source(&source).map_err(source_failure)?;
-    if !directory.matches(project_root).map_err(source_failure)? {
-        return Err(GoObservationError::SourceChanged);
-    }
+    let source = NativeSource::capture(project_root, "Go").map_err(source_failure)?;
     let admitted = admit_go(
         ExactClosedPackage {
-            source: &source,
-            source_fingerprint: &source_fingerprint,
-            authority_digest: &authority_digest,
+            source: &source.view,
+            source_fingerprint: &source.binding.source_fingerprint,
+            authority_digest: &source.binding.authority_digest,
             actual: true,
             directory: selection.directory,
             package_path: selection.package_path,
@@ -65,21 +57,13 @@ pub fn observe_go_native(
     )?;
     let output = launch(admitted.request_bytes())?;
     let observation = admitted.verify(collector, &output)?;
-    if capture(project_root)? != source
-        || !directory.matches(project_root).map_err(source_failure)?
-    {
-        return Err(GoObservationError::SourceChanged);
-    }
+    source.revalidate().map_err(source_failure)?;
     Ok(observation)
 }
 
-fn capture(project_root: &Path) -> Result<SourceView, GoObservationError> {
-    assert_no_incomplete_migration(project_root).map_err(source_failure)?;
-    let source = observe_candidate_source(project_root).map_err(source_failure)?;
-    assert_no_incomplete_migration(project_root).map_err(source_failure)?;
-    Ok(source)
-}
-
-fn source_failure(error: impl std::fmt::Display) -> GoObservationError {
-    GoObservationError::SourceUnavailable(error.to_string())
+fn source_failure(error: NativeSourceError) -> GoObservationError {
+    match error {
+        NativeSourceError::Unavailable(detail) => GoObservationError::SourceUnavailable(detail),
+        NativeSourceError::Changed => GoObservationError::SourceChanged,
+    }
 }
