@@ -506,6 +506,59 @@ fn defined_error_outcomes_and_uncertainty_are_not_false_failures() {
     );
 }
 
+/// `T-AF-SEMANTIC-ANALYSIS-0001-R03-005`
+/// Fortress requirement: AF-SEMANTIC-ANALYSIS-0001-R03
+#[test]
+fn unmodeled_pattern_selection_cannot_establish_impossible_state_reachability() {
+    let model = psm(
+        "fn excluded_range() { match 0_u8 { 1..=2 => { unreachable!(); }, _ => {} } }\n\
+         fn prior_range() { match 0_u8 { 0..=0 => {}, _ => { unreachable!(); } } }\n\
+         fn nested_range() { match Some(0_u8) { Some(1..=2) => { unreachable!(); }, _ => {} } }\n\
+         fn loop_range() { while let 1..=2 = 0_u8 { unreachable!(); } }\n\
+         fn supported_branch(value: Option<u8>) { match value { Some(_) => { unreachable!(); }, None => {} } }\n\
+         fn unconditional() { unreachable!(); }\n",
+    );
+    let evaluation = analyze(&model, &empty_contracts(&model));
+    let model_json: Value = serde_json::from_str(&evaluation.model().to_canonical_json().unwrap())
+        .expect("semantic model serializes");
+    let checks = model_json["checks"].as_array().unwrap();
+    let summaries = model_json["summaries"].as_array().unwrap();
+    for function in [
+        "excluded_range",
+        "prior_range",
+        "nested_range",
+        "loop_range",
+    ] {
+        let symbol = symbol_id(&model, function);
+        let check = checks
+            .iter()
+            .find(|record| record["producer_symbol"] == symbol)
+            .unwrap_or_else(|| panic!("missing check for {function}"));
+        assert_eq!(check["kind"], "impossible_state_assertion");
+        assert_eq!(check["state"], "UNSUPPORTED");
+        assert_eq!(
+            check["provenance"]["derivation"],
+            "unsupported_pattern_reachability"
+        );
+        let summary = summaries
+            .iter()
+            .find(|row| row["symbol"] == symbol)
+            .unwrap();
+        assert_eq!(summary["coverage"]["partial_operations"], "UNSUPPORTED");
+    }
+    let violations = model_json["violations"].as_array().unwrap();
+    assert_eq!(violations.len(), 2);
+    assert_eq!(evaluation.findings().len(), 2);
+    for function in ["supported_branch", "unconditional"] {
+        let symbol = symbol_id(&model, function);
+        assert!(
+            violations
+                .iter()
+                .any(|record| record["producer_symbol"] == symbol)
+        );
+    }
+}
+
 /// `T-AF-SEMANTIC-ANALYSIS-0001-R04-001`
 /// Fortress requirement: AF-SEMANTIC-ANALYSIS-0001-R04
 #[test]

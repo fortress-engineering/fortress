@@ -45,7 +45,7 @@ pub const SEMANTIC_ANALYSIS_SCHEMA: &str = "urn:fortress:schema:v2:semantic-anal
 /// Canonical Semantic Analysis artifact schema version.
 pub const SEMANTIC_ANALYSIS_SCHEMA_VERSION: u16 = 2;
 /// Semantic version of the abstract interpreter.
-pub const SEMANTIC_ANALYSIS_VERSION: &str = "2.0.0";
+pub const SEMANTIC_ANALYSIS_VERSION: &str = "2.0.1";
 /// Stable evaluator identity used by normalized findings.
 pub const SEMANTIC_ANALYZER_ID: &str = "fortress-semantic-domain-analysis";
 
@@ -1206,6 +1206,7 @@ impl<'a> AnalysisContext<'a> {
         let environment = Environment {
             values: self.contract_input_domains(symbol),
             reachable: true,
+            unsupported_pattern_reachability: false,
         };
         let mut output = SemanticDomain::bottom(symbol.return_type().type_id());
         self.interpret_statements(
@@ -1358,8 +1359,12 @@ impl<'a> AnalysisContext<'a> {
                     );
                     let binding = expression_binding(value);
                     let mut joined: Option<Environment> = None;
+                    // An earlier unmodeled pattern can preempt selection of a later arm.
+                    let mut unresolved_selection = environment.unsupported_pattern_reachability;
                     for arm in arms {
+                        unresolved_selection |= contains_unsupported_pattern(arm.pattern());
                         let mut arm_environment = environment.clone();
+                        arm_environment.unsupported_pattern_reachability = unresolved_selection;
                         let matched = domain_for_pattern(arm.pattern(), &source_domain);
                         if matched.is_bottom() {
                             arm_environment.reachable = false;
@@ -1404,6 +1409,8 @@ impl<'a> AnalysisContext<'a> {
                         );
                         let matched = domain_for_pattern(pattern, &source_domain);
                         let mut entered = loop_environment.clone();
+                        entered.unsupported_pattern_reachability |=
+                            contains_unsupported_pattern(pattern);
                         bind_pattern(pattern, &matched, &mut entered);
                         if matched.is_bottom() {
                             entered.reachable = false;
@@ -1627,17 +1634,28 @@ impl<'a> AnalysisContext<'a> {
                         type_id: "type:control_reachability".into(),
                     };
                     let required = SemanticDomain::bottom("type:control_reachability");
+                    let (coverage, derivation) = if environment.unsupported_pattern_reachability {
+                        (
+                            AnalysisCoverageState::Unsupported,
+                            "unsupported_pattern_reachability",
+                        )
+                    } else {
+                        (
+                            AnalysisCoverageState::Partial,
+                            "reachable_impossible_state_assertion",
+                        )
+                    };
                     state.add_check(
                         DomainCheckKind::ImpossibleStateAssertion,
                         symbol.id(),
                         symbol.id(),
                         possible,
                         required,
-                        AnalysisCoverageState::Partial,
+                        coverage,
                         SemanticProvenance::from_program(
                             provenance,
                             symbol.id(),
-                            "reachable_impossible_state_assertion",
+                            derivation,
                             vec![symbol.id().into()],
                         ),
                         vec![symbol.id().into(), "unreachable!".into()],
@@ -2258,6 +2276,7 @@ impl AnalysisState {
 struct Environment {
     values: BTreeMap<String, SemanticDomain>,
     reachable: bool,
+    unsupported_pattern_reachability: bool,
 }
 
 impl Environment {
@@ -2265,6 +2284,7 @@ impl Environment {
         Self {
             values: BTreeMap::new(),
             reachable: false,
+            unsupported_pattern_reachability: false,
         }
     }
 
@@ -2293,6 +2313,8 @@ impl Environment {
                 )
                 .collect(),
             reachable: true,
+            unsupported_pattern_reachability: self.unsupported_pattern_reachability
+                && other.unsupported_pattern_reachability,
         }
     }
 
@@ -2463,6 +2485,15 @@ fn bind_pattern(pattern: &ProgramPattern, domain: &SemanticDomain, environment: 
             }
         }
         ProgramPattern::Wildcard | ProgramPattern::Unsupported { .. } => {}
+    }
+}
+
+fn contains_unsupported_pattern(pattern: &ProgramPattern) -> bool {
+    match pattern {
+        ProgramPattern::Unsupported { .. } => true,
+        ProgramPattern::Variant { fields, .. } => fields.iter().any(contains_unsupported_pattern),
+        ProgramPattern::Tuple { elements } => elements.iter().any(contains_unsupported_pattern),
+        ProgramPattern::Wildcard | ProgramPattern::Binding { .. } => false,
     }
 }
 
@@ -2658,10 +2689,17 @@ fn coverage_for_checks<'a>(
     has_violation: bool,
     has_unsupported: bool,
 ) -> AnalysisCoverageState {
-    let count = checks.count();
+    let (count, unsupported) = checks.fold((0, 0), |(count, unsupported), check| {
+        (
+            count + 1,
+            unsupported + usize::from(check.state == AnalysisCoverageState::Unsupported),
+        )
+    });
     if has_violation {
         AnalysisCoverageState::Partial
-    } else if count > 0 && !has_unsupported {
+    } else if count > 0 && count == unsupported {
+        AnalysisCoverageState::Unsupported
+    } else if count > 0 && !has_unsupported && unsupported == 0 {
         AnalysisCoverageState::Proven
     } else if count > 0 {
         AnalysisCoverageState::Partial
