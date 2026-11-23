@@ -202,7 +202,7 @@ def build(destination, storage, checkout):
         (destination/"manifest.json").write_bytes(raw)
         (destination/"manifest.sha256").write_text(digest(raw)+"\n",encoding="ascii",newline="\n")
         owner.publish("verified-local-distribution-build")
-    print(digest(raw), destination, flush=True)
+    print(json.dumps({"manifest_sha256": digest(raw), "destination": str(destination)}), flush=True)
 
 
 if __name__ == "__main__":

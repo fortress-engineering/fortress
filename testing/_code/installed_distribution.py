@@ -185,4 +185,5 @@ if __name__ == "__main__":
     if args.remove:
         retire(args.results.resolve(strict=True))
     else:
-        print(execute(args.package.resolve(strict=True),args.results.resolve(),args.history))
+        slot = execute(args.package.resolve(strict=True), args.results.resolve(), args.history)
+        print(json.dumps({"status": "PASS", "slot": str(slot)}))
