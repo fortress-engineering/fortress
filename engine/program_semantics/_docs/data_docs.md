@@ -46,6 +46,6 @@ Defines the closed Rust 1.97.1 external constructor and receiver-preserving buil
 
 Defines the closed wire shape and pinned toolchain identity for the bounded Rust signature catalog.
 
-### [go_native_observation_schema_v1.json](../_data/go_native_observation_schema_v1.json)
+### [go_observation_schema_v1.json](../_data/go_observation_schema_v1.json)
 
 Defines the standalone exact-source Go native observation report. Its closed dispositions and source spans preserve uncertainty, wire context and process provenance without granting semantic, policy or certification authority.

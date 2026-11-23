@@ -58,7 +58,7 @@ Provides the reviewed Markdown installation guide bundled with the local develop
 
 Describes the local development package inventory, native target, exact source binding, compatibility fields, and explicit authenticity and release-authorization states.
 
-### [`go_collector_registration_schema_v1.json`](../_data/go_collector_registration_schema_v1.json)
+### [`go_collector_schema_v1.json`](../_data/go_collector_schema_v1.json)
 
 Defines the explicit host-owned Go compiler registration, including the exact
 executable and toolchain. Runtime admission requires an ordinary absolute host

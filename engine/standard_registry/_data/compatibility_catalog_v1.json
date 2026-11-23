@@ -48,7 +48,7 @@
     },
     {
       "schema_id": "urn:fortress:derived:v1:go-native-observation",
-      "schema_path": "engine/program_semantics/_data/go_native_observation_schema_v1.json",
+      "schema_path": "engine/program_semantics/_data/go_observation_schema_v1.json",
       "version": 1,
       "writer": {
         "status": "ACTIVE",
@@ -70,7 +70,7 @@
     },
     {
       "schema_id": "urn:fortress:host:v1:go-collector-registration",
-      "schema_path": "cli/_data/go_collector_registration_schema_v1.json",
+      "schema_path": "cli/_data/go_collector_schema_v1.json",
       "version": 1,
       "writer": {
         "status": "AUTHORED",

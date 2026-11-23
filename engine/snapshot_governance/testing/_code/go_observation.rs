@@ -9,8 +9,7 @@ use fortress_core::go_observation::{
 use serde_json::{Value, json};
 
 const NATIVE: &[u8] = include_bytes!("../_data/go_native_fixture_v1.json");
-const SCHEMA: &str =
-    include_str!("../../../program_semantics/_data/go_native_observation_schema_v1.json");
+const SCHEMA: &str = include_str!("../../../program_semantics/_data/go_observation_schema_v1.json");
 const API: &str =
     "// café\r\npackage bounded\r\nfunc Run(input int) int { return target(input) }\r\n";
 const TARGET: &str = "package bounded\nfunc target(input int) int { return input + 1 }\n";
