@@ -514,7 +514,7 @@ fn unmodeled_pattern_selection_cannot_establish_impossible_state_reachability() 
         "fn excluded_range() { match 0_u8 { 1..=2 => { unreachable!(); }, _ => {} } }\n\
          fn prior_range() { match 0_u8 { 0..=0 => {}, _ => { unreachable!(); } } }\n\
          fn nested_range() { match Some(0_u8) { Some(1..=2) => { unreachable!(); }, _ => {} } }\n\
-         fn loop_range() { while let 1..=2 = 0_u8 { unreachable!(); } }\n\
+         fn loop_range() { while let 1..=2 = 0_u8 { unreachable!(); }; }\n\
          fn supported_branch(value: Option<u8>) { match value { Some(_) => { unreachable!(); }, None => {} } }\n\
          fn unconditional() { unreachable!(); }\n",
     );
