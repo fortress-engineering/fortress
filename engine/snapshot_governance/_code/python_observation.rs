@@ -9,8 +9,8 @@ use crate::native_observation::{NativeSource, NativeSourceError};
 use crate::project::EvaluationKey;
 
 pub use crate::source_architecture::python_lexical::{
-    PythonGrammar, PythonLexicalError, PythonLexicalMode, PythonLexicalObservation,
-    PythonLexicalOutcome, PythonLexicalProducer, PythonLexicalRequest,
+    PYTHON_LEXICAL_WORKER, PythonGrammar, PythonLexicalError, PythonLexicalMode,
+    PythonLexicalObservation, PythonLexicalOutcome, PythonLexicalProducer, PythonLexicalRequest,
 };
 
 const PYTHON_LEXICAL_CONTEXT: &str = "fortress-python-lexical-context-v1";

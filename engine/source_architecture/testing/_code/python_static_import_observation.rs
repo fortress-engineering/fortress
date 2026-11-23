@@ -231,7 +231,7 @@ fn check_frozen_result(
     }
 }
 
-/// T-AF-SOURCE-ARCHITECTURE-0001-R06-001
+/// `T-AF-SOURCE-ARCHITECTURE-0001-R06-001`
 /// Fortress requirement: AF-SOURCE-ARCHITECTURE-0001-R06
 #[test]
 fn static_import_resolution_matches_frozen_cpython_cases() {
@@ -276,7 +276,7 @@ fn static_import_resolution_matches_frozen_cpython_cases() {
     }
 }
 
-/// T-AF-SOURCE-ARCHITECTURE-0001-R06-002
+/// `T-AF-SOURCE-ARCHITECTURE-0001-R06-002`
 /// Fortress requirement: AF-SOURCE-ARCHITECTURE-0001-R06
 #[test]
 fn exact_roots_reject_malformed_trust_and_drift() {
@@ -339,7 +339,7 @@ fn exact_roots_reject_malformed_trust_and_drift() {
     assert_eq!(result(), result());
 }
 
-/// T-AF-SOURCE-ARCHITECTURE-0001-R06-003
+/// `T-AF-SOURCE-ARCHITECTURE-0001-R06-003`
 /// Fortress requirement: AF-SOURCE-ARCHITECTURE-0001-R06
 #[test]
 fn partial_or_conflicting_source_inventories_never_produce_static_success() {

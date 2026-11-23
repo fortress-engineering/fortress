@@ -99,7 +99,7 @@ fn syntax_reply(
     serde_json::to_vec(&value).map_err(|error| PythonLexicalError::Encoding(error).into())
 }
 
-/// T-AF-SNAPSHOT-GOVERNANCE-0001-R29-001
+/// `T-AF-SNAPSHOT-GOVERNANCE-0001-R29-001`
 /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R29
 #[test]
 fn exact_original_source_and_selected_authority_bind_python_observation() {
@@ -180,7 +180,7 @@ fn exact_original_source_and_selected_authority_bind_python_observation() {
     );
 }
 
-/// T-AF-SNAPSHOT-GOVERNANCE-0001-R29-002
+/// `T-AF-SNAPSHOT-GOVERNANCE-0001-R29-002`
 /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R29
 #[test]
 fn changes_outside_the_selected_file_prevent_python_publication() {
@@ -212,7 +212,7 @@ fn changes_outside_the_selected_file_prevent_python_publication() {
     assert_eq!(fs::read(fixture.root.join(PATH)).unwrap(), SOURCE);
 }
 
-/// T-AF-SNAPSHOT-GOVERNANCE-0001-R29-003
+/// `T-AF-SNAPSHOT-GOVERNANCE-0001-R29-003`
 /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R29
 #[test]
 fn replacement_directory_with_equal_bytes_prevents_python_publication() {
@@ -232,7 +232,7 @@ fn replacement_directory_with_equal_bytes_prevents_python_publication() {
     assert!(matches!(result, Err(PythonObservationError::SourceChanged)));
 }
 
-/// T-AF-SNAPSHOT-GOVERNANCE-0001-R29-004
+/// `T-AF-SNAPSHOT-GOVERNANCE-0001-R29-004`
 /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R29
 #[test]
 fn invalid_and_excluded_original_authority_prevent_python_dispatch() {
@@ -253,7 +253,7 @@ fn invalid_and_excluded_original_authority_prevent_python_dispatch() {
     }
 }
 
-/// T-AF-SNAPSHOT-GOVERNANCE-0001-R29-005
+/// `T-AF-SNAPSHOT-GOVERNANCE-0001-R29-005`
 /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R29
 #[test]
 fn candidate_bound_python_reply_cannot_be_used_for_actual_source() {

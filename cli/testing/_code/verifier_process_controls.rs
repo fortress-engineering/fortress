@@ -78,7 +78,7 @@ fn host_assets_cannot_be_selected_by_project_path() {
     verifier_process::require_external_asset(&tool, &project).unwrap();
 }
 
-/// T-TF-CLI-0001-R31-001
+/// `T-TF-CLI-0001-R31-001`
 /// Fortress requirement: TF-CLI-0001-R31
 #[test]
 fn pinned_compiler_readiness_precedes_source_release() {

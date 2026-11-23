@@ -1,7 +1,7 @@
 //! Exact native Go admission and refusal controls.
 
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use fortress_core::go_observation::{
     GoBuildContext, GoBuildTestMode, GoCollectorPin, GoObservationError, GoPackageSelection,
@@ -10,7 +10,6 @@ use fortress_core::go_observation::{
 use serde_json::{Value, json};
 
 const NATIVE: &[u8] = include_bytes!("../_data/go_native_fixture_v1.json");
-const SCHEMA: &str = include_str!("../../../program_semantics/_data/go_observation_schema_v1.json");
 const API: &str =
     "// café\r\npackage bounded\r\nfunc Run(input int) int { return target(input) }\r\n";
 const TARGET: &str = "package bounded\nfunc target(input int) int { return input + 1 }\n";
@@ -56,6 +55,25 @@ impl Drop for Fixture {
     }
 }
 
+fn registered_schema(edition: u8) -> Value {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let manifest: Value = serde_json::from_slice(
+        &fs::read(root.join("engine/standard_registry/_data/schema_manifest.json"))
+            .expect("registered schemas are available in the test repository"),
+    )
+    .expect("registered schema manifest");
+    let relative = format!("engine/program_semantics/_data/go_observation_schema_v{edition}.json");
+    assert!(
+        manifest["schemas"]
+            .as_array()
+            .expect("registered paths")
+            .iter()
+            .any(|path| path == relative.as_str())
+    );
+    serde_json::from_slice(&fs::read(root.join(relative)).expect("registered Go schema"))
+        .expect("Go schema JSON")
+}
+
 fn run_frozen(request: &[u8]) -> Vec<u8> {
     assert_eq!(
         fortress_core::portable::digest(request),
@@ -74,7 +92,7 @@ fn exact_native_observation_retains_authority_and_source_occurrence() {
     })
     .expect("exact native response");
     let json = serde_json::to_value(result).unwrap();
-    jsonschema::draft202012::validate(&serde_json::from_str(SCHEMA).unwrap(), &json)
+    jsonschema::draft202012::validate(&registered_schema(1), &json)
         .expect("go projection matches registered wire");
     assert_eq!(json["observation"]["status"], "OBSERVED");
     assert_eq!(json["provenance"]["actual"], true);
@@ -154,8 +172,6 @@ fn mismatched_native_spans_and_observation_status_are_rejected() {
 }
 
 const BUILD_RESPONSE: &[u8] = include_bytes!("../_data/go_build_fixture_v2.json");
-const BUILD_SCHEMA: &str =
-    include_str!("../../../program_semantics/_data/go_observation_schema_v2.json");
 const BUILD_PIN: GoCollectorPin<'static> = GoCollectorPin {
     executable_sha256: "sha256:a9e2ead7baa899dea5fa399c168d6cd17fd9e431bc765462f056509a91788cec",
     supervisor_context_sha256: "sha256:0000000000000000000000000000000000000000000000000000000000000002",
@@ -222,7 +238,7 @@ fn build_selection_binds_exact_selected_and_excluded_go_source() {
         })
         .expect("native build selection with exact frozen result");
     let observed = serde_json::to_value(observation).unwrap();
-    jsonschema::draft202012::validate(&serde_json::from_str(BUILD_SCHEMA).unwrap(), &observed)
+    jsonschema::draft202012::validate(&registered_schema(2), &observed)
         .expect("Go build selection matches its registered output schema");
     assert_eq!(observed["schema_version"], 2);
     assert_eq!(observed["provenance"]["actual"], true);

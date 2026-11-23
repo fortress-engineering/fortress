@@ -85,7 +85,7 @@ fn not_run() -> Value {
     json!({ "status": "NOT_RUN" })
 }
 
-/// T-AF-SOURCE-ARCHITECTURE-0001-R05-001
+/// `T-AF-SOURCE-ARCHITECTURE-0001-R05-001`
 /// Fortress requirement: AF-SOURCE-ARCHITECTURE-0001-R05
 #[test]
 fn lexical_observation_keeps_exact_utf8_and_runtime_uncertainty() {
@@ -120,7 +120,7 @@ fn lexical_observation_keeps_exact_utf8_and_runtime_uncertainty() {
     assert_eq!(document["report"]["target_execution"], "NOT_RUN");
 }
 
-/// T-AF-SOURCE-ARCHITECTURE-0001-R05-002
+/// `T-AF-SOURCE-ARCHITECTURE-0001-R05-002`
 /// Fortress requirement: AF-SOURCE-ARCHITECTURE-0001-R05
 #[test]
 fn lexical_report_cannot_move_across_views_contexts_or_producers() {
@@ -167,7 +167,7 @@ fn lexical_report_cannot_move_across_views_contexts_or_producers() {
     assert_ne!(other.id(), pinned.id());
 }
 
-/// T-AF-SOURCE-ARCHITECTURE-0001-R05-003
+/// `T-AF-SOURCE-ARCHITECTURE-0001-R05-003`
 /// Fortress requirement: AF-SOURCE-ARCHITECTURE-0001-R05
 #[test]
 fn lexical_mode_separates_contextual_invalidity_from_syntax_admission() {
@@ -208,7 +208,7 @@ fn lexical_mode_separates_contextual_invalidity_from_syntax_admission() {
     ));
 }
 
-/// T-AF-SOURCE-ARCHITECTURE-0001-R05-004
+/// `T-AF-SOURCE-ARCHITECTURE-0001-R05-004`
 /// Fortress requirement: AF-SOURCE-ARCHITECTURE-0001-R05
 #[test]
 fn partial_unsupported_and_unavailable_preserve_distinct_limits() {
@@ -314,7 +314,7 @@ fn assert_bounded_json_admission(request: &PythonLexicalRequest, view: &SourceVi
     }
 }
 
-/// T-AF-SOURCE-ARCHITECTURE-0001-R05-005
+/// `T-AF-SOURCE-ARCHITECTURE-0001-R05-005`
 /// Fortress requirement: AF-SOURCE-ARCHITECTURE-0001-R05
 #[test]
 fn malformed_source_and_untrusted_worker_shape_fail_closed() {
@@ -391,7 +391,7 @@ fn malformed_source_and_untrusted_worker_shape_fail_closed() {
     );
 }
 
-/// T-AF-SOURCE-ARCHITECTURE-0001-R05-006
+/// `T-AF-SOURCE-ARCHITECTURE-0001-R05-006`
 /// Fortress requirement: AF-SOURCE-ARCHITECTURE-0001-R05
 #[test]
 fn lexical_selection_uses_existing_portable_source_scope() {

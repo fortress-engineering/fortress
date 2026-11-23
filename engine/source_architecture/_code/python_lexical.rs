@@ -18,6 +18,9 @@ use crate::observation::{SourceView, is_canonical_relative_path};
 use crate::project::EvaluationKey;
 use crate::wire::{JsonAdmissionLimits, admit_json, reject_duplicate_json_keys_bytes};
 
+/// Reviewed compile-only Python worker bytes owned by Source Architecture.
+pub const PYTHON_LEXICAL_WORKER: &[u8] = include_bytes!("python_lexical_worker.py");
+
 const RESPONSE_SCHEMA: &str = "fortress-research/python-lexical-response/1";
 const MAX_SOURCE_BYTES: usize = 128 * 1024;
 const MAX_SCOPES: usize = 256;

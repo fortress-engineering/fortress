@@ -8,8 +8,8 @@ use std::time::Duration;
 use base64::{Engine as _, engine::general_purpose::STANDARD};
 use fortress_core::portable::{canonical, digest};
 use fortress_core::python_observation::{
-    PythonGrammar, PythonLexicalMode, PythonLexicalProducer, PythonLexicalRequest,
-    PythonObservationError, observe_python_lexical,
+    PYTHON_LEXICAL_WORKER, PythonGrammar, PythonLexicalMode, PythonLexicalProducer,
+    PythonLexicalRequest, PythonObservationError, observe_python_lexical,
 };
 use fortress_core::wire::{JsonAdmissionLimits, admit_json, parse_public_json, readable_text};
 use serde::Deserialize;
@@ -22,8 +22,6 @@ const REQUEST_SCHEMA: &str = "fortress-research/python-lexical-request/1";
 const READY_SCHEMA: &str = "fortress-host/python-lexical-ready/1";
 const REGISTRATION_LIMIT: usize = 16 * 1024;
 const DEADLINE: Duration = Duration::from_secs(5);
-const WORKER: &[u8] =
-    include_bytes!("../../engine/source_architecture/_code/python_lexical_worker.py");
 
 #[derive(Clone, Copy, Deserialize, PartialEq, Eq)]
 enum Grammar {
@@ -91,8 +89,9 @@ impl Registration {
 
     fn revalidate_worker(&self, root: &Path) -> Result<(), String> {
         super::verifier_process::require_external_asset(&self.worker, root)?;
-        let worker = super::provider_command::read_bounded(&self.worker, WORKER.len())?;
-        if worker == WORKER {
+        let worker =
+            super::provider_command::read_bounded(&self.worker, PYTHON_LEXICAL_WORKER.len())?;
+        if worker == PYTHON_LEXICAL_WORKER {
             return Ok(());
         }
         Err("PYTHON_WORKER_IDENTITY_MISMATCH".into())
@@ -222,7 +221,7 @@ fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
         .map_err(|error| error.to_string())?;
     let registration_path = Path::new(registration_path);
     let (registration, registration_bytes) = Registration::load(&root, registration_path)?;
-    let worker_ref = digest(WORKER);
+    let worker_ref = digest(PYTHON_LEXICAL_WORKER);
     let producer = PythonLexicalProducer::new(
         registration.grammar.into(),
         &registration.runtime_ref,
