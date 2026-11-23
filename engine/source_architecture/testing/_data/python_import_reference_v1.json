@@ -1,0 +1,550 @@
+{
+  "schema": "fortress-research/python-import-reference-protocol/1",
+  "semantics": "Finite source-only file-finder controls for explicit closed ordered roots, ignoring ambient and dynamic runtime state.",
+  "expected_basis": [
+    "https://docs.python.org/3.12/library/importlib.html",
+    "https://docs.python.org/3.13/library/importlib.html",
+    "https://peps.python.org/pep-0420/"
+  ],
+  "limits": {
+    "protocol_bytes": 65536,
+    "case_count": 40,
+    "roots": 4,
+    "manifest_files": 64,
+    "max_path_bytes": 160,
+    "max_source_bytes": 2048,
+    "max_statement_bytes": 1024,
+    "path_components": 12
+  },
+  "fixture": {
+    "A/ref_pkg/__init__.py": "# owned fixture 0\nfrom pathlib import Path\nPath(\"IMPOSSIBLE_IMPORT_SENTINEL\").write_text(\"executed\")\nraise RuntimeError(\"fixture file must never execute\")\n",
+    "A/ref_pkg/client.py": "# owned fixture 1\nfrom pathlib import Path\nPath(\"IMPOSSIBLE_IMPORT_SENTINEL\").write_text(\"executed\")\nraise RuntimeError(\"fixture file must never execute\")\n",
+    "A/ref_pkg/helper.py": "# owned fixture 2\nfrom pathlib import Path\nPath(\"IMPOSSIBLE_IMPORT_SENTINEL\").write_text(\"executed\")\nraise RuntimeError(\"fixture file must never execute\")\n",
+    "A/ref_pkg/sub/__init__.py": "# owned fixture 3\nfrom pathlib import Path\nPath(\"IMPOSSIBLE_IMPORT_SENTINEL\").write_text(\"executed\")\nraise RuntimeError(\"fixture file must never execute\")\n",
+    "A/ref_pkg/sub/caller.py": "# owned fixture 4\nfrom pathlib import Path\nPath(\"IMPOSSIBLE_IMPORT_SENTINEL\").write_text(\"executed\")\nraise RuntimeError(\"fixture file must never execute\")\n",
+    "A/ref_plain.py": "# owned fixture 5\nfrom pathlib import Path\nPath(\"IMPOSSIBLE_IMPORT_SENTINEL\").write_text(\"executed\")\nraise RuntimeError(\"fixture file must never execute\")\n",
+    "A/ref_ns/left.py": "# owned fixture 6\nfrom pathlib import Path\nPath(\"IMPOSSIBLE_IMPORT_SENTINEL\").write_text(\"executed\")\nraise RuntimeError(\"fixture file must never execute\")\n",
+    "B/ref_ns/right.py": "# owned fixture 7\nfrom pathlib import Path\nPath(\"IMPOSSIBLE_IMPORT_SENTINEL\").write_text(\"executed\")\nraise RuntimeError(\"fixture file must never execute\")\n",
+    "A/ref_shift/old.py": "# owned fixture 8\nfrom pathlib import Path\nPath(\"IMPOSSIBLE_IMPORT_SENTINEL\").write_text(\"executed\")\nraise RuntimeError(\"fixture file must never execute\")\n",
+    "B/ref_shift/__init__.py": "# owned fixture 9\nfrom pathlib import Path\nPath(\"IMPOSSIBLE_IMPORT_SENTINEL\").write_text(\"executed\")\nraise RuntimeError(\"fixture file must never execute\")\n",
+    "B/ref_shift/live.py": "# owned fixture 10\nfrom pathlib import Path\nPath(\"IMPOSSIBLE_IMPORT_SENTINEL\").write_text(\"executed\")\nraise RuntimeError(\"fixture file must never execute\")\n",
+    "A/ref_dual.py": "# owned fixture 11\nfrom pathlib import Path\nPath(\"IMPOSSIBLE_IMPORT_SENTINEL\").write_text(\"executed\")\nraise RuntimeError(\"fixture file must never execute\")\n",
+    "A/ref_dual/__init__.py": "# owned fixture 12\nfrom pathlib import Path\nPath(\"IMPOSSIBLE_IMPORT_SENTINEL\").write_text(\"executed\")\nraise RuntimeError(\"fixture file must never execute\")\n",
+    "A/ref_duplicate.py": "# owned fixture 13\nfrom pathlib import Path\nPath(\"IMPOSSIBLE_IMPORT_SENTINEL\").write_text(\"executed\")\nraise RuntimeError(\"fixture file must never execute\")\n",
+    "B/ref_duplicate.py": "# owned fixture 14\nfrom pathlib import Path\nPath(\"IMPOSSIBLE_IMPORT_SENTINEL\").write_text(\"executed\")\nraise RuntimeError(\"fixture file must never execute\")\n",
+    "C/ref_native.pyd": "# owned fixture 15\nfrom pathlib import Path\nPath(\"IMPOSSIBLE_IMPORT_SENTINEL\").write_text(\"executed\")\nraise RuntimeError(\"fixture file must never execute\")\n",
+    "C/ref_native.py": "# owned fixture 16\nfrom pathlib import Path\nPath(\"IMPOSSIBLE_IMPORT_SENTINEL\").write_text(\"executed\")\nraise RuntimeError(\"fixture file must never execute\")\n"
+  },
+  "cases": [
+    {
+      "id": "regular-package",
+      "statement": "import ref_pkg",
+      "roots": [
+        "A",
+        "B"
+      ],
+      "expected": {
+        "state": "FILE_STATIC",
+        "absolute": "ref_pkg",
+        "paths": [
+          "A/ref_pkg/__init__.py"
+        ],
+        "members": "NONE",
+        "runtime": "UNRESOLVED"
+      }
+    },
+    {
+      "id": "regular-module",
+      "statement": "import ref_plain as p",
+      "roots": [
+        "A",
+        "B"
+      ],
+      "expected": {
+        "state": "FILE_STATIC",
+        "absolute": "ref_plain",
+        "paths": [
+          "A/ref_plain.py"
+        ],
+        "members": "NONE",
+        "runtime": "UNRESOLVED"
+      }
+    },
+    {
+      "id": "dotted-regular",
+      "statement": "import ref_pkg.client",
+      "roots": [
+        "A",
+        "B"
+      ],
+      "expected": {
+        "state": "FILE_STATIC",
+        "absolute": "ref_pkg.client",
+        "paths": [
+          "A/ref_pkg/client.py"
+        ],
+        "members": "NONE",
+        "runtime": "UNRESOLVED"
+      }
+    },
+    {
+      "id": "dotted-missing",
+      "statement": "import ref_pkg.absent",
+      "roots": [
+        "A",
+        "B"
+      ],
+      "expected": {
+        "state": "MISSING_FROM_ADMITTED_ROOTS",
+        "absolute": "ref_pkg.absent",
+        "paths": [],
+        "members": "NONE",
+        "runtime": "UNRESOLVED"
+      }
+    },
+    {
+      "id": "not-a-package",
+      "statement": "import ref_plain.child",
+      "roots": [
+        "A",
+        "B"
+      ],
+      "expected": {
+        "state": "NON_PACKAGE_PREFIX",
+        "absolute": "ref_plain.child",
+        "paths": [],
+        "members": "NONE",
+        "runtime": "UNRESOLVED"
+      }
+    },
+    {
+      "id": "ambient-module",
+      "statement": "import json",
+      "roots": [
+        "A",
+        "B"
+      ],
+      "expected": {
+        "state": "MISSING_FROM_ADMITTED_ROOTS",
+        "absolute": "json",
+        "paths": [],
+        "members": "NONE",
+        "runtime": "UNRESOLVED"
+      }
+    },
+    {
+      "id": "namespace-directory",
+      "statement": "import ref_ns",
+      "roots": [
+        "A",
+        "B"
+      ],
+      "expected": {
+        "state": "NAMESPACE_STATIC",
+        "absolute": "ref_ns",
+        "paths": [
+          "A/ref_ns",
+          "B/ref_ns"
+        ],
+        "members": "NONE",
+        "runtime": "UNRESOLVED"
+      }
+    },
+    {
+      "id": "namespace-left",
+      "statement": "import ref_ns.left",
+      "roots": [
+        "A",
+        "B"
+      ],
+      "expected": {
+        "state": "FILE_STATIC",
+        "absolute": "ref_ns.left",
+        "paths": [
+          "A/ref_ns/left.py"
+        ],
+        "members": "NONE",
+        "runtime": "UNRESOLVED"
+      }
+    },
+    {
+      "id": "namespace-right",
+      "statement": "import ref_ns.right",
+      "roots": [
+        "A",
+        "B"
+      ],
+      "expected": {
+        "state": "FILE_STATIC",
+        "absolute": "ref_ns.right",
+        "paths": [
+          "B/ref_ns/right.py"
+        ],
+        "members": "NONE",
+        "runtime": "UNRESOLVED"
+      }
+    },
+    {
+      "id": "namespace-missing",
+      "statement": "import ref_ns.absent",
+      "roots": [
+        "A",
+        "B"
+      ],
+      "expected": {
+        "state": "MISSING_FROM_ADMITTED_ROOTS",
+        "absolute": "ref_ns.absent",
+        "paths": [],
+        "members": "NONE",
+        "runtime": "UNRESOLVED"
+      }
+    },
+    {
+      "id": "later-concrete-beats-namespace",
+      "statement": "import ref_shift",
+      "roots": [
+        "A",
+        "B"
+      ],
+      "expected": {
+        "state": "FILE_STATIC",
+        "absolute": "ref_shift",
+        "paths": [
+          "B/ref_shift/__init__.py"
+        ],
+        "members": "NONE",
+        "runtime": "UNRESOLVED"
+      }
+    },
+    {
+      "id": "namespace-shadow-hides-old-child",
+      "statement": "import ref_shift.old",
+      "roots": [
+        "A",
+        "B"
+      ],
+      "expected": {
+        "state": "MISSING_FROM_ADMITTED_ROOTS",
+        "absolute": "ref_shift.old",
+        "paths": [],
+        "members": "NONE",
+        "runtime": "UNRESOLVED"
+      }
+    },
+    {
+      "id": "package-beats-module-same-root",
+      "statement": "import ref_dual",
+      "roots": [
+        "A",
+        "B"
+      ],
+      "expected": {
+        "state": "FILE_STATIC",
+        "absolute": "ref_dual",
+        "paths": [
+          "A/ref_dual/__init__.py"
+        ],
+        "members": "NONE",
+        "runtime": "UNRESOLVED"
+      }
+    },
+    {
+      "id": "ordered-roots-first-file",
+      "statement": "import ref_duplicate",
+      "roots": [
+        "A",
+        "B"
+      ],
+      "expected": {
+        "state": "FILE_STATIC",
+        "absolute": "ref_duplicate",
+        "paths": [
+          "A/ref_duplicate.py"
+        ],
+        "members": "NONE",
+        "runtime": "UNRESOLVED"
+      }
+    },
+    {
+      "id": "reversed-roots-first-file",
+      "statement": "import ref_duplicate",
+      "roots": [
+        "B",
+        "A"
+      ],
+      "expected": {
+        "state": "FILE_STATIC",
+        "absolute": "ref_duplicate",
+        "paths": [
+          "B/ref_duplicate.py"
+        ],
+        "members": "NONE",
+        "runtime": "UNRESOLVED"
+      }
+    },
+    {
+      "id": "missing-exact-root",
+      "statement": "import ref_plain",
+      "roots": [
+        "D"
+      ],
+      "expected": {
+        "state": "ROOT_UNAVAILABLE",
+        "absolute": null,
+        "paths": [],
+        "members": "NONE",
+        "runtime": "UNRESOLVED"
+      }
+    },
+    {
+      "id": "case-sensitive-spelling",
+      "statement": "import REF_PLAIN",
+      "roots": [
+        "A",
+        "B"
+      ],
+      "expected": {
+        "state": "MISSING_FROM_ADMITTED_ROOTS",
+        "absolute": "REF_PLAIN",
+        "paths": [],
+        "members": "NONE",
+        "runtime": "UNRESOLVED"
+      }
+    },
+    {
+      "id": "relative-module",
+      "statement": "from ..helper import value",
+      "roots": [
+        "A",
+        "B"
+      ],
+      "origin": "A/ref_pkg/sub/caller.py",
+      "expected": {
+        "state": "FILE_STATIC",
+        "absolute": "ref_pkg.helper",
+        "paths": [
+          "A/ref_pkg/helper.py"
+        ],
+        "members": "UNRESOLVED_ATTRIBUTE_OR_SUBMODULE",
+        "runtime": "UNRESOLVED"
+      }
+    },
+    {
+      "id": "relative-package-base",
+      "statement": "from . import helper",
+      "roots": [
+        "A",
+        "B"
+      ],
+      "origin": "A/ref_pkg/client.py",
+      "expected": {
+        "state": "FILE_STATIC",
+        "absolute": "ref_pkg",
+        "paths": [
+          "A/ref_pkg/__init__.py"
+        ],
+        "members": "UNRESOLVED_ATTRIBUTE_OR_SUBMODULE",
+        "runtime": "UNRESOLVED"
+      }
+    },
+    {
+      "id": "relative-above-top-level",
+      "statement": "from ... import x",
+      "roots": [
+        "A",
+        "B"
+      ],
+      "origin": "A/ref_pkg/sub/caller.py",
+      "expected": {
+        "state": "RELATIVE_ABOVE_TOP_LEVEL",
+        "absolute": null,
+        "paths": [],
+        "members": "UNRESOLVED_ATTRIBUTE_OR_SUBMODULE",
+        "runtime": "UNRESOLVED"
+      }
+    },
+    {
+      "id": "relative-without-origin",
+      "statement": "from . import helper",
+      "roots": [
+        "A",
+        "B"
+      ],
+      "expected": {
+        "state": "ORIGIN_CONTEXT_UNAVAILABLE",
+        "absolute": null,
+        "paths": [],
+        "members": "UNRESOLVED_ATTRIBUTE_OR_SUBMODULE",
+        "runtime": "UNRESOLVED"
+      }
+    },
+    {
+      "id": "relative-shadowed-origin",
+      "statement": "from . import sub",
+      "roots": [
+        "A",
+        "B"
+      ],
+      "origin": "A/ref_shift/old.py",
+      "expected": {
+        "state": "ORIGIN_CONTEXT_UNAVAILABLE",
+        "absolute": null,
+        "paths": [],
+        "members": "UNRESOLVED_ATTRIBUTE_OR_SUBMODULE",
+        "runtime": "UNRESOLVED"
+      }
+    },
+    {
+      "id": "known-module-member",
+      "statement": "from ref_pkg import helper",
+      "roots": [
+        "A",
+        "B"
+      ],
+      "expected": {
+        "state": "FILE_STATIC",
+        "absolute": "ref_pkg",
+        "paths": [
+          "A/ref_pkg/__init__.py"
+        ],
+        "members": "UNRESOLVED_ATTRIBUTE_OR_SUBMODULE",
+        "runtime": "UNRESOLVED"
+      }
+    },
+    {
+      "id": "dynamic-syntactic-name",
+      "statement": "__import__('ref_plain')",
+      "roots": [
+        "A",
+        "B"
+      ],
+      "expected": {
+        "state": "DYNAMIC_UNRESOLVED",
+        "absolute": null,
+        "paths": [],
+        "members": "NONE",
+        "runtime": "UNRESOLVED"
+      }
+    },
+    {
+      "id": "dynamic-attribute",
+      "statement": "importlib.import_module('ref_pkg.client')",
+      "roots": [
+        "A",
+        "B"
+      ],
+      "expected": {
+        "state": "DYNAMIC_UNRESOLVED",
+        "absolute": null,
+        "paths": [],
+        "members": "NONE",
+        "runtime": "UNRESOLVED"
+      }
+    },
+    {
+      "id": "root-order-undetermined",
+      "statement": "import ref_duplicate",
+      "roots": [
+        "A",
+        "B"
+      ],
+      "ordered": false,
+      "expected": {
+        "state": "ROOT_ORDER_UNAVAILABLE",
+        "absolute": null,
+        "paths": [],
+        "members": "NONE",
+        "runtime": "UNRESOLVED"
+      }
+    },
+    {
+      "id": "root-overlap",
+      "statement": "import ref_dual",
+      "roots": [
+        "A",
+        "A/ref_dual"
+      ],
+      "expected": {
+        "state": "ROOTS_OVERLAP",
+        "absolute": null,
+        "paths": [],
+        "members": "NONE",
+        "runtime": "UNRESOLVED"
+      }
+    },
+    {
+      "id": "duplicate-root",
+      "statement": "import ref_dual",
+      "roots": [
+        "A",
+        "A"
+      ],
+      "expected": {
+        "state": "ROOTS_OVERLAP",
+        "absolute": null,
+        "paths": [],
+        "members": "NONE",
+        "runtime": "UNRESOLVED"
+      }
+    },
+    {
+      "id": "noncanonical-root",
+      "statement": "import ref_dual",
+      "roots": [
+        "A/../B"
+      ],
+      "expected": {
+        "state": "INVALID_ROOT_PATH",
+        "absolute": null,
+        "paths": [],
+        "members": "NONE",
+        "runtime": "UNRESOLVED"
+      }
+    },
+    {
+      "id": "incomplete-source-inventory",
+      "statement": "import ref_plain",
+      "roots": [
+        "A",
+        "B"
+      ],
+      "complete": false,
+      "expected": {
+        "state": "SOURCE_INVENTORY_INCOMPLETE",
+        "absolute": null,
+        "paths": [],
+        "members": "NONE",
+        "runtime": "UNRESOLVED"
+      }
+    },
+    {
+      "id": "native-loader-contender",
+      "statement": "import ref_native",
+      "roots": [
+        "C"
+      ],
+      "expected": {
+        "state": "UNSUPPORTED_ROOT_CONTENT",
+        "absolute": null,
+        "paths": [],
+        "members": "NONE",
+        "runtime": "UNRESOLVED"
+      }
+    },
+    {
+      "id": "invalid-source-statement",
+      "statement": "import ref_pkg..client",
+      "roots": [
+        "A",
+        "B"
+      ],
+      "expected": {
+        "state": "INVALID_STATEMENT",
+        "absolute": null,
+        "paths": [],
+        "members": "NONE",
+        "runtime": "UNRESOLVED"
+      }
+    }
+  ]
+}

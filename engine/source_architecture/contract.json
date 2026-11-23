@@ -121,6 +121,15 @@
             "T-AF-SOURCE-ARCHITECTURE-0001-R05-005",
             "T-AF-SOURCE-ARCHITECTURE-0001-R05-006"
           ]
+        },
+        {
+          "id": "AF-SOURCE-ARCHITECTURE-0001-R06",
+          "statement": "Source-scoped Python import candidates consume admitted lexical declarations and independently pinned ordered roots in an exact immutable source and evaluation context, preserving module, package, namespace, missing-target and unresolved-runtime distinctions.",
+          "tests": [
+            "T-AF-SOURCE-ARCHITECTURE-0001-R06-001",
+            "T-AF-SOURCE-ARCHITECTURE-0001-R06-002",
+            "T-AF-SOURCE-ARCHITECTURE-0001-R06-003"
+          ]
         }
       ]
     }

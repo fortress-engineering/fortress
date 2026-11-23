@@ -76,3 +76,37 @@ compiler. It never loads the subject from disk, resolves imports, runs the
 compiled module or publishes compiler warnings containing subject text. The
 observation preserves unresolved imports and call targets, unsupported source
 forms, encoding and contextual validity distinctions.
+
+### [`python_static_imports.rs`](../_code/python_static_imports.rs)
+
+Evaluates typed, admitted Python import declarations against a bounded
+source-only inventory. The trusted caller independently selects the canonical
+JCS/SHA-256 pin for a `fortress:python:static-import-roots:1` JSON object.
+The object includes `source_view_ref`, `evaluation_ref`, `inventory` and
+an explicitly ordered `roots` array. The accepted inventory value is
+`COMPLETE_SOURCE_ONLY`. The resolver requires a current matching source view,
+evaluation key and lexical request. The pin binds the configuration and root
+order. The caller owns its provenance and the completeness premise.
+
+Root paths are portable ASCII repository-relative paths. The resolver supports
+one to four disjoint roots, at most 4,096 files and 16 MiB of selected bytes.
+Only ordinary `.py` source names with ASCII identifier components contribute.
+Case aliases, file and directory conflicts, unsupported entries, missing roots,
+incomplete inventory and unavailable lexical facts return distinct errors.
+Directories come from admitted files. Empty physical directories are outside
+this model. The configuration is limited to 8 KiB and the report to 512 KiB,
+256 declarations and 512 names.
+
+Under the selected roots, a regular package initializer precedes a module
+in a single root. The first concrete file wins across roots, including when it
+shadows earlier namespace portions. A namespace retains its ordered represented
+portions. Relative imports require the exact importing file to be the selected
+origin in that scope. From-imports resolve their base while their member
+binding remains unresolved. Missing results describe the admitted inventory.
+
+The output is a separate `fortress:python:static-import-observation:1` record
+with lexical request identity, root provenance, original scope and UTF-8
+byte spans, and exact source target paths and digests when available.
+Runtime imports, dynamic calls, runtime reachability, installed packages,
+built-ins and native extensions remain outside the projection. It creates
+no ownership, Architecture Evaluation edge or certification evidence.

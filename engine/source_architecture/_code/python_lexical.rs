@@ -1,6 +1,10 @@
 //! Admits a compile-only Python worker response against independently selected
 //! immutable inputs. This boundary makes no claims about runtime semantics.
 
+/// Exact-source resolution of admitted Python static import declarations.
+#[path = "python_static_imports.rs"]
+pub mod python_static_imports;
+
 use std::collections::BTreeMap;
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
