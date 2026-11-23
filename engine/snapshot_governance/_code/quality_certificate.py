@@ -433,11 +433,11 @@ def artifact_member(identifier: str) -> str:
 
 def semantic_projection_version(prefix: bytes) -> str:
     """Read the canonical versioned header of the registered semantic projection."""
-    _, schema, registered_version = ARTIFACT_METADATA["semantic"]
+    _, _, registered_version = ARTIFACT_METADATA["semantic"]
     series = registered_version.rsplit(".", 1)[0]
-    header = f'{{\n  "$schema": "{schema}",\n  "schema_version": 2,\n'
+    header = b'{\n  "$schema": "urn:fortress:schema:v2:semantic-analysis",\n  "schema_version": 2,\n'
     match = re.match(
-        re.escape(header.encode())
+        re.escape(header)
         + rb'  "semantic_version": "(' + re.escape(series.encode()) + rb'\.(?:0|[1-9][0-9]{0,8}))",\n',
         prefix,
     )

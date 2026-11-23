@@ -154,7 +154,7 @@ class DerivedArtifactStorageTests(unittest.TestCase):
         root = self.workspace("semantic-producer")
         projection = root / "semantic.json"
         payload = (
-            b'{\n  "$schema": "urn:fortress:derived:v2:semantic-analysis",\n'
+            b'{\n  "$schema": "urn:fortress:schema:v2:semantic-analysis",\n'
             b'  "schema_version": 2,\n  "semantic_version": "2.0.1",\n'
             b'  "project_id": "PF-FIXTURE"\n}\n'
         )
@@ -162,6 +162,8 @@ class DerivedArtifactStorageTests(unittest.TestCase):
         size, digest, header = quality.hash_ordinary_with_prefix(projection, 256)
         self.assertEqual((size, digest), (len(payload), quality.sha256_bytes(payload)))
         self.assertEqual(quality.semantic_projection_version(header), "2.0.1")
+        with self.assertRaisesRegex(quality.CertificateError, "compatible canonical producer"):
+            quality.semantic_projection_version(header.replace(b"schema:v2", b"derived:v2"))
         for other in (b"2.1.0", b"2.0.01", b"3.0.0"):
             with self.assertRaisesRegex(quality.CertificateError, "compatible canonical producer"):
                 quality.semantic_projection_version(header.replace(b"2.0.1", other))
