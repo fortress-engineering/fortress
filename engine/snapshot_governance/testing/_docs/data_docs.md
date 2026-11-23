@@ -105,3 +105,7 @@ Registers the deterministic mutation generator, seed, exact successful populatio
 ### [`resident_campaign_v2.json`](../_data/resident_campaign_v2.json)
 
 Registers six actual-repository comparisons, twelve independent-function comparisons, twelve connected-call-graph comparisons and 100 separate lifecycle operations. The fixture strata have 32, 128 and 512 functions. The manifest records both unchanged 1,000-case corpus populations. The reports bind its exact digest and identify individual comparisons and checked operations.
+
+### [go_native_fixture_v1.json](../_data/go_native_fixture_v1.json)
+
+Retains exact stdout from the bounded Go collector for the independent two-file CRLF and UTF-8 fixture. This native input control is checked against frozen bytes, response identities, and known source coordinates.

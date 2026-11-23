@@ -2484,3 +2484,33 @@ fn migration_cli_rejects_approval_flags_and_malformed_requests() {
         assert!(output.stdout.is_empty());
     }
 }
+
+/// `T-CLI-GO-HOST-REGISTRATION-OUTSIDE-PROJECT`
+/// Fortress classification: infrastructure
+#[test]
+fn native_go_observation_refuses_project_selected_tools() {
+    let fixture = ObservationFixture::new();
+    let registration = fixture.root.join("observer.json");
+    let supplied =
+        br#"{"$schema":"urn:fortress:host:v1:go-collector-registration","schema_version":1}"#;
+    fs::write(&registration, supplied).unwrap();
+    let result = run(&[
+        "psm",
+        "--observe-go",
+        &fixture.argument(),
+        registration.to_str().unwrap(),
+        ".",
+        "probe.local/package",
+        "go1.22",
+        std::env::consts::OS,
+        "amd64",
+    ]);
+    assert_eq!(result.status.code(), Some(i32::from(EXIT_USAGE)));
+    assert!(result.stdout.is_empty());
+    assert!(
+        String::from_utf8(result.stderr)
+            .unwrap()
+            .contains("asset belongs to the project")
+    );
+    assert_eq!(fs::read(&registration).unwrap(), supplied);
+}

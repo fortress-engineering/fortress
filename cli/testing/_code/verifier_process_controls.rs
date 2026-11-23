@@ -45,3 +45,22 @@ fn embedded_consumer_deadline_kills_and_reaps_owned_child() {
     .unwrap_err();
     assert_eq!(error.code, "RESOURCE_LIMIT");
 }
+
+/// `T-HOST-ASSET-EXTERNAL-ADMISSION`
+/// Fortress classification: infrastructure
+#[test]
+fn host_assets_cannot_be_selected_by_project_path() {
+    use std::path::Path;
+    let project = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../..")
+        .canonicalize()
+        .unwrap();
+    let reference = project.join("contract.json");
+    let error = verifier_process::require_external_asset(&reference, &project).unwrap_err();
+    assert!(error.contains("asset belongs to the project"));
+    let error =
+        verifier_process::require_external_asset(Path::new("contract.json"), &project).unwrap_err();
+    assert!(error.contains("absolute host path required"));
+    let tool = interpreter(&std::env::temp_dir()).unwrap();
+    verifier_process::require_external_asset(&tool, &project).unwrap();
+}

@@ -56,6 +56,8 @@ pub mod filing;
 pub mod finding;
 #[path = "../finding_model/_code/governance.rs"]
 pub mod finding_governance;
+#[path = "../snapshot_governance/_code/go_observation.rs"]
+pub mod go_observation;
 #[path = "../snapshot_governance/_code/heavy_admission.rs"]
 pub mod heavy_admission;
 #[path = "../standard_registry/_code/identity.rs"]

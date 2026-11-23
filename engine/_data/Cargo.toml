@@ -193,6 +193,10 @@ name = "wire_contract"
 path = "../standard_registry/testing/_code/wire_contract.rs"
 
 [[test]]
+name = "go_observation"
+path = "../snapshot_governance/testing/_code/go_observation.rs"
+
+[[test]]
 name = "snapshot_evaluation"
 path = "../snapshot_governance/testing/_code/snapshot_evaluation.rs"
 
@@ -233,6 +237,7 @@ name = "provider"
 path = "../certification/testing/_code/provider.rs"
 
 [dependencies]
+base64 = "=0.22.1"
 unicase = "2.9"
 quick-xml = { version = "=0.42.0", default-features = false }
 cpu-time = "=1.0.0"

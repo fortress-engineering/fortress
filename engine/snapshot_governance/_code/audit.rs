@@ -4822,6 +4822,14 @@ fn prepared_evaluation_key(
     prepared: &PreparedAnalysis,
     psm: &ProgramSemanticModel,
 ) -> Result<EvaluationKey, AuditError> {
+    Ok(EvaluationKey::new(
+        prepared.source_manifest.entries_digest(),
+        psm.program_context().digest(),
+        prepared_authority_binding(prepared)?.digest(),
+    ))
+}
+
+fn prepared_authority_binding(prepared: &PreparedAnalysis) -> Result<AuthorityBinding, AuditError> {
     let project_digest = prepared.project_document.as_ref().map_or_else(
         || {
             format!(
@@ -4835,7 +4843,7 @@ fn prepared_evaluation_key(
         .observed_files
         .bytes(FINDING_GOVERNANCE_PATH)
         .map(|bytes| format!("sha256:{:x}", Sha256::digest(bytes)));
-    let binding = AuthorityBinding::new(
+    Ok(AuthorityBinding::new(
         prepared.standard.bundle.digest(),
         prepared.standard.bundle.edition(),
         prepared.profiles.authority_digests().to_vec(),
@@ -4843,12 +4851,28 @@ fn prepared_evaluation_key(
         serialized_digest(&prepared.ownerships)?,
         None,
         finding_digest,
-    );
-    Ok(EvaluationKey::new(
-        prepared.source_manifest.entries_digest(),
-        psm.program_context().digest(),
-        binding.digest(),
     ))
+}
+
+/// Prepares exact source and the existing selected authority for native observation.
+pub(crate) fn bind_go_observation_source(
+    source: &SourceView,
+) -> Result<(String, String), AuditError> {
+    let prepared = prepare_analysis_from_view(source.clone())?;
+    if prepared.project_state == ProjectGovernanceState::Invalid
+        || (prepared.project_state == ProjectGovernanceState::Declared
+            && (prepared.ccg().is_none() || !prepared.ownership_diagnostics.is_empty()))
+        || prepared
+            .project_configuration
+            .as_ref()
+            .is_some_and(|project| !project.observation_exclusions().is_empty())
+    {
+        return Err(AuditError::InputMismatch(
+            "Go observation requires explicit complete original authority with no authored exclusions".into(),
+        ));
+    }
+    let authority = prepared_authority_binding(&prepared)?.digest();
+    Ok((prepared.source_identity, authority))
 }
 
 fn affected_unit(

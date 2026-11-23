@@ -1008,9 +1008,9 @@ fn live_fortress_inventory_is_complete_and_rust_profile_status_is_truthful() {
     let known_without_profile = expected
         .iter()
         .filter(|path| {
-            !Path::new(path).extension().is_some_and(|extension| {
-                extension.eq_ignore_ascii_case("rs") || extension.eq_ignore_ascii_case("ts")
-            })
+            Path::new(path)
+                .extension()
+                .is_some_and(|extension| extension.eq_ignore_ascii_case("py"))
         })
         .count();
     assert_eq!(
@@ -1026,10 +1026,16 @@ fn live_fortress_inventory_is_complete_and_rust_profile_status_is_truthful() {
             Some(extension) if extension.eq_ignore_ascii_case("rs") => {
                 ArchetypeResolution::Resolved
             }
-            Some(extension) if extension.eq_ignore_ascii_case("ts") => {
+            Some(extension) if extension.eq_ignore_ascii_case("py") => {
+                ArchetypeResolution::ProfileNotRegistered
+            }
+            Some(extension) if extension.eq_ignore_ascii_case("go") => {
+                assert!(
+                    serde_json::to_value(artifact).expect("source artifact")["language"].is_null()
+                );
                 ArchetypeResolution::LanguageUnknown
             }
-            _ => ArchetypeResolution::ProfileNotRegistered,
+            _ => ArchetypeResolution::LanguageUnknown,
         };
         assert_eq!(artifact.profile().status(), status, "{}", artifact.path());
     }

@@ -5,6 +5,8 @@
 
 #[path = "analysis_context.rs"]
 mod analysis_context;
+#[path = "go_observation.rs"]
+pub(crate) mod go_observation;
 #[path = "graph.rs"]
 mod graph;
 #[path = "model_digest.rs"]

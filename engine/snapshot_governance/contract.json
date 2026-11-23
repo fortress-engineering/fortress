@@ -525,6 +525,15 @@
           "tests": [
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R27-001"
           ]
+        },
+        {
+          "id": "AF-SNAPSHOT-GOVERNANCE-0001-R28",
+          "statement": "Explicit trusted Go observation binds complete physical source and original selected authority, admits closed target context, verifies exact received observations, and refuses changed inputs before publication. It does not participate in Rust PSM v6, conformance or certification.",
+          "tests": [
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R28-001",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R28-002",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R28-003"
+          ]
         }
       ]
     }

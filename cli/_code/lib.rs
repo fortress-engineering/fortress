@@ -51,6 +51,7 @@ pub mod github_rules;
 pub mod command;
 mod finding_command;
 mod flow_command;
+mod go_observation_command;
 mod inspection;
 mod layout_command;
 #[path = "../agent_integration/_code/mediator.rs"]
@@ -1713,6 +1714,11 @@ fn run_psm<O: Write, E: Write>(
     output: &mut O,
     error: &mut E,
 ) -> io::Result<u8> {
+    if let Some((first, rest)) = arguments.split_first()
+        && first == "--observe-go"
+    {
+        return go_observation_command::run(rest, output, error);
+    }
     let (root, destination) = match parse_psm_arguments(arguments) {
         Ok(parsed) => parsed,
         Err(message) => {

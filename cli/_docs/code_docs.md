@@ -21,6 +21,10 @@ Malformed input, unsupported operations, invalid repository state, or evaluated 
 
 ## Files
 
+### [`go_observation_command.rs`](../_code/go_observation_command.rs)
+
+Runs the explicitly selected, digest-pinned Go collector with the shared bounded subprocess supervisor. Returns the independent native observation projection after source and authority revalidation.
+
 ### [`layout_command.rs`](../_code/layout_command.rs)
 
 Reads explicit digest-pinned native profile selections and supplies bounded repository observations to the Project Model projection.

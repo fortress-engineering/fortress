@@ -191,6 +191,7 @@ dependencies = [
 name = "fortress-core"
 version = "0.1.0"
 dependencies = [
+ "base64",
  "cpu-time",
  "getrandom",
  "jsonschema",

@@ -178,3 +178,26 @@ fortress projections ./project --output-dir /outside/project/new-projections --f
 The parent must exist and the destination must be new, ordinary and outside the repository. Completion publishes a versioned manifest after all canonical static members and source reobservation. Human output renders the same result. This command performs source analysis without Cargo tests, project build scripts or providers. It issues no certificate and authenticates no producer. Phase measurements are diagnostics on stderr during certification; canonical certificate bytes retain their existing meaning. Restoration checks the selected certificate and independent cold projection sets before accepting local materialization.
 
 Maintainers can review exact upgrade compatibility, migration plans and recovery through the existing command and host interfaces. [Upgrade workflow](_docs/code_docs.md#upgrade_commandrs)
+
+## Explicit Go compiler observations
+
+Ordinary PSM remains the existing Rust-backed model. The Go observation
+command uses an independently selected native helper and emits a separate
+versioned report.
+
+~~~text
+fortress psm --observe-go PROJECT HOST_REGISTRATION DIRECTORY PACKAGE_PATH go1.22 linux amd64
+~~~
+
+Use a host-owned registration outside the project. Declare the absolute
+collector executable, its exact SHA-256, and the expected Go toolchain. Use a
+complete closed package directory with no external imports. The target OS is
+explicit. A directory of . selects the project root.
+
+The registration schema is urn:fortress:host:v1:go-collector-registration with
+schema_version 1 and the executable, executable_sha256 and toolchain fields.
+The host verifies the executable immediately before launch, isolates its
+environment and bounds the exchange. The command reports package-local typed
+declarations and supported call observations. Build selection, imported
+packages, foreign bodies, dynamic dispatch and runtime effects may remain
+unresolved. The report conveys no finding, certification or write authority.

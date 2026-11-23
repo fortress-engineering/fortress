@@ -121,6 +121,25 @@ fn tool_stamp(path: &Path) -> Result<(File, String), PortableError> {
     Ok((handle, fortress_core::portable::digest(&bytes)))
 }
 
+pub(crate) fn require_external_asset(path: &Path, project: &Path) -> Result<(), String> {
+    if !path.is_absolute() {
+        return Err("COLLECTOR_TRUST_REQUIRED: absolute host path required".into());
+    }
+    let actual = path.canonicalize().map_err(|error| error.to_string())?;
+    if !outside_inputs(&actual, &[project]).map_err(|error| error.to_string())? {
+        return Err("COLLECTOR_TRUST_REQUIRED: asset belongs to the project".into());
+    }
+    for ancestor in path.ancestors() {
+        let metadata = ancestor
+            .symlink_metadata()
+            .map_err(|error| error.to_string())?;
+        if fortress_core::observation::physical::linked(&metadata) {
+            return Err("COLLECTOR_TRUST_REQUIRED: linked host asset".into());
+        }
+    }
+    Ok(())
+}
+
 struct OwnedChild(Child);
 impl Drop for OwnedChild {
     fn drop(&mut self) {

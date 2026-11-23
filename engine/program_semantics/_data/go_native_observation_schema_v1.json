@@ -1,0 +1,456 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v1:go-native-observation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "binding_sha256",
+    "response_sha256",
+    "provenance",
+    "observation"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:derived:v1:go-native-observation"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "binding_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "response_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "provenance": {
+      "$ref": "#/$defs/provenance"
+    },
+    "observation": {
+      "$ref": "#/$defs/observation"
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "span": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "start_byte",
+        "end_byte",
+        "start_line",
+        "start_byte_column"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "start_byte": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65536
+        },
+        "end_byte": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65536
+        },
+        "start_line": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65536
+        },
+        "start_byte_column": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65537
+        }
+      }
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "package_path",
+        "go_version",
+        "target_os",
+        "target_arch",
+        "source_inventory"
+      ],
+      "properties": {
+        "package_path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "go_version": {
+          "enum": [
+            "go1.17",
+            "go1.22"
+          ]
+        },
+        "target_os": {
+          "enum": [
+            "windows",
+            "linux"
+          ]
+        },
+        "target_arch": {
+          "const": "amd64"
+        },
+        "source_inventory": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "path",
+              "sha256"
+            ],
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 240
+              },
+              "sha256": {
+                "$ref": "#/$defs/sha256"
+              }
+            }
+          },
+          "minItems": 1,
+          "maxItems": 64
+        }
+      }
+    },
+    "observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "producer",
+        "go_toolchain",
+        "request_sha256",
+        "context_sha256",
+        "context",
+        "status",
+        "diagnostic",
+        "package_name",
+        "declarations",
+        "calls",
+        "limitations"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": 1
+        },
+        "producer": {
+          "const": "fortress.go-observations@0.1.1"
+        },
+        "go_toolchain": {
+          "$ref": "#/$defs/toolchain"
+        },
+        "request_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "context_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "context": {
+          "$ref": "#/$defs/context"
+        },
+        "status": {
+          "enum": [
+            "OBSERVED",
+            "INVALID_SOURCE",
+            "UNSUPPORTED",
+            "RESOURCE_LIMIT"
+          ]
+        },
+        "diagnostic": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "span"
+              ],
+              "properties": {
+                "code": {
+                  "enum": [
+                    "GO_PARSE_FAILURE",
+                    "GO_TYPE_CHECK_REJECTED",
+                    "INVALID_GO_IMPORT",
+                    "BUILD_CONTEXT_REQUIRED",
+                    "COMPILER_DIRECTIVE_CONTEXT_REQUIRED",
+                    "DEPENDENCY_CONTEXT_REQUIRED",
+                    "FOREIGN_CONTEXT_REQUIRED",
+                    "GO_UNRESOLVED_DECLARATION",
+                    "GO_AST_LIMIT",
+                    "GO_OBSERVATION_LIMIT"
+                  ]
+                },
+                "span": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/$defs/span"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "package_name": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 65536
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "declarations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/declaration"
+          },
+          "minItems": 0,
+          "maxItems": 4096
+        },
+        "calls": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/call"
+          },
+          "minItems": 0,
+          "maxItems": 4096
+        },
+        "limitations": {
+          "const": [
+            "HOST_MUST_ESTABLISH_PACKAGE_AND_CONTEXT_COMPLETENESS",
+            "NO_DEPENDENCIES_BUILD_CONDITIONS_OR_FOREIGN_CONTEXT",
+            "BODYLESS_DECLARATIONS_DO_NOT_ESTABLISH_IMPLEMENTATION",
+            "NO_RUNTIME_EFFECT_REACHABILITY_OR_EXECUTION_PROOF",
+            "INTERFACE_FUNCTION_VALUE_AND_OTHER_UNSUPPORTED_DISPATCH_REMAINS_UNRESOLVED"
+          ]
+        }
+      },
+      "if": {
+        "properties": {
+          "status": {
+            "const": "OBSERVED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "diagnostic": {
+            "type": "null"
+          },
+          "package_name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 65536
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "diagnostic": {
+            "type": "object"
+          },
+          "package_name": {
+            "type": "null"
+          },
+          "declarations": {
+            "maxItems": 0
+          },
+          "calls": {
+            "maxItems": 0
+          }
+        }
+      }
+    },
+    "declaration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "implementation",
+        "name",
+        "kind",
+        "declared_signature",
+        "span"
+      ],
+      "properties": {
+        "implementation": {
+          "enum": [
+            "SOURCE_BODY",
+            "EXTERNAL_BODY_UNOBSERVED"
+          ]
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 65536
+        },
+        "kind": {
+          "enum": [
+            "FUNCTION",
+            "METHOD"
+          ]
+        },
+        "declared_signature": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 2048
+        },
+        "span": {
+          "$ref": "#/$defs/span"
+        }
+      }
+    },
+    "call": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "resolution",
+        "activation",
+        "span",
+        "declaration"
+      ],
+      "properties": {
+        "name": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 65536
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "resolution": {
+          "enum": [
+            "DIRECT_FUNCTION",
+            "DIRECT_METHOD",
+            "EXTERNAL_BODY_UNOBSERVED",
+            "TYPE_CONVERSION",
+            "BUILTIN",
+            "UNRESOLVED_CALL_FORM",
+            "UNRESOLVED_INTERFACE_DISPATCH",
+            "UNRESOLVED_FUNCTION_VALUE",
+            "UNRESOLVED_DECLARATION"
+          ]
+        },
+        "activation": {
+          "enum": [
+            "ORDINARY",
+            "GOROUTINE",
+            "DEFERRED"
+          ]
+        },
+        "span": {
+          "$ref": "#/$defs/span"
+        },
+        "declaration": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/span"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "source_view_sha256",
+        "source_fingerprint",
+        "authority_sha256",
+        "actual",
+        "package_directory",
+        "process",
+        "wire_context_sha256",
+        "request_sha256"
+      ],
+      "properties": {
+        "kind": {
+          "const": "fortress-go-observation-input-v1"
+        },
+        "source_view_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "source_fingerprint": {
+          "$ref": "#/$defs/sha256"
+        },
+        "authority_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "actual": {
+          "const": true
+        },
+        "package_directory": {
+          "type": "string",
+          "maxLength": 240
+        },
+        "process": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "executable_sha256",
+            "supervisor_context_sha256",
+            "go_toolchain"
+          ],
+          "properties": {
+            "executable_sha256": {
+              "$ref": "#/$defs/sha256"
+            },
+            "supervisor_context_sha256": {
+              "$ref": "#/$defs/sha256"
+            },
+            "go_toolchain": {
+              "$ref": "#/$defs/toolchain"
+            }
+          }
+        },
+        "wire_context_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "request_sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "toolchain": {
+      "type": "string",
+      "maxLength": 64,
+      "pattern": "^go1\\.[A-Za-z0-9.]*$"
+    }
+  }
+}

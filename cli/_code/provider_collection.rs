@@ -44,7 +44,7 @@ pub(super) fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
     let root = Path::new(root)
         .canonicalize()
         .map_err(|error| error.to_string())?;
-    require_external(file, &root)?;
+    crate::verifier_process::require_external_asset(file, &root)?;
     let bytes = super::read_bounded(file, MAXIMUM)?;
     admit_json(
         &bytes,
@@ -65,10 +65,10 @@ pub(super) fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
     let directory = file
         .parent()
         .ok_or("host registration needs an external directory")?;
-    require_external(&registration.executable, &root)?;
-    require_external(&registration.adapter, &root)?;
+    crate::verifier_process::require_external_asset(&registration.executable, &root)?;
+    crate::verifier_process::require_external_asset(&registration.adapter, &root)?;
     if let Some(script) = &registration.script {
-        require_external(&script.path, &root)?;
+        crate::verifier_process::require_external_asset(&script.path, &root)?;
         script.verify()?;
     }
     let adapter = super::read_adapter(&registration.adapter, &registration.adapter_digest)?;
@@ -116,27 +116,6 @@ pub(super) fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
         "result": data,
     }))
     .map_err(|error| error.to_string())
-}
-
-fn require_external(path: &Path, project: &Path) -> Result<(), String> {
-    if !path.is_absolute() {
-        return Err("COLLECTOR_TRUST_REQUIRED: absolute host path required".into());
-    }
-    let actual = path.canonicalize().map_err(|error| error.to_string())?;
-    if !crate::verifier_process::outside_inputs(&actual, &[project])
-        .map_err(|error| error.to_string())?
-    {
-        return Err("COLLECTOR_TRUST_REQUIRED: asset belongs to the project".into());
-    }
-    for ancestor in path.ancestors() {
-        let metadata = ancestor
-            .symlink_metadata()
-            .map_err(|error| error.to_string())?;
-        if fortress_core::observation::physical::linked(&metadata) {
-            return Err("COLLECTOR_TRUST_REQUIRED: linked host asset".into());
-        }
-    }
-    Ok(())
 }
 
 impl Script {
