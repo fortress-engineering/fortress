@@ -38,6 +38,10 @@ Declares the exact implemented command instances exposed by the native registry.
 
 Embeds the exact standalone public Python consumer from Testing as an immutable CLI resource. Regenerate this byte-for-byte copy from `testing/_code/verify_bundle.py` when that consumer changes. The CLI regression gate rejects drift; the adapter executes these reviewed bytes in isolated Python, never a candidate repository script. This resource introduces no second implementation or authority.
 
+### [`install_guide.txt`](../_data/install_guide.txt)
+
+Provides the reviewed Markdown installation guide bundled with the local development archive. It explains the platform prerequisites, verification steps, editor and MCP setup, and exact application-slot lifecycle.
+
 ### [`package_manifest_schema_v1.json`](../_data/package_manifest_schema_v1.json)
 
 Describes the local development package inventory, native target, exact source binding, compatibility fields, and explicit authenticity and release-authorization states.

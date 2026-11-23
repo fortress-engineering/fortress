@@ -38,7 +38,16 @@ Run `fortress --version`, `fortress status /absolute/project`, and `fortress doc
 
 In VS Code Desktop use **Extensions → Install from VSIX** on the manifest-verified `editor/fortress-development.vsix`. Set `fortress.executable` in User Settings to the absolute installed CLI path outside candidate repositories. The extension respects workspace trust. Remove it through the Extensions view or with `code --uninstall-extension fortress-development.fortress-inspection`. The CLI installation is independent of that editor action.
 
-Configure an MCP client with the verified executable as the command and `serve`, `--mcp`, and the absolute repository path as separate arguments. For example, use the client’s trusted configuration as described in the [local agent guide](../cli/agent_integration/_docs/code_docs.md). Candidate preparation additionally requires an explicitly selected external storage directory. MCP does not grant permission to write. GitHub production enforcement remains `UNVERIFIED`.
+Register the verified executable and its argument array in the trusted local MCP client configuration. The Codex stdio entry uses this format.
+
+```toml
+[mcp_servers.fortress]
+command = "/absolute/install/bin/fortress"
+args = ["serve", "--mcp", "/absolute/project"]
+startup_timeout_sec = 120
+```
+
+Use absolute native paths and the platform executable name. Candidate preparation additionally requires an explicitly selected external storage directory. MCP does not grant permission to write. GitHub production enforcement remains `UNVERIFIED`.
 
 When applying a separately reviewed project migration, select a private external directory on the project’s volume using the established storage configuration. If the operating system puts temporary files on another volume, set `FORTRESS_EXECUTION_STORAGE_DIR` for commands that use default migration storage.
 

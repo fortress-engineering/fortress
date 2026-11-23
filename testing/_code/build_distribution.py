@@ -170,7 +170,7 @@ def build(destination, storage, checkout):
         archive = destination / f"fortress-{version}-{target}.zip"
         members = source_assets() | {
             "bin/" + exe.name:exe, "editor/" + vsix.name:vsix, "share/locked-dependencies.json":inventory,
-            "share/verify_bundle.py":ROOT/VERIFIER, "share/install-guide.md":ROOT/"_docs/distribution.md",
+            "share/verify_bundle.py":ROOT/VERIFIER, "share/install-guide.md":ROOT/"cli/_data/install_guide.txt",
         }
         files = package(archive, members)
         size, sha = hash_file(archive)
