@@ -6,7 +6,7 @@ The portable package contains the native Fortress CLI, an independently installa
 
 | Target | Format | Runtime |
 | --- | --- | --- |
-| Windows x64 | ZIP with `bin/fortress.exe` | Native Windows x64 runtime and system libraries |
+| Windows x64 | ZIP with `bin/fortress.exe` | Native Windows x64, Universal CRT, and the Microsoft Visual C++ v14 x64 Redistributable |
 | Linux x64 | ZIP with `bin/fortress` | Native x86-64 Linux with the GNU C runtime and the libraries required by the build |
 | macOS arm64 | Proposed | No qualified package or format reader |
 
@@ -23,7 +23,7 @@ python3 -I -B install.py verify fortress-0.1.0-linux-x64.zip manifest.json --man
 python3 -I -B install.py install fortress-0.1.0-linux-x64.zip manifest.json "$HOME/.local/fortress" --manifest-sha256 "$MANIFEST_SHA256"
 ```
 
-On Windows, use a private directory under your user profile.
+On Windows, use a private directory under your user profile. The CLI imports `VCRUNTIME140.dll`. Install the supported x64 runtime separately if it is missing, then confirm that the installed CLI launches with `--version`. [Microsoft Visual C++ Redistributable](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist/)
 
 ```powershell
 python -I -B .\install.py verify .\fortress-0.1.0-windows-x64.zip .\manifest.json --manifest-sha256 $ManifestSha256

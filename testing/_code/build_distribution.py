@@ -104,7 +104,10 @@ def runtime_binding(executable):
                "installation_python":"Python 3.11+ for the installer script",
                "workspace_certification":"registered native test execution requires a separate toolchain"}
     if os.name == "nt":
-        return binding | {"system":"Windows x64 system libraries"}
+        return binding | {
+            "system":"Windows x64 system libraries including Universal CRT",
+            "external_runtime":"Microsoft Visual C++ v14 x64 Redistributable (VCRUNTIME140.dll)",
+        }
     dynamic = output("readelf", "--dynamic", str(executable))
     versions = output("readelf", "--version-info", str(executable))
     return binding | {"system":"GNU C runtime and native system libraries",
