@@ -147,21 +147,24 @@ jobs:
           grep -Fx '1.147.0' "$RUNNER_TEMP/fortress-vscode/version.txt"
           grep -Fx '8a14f0cc1b08d531eb83255ea3764ae22aa932b5' "$RUNNER_TEMP/fortress-vscode/version.txt"
 
-      - name: Build the installed-service fixture
+      - name: Build and install the native service from its verified archive
         env:
-          CARGO_TARGET_DIR: ${{ runner.temp }}/fortress-editor-target
-        run: >-
-          cargo +1.97.1 --config _data/cargo_config.toml build --locked
-          --manifest-path _data/Cargo.toml --all-features -p fortress-cli
+          FORTRESS_STORAGE_RETENTION: cleanup-owned-compiler
+        run: |
+          rustup toolchain install 1.97.1 --profile minimal
+          python3 -B testing/_code/build_distribution.py "$RUNNER_TEMP/fortress-editor-package" \
+            --storage "$RUNNER_TEMP/fortress-editor-package-ops" --commit "$GITHUB_SHA"
+          cmp "$RUNNER_TEMP/fortress-editor-stage/fortress-development.vsix" "$RUNNER_TEMP/fortress-editor-package/fortress-development.vsix"
+          python3 -B testing/_code/installed_distribution.py "$RUNNER_TEMP/fortress-editor-package" "$RUNNER_TEMP/fortress-editor-installation"
 
       - name: Run the real desktop extension host
-        env:
-          CARGO_TARGET_DIR: ${{ runner.temp }}/fortress-editor-target
         run: |
+          executable=$(cat "$RUNNER_TEMP/fortress-editor-installation/installed-path.txt")
           python3 -B editor/testing/_code/host_runner.py --xvfb --editor /opt/fortress-desktop-fixture/code \
             --editor-cli /opt/fortress-desktop-fixture/bin/code \
-            --fortress "$CARGO_TARGET_DIR/debug/fortress" --stage "$RUNNER_TEMP/fortress-editor-stage" \
+            --fortress "$executable" --stage "$RUNNER_TEMP/fortress-editor-package" \
             --results "$RUNNER_TEMP/fortress-editor-results"
+          python3 -B testing/_code/installed_distribution.py "$RUNNER_TEMP/fortress-editor-package" "$RUNNER_TEMP/fortress-editor-installation" --remove
 
   qualify_distribution:
     name: Verify portable installation (${{ matrix.target }})
@@ -188,6 +191,7 @@ jobs:
         shell: pwsh
         run: |
           rustup toolchain install 1.97.1 --profile minimal
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python -B testing/_code/distribution_controls.py
       - name: Construct the locked native archive and VSIX
         shell: pwsh

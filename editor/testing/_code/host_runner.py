@@ -75,6 +75,22 @@ def extract_runtime(artifact: Path, destination: Path) -> None:
     assert (destination / "out/_code/extension.js").is_file()
 
 
+def verify_installation(expected_runtime: Path, installed_runtime: Path) -> None:
+    for member in expected_runtime.rglob("*"):
+        if member.is_file():
+            relative = member.relative_to(expected_runtime)
+            installed = installed_runtime / relative
+            if relative == Path("package.json"):
+                expected = json.loads(member.read_bytes())
+                actual = json.loads(installed.read_bytes())
+                assert "__metadata" not in expected
+                metadata = actual.pop("__metadata", {})
+                assert isinstance(metadata, dict)
+                assert expected == actual
+            else:
+                assert member.read_bytes() == installed.read_bytes()
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--editor", type=Path, required=True)
@@ -101,9 +117,7 @@ def main() -> None:
         subprocess.run([*cli, "--install-extension", str(vsix), "--force"], cwd=results,
                        env=environment, check=True, timeout=120)
         runtime, = (results / "extensions").glob("fortress-development.fortress-inspection-*")
-        for member in expected_runtime.rglob("*"):
-            if member.is_file():
-                assert member.read_bytes() == (runtime / member.relative_to(expected_runtime)).read_bytes()
+        verify_installation(expected_runtime, runtime)
     control = stage / "desktop_control.js"
     if not control.is_file():
         control = stage / "out/testing/_code/host.js"

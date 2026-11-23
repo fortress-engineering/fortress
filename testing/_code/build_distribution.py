@@ -50,6 +50,9 @@ def locked_environment(target):
         CARGO_ENCODED_RUSTFLAGS="\x1f".join(flags), CARGO_BUILD_JOBS="2", CARGO_INCREMENTAL="0",
         CARGO_PROFILE_RELEASE_STRIP="symbols", CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS="true",
         CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS="true", PYTHONDONTWRITEBYTECODE="1",
+        # The editor invokes package entry points directly. npm bin links would
+        # violate the execution workspace's ordinary-file inventory.
+        npm_config_bin_links="false",
     )
     return environment
 
