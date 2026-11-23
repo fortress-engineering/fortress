@@ -81,6 +81,7 @@ def main() -> None:
     parser.add_argument("--fortress", type=Path, required=True)
     parser.add_argument("--stage", type=Path, required=True)
     parser.add_argument("--results", type=Path, required=True)
+    parser.add_argument("--editor-cli", type=Path, help="install and remove the VSIX using the native editor CLI")
     parser.add_argument("--xvfb", action="store_true")
     parser.add_argument("--mode", choices=("both", "trusted", "restricted"), default="both")
     args = parser.parse_args()
@@ -89,9 +90,24 @@ def main() -> None:
     root = Path(__file__).resolve().parents[3]
     assert not results.is_relative_to(root)
     results.mkdir()
-    runtime = results / "extension"
-    extract_runtime(stage / "fortress-development.vsix", runtime)
+    expected_runtime = results / "extension"
+    vsix = stage / "fortress-development.vsix"
+    extract_runtime(vsix, expected_runtime)
+    runtime = expected_runtime
     environment = dict(os.environ, FORTRESS_EDITOR_TEST_EXECUTABLE=str(args.fortress.resolve(strict=True)))
+    if args.editor_cli:
+        cli = [str(args.editor_cli.resolve(strict=True)), "--user-data-dir", str(results / "installer-profile"),
+               "--extensions-dir", str(results / "extensions")]
+        subprocess.run([*cli, "--install-extension", str(vsix), "--force"], cwd=results,
+                       env=environment, check=True, timeout=120)
+        runtime, = (results / "extensions").glob("fortress-development.fortress-inspection-*")
+        for member in expected_runtime.rglob("*"):
+            if member.is_file():
+                assert member.read_bytes() == (runtime / member.relative_to(expected_runtime)).read_bytes()
+    control = stage / "desktop_control.js"
+    if not control.is_file():
+        control = stage / "out/testing/_code/host.js"
+    assert control.is_file()
     modes = ("trusted", "restricted") if args.mode == "both" else (args.mode,)
     for mode in modes:
         workspace = results / mode
@@ -116,7 +132,7 @@ def main() -> None:
         params = [
             str(args.editor.resolve(strict=True)), str(workspace),
             "--extensionDevelopmentPath=" + str(runtime),
-            "--extensionTestsPath=" + str(stage / "out/testing/_code/host.js"),
+            "--extensionTestsPath=" + str(control),
             "--user-data-dir=" + str(user_data), "--extensions-dir=" + str(results / "extensions"),
             "--disable-extensions", "--disable-gpu", "--skip-welcome", "--skip-release-notes",
         ]
@@ -137,6 +153,12 @@ def main() -> None:
                 print(f"Desktop {mode} log tail: {log.read(8192)!r}", file=sys.stderr)
             raise
         assert json.loads(report.read_bytes())["status"] == "PASS"
+    if args.editor_cli:
+        subprocess.run([*cli, "--uninstall-extension", "fortress-development.fortress-inspection"],
+                       cwd=results, env=environment, check=True, timeout=120)
+        listing = subprocess.check_output([*cli, "--list-extensions"], cwd=results, env=environment, timeout=120)
+        assert b"fortress-development.fortress-inspection" not in listing.lower().splitlines()
+        write_json(results / "vsix-installation.json", {"status":"PASS","method":"native CLI install and removal"})
     print(results)
 
 

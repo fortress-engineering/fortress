@@ -1,0 +1,186 @@
+"""Exercise the verified package from isolated directories with no Cargo on PATH."""
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path
+from queue import Queue
+import shutil
+import subprocess
+import sys
+from threading import Thread
+
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "cli/_code"))
+sys.path.insert(0, str(ROOT / "editor/testing/_code"))
+import package_install as distribution
+from host_runner import sample
+
+
+def protocol(exe, root, cwd, environment):
+    child = subprocess.Popen([str(exe),"serve","--mcp",str(root)], cwd=cwd, env=environment,
+                             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    replies = Queue(2)
+
+    def collect():
+        while line := child.stdout.readline(2 * 1024**2 + 1):
+            replies.put(line)
+
+    reader = Thread(target=collect, daemon=True)
+    reader.start()
+
+    def send(request):
+        child.stdin.write(json.dumps(request, ensure_ascii=True).encode() + b"\n")
+        child.stdin.flush()
+        if "id" not in request:
+            return None
+        line = replies.get(timeout=90)
+        assert len(line) <= 2 * 1024**2
+        response = json.loads(line)
+        assert response["id"] == request["id"]
+        return response
+
+    try:
+        init = send({"jsonrpc":"2.0","id":1,"method":"initialize","params":{
+            "protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"installed-qualification","version":"1"}}})
+        assert init["result"]["protocolVersion"] == "2025-11-25"
+        send({"jsonrpc":"2.0","method":"notifications/initialized"})
+        tools = send({"jsonrpc":"2.0","id":2,"method":"tools/list"})
+        only, = tools["result"]["tools"]
+        assert only["name"]=="fortress_inspect" and only["annotations"]["readOnlyHint"] is True
+        raw = send({"jsonrpc":"2.0","id":3,"method":"tools/call","params":{
+            "name":"fortress_inspect","arguments":{"request":{"protocol_version":5,
+            "request_id":"installed-status","method":"status","parameters":{}}}}})["result"]
+        refused = send({"jsonrpc":"2.0","id":4,"method":"tools/call","params":{
+            "name":"migrate_apply","arguments":{"approval":"not-an-authorization"}}})
+        assert refused["error"]["data"]["code"] == "TOOL_UNAVAILABLE"
+        assert json.loads(raw["content"][0]["text"]) == raw["structuredContent"]
+        child.stdin.close()
+        assert child.wait(timeout=10) == 0
+        return raw["structuredContent"]
+    finally:
+        if child.poll() is None:
+            child.kill()
+            child.wait(timeout=15)
+
+
+def snapshot(root):
+    return {p.relative_to(root).as_posix():hashlib.sha256(p.read_bytes()).hexdigest()
+            for p in root.rglob("*") if p.is_file()}
+
+
+def execute(package, results, history=None):
+    results.mkdir()
+    transfer = results / "received"
+    transfer.mkdir()
+    archive, = sorted(package.glob("fortress-*.zip"))
+    for asset in (archive,package/"manifest.json",package/"manifest.sha256",package/"install.py"):
+        shutil.copyfile(asset,transfer/asset.name)
+    archive = transfer / archive.name
+    manifest_file = transfer / "manifest.json"
+    raw = manifest_file.read_bytes()
+    expected = (transfer/"manifest.sha256").read_text().strip()
+    assert distribution.digest(raw) == expected
+    m = distribution.verify(archive, raw)
+    assert distribution.hash_file(transfer/"install.py")[1] == m["build"]["installer_sha256"]
+    store = results / "User applications - 安装"
+    cwd = results / "unrelated working dir"
+    cwd.mkdir()
+    root = results / "independent project"
+    sample(root)
+    starting = snapshot(root)
+    # Windows system DLL resolution and Linux glibc do not require development tools.
+    env = {key:os.environ[key] for key in ("SystemRoot","WINDIR","TEMP","TMP","TMPDIR","USERPROFILE","HOME")
+           if key in os.environ}
+    env["PATH"] = str(cwd)
+    env["PYTHONDONTWRITEBYTECODE"] = "1"
+
+    def run(executable,*args,success=(0,),environment=env):
+        r = subprocess.run([str(executable),*map(str,args)],cwd=cwd,env=environment,
+                           stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=120,check=False)
+        assert r.returncode in success,(r.returncode,r.stderr[-4000:],r.stdout[-3000:])
+        return r.stdout
+
+    args = ("-I","-B", transfer/"install.py", "install", archive, manifest_file, store,
+            "--manifest-sha256", expected)
+    slot = Path(json.loads(run(sys.executable,*args))["slot"])
+    assert json.loads(run(sys.executable,*args))["slot"] == str(slot)
+    exe = slot / "bin" / distribution.executable_name()
+    assert distribution.hash_file(exe)[1] == next(x["sha256"] for x in m["files"] if x["path"]==exe.relative_to(slot).as_posix())
+    assert run(exe,"--version").decode().strip() == "fortress " + m["product_version"]
+    cli = json.loads(run(exe,"status","--format","json",root))
+    observed = protocol(exe,root,cwd,env)
+    assert cli["state_ref"] == observed["state_ref"] and cli["result"]==observed["result"]
+    assert cli["result"]["data"]["actual_authority"]["configuration"] == "DECLARED"
+    doctor = json.loads(run(exe,"doctor","--format","json",root))
+    assert doctor["operational_state"]=="COMPLETED"
+    explanation = json.loads(run(exe,"explain","rule:ARCH-SEMANTIC-001","--format","json",root,success=(0,1,2)))
+    assert explanation["actual_source_ref"] == observed["actual_source_ref"]
+    audit = json.loads(run(exe,"audit","--format","json",root,success=(0,1,2)))
+    assert "filesystem.read" in json.dumps(audit)
+    edition = json.loads(run(exe,"upgrade","inspect","--root",root,"--format","json"))
+    assert edition["edition"]["edition"] == json.loads((root/"contract.json").read_bytes())["ecosystem"]["standard"]["edition"]
+    assert edition == json.loads(run(exe,"upgrade","inspect","--root",root,"--format","json"))
+    malformed = cwd/"malformed-bundle.zip"
+    malformed.write_bytes(b"invalid portable evidence")
+    predicate = "https://example.invalid/fortress/assurance/v1"
+    verified = run(exe,"bundle","verify",malformed,"--predicate-type",predicate,
+                   environment=env | {"FORTRESS_VERIFIER_PYTHON":sys.executable},success=(1,2))
+    assert json.loads(verified).get("integrity") != "VERIFIED"
+    no_python = run(exe,"bundle","verify",malformed,"--predicate-type",predicate,
+                    environment=env | {"FORTRESS_VERIFIER_PYTHON":str(cwd/"absent-python")},success=(1,2))
+    assert json.loads(no_python)["error"]["code"] == "VERIFIER_UNAVAILABLE"
+    independent = run(sys.executable,"-I","-B",slot/"share/verify_bundle.py",malformed,
+                      "--predicate-type",predicate,success=(1,2))
+    assert json.loads(independent).get("integrity") != "VERIFIED"
+    evidence_state = "malformed or unavailable refused"
+    if history is not None:
+        portable = cwd / "selected-history"
+        shutil.copytree(history, portable)
+        checked = json.loads(run(sys.executable,"-I","-B",slot/"share/verify_bundle.py",portable,
+                                 "--predicate-type",predicate))
+        through_cli = json.loads(run(exe,"bundle","verify",portable,"--predicate-type",predicate,
+                                     environment=env | {"FORTRESS_VERIFIER_PYTHON":sys.executable}))
+        assert checked == through_cli and checked["integrity"] == "VERIFIED" and checked["authenticity"] == "UNVERIFIED"
+        evidence_state = "selected historical integrity verified and malformed or unavailable refused"
+    native = results / "uninitialized project"
+    (native/"src").mkdir(parents=True)
+    (native/"src/lib.rs").write_bytes(b"pub fn original() -> u8 { 7 }\n")
+    (native/"Cargo.toml").write_bytes(b'[package]\nname = "distribution_fixture"\nversion = "0.1.0"\nedition = "2024"\n')
+    native_bytes = snapshot(native)
+    proposal = cwd/"bootstrap.json"
+    run(exe,"init",native,"--project-id","PF-DISTRIBUTION-FIXTURE","--display-name","Distribution Fixture","--output",proposal)
+    observed_bootstrap = json.loads(run(exe,"init","apply",native,"--proposal",proposal))
+    assert observed_bootstrap["certification"] == "NOT_ESTABLISHED"
+    assert all(snapshot(native)[name] == digest for name,digest in native_bytes.items())
+    assert snapshot(root)==starting
+    (store/"unrelated-user-notes.txt").write_bytes(b"keep")
+    (results/"installed-path.txt").write_text(str(exe),encoding="utf-8")
+    (results/"result.json").write_text(json.dumps({"status":"PASS","manifest_sha256":expected,
+        "source_commit":m["source_commit"],"target":m["target"],"installed_executable_sha256":distribution.hash_file(exe)[1],
+        "fixture_source_ref":edition["source_ref"],"runtime_path":"isolated empty working directory",
+        "source_unchanged":True,"bootstrap_preserved_source":True,"mcp":"PASS","optional_verifier":evidence_state},indent=2),encoding="utf-8")
+    return slot
+
+
+def retire(results):
+    installed = Path((results/"installed-path.txt").read_text(encoding="utf-8"))
+    slot = installed.parent.parent
+    store = slot.parent
+    manifest = (results/"received/manifest.sha256").read_text().strip()
+    subprocess.run([sys.executable,"-I","-B",str(results/"received/install.py"),"remove",str(store),slot.name,
+                    "--manifest-sha256",manifest],check=True,timeout=120)
+    assert not slot.exists() and (store/"unrelated-user-notes.txt").read_bytes()==b"keep"
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("package", type=Path)
+    parser.add_argument("results", type=Path)
+    parser.add_argument("--remove", action="store_true")
+    parser.add_argument("--history", type=Path)
+    args = parser.parse_args()
+    if args.remove:
+        retire(args.results.resolve(strict=True))
+    else:
+        print(execute(args.package.resolve(strict=True),args.results.resolve(),args.history))

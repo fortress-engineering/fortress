@@ -21,6 +21,10 @@ Malformed input, unsupported operations, invalid repository state, or evaluated 
 
 ## Files
 
+### [`package_install.py`](../_code/package_install.py)
+
+Verifies portable development archives against independently supplied manifest digests. Installs exact inventories into immutable application slots and removes only verified owned files. The installer does not write project authority or execute the package contents.
+
 ### [`candidate_command.rs`](../_code/candidate_command.rs)
 
 Adapts explicit overlay base/evaluate/inspect/reconcile requests to the existing Snapshot Governance service. Human and JSON projections preserve all fields. No apply method, production grant validator or execution-assertion reader is installed; explicit export retains a non-authoritative role-resolved proposal. See [candidate examples](code_docs.md).

@@ -3,6 +3,16 @@
   "schema_version": 1,
   "entries": [
     {
+      "schema_id": "urn:fortress:schema:v1:package-manifest",
+      "schema_path": "_data/package_manifest_schema_v1.json",
+      "version": 1,
+      "writer": {"status": "ACTIVE", "source": "testing/_code/build_distribution.py"},
+      "reader": {"status": "ACTIVE", "source": "cli/_code/package_install.py"},
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {"id": "sha256-rfc8785-package-manifest-v1", "source": "cli/_code/package_install.py"},
+      "content_hash_algorithm": {"id": "sha256-exact-file-bytes-v1", "source": "cli/_code/package_install.py"}
+    },
+    {
       "schema_id": "urn:fortress:schema:v1:affected-analysis",
       "schema_path": "engine/affected_analysis/_data/affected_analysis_schema_v1.json",
       "version": 1,

@@ -24,6 +24,10 @@ Maintainers update Data through reviewed semantic changes; schema versions chang
 
 ## Files
 
+### [`package_manifest_schema_v1.json`](../_data/package_manifest_schema_v1.json)
+
+Describes the local development package inventory, native target, exact source binding, compatibility fields, and explicit authenticity and release-authorization states.
+
 ### [`behavior_realization_contracts.json`](../_data/behavior_realization_contracts.json)
 
 Binds every checkpoint of the root Fortress audit Feature to exact supported program-semantic anchors without authoring reachability, realized transitions, bypasses, or verification evidence.

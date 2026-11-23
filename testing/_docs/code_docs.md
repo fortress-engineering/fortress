@@ -18,6 +18,18 @@ A violated assertion or fixture-loading failure fails the test target and surfac
 
 ## Files
 
+### [`build_distribution.py`](../_code/build_distribution.py)
+
+Builds locked native and editor artifacts from a clean exact commit under the existing storage owner. Produces a digest-bound portable development archive and a private desktop test driver outside the payload.
+
+### [`distribution_controls.py`](../_code/distribution_controls.py)
+
+Checks manifest, archive, installation ownership, replacement, interrupted removal, and integrity failures using independent fixtures.
+
+### [`installed_distribution.py`](../_code/installed_distribution.py)
+
+Verifies a copied package, installs its native executable and resources in a disposable store, and exercises CLI and MCP parity, offline verifier errors, and removal from unrelated directories.
+
 ### [`audit_flow.rs`](../_code/audit_flow.rs)
 
 Compiles the live distributed Intended BFG and proves the root-owned repository audit lifecycle spans the correct Module scope and participates in truthful audit rule evaluation.

@@ -159,5 +159,58 @@ jobs:
           CARGO_TARGET_DIR: ${{ runner.temp }}/fortress-editor-target
         run: |
           python3 -B editor/testing/_code/host_runner.py --xvfb --editor /opt/fortress-desktop-fixture/code \
+            --editor-cli /opt/fortress-desktop-fixture/bin/code \
             --fortress "$CARGO_TARGET_DIR/debug/fortress" --stage "$RUNNER_TEMP/fortress-editor-stage" \
             --results "$RUNNER_TEMP/fortress-editor-results"
+
+  qualify_distribution:
+    name: Verify portable installation (${{ matrix.target }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {runner: windows-latest, target: windows-x64}
+          - {runner: ubuntu-latest, target: linux-x64}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 120
+    env:
+      FORTRESS_STORAGE_RETENTION: cleanup-owned-compiler
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@v4.3.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
+        with:
+          node-version: '22.22.3'
+          package-manager-cache: false
+      - name: Select the workspace toolchain and test installation adversary controls
+        shell: pwsh
+        run: |
+          rustup toolchain install 1.97.1 --profile minimal
+          python -B testing/_code/distribution_controls.py
+      - name: Construct the locked native archive and VSIX
+        shell: pwsh
+        run: |
+          $distribution = Join-Path $env:RUNNER_TEMP 'fortress-package'
+          $storage = Join-Path $env:RUNNER_TEMP 'fortress-package-ops'
+          python -B testing/_code/build_distribution.py $distribution --storage $storage --commit $env:GITHUB_SHA
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $replay = Join-Path $env:RUNNER_TEMP 'fortress-package-replay'
+          python -B testing/_code/build_distribution.py $replay --storage $storage --commit $env:GITHUB_SHA
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $published = Get-ChildItem $distribution -File | Where-Object { $_.Extension -in '.zip','.vsix' -or $_.Name -in 'manifest.json','manifest.sha256','install.py' }
+          foreach ($asset in $published) {
+            $first = (Get-FileHash -Algorithm SHA256 -LiteralPath $asset.FullName).Hash
+            $second = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $replay $asset.Name)).Hash
+            if ($first -ne $second) { throw "Independent package bytes differ: $($asset.Name)" }
+            Write-Output "$first $($asset.Name)"
+          }
+      - name: Verify install and removal from an independent directory
+        shell: pwsh
+        run: |
+          $distribution = Join-Path $env:RUNNER_TEMP 'fortress-package'
+          $results = Join-Path $env:RUNNER_TEMP 'fortress-install-control'
+          python -B testing/_code/installed_distribution.py $distribution $results
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -B testing/_code/installed_distribution.py $distribution $results --remove

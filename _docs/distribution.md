@@ -1,0 +1,51 @@
+# Install a local Fortress development build
+
+The portable package contains the native Fortress CLI, an independently installable VSIX, the standalone Python assurance verifier, an offline copy of the registered Standard and schema assets, and the locked workspace dependency inventory. The schemas and protocol documentation let local clients consume the existing public wire formats. The dependency inventory describes the workspace lock and carries no vulnerability-assurance result.
+
+## Select the package
+
+| Target | Format | Runtime |
+| --- | --- | --- |
+| Windows x64 | ZIP with `bin/fortress.exe` | Native Windows x64 runtime and system libraries |
+| Linux x64 | ZIP with `bin/fortress` | Native x86-64 Linux with the GNU C runtime and the libraries required by the build |
+| macOS arm64 | Proposed | No qualified package or format reader |
+
+Use the exact target and runtime evidence accompanying the package. A development build uses product version `0.1.0`. Product versions, Standard editions, and protocol versions have separate identities. The packaged extension uses native query versions 1–5 according to negotiated capabilities. The local MCP server supports MCP `2025-11-25` and `2025-06-18`. The desktop qualification target is VS Code Desktop 1.147.0 on Windows and Linux x64.
+
+## Verify and install
+
+Obtain `install.py`, `manifest.json`, the ZIP, and the manifest SHA-256 through a trusted local channel. Independently check the expected installer SHA-256 before running it. Pass the independently obtained manifest SHA-256 to the installer. The manifest binds the raw ZIP and each installed file. SHA-256 checks validate content integrity. Issuer authenticity and public-release authorization remain unverified for these development artifacts.
+
+On Linux, use a private user-owned application directory and Python 3.11 or later.
+
+```sh
+python3 -I -B install.py verify fortress-0.1.0-linux-x64.zip manifest.json --manifest-sha256 "$MANIFEST_SHA256"
+python3 -I -B install.py install fortress-0.1.0-linux-x64.zip manifest.json "$HOME/.local/fortress" --manifest-sha256 "$MANIFEST_SHA256"
+```
+
+On Windows, use a private directory under your user profile.
+
+```powershell
+python -I -B .\install.py verify .\fortress-0.1.0-windows-x64.zip .\manifest.json --manifest-sha256 $ManifestSha256
+python -I -B .\install.py install .\fortress-0.1.0-windows-x64.zip .\manifest.json (Join-Path $env:LOCALAPPDATA 'Fortress') --manifest-sha256 $ManifestSha256
+```
+
+The reply supplies the exact installed slot. Invoke its `bin/fortress` or `bin/fortress.exe` by absolute path. Optionally add that verified `bin` directory to your user `PATH`. Check which command the shell resolves with `command -v fortress` or `Get-Command fortress` before use. Installation leaves `PATH`, editor settings, repositories, and project governance unchanged. Each installed application slot is separate from repositories, certificate materializations, and migration recovery storage.
+
+## Use the installed CLI
+
+Run `fortress --version`, `fortress status /absolute/project`, and `fortress doctor /absolute/project` from any directory. `fortress query modules /absolute/project` lists supported architectural Modules. Use `fortress explain <identity> /absolute/project` with a reference from that project. Saved evidence keeps its original source bindings. A missing or stale selection has no current assurance meaning. Ordinary inspection and static analysis use the packaged native executable without Rust, Cargo, Node, or Python. Registered native test execution for certification requires the respective external toolchain. Offline `fortress bundle verify` uses a trusted Python 3.11+ executable. Set `FORTRESS_VERIFIER_PYTHON` to its absolute path outside the working and bundle trees. The separately usable `share/verify_bundle.py` also runs offline with standard-library Python. Its result distinguishes integrity from execution, freshness, and authenticity.
+
+In VS Code Desktop use **Extensions → Install from VSIX** on the manifest-verified `editor/fortress-development.vsix`. Set `fortress.executable` in User Settings to the absolute installed CLI path outside candidate repositories. The extension respects workspace trust. Remove it through the Extensions view or with `code --uninstall-extension fortress-development.fortress-inspection`. The CLI installation is independent of that editor action.
+
+Configure an MCP client with the verified executable as the command and `serve`, `--mcp`, and the absolute repository path as separate arguments. For example, use the client’s trusted configuration as described in the [local agent guide](../cli/agent_integration/_docs/code_docs.md). Candidate preparation additionally requires an explicitly selected external storage directory. MCP does not grant permission to write. GitHub production enforcement remains `UNVERIFIED`.
+
+## Replace or remove a build
+
+Reinstalling an identical manifest rechecks the archive and the installed inventory. To replace a qualified build of the same product version and platform, pass `--replace OLD_SLOT OLD_MANIFEST_SHA256` to `install`. The new build receives a separate slot. Switch your trusted client settings or `PATH` to it after verification. The previous version remains available until explicit removal. Other version relationships require a qualified compatibility declaration. Application replacement does not upgrade any project Standard or schema.
+
+Use `python -I -B install.py remove /absolute/install-root SLOT --manifest-sha256 SHA256` to remove the exact application files. Close running consumers first. Leave user-owned files beside application slots. The installer refuses changed files, linked destinations, and unexpected entries. An interrupted install never exposes the incomplete slot. Repeat the verified installation if the final slot is absent. An interrupted removal can resume with the same slot and manifest identity, while the retained tombstone manifest is still present. Preserve uncertain staging or interrupted state for review. These operations use a private directory and a cooperating installer lock. They do not establish guarantees against a privileged process that can rewrite the private store, or arbitrary power loss.
+
+## Reproduce packages
+
+On a supported native host, use the pinned Rust toolchain, Python 3.11+, and Node 22.22.3 with its npm, on the reviewed clean source commit. Use external storage and select the existing `cleanup-owned-compiler` retention policy. Run `python -B testing/_code/build_distribution.py OUT --storage OWNED_STORAGE --commit SOURCE_COMMIT` twice with fresh output directories. Compare the actual ZIP and VSIX bytes, manifests, and installer bytes. The packaging pipeline records the exact source fingerprint, locks, toolchain, target, runtime dependencies, and member digests. A per-platform qualification receipt should accompany the manifests. Different environments need separate evidence.
