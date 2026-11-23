@@ -185,7 +185,14 @@ impl Disposition {
             Self::ProductionTestExcluded => {
                 is_test && native_match == Some(true) && mode == GoBuildTestMode::ProductionOnly
             }
-            Self::SelectedGoSource => !is_test && native_match == Some(true),
+            Self::SelectedGoSource
+            | Self::GoParseFailure
+            | Self::GoAstLimit
+            | Self::DualConstraintsUnsupported
+            | Self::GeneratedSourceContextRequired
+            | Self::CompilerDirectiveContextRequired
+            | Self::CgoContextUnsupported
+            | Self::DependencyContextRequired => !is_test && native_match == Some(true),
             Self::NativeSelectionError => native_match.is_some(),
             Self::VirtualSourceUnavailable => native_match.is_none(),
             Self::TestContextRequired => {
@@ -193,7 +200,6 @@ impl Disposition {
                     && native_match == Some(true)
                     && mode == GoBuildTestMode::RequireSeparateTestContext
             }
-            _ => !is_test && native_match == Some(true),
         }
     }
 }
