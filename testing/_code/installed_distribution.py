@@ -81,9 +81,14 @@ def selected_external_evidence(run, exe, slot, results):
     collector = sdk / "example_evidence_collector.py"
     executable = Path(sys.executable).resolve(strict=True)
 
+    def encode(value):
+        # These fixture DTOs have ASCII keys and exact integers, while the
+        # trusted host selectors must retain Unicode path spelling.
+        return json.dumps(value, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode()
+
     def write(name, value):
         path = authority / name
-        path.write_bytes(distribution.canonical(value))
+        path.write_bytes(encode(value))
         return path
 
     registration = write("registration.json", {
@@ -101,7 +106,7 @@ def selected_external_evidence(run, exe, slot, results):
     assert response["evidence_admission"] == response["producer_authenticity"] == "UNVERIFIED"
     reported = response["result"]
     assert reported["outcome"] == "REPORTED"
-    envelope = distribution.canonical(reported["envelope"])
+    envelope = encode(reported["envelope"])
     identifier = "sha256:" + distribution.digest(envelope)
     raw_payload = reported["raw_utf8"].encode()
     directory = root / "__fortress/evidence/imports" / identifier.split(":")[1]
@@ -113,7 +118,7 @@ def selected_external_evidence(run, exe, slot, results):
         "$schema": "urn:fortress:derived:v1:evidence-input-set", "schema_version": 1,
         "binding": binding, "selected": [{"envelope_digest": identifier,
             "payload_digest": "sha256:" + distribution.digest(raw_payload),
-            "inventory_digest": "sha256:" + distribution.digest(distribution.canonical(inventory))}],
+            "inventory_digest": "sha256:" + distribution.digest(encode(inventory))}],
     })
     state = authority / "state.json"
     run(exe, "state-view", root, "--evidence-inputs", selection, "--output", state)
