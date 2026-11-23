@@ -63,3 +63,11 @@ Describes the local development package inventory, native target, exact source b
 Defines the explicit host-owned Go compiler registration, including the exact
 executable and toolchain. Runtime admission requires an ordinary absolute host
 asset outside the selected repository.
+
+### [python_worker_schema_v1.json](../_data/python_worker_schema_v1.json)
+
+Versioned host registration for the independently selected interpreter. The schema requires an absolute host interpreter and worker path in production. The executable SHA-256, runtime descriptor hash and exact grammar identify the selected binding. The worker path must contain the reviewed implementation shipped with the running Fortress executable.
+
+### [python_lexical_schema_v1.json](../_data/python_lexical_schema_v1.json)
+
+Versioned Python lexical observation envelope. It records the exact source, context, authority, selected interpreter, registration and resource profile. The nested Source Architecture report retains syntax, scope, module validity, source spans and explicit runtime limitations. This shape is an observational projection, with no portable authority or assessment meaning.

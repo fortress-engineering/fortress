@@ -3,6 +3,50 @@
   "schema_version": 1,
   "entries": [
     {
+      "schema_id": "urn:fortress:host:v1:python-lexical-registration",
+      "schema_path": "cli/_data/python_worker_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "cli/_code/python_observe_command.rs"
+      },
+      "reader": {
+        "status": "ACTIVE",
+        "source": "cli/_code/python_observe_command.rs"
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "sha256-owner-exact-python-lexical-binding",
+        "source": "cli/_code/python_observe_command.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-owner-canonical-or-exact-bytes",
+        "source": "cli/_code/python_observe_command.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:derived:v1:python-lexical-observation",
+      "schema_path": "cli/_data/python_lexical_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "cli/_code/python_observe_command.rs"
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "sha256-owner-exact-python-lexical-binding",
+        "source": "cli/_code/python_observe_command.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-owner-canonical-or-exact-bytes",
+        "source": "cli/_code/python_observe_command.rs"
+      }
+    },
+    {
       "schema_id": "urn:fortress:derived:v1:go-native-observation",
       "schema_path": "engine/program_semantics/_data/go_native_observation_schema_v1.json",
       "version": 1,

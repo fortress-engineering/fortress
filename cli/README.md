@@ -201,3 +201,9 @@ environment and bounds the exchange. The command reports package-local typed
 declarations and supported call observations. Build selection, imported
 packages, foreign bodies, dynamic dispatch and runtime effects may remain
 unresolved. The report conveys no finding, certification or write authority.
+
+## Explicit Python lexical observations
+
+Use `fortress source-artifacts --observe-python PROJECT HOST_REGISTRATION SOURCE_PATH lexical` from a trusted host. The selected path is a repository-relative `.py` file. Use `syntax` for the narrower parser-only result. The mode returns a separate machine-readable observation.
+
+Keep the host registration, interpreter and exact reviewed worker outside the project. The supplied registration pins the interpreter executable, selected CPython runtime descriptor and grammar. The worker must match the bytes shipped with Fortress. Review the available runtime context and platform limits before launching. See [Python worker setup](_docs/code_docs.md#python_observe_commandrs).

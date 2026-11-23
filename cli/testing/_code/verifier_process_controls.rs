@@ -77,3 +77,38 @@ fn host_assets_cannot_be_selected_by_project_path() {
     let tool = interpreter(&std::env::temp_dir()).unwrap();
     verifier_process::require_external_asset(&tool, &project).unwrap();
 }
+
+/// T-TF-CLI-0001-R31-001
+/// Fortress requirement: TF-CLI-0001-R31
+#[test]
+fn pinned_compiler_readiness_precedes_source_release() {
+    let tool = interpreter(&std::env::temp_dir()).expect("trusted host Python");
+    let executable = std::fs::read(&tool).unwrap();
+    let stamp = fortress_core::portable::digest(&executable);
+    let build = |code| {
+        let mut process = Command::new(&tool);
+        process.args(["-I", "-S", "-B", "-c", code]);
+        process
+    };
+    let input = b"exact fixture bytes";
+    let expected = b"fortress-ready\n";
+    let (actual, status) = verifier_process::run_pinned_input_after_ready(
+        build("import sys; sys.stdout.buffer.write(b'fortress-ready\\n'); sys.stdout.buffer.flush(); sys.stdout.buffer.write(sys.stdin.buffer.read())"),
+        input.to_vec(),
+        Duration::from_secs(5),
+        &stamp,
+        expected.to_vec(),
+    )
+    .unwrap();
+    assert_eq!(status, 0);
+    assert_eq!(actual, input);
+    let rejected = verifier_process::run_pinned_input_after_ready(
+        build("import sys; sys.stdout.buffer.write(b'incorrect-ready\\n'); sys.stdout.buffer.flush(); sys.stdout.buffer.write(sys.stdin.buffer.read())"),
+        input.to_vec(),
+        Duration::from_secs(5),
+        &stamp,
+        expected.to_vec(),
+    )
+    .unwrap_err();
+    assert_eq!(rejected.code, "VERIFIER_UNAVAILABLE");
+}

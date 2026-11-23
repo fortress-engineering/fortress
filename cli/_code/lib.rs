@@ -62,6 +62,7 @@ mod portable_command;
 mod presentation;
 mod projection_command;
 mod provider_command;
+mod python_observe_command;
 pub mod rpc;
 pub mod sarif;
 mod transition_command;
@@ -710,6 +711,12 @@ fn run_source_artifacts<O: Write, E: Write>(
     output: &mut O,
     error: &mut E,
 ) -> io::Result<u8> {
+    if arguments
+        .first()
+        .is_some_and(|argument| argument == "--observe-python")
+    {
+        return python_observe_command::run(&arguments[1..], output, error);
+    }
     let (root, destination, format) = match parse_source_artifact_arguments(arguments) {
         Ok(value) => value,
         Err(message) => {

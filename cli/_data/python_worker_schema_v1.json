@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:host:v1:python-lexical-registration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "interpreter",
+    "interpreter_sha256",
+    "worker",
+    "runtime_ref",
+    "grammar"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:host:v1:python-lexical-registration"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "interpreter": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "interpreter_sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "worker": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "runtime_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "grammar": {
+      "enum": [
+        "cpython3.12",
+        "cpython3.13"
+      ]
+    }
+  }
+}

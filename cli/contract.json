@@ -306,6 +306,13 @@
             "T-TF-CLI-0001-R30-001",
             "T-TF-CLI-0001-R30-002"
           ]
+        },
+        {
+          "id": "TF-CLI-0001-R31",
+          "statement": "Explicit native Python source inspection selects a reviewed worker and independently pinned external compiler custody, withholds source until the exact resource readiness frame, then returns a source-bound compile-only observation separate from policy, execution and certification.",
+          "tests": [
+            "T-TF-CLI-0001-R31-001"
+          ]
         }
       ]
     }

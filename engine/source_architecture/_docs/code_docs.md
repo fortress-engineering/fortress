@@ -37,4 +37,42 @@ Projects Rust/Cargo source roles, declarations, visibility, trait/implementation
 
 Admits one read-only compile-only worker response into a typed Python lexical observation. The caller selects a portable ordinary Python path in an immutable SourceView, its current EvaluationKey, observation mode, and trusted runtime and worker digest pins. The opaque request ID binds all those inputs and the exact file bytes. Admission rejects stale input, mismatched reply correlation, an unsupported worker protocol, malformed phase results, and out-of-scope coverage, provenance or UTF-8 byte spans. The shared JSON admission scan applies reply byte, nesting, token count, and encoded token limits before the strict decoder allocates the decoded report. A resource refusal is distinct from malformed JSON. Failed runtime or worker custody cannot report completed compiler phases. Output exhaustion retains only the phase status and an unavailable result.
 
-This boundary has no process launcher or installed command. It preserves syntax-only, partial, invalid source, unsupported and unavailable outcomes. Imports and calls remain unresolved. Observation facts neither enter the PSM nor change Source Profiles, ownership, findings, execution evidence or certification. Future host integration must establish actual runtime and dependency identity and bounded execution separately.
+This owner admits observations independently of process startup. It preserves syntax-only, partial, invalid source, unsupported and unavailable outcomes. Imports and calls remain unresolved. Observation facts neither enter the PSM nor change Source Profiles, ownership, findings, execution evidence or certification. Future host integration must establish actual runtime and dependency identity and bounded execution separately.
+
+### [`python_lexical_worker.py`](../_code/python_lexical_worker.py)
+
+Provides the fixed CPython 3.12 or 3.13 compile-only worker for a trusted host.
+The host independently selects the interpreter, runtime installation and worker
+bytes, uses an isolated working directory and environment, and invokes the
+interpreter with `-I -S -B`. The source request supplies bytes and exact identities.
+It supplies no filenames, imports, executable, environment or interpreter flags.
+
+Invoke the worker with `--serve --worker-ref DIGEST --runtime-ref DIGEST`. Keep
+stdin empty until it publishes one bounded 4 KiB ASCII JSON line with schema
+`fortress-host/python-lexical-ready/1` and status `READY`. The record binds both
+pinned digests, exact grammar (`cpython3.12` or `cpython3.13`), platform profile
+and verified limits.
+`UNAVAILABLE` carries only a fixed reason and exits without reading source. The
+host checks the launch-local record against its independent pins and sends a
+single request of at most 192 KiB, then closes stdin. The existing lexical
+response is a separate line of at most 1 MiB. Require the expected process exit
+and complete frames. Timeout or cancellation discards the response and requires
+bounded teardown. The no-input `--describe-runtime` operation describes compiler
+pieces for independent pinning. It does not qualify the interpreter installation.
+
+`LINUX_AS_CPU_V1` verifies hard and soft limits of 96 MiB address space and one
+second direct-process CPU time before source intake and disables core dumps.
+`WINDOWS_JOB_WALL_V1` verifies assignment to a private Job Object, 96 MiB process
+and job commit limits, one active process and kill on close. The host owns the
+wall deadline on both systems. Windows hard CPU-duration enforcement and Linux
+denial of arbitrary child creation are outside these profiles. Unavailable or
+incompatible OS limits prevent input admission. The profiles constrain the
+reviewed worker process. They do not provide an operating-system sandbox.
+
+The worker consumes one UTF-8 source buffer of at most 128 KiB. It verifies
+canonical encoding and exact byte identity, bounds token, AST and projection
+work, and invokes only CPython's tokenizer, AST parser, symbol table and module
+compiler. It never loads the subject from disk, resolves imports, runs the
+compiled module or publishes compiler warnings containing subject text. The
+observation preserves unresolved imports and call targets, unsupported source
+forms, encoding and contextual validity distinctions.

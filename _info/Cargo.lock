@@ -182,6 +182,7 @@ dependencies = [
 name = "fortress-cli"
 version = "0.1.0"
 dependencies = [
+ "base64",
  "fortress-core",
  "serde",
  "serde_json",

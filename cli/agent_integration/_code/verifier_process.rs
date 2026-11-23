@@ -1,7 +1,7 @@
 //! Host interpreter admission and bounded supervision for the embedded consumer.
 
 use std::fs::File;
-use std::io::{Read, Write};
+use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use std::sync::mpsc;
@@ -10,6 +10,7 @@ use std::time::{Duration, Instant};
 use fortress_core::portable::{PortableError, failure};
 
 const OUTPUT_BYTES: u64 = 1024 * 1024;
+const READY_BYTES: usize = 4096;
 const DEADLINE: Duration = Duration::from_mins(3);
 
 pub(super) fn interpreter(bundle: &Path) -> Result<PathBuf, PortableError> {
@@ -155,7 +156,7 @@ pub(super) fn run_bounded(
     script: &'static str,
     deadline: Duration,
 ) -> Result<(Vec<u8>, u8), PortableError> {
-    run_checked(command, script.as_bytes().to_vec(), deadline, None)
+    run_checked(command, script.as_bytes().to_vec(), deadline, None, None)
 }
 
 pub(crate) fn run_pinned(
@@ -172,7 +173,34 @@ pub(crate) fn run_pinned_input(
     deadline: Duration,
     executable_ref: &str,
 ) -> Result<(Vec<u8>, u8), PortableError> {
-    run_checked(command, input, deadline, Some(executable_ref))
+    run_checked(command, input, deadline, Some(executable_ref), None)
+}
+
+pub(crate) fn run_pinned_input_after_ready(
+    command: Command,
+    input: Vec<u8>,
+    deadline: Duration,
+    executable_ref: &str,
+    ready_line: Vec<u8>,
+) -> Result<(Vec<u8>, u8), PortableError> {
+    if ready_line.len() > READY_BYTES
+        || !ready_line.is_ascii()
+        || !ready_line
+            .strip_suffix(b"\n")
+            .is_some_and(|body| !body.is_empty() && !body.contains(&b'\n'))
+    {
+        return Err(failure(
+            "VERIFIER_UNAVAILABLE",
+            "invalid worker readiness premise",
+        ));
+    }
+    run_checked(
+        command,
+        input,
+        deadline,
+        Some(executable_ref),
+        Some(ready_line),
+    )
 }
 
 fn run_checked(
@@ -180,6 +208,7 @@ fn run_checked(
     input: Vec<u8>,
     deadline: Duration,
     executable_ref: Option<&str>,
+    ready_line: Option<Vec<u8>>,
 ) -> Result<(Vec<u8>, u8), PortableError> {
     let executable = PathBuf::from(command.get_program());
     let (tool, stamp) = tool_stamp(&executable)?;
@@ -195,41 +224,7 @@ fn run_checked(
         .stderr(Stdio::piped());
     let started = Instant::now();
     let mut child = OwnedChild(command.spawn().map_err(|error| unavailable(&error))?);
-    let mut stdin = child
-        .0
-        .stdin
-        .take()
-        .ok_or_else(|| failure("VERIFIER_UNAVAILABLE", "missing stdin"))?;
-    let stdout = child
-        .0
-        .stdout
-        .take()
-        .ok_or_else(|| failure("VERIFIER_UNAVAILABLE", "missing stdout"))?;
-    let stderr = child
-        .0
-        .stderr
-        .take()
-        .ok_or_else(|| failure("VERIFIER_UNAVAILABLE", "missing stderr"))?;
-    let (send, receive) = mpsc::channel();
-    let writer = send.clone();
-    std::thread::spawn(move || {
-        let _ = writer.send((0, stdin.write_all(&input).map(|()| Vec::new())));
-    });
-    for (id, pipe) in [
-        (1, Box::new(stdout) as Box<dyn Read + Send>),
-        (2, Box::new(stderr) as Box<dyn Read + Send>),
-    ] {
-        let sender = send.clone();
-        std::thread::spawn(move || {
-            let mut bytes = Vec::new();
-            let result = pipe
-                .take(OUTPUT_BYTES + 1)
-                .read_to_end(&mut bytes)
-                .map(|_| bytes);
-            let _ = sender.send((id, result));
-        });
-    }
-    drop(send);
+    let receive = transfer_pipes(&mut child.0, input, ready_line)?;
     let (mut output, mut errors, mut completed) = (Vec::new(), Vec::new(), 0);
     loop {
         while let Ok((id, result)) = receive.try_recv() {
@@ -279,4 +274,71 @@ fn run_checked(
         }
         std::thread::sleep(Duration::from_millis(10));
     }
+}
+
+type PipeResult = (u8, io::Result<Vec<u8>>);
+
+fn transfer_pipes(
+    child: &mut Child,
+    input: Vec<u8>,
+    ready_line: Option<Vec<u8>>,
+) -> Result<mpsc::Receiver<PipeResult>, PortableError> {
+    let mut stdin = child
+        .stdin
+        .take()
+        .ok_or_else(|| failure("VERIFIER_UNAVAILABLE", "missing stdin"))?;
+    let mut stdout = child
+        .stdout
+        .take()
+        .ok_or_else(|| failure("VERIFIER_UNAVAILABLE", "missing stdout"))?;
+    let stderr = child
+        .stderr
+        .take()
+        .ok_or_else(|| failure("VERIFIER_UNAVAILABLE", "missing stderr"))?;
+    let (send, receive) = mpsc::channel();
+    let (allow_input, wait_for_readiness) = mpsc::sync_channel(1);
+    let gated = ready_line.is_some();
+
+    let writer = send.clone();
+    std::thread::spawn(move || {
+        let result = if gated && wait_for_readiness.recv().is_err() {
+            Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "worker readiness was not accepted",
+            ))
+        } else {
+            stdin.write_all(&input)
+        };
+        let _ = writer.send((0, result.map(|()| Vec::new())));
+    });
+
+    let reader = send.clone();
+    std::thread::spawn(move || {
+        let result = (|| {
+            if let Some(expected) = ready_line {
+                let mut announced = vec![0; expected.len()];
+                stdout.read_exact(&mut announced)?;
+                if announced != expected {
+                    return Err(io::Error::new(
+                        io::ErrorKind::InvalidData,
+                        "worker readiness differs from its exact premise",
+                    ));
+                }
+                // Only the exact startup frame admits release of the request.
+                let _ = allow_input.send(());
+            }
+            read_pipe(stdout)
+        })();
+        let _ = reader.send((1, result));
+    });
+    std::thread::spawn(move || {
+        let _ = send.send((2, read_pipe(stderr)));
+    });
+    Ok(receive)
+}
+
+fn read_pipe(pipe: impl Read) -> io::Result<Vec<u8>> {
+    let mut bytes = Vec::new();
+    pipe.take(OUTPUT_BYTES + 1).read_to_end(&mut bytes)?;
+    Ok(bytes)
 }

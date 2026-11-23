@@ -1,0 +1,352 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v1:python-lexical-observation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "evaluation",
+    "registration_ref",
+    "interpreter_ref",
+    "resource_profile",
+    "worker_timeout_ms",
+    "observation"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:derived:v1:python-lexical-observation"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "evaluation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_manifest_digest",
+        "program_context_digest",
+        "authority_binding_digest"
+      ],
+      "properties": {
+        "source_manifest_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "program_context_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "authority_binding_digest": {
+          "$ref": "#/$defs/digest"
+        }
+      }
+    },
+    "registration_ref": {
+      "$ref": "#/$defs/digest"
+    },
+    "interpreter_ref": {
+      "$ref": "#/$defs/digest"
+    },
+    "resource_profile": {
+      "enum": [
+        "LINUX_AS_CPU_V1",
+        "WINDOWS_JOB_WALL_V1"
+      ]
+    },
+    "worker_timeout_ms": {
+      "const": 5000
+    },
+    "observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "request",
+        "report"
+      ],
+      "properties": {
+        "request": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "source_view_ref",
+            "evaluation_ref",
+            "source_path",
+            "source_ref",
+            "byte_count",
+            "mode",
+            "producer"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "source_view_ref": {
+              "$ref": "#/$defs/digest"
+            },
+            "evaluation_ref": {
+              "$ref": "#/$defs/digest"
+            },
+            "source_path": {
+              "type": "string",
+              "minLength": 1
+            },
+            "source_ref": {
+              "$ref": "#/$defs/digest"
+            },
+            "byte_count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 131072
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "SYNTAX",
+                "LEXICAL"
+              ]
+            },
+            "producer": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "grammar",
+                "runtime_ref",
+                "worker_ref"
+              ],
+              "properties": {
+                "grammar": {
+                  "enum": [
+                    "Cpython312",
+                    "Cpython313"
+                  ]
+                },
+                "runtime_ref": {
+                  "$ref": "#/$defs/digest"
+                },
+                "worker_ref": {
+                  "$ref": "#/$defs/digest"
+                }
+              }
+            }
+          }
+        },
+        "report": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "id",
+            "source_ref",
+            "byte_count",
+            "runtime_ref",
+            "worker_ref",
+            "mode",
+            "outcome",
+            "stages",
+            "observations",
+            "target_execution",
+            "runtime_limitations"
+          ],
+          "properties": {
+            "schema": {
+              "const": "fortress-research/python-lexical-response/1"
+            },
+            "id": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "source_ref": {
+              "$ref": "#/$defs/digest"
+            },
+            "byte_count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 131072
+            },
+            "runtime_ref": {
+              "$ref": "#/$defs/digest"
+            },
+            "worker_ref": {
+              "$ref": "#/$defs/digest"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "SYNTAX",
+                "LEXICAL"
+              ]
+            },
+            "outcome": {
+              "enum": [
+                "SYNTAX_ONLY",
+                "LEXICAL",
+                "PARTIAL",
+                "INVALID_SOURCE",
+                "UNSUPPORTED",
+                "UNAVAILABLE"
+              ]
+            },
+            "stages": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "SYNTAX",
+                "LEXICAL_SCOPE",
+                "MODULE_VALIDITY"
+              ],
+              "properties": {
+                "SYNTAX": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "status"
+                  ],
+                  "properties": {
+                    "status": {
+                      "enum": [
+                        "COMPLETE",
+                        "INVALID",
+                        "INCOMPLETE",
+                        "NOT_RUN"
+                      ]
+                    },
+                    "reason": {
+                      "type": "string",
+                      "maxLength": 64
+                    },
+                    "line": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 131073
+                    }
+                  }
+                },
+                "LEXICAL_SCOPE": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "status"
+                  ],
+                  "properties": {
+                    "status": {
+                      "enum": [
+                        "COMPLETE",
+                        "INVALID",
+                        "INCOMPLETE",
+                        "NOT_RUN"
+                      ]
+                    },
+                    "reason": {
+                      "type": "string",
+                      "maxLength": 64
+                    },
+                    "line": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 131073
+                    }
+                  }
+                },
+                "MODULE_VALIDITY": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "status"
+                  ],
+                  "properties": {
+                    "status": {
+                      "enum": [
+                        "COMPLETE",
+                        "INVALID",
+                        "INCOMPLETE",
+                        "NOT_RUN"
+                      ]
+                    },
+                    "reason": {
+                      "type": "string",
+                      "maxLength": 64
+                    },
+                    "line": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 131073
+                    }
+                  }
+                }
+              }
+            },
+            "observations": {
+              "anyOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "scopes",
+                    "imports",
+                    "constructs",
+                    "limitations"
+                  ],
+                  "properties": {
+                    "scopes": {
+                      "type": "array",
+                      "maxItems": 256,
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    "imports": {
+                      "type": "array",
+                      "maxItems": 5000,
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    "constructs": {
+                      "type": "array",
+                      "maxItems": 5000,
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    "limitations": {
+                      "type": "array",
+                      "maxItems": 5000,
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              ]
+            },
+            "target_execution": {
+              "const": "NOT_RUN"
+            },
+            "runtime_limitations": {
+              "const": [
+                "IMPORT_TARGETS",
+                "RUNTIME_CALL_TARGETS",
+                "EFFECTS",
+                "EXECUTION"
+              ]
+            },
+            "reason": {
+              "type": "string",
+              "maxLength": 64
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    }
+  }
+}
