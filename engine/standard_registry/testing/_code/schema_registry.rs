@@ -43,7 +43,7 @@ fn registered_schemas_are_unique_json_schema_documents() {
     assert!(
         paths
             .iter()
-            .any(|path| path == "_data/package_manifest_schema_v1.json")
+            .any(|path| path == "cli/_data/package_manifest_schema_v1.json")
     );
     assert!(paths.iter().any(
         |path| path == "engine/snapshot_governance/_data/security_qualification_schema_v1.json"

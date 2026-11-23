@@ -4,7 +4,7 @@
   "entries": [
     {
       "schema_id": "urn:fortress:schema:v1:package-manifest",
-      "schema_path": "_data/package_manifest_schema_v1.json",
+      "schema_path": "cli/_data/package_manifest_schema_v1.json",
       "version": 1,
       "writer": {"status": "ACTIVE", "source": "testing/_code/build_distribution.py"},
       "reader": {"status": "ACTIVE", "source": "cli/_code/package_install.py"},

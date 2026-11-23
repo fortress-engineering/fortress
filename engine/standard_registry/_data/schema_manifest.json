@@ -4,7 +4,7 @@
   "id": "fortress-schema-registry-v2",
   "schemas": [
     "engine/affected_analysis/_data/affected_analysis_schema_v1.json",
-    "_data/package_manifest_schema_v1.json",
+    "cli/_data/package_manifest_schema_v1.json",
     "engine/standard_registry/_data/schema_manifest_schema_v1.json",
     "engine/standard_registry/_data/schema_manifest_schema_v2.json",
     "engine/standard_registry/_data/compatibility_catalog_schema_v1.json",
