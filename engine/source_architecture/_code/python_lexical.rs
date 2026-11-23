@@ -49,9 +49,9 @@ pub enum PythonLexicalMode {
 /// Supported worker interpreter family selected by the trusted host.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
 pub enum PythonGrammar {
-    /// CPython 3.12 in ordinary module mode.
+    /// `CPython` 3.12 in ordinary module mode.
     Cpython312,
-    /// CPython 3.13 in ordinary module mode.
+    /// `CPython` 3.13 in ordinary module mode.
     Cpython313,
 }
 
@@ -790,9 +790,8 @@ impl Facts {
 impl Import {
     fn validate(&self) -> bool {
         let valid_form = match (self.form, self.level, &self.module) {
-            (ImportForm::Import, None, None) => true,
             (ImportForm::From, Some(_), Some(module)) => valid_name(module),
-            (ImportForm::From, Some(1..), None) => true,
+            (ImportForm::Import, None, None) | (ImportForm::From, Some(1..), None) => true,
             _ => false,
         };
         valid_form
