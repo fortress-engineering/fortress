@@ -1035,16 +1035,33 @@ fn assert_corpus_input_binding_compatibility(
     result: &SemanticConformanceEvaluation,
     current_digest: &str,
     record: &serde_json::Value,
+    producer_update: &serde_json::Value,
 ) {
-    assert_eq!(record["current_raw_output_digest"], current_digest);
+    assert_eq!(producer_update["current_raw_output_digest"], current_digest);
+    assert_eq!(
+        producer_update["previous_raw_output_digest"],
+        record["current_raw_output_digest"]
+    );
     let current_utf8 = result.model().to_canonical_json().unwrap();
     let historical_utf8 = record["historical_model_utf8"].as_str().unwrap();
-    let bindings = record["current_to_historical_bindings"]
+    let mut bindings = record["current_to_historical_bindings"]
+        .as_object()
+        .unwrap()
+        .clone();
+    let producer_bindings = producer_update["current_to_previous_bindings"]
         .as_object()
         .unwrap();
+    assert!(!producer_bindings.is_empty());
+    for (current, previous) in producer_bindings {
+        let previous = previous.as_str().unwrap();
+        let historical = bindings
+            .remove(previous)
+            .expect("previous identity is frozen");
+        assert!(bindings.insert(current.clone(), historical).is_none());
+    }
     assert!(!bindings.is_empty());
     let mut historical_ids = BTreeSet::new();
-    for (current, historical) in bindings {
+    for (current, historical) in &bindings {
         let historical = historical.as_str().unwrap();
         let (current_prefix, current_hash) = current.rsplit_once("sha256:").unwrap();
         let (historical_prefix, historical_hash) = historical.rsplit_once("sha256:").unwrap();
@@ -1069,7 +1086,7 @@ fn assert_corpus_input_binding_compatibility(
     }
     let mut current: serde_json::Value = serde_json::from_str(&current_utf8).unwrap();
     let mut historical: serde_json::Value = serde_json::from_str(historical_utf8).unwrap();
-    project_corpus_input_bindings(&mut current, bindings);
+    project_corpus_input_bindings(&mut current, &bindings);
     project_corpus_input_bindings(&mut historical, &serde_json::Map::new());
     assert_eq!(
         current, historical,
@@ -1092,14 +1109,28 @@ fn qualification_corpus_replays_authored_cases() {
     let ledger: serde_json::Value =
         serde_json::from_slice(&fs::read(ledger_path).expect("regression ledger reads"))
             .expect("regression ledger parses");
-    let compatibility: serde_json::Value = serde_json::from_slice(
-        &fs::read(
-            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-                .join("../../testing/_data/flow_compatibility_bindings_v1.json"),
-        )
-        .unwrap(),
+    let inputs = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../testing/_data");
+    let compatibility_bytes = fs::read(inputs.join("flow_compatibility_bindings_v1.json")).unwrap();
+    let compatibility: serde_json::Value = serde_json::from_slice(&compatibility_bytes).unwrap();
+    let producer_updates: serde_json::Value = serde_json::from_slice(
+        &fs::read(inputs.join("semantic_producer_bindings_v1.json")).unwrap(),
     )
     .unwrap();
+    assert_eq!(
+        producer_updates["format"],
+        "semantic-corpus-producer-bindings-v1"
+    );
+    assert_eq!(producer_updates["schema_version"], 1);
+    assert_eq!(producer_updates["previous_semantic_producer"], "2.0.0");
+    assert_eq!(
+        producer_updates["current_semantic_producer"],
+        fortress_core::semantic_analysis::SEMANTIC_ANALYSIS_VERSION
+    );
+    assert_eq!(
+        producer_updates["frozen_flow_binding_record"],
+        format!("sha256:{:x}", Sha256::digest(&compatibility_bytes))
+    );
+    let producer_cases = producer_updates["cases"].as_array().unwrap();
     assert_eq!(
         compatibility["format"],
         "semantic-corpus-input-binding-compatibility-v1"
@@ -1150,6 +1181,14 @@ fn qualification_corpus_replays_authored_cases() {
         .map(|case| case["case_id"].as_str().unwrap())
         .collect::<BTreeSet<_>>();
     assert_eq!(ids.len(), manifest["cases"].as_array().unwrap().len());
+    assert_eq!(producer_cases.len(), ids.len());
+    assert_eq!(
+        producer_cases
+            .iter()
+            .map(|case| case["case_id"].as_str().unwrap())
+            .collect::<BTreeSet<_>>(),
+        ids
+    );
     for subject in manifest["upstream_subjects"].as_array().unwrap() {
         assert_eq!(
             subject["adjudication_status"],
@@ -1252,7 +1291,16 @@ fn qualification_corpus_replays_authored_cases() {
             .iter()
             .find(|record| record["case_id"] == case["case_id"])
             .unwrap();
-        assert_corpus_input_binding_compatibility(&result, &raw_digest, compatibility_case);
+        let producer_update = producer_cases
+            .iter()
+            .find(|record| record["case_id"] == case["case_id"])
+            .unwrap();
+        assert_corpus_input_binding_compatibility(
+            &result,
+            &raw_digest,
+            compatibility_case,
+            producer_update,
+        );
         let legacy_digest = legacy_corpus_snapshot_digest(
             &files,
             compatibility_case["historical_model_utf8"]
