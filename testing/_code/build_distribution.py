@@ -150,7 +150,11 @@ def build(destination, storage, checkout):
         stage = owner.staging / "editor"
         run_command(ROOT, [sys.executable,"-B","editor/_code/build.py", str(stage),"--install-tools","--vsix"],
                     env, workspace=owner, timeout_seconds=600)
-        exe = owner.target / "release" / executable_name(target)
+        # Cargo may hard-link the public executable to its dependency output.
+        # Packages consume a separate ordinary file, leaving Cargo's layout intact.
+        exe = owner.staging / executable_name(target)
+        shutil.copyfile(owner.target / "release" / exe.name, exe)
+        exe.chmod(0o755)
         version_line = subprocess.check_output([str(exe),"--version"], cwd=owner.staging, text=True, timeout=30).strip()
         if version_line != "fortress " + version:
             raise ValueError("built executable version differs from workspace version: " + version_line)
