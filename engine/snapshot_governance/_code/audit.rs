@@ -4886,7 +4886,10 @@ fn projection_generator_version(kind: ProjectionKind) -> String {
             crate::source_architecture::SOURCE_ARCHITECTURE_SEMANTIC_VERSION.into()
         }
         ProjectionKind::Audit => {
-            format!("{AFFECTED_ANALYSIS_VERSION}+audit-v{AUDIT_RESULT_SCHEMA_VERSION}")
+            format!(
+                "{AFFECTED_ANALYSIS_VERSION}+audit-v{AUDIT_RESULT_SCHEMA_VERSION}+semantic-{}",
+                crate::semantic_analysis::SEMANTIC_ANALYSIS_VERSION
+            )
         }
         _ => AFFECTED_ANALYSIS_VERSION.into(),
     }

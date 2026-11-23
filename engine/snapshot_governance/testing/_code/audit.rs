@@ -4,12 +4,17 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 
+use fortress_core::affected_analysis::{
+    AFFECTED_ANALYSIS_VERSION, IncrementalCacheState, IncrementalProjectionCache,
+    ProjectionCacheKey, ProjectionKind,
+};
 use fortress_core::audit::{
-    audit_repository, compile_repository_environmental_analysis,
+    AUDIT_RESULT_SCHEMA_VERSION, audit_repository, compile_repository_environmental_analysis,
     compile_repository_information_flow_analysis, compile_repository_psm,
     compile_repository_realized_bfg, compile_repository_semantic_analysis,
     compile_repository_semantic_conformance, compile_repository_source_artifact_model,
     compile_repository_state_effect_analysis, inspect_repository_modules,
+    prepare_repository_projection_cache,
 };
 use fortress_core::environmental_semantics::canonicalize_environment_contract_json;
 use fortress_core::evaluation::RuleExecutionState;
@@ -87,6 +92,49 @@ fn assert_native_profile_has_no_filing_noise(repository: &Path) {
                 .all(|finding| finding.rule_id() != rule_id)
         );
     }
+}
+
+/// `T-AUDIT-CACHE-SEMANTIC-PRODUCER-001`
+/// Fortress classification: infrastructure
+#[test]
+fn audit_rejects_cache_entries_without_a_semantic_producer_binding() {
+    let repository = TestRepository::new("audit-cache-producer");
+    repository.write("src/lib.rs", "pub fn value() {}\n");
+    let current = prepare_repository_projection_cache(repository.path(), ProjectionKind::Audit)
+        .expect("current audit key");
+    let prior = ProjectionCacheKey::new(
+        ProjectionKind::Audit,
+        "fortress-core/audit",
+        format!("{AFFECTED_ANALYSIS_VERSION}+audit-v{AUDIT_RESULT_SCHEMA_VERSION}"),
+        current.key().dependencies().to_vec(),
+    )
+    .expect("prior audit key");
+    let storage = TestRepository::new("audit-cache-storage");
+    let cache = IncrementalProjectionCache::new(storage.path(), "cache-producer-fixture")
+        .expect("independent cache");
+    cache.store(&prior, b"{}\n", 1).expect("retain prior audit");
+    assert_eq!(
+        cache.load(&prior).expect("load prior audit").state(),
+        IncrementalCacheState::ReusableCurrent
+    );
+    assert_eq!(
+        cache
+            .load(current.key())
+            .expect("load current audit")
+            .state(),
+        IncrementalCacheState::Stale
+    );
+    let encoded = serde_json::to_value(current.key()).expect("serialize current key");
+    let version = format!(
+        "+semantic-{}",
+        fortress_core::semantic_analysis::SEMANTIC_ANALYSIS_VERSION
+    );
+    assert!(
+        encoded["generator_version"]
+            .as_str()
+            .unwrap()
+            .ends_with(&version)
+    );
 }
 
 /// `T-LOGICAL-MODULE-INTEGRATION-001`
