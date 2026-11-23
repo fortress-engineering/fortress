@@ -40,6 +40,8 @@ In VS Code Desktop use **Extensions → Install from VSIX** on the manifest-veri
 
 Configure an MCP client with the verified executable as the command and `serve`, `--mcp`, and the absolute repository path as separate arguments. For example, use the client’s trusted configuration as described in the [local agent guide](../cli/agent_integration/_docs/code_docs.md). Candidate preparation additionally requires an explicitly selected external storage directory. MCP does not grant permission to write. GitHub production enforcement remains `UNVERIFIED`.
 
+When applying a separately reviewed project migration, select a private external directory on the project’s volume using the established storage configuration. If the operating system puts temporary files on another volume, set `FORTRESS_EXECUTION_STORAGE_DIR` for commands that use default migration storage.
+
 ## Replace or remove a build
 
 Reinstalling an identical manifest rechecks the archive and the installed inventory. To replace a qualified build of the same product version and platform, pass `--replace OLD_SLOT OLD_MANIFEST_SHA256` to `install`. The new build receives a separate slot. Switch your trusted client settings or `PATH` to it after verification. The previous version remains available until explicit removal. Other version relationships require a qualified compatibility declaration. Application replacement does not upgrade any project Standard or schema.

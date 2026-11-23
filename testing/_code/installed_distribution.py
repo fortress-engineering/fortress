@@ -150,7 +150,9 @@ def execute(package, results, history=None):
     native_bytes = snapshot(native)
     proposal = cwd/"bootstrap.json"
     run(exe,"init",native,"--project-id","PF-DISTRIBUTION-FIXTURE","--display-name","Distribution Fixture","--output",proposal)
-    observed_bootstrap = json.loads(run(exe,"init","apply",native,"--proposal",proposal))
+    # The system temp directory can be on a different volume from the fixture.
+    storage = env | {"FORTRESS_EXECUTION_STORAGE_DIR": str(results / "migration-storage")}
+    observed_bootstrap = json.loads(run(exe,"init","apply",native,"--proposal",proposal,environment=storage))
     assert observed_bootstrap["certification"] == "NOT_ESTABLISHED"
     assert all(snapshot(native)[name] == digest for name,digest in native_bytes.items())
     assert snapshot(root)==starting

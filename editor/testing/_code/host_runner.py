@@ -118,9 +118,7 @@ def main() -> None:
                        env=environment, check=True, timeout=120)
         runtime, = (results / "extensions").glob("fortress-development.fortress-inspection-*")
         verify_installation(expected_runtime, runtime)
-    control = stage / "desktop_control.js"
-    if not control.is_file():
-        control = stage / "out/testing/_code/host.js"
+    control = stage / "out/testing/_code/host.js"
     assert control.is_file()
     modes = ("trusted", "restricted") if args.mode == "both" else (args.mode,)
     for mode in modes:

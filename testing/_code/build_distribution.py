@@ -196,8 +196,9 @@ def build(destination, storage, checkout):
         if repository_fingerprint(ROOT)[0] != source_fingerprint or output("git","rev-parse","HEAD") != commit:
             raise ValueError("source changed during packaging")
         shutil.copyfile(ROOT/INSTALLER,destination/"install.py")
-        # Test driver is outside all installation payloads.
-        shutil.copyfile(stage/"out/testing/_code/host.js",destination/"desktop_control.js")
+        # The editor control imports the compiled client by relative path.
+        # The complete control tree is a qualification input outside the ZIP.
+        shutil.copytree(stage / "out", destination / "out")
         (destination/"manifest.json").write_bytes(raw)
         (destination/"manifest.sha256").write_text(digest(raw)+"\n",encoding="ascii",newline="\n")
         owner.publish("verified-local-distribution-build")
