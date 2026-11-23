@@ -21,3 +21,7 @@ Negative cases assert typed profile errors or exact Source Architecture conclusi
 ### [`source_architecture.rs`](../_code/source_architecture.rs)
 
 Exercises responsibility, identity, content, profile, archetype, region, generated, verification, relocation, determinism, live inventory, and scale conformance requirements.
+
+### [`python_lexical_observation.rs`](../_code/python_lexical_observation.rs)
+
+Exercises exact SourceView, context, producer and mode correlation for compile-only Python lexical observations. Fixtures independently state scope and UTF-8 byte positions, and distinguish partial, invalid, unsupported and unavailable cases. Negative controls refuse mutated snapshots, contextual invalidity concealed by a later phase, noncanonical paths, control inputs, resolved target assertions, duplicate JSON fields, and byte, nesting, token count and token length budget exhaustion. Custody and output failures have separate allowed phase states. The controls admit retained reports only and launch no external process.

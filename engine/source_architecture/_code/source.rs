@@ -6,6 +6,10 @@
 //! language syntax into structural facts; this module does not perform deep
 //! program semantics or define universal language idioms.
 
+/// Exact-source admission for compile-only Python lexical observations.
+#[path = "python_lexical.rs"]
+pub mod python_lexical;
+
 #[path = "rust.rs"]
 mod rust;
 

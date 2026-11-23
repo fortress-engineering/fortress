@@ -32,3 +32,9 @@ Defines Source Artifact Model v1, universal semantic regions and coverage, Sourc
 ### [`rust.rs`](../_code/rust.rs)
 
 Projects Rust/Cargo source roles, declarations, visibility, trait/implementation structure, attributes, and explicit macro-expansion limitations into the registered Rust Source Profile without creating a second program-semantic model. Rust tokenization invokes Repository Observation's neutral retained-input admission helper before parsing; inactive admission preserves ordinary profile observation.
+
+### [`python_lexical.rs`](../_code/python_lexical.rs)
+
+Admits one read-only compile-only worker response into a typed Python lexical observation. The caller selects a portable ordinary Python path in an immutable SourceView, its current EvaluationKey, observation mode, and trusted runtime and worker digest pins. The opaque request ID binds all those inputs and the exact file bytes. Admission rejects stale input, mismatched reply correlation, an unsupported worker protocol, malformed phase results, and out-of-scope coverage, provenance or UTF-8 byte spans. The shared JSON admission scan applies reply byte, nesting, token count, and encoded token limits before the strict decoder allocates the decoded report. A resource refusal is distinct from malformed JSON. Failed runtime or worker custody cannot report completed compiler phases. Output exhaustion retains only the phase status and an unavailable result.
+
+This boundary has no process launcher or installed command. It preserves syntax-only, partial, invalid source, unsupported and unavailable outcomes. Imports and calls remain unresolved. Observation facts neither enter the PSM nor change Source Profiles, ownership, findings, execution evidence or certification. Future host integration must establish actual runtime and dependency identity and bounded execution separately.

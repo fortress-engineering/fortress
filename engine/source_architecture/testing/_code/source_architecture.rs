@@ -1,5 +1,7 @@
 //! Universal Source Architecture conformance tests.
 
+mod python_lexical_observation;
+
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 

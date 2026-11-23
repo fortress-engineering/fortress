@@ -109,6 +109,18 @@
             "T-AF-SOURCE-ARCHITECTURE-0001-R04-003",
             "T-AF-SOURCE-ARCHITECTURE-0001-R04-004"
           ]
+        },
+        {
+          "id": "AF-SOURCE-ARCHITECTURE-0001-R05",
+          "statement": "Compile-only Python lexical observations admit one ordinary immutable source entry and bounded worker data against exact source, snapshot, evaluation context, mode and producer bindings, preserving syntax-only, scoped invalidity, partial coverage and runtime uncertainty without granting execution, semantic proof or certification.",
+          "tests": [
+            "T-AF-SOURCE-ARCHITECTURE-0001-R05-001",
+            "T-AF-SOURCE-ARCHITECTURE-0001-R05-002",
+            "T-AF-SOURCE-ARCHITECTURE-0001-R05-003",
+            "T-AF-SOURCE-ARCHITECTURE-0001-R05-004",
+            "T-AF-SOURCE-ARCHITECTURE-0001-R05-005",
+            "T-AF-SOURCE-ARCHITECTURE-0001-R05-006"
+          ]
         }
       ]
     }
