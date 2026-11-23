@@ -106,19 +106,17 @@ fn tool_stamp(path: &Path) -> Result<(File, String), PortableError> {
             "interpreter identity budget exceeded",
         ));
     }
-    let mut bytes = Vec::new();
-    Read::by_ref(&mut handle)
-        .take(MAXIMUM + 1)
-        .read_to_end(&mut bytes)
-        .map_err(|error| unavailable(&error))?;
-    if bytes.len() as u64 > MAXIMUM || bytes.len() as u64 != before.len() {
+    let (bytes, stamp) =
+        fortress_core::portable::digest_reader(&mut Read::by_ref(&mut handle).take(MAXIMUM + 1))
+            .map_err(|error| unavailable(&error))?;
+    if bytes > MAXIMUM || bytes != before.len() {
         return Err(failure(
             "RESOURCE_LIMIT",
             "interpreter grew beyond identity budget",
         ));
     }
     physical::verify_regular(path, &handle, &before).map_err(|error| unavailable(&error))?;
-    Ok((handle, fortress_core::portable::digest(&bytes)))
+    Ok((handle, stamp))
 }
 
 pub(crate) fn require_external_asset(path: &Path, project: &Path) -> Result<(), String> {

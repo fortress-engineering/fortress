@@ -101,6 +101,16 @@ pub fn digest(bytes: &[u8]) -> String {
     format!("sha256:{:x}", Sha256::digest(bytes))
 }
 
+/// Exact byte digest and byte count for a stream admitted by the caller.
+///
+/// # Errors
+/// Returns the first read error without publishing a digest.
+pub fn digest_reader(reader: &mut impl std::io::Read) -> std::io::Result<(u64, String)> {
+    let mut digest = Sha256::new();
+    let bytes = std::io::copy(reader, &mut digest)?;
+    Ok((bytes, format!("sha256:{:x}", digest.finalize())))
+}
+
 /// RFC 8785 bytes with the established exact public integer boundary.
 /// # Errors
 /// Rejects unsafe numbers, invalid Unicode or serialization failures.
