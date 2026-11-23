@@ -33,7 +33,9 @@ import uuid
 # Verification must not create an untracked bytecode input before it checks the
 # repository fingerprint. Keep the storage adapter import side-effect free.
 sys.dont_write_bytecode = True
-from bounded_io import copy_ordinary, hash_ordinary, inventory, read_ordinary, strict_json
+from bounded_io import (
+    copy_ordinary, hash_ordinary, hash_ordinary_with_prefix, inventory, read_ordinary, strict_json,
+)
 from execution_storage import (
     RunWorkspace,
     StorageError,
@@ -429,11 +431,28 @@ def artifact_member(identifier: str) -> str:
     raise CertificateError(f"artifact is not an included generation member: {identifier}")
 
 
+def semantic_projection_version(prefix: bytes) -> str:
+    """Read the canonical versioned header of the registered semantic projection."""
+    _, schema, registered_version = ARTIFACT_METADATA["semantic"]
+    series = registered_version.rsplit(".", 1)[0]
+    header = f'{{\n  "$schema": "{schema}",\n  "schema_version": 2,\n'
+    match = re.match(
+        re.escape(header.encode())
+        + rb'  "semantic_version": "(' + re.escape(series.encode()) + rb'\.(?:0|[1-9][0-9]{0,8}))",\n',
+        prefix,
+    )
+    if match is None:
+        raise CertificateError("semantic projection lacks a compatible canonical producer version")
+    return match.group(1).decode("ascii")
+
+
 def build_generation_manifest(
     root: Path,
     certificate: dict[str, Any],
     certificate_bytes: bytes,
     pending_artifacts: dict[str, bytes],
+    *,
+    semantic_producer: str | None = None,
 ) -> dict[str, Any]:
     """Build a sorted self-independent generation manifest."""
     descriptors: list[dict[str, Any]] = []
@@ -441,6 +460,8 @@ def build_generation_manifest(
     for identifier, logical_path, storage in ARTIFACTS:
         record = certificate_artifacts[identifier]
         producer, schema_ref, version = ARTIFACT_METADATA[identifier]
+        if identifier == "semantic" and semantic_producer is not None:
+            version = semantic_producer
         storage_record = (
             {"kind": "INCLUDED", "member_name": artifact_member(identifier)}
             if storage == TRACKED_EVIDENCE
@@ -1036,6 +1057,7 @@ def _issue(root: Path, workspace: RunWorkspace) -> dict[str, Any]:
 
         artifact_records: list[dict[str, Any]] = []
         pending_artifacts: dict[str, bytes] = {}
+        semantic_producer = None
         projection_directory = temporary / "projections"
         audit_output = temporary / "audit.json"
         certification_outputs = {
@@ -1106,7 +1128,11 @@ def _issue(root: Path, workspace: RunWorkspace) -> dict[str, Any]:
         for command_name, logical_path, storage in SEMANTIC_ARTIFACTS + APPLICATION_ARTIFACTS:
             projection = projection_directory / logical_path
             if storage == LOCAL_MATERIALIZATION:
-                byte_count, content_digest = hash_ordinary(projection)
+                if command_name == "semantic":
+                    byte_count, content_digest, prefix = hash_ordinary_with_prefix(projection, 256)
+                    semantic_producer = semantic_projection_version(prefix)
+                else:
+                    byte_count, content_digest = hash_ordinary(projection)
                 # Disposable projections may exist without a selected certificate.
                 # Only the final verified generation can make them current evidence.
                 write_projection_with_budget(workspace,
@@ -1276,8 +1302,10 @@ def _issue(root: Path, workspace: RunWorkspace) -> dict[str, Any]:
     certificate_bytes = (
         json.dumps(document, ensure_ascii=False, indent=2) + "\n"
     ).encode("utf-8")
+    if semantic_producer is None:
+        raise CertificateError("qualified semantic producer identity is missing")
     generation_manifest = build_generation_manifest(
-        root, document, certificate_bytes, pending_artifacts
+        root, document, certificate_bytes, pending_artifacts, semantic_producer=semantic_producer,
     )
     generation_id = manifest_digest(generation_manifest)
     generation_name = generation_id.removeprefix("sha256:")

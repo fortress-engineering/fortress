@@ -96,7 +96,7 @@ def read_ordinary(path, maximum=MAX_BYTES):
     return _consume_ordinary(path, maximum, collect)
 
 
-def _stream_ordinary(path, maximum, output):
+def _stream_ordinary(path, maximum, output, prefix_size=0):
     """Hash complete pinned bytes with at most 64 KiB of input scratch.
 
     This establishes integrity only. It neither parses evidence nor authenticates
@@ -104,6 +104,7 @@ def _stream_ordinary(path, maximum, output):
     """
     def collect(stream, limit):
         digest = hashlib.sha256()
+        prefix = bytearray()
         length = 0
         remaining = limit + 1
         while remaining:
@@ -115,13 +116,22 @@ def _stream_ordinary(path, maximum, output):
             if output is not None and output.write(chunk) != len(chunk):
                 raise OSError("INCOMPLETE_WRITE: ordinary copy was not complete")
             digest.update(chunk)
-        return length, (length, "sha256:" + digest.hexdigest())
+            if len(prefix) < prefix_size:
+                prefix.extend(chunk[:prefix_size - len(prefix)])
+        return length, (length, "sha256:" + digest.hexdigest(), bytes(prefix))
     return _consume_ordinary(path, maximum, collect)
 
 
 def hash_ordinary(path, maximum=MAX_BYTES):
     """Hash complete pinned bytes with bounded scratch and unchanged admission."""
-    return _stream_ordinary(path, maximum, None)
+    return _stream_ordinary(path, maximum, None)[:2]
+
+
+def hash_ordinary_with_prefix(path, prefix_size, maximum=MAX_BYTES):
+    """Return a bounded header from the same retained bytes that are hashed."""
+    if type(prefix_size) is not int or not 1 <= prefix_size <= 1024:
+        raise ValueError("prefix size must be between 1 and 1024 bytes")
+    return _stream_ordinary(path, maximum, None, prefix_size)
 
 
 def copy_ordinary(path, output, maximum=MAX_BYTES):
@@ -130,7 +140,7 @@ def copy_ordinary(path, output, maximum=MAX_BYTES):
     No destination path is opened here. A failed copy supplies no favorable
     integrity result; the caller owns partial-output recovery or publication.
     """
-    return _stream_ordinary(path, maximum, output)
+    return _stream_ordinary(path, maximum, output)[:2]
 
 
 def strict_json(source, *, maximum=MAX_BYTES, nodes=16_000_000, depth=96):

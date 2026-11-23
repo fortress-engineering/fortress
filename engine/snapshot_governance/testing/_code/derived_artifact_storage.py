@@ -150,6 +150,22 @@ class DerivedArtifactStorageTests(unittest.TestCase):
         self.assertEqual(target.read_bytes(),b"new index")
         self.assertEqual(foreign.read_bytes(),b"owner work")
 
+    def test_semantic_projection_version_is_bound_to_the_hashed_bytes(self) -> None:
+        root = self.workspace("semantic-producer")
+        projection = root / "semantic.json"
+        payload = (
+            b'{\n  "$schema": "urn:fortress:derived:v2:semantic-analysis",\n'
+            b'  "schema_version": 2,\n  "semantic_version": "2.0.1",\n'
+            b'  "project_id": "PF-FIXTURE"\n}\n'
+        )
+        projection.write_bytes(payload)
+        size, digest, header = quality.hash_ordinary_with_prefix(projection, 256)
+        self.assertEqual((size, digest), (len(payload), quality.sha256_bytes(payload)))
+        self.assertEqual(quality.semantic_projection_version(header), "2.0.1")
+        for other in (b"2.1.0", b"2.0.01", b"3.0.0"):
+            with self.assertRaisesRegex(quality.CertificateError, "compatible canonical producer"):
+                quality.semantic_projection_version(header.replace(b"2.0.1", other))
+
     def test_current_generation_binds_layout_and_manifest_v8(self) -> None:
         certificate = self.certificate("sha256:" + "a" * 64)
         certificate["source"]["file_count"] = 1
@@ -158,9 +174,13 @@ class DerivedArtifactStorageTests(unittest.TestCase):
             for _, logical_path, storage in quality.ARTIFACTS
             if storage == quality.TRACKED_EVIDENCE
         }
-        manifest = quality.build_generation_manifest(ROOT, certificate, b"{}\n", pending)
+        manifest = quality.build_generation_manifest(
+            ROOT, certificate, b"{}\n", pending, semantic_producer="2.0.1",
+        )
         self.assertEqual(manifest["$schema"], "urn:fortress:derived:v8:assessment-generation-manifest")
         self.assertEqual(manifest["schema_version"], 8)
+        descriptor = next(item for item in manifest["artifacts"] if item["id"] == "semantic")
+        self.assertEqual(descriptor["producer_semantic_version"], "2.0.1")
         self.assertEqual(
             manifest["control_layout"],
             {"id": "fortress-control-layout-v8", "digest": quality.sha256_bytes(
