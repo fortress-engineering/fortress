@@ -137,6 +137,48 @@ def selected_external_evidence(run, exe, slot, results):
             "authenticity": verified["authenticity"]}
 
 
+def selected_python_worker(run, exe, slot, manifest, results):
+    """Exercise the explicitly selected compile-only worker from the installed archive."""
+    path = "share/fortress/workers/python_lexical_worker.py"
+    worker = slot / path
+    _, worker_sha = distribution.hash_file(worker)
+    assert worker_sha == next(row["sha256"] for row in manifest["files"] if row["path"] == path)
+    if sys.implementation.name != "cpython" or sys.version_info[:2] not in ((3, 12), (3, 13)):
+        return {"status": "UNAVAILABLE", "reason": "Qualified CPython 3.12 or 3.13 is unavailable"}
+    interpreter = Path(sys.executable).resolve(strict=True)
+    descriptor = run(interpreter, "-I", "-S", "-B", worker, "--describe-runtime")
+    assert descriptor.endswith(b"\n")
+    descriptor_ref = "sha256:" + distribution.digest(descriptor[:-1])
+    root = results / "isolated python project"
+    root.mkdir()
+    member = root / "source.py"
+    member.write_bytes(b"def count(value):\n    return value + 1\n")
+    before = snapshot(root)
+    registration = results / "python-registration.json"
+    registration.write_text(json.dumps({
+        "$schema": "urn:fortress:host:v1:python-lexical-registration",
+        "schema_version": 1,
+        "interpreter": str(interpreter),
+        "interpreter_sha256": "sha256:" + distribution.hash_file(interpreter)[1],
+        "worker": str(worker),
+        "runtime_ref": descriptor_ref,
+        "grammar": f"cpython{sys.version_info.major}.{sys.version_info.minor}",
+    }), encoding="utf-8")
+    mode = ("source-artifacts", "--observe-python", root, registration, "source.py", "lexical")
+    emitted = run(exe, *mode)
+    assert emitted == run(exe, *mode)
+    observed = json.loads(emitted)
+    report = observed["observation"]["report"]
+    assert report["outcome"] == "LEXICAL" and report["target_execution"] == "NOT_RUN"
+    assert report["source_ref"] == "sha256:" + before["source.py"]
+    assert report["worker_ref"] == "sha256:" + worker_sha
+    assert report["runtime_ref"] == descriptor_ref
+    assert {scope["name"] for scope in report["observations"]["scopes"]} == {"top", "count"}
+    assert snapshot(root) == before
+    return {"status": "PASS", "worker": report["worker_ref"], "runtime": descriptor_ref,
+            "observation": "sha256:" + distribution.digest(emitted), "source_unchanged": True}
+
+
 def execute(package, results, history=None):
     results.mkdir()
     transfer = results / "received"
@@ -228,6 +270,7 @@ def execute(package, results, history=None):
         assert checked == through_cli and checked["integrity"] == "VERIFIED" and checked["authenticity"] == "UNVERIFIED"
         evidence_state = "selected historical integrity verified and malformed or unavailable refused"
     external_evidence = selected_external_evidence(run, exe, slot, results)
+    python_worker = selected_python_worker(run, exe, slot, m, results)
     native = results / "uninitialized project"
     (native/"src").mkdir(parents=True)
     (native/"src/lib.rs").write_bytes(b"pub fn original() -> u8 { 7 }\n")
@@ -247,7 +290,8 @@ def execute(package, results, history=None):
         "source_commit":m["source_commit"],"target":m["target"],"installed_executable_sha256":distribution.hash_file(exe)[1],
         "fixture_source_ref":edition["source_ref"],"runtime_path":"isolated empty working directory",
         "source_unchanged":True,"bootstrap_preserved_source":True,"mcp":"PASS","optional_verifier":evidence_state,
-        "extension_kits":extensions,"external_evidence":external_evidence},indent=2),encoding="utf-8")
+        "extension_kits":extensions,"external_evidence":external_evidence,
+        "python_lexical_worker":python_worker},indent=2),encoding="utf-8")
     return slot
 
 

@@ -71,6 +71,7 @@ def source_assets():
     sources = {f"share/fortress/{name}": ROOT / name for name in sorted(names)}
     sdk = "share/fortress/sdk/"
     sources.update({
+        "share/fortress/workers/python_lexical_worker.py": ROOT / "engine/source_architecture/_code/python_lexical_worker.py",
         sdk + "guide.md": ROOT / "cli/_data/extension_guide.txt",
         sdk + "extension_conformance.py": ROOT / "testing/_code/extension_conformance.py",
     })
@@ -115,6 +116,7 @@ def runtime_binding(executable):
     binding = {"build_os":platform.system(), "build_kernel_or_version":platform.version(),
                "verifier_python":"host-selected Python 3.11+ for offline bundle verification",
                "installation_python":"Python 3.11+ for the installer script",
+               "lexical_python":"host-selected CPython 3.12 or 3.13 for explicit lexical observations",
                "workspace_certification":"registered native test execution requires a separate toolchain"}
     if os.name == "nt":
         return binding | {

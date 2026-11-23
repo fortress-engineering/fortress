@@ -60,3 +60,9 @@ Use `python -I -B install.py remove /absolute/install-root SLOT --manifest-sha25
 ## Reproduce packages
 
 On a supported native host, use the pinned Rust toolchain, Python 3.11+, and Node 22.22.3 with its npm, on the reviewed clean source commit. Use external storage and select the existing `cleanup-owned-compiler` retention policy. Run `python -B testing/_code/build_distribution.py OUT --storage OWNED_STORAGE --commit SOURCE_COMMIT` twice with fresh output directories. Compare the actual ZIP and VSIX bytes, manifests, and installer bytes. The packaging pipeline records the exact source fingerprint, locks, toolchain, target, runtime dependencies, and member digests. A per-platform qualification receipt should accompany the manifests. Different environments need separate evidence.
+
+## Optional Python lexical inspection
+
+The verified installed slot includes the compile-only worker at `share/fortress/workers/python_lexical_worker.py`.
+Use it with a trusted CPython 3.12 or 3.13 installation outside the project. An independent host registers the absolute interpreter and installed worker paths, exact interpreter digest, exact runtime descriptor and grammar. Select the original repository and a single repository-relative Python file explicitly through `fortress source-artifacts --observe-python PROJECT HOST_REGISTRATION SOURCE_PATH lexical`.
+The registration schema is available in the installed CLI schema inventory. The observation has compile-only scope and retains unsupported import, call, effect and execution behavior.
