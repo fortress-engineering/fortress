@@ -3,6 +3,50 @@
   "schema_version": 1,
   "entries": [
     {
+      "schema_id": "urn:fortress:derived:v2:go-native-build-observation",
+      "schema_path": "engine/program_semantics/_data/go_observation_schema_v2.json",
+      "version": 2,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/program_semantics/_code/go_build_selection.rs"
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "sha256-owner-exact-go-observation-binding",
+        "source": "engine/program_semantics/_code/go_build_selection.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-owner-canonical-or-exact-bytes",
+        "source": "engine/program_semantics/_code/go_build_selection.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:host:v2:go-build-collector-registration",
+      "schema_path": "cli/_data/go_collector_schema_v2.json",
+      "version": 2,
+      "writer": {
+        "status": "AUTHORED",
+        "source": null
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "cli/_code/go_observation_command.rs"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-owner-canonical-or-exact-bytes",
+        "source": "cli/_code/go_observation_command.rs"
+      }
+    },
+    {
       "schema_id": "urn:fortress:host:v1:python-lexical-registration",
       "schema_path": "cli/_data/python_worker_schema_v1.json",
       "version": 1,

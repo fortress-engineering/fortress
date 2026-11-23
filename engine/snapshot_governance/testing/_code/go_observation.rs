@@ -4,7 +4,8 @@ use std::fs;
 use std::path::PathBuf;
 
 use fortress_core::go_observation::{
-    GoCollectorPin, GoObservationError, GoPackageSelection, observe_go_native,
+    GoBuildContext, GoBuildTestMode, GoCollectorPin, GoObservationError, GoPackageSelection,
+    observe_go_native, observe_go_native_build,
 };
 use serde_json::{Value, json};
 
@@ -150,4 +151,150 @@ fn mismatched_native_spans_and_observation_status_are_rejected() {
         });
         assert!(matches!(rejected, Err(GoObservationError::InvalidResponse)));
     }
+}
+
+const BUILD_RESPONSE: &[u8] = include_bytes!("../_data/go_build_fixture_v2.json");
+const BUILD_SCHEMA: &str =
+    include_str!("../../../program_semantics/_data/go_observation_schema_v2.json");
+const BUILD_PIN: GoCollectorPin<'static> = GoCollectorPin {
+    executable_sha256: "sha256:a9e2ead7baa899dea5fa399c168d6cd17fd9e431bc765462f056509a91788cec",
+    supervisor_context_sha256: "sha256:0000000000000000000000000000000000000000000000000000000000000002",
+    go_toolchain: "go1.22.12",
+};
+
+fn build_fixture(name: &str) -> Fixture {
+    let fixture = Fixture::new(name);
+    fs::remove_file(fixture.root.join("src/target.go")).unwrap();
+    for (file, source) in [
+        (
+            "api.go",
+            "package fixture\nfunc Run(n int) int { return target(n) }\n",
+        ),
+        ("api_linux_test.go", "package fixture\nfunc Tested() {}\n"),
+        (
+            "core_linux.go",
+            "package fixture\nfunc target(n int) int { return n + 1 }\n",
+        ),
+        ("core_windows.go", "package fixture\nfunc WINDOWS(\n"),
+    ] {
+        fs::write(fixture.root.join("src").join(file), source).unwrap();
+    }
+    fixture
+}
+
+fn select_build() -> (GoPackageSelection<'static>, GoBuildContext) {
+    (
+        GoPackageSelection {
+            directory: "src",
+            package_path: "fixture.local/selected",
+            go_version: "go1.22",
+            target_os: "linux",
+            target_arch: "amd64",
+        },
+        GoBuildContext {
+            compiler: "gc".into(),
+            release_minor: 22,
+            cgo_enabled: false,
+            test_mode: GoBuildTestMode::ProductionOnly,
+            custom_tags: Vec::new(),
+            tool_tags: vec!["amd64.v1".into()],
+        },
+    )
+}
+
+fn replay_build(request: &[u8]) -> Vec<u8> {
+    assert_eq!(
+        fortress_core::portable::digest(request),
+        "sha256:843a1488e427d47ec0664703d1cf749a62758ac7749b1d960b7e58e14c6eb0e5"
+    );
+    BUILD_RESPONSE.to_vec()
+}
+
+/// `T-AF-SNAPSHOT-GOVERNANCE-0001-R28-004`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R28
+#[test]
+fn build_selection_binds_exact_selected_and_excluded_go_source() {
+    let fixture = build_fixture("build-selection");
+    let (selection, context) = select_build();
+    let observation =
+        observe_go_native_build(&fixture.root, selection, context, &BUILD_PIN, |request| {
+            Ok(replay_build(request))
+        })
+        .expect("native build selection with exact frozen result");
+    let observed = serde_json::to_value(observation).unwrap();
+    jsonschema::draft202012::validate(&serde_json::from_str(BUILD_SCHEMA).unwrap(), &observed)
+        .expect("Go build selection matches its registered output schema");
+    assert_eq!(observed["schema_version"], 2);
+    assert_eq!(observed["provenance"]["actual"], true);
+    assert_eq!(observed["observation"]["status"], "OBSERVED");
+    assert_eq!(
+        observed["selection"][1]["disposition"],
+        "PRODUCTION_TEST_EXCLUDED"
+    );
+    assert_eq!(
+        observed["selection"][3]["disposition"],
+        "EXCLUDED_BY_NAME_OR_CONSTRAINT"
+    );
+    assert_eq!(
+        observed["observation"]["calls"][0]["declaration"]["path"],
+        "src/core_linux.go"
+    );
+    let frozen: Value = serde_json::from_slice(BUILD_RESPONSE).unwrap();
+    assert_eq!(observed["selection"], frozen["selection"]);
+    assert_eq!(observed["build_context"], frozen["build_context"]);
+}
+
+/// `T-AF-SNAPSHOT-GOVERNANCE-0001-R28-005`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R28
+#[test]
+fn go_build_rejects_context_and_inventory_overclaims_and_excluded_source_drift() {
+    let fixture = build_fixture("build-refusals");
+    for (member, replacement) in [
+        ("/build_context/release_minor", json!(21)),
+        (
+            "/selection/0/sha256",
+            json!("sha256:0000000000000000000000000000000000000000000000000000000000000000"),
+        ),
+        ("/selection/1/native_match", json!(false)),
+        (
+            "/selection/2/disposition",
+            json!("EXCLUDED_BY_NAME_OR_CONSTRAINT"),
+        ),
+        ("/calls/0/span/path", json!("src/core_windows.go")),
+        ("/selection/3/path", json!("src/unavailable.go")),
+    ] {
+        let (selection, context) = select_build();
+        let result =
+            observe_go_native_build(&fixture.root, selection, context, &BUILD_PIN, |request| {
+                let mut value: Value = serde_json::from_slice(&replay_build(request)).unwrap();
+                *value.pointer_mut(member).unwrap() = replacement;
+                let mut forged = serde_json::to_vec(&value).unwrap();
+                forged.push(b'\n');
+                Ok(forged)
+            });
+        assert!(matches!(result, Err(GoObservationError::InvalidResponse)));
+    }
+
+    let (selection, mut context) = select_build();
+    context.cgo_enabled = true;
+    let blocked = observe_go_native_build(&fixture.root, selection, context, &BUILD_PIN, |_| {
+        panic!("unsupported cgo must not dispatch a native request")
+    });
+    assert!(matches!(
+        blocked,
+        Err(GoObservationError::UnsupportedContext)
+    ));
+
+    let (selection, context) = select_build();
+    let changed =
+        observe_go_native_build(&fixture.root, selection, context, &BUILD_PIN, |request| {
+            let output = replay_build(request);
+            fs::write(
+                fixture.root.join("src/core_windows.go"),
+                "package fixture\n",
+            )
+            .unwrap();
+            Ok(output)
+        });
+    assert!(matches!(changed, Err(GoObservationError::SourceChanged)));
 }

@@ -3,10 +3,11 @@
 use std::path::Path;
 
 use crate::native_observation::{NativeSource, NativeSourceError};
-use crate::program_semantics::go_observation::{ExactClosedPackage, admit_go};
+use crate::program_semantics::go_observation::{ExactClosedPackage, admit_go, admit_go_build};
 
 pub use crate::program_semantics::go_observation::{
-    GoCollectorPin, GoNativeObservation, GoObservationError,
+    GoBuildContext, GoBuildTestMode, GoCollectorPin, GoNativeBuildObservation, GoNativeObservation,
+    GoObservationError,
 };
 
 /// Independently selected observation context for a closed Go source directory.
@@ -40,23 +41,52 @@ pub fn observe_go_native(
     collector: &GoCollectorPin<'_>,
     launch: impl FnOnce(&[u8]) -> Result<Vec<u8>, GoObservationError>,
 ) -> Result<GoNativeObservation, GoObservationError> {
+    observe_exact(project_root, selection, |source| {
+        let admitted = admit_go(source, collector)?;
+        let output = launch(admitted.request_bytes())?;
+        admitted.verify(collector, &output)
+    })
+}
+
+/// Observes the build-selected content of one closed Go source directory.
+///
+/// The caller must independently select and verify the v2 classifier, its
+/// target build context and process environment. The receipt is standalone
+/// native observation, without PSM, runtime or certification authority.
+///
+/// # Errors
+/// Refuses nonexact inputs and any v2 classifier response that fails admission.
+pub fn observe_go_native_build(
+    project_root: &Path,
+    selection: GoPackageSelection<'_>,
+    build_context: GoBuildContext,
+    collector: &GoCollectorPin<'_>,
+    launch: impl FnOnce(&[u8]) -> Result<Vec<u8>, GoObservationError>,
+) -> Result<GoNativeBuildObservation, GoObservationError> {
+    observe_exact(project_root, selection, |source| {
+        let admitted = admit_go_build(source, collector, build_context)?;
+        let output = launch(admitted.request_bytes())?;
+        admitted.verify(collector, &output)
+    })
+}
+
+fn observe_exact<T>(
+    project_root: &Path,
+    selection: GoPackageSelection<'_>,
+    operation: impl FnOnce(ExactClosedPackage<'_>) -> Result<T, GoObservationError>,
+) -> Result<T, GoObservationError> {
     let source = NativeSource::capture(project_root, "Go").map_err(source_failure)?;
-    let admitted = admit_go(
-        ExactClosedPackage {
-            source: &source.view,
-            source_fingerprint: &source.binding.source_fingerprint,
-            authority_digest: &source.binding.authority_digest,
-            actual: true,
-            directory: selection.directory,
-            package_path: selection.package_path,
-            go_version: selection.go_version,
-            target_os: selection.target_os,
-            target_arch: selection.target_arch,
-        },
-        collector,
-    )?;
-    let output = launch(admitted.request_bytes())?;
-    let observation = admitted.verify(collector, &output)?;
+    let observation = operation(ExactClosedPackage {
+        source: &source.view,
+        source_fingerprint: &source.binding.source_fingerprint,
+        authority_digest: &source.binding.authority_digest,
+        actual: true,
+        directory: selection.directory,
+        package_path: selection.package_path,
+        go_version: selection.go_version,
+        target_os: selection.target_os,
+        target_arch: selection.target_arch,
+    })?;
     source.revalidate().map_err(source_failure)?;
     Ok(observation)
 }

@@ -202,6 +202,29 @@ declarations and supported call observations. Build selection, imported
 packages, foreign bodies, dynamic dispatch and runtime effects may remain
 unresolved. The report conveys no finding, certification or write authority.
 
+### Explicit Go build selection
+
+For filename and build-constraint selection, use the separately reviewed helper
+built from collector.go and collector_build_context.go. Register the combined
+executable outside the repository with its own exact digest and toolchain. The
+registration uses urn:fortress:host:v2:go-build-collector-registration and
+schema_version 2. It also requires the exact build_context defined by the
+[registration schema](_data/go_collector_schema_v2.json).
+
+~~~text
+fortress psm --observe-go-build PROJECT HOST_REGISTRATION DIRECTORY PACKAGE_PATH go1.22 linux amd64
+~~~
+
+Select compiler gc, release_minor 22, cgo_enabled false, test_mode
+PRODUCTION_ONLY, custom_tags [], and tool_tags ["amd64.v1"] for the default
+registered Go 1.22 amd64 production context. Specify
+REQUIRE_SEPARATE_TEST_CONTEXT to leave a matching test file explicitly
+unresolved. The v2 report preserves selected and excluded source digests,
+physical spans and the exact source, authority, execution and context bindings.
+Use the separate v1 command and v1 registration for the legacy closed-package
+projection. External imports, actual test execution and runtime behavior remain
+outside the reported build-selection scope.
+
 ## Explicit Python lexical observations
 
 Use `fortress source-artifacts --observe-python PROJECT HOST_REGISTRATION SOURCE_PATH lexical` from a trusted host. The selected path is a repository-relative `.py` file. Use `syntax` for the narrower parser-only result. The mode returns a separate machine-readable observation.

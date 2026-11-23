@@ -87,3 +87,16 @@ Validates an exact closed Go source request and the bounded native response from
 ### [collector.go](../_code/collector.go)
 
 Uses the Go standard library parser and type checker to observe one explicit source-only package. The reviewed host builds and selects this helper separately. It reads a bounded request on stdin and writes one bounded JSON frame to stdout. It runs no project code, package resolver, compiler or subprocess. Explicit Go 1.17 and 1.22 contexts on Windows and Linux amd64 are admitted. The closed observation refuses dependency, build directive, test, generated/foreign and unsupported context. Declaration-site resolutions and syntactic activation markers do not establish execution, control flow, effects, or stable cross-revision symbol identity.
+
+### [collector_build_context.go](../_code/collector_build_context.go)
+
+Adds explicit standalone build selection for one sealed Go source directory. The trusted host builds the two named source files with the selected Go toolchain and invokes the result with the single argument `--select-build-go`. The original single-file collector source and build remain byte-identical. With no argument the combined helper also emits the existing v1 wire projection.
+
+Version 2 binds the exact complete supplied inventory, sorted source digests, package identity, target, Go language version, explicit cumulative compiler release and architecture tags, custom tags and test mode. It asks the native Go build library to match only admitted virtual files. Selection never calls package resolution or reads an ambient source path. Each admitted source records its exact digest and distinct selected, excluded, unsupported or unavailable outcome. Inputs including dependencies, cgo, generated code, external test context and non-build compiler directives remain unsupported. The two declared test modes either exclude matching test input as production-only or require a separately established test context.
+
+This standalone interface projects direct source-body and external-declaration observations for the selected inputs. It grants no repository authority or complete package, linkage, effect, runtime, or certification conclusion. Snapshot Governance integration must independently bind the complete physical source inventory and the trusted build context before using the selected source set. Targets describe compile selection and do not establish operational platform support.
+
+
+### [go_build_selection.rs](../_code/go_build_selection.rs)
+
+Shares legacy native response admission and verifies the explicit Go build-context receipt. Every returned source path and digest must match the complete admitted inventory in order. Physical declaration, call and diagnostic spans can reference only selected files.

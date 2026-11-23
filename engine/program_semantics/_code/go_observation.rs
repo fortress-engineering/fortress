@@ -8,6 +8,11 @@ use base64::{Engine as _, engine::general_purpose::STANDARD};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
+#[path = "go_build_selection.rs"]
+mod build_selection;
+pub(crate) use build_selection::admit_go_build;
+pub use build_selection::{GoBuildContext, GoBuildTestMode, GoNativeBuildObservation};
+
 use crate::observation::SourceView;
 use crate::wire::{
     JsonAdmissionLimits, admit_json, canonicalize_public_json, parse_strict_json_bytes,
@@ -348,10 +353,18 @@ fn has_case_alias(path: &str, directory: &str) -> bool {
     false
 }
 
-#[allow(clippy::too_many_lines)]
 pub(crate) fn admit_go<'a>(
     selection: ExactClosedPackage<'a>,
     pin: &'a GoCollectorPin<'a>,
+) -> Result<GoRequest<'a>, GoObservationError> {
+    admit_go_with(selection, pin, None)
+}
+
+#[allow(clippy::too_many_lines)]
+fn admit_go_with<'a>(
+    selection: ExactClosedPackage<'a>,
+    pin: &'a GoCollectorPin<'a>,
+    build: Option<&GoBuildContext>,
 ) -> Result<GoRequest<'a>, GoObservationError> {
     let ExactClosedPackage {
         source,
@@ -388,7 +401,7 @@ pub(crate) fn admit_go<'a>(
             .any(|part| matches!(part, "vendor" | "__fortress"))
         || !matches!(go_version, "go1.17" | "go1.22")
         || !matches!(target_os, "windows" | "linux")
-        || target_arch != "amd64"
+        || !(target_arch == "amd64" || build.is_some() && target_arch == "arm64")
     {
         return Err(GoObservationError::UnsupportedContext);
     }
@@ -403,7 +416,7 @@ pub(crate) fn admit_go<'a>(
         source_inventory: Vec::new(),
     };
     let mut request = Request {
-        schema_version: 1,
+        schema_version: if build.is_some() { 2 } else { 1 },
         package_path,
         go_version,
         target_os,
@@ -431,9 +444,14 @@ pub(crate) fn admit_go<'a>(
         }
         // The initial language/context experiment is Go-source-only. Never
         // silently omit test/target files, assembly, generated inputs or assets.
-        if !portable_ascii_path(path)
+        let valid_path = if build.is_some() {
+            build_selection::valid_source_path(path, dir, name)
+        } else {
+            portable_ascii_path(path)
+        };
+        if !valid_path
             || Path::new(name).extension() != Some(OsStr::new("go"))
-            || name.contains('_')
+            || (build.is_none() && name.contains('_'))
             || !folded.insert(name.to_ascii_lowercase())
         {
             return Err(GoObservationError::UnsupportedContext);
@@ -460,18 +478,31 @@ pub(crate) fn admit_go<'a>(
     if files.is_empty() {
         return Err(GoObservationError::UnsupportedContext);
     }
-    let wire = serde_json::to_vec(&request).map_err(|_| GoObservationError::WireEncoding)?;
+    let wire = if let Some(build_context) = build {
+        build_selection::encode_request(&request, build_context)
+    } else {
+        serde_json::to_vec(&request)
+    }
+    .map_err(|_| GoObservationError::WireEncoding)?;
     if wire.len() > MAX_WIRE {
         return Err(GoObservationError::ResourceLimit);
     }
     // The collector's local protocol uses Go JSON struct order, with admitted
     // path/context characters having identical escaped bytes in both encoders.
-    let context_bytes =
-        serde_json::to_vec(&context).map_err(|_| GoObservationError::WireEncoding)?;
+    let context_bytes = if let Some(build_context) = build {
+        build_selection::encode_context(&context, build_context)
+    } else {
+        serde_json::to_vec(&context)
+    }
+    .map_err(|_| GoObservationError::WireEncoding)?;
     let context_sha256 = sha256(&context_bytes);
     let request_sha256 = sha256(&wire);
     let envelope = Provenance {
-        kind: "fortress-go-observation-input-v1",
+        kind: if build.is_some() {
+            "fortress-go-build-observation-input-v2"
+        } else {
+            "fortress-go-observation-input-v1"
+        },
         source_view_sha256: source.digest(),
         source_fingerprint,
         authority_sha256: authority_digest,
@@ -511,46 +542,10 @@ impl GoRequest<'_> {
         launched: &GoCollectorPin<'_>,
         stdout: &[u8],
     ) -> Result<GoNativeObservation, GoObservationError> {
-        if launched != self.pin {
-            return Err(GoObservationError::UnmatchedExecution);
-        }
-        if stdout.len() > MAX_WIRE {
-            return Err(GoObservationError::ResourceLimit);
-        }
-        let Some(line) = stdout.strip_suffix(b"\n") else {
-            return Err(GoObservationError::InvalidResponse);
-        };
-        if line.first() != Some(&b'{')
-            || line.last() != Some(&b'}')
-            || line.contains(&b'\n')
-            || line.contains(&b'\r')
-        {
-            return Err(GoObservationError::InvalidResponse);
-        }
-        admit_json(
-            line,
-            JsonAdmissionLimits {
-                bytes: MAX_WIRE,
-                depth: 12,
-                nodes: 250_000,
-                token_bytes: 16 << 10,
-            },
-        )
-        .map_err(|_| GoObservationError::ResourceLimit)?;
+        let line = self.verify_transport(launched, stdout)?;
         let answer: Response =
             parse_strict_json_bytes(line).map_err(|_| GoObservationError::InvalidResponse)?;
-        if answer.schema_version != 1
-            || answer.producer != PRODUCER
-            || answer.go_toolchain != self.pin.go_toolchain
-            || answer.request_sha256 != self.request_sha256
-            || !answer
-                .limitations
-                .iter()
-                .map(String::as_str)
-                .eq(LIMITATIONS)
-        {
-            return Err(GoObservationError::InvalidResponse);
-        }
+        self.verify_header(&answer, 1, PRODUCER, &LIMITATIONS)?;
         if answer.status == Status::ResourceLimit
             && answer
                 .diagnostic
@@ -605,6 +600,62 @@ impl GoRequest<'_> {
             provenance: self.provenance.clone(),
             observation: answer,
         })
+    }
+
+    fn verify_transport<'o>(
+        &self,
+        launched: &GoCollectorPin<'_>,
+        stdout: &'o [u8],
+    ) -> Result<&'o [u8], GoObservationError> {
+        if launched != self.pin {
+            return Err(GoObservationError::UnmatchedExecution);
+        }
+        if stdout.len() > MAX_WIRE {
+            return Err(GoObservationError::ResourceLimit);
+        }
+        let Some(line) = stdout.strip_suffix(b"\n") else {
+            return Err(GoObservationError::InvalidResponse);
+        };
+        if line.first() != Some(&b'{')
+            || line.last() != Some(&b'}')
+            || line.contains(&b'\n')
+            || line.contains(&b'\r')
+        {
+            return Err(GoObservationError::InvalidResponse);
+        }
+        admit_json(
+            line,
+            JsonAdmissionLimits {
+                bytes: MAX_WIRE,
+                depth: 12,
+                nodes: 250_000,
+                token_bytes: 16 << 10,
+            },
+        )
+        .map_err(|_| GoObservationError::ResourceLimit)?;
+        Ok(line)
+    }
+
+    fn verify_header(
+        &self,
+        answer: &Response,
+        version: u16,
+        producer: &str,
+        limitations: &[&str],
+    ) -> Result<(), GoObservationError> {
+        if answer.schema_version != version
+            || answer.producer != producer
+            || answer.go_toolchain != self.pin.go_toolchain
+            || answer.request_sha256 != self.request_sha256
+            || !answer
+                .limitations
+                .iter()
+                .map(String::as_str)
+                .eq(limitations.iter().copied())
+        {
+            return Err(GoObservationError::InvalidResponse);
+        }
+        Ok(())
     }
 
     fn span(&self, span: &Span) -> Result<&str, GoObservationError> {

@@ -1726,6 +1726,11 @@ fn run_psm<O: Write, E: Write>(
     {
         return go_observation_command::run(rest, output, error);
     }
+    if let Some((first, rest)) = arguments.split_first()
+        && first == "--observe-go-build"
+    {
+        return go_observation_command::run_build(rest, output, error);
+    }
     let (root, destination) = match parse_psm_arguments(arguments) {
         Ok(parsed) => parsed,
         Err(message) => {

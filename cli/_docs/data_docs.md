@@ -64,6 +64,10 @@ Defines the explicit host-owned Go compiler registration, including the exact
 executable and toolchain. Runtime admission requires an ordinary absolute host
 asset outside the selected repository.
 
+### [go_collector_schema_v2.json](../_data/go_collector_schema_v2.json)
+
+Defines the explicit external host registration for the native Go build-selection mode. The trusted host pins the combined helper and declares its exact bounded compiler and test context.
+
 ### [python_worker_schema_v1.json](../_data/python_worker_schema_v1.json)
 
 Versioned host registration for the independently selected interpreter. The schema requires an absolute host interpreter and worker path in production. The executable SHA-256, runtime descriptor hash and exact grammar identify the selected binding. The worker path must contain the reviewed implementation shipped with the running Fortress executable.

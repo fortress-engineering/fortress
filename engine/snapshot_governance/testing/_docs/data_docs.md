@@ -109,3 +109,8 @@ Registers six actual-repository comparisons, twelve independent-function compari
 ### [go_native_fixture_v1.json](../_data/go_native_fixture_v1.json)
 
 Retains exact stdout from the bounded Go collector for the independent two-file CRLF and UTF-8 fixture. This native input control is checked against frozen bytes, response identities, and known source coordinates.
+
+
+### [go_build_fixture_v2.json](../_data/go_build_fixture_v2.json)
+
+Retains the exact native Go build-selection reply and the verified disposition of the separately frozen production and test inventory. The source bytes and ordered request digest are replayed in the native observation control.
