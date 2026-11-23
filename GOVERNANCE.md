@@ -39,3 +39,18 @@ history.
 License selection remains owner-gated. No package, standard edition,
 certification claim, release, tag, or deployment
 may be published without separate authorization and all applicable gates.
+
+## Multilingual release qualification
+
+External technical qualification of the existing product establishes the
+starting point for language expansion. Before the Standard release candidate
+can be stabilized, Fortress must qualify the applicable capabilities of each
+required language and the relationships supported across language boundaries.
+An external campaign must then exercise the installed multilingual candidate
+against independent real projects.
+
+The external campaign also retains the independent adoption requirement.
+Consenting maintainers must author project-specific policies and exercise them
+through sustained changes and a supported edition upgrade. The campaign
+independently adjudicates blocking findings. Candidate sharing and recruitment
+require separate authorization.
