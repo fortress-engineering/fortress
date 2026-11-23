@@ -54,6 +54,8 @@ Supplies local MCP framing, the client adapter, and process supervision shared b
 
 ## Guarantees
 
+See [local development installation](./_data/install_guide.txt) for verified portable archives, the VS Code extension, and offline assurance verification.
+
 The [overlay command](./_docs/code_docs.md) evaluates exact immutable proposals and inspects post-write agreement without applying source changes. RPC v5 exposes complete preloaded proposal fields with bounded paging. Hypothetical outcomes remain PROPOSED, never actual certification or permission; CLI records cannot recreate external grants or execution proof.
 
 `fortress query findings . --format json` pages retained finding records and their recorded enforcement. Protocol v5 advertises this optional query through `finding_inventory`. Existing editions and query kinds keep their prior wire meaning. The inventory supplies a matching source file digest only when the selected subject equals the newly observed source. A missing digest leaves source navigation unverified.
