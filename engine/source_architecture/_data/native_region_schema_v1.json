@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v1:native-source-regions",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema", "schema_version", "language", "path", "source_ref",
+    "source_view_ref", "source_manifest_ref", "original_authority_ref",
+    "native_receipt_ref", "availability", "regions", "layout"
+  ],
+  "properties": {
+    "$schema": {"const": "urn:fortress:derived:v1:native-source-regions"},
+    "schema_version": {"const": 1},
+    "language": {"enum": ["go", "python"]},
+    "path": {"type": "string", "minLength": 1},
+    "source_ref": {"$ref": "#/$defs/digest"},
+    "source_view_ref": {"$ref": "#/$defs/digest"},
+    "source_manifest_ref": {"$ref": "#/$defs/digest"},
+    "original_authority_ref": {"$ref": "#/$defs/digest"},
+    "native_receipt_ref": {"$ref": "#/$defs/digest"},
+    "availability": {"enum": [
+      "OBSERVED", "PARTIAL", "SYNTAX_ONLY", "INVALID_SOURCE",
+      "UNSUPPORTED", "UNAVAILABLE", "RESOURCE_LIMIT"
+    ]},
+    "regions": {
+      "type": "array",
+      "minItems": 11,
+      "maxItems": 11,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["region", "coverage", "evidence"],
+        "properties": {
+          "region": {"enum": [
+            "IDENTITY_RESPONSIBILITY", "DEPENDENCIES", "DECLARATIONS",
+            "STATE", "INITIALIZATION", "PUBLIC_INTERFACE", "IMPLEMENTATION",
+            "FAILURE_SEMANTICS", "EFFECTS", "DOCUMENTATION_INTENT",
+            "VERIFICATION_RELATIONSHIPS"
+          ]},
+          "coverage": {"enum": ["OBSERVED", "UNSUPPORTED"]},
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["analyzer", "source_reference", "start_line"],
+              "properties": {
+                "analyzer": {"enum": [
+                  "fortress-core/go-declaration-regions-v1",
+                  "fortress-core/python-lexical-regions-v1"
+                ]},
+                "source_reference": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}#/"},
+                "start_line": {"type": ["integer", "null"], "minimum": 1}
+              }
+            }
+          }
+        }
+      }
+    },
+    "layout": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["layout_report_ref", "authority", "entry", "selected_profile"],
+          "properties": {
+            "layout_report_ref": {"$ref": "#/$defs/digest"},
+            "authority": {"const": "ANALYSIS_ONLY"},
+            "entry": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["path", "state", "profile", "role", "observation_limitation"],
+              "properties": {
+                "path": {"type": "string", "minLength": 1},
+                "state": {"enum": [
+                  "UNCLASSIFIED", "NOT_OBSERVED", "UNESTABLISHED_MARKER",
+                  "CLASSIFIED", "UNSUPPORTED_ENTRY_KIND"
+                ]},
+                "profile": {"type": ["string", "null"]},
+                "role": {"enum": ["SOURCE", "CONFIGURATION", "DOCUMENTATION", "TEST", "ASSET", null]},
+                "observation_limitation": {"type": ["string", "null"]}
+              }
+            },
+            "selected_profile": {
+              "oneOf": [
+                {"type": "null"},
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["id", "version", "digest", "ecosystem", "marker", "applicability"],
+                  "properties": {
+                    "id": {"type": "string"},
+                    "version": {"type": "string"},
+                    "digest": {"$ref": "#/$defs/digest"},
+                    "ecosystem": {"type": "string"},
+                    "marker": {"type": "string"},
+                    "applicability": {"enum": ["OBSERVED_MARKER", "UNESTABLISHED_MARKER"]}
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+  }
+}

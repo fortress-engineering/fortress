@@ -14,6 +14,10 @@ Compile canonical authored file responsibility when present, explicit snapshot-b
 
 Universal semantic regions, truthful coverage states, language-profile and archetype contracts, the registered Rust structural profile, generated-source provenance, stable semantic references, deterministic projection, and SOURCE-PROFILE-001/SOURCE-ARTIFACT-001 evaluation.
 
+Explicit native receipt projections expose scoped Go declarations and source
+bodies and Python lexical declarations. They retain unresolved imports and
+analysis-only layout roles independently of File Content Profile assignment.
+
 ### Excludes
 
 Compiler-semantic Rust resolution, prescribed Rust item ordering, universal one-X-per-file rules, natural-language/code matching, automatic rewriting, and deep value/state/effect/security/environment reasoning.

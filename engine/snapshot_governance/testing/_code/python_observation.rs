@@ -25,6 +25,142 @@ const SOURCE: &[u8] = b"value: int = 7\r\n";
 const OTHER: &[u8] = b"original ancillary input\n";
 const CONTEXT: &str = "sha256:f19e50baa1d1fd5a6df2123b2973d458d3806567b133d3192b5b2587b5e1376f";
 
+mod regions {
+    use super::*;
+    use fortress_core::filing::LayoutExtension;
+    use fortress_core::native_regions::{
+        NativeRegionAvailability, NativeRegionError, NativeRegionInput,
+        project_native_source_regions,
+    };
+    use fortress_core::source_architecture::{RegionCoverage, SemanticRegion};
+
+    const NATIVE: &[u8] = include_bytes!("../_data/python_region_fixture_v1.json");
+    const LAYOUT: &[u8] =
+        include_bytes!("../../../project_model/testing/_data/layout_extension_example_v1.json");
+    const LEXICAL_SOURCE: &str =
+        "# café\r\nimport outside\r\nasync def convert(value):\r\n    return value\r\n";
+    const LEXICAL_PATH: &str = "src/convert.py";
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R29-008`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R29
+    #[test]
+    fn python_layout_role_and_lexical_regions_remain_distinct() {
+        let fixture = Fixture::new("py-native-regions");
+        fs::create_dir(fixture.root.join("src")).unwrap();
+        fs::write(fixture.root.join(LEXICAL_PATH), LEXICAL_SOURCE).unwrap();
+        fs::write(
+            fixture.root.join("pyproject.toml"),
+            "[project]\nname = 'region-test'\n",
+        )
+        .unwrap();
+        let response: serde_json::Value = serde_json::from_slice(NATIVE).unwrap();
+        let native_pin = PythonLexicalProducer::new(
+            PythonGrammar::Cpython313,
+            response["runtime_ref"].as_str().unwrap().to_owned(),
+            response["worker_ref"].as_str().unwrap().to_owned(),
+        )
+        .unwrap();
+        let admitted = observe_python_lexical(
+            &fixture.root,
+            LEXICAL_PATH,
+            PythonLexicalMode::Lexical,
+            &native_pin,
+            |request, selected| {
+                assert_eq!(selected, LEXICAL_SOURCE.as_bytes());
+                // Keep exact compiler facts and producer pins, and bind the
+                // independent native replay to this caller's exact request.
+                let mut replay = response;
+                replay["id"] = json!(request.id());
+                Ok(serde_json::to_vec(&replay).unwrap())
+            },
+        )
+        .unwrap();
+        let profile = LayoutExtension::from_pinned_bytes(LAYOUT, &digest(LAYOUT)).unwrap();
+        let project = |path| {
+            project_native_source_regions(
+                &fixture.root,
+                path,
+                NativeRegionInput::Python(&admitted),
+                std::slice::from_ref(&profile),
+            )
+        };
+        let result = project(LEXICAL_PATH).unwrap();
+        assert_eq!(result.availability(), NativeRegionAvailability::Observed);
+        for region in result.regions() {
+            let expected = if region.region() == SemanticRegion::Declarations {
+                RegionCoverage::Observed
+            } else {
+                RegionCoverage::Unsupported
+            };
+            assert_eq!(region.coverage(), expected);
+        }
+        let document = serde_json::to_value(&result).unwrap();
+        let schema =
+            fortress_core::source_architecture::native_regions::native_source_region_schema();
+        jsonschema::draft202012::validate(&serde_json::from_str(schema).unwrap(), &document)
+            .expect(
+                "source-bound region view and analysis-only layout satisfy the registered schema",
+            );
+        assert_eq!(document["layout"]["authority"], "ANALYSIS_ONLY");
+        assert_eq!(document["layout"]["entry"]["state"], "CLASSIFIED");
+        assert_eq!(document["layout"]["entry"]["role"], "SOURCE");
+        assert_eq!(
+            document["layout"]["selected_profile"]["digest"],
+            digest(LAYOUT)
+        );
+        assert_eq!(document["regions"][1]["coverage"], "UNSUPPORTED");
+        let evidence = &document["regions"][1]["evidence"][0];
+        assert_eq!(evidence["start_line"], 2);
+        assert_eq!(
+            evidence["source_reference"],
+            format!(
+                "{}#/report/observations/imports/0",
+                document["native_receipt_ref"].as_str().unwrap(),
+            )
+        );
+        assert!(document.get("ownership").is_none());
+        assert!(matches!(
+            project(PATH),
+            Err(NativeRegionError::SubjectMismatch)
+        ));
+        fs::remove_file(fixture.root.join("pyproject.toml")).unwrap();
+        assert!(matches!(
+            project(LEXICAL_PATH),
+            Err(NativeRegionError::StaleReceipt)
+        ));
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R29-009`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R29
+    #[test]
+    fn python_syntax_only_does_not_establish_other_regions() {
+        let fixture = Fixture::new("py-syntax-regions");
+        let admitted = observe_python_lexical(
+            &fixture.root,
+            PATH,
+            PythonLexicalMode::Syntax,
+            &pin(),
+            syntax_reply,
+        )
+        .unwrap();
+        let result = project_native_source_regions(
+            &fixture.root,
+            PATH,
+            NativeRegionInput::Python(&admitted),
+            &[],
+        )
+        .unwrap();
+        assert_eq!(result.availability(), NativeRegionAvailability::SyntaxOnly);
+        assert!(
+            result
+                .regions()
+                .iter()
+                .all(|region| region.coverage() == RegionCoverage::Unsupported)
+        );
+        assert!(serde_json::to_value(result).unwrap()["layout"].is_null());
+    }
+}
+
 struct Fixture {
     container: PathBuf,
     root: PathBuf,

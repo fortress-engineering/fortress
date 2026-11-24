@@ -3,6 +3,28 @@
   "schema_version": 1,
   "entries": [
     {
+      "schema_id": "urn:fortress:derived:v1:native-source-regions",
+      "schema_path": "engine/source_architecture/_data/native_region_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/source_architecture/_code/native_regions.rs"
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "sha256-verified-native-source-manifest-receipt",
+        "source": "engine/snapshot_governance/_code/native_regions.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-owner-canonical-or-exact-bytes",
+        "source": "engine/snapshot_governance/_code/native_regions.rs"
+      }
+    },
+    {
       "schema_id": "urn:fortress:derived:v1:go-native-body",
       "schema_path": "engine/program_semantics/_data/go_body_schema_v1.json",
       "version": 1,

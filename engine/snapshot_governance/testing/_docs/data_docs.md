@@ -135,3 +135,9 @@ Retains the exact pinned Go scalar-body worker response for a closed native
 fixture covering both signed int64 endpoints, a full range, a disjoint union,
 a Boolean literal and explicit runtime-arithmetic unavailability. The same
 frozen original source ran under an independently authored native reference.
+
+### [`python_region_fixture_v1.json`](../_data/python_region_fixture_v1.json)
+
+Retains a pinned CPython compiler-only reply for a fixed CRLF file with a UTF-8
+comment, async function and unresolved import. Snapshot Governance tests replay
+its immutable source, facts and producer pins under the exact live request ID.

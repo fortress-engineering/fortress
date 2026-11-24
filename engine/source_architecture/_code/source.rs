@@ -6,6 +6,10 @@
 //! language syntax into structural facts; this module does not perform deep
 //! program semantics or define universal language idioms.
 
+/// Scoped Source Architecture views of explicitly admitted native observations.
+#[path = "native_regions.rs"]
+pub mod native_regions;
+
 /// Exact-source admission for compile-only Python lexical observations.
 #[path = "python_lexical.rs"]
 pub mod python_lexical;
@@ -1649,6 +1653,22 @@ fn compile_regions(
     has_responsibility: bool,
     has_verification: bool,
 ) -> Vec<SourceRegion> {
+    compile_regions_with(observations, |region| match region {
+        SemanticRegion::IdentityResponsibility => Some(RegionCoverage::Observed),
+        SemanticRegion::DocumentationIntent if has_responsibility => Some(RegionCoverage::Observed),
+        SemanticRegion::VerificationRelationships => Some(if has_verification {
+            RegionCoverage::Observed
+        } else {
+            RegionCoverage::Absent
+        }),
+        _ => None,
+    })
+}
+
+fn compile_regions_with(
+    observations: &[SourceObservation],
+    implicit_coverage: impl Fn(SemanticRegion) -> Option<RegionCoverage>,
+) -> Vec<SourceRegion> {
     SEMANTIC_REGIONS
         .iter()
         .copied()
@@ -1657,18 +1677,7 @@ fn compile_regions(
                 .iter()
                 .filter(|observation| observation.region == region)
                 .collect::<Vec<_>>();
-            let implicit = match region {
-                SemanticRegion::IdentityResponsibility => Some(RegionCoverage::Observed),
-                SemanticRegion::DocumentationIntent if has_responsibility => {
-                    Some(RegionCoverage::Observed)
-                }
-                SemanticRegion::VerificationRelationships => Some(if has_verification {
-                    RegionCoverage::Observed
-                } else {
-                    RegionCoverage::Absent
-                }),
-                _ => None,
-            };
+            let implicit = implicit_coverage(region);
             let coverage = implicit.unwrap_or_else(|| join_coverage(&relevant));
             let mut evidence = relevant
                 .iter()

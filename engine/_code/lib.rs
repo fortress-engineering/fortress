@@ -78,6 +78,8 @@ pub mod migration_governance;
 pub mod module_index;
 #[path = "../snapshot_governance/_code/native_observation.rs"]
 mod native_observation;
+#[path = "../snapshot_governance/_code/native_regions.rs"]
+pub mod native_regions;
 #[path = "../repository_observation/_code/observation.rs"]
 pub mod observation;
 #[path = "../snapshot_governance/_code/ownership.rs"]

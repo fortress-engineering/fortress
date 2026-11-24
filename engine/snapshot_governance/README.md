@@ -120,6 +120,9 @@ Consumes one deterministic PSM-backed function-domain evaluation so PROGRAM-DOMA
 
 Compiles the canonical code documentation catalog when governed and the shared explicit source-ownership relation plus existing implementation observations into one deterministic language-neutral Source Artifact Model.
 
+Projects independently admitted Go and Python receipts onto the shared source
+region vocabulary after checking current original source and authority.
+
 ### [State and Effect Analysis](../state_effect_analysis/README.md)
 
 **Types:** `depends_on`

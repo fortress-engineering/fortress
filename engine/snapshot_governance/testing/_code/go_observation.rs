@@ -7,6 +7,10 @@ use fortress_core::go_observation::{
     GoBuildContext, GoBuildTestMode, GoCollectorPin, GoObservationError, GoPackageSelection,
     observe_go_native, observe_go_native_build,
 };
+use fortress_core::native_regions::{
+    NativeRegionAvailability, NativeRegionError, NativeRegionInput, project_native_source_regions,
+};
+use fortress_core::source_architecture::{RegionCoverage, SemanticRegion};
 use serde_json::{Value, json};
 
 const NATIVE: &[u8] = include_bytes!("../_data/go_native_fixture_v1.json");
@@ -347,6 +351,105 @@ mod bodies {
         });
         assert!(matches!(injected, Err(GoObservationError::InvalidResponse)));
     }
+}
+
+/// `T-AF-SNAPSHOT-GOVERNANCE-0001-R28-012`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R28
+#[test]
+fn go_native_regions_reuse_exact_declarations_without_ownership_or_absence() {
+    let fixture = Fixture::new("go-regions");
+    let receipt = observe_go_native(&fixture.root, Fixture::select(), &PIN, |request| {
+        Ok(run_frozen(request))
+    })
+    .unwrap();
+    let report = project_native_source_regions(
+        &fixture.root,
+        "src/api.go",
+        NativeRegionInput::Go(&receipt),
+        &[],
+    )
+    .unwrap();
+    assert_eq!(report.availability(), NativeRegionAvailability::Observed);
+    for region in report.regions() {
+        let expected = match region.region() {
+            SemanticRegion::Declarations | SemanticRegion::Implementation => {
+                RegionCoverage::Observed
+            }
+            _ => RegionCoverage::Unsupported,
+        };
+        assert_eq!(region.coverage(), expected, "{:?}", region.region());
+    }
+    let document = serde_json::to_value(&report).unwrap();
+    let schema = fortress_core::source_architecture::native_regions::native_source_region_schema();
+    jsonschema::draft202012::validate(&serde_json::from_str(schema).unwrap(), &document)
+        .expect("source-bound Go region view satisfies the registered schema");
+    let original = serde_json_canonicalizer::to_vec(&receipt).unwrap();
+    assert_eq!(
+        document["native_receipt_ref"],
+        fortress_core::portable::digest(&original)
+    );
+    assert_eq!(
+        document["source_ref"],
+        fortress_core::portable::digest(API.as_bytes())
+    );
+    assert_eq!(document["regions"][2]["evidence"][0]["start_line"], 3);
+    assert_eq!(
+        document["regions"][2]["evidence"][0]["source_reference"],
+        format!(
+            "{}#/observation/declarations/0",
+            document["native_receipt_ref"].as_str().unwrap(),
+        )
+    );
+    assert!(document["layout"].is_null());
+    assert!(document.get("ownership").is_none());
+    let repeated = project_native_source_regions(
+        &fixture.root,
+        "src/api.go",
+        NativeRegionInput::Go(&receipt),
+        &[],
+    )
+    .unwrap();
+    assert_eq!(
+        serde_json_canonicalizer::to_vec(&report).unwrap(),
+        serde_json_canonicalizer::to_vec(&repeated).unwrap()
+    );
+}
+
+/// `T-AF-SNAPSHOT-GOVERNANCE-0001-R28-013`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R28
+#[test]
+fn go_native_regions_refuse_stale_ancillary_source_and_missing_subject() {
+    let fixture = Fixture::new("go-region-stale");
+    fs::write(fixture.root.join("notes.txt"), "original").unwrap();
+    let receipt = observe_go_native(&fixture.root, Fixture::select(), &PIN, |request| {
+        Ok(run_frozen(request))
+    })
+    .unwrap();
+    let project = |path| {
+        project_native_source_regions(&fixture.root, path, NativeRegionInput::Go(&receipt), &[])
+    };
+    assert!(matches!(
+        project("notes.txt"),
+        Err(NativeRegionError::SubjectMismatch)
+    ));
+    assert!(matches!(
+        project("../api.go"),
+        Err(NativeRegionError::InvalidPath)
+    ));
+    fs::write(
+        fixture.root.join("notes.txt"),
+        "changed outside the closed package",
+    )
+    .unwrap();
+    assert!(matches!(
+        project("src/api.go"),
+        Err(NativeRegionError::StaleReceipt)
+    ));
+    fs::remove_file(fixture.root.join("src/api.go")).unwrap();
+    assert!(matches!(
+        project("src/api.go"),
+        Err(NativeRegionError::MissingSource)
+    ));
 }
 
 /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R28-001`

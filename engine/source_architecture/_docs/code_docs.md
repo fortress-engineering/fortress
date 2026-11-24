@@ -39,6 +39,18 @@ Admits one read-only compile-only worker response into a typed Python lexical ob
 
 This owner admits observations independently of process startup. It preserves syntax-only, partial, invalid source, unsupported and unavailable outcomes. Imports and calls remain unresolved. Observation facts neither enter the PSM nor change Source Profiles, ownership, findings, execution evidence or certification. Future host integration must establish actual runtime and dependency identity and bounded execution separately.
 
+### [`native_regions.rs`](../_code/native_regions.rs)
+
+Projects the shared source region vocabulary over a selected, already admitted
+Go or Python receipt. Go declaration entries contribute positive declaration
+facts and only confirmed source bodies contribute positive implementation
+facts. Python function scopes contribute positive lexical declaration facts.
+Unresolved Python import occurrences remain attached to unsupported dependency
+coverage. Other regions remain unsupported. This output carries no inferred
+absence, ownership, authored responsibility, semantic effects or verification
+relationships. The canonical Source Artifact Model continues to use its
+established ownership and verification inputs.
+
 ### [`python_lexical_worker.py`](../_code/python_lexical_worker.py)
 
 Provides the fixed CPython 3.12 or 3.13 compile-only worker for a trusted host.

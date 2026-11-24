@@ -22,6 +22,14 @@ Compatible extensions retain v1; incompatible model or profile authority changes
 
 ## Files
 
+### [`native_region_schema_v1.json`](../_data/native_region_schema_v1.json)
+
+Defines an independently versioned, observational source region report. It binds
+exact file, view, manifest, original authority and admitted compiler receipt
+identities. An optional native layout annotation retains its selected profile
+and analysis-only authority. The report does not extend canonical Source
+Artifact Model v1 or assign a File Content Profile.
+
 ### [`source_model_schema_v1.json`](../_data/source_model_schema_v1.json)
 
 Defines canonical deterministic Source Artifact Model v1 derived Info.

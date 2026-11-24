@@ -278,6 +278,39 @@ impl PythonLexicalObservation {
     pub fn to_canonical_json(&self) -> Result<Vec<u8>, serde_json::Error> {
         serde_json_canonicalizer::to_vec(self)
     }
+
+    pub(crate) fn selected_source_path(&self) -> &str {
+        &self.request.source_path
+    }
+
+    pub(crate) fn matches_source(&self, source_view_ref: &str, source_ref: &str) -> bool {
+        self.request.source_view_ref == source_view_ref && self.request.source_ref == source_ref
+    }
+
+    pub(crate) fn function_regions(&self) -> impl Iterator<Item = (usize, usize)> + '_ {
+        self.report
+            .observations
+            .iter()
+            .flat_map(|facts| facts.scopes.iter().enumerate())
+            .filter_map(|(index, scope)| {
+                if matches!(
+                    scope.kind,
+                    ScopeKind::FunctionDef | ScopeKind::AsyncFunctionDef
+                ) {
+                    scope.span.map(|span| (index, span.0))
+                } else {
+                    None
+                }
+            })
+    }
+
+    pub(crate) fn unresolved_import_regions(&self) -> impl Iterator<Item = (usize, usize)> + '_ {
+        self.report
+            .observations
+            .iter()
+            .flat_map(|facts| facts.imports.iter().enumerate())
+            .map(|(index, imported)| (index, imported.span.0))
+    }
 }
 
 /// Failure to establish the requested lexical observation.

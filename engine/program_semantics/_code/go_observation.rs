@@ -258,7 +258,7 @@ struct Call {
 
 #[derive(Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-enum Status {
+pub(crate) enum Status {
     Observed,
     InvalidRequest,
     InvalidSource,
@@ -313,6 +313,46 @@ pub struct GoNativeObservation {
     response_sha256: String,
     provenance: serde_json::Value,
     observation: Response,
+}
+
+impl GoNativeObservation {
+    pub(crate) const fn status(&self) -> &Status {
+        &self.observation.status
+    }
+
+    pub(crate) fn matches_actual_source(&self, view_digest: &str, authority_digest: &str) -> bool {
+        self.provenance["actual"] == true
+            && self.provenance["source_view_sha256"] == view_digest
+            && self.provenance["authority_sha256"] == authority_digest
+    }
+
+    pub(crate) fn source_digest(&self, path: &str) -> Option<&str> {
+        self.observation
+            .context
+            .as_ref()?
+            .source_inventory
+            .iter()
+            .find(|entry| entry.path == path)
+            .map(|entry| entry.sha256.as_str())
+    }
+
+    pub(crate) fn declaration_regions<'a>(
+        &'a self,
+        path: &'a str,
+    ) -> impl Iterator<Item = (usize, usize, bool)> + 'a {
+        self.observation
+            .declarations
+            .iter()
+            .enumerate()
+            .filter(move |(_, declaration)| declaration.span.path == path)
+            .map(|(index, declaration)| {
+                (
+                    index,
+                    declaration.span.start_line,
+                    declaration.implementation == Implementation::SourceBody,
+                )
+            })
+    }
 }
 
 pub(crate) struct GoRequest<'a> {
