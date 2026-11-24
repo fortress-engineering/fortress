@@ -370,7 +370,7 @@ impl GoRequest<'_> {
         };
         let outcome = match mode {
             Mode::FirstOrder => input.admit(&row_bytes),
-            Mode::BoundCalls => input.admit_bound_go_body(&row_bytes),
+            Mode::BoundCalls => input.admit_bound_calls(&row_bytes),
         }
         .map_err(|failure| match failure {
             NativeBodyError::ResourceLimit => GoObservationError::ResourceLimit,

@@ -806,3 +806,9 @@ registration to inspect a Boolean return table for an occurrence reported by
 `--bound-calls`. The first parameter is the low bit in table order. The table
 covers only the selected closed scalar model. Missing bound bodies and cycles
 remain unavailable.
+
+Use the existing Python scalar host registration with --call-return to inspect
+finite Boolean returns for a selected local call closure. The call mode
+requires the current pinned scalar worker and its matching bootstrap.
+Unresolved lexical scopes, mutable targets and unsupported arguments are
+reported with the exact source binding.

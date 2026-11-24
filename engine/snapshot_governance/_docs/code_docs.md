@@ -703,3 +703,8 @@ A finite Go call return inspection selects an exact occurrence from the current
 bound-call report. It admits the same source, context, original authority and
 worker evidence before composing the selected dependency closure. Changes to
 those inputs require a fresh occurrence selection.
+
+The local Python call return inspection selects its Boolean input premises
+from the existing trusted scalar registration. The finite result carries
+the selected source, context, original authority and worker response digest.
+The same interpreter handles closed Go and Python scalar call tables.

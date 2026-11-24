@@ -21,8 +21,8 @@ pub use crate::program_semantics::python_scalar::python_filesystem::{
 };
 use crate::project::EvaluationKey;
 use crate::semantic_analysis::{
-    NativeBooleanSensitivity, SemanticDomain, infer_native_scalar_output,
-    inspect_native_boolean_sensitivity,
+    NativeBooleanSensitivity, SemanticDomain, analyze_native_boolean_calls,
+    infer_native_scalar_output, inspect_native_boolean_sensitivity,
 };
 
 pub use crate::program_semantics::python_scalar::{
@@ -551,6 +551,67 @@ pub fn observe_python_scalar_sensitivity(
             NativeBodyOutcome::Unavailable(_) => None,
         },
     )
+}
+
+/// Composes exact local Python calls in the compile-only Boolean model.
+///
+/// The trusted host selects the exact source and ordered root argument premises.
+/// The admitted closure has deterministic local bindings and no captured values.
+/// Revalidates the complete original source and selected authority after analysis.
+///
+/// # Errors
+/// Refuses source drift, unresolved authority and incompatible host replies.
+pub fn observe_python_native_call_return(
+    project_root: &Path,
+    subject: &PythonScalarSubject,
+    producer: &PythonScalarProducer,
+    exchange: impl FnOnce(Vec<u8>) -> Result<Vec<u8>, PythonObservationError>,
+) -> Result<serde_json::Value, PythonObservationError> {
+    let source = NativeSource::capture(project_root, "Python")?;
+    let context = serde_json_canonicalizer::to_vec(&(
+        "fortress-python-lexical-call-context-v1",
+        subject,
+        producer,
+    ))
+    .map_err(PythonScalarError::Json)?;
+    let evaluation_key = EvaluationKey::new(
+        &source.binding.source_manifest_digest,
+        sha256(&context),
+        &source.binding.authority_digest,
+    );
+    let request = bind_scalar_request(&source.view, subject, producer, &evaluation_key)?
+        .into_lexical_calls()?;
+    let response = exchange(request.worker_payload(&source.view, &evaluation_key)?)?;
+    let observation = request.admit_lexical_calls(&source.view, &evaluation_key, &response)?;
+    let targets = observation.targets()?;
+    let (evaluation, diagnostic, calls) = match &observation.root {
+        NativeBodyOutcome::Lowered(body) => (
+            Some(analyze_native_boolean_calls(body, &targets)),
+            None,
+            body.bound_calls(),
+        ),
+        NativeBodyOutcome::Unavailable(limitation) => (
+            None,
+            Some(serde_json::json!({"code":limitation.code(), "location":limitation.location()})),
+            &[][..],
+        ),
+    };
+    source.revalidate()?;
+    Ok(serde_json::json!({
+        "$schema":"urn:fortress:derived:v1:python-native-call-return",
+        "schema_version":1,
+        "scope":"BOUNDED_LEXICAL_BOOLEAN_CALL_RETURN",
+        "target_execution":"NOT_RUN",
+        "evaluation_key":evaluation_key,
+        "exchange_sha256":request.exchange_ref(),
+        "response_sha256":sha256(&response),
+        "source_path":subject.source_path,
+        "source_ref":request.source_ref(),
+        "producer":producer,
+        "calls":calls,
+        "evaluation":evaluation,
+        "diagnostic":diagnostic,
+    }))
 }
 
 /// Inspects an exact Python postimage from a retained unapplied candidate.

@@ -144,7 +144,7 @@ pub struct NativeScalarBody {
 }
 
 /// An occurrence and an exact source declaration supplied by the separately
-/// admitted Go body producer. Body availability and evaluation are separate.
+/// admitted native producer. Body availability and evaluation are separate.
 #[derive(Debug, Serialize)]
 pub(crate) struct NativeBoundCall {
     pub(crate) reference: String,
@@ -216,7 +216,7 @@ impl std::fmt::Display for NativeBodyError {
 
 impl std::error::Error for NativeBodyError {}
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct Span {
     pub(crate) path: String,
@@ -226,7 +226,7 @@ pub(crate) struct Span {
     pub(crate) start_byte_column: usize,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct Symbol {
     pub(crate) name: String,
@@ -399,7 +399,7 @@ struct Lowering<'a> {
     result: NativeScalar,
     bindings: BTreeMap<String, NativeScalar>,
     parameters: BTreeSet<String>,
-    allow_bound_go_calls: bool,
+    allow_bound_calls: bool,
     calls: Vec<NativeBoundCall>,
 }
 
@@ -471,7 +471,7 @@ impl Lowering<'_> {
                     NativeScalar::Bool,
                 )
             }
-            Expression::Call { call } if self.allow_bound_go_calls => {
+            Expression::Call { call } if self.allow_bound_calls => {
                 (self.bound_call(*call, enclosure)?, NativeScalar::Bool)
             }
             Expression::Unary { .. } | Expression::Call { .. } => {
@@ -641,20 +641,17 @@ impl NativeBodyInput<'_> {
         self.admit_body(response, false)
     }
 
-    pub(crate) fn admit_bound_go_body(
+    pub(crate) fn admit_bound_calls(
         &self,
         response: &[u8],
     ) -> Result<NativeBodyOutcome, NativeBodyError> {
-        if self.language != NativeBodyLanguage::Go {
-            return Err(NativeBodyError::InvalidBinding);
-        }
         self.admit_body(response, true)
     }
 
     fn admit_body(
         &self,
         response: &[u8],
-        bound_go_calls: bool,
+        bound_calls: bool,
     ) -> Result<NativeBodyOutcome, NativeBodyError> {
         if self.source.len() > MAX_SOURCE_BYTES || self.python_bool_parameters.len() > MAX_BINDINGS
         {
@@ -706,7 +703,7 @@ impl NativeBodyInput<'_> {
                 result_scalar,
                 &locals,
                 body,
-                bound_go_calls,
+                bound_calls,
             ),
             Reply::Unavailable {
                 symbol,
@@ -753,7 +750,7 @@ impl NativeBodyInput<'_> {
         result: NativeScalar,
         locals: &[Binding],
         body: Vec<Statement>,
-        allow_bound_go_calls: bool,
+        allow_bound_calls: bool,
     ) -> Result<NativeBodyOutcome, NativeBodyError> {
         if parameters.len().saturating_add(locals.len()) > MAX_BINDINGS {
             return Err(NativeBodyError::ResourceLimit);
@@ -810,7 +807,7 @@ impl NativeBodyInput<'_> {
             result,
             bindings,
             parameters: parameters.iter().map(|item| item.name.clone()).collect(),
-            allow_bound_go_calls,
+            allow_bound_calls,
             calls: Vec::new(),
         };
         let (statements, _) = lowering.statements(body, &declaration)?;

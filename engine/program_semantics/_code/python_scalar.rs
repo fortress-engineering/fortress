@@ -1,5 +1,7 @@
 //! Exact exchange binding for the compile-only Python scalar worker.
 
+#[path = "python_calls.rs"]
+mod python_calls;
 /// Compile-only Python filesystem call shape and installed receiver admission.
 #[path = "python_filesystem.rs"]
 pub mod python_filesystem;
@@ -23,6 +25,9 @@ use super::native_body::{NativeBodyError, NativeBodyInput, NativeBodyLanguage, N
 
 const REQUEST_SCHEMA: &str = "fortress:python:scalar-request:1";
 const RESPONSE_SCHEMA: &str = "fortress:python:scalar-response:1";
+const CALL_REQUEST_SCHEMA: &str = "fortress:python:lexical-call-request:1";
+const CALL_RESPONSE_SCHEMA: &str = "fortress:python:lexical-call-response:1";
+const MAX_CALL_PARAMETERS: usize = 4;
 const MAX_SOURCE_BYTES: usize = 32 * 1024;
 const MAX_NAMES: usize = 8;
 const RESPONSE_LIMITS: JsonAdmissionLimits = JsonAdmissionLimits {
@@ -82,6 +87,8 @@ pub struct PythonScalarRequest {
     function: String,
     parameters: Vec<String>,
     producer: PythonScalarProducer,
+    #[serde(skip)]
+    lexical_calls: bool,
 }
 
 impl PythonScalarRequest {
@@ -138,7 +145,19 @@ impl PythonScalarRequest {
                 .map(|name| (*name).to_owned())
                 .collect(),
             producer: producer.clone(),
+            lexical_calls: false,
         })
+    }
+
+    pub(crate) fn into_lexical_calls(mut self) -> Result<Self, PythonScalarError> {
+        if self.parameters.len() > MAX_CALL_PARAMETERS {
+            return Err(PythonScalarError::Binding);
+        }
+        let material = serde_json_canonicalizer::to_vec(&(CALL_REQUEST_SCHEMA, &self.exchange_ref))
+            .map_err(PythonScalarError::Json)?;
+        self.exchange_ref = digest(&material);
+        self.lexical_calls = true;
+        Ok(self)
     }
 
     /// Returns the unique source, policy, producer and assumption binding.
@@ -179,7 +198,7 @@ impl PythonScalarRequest {
     ) -> Result<Vec<u8>, PythonScalarError> {
         let source = self.source_bytes(view, evaluation)?;
         serde_json_canonicalizer::to_vec(&json!({
-            "schema": REQUEST_SCHEMA,
+            "schema": if self.lexical_calls { CALL_REQUEST_SCHEMA } else { REQUEST_SCHEMA },
             "id": self.wire_id(),
             "source": STANDARD.encode(source),
             "byte_count": source.len(),
@@ -207,29 +226,14 @@ impl PythonScalarRequest {
         evaluation: &EvaluationKey,
         response: &[u8],
     ) -> Result<NativeBodyOutcome, PythonScalarError> {
+        if self.lexical_calls {
+            return Err(PythonScalarError::InvalidResponse);
+        }
         let source = self.source_bytes(view, evaluation)?;
         admit_json(response, RESPONSE_LIMITS).map_err(|_| PythonScalarError::ResourceLimit)?;
         let raw: WorkerResponse =
             parse_strict_json_bytes(response).map_err(|_| PythonScalarError::InvalidResponse)?;
-        if raw.schema != RESPONSE_SCHEMA
-            || raw.id != self.wire_id()
-            || raw.source_path != self.source_path
-            || raw.source_ref != self.source_ref
-            || raw.byte_count != source.len()
-            || raw.function != self.function
-            || raw.worker_ref != self.producer.worker
-            || raw.bootstrap_ref != self.producer.bootstrap
-            || raw.runtime_ref != self.producer.runtime
-            || raw.parameter_domains.len() != self.parameters.len()
-            || raw.parameter_domains.iter().any(|domain| domain != "BOOL")
-            || raw.target_execution != "NOT_RUN"
-            || raw
-                .symbol
-                .as_ref()
-                .is_some_and(|symbol| symbol["name"].as_str() != Some(self.function.as_str()))
-        {
-            return Err(PythonScalarError::InvalidResponse);
-        }
+        self.validate_response(source, &raw, RESPONSE_SCHEMA)?;
         let native = raw.into_native()?;
         let producer_ref =
             serde_json_canonicalizer::to_vec(&self.producer).map_err(PythonScalarError::Json)?;
@@ -249,6 +253,34 @@ impl PythonScalarRequest {
         }
         .admit(&native)
         .map_err(PythonScalarError::Native)
+    }
+
+    fn validate_response(
+        &self,
+        source: &[u8],
+        raw: &WorkerResponse,
+        schema: &str,
+    ) -> Result<(), PythonScalarError> {
+        if raw.schema != schema
+            || raw.id != self.wire_id()
+            || raw.source_path != self.source_path
+            || raw.source_ref != self.source_ref
+            || raw.byte_count != source.len()
+            || raw.function != self.function
+            || raw.worker_ref != self.producer.worker
+            || raw.bootstrap_ref != self.producer.bootstrap
+            || raw.runtime_ref != self.producer.runtime
+            || raw.parameter_domains.len() != self.parameters.len()
+            || raw.parameter_domains.iter().any(|domain| domain != "BOOL")
+            || raw.target_execution != "NOT_RUN"
+            || raw
+                .symbol
+                .as_ref()
+                .is_some_and(|symbol| symbol["name"].as_str() != Some(self.function.as_str()))
+        {
+            return Err(PythonScalarError::InvalidResponse);
+        }
+        Ok(())
     }
 }
 

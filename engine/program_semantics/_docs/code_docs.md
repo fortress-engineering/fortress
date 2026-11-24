@@ -239,3 +239,8 @@ It checks ordered Boolean arguments, call sites and known declaration spans
 before constructing existing Program Call expressions. Dynamic function
 values and unsupported type forms retain explicit limitations. Pure call
 resolution and recursion are recorded without inferring an actual return.
+
+Compile-only Python call admission verifies that each reported local helper
+precedes the first executable body statement, belongs to the selected source
+declaration and has an exact ordered Boolean interface. Reused body admission
+and exact call locations preserve shared Program Semantics identities.

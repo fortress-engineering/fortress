@@ -1,4 +1,4 @@
-"""Collect bounded compile-only Python scalar and control-flow facts."""
+"""Collect bounded compile-only Python scalar, control-flow and lexical call facts."""
 
 import sys
 
@@ -18,6 +18,9 @@ import warnings
 REQUEST = "fortress:python:scalar-request:1"
 RESPONSE = "fortress:python:scalar-response:1"
 READY = "fortress-host/python-scalar-ready/1"
+CALL_REQUEST = "fortress:python:lexical-call-request:1"
+CALL_RESPONSE = "fortress:python:lexical-call-response:1"
+CALL_READY = "fortress-host/python-lexical-call-ready/1"
 BOOTSTRAP_REF = "sha256:19ca652a6ed8908d128ac231da47b45d0b0a86a9baffaff9626fb2d1609c9836"
 MAX_BOOTSTRAP_BYTES = 64 * 1024
 MAX_SOURCE_BYTES = 32 * 1024
@@ -26,6 +29,8 @@ MAX_RESPONSE_BYTES = 256 * 1024
 MAX_UNITS = 256
 MAX_DEPTH = 20
 MAX_PARAMS = 8
+MAX_CALL_PARAMS = 4
+MAX_HELPERS = 16
 IDENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]{0,63}\Z")
 PATH_PART = re.compile(r"[A-Za-z0-9_][A-Za-z0-9_.-]{0,63}\Z")
 REF = re.compile(r"sha256:[0-9a-f]{64}\Z")
@@ -60,7 +65,7 @@ def publish(value):
 
 
 def chosen_pins(args):
-    if len(args) != 7 or args[0] != "--serve":
+    if len(args) != 7 or args[0] not in ("--serve", "--serve-calls"):
         raise Refuse("UNSUPPORTED_INVOCATION")
     expected_flags = ["--worker-ref", "--bootstrap-ref", "--runtime-ref"]
     if args[1::2] != expected_flags or not all(REF.fullmatch(value) for value in args[2::2]):
@@ -83,7 +88,7 @@ def trusted_bootstrap(expected):
     return tool
 
 
-def prepare(args):
+def prepare(args, with_calls):
     pins = chosen_pins(args)
     tool = trusted_bootstrap(pins["bootstrap_ref"])
     try:
@@ -94,12 +99,12 @@ def prepare(args):
         raise Refuse("WORKER_BINDING_MISMATCH")
     if tool["stamp"](tool["exact_json"](tool["runtime"]())) != pins["runtime_ref"]:
         raise Refuse("RUNTIME_BINDING_MISMATCH")
-    publish({"schema": READY, "status": "READY", "grammar": f"cpython{sys.version_info.major}.{sys.version_info.minor}",
+    publish({"schema": CALL_READY if with_calls else READY, "status": "READY", "grammar": f"cpython{sys.version_info.major}.{sys.version_info.minor}",
              "profile": profile, "limits": limits, **pins})
     return tool, pins
 
 
-def load_request(tool, pins):
+def load_request(tool, pins, with_calls):
     payload = sys.stdin.buffer.read(MAX_REQUEST_BYTES + 1)
     if len(payload) > MAX_REQUEST_BYTES:
         raise Refuse("INPUT_LIMIT")
@@ -107,7 +112,8 @@ def load_request(tool, pins):
         record = json.loads(payload, object_pairs_hook=tool["duplicate_free"], parse_constant=tool["no_constant"])
     except (ValueError, UnicodeError, RecursionError) as error:
         raise Refuse("MALFORMED_INPUT") from error
-    if not isinstance(record, dict) or set(record) != SOURCE_KEYS or record["schema"] != REQUEST:
+    schema = CALL_REQUEST if with_calls else REQUEST
+    if not isinstance(record, dict) or set(record) != SOURCE_KEYS or record["schema"] != schema:
         raise Refuse("MALFORMED_INPUT")
     if any(record[key] != pins[key] for key in PIN_KEYS):
         raise Refuse("INPUT_PIN_MISMATCH")
@@ -121,7 +127,7 @@ def load_request(tool, pins):
             or path.split("/")[0].lower() in ("__fortress", ".git")):
         raise Refuse("INVALID_SOURCE_PATH")
     if (not isinstance(record["parameter_domains"], list)
-            or len(record["parameter_domains"]) > MAX_PARAMS
+            or len(record["parameter_domains"]) > (MAX_CALL_PARAMS if with_calls else MAX_PARAMS)
             or any(item != "BOOL" for item in record["parameter_domains"])):
         raise Refuse("PARAMETER_DOMAIN_UNAVAILABLE")
     count = record["byte_count"]
@@ -177,8 +183,9 @@ class Source:
 
 
 class Lower:
-    def __init__(self, source, parameters):
+    def __init__(self, source, parameters, callees=None):
         self.source = source
+        self.callees = callees
         self.parameters = dict.fromkeys(parameters, "BOOL")
         self.locals = {}
         self.result = None
@@ -219,12 +226,31 @@ class Lower:
         if isinstance(node, ast.Compare):
             return self.comparison(node, initialized, depth)
         if isinstance(node, ast.Call):
-            raise Refuse("CALL_UNSUPPORTED", node)
+            return self.call(node, initialized, depth)
         if isinstance(node, ast.BinOp):
             raise Refuse("INTEGER_OPERATION_UNSUPPORTED", node)
         if isinstance(node, MODULE_VALUE_KINDS):
             raise Refuse("OBJECT_OR_ALIAS_UNSUPPORTED", node)
         raise Refuse("EXPRESSION_UNSUPPORTED", node)
+
+    def call(self, node, initialized, depth):
+        if self.callees is None:
+            raise Refuse("CALL_UNSUPPORTED", node)
+        if not isinstance(node.func, ast.Name) or node.func.id not in self.callees:
+            raise Refuse("CALL_TARGET_UNESTABLISHED", node)
+        self.source.name(node.func.id, node.func)
+        target, count = self.callees[node.func.id]
+        if node.keywords or len(node.args) != count:
+            raise Refuse("CALL_ARGUMENTS_UNSUPPORTED", node)
+        arguments = []
+        for item in node.args:
+            scalar, expression = self.expression(item, initialized, depth + 1)
+            if scalar != "BOOL":
+                raise Refuse("CALL_ARGUMENTS_UNSUPPORTED", item)
+            arguments.append(expression)
+        return "BOOL", {"kind": "call", "call": {
+            "target": target, "span": self.source.node(node), "arguments": arguments,
+        }}
 
     def comparison(self, node, initialized, depth):
         if len(node.ops) != 1:
@@ -293,8 +319,8 @@ class Lower:
         return rows, init
 
 
-def describe_function(function, source, request, report):
-    if not isinstance(function, ast.FunctionDef) or function.name != request["function"]:
+def function_signature(function, source, name, report, expected_count=None):
+    if not isinstance(function, ast.FunctionDef) or function.name != name:
         raise Refuse("FUNCTION_FORM_UNSUPPORTED", function)
     if function.decorator_list or function.returns or function.type_params:
         raise Refuse("FUNCTION_FORM_UNSUPPORTED", function)
@@ -304,21 +330,76 @@ def describe_function(function, source, request, report):
     if (args.vararg or args.kwarg or args.kwonlyargs or args.defaults
             or any(param.annotation or param.type_comment for param in params)):
         raise Refuse("FUNCTION_FORM_UNSUPPORTED", function)
-    if len(params) != len(request["parameter_domains"]):
+    if expected_count is not None and len(params) != expected_count:
         raise Refuse("PARAMETER_DOMAIN_UNAVAILABLE", function)
     if not all(IDENT.fullmatch(param.arg) for param in params):
         raise Refuse("IDENTIFIER_SPELLING_UNSUPPORTED", function)
-    parameters = [{"name": param.arg, "scalar": "BOOL", "span": source.name(param.arg, param)}
-                  for param in params]
-    analysis = Lower(source, [row["name"] for row in parameters])
-    body, after = analysis.block(function.body, analysis.parameters.copy())
+    return [{"name": param.arg, "scalar": "BOOL", "span": source.name(param.arg, param)}
+            for param in params]
+
+
+def lower_body(function, source, statements, parameters, report, callees=None):
+    analysis = Lower(source, [row["name"] for row in parameters], callees)
+    body, after = analysis.block(statements, analysis.parameters.copy())
     if after is not None or analysis.result is None:
         raise Refuse("FALLTHROUGH_UNSUPPORTED", function)
     report.update(status="LOWERABLE", result_scalar=analysis.result,
                   parameters=parameters, locals=list(analysis.locals.values()), body=body)
 
 
-def observe(tool, request, raw, report):
+def describe_function(function, source, request, report):
+    parameters = function_signature(function, source, request["function"], report,
+                                    len(request["parameter_domains"]))
+    lower_body(function, source, function.body, parameters, report)
+
+
+def describe_lexical_calls(function, source, request, report, top_scope):
+    parameters = function_signature(function, source, request["function"], report,
+                                    len(request["parameter_domains"]))
+    namespaces = top_scope.lookup(function.name).get_namespaces()
+    if len(namespaces) != 1 or namespaces[0].get_lineno() != function.lineno:
+        raise Refuse("LEXICAL_SCOPE_UNESTABLISHED", function)
+    outer = namespaces[0]
+    if outer.get_frees():
+        raise Refuse("LEXICAL_SCOPE_UNESTABLISHED", function)
+    helpers = []
+    for node in function.body:
+        if not isinstance(node, ast.FunctionDef):
+            break
+        helpers.append(node)
+    if len(helpers) > MAX_HELPERS:
+        raise Refuse("CALLABLE_COUNT_LIMIT", function)
+    statements = function.body[len(helpers):]
+    names = {node.name for node in helpers}
+    if len(names) != len(helpers) or names.intersection(row["name"] for row in parameters):
+        raise Refuse("CALL_TARGET_UNESTABLISHED", function)
+    for statement in statements:
+        for node in ast.walk(statement):
+            if isinstance(node, ast.Name) and node.id in names and not isinstance(node.ctx, ast.Load):
+                raise Refuse("CALL_TARGET_UNESTABLISHED", node)
+
+    callees, bodies = {}, []
+    for helper in helpers:
+        symbol = outer.lookup(helper.name)
+        definitions = symbol.get_namespaces()
+        if (not symbol.is_local() or symbol.is_global() or symbol.is_nonlocal()
+                or len(definitions) != 1 or definitions[0].get_lineno() != helper.lineno
+                or definitions[0].get_frees()):
+            raise Refuse("LEXICAL_SCOPE_UNESTABLISHED", helper)
+        body = {}
+        selected = function_signature(helper, source, helper.name, body)
+        if len(selected) > MAX_CALL_PARAMS:
+            raise Refuse("CALL_ARGUMENTS_UNSUPPORTED", helper)
+        lower_body(helper, source, helper.body, selected, body, {})
+        if body["result_scalar"] != "BOOL":
+            raise Refuse("CALL_TARGET_SCALAR_UNSUPPORTED", helper)
+        callees[helper.name] = (body["symbol"], len(selected))
+        bodies.append(body)
+    lower_body(function, source, statements, parameters, report, callees)
+    report["helpers"] = bodies
+
+
+def observe(tool, request, raw, report, with_calls):
     source = Source(request["source_path"], raw, tool)
     try:
         text = tool["source_text"](raw)
@@ -331,7 +412,13 @@ def observe(tool, request, raw, report):
             compile(text, "<fortress-scalar-source>", "exec", dont_inherit=True, optimize=0)
         if len(parsed.body) != 1:
             raise Refuse("MODULE_FORM_UNSUPPORTED")
-        describe_function(parsed.body[0], source, request, report)
+        if with_calls:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                scope = tool["symtable"].symtable(text, "<fortress-scalar-source>", "exec")
+            describe_lexical_calls(parsed.body[0], source, request, report, scope)
+        else:
+            describe_function(parsed.body[0], source, request, report)
     except (SyntaxError, UnicodeError):
         report["diagnostic"] = {"code": "INVALID_SOURCE", "span": None}
     except Refuse as error:
@@ -343,32 +430,39 @@ def observe(tool, request, raw, report):
 
 
 def main():
+    with_calls = sys.argv[1:2] == ["--serve-calls"]
+    ready_schema = CALL_READY if with_calls else READY
+    response_schema = CALL_RESPONSE if with_calls else RESPONSE
     try:
-        tool, pins = prepare(sys.argv[1:])
+        tool, pins = prepare(sys.argv[1:], with_calls)
     except (Refuse, OSError, ImportError, ValueError, MemoryError) as error:
         code = error.code if isinstance(error, Refuse) else "TRUST_OR_RESOURCE_UNAVAILABLE"
-        publish({"schema": READY, "status": "UNAVAILABLE", "reason": code})
+        publish({"schema": ready_schema, "status": "UNAVAILABLE", "reason": code})
         return 3
     try:
-        request, raw = load_request(tool, pins)
+        request, raw = load_request(tool, pins, with_calls)
     except (Refuse, tool["Refuse"]) as error:
         code = error.code if isinstance(error, Refuse) else "MALFORMED_INPUT"
-        publish({"schema": RESPONSE, "status": "UNAVAILABLE", "diagnostic": {"code": code, "span": None}})
+        publish({"schema": response_schema, "status": "UNAVAILABLE", "diagnostic": {"code": code, "span": None}})
         return 2
     bindings = {key: request[key] for key in (
         "id", "source_path", "source_ref", "byte_count", "function", "parameter_domains", *PIN_KEYS,
     )}
     report = {
-        "schema": RESPONSE, **bindings, "target_execution": "NOT_RUN",
+        "schema": response_schema, **bindings, "target_execution": "NOT_RUN",
         "status": "UNAVAILABLE", "symbol": None, "parameters": [], "locals": [],
         "result_scalar": None, "body": [], "diagnostic": None,
     }
-    observe(tool, request, raw, report)
+    if with_calls:
+        report["helpers"] = []
+    observe(tool, request, raw, report, with_calls)
     try:
         publish(report)
     except Refuse as error:
         report.update(status="UNAVAILABLE", parameters=[], locals=[], result_scalar=None, body=[],
                       diagnostic={"code": error.code, "span": None})
+        if with_calls:
+            report["helpers"] = []
         publish(report)
     return 0
 

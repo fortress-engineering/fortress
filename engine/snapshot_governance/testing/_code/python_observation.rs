@@ -32,6 +32,165 @@ const SOURCE: &[u8] = b"value: int = 7\r\n";
 const OTHER: &[u8] = b"original ancillary input\n";
 const CONTEXT: &str = "sha256:f19e50baa1d1fd5a6df2123b2973d458d3806567b133d3192b5b2587b5e1376f";
 
+mod lexical_calls {
+    use super::{
+        Fixture, PythonObservationError, PythonScalarError, PythonScalarProducer,
+        PythonScalarSubject, digest, fs, json, observe_python_scalar,
+    };
+    use fortress_core::python_observation::observe_python_native_call_return;
+    use serde_json::Value;
+
+    fn case(
+        name: &str,
+        label: &str,
+    ) -> (Fixture, PythonScalarSubject, PythonScalarProducer, Value) {
+        let doc: Value =
+            serde_json::from_slice(include_bytes!("../_data/python_call_fixture_v1.json")).unwrap();
+        let row = &doc[name];
+        let report = &row["reply"];
+        let data = row["source"].as_str().unwrap();
+        assert_eq!(report["source_ref"], digest(data.as_bytes()));
+        let fixture = Fixture::new(label);
+        fs::write(fixture.root.join("fixture.py"), data).unwrap();
+        let producer = PythonScalarProducer::new(
+            report["worker_ref"].as_str().unwrap(),
+            report["bootstrap_ref"].as_str().unwrap(),
+            report["runtime_ref"].as_str().unwrap(),
+        )
+        .unwrap();
+        let subject = PythonScalarSubject {
+            source_path: "fixture.py".into(),
+            source_ref: digest(data.as_bytes()),
+            function: "outer".into(),
+            exact_bool_parameters: vec!["v".into()],
+        };
+        (fixture, subject, producer, report.clone())
+    }
+
+    fn bind(request: &[u8], reply: &Value) -> Value {
+        let request: Value = serde_json::from_slice(request).unwrap();
+        assert_eq!(request["schema"], "fortress:python:lexical-call-request:1");
+        for key in [
+            "source_path",
+            "source_ref",
+            "worker_ref",
+            "runtime_ref",
+            "bootstrap_ref",
+        ] {
+            assert_eq!(request[key], reply[key], "{key}");
+        }
+        let mut response = reply.clone();
+        response["id"] = request["id"].clone();
+        response
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R35-001`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R35
+    #[test]
+    fn python_lexical_calls_compose_selected_cases_and_preserve_uncertainty() {
+        for (name, expected) in [
+            ("locally_defined_shadow_free_function", None),
+            ("ordered_positionals", None),
+            ("later_local_rebind", Some("CALL_TARGET_UNESTABLISHED")),
+            (
+                "nested_recursive_capture",
+                Some("LEXICAL_SCOPE_UNESTABLISHED"),
+            ),
+            ("decorated_local", Some("FUNCTION_FORM_UNSUPPORTED")),
+        ] {
+            let (fixture, subject, producer, reply) = case(name, name);
+            let observe = || {
+                observe_python_native_call_return(&fixture.root, &subject, &producer, |request| {
+                    Ok(serde_json::to_vec(&bind(&request, &reply)).unwrap())
+                })
+                .unwrap()
+            };
+            let report = observe();
+            assert_eq!(report, observe());
+            assert_eq!(report["target_execution"], "NOT_RUN");
+            assert_eq!(report["scope"], "BOUNDED_LEXICAL_BOOLEAN_CALL_RETURN");
+            assert_eq!(report["source_ref"], subject.source_ref);
+            if let Some(reason) = expected {
+                assert!(report["evaluation"].is_null());
+                assert_eq!(report["diagnostic"]["code"], reason);
+                assert_eq!(report["calls"], json!([]));
+            } else {
+                assert!(report["diagnostic"].is_null());
+                assert_eq!(report["calls"][0]["target"]["name"], "inner");
+                assert_eq!(report["evaluation"]["status"], "COMPLETE");
+                assert_eq!(report["evaluation"]["parameters"], json!(["v"]));
+                assert_eq!(report["evaluation"]["returns"], json!([true, false]));
+                assert_eq!(
+                    report["evaluation"]["dependency_occurrences"]
+                        .as_array()
+                        .unwrap()
+                        .len(),
+                    1
+                );
+            }
+        }
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R35-002`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R35
+    #[test]
+    fn python_lexical_calls_reject_displaced_evidence_and_source_drift() {
+        let (fixture, subject, producer, reply) = case(
+            "locally_defined_shadow_free_function",
+            "lexical-call-rejected",
+        );
+        for (pointer, replacement) in [
+            ("/schema", json!("fortress:python:scalar-response:1")),
+            ("/helpers", json!([])),
+            ("/body/0/value/call/target/span/path", json!("different.py")),
+            ("/body/0/value/call/arguments", json!([])),
+            (
+                "/source_ref",
+                json!("sha256:0000000000000000000000000000000000000000000000000000000000000000"),
+            ),
+        ] {
+            let failure =
+                observe_python_native_call_return(&fixture.root, &subject, &producer, |request| {
+                    let mut response = bind(&request, &reply);
+                    *response.pointer_mut(pointer).unwrap() = replacement;
+                    Ok(serde_json::to_vec(&response).unwrap())
+                });
+            assert!(
+                matches!(
+                    failure,
+                    Err(PythonObservationError::Scalar(
+                        PythonScalarError::InvalidResponse | PythonScalarError::Native(_)
+                    ))
+                ),
+                "{pointer}"
+            );
+        }
+        assert!(matches!(
+            observe_python_scalar(&fixture.root, &subject, &producer, |request| {
+                let selected: Value = serde_json::from_slice(&request).unwrap();
+                let mut response = reply.clone();
+                response["id"] = selected["id"].clone();
+                Ok(serde_json::to_vec(&response).unwrap())
+            }),
+            Err(PythonObservationError::Scalar(
+                PythonScalarError::InvalidResponse
+            ))
+        ));
+        assert!(matches!(
+            observe_python_native_call_return(&fixture.root, &subject, &producer, |request| {
+                let response = bind(&request, &reply);
+                fs::write(
+                    fixture.root.join("fixture.py"),
+                    b"# changed after observation\n",
+                )
+                .unwrap();
+                Ok(serde_json::to_vec(&response).unwrap())
+            }),
+            Err(PythonObservationError::SourceChanged)
+        ));
+    }
+}
+
 mod test_declarations {
     use super::*;
     use fortress_core::python_observation::{

@@ -15,8 +15,8 @@ use fortress_core::python_observation::{
     ActualPythonScalarObservation, NativeBodyOutcome, PYTHON_LEXICAL_WORKER, PYTHON_SCALAR_WORKER,
     PythonCallableSelection, PythonObservationError, PythonScalarError, PythonScalarProducer,
     PythonScalarSubject, observe_python_authored_native_return,
-    observe_python_candidate_sensitivity, observe_python_scalar, observe_python_scalar_flow,
-    observe_python_scalar_sensitivity,
+    observe_python_candidate_sensitivity, observe_python_native_call_return, observe_python_scalar,
+    observe_python_scalar_flow, observe_python_scalar_sensitivity,
 };
 use fortress_core::wire::{
     JsonAdmissionLimits, admit_json, parse_strict_json_bytes, readable_text,
@@ -30,18 +30,22 @@ use super::python_observe_command::{
 use super::verifier_process::{require_external_asset, run_pinned_input_after_ready};
 
 const USAGE: &str = concat!(
-    "fortress source-artifacts --observe-python-scalar project host-registration [--flow|--return-sensitivity]",
+    "fortress source-artifacts --observe-python-scalar project host-registration [--flow|--return-sensitivity|--call-return]",
     "\n       fortress source-artifacts --observe-python-scalar project host-registration --contract module root-scope root-scope-sha256",
 );
 const REGISTRATION_SCHEMA: &str = "urn:fortress:host:v1:python-scalar-registration";
 const OBSERVATION_SCHEMA: &str = "urn:fortress:derived:v1:python-scalar-observation";
 const READY_SCHEMA: &str = "fortress-host/python-scalar-ready/1";
+const CALL_READY_SCHEMA: &str = "fortress-host/python-lexical-call-ready/1";
 const BOOTSTRAP_NAME: &str = "python_lexical_worker.py";
 const WORKER_NAME: &str = "python_scalar_worker.py";
 // Retain existing exact local registrations through a compatible scalar wire edition.
 const PRIOR_WORKER_BYTES: usize = 16_457;
 const PRIOR_WORKER_REF: &str =
     "sha256:7df54ae0f4affba51191d62fbe4b12bc484ba0f7b15594222652a0a2ce2abc0f";
+const COMPARISON_WORKER_BYTES: usize = 17_395;
+const COMPARISON_WORKER_REF: &str =
+    "sha256:ab3e9ec2a698430491b01619f350ebe3f1c4438200166fac3632ff371ab58288";
 const REGISTRATION_MAX: usize = 16 * 1024;
 const DEADLINE: Duration = Duration::from_secs(5);
 
@@ -94,11 +98,15 @@ impl Registration {
         require_external_asset(&self.bootstrap, root)?;
         let worker = super::provider_command::read_bounded(
             &self.worker,
-            PYTHON_SCALAR_WORKER.len().max(PRIOR_WORKER_BYTES),
+            PYTHON_SCALAR_WORKER
+                .len()
+                .max(PRIOR_WORKER_BYTES)
+                .max(COMPARISON_WORKER_BYTES),
         )?;
         let worker_ref = digest(&worker);
         if (worker != PYTHON_SCALAR_WORKER
-            && (worker.len() != PRIOR_WORKER_BYTES || worker_ref != PRIOR_WORKER_REF))
+            && (worker.len() != PRIOR_WORKER_BYTES || worker_ref != PRIOR_WORKER_REF)
+            && (worker.len() != COMPARISON_WORKER_BYTES || worker_ref != COMPARISON_WORKER_REF))
             || super::provider_command::read_bounded(&self.bootstrap, PYTHON_LEXICAL_WORKER.len())?
                 != PYTHON_LEXICAL_WORKER
         {
@@ -129,7 +137,13 @@ impl Registration {
         Ok(())
     }
 
-    fn command(&self, cwd: &Path, worker_ref: &str, bootstrap_ref: &str) -> Command {
+    fn command(
+        &self,
+        cwd: &Path,
+        worker_ref: &str,
+        bootstrap_ref: &str,
+        lexical_calls: bool,
+    ) -> Command {
         let mut command = Command::new(&self.interpreter);
         command
             .env_clear()
@@ -137,7 +151,11 @@ impl Registration {
             .args(["-I", "-S", "-B"])
             .arg(&self.worker)
             .args([
-                "--serve",
+                if lexical_calls {
+                    "--serve-calls"
+                } else {
+                    "--serve"
+                },
                 "--worker-ref",
                 worker_ref,
                 "--bootstrap-ref",
@@ -156,13 +174,14 @@ impl Registration {
         &self,
         worker_ref: &str,
         bootstrap_ref: &str,
+        lexical_calls: bool,
     ) -> Result<(Vec<u8>, &'static str), String> {
         if std::env::consts::ARCH != "x86_64" {
             return Err("PYTHON_SCALAR_PLATFORM_UNAVAILABLE".into());
         }
         let (profile, limits) = resource_profile()?;
         let mut frame = canonical(&json!({
-            "schema": READY_SCHEMA,
+            "schema": if lexical_calls { CALL_READY_SCHEMA } else { READY_SCHEMA },
             "status": "READY",
             "grammar": self.grammar.wire_name(),
             "profile": profile,
@@ -188,17 +207,25 @@ struct RegisteredScalarHost<'a> {
     producer: PythonScalarProducer,
     ready: Vec<u8>,
     profile: &'static str,
+    lexical_calls: bool,
 }
 
 impl<'a> RegisteredScalarHost<'a> {
-    fn load(root: &'a Path, registration_path: &'a Path) -> Result<Self, String> {
+    fn load(
+        root: &'a Path,
+        registration_path: &'a Path,
+        lexical_calls: bool,
+    ) -> Result<Self, String> {
         let (registration, registration_bytes, worker_ref) =
             Registration::load(root, registration_path)?;
+        if lexical_calls && worker_ref != digest(PYTHON_SCALAR_WORKER) {
+            return Err("PYTHON_LEXICAL_CALL_WORKER_UNAVAILABLE".into());
+        }
         let bootstrap_ref = digest(PYTHON_LEXICAL_WORKER);
         let producer =
             PythonScalarProducer::new(&worker_ref, &bootstrap_ref, &registration.runtime_ref)
                 .map_err(|error| error.to_string())?;
-        let (ready, profile) = registration.ready(&worker_ref, &bootstrap_ref)?;
+        let (ready, profile) = registration.ready(&worker_ref, &bootstrap_ref, lexical_calls)?;
         let working_directory = registration_path
             .parent()
             .ok_or("Missing trusted registration parent")?;
@@ -213,6 +240,7 @@ impl<'a> RegisteredScalarHost<'a> {
             producer,
             ready,
             profile,
+            lexical_calls,
         })
     }
 
@@ -231,6 +259,7 @@ impl<'a> RegisteredScalarHost<'a> {
             self.working_directory,
             &self.worker_ref,
             &self.bootstrap_ref,
+            self.lexical_calls,
         );
         let (bytes, status) = run_pinned_input_after_ready(
             command,
@@ -262,7 +291,8 @@ pub(super) fn inspect_candidate(
     workspace: &CandidateWorkspace,
     retained: NativeCandidateSelection<'_>,
 ) -> Result<HypotheticalNativeBodyInspection, MigrationError> {
-    let host = RegisteredScalarHost::load(root, registration_path).map_err(candidate_host_error)?;
+    let host =
+        RegisteredScalarHost::load(root, registration_path, false).map_err(candidate_host_error)?;
     let result = observe_python_candidate_sensitivity(
         workspace,
         retained,
@@ -300,6 +330,7 @@ enum ScalarInspection {
     Observation,
     Flow,
     ReturnSensitivity,
+    CallReturn,
 }
 
 fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
@@ -310,6 +341,7 @@ fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
         [] => (ScalarInspection::Observation, None),
         [flag] if flag == "--flow" => (ScalarInspection::Flow, None),
         [flag] if flag == "--return-sensitivity" => (ScalarInspection::ReturnSensitivity, None),
+        [flag] if flag == "--call-return" => (ScalarInspection::CallReturn, None),
         [flag, module, scope_path, scope_ref] if flag == "--contract" => (
             ScalarInspection::Observation,
             Some((module.as_str(), Path::new(scope_path), scope_ref.as_str())),
@@ -325,8 +357,20 @@ fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
                 .map(|(scope, bytes)| (module, scope_path, scope, bytes))
         })
         .transpose()?;
-    let host = RegisteredScalarHost::load(&root, Path::new(registration_path))?;
+    let lexical_calls = matches!(inspection, ScalarInspection::CallReturn);
+    let host = RegisteredScalarHost::load(&root, Path::new(registration_path), lexical_calls)?;
     let exchange = |request| host.exchange(request);
+    if lexical_calls {
+        let report = observe_python_native_call_return(
+            &root,
+            &host.registration.subject,
+            &host.producer,
+            exchange,
+        )
+        .map_err(|error| error.to_string())?;
+        host.revalidate().map_err(|error| error.to_string())?;
+        return canonical(&report).map_err(|error| error.to_string());
+    }
     if let Some((module, scope_path, scope, scope_bytes)) = authored {
         let subject = &host.registration.subject;
         if !subject.exact_bool_parameters.is_empty() {

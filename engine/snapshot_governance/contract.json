@@ -635,6 +635,14 @@
           "tests": [
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R34-001"
           ]
+        },
+        {
+          "id": "AF-SNAPSHOT-GOVERNANCE-0001-R35",
+          "statement": "An exact pinned compile-only Python worker can bind a fresh unambiguous local call closure under ordered Boolean premises, and Snapshot Governance can compose its finite returns through shared Semantic Analysis. Mutable lookups, captured scopes, displaced declarations, unsupported arguments, unverified modes and source drift remain unavailable.",
+          "tests": [
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R35-001",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R35-002"
+          ]
         }
       ]
     }

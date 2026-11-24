@@ -163,7 +163,13 @@ fn live_contract_v2_v3_ecosystem_resolves_completely() {
     assert_eq!(resolved.modules().len(), 55);
     assert_eq!(resolved.capabilities().len(), 27);
     assert_eq!(resolved.features().len(), 28);
-    assert_eq!(resolved.requirements().len(), 191);
+    assert_eq!(resolved.requirements().len(), 192);
+    assert_eq!(
+        resolved.requirements()["AF-SNAPSHOT-GOVERNANCE-0001-R35"]
+            .tests()
+            .len(),
+        2
+    );
     assert_eq!(
         resolved.requirements()["AF-SNAPSHOT-GOVERNANCE-0001-R34"]
             .tests()

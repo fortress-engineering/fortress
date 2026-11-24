@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v1:python-native-call-return",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "scope",
+    "target_execution",
+    "evaluation_key",
+    "exchange_sha256",
+    "response_sha256",
+    "source_path",
+    "source_ref",
+    "producer",
+    "calls",
+    "evaluation",
+    "diagnostic"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:derived:v1:python-native-call-return"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "scope": {
+      "const": "BOUNDED_LEXICAL_BOOLEAN_CALL_RETURN"
+    },
+    "target_execution": {
+      "const": "NOT_RUN"
+    },
+    "evaluation_key": {
+      "$ref": "urn:fortress:derived:v1:python-scalar-observation#/$defs/evaluation"
+    },
+    "exchange_sha256": {
+      "$ref": "urn:fortress:derived:v1:python-scalar-observation#/$defs/digest"
+    },
+    "response_sha256": {
+      "$ref": "urn:fortress:derived:v1:python-scalar-observation#/$defs/digest"
+    },
+    "source_path": {
+      "type": "string",
+      "minLength": 4,
+      "maxLength": 240
+    },
+    "source_ref": {
+      "$ref": "urn:fortress:derived:v1:python-scalar-observation#/$defs/digest"
+    },
+    "producer": {
+      "$ref": "urn:fortress:derived:v1:python-scalar-observation#/$defs/assumption"
+    },
+    "calls": {
+      "type": "array",
+      "uniqueItems": true,
+      "maxItems": 256,
+      "items": {
+        "$ref": "urn:fortress:derived:v1:go-bound-call-observation#/$defs/call"
+      }
+    },
+    "evaluation": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "urn:fortress:derived:v1:go-native-call-return#/properties/evaluation"
+        }
+      ]
+    },
+    "diagnostic": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "code",
+            "location"
+          ],
+          "properties": {
+            "code": {
+              "type": "string",
+              "pattern": "^[A-Z0-9_]{1,96}$"
+            },
+            "location": {
+              "anyOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "urn:fortress:derived:v1:python-scalar-observation#/$defs/location"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "evaluation": {
+          "type": "object"
+        },
+        "diagnostic": {
+          "type": "null"
+        }
+      }
+    },
+    {
+      "properties": {
+        "evaluation": {
+          "type": "null"
+        },
+        "diagnostic": {
+          "type": "object"
+        },
+        "calls": {
+          "maxItems": 0
+        }
+      }
+    }
+  ]
+}
