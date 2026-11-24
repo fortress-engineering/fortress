@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v1:go-source-dependency-inspection",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "source_manifest_sha256",
+    "scope",
+    "native_receipt",
+    "ownership_diagnostics",
+    "dependencies"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:derived:v1:go-source-dependency-inspection"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "source_manifest_sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "scope": {
+      "const": "SCOPED_SOURCE_OBSERVATION"
+    },
+    "native_receipt": {
+      "$ref": "urn:fortress:derived:v3:go-native-module-observation"
+    },
+    "ownership_diagnostics": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code",
+          "source_path",
+          "modules",
+          "detail"
+        ],
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "source_path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024,
+            "pattern": "^[^/\\\\](?:[^\\\\]*[^/\\\\])?$"
+          },
+          "modules": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024
+            }
+          },
+          "detail": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "dependencies": {
+      "oneOf": [
+        {
+          "allOf": [
+            {
+              "$ref": "urn:fortress:derived:v1:native-dependency-projection"
+            },
+            {
+              "properties": {
+                "language": {
+                  "const": "go"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "if": {
+    "properties": {
+      "native_receipt": {
+        "properties": {
+          "observation": {
+            "properties": {
+              "status": {
+                "const": "OBSERVED"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "then": {
+    "properties": {
+      "dependencies": {
+        "type": "object"
+      }
+    }
+  },
+  "else": {
+    "properties": {
+      "dependencies": {
+        "type": "null"
+      }
+    }
+  }
+}

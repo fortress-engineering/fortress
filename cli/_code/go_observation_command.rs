@@ -7,12 +7,12 @@ use std::time::Duration;
 
 use fortress_core::go_observation::{
     GoBuildContext, GoCollectorPin, GoModuleSelection, GoObservationError, GoPackageSelection,
-    GoTypeComparison, GoTypeSelector, observe_go_native, observe_go_native_build,
-    observe_go_native_module,
+    GoTypeComparison, GoTypeSelector, observe_go_module_dependencies, observe_go_native,
+    observe_go_native_build, observe_go_native_module,
 };
 use fortress_core::portable::{canonical, digest};
 use fortress_core::wire::{JsonAdmissionLimits, admit_json, parse_public_json, readable_text};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 
 const SCHEMA: &str = "urn:fortress:host:v1:go-collector-registration";
@@ -66,7 +66,7 @@ impl Mode {
                 "--observe-go-build project host-registration directory package-path go-version target-os target-arch"
             }
             Self::Module => {
-                "--observe-go-module project host-registration module-directory module-path entry-path target-os target-arch [left-package left-type right-package right-type]"
+                "--observe-go-module project host-registration module-directory module-path entry-path target-os target-arch [--dependencies | left-package left-type right-package right-type]"
             }
         }
     }
@@ -143,7 +143,12 @@ fn collect(arguments: &[String], mode: Mode) -> Result<Vec<u8>, String> {
             "Explicit source, trusted host registration and package context are required.".into(),
         );
     };
-    let comparison = parse_comparison(mode, compare)?;
+    let dependencies = mode == Mode::Module && compare == ["--dependencies"];
+    let comparison = if dependencies {
+        None
+    } else {
+        parse_comparison(mode, compare)?
+    };
     let root = Path::new(root)
         .canonicalize()
         .map_err(|error| error.to_string())?;
@@ -172,9 +177,14 @@ fn collect(arguments: &[String], mode: Mode) -> Result<Vec<u8>, String> {
                 target_arch,
                 comparison: comparison.as_ref(),
             };
-            let result = observe_go_native_module(&root, selection, context, &pin, launch)
-                .map_err(|error| error.to_string())?;
-            serde_json::to_value(result)
+            if dependencies {
+                observe_go_module_dependencies(&root, selection, context, &pin, launch)
+                    .map_err(|error| error.to_string())
+            } else {
+                let result = observe_go_native_module(&root, selection, context, &pin, launch)
+                    .map_err(|error| error.to_string())?;
+                encode_observation(result)
+            }
         }
         (mode, context) => {
             let selection = GoPackageSelection {
@@ -188,24 +198,28 @@ fn collect(arguments: &[String], mode: Mode) -> Result<Vec<u8>, String> {
                 (Mode::Build, Some(context)) => {
                     let result = observe_go_native_build(&root, selection, context, &pin, launch)
                         .map_err(|error| error.to_string())?;
-                    serde_json::to_value(result)
+                    encode_observation(result)
                 }
                 (Mode::Legacy, None) => {
                     let result = observe_go_native(&root, selection, &pin, launch)
                         .map_err(|error| error.to_string())?;
-                    serde_json::to_value(result)
+                    encode_observation(result)
                 }
                 _ => return Err("UNSUPPORTED_COLLECTOR_REGISTRATION_VERSION".into()),
             }
         }
-    }
-    .map_err(|error| error.to_string())?;
+    }?;
     super::verifier_process::require_external_asset(registration, &root)?;
     if super::provider_command::read_bounded(registration, REGISTRATION_LIMIT)?
         != registration_bytes
     {
         return Err("SOURCE_DRIFT: Native collector registration changed.".into());
     }
+    Ok(projection)
+}
+
+fn encode_observation(observation: impl Serialize) -> Result<Vec<u8>, String> {
+    let projection = serde_json::to_value(observation).map_err(|error| error.to_string())?;
     canonical(&projection).map_err(|error| error.to_string())
 }
 

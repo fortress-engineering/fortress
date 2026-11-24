@@ -70,8 +70,10 @@ use crate::finding_governance::{
 use crate::implementation_observation::{
     ImplementationObservationError, ImplementationObservationInput, ModuleTerritory,
     ObservedImplementation, SnapshotBoundFile, SourceOwnership, SourceOwnershipAuthority,
-    SourceOwnershipBasis, SourceOwnershipDiagnostic, observe_cargo_analysis_territories,
-    observe_rust_implementation, resolve_source_ownership_with_logical_modules,
+    SourceOwnershipBasis, SourceOwnershipDiagnostic, SourceOwnershipResolution,
+    observe_cargo_analysis_territories, observe_rust_implementation,
+    resolve_inventory_ownership_with_logical_modules,
+    resolve_source_ownership_with_logical_modules,
 };
 use crate::information_flow::{
     InformationFlowAnalysisError, InformationFlowEvaluation, InformationFlowPolicyError,
@@ -4858,12 +4860,14 @@ pub(crate) struct NativeObservationBinding {
     pub(crate) source_fingerprint: String,
     pub(crate) source_manifest_digest: String,
     pub(crate) authority_digest: String,
+    pub(crate) dependency_ownership: Option<SourceOwnershipResolution>,
 }
 
 /// Prepares exact source and the existing selected authority for native observation.
 pub(crate) fn bind_native_observation_source(
     source: &SourceView,
     language: &str,
+    dependencies: bool,
 ) -> Result<NativeObservationBinding, AuditError> {
     let prepared = prepare_analysis_from_view(source.clone())?;
     if prepared.project_state == ProjectGovernanceState::Invalid
@@ -4879,11 +4883,40 @@ pub(crate) fn bind_native_observation_source(
         ));
     }
     let authority_digest = prepared_authority_binding(&prepared)?.digest();
+    let dependency_ownership = dependencies.then(|| native_dependency_ownership(&prepared));
     Ok(NativeObservationBinding {
         source_fingerprint: prepared.source_identity,
         source_manifest_digest: prepared.source_manifest.entries_digest().to_owned(),
         authority_digest,
+        dependency_ownership,
     })
+}
+
+fn native_dependency_ownership(prepared: &PreparedAnalysis) -> SourceOwnershipResolution {
+    let logical = prepared
+        .project_configuration
+        .as_ref()
+        .map_or(&[][..], ProjectConfiguration::logical_modules);
+    let logical_ids = logical
+        .iter()
+        .map(crate::project::LogicalModuleDeclaration::module)
+        .collect::<BTreeSet<_>>();
+    let mut physical = Vec::new();
+    let mut known = BTreeSet::new();
+    if let Some(ccg) = prepared.ccg() {
+        for (id, module) in ccg.modules() {
+            known.insert(id.clone());
+            if !logical_ids.contains(id.as_str()) {
+                physical.push(ModuleTerritory::new(id, module.path()));
+            }
+        }
+    }
+    resolve_inventory_ownership_with_logical_modules(
+        prepared.observed_files.keys().map(String::as_str),
+        &physical,
+        logical,
+        &known,
+    )
 }
 
 fn affected_unit(

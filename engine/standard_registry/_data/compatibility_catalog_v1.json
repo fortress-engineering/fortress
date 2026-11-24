@@ -3,6 +3,50 @@
   "schema_version": 1,
   "entries": [
     {
+      "schema_id": "urn:fortress:derived:v1:go-source-dependency-inspection",
+      "schema_path": "engine/snapshot_governance/_data/go_dependency_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/snapshot_governance/_code/go_observation.rs"
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-owner-canonical-or-exact-bytes",
+        "source": "engine/snapshot_governance/_code/go_observation.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:derived:v1:native-dependency-projection",
+      "schema_path": "engine/implementation_observation/_data/native_dependency_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/implementation_observation/_code/native_dependency.rs"
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-owner-canonical-or-exact-bytes",
+        "source": "engine/implementation_observation/_code/native_dependency.rs"
+      }
+    },
+    {
       "schema_id": "urn:fortress:derived:v1:native-source-regions",
       "schema_path": "engine/source_architecture/_data/native_region_schema_v1.json",
       "version": 1,

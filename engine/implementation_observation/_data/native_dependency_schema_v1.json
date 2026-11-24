@@ -1,0 +1,524 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v1:native-dependency-projection",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "adapter_version",
+    "context",
+    "language",
+    "observation_sha256",
+    "coverage",
+    "sites",
+    "observation"
+  ],
+  "properties": {
+    "adapter_version": {
+      "const": "1.0.0"
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "snapshot_fingerprint",
+        "source_view_sha256",
+        "authority_sha256",
+        "context_sha256"
+      ],
+      "properties": {
+        "snapshot_fingerprint": {
+          "$ref": "#/$defs/digest"
+        },
+        "source_view_sha256": {
+          "$ref": "#/$defs/digest"
+        },
+        "authority_sha256": {
+          "$ref": "#/$defs/digest"
+        },
+        "context_sha256": {
+          "$ref": "#/$defs/digest"
+        }
+      }
+    },
+    "language": {
+      "enum": [
+        "go",
+        "python"
+      ]
+    },
+    "observation_sha256": {
+      "$ref": "#/$defs/digest"
+    },
+    "coverage": {
+      "const": "positive_scoped_source_only_runtime_and_absence_unestablished"
+    },
+    "sites": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/source_site"
+      },
+      "maxItems": 4096
+    },
+    "observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "snapshot_fingerprint",
+        "analyzer_id",
+        "analyzer_version",
+        "observations",
+        "module_dependencies",
+        "issues"
+      ],
+      "properties": {
+        "snapshot_fingerprint": {
+          "$ref": "#/$defs/digest"
+        },
+        "analyzer_id": {
+          "enum": [
+            "fortress-go-source-dependency-adapter",
+            "fortress-python-source-dependency-adapter"
+          ]
+        },
+        "analyzer_version": {
+          "const": "1.0.0"
+        },
+        "observations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/observation"
+          },
+          "maxItems": 4096
+        },
+        "module_dependencies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/edge"
+          },
+          "maxItems": 4096
+        },
+        "issues": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/issue"
+          },
+          "maxItems": 4096
+        }
+      }
+    }
+  },
+  "$defs": {
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "path": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024,
+      "pattern": "^[^/\\\\](?:[^\\\\]*[^/\\\\])?$"
+    },
+    "file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/path"
+        },
+        "sha256": {
+          "$ref": "#/$defs/digest"
+        }
+      }
+    },
+    "owner": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "owner",
+        "authority"
+      ],
+      "properties": {
+        "owner": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "authority": {
+          "enum": [
+            "DECLARED_MODULE",
+            "CARGO_ANALYSIS_TERRITORY"
+          ]
+        }
+      }
+    },
+    "ownership": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "state",
+            "module"
+          ],
+          "properties": {
+            "state": {
+              "const": "declared"
+            },
+            "module": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "state",
+            "territory"
+          ],
+          "properties": {
+            "state": {
+              "const": "scaffold"
+            },
+            "territory": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "state",
+            "owners",
+            "unowned_paths"
+          ],
+          "properties": {
+            "state": {
+              "enum": [
+                "many_owned",
+                "ownership_unavailable"
+              ]
+            },
+            "owners": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/owner"
+              },
+              "maxItems": 8192
+            },
+            "unowned_paths": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/path"
+              },
+              "maxItems": 8192
+            }
+          }
+        }
+      ]
+    },
+    "occurrence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "file",
+        "start_byte",
+        "end_byte",
+        "reference"
+      ],
+      "properties": {
+        "file": {
+          "$ref": "#/$defs/file"
+        },
+        "start_byte": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "end_byte": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "reference": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        }
+      }
+    },
+    "target": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "files",
+            "ownership"
+          ],
+          "properties": {
+            "kind": {
+              "const": "go_closed_package"
+            },
+            "files": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/file"
+              },
+              "maxItems": 64,
+              "minItems": 1
+            },
+            "ownership": {
+              "$ref": "#/$defs/ownership"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "file",
+            "ownership"
+          ],
+          "properties": {
+            "kind": {
+              "const": "python_static_origin"
+            },
+            "file": {
+              "$ref": "#/$defs/file"
+            },
+            "ownership": {
+              "$ref": "#/$defs/ownership"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "reason"
+          ],
+          "properties": {
+            "kind": {
+              "const": "unresolved"
+            },
+            "reason": {
+              "enum": [
+                "missing_from_admitted_scope",
+                "unsupported_context",
+                "ambiguous_source_origin",
+                "namespace_only"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "source_site": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "occurrence",
+        "source_ownership",
+        "target"
+      ],
+      "properties": {
+        "occurrence": {
+          "$ref": "#/$defs/occurrence"
+        },
+        "source_ownership": {
+          "$ref": "#/$defs/ownership"
+        },
+        "target": {
+          "$ref": "#/$defs/target"
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_path",
+        "source_module",
+        "reference",
+        "location",
+        "resolved_target"
+      ],
+      "properties": {
+        "source_path": {
+          "$ref": "#/$defs/path"
+        },
+        "source_module": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "reference": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "location": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "line",
+            "column"
+          ],
+          "properties": {
+            "line": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "column": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "resolved_target": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_module",
+        "source_artifact",
+        "target_classification",
+        "target_module",
+        "external_target",
+        "relation_kind",
+        "language",
+        "conditionality",
+        "provenance",
+        "resolution_status"
+      ],
+      "properties": {
+        "source_module": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "source_artifact": {
+          "$ref": "#/$defs/path"
+        },
+        "target_classification": {
+          "enum": [
+            "governed_module",
+            "analysis_territory",
+            "unresolved"
+          ]
+        },
+        "target_module": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "external_target": {
+          "type": "null"
+        },
+        "relation_kind": {
+          "const": "source_dependency"
+        },
+        "language": {
+          "enum": [
+            "go",
+            "python"
+          ]
+        },
+        "conditionality": {
+          "const": "unestablished"
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        },
+        "resolution_status": {
+          "enum": [
+            "resolved",
+            "unresolved"
+          ]
+        }
+      }
+    },
+    "edge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_module",
+        "target_module",
+        "evidence"
+      ],
+      "properties": {
+        "source_module": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "target_module": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/provenance"
+          },
+          "maxItems": 4096,
+          "minItems": 1
+        }
+      }
+    },
+    "issue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "source_path",
+        "detail"
+      ],
+      "properties": {
+        "kind": {
+          "const": "unsupported"
+        },
+        "source_path": {
+          "$ref": "#/$defs/path"
+        },
+        "detail": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        }
+      }
+    }
+  }
+}

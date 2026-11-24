@@ -528,7 +528,7 @@
         },
         {
           "id": "AF-SNAPSHOT-GOVERNANCE-0001-R28",
-          "statement": "Explicit trusted Go observation binds complete physical source and original selected authority, admits closed target context, verifies exact received observations, and refuses changed inputs before publication. It does not participate in Rust PSM v6, conformance or certification.",
+          "statement": "Explicit trusted Go observation binds complete physical source and original selected authority, admits closed target context, verifies exact received observations, and refuses changed inputs before publication. Explicit Go module dependency inspection relates the exact selected import sites and package source files to existing original Module ownership. The output retains unavailable and unowned scope as separate observational evidence, with no conformance or certification authority.",
           "tests": [
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R28-001",
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R28-002",
@@ -544,7 +544,9 @@
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R28-012",
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R28-013",
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R28-014",
-            "T-AF-SNAPSHOT-GOVERNANCE-0001-R28-015"
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R28-015",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R28-016",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R28-017"
           ]
         },
         {

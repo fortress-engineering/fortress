@@ -14,6 +14,11 @@ use super::{
     MAX_WIRE, Request, RequestFile, Resolution, SourceIdentity, SourceText, Span, Status, digest,
     display_name, has_case_alias, portable_ascii_path, seal_go_request, sha256,
 };
+use crate::implementation_observation::{
+    ImplementationObservationInput, NativeDependencyBatch, NativeDependencyContext,
+    NativeDependencyEndpoint, NativeDependencyFile, NativeDependencyLanguage,
+    NativeDependencyOccurrence, NativeDependencyTarget, adapt_native_dependencies,
+};
 use crate::wire::parse_strict_json_bytes;
 
 const SCHEMA: &str = "urn:fortress:derived:v3:go-native-module-observation";
@@ -543,6 +548,98 @@ pub(crate) fn admit_go_module<'a>(
 }
 
 impl GoModuleRequest<'_> {
+    pub(crate) fn dependency_paths(&self) -> impl Iterator<Item = &str> {
+        self.base
+            .context
+            .source_inventory
+            .iter()
+            .map(|file| file.path.as_str())
+    }
+
+    pub(crate) fn dependency_context(&self) -> &str {
+        &self.base.binding_sha256
+    }
+
+    pub(crate) fn project_dependencies(
+        &self,
+        input: &ImplementationObservationInput,
+        expected: NativeDependencyContext<'_>,
+        receipt: &GoNativeModuleObservation,
+    ) -> Result<Option<serde_json::Value>, GoObservationError> {
+        let response = &receipt.observation;
+        if response.status != Status::Observed {
+            return Ok(None);
+        }
+        let context = NativeDependencyContext {
+            snapshot_fingerprint: receipt.provenance["source_fingerprint"]
+                .as_str()
+                .ok_or(GoObservationError::InvalidResponse)?,
+            source_view_sha256: receipt.provenance["source_view_sha256"]
+                .as_str()
+                .ok_or(GoObservationError::InvalidResponse)?,
+            authority_sha256: receipt.provenance["authority_sha256"]
+                .as_str()
+                .ok_or(GoObservationError::InvalidResponse)?,
+            context_sha256: &receipt.binding_sha256,
+        };
+        let mut selected = BTreeMap::new();
+        let mut packages = BTreeMap::<&str, Vec<NativeDependencyFile<'_>>>::new();
+        for file in response
+            .selection
+            .iter()
+            .filter(|file| file.disposition == Disposition::SelectedGoSource)
+        {
+            let identity = NativeDependencyFile {
+                path: &file.path,
+                sha256: &file.sha256,
+            };
+            let package = self
+                .owners
+                .get(file.path.as_str())
+                .ok_or(GoObservationError::InvalidResponse)?;
+            packages.entry(package).or_default().push(identity);
+            selected.insert(file.path.as_str(), identity);
+        }
+        let mut endpoints = Vec::new();
+        for import in response
+            .observed_packages
+            .iter()
+            .flat_map(|package| &package.imports)
+        {
+            let file = *selected
+                .get(import.span.path.as_str())
+                .ok_or(GoObservationError::InvalidResponse)?;
+            let target = packages
+                .get(import.target_package.as_str())
+                .ok_or(GoObservationError::InvalidResponse)?;
+            endpoints.push(NativeDependencyEndpoint {
+                occurrence: NativeDependencyOccurrence {
+                    file,
+                    start_byte: import.span.start_byte,
+                    end_byte: import.span.end_byte,
+                    reference: &import.target_package,
+                },
+                target: NativeDependencyTarget::GoClosedPackage(target),
+            });
+        }
+        let admitted = NativeDependencyBatch {
+            language: NativeDependencyLanguage::Go,
+            context,
+            observation_sha256: &receipt.response_sha256,
+            endpoints: &endpoints,
+        };
+        let report =
+            adapt_native_dependencies(input, expected, &admitted).map_err(|error| match error {
+                crate::implementation_observation::NativeDependencyAdapterError::ResourceLimit => {
+                    GoObservationError::ResourceLimit
+                }
+                _ => GoObservationError::InvalidResponse,
+            })?;
+        serde_json::to_value(report)
+            .map(Some)
+            .map_err(|_| GoObservationError::WireEncoding)
+    }
+
     pub(crate) fn request_bytes(&self) -> &[u8] {
         self.base.request_bytes()
     }

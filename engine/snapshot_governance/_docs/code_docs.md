@@ -568,3 +568,9 @@ enters the evaluation key. The owner binds the resolver's configuration to
 that exact source and context. Compiler and inventory limitations retain the
 preceding lexical observation. Publication revalidates the complete physical
 source and original authority inputs.
+
+The explicit Go module dependency view obtains the complete occurrence ownership
+relation from the same original source, logical bindings and CCG used to seal
+the worker request. It preserves the native response and attaches a scoped
+Implementation Observation projection. The full physical view is revalidated
+after the report is assembled and before its publication.

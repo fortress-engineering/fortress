@@ -316,3 +316,20 @@ compile-only lexical artifact. Static lookup can identify a source file or
 ordered namespace portions under the selected roots. Missing results are scoped
 to that admitted inventory. Empty directories, dynamic imports, runtime
 package discovery and from-import member resolution remain unresolved.
+
+### Inspect original Go Module dependencies
+
+Use the existing pinned Go v3 collector with the trailing `--dependencies`
+option:
+
+```text
+fortress psm --observe-go-module PROJECT HOST_REGISTRATION . example.org/component example.org/component/api linux amd64 --dependencies
+```
+
+The report embeds the original native receipt and relates each admitted import
+to the exact selected files of its target package. Where the original governing
+configuration supplies unambiguous owners for both ends, the report shows a
+directed source relationship between those Modules. Ownership diagnostics and
+unresolved or unavailable native inputs remain visible. A source relationship
+provides observational evidence for review. Runtime behavior, authorization,
+and assessment have separate inputs.

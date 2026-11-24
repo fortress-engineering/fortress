@@ -161,3 +161,9 @@ evaluation key. It emits the exact worker request and strictly correlates
 the bounded reply. The common native body boundary validates and lowers
 the result to Program Semantics types. This adapter leaves the historical
 Rust model and its test populations untouched.
+
+The Go module dependency adapter consumes only compiler-admitted import
+occurrences. Each target uses the complete selected source files of its
+verified Go package. The snapshot owner separately supplies original Fortress
+ownership. Native scope remains source-level and bounded by the original
+worker request.

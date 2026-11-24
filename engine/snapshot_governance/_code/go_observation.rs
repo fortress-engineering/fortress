@@ -2,6 +2,9 @@
 
 use std::path::Path;
 
+use serde::Serialize;
+
+use crate::implementation_observation::{NativeDependencyContext, SourceOwnershipDiagnostic};
 use crate::native_observation::{NativeSource, NativeSourceError};
 use crate::program_semantics::go_observation::{
     ExactClosedPackage, admit_go, admit_go_build, admit_go_module,
@@ -89,21 +92,89 @@ pub fn observe_go_native_module(
     collector: &GoCollectorPin<'_>,
     launch: impl FnOnce(&[u8]) -> Result<Vec<u8>, GoObservationError>,
 ) -> Result<GoNativeModuleObservation, GoObservationError> {
-    observe_exact(
-        project_root,
-        GoPackageSelection {
-            directory: selected.directory,
-            package_path: selected.entry_path,
-            go_version: "go1.22",
-            target_os: selected.target_os,
-            target_arch: selected.target_arch,
-        },
-        |source| {
-            let admitted = admit_go_module(source, selected, collector, build_context)?;
-            let output = launch(admitted.request_bytes())?;
-            admitted.verify(collector, &output)
-        },
-    )
+    observe_exact(project_root, module_entry(selected), |source| {
+        let admitted = admit_go_module(source, selected, collector, build_context)?;
+        let output = launch(admitted.request_bytes())?;
+        admitted.verify(collector, &output)
+    })
+}
+
+/// Projects the exact Go module's verified imports through authored Module ownership.
+///
+/// The same pinned Go v3 worker observes the same physical inputs. Only its
+/// admitted selected package files can support positive source observations.
+/// Runtime behavior and assessment remain outside this report.
+///
+/// # Errors
+/// Refuses invalid source or host context, source drift, invalid output, or a
+/// result over the bounded report limit.
+pub fn observe_go_module_dependencies(
+    project_root: &Path,
+    selected: GoModuleSelection<'_>,
+    build_context: GoBuildContext,
+    collector: &GoCollectorPin<'_>,
+    launch: impl FnOnce(&[u8]) -> Result<Vec<u8>, GoObservationError>,
+) -> Result<Vec<u8>, GoObservationError> {
+    let source =
+        NativeSource::capture_for_dependencies(project_root, "Go").map_err(source_failure)?;
+    let admitted = admit_go_module(
+        closed_package(&source, module_entry(selected)),
+        selected,
+        collector,
+        build_context,
+    )?;
+    let output = launch(admitted.request_bytes())?;
+    let receipt = admitted.verify(collector, &output)?;
+    let (input, diagnostics) = source
+        .dependency_input(admitted.dependency_paths())
+        .map_err(source_failure)?;
+    let context = NativeDependencyContext {
+        snapshot_fingerprint: &source.binding.source_fingerprint,
+        source_view_sha256: source.view.digest(),
+        authority_sha256: &source.binding.authority_digest,
+        context_sha256: admitted.dependency_context(),
+    };
+    let dependencies = admitted.project_dependencies(&input, context, &receipt)?;
+    let report = GoDependencyInspection {
+        schema: "urn:fortress:derived:v1:go-source-dependency-inspection",
+        schema_version: 1,
+        source_manifest_sha256: &source.binding.source_manifest_digest,
+        scope: "SCOPED_SOURCE_OBSERVATION",
+        native_receipt: &receipt,
+        ownership_diagnostics: diagnostics,
+        dependencies,
+    };
+
+    let report = serde_json::to_value(report).map_err(|_| GoObservationError::WireEncoding)?;
+    let bytes =
+        crate::portable::canonical(&report).map_err(|_| GoObservationError::WireEncoding)?;
+    if bytes.len() > 2 << 20 {
+        return Err(GoObservationError::ResourceLimit);
+    }
+    source.revalidate().map_err(source_failure)?;
+    Ok(bytes)
+}
+
+#[derive(Serialize)]
+struct GoDependencyInspection<'a> {
+    #[serde(rename = "$schema")]
+    schema: &'static str,
+    schema_version: u16,
+    source_manifest_sha256: &'a str,
+    scope: &'static str,
+    native_receipt: &'a GoNativeModuleObservation,
+    ownership_diagnostics: &'a [SourceOwnershipDiagnostic],
+    dependencies: Option<serde_json::Value>,
+}
+
+fn module_entry(selected: GoModuleSelection<'_>) -> GoPackageSelection<'_> {
+    GoPackageSelection {
+        directory: selected.directory,
+        package_path: selected.entry_path,
+        go_version: "go1.22",
+        target_os: selected.target_os,
+        target_arch: selected.target_arch,
+    }
 }
 
 /// Admits bounded native Go scalar bodies under the exact original closed context.
@@ -143,21 +214,28 @@ fn observe_bound_exact<T>(
 ) -> Result<T, GoObservationError> {
     let source = NativeSource::capture(project_root, "Go").map_err(source_failure)?;
     let observation = operation(
-        ExactClosedPackage {
-            source: &source.view,
-            source_fingerprint: &source.binding.source_fingerprint,
-            authority_digest: &source.binding.authority_digest,
-            actual: true,
-            directory: selection.directory,
-            package_path: selection.package_path,
-            go_version: selection.go_version,
-            target_os: selection.target_os,
-            target_arch: selection.target_arch,
-        },
+        closed_package(&source, selection),
         &source.binding.source_manifest_digest,
     )?;
     source.revalidate().map_err(source_failure)?;
     Ok(observation)
+}
+
+fn closed_package<'a>(
+    source: &'a NativeSource<'_>,
+    selection: GoPackageSelection<'a>,
+) -> ExactClosedPackage<'a> {
+    ExactClosedPackage {
+        source: &source.view,
+        source_fingerprint: &source.binding.source_fingerprint,
+        authority_digest: &source.binding.authority_digest,
+        actual: true,
+        directory: selection.directory,
+        package_path: selection.package_path,
+        go_version: selection.go_version,
+        target_os: selection.target_os,
+        target_arch: selection.target_arch,
+    }
 }
 
 fn source_failure(error: NativeSourceError) -> GoObservationError {

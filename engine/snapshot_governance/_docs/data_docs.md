@@ -201,3 +201,9 @@ Binds the exact selection manifest and report references for each required popul
 ### [`governance_proposal_schema_v3.json`](../_data/governance_proposal_schema_v3.json)
 
 Retains the existing exact maintenance proposal shape when the postimage has finding-governance v3 records. The additional admission-retirement operation keeps the original admission and attaches comparable retirement evidence. The original schema and historical proposal bytes remain valid.
+
+### [`go_dependency_schema_v1.json`](../_data/go_dependency_schema_v1.json)
+
+Defines exact Go module dependency inspection with the original native receipt,
+scoped normalized sites, and authored ownership diagnostics. Unavailable native
+module observations retain a null dependency projection.

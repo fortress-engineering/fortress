@@ -60,19 +60,22 @@ impl Drop for Fixture {
 }
 
 fn registered_schema(name: &str) -> Value {
+    registered_schema_path(&format!("engine/program_semantics/_data/{name}"))
+}
+
+fn registered_schema_path(relative: &str) -> Value {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let manifest: Value = serde_json::from_slice(
         &fs::read(root.join("engine/standard_registry/_data/schema_manifest.json"))
             .expect("registered schemas are available in the test repository"),
     )
     .expect("registered schema manifest");
-    let relative = format!("engine/program_semantics/_data/{name}");
     assert!(
         manifest["schemas"]
             .as_array()
             .expect("registered paths")
             .iter()
-            .any(|path| path == relative.as_str())
+            .any(|path| path == relative)
     );
     serde_json::from_slice(&fs::read(root.join(relative)).expect("registered Go schema"))
         .expect("Go schema JSON")
@@ -691,7 +694,9 @@ fn go_build_rejects_context_and_inventory_overclaims_and_excluded_source_drift()
 // Frozen native module controls reuse the independent Go reference source and replies.
 mod module_controls {
     use super::*;
-    use fortress_core::go_observation::{GoModuleSelection, observe_go_native_module};
+    use fortress_core::go_observation::{
+        GoModuleSelection, observe_go_module_dependencies, observe_go_native_module,
+    };
 
     const MOD: &[u8] = b"module example.test/fortresslocal\n\ngo 1.22\n";
     const APP: &[u8] = b"package app\nimport q \"example.test/fortresslocal/base\"\nfunc Use() int { return q.Number() }\n";
@@ -744,6 +749,207 @@ mod module_controls {
         response.to_vec()
     }
 
+    fn authored_module(id: &str, project: bool) -> String {
+        let ecosystem = if project {
+            r#"  "ecosystem": {
+    "repository_grammar": 1,
+    "standard": {
+      "id": "STD-FORTRESS-ENGINEERING",
+      "edition": "1.0.0-draft.2"
+    }
+  },
+"#
+        } else {
+            ""
+        };
+        r#"{
+  "$schema": "urn:fortress:schema:v2:module-contract",
+  "schema_version": 2,
+  "id": "MODULE_ID",
+  "display_name": "MODULE_ID",
+ROOT_ECOSYSTEM  "provides": [],
+  "requires": [],
+  "relationships": [],
+  "constraints": [],
+  "guarantees": [],
+  "features": [],
+  "behavior": []
+}
+"#
+        .replace("MODULE_ID", id)
+        .replace("ROOT_ECOSYSTEM", ecosystem)
+    }
+
+    fn declare_owners(fixture: &Fixture) {
+        let owner = "PF-GO-INSPECTION";
+        fs::write(
+            fixture.root.join("contract.json"),
+            authored_module(owner, true),
+        )
+        .unwrap();
+        fs::create_dir(fixture.root.join("__fortress")).unwrap();
+        let mut modules = Vec::new();
+        for (directory, id) in [("app", "AF-GO-APP-0001"), ("base", "AF-GO-BASE-0001")] {
+            let path = format!("_data/logical_modules/{directory}/contract.json");
+            let file = fixture.root.join(&path);
+            fs::create_dir_all(file.parent().unwrap()).unwrap();
+            fs::write(file, authored_module(id, false)).unwrap();
+            modules.push(json!({
+                "module": id,
+                "contract": path,
+                "parent": owner,
+                "bindings": [{"path":directory,"kind":"directory"}],
+            }));
+        }
+        fs::write(
+            fixture.root.join("__fortress/.fsconfig"),
+            serde_json::to_vec(&json!({
+                "$schema":"urn:fortress:schema:v3:project-configuration",
+                "schema_version":3,
+                "observation_exclusions":[],
+                "logical_modules":modules,
+            }))
+            .unwrap(),
+        )
+        .unwrap();
+    }
+
+    fn dependency_validator() -> jsonschema::Validator {
+        let schema = super::registered_schema_path(
+            "engine/snapshot_governance/_data/go_dependency_schema_v1.json",
+        );
+        let resources = [
+            super::registered_schema_path(
+                "engine/implementation_observation/_data/native_dependency_schema_v1.json",
+            ),
+            registered_schema("go_observation_schema_v3.json"),
+        ]
+        .into_iter()
+        .map(|value| {
+            (
+                value["$id"].as_str().unwrap().to_owned(),
+                jsonschema::Resource::from_contents(value).unwrap(),
+            )
+        });
+        jsonschema::draft202012::options()
+            .with_resources(resources)
+            .build(&schema)
+            .unwrap()
+    }
+
+    fn inspect(fixture: &Fixture, raw: &[u8]) -> Vec<u8> {
+        observe_go_module_dependencies(
+            &fixture.root,
+            selection(),
+            context(),
+            &BUILD_PIN,
+            |request| Ok(frozen(request, raw)),
+        )
+        .unwrap()
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R28-016`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R28
+    #[test]
+    fn go_dependencies_attach_exact_authored_direction_without_changed_worker_input() {
+        let fixture = project("go-dependency-authority");
+        declare_owners(&fixture);
+        let bytes = inspect(&fixture, OBSERVED);
+        assert_eq!(inspect(&fixture, OBSERVED), bytes);
+        let report: Value = serde_json::from_slice(&bytes).unwrap();
+        let validator = dependency_validator();
+        validator.validate(&report).unwrap();
+        let mut falsely_decisive = report.clone();
+        falsely_decisive["scope"] = json!("CERTIFIED");
+        assert!(!validator.is_valid(&falsely_decisive));
+        assert_eq!(report["scope"], "SCOPED_SOURCE_OBSERVATION");
+        assert_eq!(report["ownership_diagnostics"], json!([]));
+        let dependencies = &report["dependencies"];
+        assert_eq!(dependencies["language"], "go");
+        let sites = dependencies["sites"].as_array().unwrap();
+        assert_eq!(sites.len(), 1);
+        let site = &sites[0];
+        assert_eq!(site["occurrence"]["file"]["path"], "app/app.go");
+        assert_eq!(
+            site["occurrence"]["file"]["sha256"],
+            fortress_core::portable::digest(APP)
+        );
+        assert_eq!(site["occurrence"]["start_byte"], 21);
+        assert_eq!(site["occurrence"]["end_byte"], 54);
+        assert_eq!(site["target"]["files"][0]["path"], "base/base.go");
+        assert_eq!(site["source_ownership"]["module"], "AF-GO-APP-0001");
+        assert_eq!(site["target"]["ownership"]["module"], "AF-GO-BASE-0001");
+        let edges = &dependencies["observation"]["module_dependencies"];
+        assert_eq!(
+            edges,
+            &json!([{
+                "source_module":"AF-GO-APP-0001",
+                "target_module":"AF-GO-BASE-0001",
+                "evidence":[{
+                    "source_path":"app/app.go",
+                    "source_module":"AF-GO-APP-0001",
+                    "reference":"example.test/fortresslocal/base",
+                    "location":{"line":2,"column":10},
+                    "resolved_target":"AF-GO-BASE-0001"
+                }]
+            }])
+        );
+        assert_eq!(fs::read(fixture.root.join("app/app.go")).unwrap(), APP);
+        assert_eq!(
+            fs::read(fixture.root.join("base/base.go")).unwrap(),
+            LIBRARY
+        );
+        let native = observe_go_native_module(
+            &fixture.root,
+            selection(),
+            context(),
+            &BUILD_PIN,
+            |request| Ok(frozen(request, OBSERVED)),
+        )
+        .unwrap();
+        assert_eq!(
+            report["native_receipt"],
+            serde_json::to_value(native).unwrap()
+        );
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R28-017`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R28
+    #[test]
+    fn go_dependencies_retain_unowned_source_refusal_and_original_source_drift() {
+        let fixture = project("go-dependency-limits");
+        let report: Value = serde_json::from_slice(&inspect(&fixture, OBSERVED)).unwrap();
+        assert_eq!(report["dependencies"]["sites"].as_array().unwrap().len(), 1);
+        assert_eq!(
+            report["dependencies"]["observation"]["module_dependencies"],
+            json!([])
+        );
+
+        let failure = observe_go_module_dependencies(
+            &fixture.root,
+            selection(),
+            context(),
+            &BUILD_PIN,
+            |request| {
+                fs::write(fixture.root.join("notes.txt"), "changed during observation").unwrap();
+                Ok(frozen(request, OBSERVED))
+            },
+        );
+        assert!(matches!(failure, Err(GoObservationError::SourceChanged)));
+
+        fs::write(fixture.root.join("app/app.go"), MISSING).unwrap();
+        let refused: Value = serde_json::from_slice(&inspect(&fixture, UNAVAILABLE)).unwrap();
+        let validator = dependency_validator();
+        validator.validate(&refused).unwrap();
+        assert!(refused["dependencies"].is_null());
+        let mut missing_worker_output = refused.clone();
+        missing_worker_output["dependencies"] = report["dependencies"].clone();
+        assert!(!validator.is_valid(&missing_worker_output));
+        assert_eq!(
+            refused["native_receipt"]["observation"]["diagnostic"]["code"],
+            "MISSING_LOCAL_PACKAGE"
+        );
+    }
     /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R28-006`
     /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R28
     #[test]
