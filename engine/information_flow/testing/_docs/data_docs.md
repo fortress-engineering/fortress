@@ -30,7 +30,7 @@ Frozen positive, negative, conditional and unknown source controls.
 
 Versioned finite corpus grammar.
 
-### [`native_scalar_flow_cases_v1.json`](../_data/native_scalar_flow_cases_v1.json)
+### [`native_flow_cases_v1.json`](../_data/native_flow_cases_v1.json)
 
 Fourteen exact Go and Python witness fixtures bind seven paired finite Boolean
 programs. The independently frozen oracle fixes each program's truth table and

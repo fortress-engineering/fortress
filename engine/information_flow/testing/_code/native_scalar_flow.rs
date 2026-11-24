@@ -11,7 +11,7 @@ use sha2::{Digest, Sha256};
 const PIN: &str = "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 const ALTERNATE: &str = "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
 const FIXTURE_REF: &str = "sha256:1aab62de475435c507ef0ac209e51273262e684f934b0045c54dc136164790df";
-const FIXTURES: &[u8] = include_bytes!("../_data/native_scalar_flow_cases_v1.json");
+const FIXTURES: &[u8] = include_bytes!("../_data/native_flow_cases_v1.json");
 
 fn digest(bytes: &[u8]) -> String {
     format!("sha256:{:x}", Sha256::digest(bytes))
