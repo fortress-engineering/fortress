@@ -218,7 +218,7 @@ impl GoNativeBodyObservation {
     }
 
     pub(crate) fn call_targets(&self) -> Result<NativeCallBindings<'_>, GoObservationError> {
-        resolve_go_bound_calls(&self.functions, |_| {})
+        resolve_go_bound_calls(&self.functions, &self.source_inventory, |_| {})
     }
 
     pub(crate) fn lowered_bodies(&self) -> impl Iterator<Item = Option<&NativeScalarBody>> {
@@ -247,13 +247,17 @@ impl GoRequest<'_> {
     ) -> Result<Value, GoObservationError> {
         let observation = self.verify_bound_bodies(launched, source_manifest, stdout)?;
         let mut calls = Vec::new();
-        resolve_go_bound_calls(&observation.functions, |edge| {
-            calls.push(serde_json::json!({
-                "caller": edge.caller,
-                "call": edge.call,
-                "target_body": edge.target_body.map(NativeScalarBody::binding),
-            }));
-        })?;
+        resolve_go_bound_calls(
+            &observation.functions,
+            &observation.source_inventory,
+            |edge| {
+                calls.push(serde_json::json!({
+                    "caller": edge.caller,
+                    "call": edge.call,
+                    "target_body": edge.target_body.map(NativeScalarBody::binding),
+                }));
+            },
+        )?;
         Ok(serde_json::json!({
             "$schema": "urn:fortress:derived:v1:go-bound-call-observation",
             "schema_version": 1,
@@ -480,6 +484,7 @@ fn go_bound_function_summary(function: &GoBodyFunction) -> Value {
 
 fn resolve_go_bound_calls<'a>(
     functions: &'a [GoBodyFunction],
+    source_inventory: &[SourceIdentity],
     mut record: impl FnMut(GoResolvedCall<'a>),
 ) -> Result<NativeCallBindings<'a>, GoObservationError> {
     let mut declarations = BTreeMap::new();
@@ -494,8 +499,15 @@ fn resolve_go_bound_calls<'a>(
             } => (symbol, None),
             GoBodyFunction::Unavailable { symbol: None, .. } => continue,
         };
+        let selected = source_inventory
+            .binary_search_by(|source| source.path.cmp(&symbol.span.path))
+            .map_err(|_| GoObservationError::InvalidResponse)?;
+        let source_ref = &source_inventory[selected].sha256;
         let key = (&symbol.span.path, symbol.span.start_byte);
-        if declarations.insert(key, (symbol, body)).is_some() {
+        if declarations
+            .insert(key, (symbol, body, source_ref))
+            .is_some()
+        {
             return Err(GoObservationError::InvalidResponse);
         }
     }
@@ -508,7 +520,7 @@ fn resolve_go_bound_calls<'a>(
         for call in lowered.0.bound_calls() {
             let target = &call.target;
             let key = (&target.span.path, target.span.start_byte);
-            let (symbol, body) = declarations
+            let (symbol, body, source_ref) = declarations
                 .get(&key)
                 .ok_or(GoObservationError::InvalidResponse)?;
             if symbol.name != target.name
@@ -518,7 +530,7 @@ fn resolve_go_bound_calls<'a>(
                 return Err(GoObservationError::InvalidResponse);
             }
             bindings
-                .insert(&lowered.0, call, *body)
+                .insert(&lowered.0, call, source_ref, *body)
                 .map_err(|_| GoObservationError::InvalidResponse)?;
             record(GoResolvedCall {
                 caller,

@@ -171,25 +171,30 @@ struct BoundNativeTarget<'a> {
 
 impl<'a> NativeCallBindings<'a> {
     /// Records a producer-admitted site and its independently resolved declaration.
+    /// The target file identity comes from the immutable producer input inventory.
     pub(crate) fn insert(
         &mut self,
         source: &'a NativeScalarBody,
         site: &'a NativeBoundCall,
+        target_source_ref: &str,
         target: Option<&'a NativeScalarBody>,
     ) -> Result<(), NativeBodyError> {
-        if target.is_some_and(|body| {
-            body.language != source.language
-                || body.evaluation != source.evaluation
-                || body.exchange_ref != source.exchange_ref
-                || body.producer_ref != source.producer_ref
-                || body.declaration != site.target
-                || body.result != NativeScalar::Bool
-                || body.parameters.len() != site.argument_count
-                || body
-                    .parameters
-                    .iter()
-                    .any(|(_, scalar)| *scalar != NativeScalar::Bool)
-        }) {
+        if !digest(target_source_ref)
+            || target.is_some_and(|body| {
+                body.source_ref != target_source_ref
+                    || body.language != source.language
+                    || body.evaluation != source.evaluation
+                    || body.exchange_ref != source.exchange_ref
+                    || body.producer_ref != source.producer_ref
+                    || body.declaration != site.target
+                    || body.result != NativeScalar::Bool
+                    || body.parameters.len() != site.argument_count
+                    || body
+                        .parameters
+                        .iter()
+                        .any(|(_, scalar)| *scalar != NativeScalar::Bool)
+            })
+        {
             return Err(NativeBodyError::InvalidResponse);
         }
         let std::collections::btree_map::Entry::Vacant(entry) =
@@ -222,6 +227,10 @@ impl<'a> NativeCallBindings<'a> {
 impl NativeScalarBody {
     pub(crate) const fn declaration(&self) -> &Symbol {
         &self.declaration
+    }
+
+    pub(crate) fn source_ref(&self) -> &str {
+        &self.source_ref
     }
 
     pub(super) fn matches_declaration(

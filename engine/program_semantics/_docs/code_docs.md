@@ -30,7 +30,7 @@ Independent cold compilation executes the same complete Rust producer and final 
 
 The producer carries its analyzer descriptor alongside its facts in both cold and prepared analysis. The shared assembler derives the language list from that descriptor. The private boundary keeps the existing Rust v6 document, coverage, provenance, and preparation semantics.
 
-Rust and bounded native call analysis submit directed adjacency to the same Program Semantics graph assembly. Both derive reachability, recursion and topology ordering through that assembly. Only the Rust prepared path supplies retained component inputs. Bounded Go and Python analysis preserves unavailable target sites and removes callers with unavailable targets from its leaf list. The Rust v6 representation and the native reports retain their existing identities and evidence scope.
+Rust and bounded native call analysis submit directed adjacency to the same Program Semantics graph assembly. Both derive reachability, recursion and topology ordering through that assembly. Only the Rust prepared path supplies retained component inputs. Native call bindings compare the target body with the independently admitted file digest from the producer's source input. Matching declaration coordinates and context identities alone cannot substitute a body from different bytes. Bounded Go and Python analysis preserves unavailable target sites and removes callers with unavailable targets from its leaf list. The Rust v6 representation and the native reports retain their existing identities and evidence scope.
 
 ## State
 

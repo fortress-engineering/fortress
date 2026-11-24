@@ -39,7 +39,7 @@ impl PythonLexicalCalls {
                 .get(call.target.name.as_str())
                 .ok_or(PythonScalarError::InvalidResponse)?;
             targets
-                .insert(root, call, Some(*body))
+                .insert(root, call, root.source_ref(), Some(*body))
                 .map_err(|_| PythonScalarError::InvalidResponse)?;
         }
         Ok(targets)

@@ -107,24 +107,10 @@ fn native_callable_requires_the_retained_exact_declaration_and_evaluation() {
     assert_eq!(linked.evaluation(), &evaluation);
 }
 
-/// `T-AF-PROGRAM-SEMANTICS-0001-R11-006`
-/// Fortress requirement: AF-PROGRAM-SEMANTICS-0001-R11
-#[test]
-fn native_calls_reject_mixed_evaluations_exchanges_and_declarations() {
-    const CALL_SOURCE: &str =
-        "def outer():\n    def helper():\n        return True\n    return helper()\n";
-    let file_ref = format!("sha256:{:x}", Sha256::digest(CALL_SOURCE.as_bytes()));
-    let evaluation = EvaluationKey::new(PIN, PIN, PIN);
-    let input = NativeBodyInput {
-        language: NativeBodyLanguage::Python,
-        evaluation: &evaluation,
-        exchange_ref: PIN,
-        producer_ref: PIN,
-        source_path: PATH,
-        source_ref: &file_ref,
-        source: CALL_SOURCE.as_bytes(),
-        python_bool_parameters: &[],
-    };
+const CALL_SOURCE: &str =
+    "def outer():\n    def helper():\n        return True\n    return helper()\n";
+
+fn native_call_replies() -> (Vec<u8>, Vec<u8>) {
     let span = |start: usize, end: usize| {
         let prefix = &CALL_SOURCE[..start];
         let line = prefix.bytes().filter(|byte| *byte == b'\n').count() + 1;
@@ -157,6 +143,26 @@ fn native_calls_reject_mixed_evaluations_exchanges_and_declarations() {
                  "value":{"kind":"boolean","value":true}}],
     }))
     .unwrap();
+    (caller_reply, target_reply)
+}
+
+/// `T-AF-PROGRAM-SEMANTICS-0001-R11-006`
+/// Fortress requirement: AF-PROGRAM-SEMANTICS-0001-R11
+#[test]
+fn native_calls_reject_mixed_evaluations_exchanges_and_declarations() {
+    let file_ref = format!("sha256:{:x}", Sha256::digest(CALL_SOURCE.as_bytes()));
+    let evaluation = EvaluationKey::new(PIN, PIN, PIN);
+    let input = NativeBodyInput {
+        language: NativeBodyLanguage::Python,
+        evaluation: &evaluation,
+        exchange_ref: PIN,
+        producer_ref: PIN,
+        source_path: PATH,
+        source_ref: &file_ref,
+        source: CALL_SOURCE.as_bytes(),
+        python_bool_parameters: &[],
+    };
+    let (caller_reply, target_reply) = native_call_replies();
     let lower = |scope: &NativeBodyInput<'_>, reply: &[u8]| {
         let NativeBodyOutcome::Lowered(body) = scope.admit_bound_calls(reply).unwrap() else {
             panic!("the exact Boolean fixtures must lower");
@@ -173,7 +179,7 @@ fn native_calls_reject_mixed_evaluations_exchanges_and_declarations() {
         let incompatible = lower(changed, &target_reply);
         let mut bindings = NativeCallBindings::default();
         assert_eq!(
-            bindings.insert(&caller, site, Some(&incompatible)),
+            bindings.insert(&caller, site, &file_ref, Some(&incompatible)),
             Err(NativeBodyError::InvalidResponse)
         );
         assert!(bindings.target(&caller, site).is_none());
@@ -197,14 +203,23 @@ fn native_calls_reject_mixed_evaluations_exchanges_and_declarations() {
         ..input
     });
 
+    let drifted_source = format!("{CALL_SOURCE}# unrelated source edit\n");
+    let drifted_ref = format!("sha256:{:x}", Sha256::digest(drifted_source.as_bytes()));
+    rejects(&NativeBodyInput {
+        source: drifted_source.as_bytes(),
+        source_ref: &drifted_ref,
+        ..input
+    });
     let mut bindings = NativeCallBindings::default();
     assert_eq!(
-        bindings.insert(&caller, site, Some(&caller)),
+        bindings.insert(&caller, site, &file_ref, Some(&caller)),
         Err(NativeBodyError::InvalidResponse)
     );
-    bindings.insert(&caller, site, Some(&helper)).unwrap();
+    bindings
+        .insert(&caller, site, &file_ref, Some(&helper))
+        .unwrap();
     assert_eq!(
-        bindings.insert(&caller, site, None),
+        bindings.insert(&caller, site, &file_ref, None),
         Err(NativeBodyError::InvalidResponse)
     );
     assert_eq!(
