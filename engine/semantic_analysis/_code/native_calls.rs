@@ -9,7 +9,7 @@ use super::native_sensitivity::{
     MAX_PARAMETERS, NativeBooleanParameterSensitivity, boolean_return_table, boolean_scope,
     compare_boolean_parameters,
 };
-use crate::program_semantics::native_body::NativeScalarBody;
+use crate::program_semantics::native_body::{NativeCallBindings, NativeScalarBody};
 
 const MAX_BODIES: usize = 64;
 const MAX_DEPTH: usize = 16;
@@ -84,7 +84,7 @@ impl NativeBooleanCallEvaluation {
 /// have a complete finite model, including calls in infeasible branches.
 pub(crate) fn analyze_native_boolean_calls<'a>(
     body: &'a NativeScalarBody,
-    targets: &BTreeMap<&'a str, Option<&'a NativeScalarBody>>,
+    targets: &NativeCallBindings<'a>,
 ) -> NativeBooleanCallEvaluation {
     let mut analysis = Composition {
         targets,
@@ -119,7 +119,7 @@ pub(crate) fn analyze_native_boolean_calls<'a>(
 }
 
 struct Composition<'a, 't> {
-    targets: &'t BTreeMap<&'a str, Option<&'a NativeScalarBody>>,
+    targets: &'t NativeCallBindings<'a>,
     returns: BTreeMap<&'a str, Vec<bool>>,
     active: BTreeSet<&'a str>,
     visited_sites: usize,
@@ -145,12 +145,18 @@ impl<'a> Composition<'a, '_> {
         }
         self.active.insert(body.binding());
         for call in body.bound_calls() {
-            let target = self.target(&call.reference)?;
+            let target = self
+                .targets
+                .target(body, call)
+                .ok_or(Unavailable::MissingTargetBody)?;
             self.visit(target)?;
         }
         let mut tables = BTreeMap::new();
         for call in body.bound_calls() {
-            let target = self.target(&call.reference)?;
+            let target = self
+                .targets
+                .target(body, call)
+                .ok_or(Unavailable::MissingTargetBody)?;
             let values = self
                 .returns
                 .get(target.binding())
@@ -164,13 +170,5 @@ impl<'a> Composition<'a, '_> {
         self.active.remove(body.binding());
         self.returns.insert(body.binding(), output);
         Ok(())
-    }
-
-    fn target(&self, reference: &str) -> Result<&'a NativeScalarBody, Unavailable> {
-        self.targets
-            .get(reference)
-            .copied()
-            .flatten()
-            .ok_or(Unavailable::MissingTargetBody)
     }
 }

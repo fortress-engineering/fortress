@@ -10,7 +10,8 @@ use super::{
 };
 use crate::observation::SourceView;
 use crate::program_semantics::native_body::{
-    NativeBodyInput, NativeBodyLanguage, NativeBodyOutcome, NativeScalar, NativeScalarBody, Symbol,
+    NativeBodyInput, NativeBodyLanguage, NativeBodyOutcome, NativeCallBindings, NativeScalar,
+    NativeScalarBody, Symbol,
 };
 use crate::project::EvaluationKey;
 use crate::wire::{admit_json, parse_strict_json_bytes};
@@ -23,30 +24,23 @@ pub(crate) struct PythonLexicalCalls {
 }
 
 impl PythonLexicalCalls {
-    pub(crate) fn targets(
-        &self,
-    ) -> Result<BTreeMap<&str, Option<&NativeScalarBody>>, PythonScalarError> {
+    pub(crate) fn targets(&self) -> Result<NativeCallBindings<'_>, PythonScalarError> {
+        let mut targets = NativeCallBindings::default();
         let NativeBodyOutcome::Lowered(root) = &self.root else {
-            return Ok(BTreeMap::new());
+            return Ok(targets);
         };
         let declarations = self
             .helpers
             .iter()
             .map(|body| (body.declaration().name.as_str(), body))
             .collect::<BTreeMap<_, _>>();
-        let mut targets = BTreeMap::new();
         for call in root.bound_calls() {
             let body = declarations
                 .get(call.target.name.as_str())
                 .ok_or(PythonScalarError::InvalidResponse)?;
-            if body.declaration() != &call.target
-                || body.parameters().len() != call.argument_count
-                || targets
-                    .insert(call.reference.as_str(), Some(*body))
-                    .is_some()
-            {
-                return Err(PythonScalarError::InvalidResponse);
-            }
+            targets
+                .insert(root, call, Some(*body))
+                .map_err(|_| PythonScalarError::InvalidResponse)?;
         }
         Ok(targets)
     }

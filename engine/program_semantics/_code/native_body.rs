@@ -137,6 +137,8 @@ pub struct NativeScalarBody {
     language: NativeBodyLanguage,
     declaration: Symbol,
     evaluation: EvaluationKey,
+    exchange_ref: String,
+    producer_ref: String,
     source_ref: String,
     binding: String,
     body: ProgramBody,
@@ -154,6 +156,67 @@ pub(crate) struct NativeBoundCall {
     pub(crate) span: Span,
     pub(crate) target: Symbol,
     pub(crate) argument_count: usize,
+}
+
+/// Admitted local call sites indexed by exact occurrence.
+#[derive(Default)]
+pub(crate) struct NativeCallBindings<'a> {
+    sites: BTreeMap<&'a str, BoundNativeTarget<'a>>,
+}
+
+struct BoundNativeTarget<'a> {
+    caller_occurrence: &'a str,
+    body: Option<&'a NativeScalarBody>,
+}
+
+impl<'a> NativeCallBindings<'a> {
+    /// Records a producer-admitted site and its independently resolved declaration.
+    pub(crate) fn insert(
+        &mut self,
+        source: &'a NativeScalarBody,
+        site: &'a NativeBoundCall,
+        target: Option<&'a NativeScalarBody>,
+    ) -> Result<(), NativeBodyError> {
+        if target.is_some_and(|body| {
+            body.language != source.language
+                || body.evaluation != source.evaluation
+                || body.exchange_ref != source.exchange_ref
+                || body.producer_ref != source.producer_ref
+                || body.declaration != site.target
+                || body.result != NativeScalar::Bool
+                || body.parameters.len() != site.argument_count
+                || body
+                    .parameters
+                    .iter()
+                    .any(|(_, scalar)| *scalar != NativeScalar::Bool)
+        }) {
+            return Err(NativeBodyError::InvalidResponse);
+        }
+        let std::collections::btree_map::Entry::Vacant(entry) =
+            self.sites.entry(site.reference.as_str())
+        else {
+            return Err(NativeBodyError::InvalidResponse);
+        };
+        entry.insert(BoundNativeTarget {
+            caller_occurrence: source.binding(),
+            body: target,
+        });
+        Ok(())
+    }
+
+    /// Returns a lowered target only for the original exact caller occurrence.
+    pub(crate) fn target(
+        &self,
+        source: &NativeScalarBody,
+        site: &NativeBoundCall,
+    ) -> Option<&'a NativeScalarBody> {
+        let target = self.sites.get(site.reference.as_str())?;
+        if target.caller_occurrence == source.binding() {
+            target.body
+        } else {
+            None
+        }
+    }
 }
 
 impl NativeScalarBody {
@@ -256,7 +319,7 @@ impl NativeCallTopology<'_> {
 // Edges are only supplied to the common topology when both bodies are admitted.
 pub(crate) fn inspect_native_call_topology<'a>(
     root: &'a NativeScalarBody,
-    targets: &BTreeMap<&'a str, Option<&'a NativeScalarBody>>,
+    targets: &NativeCallBindings<'a>,
 ) -> NativeCallTopology<'a> {
     const MAX_BODIES: usize = 64;
     const MAX_CALLS: usize = 256;
@@ -278,7 +341,7 @@ pub(crate) fn inspect_native_call_topology<'a>(
         }
         let mut outgoing = BTreeSet::new();
         for call in body.bound_calls() {
-            let target = targets.get(call.reference.as_str()).copied().flatten();
+            let target = targets.target(body, call);
             if let Some(target) = target {
                 outgoing.insert(target.binding().to_owned());
                 pending.push(target);
@@ -931,6 +994,8 @@ impl NativeBodyInput<'_> {
             language: self.language,
             declaration: symbol,
             evaluation: self.evaluation.clone(),
+            exchange_ref: self.exchange_ref.into(),
+            producer_ref: self.producer_ref.into(),
             source_ref: self.source_ref.into(),
             body: ProgramBody {
                 symbol: binding.clone(),

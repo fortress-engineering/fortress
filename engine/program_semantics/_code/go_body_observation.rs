@@ -1,6 +1,6 @@
 //! Admits exact native Go scalar body rows before shared body construction.
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 
 use serde::ser::SerializeStruct;
 use serde::{Deserialize, Serialize, Serializer};
@@ -12,7 +12,7 @@ use super::{
 };
 use crate::program_semantics::native_body::{
     NativeBodyError, NativeBodyInput, NativeBodyLanguage, NativeBodyOutcome, NativeBoundCall,
-    NativeScalar, NativeScalarBody, Span as BodySpan,
+    NativeCallBindings, NativeScalarBody, Span as BodySpan,
 };
 use crate::program_semantics::native_callable::NativeCallableLimitation as Limit;
 use crate::project::EvaluationKey;
@@ -217,13 +217,8 @@ impl GoNativeBodyObservation {
         })
     }
 
-    pub(crate) fn call_targets(
-        &self,
-    ) -> Result<BTreeMap<&str, Option<&NativeScalarBody>>, GoObservationError> {
-        Ok(resolve_go_bound_calls(&self.functions)?
-            .into_iter()
-            .map(|edge| (edge.call.reference.as_str(), edge.target_body))
-            .collect())
+    pub(crate) fn call_targets(&self) -> Result<NativeCallBindings<'_>, GoObservationError> {
+        resolve_go_bound_calls(&self.functions, |_| {})
     }
 
     pub(crate) fn lowered_bodies(&self) -> impl Iterator<Item = Option<&NativeScalarBody>> {
@@ -251,16 +246,14 @@ impl GoRequest<'_> {
         stdout: &[u8],
     ) -> Result<Value, GoObservationError> {
         let observation = self.verify_bound_bodies(launched, source_manifest, stdout)?;
-        let calls = resolve_go_bound_calls(&observation.functions)?
-            .into_iter()
-            .map(|edge| {
-                serde_json::json!({
-                    "caller": edge.caller,
-                    "call": edge.call,
-                    "target_body": edge.target_body.map(NativeScalarBody::binding),
-                })
-            })
-            .collect::<Vec<_>>();
+        let mut calls = Vec::new();
+        resolve_go_bound_calls(&observation.functions, |edge| {
+            calls.push(serde_json::json!({
+                "caller": edge.caller,
+                "call": edge.call,
+                "target_body": edge.target_body.map(NativeScalarBody::binding),
+            }));
+        })?;
         Ok(serde_json::json!({
             "$schema": "urn:fortress:derived:v1:go-bound-call-observation",
             "schema_version": 1,
@@ -485,9 +478,10 @@ fn go_bound_function_summary(function: &GoBodyFunction) -> Value {
     }
 }
 
-fn resolve_go_bound_calls(
-    functions: &[GoBodyFunction],
-) -> Result<Vec<GoResolvedCall<'_>>, GoObservationError> {
+fn resolve_go_bound_calls<'a>(
+    functions: &'a [GoBodyFunction],
+    mut record: impl FnMut(GoResolvedCall<'a>),
+) -> Result<NativeCallBindings<'a>, GoObservationError> {
     let mut declarations = BTreeMap::new();
     for function in functions {
         let (symbol, body) = match function {
@@ -505,17 +499,13 @@ fn resolve_go_bound_calls(
             return Err(GoObservationError::InvalidResponse);
         }
     }
-    let mut references = BTreeSet::new();
-    let mut calls = Vec::new();
+    let mut bindings = NativeCallBindings::default();
     for function in functions {
         let GoBodyFunction::Lowered { lowered, .. } = function else {
             continue;
         };
         let caller = lowered.0.binding();
         for call in lowered.0.bound_calls() {
-            if !references.insert(call.reference.as_str()) {
-                return Err(GoObservationError::InvalidResponse);
-            }
             let target = &call.target;
             let key = (&target.span.path, target.span.start_byte);
             let (symbol, body) = declarations
@@ -524,25 +514,20 @@ fn resolve_go_bound_calls(
             if symbol.name != target.name
                 || !same_span(&symbol.span, &target.span)
                 || !same_span(&symbol.declaration_span, &target.declaration_span)
-                || body.is_some_and(|body| {
-                    body.result() != NativeScalar::Bool
-                        || body.parameters().len() != call.argument_count
-                        || body
-                            .parameters()
-                            .iter()
-                            .any(|(_, scalar)| *scalar != NativeScalar::Bool)
-                })
             {
                 return Err(GoObservationError::InvalidResponse);
             }
-            calls.push(GoResolvedCall {
+            bindings
+                .insert(&lowered.0, call, *body)
+                .map_err(|_| GoObservationError::InvalidResponse)?;
+            record(GoResolvedCall {
                 caller,
                 call,
                 target_body: *body,
             });
         }
     }
-    Ok(calls)
+    Ok(bindings)
 }
 
 fn same_span(go: &Span, native: &BodySpan) -> bool {

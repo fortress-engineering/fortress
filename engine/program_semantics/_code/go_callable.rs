@@ -8,11 +8,11 @@ use super::{
 };
 use base64::Engine as _;
 
-use std::collections::BTreeMap;
-
 use crate::program_semantics::canonical_fact_id;
 use crate::program_semantics::go_observation::{DeclarationKind, Implementation};
-use crate::program_semantics::native_body::{NativeBodyLanguage, NativeScalarBody};
+use crate::program_semantics::native_body::{
+    NativeBodyLanguage, NativeCallBindings, NativeScalarBody,
+};
 use crate::program_semantics::native_callable::{
     NativeCallableLimitation as Limit, NativeCallableOutcome, VerifiedCallableLink,
 };
@@ -29,7 +29,7 @@ impl GoModuleRequest<'_> {
         launch: impl FnOnce(&[u8]) -> Result<Vec<u8>, GoObservationError>,
         call_analysis: (
             bool,
-            impl FnOnce(&NativeScalarBody, &BTreeMap<&str, Option<&NativeScalarBody>>) -> Option<T>,
+            impl FnOnce(&NativeScalarBody, &NativeCallBindings<'_>) -> Option<T>,
         ),
     ) -> Result<(NativeCallableOutcome, Option<T>), GoObservationError> {
         if receipt.binding_sha256 != self.base.binding_sha256

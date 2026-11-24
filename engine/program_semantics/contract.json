@@ -175,13 +175,14 @@
         },
         {
           "id": "AF-PROGRAM-SEMANTICS-0001-R11",
-          "statement": "Program Semantics admits an explicitly selected native Go or Python scalar body only within its configured source, producer, context, authority, resource and input-type bounds. It lowers admitted control structure through the existing Program Body types. Callable linkage preserves the exact admitted physical declaration, source and evaluation bindings. It preserves typed unavailability and does not add an unqualified body to the governed Program Semantic Model.",
+          "statement": "Program Semantics admits an explicitly selected native Go or Python scalar body only within its configured source, producer, context, authority, resource and input-type bounds. It lowers admitted control structure through the existing Program Body types. Callable and call linkage preserve exact admitted declarations, source, evaluation, producer and exchange bindings. Shared topology and return consumers resolve a call only for its admitted caller occurrence. It preserves typed unavailability and does not add an unqualified body to the governed Program Semantic Model.",
           "tests": [
             "T-AF-PROGRAM-SEMANTICS-0001-R11-001",
             "T-AF-PROGRAM-SEMANTICS-0001-R11-002",
             "T-AF-PROGRAM-SEMANTICS-0001-R11-003",
             "T-AF-PROGRAM-SEMANTICS-0001-R11-004",
-            "T-AF-PROGRAM-SEMANTICS-0001-R11-005"
+            "T-AF-PROGRAM-SEMANTICS-0001-R11-005",
+            "T-AF-PROGRAM-SEMANTICS-0001-R11-006"
           ]
         },
         {

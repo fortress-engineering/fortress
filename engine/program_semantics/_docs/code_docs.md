@@ -159,6 +159,8 @@ Admits the exact current Go module and package map from independently captured o
 
 ### [`native_body.rs`](../_code/native_body.rs)
 
+The local call index supplies the same admitted targets to topology and return evaluation. It requires the exact caller occurrence, target declaration, source and authority context, producer, and exchange. Unavailable target bodies remain unavailable to both consumers.
+
 Accepts the selected native frontend's bounded scalar body attachment after
 verified exchange framing. The attachment binds the exact physical source
 bytes, evaluation, runtime registration and exchange receipt. The owner checks
