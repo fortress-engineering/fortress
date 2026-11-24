@@ -214,3 +214,13 @@ Retains the exact bounded Go module and native body receipts for a
 zero-argument Boolean function that returns true. The independently
 computed slot reference and fixed program behavior qualify matching and
 excluding original authored requirements without updating source.
+
+### [`go_call_fixture_v1.json`](../_data/go_call_fixture_v1.json)
+
+Retains admitted Go source and pinned worker replies for typed declarations,
+recursion, lexical trivia, provisional targets and historical mode replay.
+
+### [`python_call_fixture_v1.json`](../_data/python_call_fixture_v1.json)
+
+Retains exact Python source and pinned compile-only worker replies for
+local call scopes, valid source continuations and explicit refusals.

@@ -244,3 +244,9 @@ Compile-only Python call admission verifies that each reported local helper
 precedes the first executable body statement, belongs to the selected source
 declaration and has an exact ordered Boolean interface. Reused body admission
 and exact call locations preserve shared Program Semantics identities.
+
+### [`python_calls.rs`](../_code/python_calls.rs)
+
+Admits a pinned compile-only Python reply for an exact lexical call closure.
+Checks the enclosing declaration, ordered helper spans, Boolean parameters,
+call sites and exact target symbols before exposing typed dependencies.

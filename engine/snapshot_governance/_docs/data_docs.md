@@ -267,3 +267,13 @@ Defines the read-only workspace declaration report and exact source
 provenance. Reports the presence of replacement declarations without resolving
 their targets. The existing selected Module reader retains its independent
 closed context and historical schema versions.
+
+### [`go_call_return_v1.json`](../_data/go_call_return_v1.json)
+
+Constrains exact Go finite return inspection, its source and producer
+evidence, and the reasons a complete model can be unavailable.
+
+### [`python_call_return_v1.json`](../_data/python_call_return_v1.json)
+
+Constrains exact Python finite return inspection, compile-only observation
+bindings, admitted call sites and unresolved lexical or modeling states.

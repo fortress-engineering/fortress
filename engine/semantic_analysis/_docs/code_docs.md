@@ -81,3 +81,9 @@ input model. It evaluates each exact body once per valuation after its targets
 are available. Cycles, unknown bodies, unsupported domains, incomplete
 valuations and resource limits yield an unavailable result. A complete table
 is a bounded static returned-value observation.
+
+### [`native_calls.rs`](../_code/native_calls.rs)
+
+Evaluates the selected finite Boolean call dependency closure through the
+existing domain interpreter. Retains exact occurrences and reports explicit
+unavailability when a dependency, valuation or resource premise fails.
