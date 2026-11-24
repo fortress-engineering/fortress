@@ -113,7 +113,13 @@ fn build_call_topology(
         .filter(|symbol| symbol.has_body())
         .map(|symbol| symbol.id.as_str());
     let reuse = retain.then_some(GraphReuse { index, previous });
-    assemble_call_topology(&ids, outgoing_calls, bodies, cross_package_calls, reuse)
+    assemble_call_topology(
+        &ids,
+        outgoing_calls,
+        bodies,
+        cross_package_calls,
+        reuse.as_ref(),
+    )
 }
 
 struct GraphReuse<'a> {
@@ -126,7 +132,7 @@ fn assemble_call_topology<'a>(
     outgoing_calls: BTreeMap<String, BTreeSet<String>>,
     bodies: impl Clone + Iterator<Item = &'a str>,
     cross_package_calls: Vec<String>,
-    reuse: Option<GraphReuse<'_>>,
+    reuse: Option<&GraphReuse<'_>>,
 ) -> PreparedCallTopologyResult {
     let mut incoming_calls = ids
         .iter()
@@ -156,7 +162,7 @@ fn assemble_call_topology<'a>(
                 )
             })
             .collect::<BTreeMap<_, _>>();
-        let Some(reuse) = &reuse else {
+        let Some(reuse) = reuse else {
             recomputed_components += 1;
             transitive_reachability.extend(component_reachability(&edges));
             component_groups.extend(strongly_connected_components(&members, &edges));
