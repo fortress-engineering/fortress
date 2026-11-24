@@ -1,0 +1,168 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v3:hypothetical-native-body-inspection",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "status",
+    "actual_state",
+    "language",
+    "proposal_ref",
+    "proposal_digest",
+    "overlay_context_ref",
+    "original_source_view_ref",
+    "candidate_source_view_ref",
+    "original_authority_ref",
+    "candidate_authority_ref",
+    "source_path",
+    "source_ref",
+    "function",
+    "comparison",
+    "runtime_execution",
+    "actual_certificate",
+    "native"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:derived:v3:hypothetical-native-body-inspection"
+    },
+    "schema_version": {
+      "const": 3
+    },
+    "status": {
+      "const": "PROPOSED"
+    },
+    "actual_state": {
+      "const": false
+    },
+    "language": {
+      "enum": [
+        "go",
+        "python"
+      ]
+    },
+    "proposal_ref": {
+      "$ref": "#/$defs/sha256"
+    },
+    "proposal_digest": {
+      "$ref": "#/$defs/sha256"
+    },
+    "overlay_context_ref": {
+      "$ref": "#/$defs/sha256"
+    },
+    "original_source_view_ref": {
+      "$ref": "#/$defs/sha256"
+    },
+    "candidate_source_view_ref": {
+      "$ref": "#/$defs/sha256"
+    },
+    "original_authority_ref": {
+      "$ref": "#/$defs/sha256"
+    },
+    "candidate_authority_ref": {
+      "$ref": "#/$defs/sha256"
+    },
+    "source_path": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "source_ref": {
+      "$ref": "#/$defs/sha256"
+    },
+    "function": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 240,
+      "pattern": "^[A-Za-z_][A-Za-z_0-9]*$"
+    },
+    "comparison": {
+      "enum": [
+        "ORIGINAL_DEPENDENCY_INTENT_ONLY",
+        "NOT_COMPARED"
+      ]
+    },
+    "runtime_execution": {
+      "const": "NOT_RUN"
+    },
+    "actual_certificate": {
+      "const": "NOT_ISSUED"
+    },
+    "native": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "report"
+          ],
+          "properties": {
+            "status": {
+              "const": "PROJECTED"
+            },
+            "report": {
+              "$ref": "urn:fortress:derived:v1:native-call-module-boundaries"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "reason"
+          ],
+          "properties": {
+            "status": {
+              "const": "UNAVAILABLE"
+            },
+            "reason": {
+              "enum": [
+                "ORIGINAL_AUTHORITY_CHANGED",
+                "GOVERNING_GRAPH_CHANGED"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "native": {
+            "properties": {
+              "status": {
+                "const": "PROJECTED"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "comparison": {
+            "const": "ORIGINAL_DEPENDENCY_INTENT_ONLY"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "comparison": {
+            "const": "NOT_COMPARED"
+          }
+        }
+      }
+    }
+  ]
+}

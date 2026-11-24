@@ -351,6 +351,94 @@ mod lexical_calls {
         assert_eq!(fs::read(&source).unwrap(), actual);
     }
 
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R41-002`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R41
+    #[test]
+    fn retained_python_dependency_projection_preserves_unavailable_ownership() {
+        use fortress_core::python_observation::observe_python_candidate_call_module_boundaries;
+
+        let (fixture, subject, producer, reply) = case(
+            "locally_defined_shadow_free_function",
+            "retained_python_owned_call",
+        );
+        let path = fixture.root.join("fixture.py");
+        let target = fs::read(&path).unwrap();
+        let original = b"def outer(v):\n    return v\n";
+        fs::write(&path, original).unwrap();
+        let mut workspace = CandidateWorkspace::open_cold(&fixture.root).unwrap();
+        let request = CandidateRequest {
+            schema_version: 1,
+            base_source_ref: workspace.base_source_ref().into(),
+            context_ref: workspace.context_ref().into(),
+            operations: vec![MigrationOperation::ReplaceFile {
+                path: "fixture.py".into(),
+                preimage: original.to_vec(),
+                postimage: target,
+            }],
+            comparison_context: ComparisonContext::default(),
+        };
+        let authority = CanonicalMigrationAuthority {
+            policy: None,
+            host: &UnmediatedHost,
+            validator: &NoGrantValidator,
+            evaluation_time: None,
+            reviewed_initial_intent_ref: None,
+            finding_proposal: None,
+            identity_plan: None,
+        };
+        let cancelled = AtomicBool::new(false);
+        let proposal = workspace
+            .evaluate("owner", "edit", request, &authority, &cancelled)
+            .unwrap();
+        let retained = NativeCandidateSelection {
+            client: "owner",
+            candidate: "edit",
+            cancelled: &cancelled,
+        };
+        let exchange = |request: Vec<u8>| Ok(serde_json::to_vec(&bind(&request, &reply)).unwrap());
+        let output = observe_python_candidate_call_module_boundaries(
+            &workspace, retained, &subject, &producer, exchange,
+        )
+        .unwrap();
+        let report = serde_json::to_value(output).unwrap();
+        assert_eq!(report["schema_version"], 3);
+        assert_eq!(report["proposal_ref"], proposal.evaluation_ref());
+        assert_eq!(report["source_ref"], subject.source_ref);
+        assert_eq!(report["actual_state"], false);
+        let observed = &report["native"]["report"];
+        assert_eq!(
+            observed["original_intent"],
+            json!({"status":"ORIGINAL_INTENT_UNAVAILABLE"})
+        );
+        assert_eq!(
+            observed["ownership_sites"][0]["relationship"],
+            "DECLARED_OWNER_UNAVAILABLE"
+        );
+        assert_eq!(
+            observed["source_view_sha256"],
+            report["candidate_source_view_ref"]
+        );
+        assert_ne!(
+            report["candidate_source_view_ref"],
+            report["original_source_view_ref"]
+        );
+
+        let refusal = observe_python_candidate_call_module_boundaries(
+            &workspace,
+            retained,
+            &subject,
+            &producer,
+            |request| {
+                cancelled.store(true, Ordering::Release);
+                exchange(request)
+            },
+        )
+        .err()
+        .unwrap();
+        assert_eq!(refusal.code, "CANCELLED");
+        assert_eq!(fs::read(&path).unwrap(), original);
+    }
+
     /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R35-002`
     /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R35
     #[test]

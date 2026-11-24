@@ -683,6 +683,14 @@
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R40-001",
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R40-002"
           ]
+        },
+        {
+          "id": "AF-SNAPSHOT-GOVERNANCE-0001-R41",
+          "statement": "Native call dependency inspection of a retained Go or Python candidate uses exact postimage source, independently established original authority and the unchanged original governing graph. Authority or graph changes prevent the projection. The bounded result preserves absent ownership and incomplete observation, candidate provenance, cancellation and an unapplied status.",
+          "tests": [
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R41-001",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R41-002"
+          ]
         }
       ]
     }

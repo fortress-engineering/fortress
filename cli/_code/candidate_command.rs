@@ -7,7 +7,8 @@ use fortress_core::development_governance::{
     AuthorizationRule, NoGrantValidator, TrustedBasePolicy, UnmediatedHost,
 };
 use fortress_core::go_observation::{
-    GoPackageSelection, observe_go_candidate_call_return, observe_go_candidate_sensitivity,
+    GoPackageSelection, observe_go_candidate_call_module_boundaries,
+    observe_go_candidate_call_return, observe_go_candidate_sensitivity,
 };
 use fortress_core::migration_adapter::CanonicalMigrationAuthority;
 use fortress_core::migration_governance::MigrationError;
@@ -47,6 +48,7 @@ struct PreviewSelection {
 
 const NATIVE_DESCRIPTOR_SCHEMA: &str = "urn:fortress:host:v1:native-candidate-inspection";
 const NATIVE_CALL_DESCRIPTOR_SCHEMA: &str = "urn:fortress:host:v2:native-candidate-inspection";
+const NATIVE_BOUNDARY_DESCRIPTOR_SCHEMA: &str = "urn:fortress:host:v3:native-candidate-inspection";
 const NATIVE_DESCRIPTOR_LIMIT: usize = 16 * 1024;
 
 #[derive(Deserialize)]
@@ -62,15 +64,23 @@ struct CallCandidateDescriptor {
     #[serde(rename = "$schema")]
     schema: String,
     schema_version: u16,
-    #[serde(rename = "analysis")]
-    _analysis: CandidateCallAnalysis,
+    analysis: NativeCandidateMode,
     inspection: NativeInspectionHost,
 }
 
-#[derive(Deserialize)]
+#[derive(Clone, Copy, Deserialize, Eq, PartialEq)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-enum CandidateCallAnalysis {
+pub(super) enum NativeCandidateMode {
+    #[serde(skip)]
+    ScalarSensitivity,
     FiniteCallReturn,
+    OriginalCallDependencies,
+}
+
+impl NativeCandidateMode {
+    pub(super) const fn requires_call_worker(self) -> bool {
+        !matches!(self, Self::ScalarSensitivity)
+    }
 }
 
 #[derive(Deserialize)]
@@ -117,7 +127,7 @@ struct NativeInspection<'a> {
     path: &'a Path,
     bytes: Vec<u8>,
     host: NativeInspectionHost,
-    call_returns: bool,
+    mode: NativeCandidateMode,
 }
 
 impl<'a> NativeInspection<'a> {
@@ -135,18 +145,26 @@ impl<'a> NativeInspection<'a> {
         .map_err(convert)?;
         let descriptor: NativeInspectionDescriptor =
             parse_strict_json_bytes(&bytes).map_err(convert)?;
-        let (host, call_returns) = match descriptor {
+        let (host, mode) = match descriptor {
             NativeInspectionDescriptor::Scalar(descriptor)
                 if descriptor.schema == NATIVE_DESCRIPTOR_SCHEMA
                     && descriptor.schema_version == 1 =>
             {
-                (descriptor.inspection, false)
+                (
+                    descriptor.inspection,
+                    NativeCandidateMode::ScalarSensitivity,
+                )
             }
             NativeInspectionDescriptor::Calls(descriptor)
-                if descriptor.schema == NATIVE_CALL_DESCRIPTOR_SCHEMA
-                    && descriptor.schema_version == 2 =>
+                if (descriptor.schema == NATIVE_CALL_DESCRIPTOR_SCHEMA
+                    && descriptor.schema_version == 2
+                    && descriptor.analysis == NativeCandidateMode::FiniteCallReturn)
+                    || (descriptor.schema == NATIVE_BOUNDARY_DESCRIPTOR_SCHEMA
+                        && descriptor.schema_version == 3
+                        && descriptor.analysis
+                            == NativeCandidateMode::OriginalCallDependencies) =>
             {
-                (descriptor.inspection, true)
+                (descriptor.inspection, descriptor.analysis)
             }
             _ => return Err(error("unsupported native candidate inspection descriptor")),
         };
@@ -154,7 +172,7 @@ impl<'a> NativeInspection<'a> {
             path,
             bytes,
             host,
-            call_returns,
+            mode,
         })
     }
 
@@ -202,17 +220,25 @@ impl<'a> NativeInspection<'a> {
                 super::go_body_command::with_registered_body_mode(
                     root,
                     registration,
-                    self.call_returns,
+                    self.mode.requires_call_worker(),
                     |pin, collector| {
                         let launch = |input: &[u8]| collector.run(input);
-                        Ok(if self.call_returns {
-                            observe_go_candidate_call_return(
-                                workspace, retained, package, subject, pin, launch,
-                            )
-                        } else {
-                            observe_go_candidate_sensitivity(
-                                workspace, retained, package, subject, pin, launch,
-                            )
+                        Ok(match self.mode {
+                            NativeCandidateMode::ScalarSensitivity => {
+                                observe_go_candidate_sensitivity(
+                                    workspace, retained, package, subject, pin, launch,
+                                )
+                            }
+                            NativeCandidateMode::FiniteCallReturn => {
+                                observe_go_candidate_call_return(
+                                    workspace, retained, package, subject, pin, launch,
+                                )
+                            }
+                            NativeCandidateMode::OriginalCallDependencies => {
+                                observe_go_candidate_call_module_boundaries(
+                                    workspace, retained, package, subject, pin, launch,
+                                )
+                            }
                         })
                     },
                 )
@@ -224,22 +250,25 @@ impl<'a> NativeInspection<'a> {
                     registration,
                     workspace,
                     retained,
-                    self.call_returns,
+                    self.mode,
                 )
             }
         };
         self.revalidate(root)?;
         let native_inspection = result?;
-        let (schema, version) = if self.call_returns {
-            (
-                "urn:fortress:derived:v2:overlay-native-candidate-inspection",
-                2,
-            )
-        } else {
-            (
+        let (schema, version) = match self.mode {
+            NativeCandidateMode::ScalarSensitivity => (
                 "urn:fortress:derived:v1:overlay-native-candidate-inspection",
                 1,
-            )
+            ),
+            NativeCandidateMode::FiniteCallReturn => (
+                "urn:fortress:derived:v2:overlay-native-candidate-inspection",
+                2,
+            ),
+            NativeCandidateMode::OriginalCallDependencies => (
+                "urn:fortress:derived:v3:overlay-native-candidate-inspection",
+                3,
+            ),
         };
         Ok(json!({
             "$schema": schema,

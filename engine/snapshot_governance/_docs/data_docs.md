@@ -307,3 +307,7 @@ bindings, admitted call sites and unresolved lexical or modeling states.
 
 Constrains exact hypothetical Go and Python call-return records. The retained
 snapshot binding stays separate from the native modeled result or limitation.
+
+### [`native_candidate_body_v3.json`](../_data/native_candidate_body_v3.json)
+
+The retained candidate's exact source identities and original call dependency inspection. The original authority and governing graph must agree before projected calls can be compared. A change in either produces explicit unavailability.

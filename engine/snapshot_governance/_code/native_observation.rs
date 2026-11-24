@@ -82,59 +82,14 @@ impl<'a> NativeSource<'a> {
         paths: impl IntoIterator<Item = &'path str>,
     ) -> Result<(ImplementationObservationInput, &[SourceOwnershipDiagnostic]), NativeSourceError>
     {
-        let ownership = self
-            .binding
-            .dependency_ownership
-            .as_ref()
-            .ok_or_else(|| unavailable("Native dependency ownership was not selected"))?;
-        let paths = paths.into_iter().collect::<BTreeSet<_>>();
-        if paths.len() > MAX_DEPENDENCY_FILES {
-            return Err(unavailable(
-                "Native dependency input exceeds its file limit",
-            ));
-        }
-        let mut size = 0usize;
-        let mut files = Vec::with_capacity(paths.len());
-        for &path in &paths {
-            let bytes = self
-                .view
-                .bytes(path)
-                .ok_or_else(|| unavailable("Native dependency source was not observed"))?;
-            size = size.saturating_add(bytes.len());
-            if size > MAX_DEPENDENCY_BYTES {
-                return Err(unavailable(
-                    "Native dependency input exceeds its byte limit",
-                ));
-            }
-            files.push(SnapshotBoundFile::from_bytes(path, bytes));
-        }
-        let input = ImplementationObservationInput::new_with_ownership(
-            &self.binding.source_fingerprint,
-            files,
-            ownership
-                .ownerships()
-                .iter()
-                .filter(|owner| paths.contains(owner.source_path()))
-                .cloned()
-                .collect(),
-        );
-        Ok((input, ownership.diagnostics()))
+        dependency_input(&self.view, &self.binding, paths)
     }
 
     pub(crate) fn compare_dependency_intent(
         &self,
         observed: Option<&ObservedImplementation>,
     ) -> Result<ScopedDependencyIntent, serde_json::Error> {
-        let Some(graph) = &self.binding.dependency_intent else {
-            return Ok(ScopedDependencyIntent::OriginalIntentUnavailable);
-        };
-        let Some(observed) = observed else {
-            return Ok(ScopedDependencyIntent::NativeObservationUnavailable);
-        };
-        Ok(ScopedDependencyIntent::Compared {
-            ccg_digest: graph.digest()?,
-            records: compare_scoped_dependencies(graph, observed),
-        })
+        compare_dependency_intent(&self.binding, observed)
     }
 
     pub(crate) fn original_declared_owner(
@@ -166,6 +121,70 @@ impl<'a> NativeSource<'a> {
         }
         Ok(())
     }
+}
+
+fn dependency_input<'binding, 'path>(
+    view: &SourceView,
+    binding: &'binding NativeObservationBinding,
+    paths: impl IntoIterator<Item = &'path str>,
+) -> Result<
+    (
+        ImplementationObservationInput,
+        &'binding [SourceOwnershipDiagnostic],
+    ),
+    NativeSourceError,
+> {
+    let ownership = binding
+        .dependency_ownership
+        .as_ref()
+        .ok_or_else(|| unavailable("Native dependency ownership was not selected"))?;
+    let paths = paths.into_iter().collect::<BTreeSet<_>>();
+    if paths.len() > MAX_DEPENDENCY_FILES {
+        return Err(unavailable(
+            "Native dependency input exceeds its file limit",
+        ));
+    }
+    let mut size = 0usize;
+    let mut files = Vec::with_capacity(paths.len());
+    for &path in &paths {
+        let bytes = view
+            .bytes(path)
+            .ok_or_else(|| unavailable("Native dependency source was not observed"))?;
+        size = size.saturating_add(bytes.len());
+        if size > MAX_DEPENDENCY_BYTES {
+            return Err(unavailable(
+                "Native dependency input exceeds its byte limit",
+            ));
+        }
+        files.push(SnapshotBoundFile::from_bytes(path, bytes));
+    }
+    let input = ImplementationObservationInput::new_with_ownership(
+        &binding.source_fingerprint,
+        files,
+        ownership
+            .ownerships()
+            .iter()
+            .filter(|owner| paths.contains(owner.source_path()))
+            .cloned()
+            .collect(),
+    );
+    Ok((input, ownership.diagnostics()))
+}
+
+fn compare_dependency_intent(
+    original: &NativeObservationBinding,
+    observed: Option<&ObservedImplementation>,
+) -> Result<ScopedDependencyIntent, serde_json::Error> {
+    let Some(graph) = &original.dependency_intent else {
+        return Ok(ScopedDependencyIntent::OriginalIntentUnavailable);
+    };
+    let Some(observed) = observed else {
+        return Ok(ScopedDependencyIntent::NativeObservationUnavailable);
+    };
+    Ok(ScopedDependencyIntent::Compared {
+        ccg_digest: graph.digest()?,
+        records: compare_scoped_dependencies(graph, observed),
+    })
 }
 
 fn observe_source(root: &Path) -> Result<SourceView, NativeSourceError> {
@@ -229,11 +248,18 @@ struct NativeCallOwnership<'a> {
 }
 
 pub(crate) fn project_native_call_ownership(
-    source: &NativeSource<'_>,
+    view: &SourceView,
+    selected: &NativeObservationBinding,
+    original: &NativeObservationBinding,
     language: &str,
     observation: &serde_json::Value,
     topology: &NativeCallTopology<'_>,
 ) -> Result<serde_json::Value, NativeSourceError> {
+    if selected.authority_digest != original.authority_digest {
+        return Err(unavailable(
+            "Native call projection requires the original authority binding",
+        ));
+    }
     let sites = match topology {
         NativeCallTopology::Available { sites, .. } => Some(sites.as_slice()),
         NativeCallTopology::Unavailable { .. } => None,
@@ -246,7 +272,7 @@ pub(crate) fn project_native_call_ownership(
             [call.span.path.as_str(), call.target.span.path.as_str()]
         })
         .collect::<BTreeSet<_>>();
-    let (input, diagnostics) = source.dependency_input(paths)?;
+    let (input, diagnostics) = dependency_input(view, selected, paths)?;
     let disputed_paths = diagnostics
         .iter()
         .map(SourceOwnershipDiagnostic::source_path)
@@ -290,16 +316,15 @@ pub(crate) fn project_native_call_ownership(
     }
     let observed = sites.map(|_| {
         ObservedImplementation::from_facts(
-            &source.binding.source_fingerprint,
+            &selected.source_fingerprint,
             "fortress-native-call-dependency",
             "1.0.0",
             facts,
             Vec::new(),
         )
     });
-    let original_intent = source
-        .compare_dependency_intent(observed.as_ref())
-        .map_err(unavailable)?;
+    let original_intent =
+        compare_dependency_intent(original, observed.as_ref()).map_err(unavailable)?;
     Ok(serde_json::json!({
         "$schema": "urn:fortress:derived:v1:native-call-module-boundaries",
         "schema_version": 1,
@@ -307,9 +332,9 @@ pub(crate) fn project_native_call_ownership(
         "language": language,
         "target_execution": "NOT_RUN",
         "canonical_finding_or_certificate": "NOT_ISSUED",
-        "source_view_sha256": source.view.digest(),
-        "source_manifest_sha256": source.binding.source_manifest_digest,
-        "authority_sha256": source.binding.authority_digest,
+        "source_view_sha256": view.digest(),
+        "source_manifest_sha256": selected.source_manifest_digest,
+        "authority_sha256": original.authority_digest,
         "observation": observation,
         "topology": topology,
         "ownership_sites": relationships,

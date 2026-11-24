@@ -15,11 +15,11 @@ use fortress_core::python_observation::{
     ActualPythonScalarObservation, NativeBodyOutcome, PYTHON_LEXICAL_WORKER, PYTHON_SCALAR_WORKER,
     PythonCallableSelection, PythonObservationError, PythonScalarError, PythonScalarProducer,
     PythonScalarSubject, observe_python_authored_call_return,
-    observe_python_authored_native_return, observe_python_candidate_call_return,
-    observe_python_candidate_sensitivity, observe_python_native_call_module_boundaries,
-    observe_python_native_call_return, observe_python_native_call_sensitivity,
-    observe_python_native_call_topology, observe_python_scalar, observe_python_scalar_flow,
-    observe_python_scalar_sensitivity,
+    observe_python_authored_native_return, observe_python_candidate_call_module_boundaries,
+    observe_python_candidate_call_return, observe_python_candidate_sensitivity,
+    observe_python_native_call_module_boundaries, observe_python_native_call_return,
+    observe_python_native_call_sensitivity, observe_python_native_call_topology,
+    observe_python_scalar, observe_python_scalar_flow, observe_python_scalar_sensitivity,
 };
 use fortress_core::wire::{
     JsonAdmissionLimits, admit_json, parse_strict_json_bytes, readable_text,
@@ -27,6 +27,7 @@ use fortress_core::wire::{
 use serde::Deserialize;
 use serde_json::{Value, json};
 
+use super::candidate_command::NativeCandidateMode;
 use super::python_observe_command::{
     Grammar, load_import_scope, resource_profile, verify_import_scope,
 };
@@ -294,16 +295,36 @@ pub(super) fn inspect_candidate(
     registration_path: &Path,
     workspace: &CandidateWorkspace,
     retained: NativeCandidateSelection<'_>,
-    call_returns: bool,
+    mode: NativeCandidateMode,
 ) -> Result<HypotheticalNativeBodyInspection, MigrationError> {
-    let host = RegisteredScalarHost::load(root, registration_path, call_returns)
+    let host = RegisteredScalarHost::load(root, registration_path, mode.requires_call_worker())
         .map_err(candidate_host_error)?;
     let subject = &host.registration.subject;
     let exchange = |request| host.exchange(request);
-    let result = if call_returns {
-        observe_python_candidate_call_return(workspace, retained, subject, &host.producer, exchange)
-    } else {
-        observe_python_candidate_sensitivity(workspace, retained, subject, &host.producer, exchange)
+    let result = match mode {
+        NativeCandidateMode::ScalarSensitivity => observe_python_candidate_sensitivity(
+            workspace,
+            retained,
+            subject,
+            &host.producer,
+            exchange,
+        ),
+        NativeCandidateMode::FiniteCallReturn => observe_python_candidate_call_return(
+            workspace,
+            retained,
+            subject,
+            &host.producer,
+            exchange,
+        ),
+        NativeCandidateMode::OriginalCallDependencies => {
+            observe_python_candidate_call_module_boundaries(
+                workspace,
+                retained,
+                subject,
+                &host.producer,
+                exchange,
+            )
+        }
     };
     host.revalidate().map_err(candidate_host_error)?;
     result

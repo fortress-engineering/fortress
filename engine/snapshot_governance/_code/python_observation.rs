@@ -10,7 +10,8 @@ use crate::audit::NativeObservationBinding;
 use crate::candidate::{
     CandidateWorkspace, HypotheticalNativeBodyInspection, NativeCandidateBody,
     NativeCandidateCalls, NativeCandidateSelection, NativeCandidateSubject,
-    inspect_hypothetical_native_body, inspect_hypothetical_native_calls, native_error,
+    inspect_hypothetical_native_body, inspect_hypothetical_native_call_boundaries,
+    inspect_hypothetical_native_calls, native_error,
 };
 use crate::information_flow::{NativeScalarFlowObservation, observe_native_scalar_flow};
 use crate::migration_governance::MigrationError;
@@ -719,7 +720,9 @@ pub fn observe_python_native_call_module_boundaries(
         }
     };
     let report = project_native_call_ownership(
-        &source,
+        &source.view,
+        &source.binding,
+        &source.binding,
         "python",
         &serde_json::json!({
             "evaluation_key": evaluation_key,
@@ -771,6 +774,55 @@ pub fn observe_python_candidate_call_return(
             limitation,
         })
     })
+}
+
+/// Evaluates exact local Python lexical call dependencies in a retained candidate.
+/// The projection carries original dependency intent and exact postimage observations.
+///
+/// # Errors
+/// Refuses stale or cancelled candidates, unsafe inputs, and mismatched native replies.
+pub fn observe_python_candidate_call_module_boundaries(
+    workspace: &CandidateWorkspace,
+    retained: NativeCandidateSelection<'_>,
+    subject: &PythonScalarSubject,
+    producer: &PythonScalarProducer,
+    exchange: impl FnOnce(Vec<u8>) -> Result<Vec<u8>, PythonObservationError>,
+) -> Result<HypotheticalNativeBodyInspection, MigrationError> {
+    let selected = NativeCandidateSubject {
+        source_path: &subject.source_path,
+        source_ref: &subject.source_ref,
+        function: &subject.function,
+    };
+    inspect_hypothetical_native_call_boundaries(
+        workspace,
+        retained,
+        selected,
+        "python",
+        |view, original, candidate| {
+            let (evaluation_key, request, response_ref, observation) =
+                inspect_lexical_calls(view, candidate, subject, producer, exchange)
+                    .map_err(native_error)?;
+            let graph = match &observation.root {
+                NativeBodyOutcome::Lowered(body) => inspect_native_call_topology(
+                    body,
+                    &observation.targets().map_err(native_error)?,
+                ),
+                NativeBodyOutcome::Unavailable(diagnostic) => {
+                    NativeCallTopology::unavailable(None, diagnostic.code())
+                }
+            };
+            let evidence = serde_json::json!({
+                "evaluation_key": evaluation_key,
+                "exchange_sha256": request.exchange_ref(),
+                "response_sha256": response_ref,
+                "source_path": subject.source_path,
+                "source_ref": request.source_ref(),
+                "producer": producer,
+            });
+            project_native_call_ownership(view, candidate, original, "python", &evidence, &graph)
+                .map_err(|failure| native_error(PythonObservationError::from(failure)))
+        },
+    )
 }
 
 fn inspect_lexical_calls(

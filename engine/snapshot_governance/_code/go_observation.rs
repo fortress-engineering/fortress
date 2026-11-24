@@ -8,7 +8,8 @@ use crate::audit::{NativeAuthorityScope, NativeObservationBinding};
 use crate::candidate::{
     CandidateWorkspace, HypotheticalNativeBodyInspection, NativeCandidateBody,
     NativeCandidateCalls, NativeCandidateSelection, NativeCandidateSubject,
-    inspect_hypothetical_native_body, inspect_hypothetical_native_calls, native_error,
+    inspect_hypothetical_native_body, inspect_hypothetical_native_call_boundaries,
+    inspect_hypothetical_native_calls, native_error,
 };
 use crate::implementation_observation::{NativeDependencyContext, SourceOwnershipDiagnostic};
 use crate::information_flow::NativeScalarFlowObservation;
@@ -516,8 +517,15 @@ pub fn observe_go_native_call_module_boundaries(
     .map_err(source_failure)?;
     let observed = verified_go_calls(&source, selection, collector, launch)?;
     let graph = go_call_topology(&observed, occurrence)?;
-    let report = project_native_call_ownership(&source, "go", &observed.call_evidence(), &graph)
-        .map_err(source_failure)?;
+    let report = project_native_call_ownership(
+        &source.view,
+        &source.binding,
+        &source.binding,
+        "go",
+        &observed.call_evidence(),
+        &graph,
+    )
+    .map_err(source_failure)?;
     source.revalidate().map_err(source_failure)?;
     Ok(report)
 }
@@ -641,6 +649,55 @@ pub fn observe_go_candidate_call_return(
             result,
         })
     })
+}
+
+/// Evaluates admitted call dependencies in a retained exact Go candidate.
+/// The original CCG supplies dependency intent after unchanged authority and
+/// graph bindings have been established.
+///
+/// # Errors
+/// Refuses stale or cancelled candidates, unsafe inputs, and mismatched native replies.
+pub fn observe_go_candidate_call_module_boundaries(
+    workspace: &CandidateWorkspace,
+    retained: NativeCandidateSelection<'_>,
+    package: GoPackageSelection<'_>,
+    subject: NativeCandidateSubject<'_>,
+    collector: &GoCollectorPin<'_>,
+    launch: impl FnOnce(&[u8]) -> Result<Vec<u8>, GoObservationError>,
+) -> Result<HypotheticalNativeBodyInspection, MigrationError> {
+    inspect_hypothetical_native_call_boundaries(
+        workspace,
+        retained,
+        subject,
+        "go",
+        |view, original, candidate| {
+            let source = scoped_package(view, candidate, package, false);
+            let admitted = admit_go(source, collector).map_err(native_error)?;
+            let output = launch(admitted.request_bytes()).map_err(native_error)?;
+            let observed = admitted
+                .verify_bound_bodies(collector, &candidate.source_manifest_digest, &output)
+                .map_err(native_error)?;
+            let graph = match observed.selected_call_body(subject.source_path, subject.function) {
+                Some(body) => inspect_native_call_topology(
+                    body,
+                    &observed.call_targets().map_err(native_error)?,
+                ),
+                None => NativeCallTopology::unavailable(
+                    None,
+                    "SELECTED_DECLARATION_OR_BODY_UNAVAILABLE",
+                ),
+            };
+            project_native_call_ownership(
+                view,
+                candidate,
+                original,
+                "go",
+                &observed.call_evidence(),
+                &graph,
+            )
+            .map_err(|failure| native_error(source_failure(failure)))
+        },
+    )
 }
 
 fn validate_body_occurrence(occurrence: &str) -> Result<(), GoObservationError> {

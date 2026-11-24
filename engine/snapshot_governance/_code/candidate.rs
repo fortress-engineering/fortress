@@ -5,7 +5,7 @@ mod native;
 pub use native::{HypotheticalNativeBodyInspection, NativeCandidateSubject};
 pub(crate) use native::{
     NativeCandidateBody, NativeCandidateCalls, inspect_hypothetical_native_body,
-    inspect_hypothetical_native_calls, native_error,
+    inspect_hypothetical_native_call_boundaries, inspect_hypothetical_native_calls, native_error,
 };
 
 use std::collections::BTreeMap;

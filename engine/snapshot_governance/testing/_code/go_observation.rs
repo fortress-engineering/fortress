@@ -304,13 +304,8 @@ mod bound_call_bodies {
         }
     }
 
-    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R40-001`
-    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R40
-    #[test]
-    fn exact_go_call_compares_distinct_original_module_owners() {
-        use fortress_core::go_observation::observe_go_native_call_module_boundaries;
-
-        let fixture = Fixture::new("native-owned-call");
+    fn owned_call_fixture(label: &str) -> (Fixture, Value) {
+        let fixture = Fixture::new(label);
         let record: Value =
             serde_json::from_slice(include_bytes!("../_data/go_owned_call_v1.json")).unwrap();
         for (name, source) in record["files"].as_object().unwrap() {
@@ -318,6 +313,16 @@ mod bound_call_bodies {
             fs::create_dir_all(path.parent().unwrap()).unwrap();
             fs::write(path, source.as_str().unwrap()).unwrap();
         }
+        (fixture, record)
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R40-001`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R40
+    #[test]
+    fn exact_go_call_compares_distinct_original_module_owners() {
+        use fortress_core::go_observation::observe_go_native_call_module_boundaries;
+
+        let (fixture, record) = owned_call_fixture("native-owned-call");
         let pin = GoCollectorPin {
             executable_sha256: record["worker_sha256"].as_str().unwrap(),
             ..PIN
@@ -370,6 +375,161 @@ mod bound_call_bodies {
         assert_eq!(
             missing["original_intent"],
             json!({"status":"NATIVE_OBSERVATION_UNAVAILABLE"})
+        );
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R41-001`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R41
+    #[test]
+    fn retained_go_call_ownership_uses_original_governing_graph() {
+        use fortress_core::go_observation::observe_go_candidate_call_module_boundaries;
+
+        let (fixture, record) = owned_call_fixture("native-owned-candidate");
+        let path = "_code/caller.go";
+        let initial = b"package app\n\nfunc Entry(v bool) bool { return v }\n";
+        let target = record["files"][path].as_str().unwrap().as_bytes();
+        let pin = GoCollectorPin {
+            executable_sha256: record["worker_sha256"].as_str().unwrap(),
+            ..PIN
+        };
+        let package = GoPackageSelection {
+            directory: "_code",
+            package_path: "reference.test/owned",
+            ..SELECTION
+        };
+        fs::write(fixture.root.join(path), initial).unwrap();
+        let mut workspace = CandidateWorkspace::open_cold(&fixture.root).unwrap();
+        let base_src = workspace.base_source_ref().to_owned();
+        let context = workspace.context_ref().to_owned();
+        let no_cancel = AtomicBool::new(false);
+        let authority = CanonicalMigrationAuthority {
+            policy: None,
+            host: &UnmediatedHost,
+            validator: &NoGrantValidator,
+            evaluation_time: None,
+            reviewed_initial_intent_ref: None,
+            finding_proposal: None,
+            identity_plan: None,
+        };
+        let key = digest(target);
+        let subject = NativeCandidateSubject {
+            source_path: path,
+            source_ref: &key,
+            function: "Entry",
+        };
+        let actual = MigrationOperation::ReplaceFile {
+            path: path.into(),
+            preimage: initial.to_vec(),
+            postimage: target.to_vec(),
+        };
+        let make_request = |operations| CandidateRequest {
+            schema_version: 1,
+            base_source_ref: base_src.clone(),
+            context_ref: context.clone(),
+            comparison_context: ComparisonContext::default(),
+            operations,
+        };
+        let selection = |candidate| NativeCandidateSelection {
+            client: "owner",
+            candidate,
+            cancelled: &no_cancel,
+        };
+
+        let exact = workspace
+            .evaluate(
+                "owner",
+                "code",
+                make_request(vec![actual.clone()]),
+                &authority,
+                &no_cancel,
+            )
+            .unwrap();
+        let result = observe_go_candidate_call_module_boundaries(
+            &workspace,
+            selection("code"),
+            package,
+            subject,
+            &pin,
+            |request| Ok(receipt(request, &record, "bound")),
+        )
+        .unwrap();
+        let report = serde_json::to_value(result).unwrap();
+        assert_go_candidate_dependency(&report, exact.evaluation_ref(), &base_src);
+
+        for (label, authority_path, current, condition) in [
+            (
+                "module-graph",
+                "_data/logical_modules/caller/contract.json",
+                "AF-NATIVE-CALLER-0001",
+                "GOVERNING_GRAPH_CHANGED",
+            ),
+            (
+                "original-authority",
+                "contract.json",
+                "PF-NATIVE-CALL-OWNERS",
+                "ORIGINAL_AUTHORITY_CHANGED",
+            ),
+        ] {
+            let bytes = record["files"][authority_path].as_str().unwrap();
+            let edited = rename_candidate_authority(authority_path, current, bytes);
+            let request = make_request(vec![actual.clone(), edited]);
+            workspace
+                .evaluate("owner", label, request, &authority, &no_cancel)
+                .unwrap();
+            let compared = observe_go_candidate_call_module_boundaries(
+                &workspace,
+                selection(label),
+                package,
+                subject,
+                &pin,
+                |_| panic!("changed original authority or graph must prevent native dispatch"),
+            )
+            .unwrap();
+            let result = serde_json::to_value(compared).unwrap();
+            assert_eq!(result["comparison"], "NOT_COMPARED");
+            assert_eq!(
+                result["native"],
+                json!({"status":"UNAVAILABLE","reason":condition})
+            );
+            assert_eq!(
+                fs::read(fixture.root.join(authority_path)).unwrap(),
+                bytes.as_bytes()
+            );
+        }
+        assert_eq!(fs::read(fixture.root.join(path)).unwrap(), initial);
+    }
+
+    fn rename_candidate_authority(path: &str, name: &str, bytes: &str) -> MigrationOperation {
+        let current = format!("\"display_name\": \"{name}\"");
+        let changed = bytes.replace(&current, "\"display_name\": \"Changed original name\"");
+        assert_ne!(changed, bytes);
+        MigrationOperation::ReplaceFile {
+            path: path.into(),
+            preimage: bytes.as_bytes().to_vec(),
+            postimage: changed.into_bytes(),
+        }
+    }
+
+    fn assert_go_candidate_dependency(report: &Value, proposal_ref: &str, base_src: &str) {
+        assert_eq!(report["status"], "PROPOSED");
+        assert_eq!(report["actual_state"], false);
+        assert_eq!(report["actual_certificate"], "NOT_ISSUED");
+        assert_eq!(report["proposal_ref"], proposal_ref);
+        assert_eq!(report["original_source_view_ref"], base_src);
+        assert_ne!(report["candidate_source_view_ref"], base_src);
+        assert_eq!(
+            report["original_authority_ref"],
+            report["candidate_authority_ref"]
+        );
+        let facts = &report["native"]["report"];
+        assert_eq!(facts["ownership_sites"][0]["relationship"], "CROSS_MODULE");
+        assert_eq!(
+            facts["original_intent"]["records"][0]["state"],
+            "OBSERVED_UNDECLARED"
+        );
+        assert_eq!(
+            facts["source_view_sha256"],
+            report["candidate_source_view_ref"]
         );
     }
 

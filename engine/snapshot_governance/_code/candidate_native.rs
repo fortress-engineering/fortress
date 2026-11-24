@@ -81,6 +81,7 @@ pub(crate) struct NativeCandidateBody {
 enum NativeCandidateAnalysis {
     Scalar(NativeCandidateBody),
     Calls(NativeCandidateCalls),
+    CallBoundaries(NativeCandidateCallBoundaries),
 }
 
 #[derive(Serialize)]
@@ -89,6 +90,13 @@ pub(crate) struct NativeCandidateCalls {
     pub(crate) response_ref: String,
     pub(crate) result: Option<NativeBooleanCallEvaluation>,
     pub(crate) limitation: Option<String>,
+}
+
+#[derive(Serialize)]
+#[serde(tag = "status", rename_all = "SCREAMING_SNAKE_CASE")]
+enum NativeCandidateCallBoundaries {
+    Projected { report: serde_json::Value },
+    Unavailable { reason: &'static str },
 }
 
 pub(crate) fn inspect_hypothetical_native_body(
@@ -107,7 +115,8 @@ pub(crate) fn inspect_hypothetical_native_body(
         selected,
         subject,
         language,
-        |view, binding, proposal| {
+        NativeAuthorityScope::Observation,
+        |view, _, binding, proposal| {
             inspect(view, binding, proposal).map(NativeCandidateAnalysis::Scalar)
         },
     )
@@ -128,8 +137,58 @@ pub(crate) fn inspect_hypothetical_native_calls(
         selected,
         subject,
         language,
-        |view, binding, _| inspect(view, binding).map(NativeCandidateAnalysis::Calls),
+        NativeAuthorityScope::Observation,
+        |view, _, binding, _| inspect(view, binding).map(NativeCandidateAnalysis::Calls),
     )
+}
+
+pub(crate) fn inspect_hypothetical_native_call_boundaries(
+    workspace: &CandidateWorkspace,
+    selected: NativeCandidateSelection<'_>,
+    subject: NativeCandidateSubject<'_>,
+    language: &'static str,
+    inspect: impl FnOnce(
+        &SourceView,
+        &NativeObservationBinding,
+        &NativeObservationBinding,
+    ) -> Result<serde_json::Value, MigrationError>,
+) -> Result<HypotheticalNativeBodyInspection, MigrationError> {
+    inspect_hypothetical_native(
+        workspace,
+        selected,
+        subject,
+        language,
+        NativeAuthorityScope::DependenciesWithIntent,
+        |view, original, candidate, _| {
+            let projection = if original.authority_digest != candidate.authority_digest {
+                NativeCandidateCallBoundaries::Unavailable {
+                    reason: "ORIGINAL_AUTHORITY_CHANGED",
+                }
+            } else if original_intent_changed(original, candidate)? {
+                NativeCandidateCallBoundaries::Unavailable {
+                    reason: "GOVERNING_GRAPH_CHANGED",
+                }
+            } else {
+                NativeCandidateCallBoundaries::Projected {
+                    report: inspect(view, original, candidate)?,
+                }
+            };
+            Ok(NativeCandidateAnalysis::CallBoundaries(projection))
+        },
+    )
+}
+
+fn original_intent_changed(
+    original: &NativeObservationBinding,
+    candidate: &NativeObservationBinding,
+) -> Result<bool, MigrationError> {
+    match (&original.dependency_intent, &candidate.dependency_intent) {
+        (None, None) => Ok(false),
+        (Some(left), Some(right)) => {
+            Ok(left.digest().map_err(native_error)? != right.digest().map_err(native_error)?)
+        }
+        _ => Ok(true),
+    }
 }
 
 fn inspect_hypothetical_native(
@@ -137,8 +196,10 @@ fn inspect_hypothetical_native(
     selected: NativeCandidateSelection<'_>,
     subject: NativeCandidateSubject<'_>,
     language: &'static str,
+    scope: NativeAuthorityScope<'_>,
     inspect: impl FnOnce(
         &SourceView,
+        &NativeObservationBinding,
         &NativeObservationBinding,
         &HypotheticalEvaluation,
     ) -> Result<NativeCandidateAnalysis, MigrationError>,
@@ -179,20 +240,30 @@ fn inspect_hypothetical_native(
                 ));
             }
             let original =
-                bind_native_observation_source(base, language, NativeAuthorityScope::Observation)
-                    .map_err(native_error)?;
+                bind_native_observation_source(base, language, scope).map_err(native_error)?;
             let candidate =
-                bind_native_observation_source(target, language, NativeAuthorityScope::Observation)
-                    .map_err(native_error)?;
-            let native = inspect(target, &candidate, proposal)?;
-            let (schema, schema_version) = match &native {
+                bind_native_observation_source(target, language, scope).map_err(native_error)?;
+            let native = inspect(target, &original, &candidate, proposal)?;
+            let (schema, schema_version, comparison) = match &native {
                 NativeCandidateAnalysis::Scalar(_) => (
                     "urn:fortress:derived:v1:hypothetical-native-body-inspection",
                     1,
+                    "NOT_COMPARED",
                 ),
                 NativeCandidateAnalysis::Calls(_) => (
                     "urn:fortress:derived:v2:hypothetical-native-body-inspection",
                     2,
+                    "NOT_COMPARED",
+                ),
+                NativeCandidateAnalysis::CallBoundaries(boundaries) => (
+                    "urn:fortress:derived:v3:hypothetical-native-body-inspection",
+                    3,
+                    match boundaries {
+                        NativeCandidateCallBoundaries::Projected { .. } => {
+                            "ORIGINAL_DEPENDENCY_INTENT_ONLY"
+                        }
+                        NativeCandidateCallBoundaries::Unavailable { .. } => "NOT_COMPARED",
+                    },
                 ),
             };
             Ok(HypotheticalNativeBodyInspection {
@@ -211,7 +282,7 @@ fn inspect_hypothetical_native(
                 source_path: subject.source_path.into(),
                 source_ref: subject.source_ref.into(),
                 function: subject.function.into(),
-                comparison: "NOT_COMPARED",
+                comparison,
                 runtime_execution: "NOT_RUN",
                 actual_certificate: "NOT_ISSUED",
                 native,

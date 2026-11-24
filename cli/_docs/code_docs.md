@@ -850,3 +850,5 @@ The existing candidate `--native-inspection` option accepts
 `2` and `analysis` set to `FINITE_CALL_RETURN`. The same independent Go or
 Python host selection pins the exact postimage. Edition 1 descriptors retain
 their original finite single-body sensitivity behavior.
+
+A version 3 `--native-inspection` descriptor selects `ORIGINAL_CALL_DEPENDENCIES` for the retained overlay. The projection inspects native Go or Python calls in the exact proposed source. It uses original dependency intent when the governing graph and authority agree. Changed authority or governing graph makes the projection unavailable. The overlay stays unapplied and carries both source identities.

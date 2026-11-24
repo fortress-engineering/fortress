@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v3:overlay-native-candidate-inspection",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "status",
+    "actual_state",
+    "descriptor_ref",
+    "assessment",
+    "native_inspection"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:derived:v3:overlay-native-candidate-inspection"
+    },
+    "schema_version": {
+      "const": 3
+    },
+    "status": {
+      "const": "PROPOSED"
+    },
+    "actual_state": {
+      "const": false
+    },
+    "descriptor_ref": {
+      "$ref": "#/$defs/sha256"
+    },
+    "assessment": {
+      "$ref": "urn:fortress:derived:v1:hypothetical-evaluation"
+    },
+    "native_inspection": {
+      "$ref": "urn:fortress:derived:v3:hypothetical-native-body-inspection"
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    }
+  }
+}

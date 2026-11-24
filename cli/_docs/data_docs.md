@@ -174,3 +174,11 @@ selection binds the same source and configuration policy as earlier descriptors.
 
 Retains the original overlay assessment and attaches a finite candidate call
 result under the exact descriptor and retained candidate references.
+
+### [`native_candidate_host_v3.json`](../_data/native_candidate_host_v3.json)
+
+The independently selected local host descriptor for original call dependency inspection. Its analysis is `ORIGINAL_CALL_DEPENDENCIES`. The existing external registration and resource bounds apply.
+
+### [`native_candidate_overlay_v3.json`](../_data/native_candidate_overlay_v3.json)
+
+Overlay proposal and its version 3 native call dependency inspection. The envelope retains the proposal and exact descriptor identities. Its status is proposed and its actual-state flag is false.
