@@ -4,6 +4,16 @@
 //! bytes. It deliberately contains no contract dependency authorization and no
 //! architectural judgment; those belong to the CCG and Architecture Evaluation.
 
+#[path = "native_dependency.rs"]
+mod native_dependency;
+pub use native_dependency::{
+    NativeDependencyAdapterError, NativeDependencyBatch, NativeDependencyContext,
+    NativeDependencyEndpoint, NativeDependencyFile, NativeDependencyLanguage,
+    NativeDependencyOccurrence, NativeDependencyProjection, NativeDependencySite,
+    NativeDependencySiteTarget, NativeDependencyTarget, NativeDependencyUnresolved,
+    NativeEndpointOwner, NativeEndpointOwnership, adapt_native_dependencies,
+};
+
 #[path = "rust.rs"]
 mod rust;
 
@@ -552,6 +562,8 @@ pub enum Conditionality {
     Unconditional,
     /// A supported `cfg` attribute guards the reference.
     Conditional,
+    /// This source-only observer does not establish its conditional guard.
+    Unestablished,
 }
 
 /// Stable one-based source position.
@@ -622,7 +634,7 @@ impl ObservationProvenance {
         &self.source_module
     }
 
-    /// Returns the canonical Rust reference spelling.
+    /// Returns the scoped reference spelling reported by the analyzer.
     #[must_use]
     pub fn reference(&self) -> &str {
         &self.reference

@@ -21,3 +21,5 @@ Any parse, resolution, ordering, ownership, or identity discrepancy fails the te
 ### [`implementation_observation.rs`](../_code/implementation_observation.rs)
 
 Exercises stable snapshot binding, Rust syntax/reference classes, namespace and facade resolution, ownership, edge collapse, explicit coverage, and deterministic repetition.
+
+The native dependency controls in the same test target use independently fixed Go and Python source occurrences and exact authored ownership. They assert direction, complete Go package membership, static Python scope, determinism, conflicting ownership, unavailable endpoints, forged context, stale bytes, conflicting observations, path coordinates, and resource limits. The adapter also covers analysis-only scaffolding in an owner-local control.
