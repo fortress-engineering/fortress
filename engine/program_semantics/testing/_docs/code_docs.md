@@ -40,3 +40,9 @@ Exercises both native scalar scopes at the common Program Semantics owner.
 Independent expected results cover structural body nodes, physical positions,
 byte freshness, producer and context identity, unsupported operations and
 explicitly unavailable results.
+
+### [`native_callable_binding.rs`](../_code/native_callable_binding.rs)
+
+Exercises the callable admission boundary with an exact literal native body.
+The controls verify that changed language, declaration name, source path,
+source digest, or evaluation key prevents attachment.
