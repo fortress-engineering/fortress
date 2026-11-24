@@ -3,6 +3,50 @@
   "schema_version": 1,
   "entries": [
     {
+      "schema_id": "urn:fortress:host:v1:go-filesystem-registration",
+      "schema_path": "cli/_data/go_fs_registration_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "AUTHORED",
+        "source": null
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "cli/_code/go_fs_command.rs"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-owner-canonical-or-exact-bytes",
+        "source": "cli/_code/go_fs_command.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:derived:v1:go-filesystem-effects",
+      "schema_path": "engine/snapshot_governance/_data/go_fs_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/snapshot_governance/_code/go_fs_observation.rs"
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-owner-canonical-or-exact-bytes",
+        "source": "engine/snapshot_governance/_code/go_fs_observation.rs"
+      }
+    },
+    {
       "schema_id": "urn:fortress:derived:v1:native-return-inspection",
       "schema_path": "cli/_data/native_return_schema_v1.json",
       "version": 1,

@@ -12,6 +12,13 @@ use sha2::{Digest, Sha256};
 mod body_observation;
 #[path = "go_build_selection.rs"]
 mod build_selection;
+#[path = "go_filesystem_observation.rs"]
+mod filesystem_observation;
+pub(crate) use filesystem_observation::admit_go_filesystem;
+pub use filesystem_observation::{
+    GoFilesystemCallResolution, GoFilesystemDisposition, GoFilesystemLibraryPin,
+    GoNativeFilesystemObservation,
+};
 #[path = "go_test_observation.rs"]
 mod test_observation;
 pub use test_observation::GoNativeTestObservation;

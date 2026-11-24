@@ -203,3 +203,19 @@ Checks the exact v3 package selection and rebuilds a legacy body request from
 its admitted immutable files. The initial join uses one import-free ordinary
 package, the same pinned Go version, and bounded default build tags. The body
 must refer to the same declaration name and exact physical identifier span.
+
+### [`go_fs_collector.go`](../_code/go_fs_collector.go)
+
+An explicit bounded Go compiler worker observes source call positions and
+compares the callee object with an independently packaged standard library
+declaration. Its native exporter only opens admitted embedded archive members.
+The supported source scope is one ordinary closed package file with no local
+build variation. A shadowed binding or a dynamic callee has no standard
+operation credit. Existing native worker builds keep their exact inputs.
+
+### [`go_filesystem_observation.rs`](../_code/go_filesystem_observation.rs)
+
+Validates bounded raw Go filesystem receipts against the exact supervised
+request, physical data, native declaration and independently pinned library
+assets. It keeps unsupported observations open and supplies only typed
+call evidence to Snapshot Governance.

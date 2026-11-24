@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:host:v1:go-filesystem-registration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "executable",
+    "executable_sha256",
+    "toolchain",
+    "package_source_ref",
+    "export_set_ref",
+    "preparation"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:host:v1:go-filesystem-registration"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "executable": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "executable_sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "toolchain": {
+      "enum": [
+        "go1.22.2",
+        "go1.22.12"
+      ]
+    },
+    "package_source_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "export_set_ref": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "preparation": {
+      "const": "INSTALLED_STDLIB_GC_NO_CGO_V1"
+    }
+  }
+}

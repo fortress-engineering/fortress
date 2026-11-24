@@ -30,6 +30,30 @@ collection comparison. Snapshot test replay changes only the per-request
 correlation field. The compiled observations retain their original facts,
 limitations and producer identities.
 
+### [`go_direct_request_v1.json`](../_data/go_direct_request_v1.json)
+
+Retains the exact Windows Go 1.22.12 filesystem observation request bytes for a standard library WriteFile call.
+
+### [`go_fs_direct_v1.json`](../_data/go_fs_direct_v1.json)
+
+Retains the exact Windows Go 1.22.12 filesystem observation compiler response for a standard library WriteFile call.
+
+### [`go_shadow_request_v1.json`](../_data/go_shadow_request_v1.json)
+
+Retains the exact Windows Go 1.22.12 filesystem observation request bytes for a source-defined WriteFile method.
+
+### [`go_fs_shadow_v1.json`](../_data/go_fs_shadow_v1.json)
+
+Retains the exact Windows Go 1.22.12 filesystem observation compiler response for a source-defined WriteFile method.
+
+### [`go_closed_request_v1.json`](../_data/go_closed_request_v1.json)
+
+Retains the exact Windows Go 1.22.12 filesystem observation request bytes for a file that needs a conditional build context.
+
+### [`go_fs_closed_v1.json`](../_data/go_fs_closed_v1.json)
+
+Retains the exact Windows Go 1.22.12 filesystem observation compiler response for a file that needs a conditional build context.
+
 ### [`go_test_request_v1.json`](../_data/go_test_request_v1.json)
 
 Retains the exact ordered closed build input for the Windows Go test declaration

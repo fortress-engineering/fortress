@@ -33,6 +33,24 @@ inspect one lowered body. Copy the exact `binding` from its original receipt.
 A changed source or producer can make the occurrence unavailable. The report
 retains both the original body receipt and the scoped flow disposition.
 
+### [`go_fs_command.rs`](../_code/go_fs_command.rs)
+
+Uses an external registration and the existing bounded local subprocess to relate
+one ordinary Go file's exact statically resolved call sites to the installed
+Operation Summary catalog. Source and the registration are checked before
+publication. The command only reports the selected context and scoped effects.
+
+```text
+fortress psm --observe-go-filesystem PROJECT HOST_REGISTRATION DIRECTORY PACKAGE_PATH go1.22 linux amd64
+```
+
+Select the matching platform and locally reviewed worker prepared with
+`INSTALLED_STDLIB_GC_NO_CGO_V1` and pinned Windows Go 1.22.12 or Linux
+Go 1.22.2. A qualified static `os.WriteFile` call can expose a conditional
+filesystem write effect at the source location. Control-flow reachability,
+runtime execution, complete effect bounds, and missing or indirect effects
+remain unresolved. The command issues no canonical finding or certificate.
+
 ### [`go_observation_command.rs`](../_code/go_observation_command.rs)
 
 Select the original Go module and target context using the existing module

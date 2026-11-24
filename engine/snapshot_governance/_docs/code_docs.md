@@ -626,3 +626,11 @@ contract outside the selected closed module prefix. Application, canonical
 findings, execution, and certification are separate operations. Missing
 original authority, competing requirements, incompatible scope and opacity
 remain explicit. Publication revalidates the entire original input.
+
+### [`go_fs_observation.rs`](../_code/go_fs_observation.rs)
+
+Binds the exact native Go call observation to original physical source and
+the separately verified installed standard-library recipe. It uses the
+existing Operation Summary catalog to project scoped positive lower facts.
+Unknown context, effects outside the scope, and runtime execution remain
+explicit. The original physical view is revalidated before publication.

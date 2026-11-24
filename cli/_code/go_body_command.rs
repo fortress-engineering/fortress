@@ -19,8 +19,8 @@ use serde_json::json;
 
 const SCHEMA: &str = "urn:fortress:host:v1:go-body-registration";
 const REGISTRATION_LIMIT: usize = 16 * 1024;
-const TIMEOUT: Duration = Duration::from_secs(5);
-const ENVIRONMENT: [(&str, &str); 3] = [
+pub(super) const TIMEOUT: Duration = Duration::from_secs(5);
+pub(super) const ENVIRONMENT: [(&str, &str); 3] = [
     ("GOMAXPROCS", "2"),
     ("GODEBUG", "gotypesalias=0"),
     ("GOMEMLIMIT", "128MiB"),
@@ -134,19 +134,12 @@ pub(super) fn with_registered_body<T>(
     let host_directory = registration
         .parent()
         .ok_or("Host registration needs an external working directory.")?;
-    let mut command = Command::new(&declared.executable);
-    command
-        .arg("--lower-first-order-go")
-        .env_clear()
-        .current_dir(host_directory)
-        .envs(ENVIRONMENT);
-    #[cfg(windows)]
-    let system_root = std::env::var("SystemRoot").ok();
-    #[cfg(not(windows))]
-    let system_root: Option<String> = None;
-    if let Some(value) = &system_root {
-        command.env("SystemRoot", value);
-    }
+    let (launch, system_root) = prepare_native_go_launch(
+        &declared.executable,
+        &declared.executable_sha256,
+        host_directory,
+        "--lower-first-order-go",
+    );
     let host_context = json!({
         "format": "pinned-go-body-collector-host-v1",
         "registration_sha256": digest(&original),
@@ -163,18 +156,40 @@ pub(super) fn with_registered_body<T>(
         supervisor_context_sha256: &context_sha256,
         go_toolchain: &declared.toolchain,
     };
-    let result = observe(
-        &pin,
-        BodyLaunch {
-            command,
-            executable_ref: pin.executable_sha256,
-        },
-    )?;
+    let result = observe(&pin, launch)?;
     super::verifier_process::require_external_asset(registration, root)?;
     if super::provider_command::read_bounded(registration, REGISTRATION_LIMIT)? != original {
         return Err("SOURCE_DRIFT: Native collector registration changed.".into());
     }
     Ok(result)
+}
+
+pub(super) fn prepare_native_go_launch<'a>(
+    executable: &Path,
+    executable_ref: &'a str,
+    host_directory: &Path,
+    selector: &str,
+) -> (BodyLaunch<'a>, Option<String>) {
+    let mut command = Command::new(executable);
+    command
+        .arg(selector)
+        .env_clear()
+        .current_dir(host_directory)
+        .envs(ENVIRONMENT);
+    #[cfg(windows)]
+    let system_root = std::env::var("SystemRoot").ok();
+    #[cfg(not(windows))]
+    let system_root: Option<String> = None;
+    if let Some(value) = &system_root {
+        command.env("SystemRoot", value);
+    }
+    (
+        BodyLaunch {
+            command,
+            executable_ref,
+        },
+        system_root,
+    )
 }
 
 fn read_host_registration(

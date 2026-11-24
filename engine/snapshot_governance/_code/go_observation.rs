@@ -13,7 +13,13 @@ use crate::program_semantics::go_observation::{
 
 #[path = "go_body_domains.rs"]
 mod body_domains;
+
+#[path = "go_fs_observation.rs"]
+mod filesystem;
 pub use body_domains::ActualGoNativeBodyObservation;
+pub use filesystem::{
+    ActualGoFilesystemEffectObservation, GoFilesystemHost, observe_go_filesystem_effects,
+};
 
 #[path = "go_callable.rs"]
 mod callable;
@@ -22,6 +28,7 @@ pub use callable::{
     observe_go_linked_callable,
 };
 
+pub use crate::program_semantics::go_observation::GoFilesystemLibraryPin;
 pub use crate::program_semantics::go_observation::{
     GoBuildContext, GoBuildTestMode, GoCollectorPin, GoModuleSelection, GoNativeBuildObservation,
     GoNativeModuleObservation, GoNativeObservation, GoNativeTestObservation, GoObservationError,

@@ -41,6 +41,7 @@ use crate::semantic_analysis::{
 use field_projection::{FIELD_PROJECTION_SCRATCH_BYTES, field_projection_index, symbol_fields};
 use operation_effect::{OperationEffectClassification, classify_operation};
 
+pub(crate) use native_filesystem::native_filesystem_catalog_source_ref;
 pub use native_filesystem::{
     NativeFilesystemBatch, NativeFilesystemBinding, NativeFilesystemCall, NativeFilesystemCallee,
     NativeFilesystemDisposition, NativeFilesystemError, NativeFilesystemLanguage,

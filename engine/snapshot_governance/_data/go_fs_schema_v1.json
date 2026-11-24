@@ -1,0 +1,683 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v1:go-filesystem-effects",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "runtime_execution",
+    "canonical_finding_or_certificate",
+    "evaluation_key",
+    "native",
+    "effects"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:derived:v1:go-filesystem-effects"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "runtime_execution": {
+      "const": "NOT_RUN"
+    },
+    "canonical_finding_or_certificate": {
+      "const": "NOT_ISSUED"
+    },
+    "evaluation_key": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_manifest_digest",
+        "program_context_digest",
+        "authority_binding_digest"
+      ],
+      "properties": {
+        "source_manifest_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "program_context_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "authority_binding_digest": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "native": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "binding_ref",
+        "request_ref",
+        "response_ref",
+        "selected_package_source_ref",
+        "selected_export_set_ref",
+        "source",
+        "disposition",
+        "declaration_ref",
+        "calls"
+      ],
+      "properties": {
+        "binding_ref": {
+          "$ref": "#/$defs/sha256"
+        },
+        "request_ref": {
+          "$ref": "#/$defs/sha256"
+        },
+        "response_ref": {
+          "$ref": "#/$defs/sha256"
+        },
+        "selected_package_source_ref": {
+          "$ref": "#/$defs/sha256"
+        },
+        "selected_export_set_ref": {
+          "$ref": "#/$defs/sha256"
+        },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "path",
+            "sha256"
+          ],
+          "properties": {
+            "path": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            },
+            "sha256": {
+              "$ref": "#/$defs/sha256"
+            }
+          }
+        },
+        "disposition": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "status"
+              ],
+              "properties": {
+                "status": {
+                  "const": "OBSERVED"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "status",
+                "reason"
+              ],
+              "properties": {
+                "status": {
+                  "const": "UNAVAILABLE"
+                },
+                "reason": {
+                  "enum": [
+                    "CLOSED_PACKAGE_CONTEXT_UNAVAILABLE",
+                    "BUILD_CONTEXT_REQUIRED",
+                    "GO_PARSE_FAILURE",
+                    "COMPILER_DIRECTIVE_CONTEXT_REQUIRED",
+                    "GO_AST_LIMIT",
+                    "STANDARD_EXPORT_CONTEXT_UNAVAILABLE",
+                    "STANDARD_EXPORT_UNAVAILABLE",
+                    "STANDARD_DECLARATION_UNAVAILABLE",
+                    "GO_TYPE_CONTEXT_UNAVAILABLE",
+                    "CALL_INVENTORY_LIMIT",
+                    "DECLARATION_IDENTITY_UNAVAILABLE"
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        "declaration_ref": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "calls": {
+          "type": "array",
+          "maxItems": 64,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "span",
+              "resolution"
+            ],
+            "properties": {
+              "span": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "path",
+                  "start_byte",
+                  "end_byte",
+                  "start_line",
+                  "start_byte_column"
+                ],
+                "properties": {
+                  "path": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 4096
+                  },
+                  "start_byte": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 65536
+                  },
+                  "end_byte": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 65536
+                  },
+                  "start_line": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 65536
+                  },
+                  "start_byte_column": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 65536
+                  }
+                }
+              },
+              "resolution": {
+                "enum": [
+                  "RESOLVED_STANDARD_LIBRARY",
+                  "LOCAL_OR_SHADOWED",
+                  "UNRESOLVED"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "effects": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/effects"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "if": {
+    "properties": {
+      "native": {
+        "properties": {
+          "disposition": {
+            "properties": {
+              "status": {
+                "const": "UNAVAILABLE"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "then": {
+    "properties": {
+      "native": {
+        "properties": {
+          "calls": {
+            "const": []
+          },
+          "declaration_ref": {
+            "type": "null"
+          }
+        }
+      },
+      "effects": {
+        "type": "null"
+      }
+    }
+  },
+  "else": {
+    "properties": {
+      "native": {
+        "properties": {
+          "declaration_ref": {
+            "$ref": "#/$defs/sha256"
+          }
+        }
+      },
+      "effects": {
+        "$ref": "#/$defs/effects"
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "effects": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "adapter_version",
+        "binding",
+        "language",
+        "observation_sha256",
+        "catalog_sha256",
+        "upper_bound",
+        "scope",
+        "sites"
+      ],
+      "properties": {
+        "adapter_version": {
+          "const": 1
+        },
+        "binding": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "snapshot_fingerprint",
+            "source_view_sha256",
+            "authority_sha256",
+            "evaluation_sha256",
+            "source_sha256",
+            "source_path"
+          ],
+          "properties": {
+            "snapshot_fingerprint": {
+              "$ref": "#/$defs/sha256"
+            },
+            "source_view_sha256": {
+              "$ref": "#/$defs/sha256"
+            },
+            "authority_sha256": {
+              "$ref": "#/$defs/sha256"
+            },
+            "evaluation_sha256": {
+              "$ref": "#/$defs/sha256"
+            },
+            "source_sha256": {
+              "$ref": "#/$defs/sha256"
+            },
+            "source_path": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            }
+          }
+        },
+        "language": {
+          "const": "go"
+        },
+        "observation_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "catalog_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "upper_bound": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "state"
+          ],
+          "properties": {
+            "state": {
+              "const": "UNKNOWN"
+            }
+          }
+        },
+        "scope": {
+          "const": "scoped_positive_operation_only_execution_and_absence_unestablished"
+        },
+        "sites": {
+          "type": "array",
+          "maxItems": 64,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "start_byte",
+              "end_byte",
+              "disposition"
+            ],
+            "properties": {
+              "start_byte": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 65536
+              },
+              "end_byte": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 65536
+              },
+              "disposition": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "status",
+                      "operation",
+                      "declaration_sha256",
+                      "context",
+                      "summary_id",
+                      "effects",
+                      "qualification_refs"
+                    ],
+                    "properties": {
+                      "status": {
+                        "const": "modeled_operation"
+                      },
+                      "operation": {
+                        "const": "go_os_write_file"
+                      },
+                      "declaration_sha256": {
+                        "$ref": "#/$defs/sha256"
+                      },
+                      "context": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "source_digest",
+                          "version",
+                          "target",
+                          "features",
+                          "type_bindings"
+                        ],
+                        "properties": {
+                          "source_digest": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "state",
+                              "value"
+                            ],
+                            "properties": {
+                              "state": {
+                                "const": "KNOWN"
+                              },
+                              "value": {
+                                "$ref": "#/$defs/sha256"
+                              }
+                            }
+                          },
+                          "version": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "state",
+                              "value"
+                            ],
+                            "properties": {
+                              "state": {
+                                "const": "KNOWN"
+                              },
+                              "value": {
+                                "enum": [
+                                  "go1.22.2",
+                                  "go1.22.12"
+                                ]
+                              }
+                            }
+                          },
+                          "target": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "state",
+                              "value"
+                            ],
+                            "properties": {
+                              "state": {
+                                "const": "KNOWN"
+                              },
+                              "value": {
+                                "enum": [
+                                  "linux/amd64",
+                                  "windows/amd64"
+                                ]
+                              }
+                            }
+                          },
+                          "features": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "state",
+                              "value"
+                            ],
+                            "properties": {
+                              "state": {
+                                "const": "KNOWN"
+                              },
+                              "value": {
+                                "const": [
+                                  "cgo-disabled",
+                                  "local-stdlib"
+                                ]
+                              }
+                            }
+                          },
+                          "type_bindings": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "state",
+                              "value"
+                            ],
+                            "properties": {
+                              "state": {
+                                "const": "KNOWN"
+                              },
+                              "value": {
+                                "const": []
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "summary_id": {
+                        "enum": [
+                          "operation:go_stdlib::os::WriteFile:linux-amd64",
+                          "operation:go_stdlib::os::WriteFile:windows-amd64"
+                        ]
+                      },
+                      "effects": {
+                        "const": [
+                          "filesystem.write"
+                        ]
+                      },
+                      "qualification_refs": {
+                        "type": "array",
+                        "maxItems": 8,
+                        "items": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 512
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "status",
+                      "operation",
+                      "declaration_sha256",
+                      "context",
+                      "reasons"
+                    ],
+                    "properties": {
+                      "status": {
+                        "const": "context_unavailable"
+                      },
+                      "operation": {
+                        "const": "go_os_write_file"
+                      },
+                      "declaration_sha256": {
+                        "$ref": "#/$defs/sha256"
+                      },
+                      "context": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "source_digest",
+                          "version",
+                          "target",
+                          "features",
+                          "type_bindings"
+                        ],
+                        "properties": {
+                          "source_digest": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "state",
+                              "value"
+                            ],
+                            "properties": {
+                              "state": {
+                                "const": "KNOWN"
+                              },
+                              "value": {
+                                "$ref": "#/$defs/sha256"
+                              }
+                            }
+                          },
+                          "version": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "state",
+                              "value"
+                            ],
+                            "properties": {
+                              "state": {
+                                "const": "KNOWN"
+                              },
+                              "value": {
+                                "enum": [
+                                  "go1.22.2",
+                                  "go1.22.12"
+                                ]
+                              }
+                            }
+                          },
+                          "target": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "state",
+                              "value"
+                            ],
+                            "properties": {
+                              "state": {
+                                "const": "KNOWN"
+                              },
+                              "value": {
+                                "enum": [
+                                  "linux/amd64",
+                                  "windows/amd64"
+                                ]
+                              }
+                            }
+                          },
+                          "features": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "state",
+                              "value"
+                            ],
+                            "properties": {
+                              "state": {
+                                "const": "KNOWN"
+                              },
+                              "value": {
+                                "const": [
+                                  "cgo-disabled",
+                                  "local-stdlib"
+                                ]
+                              }
+                            }
+                          },
+                          "type_bindings": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": [
+                              "state",
+                              "value"
+                            ],
+                            "properties": {
+                              "state": {
+                                "const": "KNOWN"
+                              },
+                              "value": {
+                                "const": []
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "reasons": {
+                        "type": "array",
+                        "maxItems": 32,
+                        "items": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 512
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "status"
+                    ],
+                    "properties": {
+                      "status": {
+                        "const": "local_or_shadowed"
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "status"
+                    ],
+                    "properties": {
+                      "status": {
+                        "const": "unresolved"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

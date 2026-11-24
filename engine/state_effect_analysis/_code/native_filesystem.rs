@@ -20,6 +20,11 @@ const MAX_SOURCE: usize = 64 << 10;
 const MAX_SITES: usize = 64;
 const MAX_METADATA: usize = 240;
 
+/// Identity of the installed bytes that can affect native operation selection.
+pub(crate) fn native_filesystem_catalog_source_ref() -> String {
+    format!("sha256:{:x}", Sha256::digest(CATALOG.as_bytes()))
+}
+
 /// Native language associated with already verified call evidence.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "snake_case")]

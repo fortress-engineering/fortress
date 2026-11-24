@@ -88,7 +88,7 @@ mod test_declarations {
         assert_eq!(renamed["span"]["path"], "external_test.go");
         let unicode = declarations
             .iter()
-            .find(|row| row["name"] == "TestÉ")
+            .find(|row| row["name"] == "TestÃƒÆ’Ã¢â‚¬Â°")
             .unwrap();
         assert_eq!(unicode["span"]["start_line"], 11);
         assert_eq!(unicode["span"]["start_byte_column"], 6);
@@ -204,7 +204,7 @@ mod test_declarations {
 
 const NATIVE: &[u8] = include_bytes!("../_data/go_native_fixture_v1.json");
 const API: &str =
-    "// café\r\npackage bounded\r\nfunc Run(input int) int { return target(input) }\r\n";
+    "// cafÃƒÆ’Ã‚Â©\r\npackage bounded\r\nfunc Run(input int) int { return target(input) }\r\n";
 const TARGET: &str = "package bounded\nfunc target(input int) int { return input + 1 }\n";
 const PIN: GoCollectorPin<'static> = GoCollectorPin {
     executable_sha256: "sha256:a8fa98c0d583a610b230c245357a50151fb8b5e5133fb62ca1b41c49b1e71419",
@@ -283,12 +283,12 @@ mod bodies {
     use fortress_core::go_observation::observe_go_native_body;
 
     const SOURCE: &str = concat!(
-        "// café\r\npackage fixture\r\n",
+        "// cafÃƒÆ’Ã‚Â©\r\npackage fixture\r\n",
         "func Keep(b bool) bool { if b {} ; return !b }\r\n",
-        "func Étude(b bool) bool { return b }\r\n",
+        "func ÃƒÆ’Ã¢â‚¬Â°tude(b bool) bool { return b }\r\n",
         "func _(b bool) bool { return b }\r\n",
-        "func Named(café bool) bool { return café }\r\n",
-        "func Local(b bool) bool { côté := b; return côté }\r\n",
+        "func Named(cafÃƒÆ’Ã‚Â© bool) bool { return cafÃƒÆ’Ã‚Â© }\r\n",
+        "func Local(b bool) bool { cÃƒÆ’Ã‚Â´tÃƒÆ’Ã‚Â© := b; return cÃƒÆ’Ã‚Â´tÃƒÆ’Ã‚Â© }\r\n",
         "func Blank(_ bool) bool { return true }\r\n",
         "func Unnamed(bool) bool { return true }\r\n",
         "func Deep(b bool) bool { if b { if b { if b { if b { if b { if b { if b { if b { if b { if b { if b {} } } } } } } } } } } ; return b }\r\n",
@@ -1632,5 +1632,160 @@ mod callable_links {
             manifests.push(subject.evaluation().source_manifest_digest().to_owned());
         }
         assert_ne!(manifests[0], manifests[1]);
+    }
+}
+
+mod filesystem {
+    use super::*;
+    use base64::{Engine as _, engine::general_purpose::STANDARD};
+    use fortress_core::go_observation::{
+        GoFilesystemHost, GoFilesystemLibraryPin, observe_go_filesystem_effects,
+    };
+
+    const WORKER: GoCollectorPin<'static> = GoCollectorPin {
+        executable_sha256: "sha256:16afcaf7f5791425b2eeeff8c3c86b297e71b50156cf83ab86953a475e1f8bf5",
+        supervisor_context_sha256: "sha256:0000000000000000000000000000000000000000000000000000000000000001",
+        go_toolchain: "go1.22.12",
+    };
+    const LIBRARY: GoFilesystemLibraryPin<'static> = GoFilesystemLibraryPin {
+        package_source_ref: "sha256:8f61ebb242bc4c60ebcaf6a96015ff67d0ac84d3441da63bd6c185eda13fc226",
+        export_set_ref: "sha256:4ff2871ac521be941d7da0eaef51d1a90a6e30a504774a8b043a03943e1798bc",
+    };
+    const SELECTED: GoPackageSelection<'static> = GoPackageSelection {
+        directory: "",
+        package_path: "fixture.local/effects",
+        go_version: "go1.22",
+        target_os: "windows",
+        target_arch: "amd64",
+    };
+    const DIRECT_INPUT: &[u8] = include_bytes!("../_data/go_direct_request_v1.json");
+    const DIRECT_REPLY: &[u8] = include_bytes!("../_data/go_fs_direct_v1.json");
+
+    fn filesystem_fixture(name: &str, request: &[u8]) -> (Fixture, Vec<u8>) {
+        let fixture = Fixture::new(name);
+        let request: Value = serde_json::from_slice(request).unwrap();
+        let file = &request["files"][0];
+        assert_eq!(file["path"], "fixture.go");
+        let bytes = STANDARD
+            .decode(file["source_base64"].as_str().unwrap())
+            .unwrap();
+        assert_eq!(file["sha256"], fortress_core::portable::digest(&bytes));
+        fs::write(fixture.root.join("fixture.go"), &bytes).unwrap();
+        (fixture, bytes)
+    }
+
+    fn replay(name: &str, request: &[u8], reply: &[u8]) -> Value {
+        let (fixture, original) = filesystem_fixture(name, request);
+        let result = observe_go_filesystem_effects(
+            &fixture.root,
+            SELECTED,
+            GoFilesystemHost {
+                collector: &WORKER,
+                library: LIBRARY,
+            },
+            |sent| {
+                assert_eq!(sent, request);
+                Ok(reply.to_vec())
+            },
+        )
+        .unwrap();
+        assert_eq!(fs::read(fixture.root.join("fixture.go")).unwrap(), original);
+        let document = serde_json::to_value(result).unwrap();
+        jsonschema::draft202012::validate(
+            &registered_schema_path("engine/snapshot_governance/_data/go_fs_schema_v1.json"),
+            &document,
+        )
+        .expect("public Go filesystem inspection schema");
+        assert_eq!(document["runtime_execution"], "NOT_RUN");
+        assert_eq!(document["canonical_finding_or_certificate"], "NOT_ISSUED");
+        assert_eq!(
+            document["native"]["response_ref"],
+            fortress_core::portable::digest(reply)
+        );
+        // The effect context binds the native exchange plus the installed catalog.
+        assert_ne!(
+            document["native"]["binding_ref"],
+            document["evaluation_key"]["program_context_digest"]
+        );
+        document
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R28-025`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R28
+    #[test]
+    fn exact_go_filesystem_effects_bind_scoped_facts_and_refuse_stale_source() {
+        let observed = replay("filesystem-direct", DIRECT_INPUT, DIRECT_REPLY);
+        let effects = &observed["effects"];
+        assert_eq!(effects["upper_bound"], json!({"state":"UNKNOWN"}));
+        assert_eq!(
+            effects["binding"]["authority_sha256"],
+            observed["evaluation_key"]["authority_binding_digest"]
+        );
+        assert_eq!(effects["sites"].as_array().unwrap().len(), 1);
+        assert_eq!(effects["sites"][0]["start_byte"], 58);
+        assert_eq!(effects["sites"][0]["end_byte"], 89);
+        let operation = &effects["sites"][0]["disposition"];
+        assert_eq!(operation["status"], "modeled_operation");
+        assert_eq!(operation["effects"], json!(["filesystem.write"]));
+
+        let shadowed = replay(
+            "filesystem-shadowed",
+            include_bytes!("../_data/go_shadow_request_v1.json"),
+            include_bytes!("../_data/go_fs_shadow_v1.json"),
+        );
+        assert_eq!(
+            shadowed["effects"]["sites"][0]["disposition"],
+            json!({"status":"local_or_shadowed"})
+        );
+        assert_eq!(
+            shadowed["effects"]["upper_bound"],
+            json!({"state":"UNKNOWN"})
+        );
+
+        let unavailable = replay(
+            "filesystem-conditional",
+            include_bytes!("../_data/go_closed_request_v1.json"),
+            include_bytes!("../_data/go_fs_closed_v1.json"),
+        );
+        assert_eq!(
+            unavailable["native"]["disposition"]["reason"],
+            "BUILD_CONTEXT_REQUIRED"
+        );
+        assert_eq!(unavailable["native"]["calls"], json!([]));
+        assert_eq!(unavailable["effects"], Value::Null);
+
+        let (fixture, _) = filesystem_fixture("filesystem-export-mismatch", DIRECT_INPUT);
+        let unknown_sdk = observe_go_filesystem_effects(
+            &fixture.root,
+            SELECTED,
+            GoFilesystemHost {
+                collector: &WORKER,
+                library: GoFilesystemLibraryPin {
+                    export_set_ref: WORKER.supervisor_context_sha256,
+                    ..LIBRARY
+                },
+            },
+            |_| panic!("unqualified SDK must never be dispatched"),
+        );
+        assert!(matches!(
+            unknown_sdk,
+            Err(GoObservationError::UnsupportedContext)
+        ));
+
+        let (fixture, _) = filesystem_fixture("filesystem-drift", DIRECT_INPUT);
+        let stale = observe_go_filesystem_effects(
+            &fixture.root,
+            SELECTED,
+            GoFilesystemHost {
+                collector: &WORKER,
+                library: LIBRARY,
+            },
+            |sent| {
+                assert_eq!(sent, DIRECT_INPUT);
+                fs::write(fixture.root.join("fixture.go"), b"package effects\n").unwrap();
+                Ok(DIRECT_REPLY.to_vec())
+            },
+        );
+        assert!(matches!(stale, Err(GoObservationError::SourceChanged)));
     }
 }
