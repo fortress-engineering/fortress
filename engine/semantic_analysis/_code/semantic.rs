@@ -776,6 +776,47 @@ pub fn infer_native_scalar_output(body: &NativeScalarBody) -> Option<SemanticDom
     Some(output)
 }
 
+/// Comparison of a bounded native return against an independently supplied Boolean.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum NativeBooleanReturn {
+    /// Every result in the established bound is the required value.
+    MatchesRequiredValue,
+    /// The nonempty established bound excludes the required value.
+    ExcludesRequiredValue,
+    /// The available static body does not establish either comparison.
+    Unresolved,
+}
+
+/// Compares the return bound of an admitted zero-argument native Boolean body.
+///
+/// The comparison describes the admitted lexical declaration under its static
+/// premises. The caller must independently resolve authored identity, source
+/// ownership and authority before using it for project inspection.
+#[must_use]
+pub fn compare_native_boolean_return(
+    body: &NativeScalarBody,
+    required: bool,
+) -> NativeBooleanReturn {
+    if !body.parameters().is_empty() || body.result() != NativeScalar::Bool {
+        return NativeBooleanReturn::Unresolved;
+    }
+    let Some(observed) = infer_native_scalar_output(body) else {
+        return NativeBooleanReturn::Unresolved;
+    };
+    if observed.is_bottom() {
+        return NativeBooleanReturn::Unresolved;
+    }
+
+    let expected = SemanticDomain::boolean(NATIVE_BOOL, [required]);
+    if observed.is_subset_of(&expected) {
+        NativeBooleanReturn::MatchesRequiredValue
+    } else if observed.intersection(&expected).is_bottom() {
+        NativeBooleanReturn::ExcludesRequiredValue
+    } else {
+        NativeBooleanReturn::Unresolved
+    }
+}
+
 struct AnalysisContext<'a> {
     contracts: Option<&'a ResolvedFunctionContracts>,
     symbols: BTreeMap<&'a str, &'a ExecutableSymbol>,

@@ -11,11 +11,13 @@ use fortress_core::program_semantics::native_body::{
 };
 use fortress_core::program_semantics::{ProgramSemanticInput, compile_program_semantic_model};
 use fortress_core::project::EvaluationKey;
-use fortress_core::semantic_analysis::infer_native_scalar_output;
 use fortress_core::semantic_analysis::{
     DomainSpecification, FunctionContractError, FunctionContractSource, IntegerInterval,
     SemanticDomain, analyze_program_domains, canonicalize_function_contract_json,
     load_function_contracts,
+};
+use fortress_core::semantic_analysis::{
+    NativeBooleanReturn, compare_native_boolean_return, infer_native_scalar_output,
 };
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
@@ -717,5 +719,90 @@ fn shared_scalar_domain_interpreter_retains_exact_native_scope() {
             "then_branch":[branch], "else_branch":[]
         });
         assert!(analyze(&reply).is_none());
+    }
+}
+
+/// `T-AF-SEMANTIC-ANALYSIS-0001-R07-001`
+/// Fortress requirement: AF-SEMANTIC-ANALYSIS-0001-R07
+#[test]
+fn scoped_native_boolean_return_needs_a_nonempty_closed_bound() {
+    for (language, path, declaration, name_prefix, boolean) in [
+        (
+            NativeBodyLanguage::Go,
+            "package/f.go",
+            "func F() bool { return true }",
+            "func ",
+            true,
+        ),
+        (
+            NativeBodyLanguage::Python,
+            "package/f.py",
+            "def F():\n    return False",
+            "def ",
+            false,
+        ),
+    ] {
+        let reference = "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+        let evaluation = EvaluationKey::new(reference, reference, reference);
+        let source_ref = format!("sha256:{:x}", Sha256::digest(declaration));
+        let input = NativeBodyInput {
+            language,
+            evaluation: &evaluation,
+            exchange_ref: reference,
+            producer_ref: reference,
+            source_path: path,
+            source_ref: &source_ref,
+            source: declaration.as_bytes(),
+            python_bool_parameters: &[],
+        };
+        let span = |start: usize, end: usize| {
+            let before = &declaration[..start];
+            let line = before.matches('\n').count() + 1;
+            let column = before.rsplit('\n').next().unwrap().len() + 1;
+            json!({
+                "path": path, "start_byte": start, "end_byte": end,
+                "start_line": line, "start_byte_column": column,
+            })
+        };
+        let body_start = declaration.find("return").unwrap();
+        let body_end = declaration.trim_end_matches([' ', '}']).len();
+        let mut reply = json!({
+            "status": "LOWERABLE",
+            "symbol": {
+                "name": "F", "span": span(name_prefix.len(), name_prefix.len() + 1),
+                "declaration_span": span(0, declaration.len()),
+            },
+            "parameters": [], "locals": [], "result_scalar": "BOOL",
+            "body": [{
+                "kind": "return", "span": span(body_start, body_end),
+                "value": {"kind": "boolean", "value": boolean},
+            }],
+        });
+        let compare = |reply: &Value, required| {
+            let NativeBodyOutcome::Lowered(body) =
+                input.admit(&serde_json::to_vec(reply).unwrap()).unwrap()
+            else {
+                panic!("fixture independently supplies a structurally admitted body");
+            };
+            compare_native_boolean_return(&body, required)
+        };
+        assert_eq!(
+            compare(&reply, boolean),
+            NativeBooleanReturn::MatchesRequiredValue
+        );
+        assert_eq!(
+            compare(&reply, !boolean),
+            NativeBooleanReturn::ExcludesRequiredValue
+        );
+
+        let unreachable = reply["body"][0].take();
+        reply["body"][0] = json!({
+            "kind": "if",
+            "span": unreachable["span"],
+            "condition": {"kind": "boolean", "value": false},
+            "then_branch": [unreachable],
+            "else_branch": [],
+        });
+        assert_eq!(compare(&reply, boolean), NativeBooleanReturn::Unresolved);
     }
 }

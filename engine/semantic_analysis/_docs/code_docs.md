@@ -28,6 +28,14 @@ Implements deterministic value-domain subset, intersection, join, difference, bo
 
 ### [`semantic.rs`](../_code/semantic.rs)
 
+The scoped native Boolean return comparison consumes an admitted
+zero-argument body and an independently supplied expected value. It reuses
+the existing return-domain interpreter and Boolean subset and intersection
+operations. A sufficient nonempty bound establishes a match or exclusion.
+Unknown control, unavailable body bounds, arguments and non-Boolean results
+remain unresolved. Authored identity and original authority are resolved by
+the caller before using the comparison for project inspection.
+
 Interprets PSM control/value facts, derives recursive summaries, checks contracts and partial operations, records coverage, serializes derived Info, and normalizes PROGRAM-DOMAIN-001 findings. Caller-indexed call views retain every call in its original PSM order, preserving first-match resolution while avoiding repeated scans of unrelated calls.
 
 An impossible-state assertion reached only through unmodeled pattern selection has an unsupported reachability check. This includes a later match arm whose selection depends on an earlier unmodeled pattern and loop entry conditioned on an unmodeled pattern. Supported reachable contradictions still generate findings. Semantic Analysis 2.0.1 records the new producer semantics under the existing artifact schema. Historical artifacts retain their original producer identity.

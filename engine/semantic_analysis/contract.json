@@ -102,6 +102,13 @@
           "tests": [
             "T-AF-SEMANTIC-ANALYSIS-0001-R06-001"
           ]
+        },
+        {
+          "id": "AF-SEMANTIC-ANALYSIS-0001-R07",
+          "statement": "Semantic Analysis can compare an admitted zero-argument native Boolean return bound with an independently supplied required value. It reports a matching or excluding comparison only for a nonempty sufficient bound. Missing or unsupported premises remain unresolved. This comparison does not select authored authority, establish runtime invocation, issue findings or certify the project.",
+          "tests": [
+            "T-AF-SEMANTIC-ANALYSIS-0001-R07-001"
+          ]
         }
       ]
     }
