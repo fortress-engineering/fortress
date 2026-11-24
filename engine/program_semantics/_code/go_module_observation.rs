@@ -346,7 +346,12 @@ impl<'a> Inventory<'a> {
         let mut total = 0;
         let mut folded = BTreeSet::new();
         for (path, bytes) in closed.source.files() {
-            if path == definition || path.starts_with("__fortress/") {
+            // The original project selects these canonical Module contracts as
+            // authority in an inert Go directory. Exact source still binds them.
+            if path == definition
+                || path.starts_with("__fortress/")
+                || closed.logical_contracts.contains(path)
+            {
                 continue;
             }
             let (dir, file) = path.rsplit_once('/').unwrap_or(("", path));

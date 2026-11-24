@@ -1149,6 +1149,22 @@ ROOT_ECOSYSTEM  "provides": [],
             report["native_receipt"],
             serde_json::to_value(native).unwrap()
         );
+        fs::write(
+            fixture.root.join("_data/logical_modules/app/other.txt"),
+            b"an unrelated data input",
+        )
+        .unwrap();
+        let unsupported = observe_go_module_dependencies(
+            &fixture.root,
+            selection(),
+            context(),
+            &BUILD_PIN,
+            |_| panic!("unrecognized input cannot start the worker"),
+        );
+        assert!(matches!(
+            unsupported,
+            Err(GoObservationError::UnsupportedContext)
+        ));
     }
 
     /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R28-017`
@@ -1169,7 +1185,7 @@ ROOT_ECOSYSTEM  "provides": [],
             context(),
             &BUILD_PIN,
             |request| {
-                fs::write(fixture.root.join("notes.txt"), "changed during observation").unwrap();
+                fs::write(fixture.root.join("README.md"), "changed during observation").unwrap();
                 Ok(frozen(request, OBSERVED))
             },
         );

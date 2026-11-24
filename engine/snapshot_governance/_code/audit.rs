@@ -4861,6 +4861,7 @@ pub(crate) struct NativeObservationBinding {
     pub(crate) source_manifest_digest: String,
     pub(crate) authority_digest: String,
     pub(crate) dependency_ownership: Option<SourceOwnershipResolution>,
+    pub(crate) logical_contracts: BTreeSet<String>,
 }
 
 /// Prepares exact source and the existing selected authority for native observation.
@@ -4884,11 +4885,23 @@ pub(crate) fn bind_native_observation_source(
     }
     let authority_digest = prepared_authority_binding(&prepared)?.digest();
     let dependency_ownership = dependencies.then(|| native_dependency_ownership(&prepared));
+    let logical_contracts = prepared
+        .project_configuration
+        .as_ref()
+        .into_iter()
+        .flat_map(ProjectConfiguration::logical_modules)
+        .map(crate::project::LogicalModuleDeclaration::contract)
+        .filter(|path| {
+            path.starts_with("_data/logical_modules/") && path.ends_with("/contract.json")
+        })
+        .map(str::to_owned)
+        .collect();
     Ok(NativeObservationBinding {
         source_fingerprint: prepared.source_identity,
         source_manifest_digest: prepared.source_manifest.entries_digest().to_owned(),
         authority_digest,
         dependency_ownership,
+        logical_contracts,
     })
 }
 

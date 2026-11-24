@@ -183,5 +183,7 @@ Rust model and its test populations untouched.
 The Go module dependency adapter consumes only compiler-admitted import
 occurrences. Each target uses the complete selected source files of its
 verified Go package. The snapshot owner separately supplies original Fortress
-ownership. Native scope remains source-level and bounded by the original
-worker request.
+ownership. Exact logical Module contract files selected by that authority
+remain part of the original snapshot and separate from the Go compiler input.
+Unrecognized files in the selected module still prevent observation. Native
+scope remains source-level and bounded by the original worker request.

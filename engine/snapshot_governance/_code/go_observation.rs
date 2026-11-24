@@ -300,6 +300,7 @@ fn closed_package<'a>(
         source: &source.view,
         source_fingerprint: &source.binding.source_fingerprint,
         authority_digest: &source.binding.authority_digest,
+        logical_contracts: &source.binding.logical_contracts,
         actual: true,
         directory: selection.directory,
         package_path: selection.package_path,

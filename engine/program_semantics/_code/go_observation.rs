@@ -104,6 +104,7 @@ pub(crate) struct ExactClosedPackage<'a> {
     pub(crate) source: &'a SourceView,
     pub(crate) source_fingerprint: &'a str,
     pub(crate) authority_digest: &'a str,
+    pub(crate) logical_contracts: &'a BTreeSet<String>,
     pub(crate) actual: bool,
     pub(crate) directory: &'a str,
     pub(crate) package_path: &'a str,
