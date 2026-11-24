@@ -6,9 +6,10 @@ use std::process::Command;
 use std::time::Duration;
 
 use fortress_core::go_observation::{
-    GoCollectorPin, GoObservationError, GoPackageSelection, observe_go_native_body,
-    observe_go_native_body_flow,
+    ActualGoNativeBodyObservation, GoCollectorPin, GoObservationError, GoPackageSelection,
+    observe_go_native_body, observe_go_native_body_flow,
 };
+use fortress_core::information_flow::NativeScalarFlowObservation;
 use fortress_core::portable::{canonical, digest};
 use fortress_core::wire::{
     JsonAdmissionLimits, admit_json, parse_strict_json_bytes, readable_text,
@@ -82,24 +83,7 @@ fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
         .canonicalize()
         .map_err(|failure| failure.to_string())?;
     let registration = Path::new(registration);
-    super::verifier_process::require_external_asset(registration, &root)?;
-    let original = super::provider_command::read_bounded(registration, REGISTRATION_LIMIT)?;
-    admit_json(
-        &original,
-        JsonAdmissionLimits {
-            bytes: REGISTRATION_LIMIT,
-            depth: 4,
-            nodes: 32,
-            token_bytes: 4096,
-        },
-    )
-    .map_err(|failure| failure.to_string())?;
-    let declared: Registration =
-        parse_strict_json_bytes(&original).map_err(|failure| failure.to_string())?;
-    if declared.schema != SCHEMA || declared.schema_version != 1 {
-        return Err("UNSUPPORTED_COLLECTOR_REGISTRATION_VERSION".into());
-    }
-    super::verifier_process::require_external_asset(&declared.executable, &root)?;
+    let (declared, original) = read_host_registration(registration, &root)?;
     let host_directory = registration
         .parent()
         .ok_or("Host registration needs an external working directory.")?;
@@ -164,6 +148,39 @@ fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
     if super::provider_command::read_bounded(registration, REGISTRATION_LIMIT)? != original {
         return Err("SOURCE_DRIFT: Native collector registration changed.".into());
     }
+    serialize_report(result, occurrence, flow.as_ref())
+}
+
+fn read_host_registration(
+    registration: &Path,
+    root: &Path,
+) -> Result<(Registration, Vec<u8>), String> {
+    super::verifier_process::require_external_asset(registration, root)?;
+    let original = super::provider_command::read_bounded(registration, REGISTRATION_LIMIT)?;
+    admit_json(
+        &original,
+        JsonAdmissionLimits {
+            bytes: REGISTRATION_LIMIT,
+            depth: 4,
+            nodes: 32,
+            token_bytes: 4096,
+        },
+    )
+    .map_err(|failure| failure.to_string())?;
+    let declared: Registration =
+        parse_strict_json_bytes(&original).map_err(|failure| failure.to_string())?;
+    if declared.schema != SCHEMA || declared.schema_version != 1 {
+        return Err("UNSUPPORTED_COLLECTOR_REGISTRATION_VERSION".into());
+    }
+    super::verifier_process::require_external_asset(&declared.executable, root)?;
+    Ok((declared, original))
+}
+
+fn serialize_report(
+    result: ActualGoNativeBodyObservation,
+    occurrence: Option<&str>,
+    flow: Option<&NativeScalarFlowObservation>,
+) -> Result<Vec<u8>, String> {
     let projection = serde_json::to_value(result).map_err(|failure| failure.to_string())?;
     let report = if let Some(binding) = occurrence {
         json!({
