@@ -4,6 +4,8 @@ pub(crate) const PROGRAM_STATE_RULE_SOURCE: &str = include_str!("../_data/progra
 pub(crate) const PROGRAM_EFFECT_RULE_SOURCE: &str =
     include_str!("../_data/program_effect_rule.json");
 
+#[path = "native_filesystem.rs"]
+mod native_filesystem;
 #[path = "operation_effect.rs"]
 mod operation_effect;
 #[path = "state_contract.rs"]
@@ -38,6 +40,13 @@ use crate::semantic_analysis::{
 };
 use field_projection::{FIELD_PROJECTION_SCRATCH_BYTES, field_projection_index, symbol_fields};
 use operation_effect::{OperationEffectClassification, classify_operation};
+
+pub use native_filesystem::{
+    NativeFilesystemBatch, NativeFilesystemBinding, NativeFilesystemCall, NativeFilesystemCallee,
+    NativeFilesystemDisposition, NativeFilesystemError, NativeFilesystemLanguage,
+    NativeFilesystemOperation, NativeFilesystemProjection, NativeFilesystemSite,
+    project_native_filesystem_effects,
+};
 
 pub use summary::{
     OperationSummary, OperationSummaryCatalog, OperationSummaryError, SummaryAcceptance,

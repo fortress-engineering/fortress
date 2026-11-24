@@ -57,3 +57,7 @@ Defines retained deterministic State/Effect Analysis v4 output whose direct and 
 ### [`state_effect_schema_v5.json`](../_data/state_effect_schema_v5.json)
 
 Defines current deterministic State/Effect Analysis v5 output with the exact operation-summary catalog digest and per-site selected authority, context observations, upper bounds, premise and assumption references, and explicit unresolved reasons.
+
+### [native_filesystem_catalog_v1.json](../_data/native_filesystem_catalog_v1.json)
+
+Uses the existing Operation Summary v1 schema and exact selector semantics. It binds four reviewed Go and Python native contexts to the same filesystem write effect vocabulary. Its records are observed and partial. This catalog serves the standalone projection and leaves the installed Rust catalog and its canonical evaluation identity intact.

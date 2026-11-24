@@ -1,0 +1,128 @@
+{
+  "reference": "sha256:f4febcb9863fd8ecb63abdfe4d9bf46055e2d6cdc7d334d314f49371ae9427f2",
+  "fixtures": {
+    "go": {
+      "source": "package fixture\nimport std \"os\"\ntype decoy struct{}\nfunc (decoy) WriteFile(string, []byte, uint32) error { return nil }\nfunc exact(path string) error { return std.WriteFile(path, []byte{65}, 0600) }\nfunc shadow(std decoy, path string) error { return std.WriteFile(path, []byte{65}, 0600) }\nfunc dynamic(writer func(string, []byte, std.FileMode) error, path string) error {\n    return writer(path, []byte{65}, 0600)\n}\n",
+      "source_ref": "sha256:95e25c9d48dccf0c8acbd2d782f541a3e7f78e83280a36e43504ee65563e7e49",
+      "path": "src/fixture.go",
+      "sites": [
+        {
+          "range": [
+            159,
+            196
+          ],
+          "expected": "modeled_operation"
+        },
+        {
+          "range": [
+            250,
+            287
+          ],
+          "expected": "local_or_shadowed"
+        },
+        {
+          "range": [
+            384,
+            414
+          ],
+          "expected": "unresolved"
+        }
+      ]
+    },
+    "python": {
+      "source": "from pathlib import Path as StdPath\nclass Decoy:\n    def write_bytes(self, data):\n        return len(data)\ndef exact(path):\n    return StdPath(path).write_bytes(b\"A\")\ndef shadow(StdPath, path):\n    return StdPath(path).write_bytes(b\"A\")\ndef dynamic(receiver):\n    return receiver.write_bytes(b\"A\")\n",
+      "source_ref": "sha256:38b7e7e56c4ed0de97886e3cce25a465219fbd8436dd3f8eb90ec689e0b003fb",
+      "path": "src/fixture.py",
+      "sites": [
+        {
+          "range": [
+            135,
+            166
+          ],
+          "expected": "modeled_operation"
+        },
+        {
+          "range": [
+            205,
+            236
+          ],
+          "expected": "local_or_shadowed"
+        },
+        {
+          "range": [
+            271,
+            297
+          ],
+          "expected": "unresolved"
+        }
+      ]
+    }
+  },
+  "contexts": [
+    {
+      "language": "go",
+      "platform": "linux",
+      "source_context": "sha256:f303ff6f8d3d1c289200cd4ec875383db41fa256582cf573e9e24cd02043523f",
+      "version": "go1.22.2",
+      "target": "linux/amd64",
+      "features": [
+        "cgo-disabled",
+        "local-stdlib"
+      ],
+      "type_bindings": [],
+      "summary_id": "operation:go_stdlib::os::WriteFile:linux-amd64",
+      "operation_ref": "sha256:4f6764f0c3d17212e60f05b6e851743cf69e6fa787914b69b1834a2ed18de888",
+      "positive_effect": "filesystem.write"
+    },
+    {
+      "language": "python",
+      "platform": "linux",
+      "source_context": "sha256:e8f5edbfdbb267a48b402ac87b416b6f574a07f3ec163c8ea74e927c5c35a85b",
+      "version": "3.12.3",
+      "target": "linux/amd64",
+      "features": [
+        "isolated",
+        "no-site"
+      ],
+      "type_bindings": [
+        "pathlib.PosixPath"
+      ],
+      "summary_id": "operation:python_stdlib::pathlib::Path::write_bytes:linux-amd64",
+      "operation_ref": "sha256:25f9b6e9211ca9cd337683f67dd2964529f0be2fd7ae008156c32d209a3c0cd1",
+      "positive_effect": "filesystem.write"
+    },
+    {
+      "language": "go",
+      "platform": "windows",
+      "source_context": "sha256:8f61ebb242bc4c60ebcaf6a96015ff67d0ac84d3441da63bd6c185eda13fc226",
+      "version": "go1.22.12",
+      "target": "windows/amd64",
+      "features": [
+        "cgo-disabled",
+        "local-stdlib"
+      ],
+      "type_bindings": [],
+      "summary_id": "operation:go_stdlib::os::WriteFile:windows-amd64",
+      "operation_ref": "sha256:4f6764f0c3d17212e60f05b6e851743cf69e6fa787914b69b1834a2ed18de888",
+      "positive_effect": "filesystem.write"
+    },
+    {
+      "language": "python",
+      "platform": "windows",
+      "source_context": "sha256:e7fd36144d77040e4b15d5804817c959d91e5864426eb1a87083b5f346f37fb2",
+      "version": "3.13.5",
+      "target": "windows/amd64",
+      "features": [
+        "isolated",
+        "no-site"
+      ],
+      "type_bindings": [
+        "pathlib._local.WindowsPath"
+      ],
+      "summary_id": "operation:python_stdlib::pathlib::Path::write_bytes:windows-amd64",
+      "operation_ref": "sha256:2e635fac3150de16767adec28af08c6cf08b75c11905a48dfa0c42323fec772f",
+      "positive_effect": "filesystem.write"
+    }
+  ],
+  "scope": "Positive exact-callee effect only. No execution, absence, or upper bound."
+}

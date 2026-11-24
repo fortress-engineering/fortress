@@ -25,3 +25,7 @@ Maintainers update the retained comparison through reviewed changes alongside it
 ### [`operation_summary_qualification_v1.json`](../_data/operation_summary_qualification_v1.json)
 
 Retains the reviewed same-case comparison of authored, source-derived, and hybrid summary strategies, selected source bindings, expected effect facts, and bounded qualification scope. The fixture verifies the advertised installed subset without asserting general dependency effect completeness.
+
+### [native_filesystem_reference_v1.json](../_data/native_filesystem_reference_v1.json)
+
+Binds the independently frozen Go and Python source occurrences to the exact reviewed library contexts, declaration receipts, and expected dispositions on Windows and Linux amd64. These test inputs distinguish structural binding checks from actual controlled native execution.

@@ -1,0 +1,142 @@
+{
+  "$schema": "urn:fortress:schema:v1:operation-summary-catalog",
+  "schema_version": 1,
+  "id": "fortress-scoped-native-filesystem-operation-summaries",
+  "producer_version": "native-filesystem-v1.0",
+  "summaries": [
+    {
+      "id": "operation:go_stdlib::os::WriteFile:linux-amd64",
+      "operation_selector": "go_stdlib::os::WriteFile",
+      "toolchain_or_package_source_digest": "sha256:f303ff6f8d3d1c289200cd4ec875383db41fa256582cf573e9e24cd02043523f",
+      "supported_versions": [
+        "go1.22.2"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "linux/amd64"
+        ],
+        "features": [
+          "cgo-disabled",
+          "local-stdlib"
+        ]
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "filesystem.write"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "native-reference:sha256:42c6ca7b48e4d587604a118cc388094cde63a899bdb3ab2cce7c0eff121f3336",
+        "source-inventory:sha256:f303ff6f8d3d1c289200cd4ec875383db41fa256582cf573e9e24cd02043523f"
+      ]
+    },
+    {
+      "id": "operation:go_stdlib::os::WriteFile:windows-amd64",
+      "operation_selector": "go_stdlib::os::WriteFile",
+      "toolchain_or_package_source_digest": "sha256:8f61ebb242bc4c60ebcaf6a96015ff67d0ac84d3441da63bd6c185eda13fc226",
+      "supported_versions": [
+        "go1.22.12"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "windows/amd64"
+        ],
+        "features": [
+          "cgo-disabled",
+          "local-stdlib"
+        ]
+      },
+      "type_constraints": [],
+      "observed_effects": [
+        "filesystem.write"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "native-reference:sha256:c70c6c54cdc48de07bf8aef977d32154366aa7a87886f4ad4497a9943fb50e5b",
+        "source-inventory:sha256:8f61ebb242bc4c60ebcaf6a96015ff67d0ac84d3441da63bd6c185eda13fc226"
+      ]
+    },
+    {
+      "id": "operation:python_stdlib::pathlib::Path::write_bytes:linux-amd64",
+      "operation_selector": "python_stdlib::pathlib::Path::write_bytes",
+      "toolchain_or_package_source_digest": "sha256:e8f5edbfdbb267a48b402ac87b416b6f574a07f3ec163c8ea74e927c5c35a85b",
+      "supported_versions": [
+        "3.12.3"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "linux/amd64"
+        ],
+        "features": [
+          "isolated",
+          "no-site"
+        ]
+      },
+      "type_constraints": [
+        "pathlib.PosixPath"
+      ],
+      "observed_effects": [
+        "filesystem.write"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "native-receiver:sha256:b44229482114cc971af9af6d5586e64644e94f0bfd6926d2d41b508505997590",
+        "native-reference:sha256:42c6ca7b48e4d587604a118cc388094cde63a899bdb3ab2cce7c0eff121f3336",
+        "source-inventory:sha256:e8f5edbfdbb267a48b402ac87b416b6f574a07f3ec163c8ea74e927c5c35a85b"
+      ]
+    },
+    {
+      "id": "operation:python_stdlib::pathlib::Path::write_bytes:windows-amd64",
+      "operation_selector": "python_stdlib::pathlib::Path::write_bytes",
+      "toolchain_or_package_source_digest": "sha256:e7fd36144d77040e4b15d5804817c959d91e5864426eb1a87083b5f346f37fb2",
+      "supported_versions": [
+        "3.13.5"
+      ],
+      "target_features_constraints": {
+        "targets": [
+          "windows/amd64"
+        ],
+        "features": [
+          "isolated",
+          "no-site"
+        ]
+      },
+      "type_constraints": [
+        "pathlib._local.WindowsPath"
+      ],
+      "observed_effects": [
+        "filesystem.write"
+      ],
+      "effect_upper_bound": {
+        "state": "UNKNOWN"
+      },
+      "callback_dependencies": [],
+      "destructor_dependencies": [],
+      "completeness": "PARTIAL",
+      "authority_class": "OBSERVED",
+      "qualification_refs": [
+        "native-receiver:sha256:325e340b8006cf1a5f908de2bf7419368f7f31fa11f06e89249858fabf57a800",
+        "native-reference:sha256:c70c6c54cdc48de07bf8aef977d32154366aa7a87886f4ad4497a9943fb50e5b",
+        "source-inventory:sha256:e7fd36144d77040e4b15d5804817c959d91e5864426eb1a87083b5f346f37fb2"
+      ]
+    }
+  ]
+}

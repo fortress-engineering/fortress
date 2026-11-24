@@ -1100,3 +1100,6 @@ fn exact_site_constructor_instantiation_is_bound_to_current_psm() {
         .is_err()
     );
 }
+
+#[path = "native_filesystem.rs"]
+mod native_filesystem_controls;

@@ -145,6 +145,15 @@
             "T-AF-STATE-EFFECT-ANALYSIS-0001-R07-007",
             "T-AF-STATE-EFFECT-ANALYSIS-0001-R07-008"
           ]
+        },
+        {
+          "id": "AF-STATE-EFFECT-ANALYSIS-0001-R08",
+          "statement": "The standalone native filesystem projection accepts exact admitted Go and Python declarations and original source bindings. It selects only a reviewed matching Operation Summary and retains positive scoped write facts with unknown runtime and whole-operation bounds. Local, shadowed, indirect and unsupported contexts confer no effects or authority.",
+          "tests": [
+            "T-AF-STATE-EFFECT-ANALYSIS-0001-R08-001",
+            "T-AF-STATE-EFFECT-ANALYSIS-0001-R08-002",
+            "T-AF-STATE-EFFECT-ANALYSIS-0001-R08-003"
+          ]
         }
       ]
     }

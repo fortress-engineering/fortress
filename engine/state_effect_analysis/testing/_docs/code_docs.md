@@ -37,3 +37,7 @@ Verifies exact-context effect authority, callback and destructor premises, confl
 ### [`effect_preparation.rs`](../_code/effect_preparation.rs)
 
 Verifies R07-001 through R07-007: direct-seed and closure replay; exact witness and reverse-dependency rebuilding; cycles and witness budgets, including converging unequal paths, repeated call sites, source-order variants and production/test/unknown execution provenance checked against the independent unprepared producer; conservative topology/inventory fallback; bounded payload retention; current authority rebinding after unrelated catalog edits; and whole-PSM primitive-premise refresh with cold/prepared rejection of stale, malformed, absent, nonunit or nonempty reserved proof claims. Nonreserved caller-established references remain accepted under the ordinary summary authority boundary.
+
+### [native_filesystem.rs](../_code/native_filesystem.rs)
+
+Exercises the scoped Operation Summary projection against its independently established native binding controls. Positive and shadowed calls share identical spelling. The tests verify context-specific selection, explicit unknowns, stale binding and malformed-input refusal, canonical site order and preservation of the installed Rust catalog bytes.
