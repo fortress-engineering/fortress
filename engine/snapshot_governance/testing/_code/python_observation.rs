@@ -717,3 +717,210 @@ fn stale_static_imports_refuse_and_incomplete_scopes_keep_truthful_limits() {
         Err(PythonObservationError::SourceChanged)
     ));
 }
+
+const DEPENDENCY_SOURCE: &str = "café = 1; from chosen import member\r\nimport ns, missing\r\ndynamic = __import__(\"chosen\")\r\n";
+const CONSUMER: &str = "AF-PYTHON-CONSUMER-0001";
+const PROVIDER: &str = "AF-PYTHON-PROVIDER-0001";
+
+fn write_dependency_contract(path: &Path, document: serde_json::Value) {
+    let contract: fortress_core::contract_coherency::ModuleContract =
+        serde_json::from_value(document).unwrap();
+    fs::write(path, contract.to_canonical_json().unwrap()).unwrap();
+}
+
+fn dependency_fixture(name: &str) -> Fixture {
+    let fixture = import_fixture(name);
+    fs::write(fixture.root.join(PATH), DEPENDENCY_SOURCE.as_bytes()).unwrap();
+    fs::create_dir(fixture.root.join("_code/ns")).unwrap();
+    fs::write(fixture.root.join("_code/ns/portion.py"), b"VALUE = 1\n").unwrap();
+    let root = json!({
+        "$schema": "urn:fortress:schema:v2:module-contract", "schema_version": 2,
+        "id": "PF-PYTHON-FIXTURE", "display_name": "Python dependency fixture",
+        "ecosystem":{"repository_grammar":1,
+            "standard":{"id":"STD-FORTRESS-ENGINEERING","edition":"1.0.0-draft.2"}},
+        "provides":[],"requires":[],"relationships":[],"constraints":[],
+        "guarantees":[],"features":[],"behavior":[]
+    });
+    write_dependency_contract(&fixture.root.join("contract.json"), root);
+    let mut logical = Vec::new();
+    for (id, stem, path) in [
+        (CONSUMER, "consumer", PATH),
+        (PROVIDER, "provider", "_code/chosen.py"),
+    ] {
+        let contract = format!("_data/logical_modules/{stem}/contract.json");
+        let absolute = fixture.root.join(&contract);
+        fs::create_dir_all(absolute.parent().unwrap()).unwrap();
+        let module = json!({
+            "$schema":"urn:fortress:schema:v2:module-contract","schema_version":2,
+            "id":id,"display_name":stem,"provides":[],"requires":[],"relationships":[],
+            "constraints":[],"guarantees":[],"features":[],"behavior":[]
+        });
+        write_dependency_contract(&absolute, module);
+        logical.push(
+            json!({"module":id,"contract":contract,"parent":"PF-PYTHON-FIXTURE",
+            "bindings":[{"kind":"file","path":path}]}),
+        );
+    }
+    fixture.configure(
+        &serde_json::to_vec(&json!({
+            "$schema":"urn:fortress:schema:v3:project-configuration","schema_version":3,
+            "observation_exclusions":[],"logical_modules":logical,
+        }))
+        .unwrap(),
+    );
+    fixture
+}
+
+fn dependency_reply(
+    request: &PythonLexicalRequest,
+    source: &[u8],
+) -> Result<Vec<u8>, PythonObservationError> {
+    assert_eq!(source, DEPENDENCY_SOURCE.as_bytes());
+    // Native fixture positions are independently asserted against physical bytes.
+    let report = json!({
+        "schema":"fortress-research/python-lexical-response/1","id":request.id(),
+        "mode":"LEXICAL","source_ref":request.source_ref(),"byte_count":source.len(),
+        "runtime_ref":request.runtime_ref(),"worker_ref":request.worker_ref(),
+        "outcome":"LEXICAL",
+        "stages":{"SYNTAX":{"status":"COMPLETE"},"LEXICAL_SCOPE":{"status":"COMPLETE"},
+            "MODULE_VALIDITY":{"status":"COMPLETE"}},
+        "observations":{
+            "imports":[
+                {"scope":"s0","form":"from","level":0,"module":"chosen",
+                    "names":[["member",null]],"target":"UNRESOLVED","span":[1,11,1,36]},
+                {"scope":"s0","form":"import","level":null,"module":null,
+                    "names":[["ns",null],["missing",null]],"target":"UNRESOLVED","span":[2,0,2,18]}
+            ],
+            "scopes":[{"id":"s0","name":"top","parent":null,"span":null,
+                "kind":"Module","bindings":[]}],
+            "constructs":[],"limitations":[]
+        },
+        "target_execution":"NOT_RUN",
+        "runtime_limitations":["IMPORT_TARGETS","RUNTIME_CALL_TARGETS","EFFECTS","EXECUTION"]
+    });
+    serde_json::to_vec(&report).map_err(|error| PythonLexicalError::Encoding(error).into())
+}
+
+/// `T-AF-SNAPSHOT-GOVERNANCE-0001-R29-010`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R29
+#[test]
+fn scoped_python_dependencies_join_only_exact_declared_file_origins() {
+    use fortress_core::python_observation::{
+        PythonStaticDependencyOutcome, observe_python_static_dependencies,
+    };
+
+    let fixture = dependency_fixture("dependency-scope");
+    let check = |roots: &[&str]| {
+        let (bytes, scope_ref) = import_scope(roots, "COMPLETE_SOURCE_ONLY");
+        let scope = PythonImportScope::admit(&bytes, &scope_ref).unwrap();
+        let report = observe_python_static_dependencies(
+            &fixture.root,
+            PATH,
+            &pin(),
+            &scope,
+            dependency_reply,
+        )
+        .unwrap();
+        let PythonStaticDependencyOutcome::Observed {
+            projection,
+            ownership_diagnostics,
+            ..
+        } = report.dependencies()
+        else {
+            panic!("expected scoped native evidence")
+        };
+        assert!(ownership_diagnostics.is_empty());
+        let PythonStaticImportOutcome::Observed { observation } = report.imports().outcome() else {
+            panic!("expected original static import observation")
+        };
+        assert_eq!(
+            projection["observation_sha256"],
+            digest(&observation.to_canonical_json().unwrap())
+        );
+        let receipt = serde_json::to_value(&observation.imports()[0]).unwrap();
+        assert_eq!(
+            receipt["member_resolution"],
+            "UNRESOLVED_ATTRIBUTE_OR_SUBMODULE"
+        );
+        assert_eq!(receipt["runtime_resolution"], "UNRESOLVED");
+        projection.clone()
+    };
+    let forward = check(&["_code", "vendor"]);
+    let dependencies = forward["observation"]["module_dependencies"]
+        .as_array()
+        .unwrap();
+    assert_eq!(dependencies.len(), 1);
+    assert_eq!(dependencies[0]["source_module"], CONSUMER);
+    assert_eq!(dependencies[0]["target_module"], PROVIDER);
+    assert_eq!(forward["sites"][0]["occurrence"]["start_byte"], 11);
+    assert_eq!(forward["sites"][0]["occurrence"]["end_byte"], 36);
+    assert_eq!(
+        forward["sites"][0]["target"]["file"]["path"],
+        "_code/chosen.py"
+    );
+    assert_eq!(forward["sites"][1]["occurrence"]["start_byte"], 38);
+    assert_eq!(forward["sites"][1]["occurrence"]["end_byte"], 56);
+    assert_eq!(
+        forward["sites"][1]["target"]["reason"],
+        "missing_from_admitted_scope"
+    );
+    assert_eq!(forward["sites"][2]["target"]["reason"], "namespace_only");
+    let reverse = check(&["vendor", "_code"]);
+    assert_eq!(
+        reverse["sites"][0]["target"]["file"]["path"],
+        "vendor/chosen.py"
+    );
+    assert_eq!(
+        reverse["sites"][0]["target"]["ownership"]["state"],
+        "ownership_unavailable"
+    );
+    assert_eq!(reverse["observation"]["module_dependencies"], json!([]));
+    assert_eq!(forward, check(&["_code", "vendor"]));
+    assert_eq!(
+        fs::read(fixture.root.join(PATH)).unwrap(),
+        DEPENDENCY_SOURCE.as_bytes()
+    );
+}
+
+/// `T-AF-SNAPSHOT-GOVERNANCE-0001-R29-011`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R29
+#[test]
+fn python_dependency_capture_rejects_drift_and_preserves_unavailable_scope() {
+    use fortress_core::python_observation::{
+        PythonStaticDependencyOutcome, observe_python_static_dependencies,
+    };
+
+    let fixture = dependency_fixture("dependency-drift");
+    let (bytes, scope_ref) = import_scope(&["_code", "vendor"], "COMPLETE_SOURCE_ONLY");
+    let scope = PythonImportScope::admit(&bytes, &scope_ref).unwrap();
+    let result = observe_python_static_dependencies(
+        &fixture.root,
+        PATH,
+        &pin(),
+        &scope,
+        |request, source| {
+            let answer = dependency_reply(request, source)?;
+            fs::write(fixture.root.join("_code/chosen.py"), b"VALUE = 41\n").unwrap();
+            Ok(answer)
+        },
+    );
+    assert!(matches!(result, Err(PythonObservationError::SourceChanged)));
+    fs::write(
+        fixture.root.join("_code/unsafe.pyd"),
+        b"unsupported native source",
+    )
+    .unwrap();
+    let blocked =
+        observe_python_static_dependencies(&fixture.root, PATH, &pin(), &scope, dependency_reply)
+            .unwrap();
+    assert!(matches!(
+        blocked.dependencies(),
+        PythonStaticDependencyOutcome::Unavailable {
+            reason: PythonStaticImportLimitation::UnsupportedRootContent,
+        }
+    ));
+    assert_eq!(
+        blocked.imports().lexical().outcome(),
+        PythonLexicalOutcome::Lexical
+    );
+}

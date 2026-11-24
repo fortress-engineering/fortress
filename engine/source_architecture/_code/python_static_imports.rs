@@ -293,6 +293,26 @@ impl PythonStaticImport {
         [start_line, start_column, end_line, end_column]
     }
 
+    /// Returns the bounded declared spelling for one static lookup in original order.
+    pub(crate) fn lookup_spelling(&self, index: usize) -> Option<String> {
+        match self.occurrence.form {
+            ImportForm::Import => self
+                .occurrence
+                .names
+                .get(index)
+                .map(|(name, _)| name.clone()),
+            ImportForm::From if index == 0 => {
+                let level = self.occurrence.level?;
+                let module = self.occurrence.module.as_deref().unwrap_or_default();
+                if level > MAX_NAME_BYTES {
+                    return None;
+                }
+                Some(format!("{}{module}", ".".repeat(level)))
+            }
+            ImportForm::From => None,
+        }
+    }
+
     /// Returns one lookup for a from-import base or one per plain import name.
     #[must_use]
     pub fn static_targets(&self) -> &[PythonStaticImportTarget] {

@@ -10,7 +10,7 @@ use fortress_core::portable::{canonical, digest};
 use fortress_core::python_observation::{
     PYTHON_LEXICAL_WORKER, PythonGrammar, PythonImportScope, PythonLexicalMode,
     PythonLexicalProducer, PythonLexicalRequest, PythonObservationError, observe_python_lexical,
-    observe_python_static_imports,
+    observe_python_static_dependencies, observe_python_static_imports,
 };
 use fortress_core::wire::{JsonAdmissionLimits, admit_json, parse_public_json, readable_text};
 use serde::Deserialize;
@@ -18,7 +18,7 @@ use serde_json::{Value, json};
 
 const USAGE: &str = concat!(
     "fortress source-artifacts --observe-python project host-registration source-path lexical|syntax",
-    "\n       fortress source-artifacts --observe-python project host-registration source-path imports root-scope root-scope-sha256",
+    "\n       fortress source-artifacts --observe-python project host-registration source-path imports|dependencies root-scope root-scope-sha256",
 );
 const REGISTRATION_SCHEMA: &str = "urn:fortress:host:v1:python-lexical-registration";
 const OBSERVATION_SCHEMA: &str = "urn:fortress:derived:v1:python-lexical-observation";
@@ -207,13 +207,10 @@ pub(super) fn run<O: Write, E: Write>(
             Ok(super::EXIT_SUCCESS)
         }
         Err(failure) => {
-            let mode = if arguments
-                .get(3)
-                .is_some_and(|argument| argument == "imports")
-            {
-                "static import"
-            } else {
-                "lexical"
+            let mode = match arguments.get(3).map(String::as_str) {
+                Some("imports") => "static import",
+                Some("dependencies") => "static dependency",
+                _ => "lexical",
             };
             writeln!(
                 error,
@@ -227,9 +224,16 @@ pub(super) fn run<O: Write, E: Write>(
 
 fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
     if let [root, registration, source, mode, scope, scope_ref] = arguments
-        && mode == "imports"
+        && matches!(mode.as_str(), "imports" | "dependencies")
     {
-        return collect_imports(root, registration, source, scope, scope_ref);
+        return collect_imports(
+            root,
+            registration,
+            source,
+            scope,
+            scope_ref,
+            mode == "dependencies",
+        );
     }
     let [root, registration_path, source_path, mode] = arguments else {
         return Err(format!("usage: {USAGE}"));
@@ -295,6 +299,7 @@ fn collect_imports(
     source_path: &str,
     scope_path: &str,
     scope_ref: &str,
+    with_dependencies: bool,
 ) -> Result<Vec<u8>, String> {
     let root = Path::new(root)
         .canonicalize()
@@ -319,34 +324,73 @@ fn collect_imports(
         .parent()
         .ok_or("Missing trusted registration parent")?;
     let command = registration.command(host_root, &worker_ref);
-    let result =
-        observe_python_static_imports(&root, source_path, &producer, &scope, |request, source| {
-            let output = one_request(
-                command,
-                &registration,
-                ready_frame,
-                request,
-                source,
-                "LEXICAL",
-            )?;
-            registration
-                .revalidate_worker(&root)
-                .map_err(|_| PythonObservationError::HostUnavailable)?;
-            verify_external_input(
-                &root,
-                registration_path,
-                REGISTRATION_LIMIT,
-                &registration_bytes,
-            )?;
-            verify_external_input(&root, scope_path, IMPORT_SCOPE_LIMIT, &scope_bytes)?;
-            Ok(output)
-        })
+    let receive = |request: &PythonLexicalRequest, source: &[u8]| {
+        let output = one_request(
+            command,
+            &registration,
+            ready_frame,
+            request,
+            source,
+            "LEXICAL",
+        )?;
+        registration
+            .revalidate_worker(&root)
+            .map_err(|_| PythonObservationError::HostUnavailable)?;
+        verify_external_input(
+            &root,
+            registration_path,
+            REGISTRATION_LIMIT,
+            &registration_bytes,
+        )?;
+        verify_external_input(&root, scope_path, IMPORT_SCOPE_LIMIT, &scope_bytes)?;
+        Ok(output)
+    };
+    if !with_dependencies {
+        let report = observe_python_static_imports(&root, source_path, &producer, &scope, receive)
+            .map_err(|error| error.to_string())?;
+        return encode(&static_import_report(
+            &report,
+            &registration,
+            &registration_bytes,
+            &scope,
+            profile,
+        ));
+    }
+    let dependency_report =
+        observe_python_static_dependencies(&root, source_path, &producer, &scope, receive)
+            .map_err(|error| error.to_string())?;
+    // The static dependency projection can take longer than the existing
+    // import-only lookup. Recheck distinct host inputs before publishing it.
+    registration.revalidate_worker(&root)?;
+    verify_external_input(
+        &root,
+        registration_path,
+        REGISTRATION_LIMIT,
+        &registration_bytes,
+    )
+    .map_err(|error| error.to_string())?;
+    verify_external_input(&root, scope_path, IMPORT_SCOPE_LIMIT, &scope_bytes)
         .map_err(|error| error.to_string())?;
     encode(&json!({
+        "$schema": "urn:fortress:derived:v1:python-static-dependency-observation",
+        "schema_version": 1,
+        "static_imports": static_import_report(dependency_report.imports(), &registration, &registration_bytes, &scope, profile),
+        "dependencies": dependency_report.dependencies(),
+    }))
+}
+
+fn static_import_report(
+    result: &fortress_core::python_observation::ActualPythonStaticImportObservation,
+    registration: &Registration,
+    registration_bytes: &[u8],
+    scope: &PythonImportScope,
+    profile: &str,
+) -> Value {
+    json!({
         "$schema": "urn:fortress:derived:v1:python-static-import-observation",
         "schema_version": 1,
         "evaluation": result.evaluation_key(),
-        "registration_ref": digest(&registration_bytes),
+        "registration_ref": digest(registration_bytes),
         "interpreter_ref": registration.interpreter_sha256,
         "root_scope_ref": scope.scope_ref(),
         "resource_profile": profile,
@@ -358,7 +402,7 @@ fn collect_imports(
             "execution": "NOT_RUN",
             "authority": "OBSERVATION_ONLY",
         },
-    }))
+    })
 }
 
 fn verify_external_input(

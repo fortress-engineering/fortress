@@ -202,3 +202,9 @@ The static import controls check exact source, authority and root-order
 bindings, typed import origin coordinates, refusal of stale or incomplete
 inputs, retention of lexical facts when a root is unsupported, and rejection
 after physical source changes during inspection.
+
+Additional Python controls join independently established source origins to
+original declared Module owners, preserve byte offsets across UTF-8 and
+CRLF, and distinguish target precedence, unresolved members, missing files,
+namespaces and unowned files. They reject target drift and retain unsupported
+root scope explicitly.

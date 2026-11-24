@@ -24,6 +24,13 @@ pub use crate::source_architecture::python_lexical::python_static_imports::{
     PythonImportScope, PythonStaticImportError, PythonStaticImportObservation,
 };
 
+#[path = "python_dependencies.rs"]
+mod python_dependencies;
+pub use python_dependencies::{
+    ActualPythonStaticDependencyObservation, PythonStaticDependencyOutcome,
+    observe_python_static_dependencies,
+};
+
 const PYTHON_LEXICAL_CONTEXT: &str = "fortress-python-lexical-context-v1";
 
 /// A lexical observation bound to revalidated original physical source and authority.
@@ -134,6 +141,8 @@ pub enum PythonObservationError {
     Lexical(PythonLexicalError),
     /// The independent scoped import request or observation failed admission.
     StaticImports(PythonStaticImportError),
+    /// The admitted native dependency evidence could not be bound to original inputs.
+    StaticDependencies(crate::implementation_observation::NativeDependencyAdapterError),
     /// The selected source differs from the trusted exact subject.
     SubjectIdentityMismatch,
     /// The scoped scalar request or response failed admission.
@@ -151,6 +160,7 @@ impl Display for PythonObservationError {
             }
             Self::Lexical(error) => Display::fmt(error, formatter),
             Self::StaticImports(error) => Display::fmt(error, formatter),
+            Self::StaticDependencies(error) => Display::fmt(error, formatter),
             Self::SubjectIdentityMismatch => {
                 formatter.write_str("selected Python source differs from the trusted subject pin")
             }
@@ -164,6 +174,7 @@ impl Error for PythonObservationError {
         match self {
             Self::Lexical(error) => Some(error),
             Self::StaticImports(error) => Some(error),
+            Self::StaticDependencies(error) => Some(error),
             Self::Scalar(error) => Some(error),
             _ => None,
         }
@@ -263,6 +274,18 @@ pub fn observe_python_static_imports(
     receive: impl FnOnce(&PythonLexicalRequest, &[u8]) -> Result<Vec<u8>, PythonObservationError>,
 ) -> Result<ActualPythonStaticImportObservation, PythonObservationError> {
     let source = NativeSource::capture(project_root, "Python")?;
+    let result = collect_static_imports(&source, source_path, producer, scope, receive)?;
+    source.revalidate()?;
+    Ok(result)
+}
+
+fn collect_static_imports(
+    source: &NativeSource<'_>,
+    source_path: &str,
+    producer: &PythonLexicalProducer,
+    scope: &PythonImportScope,
+    receive: impl FnOnce(&PythonLexicalRequest, &[u8]) -> Result<Vec<u8>, PythonObservationError>,
+) -> Result<ActualPythonStaticImportObservation, PythonObservationError> {
     let context = serde_json_canonicalizer::to_vec(&(
         "fortress-python-static-import-context-v1",
         source_path,
@@ -277,7 +300,7 @@ pub fn observe_python_static_imports(
     );
     let roots = scope.bind(&source.view, &evaluation_key)?;
     let lexical = collect_lexical(
-        &source,
+        source,
         &evaluation_key,
         source_path,
         PythonLexicalMode::Lexical,
@@ -297,7 +320,6 @@ pub fn observe_python_static_imports(
             reason: scoped_import_limitation(error)?,
         },
     };
-    source.revalidate()?;
     Ok(ActualPythonStaticImportObservation {
         evaluation_key,
         lexical,

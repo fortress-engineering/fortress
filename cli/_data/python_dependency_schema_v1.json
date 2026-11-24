@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v1:python-static-dependency-observation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "static_imports",
+    "dependencies"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:derived:v1:python-static-dependency-observation"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "static_imports": {
+      "$ref": "urn:fortress:derived:v1:python-static-import-observation"
+    },
+    "dependencies": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "ownership_ref",
+            "ownership_diagnostics",
+            "projection"
+          ],
+          "properties": {
+            "status": {
+              "const": "OBSERVED"
+            },
+            "ownership_ref": {
+              "$ref": "#/$defs/digest"
+            },
+            "ownership_diagnostics": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/ownership_diagnostic"
+              }
+            },
+            "projection": {
+              "$ref": "#/$defs/projection"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "reason"
+          ],
+          "properties": {
+            "status": {
+              "const": "UNAVAILABLE"
+            },
+            "reason": {
+              "enum": [
+                "LEXICAL_UNAVAILABLE",
+                "ROOT_UNAVAILABLE",
+                "UNSUPPORTED_ROOT_CONTENT",
+                "AMBIGUOUS_INVENTORY",
+                "RESOURCE_LIMIT"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "ownership_diagnostic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "source_path",
+        "modules",
+        "detail"
+      ],
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "source_path": {
+          "type": "string"
+        },
+        "modules": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "detail": {
+          "type": "string"
+        }
+      }
+    },
+    "projection": {
+      "allOf": [
+        {
+          "$ref": "urn:fortress:derived:v1:native-dependency-projection"
+        },
+        {
+          "properties": {
+            "language": {
+              "const": "python"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

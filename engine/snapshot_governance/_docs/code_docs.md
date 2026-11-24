@@ -574,3 +574,11 @@ relation from the same original source, logical bindings and CCG used to seal
 the worker request. It preserves the native response and attaches a scoped
 Implementation Observation projection. The full physical view is revalidated
 after the report is assembled and before its publication.
+
+### [python_dependencies.rs](../_code/python_dependencies.rs)
+
+Combines an admitted Python static import receipt with original logical
+Module ownership through the native dependency adapter. Positions use the
+original UTF-8 bytes with physical CRLF retained. The result retains unknown
+targets and ownership ambiguity alongside exact source evidence. The
+physical revalidation boundary covers dependency projection and publication.

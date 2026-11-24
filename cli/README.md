@@ -333,3 +333,16 @@ directed source relationship between those Modules. Ownership diagnostics and
 unresolved or unavailable native inputs remain visible. A source relationship
 provides observational evidence for review. Runtime behavior, authorization,
 and assessment have separate inputs.
+
+### Static Python dependency evidence
+
+Use the same invocation with `dependencies` in place of `imports` to join
+unique authored Module ownership to exact Python file origins under the
+selected roots. The versioned result embeds the original lexical/import
+receipt and retains separate source, observation and ownership identities.
+Coordinates are zero-based byte offsets in the captured source, including
+UTF-8 and original line endings. A from-import row describes its base
+without resolving its named member. Namespace, missing, unowned and
+ambiguous endpoints remain visible. The resulting edges express scoped
+source evidence. Runtime behavior, dependency absence, enforcement,
+assurance and certification are outside this inspection.

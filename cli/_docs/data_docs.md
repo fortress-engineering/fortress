@@ -108,3 +108,9 @@ inventory premise. The caller independently pins the canonical document digest.
 Versioned actual-state Python lexical and static import report. It records
 exact repository, evaluator and host provenance, optional static targets
 or unavailable reasons, and unresolved runtime behavior.
+
+### [python_dependency_schema_v1.json](../_data/python_dependency_schema_v1.json)
+
+Versioned static dependency inspection envelope. It binds the original
+Python import report to admitted source origins, explicit ownership
+diagnostics and separately retained scoped dependency evidence.

@@ -2659,3 +2659,31 @@ fn python_import_cli_refuses_a_repository_controlled_scope_before_worker_access(
         declaration
     );
 }
+
+/// `T-TF-CLI-0001-R31-004`
+/// Fortress requirement: TF-CLI-0001-R31
+#[test]
+fn python_dependency_cli_refuses_a_repository_controlled_root_scope() {
+    let fixture = ObservationFixture::new();
+    let root = fixture.argument();
+    let scope = fixture.root.join("root-scope.json");
+    let declaration = br#"{"roots":["src"],"inventory":"COMPLETE_SOURCE_ONLY"}"#;
+    fs::write(&scope, declaration).expect("write controlled rejected scope");
+    let scope_ref = fortress_core::portable::digest(declaration);
+    let result = run(&[
+        "source-artifacts",
+        "--observe-python",
+        &root,
+        "no-host-registration.json",
+        "src/lib.py",
+        "dependencies",
+        &scope.to_string_lossy(),
+        &scope_ref,
+    ]);
+    assert_eq!(result.status.code(), Some(i32::from(EXIT_USAGE)));
+    assert!(result.stdout.is_empty());
+    let failure = String::from_utf8_lossy(&result.stderr);
+    assert!(failure.contains("static dependency observation failed"));
+    assert!(failure.contains("COLLECTOR_TRUST_REQUIRED"));
+    assert_eq!(fs::read(scope).unwrap(), declaration);
+}

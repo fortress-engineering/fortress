@@ -551,7 +551,7 @@
         },
         {
           "id": "AF-SNAPSHOT-GOVERNANCE-0001-R29",
-          "statement": "Explicit trusted Python lexical observation binds complete physical source, scoped observation context and original selected authority before dispatch. It passes immutable selected bytes, validates exact response correlation, and refuses stale physical source or directory identity before publication without granting semantic or certification authority.",
+          "statement": "Explicit trusted Python lexical observation binds complete physical source, scoped observation context and original selected authority before dispatch. It passes immutable selected bytes, validates exact response correlation, and refuses stale physical source or directory identity before publication without granting semantic or certification authority. Optional static dependency inspection joins admitted file origins only to exact original authored ownership and retains unresolved observations.",
           "tests": [
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R29-001",
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R29-002",
@@ -561,7 +561,9 @@
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R29-006",
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R29-007",
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R29-008",
-            "T-AF-SNAPSHOT-GOVERNANCE-0001-R29-009"
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R29-009",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R29-010",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R29-011"
           ]
         },
         {
