@@ -12,6 +12,10 @@ use sha2::{Digest, Sha256};
 mod body_observation;
 #[path = "go_build_selection.rs"]
 mod build_selection;
+#[path = "go_test_observation.rs"]
+mod test_observation;
+pub use test_observation::GoNativeTestObservation;
+pub(crate) use test_observation::admit_go_tests;
 #[path = "go_module_observation.rs"]
 mod module_observation;
 pub(crate) use body_observation::GoNativeBodyObservation;

@@ -22,6 +22,12 @@ The schema changes only when the supported PSM document contract changes; incomp
 
 ## Files
 
+### [`go_test_schema_v1.json`](../_data/go_test_schema_v1.json)
+
+Defines the separately versioned closed Go test declaration report. It distinguishes
+selection and package roles, direct standard testing import syntax, unresolved
+parameter identity, invalid declaration forms and package-level barriers.
+
 ### [`program_model_schema_v3.json`](../_data/program_model_schema_v3.json)
 
 Defines the retained PSM v3 serialized structure for historical projection interpretation.

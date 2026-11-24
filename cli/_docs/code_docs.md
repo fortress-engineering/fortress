@@ -32,6 +32,22 @@ to stdout without modifying project source.
 
 Runs the explicitly selected, digest-pinned Go collector with the shared bounded subprocess supervisor. Returns the independent native observation projection after source and authority revalidation.
 
+For declaration-only test inspection, build the reviewed helper from
+`collector.go`, `collector_build_context.go` and `go_test_observer.go` and place its executable
+and [test registration](../_data/go_test_registration_v1.json) outside the observed repository.
+The registration pins Go 1.22.12 on Windows x64 or Go 1.22.2 on Linux x64 and
+uses `REQUIRE_SEPARATE_TEST_CONTEXT` with an explicit target and tag selection.
+
+```text
+fortress psm --observe-go-tests PROJECT HOST_REGISTRATION DIRECTORY PACKAGE_PATH go1.22 linux amd64
+```
+
+The observer sees one closed directory without ancestor module or workspace
+inputs. It reports direct standard test signatures, `TestMain` hooks and
+unsupported or invalid shapes. Package compilation, runner eligibility,
+benchmark and fuzz declarations, examples, subtests, third-party frameworks,
+coverage and verification remain outside this observation.
+
 ### [`layout_command.rs`](../_code/layout_command.rs)
 
 Reads explicit digest-pinned native profile selections and supplies bounded repository observations to the Project Model projection.

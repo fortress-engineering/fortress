@@ -284,6 +284,10 @@ func goSelectionFailureStatus(code string) string {
 }
 
 func selectedGoFile(req goBuildRequest, source sourceFile, positions *token.FileSet, nodes *int, localImports bool) (goFileSelection, *ast.File) {
+	return selectedGoFileForObservation(req, source, positions, nodes, localImports, false)
+}
+
+func selectedGoFileForObservation(req goBuildRequest, source sourceFile, positions *token.FileSet, nodes *int, localImports, testDeclarations bool) (goFileSelection, *ast.File) {
 	result := goFileSelection{Path: source.Path, SHA256: source.SHA256, Disposition: "EXCLUDED_BY_NAME_OR_CONSTRAINT"}
 	matched, err := matchVirtualGoFile(req, source)
 	if errors.Is(err, errUnknownVirtualGoFile) || errors.Is(err, errUnexpectedGoBuildAccess) {
@@ -298,7 +302,7 @@ func selectedGoFile(req goBuildRequest, source sourceFile, positions *token.File
 	if !matched {
 		return result, nil
 	}
-	if strings.HasSuffix(source.Path, "_test.go") {
+	if !testDeclarations && strings.HasSuffix(source.Path, "_test.go") {
 		result.Disposition = "TEST_CONTEXT_REQUIRED"
 		if req.BuildContext.TestMode == "PRODUCTION_ONLY" {
 			result.Disposition = "PRODUCTION_TEST_EXCLUDED"
@@ -465,6 +469,7 @@ func executeSelectedGoBuild() int {
 // A combined worker optionally links the module-local mode while two-file workers
 // retain their original protocol. Package variable initialization precedes init.
 var goLocalImportsMode func() int
+var goTestDeclarationsMode func() int
 
 // This file is linked only into trusted builds exposing the explicit v2 mode.
 // The single-file v1 collector and its byte identity remain untouched.
@@ -474,6 +479,9 @@ func init() {
 	}
 	if len(os.Args) == 2 && os.Args[1] == "--observe-go-module" && goLocalImportsMode != nil {
 		os.Exit(goLocalImportsMode())
+	}
+	if len(os.Args) == 2 && os.Args[1] == "--observe-go-tests" && goTestDeclarationsMode != nil {
+		os.Exit(goTestDeclarationsMode())
 	}
 	if len(os.Args) != 2 || os.Args[1] != goBuildSelectionFlag {
 		fmt.Fprintln(os.Stderr, "unsupported Go collector invocation")

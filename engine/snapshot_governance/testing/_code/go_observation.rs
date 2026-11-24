@@ -13,6 +13,195 @@ use fortress_core::native_regions::{
 use fortress_core::source_architecture::{RegionCoverage, SemanticRegion};
 use serde_json::{Value, json};
 
+mod test_declarations {
+    use super::*;
+    use base64::{Engine as _, engine::general_purpose::STANDARD};
+    use fortress_core::go_observation::observe_go_native_tests;
+
+    const SOURCE: &[u8] = include_bytes!("../_data/go_test_request_v1.json");
+    const NATIVE: &[u8] = include_bytes!("../_data/go_test_fixture_v1.json");
+    const TEST_PIN: GoCollectorPin<'static> = GoCollectorPin {
+        executable_sha256: "sha256:f2e010b50ea3f4c433f455be592a3b8cad34c8bb3027b6237c27ab2e748760a3",
+        supervisor_context_sha256: "sha256:0000000000000000000000000000000000000000000000000000000000000001",
+        go_toolchain: "go1.22.12",
+    };
+
+    fn test_fixture(name: &str) -> (Fixture, GoPackageSelection<'static>, GoBuildContext) {
+        let fixture = Fixture::new(name);
+        let request: Value = serde_json::from_slice(SOURCE).unwrap();
+        for file in request["files"].as_array().unwrap() {
+            let name = file["path"].as_str().unwrap();
+            assert!(
+                name.ends_with(".go")
+                    && name
+                        .bytes()
+                        .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'.' | b'_'))
+            );
+            let bytes = STANDARD
+                .decode(file["source_base64"].as_str().unwrap())
+                .unwrap();
+            let digest = fortress_core::portable::digest(&bytes);
+            assert_eq!(file["sha256"], digest);
+            fs::write(fixture.root.join(name), bytes).unwrap();
+        }
+        let selection = GoPackageSelection {
+            directory: "",
+            package_path: "fixture.local/native",
+            go_version: "go1.22",
+            target_os: "windows",
+            target_arch: "amd64",
+        };
+        let context = serde_json::from_value(request["build_context"].clone()).unwrap();
+        (fixture, selection, context)
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R28-018`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R28
+    #[test]
+    fn exact_closed_test_declarations_preserve_scope_and_native_coordinates() {
+        let (fixture, selection, context) = test_fixture("native-tests");
+        let result =
+            observe_go_native_tests(&fixture.root, selection, context, &TEST_PIN, |request| {
+                assert_eq!(request, SOURCE);
+                Ok(NATIVE.to_vec())
+            })
+            .unwrap();
+        let doc = serde_json::to_value(result).unwrap();
+        jsonschema::draft202012::validate(
+            &super::registered_schema("go_test_schema_v1.json"),
+            &doc,
+        )
+        .expect("canonical test declaration schema");
+        assert_eq!(
+            doc["response_sha256"],
+            fortress_core::portable::digest(NATIVE)
+        );
+        let observation = &doc["observation"];
+        assert_eq!(observation["status"], "DECLARATIONS_OBSERVED");
+        let declarations = observation["test_declarations"].as_array().unwrap();
+        assert_eq!(declarations.len(), 7);
+        let renamed = declarations
+            .iter()
+            .find(|row| row["name"] == "TestRenamed")
+            .unwrap();
+        assert_eq!(renamed["parameter"]["qualifier"], "trial");
+        assert_eq!(renamed["span"]["path"], "external_test.go");
+        let unicode = declarations
+            .iter()
+            .find(|row| row["name"] == "TestÉ")
+            .unwrap();
+        assert_eq!(unicode["span"]["start_line"], 11);
+        assert_eq!(unicode["span"]["start_byte_column"], 6);
+        assert_eq!(
+            unicode["span"]["end_byte"].as_u64().unwrap()
+                - unicode["span"]["start_byte"].as_u64().unwrap(),
+            6
+        );
+        assert!(
+            declarations
+                .iter()
+                .any(|row| row["name"] == "TestMain" && row["kind"] == "TEST")
+        );
+        let files = observation["selection"].as_array().unwrap();
+        let external = files
+            .iter()
+            .find(|row| row["path"] == "external_test.go")
+            .unwrap();
+        assert_eq!(external["package_role"], "EXTERNAL_TEST");
+        let hidden = files
+            .iter()
+            .find(|row| row["path"] == "excluded_test.go")
+            .unwrap();
+        assert_eq!(hidden["disposition"], "EXCLUDED_BY_NAME_OR_CONSTRAINT");
+        assert!(observation.get("execution").is_none() && observation.get("coverage").is_none());
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R28-019`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R28
+    #[test]
+    fn forged_test_evidence_and_mismatched_occurrences_are_refused() {
+        let (fixture, selection, context) = test_fixture("native-tests-wire");
+        let schema: Value = super::registered_schema("go_test_schema_v1.json");
+        let raw: Value = serde_json::from_slice(NATIVE).unwrap();
+        for (path, replacement) in [
+            ("/context_sha256", json!("wrong-build-context")),
+            ("/selection/1/sha256", json!("altered-file")),
+            ("/selection/1/package_role", json!("INTERNAL_TEST")),
+            ("/test_declarations/0/parameter/qualifier", json!("spoofed")),
+            (
+                "/test_declarations/0/parameter/import_path_span/path",
+                json!("prod.go"),
+            ),
+            ("/test_declarations/0/span/start_byte_column", json!(1)),
+            ("/test_declarations/0/parameter", Value::Null),
+            ("/test_declarations/0/kind", json!("TEST_MAIN_HOOK")),
+            ("/status", json!("PASS")),
+        ] {
+            let result = observe_go_native_tests(
+                &fixture.root,
+                selection,
+                context.clone(),
+                &TEST_PIN,
+                |_| {
+                    let mut altered = raw.clone();
+                    *altered.pointer_mut(path).unwrap() = replacement;
+                    let mut wire = serde_json::to_vec(&altered).unwrap();
+                    wire.push(b'\n');
+                    Ok(wire)
+                },
+            );
+            assert!(
+                matches!(result, Err(GoObservationError::InvalidResponse)),
+                "{path}"
+            );
+        }
+        let injection =
+            observe_go_native_tests(&fixture.root, selection, context.clone(), &TEST_PIN, |_| {
+                let mut altered = raw.clone();
+                altered["execution"] = json!({"status":"PASS"});
+                let mut wire = serde_json::to_vec(&altered).unwrap();
+                wire.push(b'\n');
+                Ok(wire)
+            });
+        assert!(matches!(
+            injection,
+            Err(GoObservationError::InvalidResponse)
+        ));
+        let original =
+            observe_go_native_tests(&fixture.root, selection, context, &TEST_PIN, |_| {
+                Ok(NATIVE.to_vec())
+            })
+            .unwrap();
+        let mut doc = serde_json::to_value(original).unwrap();
+        doc["observation"]["test_declarations"][0]["parameter"] = Value::Null;
+        assert!(jsonschema::draft202012::validate(&schema, &doc).is_err());
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R28-020`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R28
+    #[test]
+    fn test_declaration_observation_refuses_production_scope_and_stale_source() {
+        let (fixture, selection, context) = test_fixture("native-tests-stale");
+        let mut production = context.clone();
+        production.test_mode = GoBuildTestMode::ProductionOnly;
+        let missing_scope =
+            observe_go_native_tests(&fixture.root, selection, production, &TEST_PIN, |_| {
+                panic!("missing explicit test declaration scope must prevent dispatch");
+            });
+        assert!(matches!(
+            missing_scope,
+            Err(GoObservationError::UnsupportedContext)
+        ));
+        let changed =
+            observe_go_native_tests(&fixture.root, selection, context, &TEST_PIN, |request| {
+                assert_eq!(request, SOURCE);
+                fs::write(fixture.root.join("tagged_test.go"), "package sample\n").unwrap();
+                Ok(NATIVE.to_vec())
+            });
+        assert!(matches!(changed, Err(GoObservationError::SourceChanged)));
+    }
+}
+
 const NATIVE: &[u8] = include_bytes!("../_data/go_native_fixture_v1.json");
 const API: &str =
     "// café\r\npackage bounded\r\nfunc Run(input int) int { return target(input) }\r\n";

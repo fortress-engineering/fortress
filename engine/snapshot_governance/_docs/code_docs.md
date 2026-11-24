@@ -521,6 +521,11 @@ Observes exact governed endpoints and composes existing migration, Standard and 
 
 Captures the existing bounded physical source inventory and original selected authority before passing a closed Go request to an explicit trusted host. The host selects and supervises the pinned executable. Snapshot Governance reobserves physical source and checks the native directory identity before exposing the observation. Ordinary audit, discovery, query, and candidate evaluation never launch this helper. The result remains separate from application assessment, governance decisions, and native certification.
 
+The test declaration mode separately pins its worker and requires an explicit
+Go 1.22 test context. It revalidates both selected and excluded source before
+publication. It reports syntax and locations without admitting runner or
+execution evidence.
+
 The optional scalar body mode uses the same closed original source capture and
 retains its exact source manifest in the evaluation key. The scope includes
 the selected native producer and target. Revalidation precedes publication.

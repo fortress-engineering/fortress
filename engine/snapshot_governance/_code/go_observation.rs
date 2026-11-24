@@ -7,7 +7,7 @@ use serde::Serialize;
 use crate::implementation_observation::{NativeDependencyContext, SourceOwnershipDiagnostic};
 use crate::native_observation::{NativeSource, NativeSourceError};
 use crate::program_semantics::go_observation::{
-    ExactClosedPackage, admit_go, admit_go_build, admit_go_module,
+    ExactClosedPackage, admit_go, admit_go_build, admit_go_module, admit_go_tests,
 };
 
 #[path = "go_body_domains.rs"]
@@ -16,8 +16,8 @@ pub use body_domains::ActualGoNativeBodyObservation;
 
 pub use crate::program_semantics::go_observation::{
     GoBuildContext, GoBuildTestMode, GoCollectorPin, GoModuleSelection, GoNativeBuildObservation,
-    GoNativeModuleObservation, GoNativeObservation, GoObservationError, GoTypeComparison,
-    GoTypeSelector,
+    GoNativeModuleObservation, GoNativeObservation, GoNativeTestObservation, GoObservationError,
+    GoTypeComparison, GoTypeSelector,
 };
 
 /// Independently selected observation context for a closed Go source directory.
@@ -77,6 +77,28 @@ pub fn observe_go_native_build(
         let admitted = admit_go_build(source, collector, build_context)?;
         let output = launch(admitted.request_bytes())?;
         admitted.verify(collector, &output)
+    })
+}
+
+/// Observes exact selected Go test declarations through a separately pinned worker.
+///
+/// Test declarations and file-selection evidence are compile-free observations.
+/// The original physical source and governing authority are revalidated before
+/// publication. No execution, coverage or verification relationship follows.
+///
+/// # Errors
+/// Refuses unsafe, stale, unsupported or oversized inputs and mismatched worker output.
+pub fn observe_go_native_tests(
+    project_root: &Path,
+    selection: GoPackageSelection<'_>,
+    build_context: GoBuildContext,
+    collector: &GoCollectorPin<'_>,
+    launch: impl FnOnce(&[u8]) -> Result<Vec<u8>, GoObservationError>,
+) -> Result<GoNativeTestObservation, GoObservationError> {
+    observe_exact(project_root, selection, |source| {
+        let admitted = admit_go_tests(source, collector, build_context)?;
+        let output = launch(admitted.request_bytes())?;
+        admitted.verify_tests(collector, &output)
     })
 }
 

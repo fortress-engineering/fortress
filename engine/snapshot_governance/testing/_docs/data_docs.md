@@ -22,6 +22,16 @@ Fixtures change deliberately with compatible rule clarification or an explicit s
 
 ## Files
 
+### [`go_test_request_v1.json`](../_data/go_test_request_v1.json)
+
+Retains the exact ordered closed build input for the Windows Go test declaration
+fixture, including original source bytes, selected tag and target context.
+
+### [`go_test_fixture_v1.json`](../_data/go_test_fixture_v1.json)
+
+Retains exact stdout from the pinned native test declaration worker, separately
+checked against a fixed native Go listing.
+
 ### [`documentation_boundary.json`](../_data/documentation_boundary.json)
 
 Provides specification-authored boundary conformance data for documentation behavior.

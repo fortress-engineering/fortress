@@ -8,7 +8,7 @@ use std::time::Duration;
 use fortress_core::go_observation::{
     GoBuildContext, GoCollectorPin, GoModuleSelection, GoObservationError, GoPackageSelection,
     GoTypeComparison, GoTypeSelector, observe_go_module_dependencies, observe_go_native,
-    observe_go_native_build, observe_go_native_module,
+    observe_go_native_build, observe_go_native_module, observe_go_native_tests,
 };
 use fortress_core::portable::{canonical, digest};
 use fortress_core::wire::{JsonAdmissionLimits, admit_json, parse_public_json, readable_text};
@@ -18,6 +18,7 @@ use serde_json::json;
 const SCHEMA: &str = "urn:fortress:host:v1:go-collector-registration";
 const MODULE_SCHEMA: &str = "urn:fortress:host:v3:go-module-collector-registration";
 const BUILD_SCHEMA: &str = "urn:fortress:host:v2:go-build-collector-registration";
+const TEST_SCHEMA: &str = "urn:fortress:host:v1:go-test-registration";
 const REGISTRATION_LIMIT: usize = 16 * 1024;
 const TIMEOUT: Duration = Duration::from_secs(5);
 const ENVIRONMENT: [(&str, &str); 3] = [
@@ -54,6 +55,7 @@ enum Mode {
     Legacy,
     Build,
     Module,
+    Tests,
 }
 
 impl Mode {
@@ -65,6 +67,9 @@ impl Mode {
             Self::Build => {
                 "--observe-go-build project host-registration directory package-path go-version target-os target-arch"
             }
+            Self::Tests => {
+                "--observe-go-tests project host-registration directory package-path go-version target-os target-arch"
+            }
             Self::Module => {
                 "--observe-go-module project host-registration module-directory module-path entry-path target-os target-arch [--dependencies | left-package left-type right-package right-type]"
             }
@@ -75,6 +80,7 @@ impl Mode {
         match self {
             Self::Legacy => "pinned-go-collector-host-v1",
             Self::Build => "pinned-go-build-collector-host-v2",
+            Self::Tests => "pinned-go-test-declaration-host-v1",
             Self::Module => "pinned-go-module-collector-host-v3",
         }
     }
@@ -102,6 +108,14 @@ pub(super) fn run_module<O: Write, E: Write>(
     error: &mut E,
 ) -> io::Result<u8> {
     run_mode(arguments, output, error, Mode::Module)
+}
+
+pub(super) fn run_tests<O: Write, E: Write>(
+    arguments: &[String],
+    output: &mut O,
+    error: &mut E,
+) -> io::Result<u8> {
+    run_mode(arguments, output, error, Mode::Tests)
 }
 
 fn run_mode<O: Write, E: Write>(
@@ -200,6 +214,11 @@ fn collect(arguments: &[String], mode: Mode) -> Result<Vec<u8>, String> {
                         .map_err(|error| error.to_string())?;
                     encode_observation(result)
                 }
+                (Mode::Tests, Some(context)) => {
+                    let result = observe_go_native_tests(&root, selection, context, &pin, launch)
+                        .map_err(|error| error.to_string())?;
+                    encode_observation(result)
+                }
                 (Mode::Legacy, None) => {
                     let result = observe_go_native(&root, selection, &pin, launch)
                         .map_err(|error| error.to_string())?;
@@ -262,7 +281,7 @@ fn prepare_command(
         Mode::Build => {
             command.arg("--select-build-go");
         }
-        Mode::Module => {
+        Mode::Module | Mode::Tests => {
             if !matches!(
                 (
                     std::env::consts::OS,
@@ -271,9 +290,17 @@ fn prepare_command(
                 ),
                 ("windows", "x86_64", "go1.22.12") | ("linux", "x86_64", "go1.22.2")
             ) {
-                return Err("UNSUPPORTED_GO_MODULE_HOST_TOOLCHAIN".into());
+                return Err(if mode == Mode::Module {
+                    "UNSUPPORTED_GO_MODULE_HOST_TOOLCHAIN".into()
+                } else {
+                    "UNSUPPORTED_GO_TEST_HOST_TOOLCHAIN".into()
+                });
             }
-            command.arg("--observe-go-module");
+            command.arg(if mode == Mode::Module {
+                "--observe-go-module"
+            } else {
+                "--observe-go-tests"
+            });
         }
     }
     command
@@ -324,10 +351,10 @@ fn parse_registration(
         return Ok((declared, None));
     }
     let declared: BuildRegistration = parse_public_json(json).map_err(|error| error.to_string())?;
-    let (schema, version) = if mode == Mode::Module {
-        (MODULE_SCHEMA, 3)
-    } else {
-        (BUILD_SCHEMA, 2)
+    let (schema, version) = match mode {
+        Mode::Module => (MODULE_SCHEMA, 3),
+        Mode::Tests => (TEST_SCHEMA, 1),
+        Mode::Build | Mode::Legacy => (BUILD_SCHEMA, 2),
     };
     if declared.schema != schema || declared.schema_version != version {
         return Err("UNSUPPORTED_COLLECTOR_REGISTRATION_VERSION".into());

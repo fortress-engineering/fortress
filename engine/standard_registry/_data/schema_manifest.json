@@ -5,6 +5,8 @@
   "schemas": [
     "engine/snapshot_governance/_data/go_dependency_schema_v1.json",
     "engine/implementation_observation/_data/native_dependency_schema_v1.json",
+    "engine/program_semantics/_data/go_test_schema_v1.json",
+    "cli/_data/go_test_registration_v1.json",
     "cli/_data/scalar_worker_schema_v1.json",
     "cli/_data/python_scalar_schema_v1.json",
     "cli/_data/python_scope_schema_v1.json",

@@ -22,6 +22,11 @@ Maintainers update Data through reviewed semantic changes; schema versions chang
 
 ## Files
 
+### [`go_test_registration_v1.json`](../_data/go_test_registration_v1.json)
+
+Defines the independent, externally pinned Go test declaration worker and its
+explicit Go 1.22 build and test scope.
+
 ### [`collector_registration_schema_v1.json`](../_data/collector_registration_schema_v1.json)
 
 Defines the local host registration, including absolute tool and script selectors and exact digests.

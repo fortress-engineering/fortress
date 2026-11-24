@@ -239,8 +239,8 @@ pub struct GoNativeBuildObservation {
 }
 
 pub(crate) struct GoBuildRequest<'a> {
-    base: GoRequest<'a>,
-    context: GoBuildContext,
+    pub(super) base: GoRequest<'a>,
+    pub(super) context: GoBuildContext,
 }
 
 pub(crate) fn admit_go_build<'a>(

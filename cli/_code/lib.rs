@@ -1735,6 +1735,11 @@ fn run_psm<O: Write, E: Write>(
         return go_body_command::run(rest, output, error);
     }
     if let Some((first, rest)) = arguments.split_first()
+        && first == "--observe-go-tests"
+    {
+        return go_observation_command::run_tests(rest, output, error);
+    }
+    if let Some((first, rest)) = arguments.split_first()
         && first == "--observe-go"
     {
         return go_observation_command::run(rest, output, error);

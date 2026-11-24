@@ -40,6 +40,24 @@ Snapshot mutation, malformed supported source, missing ownership, or analyzer di
 
 ## Files
 
+### [`go_test_observer.go`](../_code/go_test_observer.go)
+
+Uses the existing virtual build matcher and bounded Go parser to observe
+selected test declarations. It recognizes package-level `Test` names under
+Go 1.22 naming rules, separates internal and external test packages, and records
+direct `*testing.T` forms and `TestMain(*testing.M)` hooks with their physical
+signature and import spans. Renamed direct imports are admitted. Type aliases,
+unresolved imports, invalid signatures and bodyless functions retain explicit
+limitations. It does not load imports, compile the package or start its runner.
+
+### [`go_test_observation.rs`](../_code/go_test_observation.rs)
+
+Admits only the explicit test-declaration exchange with the existing closed
+build input. Checks the exact selected and excluded files, native matching,
+source-proven package and declaration occurrences, source-bound import and
+type locations, context and worker identity. The derived report supplies no
+test execution, coverage, verification or canonical PSM facts.
+
 ### [`graph.rs`](../_code/graph.rs)
 
 Derives deterministic call adjacency, reachability, strongly connected components, recursion, entry/leaf facts, and cross-boundary projections.
