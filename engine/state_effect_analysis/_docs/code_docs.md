@@ -50,6 +50,6 @@ Prepared evaluation retains exact direct seeds and bounded synchronous effect-cl
 
 The registered effect catalog is exposed read-only for existing authored-policy compilation; inspecting it executes no semantic analysis or project code.
 
-### [native_filesystem.rs](../_code/native_filesystem.rs)
+### [`native_filesystem.rs`](../_code/native_filesystem.rs)
 
 Projects already admitted Go and Python filesystem call identities through the exact resolver owned by Operation Summary. A separate scoped catalog covers one independently witnessed standard-library write in each language. Resolution requires the exact source-side binding, native declaration evidence, library source digest, selected version, target, features, and type facts. Local, shadowed, indirect, and unsupported calls retain explicit dispositions. The receipt gives a positive effect for the reviewed operation and an unknown upper bound. Ordinary state/effect evaluation does not consume it.

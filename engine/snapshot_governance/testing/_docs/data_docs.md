@@ -116,24 +116,24 @@ Registers the deterministic mutation generator, seed, exact successful populatio
 
 Registers six actual-repository comparisons, twelve independent-function comparisons, twelve connected-call-graph comparisons and 100 separate lifecycle operations. The fixture strata have 32, 128 and 512 functions. The manifest records both unchanged 1,000-case corpus populations. The reports bind its exact digest and identify individual comparisons and checked operations.
 
-### [go_native_fixture_v1.json](../_data/go_native_fixture_v1.json)
+### [`go_native_fixture_v1.json`](../_data/go_native_fixture_v1.json)
 
 Retains exact stdout from the bounded Go collector for the independent two-file CRLF and UTF-8 fixture. This native input control is checked against frozen bytes, response identities, and known source coordinates.
 
 
-### [go_build_fixture_v2.json](../_data/go_build_fixture_v2.json)
+### [`go_build_fixture_v2.json`](../_data/go_build_fixture_v2.json)
 
 Retains the exact native Go build-selection reply and the verified disposition of the separately frozen production and test inventory. The source bytes and ordered request digest are replayed in the native observation control.
 
-### [go_observed_fixture_v3.json](../_data/go_observed_fixture_v3.json)
+### [`go_observed_fixture_v3.json`](../_data/go_observed_fixture_v3.json)
 
 Retains native output for the independently fixed Go module import and exact cross-package declaration site. Its request identity uses the production ingress member order and the semantic record matches the original reference.
 
-### [go_missing_fixture_v3.json](../_data/go_missing_fixture_v3.json)
+### [`go_missing_fixture_v3.json`](../_data/go_missing_fixture_v3.json)
 
 Retains the exact refusal for an independently fixed unavailable in-module dependency. No reachable package observations or type comparison are asserted.
 
-### [go_body_fixture_v1.json](../_data/go_body_fixture_v1.json)
+### [`go_body_fixture_v1.json`](../_data/go_body_fixture_v1.json)
 
 Retains exact stdout from the Windows Go scalar-body worker against the
 independently frozen native function and source-position expectations. The

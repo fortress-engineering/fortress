@@ -98,15 +98,15 @@ The existing directed relation is evaluated with borrowed symbol keys and bounde
 
 Cold construction moves complete graph results into the PSM instead of cloning them into an immediately discarded preparation. Resident graph reuse retains its complete component membership, edge and symbol-metadata checks, historical Tarjan ordering and conservative reconstruction. These implementation strategies preserve the existing model and analyzer semantic versions because their supported meanings and canonical bytes are unchanged. Their new operational strategy contract is version 1; any semantic difference requires separate producer versioning and qualification.
 
-### [go_observation.rs](../_code/go_observation.rs)
+### [`go_observation.rs`](../_code/go_observation.rs)
 
 Validates an exact closed Go source request and the bounded native response from a separately selected trusted process. The version 1 observation preserves physical declaration and call occurrences, direct source-body or bodyless declaration associations, explicit unsupported states and original source, authority, context and producer bindings. This projection has its own identity and keeps canonical Rust PSM v6, finding generation, enforcement and certification unchanged.
 
-### [collector.go](../_code/collector.go)
+### [`collector.go`](../_code/collector.go)
 
 Uses the Go standard library parser and type checker to observe one explicit source-only package. The reviewed host builds and selects this helper separately. It reads a bounded request on stdin and writes one bounded JSON frame to stdout. It runs no project code, package resolver, compiler or subprocess. Explicit Go 1.17 and 1.22 contexts on Windows and Linux amd64 are admitted. The closed observation refuses dependency, build directive, test, generated/foreign and unsupported context. Declaration-site resolutions and syntactic activation markers do not establish execution, control flow, effects, or stable cross-revision symbol identity.
 
-### [go_body.go](../_code/go_body.go)
+### [`go_body.go`](../_code/go_body.go)
 
 Adds an explicit scalar body mode when built together with the single-file
 collector. Native Go name resolution and type checking verify ordered local
@@ -117,7 +117,7 @@ arithmetic, dynamic or external calls, methods, goroutines, defer, limited
 identifiers and larger bodies retain explicit refusal. The worker never
 imports or executes repository code.
 
-### [go_body_observation.rs](../_code/go_body_observation.rs)
+### [`go_body_observation.rs`](../_code/go_body_observation.rs)
 
 Checks the exact closed-package transport and source inventory before admitting
 each row to shared Program Semantics body construction. The body receipt binds
@@ -125,7 +125,7 @@ the originating evaluation, producer, stdout and physical source occurrences.
 Effects, behavioral proof and conformance are outside this standalone
 observation.
 
-### [collector_build_context.go](../_code/collector_build_context.go)
+### [`collector_build_context.go`](../_code/collector_build_context.go)
 
 Adds explicit standalone build selection for one sealed Go source directory. The trusted host builds the two named source files with the selected Go toolchain and invokes the result with the single argument `--select-build-go`. The original single-file collector source and build remain byte-identical. With no argument the combined helper also emits the existing v1 wire projection.
 
@@ -134,7 +134,7 @@ Version 2 binds the exact complete supplied inventory, sorted source digests, pa
 This standalone interface projects direct source-body and external-declaration observations for the selected inputs. It grants no repository authority or complete package, linkage, effect, runtime, or certification conclusion. Snapshot Governance integration must independently bind the complete physical source inventory and the trusted build context before using the selected source set. Targets describe compile selection and do not establish operational platform support.
 
 
-### [collector_local_imports.go](../_code/collector_local_imports.go)
+### [`collector_local_imports.go`](../_code/collector_local_imports.go)
 
 Adds explicit module-local type observations for a closed pure-Go library package graph. A trusted build links all three Go collector source files and passes only `--observe-go-module`. Version 3 accepts only a selected Go 1.22 release and Windows or Linux amd64 target context, with the qualified Go 1.22.12 Windows or Go 1.22.2 Linux helper and `GODEBUG=gotypesalias=0`. The no-argument v1 and explicit `--select-build-go` v2 modes retain their wire shapes and meanings.
 
@@ -144,15 +144,15 @@ The Go file matcher reads only admitted virtual bytes. A single `go/types` packa
 
 A successful result gives per-package lexical import occurrences, aliases, declaration and call positions, and any requested native nominal-type identity comparison. Static qualified function and method associations include the exact declaring package and source site. Function values, interface calls and unsupported call forms retain unresolved states. An unavailable import, unsupported input, cycle, resource limit or type checking error yields a typed refusal with no projected package facts. This protocol exposes source observations only. It establishes neither runtime behavior nor semantic or certification authority. The explicit CLI and Snapshot Governance admission bind actual source and an independently registered worker.
 
-### [go_build_selection.rs](../_code/go_build_selection.rs)
+### [`go_build_selection.rs`](../_code/go_build_selection.rs)
 
 Shares legacy native response admission and verifies the explicit Go build-context receipt. Every returned source path and digest must match the complete admitted inventory in order. Physical declaration, call and diagnostic spans can reference only selected files.
 
-### [go_module_observation.rs](../_code/go_module_observation.rs)
+### [`go_module_observation.rs`](../_code/go_module_observation.rs)
 
 Admits the exact current Go module and package map from independently captured ordinary source. It checks the separately selected build context, source and module digests, known worker and request identity, package reachability, returned file dispositions and bounded declaration, call, import and type-comparison coordinates. Unsupported paths and contexts fail closed. A public projection contains only these actual native observations and their provenance.
 
-### [native_body.rs](../_code/native_body.rs)
+### [`native_body.rs`](../_code/native_body.rs)
 
 Accepts the selected native frontend's bounded scalar body attachment after
 verified exchange framing. The attachment binds the exact physical source

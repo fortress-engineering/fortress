@@ -184,7 +184,7 @@ Parses bounded comparison-campaign options without executing work. Its explicit 
 
 Runs canonical read-only and shared migration fixtures with independent expected results. Cases distinguish old violations, newly introduced effect requirements, mixed edits and unavailable history. Review and application controls preserve byte-exact input binding and exercise missing grants, expiry, semantic persistence and stale scope.
 
-### [go_observation.rs](../_code/go_observation.rs)
+### [`go_observation.rs`](../_code/go_observation.rs)
 
 Exercises exact physical capture, native output verification, original authority bindings, schema shape, stale source, unsupported unselected context, false-PASS attempts and malformed declaration/coordinate references against a frozen independent native collector response.
 

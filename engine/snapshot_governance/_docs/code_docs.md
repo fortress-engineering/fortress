@@ -517,7 +517,7 @@ Evaluates a proposed policy or profile change on exact immutable bytes through S
 
 Observes exact governed endpoints and composes existing migration, Standard and optional admission services. A second physical observation checks current source before exposing a proposal. The adapter produces no authority, application receipt, or certificate.
 
-### [go_observation.rs](../_code/go_observation.rs)
+### [`go_observation.rs`](../_code/go_observation.rs)
 
 Captures the existing bounded physical source inventory and original selected authority before passing a closed Go request to an explicit trusted host. The host selects and supervises the pinned executable. Snapshot Governance reobserves physical source and checks the native directory identity before exposing the observation. Ordinary audit, discovery, query, and candidate evaluation never launch this helper. The result remains separate from application assessment, governance decisions, and native certification.
 
@@ -580,7 +580,7 @@ the worker request. It preserves the native response and attaches a scoped
 Implementation Observation projection. The full physical view is revalidated
 after the report is assembled and before its publication.
 
-### [python_dependencies.rs](../_code/python_dependencies.rs)
+### [`python_dependencies.rs`](../_code/python_dependencies.rs)
 
 Combines an admitted Python static import receipt with original logical
 Module ownership through the native dependency adapter. Positions use the

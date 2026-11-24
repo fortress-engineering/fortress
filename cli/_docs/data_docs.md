@@ -69,52 +69,52 @@ Defines the explicit host-owned Go compiler registration, including the exact
 executable and toolchain. Runtime admission requires an ordinary absolute host
 asset outside the selected repository.
 
-### [go_body_registration_v1.json](../_data/go_body_registration_v1.json)
+### [`go_body_registration_v1.json`](../_data/go_body_registration_v1.json)
 
 Defines the external registration for an explicitly selected pinned Go
 scalar-body worker. Its separate schema preserves the identities of the
 existing declaration and build-selection processes.
 
-### [go_collector_schema_v2.json](../_data/go_collector_schema_v2.json)
+### [`go_collector_schema_v2.json`](../_data/go_collector_schema_v2.json)
 
 Defines the explicit external host registration for the native Go build-selection mode. The trusted host pins the combined helper and declares its exact bounded compiler and test context.
 
-### [python_worker_schema_v1.json](../_data/python_worker_schema_v1.json)
+### [`python_worker_schema_v1.json`](../_data/python_worker_schema_v1.json)
 
 Versioned host registration for the independently selected interpreter. The schema requires an absolute host interpreter and worker path in production. The executable SHA-256, runtime descriptor hash and exact grammar identify the selected binding. The worker path must contain the reviewed implementation shipped with the running Fortress executable.
 
-### [python_lexical_schema_v1.json](../_data/python_lexical_schema_v1.json)
+### [`python_lexical_schema_v1.json`](../_data/python_lexical_schema_v1.json)
 
 Versioned Python lexical observation envelope. It records the exact source, context, authority, selected interpreter, registration and resource profile. The nested Source Architecture report retains syntax, scope, module validity, source spans and explicit runtime limitations. This shape is an observational projection, with no portable authority or assessment meaning.
 
-### [go_collector_schema_v3.json](../_data/go_collector_schema_v3.json)
+### [`go_collector_schema_v3.json`](../_data/go_collector_schema_v3.json)
 
 Defines the external host registration for the bounded native Go module observer. The host supplies a reviewed executable digest, the exact runtime edition, and the selected build context independently of repository bytes.
 
-### [scalar_worker_schema_v1.json](../_data/scalar_worker_schema_v1.json)
+### [`scalar_worker_schema_v1.json`](../_data/scalar_worker_schema_v1.json)
 
 Versioned external registration for explicit scalar observation. It declares the
 trusted interpreter and two worker assets and specifies the exact observed
 source, function and ordered exact-bool input premises.
 
-### [python_scalar_schema_v1.json](../_data/python_scalar_schema_v1.json)
+### [`python_scalar_schema_v1.json`](../_data/python_scalar_schema_v1.json)
 
 Versioned Python scalar inspection report. It retains exact source, original
 authority and context, resource profile, exchange identity, scoped native
 body status and conditional output domain when available.
 
-### [python_scope_schema_v1.json](../_data/python_scope_schema_v1.json)
+### [`python_scope_schema_v1.json`](../_data/python_scope_schema_v1.json)
 
 Versioned external selection of ordered analysis-only Python roots and their
 inventory premise. The caller independently pins the canonical document digest.
 
-### [python_import_schema_v1.json](../_data/python_import_schema_v1.json)
+### [`python_import_schema_v1.json`](../_data/python_import_schema_v1.json)
 
 Versioned actual-state Python lexical and static import report. It records
 exact repository, evaluator and host provenance, optional static targets
 or unavailable reasons, and unresolved runtime behavior.
 
-### [python_dependency_schema_v1.json](../_data/python_dependency_schema_v1.json)
+### [`python_dependency_schema_v1.json`](../_data/python_dependency_schema_v1.json)
 
 Versioned static dependency inspection envelope. It binds the original
 Python import report to admitted source origins, explicit ownership

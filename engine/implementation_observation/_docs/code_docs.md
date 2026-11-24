@@ -32,6 +32,6 @@ Inline namespace traversal carries its physical lookup directory through nested 
 
 The supported top-level Cargo `tests/*.rs` inventory is observed when automatic test discovery is enabled, matching Program Semantics. `autotests=false` suppresses implicit roots while retaining explicitly declared test targets. This is source observation, not actual test execution or complete Cargo build reproduction.
 
-### [native_dependency.rs](../_code/native_dependency.rs)
+### [`native_dependency.rs`](../_code/native_dependency.rs)
 
 Maps already admitted, exact directional native source dependencies through the immutable selected source and ownership relation. Go supplies all selected files of a resolved local package. Python supplies a scoped static file origin. Both preserve the source and authority identities, the evidence receipt, physical location, and positive source scope. A uniform declared owner on both endpoints is required for a governed Module edge. Multiple owners, incomplete ownership, mechanical analysis territories, and unresolved targets remain explicit. No runtime, absence, assurance, or certification conclusion is derived. The adapter is independent of ordinary repository audit and native process selection.
