@@ -444,7 +444,7 @@ fn physical_native_code_ownership_is_independent_of_responsibility_docs() {
     repository.write("outside/unowned.go", "package outside\n");
     repository.write("native/_data/unowned.py", "ignored = True\n");
     let undeclared = inspect_repository_modules(repository.path()).unwrap();
-    assert_eq!(undeclared.project_authority_state(), "ABSENT");
+    assert_eq!(undeclared.project_authority_state(), "MISSING");
     assert!(
         undeclared
             .modules()
