@@ -108,7 +108,7 @@ impl CodeFileResponsibility {
     }
 }
 /// Semantic implementation version of Source Architecture.
-pub const SOURCE_ARCHITECTURE_SEMANTIC_VERSION: &str = "1.3.0";
+pub const SOURCE_ARCHITECTURE_SEMANTIC_VERSION: &str = "1.4.0";
 
 const PROFILE_REMEDIATION: &str = "Correct the registered language profile so its identity, adapter, extensions, semantic-region mapping, archetypes, composition constraints, and coverage limitations conform to Source Profile v1.";
 const ARTIFACT_REMEDIATION: &str = "Document the file's single architectural responsibility in canonical code_docs.md, register or correct the applicable language profile, and align observed composition with exactly one permitted archetype without suppressing unsupported coverage.";

@@ -426,6 +426,73 @@ fn a_go_edit_invalidates_the_artifact_projection_without_entering_rust_inputs() 
     assert_eq!(key(ProjectionKind::Psm), psm_key);
 }
 
+/// `T-NATIVE-PHYSICAL-OWNERSHIP-001`
+/// Fortress classification: infrastructure
+#[test]
+fn physical_native_code_ownership_is_independent_of_responsibility_docs() {
+    let repository = TestRepository::new("physical-native-ownership");
+    repository.write(
+        "contract.json",
+        &minimal_contract("PF-FIXTURE", "Fixture", true),
+    );
+    repository.write(
+        "native/contract.json",
+        &minimal_contract("AF-NATIVE-0001", "Native", false),
+    );
+    repository.write("native/_code/check.go", "package native\n");
+    repository.write("native/_code/check.py", "enabled = True\n");
+    repository.write("outside/unowned.go", "package outside\n");
+    repository.write("native/_data/unowned.py", "ignored = True\n");
+    let inspection = inspect_repository_modules(repository.path()).unwrap();
+    let module = inspection
+        .modules()
+        .iter()
+        .find(|module| module.module() == "AF-NATIVE-0001")
+        .unwrap();
+    assert_eq!(module.observed_sources(), 2);
+    let inspect = || compile_repository_source_artifact_model(repository.path()).unwrap();
+    let expected = ["native/_code/check.go", "native/_code/check.py"];
+    let ownership = |model: &fortress_core::source_architecture::SourceArtifactModel| {
+        let mut ids = Vec::new();
+        for path in expected {
+            let artifact = model
+                .artifacts()
+                .iter()
+                .find(|row| row.path() == path)
+                .unwrap();
+            assert_eq!(artifact.module_id(), "AF-NATIVE-0001");
+            ids.push(artifact.id().to_owned());
+        }
+        assert_eq!(model.artifacts().len(), expected.len());
+        ids
+    };
+    let undocumented = ownership(&inspect());
+    repository.write(
+        "native/_docs/code_docs.md",
+        "# Code\n\n## Files\n\n### `check.go`\n\nDeclares the native Go fixture package.\n\n### `check.py`\n\nDefines the flag used by the native Python fixture.\n",
+    );
+    assert_eq!(ownership(&inspect()), undocumented);
+    let affected =
+        fortress_core::audit::compile_repository_affected_snapshot(repository.path()).unwrap();
+    for path in expected {
+        let source = affected
+            .units()
+            .iter()
+            .find(|unit| unit.id() == format!("source:{path}"))
+            .unwrap();
+        assert!(
+            source
+                .dependencies()
+                .contains(&"authority:native/contract.json".to_owned())
+        );
+        assert!(
+            !source
+                .dependencies()
+                .contains(&"authority:__fortress/.fsconfig".to_owned())
+        );
+    }
+}
+
 fn write_nested_native_bindings(repository: &TestRepository, exact: &str) {
     let modules = [
         ("AF-BASE-0001", "PF-FIXTURE", "base", "directory", "src"),

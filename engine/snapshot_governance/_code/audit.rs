@@ -72,7 +72,7 @@ use crate::implementation_observation::{
     ObservedImplementation, SnapshotBoundFile, SourceOwnership, SourceOwnershipAuthority,
     SourceOwnershipBasis, SourceOwnershipDiagnostic, SourceOwnershipResolution,
     observe_cargo_analysis_territories, observe_rust_implementation,
-    resolve_inventory_ownership_with_logical_modules,
+    resolve_inventory_ownership_with_logical_modules, resolve_selected_native_source_ownership,
     resolve_source_ownership_with_logical_modules,
 };
 use crate::information_flow::{
@@ -1748,6 +1748,11 @@ fn is_native_artifact_path(path: &str) -> bool {
     )
 }
 
+fn physical_code_location(path: &str) -> &str {
+    path.rsplit_once("/_code/")
+        .map_or(path, |(_, relative)| relative)
+}
+
 fn source_artifact_inputs(
     ownerships: &[SourceOwnership],
     native_source_ownerships: &[SourceOwnership],
@@ -1780,19 +1785,25 @@ fn source_artifact_inputs(
     for responsibility in responsibilities {
         let path = responsibility.source_path();
         artifacts.entry(path).or_insert_with(|| {
-            let marker = "/_code/";
-            let relative = path
-                .rfind(marker)
-                .map_or(path, |index| &path[index + marker.len()..]);
-            SourceArtifactInput::new(path, responsibility.module_id(), relative)
+            SourceArtifactInput::new(
+                path,
+                responsibility.module_id(),
+                physical_code_location(path),
+            )
         });
     }
     for ownership in native_source_ownerships {
         let path = ownership.source_path();
-        artifacts.insert(
-            path,
-            SourceArtifactInput::with_project_relative_location(path, ownership.owner()),
-        );
+        if ownership.basis() == SourceOwnershipBasis::LogicalPathBinding {
+            artifacts.insert(
+                path,
+                SourceArtifactInput::with_project_relative_location(path, ownership.owner()),
+            );
+        } else {
+            artifacts.entry(path).or_insert_with(|| {
+                SourceArtifactInput::new(path, ownership.owner(), physical_code_location(path))
+            });
+        }
     }
     artifacts.into_values().collect()
 }
@@ -4692,10 +4703,13 @@ fn build_affected_snapshot(
     let mut native_source_units = Vec::new();
     for ownership in &prepared.native_source_ownerships {
         let path = ownership.source_path();
-        let mut dependencies = vec![
-            format!("authority:{path}"),
-            format!("authority:{PROJECT_CONFIGURATION_PATH}"),
-        ];
+        let mut dependencies = vec![format!("authority:{path}")];
+        if prepared
+            .observed_files
+            .contains_key(PROJECT_CONFIGURATION_PATH)
+        {
+            dependencies.push(format!("authority:{PROJECT_CONFIGURATION_PATH}"));
+        }
         if let Some(module) = prepared
             .ccg()
             .and_then(|ccg| ccg.modules().get(ownership.owner()))
@@ -5372,6 +5386,7 @@ fn prepare_analysis_from_view(view: SourceView) -> Result<PreparedAnalysis, Audi
 fn project_native_artifact_ownership(
     files: &SourceView,
     project: &LoadedProjectAuthority,
+    physical_modules: &[ModuleTerritory],
     known_modules: &BTreeSet<String>,
     rust_ownership: &SourceOwnershipResolution,
 ) -> (Vec<SourceOwnership>, Vec<SourceOwnershipDiagnostic>) {
@@ -5380,15 +5395,15 @@ fn project_native_artifact_ownership(
         .configuration
         .as_ref()
         .map_or(&[][..], ProjectConfiguration::logical_modules);
-    if project.state != ProjectGovernanceState::Declared || logical_modules.is_empty() {
+    if project.state != ProjectGovernanceState::Declared {
         return (Vec::new(), diagnostics);
     }
-    let selected = resolve_inventory_ownership_with_logical_modules(
+    let selected = resolve_selected_native_source_ownership(
         files
             .keys()
             .map(String::as_str)
             .filter(|path| is_native_artifact_path(path)),
-        &[],
+        physical_modules,
         logical_modules,
         known_modules,
     );
@@ -5468,6 +5483,7 @@ fn prepare_analysis_from_observed(
     let (native_source_ownerships, ownership_diagnostics) = project_native_artifact_ownership(
         &observed_files,
         &project,
+        &modules,
         &known_module_ids,
         &ownership_resolution,
     );

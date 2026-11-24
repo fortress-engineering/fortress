@@ -250,18 +250,8 @@ pub fn resolve_source_ownership<'a>(
             .extension()
             .is_some_and(|extension| extension.eq_ignore_ascii_case("rs"))
     }) {
-        if let Some(module) = modules
-            .iter()
-            .filter(|module| module.contains_source(path))
-            .max_by_key(|module| module.path().len())
-        {
-            ownerships.push(SourceOwnership {
-                source_path: path.clone(),
-                owner: module.id().into(),
-                territory_path: module.path().into(),
-                authority: SourceOwnershipAuthority::DeclaredModule,
-                basis: SourceOwnershipBasis::PhysicalModuleContainment,
-            });
+        if let Some(ownership) = declared_source_containment(path, modules) {
+            ownerships.push(ownership);
             continue;
         }
         if let Some((manifest, territory)) = manifests
@@ -280,6 +270,20 @@ pub fn resolve_source_ownership<'a>(
     }
     ownerships.sort();
     ownerships
+}
+
+fn declared_source_containment(path: &str, modules: &[ModuleTerritory]) -> Option<SourceOwnership> {
+    modules
+        .iter()
+        .filter(|module| module.contains_source(path))
+        .max_by_key(|module| module.path().len())
+        .map(|module| SourceOwnership {
+            source_path: path.into(),
+            owner: module.id().into(),
+            territory_path: module.path().into(),
+            authority: SourceOwnershipAuthority::DeclaredModule,
+            basis: SourceOwnershipBasis::PhysicalModuleContainment,
+        })
 }
 
 /// Resolves authored logical bindings before deterministic Cargo fallback.
@@ -321,6 +325,41 @@ pub fn resolve_inventory_ownership_with_logical_modules<'a>(
         known_module_ids,
         false,
     )
+}
+
+/// Resolves selected native source paths through existing authored selectors and
+/// canonical code containment. A conflicting authored selector blocks fallback.
+pub(crate) fn resolve_selected_native_source_ownership<'a>(
+    paths: impl IntoIterator<Item = &'a str>,
+    physical_modules: &[ModuleTerritory],
+    logical_modules: &[LogicalModuleDeclaration],
+    known_module_ids: &BTreeSet<String>,
+) -> SourceOwnershipResolution {
+    let paths = paths.into_iter().collect::<BTreeSet<_>>();
+    let mut resolved = resolve_inventory_ownership_with_logical_modules(
+        paths.iter().copied(),
+        &[],
+        logical_modules,
+        known_module_ids,
+    );
+    let accounted = resolved
+        .ownerships
+        .iter()
+        .map(SourceOwnership::source_path)
+        .chain(
+            resolved
+                .diagnostics
+                .iter()
+                .map(SourceOwnershipDiagnostic::source_path),
+        )
+        .collect::<BTreeSet<_>>();
+    let fallbacks = paths
+        .difference(&accounted)
+        .filter_map(|path| declared_source_containment(path, physical_modules))
+        .collect::<Vec<_>>();
+    resolved.ownerships.extend(fallbacks);
+    resolved.ownerships.sort();
+    resolved
 }
 
 fn resolve_binding_ownership<'a>(
