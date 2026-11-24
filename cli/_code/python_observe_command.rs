@@ -306,7 +306,7 @@ fn collect_imports(
     let scope =
         PythonImportScope::admit(&scope_bytes, scope_ref).map_err(|error| error.to_string())?;
     let (registration, registration_bytes) = Registration::load(&root, registration_path)?;
-    let worker_ref = digest(WORKER);
+    let worker_ref = digest(PYTHON_LEXICAL_WORKER);
     let producer = PythonLexicalProducer::new(
         registration.grammar.into(),
         &registration.runtime_ref,
