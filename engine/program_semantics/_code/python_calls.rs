@@ -100,8 +100,7 @@ impl PythonScalarRequest {
         };
         let enclosing = selected
             .symbol
-            .as_ref()
-            .cloned()
+            .clone()
             .map(serde_json::from_value::<Symbol>)
             .transpose()
             .map_err(|_| PythonScalarError::InvalidResponse)?;
