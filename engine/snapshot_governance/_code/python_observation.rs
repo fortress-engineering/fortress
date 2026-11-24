@@ -16,7 +16,7 @@ use crate::candidate::{
 use crate::information_flow::{NativeScalarFlowObservation, observe_native_scalar_flow};
 use crate::migration_governance::MigrationError;
 use crate::native_observation::{
-    NativeSource, NativeSourceError, project_native_call_ownership,
+    NativeOwnershipProjectionKind, NativeSource, NativeSourceError, project_native_call_ownership,
     project_native_call_sensitivity, project_native_call_topology,
 };
 use crate::observation::SourceView;
@@ -723,6 +723,7 @@ pub fn observe_python_native_call_module_boundaries(
         &source.view,
         &source.binding,
         &source.binding,
+        NativeOwnershipProjectionKind::Actual,
         "python",
         &serde_json::json!({
             "evaluation_key": evaluation_key,
@@ -819,8 +820,16 @@ pub fn observe_python_candidate_call_module_boundaries(
                 "source_ref": request.source_ref(),
                 "producer": producer,
             });
-            project_native_call_ownership(view, candidate, original, "python", &evidence, &graph)
-                .map_err(|failure| native_error(PythonObservationError::from(failure)))
+            project_native_call_ownership(
+                view,
+                candidate,
+                original,
+                NativeOwnershipProjectionKind::Hypothetical,
+                "python",
+                &evidence,
+                &graph,
+            )
+            .map_err(|failure| native_error(PythonObservationError::from(failure)))
         },
     )
 }

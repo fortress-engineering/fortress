@@ -407,6 +407,10 @@ mod lexical_calls {
         assert_eq!(report["actual_state"], false);
         let observed = &report["native"]["report"];
         assert_eq!(
+            observed["$schema"],
+            "urn:fortress:derived:v1:hypothetical-native-call-module-boundaries"
+        );
+        assert_eq!(
             observed["original_intent"],
             json!({"status":"ORIGINAL_INTENT_UNAVAILABLE"})
         );

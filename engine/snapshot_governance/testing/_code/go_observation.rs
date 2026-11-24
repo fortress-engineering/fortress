@@ -534,6 +534,11 @@ mod bound_call_bodies {
             report["candidate_authority_ref"]
         );
         let facts = &report["native"]["report"];
+        assert_eq!(
+            facts["$schema"],
+            "urn:fortress:derived:v1:hypothetical-native-call-module-boundaries"
+        );
+        assert_eq!(facts["observation"]["provenance"]["actual"], false);
         assert_eq!(facts["ownership_sites"][0]["relationship"], "CROSS_MODULE");
         assert_eq!(
             facts["original_intent"]["records"][0]["state"],

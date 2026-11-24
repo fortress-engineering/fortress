@@ -247,10 +247,17 @@ struct NativeCallOwnership<'a> {
     relationship: NativeCallOwnershipState,
 }
 
+#[derive(Clone, Copy)]
+pub(crate) enum NativeOwnershipProjectionKind {
+    Actual,
+    Hypothetical,
+}
+
 pub(crate) fn project_native_call_ownership(
     view: &SourceView,
     selected: &NativeObservationBinding,
     original: &NativeObservationBinding,
+    kind: NativeOwnershipProjectionKind,
     language: &str,
     observation: &serde_json::Value,
     topology: &NativeCallTopology<'_>,
@@ -325,8 +332,16 @@ pub(crate) fn project_native_call_ownership(
     });
     let original_intent =
         compare_dependency_intent(original, observed.as_ref()).map_err(unavailable)?;
+    let schema = match kind {
+        NativeOwnershipProjectionKind::Actual => {
+            "urn:fortress:derived:v1:native-call-module-boundaries"
+        }
+        NativeOwnershipProjectionKind::Hypothetical => {
+            "urn:fortress:derived:v1:hypothetical-native-call-module-boundaries"
+        }
+    };
     Ok(serde_json::json!({
-        "$schema": "urn:fortress:derived:v1:native-call-module-boundaries",
+        "$schema": schema,
         "schema_version": 1,
         "scope": "POSITIVE_STATIC_CALLS_UNDER_ORIGINAL_LOGICAL_OWNERSHIP",
         "language": language,
