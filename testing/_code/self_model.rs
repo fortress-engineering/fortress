@@ -164,36 +164,6 @@ fn live_contract_v2_v3_ecosystem_resolves_completely() {
     assert_eq!(resolved.capabilities().len(), 27);
     assert_eq!(resolved.features().len(), 28);
     assert_eq!(resolved.requirements().len(), 192);
-    assert_eq!(
-        resolved.requirements()["AF-SNAPSHOT-GOVERNANCE-0001-R35"]
-            .tests()
-            .len(),
-        2
-    );
-    assert_eq!(
-        resolved.requirements()["AF-SNAPSHOT-GOVERNANCE-0001-R34"]
-            .tests()
-            .len(),
-        1
-    );
-    assert_eq!(
-        resolved.requirements()["AF-SNAPSHOT-GOVERNANCE-0001-R33"]
-            .tests()
-            .len(),
-        3
-    );
-    assert_eq!(
-        resolved.requirements()["AF-SNAPSHOT-GOVERNANCE-0001-R32"]
-            .tests()
-            .len(),
-        3
-    );
-    assert_eq!(
-        resolved.requirements()["AF-SNAPSHOT-GOVERNANCE-0001-R31"]
-            .tests()
-            .len(),
-        3
-    );
     assert!(
         resolved
             .requirements()
@@ -205,7 +175,11 @@ fn live_contract_v2_v3_ecosystem_resolves_completely() {
     let admission = &resolved.requirements()["AF-SNAPSHOT-GOVERNANCE-0001-R26"];
     assert_eq!(admission.tests().len(), 8);
     for &(requirement, count) in REQUIRED_SELF_MODEL_TEST_COUNTS {
-        assert_eq!(resolved.requirements()[requirement].tests().len(), count);
+        assert_eq!(
+            resolved.requirements()[requirement].tests().len(),
+            count,
+            "{requirement}"
+        );
     }
     assert_eq!(resolved.guarantees().len(), 17);
     assert_eq!(resolved.checkpoints().len(), 10);
@@ -307,6 +281,11 @@ const REQUIRED_SELF_MODEL_TEST_COUNTS: &[(&str, usize)] = &[
     ("AF-SNAPSHOT-GOVERNANCE-0001-R28", 30),
     ("AF-SNAPSHOT-GOVERNANCE-0001-R29", 19),
     ("AF-SNAPSHOT-GOVERNANCE-0001-R30", 9),
+    ("AF-SNAPSHOT-GOVERNANCE-0001-R31", 3),
+    ("AF-SNAPSHOT-GOVERNANCE-0001-R32", 3),
+    ("AF-SNAPSHOT-GOVERNANCE-0001-R33", 3),
+    ("AF-SNAPSHOT-GOVERNANCE-0001-R34", 1),
+    ("AF-SNAPSHOT-GOVERNANCE-0001-R35", 2),
     ("AF-SOURCE-ARCHITECTURE-0001-R05", 6),
     ("AF-SOURCE-ARCHITECTURE-0001-R06", 3),
     ("AF-STATE-EFFECT-ANALYSIS-0001-R08", 4),
