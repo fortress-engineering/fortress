@@ -1,5 +1,7 @@
 //! Admits exact native Go scalar body rows before shared body construction.
 
+use std::collections::{BTreeMap, BTreeSet};
+
 use serde::ser::SerializeStruct;
 use serde::{Deserialize, Serialize, Serializer};
 use serde_json::Value;
@@ -9,13 +11,30 @@ use super::{
     digest, known_diagnostic, sha256,
 };
 use crate::program_semantics::native_body::{
-    NativeBodyError, NativeBodyInput, NativeBodyLanguage, NativeBodyOutcome, NativeScalarBody,
+    NativeBodyError, NativeBodyInput, NativeBodyLanguage, NativeBodyOutcome, NativeBoundCall,
+    NativeScalar, NativeScalarBody, Span as BodySpan,
 };
 use crate::program_semantics::native_callable::NativeCallableLimitation as Limit;
 use crate::project::EvaluationKey;
 use crate::wire::parse_strict_json_bytes;
 
 const PRODUCER: &str = "fortress.go-bodies@0.1.0";
+const CALL_PRODUCER: &str = "fortress.go-call-bodies@0.1.0";
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Mode {
+    FirstOrder,
+    BoundCalls,
+}
+
+impl Mode {
+    const fn wire(self) -> (u16, &'static str) {
+        match self {
+            Self::FirstOrder => (1, PRODUCER),
+            Self::BoundCalls => (2, CALL_PRODUCER),
+        }
+    }
+}
 const MAX_ROWS: usize = 1024;
 const LIMITATIONS: [&str; 4] = [
     "CLOSED_PACKAGE_ONLY",
@@ -100,6 +119,13 @@ pub(crate) struct GoNativeBodyObservation {
     limitations: [&'static str; 4],
 }
 
+#[derive(Serialize)]
+struct GoResolvedCall<'a> {
+    caller: &'a str,
+    call: &'a NativeBoundCall,
+    target_body: Option<&'a str>,
+}
+
 pub(super) struct LinkedBody {
     pub(super) evaluation: EvaluationKey,
     pub(super) exchange: String,
@@ -165,15 +191,56 @@ impl GoRequest<'_> {
         source_manifest: &str,
         stdout: &[u8],
     ) -> Result<GoNativeBodyObservation, GoObservationError> {
+        self.verify_body_payload(launched, source_manifest, stdout, Mode::FirstOrder)
+    }
+
+    pub(crate) fn verify_call_bodies(
+        &self,
+        launched: &GoCollectorPin<'_>,
+        source_manifest: &str,
+        stdout: &[u8],
+    ) -> Result<Value, GoObservationError> {
+        let observation =
+            self.verify_body_payload(launched, source_manifest, stdout, Mode::BoundCalls)?;
+        let calls = resolve_go_bound_calls(&observation.functions)?;
+        Ok(serde_json::json!({
+            "$schema": "urn:fortress:derived:v1:go-bound-call-observation",
+            "schema_version": 1,
+            "scope": "STATIC_CALL_DECLARATIONS_ONLY",
+            "observation": {
+                "evaluation_key": observation.evaluation_key,
+                "exchange_sha256": observation.exchange_sha256,
+                "producer_sha256": observation.producer_sha256,
+                "response_sha256": observation.response_sha256,
+                "provenance": observation.provenance,
+                "source_inventory": observation.source_inventory,
+                "status": observation.status,
+                "diagnostic": observation.diagnostic,
+                "functions": observation.functions.iter().map(go_bound_function_summary).collect::<Vec<_>>(),
+            },
+            "calls": calls,
+            "call_evaluation": "UNESTABLISHED",
+        }))
+    }
+
+    fn verify_body_payload(
+        &self,
+        launched: &GoCollectorPin<'_>,
+        source_manifest: &str,
+        stdout: &[u8],
+        mode: Mode,
+    ) -> Result<GoNativeBodyObservation, GoObservationError> {
         if !digest(source_manifest) {
             return Err(GoObservationError::InvalidTrustedBinding);
         }
         let line = self.verify_transport_depth(launched, stdout, 40)?;
         let response: NativeResponse =
             parse_strict_json_bytes(line).map_err(|_| GoObservationError::InvalidResponse)?;
-        self.verify_body_envelope(&response)?;
+        self.verify_body_envelope(&response, mode)?;
 
-        let producer_sha256 = identity(&("fortress-go-body-producer-v1", PRODUCER, self.pin))?;
+        let (_, selected_producer) = mode.wire();
+        let producer_sha256 =
+            identity(&("fortress-go-body-producer-v1", selected_producer, self.pin))?;
         let context_sha256 = identity(&(
             "fortress-go-body-context-v1",
             &self.context_sha256,
@@ -191,7 +258,7 @@ impl GoRequest<'_> {
         let mut previous = (String::new(), 0);
         let mut functions = Vec::with_capacity(response.functions.len());
         for row in response.functions {
-            let span = occurrence(&row)?;
+            let span = occurrence(&row, mode)?;
             if (span.path.as_str(), span.start_byte) < (previous.0.as_str(), previous.1) {
                 return Err(GoObservationError::InvalidResponse);
             }
@@ -202,6 +269,7 @@ impl GoRequest<'_> {
                 &evaluation_key,
                 &exchange_sha256,
                 &producer_sha256,
+                mode,
             )?);
         }
         Ok(GoNativeBodyObservation {
@@ -218,6 +286,7 @@ impl GoRequest<'_> {
         })
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn verify_body_row(
         &self,
         row: &Value,
@@ -225,6 +294,7 @@ impl GoRequest<'_> {
         evaluation: &EvaluationKey,
         exchange_ref: &str,
         producer_ref: &str,
+        mode: Mode,
     ) -> Result<GoBodyFunction, GoObservationError> {
         let original = self
             .files
@@ -250,7 +320,7 @@ impl GoRequest<'_> {
             }
         }
         let row_bytes = serde_json::to_vec(row).map_err(|_| GoObservationError::WireEncoding)?;
-        let outcome = NativeBodyInput {
+        let input = NativeBodyInput {
             language: NativeBodyLanguage::Go,
             evaluation,
             exchange_ref,
@@ -259,8 +329,11 @@ impl GoRequest<'_> {
             source_ref: &source.sha256,
             source: original.text.as_bytes(),
             python_bool_parameters: &[],
+        };
+        let outcome = match mode {
+            Mode::FirstOrder => input.admit(&row_bytes),
+            Mode::BoundCalls => input.admit_bound_go_body(&row_bytes),
         }
-        .admit(&row_bytes)
         .map_err(|failure| match failure {
             NativeBodyError::ResourceLimit => GoObservationError::ResourceLimit,
             _ => GoObservationError::InvalidResponse,
@@ -281,9 +354,14 @@ impl GoRequest<'_> {
         }
     }
 
-    fn verify_body_envelope(&self, response: &NativeResponse) -> Result<(), GoObservationError> {
-        if response.schema_version != 1
-            || response.producer != PRODUCER
+    fn verify_body_envelope(
+        &self,
+        response: &NativeResponse,
+        mode: Mode,
+    ) -> Result<(), GoObservationError> {
+        let (version, producer) = mode.wire();
+        if response.schema_version != version
+            || response.producer != producer
             || response.go_toolchain != self.pin.go_toolchain
             || response.request_sha256 != self.request_sha256
             || response.source_inventory != self.context.source_inventory
@@ -314,12 +392,106 @@ impl GoRequest<'_> {
     }
 }
 
+fn go_bound_function_summary(function: &GoBodyFunction) -> Value {
+    match function {
+        GoBodyFunction::Lowered {
+            span,
+            symbol,
+            lowered,
+        } => serde_json::json!({
+            "status": "LOWERED",
+            "span": span,
+            "symbol": symbol,
+            "binding": lowered.0.binding(),
+        }),
+        GoBodyFunction::Unavailable {
+            span,
+            symbol,
+            diagnostic,
+            ..
+        } => serde_json::json!({
+            "status": "UNAVAILABLE",
+            "span": span,
+            "symbol": symbol,
+            "diagnostic": diagnostic,
+        }),
+    }
+}
+
+fn resolve_go_bound_calls(
+    functions: &[GoBodyFunction],
+) -> Result<Vec<GoResolvedCall<'_>>, GoObservationError> {
+    let mut declarations = BTreeMap::new();
+    for function in functions {
+        let (symbol, body) = match function {
+            GoBodyFunction::Lowered {
+                symbol, lowered, ..
+            } => (symbol, Some(lowered.0.as_ref())),
+            GoBodyFunction::Unavailable {
+                symbol: Some(symbol),
+                ..
+            } => (symbol, None),
+            GoBodyFunction::Unavailable { symbol: None, .. } => continue,
+        };
+        let key = (&symbol.span.path, symbol.span.start_byte);
+        if declarations.insert(key, (symbol, body)).is_some() {
+            return Err(GoObservationError::InvalidResponse);
+        }
+    }
+    let mut references = BTreeSet::new();
+    let mut calls = Vec::new();
+    for function in functions {
+        let GoBodyFunction::Lowered { lowered, .. } = function else {
+            continue;
+        };
+        let caller = lowered.0.binding();
+        for call in lowered.0.bound_calls() {
+            if !references.insert(call.reference.as_str()) {
+                return Err(GoObservationError::InvalidResponse);
+            }
+            let target = &call.target;
+            let key = (&target.span.path, target.span.start_byte);
+            let (symbol, body) = declarations
+                .get(&key)
+                .ok_or(GoObservationError::InvalidResponse)?;
+            if symbol.name != target.name
+                || !same_span(&symbol.span, &target.span)
+                || !same_span(&symbol.declaration_span, &target.declaration_span)
+                || body.is_some_and(|body| {
+                    body.result() != NativeScalar::Bool
+                        || body.parameters().len() != call.argument_count
+                        || body
+                            .parameters()
+                            .iter()
+                            .any(|(_, scalar)| *scalar != NativeScalar::Bool)
+                })
+            {
+                return Err(GoObservationError::InvalidResponse);
+            }
+            calls.push(GoResolvedCall {
+                caller,
+                call,
+                target_body: body.map(NativeScalarBody::binding),
+            });
+        }
+    }
+    Ok(calls)
+}
+
+fn same_span(go: &Span, native: &BodySpan) -> bool {
+    go.path == native.path
+        && go.start_byte == native.start_byte
+        && go.end_byte == native.end_byte
+        && go.start_line == native.start_line
+        && go.start_byte_column == native.start_byte_column
+}
+
 fn field<T: serde::de::DeserializeOwned>(row: &Value, name: &str) -> Result<T, GoObservationError> {
     serde_json::from_value(row.get(name).cloned().unwrap_or(Value::Null))
         .map_err(|_| GoObservationError::InvalidResponse)
 }
 
-fn occurrence(row: &Value) -> Result<Span, GoObservationError> {
+fn occurrence(row: &Value, mode: Mode) -> Result<Span, GoObservationError> {
     let code = row.pointer("/diagnostic/code").and_then(Value::as_str);
     if let Some(code) = code
         && !matches!(
@@ -346,6 +518,11 @@ fn occurrence(row: &Value) -> Result<Span, GoObservationError> {
                 | "SIGNATURE_FORM_UNAVAILABLE"
                 | "NAMED_RETURN_UNAVAILABLE"
         )
+        && !(mode == Mode::BoundCalls
+            && matches!(
+                code,
+                "CALL_TARGET_UNESTABLISHED" | "CALL_SCALAR_CONTRACT_UNAVAILABLE"
+            ))
     {
         return Err(GoObservationError::InvalidResponse);
     }

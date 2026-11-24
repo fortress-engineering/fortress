@@ -795,3 +795,8 @@ Supply an ordinary absolute Go executable, its SHA-256 reference and an
 ordinary absolute scratch directory outside the project. Toolchain switching,
 ambient workspace lookup and dependency fetching are disabled. The command
 rechecks staged bytes and ownership before publishing declarations.
+
+The Go body command accepts `--bound-calls` with an explicitly pinned
+collector built from the matching native worker. The command reports exact
+call sites and target body availability. The ordinary Go body and return
+sensitivity modes retain their existing contracts.

@@ -212,6 +212,157 @@ const PIN: GoCollectorPin<'static> = GoCollectorPin {
     go_toolchain: "go1.22.12",
 };
 
+mod bound_call_bodies {
+    use super::{Fixture, GoCollectorPin, GoObservationError, GoPackageSelection, Value, fs, json};
+    use fortress_core::go_observation::{observe_go_native_body, observe_go_native_bound_calls};
+    use fortress_core::portable::digest;
+
+    const PIN: GoCollectorPin<'static> = GoCollectorPin {
+        executable_sha256: "sha256:0080cc402d1ec788f1222d45d9ba7352d9ebd6551908c6caabe722286533ef63",
+        supervisor_context_sha256: "sha256:0000000000000000000000000000000000000000000000000000000000000001",
+        go_toolchain: "go1.22.12",
+    };
+
+    const SELECTION: GoPackageSelection<'static> = GoPackageSelection {
+        directory: "",
+        package_path: "reference.test/bound",
+        go_version: "go1.22",
+        target_os: "windows",
+        target_arch: "amd64",
+    };
+
+    fn fixture(name: &str) -> (Fixture, Value) {
+        let all: Value =
+            serde_json::from_slice(include_bytes!("../_data/go_call_fixture_v1.json")).unwrap();
+        let row = &all[name];
+        let fixture = Fixture::new(name);
+        fs::write(
+            fixture.root.join("fixture.go"),
+            row["source"].as_str().unwrap(),
+        )
+        .unwrap();
+        (fixture, row.clone())
+    }
+
+    fn receipt(request: &[u8], record: &Value, field: &str) -> Vec<u8> {
+        let raw = record[field].as_str().unwrap();
+        let wire: Value = serde_json::from_str(raw).unwrap();
+        assert_eq!(wire["request_sha256"], digest(request));
+        raw.as_bytes().to_vec()
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R33-001`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R33
+    #[test]
+    fn go_bound_call_declarations_retain_typed_sites_and_recursion() {
+        for (case, target) in [
+            ("fixed_free_function", "inner"),
+            ("recursive_target", "outer"),
+        ] {
+            let (project, records) = fixture(case);
+            let inspect = || {
+                observe_go_native_bound_calls(&project.root, SELECTION, &PIN, |request| {
+                    Ok(receipt(request, &records, "bound"))
+                })
+                .unwrap()
+            };
+            let result = inspect();
+            assert_eq!(result, inspect());
+            assert_eq!(result["scope"], "STATIC_CALL_DECLARATIONS_ONLY");
+            assert_eq!(result["call_evaluation"], "UNESTABLISHED");
+            let call = &result["calls"][0];
+            assert_eq!(result["calls"].as_array().unwrap().len(), 1);
+            assert_eq!(call["call"]["target"]["name"], target);
+            assert_eq!(call["call"]["argument_count"], 1);
+            assert!(call["target_body"].is_string());
+            assert_eq!(
+                call["target_body"] == call["caller"],
+                case == "recursive_target"
+            );
+            assert!(
+                call["call"]["reference"]
+                    .as_str()
+                    .unwrap()
+                    .starts_with("native_call_site:v1:sha256:")
+            );
+            assert_eq!(
+                result["observation"]["response_sha256"],
+                digest(records["bound"].as_str().unwrap().as_bytes())
+            );
+        }
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R33-002`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R33
+    #[test]
+    fn go_bound_call_declarations_preserve_dynamic_and_legacy_modes() {
+        let (project, data) = fixture("function_value_can_change");
+        let result = observe_go_native_bound_calls(&project.root, SELECTION, &PIN, |request| {
+            Ok(receipt(request, &data, "bound"))
+        })
+        .unwrap();
+        assert_eq!(result["calls"], json!([]));
+        let caller = result["observation"]["functions"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|row| row["symbol"]["name"] == "outer")
+            .unwrap();
+        assert_eq!(caller["diagnostic"]["code"], "CALL_TARGET_UNESTABLISHED");
+        assert!(matches!(
+            observe_go_native_body(&project.root, SELECTION, &PIN, |request| {
+                Ok(receipt(request, &data, "bound"))
+            }),
+            Err(GoObservationError::InvalidResponse)
+        ));
+        assert!(
+            observe_go_native_body(&project.root, SELECTION, &PIN, |request| {
+                Ok(receipt(request, &data, "legacy"))
+            })
+            .is_ok()
+        );
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R33-003`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R33
+    #[test]
+    fn go_bound_call_declarations_refuse_forged_locations_and_stale_source() {
+        let (project, data) = fixture("fixed_free_function");
+        for (pointer, value) in [
+            (
+                "/functions/1/body/0/value/call/target/span/path",
+                json!("different.go"),
+            ),
+            (
+                "/functions/1/body/0/value/call/target/declaration_span/start_byte",
+                json!(0),
+            ),
+            ("/functions/1/body/0/value/call/arguments", json!([])),
+        ] {
+            let result = observe_go_native_bound_calls(&project.root, SELECTION, &PIN, |request| {
+                let mut doc: Value =
+                    serde_json::from_slice(&receipt(request, &data, "bound")).unwrap();
+                *doc.pointer_mut(pointer).unwrap() = value;
+                let mut wire = serde_json::to_vec(&doc).unwrap();
+                wire.push(b'\n');
+                Ok(wire)
+            });
+            assert!(
+                matches!(result, Err(GoObservationError::InvalidResponse)),
+                "{pointer}"
+            );
+        }
+        assert!(matches!(
+            observe_go_native_bound_calls(&project.root, SELECTION, &PIN, |request| {
+                let result = receipt(request, &data, "bound");
+                fs::write(project.root.join("fixture.go"), b"package main\n").unwrap();
+                Ok(result)
+            }),
+            Err(GoObservationError::SourceChanged)
+        ));
+    }
+}
+
 mod workspace_declarations {
     use super::{Fixture, Value, fs, json, registered_schema_path};
     use fortress_core::go_workspace_observation::{

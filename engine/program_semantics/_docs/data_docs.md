@@ -72,3 +72,9 @@ Defines the standalone version 2 Go build-selection projection. It binds the sep
 ### [`go_observation_schema_v3.json`](../_data/go_observation_schema_v3.json)
 
 Defines the actual-state, exact-source native Go module observation, its explicit build and module context, physical imports and locations, and verified observation status. Earlier single-package projections keep their historical wire contracts.
+
+### [`go_call_schema_v1.json`](../_data/go_call_schema_v1.json)
+
+Declares the source-bound Go call relation report. Every admitted static
+target remains distinct from target body availability and evaluation.
+The report references first-order identities without changing their schema.

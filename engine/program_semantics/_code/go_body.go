@@ -37,6 +37,13 @@ type expression struct {
 	Value    any         `json:"value,omitempty"`
 	Left     *expression `json:"left,omitempty"`
 	Right    *expression `json:"right,omitempty"`
+	Call     *bodyCall   `json:"call,omitempty"`
+}
+
+type bodyCall struct {
+	Span      sourceSpan    `json:"span"`
+	Target    bodySymbol    `json:"target"`
+	Arguments []*expression `json:"arguments"`
 }
 
 type identifier struct {
@@ -84,9 +91,11 @@ type observedBody struct {
 	locals       []scalarBinding
 	depth        int
 	nodes        int
+	calls        map[*types.Func]*ast.FuncDecl
 }
 
 const bodyProducer = "fortress.go-bodies@0.1.0"
+const bodyCallProducer = "fortress.go-call-bodies@0.1.0"
 const scalarBool = "BOOL"
 const scalarInt64 = "SIGNED_I64"
 const maxBodyBindings = 128
@@ -215,9 +224,58 @@ func (state *observedBody) expr(node ast.Expr, expected string) (*expression, *d
 		}
 		return state.comparison(item)
 	case *ast.CallExpr:
-		return nil, state.error(node, "RUNTIME_CALL_OR_CONVERSION_UNAVAILABLE")
+		return state.boundCall(item, expected)
 	}
 	return nil, state.error(node, "EXPRESSION_SEMANTICS_UNAVAILABLE")
+}
+
+func (state *observedBody) boundCall(node *ast.CallExpr, expected string) (*expression, *diagnostic) {
+	if state.calls == nil {
+		return nil, state.error(node, "RUNTIME_CALL_OR_CONVERSION_UNAVAILABLE")
+	}
+	if expected != scalarBool || node.Ellipsis.IsValid() {
+		return nil, state.error(node, "CALL_SCALAR_CONTRACT_UNAVAILABLE")
+	}
+	name, bare := node.Fun.(*ast.Ident)
+	if !bare {
+		return nil, state.error(node, "CALL_TARGET_UNESTABLISHED")
+	}
+	target, direct := state.info.Uses[name].(*types.Func)
+	if !direct {
+		return nil, state.error(node, "CALL_TARGET_UNESTABLISHED")
+	}
+	declaration, available := state.calls[target]
+	if !available {
+		return nil, state.error(node, "CALL_TARGET_UNESTABLISHED")
+	}
+	sig := target.Type().(*types.Signature)
+	if sig.Variadic() || sig.TypeParams().Len() != 0 || sig.Results().Len() != 1 ||
+		goScalar(sig.Results().At(0).Type()) != scalarBool ||
+		len(node.Args) != sig.Params().Len() || len(node.Args) > 4 {
+		return nil, state.error(node, "CALL_SCALAR_CONTRACT_UNAVAILABLE")
+	}
+	args := make([]*expression, 0, len(node.Args))
+	for index, arg := range node.Args {
+		if goScalar(sig.Params().At(index).Type()) != scalarBool {
+			return nil, state.error(node, "CALL_SCALAR_CONTRACT_UNAVAILABLE")
+		}
+		value, refusal := state.expr(arg, scalarBool)
+		if refusal != nil {
+			return nil, refusal
+		}
+		args = append(args, value)
+	}
+	return &expression{Kind: "call", Call: &bodyCall{
+		Span: span(state.positions, node.Pos(), node.End()),
+		Target: bodySymbol{
+			identifier: identifier{
+				declaration.Name.Name,
+				span(state.positions, declaration.Name.Pos(), declaration.Name.End()),
+			},
+			DeclarationSpan: span(state.positions, declaration.Pos(), declaration.End()),
+		},
+		Arguments: args,
+	}}, nil
 }
 
 func (state *observedBody) comparison(node *ast.BinaryExpr) (*expression, *diagnostic) {
@@ -359,9 +417,9 @@ func (state *observedBody) lower(node ast.Stmt) (statement, *diagnostic) {
 	}
 }
 
-func functionBody(decl *ast.FuncDecl, info *types.Info, places *token.FileSet) bodyObservation {
+func functionBody(decl *ast.FuncDecl, info *types.Info, places *token.FileSet, calls map[*types.Func]*ast.FuncDecl) bodyObservation {
 	state := observedBody{info: info, positions: places, names: map[string]bool{},
-		objects: map[types.Object]scalarBinding{}, locals: []scalarBinding{}}
+		objects: map[types.Object]scalarBinding{}, locals: []scalarBinding{}, calls: calls}
 	result := bodyObservation{
 		Status: "UNAVAILABLE", Parameters: []scalarBinding{}, Locals: []scalarBinding{}, Body: []statement{},
 	}
@@ -415,10 +473,13 @@ func functionBody(decl *ast.FuncDecl, info *types.Info, places *token.FileSet) b
 	return result
 }
 
-func observeFirstOrder(raw []byte) firstOrderReceipt {
+func observeFirstOrder(raw []byte, withCalls bool) firstOrderReceipt {
 	result := firstOrderReceipt{Version: 1, Producer: bodyProducer,
 		Toolchain: runtime.Version(), RequestSHA: sha(raw), Status: "INVALID_REQUEST",
 		Inventory: []identity{}, Functions: []bodyObservation{},
+	}
+	if withCalls {
+		result.Version, result.Producer = 2, bodyCallProducer
 	}
 	req, code := decodeRequest(raw)
 	if code != "" {
@@ -441,13 +502,31 @@ func observeFirstOrder(raw []byte) firstOrderReceipt {
 		result.Status, result.Diagnostic = "INVALID_SOURCE", &diagnostic{Code: "GO_TYPE_CHECK_REJECTED"}
 		return result
 	}
+	var admitted map[*types.Func]*ast.FuncDecl
+	if withCalls {
+		admitted = make(map[*types.Func]*ast.FuncDecl)
+		for _, file := range files {
+			for _, item := range file.Decls {
+				function, ok := item.(*ast.FuncDecl)
+				if !ok || function.Body == nil || function.Recv != nil || !bodyIdentifier(function.Name.Name) {
+					continue
+				}
+				if bound, known := info.Defs[function.Name].(*types.Func); known {
+					admitted[bound] = function
+				}
+				if len(admitted) > maxBodyRows {
+					return result.resourceLimit("GO_OBSERVATION_LIMIT")
+				}
+			}
+		}
+	}
 	for _, file := range files {
 		for _, item := range file.Decls {
 			if decl, ok := item.(*ast.FuncDecl); ok {
 				if len(result.Functions) >= maxBodyRows {
 					return result.resourceLimit("GO_OBSERVATION_LIMIT")
 				}
-				result.Functions = append(result.Functions, functionBody(decl, &info, places))
+				result.Functions = append(result.Functions, functionBody(decl, &info, places, admitted))
 			}
 		}
 	}
@@ -465,14 +544,18 @@ func init() {
 	if len(os.Args) == 1 {
 		return
 	}
-	if len(os.Args) != 2 || os.Args[1] != "--lower-first-order-go" {
+	if len(os.Args) != 2 {
+		os.Exit(2)
+	}
+	withCalls := os.Args[1] == "--lower-go-bound-calls"
+	if os.Args[1] != "--lower-first-order-go" && !withCalls {
 		os.Exit(2)
 	}
 	raw, err := io.ReadAll(io.LimitReader(os.Stdin, maxWireBytes+1))
 	if err != nil || len(raw) > maxWireBytes {
 		os.Exit(2)
 	}
-	result := observeFirstOrder(raw)
+	result := observeFirstOrder(raw, withCalls)
 	wire, err := json.Marshal(result)
 	if err == nil && len(wire)+1 > maxWireBytes {
 		wire, err = json.Marshal(result.resourceLimit("GO_OBSERVATION_LIMIT"))

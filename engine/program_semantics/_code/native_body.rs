@@ -140,9 +140,24 @@ pub struct NativeScalarBody {
     parameters: Vec<(String, NativeScalar)>,
     locals: Vec<(String, NativeScalar)>,
     result: NativeScalar,
+    calls: Vec<NativeBoundCall>,
+}
+
+/// An occurrence and an exact source declaration supplied by the separately
+/// admitted Go body producer. Body availability and evaluation are separate.
+#[derive(Debug, Serialize)]
+pub(crate) struct NativeBoundCall {
+    pub(crate) reference: String,
+    pub(crate) span: Span,
+    pub(crate) target: Symbol,
+    pub(crate) argument_count: usize,
 }
 
 impl NativeScalarBody {
+    pub(crate) fn bound_calls(&self) -> &[NativeBoundCall] {
+        &self.calls
+    }
+
     pub(crate) const fn integer_scalar(&self) -> NativeScalar {
         self.language.integer()
     }
@@ -201,22 +216,22 @@ impl std::fmt::Display for NativeBodyError {
 
 impl std::error::Error for NativeBodyError {}
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
-struct Span {
-    path: String,
-    start_byte: usize,
-    end_byte: usize,
-    start_line: usize,
-    start_byte_column: usize,
+pub(crate) struct Span {
+    pub(crate) path: String,
+    pub(crate) start_byte: usize,
+    pub(crate) end_byte: usize,
+    pub(crate) start_line: usize,
+    pub(crate) start_byte_column: usize,
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
-struct Symbol {
-    name: String,
-    span: Span,
-    declaration_span: Span,
+pub(crate) struct Symbol {
+    pub(crate) name: String,
+    pub(crate) span: Span,
+    pub(crate) declaration_span: Span,
 }
 
 #[derive(Deserialize)]
@@ -320,6 +335,17 @@ enum Expression {
         left: Box<Self>,
         right: Box<Self>,
     },
+    Call {
+        call: Box<Call>,
+    },
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct Call {
+    span: Span,
+    target: Symbol,
+    arguments: Vec<Expression>,
 }
 
 struct Source<'a> {
@@ -373,6 +399,8 @@ struct Lowering<'a> {
     result: NativeScalar,
     bindings: BTreeMap<String, NativeScalar>,
     parameters: BTreeSet<String>,
+    allow_bound_go_calls: bool,
+    calls: Vec<NativeBoundCall>,
 }
 
 impl Lowering<'_> {
@@ -387,8 +415,9 @@ impl Lowering<'_> {
     }
 
     fn expression(
-        &self,
+        &mut self,
         expression: Expression,
+        enclosure: &Range<usize>,
     ) -> Result<(ProgramExpression, NativeScalar), NativeBodyError> {
         let (value, scalar) = match expression {
             Expression::Binding { name } => {
@@ -416,7 +445,7 @@ impl Lowering<'_> {
             Expression::Unary { operator, value } if operator == "!" => (
                 ProgramExpression::Unary {
                     operator,
-                    value: Box::new(self.typed(*value, NativeScalar::Bool)?),
+                    value: Box::new(self.typed(*value, NativeScalar::Bool, enclosure)?),
                 },
                 NativeScalar::Bool,
             ),
@@ -425,14 +454,14 @@ impl Lowering<'_> {
                 left,
                 right,
             } => {
-                let (left, scalar) = self.expression(*left)?;
+                let (left, scalar) = self.expression(*left, enclosure)?;
                 if !(matches!(operator.as_str(), "==" | "!=")
                     || scalar == self.language.integer()
                         && matches!(operator.as_str(), "<" | "<=" | ">" | ">="))
                 {
                     return Err(NativeBodyError::InvalidResponse);
                 }
-                let right = self.typed(*right, scalar)?;
+                let right = self.typed(*right, scalar, enclosure)?;
                 (
                     ProgramExpression::Binary {
                         operator,
@@ -442,17 +471,57 @@ impl Lowering<'_> {
                     NativeScalar::Bool,
                 )
             }
-            Expression::Unary { .. } => return Err(NativeBodyError::InvalidResponse),
+            Expression::Call { call } if self.allow_bound_go_calls => {
+                (self.bound_call(*call, enclosure)?, NativeScalar::Bool)
+            }
+            Expression::Unary { .. } | Expression::Call { .. } => {
+                return Err(NativeBodyError::InvalidResponse);
+            }
         };
         Ok((value, scalar))
     }
 
+    fn bound_call(
+        &mut self,
+        call: Call,
+        enclosure: &Range<usize>,
+    ) -> Result<ProgramExpression, NativeBodyError> {
+        let span = self.source.range(&call.span)?;
+        within(&span, enclosure)?;
+        let site = self.source.text[span]
+            .strip_prefix(&call.target.name)
+            .ok_or(NativeBodyError::InvalidResponse)?;
+        if !site.trim_start().starts_with('(') || !site.ends_with(')') || call.arguments.len() > 4 {
+            return Err(NativeBodyError::InvalidResponse);
+        }
+        let arguments = call
+            .arguments
+            .into_iter()
+            .map(|argument| self.typed(argument, NativeScalar::Bool, enclosure))
+            .collect::<Result<Vec<_>, _>>()?;
+        let reference = canonical_fact_id(
+            "native_call_site:v1",
+            &(self.symbol, &call.span, &call.target),
+        );
+        self.calls.push(NativeBoundCall {
+            reference: reference.clone(),
+            span: call.span,
+            target: call.target,
+            argument_count: arguments.len(),
+        });
+        Ok(ProgramExpression::Call {
+            reference,
+            arguments,
+        })
+    }
+
     fn typed(
-        &self,
+        &mut self,
         expression: Expression,
         expected: NativeScalar,
+        enclosure: &Range<usize>,
     ) -> Result<ProgramExpression, NativeBodyError> {
-        let (value, scalar) = self.expression(expression)?;
+        let (value, scalar) = self.expression(expression, enclosure)?;
         if scalar != expected {
             return Err(NativeBodyError::InvalidResponse);
         }
@@ -467,7 +536,7 @@ impl Lowering<'_> {
     }
 
     fn statements(
-        &self,
+        &mut self,
         statements: Vec<Statement>,
         enclosure: &Range<usize>,
     ) -> Result<(Vec<ProgramStatement>, usize), NativeBodyError> {
@@ -488,7 +557,7 @@ impl Lowering<'_> {
                     if self.parameters.contains(&name) {
                         return Err(NativeBodyError::InvalidResponse);
                     }
-                    let value = self.typed(value, self.binding(&name)?)?;
+                    let value = self.typed(value, self.binding(&name)?, &range)?;
                     ProgramStatement::Let {
                         pattern: ProgramPattern::Binding { name },
                         value: Some(value),
@@ -501,7 +570,7 @@ impl Lowering<'_> {
                     {
                         return Err(NativeBodyError::InvalidResponse);
                     }
-                    let value = self.typed(value, self.binding(&target)?)?;
+                    let value = self.typed(value, self.binding(&target)?, &range)?;
                     ProgramStatement::Assign {
                         target,
                         value,
@@ -517,14 +586,14 @@ impl Lowering<'_> {
                     let (then_branch, then_end) = self.statements(then_branch, &range)?;
                     let (else_branch, _) = self.statements(else_branch, &(then_end..range.end))?;
                     ProgramStatement::If {
-                        condition: self.typed(condition, NativeScalar::Bool)?,
+                        condition: self.typed(condition, NativeScalar::Bool, &range)?,
                         then_branch,
                         else_branch,
                         provenance: span_provenance,
                     }
                 }
                 Statement::Return { value, .. } => ProgramStatement::Return {
-                    value: Some(self.typed(value, self.result)?),
+                    value: Some(self.typed(value, self.result, &range)?),
                     provenance: span_provenance,
                 },
             };
@@ -569,6 +638,24 @@ impl NativeBodyInput<'_> {
     /// Rejects invalid input bindings, oversized input, malformed replies and
     /// records that disagree with the bounded source or scalar scope.
     pub fn admit(&self, response: &[u8]) -> Result<NativeBodyOutcome, NativeBodyError> {
+        self.admit_body(response, false)
+    }
+
+    pub(crate) fn admit_bound_go_body(
+        &self,
+        response: &[u8],
+    ) -> Result<NativeBodyOutcome, NativeBodyError> {
+        if self.language != NativeBodyLanguage::Go {
+            return Err(NativeBodyError::InvalidBinding);
+        }
+        self.admit_body(response, true)
+    }
+
+    fn admit_body(
+        &self,
+        response: &[u8],
+        bound_go_calls: bool,
+    ) -> Result<NativeBodyOutcome, NativeBodyError> {
         if self.source.len() > MAX_SOURCE_BYTES || self.python_bool_parameters.len() > MAX_BINDINGS
         {
             return Err(NativeBodyError::ResourceLimit);
@@ -612,7 +699,15 @@ impl NativeBodyInput<'_> {
                 result_scalar,
                 locals,
                 body,
-            } => self.lower(&source, &symbol, &parameters, result_scalar, &locals, body),
+            } => self.lower(
+                &source,
+                &symbol,
+                &parameters,
+                result_scalar,
+                &locals,
+                body,
+                bound_go_calls,
+            ),
             Reply::Unavailable {
                 symbol,
                 parameters,
@@ -649,6 +744,7 @@ impl NativeBodyInput<'_> {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn lower(
         &self,
         source: &Source<'_>,
@@ -657,6 +753,7 @@ impl NativeBodyInput<'_> {
         result: NativeScalar,
         locals: &[Binding],
         body: Vec<Statement>,
+        allow_bound_go_calls: bool,
     ) -> Result<NativeBodyOutcome, NativeBodyError> {
         if parameters.len().saturating_add(locals.len()) > MAX_BINDINGS {
             return Err(NativeBodyError::ResourceLimit);
@@ -706,16 +803,19 @@ impl NativeBodyInput<'_> {
                 &symbol.name,
             ),
         );
-        let lowering = Lowering {
+        let mut lowering = Lowering {
             language: self.language,
             source,
             symbol: &binding,
             result,
             bindings,
             parameters: parameters.iter().map(|item| item.name.clone()).collect(),
+            allow_bound_go_calls,
+            calls: Vec::new(),
         };
         let (statements, _) = lowering.statements(body, &declaration)?;
         let provenance = lowering.provenance(&symbol.span)?;
+        let calls = lowering.calls;
         Ok(NativeBodyOutcome::Lowered(Box::new(NativeScalarBody {
             language: self.language,
             body: ProgramBody {
@@ -727,6 +827,7 @@ impl NativeBodyInput<'_> {
             parameters: scalar_bindings(parameters),
             locals: scalar_bindings(locals),
             result,
+            calls,
         })))
     }
 

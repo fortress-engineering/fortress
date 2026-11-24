@@ -365,6 +365,27 @@ pub fn observe_go_native_body_sensitivity(
     })
 }
 
+/// Observes exact typed call targets from a closed Go package.
+///
+/// The body producer has an independent, incompatible response mode. An admitted
+/// call relates exact declarations in the same captured package and grants no
+/// evaluation, effect, runtime execution, or certification authority.
+///
+/// # Errors
+/// Refuses unsafe or stale source and incomplete, untrusted, or mismatched replies.
+pub fn observe_go_native_bound_calls(
+    project_root: &Path,
+    selection: GoPackageSelection<'_>,
+    collector: &GoCollectorPin<'_>,
+    launch: impl FnOnce(&[u8]) -> Result<Vec<u8>, GoObservationError>,
+) -> Result<serde_json::Value, GoObservationError> {
+    observe_bound_exact(project_root, selection, |source, manifest| {
+        let admitted = admit_go(source, collector)?;
+        let output = launch(admitted.request_bytes())?;
+        admitted.verify_call_bodies(collector, manifest, &output)
+    })
+}
+
 /// Inspects a retained candidate's exact closed Go function under the Boolean model.
 ///
 /// Only an explicit host supplies the compiler process. The candidate remains

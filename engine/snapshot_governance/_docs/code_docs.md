@@ -693,3 +693,8 @@ governance to immutable physical source. It admits a bounded Go editor reply,
 distinguishes scoped ordinary module and checksum files from unavailable
 paths, and reports the reader and declared toolchain separately. Workspace
 selection and dependency resolution remain unestablished.
+
+Use the separate Go bound-call observation to retain exact compiler-resolved
+targets from an ordinary closed package. It binds one physical source view,
+original authority, caller, declaration and producer. Call evaluation and
+unsupported target bodies remain distinct from source resolution.

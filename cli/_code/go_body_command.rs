@@ -8,6 +8,7 @@ use std::time::Duration;
 use fortress_core::go_observation::{
     ActualGoNativeBodyObservation, GoCollectorPin, GoObservationError, GoPackageSelection,
     observe_go_native_body, observe_go_native_body_flow, observe_go_native_body_sensitivity,
+    observe_go_native_bound_calls,
 };
 use fortress_core::information_flow::NativeScalarFlowObservation;
 use fortress_core::portable::{canonical, digest};
@@ -50,7 +51,7 @@ pub(super) fn run<O: Write, E: Write>(
         Err(failure) => {
             writeln!(
                 error,
-                "Go body observation failed: {}\nusage: fortress psm --observe-go-body project host-registration directory package-path go-version target-os target-arch [--flow|--return-sensitivity exact-occurrence]",
+                "Go body observation failed: {}\nusage: fortress psm --observe-go-body project host-registration directory package-path go-version target-os target-arch [--flow exact-occurrence | --return-sensitivity exact-occurrence | --bound-calls]",
                 readable_text(&failure)
             )?;
             Ok(super::EXIT_USAGE)
@@ -74,7 +75,9 @@ fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
             "Explicit source, trusted host registration and package context are required.".into(),
         );
     };
+    let with_calls = matches!(mode, [flag] if flag == "--bound-calls");
     let (occurrence, sensitivity) = match mode {
+        [flag] if flag == "--bound-calls" => (None, false),
         [] => (None, false),
         [flag, binding] if flag == "--flow" => (Some(binding.as_str()), false),
         [flag, binding] if flag == "--return-sensitivity" => (Some(binding.as_str()), true),
@@ -91,6 +94,13 @@ fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
         target_os,
         target_arch,
     };
+    if with_calls {
+        let report = with_registered_body_mode(&root, registration, true, |pin, collector| {
+            observe_go_native_bound_calls(&root, selection, pin, |input| collector.run(input))
+                .map_err(|failure| failure.to_string())
+        })?;
+        return canonical(&report).map_err(|failure| failure.to_string());
+    }
     if let Some(binding) = occurrence.filter(|_| sensitivity) {
         let (receipt, result) = with_registered_body(&root, registration, |pin, collector| {
             observe_go_native_body_sensitivity(&root, selection, pin, binding, |input| {
@@ -145,18 +155,32 @@ pub(super) fn with_registered_body<T>(
     registration: &Path,
     observe: impl FnOnce(&GoCollectorPin<'_>, BodyLaunch<'_>) -> Result<T, String>,
 ) -> Result<T, String> {
+    with_registered_body_mode(root, registration, false, observe)
+}
+
+fn with_registered_body_mode<T>(
+    root: &Path,
+    registration: &Path,
+    with_calls: bool,
+    observe: impl FnOnce(&GoCollectorPin<'_>, BodyLaunch<'_>) -> Result<T, String>,
+) -> Result<T, String> {
     let (declared, original) = read_host_registration(registration, root)?;
     let host_directory = registration
         .parent()
         .ok_or("Host registration needs an external working directory.")?;
+    let (selector, format) = if with_calls {
+        ("--lower-go-bound-calls", "pinned-go-bound-call-host-v1")
+    } else {
+        ("--lower-first-order-go", "pinned-go-body-collector-host-v1")
+    };
     let (launch, system_root) = prepare_native_go_launch(
         &declared.executable,
         &declared.executable_sha256,
         host_directory,
-        "--lower-first-order-go",
+        selector,
     );
     let host_context = json!({
-        "format": "pinned-go-body-collector-host-v1",
+        "format": format,
         "registration_sha256": digest(&original),
         "transport": "bounded_one_shot_stdio",
         "timeout_ms": TIMEOUT.as_millis(),

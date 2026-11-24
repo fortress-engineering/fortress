@@ -619,6 +619,15 @@
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R32-002",
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R32-003"
           ]
+        },
+        {
+          "id": "AF-SNAPSHOT-GOVERNANCE-0001-R33",
+          "statement": "An explicit Go native call observation version validates exact source, original authority, producer and bounded call placements within a closed package. It retains typed static target declarations independently of target body availability. Dynamic calls, unverifiable targets and stale source cannot establish a static result. Legacy body responses retain their independent version and interpretation.",
+          "tests": [
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R33-001",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R33-002",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R33-003"
+          ]
         }
       ]
     }

@@ -233,3 +233,9 @@ coordinates. This wire edition admits the exact reviewed worker and bootstrap
 by digest. The host verifies their bytes before dispatch. The installed receiver, qualified CPython context and
 source classification remain separate. Project runtime imports, execution
 and effects are unestablished at this boundary.
+
+The explicit Go bound-call reader admits a separate worker response version.
+It checks ordered Boolean arguments, call sites and known declaration spans
+before constructing existing Program Call expressions. Dynamic function
+values and unsupported type forms retain explicit limitations. Pure call
+resolution and recursion are recorded without inferring an actual return.

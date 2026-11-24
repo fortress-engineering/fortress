@@ -772,6 +772,9 @@ fn interpret_native_body(
     context: &AnalysisContext<'_>,
     values: BTreeMap<String, SemanticDomain>,
 ) -> Option<SemanticDomain> {
+    if !body.bound_calls().is_empty() {
+        return None;
+    }
     let subject = BodySubject::Native(body);
     let environment = Environment {
         values,
