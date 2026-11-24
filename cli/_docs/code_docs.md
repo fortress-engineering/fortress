@@ -800,3 +800,9 @@ The Go body command accepts `--bound-calls` with an explicitly pinned
 collector built from the matching native worker. The command reports exact
 call sites and target body availability. The ordinary Go body and return
 sensitivity modes retain their existing contracts.
+
+Use `--call-return exact-occurrence` on the same Go body command and host
+registration to inspect a Boolean return table for an occurrence reported by
+`--bound-calls`. The first parameter is the low bit in table order. The table
+covers only the selected closed scalar model. Missing bound bodies and cycles
+remain unavailable.

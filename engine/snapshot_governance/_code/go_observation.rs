@@ -18,7 +18,7 @@ use crate::observation::SourceView;
 use crate::program_semantics::go_observation::{
     ExactClosedPackage, admit_go, admit_go_build, admit_go_module, admit_go_tests,
 };
-use crate::semantic_analysis::NativeBooleanSensitivity;
+use crate::semantic_analysis::{NativeBooleanSensitivity, analyze_native_boolean_calls};
 
 #[path = "go_body_domains.rs"]
 mod body_domains;
@@ -383,6 +383,50 @@ pub fn observe_go_native_bound_calls(
         let admitted = admit_go(source, collector)?;
         let output = launch(admitted.request_bytes())?;
         admitted.verify_call_bodies(collector, manifest, &output)
+    })
+}
+
+/// Composes a selected exact Go call graph under a finite Boolean model.
+///
+/// All reached declarations must have supported bodies and complete returns for
+/// every admitted input. Cycles and limits yield an explicit unavailable result.
+/// The result is derived inspection under static premises.
+///
+/// # Errors
+/// Refuses unsafe or stale source and incomplete, untrusted, or mismatched replies.
+pub fn observe_go_native_call_return(
+    project_root: &Path,
+    selection: GoPackageSelection<'_>,
+    occurrence: &str,
+    collector: &GoCollectorPin<'_>,
+    launch: impl FnOnce(&[u8]) -> Result<Vec<u8>, GoObservationError>,
+) -> Result<serde_json::Value, GoObservationError> {
+    validate_body_occurrence(occurrence)?;
+    observe_bound_exact(project_root, selection, |source, manifest| {
+        let admitted = admit_go(source, collector)?;
+        let output = launch(admitted.request_bytes())?;
+        let observed = admitted.verify_bound_bodies(collector, manifest, &output)?;
+        let targets = observed.call_targets()?;
+        let mut selected = observed
+            .lowered_bodies()
+            .flatten()
+            .filter(|body| body.binding() == occurrence);
+        let result = match selected.next().filter(|_| selected.next().is_none()) {
+            Some(body) => serde_json::to_value(analyze_native_boolean_calls(body, &targets))
+                .map_err(|_| GoObservationError::WireEncoding)?,
+            None => serde_json::json!({
+                "status": "UNAVAILABLE",
+                "occurrence": occurrence,
+                "reason": "MISSING_EXACT_OCCURRENCE",
+            }),
+        };
+        Ok(serde_json::json!({
+            "$schema": "urn:fortress:derived:v1:go-native-call-return",
+            "schema_version": 1,
+            "scope": "BOUNDED_CLOSED_BOOLEAN_CALL_RETURN",
+            "observation": observed.call_evidence(),
+            "evaluation": result,
+        }))
     })
 }
 

@@ -1,0 +1,139 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v1:go-native-call-return",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "scope",
+    "observation",
+    "evaluation"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:derived:v1:go-native-call-return"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "scope": {
+      "const": "BOUNDED_CLOSED_BOOLEAN_CALL_RETURN"
+    },
+    "observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evaluation_key",
+        "exchange_sha256",
+        "producer_sha256",
+        "response_sha256",
+        "provenance",
+        "source_inventory",
+        "status",
+        "diagnostic"
+      ],
+      "properties": {
+        "evaluation_key": {
+          "$ref": "urn:fortress:derived:v1:go-native-body#/properties/evaluation_key"
+        },
+        "exchange_sha256": {
+          "$ref": "urn:fortress:derived:v1:go-native-body#/properties/exchange_sha256"
+        },
+        "producer_sha256": {
+          "$ref": "urn:fortress:derived:v1:go-native-body#/properties/producer_sha256"
+        },
+        "response_sha256": {
+          "$ref": "urn:fortress:derived:v1:go-native-body#/properties/response_sha256"
+        },
+        "provenance": {
+          "$ref": "urn:fortress:derived:v1:go-native-body#/properties/provenance"
+        },
+        "source_inventory": {
+          "$ref": "urn:fortress:derived:v1:go-native-body#/properties/source_inventory"
+        },
+        "status": {
+          "$ref": "urn:fortress:derived:v1:go-native-body#/properties/status"
+        },
+        "diagnostic": {
+          "$ref": "urn:fortress:derived:v1:go-native-body#/properties/diagnostic"
+        }
+      }
+    },
+    "evaluation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "occurrence",
+            "parameters",
+            "returns",
+            "dependency_occurrences"
+          ],
+          "properties": {
+            "status": {
+              "const": "COMPLETE"
+            },
+            "occurrence": {
+              "$ref": "urn:fortress:derived:v1:go-native-body#/$defs/binding"
+            },
+            "parameters": {
+              "type": "array",
+              "maxItems": 4,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "pattern": "^[A-Za-z_][A-Za-z0-9_]{0,63}$"
+              }
+            },
+            "returns": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 16,
+              "items": {
+                "type": "boolean"
+              }
+            },
+            "dependency_occurrences": {
+              "type": "array",
+              "maxItems": 63,
+              "uniqueItems": true,
+              "items": {
+                "$ref": "urn:fortress:derived:v1:go-native-body#/$defs/binding"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "occurrence",
+            "reason"
+          ],
+          "properties": {
+            "status": {
+              "const": "UNAVAILABLE"
+            },
+            "occurrence": {
+              "$ref": "urn:fortress:derived:v1:go-native-body#/$defs/binding"
+            },
+            "reason": {
+              "enum": [
+                "MISSING_EXACT_OCCURRENCE",
+                "MISSING_TARGET_BODY",
+                "RECURSIVE_DEPENDENCY",
+                "ANALYSIS_LIMIT",
+                "UNSUPPORTED_SCALAR_SCOPE",
+                "INCOMPLETE_VALUATION"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}

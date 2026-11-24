@@ -10,6 +10,8 @@ pub(crate) const PROGRAM_DOMAIN_RULE_SOURCE: &str =
 mod domain;
 #[path = "function_contract.rs"]
 mod function_contract;
+#[path = "native_calls.rs"]
+mod native_calls;
 #[path = "native_return_contract.rs"]
 mod native_return_contract;
 #[path = "native_sensitivity.rs"]
@@ -37,6 +39,7 @@ pub use native_sensitivity::{
     NativeBooleanSensitivityReason, inspect_native_boolean_sensitivity,
 };
 
+pub(crate) use native_calls::analyze_native_boolean_calls;
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 
@@ -751,6 +754,18 @@ pub fn infer_native_scalar_output(body: &NativeScalarBody) -> Option<SemanticDom
     interpret_native_body(body, &context, values)
 }
 
+fn exact_native_bool(domain: SemanticDomain) -> Option<bool> {
+    match domain {
+        SemanticDomain::Boolean { type_id, values } if type_id == NATIVE_BOOL => {
+            match values.as_slice() {
+                [result] => Some(*result),
+                _ => None,
+            }
+        }
+        _ => None,
+    }
+}
+
 fn native_analysis_context(body: &NativeScalarBody) -> AnalysisContext<'_> {
     AnalysisContext {
         contracts: None,
@@ -764,6 +779,7 @@ fn native_analysis_context(body: &NativeScalarBody) -> AnalysisContext<'_> {
             .map(|(name, scalar)| ((body.binding(), name.as_str()), native_type_id(*scalar)))
             .collect(),
         calls_by_caller: BTreeMap::new(),
+        native_call_tables: None,
     }
 }
 
@@ -772,7 +788,7 @@ fn interpret_native_body(
     context: &AnalysisContext<'_>,
     values: BTreeMap<String, SemanticDomain>,
 ) -> Option<SemanticDomain> {
-    if !body.bound_calls().is_empty() {
+    if !body.bound_calls().is_empty() && context.native_call_tables.is_none() {
         return None;
     }
     let subject = BodySubject::Native(body);
@@ -792,6 +808,7 @@ fn interpret_native_body(
         &mut output,
     );
     if remainder.reachable
+        || state.native_call_unresolved
         || !state.checks.is_empty()
         || !state.exceptional.is_empty()
         || !matches!(
@@ -852,6 +869,7 @@ struct AnalysisContext<'a> {
     bodies: BTreeMap<&'a str, &'a ProgramBody>,
     local_types: BTreeMap<(&'a str, &'a str), &'a str>,
     calls_by_caller: BTreeMap<&'a str, Vec<&'a ProgramCall>>,
+    native_call_tables: Option<&'a BTreeMap<&'a str, &'a [bool]>>,
 }
 
 impl<'a> AnalysisContext<'a> {
@@ -903,6 +921,7 @@ impl<'a> AnalysisContext<'a> {
             bodies,
             local_types,
             calls_by_caller,
+            native_call_tables: None,
         }
     }
 
@@ -2019,6 +2038,22 @@ impl<'a> AnalysisContext<'a> {
         state: &mut AnalysisState,
         provenance: &ProgramProvenance,
     ) -> SemanticDomain {
+        if matches!(caller, BodySubject::Native(_)) {
+            let result = self.evaluate_native_call(
+                caller,
+                reference,
+                arguments,
+                environment,
+                outputs,
+                state,
+                provenance,
+            );
+            if let Some(value) = result {
+                return SemanticDomain::boolean(NATIVE_BOOL, [value]);
+            }
+            state.native_call_unresolved = true;
+            return self.static_domain(NATIVE_BOOL);
+        }
         let resolved = self.calls_for(caller.id()).iter().copied().find(|call| {
             call.caller() == caller.id()
                 && call.state() == CallResolutionState::ResolvedStatic
@@ -2099,6 +2134,39 @@ impl<'a> AnalysisContext<'a> {
             .get(target_symbol.id())
             .cloned()
             .unwrap_or_else(|| self.static_domain(target_symbol.return_type().type_id()))
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn evaluate_native_call(
+        &self,
+        caller: BodySubject<'_>,
+        reference: &str,
+        arguments: &[ProgramExpression],
+        environment: &Environment,
+        outputs: &BTreeMap<String, SemanticDomain>,
+        state: &mut AnalysisState,
+        provenance: &ProgramProvenance,
+    ) -> Option<bool> {
+        let table = self.native_call_tables?.get(reference)?;
+        if arguments.len() > native_sensitivity::MAX_PARAMETERS
+            || table.len() != 1 << arguments.len()
+        {
+            return None;
+        }
+        let mut mask = 0;
+        for (index, argument) in arguments.iter().enumerate() {
+            let domain = self.evaluate_expression(
+                caller,
+                argument,
+                Some(NATIVE_BOOL),
+                environment,
+                outputs,
+                state,
+                provenance,
+            );
+            mask |= usize::from(exact_native_bool(domain)?) << index;
+        }
+        table.get(mask).copied()
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -2407,6 +2475,7 @@ struct AnalysisState {
     checks: Vec<DomainCheck>,
     violations: Vec<SemanticViolation>,
     exceptional: BTreeMap<String, Vec<String>>,
+    native_call_unresolved: bool,
 }
 
 #[derive(Serialize)]

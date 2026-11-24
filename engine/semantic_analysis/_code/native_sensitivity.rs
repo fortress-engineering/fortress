@@ -2,10 +2,13 @@
 
 use serde::Serialize;
 
-use super::{NATIVE_BOOL, SemanticDomain, interpret_native_body, native_analysis_context};
+use super::{
+    AnalysisContext, NATIVE_BOOL, SemanticDomain, exact_native_bool, interpret_native_body,
+    native_analysis_context,
+};
 use crate::program_semantics::native_body::{NativeScalar, NativeScalarBody};
 
-const MAX_PARAMETERS: usize = 4;
+pub(super) const MAX_PARAMETERS: usize = 4;
 
 /// Finite returned-value sensitivity for one admitted native body occurrence.
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
@@ -86,43 +89,17 @@ pub fn inspect_native_boolean_sensitivity(body: &NativeScalarBody) -> NativeBool
     if !(1..=MAX_PARAMETERS).contains(&count) {
         return unavailable(NativeBooleanSensitivityReason::ParameterCount);
     }
-    if body.result() != NativeScalar::Bool
-        || body
-            .parameters()
-            .iter()
-            .chain(body.locals())
-            .any(|(_, scalar)| *scalar != NativeScalar::Bool)
-    {
+    if !boolean_scope(body) {
         return unavailable(NativeBooleanSensitivityReason::UnsupportedScalarScope);
     }
 
-    let context = native_analysis_context(body);
-    let valuation_count = 1 << count;
-    let mut returns = Vec::with_capacity(valuation_count);
-    for mask in 0..valuation_count {
-        let inputs = body
-            .parameters()
-            .iter()
-            .zip(valuation(mask, count))
-            .map(|((name, _), value)| (name.clone(), SemanticDomain::boolean(NATIVE_BOOL, [value])))
-            .collect();
-        let Some(SemanticDomain::Boolean { type_id, values }) =
-            interpret_native_body(body, &context, inputs)
-        else {
-            return unavailable(NativeBooleanSensitivityReason::IncompleteValuation);
-        };
-        let [result] = values.as_slice() else {
-            return unavailable(NativeBooleanSensitivityReason::IncompleteValuation);
-        };
-        if type_id != NATIVE_BOOL {
-            return unavailable(NativeBooleanSensitivityReason::IncompleteValuation);
-        }
-        returns.push(*result);
-    }
+    let Some(returns) = boolean_return_table(body, &native_analysis_context(body)) else {
+        return unavailable(NativeBooleanSensitivityReason::IncompleteValuation);
+    };
 
     NativeBooleanSensitivity::Complete {
         occurrence_ref: body.binding().into(),
-        valuation_count,
+        valuation_count: returns.len(),
         parameters: body
             .parameters()
             .iter()
@@ -133,6 +110,38 @@ pub fn inspect_native_boolean_sensitivity(body: &NativeScalarBody) -> NativeBool
             })
             .collect(),
     }
+}
+
+pub(super) fn boolean_scope(body: &NativeScalarBody) -> bool {
+    body.result() == NativeScalar::Bool
+        && body
+            .parameters()
+            .iter()
+            .chain(body.locals())
+            .all(|(_, scalar)| *scalar == NativeScalar::Bool)
+}
+
+pub(super) fn boolean_return_table(
+    body: &NativeScalarBody,
+    context: &AnalysisContext<'_>,
+) -> Option<Vec<bool>> {
+    let count = body.parameters().len();
+    if count > MAX_PARAMETERS || !boolean_scope(body) {
+        return None;
+    }
+    (0..1 << count)
+        .map(|mask| {
+            let inputs = body
+                .parameters()
+                .iter()
+                .zip(valuation(mask, count))
+                .map(|((name, _), value)| {
+                    (name.clone(), SemanticDomain::boolean(NATIVE_BOOL, [value]))
+                })
+                .collect();
+            exact_native_bool(interpret_native_body(body, context, inputs)?)
+        })
+        .collect()
 }
 
 fn valuation(mask: usize, count: usize) -> impl Iterator<Item = bool> {

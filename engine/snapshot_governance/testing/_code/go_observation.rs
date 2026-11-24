@@ -214,7 +214,9 @@ const PIN: GoCollectorPin<'static> = GoCollectorPin {
 
 mod bound_call_bodies {
     use super::{Fixture, GoCollectorPin, GoObservationError, GoPackageSelection, Value, fs, json};
-    use fortress_core::go_observation::{observe_go_native_body, observe_go_native_bound_calls};
+    use fortress_core::go_observation::{
+        observe_go_native_body, observe_go_native_bound_calls, observe_go_native_call_return,
+    };
     use fortress_core::portable::digest;
 
     const PIN: GoCollectorPin<'static> = GoCollectorPin {
@@ -288,6 +290,69 @@ mod bound_call_bodies {
             assert_eq!(
                 result["observation"]["response_sha256"],
                 digest(records["bound"].as_str().unwrap().as_bytes())
+            );
+        }
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R34-001`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R34
+    #[test]
+    fn go_native_call_returns_cover_exact_composition_and_unknowns() {
+        for case in ["fixed_free_function", "recursive_target"] {
+            let (project, records) = fixture(case, &format!("return_{case}"));
+            let observation =
+                observe_go_native_bound_calls(&project.root, SELECTION, &PIN, |request| {
+                    Ok(receipt(request, &records, "bound"))
+                })
+                .unwrap();
+            let occurrence = observation["calls"][0]["caller"].as_str().unwrap();
+            let target = &observation["calls"][0]["target_body"];
+            let inspect = |occurrence| {
+                observe_go_native_call_return(
+                    &project.root,
+                    SELECTION,
+                    occurrence,
+                    &PIN,
+                    |request| Ok(receipt(request, &records, "bound")),
+                )
+                .unwrap()
+            };
+            let result = inspect(occurrence);
+            assert_eq!(result, inspect(occurrence));
+            for field in [
+                "evaluation_key",
+                "exchange_sha256",
+                "response_sha256",
+                "producer_sha256",
+                "source_inventory",
+                "provenance",
+            ] {
+                assert_eq!(
+                    result["observation"][field], observation["observation"][field],
+                    "{field}"
+                );
+            }
+            assert_eq!(result["evaluation"]["occurrence"], occurrence);
+            if case == "fixed_free_function" {
+                assert_eq!(result["evaluation"]["status"], "COMPLETE");
+                assert_eq!(result["evaluation"]["parameters"], json!(["v"]));
+                assert_eq!(result["evaluation"]["returns"], json!([true, false]));
+                assert_eq!(
+                    result["evaluation"]["dependency_occurrences"],
+                    json!([target])
+                );
+            } else {
+                assert_eq!(
+                    result["evaluation"],
+                    json!({
+                        "status":"UNAVAILABLE", "occurrence":occurrence, "reason":"RECURSIVE_DEPENDENCY",
+                    })
+                );
+            }
+            let missing = "native_body_occurrence:v1:sha256:0000000000000000000000000000000000000000000000000000000000000000";
+            assert_eq!(
+                inspect(missing)["evaluation"]["reason"],
+                "MISSING_EXACT_OCCURRENCE"
             );
         }
     }

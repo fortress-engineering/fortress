@@ -75,3 +75,9 @@ bounds remain unavailable. This includes guard forms the existing interpreter
 cannot refine. The result carries the admitted occurrence and stays outside
 the canonical flow and proof lanes. Runtime invocation, termination and
 effects remain independently unestablished.
+
+Finite native call analysis reuses the existing Boolean interpreter and singleton
+input model. It evaluates each exact body once per valuation after its targets
+are available. Cycles, unknown bodies, unsupported domains, incomplete
+valuations and resource limits yield an unavailable result. A complete table
+is a bounded static returned-value observation.

@@ -119,11 +119,10 @@ pub(crate) struct GoNativeBodyObservation {
     limitations: [&'static str; 4],
 }
 
-#[derive(Serialize)]
 struct GoResolvedCall<'a> {
     caller: &'a str,
     call: &'a NativeBoundCall,
-    target_body: Option<&'a str>,
+    target_body: Option<&'a NativeScalarBody>,
 }
 
 pub(super) struct LinkedBody {
@@ -176,6 +175,28 @@ impl GoNativeBodyObservation {
         (self.evaluation_key, self.response_sha256, selected)
     }
 
+    pub(crate) fn call_evidence(&self) -> Value {
+        serde_json::json!({
+            "evaluation_key": self.evaluation_key,
+            "exchange_sha256": self.exchange_sha256,
+            "producer_sha256": self.producer_sha256,
+            "response_sha256": self.response_sha256,
+            "provenance": self.provenance,
+            "source_inventory": self.source_inventory,
+            "status": self.status,
+            "diagnostic": self.diagnostic,
+        })
+    }
+
+    pub(crate) fn call_targets(
+        &self,
+    ) -> Result<BTreeMap<&str, Option<&NativeScalarBody>>, GoObservationError> {
+        Ok(resolve_go_bound_calls(&self.functions)?
+            .into_iter()
+            .map(|edge| (edge.call.reference.as_str(), edge.target_body))
+            .collect())
+    }
+
     pub(crate) fn lowered_bodies(&self) -> impl Iterator<Item = Option<&NativeScalarBody>> {
         self.functions.iter().map(|function| match function {
             GoBodyFunction::Lowered { lowered, .. } => Some(lowered.0.as_ref()),
@@ -200,9 +221,17 @@ impl GoRequest<'_> {
         source_manifest: &str,
         stdout: &[u8],
     ) -> Result<Value, GoObservationError> {
-        let observation =
-            self.verify_body_payload(launched, source_manifest, stdout, Mode::BoundCalls)?;
-        let calls = resolve_go_bound_calls(&observation.functions)?;
+        let observation = self.verify_bound_bodies(launched, source_manifest, stdout)?;
+        let calls = resolve_go_bound_calls(&observation.functions)?
+            .into_iter()
+            .map(|edge| {
+                serde_json::json!({
+                    "caller": edge.caller,
+                    "call": edge.call,
+                    "target_body": edge.target_body.map(NativeScalarBody::binding),
+                })
+            })
+            .collect::<Vec<_>>();
         Ok(serde_json::json!({
             "$schema": "urn:fortress:derived:v1:go-bound-call-observation",
             "schema_version": 1,
@@ -221,6 +250,15 @@ impl GoRequest<'_> {
             "calls": calls,
             "call_evaluation": "UNESTABLISHED",
         }))
+    }
+
+    pub(crate) fn verify_bound_bodies(
+        &self,
+        launched: &GoCollectorPin<'_>,
+        source_manifest: &str,
+        stdout: &[u8],
+    ) -> Result<GoNativeBodyObservation, GoObservationError> {
+        self.verify_body_payload(launched, source_manifest, stdout, Mode::BoundCalls)
     }
 
     fn verify_body_payload(
@@ -471,7 +509,7 @@ fn resolve_go_bound_calls(
             calls.push(GoResolvedCall {
                 caller,
                 call,
-                target_body: body.map(NativeScalarBody::binding),
+                target_body: *body,
             });
         }
     }

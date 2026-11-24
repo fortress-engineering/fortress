@@ -698,3 +698,8 @@ Use the separate Go bound-call observation to retain exact compiler-resolved
 targets from an ordinary closed package. It binds one physical source view,
 original authority, caller, declaration and producer. Call evaluation and
 unsupported target bodies remain distinct from source resolution.
+
+A finite Go call return inspection selects an exact occurrence from the current
+bound-call report. It admits the same source, context, original authority and
+worker evidence before composing the selected dependency closure. Changes to
+those inputs require a fresh occurrence selection.
