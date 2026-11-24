@@ -25,9 +25,7 @@ use crate::state_effect_analysis::{
     project_hypothetical_python_filesystem,
 };
 
-/// Reviewed isolated worker that observes an installed import spec without loading it.
-pub const PYTHON_ORIGIN_WORKER: &[u8] =
-    include_bytes!("../../source_architecture/_code/python_origin_worker.py");
+pub use crate::source_architecture::python_lexical::PYTHON_ORIGIN_WORKER;
 
 /// Independently selected exact runtime and the supervised execution context.
 #[derive(Clone, Copy)]
@@ -203,7 +201,7 @@ fn observe_captured(
         scope.scope_ref(),
         host.producer,
         host.profile.runtime_ref(),
-        digest(expected_origin(host.profile)),
+        digest(python_filesystem_origin_manifest(host.profile)),
         host.supervisor_ref,
         native_filesystem_catalog_source_ref(),
     ]))?;
@@ -242,7 +240,7 @@ fn observe_captured(
     report.status = match observed.outcome() {
         PythonFilesystemOutcome::ClosedLiteralShape { site } => {
             let live = origin()?;
-            if live.as_slice() != expected_origin(host.profile) {
+            if live.as_slice() != python_filesystem_origin_manifest(host.profile) {
                 return Err(PythonObservationError::HostUnavailable);
             }
             let origin_ref = digest(&live);
@@ -267,7 +265,9 @@ fn observe_captured(
     Ok(report)
 }
 
-fn expected_origin(profile: PythonFilesystemProfile) -> &'static [u8] {
+/// Returns the exact reviewed installed-origin manifest for a host profile.
+#[must_use]
+pub fn python_filesystem_origin_manifest(profile: PythonFilesystemProfile) -> &'static [u8] {
     match profile {
         PythonFilesystemProfile::WindowsX64 => {
             include_bytes!("../_data/python_origin_windows_v1.json")

@@ -58,8 +58,19 @@ pub use crate::source_architecture::python_lexical::PYTHON_FILESYSTEM_WORKER;
 pub use filesystem::{
     HypotheticalPythonFilesystemObservation, HypotheticalPythonFilesystemPolicyObservation,
     PYTHON_ORIGIN_WORKER, PythonFilesystemHost, observe_hypothetical_python_filesystem,
-    observe_hypothetical_python_filesystem_policy,
+    observe_hypothetical_python_filesystem_policy, python_filesystem_origin_manifest,
 };
+
+/// Registered schema for declaration-only Python test observations.
+pub const PYTHON_TEST_OBSERVATION_SCHEMA: &str =
+    include_str!("../_data/python_test_schema_v1.json");
+
+/// Registered schema for source-bound Python filesystem observations.
+pub const PYTHON_FILESYSTEM_OBSERVATION_SCHEMA: &str =
+    include_str!("../_data/python_fs_schema_v1.json");
+
+/// Registered schema for the separately scoped Python filesystem policy view.
+pub const PYTHON_FILESYSTEM_POLICY_SCHEMA: &str = include_str!("../_data/python_fs_policy_v1.json");
 
 const PYTHON_LEXICAL_CONTEXT: &str = "fortress-python-lexical-context-v1";
 

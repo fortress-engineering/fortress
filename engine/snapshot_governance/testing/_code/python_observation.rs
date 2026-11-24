@@ -34,11 +34,12 @@ const CONTEXT: &str = "sha256:f19e50baa1d1fd5a6df2123b2973d458d3806567b133d3192b
 
 mod test_declarations {
     use super::*;
-    use fortress_core::python_observation::observe_python_tests;
+    use fortress_core::python_observation::{
+        PYTHON_TEST_OBSERVATION_SCHEMA as SCHEMA, observe_python_tests,
+    };
     use serde_json::Value;
 
     const NATIVE: &[u8] = include_bytes!("../_data/python_test_fixture_v1.json");
-    const SCHEMA: &str = include_str!("../../_data/python_test_schema_v1.json");
 
     fn native_fixture(name: &str) -> (Fixture, Value, PythonLexicalProducer) {
         let fixture = Fixture::new(name);
@@ -217,8 +218,8 @@ mod regions {
     use fortress_core::source_architecture::{RegionCoverage, SemanticRegion};
 
     const NATIVE: &[u8] = include_bytes!("../_data/python_region_fixture_v1.json");
-    const LAYOUT: &[u8] =
-        include_bytes!("../../../project_model/testing/_data/layout_extension_example_v1.json");
+    const LAYOUT_REF: &str =
+        "sha256:9515352f9c2d5e6bce1ec5871efce892ac068308baaf6706ed379fe86f52cbef";
     const LEXICAL_SOURCE: &str =
         "# café\r\nimport outside\r\nasync def convert(value):\r\n    return value\r\n";
     const LEXICAL_PATH: &str = "src/convert.py";
@@ -257,7 +258,12 @@ mod regions {
             },
         )
         .unwrap();
-        let profile = LayoutExtension::from_pinned_bytes(LAYOUT, &digest(LAYOUT)).unwrap();
+        let layout = fs::read(
+            Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("../../engine/project_model/testing/_data/layout_extension_example_v1.json"),
+        )
+        .expect("qualified external example is present in the exact test checkout");
+        let profile = LayoutExtension::from_pinned_bytes(&layout, LAYOUT_REF).unwrap();
         let project = |path| {
             project_native_source_regions(
                 &fixture.root,
@@ -286,10 +292,7 @@ mod regions {
         assert_eq!(document["layout"]["authority"], "ANALYSIS_ONLY");
         assert_eq!(document["layout"]["entry"]["state"], "CLASSIFIED");
         assert_eq!(document["layout"]["entry"]["role"], "SOURCE");
-        assert_eq!(
-            document["layout"]["selected_profile"]["digest"],
-            digest(LAYOUT)
-        );
+        assert_eq!(document["layout"]["selected_profile"]["digest"], LAYOUT_REF);
         assert_eq!(document["regions"][1]["coverage"], "UNSUPPORTED");
         let evidence = &document["regions"][1]["evidence"][0];
         assert_eq!(evidence["start_line"], 2);
@@ -1638,14 +1641,21 @@ mod filesystem {
     use super::*;
     use fortress_core::portable::canonical;
     use fortress_core::python_observation::{
+        PYTHON_FILESYSTEM_OBSERVATION_SCHEMA as SCHEMA, PYTHON_FILESYSTEM_POLICY_SCHEMA,
         PythonFilesystemHost, PythonFilesystemProfile, observe_hypothetical_python_filesystem,
-        observe_hypothetical_python_filesystem_policy,
+        observe_hypothetical_python_filesystem_policy, python_filesystem_origin_manifest,
     };
     use serde_json::Value;
 
     const RECEIPT: &[u8] = include_bytes!("../_data/python_effect_fixture_v1.json");
-    const ORIGIN: &[u8] = include_bytes!("../../_data/python_origin_windows_v1.json");
-    const SCHEMA: &str = include_str!("../../_data/python_fs_schema_v1.json");
+    fn origin() -> &'static [u8] {
+        let bytes = python_filesystem_origin_manifest(PythonFilesystemProfile::WindowsX64);
+        assert_eq!(
+            digest(bytes),
+            "sha256:d64d760d5aa32736dc505121364f40fbb0c52aef5e400536c80935ac6236db9c"
+        );
+        bytes
+    }
 
     fn make_fixture(name: &str) -> (Fixture, Value, PythonScalarSubject, PythonImportScope) {
         let fixture = Fixture::new(name);
@@ -1715,7 +1725,7 @@ mod filesystem {
                 &scope,
                 host(&producer),
                 |request, ready| Ok(replay(&native, request, ready)),
-                || Ok(ORIGIN.to_vec()),
+                || Ok(origin().to_vec()),
             )
         };
         let report = serde_json::to_value(run().unwrap()).unwrap();
@@ -1733,7 +1743,7 @@ mod filesystem {
             effect["catalog_disposition"]["effects"],
             json!(["filesystem.write"])
         );
-        assert_eq!(effect["installed_origin_sha256"], digest(ORIGIN));
+        assert_eq!(effect["installed_origin_sha256"], digest(origin()));
         assert!(!fixture.root.join("sentinel.bin").exists());
 
         let refused = observe_hypothetical_python_filesystem(
@@ -1833,12 +1843,11 @@ mod filesystem {
             scope,
             host(&producer),
             |request, ready| Ok(replay(native, request, ready)),
-            || Ok(ORIGIN.to_vec()),
+            || Ok(origin().to_vec()),
         )
         .unwrap();
         let document = serde_json::to_value(report).unwrap();
-        let schema: Value =
-            serde_json::from_str(include_str!("../../_data/python_fs_policy_v1.json")).unwrap();
+        let schema: Value = serde_json::from_str(PYTHON_FILESYSTEM_POLICY_SCHEMA).unwrap();
         let underlying: Value = serde_json::from_str(SCHEMA).unwrap();
         jsonschema::draft202012::options()
             .with_resource(
@@ -1895,7 +1904,7 @@ mod filesystem {
                 &scope,
                 host(&selected_producer(&native)),
                 |request, ready| Ok(replay(&native, request, ready)),
-                || Ok(ORIGIN.to_vec()),
+                || Ok(origin().to_vec()),
             )
             .unwrap();
             assert_eq!(
@@ -1923,7 +1932,7 @@ mod filesystem {
             |request, ready| Ok(replay(&native, request, ready)),
             || {
                 write_effect_contract(&fixture, Some(true));
-                Ok(ORIGIN.to_vec())
+                Ok(origin().to_vec())
             },
         );
         assert!(matches!(drift, Err(PythonObservationError::SourceChanged)));

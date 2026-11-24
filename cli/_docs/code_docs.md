@@ -93,7 +93,7 @@ body without project code execution. Its registration uses
 `urn:fortress:host:v1:go-body-registration` with the existing version,
 executable path, executable SHA-256 and toolchain fields. Build the collector
 outside the observed project with the reviewed Go compiler and the two exact
-files documented by [Program Semantics](../../engine/program_semantics/README.md),
+files documented by Program Semantics (`AF-PROGRAM-SEMANTICS-0001`),
 collector.go and go_body.go.
 
 ```text
