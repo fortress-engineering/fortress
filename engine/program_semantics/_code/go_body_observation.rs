@@ -175,6 +175,15 @@ impl GoNativeBodyObservation {
         (self.evaluation_key, self.response_sha256, selected)
     }
 
+    pub(super) fn call_body_at(&self, name: &str, location: &Span) -> Option<&NativeScalarBody> {
+        self.functions.iter().find_map(|row| match row {
+            GoBodyFunction::Lowered {
+                symbol, lowered, ..
+            } if symbol.name == name && symbol.span == *location => Some(lowered.0.as_ref()),
+            _ => None,
+        })
+    }
+
     pub(crate) fn selected_call_body(
         &self,
         source_path: &str,

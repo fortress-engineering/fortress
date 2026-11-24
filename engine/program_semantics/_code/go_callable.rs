@@ -1,21 +1,25 @@
 //! Exact linkage from an admitted Go module declaration to a scalar body.
 
+use super::super::body_observation::LinkedBody;
 use super::{
     Context, ExactClosedPackage, GoCollectorPin, GoModuleRequest, GoNativeModuleObservation,
     GoObservationError, GoRequest, MAX_WIRE, Request, RequestFile, STANDARD, SourceIdentity,
-    SourceText, Status, digest, seal_go_request,
+    SourceText, Span, Status, digest, seal_go_request,
 };
 use base64::Engine as _;
 
+use std::collections::BTreeMap;
+
 use crate::program_semantics::canonical_fact_id;
 use crate::program_semantics::go_observation::{DeclarationKind, Implementation};
-use crate::program_semantics::native_body::NativeBodyLanguage;
+use crate::program_semantics::native_body::{NativeBodyLanguage, NativeScalarBody};
 use crate::program_semantics::native_callable::{
     NativeCallableLimitation as Limit, NativeCallableOutcome, VerifiedCallableLink,
 };
 
 impl GoModuleRequest<'_> {
-    pub(crate) fn link_callable(
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn link_callable<T>(
         &self,
         original: ExactClosedPackage<'_>,
         receipt: &GoNativeModuleObservation,
@@ -23,7 +27,11 @@ impl GoModuleRequest<'_> {
         function: &str,
         manifest: &str,
         launch: impl FnOnce(&[u8]) -> Result<Vec<u8>, GoObservationError>,
-    ) -> Result<NativeCallableOutcome, GoObservationError> {
+        call_analysis: (
+            bool,
+            impl FnOnce(&NativeScalarBody, &BTreeMap<&str, Option<&NativeScalarBody>>) -> Option<T>,
+        ),
+    ) -> Result<(NativeCallableOutcome, Option<T>), GoObservationError> {
         if receipt.binding_sha256 != self.base.binding_sha256
             || receipt.observation.request_sha256 != self.base.request_sha256
             || receipt.provenance["source_view_sha256"].as_str() != Some(original.source.digest())
@@ -36,7 +44,10 @@ impl GoModuleRequest<'_> {
             return Err(GoObservationError::InvalidResponse);
         }
         if receipt.observation.status != Status::Observed {
-            return Ok(NativeCallableOutcome::Unavailable(Limit::UnsupportedScope));
+            return Ok((
+                NativeCallableOutcome::Unavailable(Limit::UnsupportedScope),
+                None,
+            ));
         }
         if body_pin.go_toolchain != self.base.pin.go_toolchain
             || !digest(body_pin.executable_sha256)
@@ -56,53 +67,67 @@ impl GoModuleRequest<'_> {
                 .map(String::as_str)
                 .ne(["amd64.v1"])
         {
-            return Ok(NativeCallableOutcome::Unavailable(Limit::UnsupportedScope));
+            return Ok((
+                NativeCallableOutcome::Unavailable(Limit::UnsupportedScope),
+                None,
+            ));
         }
         let [package] = receipt.observation.observed_packages.as_slice() else {
-            return Ok(NativeCallableOutcome::Unavailable(Limit::UnsupportedScope));
+            return Ok((
+                NativeCallableOutcome::Unavailable(Limit::UnsupportedScope),
+                None,
+            ));
         };
         if package.import_path != original.package_path || !package.imports.is_empty() {
-            return Ok(NativeCallableOutcome::Unavailable(Limit::UnsupportedScope));
+            return Ok((
+                NativeCallableOutcome::Unavailable(Limit::UnsupportedScope),
+                None,
+            ));
         }
 
         let mut matches = package.declarations.iter().filter(|declaration| {
             declaration.name == function && declaration.kind == DeclarationKind::Function
         });
         let Some(declaration) = matches.next() else {
-            return Ok(NativeCallableOutcome::Unavailable(Limit::MissingSubject));
+            return Ok((
+                NativeCallableOutcome::Unavailable(Limit::MissingSubject),
+                None,
+            ));
         };
         if matches.next().is_some() {
-            return Ok(NativeCallableOutcome::Unavailable(Limit::AmbiguousSubject));
+            return Ok((
+                NativeCallableOutcome::Unavailable(Limit::AmbiguousSubject),
+                None,
+            ));
         }
         if declaration.implementation != Implementation::SourceBody {
-            return Ok(NativeCallableOutcome::Unavailable(Limit::BodyUnavailable));
+            return Ok((
+                NativeCallableOutcome::Unavailable(Limit::BodyUnavailable),
+                None,
+            ));
         }
 
         let request = self.body_request(original, receipt, body_pin)?;
         let bytes = launch(request.request_bytes())?;
-        let bodies = request.verify_bodies(body_pin, manifest, &bytes)?;
+        let (call_returns, analyze) = call_analysis;
+        let (bodies, observed) = if call_returns {
+            let bodies = request.verify_bound_bodies(body_pin, manifest, &bytes)?;
+            let observed = if let Some(body) = bodies.call_body_at(function, &declaration.span) {
+                analyze(body, &bodies.call_targets()?)
+            } else {
+                None
+            };
+            (bodies, observed)
+        } else {
+            (request.verify_bodies(body_pin, manifest, &bytes)?, None)
+        };
         let linked = match bodies.into_callable(function, &declaration.span) {
             Ok(linked) => linked,
-            Err(limit) => return Ok(NativeCallableOutcome::Unavailable(limit)),
+            Err(limit) => return Ok((NativeCallableOutcome::Unavailable(limit), None)),
         };
-        let source = original
-            .source
-            .bytes(&declaration.span.path)
-            .ok_or(GoObservationError::InvalidResponse)?;
-        let origin_ref = canonical_fact_id(
-            "go_callable_module_link:v1",
-            &(&receipt.binding_sha256, &receipt.response_sha256),
-        );
-        let link = VerifiedCallableLink {
-            language: NativeBodyLanguage::Go,
-            namespace: original.package_path,
-            function,
-            source_path: &declaration.span.path,
-            source_ref: &super::sha256(source),
-            origin_ref: &origin_ref,
-            exchange_ref: &linked.exchange,
-        };
-        Ok(link.attach(linked.evaluation, linked.body))
+        let subject =
+            link_observed_callable(original, receipt, function, &declaration.span, linked)?;
+        Ok((subject, observed))
     }
 
     fn body_request<'a>(
@@ -184,4 +209,31 @@ impl GoModuleRequest<'_> {
             "fortress-go-linked-callable-body-v1",
         )
     }
+}
+
+fn link_observed_callable(
+    original: ExactClosedPackage<'_>,
+    receipt: &GoNativeModuleObservation,
+    function: &str,
+    location: &Span,
+    linked: LinkedBody,
+) -> Result<NativeCallableOutcome, GoObservationError> {
+    let source = original
+        .source
+        .bytes(&location.path)
+        .ok_or(GoObservationError::InvalidResponse)?;
+    let origin_ref = canonical_fact_id(
+        "go_callable_module_link:v1",
+        &(&receipt.binding_sha256, &receipt.response_sha256),
+    );
+    let link = VerifiedCallableLink {
+        language: NativeBodyLanguage::Go,
+        namespace: original.package_path,
+        function,
+        source_path: &location.path,
+        source_ref: &super::sha256(source),
+        origin_ref: &origin_ref,
+        exchange_ref: &linked.exchange,
+    };
+    Ok(link.attach(linked.evaluation, linked.body))
 }

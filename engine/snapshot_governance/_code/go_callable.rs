@@ -9,9 +9,11 @@ use super::{
 use crate::audit::NativeAuthorityScope;
 use crate::native_observation::NativeSource;
 use crate::native_return_observation::{
-    AuthoredNativeReturnObservation, compare_captured_native_return,
+    AuthoredNativeCallReturnObservation, AuthoredNativeReturnObservation,
+    compare_captured_native_call_return, compare_captured_native_return,
 };
 use crate::program_semantics::native_callable::NativeCallableOutcome;
+use crate::semantic_analysis::{NativeBooleanCallEvaluation, analyze_native_boolean_calls};
 
 /// Independently selected Go callable within one closed native module.
 #[derive(Clone, Copy)]
@@ -52,7 +54,15 @@ pub fn observe_go_linked_callable(
 ) -> Result<NativeCallableOutcome, GoObservationError> {
     let source =
         NativeSource::capture_for_dependencies(project_root, "Go").map_err(source_failure)?;
-    let linked = link(&source, selected, context, host, launch_module, launch_body)?;
+    let (linked, _) = link(
+        &source,
+        selected,
+        context,
+        host,
+        false,
+        launch_module,
+        launch_body,
+    )?;
     source.revalidate().map_err(source_failure)?;
     Ok(linked)
 }
@@ -72,13 +82,75 @@ pub fn observe_go_authored_native_return(
     launch_module: impl FnOnce(&[u8]) -> Result<Vec<u8>, GoObservationError>,
     launch_body: impl FnOnce(&[u8]) -> Result<Vec<u8>, GoObservationError>,
 ) -> Result<AuthoredNativeReturnObservation, GoObservationError> {
+    let (source, linked, _) = observe_authored(
+        project_root,
+        selected,
+        context,
+        host,
+        false,
+        launch_module,
+        launch_body,
+    )?;
+    let result = compare_captured_native_return(&source, linked);
+    source.revalidate().map_err(source_failure)?;
+    Ok(result)
+}
+
+/// Compare an original Go Boolean requirement with exact closed call evidence.
+///
+/// # Errors
+/// Refuses incomplete original evidence, mismatched exchanges or source drift.
+pub fn observe_go_authored_call_return(
+    project_root: &Path,
+    selected: GoCallableSelection<'_>,
+    context: GoBuildContext,
+    host: GoCallableHost<'_>,
+    launch_module: impl FnOnce(&[u8]) -> Result<Vec<u8>, GoObservationError>,
+    launch_body: impl FnOnce(&[u8]) -> Result<Vec<u8>, GoObservationError>,
+) -> Result<AuthoredNativeCallReturnObservation, GoObservationError> {
+    let (source, linked, observed) = observe_authored(
+        project_root,
+        selected,
+        context,
+        host,
+        true,
+        launch_module,
+        launch_body,
+    )?;
+    let result = compare_captured_native_call_return(&source, linked, observed);
+    source.revalidate().map_err(source_failure)?;
+    Ok(result)
+}
+
+fn observe_authored<'a>(
+    project_root: &'a Path,
+    selected: GoCallableSelection<'_>,
+    context: GoBuildContext,
+    host: GoCallableHost<'_>,
+    call_returns: bool,
+    launch_module: impl FnOnce(&[u8]) -> Result<Vec<u8>, GoObservationError>,
+    launch_body: impl FnOnce(&[u8]) -> Result<Vec<u8>, GoObservationError>,
+) -> Result<
+    (
+        NativeSource<'a>,
+        NativeCallableOutcome,
+        Option<NativeBooleanCallEvaluation>,
+    ),
+    GoObservationError,
+> {
     let source =
         NativeSource::capture_with(project_root, "Go", NativeAuthorityScope::AuthoredReturn)
             .map_err(source_failure)?;
-    let linked = link(&source, selected, context, host, launch_module, launch_body)?;
-    let report = compare_captured_native_return(&source, linked);
-    source.revalidate().map_err(source_failure)?;
-    Ok(report)
+    let (linked, observed) = link(
+        &source,
+        selected,
+        context,
+        host,
+        call_returns,
+        launch_module,
+        launch_body,
+    )?;
+    Ok((source, linked, observed))
 }
 
 fn link(
@@ -86,19 +158,25 @@ fn link(
     selected: GoCallableSelection<'_>,
     context: GoBuildContext,
     host: GoCallableHost<'_>,
+    call_returns: bool,
     launch_module: impl FnOnce(&[u8]) -> Result<Vec<u8>, GoObservationError>,
     launch_body: impl FnOnce(&[u8]) -> Result<Vec<u8>, GoObservationError>,
-) -> Result<NativeCallableOutcome, GoObservationError> {
+) -> Result<(NativeCallableOutcome, Option<NativeBooleanCallEvaluation>), GoObservationError> {
     let original = closed_package(source, module_entry(selected.module));
     let admitted = admit_go_module(original, selected.module, host.module, context)?;
     let module = admitted.verify(host.module, &launch_module(admitted.request_bytes())?)?;
-    let mut linked = admitted.link_callable(
+    let (mut linked, observed) = admitted.link_callable(
         original,
         &module,
         host.body,
         selected.function,
         &source.binding.source_manifest_digest,
         launch_body,
+        (call_returns, |body, targets| {
+            body.parameters()
+                .is_empty()
+                .then(|| analyze_native_boolean_calls(body, targets))
+        }),
     )?;
     if let NativeCallableOutcome::Linked(subject) = &mut linked {
         let owner = source
@@ -106,5 +184,5 @@ fn link(
             .map_err(source_failure)?;
         subject.record_original_owner(owner);
     }
-    Ok(linked)
+    Ok((linked, observed))
 }

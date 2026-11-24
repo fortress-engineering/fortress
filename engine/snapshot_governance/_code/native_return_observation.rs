@@ -4,7 +4,8 @@ use crate::affected_analysis::sha256;
 use crate::native_observation::NativeSource;
 use crate::program_semantics::native_callable::{LinkedNativeCallable, NativeCallableOutcome};
 use crate::semantic_analysis::{
-    NativeBooleanReturn, NativeReturnContracts, compare_native_boolean_return,
+    NativeBooleanCallEvaluation, NativeBooleanReturn, NativeReturnContracts,
+    compare_native_boolean_return,
 };
 
 /// The exact callable observation and a separately selected authored comparison.
@@ -20,6 +21,22 @@ pub struct AuthoredNativeReturnObservation {
     pub subject: NativeCallableOutcome,
     /// The separately bound authored observation.
     pub comparison: AuthoredNativeReturnComparison,
+}
+
+/// Original authored comparison and the separately retained finite call evaluation.
+#[derive(Debug)]
+pub struct AuthoredNativeCallReturnObservation {
+    /// Selected subject, authored requirement, and original source binding.
+    pub observation: AuthoredNativeReturnObservation,
+    call_evaluation: Option<NativeBooleanCallEvaluation>,
+}
+
+impl AuthoredNativeCallReturnObservation {
+    /// Exact call evaluation with dependency occurrences or explicit unavailability.
+    #[must_use]
+    pub fn call_evaluation(&self) -> Option<&impl serde::Serialize> {
+        self.call_evaluation.as_ref()
+    }
 }
 
 /// Result of resolving an authored requirement in original Module territory.
@@ -69,8 +86,38 @@ pub(crate) fn compare_captured_native_return(
     source: &NativeSource<'_>,
     subject: NativeCallableOutcome,
 ) -> AuthoredNativeReturnObservation {
+    compare_captured(source, subject, ReturnEvidence::IsolatedBody)
+}
+
+pub(crate) fn compare_captured_native_call_return(
+    source: &NativeSource<'_>,
+    subject: NativeCallableOutcome,
+    call_evaluation: Option<NativeBooleanCallEvaluation>,
+) -> AuthoredNativeCallReturnObservation {
+    let observation = compare_captured(
+        source,
+        subject,
+        ReturnEvidence::ComposedCalls(call_evaluation.as_ref()),
+    );
+    AuthoredNativeCallReturnObservation {
+        observation,
+        call_evaluation,
+    }
+}
+
+#[derive(Clone, Copy)]
+enum ReturnEvidence<'a> {
+    IsolatedBody,
+    ComposedCalls(Option<&'a NativeBooleanCallEvaluation>),
+}
+
+fn compare_captured(
+    source: &NativeSource<'_>,
+    subject: NativeCallableOutcome,
+    evidence: ReturnEvidence<'_>,
+) -> AuthoredNativeReturnObservation {
     let comparison = match &subject {
-        NativeCallableOutcome::Linked(link) => compare_link(source, link).map_or_else(
+        NativeCallableOutcome::Linked(link) => compare_link(source, link, evidence).map_or_else(
             AuthoredNativeReturnComparison::Unavailable,
             AuthoredNativeReturnComparison::Observed,
         ),
@@ -90,6 +137,7 @@ pub(crate) fn compare_captured_native_return(
 fn compare_link(
     source: &NativeSource<'_>,
     link: &LinkedNativeCallable,
+    evidence: ReturnEvidence<'_>,
 ) -> Result<BoundNativeReturnComparison, NativeReturnComparisonLimitation> {
     use NativeReturnComparisonLimitation as Limit;
 
@@ -123,11 +171,27 @@ fn compare_link(
     if contract.module() != owner.owner() {
         return Err(Limit::ForeignContractOwner);
     }
+    let observed_return = match evidence {
+        ReturnEvidence::IsolatedBody => compare_native_boolean_return(link.body(), required_return),
+        ReturnEvidence::ComposedCalls(Some(NativeBooleanCallEvaluation::Complete {
+            occurrence,
+            parameters,
+            returns,
+            ..
+        })) if occurrence == link.body().binding() && parameters.is_empty() => {
+            match returns.as_slice() {
+                [value] if *value == required_return => NativeBooleanReturn::MatchesRequiredValue,
+                [_] => NativeBooleanReturn::ExcludesRequiredValue,
+                _ => NativeBooleanReturn::Unresolved,
+            }
+        }
+        ReturnEvidence::ComposedCalls(_) => NativeBooleanReturn::Unresolved,
+    };
     Ok(BoundNativeReturnComparison {
         author: owner.owner().into(),
         contract_path: contract.path().into(),
         contract_ref: sha256(bytes),
         required_return,
-        observed_return: compare_native_boolean_return(link.body(), required_return),
+        observed_return,
     })
 }

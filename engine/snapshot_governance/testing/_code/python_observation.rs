@@ -2115,6 +2115,97 @@ mod callable_links {
         bytes
     }
 
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R37-002`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R37
+    #[test]
+    fn python_authored_call_return_preserves_original_authority_and_limits() {
+        use fortress_core::python_observation::observe_python_authored_call_return;
+        use fortress_core::semantic_analysis::NativeBooleanReturn;
+
+        let frozen: serde_json::Value =
+            serde_json::from_slice(include_bytes!("../_data/authored_call_fixture_v1.json"))
+                .unwrap();
+        for (name, required, foreign) in [
+            ("complete", true, false),
+            ("complete", false, false),
+            ("complete", true, true),
+            ("rebound", true, false),
+        ] {
+            let fixture = contract_fixture(&format!("authored-call-{name}-{required}-{foreign}"));
+            let row = &frozen["python"][name];
+            let source = row["source"].as_str().unwrap().as_bytes();
+            let captured = &row["reply"];
+            let producer = PythonScalarProducer::new(
+                captured["worker_ref"].as_str().unwrap(),
+                captured["bootstrap_ref"].as_str().unwrap(),
+                captured["runtime_ref"].as_str().unwrap(),
+            )
+            .unwrap();
+            fs::write(fixture.root.join(PATH), source).unwrap();
+            let path = if foreign {
+                PROVIDER_RETURN
+            } else {
+                CONSUMER_RETURN
+            };
+            let authored = write_return_contract(&fixture, path, required);
+            let result = observe_python_authored_call_return(
+                &fixture.root,
+                selection("source"),
+                &scope(),
+                &producer,
+                |request| {
+                    let request: serde_json::Value = serde_json::from_slice(&request).unwrap();
+                    assert_eq!(request["source_ref"], digest(source));
+                    assert_eq!(request["schema"], "fortress:python:lexical-call-request:1");
+                    for field in [
+                        "source_path",
+                        "source_ref",
+                        "runtime_ref",
+                        "worker_ref",
+                        "bootstrap_ref",
+                    ] {
+                        assert_eq!(request[field], row["request"][field]);
+                    }
+                    let mut reply = captured.clone();
+                    reply["id"] = request["id"].clone();
+                    Ok(serde_json::to_vec(&reply).unwrap())
+                },
+            )
+            .unwrap();
+            let evaluation = serde_json::to_value(result.call_evaluation()).unwrap();
+            match result.observation.comparison {
+                AuthoredNativeReturnComparison::Observed(checked)
+                    if name == "complete" && !foreign =>
+                {
+                    let expected = if required {
+                        NativeBooleanReturn::MatchesRequiredValue
+                    } else {
+                        NativeBooleanReturn::ExcludesRequiredValue
+                    };
+                    assert_eq!(checked.observed_return, expected);
+                    assert_eq!(checked.contract_ref, digest(&authored));
+                    assert_eq!(evaluation["returns"], json!([true]));
+                    assert_eq!(
+                        evaluation["dependency_occurrences"]
+                            .as_array()
+                            .unwrap()
+                            .len(),
+                        1
+                    );
+                }
+                AuthoredNativeReturnComparison::Unavailable(
+                    NativeReturnComparisonLimitation::ForeignContractOwner,
+                ) if foreign => assert_eq!(evaluation["returns"], json!([true])),
+                AuthoredNativeReturnComparison::Unavailable(
+                    NativeReturnComparisonLimitation::SubjectUnavailable,
+                ) if name == "rebound" => assert!(evaluation.is_null()),
+                result => panic!("unanticipated authored call result {result:?}"),
+            }
+            assert_eq!(fs::read(fixture.root.join(PATH)).unwrap(), source);
+            assert_eq!(fs::read(fixture.root.join(path)).unwrap(), authored);
+        }
+    }
+
     /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R30-006`
     /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R30
     #[test]

@@ -2431,6 +2431,97 @@ mod callable_links {
         }
         assert_ne!(manifests[0], manifests[1]);
     }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R37-001`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R37
+    #[test]
+    fn go_authored_call_return_binds_original_requirement_and_exact_dependency() {
+        use fortress_core::go_observation::observe_go_authored_call_return;
+        use fortress_core::native_return_observation::AuthoredNativeReturnComparison;
+        use fortress_core::semantic_analysis::NativeBooleanReturn;
+
+        const CONTRACT_PATH: &str = "authoring/app/data/native_function_contracts.json";
+        const SLOT: &str = "go_callable_slot:v1:sha256:f13fd3e3d4a7a753633dd369bd15b7338bc48823fbba46c47718015230fc5540";
+        let frozen: Value =
+            serde_json::from_slice(include_bytes!("../_data/authored_call_fixture_v1.json"))
+                .unwrap();
+        let record = &frozen["go"];
+        let module_pin = pin(record, "module");
+        let body_pin = pin(record, "body");
+        let host = GoCallableHost {
+            module: &module_pin,
+            body: &body_pin,
+        };
+        let mut selected = selection("Keep");
+        selected.module.target_os = "windows";
+        let pairs = [
+            (0, true, NativeBooleanReturn::MatchesRequiredValue),
+            (0, false, NativeBooleanReturn::ExcludesRequiredValue),
+            (1, true, NativeBooleanReturn::Unresolved),
+        ];
+        for (index, required_return, expected) in pairs {
+            let fixture = Fixture::new(&format!("go-authored-calls-{index}-{required_return}"));
+            let row = &record["cases"][index];
+            let source_path = row["path"].as_str().unwrap();
+            stage(&fixture, record, row);
+            configure_authored_go_owner(&fixture, source_path);
+            let mut authority = serde_json_canonicalizer::to_vec(&json!({
+                "$schema":"urn:fortress:schema:v1:native-function-contracts",
+                "schema_version":1,"functions":[{"subject":SLOT,"required_return":required_return}],
+            }))
+            .unwrap();
+            authority.push(b'\n');
+            let contract = fixture.root.join(CONTRACT_PATH);
+            fs::write(&contract, &authority).unwrap();
+            let result = observe_go_authored_call_return(
+                &fixture.root,
+                selected,
+                context(),
+                host,
+                |request| Ok(reply(row, request, "module")),
+                |request| Ok(reply(row, request, "body")),
+            )
+            .unwrap();
+            let evaluation = serde_json::to_value(result.call_evaluation()).unwrap();
+            let NativeCallableOutcome::Linked(subject) = result.observation.subject else {
+                panic!("the original compiler-identified declaration must remain linked");
+            };
+            let AuthoredNativeReturnComparison::Observed(observed) = result.observation.comparison
+            else {
+                panic!("the original authored requirement must remain visible");
+            };
+            // The result retains the selected body occurrence and distinct callees.
+            assert_eq!(subject.slot_ref(), SLOT);
+            assert_eq!(evaluation["occurrence"], subject.body().binding());
+            if index == 0 {
+                assert_eq!(evaluation["returns"], json!([true]));
+                assert_eq!(
+                    evaluation["dependency_occurrences"]
+                        .as_array()
+                        .unwrap()
+                        .len(),
+                    1
+                );
+                assert_ne!(
+                    evaluation["dependency_occurrences"][0],
+                    subject.body().binding()
+                );
+            } else {
+                assert_eq!(evaluation["reason"], "RECURSIVE_DEPENDENCY");
+            }
+            assert_eq!(observed.observed_return, expected);
+            assert_eq!(observed.required_return, required_return);
+            assert_eq!(
+                observed.contract_ref,
+                fortress_core::portable::digest(&authority)
+            );
+            assert_eq!(fs::read(&contract).unwrap(), authority);
+            assert_eq!(
+                fs::read(fixture.root.join(source_path)).unwrap(),
+                row["source"].as_str().unwrap().as_bytes()
+            );
+        }
+    }
 }
 
 mod filesystem {

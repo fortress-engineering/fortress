@@ -14,10 +14,10 @@ use fortress_core::portable::{canonical, digest};
 use fortress_core::python_observation::{
     ActualPythonScalarObservation, NativeBodyOutcome, PYTHON_LEXICAL_WORKER, PYTHON_SCALAR_WORKER,
     PythonCallableSelection, PythonObservationError, PythonScalarError, PythonScalarProducer,
-    PythonScalarSubject, observe_python_authored_native_return,
-    observe_python_candidate_call_return, observe_python_candidate_sensitivity,
-    observe_python_native_call_return, observe_python_scalar, observe_python_scalar_flow,
-    observe_python_scalar_sensitivity,
+    PythonScalarSubject, observe_python_authored_call_return,
+    observe_python_authored_native_return, observe_python_candidate_call_return,
+    observe_python_candidate_sensitivity, observe_python_native_call_return, observe_python_scalar,
+    observe_python_scalar_flow, observe_python_scalar_sensitivity,
 };
 use fortress_core::wire::{
     JsonAdmissionLimits, admit_json, parse_strict_json_bytes, readable_text,
@@ -33,6 +33,7 @@ use super::verifier_process::{require_external_asset, run_pinned_input_after_rea
 const USAGE: &str = concat!(
     "fortress source-artifacts --observe-python-scalar project host-registration [--flow|--return-sensitivity|--call-return]",
     "\n       fortress source-artifacts --observe-python-scalar project host-registration --contract module root-scope root-scope-sha256",
+    "\n       fortress source-artifacts --observe-python-scalar project host-registration --contract-call-return module root-scope root-scope-sha256",
 );
 const REGISTRATION_SCHEMA: &str = "urn:fortress:host:v1:python-scalar-registration";
 const OBSERVATION_SCHEMA: &str = "urn:fortress:derived:v1:python-scalar-observation";
@@ -344,25 +345,37 @@ fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
         [flag] if flag == "--flow" => (ScalarInspection::Flow, None),
         [flag] if flag == "--return-sensitivity" => (ScalarInspection::ReturnSensitivity, None),
         [flag] if flag == "--call-return" => (ScalarInspection::CallReturn, None),
-        [flag, module, scope_path, scope_ref] if flag == "--contract" => (
-            ScalarInspection::Observation,
-            Some((module.as_str(), Path::new(scope_path), scope_ref.as_str())),
-        ),
+        [flag, module, scope_path, scope_ref]
+            if matches!(flag.as_str(), "--contract" | "--contract-call-return") =>
+        {
+            (
+                ScalarInspection::Observation,
+                Some((
+                    module.as_str(),
+                    Path::new(scope_path),
+                    scope_ref.as_str(),
+                    flag == "--contract-call-return",
+                )),
+            )
+        }
         _ => return Err(format!("usage: {USAGE}")),
     };
     let root = Path::new(root)
         .canonicalize()
         .map_err(|error| error.to_string())?;
     let authored = authored
-        .map(|(module, scope_path, scope_ref)| {
+        .map(|(module, scope_path, scope_ref, call_returns)| {
             load_import_scope(&root, scope_path, scope_ref)
-                .map(|(scope, bytes)| (module, scope_path, scope, bytes))
+                .map(|(scope, bytes)| (module, scope_path, scope, bytes, call_returns))
         })
         .transpose()?;
-    let lexical_calls = matches!(inspection, ScalarInspection::CallReturn);
+    let lexical_calls = matches!(inspection, ScalarInspection::CallReturn)
+        || authored
+            .as_ref()
+            .is_some_and(|(_, _, _, _, call_returns)| *call_returns);
     let host = RegisteredScalarHost::load(&root, Path::new(registration_path), lexical_calls)?;
     let exchange = |request| host.exchange(request);
-    if lexical_calls {
+    if lexical_calls && authored.is_none() {
         let report = observe_python_native_call_return(
             &root,
             &host.registration.subject,
@@ -373,7 +386,7 @@ fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
         host.revalidate().map_err(|error| error.to_string())?;
         return canonical(&report).map_err(|error| error.to_string());
     }
-    if let Some((module, scope_path, scope, scope_bytes)) = authored {
+    if let Some((module, scope_path, scope, scope_bytes, call_returns)) = authored {
         let subject = &host.registration.subject;
         if !subject.exact_bool_parameters.is_empty() {
             return Err("PYTHON_AUTHORED_RETURN_REQUIRES_ZERO_ARGUMENT_SUBJECT".into());
@@ -382,22 +395,24 @@ fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
             module,
             function: &subject.function,
         };
-        let result = observe_python_authored_native_return(
-            &root,
-            selected,
-            &scope,
-            &host.producer,
-            |request| {
-                check_contract_subject(subject, &request)?;
-                host.revalidate()?;
-                verify_import_scope(&root, scope_path, &scope_bytes)?;
-                exchange(request)
-            },
-        )
-        .map_err(|error| error.to_string())?;
+        let execute = |request: Vec<u8>| {
+            check_contract_subject(subject, &request)?;
+            host.revalidate()?;
+            verify_import_scope(&root, scope_path, &scope_bytes)?;
+            exchange(request)
+        };
+        let result = if call_returns {
+            observe_python_authored_call_return(&root, selected, &scope, &host.producer, execute)
+                .map_err(|error| error.to_string())
+                .and_then(|report| super::native_return_command::serialize_call_return(&report))
+        } else {
+            observe_python_authored_native_return(&root, selected, &scope, &host.producer, execute)
+                .map_err(|error| error.to_string())
+                .and_then(|report| super::native_return_command::serialize(&report))
+        };
         host.revalidate().map_err(|error| error.to_string())?;
         verify_import_scope(&root, scope_path, &scope_bytes).map_err(|error| error.to_string())?;
-        return crate::native_return_command::serialize(&result);
+        return result;
     }
     serialize_scalar_inspection(
         &root,

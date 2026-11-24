@@ -68,6 +68,11 @@ produces a bounded static comparison with independently reported body and
 declaration provenance.
 
 
+Append `--authored-call-return FUNCTION BODY_REGISTRATION` for a bounded
+zero-argument Boolean call closure. This mode reports the exact root
+occurrence, dependency occurrences, and the observed return or unavailable
+reason alongside the original authored requirement.
+
 Runs the explicitly selected, digest-pinned Go collector with the shared bounded subprocess supervisor. Returns the independent native observation projection after source and authority revalidation.
 
 For declaration-only test inspection, build the reviewed helper from
@@ -771,6 +776,11 @@ The displayed requirement comes from the original Module's captured
 requirements remain explicit. The result reports a compile-only, bounded
 comparison and preserves uncertainty about runtime imports, execution and
 certification.
+
+Replace `--contract` with `--contract-call-return` to select the finite
+compile-only local call closure. The version 2 report retains its exact
+dependency occurrences. Rebinding, missing scope and incomplete closure
+remain explicit and there is no target execution.
 
 ### [`native_return_command.rs`](../_code/native_return_command.rs)
 

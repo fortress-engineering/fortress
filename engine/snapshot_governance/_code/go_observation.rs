@@ -34,8 +34,8 @@ pub use filesystem::{
 #[path = "go_callable.rs"]
 mod callable;
 pub use callable::{
-    GoCallableHost, GoCallableSelection, observe_go_authored_native_return,
-    observe_go_linked_callable,
+    GoCallableHost, GoCallableSelection, observe_go_authored_call_return,
+    observe_go_authored_native_return, observe_go_linked_callable,
 };
 
 pub use crate::program_semantics::go_observation::GoFilesystemLibraryPin;

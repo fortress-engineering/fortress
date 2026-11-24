@@ -8,9 +8,9 @@ use std::time::Duration;
 use fortress_core::go_observation::{
     GoBuildContext, GoCallableHost, GoCallableSelection, GoCollectorPin, GoModuleSelection,
     GoObservationError, GoPackageSelection, GoTypeComparison, GoTypeSelector,
-    observe_go_authored_native_return, observe_go_module_dependencies,
-    observe_go_module_dependency_intent, observe_go_native, observe_go_native_build,
-    observe_go_native_module, observe_go_native_tests,
+    observe_go_authored_call_return, observe_go_authored_native_return,
+    observe_go_module_dependencies, observe_go_module_dependency_intent, observe_go_native,
+    observe_go_native_build, observe_go_native_module, observe_go_native_tests,
 };
 use fortress_core::portable::{canonical, digest};
 use fortress_core::wire::{JsonAdmissionLimits, admit_json, parse_public_json, readable_text};
@@ -73,7 +73,7 @@ impl Mode {
                 "--observe-go-tests project host-registration directory package-path go-version target-os target-arch"
             }
             Self::Module => {
-                "--observe-go-module project host-registration module-directory module-path entry-path target-os target-arch [--dependencies | --dependency-intent | --authored-return function body-registration | left-package left-type right-package right-type]"
+                "--observe-go-module project host-registration module-directory module-path entry-path target-os target-arch [--dependencies | --dependency-intent | --authored-return function body-registration | --authored-call-return function body-registration | left-package left-type right-package right-type]"
             }
         }
     }
@@ -239,6 +239,7 @@ enum ModuleOperation<'a> {
     AuthoredReturn {
         function: &'a str,
         body_registration: &'a Path,
+        call_returns: bool,
     },
 }
 
@@ -248,14 +249,14 @@ fn parse_operation(mode: Mode, options: &[String]) -> Result<ModuleOperation<'_>
         (Mode::Module, [flag]) if flag == "--dependencies" => Ok(ModuleOperation::Dependencies),
         (Mode::Module, [flag]) if flag == "--dependency-intent" => Ok(ModuleOperation::DependencyIntent),
         (Mode::Module, [flag, function, body_registration])
-            if flag == "--authored-return"
+            if matches!(flag.as_str(), "--authored-return" | "--authored-call-return")
                 && !function.is_empty()
                 && !function.starts_with('-')
                 && Path::new(body_registration).is_absolute() =>
         {
-            Ok(ModuleOperation::AuthoredReturn { function, body_registration: Path::new(body_registration) })
+            Ok(ModuleOperation::AuthoredReturn { function, body_registration: Path::new(body_registration), call_returns: flag == "--authored-call-return" })
         }
-        (Mode::Module, [flag, ..]) if flag == "--authored-return" => {
+        (Mode::Module, [flag, ..]) if matches!(flag.as_str(), "--authored-return" | "--authored-call-return") => {
             Err("An authored return requires one function and an absolute trusted body registration path.".into())
         }
         (Mode::Module, [left_package, left_type, right_package, right_type]) => {
@@ -308,27 +309,43 @@ fn collect_module(
         ModuleOperation::AuthoredReturn {
             function,
             body_registration,
-        } => {
-            let result = super::go_body_command::with_registered_body(
-                root,
-                body_registration,
-                |body, process| {
-                    observe_go_authored_native_return(
+            call_returns,
+        } => super::go_body_command::with_registered_body_mode(
+            root,
+            body_registration,
+            call_returns,
+            |body, process| {
+                let selected = GoCallableSelection {
+                    module: selection,
+                    function,
+                };
+                let host = GoCallableHost { module: pin, body };
+                let launch_body = |bytes: &[u8]| process.run(bytes);
+                if call_returns {
+                    observe_go_authored_call_return(
                         root,
-                        GoCallableSelection {
-                            module: selection,
-                            function,
-                        },
+                        selected,
                         context,
-                        GoCallableHost { module: pin, body },
+                        host,
                         launch,
-                        |bytes| process.run(bytes),
+                        launch_body,
                     )
                     .map_err(|error| error.to_string())
-                },
-            )?;
-            super::native_return_command::serialize(&result)
-        }
+                    .and_then(|report| super::native_return_command::serialize_call_return(&report))
+                } else {
+                    observe_go_authored_native_return(
+                        root,
+                        selected,
+                        context,
+                        host,
+                        launch,
+                        launch_body,
+                    )
+                    .map_err(|error| error.to_string())
+                    .and_then(|report| super::native_return_command::serialize(&report))
+                }
+            },
+        ),
     }
 }
 

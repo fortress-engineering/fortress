@@ -10,13 +10,15 @@ use crate::affected_analysis::sha256;
 use crate::audit::NativeAuthorityScope;
 use crate::native_observation::NativeSource;
 use crate::native_return_observation::{
-    AuthoredNativeReturnObservation, compare_captured_native_return,
+    AuthoredNativeCallReturnObservation, AuthoredNativeReturnObservation,
+    compare_captured_native_call_return, compare_captured_native_return,
 };
 use crate::program_semantics::native_body::{NativeBodyLanguage, NativeBodyOutcome};
 use crate::program_semantics::native_callable::{
     NativeCallableLimitation as Limit, NativeCallableOutcome, VerifiedCallableLink,
 };
 use crate::project::EvaluationKey;
+use crate::semantic_analysis::{NativeBooleanCallEvaluation, analyze_native_boolean_calls};
 use crate::source_architecture::python_lexical::python_static_imports::UniquePythonModule;
 
 /// Independently selected lexical Python subject. Initial support is a
@@ -46,7 +48,7 @@ pub fn observe_python_linked_callable(
     exchange: impl FnOnce(Vec<u8>) -> Result<Vec<u8>, PythonObservationError>,
 ) -> Result<NativeCallableOutcome, PythonObservationError> {
     let source = NativeSource::capture_for_dependencies(project_root, "Python")?;
-    let linked = link_with_owner(&source, selected, scope, producer, exchange)?;
+    let (linked, _) = link_with_owner(&source, selected, scope, producer, false, exchange)?;
     source.revalidate()?;
     Ok(linked)
 }
@@ -65,12 +67,51 @@ pub fn observe_python_authored_native_return(
     producer: &PythonScalarProducer,
     exchange: impl FnOnce(Vec<u8>) -> Result<Vec<u8>, PythonObservationError>,
 ) -> Result<AuthoredNativeReturnObservation, PythonObservationError> {
+    let (source, linked, _) =
+        observe_authored(project_root, selected, scope, producer, false, exchange)?;
+    let result = compare_captured_native_return(&source, linked);
+    source.revalidate()?;
+    Ok(result)
+}
+
+/// Compare an original Python Boolean requirement using an exact local call closure.
+///
+/// # Errors
+/// Refuses incomplete original governance, an incompatible reply, or source drift.
+pub fn observe_python_authored_call_return(
+    project_root: &Path,
+    selected: PythonCallableSelection<'_>,
+    scope: &PythonImportScope,
+    producer: &PythonScalarProducer,
+    exchange: impl FnOnce(Vec<u8>) -> Result<Vec<u8>, PythonObservationError>,
+) -> Result<AuthoredNativeCallReturnObservation, PythonObservationError> {
+    let (source, linked, observed) =
+        observe_authored(project_root, selected, scope, producer, true, exchange)?;
+    let result = compare_captured_native_call_return(&source, linked, observed);
+    source.revalidate()?;
+    Ok(result)
+}
+
+fn observe_authored<'a>(
+    project_root: &'a Path,
+    selected: PythonCallableSelection<'_>,
+    scope: &PythonImportScope,
+    producer: &PythonScalarProducer,
+    call_returns: bool,
+    exchange: impl FnOnce(Vec<u8>) -> Result<Vec<u8>, PythonObservationError>,
+) -> Result<
+    (
+        NativeSource<'a>,
+        NativeCallableOutcome,
+        Option<NativeBooleanCallEvaluation>,
+    ),
+    PythonObservationError,
+> {
     let source =
         NativeSource::capture_with(project_root, "Python", NativeAuthorityScope::AuthoredReturn)?;
-    let linked = link_with_owner(&source, selected, scope, producer, exchange)?;
-    let comparison = compare_captured_native_return(&source, linked);
-    source.revalidate()?;
-    Ok(comparison)
+    let (linked, observed) =
+        link_with_owner(&source, selected, scope, producer, call_returns, exchange)?;
+    Ok((source, linked, observed))
 }
 
 fn link_with_owner(
@@ -78,14 +119,15 @@ fn link_with_owner(
     selected: PythonCallableSelection<'_>,
     scope: &PythonImportScope,
     producer: &PythonScalarProducer,
+    call_returns: bool,
     exchange: impl FnOnce(Vec<u8>) -> Result<Vec<u8>, PythonObservationError>,
-) -> Result<NativeCallableOutcome, PythonObservationError> {
-    let mut result = link(source, selected, scope, producer, exchange)?;
+) -> Result<(NativeCallableOutcome, Option<NativeBooleanCallEvaluation>), PythonObservationError> {
+    let (mut result, observed) = link(source, selected, scope, producer, call_returns, exchange)?;
     if let NativeCallableOutcome::Linked(subject) = &mut result {
         let owner = source.original_declared_owner(subject.source_path())?;
         subject.record_original_owner(owner);
     }
-    Ok(result)
+    Ok((result, observed))
 }
 
 fn link(
@@ -93,18 +135,28 @@ fn link(
     selected: PythonCallableSelection<'_>,
     scope: &PythonImportScope,
     producer: &PythonScalarProducer,
+    call_returns: bool,
     exchange: impl FnOnce(Vec<u8>) -> Result<Vec<u8>, PythonObservationError>,
-) -> Result<NativeCallableOutcome, PythonObservationError> {
+) -> Result<(NativeCallableOutcome, Option<NativeBooleanCallEvaluation>), PythonObservationError> {
     let origin = match scope.unique_regular_module(&source.view, selected.module)? {
         UniquePythonModule::File { path, source_ref } => (path, source_ref),
         UniquePythonModule::Missing => {
-            return Ok(NativeCallableOutcome::Unavailable(Limit::MissingSubject));
+            return Ok((
+                NativeCallableOutcome::Unavailable(Limit::MissingSubject),
+                None,
+            ));
         }
         UniquePythonModule::Ambiguous => {
-            return Ok(NativeCallableOutcome::Unavailable(Limit::AmbiguousSubject));
+            return Ok((
+                NativeCallableOutcome::Unavailable(Limit::AmbiguousSubject),
+                None,
+            ));
         }
         UniquePythonModule::Unsupported => {
-            return Ok(NativeCallableOutcome::Unavailable(Limit::UnsupportedScope));
+            return Ok((
+                NativeCallableOutcome::Unavailable(Limit::UnsupportedScope),
+                None,
+            ));
         }
     };
     let subject = PythonScalarSubject {
@@ -129,10 +181,29 @@ fn link(
         &source.binding.authority_digest,
     );
     let request = bind_scalar_request(&source.view, &subject, producer, &evaluation)?;
+    let request = if call_returns {
+        request.into_lexical_calls()?
+    } else {
+        request
+    };
     let reply = exchange(request.worker_payload(&source.view, &evaluation)?)?;
-    let outcome = request.admit(&source.view, &evaluation, &reply)?;
+    let (outcome, observed) = if call_returns {
+        let observed = request.admit_lexical_calls(&source.view, &evaluation, &reply)?;
+        let value = match &observed.root {
+            NativeBodyOutcome::Lowered(body) => {
+                Some(analyze_native_boolean_calls(body, &observed.targets()?))
+            }
+            NativeBodyOutcome::Unavailable(_) => None,
+        };
+        (observed.root, value)
+    } else {
+        (request.admit(&source.view, &evaluation, &reply)?, None)
+    };
     let NativeBodyOutcome::Lowered(body) = outcome else {
-        return Ok(NativeCallableOutcome::Unavailable(Limit::BodyUnavailable));
+        return Ok((
+            NativeCallableOutcome::Unavailable(Limit::BodyUnavailable),
+            None,
+        ));
     };
     let link = VerifiedCallableLink {
         language: NativeBodyLanguage::Python,
@@ -143,5 +214,5 @@ fn link(
         origin_ref: &context_ref,
         exchange_ref: &sha256(&reply),
     };
-    Ok(link.attach(evaluation, body))
+    Ok((link.attach(evaluation, body), observed))
 }

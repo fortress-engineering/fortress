@@ -163,43 +163,7 @@ fn live_contract_v2_v3_ecosystem_resolves_completely() {
     assert_eq!(resolved.modules().len(), 55);
     assert_eq!(resolved.capabilities().len(), 27);
     assert_eq!(resolved.features().len(), 28);
-    assert_eq!(resolved.requirements().len(), 193);
-    assert_eq!(
-        resolved.requirements()["AF-SNAPSHOT-GOVERNANCE-0001-R36"]
-            .tests()
-            .len(),
-        2
-    );
-    assert_eq!(
-        resolved.requirements()["AF-SNAPSHOT-GOVERNANCE-0001-R35"]
-            .tests()
-            .len(),
-        2
-    );
-    assert_eq!(
-        resolved.requirements()["AF-SNAPSHOT-GOVERNANCE-0001-R34"]
-            .tests()
-            .len(),
-        1
-    );
-    assert_eq!(
-        resolved.requirements()["AF-SNAPSHOT-GOVERNANCE-0001-R33"]
-            .tests()
-            .len(),
-        3
-    );
-    assert_eq!(
-        resolved.requirements()["AF-SNAPSHOT-GOVERNANCE-0001-R32"]
-            .tests()
-            .len(),
-        3
-    );
-    assert_eq!(
-        resolved.requirements()["AF-SNAPSHOT-GOVERNANCE-0001-R31"]
-            .tests()
-            .len(),
-        3
-    );
+    assert_eq!(resolved.requirements().len(), 194);
     assert!(
         resolved
             .requirements()
@@ -296,6 +260,13 @@ fn real_reference_scope_has_authored_purity_and_nonvacuous_semantic_support() {
 }
 
 const REQUIRED_SELF_MODEL_TEST_COUNTS: &[(&str, usize)] = &[
+    ("AF-SNAPSHOT-GOVERNANCE-0001-R31", 3),
+    ("AF-SNAPSHOT-GOVERNANCE-0001-R32", 3),
+    ("AF-SNAPSHOT-GOVERNANCE-0001-R33", 3),
+    ("AF-SNAPSHOT-GOVERNANCE-0001-R34", 1),
+    ("AF-SNAPSHOT-GOVERNANCE-0001-R35", 2),
+    ("AF-SNAPSHOT-GOVERNANCE-0001-R36", 2),
+    ("AF-SNAPSHOT-GOVERNANCE-0001-R37", 2),
     ("TF-AGENT-INTEGRATION-0001-R01", 6),
     ("TF-AGENT-INTEGRATION-0001-R02", 7),
     ("TF-AGENT-INTEGRATION-0001-R03", 2),

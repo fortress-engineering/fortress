@@ -47,6 +47,7 @@ fn registered_schemas_are_unique_json_schema_documents() {
         "cli/_data/go_fs_registration_v1.json",
         "engine/snapshot_governance/_data/go_fs_schema_v1.json",
         "cli/_data/native_return_schema_v1.json",
+        "cli/_data/native_return_schema_v2.json",
         "engine/semantic_analysis/_data/native_return_schema_v1.json",
         "cli/_data/native_candidate_host_v1.json",
         "cli/_data/native_candidate_host_v2.json",

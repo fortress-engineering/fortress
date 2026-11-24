@@ -158,6 +158,12 @@ provenance. The same schema represents unavailable subjects and requirements
 without allocating a finding, grant, runtime result, or certificate.
 
 
+### [`native_return_schema_v2.json`](../_data/native_return_schema_v2.json)
+
+Defines the original-source Boolean comparison when a bounded native call
+closure supplies the return observation. Version 1 retains its isolated body
+scope. Missing or unprovable call dependencies remain unresolved.
+
 ### [`native_candidate_host_v2.json`](../_data/native_candidate_host_v2.json)
 
 Selects finite call return inspection for either supported pinned host. The

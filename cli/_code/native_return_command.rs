@@ -2,8 +2,8 @@
 
 use fortress_core::implementation_observation::SourceOwnership;
 use fortress_core::native_return_observation::{
-    AuthoredNativeReturnComparison, AuthoredNativeReturnObservation,
-    NativeReturnComparisonLimitation,
+    AuthoredNativeCallReturnObservation, AuthoredNativeReturnComparison,
+    AuthoredNativeReturnObservation, NativeReturnComparisonLimitation,
 };
 use fortress_core::portable::canonical;
 use fortress_core::program_semantics::native_callable::NativeCallableOutcome;
@@ -11,8 +11,24 @@ use fortress_core::semantic_analysis::{NativeBooleanReturn, NativeBooleanSensiti
 use serde_json::{Value, json};
 
 const SCHEMA: &str = "urn:fortress:derived:v1:native-return-inspection";
+const CALL_SCHEMA: &str = "urn:fortress:derived:v2:native-return-inspection";
 
 pub(super) fn serialize(report: &AuthoredNativeReturnObservation) -> Result<Vec<u8>, String> {
+    canonical(&projection(report)).map_err(|failure| failure.to_string())
+}
+
+pub(super) fn serialize_call_return(
+    report: &AuthoredNativeCallReturnObservation,
+) -> Result<Vec<u8>, String> {
+    let mut wire = projection(&report.observation);
+    wire["$schema"] = json!(CALL_SCHEMA);
+    wire["schema_version"] = json!(2);
+    wire["scope"] = json!("ACTUAL_ORIGINAL_SOURCE_SCOPED_NATIVE_BOOLEAN_CALL_RETURN");
+    wire["call_evaluation"] = json!(report.call_evaluation());
+    canonical(&wire).map_err(|failure| failure.to_string())
+}
+
+fn projection(report: &AuthoredNativeReturnObservation) -> Value {
     let subject = match &report.subject {
         NativeCallableOutcome::Linked(link) => json!({
             "status": "LINKED",
@@ -34,7 +50,7 @@ pub(super) fn serialize(report: &AuthoredNativeReturnObservation) -> Result<Vec<
             "reason": reason,
         }),
     };
-    canonical(&json!({
+    json!({
         "$schema": SCHEMA,
         "schema_version": 1,
         "scope": "ACTUAL_ORIGINAL_SOURCE_SCOPED_NATIVE_BOOLEAN_RETURN",
@@ -48,8 +64,7 @@ pub(super) fn serialize(report: &AuthoredNativeReturnObservation) -> Result<Vec<
         },
         "subject": subject,
         "comparison": comparison(&report.comparison),
-    }))
-    .map_err(|failure| failure.to_string())
+    })
 }
 
 pub(super) fn serialize_sensitivity(

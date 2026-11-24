@@ -1,0 +1,230 @@
+{
+  "go": {
+    "cases": [
+      {
+        "body_reply": "{\"schema_version\":2,\"producer\":\"fortress.go-call-bodies@0.1.0\",\"go_toolchain\":\"go1.22.12\",\"request_sha256\":\"sha256:460fd2aa7fbfa133c6f2e2cb4939131474dda28d41344e0f55a92c855ce88fc3\",\"source_inventory\":[{\"path\":\"subject/app/first.go\",\"sha256\":\"sha256:0bfea2490632571cabd17c996597228d4ac8e92567c79e62beddd1e49a332c9e\"}],\"status\":\"OBSERVED_BODIES\",\"functions\":[{\"symbol\":{\"name\":\"helper\",\"span\":{\"path\":\"subject/app/first.go\",\"start_byte\":18,\"end_byte\":24,\"start_line\":3,\"start_byte_column\":6},\"declaration_span\":{\"path\":\"subject/app/first.go\",\"start_byte\":13,\"end_byte\":47,\"start_line\":3,\"start_byte_column\":1}},\"status\":\"LOWERABLE\",\"parameters\":[],\"result_scalar\":\"BOOL\",\"locals\":[],\"body\":[{\"kind\":\"return\",\"span\":{\"path\":\"subject/app/first.go\",\"start_byte\":34,\"end_byte\":45,\"start_line\":3,\"start_byte_column\":22},\"value\":{\"kind\":\"boolean\",\"value\":true}}]},{\"symbol\":{\"name\":\"Keep\",\"span\":{\"path\":\"subject/app/first.go\",\"start_byte\":53,\"end_byte\":57,\"start_line\":4,\"start_byte_column\":6},\"declaration_span\":{\"path\":\"subject/app/first.go\",\"start_byte\":48,\"end_byte\":84,\"start_line\":4,\"start_byte_column\":1}},\"status\":\"LOWERABLE\",\"parameters\":[],\"result_scalar\":\"BOOL\",\"locals\":[],\"body\":[{\"kind\":\"return\",\"span\":{\"path\":\"subject/app/first.go\",\"start_byte\":67,\"end_byte\":82,\"start_line\":4,\"start_byte_column\":20},\"value\":{\"kind\":\"call\",\"call\":{\"span\":{\"path\":\"subject/app/first.go\",\"start_byte\":74,\"end_byte\":82,\"start_line\":4,\"start_byte_column\":27},\"target\":{\"name\":\"helper\",\"span\":{\"path\":\"subject/app/first.go\",\"start_byte\":18,\"end_byte\":24,\"start_line\":3,\"start_byte_column\":6},\"declaration_span\":{\"path\":\"subject/app/first.go\",\"start_byte\":13,\"end_byte\":47,\"start_line\":3,\"start_byte_column\":1}},\"arguments\":[]}}}]}]}\n",
+        "body_request_ref": "sha256:460fd2aa7fbfa133c6f2e2cb4939131474dda28d41344e0f55a92c855ce88fc3",
+        "module_reply": "{\"schema_version\":3,\"producer\":\"fortress.go-module-observations@0.1.0\",\"go_toolchain\":\"go1.22.12\",\"request_sha256\":\"sha256:fded694b91eec238ae17d7a23e30e32da34d7ea03a7f9b135c7e02be913f1533\",\"context_sha256\":\"sha256:290834e7a6671634e6fe477bf91e44ebe614184ce8739b4095960a1f5d6eded3\",\"context\":{\"package_path\":\"example.test/fortresscallable/app\",\"go_version\":\"go1.22\",\"target_os\":\"windows\",\"target_arch\":\"amd64\",\"source_inventory\":[{\"path\":\"subject/app/first.go\",\"sha256\":\"sha256:0bfea2490632571cabd17c996597228d4ac8e92567c79e62beddd1e49a332c9e\"}]},\"build_context\":{\"compiler\":\"gc\",\"release_minor\":22,\"cgo_enabled\":false,\"test_mode\":\"REQUIRE_SEPARATE_TEST_CONTEXT\",\"custom_tags\":[],\"tool_tags\":[\"amd64.v1\"]},\"module\":{\"root_directory\":\"subject\",\"path\":\"example.test/fortresscallable\",\"definition\":{\"path\":\"subject/go.mod\",\"sha256\":\"sha256:d6df0b52e472931cb72c8a4dd2838beb4f7a69a24dcb4186dafc1f220149ce83\"},\"packages\":[{\"import_path\":\"example.test/fortresscallable/app\",\"directory\":\"app\"}]},\"status\":\"OBSERVED\",\"selection\":[{\"path\":\"subject/app/first.go\",\"sha256\":\"sha256:0bfea2490632571cabd17c996597228d4ac8e92567c79e62beddd1e49a332c9e\",\"native_match\":true,\"disposition\":\"SELECTED_GO_SOURCE\"}],\"observed_packages\":[{\"import_path\":\"example.test/fortresscallable/app\",\"package_name\":\"app\",\"imports\":[],\"declarations\":[{\"implementation\":\"SOURCE_BODY\",\"name\":\"helper\",\"kind\":\"FUNCTION\",\"declared_signature\":\"func() bool\",\"span\":{\"path\":\"subject/app/first.go\",\"start_byte\":18,\"end_byte\":24,\"start_line\":3,\"start_byte_column\":6}},{\"implementation\":\"SOURCE_BODY\",\"name\":\"Keep\",\"kind\":\"FUNCTION\",\"declared_signature\":\"func() bool\",\"span\":{\"path\":\"subject/app/first.go\",\"start_byte\":53,\"end_byte\":57,\"start_line\":4,\"start_byte_column\":6}}],\"calls\":[{\"name\":\"helper\",\"resolution\":\"DIRECT_FUNCTION\",\"activation\":\"ORDINARY\",\"span\":{\"path\":\"subject/app/first.go\",\"start_byte\":74,\"end_byte\":82,\"start_line\":4,\"start_byte_column\":27},\"declaration\":{\"path\":\"subject/app/first.go\",\"start_byte\":18,\"end_byte\":24,\"start_line\":3,\"start_byte_column\":6},\"declaration_package\":\"example.test/fortresscallable/app\"}]}],\"limitations\":[\"HOST_MUST_ESTABLISH_COMPLETE_ORDINARY_MODULE_AND_CONTEXT\",\"ONLY_REACHABLE_PURE_GO_LIBRARY_PACKAGES_ARE_OBSERVED\",\"NO_EXTERNAL_STANDARD_LIBRARY_CGO_WORKSPACE_OR_GENERATED_CONTEXT\",\"BODYLESS_DECLARATIONS_DO_NOT_ESTABLISH_IMPLEMENTATION\",\"NO_RUNTIME_EFFECT_REACHABILITY_OR_EXECUTION_PROOF\",\"INTERFACE_FUNCTION_VALUE_AND_OTHER_UNSUPPORTED_DISPATCH_REMAINS_UNRESOLVED\"]}\n",
+        "module_request_ref": "sha256:fded694b91eec238ae17d7a23e30e32da34d7ea03a7f9b135c7e02be913f1533",
+        "name": "complete",
+        "path": "subject/app/first.go",
+        "source": "package app\n\nfunc helper() bool { return true }\nfunc Keep() bool { return helper() }\n"
+      },
+      {
+        "body_reply": "{\"schema_version\":2,\"producer\":\"fortress.go-call-bodies@0.1.0\",\"go_toolchain\":\"go1.22.12\",\"request_sha256\":\"sha256:6bb3e4903ec77b3b36a513a6ccca26fa0149fc756ee5ea21528db9ceb8133c59\",\"source_inventory\":[{\"path\":\"subject/app/first.go\",\"sha256\":\"sha256:042cbdf0b64a9bb1356f6e13562d5eef330ab2472a626d3c944e74e0c70ea135\"}],\"status\":\"OBSERVED_BODIES\",\"functions\":[{\"symbol\":{\"name\":\"helper\",\"span\":{\"path\":\"subject/app/first.go\",\"start_byte\":18,\"end_byte\":24,\"start_line\":3,\"start_byte_column\":6},\"declaration_span\":{\"path\":\"subject/app/first.go\",\"start_byte\":13,\"end_byte\":47,\"start_line\":3,\"start_byte_column\":1}},\"status\":\"LOWERABLE\",\"parameters\":[],\"result_scalar\":\"BOOL\",\"locals\":[],\"body\":[{\"kind\":\"return\",\"span\":{\"path\":\"subject/app/first.go\",\"start_byte\":34,\"end_byte\":45,\"start_line\":3,\"start_byte_column\":22},\"value\":{\"kind\":\"boolean\",\"value\":true}}]},{\"symbol\":{\"name\":\"Keep\",\"span\":{\"path\":\"subject/app/first.go\",\"start_byte\":53,\"end_byte\":57,\"start_line\":4,\"start_byte_column\":6},\"declaration_span\":{\"path\":\"subject/app/first.go\",\"start_byte\":48,\"end_byte\":82,\"start_line\":4,\"start_byte_column\":1}},\"status\":\"LOWERABLE\",\"parameters\":[],\"result_scalar\":\"BOOL\",\"locals\":[],\"body\":[{\"kind\":\"return\",\"span\":{\"path\":\"subject/app/first.go\",\"start_byte\":67,\"end_byte\":80,\"start_line\":4,\"start_byte_column\":20},\"value\":{\"kind\":\"call\",\"call\":{\"span\":{\"path\":\"subject/app/first.go\",\"start_byte\":74,\"end_byte\":80,\"start_line\":4,\"start_byte_column\":27},\"target\":{\"name\":\"Keep\",\"span\":{\"path\":\"subject/app/first.go\",\"start_byte\":53,\"end_byte\":57,\"start_line\":4,\"start_byte_column\":6},\"declaration_span\":{\"path\":\"subject/app/first.go\",\"start_byte\":48,\"end_byte\":82,\"start_line\":4,\"start_byte_column\":1}},\"arguments\":[]}}}]}]}\n",
+        "body_request_ref": "sha256:6bb3e4903ec77b3b36a513a6ccca26fa0149fc756ee5ea21528db9ceb8133c59",
+        "module_reply": "{\"schema_version\":3,\"producer\":\"fortress.go-module-observations@0.1.0\",\"go_toolchain\":\"go1.22.12\",\"request_sha256\":\"sha256:d409e10ec78ab2d8d180785614895942a16891269e838b698017f7cf355bcb0d\",\"context_sha256\":\"sha256:cfffe29cc505538a6825cbe61ae678028cb6ab4a3d0999080b37042b90dafc00\",\"context\":{\"package_path\":\"example.test/fortresscallable/app\",\"go_version\":\"go1.22\",\"target_os\":\"windows\",\"target_arch\":\"amd64\",\"source_inventory\":[{\"path\":\"subject/app/first.go\",\"sha256\":\"sha256:042cbdf0b64a9bb1356f6e13562d5eef330ab2472a626d3c944e74e0c70ea135\"}]},\"build_context\":{\"compiler\":\"gc\",\"release_minor\":22,\"cgo_enabled\":false,\"test_mode\":\"REQUIRE_SEPARATE_TEST_CONTEXT\",\"custom_tags\":[],\"tool_tags\":[\"amd64.v1\"]},\"module\":{\"root_directory\":\"subject\",\"path\":\"example.test/fortresscallable\",\"definition\":{\"path\":\"subject/go.mod\",\"sha256\":\"sha256:d6df0b52e472931cb72c8a4dd2838beb4f7a69a24dcb4186dafc1f220149ce83\"},\"packages\":[{\"import_path\":\"example.test/fortresscallable/app\",\"directory\":\"app\"}]},\"status\":\"OBSERVED\",\"selection\":[{\"path\":\"subject/app/first.go\",\"sha256\":\"sha256:042cbdf0b64a9bb1356f6e13562d5eef330ab2472a626d3c944e74e0c70ea135\",\"native_match\":true,\"disposition\":\"SELECTED_GO_SOURCE\"}],\"observed_packages\":[{\"import_path\":\"example.test/fortresscallable/app\",\"package_name\":\"app\",\"imports\":[],\"declarations\":[{\"implementation\":\"SOURCE_BODY\",\"name\":\"helper\",\"kind\":\"FUNCTION\",\"declared_signature\":\"func() bool\",\"span\":{\"path\":\"subject/app/first.go\",\"start_byte\":18,\"end_byte\":24,\"start_line\":3,\"start_byte_column\":6}},{\"implementation\":\"SOURCE_BODY\",\"name\":\"Keep\",\"kind\":\"FUNCTION\",\"declared_signature\":\"func() bool\",\"span\":{\"path\":\"subject/app/first.go\",\"start_byte\":53,\"end_byte\":57,\"start_line\":4,\"start_byte_column\":6}}],\"calls\":[{\"name\":\"Keep\",\"resolution\":\"DIRECT_FUNCTION\",\"activation\":\"ORDINARY\",\"span\":{\"path\":\"subject/app/first.go\",\"start_byte\":74,\"end_byte\":80,\"start_line\":4,\"start_byte_column\":27},\"declaration\":{\"path\":\"subject/app/first.go\",\"start_byte\":53,\"end_byte\":57,\"start_line\":4,\"start_byte_column\":6},\"declaration_package\":\"example.test/fortresscallable/app\"}]}],\"limitations\":[\"HOST_MUST_ESTABLISH_COMPLETE_ORDINARY_MODULE_AND_CONTEXT\",\"ONLY_REACHABLE_PURE_GO_LIBRARY_PACKAGES_ARE_OBSERVED\",\"NO_EXTERNAL_STANDARD_LIBRARY_CGO_WORKSPACE_OR_GENERATED_CONTEXT\",\"BODYLESS_DECLARATIONS_DO_NOT_ESTABLISH_IMPLEMENTATION\",\"NO_RUNTIME_EFFECT_REACHABILITY_OR_EXECUTION_PROOF\",\"INTERFACE_FUNCTION_VALUE_AND_OTHER_UNSUPPORTED_DISPATCH_REMAINS_UNRESOLVED\"]}\n",
+        "module_request_ref": "sha256:d409e10ec78ab2d8d180785614895942a16891269e838b698017f7cf355bcb0d",
+        "name": "recursive",
+        "path": "subject/app/first.go",
+        "source": "package app\n\nfunc helper() bool { return true }\nfunc Keep() bool { return Keep() }\n"
+      }
+    ],
+    "definition": "module example.test/fortresscallable\n\ngo 1.22\n",
+    "module": "example.test/fortresscallable",
+    "package": "example.test/fortresscallable/app",
+    "worker_refs": {
+      "body": "sha256:0104fb224f0a97b9b192d8bc2361c2b0d6acb3628d9ee465abc329e43d6b142e",
+      "module": "sha256:b7b849d17497d78cbdc5e54432aaf1260c4db50c54fc735757f59b8ef36d603b"
+    }
+  },
+  "python": {
+    "complete": {
+      "reply": {
+        "body": [
+          {
+            "kind": "return",
+            "span": {
+              "end_byte": 72,
+              "path": "_code/source.py",
+              "start_byte": 57,
+              "start_byte_column": 5,
+              "start_line": 4
+            },
+            "value": {
+              "call": {
+                "arguments": [],
+                "span": {
+                  "end_byte": 72,
+                  "path": "_code/source.py",
+                  "start_byte": 64,
+                  "start_byte_column": 12,
+                  "start_line": 4
+                },
+                "target": {
+                  "declaration_span": {
+                    "end_byte": 52,
+                    "path": "_code/source.py",
+                    "start_byte": 19,
+                    "start_byte_column": 5,
+                    "start_line": 2
+                  },
+                  "name": "helper",
+                  "span": {
+                    "end_byte": 29,
+                    "path": "_code/source.py",
+                    "start_byte": 23,
+                    "start_byte_column": 9,
+                    "start_line": 2
+                  }
+                }
+              },
+              "kind": "call"
+            }
+          }
+        ],
+        "bootstrap_ref": "sha256:19ca652a6ed8908d128ac231da47b45d0b0a86a9baffaff9626fb2d1609c9836",
+        "byte_count": 73,
+        "diagnostic": null,
+        "function": "subject",
+        "helpers": [
+          {
+            "body": [
+              {
+                "kind": "return",
+                "span": {
+                  "end_byte": 52,
+                  "path": "_code/source.py",
+                  "start_byte": 41,
+                  "start_byte_column": 9,
+                  "start_line": 3
+                },
+                "value": {
+                  "kind": "boolean",
+                  "value": true
+                }
+              }
+            ],
+            "locals": [],
+            "parameters": [],
+            "result_scalar": "BOOL",
+            "status": "LOWERABLE",
+            "symbol": {
+              "declaration_span": {
+                "end_byte": 52,
+                "path": "_code/source.py",
+                "start_byte": 19,
+                "start_byte_column": 5,
+                "start_line": 2
+              },
+              "name": "helper",
+              "span": {
+                "end_byte": 29,
+                "path": "_code/source.py",
+                "start_byte": 23,
+                "start_byte_column": 9,
+                "start_line": 2
+              }
+            }
+          }
+        ],
+        "id": "2ac1240bf3d588ef7548c4cee5a7d1e37e4074021426cc68e542dd16a24e6663",
+        "locals": [],
+        "parameter_domains": [],
+        "parameters": [],
+        "result_scalar": "BOOL",
+        "runtime_ref": "sha256:c3c97417572f780314efe1ac3c4d5ce5e3cef99b1d5a93e5faec954a7c3fb7ce",
+        "schema": "fortress:python:lexical-call-response:1",
+        "source_path": "_code/source.py",
+        "source_ref": "sha256:2ac1240bf3d588ef7548c4cee5a7d1e37e4074021426cc68e542dd16a24e6663",
+        "status": "LOWERABLE",
+        "symbol": {
+          "declaration_span": {
+            "end_byte": 72,
+            "path": "_code/source.py",
+            "start_byte": 0,
+            "start_byte_column": 1,
+            "start_line": 1
+          },
+          "name": "subject",
+          "span": {
+            "end_byte": 11,
+            "path": "_code/source.py",
+            "start_byte": 4,
+            "start_byte_column": 5,
+            "start_line": 1
+          }
+        },
+        "target_execution": "NOT_RUN",
+        "worker_ref": "sha256:f581a2047e320eea9abdd0b19ea26f1c49ab051c747ebd330ecae0979c93796c"
+      },
+      "request": {
+        "bootstrap_ref": "sha256:19ca652a6ed8908d128ac231da47b45d0b0a86a9baffaff9626fb2d1609c9836",
+        "byte_count": 73,
+        "function": "subject",
+        "id": "2ac1240bf3d588ef7548c4cee5a7d1e37e4074021426cc68e542dd16a24e6663",
+        "parameter_domains": [],
+        "runtime_ref": "sha256:c3c97417572f780314efe1ac3c4d5ce5e3cef99b1d5a93e5faec954a7c3fb7ce",
+        "schema": "fortress:python:lexical-call-request:1",
+        "source": "ZGVmIHN1YmplY3QoKToKICAgIGRlZiBoZWxwZXIoKToKICAgICAgICByZXR1cm4gVHJ1ZQogICAgcmV0dXJuIGhlbHBlcigpCg==",
+        "source_path": "_code/source.py",
+        "source_ref": "sha256:2ac1240bf3d588ef7548c4cee5a7d1e37e4074021426cc68e542dd16a24e6663",
+        "worker_ref": "sha256:f581a2047e320eea9abdd0b19ea26f1c49ab051c747ebd330ecae0979c93796c"
+      },
+      "source": "def subject():\n    def helper():\n        return True\n    return helper()\n"
+    },
+    "rebound": {
+      "reply": {
+        "body": [],
+        "bootstrap_ref": "sha256:19ca652a6ed8908d128ac231da47b45d0b0a86a9baffaff9626fb2d1609c9836",
+        "byte_count": 91,
+        "diagnostic": {
+          "code": "CALL_TARGET_UNESTABLISHED",
+          "span": {
+            "end_byte": 63,
+            "path": "_code/source.py",
+            "start_byte": 57,
+            "start_byte_column": 5,
+            "start_line": 4
+          }
+        },
+        "function": "subject",
+        "helpers": [],
+        "id": "aca7f9d163dd97baea7fd7ec644947710822aff9ceab88fba76fc589fedee78c",
+        "locals": [],
+        "parameter_domains": [],
+        "parameters": [],
+        "result_scalar": null,
+        "runtime_ref": "sha256:c3c97417572f780314efe1ac3c4d5ce5e3cef99b1d5a93e5faec954a7c3fb7ce",
+        "schema": "fortress:python:lexical-call-response:1",
+        "source_path": "_code/source.py",
+        "source_ref": "sha256:aca7f9d163dd97baea7fd7ec644947710822aff9ceab88fba76fc589fedee78c",
+        "status": "UNAVAILABLE",
+        "symbol": {
+          "declaration_span": {
+            "end_byte": 90,
+            "path": "_code/source.py",
+            "start_byte": 0,
+            "start_byte_column": 1,
+            "start_line": 1
+          },
+          "name": "subject",
+          "span": {
+            "end_byte": 11,
+            "path": "_code/source.py",
+            "start_byte": 4,
+            "start_byte_column": 5,
+            "start_line": 1
+          }
+        },
+        "target_execution": "NOT_RUN",
+        "worker_ref": "sha256:f581a2047e320eea9abdd0b19ea26f1c49ab051c747ebd330ecae0979c93796c"
+      },
+      "request": {
+        "bootstrap_ref": "sha256:19ca652a6ed8908d128ac231da47b45d0b0a86a9baffaff9626fb2d1609c9836",
+        "byte_count": 91,
+        "function": "subject",
+        "id": "aca7f9d163dd97baea7fd7ec644947710822aff9ceab88fba76fc589fedee78c",
+        "parameter_domains": [],
+        "runtime_ref": "sha256:c3c97417572f780314efe1ac3c4d5ce5e3cef99b1d5a93e5faec954a7c3fb7ce",
+        "schema": "fortress:python:lexical-call-request:1",
+        "source": "ZGVmIHN1YmplY3QoKToKICAgIGRlZiBoZWxwZXIoKToKICAgICAgICByZXR1cm4gVHJ1ZQogICAgaGVscGVyID0gTm9uZQogICAgcmV0dXJuIGhlbHBlcigpCg==",
+        "source_path": "_code/source.py",
+        "source_ref": "sha256:aca7f9d163dd97baea7fd7ec644947710822aff9ceab88fba76fc589fedee78c",
+        "worker_ref": "sha256:f581a2047e320eea9abdd0b19ea26f1c49ab051c747ebd330ecae0979c93796c"
+      },
+      "source": "def subject():\n    def helper():\n        return True\n    helper = None\n    return helper()\n"
+    }
+  },
+  "schema_version": 1
+}

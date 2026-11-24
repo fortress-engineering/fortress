@@ -1,0 +1,420 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v2:native-return-inspection",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "scope",
+    "runtime_execution",
+    "authority_scope",
+    "canonical_finding_or_certificate",
+    "source_binding",
+    "subject",
+    "comparison",
+    "call_evaluation"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:derived:v2:native-return-inspection"
+    },
+    "schema_version": {
+      "const": 2
+    },
+    "scope": {
+      "const": "ACTUAL_ORIGINAL_SOURCE_SCOPED_NATIVE_BOOLEAN_CALL_RETURN"
+    },
+    "runtime_execution": {
+      "const": "NOT_RUN"
+    },
+    "authority_scope": {
+      "const": "ORIGINAL_DECLARED_LOGICAL_MODULE"
+    },
+    "canonical_finding_or_certificate": {
+      "const": "NOT_ISSUED"
+    },
+    "source_binding": {
+      "$ref": "#/$defs/source_binding"
+    },
+    "subject": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/linked"
+        },
+        {
+          "$ref": "#/$defs/unavailable_subject"
+        }
+      ]
+    },
+    "comparison": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/observed"
+        },
+        {
+          "$ref": "#/$defs/unavailable_comparison"
+        }
+      ]
+    },
+    "call_evaluation": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "occurrence",
+            "parameters",
+            "returns",
+            "dependency_occurrences"
+          ],
+          "properties": {
+            "status": {
+              "const": "COMPLETE"
+            },
+            "occurrence": {
+              "$ref": "urn:fortress:derived:v1:go-native-body#/$defs/binding"
+            },
+            "parameters": {
+              "type": "array",
+              "maxItems": 0,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "pattern": "^[A-Za-z_][A-Za-z0-9_]{0,63}$"
+              }
+            },
+            "returns": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 1,
+              "items": {
+                "type": "boolean"
+              }
+            },
+            "dependency_occurrences": {
+              "type": "array",
+              "maxItems": 63,
+              "uniqueItems": true,
+              "items": {
+                "$ref": "urn:fortress:derived:v1:go-native-body#/$defs/binding"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "occurrence",
+            "reason"
+          ],
+          "properties": {
+            "status": {
+              "const": "UNAVAILABLE"
+            },
+            "occurrence": {
+              "$ref": "urn:fortress:derived:v1:go-native-body#/$defs/binding"
+            },
+            "reason": {
+              "enum": [
+                "MISSING_EXACT_OCCURRENCE",
+                "MISSING_TARGET_BODY",
+                "RECURSIVE_DEPENDENCY",
+                "ANALYSIS_LIMIT",
+                "UNSUPPORTED_SCALAR_SCOPE",
+                "INCOMPLETE_VALUATION"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  },
+  "if": {
+    "properties": {
+      "subject": {
+        "properties": {
+          "status": {
+            "const": "UNAVAILABLE"
+          }
+        }
+      }
+    }
+  },
+  "then": {
+    "properties": {
+      "comparison": {
+        "properties": {
+          "status": {
+            "const": "UNAVAILABLE"
+          },
+          "reason": {
+            "const": "SUBJECT_UNAVAILABLE"
+          }
+        }
+      },
+      "call_evaluation": {
+        "type": "null"
+      }
+    }
+  },
+  "else": {
+    "properties": {
+      "comparison": {
+        "properties": {
+          "reason": {
+            "not": {
+              "const": "SUBJECT_UNAVAILABLE"
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "source_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_view_ref",
+        "source_manifest_digest",
+        "authority_binding_digest"
+      ],
+      "properties": {
+        "source_view_ref": {
+          "$ref": "#/$defs/sha256"
+        },
+        "source_manifest_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "authority_binding_digest": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "evaluation_key": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_manifest_digest",
+        "program_context_digest",
+        "authority_binding_digest"
+      ],
+      "properties": {
+        "source_manifest_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "program_context_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "authority_binding_digest": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "linked": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "language",
+        "namespace",
+        "function",
+        "source_path",
+        "source_ref",
+        "slot_ref",
+        "link_ref",
+        "origin_ref",
+        "exchange_ref",
+        "body_occurrence",
+        "original_declared_owner",
+        "evaluation_key"
+      ],
+      "properties": {
+        "status": {
+          "const": "LINKED"
+        },
+        "language": {
+          "enum": [
+            "go",
+            "python"
+          ]
+        },
+        "namespace": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "function": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "source_path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "source_ref": {
+          "$ref": "#/$defs/sha256"
+        },
+        "slot_ref": {
+          "type": "string",
+          "pattern": "^(go_callable_slot|python_lexical_callable_slot):v1:sha256:[0-9a-f]{64}$"
+        },
+        "link_ref": {
+          "type": "string",
+          "pattern": "^native_callable_owned_link:v1:sha256:[0-9a-f]{64}$"
+        },
+        "origin_ref": {
+          "type": "string"
+        },
+        "exchange_ref": {
+          "$ref": "#/$defs/sha256"
+        },
+        "body_occurrence": {
+          "type": "string",
+          "pattern": "^native_body_occurrence:v1:sha256:[0-9a-f]{64}$"
+        },
+        "original_declared_owner": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evaluation_key": {
+          "$ref": "#/$defs/evaluation_key"
+        }
+      },
+      "if": {
+        "properties": {
+          "language": {
+            "const": "go"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "origin_ref": {
+            "pattern": "^go_callable_module_link:v1:sha256:[0-9a-f]{64}$"
+          },
+          "slot_ref": {
+            "pattern": "^go_callable_slot:v1:sha256:[0-9a-f]{64}$"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "origin_ref": {
+            "$ref": "#/$defs/sha256"
+          },
+          "slot_ref": {
+            "pattern": "^python_lexical_callable_slot:v1:sha256:[0-9a-f]{64}$"
+          }
+        }
+      }
+    },
+    "unavailable_subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "reason"
+      ],
+      "properties": {
+        "status": {
+          "const": "UNAVAILABLE"
+        },
+        "reason": {
+          "enum": [
+            "MISSING_SUBJECT",
+            "AMBIGUOUS_SUBJECT",
+            "UNSUPPORTED_SCOPE",
+            "BODY_UNAVAILABLE",
+            "OCCURRENCE_UNRESOLVED"
+          ]
+        }
+      }
+    },
+    "observed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "author",
+        "contract_path",
+        "contract_ref",
+        "required_return",
+        "observed_return"
+      ],
+      "properties": {
+        "status": {
+          "const": "OBSERVED"
+        },
+        "author": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "contract_path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "contract_ref": {
+          "$ref": "#/$defs/sha256"
+        },
+        "required_return": {
+          "type": "boolean"
+        },
+        "observed_return": {
+          "enum": [
+            "MATCHES_REQUIRED_VALUE",
+            "EXCLUDES_REQUIRED_VALUE",
+            "UNRESOLVED"
+          ]
+        }
+      }
+    },
+    "unavailable_comparison": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "reason"
+      ],
+      "properties": {
+        "status": {
+          "const": "UNAVAILABLE"
+        },
+        "reason": {
+          "enum": [
+            "SUBJECT_UNAVAILABLE",
+            "OWNER_UNAVAILABLE",
+            "UNSUPPORTED_CONTRACT_SCOPE",
+            "INVALID_CONTRACT_DOCUMENT",
+            "REQUIREMENT_UNAVAILABLE",
+            "FOREIGN_CONTRACT_OWNER",
+            "AMBIGUOUS_REQUIREMENT"
+          ]
+        }
+      }
+    }
+  }
+}

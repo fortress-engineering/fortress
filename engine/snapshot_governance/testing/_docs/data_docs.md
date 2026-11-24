@@ -215,6 +215,13 @@ zero-argument Boolean function that returns true. The independently
 computed slot reference and fixed program behavior qualify matching and
 excluding original authored requirements without updating source.
 
+### [`authored_call_fixture_v1.json`](../_data/authored_call_fixture_v1.json)
+
+Retains exact worker replies for an original zero-argument return requirement.
+The Go scenarios cover a closed callee and recursion. The Python scenarios cover
+a locally declared callee and an intervening rebind. Independent return and
+authority expectations are recorded in the tests.
+
 ### [`go_call_fixture_v1.json`](../_data/go_call_fixture_v1.json)
 
 Retains admitted Go source and pinned worker replies for typed declarations,

@@ -51,7 +51,8 @@ pub use python_dependencies::{
 #[path = "python_callable.rs"]
 mod callable;
 pub use callable::{
-    PythonCallableSelection, observe_python_authored_native_return, observe_python_linked_callable,
+    PythonCallableSelection, observe_python_authored_call_return,
+    observe_python_authored_native_return, observe_python_linked_callable,
 };
 
 #[path = "python_fs_observation.rs"]
