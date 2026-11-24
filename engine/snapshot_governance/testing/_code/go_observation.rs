@@ -304,6 +304,33 @@ mod bound_call_bodies {
         }
     }
 
+    fn unmediated_candidate_authority()
+    -> CanonicalMigrationAuthority<'static, UnmediatedHost, NoGrantValidator> {
+        CanonicalMigrationAuthority {
+            policy: None,
+            host: &UnmediatedHost,
+            validator: &NoGrantValidator,
+            evaluation_time: None,
+            reviewed_initial_intent_ref: None,
+            finding_proposal: None,
+            identity_plan: None,
+        }
+    }
+
+    fn owned_call_settings(record: &Value) -> (GoCollectorPin<'_>, GoPackageSelection<'static>) {
+        (
+            GoCollectorPin {
+                executable_sha256: record["worker_sha256"].as_str().unwrap(),
+                ..PIN
+            },
+            GoPackageSelection {
+                directory: "_code",
+                package_path: "reference.test/owned",
+                ..SELECTION
+            },
+        )
+    }
+
     fn owned_call_fixture(label: &str) -> (Fixture, Value) {
         let fixture = Fixture::new(label);
         let record: Value =
@@ -323,15 +350,7 @@ mod bound_call_bodies {
         use fortress_core::go_observation::observe_go_native_call_module_boundaries;
 
         let (fixture, record) = owned_call_fixture("native-owned-call");
-        let pin = GoCollectorPin {
-            executable_sha256: record["worker_sha256"].as_str().unwrap(),
-            ..PIN
-        };
-        let selection = GoPackageSelection {
-            directory: "_code",
-            package_path: "reference.test/owned",
-            ..SELECTION
-        };
+        let (pin, selection) = owned_call_settings(&record);
         let respond = |request: &[u8]| Ok(receipt(request, &record, "bound"));
         let bound = observe_go_native_bound_calls(&fixture.root, selection, &pin, respond).unwrap();
         let edge = &bound["calls"][0];
@@ -388,29 +407,13 @@ mod bound_call_bodies {
         let path = "_code/caller.go";
         let initial = b"package app\n\nfunc Entry(v bool) bool { return v }\n";
         let target = record["files"][path].as_str().unwrap().as_bytes();
-        let pin = GoCollectorPin {
-            executable_sha256: record["worker_sha256"].as_str().unwrap(),
-            ..PIN
-        };
-        let package = GoPackageSelection {
-            directory: "_code",
-            package_path: "reference.test/owned",
-            ..SELECTION
-        };
+        let (pin, package) = owned_call_settings(&record);
         fs::write(fixture.root.join(path), initial).unwrap();
         let mut workspace = CandidateWorkspace::open_cold(&fixture.root).unwrap();
         let base_src = workspace.base_source_ref().to_owned();
         let context = workspace.context_ref().to_owned();
         let no_cancel = AtomicBool::new(false);
-        let authority = CanonicalMigrationAuthority {
-            policy: None,
-            host: &UnmediatedHost,
-            validator: &NoGrantValidator,
-            evaluation_time: None,
-            reviewed_initial_intent_ref: None,
-            finding_proposal: None,
-            identity_plan: None,
-        };
+        let authority = unmediated_candidate_authority();
         let key = digest(target);
         let subject = NativeCandidateSubject {
             source_path: path,
@@ -768,15 +771,7 @@ mod bound_call_bodies {
             }],
             comparison_context: ComparisonContext::default(),
         };
-        let authority = CanonicalMigrationAuthority {
-            policy: None,
-            host: &UnmediatedHost,
-            validator: &NoGrantValidator,
-            evaluation_time: None,
-            reviewed_initial_intent_ref: None,
-            finding_proposal: None,
-            identity_plan: None,
-        };
+        let authority = unmediated_candidate_authority();
         let cancelled = AtomicBool::new(false);
         let proposal = workspace
             .evaluate("owner", "edit", request, &authority, &cancelled)
