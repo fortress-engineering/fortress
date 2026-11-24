@@ -1,6 +1,6 @@
 //! Shared physical source capture for explicit native language observations.
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 
 use serde::Serialize;
@@ -12,10 +12,12 @@ use crate::audit::{
 };
 use crate::heavy_admission::{DirectoryIdentity, assert_no_incomplete_migration};
 use crate::implementation_observation::{
-    ImplementationObservationInput, ObservedImplementation, SnapshotBoundFile, SourceOwnership,
-    SourceOwnershipAuthority, SourceOwnershipBasis, SourceOwnershipDiagnostic,
+    Conditionality, ImplementationObservation, ImplementationObservationInput,
+    ObservationProvenance, ObservedImplementation, SnapshotBoundFile, SourceLocation,
+    SourceOwnership, SourceOwnershipAuthority, SourceOwnershipBasis, SourceOwnershipDiagnostic,
 };
 use crate::observation::SourceView;
+use crate::program_semantics::native_body::{NativeBoundCall, NativeCallTopology};
 
 const MAX_DEPENDENCY_FILES: usize = 8192;
 const MAX_DEPENDENCY_BYTES: usize = 32 << 20;
@@ -197,7 +199,7 @@ pub(crate) fn project_native_call_sensitivity(
 pub(crate) fn project_native_call_topology(
     language: &str,
     observation: &serde_json::Value,
-    graph: &crate::program_semantics::native_body::NativeCallTopology<'_>,
+    graph: &NativeCallTopology<'_>,
 ) -> serde_json::Value {
     serde_json::json!({
         "$schema": "urn:fortress:derived:v1:native-call-topology-inspection",
@@ -208,4 +210,135 @@ pub(crate) fn project_native_call_topology(
         "observation": observation,
         "graph": graph,
     })
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+enum NativeCallOwnershipState {
+    SameModule,
+    CrossModule,
+    DeclaredOwnerUnavailable,
+}
+
+#[derive(Serialize)]
+struct NativeCallOwnership<'a> {
+    call_site: &'a str,
+    caller: Option<&'a SourceOwnership>,
+    callee: Option<&'a SourceOwnership>,
+    relationship: NativeCallOwnershipState,
+}
+
+pub(crate) fn project_native_call_ownership(
+    source: &NativeSource<'_>,
+    language: &str,
+    observation: &serde_json::Value,
+    topology: &NativeCallTopology<'_>,
+) -> Result<serde_json::Value, NativeSourceError> {
+    let sites = match topology {
+        NativeCallTopology::Available { sites, .. } => Some(sites.as_slice()),
+        NativeCallTopology::Unavailable { .. } => None,
+    };
+    let paths = sites
+        .into_iter()
+        .flatten()
+        .flat_map(|site| {
+            let call = site.call();
+            [call.span.path.as_str(), call.target.span.path.as_str()]
+        })
+        .collect::<BTreeSet<_>>();
+    let (input, diagnostics) = source.dependency_input(paths)?;
+    let disputed_paths = diagnostics
+        .iter()
+        .map(SourceOwnershipDiagnostic::source_path)
+        .collect::<BTreeSet<_>>();
+    let mut owners = BTreeMap::new();
+    for owner in input.ownerships() {
+        let path = owner.source_path();
+        let declared = owner.authority() == SourceOwnershipAuthority::DeclaredModule
+            && owner.basis() == SourceOwnershipBasis::LogicalPathBinding
+            && !disputed_paths.contains(path);
+        owners
+            .entry(path)
+            .and_modify(|value| *value = None)
+            .or_insert_with(|| declared.then_some(owner));
+    }
+    let mut relationships = Vec::new();
+    let mut facts = Vec::new();
+    for site in sites.into_iter().flatten() {
+        let call = site.call();
+        let origin_owner = owners.get(call.span.path.as_str()).copied().flatten();
+        let target_owner = owners
+            .get(call.target.span.path.as_str())
+            .copied()
+            .flatten();
+        let relationship = match (origin_owner, target_owner) {
+            (Some(origin), Some(target)) if origin.owner() == target.owner() => {
+                NativeCallOwnershipState::SameModule
+            }
+            (Some(origin), Some(target)) => {
+                facts.push(native_call_dependency(language, origin, target, call)?);
+                NativeCallOwnershipState::CrossModule
+            }
+            _ => NativeCallOwnershipState::DeclaredOwnerUnavailable,
+        };
+        relationships.push(NativeCallOwnership {
+            call_site: &call.reference,
+            caller: origin_owner,
+            callee: target_owner,
+            relationship,
+        });
+    }
+    let observed = sites.map(|_| {
+        ObservedImplementation::from_facts(
+            &source.binding.source_fingerprint,
+            "fortress-native-call-dependency",
+            "1.0.0",
+            facts,
+            Vec::new(),
+        )
+    });
+    let original_intent = source
+        .compare_dependency_intent(observed.as_ref())
+        .map_err(unavailable)?;
+    Ok(serde_json::json!({
+        "$schema": "urn:fortress:derived:v1:native-call-module-boundaries",
+        "schema_version": 1,
+        "scope": "POSITIVE_STATIC_CALLS_UNDER_ORIGINAL_LOGICAL_OWNERSHIP",
+        "language": language,
+        "target_execution": "NOT_RUN",
+        "canonical_finding_or_certificate": "NOT_ISSUED",
+        "source_view_sha256": source.view.digest(),
+        "source_manifest_sha256": source.binding.source_manifest_digest,
+        "authority_sha256": source.binding.authority_digest,
+        "observation": observation,
+        "topology": topology,
+        "ownership_sites": relationships,
+        "original_intent": original_intent,
+    }))
+}
+
+fn native_call_dependency(
+    language: &str,
+    origin: &SourceOwnership,
+    target: &SourceOwnership,
+    call: &NativeBoundCall,
+) -> Result<ImplementationObservation, NativeSourceError> {
+    let location = SourceLocation::new(
+        u32::try_from(call.span.start_line).map_err(unavailable)?,
+        u32::try_from(call.span.start_byte_column).map_err(unavailable)?,
+    );
+    Ok(ImplementationObservation::governed(
+        origin.owner(),
+        origin.source_path(),
+        target.owner(),
+        Conditionality::Unestablished,
+        ObservationProvenance::new(
+            origin.source_path(),
+            origin.owner(),
+            call.target.name.as_str(),
+            location,
+            Some(target.source_path().into()),
+        ),
+    )
+    .with_language(language))
 }

@@ -163,7 +163,7 @@ fn live_contract_v2_v3_ecosystem_resolves_completely() {
     assert_eq!(resolved.modules().len(), 55);
     assert_eq!(resolved.capabilities().len(), 27);
     assert_eq!(resolved.features().len(), 28);
-    assert_eq!(resolved.requirements().len(), 196);
+    assert_eq!(resolved.requirements().len(), 197);
     assert!(
         resolved
             .requirements()
@@ -290,6 +290,7 @@ const REQUIRED_SELF_MODEL_TEST_COUNTS: &[(&str, usize)] = &[
     ("AF-SNAPSHOT-GOVERNANCE-0001-R37", 2),
     ("AF-SNAPSHOT-GOVERNANCE-0001-R38", 2),
     ("AF-SNAPSHOT-GOVERNANCE-0001-R39", 2),
+    ("AF-SNAPSHOT-GOVERNANCE-0001-R40", 2),
     ("AF-SOURCE-ARCHITECTURE-0001-R05", 6),
     ("AF-SOURCE-ARCHITECTURE-0001-R06", 3),
     ("AF-STANDARD-REGISTRY-0001-R03", 16),

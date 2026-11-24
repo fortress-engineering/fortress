@@ -237,6 +237,12 @@ pub(crate) struct NativeCallTopologySite<'a> {
     target_body: Option<&'a str>,
 }
 
+impl NativeCallTopologySite<'_> {
+    pub(crate) const fn call(&self) -> &NativeBoundCall {
+        self.call
+    }
+}
+
 impl NativeCallTopology<'_> {
     pub(crate) fn unavailable(root: Option<&str>, reason: &str) -> Self {
         Self::Unavailable {

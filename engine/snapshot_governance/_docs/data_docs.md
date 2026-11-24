@@ -268,6 +268,14 @@ provenance. Reports the presence of replacement declarations without resolving
 their targets. The existing selected Module reader retains its independent
 closed context and historical schema versions.
 
+### [`native_call_ownership_v1.json`](../_data/native_call_ownership_v1.json)
+
+Binds an admitted native call topology to the original source, authority,
+and logical Module owners. Each site retains its exact call reference and
+both endpoint ownership dispositions. Known cross-Module dependencies
+use the existing scoped CCG comparison. The source-level scope leaves
+runtime execution, absence and certification unestablished.
+
 ### [`native_call_sensitivity_v1.json`](../_data/native_call_sensitivity_v1.json)
 
 Defines the actual-source finite Boolean return-sensitivity report for Go and

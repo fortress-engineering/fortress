@@ -1,0 +1,282 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v1:native-call-module-boundaries",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "scope",
+    "language",
+    "target_execution",
+    "canonical_finding_or_certificate",
+    "source_view_sha256",
+    "source_manifest_sha256",
+    "authority_sha256",
+    "observation",
+    "topology",
+    "ownership_sites",
+    "original_intent"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:derived:v1:native-call-module-boundaries"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "scope": {
+      "const": "POSITIVE_STATIC_CALLS_UNDER_ORIGINAL_LOGICAL_OWNERSHIP"
+    },
+    "language": {
+      "enum": [
+        "go",
+        "python"
+      ]
+    },
+    "target_execution": {
+      "const": "NOT_RUN"
+    },
+    "canonical_finding_or_certificate": {
+      "const": "NOT_ISSUED"
+    },
+    "source_view_sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "source_manifest_sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "authority_sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "observation": {
+      "type": "object"
+    },
+    "topology": {
+      "$ref": "urn:fortress:derived:v1:native-call-topology-inspection#/properties/graph"
+    },
+    "ownership_sites": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/site"
+      },
+      "maxItems": 256,
+      "uniqueItems": true
+    },
+    "original_intent": {
+      "$ref": "urn:fortress:derived:v1:native-source-dependency-intent#/properties/comparison"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "language": {
+            "const": "go"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "observation": {
+            "$ref": "urn:fortress:derived:v1:go-native-call-return#/properties/observation"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "language": {
+            "const": "python"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "observation": {
+            "$ref": "urn:fortress:derived:v1:native-call-return-sensitivity#/allOf/1/then/properties/observation"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "topology": {
+            "properties": {
+              "status": {
+                "const": "UNAVAILABLE"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "ownership_sites": {
+            "maxItems": 0
+          },
+          "original_intent": {
+            "properties": {
+              "status": {
+                "enum": [
+                  "ORIGINAL_INTENT_UNAVAILABLE",
+                  "NATIVE_OBSERVATION_UNAVAILABLE"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "ownership": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_path",
+        "owner",
+        "territory_path",
+        "authority",
+        "basis"
+      ],
+      "properties": {
+        "source_path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "owner": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "territory_path": {
+          "type": "string",
+          "maxLength": 1024
+        },
+        "authority": {
+          "const": "DECLARED_MODULE"
+        },
+        "basis": {
+          "const": "LOGICAL_PATH_BINDING"
+        }
+      }
+    },
+    "site": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "call_site",
+        "caller",
+        "callee",
+        "relationship"
+      ],
+      "properties": {
+        "call_site": {
+          "type": "string",
+          "pattern": "^native_call_site:v1:sha256:[0-9a-f]{64}$"
+        },
+        "caller": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/ownership"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "callee": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/ownership"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "relationship": {
+          "enum": [
+            "SAME_MODULE",
+            "CROSS_MODULE",
+            "DECLARED_OWNER_UNAVAILABLE"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "relationship": {
+                "const": "SAME_MODULE"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "caller": {
+                "$ref": "#/$defs/ownership"
+              },
+              "callee": {
+                "$ref": "#/$defs/ownership"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "relationship": {
+                "const": "CROSS_MODULE"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "caller": {
+                "$ref": "#/$defs/ownership"
+              },
+              "callee": {
+                "$ref": "#/$defs/ownership"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "relationship": {
+                "const": "DECLARED_OWNER_UNAVAILABLE"
+              }
+            }
+          },
+          "then": {
+            "anyOf": [
+              {
+                "properties": {
+                  "caller": {
+                    "type": "null"
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "callee": {
+                    "type": "null"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

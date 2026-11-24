@@ -796,6 +796,13 @@ shows a paired input witness when the return changes, and withholds
 comparisons for incomplete closures. A constant return in this model
 provides no assurance about other observations such as effects or timing.
 
+Use `--call-module-boundaries` with the same trusted registration to
+inspect original logical ownership for each admitted static call. Supply
+the occurrence for Go. The report retains the scoped call graph and
+uses the existing CCG comparison for observed cross-Module dependencies.
+Unowned endpoints and incomplete call closures remain explicit. A
+comparison with an empty record set provides no absence guarantee.
+
 ### [`native_return_command.rs`](../_code/native_return_command.rs)
 
 Use `--return-sensitivity` with the Python scalar or Go body command to compare

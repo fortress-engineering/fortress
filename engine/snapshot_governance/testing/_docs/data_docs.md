@@ -237,3 +237,7 @@ recursion, lexical trivia, provisional targets and historical mode replay.
 
 Retains exact Python source and pinned compile-only worker replies for
 local call scopes, valid source continuations and explicit refusals.
+
+### [`go_owned_call_v1.json`](../_data/go_owned_call_v1.json)
+
+Exact pinned Go collector reply for two static call endpoints in a native package. The authored logical Modules assign those endpoints to distinct owners. The test independently expects one observed cross-Module dependency absent from original intent.

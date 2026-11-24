@@ -5,6 +5,7 @@ use std::fmt::{self, Display, Formatter};
 use std::path::Path;
 
 use crate::affected_analysis::sha256;
+use crate::audit::NativeAuthorityScope;
 use crate::audit::NativeObservationBinding;
 use crate::candidate::{
     CandidateWorkspace, HypotheticalNativeBodyInspection, NativeCandidateBody,
@@ -14,7 +15,8 @@ use crate::candidate::{
 use crate::information_flow::{NativeScalarFlowObservation, observe_native_scalar_flow};
 use crate::migration_governance::MigrationError;
 use crate::native_observation::{
-    NativeSource, NativeSourceError, project_native_call_sensitivity, project_native_call_topology,
+    NativeSource, NativeSourceError, project_native_call_ownership,
+    project_native_call_sensitivity, project_native_call_topology,
 };
 use crate::observation::SourceView;
 pub use crate::program_semantics::native_body::NativeBodyOutcome;
@@ -685,6 +687,52 @@ pub fn observe_python_native_call_topology(
         }),
         &graph,
     ))
+}
+
+/// Reconciles exact Python lexical call sites with captured original logical
+/// Module ownership and the original CCG.
+///
+/// The supported lexical worker resolves local declarations. The result retains
+/// their physical provenance and leaves runtime binding unestablished.
+///
+/// # Errors
+/// Refuses stale source or authority and incompatible host replies.
+pub fn observe_python_native_call_module_boundaries(
+    project_root: &Path,
+    subject: &PythonScalarSubject,
+    producer: &PythonScalarProducer,
+    exchange: impl FnOnce(Vec<u8>) -> Result<Vec<u8>, PythonObservationError>,
+) -> Result<serde_json::Value, PythonObservationError> {
+    let source = NativeSource::capture_with(
+        project_root,
+        "Python",
+        NativeAuthorityScope::DependenciesWithIntent,
+    )?;
+    let (evaluation_key, request, response_ref, observation) =
+        inspect_lexical_calls(&source.view, &source.binding, subject, producer, exchange)?;
+    let graph = match &observation.root {
+        NativeBodyOutcome::Lowered(body) => {
+            inspect_native_call_topology(body, &observation.targets()?)
+        }
+        NativeBodyOutcome::Unavailable(limitation) => {
+            NativeCallTopology::unavailable(None, limitation.code())
+        }
+    };
+    let report = project_native_call_ownership(
+        &source,
+        "python",
+        &serde_json::json!({
+            "evaluation_key": evaluation_key,
+            "exchange_sha256": request.exchange_ref(),
+            "response_sha256": response_ref,
+            "source_path": subject.source_path,
+            "source_ref": request.source_ref(),
+            "producer": producer,
+        }),
+        &graph,
+    )?;
+    source.revalidate()?;
+    Ok(report)
 }
 
 /// Compose source-bound Python lexical calls in a retained candidate.

@@ -65,6 +65,7 @@ fn registered_schemas_are_unique_json_schema_documents() {
         "engine/snapshot_governance/_data/python_metadata_schema_v1.json",
         "engine/snapshot_governance/_data/go_workspace_schema_v1.json",
         "engine/program_semantics/_data/go_call_schema_v1.json",
+        "engine/snapshot_governance/_data/native_call_ownership_v1.json",
         "engine/snapshot_governance/_data/native_call_sensitivity_v1.json",
         "engine/snapshot_governance/_data/native_call_topology_schema_v1.json",
         "engine/snapshot_governance/_data/go_call_return_v1.json",

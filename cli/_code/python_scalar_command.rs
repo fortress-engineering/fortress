@@ -16,9 +16,10 @@ use fortress_core::python_observation::{
     PythonCallableSelection, PythonObservationError, PythonScalarError, PythonScalarProducer,
     PythonScalarSubject, observe_python_authored_call_return,
     observe_python_authored_native_return, observe_python_candidate_call_return,
-    observe_python_candidate_sensitivity, observe_python_native_call_return,
-    observe_python_native_call_sensitivity, observe_python_native_call_topology,
-    observe_python_scalar, observe_python_scalar_flow, observe_python_scalar_sensitivity,
+    observe_python_candidate_sensitivity, observe_python_native_call_module_boundaries,
+    observe_python_native_call_return, observe_python_native_call_sensitivity,
+    observe_python_native_call_topology, observe_python_scalar, observe_python_scalar_flow,
+    observe_python_scalar_sensitivity,
 };
 use fortress_core::wire::{
     JsonAdmissionLimits, admit_json, parse_strict_json_bytes, readable_text,
@@ -32,7 +33,7 @@ use super::python_observe_command::{
 use super::verifier_process::{require_external_asset, run_pinned_input_after_ready};
 
 const USAGE: &str = concat!(
-    "fortress source-artifacts --observe-python-scalar project host-registration [--flow|--return-sensitivity|--call-return|--call-topology|--call-sensitivity]",
+    "fortress source-artifacts --observe-python-scalar project host-registration [--flow|--return-sensitivity|--call-return|--call-topology|--call-sensitivity|--call-module-boundaries]",
     "\n       fortress source-artifacts --observe-python-scalar project host-registration --contract module root-scope root-scope-sha256",
     "\n       fortress source-artifacts --observe-python-scalar project host-registration --contract-call-return module root-scope root-scope-sha256",
 );
@@ -337,6 +338,7 @@ enum ScalarInspection {
     CallReturn,
     CallTopology,
     CallSensitivity,
+    CallModuleBoundaries,
 }
 
 fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
@@ -350,6 +352,9 @@ fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
         [flag] if flag == "--call-return" => (ScalarInspection::CallReturn, None),
         [flag] if flag == "--call-topology" => (ScalarInspection::CallTopology, None),
         [flag] if flag == "--call-sensitivity" => (ScalarInspection::CallSensitivity, None),
+        [flag] if flag == "--call-module-boundaries" => {
+            (ScalarInspection::CallModuleBoundaries, None)
+        }
         [flag, module, scope_path, scope_ref]
             if matches!(flag.as_str(), "--contract" | "--contract-call-return") =>
         {
@@ -379,6 +384,7 @@ fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
         ScalarInspection::CallReturn
             | ScalarInspection::CallTopology
             | ScalarInspection::CallSensitivity
+            | ScalarInspection::CallModuleBoundaries
     ) || authored
         .as_ref()
         .is_some_and(|(_, _, _, _, call_returns)| *call_returns);
@@ -393,6 +399,12 @@ fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
             ScalarInspection::CallSensitivity => {
                 observe_python_native_call_sensitivity(&root, subject, &host.producer, exchange)
             }
+            ScalarInspection::CallModuleBoundaries => observe_python_native_call_module_boundaries(
+                &root,
+                subject,
+                &host.producer,
+                exchange,
+            ),
             _ => observe_python_native_call_return(&root, subject, &host.producer, exchange),
         }
         .map_err(|error| error.to_string())?;

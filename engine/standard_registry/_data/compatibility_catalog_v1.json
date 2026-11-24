@@ -531,6 +531,28 @@
       }
     },
     {
+      "schema_id": "urn:fortress:derived:v1:native-call-module-boundaries",
+      "schema_path": "engine/snapshot_governance/_data/native_call_ownership_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/snapshot_governance/_code/native_observation.rs"
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "exact-source-static-native-module-call",
+        "source": "engine/snapshot_governance/_code/native_observation.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-owner-canonical-or-exact-bytes",
+        "source": "engine/snapshot_governance/_code/native_observation.rs"
+      }
+    },
+    {
       "schema_id": "urn:fortress:derived:v1:native-call-return-sensitivity",
       "schema_path": "engine/snapshot_governance/_data/native_call_sensitivity_v1.json",
       "version": 1,

@@ -779,6 +779,11 @@ impl ImplementationObservation {
         )
     }
 
+    pub(crate) fn with_language(mut self, language: &str) -> Self {
+        self.language = language.into();
+        self
+    }
+
     /// Creates a resolved external dependency fact.
     #[must_use]
     pub fn external(

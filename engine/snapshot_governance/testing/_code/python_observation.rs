@@ -90,6 +90,44 @@ mod lexical_calls {
         response
     }
 
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R40-002`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R40
+    #[test]
+    fn admitted_python_call_does_not_invent_original_module_ownership() {
+        use fortress_core::python_observation::observe_python_native_call_module_boundaries;
+
+        for name in ["locally_defined_shadow_free_function", "later_local_rebind"] {
+            let (fixture, subject, producer, reply) = case(name, &format!("owned-python-{name}"));
+            let inspect = || {
+                observe_python_native_call_module_boundaries(
+                    &fixture.root,
+                    &subject,
+                    &producer,
+                    |request| Ok(serde_json::to_vec(&bind(&request, &reply)).unwrap()),
+                )
+                .unwrap()
+            };
+            let report = inspect();
+            assert_eq!(report, inspect());
+            assert_eq!(
+                report["original_intent"],
+                json!({"status":"ORIGINAL_INTENT_UNAVAILABLE"})
+            );
+            assert_eq!(report["observation"]["source_ref"], subject.source_ref);
+            assert_eq!(report["canonical_finding_or_certificate"], "NOT_ISSUED");
+            if name == "later_local_rebind" {
+                assert_eq!(report["topology"]["reason"], "CALL_TARGET_UNESTABLISHED");
+                assert_eq!(report["ownership_sites"], json!([]));
+            } else {
+                let sites = report["ownership_sites"].as_array().unwrap();
+                assert_eq!(sites.len(), 1);
+                assert_eq!(sites[0]["relationship"], "DECLARED_OWNER_UNAVAILABLE");
+                assert_eq!(sites[0]["caller"], Value::Null);
+                assert_eq!(sites[0]["callee"], Value::Null);
+            }
+        }
+    }
+
     /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R39-002`
     /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R39
     #[test]

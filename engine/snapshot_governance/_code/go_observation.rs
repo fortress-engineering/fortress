@@ -14,7 +14,8 @@ use crate::implementation_observation::{NativeDependencyContext, SourceOwnership
 use crate::information_flow::NativeScalarFlowObservation;
 use crate::migration_governance::MigrationError;
 use crate::native_observation::{
-    NativeSource, NativeSourceError, project_native_call_sensitivity, project_native_call_topology,
+    NativeSource, NativeSourceError, project_native_call_ownership,
+    project_native_call_sensitivity, project_native_call_topology,
 };
 use crate::observation::SourceView;
 use crate::program_semantics::go_observation::{
@@ -481,17 +482,60 @@ pub fn observe_go_native_call_topology(
 ) -> Result<serde_json::Value, GoObservationError> {
     validate_body_occurrence(occurrence)?;
     observe_verified_go_calls(project_root, selection, collector, launch, |observed| {
-        let graph = if let Some(body) = exact_call_body(&observed, occurrence) {
-            inspect_native_call_topology(body, &observed.call_targets()?)
-        } else {
-            NativeCallTopology::unavailable(Some(occurrence), "MISSING_EXACT_OCCURRENCE")
-        };
+        let graph = go_call_topology(&observed, occurrence)?;
         Ok(project_native_call_topology(
             "go",
             &observed.call_evidence(),
             &graph,
         ))
     })
+}
+
+/// Reconciles exact admitted Go calls with the independently selected original
+/// logical Module owners and original CCG.
+///
+/// The result provides positive source-level observations within the selected
+/// closure. Runtime execution, missing edges, or certification require separate
+/// evidence.
+///
+/// # Errors
+/// Refuses stale source or authority, invalid selectors, and incompatible worker replies.
+pub fn observe_go_native_call_module_boundaries(
+    project_root: &Path,
+    selection: GoPackageSelection<'_>,
+    occurrence: &str,
+    collector: &GoCollectorPin<'_>,
+    launch: impl FnOnce(&[u8]) -> Result<Vec<u8>, GoObservationError>,
+) -> Result<serde_json::Value, GoObservationError> {
+    validate_body_occurrence(occurrence)?;
+    let source = NativeSource::capture_with(
+        project_root,
+        "Go",
+        NativeAuthorityScope::DependenciesWithIntent,
+    )
+    .map_err(source_failure)?;
+    let observed = verified_go_calls(&source, selection, collector, launch)?;
+    let graph = go_call_topology(&observed, occurrence)?;
+    let report = project_native_call_ownership(&source, "go", &observed.call_evidence(), &graph)
+        .map_err(source_failure)?;
+    source.revalidate().map_err(source_failure)?;
+    Ok(report)
+}
+
+fn go_call_topology<'a>(
+    observed: &'a GoNativeBodyObservation,
+    occurrence: &str,
+) -> Result<NativeCallTopology<'a>, GoObservationError> {
+    match exact_call_body(observed, occurrence) {
+        Some(body) => Ok(inspect_native_call_topology(
+            body,
+            &observed.call_targets()?,
+        )),
+        None => Ok(NativeCallTopology::unavailable(
+            Some(occurrence),
+            "MISSING_EXACT_OCCURRENCE",
+        )),
+    }
 }
 
 fn exact_call_body<'a>(
@@ -512,11 +556,21 @@ fn observe_verified_go_calls<T>(
     launch: impl FnOnce(&[u8]) -> Result<Vec<u8>, GoObservationError>,
     inspect: impl FnOnce(GoNativeBodyObservation) -> Result<T, GoObservationError>,
 ) -> Result<T, GoObservationError> {
-    observe_bound_exact(project_root, selection, |source, manifest| {
-        let admitted = admit_go(source, collector)?;
-        let output = launch(admitted.request_bytes())?;
-        inspect(admitted.verify_bound_bodies(collector, manifest, &output)?)
-    })
+    let source = NativeSource::capture(project_root, "Go").map_err(source_failure)?;
+    let result = inspect(verified_go_calls(&source, selection, collector, launch)?)?;
+    source.revalidate().map_err(source_failure)?;
+    Ok(result)
+}
+
+fn verified_go_calls(
+    source: &NativeSource<'_>,
+    selection: GoPackageSelection<'_>,
+    collector: &GoCollectorPin<'_>,
+    launch: impl FnOnce(&[u8]) -> Result<Vec<u8>, GoObservationError>,
+) -> Result<GoNativeBodyObservation, GoObservationError> {
+    let admitted = admit_go(closed_package(source, selection), collector)?;
+    let output = launch(admitted.request_bytes())?;
+    admitted.verify_bound_bodies(collector, &source.binding.source_manifest_digest, &output)
 }
 
 /// Inspects a retained candidate's exact closed Go function under the Boolean model.

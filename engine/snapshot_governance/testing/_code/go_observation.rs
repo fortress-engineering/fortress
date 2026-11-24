@@ -304,6 +304,75 @@ mod bound_call_bodies {
         }
     }
 
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R40-001`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R40
+    #[test]
+    fn exact_go_call_compares_distinct_original_module_owners() {
+        use fortress_core::go_observation::observe_go_native_call_module_boundaries;
+
+        let fixture = Fixture::new("native-owned-call");
+        let record: Value =
+            serde_json::from_slice(include_bytes!("../_data/go_owned_call_v1.json")).unwrap();
+        for (name, source) in record["files"].as_object().unwrap() {
+            let path = fixture.root.join(name);
+            fs::create_dir_all(path.parent().unwrap()).unwrap();
+            fs::write(path, source.as_str().unwrap()).unwrap();
+        }
+        let pin = GoCollectorPin {
+            executable_sha256: record["worker_sha256"].as_str().unwrap(),
+            ..PIN
+        };
+        let selection = GoPackageSelection {
+            directory: "_code",
+            package_path: "reference.test/owned",
+            ..SELECTION
+        };
+        let respond = |request: &[u8]| Ok(receipt(request, &record, "bound"));
+        let bound = observe_go_native_bound_calls(&fixture.root, selection, &pin, respond).unwrap();
+        let edge = &bound["calls"][0];
+        assert_eq!(edge["call"]["target"]["name"], "helper");
+        let caller = edge["caller"].as_str().unwrap();
+        let inspect = |occurrence| {
+            observe_go_native_call_module_boundaries(
+                &fixture.root,
+                selection,
+                occurrence,
+                &pin,
+                respond,
+            )
+            .unwrap()
+        };
+        let report = inspect(caller);
+        assert_eq!(report, inspect(caller));
+        assert_eq!(report["target_execution"], "NOT_RUN");
+        assert_eq!(report["canonical_finding_or_certificate"], "NOT_ISSUED");
+        assert_eq!(report["ownership_sites"].as_array().unwrap().len(), 1);
+        let site = &report["ownership_sites"][0];
+        assert_eq!(site["call_site"], edge["call"]["reference"]);
+        assert_eq!(site["relationship"], "CROSS_MODULE");
+        assert_eq!(site["caller"]["source_path"], "_code/caller.go");
+        assert_eq!(site["callee"]["source_path"], "_code/callee.go");
+        assert_eq!(site["caller"]["owner"], "AF-NATIVE-CALLER-0001");
+        assert_eq!(site["callee"]["owner"], "AF-NATIVE-CALLEE-0001");
+        let compared = &report["original_intent"];
+        assert_eq!(compared["status"], "COMPARED");
+        let records = compared["records"].as_array().unwrap();
+        assert_eq!(records.len(), 1);
+        assert_eq!(records[0]["state"], "OBSERVED_UNDECLARED");
+        assert_eq!(records[0]["source_module"], "AF-NATIVE-CALLER-0001");
+        assert_eq!(records[0]["target_module"], "AF-NATIVE-CALLEE-0001");
+        assert_eq!(records[0]["evidence"][0]["source_path"], "_code/caller.go");
+
+        let unknown = format!("native_body_occurrence:v1:sha256:{}", "0".repeat(64));
+        let missing = inspect(&unknown);
+        assert_eq!(missing["topology"]["reason"], "MISSING_EXACT_OCCURRENCE");
+        assert_eq!(missing["ownership_sites"], json!([]));
+        assert_eq!(
+            missing["original_intent"],
+            json!({"status":"NATIVE_OBSERVATION_UNAVAILABLE"})
+        );
+    }
+
     /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R39-001`
     /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R39
     #[test]
