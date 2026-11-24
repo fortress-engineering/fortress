@@ -2702,8 +2702,9 @@ fn authored_python_cli_refuses_displaced_stale_or_parameterized_host_subjects() 
         serde_json::from_slice(&fs::read(&config).unwrap()).unwrap();
     original["observation_exclusions"] = json!([]);
     fs::write(config, canonical(&original).unwrap()).unwrap();
+    fs::create_dir(root.join("src/python")).unwrap();
     let source = b"def subject():\n    return True\n";
-    for path in ["src/selected.py", "src/elsewhere.py"] {
+    for path in ["src/python/selected.py", "src/python/elsewhere.py"] {
         fs::write(root.join(path), source).unwrap();
     }
     let scope = host.root.join("scope.json");
@@ -2711,7 +2712,7 @@ fn authored_python_cli_refuses_displaced_stale_or_parameterized_host_subjects() 
         "$schema":"urn:fortress:host:v1:python-static-import-scope",
         "schema_version":1,
         "inventory":"COMPLETE_SOURCE_ONLY",
-        "roots":["src"],
+        "roots":["src/python"],
     }))
     .unwrap();
     fs::write(&scope, &scope_bytes).unwrap();
@@ -2724,19 +2725,19 @@ fn authored_python_cli_refuses_displaced_stale_or_parameterized_host_subjects() 
     let registration = host.root.join("registration.json");
     for (path, reference, parameters, expected) in [
         (
-            "src/elsewhere.py",
+            "src/python/elsewhere.py",
             digest(source),
             vec![],
             "invalid Python scalar input binding",
         ),
         (
-            "src/selected.py",
+            "src/python/selected.py",
             digest(b"older source"),
             vec![],
             "invalid Python scalar input binding",
         ),
         (
-            "src/selected.py",
+            "src/python/selected.py",
             digest(source),
             vec!["false_scope"],
             "PYTHON_AUTHORED_RETURN_REQUIRES_ZERO_ARGUMENT_SUBJECT",
@@ -2775,7 +2776,10 @@ fn authored_python_cli_refuses_displaced_stale_or_parameterized_host_subjects() 
         );
         assert_eq!(fs::read(&registration).unwrap(), supplied);
         assert_eq!(fs::read(&scope).unwrap(), scope_bytes);
-        assert_eq!(fs::read(root.join("src/selected.py")).unwrap(), source);
+        assert_eq!(
+            fs::read(root.join("src/python/selected.py")).unwrap(),
+            source
+        );
     }
 }
 
