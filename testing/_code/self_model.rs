@@ -163,7 +163,7 @@ fn live_contract_v2_v3_ecosystem_resolves_completely() {
     assert_eq!(resolved.modules().len(), 55);
     assert_eq!(resolved.capabilities().len(), 27);
     assert_eq!(resolved.features().len(), 28);
-    assert_eq!(resolved.requirements().len(), 173);
+    assert_eq!(resolved.requirements().len(), 187);
     assert!(
         resolved
             .requirements()
@@ -182,6 +182,24 @@ fn live_contract_v2_v3_ecosystem_resolves_completely() {
         ("AF-MIGRATION-GOVERNANCE-0001-R08", 5),
         ("AF-CERTIFICATION-0001-R06", 17),
         ("AF-PROJECT-MODEL-0001-R06", 1),
+        ("AF-IMPLEMENTATION-OBSERVATION-0001-R03", 3),
+        ("AF-INFORMATION-FLOW-0001-R07", 2),
+        ("AF-PROGRAM-SEMANTICS-0001-R11", 4),
+        ("AF-PROGRAM-SEMANTICS-0001-R12", 1),
+        ("AF-SEMANTIC-ANALYSIS-0001-R06", 1),
+        ("AF-SEMANTIC-ANALYSIS-0001-R07", 2),
+        ("AF-SEMANTIC-ANALYSIS-0001-R08", 2),
+        ("AF-SNAPSHOT-GOVERNANCE-0001-R28", 28),
+        ("AF-SNAPSHOT-GOVERNANCE-0001-R29", 17),
+        ("AF-SNAPSHOT-GOVERNANCE-0001-R30", 9),
+        ("AF-SOURCE-ARCHITECTURE-0001-R05", 6),
+        ("AF-SOURCE-ARCHITECTURE-0001-R06", 3),
+        ("AF-STATE-EFFECT-ANALYSIS-0001-R08", 4),
+        ("TF-CLI-0001-R31", 6),
+        ("AF-REPOSITORY-OBSERVATION-0001-R01", 4),
+        ("AF-REPOSITORY-OBSERVATION-0001-R02", 5),
+        ("AF-REPOSITORY-OBSERVATION-0001-R03", 6),
+        ("AF-REPOSITORY-OBSERVATION-0001-R04", 4),
     ] {
         assert_eq!(resolved.requirements()[requirement].tests().len(), count);
     }
