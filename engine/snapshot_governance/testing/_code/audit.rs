@@ -246,8 +246,8 @@ fn mixed_native_artifact_repository(conflicting_binding: bool) -> TestRepository
         "contract": "_data/logical_modules/native/contract.json",
         "bindings": [
             {"kind":"file","path":"left/guard.go"},
-            {"kind":"file","path":"right/guard.go"},
-            {"kind":"directory","path":"pytools"}
+            {"kind":"directory","path":"pytools"},
+            {"kind":"file","path":"right/guard.go"}
         ]
     })];
     if conflicting_binding {
@@ -306,7 +306,12 @@ fn logical_go_and_python_artifacts_keep_exact_paths_and_unsupported_profiles() {
         .modules()
         .iter()
         .find(|module| module.module() == "AF-NATIVE-0001")
-        .expect("declared owner");
+        .unwrap_or_else(|| {
+            panic!(
+                "declared owner unavailable: {:?}",
+                inspection.governance_detail()
+            )
+        });
     assert_eq!(owner.observed_sources(), 3);
     assert!(inspection.ownership_diagnostics().is_empty());
     let model = compile_repository_source_artifact_model(repository.path())
