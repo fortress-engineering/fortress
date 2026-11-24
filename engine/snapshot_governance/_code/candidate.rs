@@ -1,5 +1,10 @@
 //! Exact hypothetical composition and read-only post-write reconciliation.
 //! All source mutation, leases, journals, recovery and receipts remain MIGRATE-owned.
+#[path = "candidate_native.rs"]
+mod native;
+pub use native::{HypotheticalNativeBodyInspection, NativeCandidateSubject};
+pub(crate) use native::{NativeCandidateBody, inspect_hypothetical_native_body, native_error};
+
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -104,6 +109,17 @@ pub struct CandidateRequest {
     /// Explicit original comparison inputs and unverified approval citations.
     #[serde(default)]
     pub comparison_context: ComparisonContext,
+}
+
+/// A retained candidate selection for native inspection.
+#[derive(Clone, Copy)]
+pub struct NativeCandidateSelection<'a> {
+    /// Client that owns the retained candidate.
+    pub client: &'a str,
+    /// Candidate identity within that client's workspace.
+    pub candidate: &'a str,
+    /// Cancellation shared with the caller supervising the inspection.
+    pub cancelled: &'a AtomicBool,
 }
 
 /// Portable, digest-bound proposed assessment. Parsing establishes integrity only.
@@ -948,6 +964,47 @@ impl CandidateWorkspace {
                 (endpoint, facts, None, "FULL_REEVALUATION_REQUIRED", vec!["No qualified resident generation; complete canonical immutable evaluation performed.".into()])
             }
         })
+    }
+
+    /// Reads retained native inspection inputs after checking the exact physical base.
+    pub(crate) fn inspect_retained_native<T>(
+        &self,
+        client: &str,
+        candidate: &str,
+        cancelled: &AtomicBool,
+        inspect: impl FnOnce(
+            &SourceView,
+            &SourceView,
+            &HypotheticalEvaluation,
+        ) -> Result<T, MigrationError>,
+    ) -> Result<T, MigrationError> {
+        check_cancelled(cancelled)?;
+        let retained = self.retained(client, candidate)?;
+        let target = retained.changes.view();
+        if retained.assessment.base_inventory_ref != self.physical_base.digest()
+            || retained.assessment.predicted_inventory_ref != target.digest()
+            || retained.assessment.candidate_digest() != retained.changes.digest()
+        {
+            return Err(error(
+                "INVALID_BINDING",
+                "retained candidate does not bind the exact inspection inputs",
+            ));
+        }
+
+        let validate_base = || {
+            check_cancelled(cancelled)?;
+            if self.observe()? != self.physical_base {
+                return Err(error(
+                    "STALE_BASE",
+                    "physical base changed before native inspection could finish",
+                ));
+            }
+            check_cancelled(cancelled)
+        };
+        validate_base()?;
+        let result = inspect(&self.physical_base, target, &retained.assessment);
+        validate_base()?;
+        result
     }
 
     /// Releases only this client's isolated buffer; the actual coordinator head is unchanged.

@@ -280,7 +280,16 @@ fn run_frozen(request: &[u8]) -> Vec<u8> {
 
 mod bodies {
     use super::*;
+    use fortress_core::candidate::{
+        CandidateRequest, CandidateWorkspace, NativeCandidateSelection, NativeCandidateSubject,
+    };
+    use fortress_core::development_governance::{NoGrantValidator, UnmediatedHost};
+    use fortress_core::go_observation::observe_go_candidate_sensitivity;
     use fortress_core::go_observation::observe_go_native_body;
+    use fortress_core::migration_adapter::CanonicalMigrationAuthority;
+    use fortress_core::migration_governance::MigrationOperation;
+    use fortress_core::state_governance::ComparisonContext;
+    use std::sync::atomic::AtomicBool;
 
     const SOURCE: &str = concat!(
         "// café\r\npackage fixture\r\n",
@@ -486,6 +495,106 @@ mod bodies {
             },
         );
         assert!(matches!(changed, Err(GoObservationError::SourceChanged)));
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R28-028`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R28
+    #[test]
+    fn exact_go_candidate_sensitivity_uses_postimage_and_releases_access() {
+        let (fixture, package) = setup("candidate-go-boolean");
+        let actual = SOURCE.replacen("return !b", "return b", 1);
+        fs::write(fixture.root.join("fixture.go"), &actual).unwrap();
+        let mut workspace = CandidateWorkspace::open_cold(&fixture.root).unwrap();
+        let original = workspace.base_source_ref().to_owned();
+        let request = CandidateRequest {
+            schema_version: 1,
+            base_source_ref: original.clone(),
+            context_ref: workspace.context_ref().into(),
+            operations: vec![MigrationOperation::ReplaceFile {
+                path: "fixture.go".into(),
+                preimage: actual.as_bytes().to_vec(),
+                postimage: SOURCE.as_bytes().to_vec(),
+            }],
+            comparison_context: ComparisonContext::default(),
+        };
+        let authority = CanonicalMigrationAuthority {
+            policy: None,
+            host: &UnmediatedHost,
+            validator: &NoGrantValidator,
+            evaluation_time: None,
+            reviewed_initial_intent_ref: None,
+            finding_proposal: None,
+            identity_plan: None,
+        };
+        let cancelled = AtomicBool::new(false);
+        let proposal = workspace
+            .evaluate("owner", "edit", request, &authority, &cancelled)
+            .unwrap();
+        let target_ref = fortress_core::portable::digest(SOURCE.as_bytes());
+        let selected = NativeCandidateSelection {
+            client: "owner",
+            candidate: "edit",
+            cancelled: &cancelled,
+        };
+        let subject = NativeCandidateSubject {
+            source_path: "fixture.go",
+            source_ref: &target_ref,
+            function: "Keep",
+        };
+        let report = observe_go_candidate_sensitivity(
+            &workspace,
+            selected,
+            package,
+            subject,
+            &PIN,
+            |bytes| Ok(replay(bytes)),
+        )
+        .unwrap();
+        let report = serde_json::to_value(report).unwrap();
+        assert_eq!(report["status"], "PROPOSED");
+        assert_eq!(report["actual_state"], false);
+        assert_eq!(report["comparison"], "NOT_COMPARED");
+        assert_eq!(report["proposal_ref"], proposal.evaluation_ref());
+        assert_eq!(report["original_source_view_ref"], original);
+        assert_ne!(report["candidate_source_view_ref"], original);
+        assert_eq!(report["source_ref"], target_ref);
+        let sensitivity = &report["native"]["sensitivity"];
+        assert_eq!(
+            sensitivity["parameters"][0]["disposition"]["return_with_parameter_false"],
+            true
+        );
+        assert_eq!(
+            sensitivity["parameters"][0]["disposition"]["return_with_parameter_true"],
+            false
+        );
+        assert_eq!(
+            fs::read_to_string(fixture.root.join("fixture.go")).unwrap(),
+            actual
+        );
+        let foreign = NativeCandidateSelection {
+            client: "foreign",
+            ..selected
+        };
+        let refusal =
+            observe_go_candidate_sensitivity(&workspace, foreign, package, subject, &PIN, |_| {
+                panic!("foreign client must be stopped before dispatch")
+            })
+            .err()
+            .unwrap();
+        assert_eq!(refusal.code, "NOT_FOUND");
+
+        workspace.release("owner", "edit");
+        let refused =
+            observe_go_candidate_sensitivity(&workspace, selected, package, subject, &PIN, |_| {
+                panic!("released candidate must be stopped before dispatch")
+            })
+            .err()
+            .unwrap();
+        assert_eq!(refused.code, "NOT_FOUND");
+        assert_eq!(
+            fs::read_to_string(fixture.root.join("fixture.go")).unwrap(),
+            actual
+        );
     }
 
     /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R28-010`

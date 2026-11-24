@@ -5,8 +5,15 @@ use std::fmt::{self, Display, Formatter};
 use std::path::Path;
 
 use crate::affected_analysis::sha256;
+use crate::candidate::{
+    CandidateWorkspace, HypotheticalNativeBodyInspection, NativeCandidateBody,
+    NativeCandidateSelection, NativeCandidateSubject, inspect_hypothetical_native_body,
+    native_error,
+};
 use crate::information_flow::{NativeScalarFlowObservation, observe_native_scalar_flow};
+use crate::migration_governance::MigrationError;
 use crate::native_observation::{NativeSource, NativeSourceError};
+use crate::observation::SourceView;
 pub use crate::program_semantics::native_body::NativeBodyOutcome;
 pub use crate::program_semantics::python_scalar::python_filesystem::{
     PythonFilesystemError, PythonFilesystemOutcome, PythonFilesystemProfile,
@@ -535,6 +542,62 @@ pub fn observe_python_scalar_sensitivity(
     )
 }
 
+/// Inspects an exact Python postimage from a retained unapplied candidate.
+///
+/// The compile-only worker uses the independently selected argument model.
+/// Original authority and the candidate context remain separately recorded.
+///
+/// # Errors
+/// Refuses missing, stale or cancelled candidates and incompatible native replies.
+pub fn observe_python_candidate_sensitivity(
+    workspace: &CandidateWorkspace,
+    retained: NativeCandidateSelection<'_>,
+    subject: &PythonScalarSubject,
+    producer: &PythonScalarProducer,
+    exchange: impl FnOnce(Vec<u8>) -> Result<Vec<u8>, PythonObservationError>,
+) -> Result<HypotheticalNativeBodyInspection, MigrationError> {
+    let selection = NativeCandidateSubject {
+        source_path: &subject.source_path,
+        source_ref: &subject.source_ref,
+        function: &subject.function,
+    };
+    inspect_hypothetical_native_body(
+        workspace,
+        retained,
+        selection,
+        "python",
+        |view, binding, proposal| {
+            let context = serde_json_canonicalizer::to_vec(&(
+                "fortress-python-candidate-scalar-context-v1",
+                proposal.evaluation_ref(),
+                proposal.context_ref(),
+                subject,
+                producer,
+            ))
+            .map_err(native_error)?;
+            let key = EvaluationKey::new(
+                &binding.source_manifest_digest,
+                sha256(&context),
+                &binding.authority_digest,
+            );
+            let request =
+                bind_scalar_request(view, subject, producer, &key).map_err(native_error)?;
+            let payload = request.worker_payload(view, &key).map_err(native_error)?;
+            let response = exchange(payload).map_err(native_error)?;
+            let outcome = request.admit(view, &key, &response).map_err(native_error)?;
+            let body = match &outcome {
+                NativeBodyOutcome::Lowered(body) => Some(body),
+                NativeBodyOutcome::Unavailable(_) => None,
+            };
+            Ok(NativeCandidateBody::analyzed(
+                key,
+                sha256(&response),
+                body.map(Box::as_ref),
+            ))
+        },
+    )
+}
+
 fn observe_scalar_with<T>(
     project_root: &Path,
     subject: &PythonScalarSubject,
@@ -551,7 +614,7 @@ fn observe_scalar_with<T>(
         sha256(&context),
         &source.binding.authority_digest,
     );
-    let request = bind_scalar_request(&source, subject, producer, &evaluation_key)?;
+    let request = bind_scalar_request(&source.view, subject, producer, &evaluation_key)?;
     let payload = request.worker_payload(&source.view, &evaluation_key)?;
     let response = exchange(payload)?;
     let outcome = request.admit(&source.view, &evaluation_key, &response)?;
@@ -573,7 +636,7 @@ fn observe_scalar_with<T>(
 }
 
 fn bind_scalar_request(
-    source: &NativeSource<'_>,
+    source: &SourceView,
     subject: &PythonScalarSubject,
     producer: &PythonScalarProducer,
     evaluation_key: &EvaluationKey,
@@ -584,7 +647,7 @@ fn bind_scalar_request(
         .map(String::as_str)
         .collect::<Vec<_>>();
     let request = PythonScalarRequest::bind(
-        &source.view,
+        source,
         evaluation_key,
         &subject.source_path,
         &subject.function,

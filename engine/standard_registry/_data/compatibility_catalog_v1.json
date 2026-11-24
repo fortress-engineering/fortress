@@ -3,6 +3,72 @@
   "schema_version": 1,
   "entries": [
     {
+      "schema_id": "urn:fortress:host:v1:native-candidate-inspection",
+      "schema_path": "cli/_data/native_candidate_host_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "AUTHORED",
+        "source": null
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "cli/_code/candidate_command.rs"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "sha256-exact-native-flow-occurrence",
+        "source": "engine/information_flow/_code/native_scalar_flow.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-owner-canonical-or-exact-bytes",
+        "source": "cli/_code/candidate_command.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:derived:v1:hypothetical-native-body-inspection",
+      "schema_path": "engine/snapshot_governance/_data/native_candidate_body_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/snapshot_governance/_code/candidate_native.rs"
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "sha256-exact-native-flow-occurrence",
+        "source": "engine/information_flow/_code/native_scalar_flow.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-owner-canonical-or-exact-bytes",
+        "source": "engine/snapshot_governance/_code/candidate_native.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:derived:v1:overlay-native-candidate-inspection",
+      "schema_path": "cli/_data/native_candidate_overlay_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "cli/_code/candidate_command.rs"
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "sha256-exact-native-flow-occurrence",
+        "source": "engine/information_flow/_code/native_scalar_flow.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-owner-canonical-or-exact-bytes",
+        "source": "cli/_code/candidate_command.rs"
+      }
+    },
+    {
       "schema_id": "urn:fortress:derived:v1:native-boolean-sensitivity-inspection",
       "schema_path": "cli/_data/native_sensitivity_schema_v1.json",
       "version": 1,

@@ -4,9 +4,17 @@ use std::path::Path;
 
 use serde::Serialize;
 
+use crate::audit::NativeObservationBinding;
+use crate::candidate::{
+    CandidateWorkspace, HypotheticalNativeBodyInspection, NativeCandidateBody,
+    NativeCandidateSelection, NativeCandidateSubject, inspect_hypothetical_native_body,
+    native_error,
+};
 use crate::implementation_observation::{NativeDependencyContext, SourceOwnershipDiagnostic};
 use crate::information_flow::NativeScalarFlowObservation;
+use crate::migration_governance::MigrationError;
 use crate::native_observation::{NativeSource, NativeSourceError};
+use crate::observation::SourceView;
 use crate::program_semantics::go_observation::{
     ExactClosedPackage, admit_go, admit_go_build, admit_go_module, admit_go_tests,
 };
@@ -286,6 +294,38 @@ pub fn observe_go_native_body_sensitivity(
     })
 }
 
+/// Inspects a retained candidate's exact closed Go function under the Boolean model.
+///
+/// Only an explicit host supplies the compiler process. The candidate remains
+/// unapplied and the result carries separate original and target identities.
+///
+/// # Errors
+/// Refuses missing, stale or cancelled candidates and incompatible native replies.
+pub fn observe_go_candidate_sensitivity(
+    workspace: &CandidateWorkspace,
+    retained: NativeCandidateSelection<'_>,
+    package: GoPackageSelection<'_>,
+    subject: NativeCandidateSubject<'_>,
+    collector: &GoCollectorPin<'_>,
+    launch: impl FnOnce(&[u8]) -> Result<Vec<u8>, GoObservationError>,
+) -> Result<HypotheticalNativeBodyInspection, MigrationError> {
+    inspect_hypothetical_native_body(workspace, retained, subject, "go", |view, binding, _| {
+        let source = scoped_package(view, binding, package, false);
+        let admitted = admit_go(source, collector).map_err(native_error)?;
+        let output = launch(admitted.request_bytes()).map_err(native_error)?;
+        let observed = admitted
+            .verify_bodies(collector, &binding.source_manifest_digest, &output)
+            .map_err(native_error)?;
+        let (evaluation_key, response_ref, body) =
+            observed.into_selected_body(subject.source_path, subject.function);
+        Ok(NativeCandidateBody::analyzed(
+            evaluation_key,
+            response_ref,
+            body.as_deref(),
+        ))
+    })
+}
+
 fn validate_body_occurrence(occurrence: &str) -> Result<(), GoObservationError> {
     let suffix = occurrence
         .strip_prefix("native_body_occurrence:v1:sha256:")
@@ -343,12 +383,21 @@ fn closed_package<'a>(
     source: &'a NativeSource<'_>,
     selection: GoPackageSelection<'a>,
 ) -> ExactClosedPackage<'a> {
+    scoped_package(&source.view, &source.binding, selection, true)
+}
+
+fn scoped_package<'a>(
+    source: &'a SourceView,
+    binding: &'a NativeObservationBinding,
+    selection: GoPackageSelection<'a>,
+    actual: bool,
+) -> ExactClosedPackage<'a> {
     ExactClosedPackage {
-        source: &source.view,
-        source_fingerprint: &source.binding.source_fingerprint,
-        authority_digest: &source.binding.authority_digest,
-        logical_contracts: &source.binding.logical_contracts,
-        actual: true,
+        source,
+        source_fingerprint: &binding.source_fingerprint,
+        authority_digest: &binding.authority_digest,
+        logical_contracts: &binding.logical_contracts,
+        actual,
         directory: selection.directory,
         package_path: selection.package_path,
         go_version: selection.go_version,

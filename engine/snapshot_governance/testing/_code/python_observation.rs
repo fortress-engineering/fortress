@@ -1,7 +1,14 @@
 //! Actual-state controls for independently hosted Python lexical observations.
 
+use fortress_core::candidate::{CandidateRequest, CandidateWorkspace, NativeCandidateSelection};
+use fortress_core::development_governance::{NoGrantValidator, UnmediatedHost};
+use fortress_core::migration_adapter::CanonicalMigrationAuthority;
+use fortress_core::migration_governance::MigrationOperation;
+use fortress_core::python_observation::observe_python_candidate_sensitivity;
+use fortress_core::state_governance::ComparisonContext;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use fortress_core::control_layout::{ControlLayout, EVIDENCE_ROOT};
 use fortress_core::observation::{
@@ -814,6 +821,96 @@ fn python_boolean_sensitivity_retains_exact_host_scope_and_refuses_drift() {
         changed,
         Err(PythonObservationError::SourceChanged)
     ));
+}
+
+/// `T-AF-SNAPSHOT-GOVERNANCE-0001-R30-009`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R30
+#[test]
+fn python_candidate_sensitivity_keeps_candidate_source_and_refuses_interrupted_publication() {
+    let (fixture, subject, producer) = scalar_fixture("python-scalar-candidate");
+    let actual = b"def subject(gate):\n    return gate\n";
+    fs::write(fixture.root.join(PATH), actual).unwrap();
+    let mut workspace = CandidateWorkspace::open_cold(&fixture.root).unwrap();
+    let request = CandidateRequest {
+        schema_version: 1,
+        base_source_ref: workspace.base_source_ref().into(),
+        context_ref: workspace.context_ref().into(),
+        operations: vec![MigrationOperation::ReplaceFile {
+            path: PATH.into(),
+            preimage: actual.to_vec(),
+            postimage: SCALAR_SOURCE.to_vec(),
+        }],
+        comparison_context: ComparisonContext::default(),
+    };
+    let authority = CanonicalMigrationAuthority {
+        policy: None,
+        host: &UnmediatedHost,
+        validator: &NoGrantValidator,
+        evaluation_time: None,
+        reviewed_initial_intent_ref: None,
+        finding_proposal: None,
+        identity_plan: None,
+    };
+    let cancelled = AtomicBool::new(false);
+    let proposal = workspace
+        .evaluate("owner", "edit", request, &authority, &cancelled)
+        .unwrap();
+    let selected = NativeCandidateSelection {
+        client: "owner",
+        candidate: "edit",
+        cancelled: &cancelled,
+    };
+    let inspect = || {
+        observe_python_candidate_sensitivity(&workspace, selected, &subject, &producer, |bytes| {
+            scalar_reply(&bytes)
+        })
+    };
+    let report = serde_json::to_value(inspect().unwrap()).unwrap();
+    assert_eq!(report, serde_json::to_value(inspect().unwrap()).unwrap());
+    assert_eq!(report["status"], "PROPOSED");
+    assert_eq!(report["actual_state"], false);
+    assert_eq!(report["comparison"], "NOT_COMPARED");
+    assert_eq!(report["proposal_ref"], proposal.evaluation_ref());
+    assert_eq!(report["source_ref"], digest(SCALAR_SOURCE));
+    assert_eq!(report["native"]["sensitivity"]["valuation_count"], 2);
+    assert_eq!(
+        report["native"]["sensitivity"]["parameters"][0]["disposition"]["return_with_parameter_false"],
+        true
+    );
+    assert_eq!(fs::read(fixture.root.join(PATH)).unwrap(), actual);
+
+    let mut stale = subject.clone();
+    stale.source_ref = digest(actual);
+    let refusal =
+        observe_python_candidate_sensitivity(&workspace, selected, &stale, &producer, |_| {
+            panic!("actual preimage cannot stand in for proposed source")
+        })
+        .err()
+        .unwrap();
+    assert_eq!(refusal.code, "NATIVE_SUBJECT_MISMATCH");
+
+    let interrupted =
+        observe_python_candidate_sensitivity(&workspace, selected, &subject, &producer, |bytes| {
+            cancelled.store(true, Ordering::Release);
+            scalar_reply(&bytes)
+        })
+        .err()
+        .unwrap();
+    assert_eq!(interrupted.code, "CANCELLED");
+    cancelled.store(false, Ordering::Release);
+    let stale_base =
+        observe_python_candidate_sensitivity(&workspace, selected, &subject, &producer, |bytes| {
+            fs::write(
+                fixture.root.join("note.txt"),
+                "external edit during analysis",
+            )
+            .unwrap();
+            scalar_reply(&bytes)
+        })
+        .err()
+        .unwrap();
+    assert_eq!(stale_base.code, "STALE_BASE");
+    assert_eq!(fs::read(fixture.root.join(PATH)).unwrap(), actual);
 }
 
 const IMPORT_SOURCE: &[u8] = b"import chosen\r\n";

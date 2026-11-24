@@ -6,12 +6,17 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::time::Duration;
 
+use fortress_core::candidate::{
+    CandidateWorkspace, HypotheticalNativeBodyInspection, NativeCandidateSelection,
+};
+use fortress_core::migration_governance::MigrationError;
 use fortress_core::portable::{canonical, digest};
 use fortress_core::python_observation::{
     ActualPythonScalarObservation, NativeBodyOutcome, PYTHON_LEXICAL_WORKER, PYTHON_SCALAR_WORKER,
     PythonCallableSelection, PythonObservationError, PythonScalarError, PythonScalarProducer,
-    PythonScalarSubject, observe_python_authored_native_return, observe_python_scalar,
-    observe_python_scalar_flow, observe_python_scalar_sensitivity,
+    PythonScalarSubject, observe_python_authored_native_return,
+    observe_python_candidate_sensitivity, observe_python_scalar, observe_python_scalar_flow,
+    observe_python_scalar_sensitivity,
 };
 use fortress_core::wire::{
     JsonAdmissionLimits, admit_json, parse_strict_json_bytes, readable_text,
@@ -158,6 +163,99 @@ impl Registration {
     }
 }
 
+struct RegisteredScalarHost<'a> {
+    root: &'a Path,
+    registration_path: &'a Path,
+    working_directory: &'a Path,
+    registration: Registration,
+    registration_bytes: Vec<u8>,
+    worker_ref: String,
+    bootstrap_ref: String,
+    producer: PythonScalarProducer,
+    ready: Vec<u8>,
+    profile: &'static str,
+}
+
+impl<'a> RegisteredScalarHost<'a> {
+    fn load(root: &'a Path, registration_path: &'a Path) -> Result<Self, String> {
+        let (registration, registration_bytes) = Registration::load(root, registration_path)?;
+        let worker_ref = digest(PYTHON_SCALAR_WORKER);
+        let bootstrap_ref = digest(PYTHON_LEXICAL_WORKER);
+        let producer =
+            PythonScalarProducer::new(&worker_ref, &bootstrap_ref, &registration.runtime_ref)
+                .map_err(|error| error.to_string())?;
+        let (ready, profile) = registration.ready(&worker_ref, &bootstrap_ref)?;
+        let working_directory = registration_path
+            .parent()
+            .ok_or("Missing trusted registration parent")?;
+        Ok(Self {
+            root,
+            registration_path,
+            working_directory,
+            registration,
+            registration_bytes,
+            worker_ref,
+            bootstrap_ref,
+            producer,
+            ready,
+            profile,
+        })
+    }
+
+    fn revalidate(&self) -> Result<(), PythonObservationError> {
+        self.registration
+            .revalidate(self.root, self.registration_path, &self.registration_bytes)
+    }
+
+    fn exchange(&self, request: Vec<u8>) -> Result<Vec<u8>, PythonObservationError> {
+        self.revalidate()?;
+        let command = self.registration.command(
+            self.working_directory,
+            &self.worker_ref,
+            &self.bootstrap_ref,
+        );
+        let (bytes, status) = run_pinned_input_after_ready(
+            command,
+            request,
+            DEADLINE,
+            &self.registration.interpreter_sha256,
+            self.ready.clone(),
+        )
+        .map_err(|_| PythonObservationError::HostUnavailable)?;
+        if status != 0 {
+            return Err(PythonObservationError::HostUnavailable);
+        }
+        self.revalidate()?;
+        Ok(bytes)
+    }
+}
+
+fn candidate_host_error(failure: impl std::fmt::Display) -> MigrationError {
+    MigrationError {
+        code: "NATIVE_OBSERVATION_UNAVAILABLE".into(),
+        message: failure.to_string(),
+        transaction_ref: None,
+    }
+}
+
+pub(super) fn inspect_candidate(
+    root: &Path,
+    registration_path: &Path,
+    workspace: &CandidateWorkspace,
+    retained: NativeCandidateSelection<'_>,
+) -> Result<HypotheticalNativeBodyInspection, MigrationError> {
+    let host = RegisteredScalarHost::load(root, registration_path).map_err(candidate_host_error)?;
+    let result = observe_python_candidate_sensitivity(
+        workspace,
+        retained,
+        &host.registration.subject,
+        &host.producer,
+        |request| host.exchange(request),
+    );
+    host.revalidate().map_err(candidate_host_error)?;
+    result
+}
+
 pub(super) fn run<O: Write, E: Write>(
     arguments: &[String],
     output: &mut O,
@@ -209,35 +307,10 @@ fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
                 .map(|(scope, bytes)| (module, scope_path, scope, bytes))
         })
         .transpose()?;
-    let registration_path = Path::new(registration_path);
-    let (registration, registration_bytes) = Registration::load(&root, registration_path)?;
-    let worker_ref = digest(PYTHON_SCALAR_WORKER);
-    let bootstrap_ref = digest(PYTHON_LEXICAL_WORKER);
-    let producer =
-        PythonScalarProducer::new(&worker_ref, &bootstrap_ref, &registration.runtime_ref)
-            .map_err(|error| error.to_string())?;
-    let (ready, profile) = registration.ready(&worker_ref, &bootstrap_ref)?;
-    let host = registration_path
-        .parent()
-        .ok_or("Missing trusted registration parent")?;
-    let command = registration.command(host, &worker_ref, &bootstrap_ref);
-    let exchange = |request| {
-        let (bytes, status) = run_pinned_input_after_ready(
-            command,
-            request,
-            DEADLINE,
-            &registration.interpreter_sha256,
-            ready,
-        )
-        .map_err(|_| PythonObservationError::HostUnavailable)?;
-        if status != 0 {
-            return Err(PythonObservationError::HostUnavailable);
-        }
-        registration.revalidate(&root, registration_path, &registration_bytes)?;
-        Ok(bytes)
-    };
+    let host = RegisteredScalarHost::load(&root, Path::new(registration_path))?;
+    let exchange = |request| host.exchange(request);
     if let Some((module, scope_path, scope, scope_bytes)) = authored {
-        let subject = &registration.subject;
+        let subject = &host.registration.subject;
         if !subject.exact_bool_parameters.is_empty() {
             return Err("PYTHON_AUTHORED_RETURN_REQUIRES_ZERO_ARGUMENT_SUBJECT".into());
         }
@@ -245,26 +318,29 @@ fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
             module,
             function: &subject.function,
         };
-        let result =
-            observe_python_authored_native_return(&root, selected, &scope, &producer, |request| {
+        let result = observe_python_authored_native_return(
+            &root,
+            selected,
+            &scope,
+            &host.producer,
+            |request| {
                 check_contract_subject(subject, &request)?;
-                registration.revalidate(&root, registration_path, &registration_bytes)?;
+                host.revalidate()?;
                 verify_import_scope(&root, scope_path, &scope_bytes)?;
                 exchange(request)
-            })
-            .map_err(|error| error.to_string())?;
-        registration
-            .revalidate(&root, registration_path, &registration_bytes)
-            .map_err(|error| error.to_string())?;
+            },
+        )
+        .map_err(|error| error.to_string())?;
+        host.revalidate().map_err(|error| error.to_string())?;
         verify_import_scope(&root, scope_path, &scope_bytes).map_err(|error| error.to_string())?;
         return crate::native_return_command::serialize(&result);
     }
     serialize_scalar_inspection(
         &root,
-        &registration,
-        &registration_bytes,
-        profile,
-        &producer,
+        &host.registration,
+        &host.registration_bytes,
+        host.profile,
+        &host.producer,
         exchange,
         inspection,
     )

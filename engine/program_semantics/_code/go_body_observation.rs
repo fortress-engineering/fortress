@@ -135,6 +135,21 @@ impl GoNativeBodyObservation {
         Err(Limit::OccurrenceUnresolved)
     }
 
+    pub(crate) fn into_selected_body(
+        self,
+        source_path: &str,
+        function: &str,
+    ) -> (EvaluationKey, String, Option<Box<NativeScalarBody>>) {
+        let mut matches = self.functions.into_iter().filter_map(|row| match row {
+            GoBodyFunction::Lowered {
+                symbol, lowered, ..
+            } if symbol.span.path == source_path && symbol.name == function => Some(lowered.0),
+            _ => None,
+        });
+        let selected = matches.next().filter(|_| matches.next().is_none());
+        (self.evaluation_key, self.response_sha256, selected)
+    }
+
     pub(crate) fn lowered_bodies(&self) -> impl Iterator<Item = Option<&NativeScalarBody>> {
         self.functions.iter().map(|function| match function {
             GoBodyFunction::Lowered { lowered, .. } => Some(lowered.0.as_ref()),

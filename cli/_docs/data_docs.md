@@ -130,6 +130,16 @@ Versioned static dependency inspection envelope. It binds the original
 Python import report to admitted source origins, explicit ownership
 diagnostics and separately retained scoped dependency evidence.
 
+### [`native_candidate_host_v1.json`](../_data/native_candidate_host_v1.json)
+
+Defines the externally selected local worker registration and native candidate
+scope. For Go it also identifies the exact proposed source and package context.
+
+### [`native_candidate_overlay_v1.json`](../_data/native_candidate_overlay_v1.json)
+
+Defines the opt-in proposed inspection with the canonical Overlay assessment,
+the native observation and the exact host descriptor digest.
+
 ### [`native_sensitivity_schema_v1.json`](../_data/native_sensitivity_schema_v1.json)
 
 Describes the finite exact Boolean return report for Go and Python. It retains the original native receipt, selected occurrence, bounded comparisons and unavailable states.

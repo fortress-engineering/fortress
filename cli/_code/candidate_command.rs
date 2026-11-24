@@ -1,17 +1,21 @@
 //! Thin explicit read-only candidate evaluation and reconciliation commands.
 use fortress_core::candidate::{
-    CandidateRequest, CandidateWorkspace, HypotheticalEvaluation, inspect_post_write,
+    CandidateRequest, CandidateWorkspace, HypotheticalEvaluation, NativeCandidateSelection,
+    NativeCandidateSubject, inspect_post_write,
 };
 use fortress_core::development_governance::{
     AuthorizationRule, NoGrantValidator, TrustedBasePolicy, UnmediatedHost,
 };
+use fortress_core::go_observation::{GoPackageSelection, observe_go_candidate_sensitivity};
 use fortress_core::migration_adapter::CanonicalMigrationAuthority;
 use fortress_core::migration_governance::MigrationError;
+use fortress_core::portable::digest;
+use fortress_core::wire::{JsonAdmissionLimits, admit_json, parse_strict_json_bytes};
 use serde::Deserialize;
 use serde_json::json;
 use std::collections::BTreeMap;
 use std::io::{self, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 
 fn error(message: impl Into<String>) -> MigrationError {
@@ -37,6 +41,165 @@ struct PreviewSelection {
     root_policy_ref: String,
     require_assurance: bool,
     rules: Vec<AuthorizationRule>,
+}
+
+const NATIVE_DESCRIPTOR_SCHEMA: &str = "urn:fortress:host:v1:native-candidate-inspection";
+const NATIVE_DESCRIPTOR_LIMIT: usize = 16 * 1024;
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct NativeInspectionDescriptor {
+    #[serde(rename = "$schema")]
+    schema: String,
+    schema_version: u16,
+    inspection: NativeInspectionHost,
+}
+
+#[derive(Deserialize)]
+#[serde(tag = "language", rename_all = "lowercase", deny_unknown_fields)]
+enum NativeInspectionHost {
+    Go {
+        registration: PathBuf,
+        package: GoPackageDescriptor,
+        subject: GoSubjectDescriptor,
+    },
+    Python {
+        registration: PathBuf,
+    },
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct GoPackageDescriptor {
+    directory: String,
+    package_path: String,
+    go_version: String,
+    target_os: String,
+    target_arch: String,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct GoSubjectDescriptor {
+    source_path: String,
+    source_ref: String,
+    function: String,
+}
+
+struct NativeInspection<'a> {
+    path: &'a Path,
+    bytes: Vec<u8>,
+    host: NativeInspectionHost,
+}
+
+impl<'a> NativeInspection<'a> {
+    fn load(root: &Path, path: &'a Path) -> Result<Self, MigrationError> {
+        let bytes = read_native_descriptor(root, path)?;
+        admit_json(
+            &bytes,
+            JsonAdmissionLimits {
+                bytes: NATIVE_DESCRIPTOR_LIMIT,
+                depth: 5,
+                nodes: 64,
+                token_bytes: 4096,
+            },
+        )
+        .map_err(convert)?;
+        let descriptor: NativeInspectionDescriptor =
+            parse_strict_json_bytes(&bytes).map_err(convert)?;
+        if descriptor.schema != NATIVE_DESCRIPTOR_SCHEMA || descriptor.schema_version != 1 {
+            return Err(error("unsupported native candidate inspection descriptor"));
+        }
+        Ok(Self {
+            path,
+            bytes,
+            host: descriptor.inspection,
+        })
+    }
+
+    fn revalidate(&self, root: &Path) -> Result<(), MigrationError> {
+        if read_native_descriptor(root, self.path)? != self.bytes {
+            return Err(MigrationError {
+                code: "SOURCE_DRIFT".into(),
+                message: "native candidate inspection descriptor changed".into(),
+                transaction_ref: None,
+            });
+        }
+        Ok(())
+    }
+
+    fn attach(
+        &self,
+        root: &Path,
+        workspace: &CandidateWorkspace,
+        retained: NativeCandidateSelection<'_>,
+        assessment: &HypotheticalEvaluation,
+    ) -> Result<serde_json::Value, MigrationError> {
+        self.revalidate(root)?;
+        let result = match &self.host {
+            NativeInspectionHost::Go {
+                registration,
+                package,
+                subject,
+            } => {
+                let package = GoPackageSelection {
+                    directory: if package.directory == "." {
+                        ""
+                    } else {
+                        &package.directory
+                    },
+                    package_path: &package.package_path,
+                    go_version: &package.go_version,
+                    target_os: &package.target_os,
+                    target_arch: &package.target_arch,
+                };
+                let subject = NativeCandidateSubject {
+                    source_path: &subject.source_path,
+                    source_ref: &subject.source_ref,
+                    function: &subject.function,
+                };
+                super::go_body_command::with_registered_body(
+                    root,
+                    registration,
+                    |pin, collector| {
+                        Ok(observe_go_candidate_sensitivity(
+                            workspace,
+                            retained,
+                            package,
+                            subject,
+                            pin,
+                            |input| collector.run(input),
+                        ))
+                    },
+                )
+                .map_err(convert)?
+            }
+            NativeInspectionHost::Python { registration } => {
+                super::python_scalar_command::inspect_candidate(
+                    root,
+                    registration,
+                    workspace,
+                    retained,
+                )
+            }
+        };
+        self.revalidate(root)?;
+        let native_inspection = result?;
+        Ok(json!({
+            "$schema": "urn:fortress:derived:v1:overlay-native-candidate-inspection",
+            "schema_version": 1,
+            "status": "PROPOSED",
+            "actual_state": false,
+            "descriptor_ref": digest(&self.bytes),
+            "assessment": assessment,
+            "native_inspection": native_inspection,
+        }))
+    }
+}
+
+fn read_native_descriptor(root: &Path, path: &Path) -> Result<Vec<u8>, MigrationError> {
+    super::verifier_process::require_external_asset(path, root).map_err(convert)?;
+    super::provider_command::read_bounded(path, NATIVE_DESCRIPTOR_LIMIT).map_err(convert)
 }
 
 pub(super) fn run<O: Write, E: Write>(
@@ -92,6 +255,7 @@ fn parse(args: &[String]) -> Result<OverlayRequest<'_>, MigrationError> {
             "--candidate",
             "--format",
             "--original-state",
+            "--native-inspection",
         ]
         .contains(&key)
         {
@@ -122,12 +286,16 @@ fn parse(args: &[String]) -> Result<OverlayRequest<'_>, MigrationError> {
             "--storage-root",
             "--client",
             "--candidate",
+            "--native-inspection",
         ],
         "inspect" | "reconcile" => vec!["--proposal"],
         _ => vec![],
     });
     if options.keys().any(|k| !allowed.contains(k)) {
         return Err(error("option does not apply to this overlay mode"));
+    }
+    if export && options.contains_key("--native-inspection") {
+        return Err(error("native candidate inspection cannot be exported"));
     }
     let human = match options.get("--format").copied().unwrap_or("human") {
         "human" => true,
@@ -153,6 +321,10 @@ fn execute<O: Write>(args: &[String], output: &mut O) -> Result<(), MigrationErr
     let root = Path::new(options.get("--root").copied().unwrap_or("."))
         .canonicalize()
         .map_err(convert)?;
+    let native = options
+        .get("--native-inspection")
+        .map(|path| NativeInspection::load(&root, Path::new(path)))
+        .transpose()?;
     let value = if matches!(mode, "inspect" | "reconcile") {
         let path = options
             .get("--proposal")
@@ -191,7 +363,7 @@ fn execute<O: Write>(args: &[String], output: &mut O) -> Result<(), MigrationErr
         if mode == "base" {
             json!({"base_source_ref":workspace.base_source_ref(),"context_ref":workspace.context_ref(),"base_state_ref":workspace.base_state().digest().map_err(convert)?,"trusted_base_authority":workspace.base_state().governing_identity().map_err(convert)?,"request_schema":"urn:fortress:derived:v1:candidate-request","request_schema_version":1,"status":"OBSERVED_BASE","permission":"NONE","actual_certification":false})
         } else {
-            evaluate_proposal(&root, &mut workspace, &options, export)?
+            evaluate_proposal(&root, &mut workspace, &options, export, native)?
         }
     };
     if human {
@@ -218,6 +390,7 @@ fn evaluate_proposal(
     workspace: &mut CandidateWorkspace,
     options: &BTreeMap<&str, &str>,
     export: bool,
+    native: Option<NativeInspection<'_>>,
 ) -> Result<serde_json::Value, MigrationError> {
     let path = options
         .get("--request")
@@ -249,13 +422,22 @@ fn evaluate_proposal(
         finding_proposal: None,
         identity_plan: None,
     };
+    let cancelled = AtomicBool::new(false);
+    let retained = NativeCandidateSelection {
+        client: options.get("--client").copied().unwrap_or("cli"),
+        candidate: options.get("--candidate").copied().unwrap_or("proposal"),
+        cancelled: &cancelled,
+    };
     let candidate = workspace.evaluate(
-        options.get("--client").copied().unwrap_or("cli"),
-        options.get("--candidate").copied().unwrap_or("proposal"),
+        retained.client,
+        retained.candidate,
         request,
         &authority,
-        &AtomicBool::new(false),
+        retained.cancelled,
     )?;
+    if let Some(native) = native {
+        return native.attach(root, workspace, retained, &candidate);
+    }
     let exported = if export {
         Some(candidate.export_proposal(root)?)
     } else {

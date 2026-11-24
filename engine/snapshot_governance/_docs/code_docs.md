@@ -58,6 +58,13 @@ exact byte identities without interpretation. Source and original authority
 are revalidated after the compile-only lexical observations complete.
 Roots without ordinary entries remain unestablished.
 
+### [`candidate_native.rs`](../_code/candidate_native.rs)
+
+Binds a native body inspection to a client-retained hypothetical endpoint. It
+validates the exact postimage before compile-only dispatch and preserves the
+original and candidate source and authority identities. The report follows
+the candidate's cancellation and physical freshness checks.
+
 ### [`candidate.rs`](../_code/candidate.rs)
 
 Composes exact immutable hypothetical evaluation, isolated client buffers, original-authority previews, pre-write validation and read-only actual reconciliation. Reuses SESSION, canonical Snapshot evaluation, State Governance, AUTHORITY and MIGRATE operations; never implements source mutation or transaction recovery. See [candidate evaluation](code_docs.md).

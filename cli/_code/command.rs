@@ -21,7 +21,7 @@ const BUILTIN_COMMANDS: &[CommandDescriptor] = &[
         name: "overlay",
         aliases: &[],
         description: "Evaluate exact proposed source changes and inspect post-write agreement without writing source or granting actual certification.",
-        usage: "fortress overlay base --root path; fortress overlay evaluate --root path --request file [--storage-root external-path] [--base-selection file] [--original-state reference] [--export] [--format human|json]; fortress overlay inspect|reconcile --root path --proposal file [--format human|json]",
+        usage: "fortress overlay base --root path; fortress overlay evaluate --root path --request file [--storage-root external-path] [--base-selection file] [--original-state reference] [--export | --native-inspection external-file] [--format human|json]; fortress overlay inspect|reconcile --root path --proposal file [--format human|json]",
     },
     CommandDescriptor {
         id: "CMD-GOVERNANCE-MIGRATE",

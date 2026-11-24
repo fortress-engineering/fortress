@@ -128,7 +128,7 @@ fn link(
         &context_ref,
         &source.binding.authority_digest,
     );
-    let request = bind_scalar_request(source, &subject, producer, &evaluation)?;
+    let request = bind_scalar_request(&source.view, &subject, producer, &evaluation)?;
     let reply = exchange(request.worker_payload(&source.view, &evaluation)?)?;
     let outcome = request.admit(&source.view, &evaluation, &reply)?;
     let NativeBodyOutcome::Lowered(body) = outcome else {

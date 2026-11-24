@@ -200,6 +200,26 @@ The optional native Go distribution attachment uses the established v1 package m
 
 ### [`candidate_command.rs`](../_code/candidate_command.rs)
 
+Loads an explicit host-selected descriptor and uses the existing pinned Go or
+Python compile-only worker. Repository contents and proposed operations carry
+neither executable selection nor write authority. Returned observations identify
+the retained proposal and its exact target inventory.
+
+```text
+fortress overlay evaluate --root REPOSITORY --request REQUEST --native-inspection HOST_DESCRIPTOR --format json
+```
+
+Choose the Go package context and exact target source path, function and
+postimage digest in the descriptor. A Python descriptor selects the existing
+trusted scalar registration for the target postimage and ordered Boolean
+inputs. Place the descriptor and registrations outside the observed
+repository. This mode returns the original assessment and the opt-in native
+report. The native report describes finite returned-value sensitivity in the
+proposed body, with separate original and target bindings and no evaluated
+cross-state semantic comparison. Local preview export is unavailable in this
+mode.
+
+
 Adapts explicit overlay base/evaluate/inspect/reconcile requests to the existing Snapshot Governance service. Human and JSON projections preserve all fields. No apply method, production grant validator or execution-assertion reader is installed; explicit export retains a non-authoritative role-resolved proposal. See [candidate examples](code_docs.md).
 
 **Hypothetical source proposals**

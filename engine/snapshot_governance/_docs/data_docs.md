@@ -165,6 +165,12 @@ Version 2 adds the exact physical source identity required to reject stale ident
 
 Versioned OVERLAY interface: exact immutable proposals and actual-state separation, original authority bindings, compatible registered CONTROL records and explicit uncertainty. Historical versions retain their original identities.
 
+### [`native_candidate_body_v1.json`](../_data/native_candidate_body_v1.json)
+
+Defines the exact proposal, host-observed finite return model and explicit
+body availability. The output retains the proposed state and leaves the
+cross-state comparison unevaluated.
+
 ### [`hypothetical_evaluation_schema_v1.json`](../_data/hypothetical_evaluation_schema_v1.json)
 
 Versioned OVERLAY interface: exact immutable proposals and actual-state separation, original authority bindings, compatible registered CONTROL records and explicit uncertainty. Historical versions retain their original identities.
