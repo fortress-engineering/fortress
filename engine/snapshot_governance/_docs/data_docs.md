@@ -277,7 +277,7 @@ yield one valuation and an empty comparison list. Incomplete closures retain
 an explicit reason and omit parameter outcomes. Reasons use the established
 native diagnostic bounds.
 
-### [`native_call_topology_schema_v1.json`](../_data/native_call_topology_schema_v1.json)
+### [`native_call_topology_v1.json`](../_data/native_call_topology_v1.json)
 
 Defines the scoped actual-source Go and Python call topology. The report
 retains exact static call sites, unresolved body references, direction, and
