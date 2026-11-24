@@ -667,6 +667,14 @@
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R38-001",
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R38-002"
           ]
+        },
+        {
+          "id": "AF-SNAPSHOT-GOVERNANCE-0001-R39",
+          "statement": "Native call-return sensitivity compares finite exact Boolean inputs only for complete bounded Go and Python call closures. It preserves the original source and known dependency occurrences, records a paired witness when modeled output changes, and withholds the comparison when the selected closure cannot be established. The result establishes neither runtime behavior nor certification.",
+          "tests": [
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R39-001",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R39-002"
+          ]
         }
       ]
     }

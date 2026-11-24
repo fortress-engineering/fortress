@@ -13,7 +13,9 @@ use crate::candidate::{
 };
 use crate::information_flow::{NativeScalarFlowObservation, observe_native_scalar_flow};
 use crate::migration_governance::MigrationError;
-use crate::native_observation::{NativeSource, NativeSourceError, project_native_call_topology};
+use crate::native_observation::{
+    NativeSource, NativeSourceError, project_native_call_sensitivity, project_native_call_topology,
+};
 use crate::observation::SourceView;
 pub use crate::program_semantics::native_body::NativeBodyOutcome;
 use crate::program_semantics::native_body::{NativeCallTopology, inspect_native_call_topology};
@@ -603,6 +605,47 @@ pub fn observe_python_native_call_return(
         "evaluation":evaluation,
         "diagnostic":diagnostic,
     }))
+}
+
+/// Compares paired Boolean inputs across an exact supported Python lexical closure.
+///
+/// The result concerns returned values under the selected premises. It retains
+/// the modeled dependency occurrences and does not establish runtime binding.
+///
+/// # Errors
+/// Refuses stale source, unresolved authority and incompatible host replies.
+pub fn observe_python_native_call_sensitivity(
+    project_root: &Path,
+    subject: &PythonScalarSubject,
+    producer: &PythonScalarProducer,
+    exchange: impl FnOnce(Vec<u8>) -> Result<Vec<u8>, PythonObservationError>,
+) -> Result<serde_json::Value, PythonObservationError> {
+    let source = NativeSource::capture(project_root, "Python")?;
+    let (evaluation_key, request, response_ref, observation) =
+        inspect_lexical_calls(&source.view, &source.binding, subject, producer, exchange)?;
+    let sensitivity = match &observation.root {
+        NativeBodyOutcome::Lowered(body) => serde_json::json!(
+            analyze_native_boolean_calls(body, &observation.targets()?).into_sensitivity()
+        ),
+        NativeBodyOutcome::Unavailable(limitation) => serde_json::json!({
+            "status": "UNAVAILABLE",
+            "occurrence": null,
+            "reason": limitation.code(),
+        }),
+    };
+    source.revalidate()?;
+    Ok(project_native_call_sensitivity(
+        "python",
+        &serde_json::json!({
+            "evaluation_key": evaluation_key,
+            "exchange_sha256": request.exchange_ref(),
+            "response_sha256": response_ref,
+            "source_path": subject.source_path,
+            "source_ref": request.source_ref(),
+            "producer": producer,
+        }),
+        &sensitivity,
+    ))
 }
 
 /// Inspects exact local Python call topology from the pinned lexical worker.

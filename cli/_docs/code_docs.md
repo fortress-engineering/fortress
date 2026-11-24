@@ -788,6 +788,14 @@ Go body command after obtaining an occurrence from `--bound-calls`. The
 topology distinguishes known directed calls, recursion, and unresolved
 targets. The selected language receipt and exact call sites are retained.
 
+Use `--call-sensitivity` with the same trusted call registration to compare
+the modeled returned Boolean through the admitted call closure. Supply the
+exact occurrence with Go. Python uses the subject and ordered Boolean
+parameters from the registration. The report binds the exact dependencies,
+shows a paired input witness when the return changes, and withholds
+comparisons for incomplete closures. A constant return in this model
+provides no assurance about other observations such as effects or timing.
+
 ### [`native_return_command.rs`](../_code/native_return_command.rs)
 
 Use `--return-sensitivity` with the Python scalar or Go body command to compare

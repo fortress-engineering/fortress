@@ -177,6 +177,23 @@ fn unavailable(error: impl std::fmt::Display) -> NativeSourceError {
     NativeSourceError::Unavailable(error.to_string())
 }
 
+pub(crate) fn project_native_call_sensitivity(
+    language: &str,
+    observation: &serde_json::Value,
+    result: &serde_json::Value,
+) -> serde_json::Value {
+    serde_json::json!({
+        "$schema": "urn:fortress:derived:v1:native-call-return-sensitivity",
+        "schema_version": 1,
+        "scope": "BOUNDED_BOOLEAN_CALL_RETURN_SENSITIVITY",
+        "language": language,
+        "target_execution": "NOT_RUN",
+        "canonical_finding_or_certificate": "NOT_ISSUED",
+        "observation": observation,
+        "sensitivity": result,
+    })
+}
+
 pub(crate) fn project_native_call_topology(
     language: &str,
     observation: &serde_json::Value,

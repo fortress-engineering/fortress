@@ -304,6 +304,69 @@ mod bound_call_bodies {
         }
     }
 
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R39-001`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R39
+    #[test]
+    fn go_native_call_sensitivity_retains_witnesses_and_refuses_recursive_scope() {
+        use fortress_core::go_observation::observe_go_native_call_sensitivity;
+
+        for (case, unavailable) in [
+            ("fixed_free_function", None),
+            ("recursive_target", Some("RECURSIVE_DEPENDENCY")),
+        ] {
+            let (project, record) = fixture(case, &format!("sensitivity-go-{case}"));
+            let respond = |request: &[u8]| Ok(receipt(request, &record, "bound"));
+            let bound =
+                observe_go_native_bound_calls(&project.root, SELECTION, &PIN, respond).unwrap();
+            let edge = &bound["calls"][0];
+            let occurrence = edge["caller"].as_str().unwrap();
+            let inspect = |occurrence| {
+                observe_go_native_call_sensitivity(
+                    &project.root,
+                    SELECTION,
+                    occurrence,
+                    &PIN,
+                    respond,
+                )
+                .unwrap()
+            };
+            let report = inspect(occurrence);
+            assert_eq!(report, inspect(occurrence));
+            assert_eq!(report["target_execution"], "NOT_RUN");
+            assert_eq!(report["canonical_finding_or_certificate"], "NOT_ISSUED");
+            assert_eq!(
+                report["observation"]["response_sha256"],
+                bound["observation"]["response_sha256"]
+            );
+            assert_eq!(
+                report["sensitivity"],
+                if let Some(reason) = unavailable {
+                    json!({"status":"UNAVAILABLE","occurrence":occurrence,"reason":reason})
+                } else {
+                    // Independently, the fixture's callee negates v before returning.
+                    json!({
+                        "status":"COMPLETE","occurrence":occurrence,"valuation_count":2,
+                        "dependency_occurrences":[edge["target_body"]],
+                        "parameters":[{"parameter":"v","disposition":{
+                            "status":"RETURN_CHANGES",
+                            "inputs_with_parameter_false":[false],
+                            "inputs_with_parameter_true":[true],
+                            "return_with_parameter_false":true,
+                            "return_with_parameter_true":false
+                        }}]
+                    })
+                }
+            );
+            let missing = format!("native_body_occurrence:v1:sha256:{}", "0".repeat(64));
+            assert_eq!(
+                inspect(&missing)["sensitivity"],
+                json!({
+                    "status":"UNAVAILABLE","occurrence":missing,"reason":"MISSING_EXACT_OCCURRENCE"
+                })
+            );
+        }
+    }
+
     /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R38-001`
     /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R38
     #[test]

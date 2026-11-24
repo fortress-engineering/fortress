@@ -268,6 +268,14 @@ provenance. Reports the presence of replacement declarations without resolving
 their targets. The existing selected Module reader retains its independent
 closed context and historical schema versions.
 
+### [`native_call_sensitivity_v1.json`](../_data/native_call_sensitivity_v1.json)
+
+Defines the actual-source finite Boolean return-sensitivity report for Go and
+Python. A complete report contains an exact occurrence, the retained dependency
+occurrences, and one parameter comparison per declaration. Zero parameters
+yield one valuation and an empty comparison list. Incomplete closures retain
+an explicit reason and omit parameter outcomes.
+
 ### [`native_call_topology_schema_v1.json`](../_data/native_call_topology_schema_v1.json)
 
 Defines the scoped actual-source Go and Python call topology. The report

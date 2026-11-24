@@ -5,7 +5,10 @@ use std::collections::{BTreeMap, BTreeSet};
 use serde::Serialize;
 
 use super::native_analysis_context;
-use super::native_sensitivity::{MAX_PARAMETERS, boolean_return_table, boolean_scope};
+use super::native_sensitivity::{
+    MAX_PARAMETERS, NativeBooleanParameterSensitivity, boolean_return_table, boolean_scope,
+    compare_boolean_parameters,
+};
 use crate::program_semantics::native_body::NativeScalarBody;
 
 const MAX_BODIES: usize = 64;
@@ -35,6 +38,45 @@ pub(crate) enum Unavailable {
     AnalysisLimit,
     UnsupportedScalarScope,
     IncompleteValuation,
+}
+
+#[derive(Debug, Eq, PartialEq, Serialize)]
+#[serde(tag = "status", rename_all = "SCREAMING_SNAKE_CASE")]
+pub(crate) enum NativeBooleanCallSensitivity {
+    Complete {
+        occurrence: String,
+        valuation_count: usize,
+        dependency_occurrences: Vec<String>,
+        parameters: Vec<NativeBooleanParameterSensitivity>,
+    },
+    Unavailable {
+        occurrence: String,
+        reason: Unavailable,
+    },
+}
+
+impl NativeBooleanCallEvaluation {
+    pub(crate) fn into_sensitivity(self) -> NativeBooleanCallSensitivity {
+        match self {
+            Self::Complete {
+                occurrence,
+                parameters,
+                returns,
+                dependency_occurrences,
+            } => NativeBooleanCallSensitivity::Complete {
+                occurrence,
+                valuation_count: returns.len(),
+                dependency_occurrences,
+                parameters: compare_boolean_parameters(
+                    &returns,
+                    parameters.iter().map(String::as_str),
+                ),
+            },
+            Self::Unavailable { occurrence, reason } => {
+                NativeBooleanCallSensitivity::Unavailable { occurrence, reason }
+            }
+        }
+    }
 }
 
 /// Consume only exact call edges already admitted by the producer boundary.

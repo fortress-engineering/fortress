@@ -13,7 +13,9 @@ use crate::candidate::{
 use crate::implementation_observation::{NativeDependencyContext, SourceOwnershipDiagnostic};
 use crate::information_flow::NativeScalarFlowObservation;
 use crate::migration_governance::MigrationError;
-use crate::native_observation::{NativeSource, NativeSourceError, project_native_call_topology};
+use crate::native_observation::{
+    NativeSource, NativeSourceError, project_native_call_sensitivity, project_native_call_topology,
+};
 use crate::observation::SourceView;
 use crate::program_semantics::go_observation::{
     ExactClosedPackage, GoNativeBodyObservation, admit_go, admit_go_build, admit_go_module,
@@ -424,6 +426,41 @@ pub fn observe_go_native_call_return(
             "observation": observed.call_evidence(),
             "evaluation": result,
         }))
+    })
+}
+
+/// Compares paired Boolean inputs across an exact, supported Go call closure.
+///
+/// The comparison covers returned values only. Its result retains all modeled
+/// dependency occurrences and makes no claim about execution or external effects.
+///
+/// # Errors
+/// Refuses unsafe or stale source, invalid selectors and incompatible producer replies.
+pub fn observe_go_native_call_sensitivity(
+    project_root: &Path,
+    selection: GoPackageSelection<'_>,
+    occurrence: &str,
+    collector: &GoCollectorPin<'_>,
+    launch: impl FnOnce(&[u8]) -> Result<Vec<u8>, GoObservationError>,
+) -> Result<serde_json::Value, GoObservationError> {
+    validate_body_occurrence(occurrence)?;
+    observe_verified_go_calls(project_root, selection, collector, launch, |observed| {
+        let sensitivity = if let Some(body) = exact_call_body(&observed, occurrence) {
+            let targets = observed.call_targets()?;
+            serde_json::to_value(analyze_native_boolean_calls(body, &targets).into_sensitivity())
+                .map_err(|_| GoObservationError::WireEncoding)?
+        } else {
+            serde_json::json!({
+                "status": "UNAVAILABLE",
+                "occurrence": occurrence,
+                "reason": "MISSING_EXACT_OCCURRENCE",
+            })
+        };
+        Ok(project_native_call_sensitivity(
+            "go",
+            &observed.call_evidence(),
+            &sensitivity,
+        ))
     })
 }
 

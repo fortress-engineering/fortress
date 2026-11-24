@@ -100,16 +100,26 @@ pub fn inspect_native_boolean_sensitivity(body: &NativeScalarBody) -> NativeBool
     NativeBooleanSensitivity::Complete {
         occurrence_ref: body.binding().into(),
         valuation_count: returns.len(),
-        parameters: body
-            .parameters()
-            .iter()
-            .enumerate()
-            .map(|(index, (name, _))| NativeBooleanParameterSensitivity {
-                parameter: name.clone(),
-                disposition: compare_pairs(&returns, index, count),
-            })
-            .collect(),
+        parameters: compare_boolean_parameters(
+            &returns,
+            body.parameters().iter().map(|(name, _)| name.as_str()),
+        ),
     }
+}
+
+pub(super) fn compare_boolean_parameters<'a>(
+    returns: &[bool],
+    parameters: impl ExactSizeIterator<Item = &'a str>,
+) -> Vec<NativeBooleanParameterSensitivity> {
+    let count = parameters.len();
+    debug_assert_eq!(returns.len(), 1 << count);
+    parameters
+        .enumerate()
+        .map(|(index, name)| NativeBooleanParameterSensitivity {
+            parameter: name.to_owned(),
+            disposition: compare_pairs(returns, index, count),
+        })
+        .collect()
 }
 
 pub(super) fn boolean_scope(body: &NativeScalarBody) -> bool {

@@ -90,6 +90,60 @@ mod lexical_calls {
         response
     }
 
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R39-002`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R39
+    #[test]
+    fn python_native_call_sensitivity_retains_witnesses_and_refuses_lexical_rebinding() {
+        use fortress_core::python_observation::observe_python_native_call_sensitivity;
+
+        for name in ["locally_defined_shadow_free_function", "later_local_rebind"] {
+            let (fixture, subject, producer, reply) =
+                case(name, &format!("sensitivity-python-{name}"));
+            let respond =
+                |request: Vec<u8>| Ok(serde_json::to_vec(&bind(&request, &reply)).unwrap());
+            let inspect = || {
+                observe_python_native_call_sensitivity(&fixture.root, &subject, &producer, respond)
+                    .unwrap()
+            };
+            let report = inspect();
+            assert_eq!(report, inspect());
+            assert_eq!(report["target_execution"], "NOT_RUN");
+            assert_eq!(report["observation"]["source_ref"], subject.source_ref);
+            let sensitivity = &report["sensitivity"];
+            if name == "later_local_rebind" {
+                assert_eq!(
+                    sensitivity,
+                    &json!({
+                        "status":"UNAVAILABLE","occurrence":null,"reason":"CALL_TARGET_UNESTABLISHED"
+                    })
+                );
+                continue;
+            }
+            let closure =
+                observe_python_native_call_return(&fixture.root, &subject, &producer, respond)
+                    .unwrap();
+            assert_eq!(sensitivity["status"], "COMPLETE");
+            assert_eq!(
+                sensitivity["occurrence"],
+                closure["evaluation"]["occurrence"]
+            );
+            assert_eq!(
+                sensitivity["dependency_occurrences"],
+                closure["evaluation"]["dependency_occurrences"]
+            );
+            assert_eq!(sensitivity["valuation_count"], 2);
+            // Independently, inner returns not v under this admitted lexical binding.
+            assert_eq!(
+                sensitivity["parameters"],
+                json!([{"parameter":"v","disposition":{
+                    "status":"RETURN_CHANGES","inputs_with_parameter_false":[false],
+                    "inputs_with_parameter_true":[true],"return_with_parameter_false":true,
+                    "return_with_parameter_true":false
+                }}])
+            );
+        }
+    }
+
     /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R38-002`
     /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R38
     #[test]
