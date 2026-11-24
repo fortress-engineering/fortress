@@ -88,7 +88,7 @@ mod test_declarations {
         assert_eq!(renamed["span"]["path"], "external_test.go");
         let unicode = declarations
             .iter()
-            .find(|row| row["name"] == "TestÃƒÆ’Ã¢â‚¬Â°")
+            .find(|row| row["name"] == "TestÉ")
             .unwrap();
         assert_eq!(unicode["span"]["start_line"], 11);
         assert_eq!(unicode["span"]["start_byte_column"], 6);
@@ -204,7 +204,7 @@ mod test_declarations {
 
 const NATIVE: &[u8] = include_bytes!("../_data/go_native_fixture_v1.json");
 const API: &str =
-    "// cafÃƒÆ’Ã‚Â©\r\npackage bounded\r\nfunc Run(input int) int { return target(input) }\r\n";
+    "// café\r\npackage bounded\r\nfunc Run(input int) int { return target(input) }\r\n";
 const TARGET: &str = "package bounded\nfunc target(input int) int { return input + 1 }\n";
 const PIN: GoCollectorPin<'static> = GoCollectorPin {
     executable_sha256: "sha256:a8fa98c0d583a610b230c245357a50151fb8b5e5133fb62ca1b41c49b1e71419",
@@ -283,12 +283,12 @@ mod bodies {
     use fortress_core::go_observation::observe_go_native_body;
 
     const SOURCE: &str = concat!(
-        "// cafÃƒÆ’Ã‚Â©\r\npackage fixture\r\n",
+        "// café\r\npackage fixture\r\n",
         "func Keep(b bool) bool { if b {} ; return !b }\r\n",
-        "func ÃƒÆ’Ã¢â‚¬Â°tude(b bool) bool { return b }\r\n",
+        "func Étude(b bool) bool { return b }\r\n",
         "func _(b bool) bool { return b }\r\n",
-        "func Named(cafÃƒÆ’Ã‚Â© bool) bool { return cafÃƒÆ’Ã‚Â© }\r\n",
-        "func Local(b bool) bool { cÃƒÆ’Ã‚Â´tÃƒÆ’Ã‚Â© := b; return cÃƒÆ’Ã‚Â´tÃƒÆ’Ã‚Â© }\r\n",
+        "func Named(café bool) bool { return café }\r\n",
+        "func Local(b bool) bool { côté := b; return côté }\r\n",
         "func Blank(_ bool) bool { return true }\r\n",
         "func Unnamed(bool) bool { return true }\r\n",
         "func Deep(b bool) bool { if b { if b { if b { if b { if b { if b { if b { if b { if b { if b { if b {} } } } } } } } } } } ; return b }\r\n",
