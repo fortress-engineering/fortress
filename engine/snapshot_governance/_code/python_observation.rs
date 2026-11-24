@@ -13,7 +13,10 @@ pub use crate::program_semantics::python_scalar::python_filesystem::{
     PythonFilesystemRequest, PythonInstalledFilesystemReceiver,
 };
 use crate::project::EvaluationKey;
-use crate::semantic_analysis::{SemanticDomain, infer_native_scalar_output};
+use crate::semantic_analysis::{
+    NativeBooleanSensitivity, SemanticDomain, infer_native_scalar_output,
+    inspect_native_boolean_sensitivity,
+};
 
 pub use crate::program_semantics::python_scalar::{
     PythonScalarError, PythonScalarProducer, PythonScalarRequest,
@@ -497,6 +500,38 @@ pub fn observe_python_scalar_flow(
         producer,
         exchange,
         observe_native_scalar_flow,
+    )
+}
+
+/// Compares finite Boolean returns for the exact original Python scalar subject.
+///
+/// The inputs are the exact ordered Boolean parameters selected by the trusted
+/// host. The comparison describes the admitted compile-only model. Physical
+/// source is revalidated after interpreting the selected body.
+///
+/// # Errors
+/// Refuses unavailable original bindings, source drift, or incompatible replies.
+pub fn observe_python_scalar_sensitivity(
+    project_root: &Path,
+    subject: &PythonScalarSubject,
+    producer: &PythonScalarProducer,
+    exchange: impl FnOnce(Vec<u8>) -> Result<Vec<u8>, PythonObservationError>,
+) -> Result<
+    (
+        ActualPythonScalarObservation,
+        Option<NativeBooleanSensitivity>,
+    ),
+    PythonObservationError,
+> {
+    observe_scalar_with(
+        project_root,
+        subject,
+        producer,
+        exchange,
+        |outcome| match outcome {
+            NativeBodyOutcome::Lowered(body) => Some(inspect_native_boolean_sensitivity(body)),
+            NativeBodyOutcome::Unavailable(_) => None,
+        },
     )
 }
 

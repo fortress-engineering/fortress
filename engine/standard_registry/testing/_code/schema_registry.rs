@@ -48,6 +48,7 @@ fn registered_schemas_are_unique_json_schema_documents() {
         "engine/snapshot_governance/_data/go_fs_schema_v1.json",
         "cli/_data/native_return_schema_v1.json",
         "engine/semantic_analysis/_data/native_return_schema_v1.json",
+        "cli/_data/native_sensitivity_schema_v1.json",
         "cli/_data/native_flow_schema_v1.json",
         "cli/_data/go_test_registration_v1.json",
         "engine/implementation_observation/_data/native_dependency_schema_v1.json",

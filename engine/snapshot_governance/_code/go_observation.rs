@@ -10,6 +10,7 @@ use crate::native_observation::{NativeSource, NativeSourceError};
 use crate::program_semantics::go_observation::{
     ExactClosedPackage, admit_go, admit_go_build, admit_go_module, admit_go_tests,
 };
+use crate::semantic_analysis::NativeBooleanSensitivity;
 
 #[path = "go_body_domains.rs"]
 mod body_domains;
@@ -253,6 +254,39 @@ pub fn observe_go_native_body_flow(
     ),
     GoObservationError,
 > {
+    validate_body_occurrence(occurrence)?;
+    observe_go_body_with(project_root, selection, collector, launch, |result| {
+        result.inspect_flow(occurrence)
+    })
+}
+
+/// Compares finite Boolean return values for one original admitted Go occurrence.
+///
+/// The comparison retains the exact body receipt and qualified input model.
+/// Physical source is revalidated after interpreting the selected body.
+///
+/// # Errors
+/// Refuses malformed occurrence references, source drift, or incompatible replies.
+pub fn observe_go_native_body_sensitivity(
+    project_root: &Path,
+    selection: GoPackageSelection<'_>,
+    collector: &GoCollectorPin<'_>,
+    occurrence: &str,
+    launch: impl FnOnce(&[u8]) -> Result<Vec<u8>, GoObservationError>,
+) -> Result<
+    (
+        ActualGoNativeBodyObservation,
+        Option<NativeBooleanSensitivity>,
+    ),
+    GoObservationError,
+> {
+    validate_body_occurrence(occurrence)?;
+    observe_go_body_with(project_root, selection, collector, launch, |result| {
+        result.inspect_sensitivity(occurrence)
+    })
+}
+
+fn validate_body_occurrence(occurrence: &str) -> Result<(), GoObservationError> {
     let suffix = occurrence
         .strip_prefix("native_body_occurrence:v1:sha256:")
         .ok_or(GoObservationError::InvalidTrustedBinding)?;
@@ -263,9 +297,7 @@ pub fn observe_go_native_body_flow(
     {
         return Err(GoObservationError::InvalidTrustedBinding);
     }
-    observe_go_body_with(project_root, selection, collector, launch, |result| {
-        result.inspect_flow(occurrence)
-    })
+    Ok(())
 }
 
 fn observe_go_body_with<T>(

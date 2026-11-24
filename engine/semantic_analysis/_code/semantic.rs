@@ -12,6 +12,8 @@ mod domain;
 mod function_contract;
 #[path = "native_return_contract.rs"]
 mod native_return_contract;
+#[path = "native_sensitivity.rs"]
+mod native_sensitivity;
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
@@ -29,6 +31,10 @@ pub use function_contract::{
 };
 pub use native_return_contract::{
     NATIVE_RETURN_CONTRACT_SCHEMA, NativeReturnContractError, NativeReturnContracts,
+};
+pub use native_sensitivity::{
+    NativeBooleanParameterDisposition, NativeBooleanParameterSensitivity, NativeBooleanSensitivity,
+    NativeBooleanSensitivityReason, inspect_native_boolean_sensitivity,
 };
 
 use serde::Serialize;
@@ -736,8 +742,17 @@ fn native_domain_for_type(type_id: &str) -> Option<SemanticDomain> {
 /// exposed if there is a residual fall-through path or opaque result.
 #[must_use]
 pub fn infer_native_scalar_output(body: &NativeScalarBody) -> Option<SemanticDomain> {
-    let subject = BodySubject::Native(body);
-    let context = AnalysisContext {
+    let context = native_analysis_context(body);
+    let values = body
+        .parameters()
+        .iter()
+        .map(|(name, scalar)| (name.clone(), native_scalar_domain(*scalar)))
+        .collect();
+    interpret_native_body(body, &context, values)
+}
+
+fn native_analysis_context(body: &NativeScalarBody) -> AnalysisContext<'_> {
+    AnalysisContext {
         contracts: None,
         symbols: BTreeMap::new(),
         types: BTreeMap::new(),
@@ -749,13 +764,17 @@ pub fn infer_native_scalar_output(body: &NativeScalarBody) -> Option<SemanticDom
             .map(|(name, scalar)| ((body.binding(), name.as_str()), native_type_id(*scalar)))
             .collect(),
         calls_by_caller: BTreeMap::new(),
-    };
+    }
+}
+
+fn interpret_native_body(
+    body: &NativeScalarBody,
+    context: &AnalysisContext<'_>,
+    values: BTreeMap<String, SemanticDomain>,
+) -> Option<SemanticDomain> {
+    let subject = BodySubject::Native(body);
     let environment = Environment {
-        values: body
-            .parameters()
-            .iter()
-            .map(|(name, scalar)| (name.clone(), native_scalar_domain(*scalar)))
-            .collect(),
+        values,
         reachable: true,
         unsupported_pattern_reachability: false,
     };

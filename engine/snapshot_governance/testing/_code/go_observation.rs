@@ -424,6 +424,70 @@ mod bodies {
         ));
     }
 
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R28-027`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R28
+    #[test]
+    fn go_boolean_sensitivity_binds_exact_original_occurrence() {
+        use fortress_core::go_observation::observe_go_native_body_sensitivity;
+        let (fixture, selection) = setup("body-return-sensitivity");
+        let original = observe_go_native_body(&fixture.root, selection, &PIN, |request| {
+            Ok(replay(request))
+        })
+        .unwrap();
+        let original = serde_json::to_value(original).unwrap();
+        let occurrence = original["functions"][0]["binding"].as_str().unwrap();
+        let inspect = |reference| {
+            observe_go_native_body_sensitivity(
+                &fixture.root,
+                selection,
+                &PIN,
+                reference,
+                |request| Ok(replay(request)),
+            )
+        };
+        let (retained, result) = inspect(occurrence).unwrap();
+        assert_eq!(serde_json::to_value(retained).unwrap(), original);
+        let report = serde_json::to_value(result).unwrap();
+        assert_eq!(report["occurrence_ref"], occurrence);
+        assert_eq!(report["status"], "COMPLETE");
+        assert_eq!(report["valuation_count"], 2);
+        assert_eq!(report["parameters"][0]["parameter"], "b");
+        assert_eq!(
+            report["parameters"][0]["disposition"],
+            json!({
+                "status":"RETURN_CHANGES","inputs_with_parameter_false":[false],
+                "inputs_with_parameter_true":[true],
+                "return_with_parameter_false":true,"return_with_parameter_true":false
+            })
+        );
+        let stale = format!("native_body_occurrence:v1:sha256:{}", "0".repeat(64));
+        assert!(inspect(&stale).unwrap().1.is_none());
+        let malformed =
+            observe_go_native_body_sensitivity(&fixture.root, selection, &PIN, "invalid", |_| {
+                panic!("invalid occurrence before dispatch")
+            });
+        assert!(matches!(
+            malformed,
+            Err(GoObservationError::InvalidTrustedBinding)
+        ));
+        let changed = observe_go_native_body_sensitivity(
+            &fixture.root,
+            selection,
+            &PIN,
+            occurrence,
+            |request| {
+                fs::write(
+                    fixture.root.join("fixture.go"),
+                    b"package changed
+",
+                )
+                .unwrap();
+                Ok(replay(request))
+            },
+        );
+        assert!(matches!(changed, Err(GoObservationError::SourceChanged)));
+    }
+
     /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R28-010`
     /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R28
     #[test]

@@ -1,5 +1,7 @@
 //! Parent-local Function Contract and semantic-domain conformance.
 
+mod native_sensitivity;
+
 use std::path::{Path, PathBuf};
 
 use fortress_core::audit::{compile_repository_psm, compile_repository_semantic_analysis};

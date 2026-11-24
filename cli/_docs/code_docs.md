@@ -732,6 +732,14 @@ certification.
 
 ### [`native_return_command.rs`](../_code/native_return_command.rs)
 
+Use `--return-sensitivity` with the Python scalar or Go body command to compare
+the returned Boolean when one exact Boolean parameter changes. Go requires
+the admitted occurrence shown by the ordinary report. Python takes its
+ordered Boolean parameter names from the trusted host registration. The
+report evaluates every valuation for one to four exact Boolean parameters
+and withholds comparisons when a valuation is incomplete. The original
+receipt, operational limitations and runtime status accompany the results.
+
 Serializes the same typed original native return observation for both language
 commands. It retains the exact source and governing authority even if the
 subject is unavailable. Each linked comparison preserves its separate native

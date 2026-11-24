@@ -772,6 +772,50 @@ fn python_scalar_flow_keeps_exact_input_and_refuses_physical_drift() {
     assert!(matches!(drift, Err(PythonObservationError::SourceChanged)));
 }
 
+/// `T-AF-SNAPSHOT-GOVERNANCE-0001-R30-008`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R30
+#[test]
+fn python_boolean_sensitivity_retains_exact_host_scope_and_refuses_drift() {
+    use fortress_core::python_observation::observe_python_scalar_sensitivity;
+    let (fixture, subject, producer) = scalar_fixture("scalar-return-sensitivity");
+    let inspect = || {
+        observe_python_scalar_sensitivity(&fixture.root, &subject, &producer, |request| {
+            scalar_reply(&request)
+        })
+    };
+    let (native, result) = inspect().unwrap();
+    let fortress_core::python_observation::NativeBodyOutcome::Lowered(body) = native.outcome()
+    else {
+        panic!("expected exact Boolean source body");
+    };
+    assert_eq!(fs::read(fixture.root.join(PATH)).unwrap(), SCALAR_SOURCE);
+    let result = result.unwrap();
+    assert_eq!(inspect().unwrap().1.as_ref(), Some(&result));
+    let report = serde_json::to_value(result).unwrap();
+    assert_eq!(report["occurrence_ref"], body.binding());
+    assert_eq!(report["status"], "COMPLETE");
+    assert_eq!(report["valuation_count"], 2);
+    assert_eq!(report["parameters"][0]["parameter"], "gate");
+    assert_eq!(
+        report["parameters"][0]["disposition"],
+        json!({
+            "status":"RETURN_CHANGES","inputs_with_parameter_false":[false],
+            "inputs_with_parameter_true":[true],
+            "return_with_parameter_false":true,"return_with_parameter_true":false
+        })
+    );
+
+    let changed =
+        observe_python_scalar_sensitivity(&fixture.root, &subject, &producer, |request| {
+            fs::write(fixture.root.join("note.txt"), "drift during exchange").unwrap();
+            scalar_reply(&request)
+        });
+    assert!(matches!(
+        changed,
+        Err(PythonObservationError::SourceChanged)
+    ));
+}
+
 const IMPORT_SOURCE: &[u8] = b"import chosen\r\n";
 
 fn import_scope(roots: &[&str], inventory: &str) -> (Vec<u8>, String) {

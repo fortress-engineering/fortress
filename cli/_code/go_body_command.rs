@@ -7,7 +7,7 @@ use std::time::Duration;
 
 use fortress_core::go_observation::{
     ActualGoNativeBodyObservation, GoCollectorPin, GoObservationError, GoPackageSelection,
-    observe_go_native_body, observe_go_native_body_flow,
+    observe_go_native_body, observe_go_native_body_flow, observe_go_native_body_sensitivity,
 };
 use fortress_core::information_flow::NativeScalarFlowObservation;
 use fortress_core::portable::{canonical, digest};
@@ -50,7 +50,7 @@ pub(super) fn run<O: Write, E: Write>(
         Err(failure) => {
             writeln!(
                 error,
-                "Go body observation failed: {}\nusage: fortress psm --observe-go-body project host-registration directory package-path go-version target-os target-arch [--flow exact-occurrence]",
+                "Go body observation failed: {}\nusage: fortress psm --observe-go-body project host-registration directory package-path go-version target-os target-arch [--flow|--return-sensitivity exact-occurrence]",
                 readable_text(&failure)
             )?;
             Ok(super::EXIT_USAGE)
@@ -74,10 +74,11 @@ fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
             "Explicit source, trusted host registration and package context are required.".into(),
         );
     };
-    let occurrence = match mode {
-        [] => None,
-        [flag, binding] if flag == "--flow" => Some(binding.as_str()),
-        _ => return Err("Expected an exact flow occurrence selection.".into()),
+    let (occurrence, sensitivity) = match mode {
+        [] => (None, false),
+        [flag, binding] if flag == "--flow" => (Some(binding.as_str()), false),
+        [flag, binding] if flag == "--return-sensitivity" => (Some(binding.as_str()), true),
+        _ => return Err("Expected an exact body occurrence selection.".into()),
     };
     let root = Path::new(root)
         .canonicalize()
@@ -90,6 +91,20 @@ fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
         target_os,
         target_arch,
     };
+    if let Some(binding) = occurrence.filter(|_| sensitivity) {
+        let (receipt, result) = with_registered_body(&root, registration, |pin, collector| {
+            observe_go_native_body_sensitivity(&root, selection, pin, binding, |input| {
+                collector.run(input)
+            })
+            .map_err(|failure| failure.to_string())
+        })?;
+        return super::native_return_command::serialize_sensitivity(
+            "go",
+            Some(binding),
+            &serde_json::to_value(receipt).map_err(|failure| failure.to_string())?,
+            result.as_ref(),
+        );
+    }
     let (result, flow) = with_registered_body(&root, registration, |pin, collector| {
         let launch = |input: &[u8]| collector.run(input);
         if let Some(binding) = occurrence {

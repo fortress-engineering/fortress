@@ -548,6 +548,8 @@ the selected native producer and target. Revalidation precedes publication.
 
 ### [`go_body_domains.rs`](../_code/go_body_domains.rs)
 
+The exact occurrence selector supplies admitted Boolean bodies to the shared finite return comparison while preserving the original Go receipt.
+
 Derives upper bounds for admitted Go scalar return values by interpreting typed
 Program Semantics bodies with the shared Semantic Analysis domain engine.
 Report entries align with the original body rows by occurrence index and keep
@@ -570,6 +572,8 @@ missing subject, mismatched authority or unresolved scope prevents favorable
 reuse. No process or project code executes during projection.
 
 ### [`python_observation.rs`](../_code/python_observation.rs)
+
+The explicit finite return comparison uses the selected ordered Boolean parameter model and revalidates the exact original source after projection.
 
 Accepts one physical repository path and one selected ordinary Python source entry. Original Snapshot Governance prepares existing authority without constructing a PSM. The exact EvaluationKey binds that original manifest and authority to a Python lexical context containing the selected source path, observation mode, grammar and pinned producer. An explicit trusted host receives the request and immutable file bytes. Source Architecture validates the compile-only reply; Snapshot Governance refuses stale snapshots, directory substitution, and replies bound to a different or hypothetical view before publication. Absent project authority remains the existing observed absence; malformed, ambiguous or exclusion-bearing authority prevents dispatch.
 

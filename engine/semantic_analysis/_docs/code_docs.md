@@ -56,3 +56,19 @@ Reads the exact supported version of native Boolean return requirements. It
 bounds JSON decoding and validates canonical format and distinct sorted
 callable references. Snapshot Governance owns original territory selection
 and exact body linkage. The reader has no source mutation capability.
+
+### [`native_sensitivity.rs`](../_code/native_sensitivity.rs)
+
+Compares returned values from one admitted native body under every valuation
+of one to four exact Boolean inputs. It uses the existing statement
+interpreter and requires a singleton Boolean return under every valuation
+before comparing inputs. Each comparison changes one parameter while
+holding the other inputs fixed. The first differing witness follows
+declaration order with the first parameter the low bit. A complete table
+can also establish a stable return for one parameter within this model.
+
+Mixed scalar types, unsupported bodies, residual paths and nonsingleton
+bounds remain unavailable. This includes guard forms the existing interpreter
+cannot refine. The result carries the admitted occurrence and stays outside
+the canonical flow and proof lanes. Runtime invocation, termination and
+effects remain independently unestablished.

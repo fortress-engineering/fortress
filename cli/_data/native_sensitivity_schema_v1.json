@@ -1,0 +1,382 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v1:native-boolean-sensitivity-inspection",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "language",
+    "scope",
+    "runtime_execution",
+    "canonical_finding_or_certificate",
+    "requested_occurrence",
+    "selection",
+    "native_receipt",
+    "sensitivity"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:derived:v1:native-boolean-sensitivity-inspection"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "language": {
+      "enum": [
+        "go",
+        "python"
+      ]
+    },
+    "scope": {
+      "const": "FINITE_EXACT_BOOLEAN_RETURN_MODEL"
+    },
+    "runtime_execution": {
+      "const": "NOT_RUN"
+    },
+    "canonical_finding_or_certificate": {
+      "const": "NOT_ISSUED"
+    },
+    "requested_occurrence": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/occurrence"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "selection": {
+      "enum": [
+        "BOUND",
+        "OCCURRENCE_UNAVAILABLE",
+        "BODY_UNAVAILABLE"
+      ]
+    },
+    "native_receipt": {
+      "oneOf": [
+        {
+          "$ref": "urn:fortress:derived:v1:go-native-body"
+        },
+        {
+          "$ref": "urn:fortress:derived:v1:python-scalar-observation"
+        }
+      ]
+    },
+    "sensitivity": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/comparison"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "language": {
+            "const": "go"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "native_receipt": {
+            "$ref": "urn:fortress:derived:v1:go-native-body"
+          },
+          "requested_occurrence": {
+            "$ref": "#/$defs/occurrence"
+          },
+          "selection": {
+            "enum": [
+              "BOUND",
+              "OCCURRENCE_UNAVAILABLE"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "language": {
+            "const": "python"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "native_receipt": {
+            "$ref": "urn:fortress:derived:v1:python-scalar-observation"
+          },
+          "requested_occurrence": {
+            "type": "null"
+          },
+          "selection": {
+            "enum": [
+              "BOUND",
+              "BODY_UNAVAILABLE"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "selection": {
+            "const": "BOUND"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "sensitivity": {
+            "$ref": "#/$defs/comparison"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "selection": {
+            "const": "OCCURRENCE_UNAVAILABLE"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "sensitivity": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "selection": {
+            "const": "BODY_UNAVAILABLE"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "sensitivity": {
+            "type": "null"
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "occurrence": {
+      "type": "string",
+      "pattern": "^native_body_occurrence:v1:sha256:[0-9a-f]{64}$"
+    },
+    "comparison": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "occurrence_ref",
+            "valuation_count",
+            "parameters"
+          ],
+          "properties": {
+            "status": {
+              "const": "COMPLETE"
+            },
+            "occurrence_ref": {
+              "$ref": "#/$defs/occurrence"
+            },
+            "valuation_count": {
+              "enum": [
+                2,
+                4,
+                8,
+                16
+              ]
+            },
+            "parameters": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "parameter",
+                  "disposition"
+                ],
+                "properties": {
+                  "parameter": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 240
+                  },
+                  "disposition": {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "status",
+                          "inputs_with_parameter_false",
+                          "inputs_with_parameter_true",
+                          "return_with_parameter_false",
+                          "return_with_parameter_true"
+                        ],
+                        "properties": {
+                          "status": {
+                            "const": "RETURN_CHANGES"
+                          },
+                          "inputs_with_parameter_false": {
+                            "type": "array",
+                            "items": {
+                              "type": "boolean"
+                            },
+                            "minItems": 1,
+                            "maxItems": 4
+                          },
+                          "inputs_with_parameter_true": {
+                            "type": "array",
+                            "items": {
+                              "type": "boolean"
+                            },
+                            "minItems": 1,
+                            "maxItems": 4
+                          },
+                          "return_with_parameter_false": {
+                            "type": "boolean"
+                          },
+                          "return_with_parameter_true": {
+                            "type": "boolean"
+                          }
+                        }
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "status"
+                        ],
+                        "properties": {
+                          "status": {
+                            "const": "SAME_RETURN_ACROSS_PAIRED_INPUTS"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              "minItems": 1,
+              "maxItems": 4
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "valuation_count": {
+                    "const": 2
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "parameters": {
+                    "minItems": 1,
+                    "maxItems": 1
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "valuation_count": {
+                    "const": 4
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "parameters": {
+                    "minItems": 2,
+                    "maxItems": 2
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "valuation_count": {
+                    "const": 8
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "parameters": {
+                    "minItems": 3,
+                    "maxItems": 3
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "valuation_count": {
+                    "const": 16
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "parameters": {
+                    "minItems": 4,
+                    "maxItems": 4
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "occurrence_ref",
+            "reason"
+          ],
+          "properties": {
+            "status": {
+              "const": "UNAVAILABLE"
+            },
+            "occurrence_ref": {
+              "$ref": "#/$defs/occurrence"
+            },
+            "reason": {
+              "enum": [
+                "PARAMETER_COUNT",
+                "UNSUPPORTED_SCALAR_SCOPE",
+                "INCOMPLETE_VALUATION"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}

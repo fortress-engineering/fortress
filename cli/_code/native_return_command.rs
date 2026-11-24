@@ -7,7 +7,7 @@ use fortress_core::native_return_observation::{
 };
 use fortress_core::portable::canonical;
 use fortress_core::program_semantics::native_callable::NativeCallableOutcome;
-use fortress_core::semantic_analysis::NativeBooleanReturn;
+use fortress_core::semantic_analysis::{NativeBooleanReturn, NativeBooleanSensitivity};
 use serde_json::{Value, json};
 
 const SCHEMA: &str = "urn:fortress:derived:v1:native-return-inspection";
@@ -48,6 +48,32 @@ pub(super) fn serialize(report: &AuthoredNativeReturnObservation) -> Result<Vec<
         },
         "subject": subject,
         "comparison": comparison(&report.comparison),
+    }))
+    .map_err(|failure| failure.to_string())
+}
+
+pub(super) fn serialize_sensitivity(
+    language: &str,
+    requested_occurrence: Option<&str>,
+    native_receipt: &Value,
+    result: Option<&NativeBooleanSensitivity>,
+) -> Result<Vec<u8>, String> {
+    let selection = match (result, requested_occurrence) {
+        (Some(_), _) => "BOUND",
+        (None, Some(_)) => "OCCURRENCE_UNAVAILABLE",
+        (None, None) => "BODY_UNAVAILABLE",
+    };
+    canonical(&json!({
+        "$schema":"urn:fortress:derived:v1:native-boolean-sensitivity-inspection",
+        "schema_version":1,
+        "language":language,
+        "scope":"FINITE_EXACT_BOOLEAN_RETURN_MODEL",
+        "runtime_execution":"NOT_RUN",
+        "canonical_finding_or_certificate":"NOT_ISSUED",
+        "requested_occurrence":requested_occurrence,
+        "selection":selection,
+        "native_receipt":native_receipt,
+        "sensitivity":result
     }))
     .map_err(|failure| failure.to_string())
 }

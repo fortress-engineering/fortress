@@ -25,3 +25,10 @@ Exercises the complete Semantic Analysis Feature across contract, lattice, flow,
 ### [`semantic_preparation.rs`](../_code/semantic_preparation.rs)
 
 Verifies R05-001 through R05-005: actual unchanged-round replay, reverse dependent rebuilding with disconnected reuse, extension through changed global stops and widening, conservative reconstruction after call/symbol changes, and bounded retention with cold-identical facts.
+
+### [`native_sensitivity.rs`](../_code/native_sensitivity.rs)
+
+Checks the exact typed Boolean scope against frozen native returned-value
+tables with independent expectations, including both direct and branch-driven
+changes. It covers no-change results, deterministic witnesses, bounded counts,
+literal guard overapproximation and absent residual returns.

@@ -6,7 +6,10 @@ use crate::information_flow::{NativeScalarFlowObservation, observe_lowered_nativ
 
 use crate::program_semantics::go_observation::GoNativeBodyObservation;
 use crate::program_semantics::native_body::{NativeScalar, NativeScalarBody};
-use crate::semantic_analysis::{SemanticDomain, infer_native_scalar_output};
+use crate::semantic_analysis::{
+    NativeBooleanSensitivity, SemanticDomain, infer_native_scalar_output,
+    inspect_native_boolean_sensitivity,
+};
 
 /// Exact original-source Go body observation with independently derived domains.
 ///
@@ -25,16 +28,23 @@ pub struct ActualGoNativeBodyObservation {
 
 impl ActualGoNativeBodyObservation {
     pub(super) fn inspect_flow(&self, binding: &str) -> Option<NativeScalarFlowObservation> {
+        self.select_body(binding)
+            .map(observe_lowered_native_scalar_flow)
+    }
+
+    pub(super) fn inspect_sensitivity(&self, binding: &str) -> Option<NativeBooleanSensitivity> {
+        self.select_body(binding)
+            .map(inspect_native_boolean_sensitivity)
+    }
+
+    fn select_body(&self, binding: &str) -> Option<&NativeScalarBody> {
         let mut matches = self
             .observation
             .lowered_bodies()
             .flatten()
             .filter(|body| body.binding() == binding);
         let body = matches.next()?;
-        matches
-            .next()
-            .is_none()
-            .then(|| observe_lowered_native_scalar_flow(body))
+        matches.next().is_none().then_some(body)
     }
 
     pub(super) fn derive(observation: GoNativeBodyObservation) -> Self {

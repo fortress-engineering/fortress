@@ -11,7 +11,7 @@ use fortress_core::python_observation::{
     ActualPythonScalarObservation, NativeBodyOutcome, PYTHON_LEXICAL_WORKER, PYTHON_SCALAR_WORKER,
     PythonCallableSelection, PythonObservationError, PythonScalarError, PythonScalarProducer,
     PythonScalarSubject, observe_python_authored_native_return, observe_python_scalar,
-    observe_python_scalar_flow,
+    observe_python_scalar_flow, observe_python_scalar_sensitivity,
 };
 use fortress_core::wire::{
     JsonAdmissionLimits, admit_json, parse_strict_json_bytes, readable_text,
@@ -25,7 +25,7 @@ use super::python_observe_command::{
 use super::verifier_process::{require_external_asset, run_pinned_input_after_ready};
 
 const USAGE: &str = concat!(
-    "fortress source-artifacts --observe-python-scalar project host-registration [--flow]",
+    "fortress source-artifacts --observe-python-scalar project host-registration [--flow|--return-sensitivity]",
     "\n       fortress source-artifacts --observe-python-scalar project host-registration --contract module root-scope root-scope-sha256",
 );
 const REGISTRATION_SCHEMA: &str = "urn:fortress:host:v1:python-scalar-registration";
@@ -179,15 +179,23 @@ pub(super) fn run<O: Write, E: Write>(
     }
 }
 
+#[derive(Clone, Copy)]
+enum ScalarInspection {
+    Observation,
+    Flow,
+    ReturnSensitivity,
+}
+
 fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
     let [root, registration_path, mode @ ..] = arguments else {
         return Err(format!("usage: {USAGE}"));
     };
-    let (inspect_flow, authored) = match mode {
-        [] => (false, None),
-        [flag] if flag == "--flow" => (true, None),
+    let (inspection, authored) = match mode {
+        [] => (ScalarInspection::Observation, None),
+        [flag] if flag == "--flow" => (ScalarInspection::Flow, None),
+        [flag] if flag == "--return-sensitivity" => (ScalarInspection::ReturnSensitivity, None),
         [flag, module, scope_path, scope_ref] if flag == "--contract" => (
-            false,
+            ScalarInspection::Observation,
             Some((module.as_str(), Path::new(scope_path), scope_ref.as_str())),
         ),
         _ => return Err(format!("usage: {USAGE}")),
@@ -251,15 +259,46 @@ fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
         verify_import_scope(&root, scope_path, &scope_bytes).map_err(|error| error.to_string())?;
         return crate::native_return_command::serialize(&result);
     }
-    let (result, flow) = if inspect_flow {
-        observe_python_scalar_flow(&root, &registration.subject, &producer, exchange)
+    serialize_scalar_inspection(
+        &root,
+        &registration,
+        &registration_bytes,
+        profile,
+        &producer,
+        exchange,
+        inspection,
+    )
+}
+
+fn serialize_scalar_inspection(
+    root: &Path,
+    registration: &Registration,
+    registration_bytes: &[u8],
+    profile: &str,
+    producer: &PythonScalarProducer,
+    exchange: impl FnOnce(Vec<u8>) -> Result<Vec<u8>, PythonObservationError>,
+    inspection: ScalarInspection,
+) -> Result<Vec<u8>, String> {
+    if matches!(inspection, ScalarInspection::ReturnSensitivity) {
+        let (result, sensitivity) =
+            observe_python_scalar_sensitivity(root, &registration.subject, producer, exchange)
+                .map_err(|error| error.to_string())?;
+        return super::native_return_command::serialize_sensitivity(
+            "python",
+            None,
+            &projection(registration, registration_bytes, profile, &result),
+            sensitivity.as_ref(),
+        );
+    }
+    let (result, flow) = if matches!(inspection, ScalarInspection::Flow) {
+        observe_python_scalar_flow(root, &registration.subject, producer, exchange)
             .map(|(report, flow)| (report, Some(flow)))
     } else {
-        observe_python_scalar(&root, &registration.subject, &producer, exchange)
+        observe_python_scalar(root, &registration.subject, producer, exchange)
             .map(|report| (report, None))
     }
     .map_err(|error| error.to_string())?;
-    let receipt = projection(&registration, &registration_bytes, profile, &result);
+    let receipt = projection(registration, registration_bytes, profile, &result);
     let value = if let Some(flow) = flow {
         json!({
             "$schema":"urn:fortress:derived:v1:native-scalar-flow-inspection",
