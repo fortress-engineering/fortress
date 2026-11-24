@@ -27,3 +27,12 @@ The assignment-and-return control also exercises two functions with identically 
 ### [`operation_flow.rs`](../_code/operation_flow.rs)
 
 Tests exact operation binding, optional and Module-scoped selection, multiple facets, safe and prohibited propagation, shared-call and callback uncertainty, declared transforms, forged trust, cold/prepared equivalence, deterministic RPC/CLI projections, cancellation, version rejection and secret-literal omission. It compiles only frozen test-owned standalone source controls through the pinned Rust toolchain in an owned bounded workspace. It does not execute the repository under inspection or infer target application test execution.
+
+### [`native_scalar_flow.rs`](../_code/native_scalar_flow.rs)
+
+Replays independent Go and Python source-site expectations through the shared
+native body admission and existing Information Flow derivation. Controls
+distinguish direct assignment and return sites, overwritten bindings,
+conditional data, ineffective guards and unavailable calls. They check exact
+binding and deterministic encoding, and require an explicit refusal when a
+bounded admitted body would produce an oversized observational report.

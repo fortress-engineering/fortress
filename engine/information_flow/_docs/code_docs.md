@@ -33,3 +33,14 @@ Owns canonical project policy loading, finite facet ordering, validation, and po
 Defines strict bounded operation declarations, exact context/name/slot binding, finite-facet source and transform lowering, per-sink coverage and canonical defeaters, explicit profile scope, and read-only authoring previews. It reuses the parent propagation algebra and PSM facts. Declared transformation trust remains conditional and cannot self-authenticate.
 
 The read-only operation-profile and claim-projection ports expose the same ordered records as the complete model serializer. Snapshot Governance checks profile selection before projecting claims and serializes only those records or trusted-transition diagnostics needed by its adapter. This avoids materializing unrelated propagation graphs without evaluating, filtering or strengthening a claim. The focused projection regression compares these ports with the complete canonical model for both selected and unselected operation profiles.
+
+### [`native_scalar_flow.rs`](../_code/native_scalar_flow.rs)
+
+Projects source-site data references for one admitted native scalar body by
+reusing the existing Information Flow body-edge and expression-source helpers.
+Assignment and return edges retain the exact enclosing occurrence identity
+and source position. Earlier assignments still have source sites after an
+overwrite. Condition records show which bindings occur in the guard, while
+actual control influence remains unsupported. The projection stays outside the
+canonical operation lanes. Empty edge lists, partial coverage, missing
+bodies and resource refusals confer no classification, proof or policy result.

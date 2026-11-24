@@ -128,6 +128,14 @@
           "tests": [
             "T-AF-INFORMATION-FLOW-0001-R06-001"
           ]
+        },
+        {
+          "id": "AF-INFORMATION-FLOW-0001-R07",
+          "statement": "An admitted native scalar body can expose bounded exact-occurrence source-site data transfers and syntactic condition inputs for inspection, preserving unsupported control dependence, proof and policy lanes.",
+          "tests": [
+            "T-AF-INFORMATION-FLOW-0001-R07-001",
+            "T-AF-INFORMATION-FLOW-0001-R07-002"
+          ]
         }
       ]
     }

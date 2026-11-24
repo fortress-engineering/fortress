@@ -1,0 +1,1358 @@
+{
+  "fixtures": [
+    {
+      "case_id": "directCopy",
+      "expected_conditions": [],
+      "expected_edges": [
+        "input->value",
+        "value->return"
+      ],
+      "language": "go",
+      "path": "src/subject.go",
+      "reply": {
+        "body": [
+          {
+            "kind": "let",
+            "pattern": {
+              "kind": "binding",
+              "name": "value"
+            },
+            "span": {
+              "end_byte": 78,
+              "path": "src/subject.go",
+              "start_byte": 64,
+              "start_byte_column": 5,
+              "start_line": 3
+            },
+            "value": {
+              "kind": "binding",
+              "name": "input"
+            }
+          },
+          {
+            "kind": "return",
+            "span": {
+              "end_byte": 95,
+              "path": "src/subject.go",
+              "start_byte": 83,
+              "start_byte_column": 5,
+              "start_line": 4
+            },
+            "value": {
+              "kind": "binding",
+              "name": "value"
+            }
+          }
+        ],
+        "locals": [
+          {
+            "name": "value",
+            "scalar": "BOOL",
+            "span": {
+              "end_byte": 69,
+              "path": "src/subject.go",
+              "start_byte": 64,
+              "start_byte_column": 5,
+              "start_line": 3
+            }
+          }
+        ],
+        "parameters": [
+          {
+            "name": "input",
+            "scalar": "BOOL",
+            "span": {
+              "end_byte": 35,
+              "path": "src/subject.go",
+              "start_byte": 30,
+              "start_byte_column": 14,
+              "start_line": 2
+            }
+          },
+          {
+            "name": "gate",
+            "scalar": "BOOL",
+            "span": {
+              "end_byte": 46,
+              "path": "src/subject.go",
+              "start_byte": 42,
+              "start_byte_column": 26,
+              "start_line": 2
+            }
+          }
+        ],
+        "result_scalar": "BOOL",
+        "status": "LOWERABLE",
+        "symbol": {
+          "declaration_span": {
+            "end_byte": 97,
+            "path": "src/subject.go",
+            "start_byte": 17,
+            "start_byte_column": 1,
+            "start_line": 2
+          },
+          "name": "subject",
+          "span": {
+            "end_byte": 29,
+            "path": "src/subject.go",
+            "start_byte": 22,
+            "start_byte_column": 6,
+            "start_line": 2
+          }
+        }
+      },
+      "source": "package fixtures\nfunc subject(input bool, gate bool) bool {\n    value := input\n    return value\n}\n"
+    },
+    {
+      "case_id": "directCopy",
+      "expected_conditions": [],
+      "expected_edges": [
+        "input->value",
+        "value->return"
+      ],
+      "language": "python",
+      "path": "src/subject.py",
+      "reply": {
+        "body": [
+          {
+            "kind": "assign",
+            "span": {
+              "end_byte": 43,
+              "path": "src/subject.py",
+              "start_byte": 30,
+              "start_byte_column": 5,
+              "start_line": 2
+            },
+            "target": "value",
+            "value": {
+              "kind": "binding",
+              "name": "input"
+            }
+          },
+          {
+            "kind": "return",
+            "span": {
+              "end_byte": 60,
+              "path": "src/subject.py",
+              "start_byte": 48,
+              "start_byte_column": 5,
+              "start_line": 3
+            },
+            "value": {
+              "kind": "binding",
+              "name": "value"
+            }
+          }
+        ],
+        "locals": [
+          {
+            "name": "value",
+            "scalar": "BOOL",
+            "span": {
+              "end_byte": 35,
+              "path": "src/subject.py",
+              "start_byte": 30,
+              "start_byte_column": 5,
+              "start_line": 2
+            }
+          }
+        ],
+        "parameters": [
+          {
+            "name": "input",
+            "scalar": "BOOL",
+            "span": {
+              "end_byte": 17,
+              "path": "src/subject.py",
+              "start_byte": 12,
+              "start_byte_column": 13,
+              "start_line": 1
+            }
+          },
+          {
+            "name": "gate",
+            "scalar": "BOOL",
+            "span": {
+              "end_byte": 23,
+              "path": "src/subject.py",
+              "start_byte": 19,
+              "start_byte_column": 20,
+              "start_line": 1
+            }
+          }
+        ],
+        "result_scalar": "BOOL",
+        "status": "LOWERABLE",
+        "symbol": {
+          "declaration_span": {
+            "end_byte": 60,
+            "path": "src/subject.py",
+            "start_byte": 0,
+            "start_byte_column": 1,
+            "start_line": 1
+          },
+          "name": "subject",
+          "span": {
+            "end_byte": 11,
+            "path": "src/subject.py",
+            "start_byte": 4,
+            "start_byte_column": 5,
+            "start_line": 1
+          }
+        }
+      },
+      "source": "def subject(input, gate):\n    value = input\n    return value\n"
+    },
+    {
+      "case_id": "guardOnly",
+      "expected_conditions": [
+        "gate"
+      ],
+      "expected_edges": [],
+      "language": "go",
+      "path": "src/subject.go",
+      "reply": {
+        "body": [
+          {
+            "condition": {
+              "kind": "binding",
+              "name": "gate"
+            },
+            "else_branch": [],
+            "kind": "if",
+            "span": {
+              "end_byte": 99,
+              "path": "src/subject.go",
+              "start_byte": 64,
+              "start_byte_column": 5,
+              "start_line": 3
+            },
+            "then_branch": [
+              {
+                "kind": "return",
+                "span": {
+                  "end_byte": 93,
+                  "path": "src/subject.go",
+                  "start_byte": 82,
+                  "start_byte_column": 9,
+                  "start_line": 4
+                },
+                "value": {
+                  "kind": "boolean",
+                  "value": true
+                }
+              }
+            ]
+          },
+          {
+            "kind": "return",
+            "span": {
+              "end_byte": 116,
+              "path": "src/subject.go",
+              "start_byte": 104,
+              "start_byte_column": 5,
+              "start_line": 6
+            },
+            "value": {
+              "kind": "boolean",
+              "value": false
+            }
+          }
+        ],
+        "locals": [],
+        "parameters": [
+          {
+            "name": "input",
+            "scalar": "BOOL",
+            "span": {
+              "end_byte": 35,
+              "path": "src/subject.go",
+              "start_byte": 30,
+              "start_byte_column": 14,
+              "start_line": 2
+            }
+          },
+          {
+            "name": "gate",
+            "scalar": "BOOL",
+            "span": {
+              "end_byte": 46,
+              "path": "src/subject.go",
+              "start_byte": 42,
+              "start_byte_column": 26,
+              "start_line": 2
+            }
+          }
+        ],
+        "result_scalar": "BOOL",
+        "status": "LOWERABLE",
+        "symbol": {
+          "declaration_span": {
+            "end_byte": 118,
+            "path": "src/subject.go",
+            "start_byte": 17,
+            "start_byte_column": 1,
+            "start_line": 2
+          },
+          "name": "subject",
+          "span": {
+            "end_byte": 29,
+            "path": "src/subject.go",
+            "start_byte": 22,
+            "start_byte_column": 6,
+            "start_line": 2
+          }
+        }
+      },
+      "source": "package fixtures\nfunc subject(input bool, gate bool) bool {\n    if gate {\n        return true\n    }\n    return false\n}\n"
+    },
+    {
+      "case_id": "guardOnly",
+      "expected_conditions": [
+        "gate"
+      ],
+      "expected_edges": [],
+      "language": "python",
+      "path": "src/subject.py",
+      "reply": {
+        "body": [
+          {
+            "condition": {
+              "kind": "binding",
+              "name": "gate"
+            },
+            "else_branch": [],
+            "kind": "if",
+            "span": {
+              "end_byte": 58,
+              "path": "src/subject.py",
+              "start_byte": 30,
+              "start_byte_column": 5,
+              "start_line": 2
+            },
+            "then_branch": [
+              {
+                "kind": "return",
+                "span": {
+                  "end_byte": 58,
+                  "path": "src/subject.py",
+                  "start_byte": 47,
+                  "start_byte_column": 9,
+                  "start_line": 3
+                },
+                "value": {
+                  "kind": "boolean",
+                  "value": true
+                }
+              }
+            ]
+          },
+          {
+            "kind": "return",
+            "span": {
+              "end_byte": 75,
+              "path": "src/subject.py",
+              "start_byte": 63,
+              "start_byte_column": 5,
+              "start_line": 4
+            },
+            "value": {
+              "kind": "boolean",
+              "value": false
+            }
+          }
+        ],
+        "locals": [],
+        "parameters": [
+          {
+            "name": "input",
+            "scalar": "BOOL",
+            "span": {
+              "end_byte": 17,
+              "path": "src/subject.py",
+              "start_byte": 12,
+              "start_byte_column": 13,
+              "start_line": 1
+            }
+          },
+          {
+            "name": "gate",
+            "scalar": "BOOL",
+            "span": {
+              "end_byte": 23,
+              "path": "src/subject.py",
+              "start_byte": 19,
+              "start_byte_column": 20,
+              "start_line": 1
+            }
+          }
+        ],
+        "result_scalar": "BOOL",
+        "status": "LOWERABLE",
+        "symbol": {
+          "declaration_span": {
+            "end_byte": 75,
+            "path": "src/subject.py",
+            "start_byte": 0,
+            "start_byte_column": 1,
+            "start_line": 1
+          },
+          "name": "subject",
+          "span": {
+            "end_byte": 11,
+            "path": "src/subject.py",
+            "start_byte": 4,
+            "start_byte_column": 5,
+            "start_line": 1
+          }
+        }
+      },
+      "source": "def subject(input, gate):\n    if gate:\n        return True\n    return False\n"
+    },
+    {
+      "case_id": "overwritten",
+      "expected_conditions": [],
+      "expected_edges": [
+        "input->value",
+        "value->return"
+      ],
+      "language": "go",
+      "path": "src/subject.go",
+      "reply": {
+        "body": [
+          {
+            "kind": "let",
+            "pattern": {
+              "kind": "binding",
+              "name": "value"
+            },
+            "span": {
+              "end_byte": 78,
+              "path": "src/subject.go",
+              "start_byte": 64,
+              "start_byte_column": 5,
+              "start_line": 3
+            },
+            "value": {
+              "kind": "binding",
+              "name": "input"
+            }
+          },
+          {
+            "kind": "assign",
+            "span": {
+              "end_byte": 96,
+              "path": "src/subject.go",
+              "start_byte": 83,
+              "start_byte_column": 5,
+              "start_line": 4
+            },
+            "target": "value",
+            "value": {
+              "kind": "boolean",
+              "value": false
+            }
+          },
+          {
+            "kind": "return",
+            "span": {
+              "end_byte": 113,
+              "path": "src/subject.go",
+              "start_byte": 101,
+              "start_byte_column": 5,
+              "start_line": 5
+            },
+            "value": {
+              "kind": "binding",
+              "name": "value"
+            }
+          }
+        ],
+        "locals": [
+          {
+            "name": "value",
+            "scalar": "BOOL",
+            "span": {
+              "end_byte": 69,
+              "path": "src/subject.go",
+              "start_byte": 64,
+              "start_byte_column": 5,
+              "start_line": 3
+            }
+          }
+        ],
+        "parameters": [
+          {
+            "name": "input",
+            "scalar": "BOOL",
+            "span": {
+              "end_byte": 35,
+              "path": "src/subject.go",
+              "start_byte": 30,
+              "start_byte_column": 14,
+              "start_line": 2
+            }
+          },
+          {
+            "name": "gate",
+            "scalar": "BOOL",
+            "span": {
+              "end_byte": 46,
+              "path": "src/subject.go",
+              "start_byte": 42,
+              "start_byte_column": 26,
+              "start_line": 2
+            }
+          }
+        ],
+        "result_scalar": "BOOL",
+        "status": "LOWERABLE",
+        "symbol": {
+          "declaration_span": {
+            "end_byte": 115,
+            "path": "src/subject.go",
+            "start_byte": 17,
+            "start_byte_column": 1,
+            "start_line": 2
+          },
+          "name": "subject",
+          "span": {
+            "end_byte": 29,
+            "path": "src/subject.go",
+            "start_byte": 22,
+            "start_byte_column": 6,
+            "start_line": 2
+          }
+        }
+      },
+      "source": "package fixtures\nfunc subject(input bool, gate bool) bool {\n    value := input\n    value = false\n    return value\n}\n"
+    },
+    {
+      "case_id": "overwritten",
+      "expected_conditions": [],
+      "expected_edges": [
+        "input->value",
+        "value->return"
+      ],
+      "language": "python",
+      "path": "src/subject.py",
+      "reply": {
+        "body": [
+          {
+            "kind": "assign",
+            "span": {
+              "end_byte": 43,
+              "path": "src/subject.py",
+              "start_byte": 30,
+              "start_byte_column": 5,
+              "start_line": 2
+            },
+            "target": "value",
+            "value": {
+              "kind": "binding",
+              "name": "input"
+            }
+          },
+          {
+            "kind": "assign",
+            "span": {
+              "end_byte": 61,
+              "path": "src/subject.py",
+              "start_byte": 48,
+              "start_byte_column": 5,
+              "start_line": 3
+            },
+            "target": "value",
+            "value": {
+              "kind": "boolean",
+              "value": false
+            }
+          },
+          {
+            "kind": "return",
+            "span": {
+              "end_byte": 78,
+              "path": "src/subject.py",
+              "start_byte": 66,
+              "start_byte_column": 5,
+              "start_line": 4
+            },
+            "value": {
+              "kind": "binding",
+              "name": "value"
+            }
+          }
+        ],
+        "locals": [
+          {
+            "name": "value",
+            "scalar": "BOOL",
+            "span": {
+              "end_byte": 35,
+              "path": "src/subject.py",
+              "start_byte": 30,
+              "start_byte_column": 5,
+              "start_line": 2
+            }
+          }
+        ],
+        "parameters": [
+          {
+            "name": "input",
+            "scalar": "BOOL",
+            "span": {
+              "end_byte": 17,
+              "path": "src/subject.py",
+              "start_byte": 12,
+              "start_byte_column": 13,
+              "start_line": 1
+            }
+          },
+          {
+            "name": "gate",
+            "scalar": "BOOL",
+            "span": {
+              "end_byte": 23,
+              "path": "src/subject.py",
+              "start_byte": 19,
+              "start_byte_column": 20,
+              "start_line": 1
+            }
+          }
+        ],
+        "result_scalar": "BOOL",
+        "status": "LOWERABLE",
+        "symbol": {
+          "declaration_span": {
+            "end_byte": 78,
+            "path": "src/subject.py",
+            "start_byte": 0,
+            "start_byte_column": 1,
+            "start_line": 1
+          },
+          "name": "subject",
+          "span": {
+            "end_byte": 11,
+            "path": "src/subject.py",
+            "start_byte": 4,
+            "start_byte_column": 5,
+            "start_line": 1
+          }
+        }
+      },
+      "source": "def subject(input, gate):\n    value = input\n    value = False\n    return value\n"
+    },
+    {
+      "case_id": "guardAndData",
+      "expected_conditions": [
+        "gate"
+      ],
+      "expected_edges": [
+        "input->value",
+        "value->return"
+      ],
+      "language": "go",
+      "path": "src/subject.go",
+      "reply": {
+        "body": [
+          {
+            "kind": "let",
+            "pattern": {
+              "kind": "binding",
+              "name": "value"
+            },
+            "span": {
+              "end_byte": 78,
+              "path": "src/subject.go",
+              "start_byte": 64,
+              "start_byte_column": 5,
+              "start_line": 3
+            },
+            "value": {
+              "kind": "boolean",
+              "value": false
+            }
+          },
+          {
+            "condition": {
+              "kind": "binding",
+              "name": "gate"
+            },
+            "else_branch": [],
+            "kind": "if",
+            "span": {
+              "end_byte": 120,
+              "path": "src/subject.go",
+              "start_byte": 83,
+              "start_byte_column": 5,
+              "start_line": 4
+            },
+            "then_branch": [
+              {
+                "kind": "assign",
+                "span": {
+                  "end_byte": 114,
+                  "path": "src/subject.go",
+                  "start_byte": 101,
+                  "start_byte_column": 9,
+                  "start_line": 5
+                },
+                "target": "value",
+                "value": {
+                  "kind": "binding",
+                  "name": "input"
+                }
+              }
+            ]
+          },
+          {
+            "kind": "return",
+            "span": {
+              "end_byte": 137,
+              "path": "src/subject.go",
+              "start_byte": 125,
+              "start_byte_column": 5,
+              "start_line": 7
+            },
+            "value": {
+              "kind": "binding",
+              "name": "value"
+            }
+          }
+        ],
+        "locals": [
+          {
+            "name": "value",
+            "scalar": "BOOL",
+            "span": {
+              "end_byte": 69,
+              "path": "src/subject.go",
+              "start_byte": 64,
+              "start_byte_column": 5,
+              "start_line": 3
+            }
+          }
+        ],
+        "parameters": [
+          {
+            "name": "input",
+            "scalar": "BOOL",
+            "span": {
+              "end_byte": 35,
+              "path": "src/subject.go",
+              "start_byte": 30,
+              "start_byte_column": 14,
+              "start_line": 2
+            }
+          },
+          {
+            "name": "gate",
+            "scalar": "BOOL",
+            "span": {
+              "end_byte": 46,
+              "path": "src/subject.go",
+              "start_byte": 42,
+              "start_byte_column": 26,
+              "start_line": 2
+            }
+          }
+        ],
+        "result_scalar": "BOOL",
+        "status": "LOWERABLE",
+        "symbol": {
+          "declaration_span": {
+            "end_byte": 139,
+            "path": "src/subject.go",
+            "start_byte": 17,
+            "start_byte_column": 1,
+            "start_line": 2
+          },
+          "name": "subject",
+          "span": {
+            "end_byte": 29,
+            "path": "src/subject.go",
+            "start_byte": 22,
+            "start_byte_column": 6,
+            "start_line": 2
+          }
+        }
+      },
+      "source": "package fixtures\nfunc subject(input bool, gate bool) bool {\n    value := false\n    if gate {\n        value = input\n    }\n    return value\n}\n"
+    },
+    {
+      "case_id": "guardAndData",
+      "expected_conditions": [
+        "gate"
+      ],
+      "expected_edges": [
+        "input->value",
+        "value->return"
+      ],
+      "language": "python",
+      "path": "src/subject.py",
+      "reply": {
+        "body": [
+          {
+            "kind": "assign",
+            "span": {
+              "end_byte": 43,
+              "path": "src/subject.py",
+              "start_byte": 30,
+              "start_byte_column": 5,
+              "start_line": 2
+            },
+            "target": "value",
+            "value": {
+              "kind": "boolean",
+              "value": false
+            }
+          },
+          {
+            "condition": {
+              "kind": "binding",
+              "name": "gate"
+            },
+            "else_branch": [],
+            "kind": "if",
+            "span": {
+              "end_byte": 78,
+              "path": "src/subject.py",
+              "start_byte": 48,
+              "start_byte_column": 5,
+              "start_line": 3
+            },
+            "then_branch": [
+              {
+                "kind": "assign",
+                "span": {
+                  "end_byte": 78,
+                  "path": "src/subject.py",
+                  "start_byte": 65,
+                  "start_byte_column": 9,
+                  "start_line": 4
+                },
+                "target": "value",
+                "value": {
+                  "kind": "binding",
+                  "name": "input"
+                }
+              }
+            ]
+          },
+          {
+            "kind": "return",
+            "span": {
+              "end_byte": 95,
+              "path": "src/subject.py",
+              "start_byte": 83,
+              "start_byte_column": 5,
+              "start_line": 5
+            },
+            "value": {
+              "kind": "binding",
+              "name": "value"
+            }
+          }
+        ],
+        "locals": [
+          {
+            "name": "value",
+            "scalar": "BOOL",
+            "span": {
+              "end_byte": 35,
+              "path": "src/subject.py",
+              "start_byte": 30,
+              "start_byte_column": 5,
+              "start_line": 2
+            }
+          }
+        ],
+        "parameters": [
+          {
+            "name": "input",
+            "scalar": "BOOL",
+            "span": {
+              "end_byte": 17,
+              "path": "src/subject.py",
+              "start_byte": 12,
+              "start_byte_column": 13,
+              "start_line": 1
+            }
+          },
+          {
+            "name": "gate",
+            "scalar": "BOOL",
+            "span": {
+              "end_byte": 23,
+              "path": "src/subject.py",
+              "start_byte": 19,
+              "start_byte_column": 20,
+              "start_line": 1
+            }
+          }
+        ],
+        "result_scalar": "BOOL",
+        "status": "LOWERABLE",
+        "symbol": {
+          "declaration_span": {
+            "end_byte": 95,
+            "path": "src/subject.py",
+            "start_byte": 0,
+            "start_byte_column": 1,
+            "start_line": 1
+          },
+          "name": "subject",
+          "span": {
+            "end_byte": 11,
+            "path": "src/subject.py",
+            "start_byte": 4,
+            "start_byte_column": 5,
+            "start_line": 1
+          }
+        }
+      },
+      "source": "def subject(input, gate):\n    value = False\n    if gate:\n        value = input\n    return value\n"
+    },
+    {
+      "case_id": "inertGuard",
+      "expected_conditions": [
+        "gate"
+      ],
+      "expected_edges": [],
+      "language": "go",
+      "path": "src/subject.go",
+      "reply": {
+        "body": [
+          {
+            "condition": {
+              "kind": "binding",
+              "name": "gate"
+            },
+            "else_branch": [],
+            "kind": "if",
+            "span": {
+              "end_byte": 99,
+              "path": "src/subject.go",
+              "start_byte": 64,
+              "start_byte_column": 5,
+              "start_line": 3
+            },
+            "then_branch": [
+              {
+                "kind": "return",
+                "span": {
+                  "end_byte": 93,
+                  "path": "src/subject.go",
+                  "start_byte": 82,
+                  "start_byte_column": 9,
+                  "start_line": 4
+                },
+                "value": {
+                  "kind": "boolean",
+                  "value": true
+                }
+              }
+            ]
+          },
+          {
+            "kind": "return",
+            "span": {
+              "end_byte": 115,
+              "path": "src/subject.go",
+              "start_byte": 104,
+              "start_byte_column": 5,
+              "start_line": 6
+            },
+            "value": {
+              "kind": "boolean",
+              "value": true
+            }
+          }
+        ],
+        "locals": [],
+        "parameters": [
+          {
+            "name": "input",
+            "scalar": "BOOL",
+            "span": {
+              "end_byte": 35,
+              "path": "src/subject.go",
+              "start_byte": 30,
+              "start_byte_column": 14,
+              "start_line": 2
+            }
+          },
+          {
+            "name": "gate",
+            "scalar": "BOOL",
+            "span": {
+              "end_byte": 46,
+              "path": "src/subject.go",
+              "start_byte": 42,
+              "start_byte_column": 26,
+              "start_line": 2
+            }
+          }
+        ],
+        "result_scalar": "BOOL",
+        "status": "LOWERABLE",
+        "symbol": {
+          "declaration_span": {
+            "end_byte": 117,
+            "path": "src/subject.go",
+            "start_byte": 17,
+            "start_byte_column": 1,
+            "start_line": 2
+          },
+          "name": "subject",
+          "span": {
+            "end_byte": 29,
+            "path": "src/subject.go",
+            "start_byte": 22,
+            "start_byte_column": 6,
+            "start_line": 2
+          }
+        }
+      },
+      "source": "package fixtures\nfunc subject(input bool, gate bool) bool {\n    if gate {\n        return true\n    }\n    return true\n}\n"
+    },
+    {
+      "case_id": "inertGuard",
+      "expected_conditions": [
+        "gate"
+      ],
+      "expected_edges": [],
+      "language": "python",
+      "path": "src/subject.py",
+      "reply": {
+        "body": [
+          {
+            "condition": {
+              "kind": "binding",
+              "name": "gate"
+            },
+            "else_branch": [],
+            "kind": "if",
+            "span": {
+              "end_byte": 58,
+              "path": "src/subject.py",
+              "start_byte": 30,
+              "start_byte_column": 5,
+              "start_line": 2
+            },
+            "then_branch": [
+              {
+                "kind": "return",
+                "span": {
+                  "end_byte": 58,
+                  "path": "src/subject.py",
+                  "start_byte": 47,
+                  "start_byte_column": 9,
+                  "start_line": 3
+                },
+                "value": {
+                  "kind": "boolean",
+                  "value": true
+                }
+              }
+            ]
+          },
+          {
+            "kind": "return",
+            "span": {
+              "end_byte": 74,
+              "path": "src/subject.py",
+              "start_byte": 63,
+              "start_byte_column": 5,
+              "start_line": 4
+            },
+            "value": {
+              "kind": "boolean",
+              "value": true
+            }
+          }
+        ],
+        "locals": [],
+        "parameters": [
+          {
+            "name": "input",
+            "scalar": "BOOL",
+            "span": {
+              "end_byte": 17,
+              "path": "src/subject.py",
+              "start_byte": 12,
+              "start_byte_column": 13,
+              "start_line": 1
+            }
+          },
+          {
+            "name": "gate",
+            "scalar": "BOOL",
+            "span": {
+              "end_byte": 23,
+              "path": "src/subject.py",
+              "start_byte": 19,
+              "start_byte_column": 20,
+              "start_line": 1
+            }
+          }
+        ],
+        "result_scalar": "BOOL",
+        "status": "LOWERABLE",
+        "symbol": {
+          "declaration_span": {
+            "end_byte": 74,
+            "path": "src/subject.py",
+            "start_byte": 0,
+            "start_byte_column": 1,
+            "start_line": 1
+          },
+          "name": "subject",
+          "span": {
+            "end_byte": 11,
+            "path": "src/subject.py",
+            "start_byte": 4,
+            "start_byte_column": 5,
+            "start_line": 1
+          }
+        }
+      },
+      "source": "def subject(input, gate):\n    if gate:\n        return True\n    return True\n"
+    },
+    {
+      "case_id": "negation",
+      "expected_conditions": [],
+      "expected_edges": [
+        "input->return"
+      ],
+      "language": "go",
+      "path": "src/subject.go",
+      "reply": {
+        "body": [
+          {
+            "kind": "return",
+            "span": {
+              "end_byte": 77,
+              "path": "src/subject.go",
+              "start_byte": 64,
+              "start_byte_column": 5,
+              "start_line": 3
+            },
+            "value": {
+              "kind": "unary",
+              "operator": "!",
+              "value": {
+                "kind": "binding",
+                "name": "input"
+              }
+            }
+          }
+        ],
+        "locals": [],
+        "parameters": [
+          {
+            "name": "input",
+            "scalar": "BOOL",
+            "span": {
+              "end_byte": 35,
+              "path": "src/subject.go",
+              "start_byte": 30,
+              "start_byte_column": 14,
+              "start_line": 2
+            }
+          },
+          {
+            "name": "gate",
+            "scalar": "BOOL",
+            "span": {
+              "end_byte": 46,
+              "path": "src/subject.go",
+              "start_byte": 42,
+              "start_byte_column": 26,
+              "start_line": 2
+            }
+          }
+        ],
+        "result_scalar": "BOOL",
+        "status": "LOWERABLE",
+        "symbol": {
+          "declaration_span": {
+            "end_byte": 79,
+            "path": "src/subject.go",
+            "start_byte": 17,
+            "start_byte_column": 1,
+            "start_line": 2
+          },
+          "name": "subject",
+          "span": {
+            "end_byte": 29,
+            "path": "src/subject.go",
+            "start_byte": 22,
+            "start_byte_column": 6,
+            "start_line": 2
+          }
+        }
+      },
+      "source": "package fixtures\nfunc subject(input bool, gate bool) bool {\n    return !input\n}\n"
+    },
+    {
+      "case_id": "negation",
+      "expected_conditions": [],
+      "expected_edges": [
+        "input->return"
+      ],
+      "language": "python",
+      "path": "src/subject.py",
+      "reply": {
+        "body": [
+          {
+            "kind": "return",
+            "span": {
+              "end_byte": 46,
+              "path": "src/subject.py",
+              "start_byte": 30,
+              "start_byte_column": 5,
+              "start_line": 2
+            },
+            "value": {
+              "kind": "unary",
+              "operator": "!",
+              "value": {
+                "kind": "binding",
+                "name": "input"
+              }
+            }
+          }
+        ],
+        "locals": [],
+        "parameters": [
+          {
+            "name": "input",
+            "scalar": "BOOL",
+            "span": {
+              "end_byte": 17,
+              "path": "src/subject.py",
+              "start_byte": 12,
+              "start_byte_column": 13,
+              "start_line": 1
+            }
+          },
+          {
+            "name": "gate",
+            "scalar": "BOOL",
+            "span": {
+              "end_byte": 23,
+              "path": "src/subject.py",
+              "start_byte": 19,
+              "start_byte_column": 20,
+              "start_line": 1
+            }
+          }
+        ],
+        "result_scalar": "BOOL",
+        "status": "LOWERABLE",
+        "symbol": {
+          "declaration_span": {
+            "end_byte": 46,
+            "path": "src/subject.py",
+            "start_byte": 0,
+            "start_byte_column": 1,
+            "start_line": 1
+          },
+          "name": "subject",
+          "span": {
+            "end_byte": 11,
+            "path": "src/subject.py",
+            "start_byte": 4,
+            "start_byte_column": 5,
+            "start_line": 1
+          }
+        }
+      },
+      "source": "def subject(input, gate):\n    return not input\n"
+    },
+    {
+      "case_id": "callBarrier",
+      "expected_conditions": null,
+      "expected_edges": null,
+      "language": "go",
+      "path": "src/subject.go",
+      "reply": {
+        "body": [],
+        "diagnostic": {
+          "code": "CALL_UNSUPPORTED",
+          "span": {
+            "end_byte": 84,
+            "path": "src/subject.go",
+            "start_byte": 64,
+            "start_byte_column": 5,
+            "start_line": 3
+          }
+        },
+        "locals": [],
+        "parameters": [],
+        "status": "UNAVAILABLE",
+        "symbol": {
+          "declaration_span": {
+            "end_byte": 86,
+            "path": "src/subject.go",
+            "start_byte": 17,
+            "start_byte_column": 1,
+            "start_line": 2
+          },
+          "name": "subject",
+          "span": {
+            "end_byte": 29,
+            "path": "src/subject.go",
+            "start_byte": 22,
+            "start_byte_column": 6,
+            "start_line": 2
+          }
+        }
+      },
+      "source": "package fixtures\nfunc subject(input bool, gate bool) bool {\n    return helper(input)\n}\n"
+    },
+    {
+      "case_id": "callBarrier",
+      "expected_conditions": null,
+      "expected_edges": null,
+      "language": "python",
+      "path": "src/subject.py",
+      "reply": {
+        "body": [],
+        "diagnostic": {
+          "code": "CALL_UNSUPPORTED",
+          "span": {
+            "end_byte": 48,
+            "path": "src/subject.py",
+            "start_byte": 30,
+            "start_byte_column": 5,
+            "start_line": 2
+          }
+        },
+        "locals": [],
+        "parameters": [],
+        "status": "UNAVAILABLE",
+        "symbol": {
+          "declaration_span": {
+            "end_byte": 48,
+            "path": "src/subject.py",
+            "start_byte": 0,
+            "start_byte_column": 1,
+            "start_line": 1
+          },
+          "name": "subject",
+          "span": {
+            "end_byte": 11,
+            "path": "src/subject.py",
+            "start_byte": 4,
+            "start_byte_column": 5,
+            "start_line": 1
+          }
+        }
+      },
+      "source": "def subject(input, gate):\n    return bool(input)\n"
+    }
+  ],
+  "oracle_ref": "sha256:4fd821e5413a2d055335eb69365892f5e06448812ab432f675acf730c114ac97"
+}

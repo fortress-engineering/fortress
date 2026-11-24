@@ -6,6 +6,10 @@ pub(crate) const PROGRAM_INFOFLOW_RULE_SOURCE: &str =
 #[path = "policy.rs"]
 mod policy;
 
+#[path = "native_scalar_flow.rs"]
+mod native_scalar_flow;
+pub use native_scalar_flow::{NativeScalarFlowObservation, observe_native_scalar_flow};
+
 #[path = "operation.rs"]
 mod operation;
 pub use operation::{
@@ -121,7 +125,7 @@ impl FlowNode {
     }
 }
 
-#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 struct FlowEdge {
     producer: FlowNode,
     consumer: FlowNode,

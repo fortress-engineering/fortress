@@ -29,3 +29,11 @@ Frozen positive, negative, conditional and unknown source controls.
 ### [`operation_cases_schema_v1.json`](../_data/operation_cases_schema_v1.json)
 
 Versioned finite corpus grammar.
+
+### [`native_scalar_flow_cases_v1.json`](../_data/native_scalar_flow_cases_v1.json)
+
+Fourteen exact Go and Python witness fixtures bind seven paired finite Boolean
+programs. The independently frozen oracle fixes each program's truth table and
+the expected source-site data and condition references. Native runtime checks
+and the typed body fixture have separate evidence roles. Runtime results do
+not establish a proof or verify a production information-flow lane.

@@ -1,5 +1,7 @@
 //! Parent-local conformance for Information Flow.
 
+mod native_scalar_flow;
+
 #[path = "operation_flow.rs"]
 mod operation_flow;
 
