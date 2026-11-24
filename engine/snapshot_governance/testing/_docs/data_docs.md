@@ -115,10 +115,10 @@ Retains exact stdout from the bounded Go collector for the independent two-file 
 
 Retains the exact native Go build-selection reply and the verified disposition of the separately frozen production and test inventory. The source bytes and ordered request digest are replayed in the native observation control.
 
-### [go_module_observed_fixture_v3.json](../_data/go_module_observed_fixture_v3.json)
+### [go_observed_fixture_v3.json](../_data/go_observed_fixture_v3.json)
 
 Retains native output for the independently fixed Go module import and exact cross-package declaration site. Its request identity uses the production ingress member order and the semantic record matches the original reference.
 
-### [go_module_missing_fixture_v3.json](../_data/go_module_missing_fixture_v3.json)
+### [go_missing_fixture_v3.json](../_data/go_missing_fixture_v3.json)
 
 Retains the exact refusal for an independently fixed unavailable in-module dependency. No reachable package observations or type comparison are asserted.

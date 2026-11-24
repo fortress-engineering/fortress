@@ -324,8 +324,8 @@ mod module_controls {
     const APP: &[u8] = b"package app\nimport q \"example.test/fortresslocal/base\"\nfunc Use() int { return q.Number() }\n";
     const LIBRARY: &[u8] = b"package shared\n\ntype Token int\nfunc Number() int { return 1 }\n";
     const MISSING: &[u8] = b"package app\nimport _ \"example.test/fortresslocal/wrong\"\n";
-    const OBSERVED: &[u8] = include_bytes!("../_data/go_module_observed_fixture_v3.json");
-    const UNAVAILABLE: &[u8] = include_bytes!("../_data/go_module_missing_fixture_v3.json");
+    const OBSERVED: &[u8] = include_bytes!("../_data/go_observed_fixture_v3.json");
+    const UNAVAILABLE: &[u8] = include_bytes!("../_data/go_missing_fixture_v3.json");
 
     fn selection() -> GoModuleSelection<'static> {
         GoModuleSelection {

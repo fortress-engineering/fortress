@@ -4,7 +4,7 @@
   "entries": [
     {
       "schema_id": "urn:fortress:host:v1:python-static-import-scope",
-      "schema_path": "cli/_data/python_import_scope_schema_v1.json",
+      "schema_path": "cli/_data/python_scope_schema_v1.json",
       "version": 1,
       "writer": {
         "status": "AUTHORED",
@@ -26,7 +26,7 @@
     },
     {
       "schema_id": "urn:fortress:derived:v1:python-static-import-observation",
-      "schema_path": "cli/_data/python_import_observation_schema_v1.json",
+      "schema_path": "cli/_data/python_import_schema_v1.json",
       "version": 1,
       "writer": {
         "status": "ACTIVE",
@@ -48,7 +48,7 @@
     },
     {
       "schema_id": "urn:fortress:host:v1:python-scalar-registration",
-      "schema_path": "cli/_data/python_scalar_worker_schema_v1.json",
+      "schema_path": "cli/_data/scalar_worker_schema_v1.json",
       "version": 1,
       "writer": {
         "status": "AUTHORED",

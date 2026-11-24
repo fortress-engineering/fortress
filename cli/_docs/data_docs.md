@@ -80,7 +80,7 @@ Versioned Python lexical observation envelope. It records the exact source, cont
 
 Defines the external host registration for the bounded native Go module observer. The host supplies a reviewed executable digest, the exact runtime edition, and the selected build context independently of repository bytes.
 
-### [python_scalar_worker_schema_v1.json](../_data/python_scalar_worker_schema_v1.json)
+### [scalar_worker_schema_v1.json](../_data/scalar_worker_schema_v1.json)
 
 Versioned external registration for explicit scalar observation. It declares the
 trusted interpreter and two worker assets and specifies the exact observed
@@ -92,12 +92,12 @@ Versioned Python scalar inspection report. It retains exact source, original
 authority and context, resource profile, exchange identity, scoped native
 body status and conditional output domain when available.
 
-### [python_import_scope_schema_v1.json](../_data/python_import_scope_schema_v1.json)
+### [python_scope_schema_v1.json](../_data/python_scope_schema_v1.json)
 
 Versioned external selection of ordered analysis-only Python roots and their
 inventory premise. The caller independently pins the canonical document digest.
 
-### [python_import_observation_schema_v1.json](../_data/python_import_observation_schema_v1.json)
+### [python_import_schema_v1.json](../_data/python_import_schema_v1.json)
 
 Versioned actual-state Python lexical and static import report. It records
 exact repository, evaluator and host provenance, optional static targets
