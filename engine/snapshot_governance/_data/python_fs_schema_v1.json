@@ -1,0 +1,692 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v1:python-hypothetical-filesystem",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "scope",
+    "evaluation_key",
+    "source_scope_ref",
+    "source_path",
+    "source_ref",
+    "observation_ref",
+    "ready_ref",
+    "installed_origin_ref",
+    "status",
+    "actual_project_binding",
+    "effect",
+    "runtime_execution",
+    "canonical_finding_or_certificate",
+    "source_shape"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:derived:v1:python-hypothetical-filesystem"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "scope": {
+      "const": "HYPOTHETICAL_CLOSED_REFERENCE_ONLY"
+    },
+    "evaluation_key": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_manifest_digest",
+        "program_context_digest",
+        "authority_binding_digest"
+      ],
+      "properties": {
+        "source_manifest_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "program_context_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "authority_binding_digest": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "source_scope_ref": {
+      "$ref": "#/$defs/sha256"
+    },
+    "source_path": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 240
+    },
+    "source_ref": {
+      "$ref": "#/$defs/sha256"
+    },
+    "observation_ref": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/sha256"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "ready_ref": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/sha256"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "installed_origin_ref": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/sha256"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "status": {
+      "enum": [
+        "CONDITIONAL",
+        "LOCAL_OR_SHADOWED",
+        "UNRESOLVED",
+        "UNAVAILABLE",
+        "LOCAL_IMPORT_OR_SCOPE_UNRESOLVED"
+      ]
+    },
+    "actual_project_binding": {
+      "const": "UNESTABLISHED"
+    },
+    "effect": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/effect"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "runtime_execution": {
+      "const": "NOT_RUN"
+    },
+    "canonical_finding_or_certificate": {
+      "const": "NOT_ISSUED"
+    },
+    "source_shape": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "site"
+          ],
+          "properties": {
+            "status": {
+              "const": "CLOSED_LITERAL_SHAPE"
+            },
+            "site": {
+              "$ref": "#/$defs/site"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "site"
+          ],
+          "properties": {
+            "status": {
+              "const": "LOCAL_OR_SHADOWED"
+            },
+            "site": {
+              "$ref": "#/$defs/site"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "site",
+            "reason"
+          ],
+          "properties": {
+            "status": {
+              "const": "UNRESOLVED"
+            },
+            "site": {
+              "$ref": "#/$defs/site"
+            },
+            "reason": {
+              "enum": [
+                "DYNAMIC_ARGUMENT",
+                "INDIRECT_RECEIVER",
+                "LEXICAL_SCOPE_UNESTABLISHED",
+                "MODULE_FORM_UNSUPPORTED",
+                "IMPORT_BINDING_UNESTABLISHED",
+                "NONCANONICAL_BINDING_SPELLING",
+                "FUNCTION_FORM_UNSUPPORTED"
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "reason"
+          ],
+          "properties": {
+            "status": {
+              "const": "UNAVAILABLE"
+            },
+            "reason": {
+              "enum": [
+                "MISSING_FUNCTION",
+                "AMBIGUOUS_FUNCTION",
+                "DIRECT_RETURN_CALL_UNESTABLISHED",
+                "INADMISSIBLE_SOURCE"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  },
+  "if": {
+    "properties": {
+      "status": {
+        "const": "CONDITIONAL"
+      }
+    }
+  },
+  "then": {
+    "properties": {
+      "observation_ref": {
+        "$ref": "#/$defs/sha256"
+      },
+      "ready_ref": {
+        "$ref": "#/$defs/sha256"
+      },
+      "installed_origin_ref": {
+        "$ref": "#/$defs/sha256"
+      },
+      "effect": {
+        "$ref": "#/$defs/effect"
+      },
+      "source_shape": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "const": "CLOSED_LITERAL_SHAPE"
+          }
+        }
+      }
+    }
+  },
+  "else": {
+    "properties": {
+      "installed_origin_ref": {
+        "type": "null"
+      },
+      "effect": {
+        "type": "null"
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "effect": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model_version",
+        "scope",
+        "condition",
+        "binding",
+        "source_observation_sha256",
+        "source_scope_sha256",
+        "installed_origin_sha256",
+        "startup_assumptions_sha256",
+        "catalog_sha256",
+        "site",
+        "catalog_disposition",
+        "actual_project_binding",
+        "execution",
+        "filesystem_result",
+        "authorization",
+        "upper_bound"
+      ],
+      "properties": {
+        "model_version": {
+          "const": 1
+        },
+        "scope": {
+          "const": "HYPOTHETICAL_CLOSED_REFERENCE_ONLY"
+        },
+        "condition": {
+          "const": "BOUND_FUNCTION_INVOKED_UNDER_CLOSED_ASSUMPTIONS_AND_REACHES_METHOD_CALL"
+        },
+        "binding": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "snapshot_fingerprint",
+            "source_view_sha256",
+            "authority_sha256",
+            "evaluation_sha256",
+            "source_sha256",
+            "source_path"
+          ],
+          "properties": {
+            "snapshot_fingerprint": {
+              "$ref": "#/$defs/sha256"
+            },
+            "source_view_sha256": {
+              "$ref": "#/$defs/sha256"
+            },
+            "authority_sha256": {
+              "$ref": "#/$defs/sha256"
+            },
+            "evaluation_sha256": {
+              "$ref": "#/$defs/sha256"
+            },
+            "source_sha256": {
+              "$ref": "#/$defs/sha256"
+            },
+            "source_path": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 240
+            }
+          }
+        },
+        "source_observation_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "source_scope_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "installed_origin_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "startup_assumptions_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "catalog_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "site": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 32768
+          }
+        },
+        "catalog_disposition": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "status",
+                "operation",
+                "declaration_sha256",
+                "context",
+                "summary_id",
+                "effects",
+                "qualification_refs"
+              ],
+              "properties": {
+                "status": {
+                  "const": "modeled_operation"
+                },
+                "operation": {
+                  "const": "python_path_write_bytes"
+                },
+                "declaration_sha256": {
+                  "$ref": "#/$defs/sha256"
+                },
+                "context": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "source_digest",
+                    "version",
+                    "target",
+                    "features",
+                    "type_bindings"
+                  ],
+                  "properties": {
+                    "source_digest": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "state",
+                        "value"
+                      ],
+                      "properties": {
+                        "state": {
+                          "const": "KNOWN"
+                        },
+                        "value": {
+                          "$ref": "#/$defs/sha256"
+                        }
+                      }
+                    },
+                    "version": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "state",
+                        "value"
+                      ],
+                      "properties": {
+                        "state": {
+                          "const": "KNOWN"
+                        },
+                        "value": {
+                          "enum": [
+                            "3.12.3",
+                            "3.13.5"
+                          ]
+                        }
+                      }
+                    },
+                    "target": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "state",
+                        "value"
+                      ],
+                      "properties": {
+                        "state": {
+                          "const": "KNOWN"
+                        },
+                        "value": {
+                          "enum": [
+                            "windows/amd64",
+                            "linux/amd64"
+                          ]
+                        }
+                      }
+                    },
+                    "features": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "state",
+                        "value"
+                      ],
+                      "properties": {
+                        "state": {
+                          "const": "KNOWN"
+                        },
+                        "value": {
+                          "const": [
+                            "isolated",
+                            "no-site"
+                          ]
+                        }
+                      }
+                    },
+                    "type_bindings": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "state",
+                        "value"
+                      ],
+                      "properties": {
+                        "state": {
+                          "const": "KNOWN"
+                        },
+                        "value": {
+                          "type": "array",
+                          "minItems": 1,
+                          "maxItems": 1,
+                          "items": {
+                            "enum": [
+                              "pathlib.PosixPath",
+                              "pathlib._local.WindowsPath"
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "summary_id": {
+                  "type": "string",
+                  "pattern": "^operation:python_stdlib::pathlib::Path::write_bytes:(linux|windows)-amd64$"
+                },
+                "effects": {
+                  "const": [
+                    "filesystem.write"
+                  ]
+                },
+                "qualification_refs": {
+                  "type": "array",
+                  "maxItems": 8,
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 512
+                  }
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "status",
+                "operation",
+                "declaration_sha256",
+                "context",
+                "reasons"
+              ],
+              "properties": {
+                "status": {
+                  "const": "context_unavailable"
+                },
+                "operation": {
+                  "const": "python_path_write_bytes"
+                },
+                "declaration_sha256": {
+                  "$ref": "#/$defs/sha256"
+                },
+                "context": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "source_digest",
+                    "version",
+                    "target",
+                    "features",
+                    "type_bindings"
+                  ],
+                  "properties": {
+                    "source_digest": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "state",
+                        "value"
+                      ],
+                      "properties": {
+                        "state": {
+                          "const": "KNOWN"
+                        },
+                        "value": {
+                          "$ref": "#/$defs/sha256"
+                        }
+                      }
+                    },
+                    "version": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "state",
+                        "value"
+                      ],
+                      "properties": {
+                        "state": {
+                          "const": "KNOWN"
+                        },
+                        "value": {
+                          "enum": [
+                            "3.12.3",
+                            "3.13.5"
+                          ]
+                        }
+                      }
+                    },
+                    "target": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "state",
+                        "value"
+                      ],
+                      "properties": {
+                        "state": {
+                          "const": "KNOWN"
+                        },
+                        "value": {
+                          "enum": [
+                            "windows/amd64",
+                            "linux/amd64"
+                          ]
+                        }
+                      }
+                    },
+                    "features": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "state",
+                        "value"
+                      ],
+                      "properties": {
+                        "state": {
+                          "const": "KNOWN"
+                        },
+                        "value": {
+                          "const": [
+                            "isolated",
+                            "no-site"
+                          ]
+                        }
+                      }
+                    },
+                    "type_bindings": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "state",
+                        "value"
+                      ],
+                      "properties": {
+                        "state": {
+                          "const": "KNOWN"
+                        },
+                        "value": {
+                          "type": "array",
+                          "minItems": 1,
+                          "maxItems": 1,
+                          "items": {
+                            "enum": [
+                              "pathlib.PosixPath",
+                              "pathlib._local.WindowsPath"
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "reasons": {
+                  "type": "array",
+                  "maxItems": 32,
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 512
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "actual_project_binding": {
+          "const": "UNESTABLISHED"
+        },
+        "execution": {
+          "const": "NOT_RUN_BY_ANALYSIS"
+        },
+        "filesystem_result": {
+          "const": "UNESTABLISHED"
+        },
+        "authorization": {
+          "const": "NOT_ESTABLISHED"
+        },
+        "upper_bound": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "state"
+          ],
+          "properties": {
+            "state": {
+              "const": "UNKNOWN"
+            }
+          }
+        }
+      }
+    },
+    "site": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "start_byte",
+        "end_byte"
+      ],
+      "properties": {
+        "start_byte": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 32767
+        },
+        "end_byte": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 32768
+        }
+      }
+    }
+  }
+}

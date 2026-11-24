@@ -182,6 +182,13 @@
             "T-AF-PROGRAM-SEMANTICS-0001-R11-003",
             "T-AF-PROGRAM-SEMANTICS-0001-R11-004"
           ]
+        },
+        {
+          "id": "AF-PROGRAM-SEMANTICS-0001-R12",
+          "statement": "The explicit compile-only Python filesystem worker exchange binds exact pinned native readiness, original source, authority and evaluation, physical call ranges, and admitted output bounds. It preserves shadowed, unsupported and unavailable classifications and does not establish runtime import binding, execution or effect authority.",
+          "tests": [
+            "T-AF-PROGRAM-SEMANTICS-0001-R12-001"
+          ]
         }
       ]
     }

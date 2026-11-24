@@ -22,6 +22,10 @@ Fixtures change deliberately with compatible rule clarification or an explicit s
 
 ## Files
 
+### [`python_effect_fixture_v1.json`](../_data/python_effect_fixture_v1.json)
+
+Retains an independently observed exact CPython source worker readiness, closed literal shape, and reply. The deterministic original-state control changes only the test invocation correlation.
+
 ### [`python_test_fixture_v1.json`](../_data/python_test_fixture_v1.json)
 
 Retains exact authored test source and original pinned Windows CPython

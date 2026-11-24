@@ -161,6 +161,10 @@ impl PythonImportScope {
         &self.scope_ref
     }
 
+    pub(crate) fn contains_source_path(&self, path: &str) -> bool {
+        self.selection.roots.iter().any(|root| under(path, root))
+    }
+
     pub(crate) fn bind(
         &self,
         view: &SourceView,

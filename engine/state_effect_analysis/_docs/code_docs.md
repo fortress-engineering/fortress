@@ -53,3 +53,22 @@ The registered effect catalog is exposed read-only for existing authored-policy 
 ### [`native_filesystem.rs`](../_code/native_filesystem.rs)
 
 Projects already admitted Go and Python filesystem call identities through the exact resolver owned by Operation Summary. A separate scoped catalog covers one independently witnessed standard-library write in each language. Resolution requires the exact source-side binding, native declaration evidence, library source digest, selected version, target, features, and type facts. Local, shadowed, indirect, and unsupported calls retain explicit dispositions. The receipt gives a positive effect for the reviewed operation and an unknown upper bound. Ordinary state/effect evaluation does not consume it.
+
+The separate Python hypothetical projection reuses this catalog and its exact
+selector for one admitted literal receiver and argument form. Its input carries
+distinct references for original source and import scope, the compile-only
+source observation, independently witnessed installed import origin and
+receiver, and explicitly selected closed startup and invocation assumptions.
+It produces only conditional catalog evidence. Original source observation
+alone leaves independently selected startup premises unavailable.
+
+A host admission route must hold the selected immutable SourceView through
+publication, reject conflicting or unavailable local import scope, and pin
+the installed runtime and origin outside project control. The existing
+Python scalar supervision can supply the bounded startup discipline. The
+scalar worker's current language of function bodies does not establish this
+filesystem call shape. A separate compile-only response must carry that
+shape, and the trusted host must obtain the installed-origin observation
+without running the project. Source-side payloads cannot nominate those
+independent premises. The projection is separate from the actual call report
+and provides no source change, runtime success, or authorization.

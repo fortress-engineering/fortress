@@ -22,6 +22,18 @@ Maintainers update Data through reviewed semantic changes; schema versions chang
 
 ## Files
 
+### [`python_fs_schema_v1.json`](../_data/python_fs_schema_v1.json)
+
+Defines the exact original source identities and hypothetical operation projection. Retains incomplete evidence and unknown whole-operation effects.
+
+### [`python_origin_windows_v1.json`](../_data/python_origin_windows_v1.json)
+
+Expected pristine installed CPython 3.13.5 module-spec bytes for the separately supervised Windows x64 origin check.
+
+### [`python_origin_linux_v1.json`](../_data/python_origin_linux_v1.json)
+
+Expected pristine installed CPython 3.12.3 module-spec bytes for the separately supervised Linux x64 origin check.
+
 ### [`python_test_schema_v1.json`](../_data/python_test_schema_v1.json)
 
 Defines the read-only Python test declaration report. It binds exact

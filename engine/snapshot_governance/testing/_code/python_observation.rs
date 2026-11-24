@@ -1492,3 +1492,134 @@ mod callable_links {
         ));
     }
 }
+
+mod filesystem {
+    use super::*;
+    use fortress_core::portable::canonical;
+    use fortress_core::python_observation::{
+        PythonFilesystemHost, PythonFilesystemProfile, observe_hypothetical_python_filesystem,
+    };
+    use serde_json::Value;
+
+    const RECEIPT: &[u8] = include_bytes!("../_data/python_effect_fixture_v1.json");
+    const ORIGIN: &[u8] = include_bytes!("../../_data/python_origin_windows_v1.json");
+    const SCHEMA: &str = include_str!("../../_data/python_fs_schema_v1.json");
+
+    fn make_fixture(name: &str) -> (Fixture, Value, PythonScalarSubject, PythonImportScope) {
+        let fixture = Fixture::new(name);
+        let native: Value = serde_json::from_slice(RECEIPT).unwrap();
+        let source = native["source"].as_str().unwrap();
+        fs::create_dir(fixture.root.join("src")).unwrap();
+        fs::write(fixture.root.join("src/effect.py"), source).unwrap();
+        let exact = PythonScalarSubject {
+            source_path: "src/effect.py".into(),
+            source_ref: digest(source.as_bytes()),
+            function: "selected".into(),
+            exact_bool_parameters: Vec::new(),
+        };
+        let config = canonical(&json!({
+            "$schema": "urn:fortress:host:v1:python-static-import-scope",
+            "schema_version": 1,
+            "inventory": "COMPLETE_SOURCE_ONLY",
+            "roots": ["src"],
+        }))
+        .unwrap();
+        let scope = PythonImportScope::admit(&config, &digest(&config)).unwrap();
+        (fixture, native, exact, scope)
+    }
+
+    fn selected_producer(native: &Value) -> PythonScalarProducer {
+        let frame: Value = serde_json::from_str(native["ready"].as_str().unwrap()).unwrap();
+        PythonScalarProducer::new(
+            frame["worker_ref"].as_str().unwrap(),
+            frame["bootstrap_ref"].as_str().unwrap(),
+            frame["runtime_ref"].as_str().unwrap(),
+        )
+        .unwrap()
+    }
+
+    fn replay(native: &Value, request: &[u8], readiness: &[u8]) -> Vec<u8> {
+        assert_eq!(readiness, native["ready"].as_str().unwrap().as_bytes());
+        let request: Value = serde_json::from_slice(request).unwrap();
+        let mut response: Value = serde_json::from_str(native["reply"].as_str().unwrap()).unwrap();
+        assert_eq!(request["source_ref"], response["source_ref"]);
+        assert_eq!(request["source_path"], response["source_path"]);
+        // This deterministic replay varies only the test capture's exact
+        // correlation. Production CLI qualification uses unmodified live frames.
+        response["id"] = request["id"].clone();
+        let mut bytes = canonical(&response).unwrap();
+        bytes.push(b'\n');
+        bytes
+    }
+
+    fn host(producer: &PythonScalarProducer) -> PythonFilesystemHost<'_> {
+        PythonFilesystemHost {
+            producer,
+            profile: PythonFilesystemProfile::WindowsX64,
+            supervisor_ref: CONTEXT,
+        }
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R29-015`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R29
+    #[test]
+    fn hypothetical_python_filesystem_preserves_original_and_refuses_scope_or_origin() {
+        let (fixture, native, subject, scope) = make_fixture("effect-conditional");
+        let producer = selected_producer(&native);
+        let run = || {
+            observe_hypothetical_python_filesystem(
+                &fixture.root,
+                &subject,
+                &scope,
+                host(&producer),
+                |request, ready| Ok(replay(&native, request, ready)),
+                || Ok(ORIGIN.to_vec()),
+            )
+        };
+        let report = serde_json::to_value(run().unwrap()).unwrap();
+        assert_eq!(report, serde_json::to_value(run().unwrap()).unwrap());
+        jsonschema::draft202012::validate(&serde_json::from_str(SCHEMA).unwrap(), &report)
+            .expect("strict conditional observation schema");
+        assert_eq!(report["status"], "CONDITIONAL");
+        assert_eq!(report["actual_project_binding"], "UNESTABLISHED");
+        assert_eq!(report["runtime_execution"], "NOT_RUN");
+        assert_eq!(report["canonical_finding_or_certificate"], "NOT_ISSUED");
+        let effect = &report["effect"];
+        assert_eq!(effect["site"], json!([63, 104]));
+        assert_eq!(effect["upper_bound"], json!({"state":"UNKNOWN"}));
+        assert_eq!(
+            effect["catalog_disposition"]["effects"],
+            json!(["filesystem.write"])
+        );
+        assert_eq!(effect["installed_origin_sha256"], digest(ORIGIN));
+        assert!(!fixture.root.join("sentinel.bin").exists());
+
+        let refused = observe_hypothetical_python_filesystem(
+            &fixture.root,
+            &subject,
+            &scope,
+            host(&producer),
+            |request, ready| Ok(replay(&native, request, ready)),
+            || Ok(b"{}".to_vec()),
+        );
+        assert!(matches!(
+            refused,
+            Err(PythonObservationError::HostUnavailable)
+        ));
+
+        fs::write(fixture.root.join("src/pathlib.py"), "# local alternative\n").unwrap();
+        let local = observe_hypothetical_python_filesystem(
+            &fixture.root,
+            &subject,
+            &scope,
+            host(&producer),
+            |_, _| panic!("local alternative must veto the source worker"),
+            || panic!("local alternative must veto the origin worker"),
+        )
+        .unwrap();
+        let local = serde_json::to_value(local).unwrap();
+        assert_eq!(local["status"], "LOCAL_IMPORT_OR_SCOPE_UNRESOLVED");
+        assert_eq!(local["effect"], Value::Null);
+        assert_eq!(local["installed_origin_ref"], Value::Null);
+    }
+}

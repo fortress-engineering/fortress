@@ -26,6 +26,9 @@ pub const PYTHON_LEXICAL_WORKER: &[u8] = include_bytes!("python_lexical_worker.p
 /// Reviewed Python scalar worker bytes owned by Source Architecture.
 pub const PYTHON_SCALAR_WORKER: &[u8] = include_bytes!("python_scalar_worker.py");
 
+/// Reviewed compile-only Python filesystem call-shape worker.
+pub const PYTHON_FILESYSTEM_WORKER: &[u8] = include_bytes!("python_filesystem_worker.py");
+
 const RESPONSE_SCHEMA: &str = "fortress-research/python-lexical-response/1";
 pub(crate) const MAX_SOURCE_BYTES: usize = 128 * 1024;
 const MAX_SCOPES: usize = 256;

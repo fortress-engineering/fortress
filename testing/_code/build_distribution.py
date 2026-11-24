@@ -74,6 +74,8 @@ def source_assets():
     sources.update({
         "share/fortress/workers/python_lexical_worker.py": ROOT / "engine/source_architecture/_code/python_lexical_worker.py",
         "share/fortress/workers/python_scalar_worker.py": ROOT / "engine/source_architecture/_code/python_scalar_worker.py",
+        "share/fortress/workers/python_filesystem_worker.py": ROOT / "engine/source_architecture/_code/python_filesystem_worker.py",
+        "share/fortress/workers/python_origin_worker.py": ROOT / "engine/source_architecture/_code/python_origin_worker.py",
         sdk + "guide.md": ROOT / "cli/_data/extension_guide.txt",
         sdk + "extension_conformance.py": ROOT / "testing/_code/extension_conformance.py",
     })

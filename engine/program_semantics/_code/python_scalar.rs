@@ -1,5 +1,9 @@
 //! Exact exchange binding for the compile-only Python scalar worker.
 
+/// Compile-only Python filesystem call shape and installed receiver admission.
+#[path = "python_filesystem.rs"]
+pub mod python_filesystem;
+
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
 use std::path::Path;

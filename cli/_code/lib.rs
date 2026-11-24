@@ -65,6 +65,7 @@ mod portable_command;
 mod presentation;
 mod projection_command;
 mod provider_command;
+mod python_fs_command;
 mod python_observe_command;
 mod python_scalar_command;
 pub mod rpc;
@@ -726,6 +727,12 @@ fn run_source_artifacts<O: Write, E: Write>(
         .is_some_and(|argument| argument == "--observe-python")
     {
         return python_observe_command::run(&arguments[1..], output, error);
+    }
+    if arguments
+        .first()
+        .is_some_and(|argument| argument == "--observe-python-filesystem")
+    {
+        return python_fs_command::run(&arguments[1..], output, error);
     }
     if arguments
         .first()

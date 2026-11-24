@@ -111,6 +111,22 @@ attachment. A package digest verifies package contents. Host trust remains an
 independent selection, and a package does not create a registration or run a
 worker on installation.
 
+Conditional Python filesystem inspection
+
+Use the exact installed python_filesystem_worker.py, python_lexical_worker.py,
+and python_origin_worker.py siblings from share/fortress/workers. The independent
+host registration also pins the trusted external CPython executable, exact runtime
+identity, and a zero-argument subject. This inspection supports the reviewed
+Windows x64 CPython 3.13.5 and Linux x64 CPython 3.12.3 installation contexts.
+
+    fortress source-artifacts --observe-python-filesystem PROJECT REGISTRATION ROOT_SCOPE ROOT_SCOPE_SHA256
+
+Create REGISTRATION and the independently chosen root-scope document outside
+PROJECT and supply their exact declared identities. The project is observed
+without runtime execution. An independently verified closed model may report a
+conditional standard-library filesystem operation while actual project import
+binding, write success, and complete effects remain unavailable.
+
 Select the asset for the command and use its corresponding independently
 configured external registration.
 

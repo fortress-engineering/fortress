@@ -219,3 +219,15 @@ Validates bounded raw Go filesystem receipts against the exact supervised
 request, physical data, native declaration and independently pinned library
 assets. It keeps unsupported observations open and supplies only typed
 call evidence to Snapshot Governance.
+
+### [`python_filesystem.rs`](../_code/python_filesystem.rs)
+
+Admits one bounded compile-only call shape from the selected Python source
+and independently configured exact CPython worker. The existing scalar
+source gate and producer identity bind an immutable view, evaluation, path,
+function, installed profile and source bytes. The host compares exact live
+READY before forwarding source. The reply must be one bounded canonical
+line with exact correlation, a supported outcome and defensible UTF-8 byte
+coordinates. The installed receiver, qualified CPython context and
+source classification remain separate. Project runtime imports, execution
+and effects are unestablished at this boundary.

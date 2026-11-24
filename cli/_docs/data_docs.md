@@ -103,6 +103,10 @@ Versioned external registration for explicit scalar observation. It declares the
 trusted interpreter and two worker assets and specifies the exact observed
 source, function and ordered exact-bool input premises.
 
+### [`python_fs_registration_v1.json`](../_data/python_fs_registration_v1.json)
+
+Defines independent local interpreter, compile-only worker, bootstrap, origin worker, runtime, and exact original subject selection for the closed hypothetical model.
+
 ### [`python_scalar_schema_v1.json`](../_data/python_scalar_schema_v1.json)
 
 Versioned Python scalar inspection report. It retains exact source, original

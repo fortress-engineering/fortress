@@ -223,6 +223,53 @@ impl<'a> NativeFilesystemProjection<'a> {
     }
 }
 
+/// One admitted call shape under an explicitly selected hypothetical `CPython` model.
+///
+/// Snapshot Governance supplies the exact original source, authority, and scope.
+/// A trusted host separately supplies exact isolated installed origin and
+/// startup assumptions. A receipt, digest, or source-only observation cannot
+/// establish these premises. This input has no actual callee or write authority.
+#[derive(Clone, Copy, Debug)]
+pub struct HypotheticalPythonFilesystemCall<'a> {
+    /// Exact independently observed original source endpoint.
+    pub binding: NativeFilesystemBinding<'a>,
+    /// Receipt for the source-bearing compile-only observation.
+    pub source_observation_sha256: &'a str,
+    /// Explicit ordered original import scope, after checking for local alternatives.
+    pub source_scope_sha256: &'a str,
+    /// Independently observed isolated installed import origin.
+    pub installed_origin_sha256: &'a str,
+    /// Explicit independently selected closed startup and invocation assumptions.
+    pub startup_assumptions_sha256: &'a str,
+    /// Exact installed declaration and concrete receiver evidence.
+    pub declaration_sha256: &'a str,
+    /// Existing exact package, toolchain, target, feature, and receiver premises.
+    pub summary_context: &'a SummaryContext,
+    /// Inclusive and exclusive UTF-8 byte offsets of the exact observed call.
+    pub site: [usize; 2],
+}
+
+/// Conditional catalog evidence for the selected closed model only.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+pub struct HypotheticalPythonFilesystemProjection<'a> {
+    model_version: u16,
+    scope: &'static str,
+    condition: &'static str,
+    binding: NativeFilesystemBinding<'a>,
+    source_observation_sha256: &'a str,
+    source_scope_sha256: &'a str,
+    installed_origin_sha256: &'a str,
+    startup_assumptions_sha256: &'a str,
+    site: [usize; 2],
+    catalog_sha256: String,
+    catalog_disposition: NativeFilesystemDisposition<'a>,
+    actual_project_binding: &'static str,
+    execution: &'static str,
+    filesystem_result: &'static str,
+    authorization: &'static str,
+    upper_bound: SummaryEffectBound,
+}
+
 /// Failure at the narrow native effect observation boundary.
 #[derive(Debug)]
 pub enum NativeFilesystemError {
@@ -348,6 +395,16 @@ fn classify<'a>(
         }
         NativeFilesystemCallee::Unresolved => return Ok(NativeFilesystemDisposition::Unresolved),
     };
+    classify_standard(language, catalog, operation, declaration_sha256, context)
+}
+
+fn classify_standard<'a>(
+    language: NativeFilesystemLanguage,
+    catalog: &OperationSummaryCatalog,
+    operation: NativeFilesystemOperation,
+    declaration_sha256: &'a str,
+    context: &'a SummaryContext,
+) -> Result<NativeFilesystemDisposition<'a>, NativeFilesystemError> {
     if language != operation.language() || !digest(declaration_sha256) || !context_shape(context) {
         return Err(NativeFilesystemError::InvalidObservation);
     }
@@ -385,6 +442,72 @@ fn classify<'a>(
         summary_id,
         effects: chosen.observed_effects.clone(),
         qualification_refs: chosen.qualification_refs.clone(),
+    })
+}
+
+/// Selects the existing exact Python operation summary under a hypothetical model.
+///
+/// Invoking the exact bound function and reaching the call with its independently
+/// selected startup assumptions are conditions of the observation. Neither the
+/// call nor any project code executes here. This projection does not produce an
+/// actual call site, a write result, or authority. Ordinary source-only
+/// observation cannot supply the independently admitted inputs.
+///
+/// # Errors
+/// Refuses malformed premise identities, source, ranges, or catalog entries.
+pub fn project_hypothetical_python_filesystem<'a>(
+    expected: NativeFilesystemBinding<'_>,
+    source: &[u8],
+    proposed: &HypotheticalPythonFilesystemCall<'a>,
+) -> Result<HypotheticalPythonFilesystemProjection<'a>, NativeFilesystemError> {
+    let language = NativeFilesystemLanguage::Python;
+    // Reuse exact source admission. No actual callee or actual site is formed.
+    let batch = NativeFilesystemBatch {
+        language,
+        binding: proposed.binding,
+        observation_sha256: proposed.source_observation_sha256,
+        calls: &[],
+    };
+    let text = validate_source(expected, &batch, source)?;
+    if ![
+        proposed.source_scope_sha256,
+        proposed.installed_origin_sha256,
+        proposed.startup_assumptions_sha256,
+    ]
+    .into_iter()
+    .all(digest)
+        || text
+            .get(proposed.site[0]..proposed.site[1])
+            .is_none_or(str::is_empty)
+    {
+        return Err(NativeFilesystemError::InvalidObservation);
+    }
+    let catalog =
+        OperationSummaryCatalog::from_json_str(CATALOG).map_err(NativeFilesystemError::Catalog)?;
+    let disposition = classify_standard(
+        language,
+        &catalog,
+        NativeFilesystemOperation::PythonPathWriteBytes,
+        proposed.declaration_sha256,
+        proposed.summary_context,
+    )?;
+    Ok(HypotheticalPythonFilesystemProjection {
+        model_version: 1,
+        scope: "HYPOTHETICAL_CLOSED_REFERENCE_ONLY",
+        condition: "BOUND_FUNCTION_INVOKED_UNDER_CLOSED_ASSUMPTIONS_AND_REACHES_METHOD_CALL",
+        binding: proposed.binding,
+        source_observation_sha256: proposed.source_observation_sha256,
+        source_scope_sha256: proposed.source_scope_sha256,
+        installed_origin_sha256: proposed.installed_origin_sha256,
+        startup_assumptions_sha256: proposed.startup_assumptions_sha256,
+        site: proposed.site,
+        catalog_sha256: catalog.digest().into(),
+        catalog_disposition: disposition,
+        actual_project_binding: "UNESTABLISHED",
+        execution: "NOT_RUN_BY_ANALYSIS",
+        filesystem_result: "UNESTABLISHED",
+        authorization: "NOT_ESTABLISHED",
+        upper_bound: SummaryEffectBound::Unknown,
     })
 }
 

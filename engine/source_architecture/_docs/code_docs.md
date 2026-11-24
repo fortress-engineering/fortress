@@ -60,6 +60,14 @@ absence, ownership, authored responsibility, semantic effects or verification
 relationships. The canonical Source Artifact Model continues to use its
 established ownership and verification inputs.
 
+### [`python_filesystem_worker.py`](../_code/python_filesystem_worker.py)
+
+Uses bounded compile-only Python source, exact worker readiness, and fixed isolated standard-library receiver evidence. The source shape and installed receiver remain separate from actual application binding and effect assessment.
+
+### [`python_origin_worker.py`](../_code/python_origin_worker.py)
+
+Uses a fresh pinned CPython installation to observe the top-level standard library import specification before loading the module. It validates isolated startup, cache and finder constraints, ordinary assets, and exact bytes. It accepts no project input and derives no project runtime origin.
+
 ### [`python_lexical_worker.py`](../_code/python_lexical_worker.py)
 
 Provides the fixed CPython 3.12 or 3.13 compile-only worker for a trusted host.

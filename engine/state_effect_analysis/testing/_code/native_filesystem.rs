@@ -3,10 +3,10 @@
 use fortress_core::program_semantics::ContextKnowledge;
 use fortress_core::semantic_analysis::FunctionEffect;
 use fortress_core::state_effect_analysis::{
-    NativeFilesystemBatch, NativeFilesystemBinding, NativeFilesystemCall, NativeFilesystemCallee,
-    NativeFilesystemDisposition, NativeFilesystemError, NativeFilesystemLanguage,
-    NativeFilesystemOperation, SummaryContext, SummaryEffectBound,
-    project_native_filesystem_effects,
+    HypotheticalPythonFilesystemCall, NativeFilesystemBatch, NativeFilesystemBinding,
+    NativeFilesystemCall, NativeFilesystemCallee, NativeFilesystemDisposition,
+    NativeFilesystemError, NativeFilesystemLanguage, NativeFilesystemOperation, SummaryContext,
+    SummaryEffectBound, project_hypothetical_python_filesystem, project_native_filesystem_effects,
 };
 use serde::Deserialize;
 use serde_json::Value;
@@ -26,6 +26,77 @@ struct CatalogWitness {
     features: Vec<String>,
     summary_id: String,
     operation_ref: String,
+}
+
+/// `T-AF-STATE-EFFECT-ANALYSIS-0001-R08-006`
+/// Fortress requirement: AF-STATE-EFFECT-ANALYSIS-0001-R08
+#[test]
+fn hypothetical_python_operation_keeps_original_and_conditional_facts_separate() {
+    let source = b"from pathlib import Path\ndef selected():\n    return Path('sentinel.bin').write_bytes(b'A')\n";
+    let (_, contexts) = fixture();
+    let binding = NativeFilesystemBinding {
+        snapshot_fingerprint: IDENTITY,
+        source_view_sha256: "sha256:d9d444a8298ef914a9f791df8f13471e21f324dc5bd79f7bcb1336d9a3ef9a3e",
+        authority_sha256: IDENTITY,
+        evaluation_sha256: IDENTITY,
+        source_path: "src/subject.py",
+        source_sha256: "sha256:e6c8593171dcb9da921934c6b50c363901b6400caaa4b0d159c2271919b62add",
+    };
+    for known in contexts
+        .iter()
+        .filter(|context| context.language == "python")
+    {
+        let context = matches_context(known);
+        let proposal = HypotheticalPythonFilesystemCall {
+            binding,
+            source_observation_sha256: IDENTITY,
+            source_scope_sha256: "sha256:33d25733a4dba571be8ba20d0c1066fe3c69a3f3f3305c9e9aa762b974286b13",
+            installed_origin_sha256: IDENTITY,
+            startup_assumptions_sha256: IDENTITY,
+            declaration_sha256: &known.operation_ref,
+            summary_context: &context,
+            site: [52, 90],
+        };
+        assert_eq!(&source[52..90], b"Path('sentinel.bin').write_bytes(b'A')");
+        let projected = project_hypothetical_python_filesystem(binding, source, &proposal).unwrap();
+        let wire = serde_json::to_value(projected).unwrap();
+        assert_eq!(wire["scope"], "HYPOTHETICAL_CLOSED_REFERENCE_ONLY");
+        assert_eq!(wire["actual_project_binding"], "UNESTABLISHED");
+        assert_eq!(wire["filesystem_result"], "UNESTABLISHED");
+        assert_eq!(wire["authorization"], "NOT_ESTABLISHED");
+        assert_eq!(wire["execution"], "NOT_RUN_BY_ANALYSIS");
+        assert_eq!(wire["upper_bound"]["state"], "UNKNOWN");
+        assert_eq!(wire["catalog_disposition"]["status"], "modeled_operation");
+        assert_eq!(wire["catalog_disposition"]["summary_id"], known.summary_id);
+        assert_eq!(
+            wire["catalog_disposition"]["effects"],
+            serde_json::json!(["filesystem.write"]),
+        );
+        assert!(matches!(
+            project_hypothetical_python_filesystem(binding, b"changed", &proposal),
+            Err(NativeFilesystemError::SourceMismatch)
+        ));
+        let unbound = HypotheticalPythonFilesystemCall {
+            startup_assumptions_sha256: "",
+            ..proposal
+        };
+        assert!(matches!(
+            project_hypothetical_python_filesystem(binding, source, &unbound),
+            Err(NativeFilesystemError::InvalidObservation)
+        ));
+        let missing_receiver = SummaryContext {
+            type_bindings: ContextKnowledge::Unknown,
+            ..context.clone()
+        };
+        let unbound = HypotheticalPythonFilesystemCall {
+            summary_context: &missing_receiver,
+            ..proposal
+        };
+        let projection = project_hypothetical_python_filesystem(binding, source, &unbound).unwrap();
+        let wire = serde_json::to_value(projection).unwrap();
+        assert_eq!(wire["catalog_disposition"]["status"], "context_unavailable");
+        assert!(wire["catalog_disposition"].get("effects").is_none());
+    }
 }
 
 fn fixture() -> (Value, Vec<CatalogWitness>) {

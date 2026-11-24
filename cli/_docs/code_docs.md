@@ -647,6 +647,22 @@ ambiguous endpoints remain visible. The resulting edges express scoped
 source evidence. Runtime behavior, dependency absence, enforcement,
 assurance and certification are outside this inspection.
 
+### [`python_fs_command.rs`](../_code/python_fs_command.rs)
+
+Uses separately supervised compile-only and pristine origin workers to inspect one
+zero-argument function selected in the original source. Place the reviewed
+worker files and registration outside the repository. Select and pin an
+independent ordinary Python import root scope.
+
+```text
+fortress source-artifacts --observe-python-filesystem PROJECT REGISTRATION ROOT_SCOPE ROOT_SCOPE_SHA256
+```
+
+The supported operation has one closed literal `pathlib.Path.write_bytes`
+shape. A local alternative, unsupported source, missing installed origin or
+changed source prevents the conditional projection. Actual project imports,
+runtime execution, physical write effects and their upper bound stay unresolved.
+
 ### [`python_scalar_command.rs`](../_code/python_scalar_command.rs)
 
 Implements explicit scalar inspection using a separately registered external

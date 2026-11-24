@@ -148,11 +148,12 @@
         },
         {
           "id": "AF-STATE-EFFECT-ANALYSIS-0001-R08",
-          "statement": "The standalone native filesystem projection accepts exact admitted Go and Python declarations and original source bindings. It selects only a reviewed matching Operation Summary and retains positive scoped write facts with unknown runtime and whole-operation bounds. Local, shadowed, indirect and unsupported contexts confer no effects or authority.",
+          "statement": "The standalone native filesystem projection accepts exact admitted Go and Python declarations and original source bindings. It selects only a reviewed matching Operation Summary and retains positive scoped write facts with unknown runtime and whole-operation bounds. Local, shadowed, indirect and unsupported contexts confer no effects or authority. A separately typed hypothetical Python observation requires independently selected closed runtime assumptions and preserves the existing original findings, runtime uncertainty and authorization boundaries.",
           "tests": [
             "T-AF-STATE-EFFECT-ANALYSIS-0001-R08-001",
             "T-AF-STATE-EFFECT-ANALYSIS-0001-R08-002",
-            "T-AF-STATE-EFFECT-ANALYSIS-0001-R08-003"
+            "T-AF-STATE-EFFECT-ANALYSIS-0001-R08-003",
+            "T-AF-STATE-EFFECT-ANALYSIS-0001-R08-006"
           ]
         }
       ]

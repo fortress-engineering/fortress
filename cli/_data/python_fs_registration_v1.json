@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:host:v1:python-filesystem-registration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "interpreter",
+    "interpreter_sha256",
+    "worker",
+    "bootstrap",
+    "origin_worker",
+    "runtime_ref",
+    "model",
+    "subject"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:host:v1:python-filesystem-registration"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "interpreter": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "interpreter_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "worker": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "bootstrap": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "origin_worker": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "runtime_ref": {
+      "enum": [
+        "sha256:c3c97417572f780314efe1ac3c4d5ce5e3cef99b1d5a93e5faec954a7c3fb7ce",
+        "sha256:043f738ca7ba9a9f6ee42cb1cf8a5a0cd453a1528d47d45cc021647dcd36802a"
+      ]
+    },
+    "model": {
+      "const": "ISOLATED_CLOSED_REFERENCE_V1"
+    },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_path",
+        "source_ref",
+        "function",
+        "exact_bool_parameters"
+      ],
+      "properties": {
+        "source_path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "source_ref": {
+          "$ref": "#/$defs/sha256"
+        },
+        "function": {
+          "type": "string",
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]{0,63}$"
+        },
+        "exact_bool_parameters": {
+          "const": []
+        }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    }
+  }
+}

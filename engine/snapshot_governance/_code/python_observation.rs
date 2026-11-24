@@ -8,6 +8,10 @@ use crate::affected_analysis::sha256;
 use crate::information_flow::{NativeScalarFlowObservation, observe_native_scalar_flow};
 use crate::native_observation::{NativeSource, NativeSourceError};
 pub use crate::program_semantics::native_body::NativeBodyOutcome;
+pub use crate::program_semantics::python_scalar::python_filesystem::{
+    PythonFilesystemError, PythonFilesystemOutcome, PythonFilesystemProfile,
+    PythonFilesystemRequest, PythonInstalledFilesystemReceiver,
+};
 use crate::project::EvaluationKey;
 use crate::semantic_analysis::{SemanticDomain, infer_native_scalar_output};
 
@@ -36,6 +40,14 @@ pub use python_dependencies::{
 mod callable;
 pub use callable::{
     PythonCallableSelection, observe_python_authored_native_return, observe_python_linked_callable,
+};
+
+#[path = "python_fs_observation.rs"]
+mod filesystem;
+pub use crate::source_architecture::python_lexical::PYTHON_FILESYSTEM_WORKER;
+pub use filesystem::{
+    HypotheticalPythonFilesystemObservation, PYTHON_ORIGIN_WORKER, PythonFilesystemHost,
+    observe_hypothetical_python_filesystem,
 };
 
 const PYTHON_LEXICAL_CONTEXT: &str = "fortress-python-lexical-context-v1";
@@ -158,6 +170,14 @@ pub enum PythonObservationError {
     SubjectIdentityMismatch,
     /// The scoped scalar request or response failed admission.
     Scalar(PythonScalarError),
+    /// Exact scoped filesystem worker request or reply failed admission.
+    Filesystem(PythonFilesystemError),
+    /// The admitted hypothetical operation could not enter the scoped catalog.
+    FilesystemEffect(crate::state_effect_analysis::NativeFilesystemError),
+    /// A bounded hypothetical effect report could not be serialized.
+    FilesystemJson(serde_json::Error),
+    /// The scoped effect context could not be represented canonically.
+    FilesystemCanonical(crate::portable::PortableError),
     /// Test roots are unsafe, overlap, or select an ordinary file.
     InvalidTestRoots,
     /// The selected test scope exceeds its pre-dispatch resource budget.
@@ -180,6 +200,10 @@ impl Display for PythonObservationError {
                 formatter.write_str("selected Python source differs from the trusted subject pin")
             }
             Self::Scalar(error) => Display::fmt(error, formatter),
+            Self::Filesystem(error) => Display::fmt(error, formatter),
+            Self::FilesystemEffect(error) => Display::fmt(error, formatter),
+            Self::FilesystemJson(error) => Display::fmt(error, formatter),
+            Self::FilesystemCanonical(error) => Display::fmt(error, formatter),
             Self::InvalidTestRoots => formatter.write_str(
                 "Python test roots must be distinct, nonoverlapping canonical directories",
             ),
@@ -197,8 +221,18 @@ impl Error for PythonObservationError {
             Self::StaticImports(error) => Some(error),
             Self::StaticDependencies(error) => Some(error),
             Self::Scalar(error) => Some(error),
+            Self::Filesystem(error) => Some(error),
+            Self::FilesystemEffect(error) => Some(error),
+            Self::FilesystemJson(error) => Some(error),
+            Self::FilesystemCanonical(error) => Some(error),
             _ => None,
         }
+    }
+}
+
+impl From<PythonFilesystemError> for PythonObservationError {
+    fn from(error: PythonFilesystemError) -> Self {
+        Self::Filesystem(error)
     }
 }
 

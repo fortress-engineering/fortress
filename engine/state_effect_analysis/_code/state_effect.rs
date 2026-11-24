@@ -43,10 +43,11 @@ use operation_effect::{OperationEffectClassification, classify_operation};
 
 pub(crate) use native_filesystem::native_filesystem_catalog_source_ref;
 pub use native_filesystem::{
+    HypotheticalPythonFilesystemCall, HypotheticalPythonFilesystemProjection,
     NativeFilesystemBatch, NativeFilesystemBinding, NativeFilesystemCall, NativeFilesystemCallee,
     NativeFilesystemDisposition, NativeFilesystemError, NativeFilesystemLanguage,
     NativeFilesystemOperation, NativeFilesystemProjection, NativeFilesystemSite,
-    project_native_filesystem_effects,
+    project_hypothetical_python_filesystem, project_native_filesystem_effects,
 };
 
 pub use summary::{
