@@ -48,7 +48,7 @@ conservative type-bound set of possible return values. Go fixed-width int64
 and bounded Python literal values have distinct domain identifiers. Native
 Boolean equality and inequality use exact admitted input values. Ordering and
 equality of singleton integer domains are decided within the same native scalar
-type. A singleton native condition can rule out an unreachable branch. A residual
+type. A singleton native comparison can rule out an unreachable branch. A residual
 control path or an opaque result has no inferred domain. Native bodies are
 excluded from governed Rust function contracts and findings. Their evaluation
 is not certification or proof of runtime execution.

@@ -1530,6 +1530,7 @@ impl<'a> AnalysisContext<'a> {
                     let (mut then_environment, mut else_environment) =
                         Self::refine_condition(condition, &environment);
                     if matches!(symbol, BodySubject::Native(_))
+                        && matches!(condition, ProgramExpression::Binary { .. })
                         && let SemanticDomain::Boolean { values, .. } = self.evaluate_expression(
                             symbol,
                             condition,
