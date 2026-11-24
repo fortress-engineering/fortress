@@ -356,7 +356,7 @@
     },
     {
       "schema_id": "urn:fortress:derived:v1:native-source-dependency-intent",
-      "schema_path": "engine/snapshot_governance/_data/native_dependency_intent_schema_v1.json",
+      "schema_path": "engine/snapshot_governance/_data/dependency_intent_schema_v1.json",
       "version": 1,
       "writer": {
         "status": "ACTIVE",
@@ -378,7 +378,7 @@
     },
     {
       "schema_id": "urn:fortress:derived:v1:python-project-metadata",
-      "schema_path": "engine/snapshot_governance/_data/python_project_metadata_schema_v1.json",
+      "schema_path": "engine/snapshot_governance/_data/python_metadata_schema_v1.json",
       "version": 1,
       "writer": {
         "status": "ACTIVE",

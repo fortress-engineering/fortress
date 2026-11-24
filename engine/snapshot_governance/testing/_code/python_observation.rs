@@ -421,9 +421,13 @@ mod project_metadata {
                 .unwrap()
                 .contains("/not/a/runtime")
         );
-        let schema: Value = serde_json::from_str(include_str!(
-            "../../_data/python_project_metadata_schema_v1.json"
-        ))
+        let repository = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let schema: Value = serde_json::from_slice(
+            &fs::read(
+                repository.join("engine/snapshot_governance/_data/python_metadata_schema_v1.json"),
+            )
+            .unwrap(),
+        )
         .unwrap();
         let validator = jsonschema::validator_for(&schema).unwrap();
         assert!(validator.is_valid(&origin));

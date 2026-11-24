@@ -241,7 +241,7 @@ Defines source-bound Go native call facts and a conditional filesystem operation
 with an unknown upper effect bound. An unavailable compiler observation carries an
 empty inventory and no sidecar.
 
-### [`native_dependency_intent_schema_v1.json`](../_data/native_dependency_intent_schema_v1.json)
+### [`dependency_intent_schema_v1.json`](../_data/dependency_intent_schema_v1.json)
 
 Defines the explicit comparison of exact positive native dependency evidence
 with independently resolved original CCG relationships. The report retains
@@ -255,7 +255,7 @@ Defines exact Go module dependency inspection with the original native receipt,
 scoped normalized sites, and authored ownership diagnostics. Unavailable native
 module observations retain a null dependency projection.
 
-### [`python_project_metadata_schema_v1.json`](../_data/python_project_metadata_schema_v1.json)
+### [`python_metadata_schema_v1.json`](../_data/python_metadata_schema_v1.json)
 
 Defines the static Python packaging observation and its source and authority
 binding. Its independent version leaves Python lexical, import, and canonical
