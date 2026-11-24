@@ -183,7 +183,7 @@ mod lexical_calls {
             assert_eq!(graph["unavailable_targets"], json!([]), "{name}");
             assert_eq!(
                 graph["sites"].as_array().unwrap().len(),
-                row["expected_site_count"].as_u64().unwrap() as usize,
+                usize::try_from(row["expected_site_count"].as_u64().unwrap()).unwrap(),
                 "{name}"
             );
             if let Some(reason) = row["expected_evaluation_limit"].as_str() {
@@ -200,7 +200,7 @@ mod lexical_calls {
                         .as_array()
                         .unwrap()
                         .len(),
-                    row["expected_dependency_count"].as_u64().unwrap() as usize,
+                    usize::try_from(row["expected_dependency_count"].as_u64().unwrap()).unwrap(),
                     "{name}"
                 );
             }
