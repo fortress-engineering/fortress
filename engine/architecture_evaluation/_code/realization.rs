@@ -238,6 +238,19 @@ pub fn reconcile_implementation(
     })
 }
 
+/// Compares positive source evidence without interpreting unobserved declarations.
+pub(crate) fn compare_scoped_dependencies(
+    ccg: &ContractCoherencyGraph,
+    observed: &ObservedImplementation,
+) -> Vec<ReconciliationRecord> {
+    let direct = declared_dependencies(ccg);
+    let (mut records, _) = governed_records(ccg, observed, &direct);
+    records.extend(coverage_records(observed));
+    records.sort();
+    records.dedup();
+    records
+}
+
 type DeclaredDependencies = BTreeMap<(String, String), BTreeSet<String>>;
 
 fn declared_dependencies(ccg: &ContractCoherencyGraph) -> DeclaredDependencies {

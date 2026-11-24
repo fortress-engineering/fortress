@@ -1340,6 +1340,77 @@ ROOT_ECOSYSTEM  "provides": [],
         ));
     }
 
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R28-030`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R28
+    #[test]
+    fn native_go_intent_compares_exact_direct_edges_without_inferred_absence() {
+        use fortress_core::contract_coherency::ModuleContract;
+        use fortress_core::go_observation::observe_go_module_dependency_intent;
+
+        let fixture = project("go-native-intent");
+        let inspect_intent = |fixture: &Fixture| {
+            observe_go_module_dependency_intent(
+                &fixture.root,
+                selection(),
+                context(),
+                &BUILD_PIN,
+                |request| Ok(frozen(request, OBSERVED)),
+            )
+            .unwrap()
+        };
+        let unavailable: Value = serde_json::from_slice(&inspect_intent(&fixture)).unwrap();
+        assert_eq!(
+            unavailable["comparison"],
+            json!({"status":"ORIGINAL_INTENT_UNAVAILABLE"})
+        );
+        declare_owners(&fixture);
+        let undocumented = inspect_intent(&fixture);
+        let original: Value = serde_json::from_slice(&undocumented).unwrap();
+        assert_eq!(undocumented, inspect_intent(&fixture));
+        assert_eq!(original["scope"], "OBSERVED_EDGES_ONLY");
+        assert_eq!(
+            original["evidence"],
+            serde_json::from_slice::<Value>(&inspect(&fixture, OBSERVED)).unwrap()
+        );
+        assert_eq!(original["comparison"]["status"], "COMPARED");
+        let record = &original["comparison"]["records"][0];
+        assert_eq!(record["state"], "OBSERVED_UNDECLARED");
+        assert_eq!(record["source_module"], "AF-GO-APP-0001");
+        assert_eq!(record["target_module"], "AF-GO-BASE-0001");
+        assert_eq!(record["evidence"][0]["source_path"], "app/app.go");
+
+        let rewrite = |name: &str, key: &str, value: Value| {
+            let file = fixture
+                .root
+                .join(format!("_data/logical_modules/{name}/contract.json"));
+            let mut contract: Value = serde_json::from_slice(&fs::read(&file).unwrap()).unwrap();
+            contract[key] = value;
+            let contract: ModuleContract = serde_json::from_value(contract).unwrap();
+            fs::write(file, contract.to_canonical_json().unwrap()).unwrap();
+        };
+        rewrite(
+            "base",
+            "provides",
+            json!([{"id":"CAP-GO-BASE","version":"0.1.0","visibility":"project"}]),
+        );
+        rewrite(
+            "app",
+            "requires",
+            json!([{"provider":"AF-GO-BASE-0001","capability":"CAP-GO-BASE","version":"^0.1.0"}]),
+        );
+        let direct: Value = serde_json::from_slice(&inspect_intent(&fixture)).unwrap();
+        assert_eq!(direct["comparison"]["status"], "COMPARED");
+        let records = direct["comparison"]["records"].as_array().unwrap();
+        assert_eq!(records.len(), 1);
+        assert_eq!(records[0]["state"], "DECLARED_AND_OBSERVED");
+        assert_eq!(records[0]["declared_capabilities"], json!(["CAP-GO-BASE"]));
+        assert_ne!(
+            original["comparison"]["ccg_digest"],
+            direct["comparison"]["ccg_digest"]
+        );
+        assert_eq!(fs::read(fixture.root.join("app/app.go")).unwrap(), APP);
+    }
+
     /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R28-029`
     /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R28
     #[test]

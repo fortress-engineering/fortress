@@ -4883,6 +4883,7 @@ fn prepared_authority_binding(prepared: &PreparedAnalysis) -> Result<AuthorityBi
 pub(crate) enum NativeAuthorityScope<'a> {
     Observation,
     Dependencies,
+    DependenciesWithIntent,
     AuthoredReturn,
     AuthoredEffect(&'a str),
 }
@@ -4892,6 +4893,7 @@ pub(crate) struct NativeObservationBinding {
     pub(crate) source_manifest_digest: String,
     pub(crate) authority_digest: String,
     pub(crate) dependency_ownership: Option<SourceOwnershipResolution>,
+    pub(crate) dependency_intent: Option<ContractCoherencyGraph>,
     pub(crate) logical_contracts: BTreeSet<String>,
     pub(crate) native_return_contracts:
         Vec<crate::contract_coherency::DistributedContractOwnership>,
@@ -4927,13 +4929,21 @@ pub(crate) fn bind_native_observation_source(
     let authority_digest = prepared_authority_binding(&prepared)?.digest();
     let dependency_ownership = match scope {
         NativeAuthorityScope::Observation => None,
-        NativeAuthorityScope::Dependencies => Some(
+        NativeAuthorityScope::Dependencies | NativeAuthorityScope::DependenciesWithIntent => Some(
             native_dependency_ownership(&prepared)
                 .with_physical_fallback(&prepared.native_source_ownerships),
         ),
         NativeAuthorityScope::AuthoredReturn | NativeAuthorityScope::AuthoredEffect(_) => {
             Some(native_dependency_ownership(&prepared))
         }
+    };
+    let dependency_intent = if matches!(scope, NativeAuthorityScope::DependenciesWithIntent)
+        && prepared.project_state == ProjectGovernanceState::Declared
+        && prepared.ccg_compilation.is_success()
+    {
+        prepared.ccg().cloned()
+    } else {
+        None
     };
     let native_return_contracts = match (scope, prepared.ccg()) {
         (NativeAuthorityScope::AuthoredReturn, Some(ccg)) => ccg
@@ -4967,6 +4977,7 @@ pub(crate) fn bind_native_observation_source(
         source_manifest_digest: prepared.source_manifest.entries_digest().to_owned(),
         authority_digest,
         dependency_ownership,
+        dependency_intent,
         logical_contracts,
         native_return_contracts,
         native_effect_policy,

@@ -574,6 +574,9 @@ impl GoModuleRequest<'_> {
         input: &ImplementationObservationInput,
         expected: NativeDependencyContext<'_>,
         receipt: &GoNativeModuleObservation,
+        inspect: impl FnOnce(
+            &crate::implementation_observation::ObservedImplementation,
+        ) -> Result<(), GoObservationError>,
     ) -> Result<Option<serde_json::Value>, GoObservationError> {
         let response = &receipt.observation;
         if response.status != Status::Observed {
@@ -644,6 +647,7 @@ impl GoModuleRequest<'_> {
                 }
                 _ => GoObservationError::InvalidResponse,
             })?;
+        inspect(report.observation())?;
         serde_json::to_value(report)
             .map(Some)
             .map_err(|_| GoObservationError::WireEncoding)

@@ -176,6 +176,11 @@ option:
 fortress psm --observe-go-module PROJECT HOST_REGISTRATION . example.org/component example.org/component/api linux amd64 --dependencies
 ```
 
+Use `--dependency-intent` in place of `--dependencies` to compare the exact
+positive Go observations with directed original CCG relationships. The
+report preserves the original dependency evidence. Missing native evidence
+or original intent has its own disposition.
+
 The report embeds the original native receipt and relates each admitted import
 to the exact selected files of its target package. Where the original governing
 configuration supplies unambiguous owners for both ends, the report shows a
@@ -645,6 +650,13 @@ Use the same independently pinned CPython lexical host with
 Keep the root-scope file outside the repository. Its independently selected
 digest is SHA-256 over its canonical JSON bytes, including the exact root order.
 A scope is an analysis selection, with no project authority or execution grant.
+
+Use `dependency-intent` in place of `imports` to compare admitted static
+dependency edges with authored Module relationships. The selected roots
+and exact static origin remain in the evidence. The comparison covers
+observed edges and their original governing intent. Runtime import behavior,
+absence of a dependency, and full-project conformance remain unestablished.
+
 
 The scope uses `urn:fortress:host:v1:python-static-import-scope`, schema version 1,
 an `inventory` value of `COMPLETE_SOURCE_ONLY`, and one to four explicitly

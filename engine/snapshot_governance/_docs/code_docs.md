@@ -628,6 +628,13 @@ Module ownership. Positions use the original UTF-8 bytes with physical CRLF reta
 targets and ownership ambiguity alongside exact source evidence. The
 physical revalidation boundary covers dependency projection and publication.
 
+The explicit dependency intent modes reuse positive edge classification from
+Architecture Evaluation. They require a complete unambiguous original CCG
+from the same physical capture and retain its digest. Unavailable inputs
+produce an explicit comparison state. The observational result preserves
+the distinction between closed Go import resolution and scoped Python
+static lookup. It does not issue findings or application assessments.
+
 ### [`go_callable.rs`](../_code/go_callable.rs)
 
 Links a scoped declaration and admitted scalar body from the same actual

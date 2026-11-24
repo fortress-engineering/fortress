@@ -3,14 +3,17 @@
 use std::collections::BTreeSet;
 use std::path::Path;
 
+use serde::Serialize;
+
+use crate::architecture_realization::{ReconciliationRecord, compare_scoped_dependencies};
 use crate::audit::{
     NativeAuthorityScope, NativeObservationBinding, bind_native_observation_source,
     observe_candidate_source,
 };
 use crate::heavy_admission::{DirectoryIdentity, assert_no_incomplete_migration};
 use crate::implementation_observation::{
-    ImplementationObservationInput, SnapshotBoundFile, SourceOwnership, SourceOwnershipAuthority,
-    SourceOwnershipBasis, SourceOwnershipDiagnostic,
+    ImplementationObservationInput, ObservedImplementation, SnapshotBoundFile, SourceOwnership,
+    SourceOwnershipAuthority, SourceOwnershipBasis, SourceOwnershipDiagnostic,
 };
 use crate::observation::SourceView;
 
@@ -27,6 +30,17 @@ pub(crate) struct NativeSource<'a> {
 pub(crate) enum NativeSourceError {
     Unavailable(String),
     Changed,
+}
+
+#[derive(Serialize)]
+#[serde(tag = "status", rename_all = "SCREAMING_SNAKE_CASE")]
+pub(crate) enum ScopedDependencyIntent {
+    Compared {
+        ccg_digest: String,
+        records: Vec<ReconciliationRecord>,
+    },
+    OriginalIntentUnavailable,
+    NativeObservationUnavailable,
 }
 
 impl<'a> NativeSource<'a> {
@@ -103,6 +117,22 @@ impl<'a> NativeSource<'a> {
                 .collect(),
         );
         Ok((input, ownership.diagnostics()))
+    }
+
+    pub(crate) fn compare_dependency_intent(
+        &self,
+        observed: Option<&ObservedImplementation>,
+    ) -> Result<ScopedDependencyIntent, serde_json::Error> {
+        let Some(graph) = &self.binding.dependency_intent else {
+            return Ok(ScopedDependencyIntent::OriginalIntentUnavailable);
+        };
+        let Some(observed) = observed else {
+            return Ok(ScopedDependencyIntent::NativeObservationUnavailable);
+        };
+        Ok(ScopedDependencyIntent::Compared {
+            ccg_digest: graph.digest()?,
+            records: compare_scoped_dependencies(graph, observed),
+        })
     }
 
     pub(crate) fn original_declared_owner(

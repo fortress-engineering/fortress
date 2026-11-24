@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v1:native-source-dependency-intent",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "scope",
+    "evidence",
+    "comparison"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:derived:v1:native-source-dependency-intent"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "scope": {
+      "const": "OBSERVED_EDGES_ONLY"
+    },
+    "evidence": {
+      "oneOf": [
+        {
+          "$ref": "urn:fortress:derived:v1:go-source-dependency-inspection"
+        },
+        {
+          "$ref": "urn:fortress:derived:v1:python-static-dependency-observation"
+        }
+      ]
+    },
+    "comparison": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "ccg_digest",
+            "records"
+          ],
+          "properties": {
+            "status": {
+              "const": "COMPARED"
+            },
+            "ccg_digest": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "records": {
+              "type": "array",
+              "maxItems": 8192,
+              "items": {
+                "$ref": "#/$defs/record"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status"
+          ],
+          "properties": {
+            "status": {
+              "enum": [
+                "ORIGINAL_INTENT_UNAVAILABLE",
+                "NATIVE_OBSERVATION_UNAVAILABLE"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state",
+        "source_module",
+        "target_module",
+        "external_target",
+        "declared_capabilities",
+        "declared_path",
+        "evidence"
+      ],
+      "properties": {
+        "state": {
+          "enum": [
+            "DECLARED_AND_OBSERVED",
+            "OBSERVED_UNDECLARED",
+            "OBSERVED_TRANSITIVE_BYPASS",
+            "EXTERNAL",
+            "UNRESOLVED"
+          ]
+        },
+        "source_module": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024
+        },
+        "target_module": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "external_target": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "declared_capabilities": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          }
+        },
+        "declared_path": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          }
+        },
+        "evidence": {
+          "type": "array",
+          "maxItems": 4096,
+          "items": {
+            "$ref": "urn:fortress:derived:v1:native-dependency-projection#/$defs/provenance"
+          }
+        }
+      }
+    }
+  }
+}

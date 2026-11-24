@@ -4,7 +4,7 @@ use std::path::Path;
 
 use serde::Serialize;
 
-use crate::audit::NativeObservationBinding;
+use crate::audit::{NativeAuthorityScope, NativeObservationBinding};
 use crate::candidate::{
     CandidateWorkspace, HypotheticalNativeBodyInspection, NativeCandidateBody,
     NativeCandidateSelection, NativeCandidateSubject, inspect_hypothetical_native_body,
@@ -162,8 +162,52 @@ pub fn observe_go_module_dependencies(
     collector: &GoCollectorPin<'_>,
     launch: impl FnOnce(&[u8]) -> Result<Vec<u8>, GoObservationError>,
 ) -> Result<Vec<u8>, GoObservationError> {
-    let source =
-        NativeSource::capture_for_dependencies(project_root, "Go").map_err(source_failure)?;
+    collect_go_module_dependencies(
+        project_root,
+        selected,
+        build_context,
+        collector,
+        launch,
+        false,
+    )
+}
+
+/// Compares admitted positive Go Module edges with the exact original CCG.
+/// The report does not authorize changes or establish any missing edge.
+///
+/// # Errors
+/// Returns the same source, transport, and output errors as dependency inspection.
+pub fn observe_go_module_dependency_intent(
+    project_root: &Path,
+    selected: GoModuleSelection<'_>,
+    build_context: GoBuildContext,
+    collector: &GoCollectorPin<'_>,
+    launch: impl FnOnce(&[u8]) -> Result<Vec<u8>, GoObservationError>,
+) -> Result<Vec<u8>, GoObservationError> {
+    collect_go_module_dependencies(
+        project_root,
+        selected,
+        build_context,
+        collector,
+        launch,
+        true,
+    )
+}
+
+fn collect_go_module_dependencies(
+    project_root: &Path,
+    selected: GoModuleSelection<'_>,
+    build_context: GoBuildContext,
+    collector: &GoCollectorPin<'_>,
+    launch: impl FnOnce(&[u8]) -> Result<Vec<u8>, GoObservationError>,
+    with_intent: bool,
+) -> Result<Vec<u8>, GoObservationError> {
+    let scope = if with_intent {
+        NativeAuthorityScope::DependenciesWithIntent
+    } else {
+        NativeAuthorityScope::Dependencies
+    };
+    let source = NativeSource::capture_with(project_root, "Go", scope).map_err(source_failure)?;
     let admitted = admit_go_module(
         closed_package(&source, module_entry(selected)),
         selected,
@@ -181,7 +225,17 @@ pub fn observe_go_module_dependencies(
         authority_sha256: &source.binding.authority_digest,
         context_sha256: admitted.dependency_context(),
     };
-    let dependencies = admitted.project_dependencies(&input, context, &receipt)?;
+    let mut intent = None;
+    let dependencies = admitted.project_dependencies(&input, context, &receipt, |observed| {
+        if with_intent {
+            intent = Some(
+                source
+                    .compare_dependency_intent(Some(observed))
+                    .map_err(|_| GoObservationError::WireEncoding)?,
+            );
+        }
+        Ok(())
+    })?;
     let report = GoDependencyInspection {
         schema: "urn:fortress:derived:v1:go-source-dependency-inspection",
         schema_version: 1,
@@ -193,6 +247,23 @@ pub fn observe_go_module_dependencies(
     };
 
     let report = serde_json::to_value(report).map_err(|_| GoObservationError::WireEncoding)?;
+    let report = if with_intent {
+        let comparison = match intent {
+            Some(result) => result,
+            None => source
+                .compare_dependency_intent(None)
+                .map_err(|_| GoObservationError::WireEncoding)?,
+        };
+        serde_json::json!({
+            "$schema": "urn:fortress:derived:v1:native-source-dependency-intent",
+            "schema_version": 1,
+            "scope": "OBSERVED_EDGES_ONLY",
+            "evidence": report,
+            "comparison": comparison,
+        })
+    } else {
+        report
+    };
     let bytes =
         crate::portable::canonical(&report).map_err(|_| GoObservationError::WireEncoding)?;
     if bytes.len() > 2 << 20 {

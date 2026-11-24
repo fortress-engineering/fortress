@@ -12,6 +12,7 @@ use super::{
     PythonStaticImportObservation, PythonStaticImportOutcome, collect_static_imports,
 };
 use crate::affected_analysis::sha256;
+use crate::audit::NativeAuthorityScope;
 use crate::implementation_observation::{
     NativeDependencyAdapterError, NativeDependencyBatch, NativeDependencyContext,
     NativeDependencyEndpoint, NativeDependencyFile, NativeDependencyLanguage,
@@ -27,6 +28,7 @@ use crate::source_architecture::python_lexical::python_static_imports::PythonSta
 pub struct ActualPythonStaticDependencyObservation {
     imports: ActualPythonStaticImportObservation,
     dependencies: PythonStaticDependencyOutcome,
+    intent: Option<Value>,
 }
 
 impl ActualPythonStaticDependencyObservation {
@@ -40,6 +42,12 @@ impl ActualPythonStaticDependencyObservation {
     #[must_use]
     pub const fn dependencies(&self) -> &PythonStaticDependencyOutcome {
         &self.dependencies
+    }
+
+    /// Returns the explicit observed-edge comparison when independently requested.
+    #[must_use]
+    pub const fn intent(&self) -> Option<&Value> {
+        self.intent.as_ref()
     }
 }
 
@@ -79,14 +87,51 @@ pub fn observe_python_static_dependencies(
     scope: &PythonImportScope,
     receive: impl FnOnce(&PythonLexicalRequest, &[u8]) -> Result<Vec<u8>, PythonObservationError>,
 ) -> Result<ActualPythonStaticDependencyObservation, PythonObservationError> {
-    let source = NativeSource::capture_for_dependencies(project_root, "Python")?;
+    collect_dependencies(project_root, source_path, producer, scope, receive, false)
+}
+
+/// Compares positive source dependency edges with independently captured intent.
+/// Runtime import execution and absence of dependencies remain unproven.
+///
+/// # Errors
+/// Returns the same source, transport, and output errors as dependency inspection.
+pub fn observe_python_static_dependency_intent(
+    project_root: &Path,
+    source_path: &str,
+    producer: &PythonLexicalProducer,
+    scope: &PythonImportScope,
+    receive: impl FnOnce(&PythonLexicalRequest, &[u8]) -> Result<Vec<u8>, PythonObservationError>,
+) -> Result<ActualPythonStaticDependencyObservation, PythonObservationError> {
+    collect_dependencies(project_root, source_path, producer, scope, receive, true)
+}
+
+fn collect_dependencies(
+    project_root: &Path,
+    source_path: &str,
+    producer: &PythonLexicalProducer,
+    scope: &PythonImportScope,
+    receive: impl FnOnce(&PythonLexicalRequest, &[u8]) -> Result<Vec<u8>, PythonObservationError>,
+    with_intent: bool,
+) -> Result<ActualPythonStaticDependencyObservation, PythonObservationError> {
+    let authority = if with_intent {
+        NativeAuthorityScope::DependenciesWithIntent
+    } else {
+        NativeAuthorityScope::Dependencies
+    };
+    let source = NativeSource::capture_with(project_root, "Python", authority)?;
     let imports = collect_static_imports(&source, source_path, producer, scope, receive)?;
+    let mut intent = None;
     let dependencies = match imports.outcome() {
         PythonStaticImportOutcome::Unavailable { reason } => {
             PythonStaticDependencyOutcome::Unavailable { reason: *reason }
         }
         PythonStaticImportOutcome::Observed { observation } => {
-            match project_dependencies(&source, imports.evaluation_key(), observation) {
+            match project_dependencies(&source, imports.evaluation_key(), observation, |observed| {
+                if with_intent {
+                    intent = Some(encode_intent(&source, Some(observed))?);
+                }
+                Ok(())
+            }) {
                 Ok(report) => report,
                 Err(PythonObservationError::StaticDependencies(
                     NativeDependencyAdapterError::ResourceLimit,
@@ -97,17 +142,34 @@ pub fn observe_python_static_dependencies(
             }
         }
     };
+    if with_intent && intent.is_none() {
+        intent = Some(encode_intent(&source, None)?);
+    }
     source.revalidate()?;
     Ok(ActualPythonStaticDependencyObservation {
         imports,
         dependencies,
+        intent,
     })
+}
+
+fn encode_intent(
+    source: &NativeSource<'_>,
+    observed: Option<&crate::implementation_observation::ObservedImplementation>,
+) -> Result<Value, PythonObservationError> {
+    source
+        .compare_dependency_intent(observed)
+        .and_then(serde_json::to_value)
+        .map_err(|error| PythonLexicalError::Encoding(error).into())
 }
 
 fn project_dependencies(
     source: &NativeSource<'_>,
     evaluation: &EvaluationKey,
     observation: &PythonStaticImportObservation,
+    inspect: impl FnOnce(
+        &crate::implementation_observation::ObservedImplementation,
+    ) -> Result<(), PythonObservationError>,
 ) -> Result<PythonStaticDependencyOutcome, PythonObservationError> {
     let expected = NativeDependencyContext {
         snapshot_fingerprint: &source.binding.source_fingerprint,
@@ -165,6 +227,7 @@ fn project_dependencies(
     };
     let projected = adapt_native_dependencies(&input, expected, &admitted)
         .map_err(PythonObservationError::StaticDependencies)?;
+    inspect(projected.observation())?;
     Ok(PythonStaticDependencyOutcome::Observed {
         ownership_ref: sha256(&ownership_bytes),
         ownership_diagnostics: diagnostics.to_vec(),
