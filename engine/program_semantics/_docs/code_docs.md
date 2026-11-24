@@ -228,6 +228,7 @@ source gate and producer identity bind an immutable view, evaluation, path,
 function, installed profile and source bytes. The host compares exact live
 READY before forwarding source. The reply must be one bounded canonical
 line with exact correlation, a supported outcome and defensible UTF-8 byte
-coordinates. The installed receiver, qualified CPython context and
+coordinates. This wire edition admits the exact reviewed worker and bootstrap
+by digest. The host verifies their bytes before dispatch. The installed receiver, qualified CPython context and
 source classification remain separate. Project runtime imports, execution
 and effects are unestablished at this boundary.

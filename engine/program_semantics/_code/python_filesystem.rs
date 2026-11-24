@@ -13,13 +13,18 @@ use super::{
 };
 use crate::observation::SourceView;
 use crate::project::EvaluationKey;
-use crate::source_architecture::python_lexical::{PYTHON_FILESYSTEM_WORKER, PYTHON_LEXICAL_WORKER};
 use crate::wire::{JsonAdmissionLimits, admit_json, parse_strict_json_bytes};
 
 const READY_SCHEMA: &str = "fortress-host/python-filesystem-calls-ready/1";
 const REQUEST_SCHEMA: &str = "fortress:python:filesystem-calls-request:1";
 const RESPONSE_SCHEMA: &str = "fortress:python:filesystem-calls-response:1";
 const MAX_FRAME: usize = 4096;
+// Exact reviewed tool identities for this response edition. The trusted host
+// selects and verifies the worker bytes before sending source.
+const FILESYSTEM_WORKER_REF: &str =
+    "sha256:1fca1c074f3dca8c2fe1a6676fdfaa3978d639f18eff772d4ac8b92b93a69ffe";
+const LEXICAL_BOOTSTRAP_REF: &str =
+    "sha256:19ca652a6ed8908d128ac231da47b45d0b0a86a9baffaff9626fb2d1609c9836";
 const RESPONSE_LIMITS: JsonAdmissionLimits = JsonAdmissionLimits {
     bytes: MAX_FRAME - 1,
     depth: 4,
@@ -163,8 +168,8 @@ impl PythonFilesystemRequest {
         profile: PythonFilesystemProfile,
     ) -> Result<Self, PythonFilesystemError> {
         if !identifier(function)
-            || producer.worker != digest(PYTHON_FILESYSTEM_WORKER)
-            || producer.bootstrap != digest(PYTHON_LEXICAL_WORKER)
+            || producer.worker != FILESYSTEM_WORKER_REF
+            || producer.bootstrap != LEXICAL_BOOTSTRAP_REF
             || producer.runtime != profile.runtime_ref()
             || ![
                 evaluation.source_manifest_digest(),
