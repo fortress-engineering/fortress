@@ -357,7 +357,7 @@ pub(crate) fn inspect_native_call_topology<'a>(
         }
         adjacency.insert(body.binding().to_owned(), outgoing);
     }
-    let mut topology = super::graph::compile_native_body_topology(&nodes, &adjacency);
+    let mut topology = super::graph::compile_native_body_topology(&nodes, adjacency);
     topology
         .leaf_symbols
         .retain(|body| !caller_with_missing_target.contains(body.as_str()));

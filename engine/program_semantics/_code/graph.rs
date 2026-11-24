@@ -76,7 +76,6 @@ pub(super) fn compile_call_topology(
     build_call_topology(symbols, calls, None, false).topology
 }
 
-#[allow(clippy::too_many_lines)]
 fn build_call_topology(
     symbols: &[ExecutableSymbol],
     calls: &[ProgramCall],
@@ -88,7 +87,6 @@ fn build_call_topology(
         .iter()
         .map(|id| (id.clone(), BTreeSet::new()))
         .collect::<BTreeMap<_, _>>();
-    let mut incoming_calls = outgoing_calls.clone();
     let index = symbol_index(symbols);
     let mut cross_package_calls = Vec::new();
     for call in calls
@@ -102,10 +100,6 @@ fn build_call_topology(
             .entry(call.caller.clone())
             .or_default()
             .insert(callee.clone());
-        incoming_calls
-            .entry(callee.clone())
-            .or_default()
-            .insert(call.caller.clone());
         if index
             .get(call.caller.as_str())
             .zip(index.get(callee.as_str()))
@@ -114,33 +108,72 @@ fn build_call_topology(
             cross_package_calls.push(call.id.clone());
         }
     }
-    let adjacency = outgoing_calls.clone();
+    let bodies = symbols
+        .iter()
+        .filter(|symbol| symbol.has_body())
+        .map(|symbol| symbol.id.as_str());
+    let reuse = retain.then_some(GraphReuse { index, previous });
+    assemble_call_topology(&ids, outgoing_calls, bodies, cross_package_calls, reuse)
+}
+
+struct GraphReuse<'a> {
+    index: BTreeMap<&'a str, &'a ExecutableSymbol>,
+    previous: Option<&'a PreparedCallTopology>,
+}
+
+fn assemble_call_topology<'a>(
+    ids: &BTreeSet<String>,
+    outgoing_calls: BTreeMap<String, BTreeSet<String>>,
+    bodies: impl Clone + Iterator<Item = &'a str>,
+    cross_package_calls: Vec<String>,
+    reuse: Option<GraphReuse<'_>>,
+) -> PreparedCallTopologyResult {
+    let mut incoming_calls = ids
+        .iter()
+        .cloned()
+        .map(|id| (id, BTreeSet::new()))
+        .collect::<BTreeMap<_, _>>();
+    for (caller, targets) in &outgoing_calls {
+        for target in targets {
+            incoming_calls
+                .entry(target.clone())
+                .or_default()
+                .insert(caller.clone());
+        }
+    }
     let mut transitive_reachability = BTreeMap::new();
     let mut component_groups = BTreeMap::new();
     let mut units = BTreeMap::new();
     let mut recomputed_components = 0;
     let mut reused_components = 0;
-    for members in weak_components(&ids, &adjacency, &incoming_calls) {
+    for members in weak_components(ids, &outgoing_calls, &incoming_calls) {
         let edges = members
             .iter()
-            .map(|id| (id.clone(), adjacency.get(id).cloned().unwrap_or_default()))
+            .map(|id| {
+                (
+                    id.clone(),
+                    outgoing_calls.get(id).cloned().unwrap_or_default(),
+                )
+            })
             .collect::<BTreeMap<_, _>>();
-        if !retain {
+        let Some(reuse) = &reuse else {
             recomputed_components += 1;
             transitive_reachability.extend(component_reachability(&edges));
             component_groups.extend(strongly_connected_components(&members, &edges));
             continue;
-        }
+        };
         let symbol_metadata = members
             .iter()
             .filter_map(|id| {
-                index
+                reuse
+                    .index
                     .get(id.as_str())
                     .map(|symbol| (id.clone(), (symbol.package.clone(), symbol.has_body())))
             })
             .collect::<BTreeMap<_, _>>();
         let key = members.iter().cloned().collect::<Vec<_>>();
-        let retained = previous
+        let retained = reuse
+            .previous
             .and_then(|prepared| prepared.units.get(&key))
             .filter(|unit| unit.adjacency == edges && unit.symbol_metadata == symbol_metadata);
         let unit = if let Some(unit) = retained {
@@ -163,10 +196,6 @@ fn build_call_topology(
         );
         units.insert(key, unit);
     }
-    let bodies = symbols
-        .iter()
-        .filter(|symbol| symbol.has_body())
-        .map(|symbol| symbol.id.as_str());
     let topology = complete_topology(
         outgoing_calls,
         incoming_calls,
@@ -185,40 +214,10 @@ fn build_call_topology(
 
 pub(super) fn compile_native_body_topology(
     ids: &BTreeSet<String>,
-    edges: &BTreeMap<String, BTreeSet<String>>,
+    edges: BTreeMap<String, BTreeSet<String>>,
 ) -> CallTopology {
-    let mut incoming = ids
-        .iter()
-        .cloned()
-        .map(|id| (id, BTreeSet::new()))
-        .collect::<BTreeMap<_, _>>();
-    for (caller, targets) in edges {
-        for target in targets {
-            incoming
-                .entry(target.clone())
-                .or_default()
-                .insert(caller.clone());
-        }
-    }
-    let mut reachability = BTreeMap::new();
-    let mut groups = BTreeMap::new();
-    for members in weak_components(ids, edges, &incoming) {
-        let subset = members
-            .iter()
-            .map(|id| (id.clone(), edges.get(id).cloned().unwrap_or_default()))
-            .collect();
-        reachability.extend(component_reachability(&subset));
-        groups.extend(strongly_connected_components(&members, &subset));
-    }
     let bodies = ids.iter().map(String::as_str);
-    complete_topology(
-        edges.clone(),
-        incoming,
-        reachability,
-        groups,
-        bodies,
-        Vec::new(),
-    )
+    assemble_call_topology(ids, edges, bodies, Vec::new(), None).topology
 }
 
 fn complete_topology<'a>(
