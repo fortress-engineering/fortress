@@ -496,7 +496,7 @@ fn native_owner_precedence_and_module_identity_survive_explicit_relocation() {
             let expected = [
                 (general.clone(), "AF-BASE-0001".to_owned()),
                 (nested.clone(), "AF-DETAIL-0001".to_owned()),
-                (candidate.to_string(), "AF-EXACT-0001".to_owned()),
+                (candidate.clone(), "AF-EXACT-0001".to_owned()),
             ]
             .into_iter()
             .collect::<std::collections::BTreeMap<_, _>>();
