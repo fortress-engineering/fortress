@@ -260,3 +260,10 @@ module observations retain a null dependency projection.
 Defines the static Python packaging observation and its source and authority
 binding. Its independent version leaves Python lexical, import, and canonical
 source-artifact document identities unchanged.
+
+### [`go_workspace_schema_v1.json`](../_data/go_workspace_schema_v1.json)
+
+Defines the read-only workspace declaration report and exact source
+provenance. Reports the presence of replacement declarations without resolving
+their targets. The existing selected Module reader retains its independent
+closed context and historical schema versions.

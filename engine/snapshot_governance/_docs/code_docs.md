@@ -685,3 +685,11 @@ sibling lock files and a colocated environment marker when present in the
 admitted view. Revalidates exact source and directory identity before returning
 the report. File presence does not establish lock resolution, interpreter
 selection, ownership, or permission to execute a backend.
+
+### [`go_workspace_observation.rs`](../_code/go_workspace_observation.rs)
+
+Binds one explicitly selected Go workspace manifest and the original
+governance to immutable physical source. It admits a bounded Go editor reply,
+distinguishes scoped ordinary module and checksum files from unavailable
+paths, and reports the reader and declared toolchain separately. Workspace
+selection and dependency resolution remain unestablished.

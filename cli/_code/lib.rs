@@ -54,6 +54,7 @@ mod flow_command;
 mod go_body_command;
 mod go_fs_command;
 mod go_observation_command;
+mod go_workspace_command;
 mod inspection;
 mod layout_command;
 #[path = "../agent_integration/_code/mediator.rs"]
@@ -716,6 +717,12 @@ fn run_source_artifacts<O: Write, E: Write>(
     output: &mut O,
     error: &mut E,
 ) -> io::Result<u8> {
+    if arguments
+        .first()
+        .is_some_and(|argument| argument == "--observe-go-workspace")
+    {
+        return go_workspace_command::run(&arguments[1..], output, error);
+    }
     if arguments
         .first()
         .is_some_and(|argument| argument == "--observe-python-project")

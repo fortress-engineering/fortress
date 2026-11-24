@@ -786,3 +786,12 @@ Serializes the same typed original native return observation for both language
 commands. It retains the exact source and governing authority even if the
 subject is unavailable. Each linked comparison preserves its separate native
 scope, exact declared owner, original intent, and static return bound.
+
+### [`go_workspace_command.rs`](../_code/go_workspace_command.rs)
+
+Invokes the explicitly pinned host Go workspace editor in restricted print
+modes using only copied manifest bytes in a fresh owned external directory.
+Supply an ordinary absolute Go executable, its SHA-256 reference and an
+ordinary absolute scratch directory outside the project. Toolchain switching,
+ambient workspace lookup and dependency fetching are disabled. The command
+rechecks staged bytes and ownership before publishing declarations.

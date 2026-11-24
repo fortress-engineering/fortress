@@ -212,6 +212,184 @@ const PIN: GoCollectorPin<'static> = GoCollectorPin {
     go_toolchain: "go1.22.12",
 };
 
+mod workspace_declarations {
+    use super::{Fixture, Value, fs, json, registered_schema_path};
+    use fortress_core::go_workspace_observation::{
+        GoWorkspaceObservationError, GoWorkspaceReaderReply, observe_go_workspace,
+    };
+    use fortress_core::portable::{canonical, digest};
+
+    const WORKSPACE: &str = "work/go.work";
+    const SOURCE: &[u8] = b"go 1.22\r\ntoolchain go1.23.0 // expected declaration\r\nuse (\r\n\t./app\r\n\t\"./a go.mod folder\"\r\n\t../outside\r\n)\r\nreplace example.test/dependency => ../elsewhere\r\n";
+    const MODULE: &[u8] = b"module example.test/app\n\ngo 1.22\n";
+    const READER: &str = "sha256:08cfbe81f1bf519874ce8e6670ea98768d18cc0d16b9ff9d67eb785ec9a15cf9";
+
+    fn write(fixture: &Fixture, name: &str, bytes: &[u8]) {
+        let path = fixture.root.join(name);
+        fs::create_dir_all(path.parent().unwrap()).unwrap();
+        fs::write(path, bytes).unwrap();
+    }
+
+    fn observed(input: &[u8], members: &[&str]) -> GoWorkspaceReaderReply {
+        assert_eq!(input, SOURCE);
+        GoWorkspaceReaderReply::Parsed {
+            json: serde_json::to_vec(
+                &json!({"Go": "1.22","Use":members.iter().map(|item| json!({"DiskPath":item})).collect::<Vec<_>>(),
+                "Replace":[{"Old":{"Path":"example.test/dependency"},"New":{"Path":"../elsewhere"}}]}),
+            ).unwrap(),
+            formatted: SOURCE.to_vec(),
+            executable_ref: READER.to_owned(),
+            version: "go1.22.12".to_owned(),
+        }
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R32-001`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R32
+    #[test]
+    fn go_workspace_declarations_bind_exact_members_and_unresolved_paths() {
+        let fixture = Fixture::new("workspace-declarations");
+        write(&fixture, WORKSPACE, SOURCE);
+        write(&fixture, "work/app/go.mod", MODULE);
+        write(&fixture, "work/go.work.sum", b"workspace checksum metadata");
+        write(&fixture, "work/a go.mod folder/go.mod", MODULE);
+        write(
+            &fixture,
+            "work/a go.mod folder/go.sum",
+            b"module checksum file",
+        );
+        let inspect = || {
+            serde_json::to_value(
+                observe_go_workspace(&fixture.root, WORKSPACE, |input| {
+                    observed(input, &["./app", "./a go.mod folder", "../outside"])
+                })
+                .unwrap(),
+            )
+            .unwrap()
+        };
+        let report = inspect();
+        assert_eq!(report["effective_workspace"], "UNESTABLISHED");
+        assert_eq!(report["manifest_sha256"], digest(SOURCE));
+        assert_eq!(
+            report["workspace_sum"],
+            json!({"path":"work/go.work.sum","sha256":digest(b"workspace checksum metadata")})
+        );
+        let metadata = &report["metadata"];
+        assert_eq!(metadata["reader_version"], "go1.22.12");
+        assert_eq!(metadata["toolchain_directive"], "go1.23.0");
+        assert_eq!(metadata["replacement_count"], 1);
+        let members = metadata["workspace_membership"].as_array().unwrap();
+        assert_eq!(
+            members,
+            &[
+                json!({"status":"OBSERVED","module":{"path":"work/a go.mod folder/go.mod","sha256":digest(MODULE)},
+                "sum":{"path":"work/a go.mod folder/go.sum","sha256":digest(b"module checksum file")}}),
+                json!({"status":"OBSERVED","module":{"path":"work/app/go.mod","sha256":digest(MODULE)},"sum":null}),
+                json!({"status":"UNRESOLVED_PATH","declared_path_ref":digest(b"../outside")}),
+            ]
+        );
+        let canonical_bytes = canonical(&report).unwrap();
+        assert_eq!(canonical_bytes, canonical(&inspect()).unwrap());
+        assert!(
+            !String::from_utf8(canonical_bytes)
+                .unwrap()
+                .contains("../outside")
+        );
+        assert!(jsonschema::is_valid(
+            &registered_schema_path("engine/snapshot_governance/_data/go_workspace_schema_v1.json"),
+            &report
+        ));
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R32-002`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R32
+    #[test]
+    fn go_workspace_declarations_distinguish_missing_ambiguous_and_invalid() {
+        let fixture = Fixture::new("workspace-unavailable");
+        let observe = |reply| {
+            serde_json::to_value(
+                observe_go_workspace(&fixture.root, WORKSPACE, |_: &[u8]| reply).unwrap(),
+            )
+            .unwrap()
+        };
+        let missing: Value = serde_json::to_value(
+            observe_go_workspace(&fixture.root, WORKSPACE, |_| {
+                panic!("missing source must not dispatch")
+            })
+            .unwrap(),
+        )
+        .unwrap();
+        assert_eq!(missing["metadata"], json!({"status":"MISSING"}));
+        assert!(missing["manifest_sha256"].is_null());
+        write(&fixture, WORKSPACE, SOURCE);
+        assert_eq!(
+            observe(GoWorkspaceReaderReply::Invalid)["metadata"],
+            json!({"status":"INVALID"})
+        );
+        assert_eq!(
+            observe(GoWorkspaceReaderReply::Unavailable)["metadata"]["reason"],
+            "PINNED_READER_UNAVAILABLE"
+        );
+        let conflicting = observe(observed(SOURCE, &["app", "./app", "./other"]));
+        assert_eq!(
+            conflicting["metadata"]["workspace_membership"],
+            json!([
+                {"status":"AMBIGUOUS","path":"work/app/go.mod"},
+                {"status":"MISSING_MODULE","path":"work/other/go.mod"},
+            ])
+        );
+        let mut response = observed(SOURCE, &[]);
+        if let GoWorkspaceReaderReply::Parsed { ref mut json, .. } = response {
+            *json = br#"{"Go":"1.22","Go":"1.23","Use":null,"Replace":null}"#.to_vec();
+        }
+        assert_eq!(
+            observe(response)["metadata"]["reason"],
+            "INVALID_READER_OBSERVATION"
+        );
+        write(&fixture, WORKSPACE, &vec![b' '; (128 << 10) + 1]);
+        let oversized = observe_go_workspace(&fixture.root, WORKSPACE, |_| {
+            panic!("oversized input must not dispatch")
+        })
+        .unwrap();
+        assert_eq!(
+            serde_json::to_value(oversized).unwrap()["metadata"]["reason"],
+            "RESOURCE_LIMIT"
+        );
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R32-003`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R32
+    #[test]
+    fn go_workspace_declarations_refuse_stale_source_and_unsafe_selection() {
+        let fixture = Fixture::new("workspace-drift");
+        write(&fixture, WORKSPACE, SOURCE);
+        let outcome = observe_go_workspace(&fixture.root, WORKSPACE, |input| {
+            write(
+                &fixture,
+                "work/go.work.sum",
+                b"changed during reader callback",
+            );
+            observed(input, &["./app"])
+        });
+        assert!(matches!(
+            outcome,
+            Err(GoWorkspaceObservationError::SourceChanged)
+        ));
+        for path in [
+            "../go.work",
+            "/go.work",
+            "work\\go.work",
+            "work/fakego.work",
+        ] {
+            assert!(matches!(
+                observe_go_workspace(&fixture.root, path, |_| panic!(
+                    "unsafe input must not dispatch"
+                )),
+                Err(GoWorkspaceObservationError::InvalidManifestPath)
+            ));
+        }
+    }
+}
+
 struct Fixture {
     parent: PathBuf,
     root: PathBuf,

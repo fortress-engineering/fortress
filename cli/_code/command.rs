@@ -308,7 +308,7 @@ const BUILTIN_COMMANDS: &[CommandDescriptor] = &[
         name: "source-artifacts",
         aliases: &[],
         description: "Compile and render the language-neutral Source Artifact Model.",
-        usage: "fortress source-artifacts [path] [--format human|json] [--output path] | fortress source-artifacts --observe-python-project PROJECT PYPROJECT_PATH | fortress source-artifacts --observe-python-scalar project host-registration [--flow | --return-sensitivity | --contract module root-scope root-scope-sha256]",
+        usage: "fortress source-artifacts [path] [--format human|json] [--output path] | fortress source-artifacts --observe-go-workspace PROJECT GO_WORK_PATH GO_EXECUTABLE GO_SHA256 TRUSTED_SCRATCH_DIRECTORY | fortress source-artifacts --observe-python-project PROJECT PYPROJECT_PATH | fortress source-artifacts --observe-python-scalar project host-registration [--flow | --return-sensitivity | --contract module root-scope root-scope-sha256]",
     },
     CommandDescriptor {
         id: "CMD-CERTIFICATION-FULL-SNAPSHOT",

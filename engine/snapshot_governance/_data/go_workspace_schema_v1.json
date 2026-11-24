@@ -1,0 +1,321 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v1:go-workspace-observation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "scope",
+    "source_fingerprint",
+    "source_manifest_digest",
+    "source_view_digest",
+    "authority_digest",
+    "manifest_path",
+    "manifest_sha256",
+    "workspace_sum",
+    "metadata",
+    "effective_workspace"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:derived:v1:go-workspace-observation"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "scope": {
+      "const": "STATIC_WORKSPACE_DECLARATIONS_ONLY"
+    },
+    "source_fingerprint": {
+      "$ref": "#/$defs/digest"
+    },
+    "source_manifest_digest": {
+      "$ref": "#/$defs/digest"
+    },
+    "source_view_digest": {
+      "$ref": "#/$defs/digest"
+    },
+    "authority_digest": {
+      "$ref": "#/$defs/digest"
+    },
+    "manifest_path": {
+      "type": "string",
+      "maxLength": 4096,
+      "pattern": "(^|/)go\\.work$"
+    },
+    "manifest_sha256": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/digest"
+        }
+      ]
+    },
+    "workspace_sum": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/file"
+        }
+      ]
+    },
+    "metadata": {
+      "$ref": "#/$defs/metadata"
+    },
+    "effective_workspace": {
+      "const": "UNESTABLISHED"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "metadata": {
+            "properties": {
+              "status": {
+                "const": "MISSING"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "manifest_sha256": {
+            "type": "null"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "manifest_sha256": {
+            "$ref": "#/$defs/digest"
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "path": {
+      "type": "string",
+      "maxLength": 4100,
+      "minLength": 1
+    },
+    "file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/path"
+        },
+        "sha256": {
+          "$ref": "#/$defs/digest"
+        }
+      }
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9._-]{1,128}$"
+    },
+    "member": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "module",
+            "sum"
+          ],
+          "properties": {
+            "status": {
+              "const": "OBSERVED"
+            },
+            "module": {
+              "$ref": "#/$defs/file"
+            },
+            "sum": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/$defs/file"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "path"
+          ],
+          "properties": {
+            "status": {
+              "const": "MISSING_MODULE"
+            },
+            "path": {
+              "$ref": "#/$defs/path"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "path"
+          ],
+          "properties": {
+            "status": {
+              "const": "AMBIGUOUS"
+            },
+            "path": {
+              "$ref": "#/$defs/path"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "declared_path_ref"
+          ],
+          "properties": {
+            "status": {
+              "const": "UNRESOLVED_PATH"
+            },
+            "declared_path_ref": {
+              "$ref": "#/$defs/digest"
+            }
+          }
+        }
+      ]
+    },
+    "metadata": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status"
+          ],
+          "properties": {
+            "status": {
+              "const": "MISSING"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status"
+          ],
+          "properties": {
+            "status": {
+              "const": "INVALID"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "reason"
+          ],
+          "properties": {
+            "status": {
+              "const": "UNAVAILABLE"
+            },
+            "reason": {
+              "enum": [
+                "RESOURCE_LIMIT",
+                "PINNED_READER_UNAVAILABLE",
+                "INVALID_READER_OBSERVATION",
+                "RESOURCE_OR_READER_OUTPUT_LIMIT"
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "go_version",
+            "toolchain_directive",
+            "reader_version",
+            "reader_executable_ref",
+            "workspace_membership",
+            "replacement_count"
+          ],
+          "properties": {
+            "status": {
+              "const": "DECLARED"
+            },
+            "go_version": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/$defs/version"
+                }
+              ]
+            },
+            "toolchain_directive": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/$defs/version"
+                }
+              ]
+            },
+            "reader_version": {
+              "enum": [
+                "go1.22.2",
+                "go1.22.12"
+              ]
+            },
+            "reader_executable_ref": {
+              "$ref": "#/$defs/digest"
+            },
+            "workspace_membership": {
+              "type": "array",
+              "maxItems": 256,
+              "items": {
+                "$ref": "#/$defs/member"
+              }
+            },
+            "replacement_count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 256
+            }
+          }
+        }
+      ]
+    }
+  }
+}

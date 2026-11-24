@@ -42,7 +42,10 @@ fn parse(arguments: &[String]) -> Result<(PathBuf, PathBuf, bool), String> {
     ))
 }
 
-fn admit_destination(root: &Path, destination: &Path) -> io::Result<(PathBuf, DirectoryIdentity)> {
+pub(super) fn admit_destination(
+    root: &Path,
+    destination: &Path,
+) -> io::Result<(PathBuf, DirectoryIdentity)> {
     if destination
         .components()
         .any(|part| matches!(part, Component::ParentDir))

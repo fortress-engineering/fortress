@@ -58,6 +58,9 @@ pub mod finding;
 pub mod finding_governance;
 #[path = "../snapshot_governance/_code/go_observation.rs"]
 pub mod go_observation;
+/// Exact read-only Go workspace source inspection.
+#[path = "../snapshot_governance/_code/go_workspace_observation.rs"]
+pub mod go_workspace_observation;
 #[path = "../snapshot_governance/_code/heavy_admission.rs"]
 pub mod heavy_admission;
 #[path = "../standard_registry/_code/identity.rs"]
