@@ -1348,8 +1348,8 @@ mod callable_links {
         assert!(matches!(result, Err(PythonObservationError::SourceChanged)));
     }
 
-    fn contract_fixture() -> Fixture {
-        let fixture = dependency_fixture("native-return");
+    fn contract_fixture(name: &str) -> Fixture {
+        let fixture = dependency_fixture(name);
         fs::write(fixture.root.join(PATH), UNCHANGED).unwrap();
 
         let original = fixture.root.join("__fortress/.fsconfig");
@@ -1389,7 +1389,7 @@ mod callable_links {
     fn native_return_comparison_uses_exact_original_owner_and_bytes() {
         use fortress_core::semantic_analysis::NativeBooleanReturn;
 
-        let fixture = contract_fixture();
+        let fixture = contract_fixture("native-return-exact");
         let inspect = || {
             observe_python_authored_native_return(
                 &fixture.root,
@@ -1444,7 +1444,7 @@ mod callable_links {
         use fortress_core::authority_roles::{ProtectedClass, protected_input_roles};
         use fortress_core::control_layout::ControlLayout;
 
-        let fixture = contract_fixture();
+        let fixture = contract_fixture("native-return-refusal");
         let inspect = || {
             observe_python_authored_native_return(
                 &fixture.root,
