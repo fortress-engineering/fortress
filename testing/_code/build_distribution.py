@@ -18,7 +18,8 @@ sys.path.insert(0, str(ROOT / "cli/_code"))
 sys.path.insert(0, str(ROOT / "engine/snapshot_governance/_code"))
 from execution_storage import RunWorkspace, StoragePolicy
 from quality_certificate import repository_fingerprint, run_command, validate_control_artifact_registry
-from package_install import SCHEMA, canonical, digest, executable_name, hash_file, target_platform, verify
+from native_go_assets import build_workers, validate_selection
+from package_install import GO_WORKERS, SCHEMA, canonical, digest, executable_name, hash_file, target_platform, verify
 
 SCHEMA_REGISTRY = "engine/standard_registry/_data/schema_manifest.json"
 STANDARD = "engine/standard_registry/_data/standard_manifest.json"
@@ -131,7 +132,8 @@ def runtime_binding(executable):
                       "glibc_symbols":sorted(set(re.findall(r"\bGLIBC_[0-9.]+\b", versions)))}
 
 
-def build(destination, storage, checkout):
+def build(destination, storage, checkout, *, go_sdk=None, go_sdk_sha256=None, go_workers=()):
+    validate_selection(go_sdk, go_sdk_sha256, go_workers)
     if destination.is_relative_to(ROOT) or storage.is_relative_to(ROOT):
         raise ValueError("distribution destinations must be outside project source")
     if output("git", "status", "--porcelain=v1", "--untracked-files=all"):
@@ -162,7 +164,13 @@ def build(destination, storage, checkout):
         if any(path.name != "_owner.json" for path in owner.target.iterdir()):
             raise ValueError("independent build requires an empty compiler target")
         owner.record_preexisting(ROOT/"_data/Cargo.lock")
+        go_assets, go_binding = build_workers(
+            ROOT, go_sdk, go_sdk_sha256, go_workers, target,
+            (commit, source_fingerprint.removeprefix("sha256:")), owner, run_command,
+        )
         env = locked_environment(owner.target)
+        if go_binding is not None:
+            env.update(CARGO_NET_OFFLINE="true", npm_config_offline="true")
         run_command(ROOT, ["cargo", "+"+toolchain, "--config", "_data/cargo_config.toml", "build",
                            "--manifest-path", "_data/Cargo.toml", "--locked", "--release",
                            "--all-features", "-p", "fortress-cli"], env, workspace=owner, timeout_seconds=7200)
@@ -184,7 +192,7 @@ def build(destination, storage, checkout):
         vsix = destination / "fortress-development.vsix"
         shutil.copyfile(stage / vsix.name, vsix)
         archive = destination / f"fortress-{version}-{target}.zip"
-        members = source_assets() | {
+        members = source_assets() | go_assets | {
             "bin/" + exe.name:exe, "editor/" + vsix.name:vsix, "share/locked-dependencies.json":inventory,
             "share/verify_bundle.py":ROOT/VERIFIER, "share/install-guide.md":ROOT/"cli/_data/install_guide.txt",
         }
@@ -210,6 +218,11 @@ def build(destination, storage, checkout):
                               "semantic_scope":"bounded installed Rust analysis with explicit unsupported results"},
             "authenticity":"UNVERIFIED","release_authorization":"NOT_ESTABLISHED",
         }
+        if go_binding is not None:
+            manifest["build"]["native_go"] = go_binding
+            manifest["runtime"]["native_go"] = (
+                "prebuilt workers; explicit independent external host registration; no installed Go SDK required"
+            )
         raw = canonical(manifest)
         verify(archive, raw)
         if repository_fingerprint(ROOT)[0] != source_fingerprint or output("git","rev-parse","HEAD") != commit:
@@ -229,5 +242,10 @@ if __name__ == "__main__":
     parser.add_argument("destination",type=Path)
     parser.add_argument("--storage",required=True,type=Path)
     parser.add_argument("--commit",required=True)
+    parser.add_argument("--go-sdk", type=Path, help="absolute trusted native Go SDK root")
+    parser.add_argument("--go-sdk-sha256", help="independently selected exact SDK inventory digest")
+    parser.add_argument("--go-worker", choices=tuple(GO_WORKERS), action="append", default=[],
+                        help="explicit optional native worker edition; repeat to select multiple editions")
     args = parser.parse_args()
-    build(args.destination.resolve(),args.storage.resolve(),args.commit)
+    build(args.destination.resolve(), args.storage.resolve(), args.commit,
+          go_sdk=args.go_sdk, go_sdk_sha256=args.go_sdk_sha256, go_workers=args.go_worker)

@@ -94,3 +94,50 @@ root-scope schema in the installed CLI schema inventory.
 Run fortress source-artifacts --observe-python PROJECT HOST_REGISTRATION SOURCE_PATH imports ROOT_SCOPE ROOT_SCOPE_SHA256.
 The report preserves exact source, authority, lexical limitations and scoped
 static candidates. Runtime imports remain unresolved.
+
+## Optional Go native inspection
+
+A package may contain prebuilt Go workers in its bin directory. Check
+the verified manifest's build.native_go attachment for the exact worker paths,
+protocols, executable digests, original source and SDK identity. Installation
+copies each approved worker with executable permissions. Use the current
+installer supplied with that package. These workers run without a Go SDK on the
+installed machine.
+
+Keep each host registration outside the observed project. Set its executable
+to the absolute installed path after independently selecting the worker and
+reviewing its digest. Use the exact host and compiler version in the worker
+attachment. A package digest verifies package contents. Host trust remains an
+independent selection, and a package does not create a registration or run a
+worker on installation.
+
+Select the asset for the command and use its corresponding independently
+configured external registration.
+
+| Worker edition | CLI command | Additional worker modes |
+| --- | --- | --- |
+| v1 | psm --observe-go | legacy observation |
+| v3 | psm --observe-go-module | legacy observation and v2 build selection |
+| body-v1 | psm --observe-go-body | legacy observation |
+| tests-v1 | psm --observe-go-tests | legacy observation and v2 build selection |
+
+For psm --observe-go-build use the combined v3 worker with a v2 registration.
+Body and test declarations have distinct worker executables and registration
+schemas. The body worker reports bounded source observations. Test declaration
+inspection does not execute project tests or supply verification evidence.
+The schemas are part of the installed schema inventory. The development
+targets are Windows x64 with go1.22.12 and Linux x64 with go1.22.2.
+
+To opt in at build time, append the following to the existing exact-source build
+command. Supply the independently pinned, unprefixed lowercase SDK inventory
+SHA-256 for the selected absolute installation.
+
+    --go-sdk SDK_ROOT --go-sdk-sha256 SDK_SHA256 --go-worker v1 --go-worker v3 --go-worker body-v1 --go-worker tests-v1
+
+The preparation checks the native SDK command, tool programs and standard
+sources before and after staging. It builds only the fixed worker sources
+with the recorded flags and disables fetching. The requested full package
+build also uses offline Cargo and npm caches. Missing dependencies or a
+different SDK inventory fail explicitly. The older v1 package reader can
+verify new package member bytes, while the supplied current installer grants
+executable permissions to the recognized additional worker files.

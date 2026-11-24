@@ -163,6 +163,8 @@ Validates external host registration, invokes one owned bounded collector at a t
 
 Verifies portable development archives against independently supplied manifest digests. Installs exact inventories into immutable application slots and removes only verified owned files. The installer does not write project authority or execute the package contents.
 
+The optional native Go distribution attachment uses the established v1 package manifest's bounded build metadata. The installer cross-checks recognized worker and notice identities against the exact file inventory, verifies each native executable header, and sets executable permissions only on admitted application members. Body and test commands select separate exact external registrations and staged executables. Installation does not create a registration.
+
 ### [`candidate_command.rs`](../_code/candidate_command.rs)
 
 Adapts explicit overlay base/evaluate/inspect/reconcile requests to the existing Snapshot Governance service. Human and JSON projections preserve all fields. No apply method, production grant validator or execution-assertion reader is installed; explicit export retains a non-authoritative role-resolved proposal. See [candidate examples](code_docs.md).

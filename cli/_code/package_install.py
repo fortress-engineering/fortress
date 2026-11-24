@@ -27,6 +27,41 @@ FIELDS = {"$schema", "schema_version", "product_version", "target", "archive_sha
           "compatibility", "runtime", "authenticity", "release_authorization"}
 
 
+# Registered optional preparation recipes. Kept in the standalone installer so
+# extraction and verification require neither a Go SDK nor a source checkout.
+GO_WORKER_FORMAT = "fortress-native-go-workers-v1"
+GO_WORKER_PREFIX = "bin/fortress-go-collector-"
+GO_NOTICE_PREFIX = "share/fortress/native/go/"
+GO_NOTICE_BYTES_LIMIT = 64 << 10
+GO_WORKER_VERSIONS = {"linux-x64": "go1.22.2", "windows-x64": "go1.22.12"}
+GO_WORKER_BUILD_FLAGS = ["-trimpath", "-buildvcs=false", "-p=1", "-ldflags=-buildid="]
+GO_WORKER_ENVIRONMENT = {
+    "CGO_ENABLED": "0", "GO111MODULE": "off", "GOAMD64": "v1", "GOARCH": "amd64",
+    "GODEBUG": "gotypesalias=0", "GOENV": "off", "GOEXPERIMENT": "", "GOFLAGS": "",
+    "GOMAXPROCS": "2", "GOPROXY": "off", "GOSUMDB": "off", "GOTOOLCHAIN": "local",
+    "GOVCS": "*:off", "GOWORK": "off",
+}
+GO_WORKER_SOURCE_ROOT = "engine/program_semantics/_code/"
+GO_WORKERS = {
+    "body-v1": (
+        ("collector.go", "go_body.go"),
+        ["observe-go-v1", "lower-first-order-go-v1"],
+    ),
+    "tests-v1": (
+        ("collector.go", "collector_build_context.go", "go_test_observer.go"),
+        ["observe-go-v1", "select-build-go-v2", "observe-go-tests-v1"],
+    ),
+    "v1": (("collector.go",), ["observe-go-v1"]),
+    "v3": (
+        ("collector.go", "collector_build_context.go", "collector_local_imports.go"),
+        ["observe-go-v1", "select-build-go-v2", "observe-go-module-v3"],
+    ),
+}
+GO_SDK_FILES_LIMIT = 16_384
+GO_SDK_BYTES_LIMIT = 384 * 1024**2
+GO_WORKER_BYTES_LIMIT = 32 * 1024**2
+
+
 class PackageError(ValueError):
     """The package or its requested installation could not be verified."""
 
@@ -72,6 +107,85 @@ def target_platform():
     if host not in ("windows", "linux") or platform.machine().lower() not in ("x86_64", "amd64"):
         raise PackageError("host is outside the supported portable installation targets")
     return host + "-x64"
+
+
+def native_go_path(worker, target):
+    suffix = ".exe" if target == "windows-x64" else ""
+    return GO_WORKER_PREFIX + worker + suffix
+
+
+def native_go_environment(target):
+    return {**GO_WORKER_ENVIRONMENT, "GOOS": target.removesuffix("-x64")}
+
+
+def native_go_notice_paths(layout):
+    names = ("debian-copyright.txt",) if layout == "debian-go-1.22-split" else ("LICENSE.txt", "PATENTS.txt")
+    return [GO_NOTICE_PREFIX + name for name in names]
+
+
+def native_go_members(manifest, files):
+    """Validate the optional build attachment and bind its executable members."""
+    names = sorted(name for name in files if name.casefold().startswith(GO_WORKER_PREFIX))
+    notices = sorted(name for name in files if name.casefold().startswith(GO_NOTICE_PREFIX))
+    details = manifest["build"].get("native_go")
+    if details is None:
+        if names or notices:
+            raise PackageError("native Go worker member has no known build attachment")
+        return []
+    target = manifest["target"]
+    if (not isinstance(details, dict)
+            or set(details) != {"format", "target", "source_commit", "source_fingerprint",
+                               "build_flags", "environment", "sdk", "workers", "notices"}
+            or details["format"] != GO_WORKER_FORMAT
+            or target not in GO_WORKER_VERSIONS or details["target"] != target
+            or details["source_commit"] != manifest["source_commit"]
+            or details["source_fingerprint"] != manifest["source_fingerprint"]
+            or details["build_flags"] != GO_WORKER_BUILD_FLAGS
+            or details["environment"] != native_go_environment(target)):
+        raise PackageError("unsupported native Go worker build attachment")
+    sdk = details["sdk"]
+    if (not isinstance(sdk, dict)
+            or set(sdk) != {"version", "digest", "go_executable_digest", "layout", "files", "bytes"}
+            or sdk["version"] != GO_WORKER_VERSIONS[target]
+            or not HEX.fullmatch(sdk["digest"])
+            or not HEX.fullmatch(sdk["go_executable_digest"])
+            or sdk["layout"] not in ("ordinary", "debian-go-1.22-split")
+            or (sdk["layout"] == "debian-go-1.22-split" and target != "linux-x64")
+            or type(sdk["files"]) is not int or not 1 <= sdk["files"] <= GO_SDK_FILES_LIMIT
+            or type(sdk["bytes"]) is not int or not 1 <= sdk["bytes"] <= GO_SDK_BYTES_LIMIT):
+        raise PackageError("unsupported native Go SDK binding")
+    notice_paths = native_go_notice_paths(sdk["layout"])
+    if notices != notice_paths or details["notices"] != [files[name] for name in notice_paths] or any(
+        not 1 <= files[name]["bytes"] <= GO_NOTICE_BYTES_LIMIT for name in notice_paths
+    ):
+        raise PackageError("native Go notices do not match exact package membership")
+    workers = details["workers"]
+    if not isinstance(workers, list) or not 1 <= len(workers) <= len(GO_WORKERS):
+        raise PackageError("invalid native Go worker population")
+    expected = []
+    for worker in workers:
+        if (not isinstance(worker, dict)
+                or set(worker) != {"edition", "path", "sha256", "bytes", "protocols", "sources"}
+                or worker["edition"] not in GO_WORKERS
+                or worker["path"] != native_go_path(worker["edition"], target)
+                or not HEX.fullmatch(worker["sha256"])
+                or type(worker["bytes"]) is not int
+                or not 64 <= worker["bytes"] <= GO_WORKER_BYTES_LIMIT):
+            raise PackageError("invalid native Go worker identity")
+        sources, protocols = GO_WORKERS[worker["edition"]]
+        if worker["protocols"] != protocols or not isinstance(worker["sources"], list) or len(worker["sources"]) != len(sources):
+            raise PackageError("unrecognized native Go worker recipe")
+        for source, name in zip(worker["sources"], sources, strict=True):
+            if (not isinstance(source, dict) or set(source) != {"path", "sha256"}
+                    or source["path"] != GO_WORKER_SOURCE_ROOT + name or not HEX.fullmatch(source["sha256"])):
+                raise PackageError("invalid native Go source identity")
+        actual = files.get(worker["path"])
+        if actual != {key: worker[key] for key in ("path", "bytes", "sha256")}:
+            raise PackageError("native Go worker differs from package membership")
+        expected.append(worker["path"])
+    if expected != names:
+        raise PackageError("native Go worker inventory is incomplete, duplicated, or noncanonical")
+    return expected
 
 
 def parse_manifest(raw):
@@ -122,6 +236,7 @@ def parse_manifest(raw):
                 or sum(row["bytes"] for row in records) > LIMIT
                 or "bin/" + executable_name(m["target"]) not in names):
             raise PackageError("noncanonical or incomplete inventory")
+        native_go_members(m, {row["path"]: row for row in records})
         return m
     except (UnicodeError, TypeError, KeyError, RecursionError, AttributeError, json.JSONDecodeError) as e:
         raise PackageError("invalid package manifest") from e
@@ -209,8 +324,10 @@ def verified_zip(path, manifest):
                             or (entry.external_attr >> 16) & 0o170000 not in (0, stat.S_IFREG)
                             or entry.file_size != expected[entry.filename]["bytes"]):
                         raise PackageError("unsupported or altered ZIP member")
-                with archive.open("bin/" + executable_name(manifest["target"])) as executable:
-                    verify_machine(executable, manifest["target"])
+                machines = ["bin/" + executable_name(manifest["target"]), *native_go_members(manifest, expected)]
+                for name in machines:
+                    with archive.open(name) as executable:
+                        verify_machine(executable, manifest["target"])
                 yield archive
         except (zipfile.BadZipFile, NotImplementedError) as e:
             raise PackageError("invalid ZIP") from e
@@ -235,6 +352,8 @@ def verify_machine(executable, target):
 
 
 def verify_members(archive, manifest, destination=None):
+    files = {row["path"]: row for row in manifest["files"]}
+    executables = {"bin/" + executable_name(manifest["target"]), *native_go_members(manifest, files)}
     for member in manifest["files"]:
         with archive.open(member["path"]) as source:
             if destination is None:
@@ -254,7 +373,7 @@ def verify_members(archive, manifest, destination=None):
                     output.flush()
                     os.fsync(output.fileno())
                 actual = (size, state.hexdigest())
-                if member["path"] == "bin/" + executable_name(manifest["target"]):
+                if member["path"] in executables:
                     path.chmod(0o755)
             if actual != (member["bytes"], member["sha256"]):
                 raise PackageError("member integrity mismatch: " + member["path"])
