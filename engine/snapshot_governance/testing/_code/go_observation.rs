@@ -260,6 +260,7 @@ mod bound_call_bodies {
         for (case, target) in [
             ("fixed_free_function", "inner"),
             ("recursive_target", "outer"),
+            ("valid_commented_call", "inner"),
         ] {
             let (project, records) = fixture(case, case);
             let inspect = || {
@@ -298,7 +299,11 @@ mod bound_call_bodies {
     /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R34
     #[test]
     fn go_native_call_returns_cover_exact_composition_and_unknowns() {
-        for case in ["fixed_free_function", "recursive_target"] {
+        for case in [
+            "fixed_free_function",
+            "recursive_target",
+            "valid_commented_call",
+        ] {
             let (project, records) = fixture(case, &format!("return_{case}"));
             let observation =
                 observe_go_native_bound_calls(&project.root, SELECTION, &PIN, |request| {
@@ -333,7 +338,7 @@ mod bound_call_bodies {
                 );
             }
             assert_eq!(result["evaluation"]["occurrence"], occurrence);
-            if case == "fixed_free_function" {
+            if case != "recursive_target" {
                 assert_eq!(result["evaluation"]["status"], "COMPLETE");
                 assert_eq!(result["evaluation"]["parameters"], json!(["v"]));
                 assert_eq!(result["evaluation"]["returns"], json!([true, false]));

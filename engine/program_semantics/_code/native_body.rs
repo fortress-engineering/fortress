@@ -488,16 +488,16 @@ impl Lowering<'_> {
     ) -> Result<ProgramExpression, NativeBodyError> {
         let span = self.source.range(&call.span)?;
         within(&span, enclosure)?;
-        let site = self.source.text[span]
+        let site = self.source.text[span.clone()]
             .strip_prefix(&call.target.name)
             .ok_or(NativeBodyError::InvalidResponse)?;
-        if !site.trim_start().starts_with('(') || !site.ends_with(')') || call.arguments.len() > 4 {
+        if !call_delimiters(self.language, site) || call.arguments.len() > 4 {
             return Err(NativeBodyError::InvalidResponse);
         }
         let arguments = call
             .arguments
             .into_iter()
-            .map(|argument| self.typed(argument, NativeScalar::Bool, enclosure))
+            .map(|argument| self.typed(argument, NativeScalar::Bool, &span))
             .collect::<Result<Vec<_>, _>>()?;
         let reference = canonical_fact_id(
             "native_call_site:v1",
@@ -830,6 +830,44 @@ impl NativeBodyInput<'_> {
 
     fn accepts(&self, scalar: NativeScalar) -> bool {
         scalar == NativeScalar::Bool || scalar == self.language.integer()
+    }
+}
+
+fn call_delimiters(language: NativeBodyLanguage, mut suffix: &str) -> bool {
+    if !suffix.ends_with(')') {
+        return false;
+    }
+    loop {
+        suffix = match language {
+            NativeBodyLanguage::Go => suffix.trim_start_matches([' ', '\t', '\r']),
+            NativeBodyLanguage::Python => {
+                suffix.trim_start_matches([' ', '\t', '\r', '\n', '\x0c'])
+            }
+        };
+        if suffix.starts_with('(') {
+            return true;
+        }
+        let remainder = match language {
+            NativeBodyLanguage::Go => suffix
+                .strip_prefix("/*")
+                .and_then(|comment| comment.split_once("*/"))
+                // A Go block comment containing a newline can insert a semicolon.
+                .filter(|(comment, _)| !comment.contains('\n'))
+                .map(|(_, rest)| rest),
+            NativeBodyLanguage::Python => suffix
+                .strip_prefix("\\\n")
+                .or_else(|| suffix.strip_prefix("\\\r\n"))
+                .or_else(|| {
+                    suffix
+                        .strip_prefix('#')
+                        .and_then(|comment| comment.split_once('\n'))
+                        .map(|(_, rest)| rest)
+                }),
+        };
+        let Some(rest) = remainder else {
+            return false;
+        };
+        suffix = rest;
     }
 }
 

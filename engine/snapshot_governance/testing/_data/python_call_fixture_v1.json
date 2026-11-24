@@ -482,5 +482,317 @@
       "target_execution": "NOT_RUN",
       "worker_ref": "sha256:f581a2047e320eea9abdd0b19ea26f1c49ab051c747ebd330ecae0979c93796c"
     }
+  },
+  "implicit_continuation_comment": {
+    "source": "def outer(v):\n    def inner(x):\n        return not x\n    return (inner # valid inside grouping\n        (v))\n",
+    "reply": {
+      "body": [
+        {
+          "kind": "return",
+          "span": {
+            "end_byte": 107,
+            "path": "fixture.py",
+            "start_byte": 57,
+            "start_byte_column": 5,
+            "start_line": 4
+          },
+          "value": {
+            "call": {
+              "arguments": [
+                {
+                  "kind": "binding",
+                  "name": "v"
+                }
+              ],
+              "span": {
+                "end_byte": 106,
+                "path": "fixture.py",
+                "start_byte": 65,
+                "start_byte_column": 13,
+                "start_line": 4
+              },
+              "target": {
+                "declaration_span": {
+                  "end_byte": 52,
+                  "path": "fixture.py",
+                  "start_byte": 18,
+                  "start_byte_column": 5,
+                  "start_line": 2
+                },
+                "name": "inner",
+                "span": {
+                  "end_byte": 27,
+                  "path": "fixture.py",
+                  "start_byte": 22,
+                  "start_byte_column": 9,
+                  "start_line": 2
+                }
+              }
+            },
+            "kind": "call"
+          }
+        }
+      ],
+      "bootstrap_ref": "sha256:19ca652a6ed8908d128ac231da47b45d0b0a86a9baffaff9626fb2d1609c9836",
+      "byte_count": 108,
+      "diagnostic": null,
+      "function": "outer",
+      "helpers": [
+        {
+          "body": [
+            {
+              "kind": "return",
+              "span": {
+                "end_byte": 52,
+                "path": "fixture.py",
+                "start_byte": 40,
+                "start_byte_column": 9,
+                "start_line": 3
+              },
+              "value": {
+                "kind": "unary",
+                "operator": "!",
+                "value": {
+                  "kind": "binding",
+                  "name": "x"
+                }
+              }
+            }
+          ],
+          "locals": [],
+          "parameters": [
+            {
+              "name": "x",
+              "scalar": "BOOL",
+              "span": {
+                "end_byte": 29,
+                "path": "fixture.py",
+                "start_byte": 28,
+                "start_byte_column": 15,
+                "start_line": 2
+              }
+            }
+          ],
+          "result_scalar": "BOOL",
+          "status": "LOWERABLE",
+          "symbol": {
+            "declaration_span": {
+              "end_byte": 52,
+              "path": "fixture.py",
+              "start_byte": 18,
+              "start_byte_column": 5,
+              "start_line": 2
+            },
+            "name": "inner",
+            "span": {
+              "end_byte": 27,
+              "path": "fixture.py",
+              "start_byte": 22,
+              "start_byte_column": 9,
+              "start_line": 2
+            }
+          }
+        }
+      ],
+      "id": "2f50f9121cde640146ae652593665c1eeb84e6d4226e47b1a8f431b39a571fd5",
+      "locals": [],
+      "parameter_domains": [
+        "BOOL"
+      ],
+      "parameters": [
+        {
+          "name": "v",
+          "scalar": "BOOL",
+          "span": {
+            "end_byte": 11,
+            "path": "fixture.py",
+            "start_byte": 10,
+            "start_byte_column": 11,
+            "start_line": 1
+          }
+        }
+      ],
+      "result_scalar": "BOOL",
+      "runtime_ref": "sha256:c3c97417572f780314efe1ac3c4d5ce5e3cef99b1d5a93e5faec954a7c3fb7ce",
+      "schema": "fortress:python:lexical-call-response:1",
+      "source_path": "fixture.py",
+      "source_ref": "sha256:2f50f9121cde640146ae652593665c1eeb84e6d4226e47b1a8f431b39a571fd5",
+      "status": "LOWERABLE",
+      "symbol": {
+        "declaration_span": {
+          "end_byte": 107,
+          "path": "fixture.py",
+          "start_byte": 0,
+          "start_byte_column": 1,
+          "start_line": 1
+        },
+        "name": "outer",
+        "span": {
+          "end_byte": 9,
+          "path": "fixture.py",
+          "start_byte": 4,
+          "start_byte_column": 5,
+          "start_line": 1
+        }
+      },
+      "target_execution": "NOT_RUN",
+      "worker_ref": "sha256:f581a2047e320eea9abdd0b19ea26f1c49ab051c747ebd330ecae0979c93796c"
+    }
+  },
+  "explicit_continuation": {
+    "source": "def outer(v):\n    def inner(x):\n        return not x\n    return inner\\\n        (v)\n",
+    "reply": {
+      "body": [
+        {
+          "kind": "return",
+          "span": {
+            "end_byte": 82,
+            "path": "fixture.py",
+            "start_byte": 57,
+            "start_byte_column": 5,
+            "start_line": 4
+          },
+          "value": {
+            "call": {
+              "arguments": [
+                {
+                  "kind": "binding",
+                  "name": "v"
+                }
+              ],
+              "span": {
+                "end_byte": 82,
+                "path": "fixture.py",
+                "start_byte": 64,
+                "start_byte_column": 12,
+                "start_line": 4
+              },
+              "target": {
+                "declaration_span": {
+                  "end_byte": 52,
+                  "path": "fixture.py",
+                  "start_byte": 18,
+                  "start_byte_column": 5,
+                  "start_line": 2
+                },
+                "name": "inner",
+                "span": {
+                  "end_byte": 27,
+                  "path": "fixture.py",
+                  "start_byte": 22,
+                  "start_byte_column": 9,
+                  "start_line": 2
+                }
+              }
+            },
+            "kind": "call"
+          }
+        }
+      ],
+      "bootstrap_ref": "sha256:19ca652a6ed8908d128ac231da47b45d0b0a86a9baffaff9626fb2d1609c9836",
+      "byte_count": 83,
+      "diagnostic": null,
+      "function": "outer",
+      "helpers": [
+        {
+          "body": [
+            {
+              "kind": "return",
+              "span": {
+                "end_byte": 52,
+                "path": "fixture.py",
+                "start_byte": 40,
+                "start_byte_column": 9,
+                "start_line": 3
+              },
+              "value": {
+                "kind": "unary",
+                "operator": "!",
+                "value": {
+                  "kind": "binding",
+                  "name": "x"
+                }
+              }
+            }
+          ],
+          "locals": [],
+          "parameters": [
+            {
+              "name": "x",
+              "scalar": "BOOL",
+              "span": {
+                "end_byte": 29,
+                "path": "fixture.py",
+                "start_byte": 28,
+                "start_byte_column": 15,
+                "start_line": 2
+              }
+            }
+          ],
+          "result_scalar": "BOOL",
+          "status": "LOWERABLE",
+          "symbol": {
+            "declaration_span": {
+              "end_byte": 52,
+              "path": "fixture.py",
+              "start_byte": 18,
+              "start_byte_column": 5,
+              "start_line": 2
+            },
+            "name": "inner",
+            "span": {
+              "end_byte": 27,
+              "path": "fixture.py",
+              "start_byte": 22,
+              "start_byte_column": 9,
+              "start_line": 2
+            }
+          }
+        }
+      ],
+      "id": "a22db5e21b1d8a54fb24b5d082c1428844034ce4ddc5a6e3f0980c49138bb745",
+      "locals": [],
+      "parameter_domains": [
+        "BOOL"
+      ],
+      "parameters": [
+        {
+          "name": "v",
+          "scalar": "BOOL",
+          "span": {
+            "end_byte": 11,
+            "path": "fixture.py",
+            "start_byte": 10,
+            "start_byte_column": 11,
+            "start_line": 1
+          }
+        }
+      ],
+      "result_scalar": "BOOL",
+      "runtime_ref": "sha256:c3c97417572f780314efe1ac3c4d5ce5e3cef99b1d5a93e5faec954a7c3fb7ce",
+      "schema": "fortress:python:lexical-call-response:1",
+      "source_path": "fixture.py",
+      "source_ref": "sha256:a22db5e21b1d8a54fb24b5d082c1428844034ce4ddc5a6e3f0980c49138bb745",
+      "status": "LOWERABLE",
+      "symbol": {
+        "declaration_span": {
+          "end_byte": 82,
+          "path": "fixture.py",
+          "start_byte": 0,
+          "start_byte_column": 1,
+          "start_line": 1
+        },
+        "name": "outer",
+        "span": {
+          "end_byte": 9,
+          "path": "fixture.py",
+          "start_byte": 4,
+          "start_byte_column": 5,
+          "start_line": 1
+        }
+      },
+      "target_execution": "NOT_RUN",
+      "worker_ref": "sha256:f581a2047e320eea9abdd0b19ea26f1c49ab051c747ebd330ecae0979c93796c"
+    }
   }
 }

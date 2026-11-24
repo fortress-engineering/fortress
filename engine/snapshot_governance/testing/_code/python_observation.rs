@@ -91,6 +91,8 @@ mod lexical_calls {
         for (name, expected) in [
             ("locally_defined_shadow_free_function", None),
             ("ordered_positionals", None),
+            ("implicit_continuation_comment", None),
+            ("explicit_continuation", None),
             ("later_local_rebind", Some("CALL_TARGET_UNESTABLISHED")),
             (
                 "nested_recursive_capture",
