@@ -601,6 +601,15 @@ that exact source and context. Compiler and inventory limitations retain the
 preceding lexical observation. Publication revalidates the complete physical
 source and original authority inputs.
 
+Ordinary ownership inspection and Source Artifact Model compilation include
+observed Go and Python files selected by an unambiguous authored logical Module
+binding. These artifacts use their exact project-relative location as the
+owner location because separately bound files may have identical basenames.
+The artifact model records extension-based language attribution and its
+profile status. Rust analyzer input and symbol ownership remain scoped to the
+existing Rust and Cargo resolution. Changing a native file invalidates its
+artifact projection through the exact file dependency.
+
 The explicit Go module dependency view obtains the complete occurrence ownership
 relation from the same original source, logical bindings and CCG used to seal
 the worker request. It preserves the native response and attaches a scoped

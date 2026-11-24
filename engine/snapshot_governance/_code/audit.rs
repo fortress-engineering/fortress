@@ -1268,6 +1268,7 @@ pub fn inspect_repository_modules(root: impl AsRef<Path>) -> Result<ModuleInspec
                 observed_sources: prepared
                     .ownerships
                     .iter()
+                    .chain(&prepared.native_source_ownerships)
                     .filter(|ownership| ownership.owner() == id)
                     .count(),
             }
@@ -1333,6 +1334,7 @@ fn compile_source_architecture_from(
             project_model_authority: "project-model/project-filing-system-v2",
             files: &prepared.observed_files,
             ownerships: &prepared.ownerships,
+            native_source_ownerships: &prepared.native_source_ownerships,
             standard: &prepared.standard,
         },
         &observation_input,
@@ -1347,6 +1349,7 @@ struct SnapshotSourceArchitecture<'a> {
     project_model_authority: &'a str,
     files: &'a BTreeMap<String, Vec<u8>>,
     ownerships: &'a [SourceOwnership],
+    native_source_ownerships: &'a [SourceOwnership],
     standard: &'a LoadedStandard,
 }
 
@@ -1357,7 +1360,11 @@ fn compile_source_architecture(
     verification_relationships: &[SourceVerificationRelationship],
     psm: Option<&ProgramSemanticModel>,
 ) -> Result<SourceArchitectureEvaluation, AuditError> {
-    let artifacts = source_artifact_inputs(snapshot.ownerships, responsibilities);
+    let artifacts = source_artifact_inputs(
+        snapshot.ownerships,
+        snapshot.native_source_ownerships,
+        responsibilities,
+    );
     let cargo = observe_cargo_analysis_territories(observation_input)
         .map_err(AuditError::ImplementationObservation)?;
     let rust_profile = observe_rust_source_profile(snapshot.files, &artifacts, &cargo)
@@ -1365,11 +1372,8 @@ fn compile_source_architecture(
     let mut observations = rust_profile.observations().to_vec();
     let mut languages = vec![
         LanguageAssignment::new("rs", "rust", RUST_SOURCE_LANGUAGE_OBSERVER),
-        LanguageAssignment::new(
-            "py",
-            "python",
-            "fortress-core/source-extension-observation-v1",
-        ),
+        LanguageAssignment::new("go", "go", NATIVE_SOURCE_EXTENSION_OBSERVER),
+        LanguageAssignment::new("py", "python", NATIVE_SOURCE_EXTENSION_OBSERVER),
     ];
     if let Some(psm) = psm {
         languages.extend(
@@ -1575,12 +1579,8 @@ fn observation_only_audit(prepared: &PreparedAnalysis) -> Result<AuditResult, Au
             Err(error) => (None, Some(format!("state_effect:{error}"))),
         },
     );
-    let declared_source_owners = prepared
-        .ownerships
-        .iter()
-        .filter(|ownership| ownership.authority() == SourceOwnershipAuthority::DeclaredModule)
-        .count();
-    let analysis_source_owners = prepared.ownerships.len() - declared_source_owners;
+    let (declared_source_owners, analysis_source_owners) =
+        source_ownership_counts(&prepared.ownerships, &prepared.native_source_ownerships);
     let tests_missing_stable_id = prepared
         .rust_tests
         .iter()
@@ -1729,6 +1729,7 @@ fn compile_analysis_source_architecture(
             },
             files: &prepared.observed_files,
             ownerships: &prepared.ownerships,
+            native_source_ownerships: &prepared.native_source_ownerships,
             standard: &prepared.standard,
         },
         &observation_input,
@@ -1738,56 +1739,62 @@ fn compile_analysis_source_architecture(
     )
 }
 
+const NATIVE_SOURCE_EXTENSION_OBSERVER: &str = "fortress-core/source-extension-observation-v1";
+
+fn is_native_artifact_path(path: &str) -> bool {
+    matches!(
+        Path::new(path).extension().and_then(|value| value.to_str()),
+        Some("go" | "py")
+    )
+}
+
 fn source_artifact_inputs(
     ownerships: &[SourceOwnership],
+    native_source_ownerships: &[SourceOwnership],
     responsibilities: &[CodeFileResponsibility],
 ) -> Vec<SourceArtifactInput> {
     let mut artifacts = ownerships
         .iter()
         .map(|ownership| {
-            let relative = ownership
-                .source_path()
+            let path = ownership.source_path();
+            let relative = path
                 .strip_prefix(ownership.territory_path())
-                .unwrap_or(ownership.source_path())
+                .unwrap_or(path)
                 .trim_start_matches('/');
+            let authority = if ownership.authority() == SourceOwnershipAuthority::DeclaredModule {
+                SourceArtifactOwnershipAuthority::DeclaredModule
+            } else {
+                SourceArtifactOwnershipAuthority::CargoAnalysisTerritory
+            };
             (
-                ownership.source_path().to_owned(),
-                (
-                    ownership.owner().to_owned(),
-                    relative.to_owned(),
-                    if ownership.authority() == SourceOwnershipAuthority::DeclaredModule {
-                        SourceArtifactOwnershipAuthority::DeclaredModule
-                    } else {
-                        SourceArtifactOwnershipAuthority::CargoAnalysisTerritory
-                    },
+                path,
+                SourceArtifactInput::with_ownership_authority(
+                    path,
+                    ownership.owner(),
+                    relative,
+                    authority,
                 ),
             )
         })
         .collect::<BTreeMap<_, _>>();
     for responsibility in responsibilities {
-        artifacts
-            .entry(responsibility.source_path().to_owned())
-            .or_insert_with(|| {
-                let marker = "/_code/";
-                let relative = responsibility
-                    .source_path()
-                    .rfind(marker)
-                    .map_or(responsibility.source_path(), |index| {
-                        &responsibility.source_path()[index + marker.len()..]
-                    });
-                (
-                    responsibility.module_id().to_owned(),
-                    relative.to_owned(),
-                    SourceArtifactOwnershipAuthority::DeclaredModule,
-                )
-            });
+        let path = responsibility.source_path();
+        artifacts.entry(path).or_insert_with(|| {
+            let marker = "/_code/";
+            let relative = path
+                .rfind(marker)
+                .map_or(path, |index| &path[index + marker.len()..]);
+            SourceArtifactInput::new(path, responsibility.module_id(), relative)
+        });
     }
-    artifacts
-        .into_iter()
-        .map(|(path, (owner, relative, authority))| {
-            SourceArtifactInput::with_ownership_authority(path, owner, relative, authority)
-        })
-        .collect()
+    for ownership in native_source_ownerships {
+        let path = ownership.source_path();
+        artifacts.insert(
+            path,
+            SourceArtifactInput::with_project_relative_location(path, ownership.owner()),
+        );
+    }
+    artifacts.into_values().collect()
 }
 
 /// Compiles distributed Function Contracts and the snapshot-bound PSM into
@@ -2586,20 +2593,10 @@ fn compile_certification_stack_from_prepared(
         &source_architecture,
     );
     let audit = result_from_evaluation(
-        &prepared.snapshot,
+        &prepared,
         &evaluation,
         &architecture_diagnostics,
         unsupported_analysis,
-        ObservedTestSummary {
-            total: prepared.rust_test_observations.len(),
-            missing_stable_identity: prepared
-                .rust_test_observations
-                .iter()
-                .filter(|test| !test.is_governed())
-                .count(),
-        },
-        prepared.finding_governance.as_ref(),
-        prepared.standard.bundle.id(),
     )?;
     measurements.record("governance_composition");
     let lifecycle_authority = prepared.finding_governance.clone();
@@ -4249,20 +4246,10 @@ fn audit_repository_with_prepared(
     unsupported_analysis.dedup();
     Ok((
         result_from_evaluation(
-            &prepared.snapshot,
+            &prepared,
             &evaluation,
             &architecture_diagnostics,
             unsupported_analysis,
-            ObservedTestSummary {
-                total: prepared.rust_test_observations.len(),
-                missing_stable_identity: prepared
-                    .rust_test_observations
-                    .iter()
-                    .filter(|test| !test.is_governed())
-                    .count(),
-            },
-            prepared.finding_governance.as_ref(),
-            prepared.standard.bundle.id(),
         )?,
         ccg.clone(),
         behavioral_semantics.graph().clone(),
@@ -4276,6 +4263,7 @@ struct PreparedAudit {
     rust_tests: Vec<crate::rust_test_analyzer::RustTestFact>,
     rust_test_observations: Vec<RustTestObservation>,
     ownerships: Vec<SourceOwnership>,
+    native_source_ownerships: Vec<SourceOwnership>,
     ccg_compilation: CcgCompilation,
     snapshot: RepositorySnapshot,
     finding_governance: Option<FindingGovernanceDocument>,
@@ -4305,6 +4293,7 @@ struct PreparedAnalysis {
     rust_tests: Vec<RustTestObservation>,
     ccg_compilation: CcgCompilation,
     ownerships: Vec<SourceOwnership>,
+    native_source_ownerships: Vec<SourceOwnership>,
     ownership_diagnostics: Vec<SourceOwnershipDiagnostic>,
     profiles: ResolvedProfiles,
 }
@@ -4700,6 +4689,28 @@ fn build_affected_snapshot(
     );
     let cargo_authority_units =
         authority_units(crate::affected_analysis::AuthorityInputKind::CargoAuthority);
+    let mut native_source_units = Vec::new();
+    for ownership in &prepared.native_source_ownerships {
+        let path = ownership.source_path();
+        let mut dependencies = vec![
+            format!("authority:{path}"),
+            format!("authority:{PROJECT_CONFIGURATION_PATH}"),
+        ];
+        if let Some(module) = prepared
+            .ccg()
+            .and_then(|ccg| ccg.modules().get(ownership.owner()))
+        {
+            dependencies.push(format!("authority:{}", module.contract_path()));
+        }
+        let id = format!("source:{path}");
+        units.push(affected_unit(
+            &id,
+            AffectedUnitKind::SourceArtifact,
+            serialized_digest(ownership)?,
+            dependencies,
+        )?);
+        native_source_units.push(id);
+    }
     let mut projection_ids = Vec::new();
     for kind in [
         ProjectionKind::Ccg,
@@ -4780,6 +4791,7 @@ fn build_affected_snapshot(
             }
             ProjectionKind::SourceArtifacts => {
                 let mut value = source_units.clone();
+                value.extend(native_source_units.clone());
                 value.extend(responsibility_units.clone());
                 value.extend(cargo_authority_units.clone());
                 value
@@ -5153,14 +5165,17 @@ fn projection_file_digest(
                 | crate::affected_analysis::AuthorityInputKind::ProjectConfiguration
                 | crate::affected_analysis::AuthorityInputKind::ModuleContract
         ),
-        ProjectionKind::SourceArtifacts => matches!(
-            authority,
-            crate::affected_analysis::AuthorityInputKind::Source
-                | crate::affected_analysis::AuthorityInputKind::CargoAuthority
-                | crate::affected_analysis::AuthorityInputKind::ProjectConfiguration
-                | crate::affected_analysis::AuthorityInputKind::ModuleContract
-                | crate::affected_analysis::AuthorityInputKind::SourceResponsibility
-        ),
+        ProjectionKind::SourceArtifacts => {
+            is_native_artifact_path(path)
+                || matches!(
+                    authority,
+                    crate::affected_analysis::AuthorityInputKind::Source
+                        | crate::affected_analysis::AuthorityInputKind::CargoAuthority
+                        | crate::affected_analysis::AuthorityInputKind::ProjectConfiguration
+                        | crate::affected_analysis::AuthorityInputKind::ModuleContract
+                        | crate::affected_analysis::AuthorityInputKind::SourceResponsibility
+                )
+        }
         ProjectionKind::Semantic => matches!(
             authority,
             crate::affected_analysis::AuthorityInputKind::Source
@@ -5410,17 +5425,34 @@ fn prepare_analysis_from_observed(
         .graph()
         .map(|ccg| ccg.modules().keys().cloned().collect())
         .unwrap_or_default();
+    let logical_modules = project
+        .configuration
+        .as_ref()
+        .map_or(&[][..], ProjectConfiguration::logical_modules);
     let ownership_resolution = resolve_source_ownership_with_logical_modules(
         observed_files.keys().map(String::as_str),
         &modules,
-        project
-            .configuration
-            .as_ref()
-            .map_or(&[], ProjectConfiguration::logical_modules),
+        logical_modules,
         &known_module_ids,
     );
     let ownerships = ownership_resolution.ownerships().to_vec();
-    let ownership_diagnostics = ownership_resolution.diagnostics().to_vec();
+    let mut ownership_diagnostics = ownership_resolution.diagnostics().to_vec();
+    let mut native_source_ownerships = Vec::new();
+    if project.state == ProjectGovernanceState::Declared && !logical_modules.is_empty() {
+        let native = resolve_inventory_ownership_with_logical_modules(
+            observed_files
+                .keys()
+                .map(String::as_str)
+                .filter(|path| is_native_artifact_path(path)),
+            &[],
+            logical_modules,
+            &known_module_ids,
+        );
+        native_source_ownerships.extend_from_slice(native.ownerships());
+        ownership_diagnostics.extend_from_slice(native.diagnostics());
+        ownership_diagnostics.sort();
+        ownership_diagnostics.dedup();
+    }
     let module_ids = ccg_compilation
         .graph()
         .map(|ccg| ccg.modules().keys().cloned().collect::<BTreeSet<_>>())
@@ -5446,6 +5478,7 @@ fn prepare_analysis_from_observed(
         rust_tests,
         ccg_compilation,
         ownerships,
+        native_source_ownerships,
         ownership_diagnostics,
         profiles,
     })
@@ -5926,6 +5959,7 @@ fn prepare_audit_from_analysis(
     let policy = control_observation_policy(&project)?;
     let observed_files = analysis.observed_files;
     let ownerships = analysis.ownerships;
+    let native_source_ownerships = analysis.native_source_ownerships;
     let profiles = analysis.profiles;
     let standard = analysis.standard;
     let rust_test_observations = analysis.rust_tests;
@@ -6005,6 +6039,7 @@ fn prepare_audit_from_analysis(
         rust_tests,
         rust_test_observations,
         ownerships,
+        native_source_ownerships,
         ccg_compilation,
         snapshot,
         finding_governance,
@@ -6098,21 +6133,30 @@ fn reconcile_repository_implementation(
     Ok((observed, realization))
 }
 
-#[derive(Clone, Copy)]
-struct ObservedTestSummary {
-    total: usize,
-    missing_stable_identity: usize,
+fn source_ownership_counts(
+    rust_ownerships: &[SourceOwnership],
+    native_ownerships: &[SourceOwnership],
+) -> (usize, usize) {
+    let declared_rust = rust_ownerships
+        .iter()
+        .filter(|ownership| ownership.authority() == SourceOwnershipAuthority::DeclaredModule)
+        .count();
+    (
+        declared_rust + native_ownerships.len(),
+        rust_ownerships.len() - declared_rust,
+    )
 }
 
 fn result_from_evaluation(
-    snapshot: &RepositorySnapshot,
+    prepared: &PreparedAudit,
     evaluation: &crate::evaluation::SnapshotEvaluation,
     architecture_diagnostics: &crate::architecture_diagnostics::ArchitectureDiagnostics,
     unsupported_analysis: Vec<String>,
-    observed_tests: ObservedTestSummary,
-    authority: Option<&FindingGovernanceDocument>,
-    standard_id: &str,
 ) -> Result<AuditResult, AuditError> {
+    let snapshot = &prepared.snapshot;
+    let standard_id = prepared.standard.bundle.id();
+    let (declared_source_owners, analysis_source_owners) =
+        source_ownership_counts(&prepared.ownerships, &prepared.native_source_ownerships);
     let summary = AuditSummary {
         rules_evaluated: evaluation.evaluated_count(),
         passed: evaluation.passed_count(),
@@ -6122,7 +6166,7 @@ fn result_from_evaluation(
     };
     let finding_governance = evaluate_finding_governance(
         evaluation.findings(),
-        authority,
+        prepared.finding_governance.as_ref(),
         standard_id,
         snapshot.standard_edition(),
     )
@@ -6133,18 +6177,14 @@ fn result_from_evaluation(
         governance: AuditGovernance {
             project_authority: ProjectGovernanceState::Declared,
             standard_authority: "PROJECT_BOUND".into(),
-            declared_source_owners: snapshot
-                .files()
+            declared_source_owners,
+            analysis_source_owners,
+            observed_tests: prepared.rust_test_observations.len(),
+            tests_missing_stable_id: prepared
+                .rust_test_observations
                 .iter()
-                .filter(|file| {
-                    Path::new(file.path())
-                        .extension()
-                        .is_some_and(|extension| extension.eq_ignore_ascii_case("rs"))
-                })
+                .filter(|test| !test.is_governed())
                 .count(),
-            analysis_source_owners: 0,
-            observed_tests: observed_tests.total,
-            tests_missing_stable_id: observed_tests.missing_stable_identity,
         },
         standard: AuditStandard {
             id: standard_id.into(),

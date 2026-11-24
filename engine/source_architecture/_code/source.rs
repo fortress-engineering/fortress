@@ -108,7 +108,7 @@ impl CodeFileResponsibility {
     }
 }
 /// Semantic implementation version of Source Architecture.
-pub const SOURCE_ARCHITECTURE_SEMANTIC_VERSION: &str = "1.2.0";
+pub const SOURCE_ARCHITECTURE_SEMANTIC_VERSION: &str = "1.3.0";
 
 const PROFILE_REMEDIATION: &str = "Correct the registered language profile so its identity, adapter, extensions, semantic-region mapping, archetypes, composition constraints, and coverage limitations conform to Source Profile v1.";
 const ARTIFACT_REMEDIATION: &str = "Document the file's single architectural responsibility in canonical code_docs.md, register or correct the applicable language profile, and align observed composition with exactly one permitted archetype without suppressing unsupported coverage.";
@@ -999,6 +999,7 @@ pub struct SourceArtifactInput {
     path: String,
     owner: String,
     owner_relative_path: String,
+    project_relative_identity: bool,
     ownership_authority: SourceArtifactOwnershipAuthority,
 }
 
@@ -1010,10 +1011,27 @@ impl SourceArtifactInput {
         owner: impl Into<String>,
         owner_relative_path: impl Into<String>,
     ) -> Self {
+        Self::with_ownership_authority(
+            path,
+            owner,
+            owner_relative_path,
+            SourceArtifactOwnershipAuthority::DeclaredModule,
+        )
+    }
+
+    /// Creates a logical artifact membership using its exact project-relative
+    /// path. Independently bound files may have no shared Module directory.
+    #[must_use]
+    pub fn with_project_relative_location(
+        path: impl Into<String>,
+        owner: impl Into<String>,
+    ) -> Self {
+        let path = path.into();
         Self {
-            path: path.into(),
+            owner_relative_path: path.clone(),
+            path,
             owner: owner.into(),
-            owner_relative_path: owner_relative_path.into(),
+            project_relative_identity: true,
             ownership_authority: SourceArtifactOwnershipAuthority::DeclaredModule,
         }
     }
@@ -1030,6 +1048,7 @@ impl SourceArtifactInput {
             path: path.into(),
             owner: owner.into(),
             owner_relative_path: owner_relative_path.into(),
+            project_relative_identity: false,
             ownership_authority,
         }
     }
@@ -1239,7 +1258,11 @@ pub fn evaluate_source_architecture(
     for entry in &source_inputs {
         let path = entry.path.as_str();
         let module_id = entry.owner.as_str();
-        let module_relative_path = semantic_source_location(&entry.owner_relative_path);
+        let module_relative_path = if entry.project_relative_identity {
+            entry.owner_relative_path.clone()
+        } else {
+            semantic_source_location(&entry.owner_relative_path)
+        };
         let artifact_id = artifact_identity(module_id, &module_relative_path);
         let bytes = input.files.get(path).map(Vec::as_slice);
         let content_digest = sha256(bytes.unwrap_or_default());
