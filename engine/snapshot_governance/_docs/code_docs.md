@@ -42,6 +42,16 @@ Invalid inputs and inability to fulfill the responsibility return explicit typed
 
 ## Files
 
+### [`python_test_observation.rs`](../_code/python_test_observation.rs)
+
+Selects default pytest filenames beneath explicit canonical, nonoverlapping
+roots in the captured original source view. The budget permits up to 16
+roots, 16 matching files, 128 KiB per lexical worker input and 512 KiB
+total selected input. Up to 64 known configuration or hook paths retain
+exact byte identities without interpretation. Source and original authority
+are revalidated after the compile-only lexical observations complete.
+Roots without ordinary entries remain unestablished.
+
 ### [`candidate.rs`](../_code/candidate.rs)
 
 Composes exact immutable hypothetical evaluation, isolated client buffers, original-authority previews, pre-write validation and read-only actual reconciliation. Reuses SESSION, canonical Snapshot evaluation, State Governance, AUTHORITY and MIGRATE operations; never implements source mutation or transaction recovery. See [candidate evaluation](code_docs.md).

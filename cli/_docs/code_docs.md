@@ -558,6 +558,20 @@ The explicit Python mode accepts host-owned registration and worker files outsid
 
 The one-process exchange releases exact source only after the bounded worker emits the expected readiness frame. Linux checks 96 MiB address-space and one second CPU limits. Windows verifies a 96 MiB nested Job commit limit and one active process, with the parent's five-second wall deadline. Hard Windows CPU enforcement remains unavailable in the tested nested configuration. Dependency custody stays with the independently selected host. The worker does not evaluate, import or build the project.
 
+Use the same external lexical registration for explicit test declaration
+inspection. Roots are repository-relative directories, or `.` for the whole
+repository. The declared default naming profile uses `test_*.py` and
+`*_test.py` filenames and the `test` function prefix. Each selected file
+uses the existing five-second compile-only exchange. The command never starts
+pytest or imports project source. Configuration and hook markers remain
+uninterpreted, and importability, dynamic or class-based collection,
+execution and coverage stay unestablished. The default naming behavior
+was checked on Windows with pytest 9.0.1 and on Linux with pytest 7.4.4.
+
+```text
+fortress source-artifacts --observe-python-tests PROJECT HOST_REGISTRATION tests
+```
+
 Readiness failure and changed tool or source bytes yield explicit unavailable errors. Successful output carries the exact original source and authority, selected grammar, and scoped lexical observations. Runtime import and call targets, effects and execution remain unresolved. This path contributes no current findings, assessment, grant or certificate. Default source-artifact and PSM behavior stays on the existing paths.
 
 The explicit static import mode reuses this same lexical worker and readiness

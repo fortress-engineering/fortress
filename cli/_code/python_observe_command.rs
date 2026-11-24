@@ -10,7 +10,7 @@ use fortress_core::portable::{canonical, digest};
 use fortress_core::python_observation::{
     PYTHON_LEXICAL_WORKER, PythonGrammar, PythonImportScope, PythonLexicalMode,
     PythonLexicalProducer, PythonLexicalRequest, PythonObservationError, observe_python_lexical,
-    observe_python_static_dependencies, observe_python_static_imports,
+    observe_python_static_dependencies, observe_python_static_imports, observe_python_tests,
 };
 use fortress_core::wire::{JsonAdmissionLimits, admit_json, parse_public_json, readable_text};
 use serde::Deserialize;
@@ -220,6 +220,80 @@ pub(super) fn run<O: Write, E: Write>(
             Ok(super::EXIT_USAGE)
         }
     }
+}
+
+pub(super) fn run_tests<O: Write, E: Write>(
+    arguments: &[String],
+    output: &mut O,
+    error: &mut E,
+) -> io::Result<u8> {
+    match collect_tests(arguments) {
+        Ok(bytes) => {
+            super::write_projection(None, output, &bytes)?;
+            Ok(super::EXIT_SUCCESS)
+        }
+        Err(failure) => {
+            writeln!(
+                error,
+                "Python test declaration observation failed: {}",
+                readable_text(&failure)
+            )?;
+            Ok(super::EXIT_USAGE)
+        }
+    }
+}
+
+fn collect_tests(arguments: &[String]) -> Result<Vec<u8>, String> {
+    let [root, registration_path, roots @ ..] = arguments else {
+        return Err("usage: fortress source-artifacts --observe-python-tests project host-registration test-root [test-root ...]".into());
+    };
+    let root = Path::new(root)
+        .canonicalize()
+        .map_err(|error| error.to_string())?;
+    let registration_path = Path::new(registration_path);
+    let roots = roots.iter().map(String::as_str).collect::<Vec<_>>();
+    let (registration, registration_bytes) = Registration::load(&root, registration_path)?;
+    let worker_ref = digest(PYTHON_LEXICAL_WORKER);
+    let producer = PythonLexicalProducer::new(
+        registration.grammar.into(),
+        &registration.runtime_ref,
+        &worker_ref,
+    )
+    .map_err(|error| error.to_string())?;
+    let (ready_frame, _) = readiness(registration.grammar, &registration.runtime_ref, &worker_ref)?;
+    let host_root = registration_path
+        .parent()
+        .ok_or("Missing trusted registration parent")?;
+    let result = observe_python_tests(&root, &roots, &producer, |request, source| {
+        registration
+            .revalidate_worker(&root)
+            .map_err(|_| PythonObservationError::HostUnavailable)?;
+        verify_external_input(
+            &root,
+            registration_path,
+            REGISTRATION_LIMIT,
+            &registration_bytes,
+        )?;
+        one_request(
+            registration.command(host_root, &worker_ref),
+            &registration,
+            ready_frame.clone(),
+            request,
+            source,
+            "LEXICAL",
+        )
+    })
+    .map_err(|error| error.to_string())?;
+    registration.revalidate_worker(&root)?;
+    verify_external_input(
+        &root,
+        registration_path,
+        REGISTRATION_LIMIT,
+        &registration_bytes,
+    )
+    .map_err(|error| error.to_string())?;
+    let projection = serde_json::to_value(result).map_err(|error| error.to_string())?;
+    encode(&projection)
 }
 
 fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {

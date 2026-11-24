@@ -715,6 +715,12 @@ fn run_source_artifacts<O: Write, E: Write>(
 ) -> io::Result<u8> {
     if arguments
         .first()
+        .is_some_and(|argument| argument == "--observe-python-tests")
+    {
+        return python_observe_command::run_tests(&arguments[1..], output, error);
+    }
+    if arguments
+        .first()
         .is_some_and(|argument| argument == "--observe-python")
     {
         return python_observe_command::run(&arguments[1..], output, error);

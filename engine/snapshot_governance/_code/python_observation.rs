@@ -34,6 +34,10 @@ pub use python_dependencies::{
 
 const PYTHON_LEXICAL_CONTEXT: &str = "fortress-python-lexical-context-v1";
 
+#[path = "python_test_observation.rs"]
+mod test_observation;
+pub use test_observation::{ActualPythonTestObservation, observe_python_tests};
+
 /// A lexical observation bound to revalidated original physical source and authority.
 ///
 /// Contents are compile-only observations. They do not enter the Program
@@ -148,6 +152,10 @@ pub enum PythonObservationError {
     SubjectIdentityMismatch,
     /// The scoped scalar request or response failed admission.
     Scalar(PythonScalarError),
+    /// Test roots are unsafe, overlap, or select an ordinary file.
+    InvalidTestRoots,
+    /// The selected test scope exceeds its pre-dispatch resource budget.
+    TestScopeLimit,
 }
 
 impl Display for PythonObservationError {
@@ -166,6 +174,12 @@ impl Display for PythonObservationError {
                 formatter.write_str("selected Python source differs from the trusted subject pin")
             }
             Self::Scalar(error) => Display::fmt(error, formatter),
+            Self::InvalidTestRoots => formatter.write_str(
+                "Python test roots must be distinct, nonoverlapping canonical directories",
+            ),
+            Self::TestScopeLimit => {
+                formatter.write_str("Python test declaration scope exceeds its bounded inventory")
+            }
         }
     }
 }

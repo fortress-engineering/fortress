@@ -25,6 +25,15 @@ Invalid profile authority returns typed errors, while missing responsibility, un
 
 ## Files
 
+### [`python_test_declarations.rs`](../_code/python_test_declarations.rs)
+
+Projects already admitted module-lexical function scopes using the fixed
+pytest default test-name prefix. Physical indentation distinguishes direct
+module statements from declarations inside a conditional or other compound
+statement. Opaque headers and classes and visible test-name rebindings or
+imports remain source-bound barriers. The projection has no runner, coverage
+or verification authority.
+
 ### [`source.rs`](../_code/source.rs)
 
 Defines Source Artifact Model v1, universal semantic regions and coverage, Source Profile/archetype contracts, generated and verification provenance, lightweight PSM projections, deterministic compilation, SOURCE-PROFILE-001/SOURCE-ARTIFACT-001 evaluation, and a human summary that explicitly distinguishes clean evaluation from remaining findings.

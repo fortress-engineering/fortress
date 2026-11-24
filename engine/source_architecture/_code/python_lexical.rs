@@ -4,6 +4,8 @@
 /// Exact-source resolution of admitted Python static import declarations.
 #[path = "python_static_imports.rs"]
 pub mod python_static_imports;
+#[path = "python_test_declarations.rs"]
+pub(crate) mod python_test_declarations;
 
 use std::collections::BTreeMap;
 use std::error::Error;
@@ -25,7 +27,7 @@ pub const PYTHON_LEXICAL_WORKER: &[u8] = include_bytes!("python_lexical_worker.p
 pub const PYTHON_SCALAR_WORKER: &[u8] = include_bytes!("python_scalar_worker.py");
 
 const RESPONSE_SCHEMA: &str = "fortress-research/python-lexical-response/1";
-const MAX_SOURCE_BYTES: usize = 128 * 1024;
+pub(crate) const MAX_SOURCE_BYTES: usize = 128 * 1024;
 const MAX_SCOPES: usize = 256;
 const MAX_BINDINGS: usize = 4000;
 const MAX_FACTS: usize = 5000;

@@ -1,0 +1,369 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v1:python-test-declarations",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "profile",
+    "evaluation_key",
+    "source_view_ref",
+    "producer",
+    "roots",
+    "discovery_markers",
+    "files",
+    "runner_collection",
+    "limitations"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:derived:v1:python-test-declarations"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "profile": {
+      "const": "PYTEST_DEFAULT_FILE_AND_FUNCTION_NAMES_V1"
+    },
+    "evaluation_key": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_manifest_digest",
+        "program_context_digest",
+        "authority_binding_digest"
+      ],
+      "properties": {
+        "source_manifest_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "program_context_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "authority_binding_digest": {
+          "$ref": "#/$defs/digest"
+        }
+      }
+    },
+    "source_view_ref": {
+      "$ref": "#/$defs/digest"
+    },
+    "producer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "grammar",
+        "runtime_ref",
+        "worker_ref"
+      ],
+      "properties": {
+        "grammar": {
+          "enum": [
+            "Cpython312",
+            "Cpython313"
+          ]
+        },
+        "runtime_ref": {
+          "$ref": "#/$defs/digest"
+        },
+        "worker_ref": {
+          "$ref": "#/$defs/digest"
+        }
+      }
+    },
+    "roots": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/root"
+      },
+      "minItems": 1,
+      "maxItems": 16,
+      "uniqueItems": true
+    },
+    "discovery_markers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "source_ref",
+          "interpretation"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source_ref": {
+            "$ref": "#/$defs/digest"
+          },
+          "interpretation": {
+            "const": "CONFIGURATION_OR_HOOK_UNINTERPRETED"
+          }
+        }
+      },
+      "maxItems": 64,
+      "uniqueItems": true
+    },
+    "files": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/file"
+      },
+      "maxItems": 16,
+      "uniqueItems": true
+    },
+    "runner_collection": {
+      "const": "UNESTABLISHED"
+    },
+    "limitations": {
+      "const": [
+        "PHYSICAL_FILENAME_AND_MODULE_LEXICAL_DECLARATIONS_ONLY",
+        "IMPORTABILITY_AND_RUNNER_COLLECTION_UNESTABLISHED",
+        "DECORATORS_REBINDING_CLASSES_AND_DYNAMIC_TESTS_UNRESOLVED",
+        "CUSTOM_DISCOVERY_PLUGINS_CONFIG_AND_DIRECTORY_POLICY_UNINTERPRETED",
+        "NO_EXECUTION_COVERAGE_OR_VERIFICATION_RELATIONSHIPS"
+      ]
+    }
+  },
+  "$defs": {
+    "digest": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "root": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "ordinary_entries",
+        "naming_matches",
+        "state"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "ordinary_entries": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "naming_matches": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 16
+        },
+        "state": {
+          "enum": [
+            "SOURCE_UNESTABLISHED",
+            "NO_NAMING_MATCHES",
+            "NAMING_MATCHES_OBSERVED"
+          ]
+        }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "state": {
+              "const": "SOURCE_UNESTABLISHED"
+            },
+            "ordinary_entries": {
+              "const": 0
+            },
+            "naming_matches": {
+              "const": 0
+            }
+          }
+        },
+        {
+          "properties": {
+            "state": {
+              "const": "NO_NAMING_MATCHES"
+            },
+            "ordinary_entries": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "naming_matches": {
+              "const": 0
+            }
+          }
+        },
+        {
+          "properties": {
+            "state": {
+              "const": "NAMING_MATCHES_OBSERVED"
+            },
+            "ordinary_entries": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "naming_matches": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 16
+            }
+          }
+        }
+      ]
+    },
+    "span": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "integer",
+          "minimum": 1
+        },
+        {
+          "type": "integer",
+          "minimum": 0
+        },
+        {
+          "type": "integer",
+          "minimum": 1
+        },
+        {
+          "type": "integer",
+          "minimum": 0
+        }
+      ],
+      "items": false,
+      "minItems": 4
+    },
+    "declaration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scope_id",
+        "name",
+        "kind",
+        "placement",
+        "span"
+      ],
+      "properties": {
+        "scope_id": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^s[1-9][0-9]*$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^test",
+          "maxLength": 4096
+        },
+        "kind": {
+          "enum": [
+            "FUNCTION",
+            "ASYNC_FUNCTION"
+          ]
+        },
+        "placement": {
+          "enum": [
+            "MODULE_BODY",
+            "CONDITIONAL_MODULE_SCOPE"
+          ]
+        },
+        "span": {
+          "$ref": "#/$defs/span"
+        }
+      }
+    },
+    "barrier": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "span"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "UNMODELED_MODULE_FUNCTION_HEADER",
+            "UNMODELED_MODULE_CLASS",
+            "MODULE_TEST_NAME_REBINDING",
+            "MODULE_TEST_NAME_IMPORT"
+          ]
+        },
+        "span": {
+          "$ref": "#/$defs/span"
+        }
+      }
+    },
+    "file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "source_ref",
+        "lexical_receipt_ref",
+        "lexical_outcome",
+        "declarations",
+        "barriers"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_ref": {
+          "$ref": "#/$defs/digest"
+        },
+        "lexical_receipt_ref": {
+          "$ref": "#/$defs/digest"
+        },
+        "lexical_outcome": {
+          "enum": [
+            "LEXICAL",
+            "PARTIAL",
+            "SYNTAX_ONLY",
+            "INVALID_SOURCE",
+            "UNSUPPORTED",
+            "UNAVAILABLE"
+          ]
+        },
+        "declarations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/declaration"
+          },
+          "maxItems": 255
+        },
+        "barriers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/barrier"
+          },
+          "maxItems": 5000
+        }
+      },
+      "if": {
+        "properties": {
+          "lexical_outcome": {
+            "enum": [
+              "SYNTAX_ONLY",
+              "INVALID_SOURCE",
+              "UNSUPPORTED",
+              "UNAVAILABLE"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "declarations": {
+            "maxItems": 0
+          },
+          "barriers": {
+            "maxItems": 0
+          }
+        }
+      }
+    }
+  }
+}

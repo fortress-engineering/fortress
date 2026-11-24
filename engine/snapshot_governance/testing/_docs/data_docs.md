@@ -22,6 +22,14 @@ Fixtures change deliberately with compatible rule clarification or an explicit s
 
 ## Files
 
+### [`python_test_fixture_v1.json`](../_data/python_test_fixture_v1.json)
+
+Retains exact authored test source and original pinned Windows CPython
+lexical replies from an independently checked pytest naming and runtime
+collection comparison. Snapshot test replay changes only the per-request
+correlation field. The compiled observations retain their original facts,
+limitations and producer identities.
+
 ### [`go_test_request_v1.json`](../_data/go_test_request_v1.json)
 
 Retains the exact ordered closed build input for the Windows Go test declaration

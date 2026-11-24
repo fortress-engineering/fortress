@@ -1,0 +1,505 @@
+{
+  "files": {
+    "outside/test_outside.py": "def test_outside():\n    pass\n",
+    "tests/extra_test.py": "def test_suffix():\n    pass\n",
+    "tests/test_basic.py": "# café\r\ndef test():\r\n    pass\r\ndef testable():\r\n    pass\r\nasync def test_async():\r\n    pass\r\ndef outer():\r\n    def test_nested():\r\n        pass\r\n",
+    "tests/test_dynamic.py": "def identity(fn):\n    return fn\n\ndef hide(fn):\n    return None\n\n@identity\ndef test_decorated():\n    pass\n\n@hide\ndef test_hidden_decorated():\n    pass\n\nif True:\n    def test_enabled():\n        pass\n\nif False:\n    def test_disabled():\n        pass\n\nclass TestContainer:\n    def test_member(self):\n        pass\n\ndef helper():\n    pass\n\ntest_dynamic = helper\n",
+    "tests/util.py": "def test_nonmatch():\n    pass\n"
+  },
+  "replies": {
+    "tests/extra_test.py": {
+      "byte_count": 28,
+      "id": "default-0",
+      "mode": "LEXICAL",
+      "observations": {
+        "constructs": [],
+        "imports": [],
+        "limitations": [],
+        "scopes": [
+          {
+            "bindings": [
+              {
+                "flags": [
+                  "assigned",
+                  "global",
+                  "local",
+                  "namespace"
+                ],
+                "name": "test_suffix"
+              }
+            ],
+            "id": "s0",
+            "kind": "Module",
+            "name": "top",
+            "parent": null,
+            "span": null
+          },
+          {
+            "bindings": [],
+            "id": "s1",
+            "kind": "FunctionDef",
+            "name": "test_suffix",
+            "parent": "s0",
+            "span": [
+              1,
+              0,
+              2,
+              8
+            ]
+          }
+        ]
+      },
+      "outcome": "LEXICAL",
+      "runtime_limitations": [
+        "IMPORT_TARGETS",
+        "RUNTIME_CALL_TARGETS",
+        "EFFECTS",
+        "EXECUTION"
+      ],
+      "runtime_ref": "sha256:c3c97417572f780314efe1ac3c4d5ce5e3cef99b1d5a93e5faec954a7c3fb7ce",
+      "schema": "fortress-research/python-lexical-response/1",
+      "source_ref": "sha256:934071809f6b9a44d3a98f1149f6e243403fd1743439406dccb90f3c7bb45fb6",
+      "stages": {
+        "LEXICAL_SCOPE": {
+          "status": "COMPLETE"
+        },
+        "MODULE_VALIDITY": {
+          "status": "COMPLETE"
+        },
+        "SYNTAX": {
+          "status": "COMPLETE"
+        }
+      },
+      "target_execution": "NOT_RUN",
+      "worker_ref": "sha256:19ca652a6ed8908d128ac231da47b45d0b0a86a9baffaff9626fb2d1609c9836"
+    },
+    "tests/test_basic.py": {
+      "byte_count": 146,
+      "id": "default-1",
+      "mode": "LEXICAL",
+      "observations": {
+        "constructs": [],
+        "imports": [],
+        "limitations": [],
+        "scopes": [
+          {
+            "bindings": [
+              {
+                "flags": [
+                  "assigned",
+                  "global",
+                  "local",
+                  "namespace"
+                ],
+                "name": "outer"
+              },
+              {
+                "flags": [
+                  "assigned",
+                  "global",
+                  "local",
+                  "namespace"
+                ],
+                "name": "test"
+              },
+              {
+                "flags": [
+                  "assigned",
+                  "global",
+                  "local",
+                  "namespace"
+                ],
+                "name": "test_async"
+              },
+              {
+                "flags": [
+                  "assigned",
+                  "global",
+                  "local",
+                  "namespace"
+                ],
+                "name": "testable"
+              }
+            ],
+            "id": "s0",
+            "kind": "Module",
+            "name": "top",
+            "parent": null,
+            "span": null
+          },
+          {
+            "bindings": [],
+            "id": "s1",
+            "kind": "FunctionDef",
+            "name": "test",
+            "parent": "s0",
+            "span": [
+              2,
+              0,
+              3,
+              8
+            ]
+          },
+          {
+            "bindings": [],
+            "id": "s2",
+            "kind": "FunctionDef",
+            "name": "testable",
+            "parent": "s0",
+            "span": [
+              4,
+              0,
+              5,
+              8
+            ]
+          },
+          {
+            "bindings": [],
+            "id": "s3",
+            "kind": "AsyncFunctionDef",
+            "name": "test_async",
+            "parent": "s0",
+            "span": [
+              6,
+              0,
+              7,
+              8
+            ]
+          },
+          {
+            "bindings": [
+              {
+                "flags": [
+                  "assigned",
+                  "local",
+                  "namespace"
+                ],
+                "name": "test_nested"
+              }
+            ],
+            "id": "s4",
+            "kind": "FunctionDef",
+            "name": "outer",
+            "parent": "s0",
+            "span": [
+              8,
+              0,
+              10,
+              12
+            ]
+          },
+          {
+            "bindings": [],
+            "id": "s5",
+            "kind": "FunctionDef",
+            "name": "test_nested",
+            "parent": "s4",
+            "span": [
+              9,
+              4,
+              10,
+              12
+            ]
+          }
+        ]
+      },
+      "outcome": "LEXICAL",
+      "runtime_limitations": [
+        "IMPORT_TARGETS",
+        "RUNTIME_CALL_TARGETS",
+        "EFFECTS",
+        "EXECUTION"
+      ],
+      "runtime_ref": "sha256:c3c97417572f780314efe1ac3c4d5ce5e3cef99b1d5a93e5faec954a7c3fb7ce",
+      "schema": "fortress-research/python-lexical-response/1",
+      "source_ref": "sha256:934453401d7845d618ec9e34e60e74f93b0eeaf03b6be192fef38e66427792aa",
+      "stages": {
+        "LEXICAL_SCOPE": {
+          "status": "COMPLETE"
+        },
+        "MODULE_VALIDITY": {
+          "status": "COMPLETE"
+        },
+        "SYNTAX": {
+          "status": "COMPLETE"
+        }
+      },
+      "target_execution": "NOT_RUN",
+      "worker_ref": "sha256:19ca652a6ed8908d128ac231da47b45d0b0a86a9baffaff9626fb2d1609c9836"
+    },
+    "tests/test_dynamic.py": {
+      "byte_count": 355,
+      "id": "default-2",
+      "mode": "LEXICAL",
+      "observations": {
+        "constructs": [
+          {
+            "kind": "Return",
+            "scope": "s1",
+            "span": [
+              2,
+              4,
+              2,
+              13
+            ]
+          },
+          {
+            "kind": "Return",
+            "scope": "s2",
+            "span": [
+              5,
+              4,
+              5,
+              15
+            ]
+          },
+          {
+            "kind": "NameStore",
+            "scope": "s0",
+            "span": [
+              30,
+              0,
+              30,
+              12
+            ],
+            "spelling": "test_dynamic"
+          }
+        ],
+        "imports": [],
+        "limitations": [
+          {
+            "code": "UNMODELED_FUNCTION_SCOPE_OR_HEADER",
+            "scope": "s0",
+            "span": [
+              8,
+              0,
+              9,
+              8
+            ]
+          },
+          {
+            "code": "UNMODELED_FUNCTION_SCOPE_OR_HEADER",
+            "scope": "s0",
+            "span": [
+              12,
+              0,
+              13,
+              8
+            ]
+          },
+          {
+            "code": "UNMODELED_SCOPE_FORM",
+            "kind": "ClassDef",
+            "scope": "s0",
+            "span": [
+              23,
+              0,
+              25,
+              12
+            ]
+          }
+        ],
+        "scopes": [
+          {
+            "bindings": [
+              {
+                "flags": [
+                  "assigned",
+                  "global",
+                  "local",
+                  "namespace"
+                ],
+                "name": "TestContainer"
+              },
+              {
+                "flags": [
+                  "assigned",
+                  "global",
+                  "local",
+                  "namespace",
+                  "referenced"
+                ],
+                "name": "helper"
+              },
+              {
+                "flags": [
+                  "assigned",
+                  "global",
+                  "local",
+                  "namespace",
+                  "referenced"
+                ],
+                "name": "hide"
+              },
+              {
+                "flags": [
+                  "assigned",
+                  "global",
+                  "local",
+                  "namespace",
+                  "referenced"
+                ],
+                "name": "identity"
+              },
+              {
+                "flags": [
+                  "assigned",
+                  "global",
+                  "local",
+                  "namespace"
+                ],
+                "name": "test_decorated"
+              },
+              {
+                "flags": [
+                  "assigned",
+                  "global",
+                  "local",
+                  "namespace"
+                ],
+                "name": "test_disabled"
+              },
+              {
+                "flags": [
+                  "assigned",
+                  "global",
+                  "local"
+                ],
+                "name": "test_dynamic"
+              },
+              {
+                "flags": [
+                  "assigned",
+                  "global",
+                  "local",
+                  "namespace"
+                ],
+                "name": "test_enabled"
+              },
+              {
+                "flags": [
+                  "assigned",
+                  "global",
+                  "local",
+                  "namespace"
+                ],
+                "name": "test_hidden_decorated"
+              }
+            ],
+            "id": "s0",
+            "kind": "Module",
+            "name": "top",
+            "parent": null,
+            "span": null
+          },
+          {
+            "bindings": [
+              {
+                "flags": [
+                  "local",
+                  "parameter",
+                  "referenced"
+                ],
+                "name": "fn"
+              }
+            ],
+            "id": "s1",
+            "kind": "FunctionDef",
+            "name": "identity",
+            "parent": "s0",
+            "span": [
+              1,
+              0,
+              2,
+              13
+            ]
+          },
+          {
+            "bindings": [
+              {
+                "flags": [
+                  "local",
+                  "parameter"
+                ],
+                "name": "fn"
+              }
+            ],
+            "id": "s2",
+            "kind": "FunctionDef",
+            "name": "hide",
+            "parent": "s0",
+            "span": [
+              4,
+              0,
+              5,
+              15
+            ]
+          },
+          {
+            "bindings": [],
+            "id": "s3",
+            "kind": "FunctionDef",
+            "name": "test_enabled",
+            "parent": "s0",
+            "span": [
+              16,
+              4,
+              17,
+              12
+            ]
+          },
+          {
+            "bindings": [],
+            "id": "s4",
+            "kind": "FunctionDef",
+            "name": "test_disabled",
+            "parent": "s0",
+            "span": [
+              20,
+              4,
+              21,
+              12
+            ]
+          },
+          {
+            "bindings": [],
+            "id": "s5",
+            "kind": "FunctionDef",
+            "name": "helper",
+            "parent": "s0",
+            "span": [
+              27,
+              0,
+              28,
+              8
+            ]
+          }
+        ]
+      },
+      "outcome": "PARTIAL",
+      "runtime_limitations": [
+        "IMPORT_TARGETS",
+        "RUNTIME_CALL_TARGETS",
+        "EFFECTS",
+        "EXECUTION"
+      ],
+      "runtime_ref": "sha256:c3c97417572f780314efe1ac3c4d5ce5e3cef99b1d5a93e5faec954a7c3fb7ce",
+      "schema": "fortress-research/python-lexical-response/1",
+      "source_ref": "sha256:de3babc479f7fb0f068b4013e17e476cbdd6f9515f89572291ee12b3ebc6856e",
+      "stages": {
+        "LEXICAL_SCOPE": {
+          "status": "COMPLETE"
+        },
+        "MODULE_VALIDITY": {
+          "status": "COMPLETE"
+        },
+        "SYNTAX": {
+          "status": "COMPLETE"
+        }
+      },
+      "target_execution": "NOT_RUN",
+      "worker_ref": "sha256:19ca652a6ed8908d128ac231da47b45d0b0a86a9baffaff9626fb2d1609c9836"
+    }
+  },
+  "schema_version": 1
+}

@@ -3,6 +3,28 @@
   "schema_version": 1,
   "entries": [
     {
+      "schema_id": "urn:fortress:derived:v1:python-test-declarations",
+      "schema_path": "engine/snapshot_governance/_data/python_test_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/snapshot_governance/_code/python_test_observation.rs"
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "sha256-python-test-context-and-exact-lexical-receipts",
+        "source": "engine/snapshot_governance/_code/python_test_observation.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-owner-canonical-or-exact-bytes",
+        "source": "engine/snapshot_governance/_code/python_test_observation.rs"
+      }
+    },
+    {
       "schema_id": "urn:fortress:derived:v1:native-scalar-flow-inspection",
       "schema_path": "cli/_data/native_flow_schema_v1.json",
       "version": 1,

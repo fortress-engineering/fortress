@@ -22,6 +22,13 @@ Maintainers update Data through reviewed semantic changes; schema versions chang
 
 ## Files
 
+### [`python_test_schema_v1.json`](../_data/python_test_schema_v1.json)
+
+Defines the read-only Python test declaration report. It binds exact
+original input and producer identities, the selected roots, naming matches,
+lexical receipt references, physical UTF-8 spans and unresolved discovery.
+It grants neither test execution evidence nor verification authority.
+
 ### [`bootstrap_proposal_schema_v1.json`](../_data/bootstrap_proposal_schema_v1.json)
 
 Defines the deterministic non-authoritative discovery proposal that separates observed repository/Cargo facts, reviewed authored content, unresolved owner choices, exact source identity, and deferred governed legacy-residue evaluation.

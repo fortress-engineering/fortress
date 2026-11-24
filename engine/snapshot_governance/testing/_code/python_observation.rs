@@ -25,6 +25,178 @@ const SOURCE: &[u8] = b"value: int = 7\r\n";
 const OTHER: &[u8] = b"original ancillary input\n";
 const CONTEXT: &str = "sha256:f19e50baa1d1fd5a6df2123b2973d458d3806567b133d3192b5b2587b5e1376f";
 
+mod test_declarations {
+    use super::*;
+    use fortress_core::python_observation::observe_python_tests;
+    use serde_json::Value;
+
+    const NATIVE: &[u8] = include_bytes!("../_data/python_test_fixture_v1.json");
+    const SCHEMA: &str = include_str!("../../_data/python_test_schema_v1.json");
+
+    fn native_fixture(name: &str) -> (Fixture, Value, PythonLexicalProducer) {
+        let fixture = Fixture::new(name);
+        let record: Value = serde_json::from_slice(NATIVE).unwrap();
+        for (path, source) in record["files"].as_object().unwrap() {
+            assert!(fortress_core::observation::is_canonical_relative_path(path));
+            let path = fixture.root.join(path);
+            fs::create_dir_all(path.parent().unwrap()).unwrap();
+            fs::write(path, source.as_str().unwrap()).unwrap();
+        }
+        let representative = &record["replies"]["tests/test_basic.py"];
+        let producer = PythonLexicalProducer::new(
+            PythonGrammar::Cpython313,
+            representative["runtime_ref"].as_str().unwrap().to_owned(),
+            representative["worker_ref"].as_str().unwrap().to_owned(),
+        )
+        .unwrap();
+        (fixture, record, producer)
+    }
+
+    fn reply(record: &Value, request: &PythonLexicalRequest, source: &[u8]) -> Value {
+        let source_ref = digest(source);
+        assert_eq!(request.source_ref(), source_ref);
+        let mut response = record["replies"]
+            .as_object()
+            .unwrap()
+            .values()
+            .find(|row| row["source_ref"] == source_ref)
+            .expect("retained compiler reply for exact file")
+            .clone();
+        response["id"] = json!(request.id());
+        response
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R29-012`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R29
+    #[test]
+    fn python_test_roots_retain_exact_declaration_and_unknown_discovery() {
+        let (fixture, record, producer) = native_fixture("python-tests-exact");
+        fs::write(
+            fixture.root.join("pytest.ini"),
+            "[pytest]\npython_files=spec_*.py\n",
+        )
+        .unwrap();
+        fs::write(
+            fixture.root.join("tests/conftest.py"),
+            "# observed hook file\n",
+        )
+        .unwrap();
+        let evaluate = |roots: &[&str]| {
+            let observed =
+                observe_python_tests(&fixture.root, roots, &producer, |request, bytes| {
+                    Ok(serde_json::to_vec(&reply(&record, request, bytes)).unwrap())
+                })
+                .unwrap();
+            serde_json::to_value(observed).unwrap()
+        };
+        let document = evaluate(&["tests", "missing"]);
+        assert_eq!(document, evaluate(&["missing", "tests"]));
+        jsonschema::draft202012::validate(&serde_json::from_str(SCHEMA).unwrap(), &document)
+            .expect("strict standalone derived schema");
+        assert_eq!(document["runner_collection"], "UNESTABLISHED");
+        assert_eq!(document["roots"][0]["state"], "SOURCE_UNESTABLISHED");
+        assert_eq!(document["roots"][1]["naming_matches"], 3);
+        assert_eq!(document["discovery_markers"][0]["path"], "pytest.ini");
+        assert_eq!(
+            document["discovery_markers"][1]["path"],
+            "tests/conftest.py"
+        );
+        let files = document["files"].as_array().unwrap();
+        assert_eq!(files.len(), 3);
+        assert_eq!(files[0]["path"], "tests/extra_test.py");
+        assert_eq!(files[1]["path"], "tests/test_basic.py");
+        assert_eq!(files[1]["declarations"][1]["name"], "testable");
+        assert_eq!(files[1]["declarations"][2]["kind"], "ASYNC_FUNCTION");
+        assert_eq!(files[1]["declarations"][2]["span"][0], 6);
+        assert_eq!(
+            files[2]["declarations"][0]["placement"],
+            "CONDITIONAL_MODULE_SCOPE"
+        );
+        assert_eq!(files[2]["declarations"][1]["name"], "test_disabled");
+        assert_eq!(files[2]["barriers"].as_array().unwrap().len(), 4);
+        assert!(document.get("coverage").is_none() && document.get("execution").is_none());
+
+        let mut false_collection = document;
+        false_collection["runner_collection"] = json!("PASSED");
+        assert!(
+            jsonschema::draft202012::validate(
+                &serde_json::from_str(SCHEMA).unwrap(),
+                &false_collection
+            )
+            .is_err()
+        );
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R29-013`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R29
+    #[test]
+    fn python_test_scope_rejects_unavailable_shapes_before_dispatch() {
+        let fixture = Fixture::new("python-tests-limits");
+        for roots in [
+            &[][..],
+            &["../tests"][..],
+            &[".", "tests"][..],
+            &["TESTS/child", "tests"][..],
+            &["note.txt"][..],
+        ] {
+            let invalid = observe_python_tests(&fixture.root, roots, &pin(), |_, _| {
+                panic!("invalid roots must prevent dispatch");
+            });
+            assert!(
+                matches!(invalid, Err(PythonObservationError::InvalidTestRoots)),
+                "{roots:?}"
+            );
+        }
+        fs::create_dir(fixture.root.join("tests")).unwrap();
+        for index in 0..17 {
+            fs::write(
+                fixture.root.join(format!("tests/test_{index}.py")),
+                "def test_something():\n    pass\n",
+            )
+            .unwrap();
+        }
+        let exceeded = observe_python_tests(&fixture.root, &["tests"], &pin(), |_, _| {
+            panic!("oversized declaration inventory must prevent dispatch");
+        });
+        assert!(matches!(
+            exceeded,
+            Err(PythonObservationError::TestScopeLimit)
+        ));
+        let missing = observe_python_tests(&fixture.root, &["future"], &pin(), |_, _| {
+            panic!("unobserved root must not invoke the lexical worker");
+        })
+        .unwrap();
+        assert_eq!(
+            serde_json::to_value(missing).unwrap()["roots"][0]["state"],
+            "SOURCE_UNESTABLISHED"
+        );
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R29-014`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R29
+    #[test]
+    fn python_test_projection_refuses_forged_execution_and_changed_source() {
+        let (fixture, record, producer) = native_fixture("python-tests-stale");
+        let forged =
+            observe_python_tests(&fixture.root, &["tests"], &producer, |request, bytes| {
+                let mut response = reply(&record, request, bytes);
+                response["target_execution"] = json!("PASS");
+                Ok(serde_json::to_vec(&response).unwrap())
+            });
+        assert!(matches!(forged, Err(PythonObservationError::Lexical(_))));
+        let stale = observe_python_tests(&fixture.root, &["tests"], &producer, |request, bytes| {
+            let response = reply(&record, request, bytes);
+            fs::write(
+                fixture.root.join("outside/test_outside.py"),
+                "# changed ancillary source\n",
+            )
+            .unwrap();
+            Ok(serde_json::to_vec(&response).unwrap())
+        });
+        assert!(matches!(stale, Err(PythonObservationError::SourceChanged)));
+    }
+}
+
 mod regions {
     use super::*;
     use fortress_core::filing::LayoutExtension;
