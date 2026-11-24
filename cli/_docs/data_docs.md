@@ -91,3 +91,14 @@ source, function and ordered exact-bool input premises.
 Versioned Python scalar inspection report. It retains exact source, original
 authority and context, resource profile, exchange identity, scoped native
 body status and conditional output domain when available.
+
+### [python_import_scope_schema_v1.json](../_data/python_import_scope_schema_v1.json)
+
+Versioned external selection of ordered analysis-only Python roots and their
+inventory premise. The caller independently pins the canonical document digest.
+
+### [python_import_observation_schema_v1.json](../_data/python_import_observation_schema_v1.json)
+
+Versioned actual-state Python lexical and static import report. It records
+exact repository, evaluator and host provenance, optional static targets
+or unavailable reasons, and unresolved runtime behavior.

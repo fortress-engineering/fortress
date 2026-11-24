@@ -46,6 +46,8 @@ fn registered_schemas_are_unique_json_schema_documents() {
         "cli/_data/python_lexical_schema_v1.json",
         "cli/_data/python_scalar_schema_v1.json",
         "cli/_data/python_scalar_worker_schema_v1.json",
+        "cli/_data/python_import_scope_schema_v1.json",
+        "cli/_data/python_import_observation_schema_v1.json",
         "cli/_data/python_worker_schema_v1.json",
         "engine/program_semantics/_data/go_observation_schema_v1.json",
         "engine/program_semantics/_data/go_observation_schema_v2.json",

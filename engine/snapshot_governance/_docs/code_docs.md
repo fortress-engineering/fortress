@@ -538,3 +538,10 @@ capture. It verifies the trusted subject digest before dispatch, consumes the
 shared native body admission, and revalidates the captured bytes and directory
 after optional conservative domain inference. The result retains the exact
 subject scope with independent original authority.
+
+The static import action reuses the same scoped lexical exchange. The ordered
+analysis-only root selection has its own independently supplied digest, which
+enters the evaluation key. The owner binds the resolver's configuration to
+that exact source and context. Compiler and inventory limitations retain the
+preceding lexical observation. Publication revalidates the complete physical
+source and original authority inputs.

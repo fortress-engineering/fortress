@@ -104,6 +104,84 @@ impl PythonImportRoots {
     }
 }
 
+/// Independently pinned, ordered source-root selection for analysis only.
+///
+/// The original physical snapshot owner binds this scope to one evaluation.
+/// The selection supplies no repository governance or runtime import authority.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PythonImportScope {
+    scope_ref: String,
+    selection: ScopeSelection,
+}
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(deny_unknown_fields)]
+struct ScopeSelection {
+    #[serde(rename = "$schema")]
+    schema: String,
+    schema_version: u16,
+    inventory: Inventory,
+    roots: Vec<String>,
+}
+
+impl PythonImportScope {
+    /// Admits an independently selected canonical root-scope digest.
+    ///
+    /// # Errors
+    /// Refuses malformed documents, invalid identities, unsupported versions,
+    /// incomplete inventories, and invalid or overlapping root paths.
+    pub fn admit(bytes: &[u8], expected_ref: &str) -> Result<Self, PythonStaticImportError> {
+        admit_json(bytes, ROOTS_LIMITS).map_err(|_| PythonStaticImportError::ResourceLimit)?;
+        reject_duplicate_json_keys_bytes(bytes).map_err(PythonStaticImportError::Encoding)?;
+        let selection: ScopeSelection =
+            serde_json::from_slice(bytes).map_err(PythonStaticImportError::Encoding)?;
+        if selection.schema != "urn:fortress:host:v1:python-static-import-scope"
+            || selection.schema_version != 1
+        {
+            return Err(PythonStaticImportError::UnsupportedConfiguration);
+        }
+        let canonical = serde_json_canonicalizer::to_vec(&selection)
+            .map_err(PythonStaticImportError::Encoding)?;
+        if digest(&canonical) != expected_ref {
+            return Err(PythonStaticImportError::InvalidBinding);
+        }
+        if selection.inventory != Inventory::CompleteSourceOnly {
+            return Err(PythonStaticImportError::IncompleteInventory);
+        }
+        validate_roots(&selection.roots)?;
+        Ok(Self {
+            scope_ref: expected_ref.to_owned(),
+            selection,
+        })
+    }
+
+    /// Returns the independently selected JCS/SHA-256 scope identity.
+    #[must_use]
+    pub fn scope_ref(&self) -> &str {
+        &self.scope_ref
+    }
+
+    pub(crate) fn bind(
+        &self,
+        view: &SourceView,
+        evaluation: &EvaluationKey,
+    ) -> Result<PythonImportRoots, PythonStaticImportError> {
+        let configuration = RootConfiguration {
+            schema: ROOTS_SCHEMA.into(),
+            source_view_ref: view.digest().into(),
+            evaluation_ref: evaluation.digest(),
+            inventory: self.selection.inventory,
+            roots: self.selection.roots.clone(),
+        };
+        let canonical = serde_json_canonicalizer::to_vec(&configuration)
+            .map_err(PythonStaticImportError::Encoding)?;
+        Ok(PythonImportRoots {
+            configuration_ref: digest(&canonical),
+            configuration,
+        })
+    }
+}
+
 fn validate_roots(roots: &[String]) -> Result<(), PythonStaticImportError> {
     if roots.is_empty() || roots.len() > MAX_ROOTS || roots.iter().any(|root| !admitted_path(root))
     {
@@ -200,6 +278,21 @@ pub struct PythonStaticImport {
 }
 
 impl PythonStaticImport {
+    /// Returns the exact original lexical scope identity for the occurrence.
+    #[must_use]
+    pub fn scope(&self) -> &str {
+        &self.occurrence.scope
+    }
+
+    /// Returns start line, start UTF-8 byte column, end line and end column.
+    ///
+    /// Lines are one-based. Columns are zero-based offsets in the source bytes.
+    #[must_use]
+    pub const fn source_span(&self) -> [usize; 4] {
+        let super::Span(start_line, start_column, end_line, end_column) = self.occurrence.span;
+        [start_line, start_column, end_line, end_column]
+    }
+
     /// Returns one lookup for a from-import base or one per plain import name.
     #[must_use]
     pub fn static_targets(&self) -> &[PythonStaticImportTarget] {
@@ -235,6 +328,36 @@ pub struct PythonStaticImportObservation {
 }
 
 impl PythonStaticImportObservation {
+    /// Returns the exact originating repository-relative source path.
+    #[must_use]
+    pub fn source_path(&self) -> &str {
+        &self.lexical_request.source_path
+    }
+
+    /// Returns the exact originating source bytes' SHA-256 reference.
+    #[must_use]
+    pub fn source_ref(&self) -> &str {
+        &self.lexical_request.source_ref
+    }
+
+    /// Returns the original complete immutable view identity.
+    #[must_use]
+    pub fn source_view_ref(&self) -> &str {
+        &self.lexical_request.source_view_ref
+    }
+
+    /// Returns the exact selected evaluation context and authority binding.
+    #[must_use]
+    pub fn evaluation_ref(&self) -> &str {
+        &self.lexical_request.evaluation_ref
+    }
+
+    /// Returns the scoped, content-addressed root configuration identity.
+    #[must_use]
+    pub fn roots_ref(&self) -> &str {
+        self.roots.configuration_ref()
+    }
+
     /// Evaluates the admitted import declarations within explicitly selected roots.
     ///
     /// Only ordinary source files from the immutable view can contribute. A

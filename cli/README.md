@@ -272,3 +272,24 @@ An admitted body with a conditional output bound appears as `LOWERED` and
 inferred domain remains unavailable. Unsupported syntax or scope has an
 explicit unavailable disposition. The observation reports unproven runtime
 argument types, compile-only execution, and no assessment.
+
+### Static Python import inspection
+
+Use the same independently pinned CPython lexical host with
+`fortress source-artifacts --observe-python PROJECT HOST_REGISTRATION SOURCE_PATH imports ROOT_SCOPE ROOT_SCOPE_SHA256`.
+Keep the root-scope file outside the repository. Its independently selected
+digest is SHA-256 over its canonical JSON bytes, including the exact root order.
+A scope is an analysis selection, with no project authority or execution grant.
+
+The scope uses `urn:fortress:host:v1:python-static-import-scope`, schema version 1,
+an `inventory` value of `COMPLETE_SOURCE_ONLY`, and one to four explicitly
+ordered `roots` relative to the repository. Roots must be disjoint and contain
+only admitted ordinary Python source. An incomplete scope, wrong digest or
+project-owned host input is refused. Conflicting names, unavailable roots and
+unsupported root contents are reported separately from lookup absence.
+
+The report retains the original source, evaluator context, authority and
+compile-only lexical artifact. Static lookup can identify a source file or
+ordered namespace portions under the selected roots. Missing results are scoped
+to that admitted inventory. Empty directories, dynamic imports, runtime
+package discovery and from-import member resolution remain unresolved.

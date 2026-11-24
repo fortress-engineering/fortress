@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:host:v1:python-static-import-scope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "inventory",
+    "roots"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:host:v1:python-static-import-scope"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "inventory": {
+      "enum": [
+        "COMPLETE_SOURCE_ONLY",
+        "INCOMPLETE"
+      ]
+    },
+    "roots": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 240
+      },
+      "maxItems": 4,
+      "minItems": 1,
+      "uniqueItems": true
+    }
+  }
+}

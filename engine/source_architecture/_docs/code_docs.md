@@ -111,6 +111,12 @@ Runtime imports, dynamic calls, runtime reachability, installed packages,
 built-ins and native extensions remain outside the projection. It creates
 no ownership, Architecture Evaluation edge or certification evidence.
 
+An independently pinned root-scope document can select ordered source roots
+before actual lookups. Snapshot Governance binds that scope to its observed
+view and context before invoking the existing resolver. Typed source and
+occurrence getters retain exact original digest, path, context, lexical scope,
+and UTF-8 byte spans for downstream observational projections.
+
 ### [`python_scalar_worker.py`](../_code/python_scalar_worker.py)
 
 Projects an exact, compile-only Python scalar function into a bounded native

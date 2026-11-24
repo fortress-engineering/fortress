@@ -15,7 +15,9 @@ use fortress_core::python_observation::{
 use serde_json::json;
 
 use fortress_core::python_observation::{
-    PythonScalarError, PythonScalarProducer, PythonScalarSubject, observe_python_scalar,
+    PythonImportScope, PythonScalarError, PythonScalarProducer, PythonScalarSubject,
+    PythonStaticImportError, PythonStaticImportLimitation, PythonStaticImportOutcome,
+    observe_python_scalar, observe_python_static_imports,
 };
 
 const PATH: &str = "_code/source.py";
@@ -394,6 +396,169 @@ fn stale_subject_pin_and_physical_drift_refuse_scalar_publication() {
         .expect("fixture changes");
         scalar_reply(&request)
     });
+    assert!(matches!(
+        changed,
+        Err(PythonObservationError::SourceChanged)
+    ));
+}
+
+const IMPORT_SOURCE: &[u8] = b"import chosen\r\n";
+
+fn import_scope(roots: &[&str], inventory: &str) -> (Vec<u8>, String) {
+    let selection = json!({
+        "$schema":"urn:fortress:host:v1:python-static-import-scope",
+        "schema_version":1,
+        "inventory":inventory,
+        "roots":roots,
+    });
+    let bytes = serde_json_canonicalizer::to_vec(&selection).expect("fixture scope canonicalizes");
+    let pin = digest(&bytes);
+    (bytes, pin)
+}
+
+fn import_fixture(name: &str) -> Fixture {
+    let fixture = Fixture::new(name);
+    fs::write(fixture.root.join(PATH), IMPORT_SOURCE).expect("write exact Python import source");
+    fs::write(fixture.root.join("_code/chosen.py"), b"VALUE = 3\n").expect("write first source");
+    fs::create_dir(fixture.root.join("vendor")).expect("second root creates");
+    fs::write(fixture.root.join("vendor/chosen.py"), b"VALUE = 9\n").expect("write second source");
+    fixture
+}
+
+fn import_reply(
+    request: &PythonLexicalRequest,
+    selected: &[u8],
+) -> Result<Vec<u8>, PythonObservationError> {
+    assert_eq!(selected, IMPORT_SOURCE);
+    let report = json!({
+        "schema":"fortress-research/python-lexical-response/1",
+        "id":request.id(),"mode":"LEXICAL","source_ref":request.source_ref(),
+        "byte_count":selected.len(),"runtime_ref":request.runtime_ref(),"worker_ref":request.worker_ref(),
+        "outcome":"LEXICAL",
+        "stages":{"SYNTAX":{"status":"COMPLETE"},"LEXICAL_SCOPE":{"status":"COMPLETE"},
+                  "MODULE_VALIDITY":{"status":"COMPLETE"}},
+        "observations":{"imports":[{"scope":"s0","form":"import","level":null,"module":null,
+                                   "names":[["chosen",null]],"target":"UNRESOLVED","span":[1,0,1,13]}],
+                        "scopes":[{"id":"s0","name":"top","parent":null,"span":null,"kind":"Module",
+                                   "bindings":[]}],
+                        "constructs":[],"limitations":[]},
+        "target_execution":"NOT_RUN",
+        "runtime_limitations":["IMPORT_TARGETS","RUNTIME_CALL_TARGETS","EFFECTS","EXECUTION"],
+    });
+    serde_json::to_vec(&report).map_err(|error| PythonLexicalError::Encoding(error).into())
+}
+
+/// `T-AF-SNAPSHOT-GOVERNANCE-0001-R29-006`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R29
+#[test]
+fn explicit_python_root_order_binds_actual_source_and_typed_origins() {
+    use fortress_core::source_architecture::python_lexical::python_static_imports::PythonStaticImportTarget;
+
+    let fixture = import_fixture("static-imports");
+    let (first, first_pin) = import_scope(&["_code", "vendor"], "COMPLETE_SOURCE_ONLY");
+    let (reversed, reverse_pin) = import_scope(&["vendor", "_code"], "COMPLETE_SOURCE_ONLY");
+    assert_ne!(first_pin, reverse_pin);
+    assert!(matches!(
+        PythonImportScope::admit(&reversed, &first_pin),
+        Err(PythonStaticImportError::InvalidBinding)
+    ));
+    let select = |bytes: &[u8], reference: &str| {
+        let scope = PythonImportScope::admit(bytes, reference).expect("trusted fixture scope");
+        observe_python_static_imports(&fixture.root, PATH, &pin(), &scope, import_reply)
+            .expect("exact native import owner")
+    };
+    let ordered = select(&first, &first_pin);
+    let switched = select(&reversed, &reverse_pin);
+    assert_ne!(
+        ordered.evaluation_key().program_context_digest(),
+        switched.evaluation_key().program_context_digest()
+    );
+    assert_eq!(
+        ordered.evaluation_key().source_manifest_digest(),
+        switched.evaluation_key().source_manifest_digest()
+    );
+    assert_eq!(
+        ordered.evaluation_key().authority_binding_digest(),
+        switched.evaluation_key().authority_binding_digest()
+    );
+    for (report, target) in [
+        (&ordered, "_code/chosen.py"),
+        (&switched, "vendor/chosen.py"),
+    ] {
+        let PythonStaticImportOutcome::Observed { observation } = report.outcome() else {
+            panic!("trusted fixture has a unique static target");
+        };
+        assert_eq!(observation.source_path(), PATH);
+        assert_eq!(observation.source_ref(), digest(IMPORT_SOURCE));
+        assert_eq!(
+            observation.evaluation_ref(),
+            report.evaluation_key().digest()
+        );
+        assert_eq!(observation.imports()[0].scope(), "s0");
+        assert_eq!(observation.imports()[0].source_span(), [1, 0, 1, 13]);
+        assert_eq!(
+            observation.imports()[0].static_targets(),
+            [PythonStaticImportTarget::FileStatic {
+                module: "chosen".into(),
+                path: target.into(),
+                source_ref: digest(
+                    &fs::read(fixture.root.join(target)).expect("exact selected bytes")
+                )
+            }]
+        );
+    }
+    assert_eq!(fs::read(fixture.root.join(PATH)).unwrap(), IMPORT_SOURCE);
+}
+
+/// `T-AF-SNAPSHOT-GOVERNANCE-0001-R29-007`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R29
+#[test]
+fn stale_static_imports_refuse_and_incomplete_scopes_keep_truthful_limits() {
+    let fixture = import_fixture("static-import-limits");
+    let (incomplete, incomplete_ref) = import_scope(&["_code"], "INCOMPLETE");
+    assert!(matches!(
+        PythonImportScope::admit(&incomplete, &incomplete_ref),
+        Err(PythonStaticImportError::IncompleteInventory)
+    ));
+    let (selection, selection_ref) = import_scope(&["_code"], "COMPLETE_SOURCE_ONLY");
+    let scope = PythonImportScope::admit(&selection, &selection_ref).unwrap();
+    let mismatch =
+        observe_python_static_imports(&fixture.root, PATH, &pin(), &scope, |request, source| {
+            let mut reply: serde_json::Value =
+                serde_json::from_slice(&import_reply(request, source)?).unwrap();
+            reply["source_ref"] = json!(digest(b"unrelated source"));
+            serde_json::to_vec(&reply).map_err(|error| PythonLexicalError::Encoding(error).into())
+        });
+    assert!(matches!(
+        mismatch,
+        Err(PythonObservationError::Lexical(
+            PythonLexicalError::InvalidBinding
+        ))
+    ));
+    fs::write(
+        fixture.root.join("_code/unsafe.pyd"),
+        b"not a native module",
+    )
+    .unwrap();
+    let blocked =
+        observe_python_static_imports(&fixture.root, PATH, &pin(), &scope, import_reply).unwrap();
+    assert_eq!(blocked.lexical().outcome(), PythonLexicalOutcome::Lexical);
+    assert!(matches!(
+        blocked.outcome(),
+        PythonStaticImportOutcome::Unavailable {
+            reason: PythonStaticImportLimitation::UnsupportedRootContent
+        }
+    ));
+    let changed =
+        observe_python_static_imports(&fixture.root, PATH, &pin(), &scope, |request, source| {
+            let report = import_reply(request, source)?;
+            fs::write(
+                fixture.root.join("note.txt"),
+                b"original scope changed during inspection",
+            )
+            .unwrap();
+            Ok(report)
+        });
     assert!(matches!(
         changed,
         Err(PythonObservationError::SourceChanged)

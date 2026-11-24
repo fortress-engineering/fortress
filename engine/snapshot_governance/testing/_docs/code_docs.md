@@ -197,3 +197,8 @@ The v3 Go module controls in [go_observation.rs](../_code/go_observation.rs) use
 The scalar boundary controls independently check the expected Boolean output
 bound for an exact-bool subject, failure before dispatch for a mismatched
 subject digest, and refusal after unrelated captured physical source changes.
+
+The static import controls check exact source, authority and root-order
+bindings, typed import origin coordinates, refusal of stale or incomplete
+inputs, retention of lexical facts when a root is unsupported, and rejection
+after physical source changes during inspection.

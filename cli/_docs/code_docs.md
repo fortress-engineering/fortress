@@ -432,6 +432,11 @@ The one-process exchange releases exact source only after the bounded worker emi
 
 Readiness failure and changed tool or source bytes yield explicit unavailable errors. Successful output carries the exact original source and authority, selected grammar, and scoped lexical observations. Runtime import and call targets, effects and execution remain unresolved. This path contributes no current findings, assessment, grant or certificate. Default source-artifact and PSM behavior stays on the existing paths.
 
+The explicit static import mode reuses this same lexical worker and readiness
+frame. It checks an independently pinned external ordered root scope before
+dispatch, then rechecks the external scope and host assets after the exchange.
+Snapshot Governance supplies the actual-state result and scoped limitations.
+
 ### [python_scalar_command.rs](../_code/python_scalar_command.rs)
 
 Implements explicit scalar inspection using a separately registered external

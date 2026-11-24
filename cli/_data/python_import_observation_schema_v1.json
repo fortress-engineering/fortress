@@ -1,0 +1,459 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v1:python-static-import-observation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "evaluation",
+    "registration_ref",
+    "interpreter_ref",
+    "root_scope_ref",
+    "resource_profile",
+    "worker_timeout_ms",
+    "lexical",
+    "imports",
+    "scope"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:derived:v1:python-static-import-observation"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "evaluation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_manifest_digest",
+        "program_context_digest",
+        "authority_binding_digest"
+      ],
+      "properties": {
+        "source_manifest_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "program_context_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "authority_binding_digest": {
+          "$ref": "#/$defs/digest"
+        }
+      }
+    },
+    "registration_ref": {
+      "$ref": "#/$defs/digest"
+    },
+    "interpreter_ref": {
+      "$ref": "#/$defs/digest"
+    },
+    "root_scope_ref": {
+      "$ref": "#/$defs/digest"
+    },
+    "resource_profile": {
+      "enum": [
+        "LINUX_AS_CPU_V1",
+        "WINDOWS_JOB_WALL_V1"
+      ]
+    },
+    "worker_timeout_ms": {
+      "const": 5000
+    },
+    "lexical": {
+      "$ref": "urn:fortress:derived:v1:python-lexical-observation#/properties/observation"
+    },
+    "imports": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "observation"
+          ],
+          "properties": {
+            "status": {
+              "const": "OBSERVED"
+            },
+            "observation": {
+              "$ref": "#/$defs/report"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "reason"
+          ],
+          "properties": {
+            "status": {
+              "const": "UNAVAILABLE"
+            },
+            "reason": {
+              "enum": [
+                "LEXICAL_UNAVAILABLE",
+                "ROOT_UNAVAILABLE",
+                "UNSUPPORTED_ROOT_CONTENT",
+                "AMBIGUOUS_INVENTORY",
+                "RESOURCE_LIMIT"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "runtime_imports",
+        "execution",
+        "authority"
+      ],
+      "properties": {
+        "runtime_imports": {
+          "const": "UNRESOLVED"
+        },
+        "execution": {
+          "const": "NOT_RUN"
+        },
+        "authority": {
+          "const": "OBSERVATION_ONLY"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "roots": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "configuration_ref",
+        "configuration"
+      ],
+      "properties": {
+        "configuration_ref": {
+          "$ref": "#/$defs/digest"
+        },
+        "configuration": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema",
+            "source_view_ref",
+            "evaluation_ref",
+            "inventory",
+            "roots"
+          ],
+          "properties": {
+            "schema": {
+              "const": "fortress:python:static-import-roots:1"
+            },
+            "source_view_ref": {
+              "$ref": "#/$defs/digest"
+            },
+            "evaluation_ref": {
+              "$ref": "#/$defs/digest"
+            },
+            "inventory": {
+              "const": "COMPLETE_SOURCE_ONLY"
+            },
+            "roots": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 240
+              },
+              "maxItems": 4,
+              "minItems": 1,
+              "uniqueItems": true
+            }
+          }
+        }
+      }
+    },
+    "item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "occurrence",
+        "static_targets",
+        "member_resolution",
+        "runtime_resolution"
+      ],
+      "properties": {
+        "occurrence": {
+          "type": "object",
+          "required": [
+            "scope",
+            "form",
+            "level",
+            "module",
+            "names",
+            "target",
+            "span"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "scope": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "form": {
+              "enum": [
+                "import",
+                "from"
+              ]
+            },
+            "level": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "module": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "maxLength": 256
+            },
+            "names": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256
+                  },
+                  {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 256
+                  }
+                ]
+              },
+              "maxItems": 512,
+              "minItems": 1
+            },
+            "target": {
+              "const": "UNRESOLVED"
+            },
+            "span": {
+              "type": "array",
+              "minItems": 4,
+              "maxItems": 4,
+              "items": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        },
+        "static_targets": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "state",
+                  "module",
+                  "path",
+                  "source_ref"
+                ],
+                "properties": {
+                  "state": {
+                    "const": "FILE_STATIC"
+                  },
+                  "module": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256
+                  },
+                  "path": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 240
+                  },
+                  "source_ref": {
+                    "$ref": "#/$defs/digest"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "state",
+                  "module",
+                  "portions"
+                ],
+                "properties": {
+                  "state": {
+                    "const": "NAMESPACE_STATIC"
+                  },
+                  "module": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256
+                  },
+                  "portions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 240
+                    },
+                    "maxItems": 4,
+                    "minItems": 1
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "state",
+                  "module"
+                ],
+                "properties": {
+                  "state": {
+                    "const": "MISSING_FROM_ADMITTED_ROOTS"
+                  },
+                  "module": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "state",
+                  "module"
+                ],
+                "properties": {
+                  "state": {
+                    "const": "NON_PACKAGE_PREFIX"
+                  },
+                  "module": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "state"
+                ],
+                "properties": {
+                  "state": {
+                    "const": "UNSUPPORTED_MODULE_SPELLING"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "state"
+                ],
+                "properties": {
+                  "state": {
+                    "const": "ORIGIN_CONTEXT_UNAVAILABLE"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "state"
+                ],
+                "properties": {
+                  "state": {
+                    "const": "RELATIVE_ABOVE_TOP_LEVEL"
+                  }
+                }
+              }
+            ]
+          },
+          "maxItems": 512,
+          "minItems": 1
+        },
+        "member_resolution": {
+          "enum": [
+            "NO_MEMBER",
+            "UNRESOLVED_ATTRIBUTE_OR_SUBMODULE"
+          ]
+        },
+        "runtime_resolution": {
+          "const": "UNRESOLVED"
+        }
+      }
+    },
+    "report": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "lexical_request",
+        "lexical_outcome",
+        "roots",
+        "directory_coverage",
+        "imports"
+      ],
+      "properties": {
+        "schema": {
+          "const": "fortress:python:static-import-observation:1"
+        },
+        "lexical_request": {
+          "$ref": "urn:fortress:derived:v1:python-lexical-observation#/properties/observation/properties/request"
+        },
+        "lexical_outcome": {
+          "enum": [
+            "LEXICAL",
+            "PARTIAL"
+          ]
+        },
+        "roots": {
+          "$ref": "#/$defs/roots"
+        },
+        "directory_coverage": {
+          "const": "IMPLIED_BY_ADMITTED_SOURCE_FILES"
+        },
+        "imports": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/item"
+          },
+          "maxItems": 256
+        }
+      }
+    }
+  }
+}

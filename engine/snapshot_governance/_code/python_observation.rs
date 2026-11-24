@@ -20,6 +20,10 @@ pub use crate::source_architecture::python_lexical::{
     PythonLexicalRequest,
 };
 
+pub use crate::source_architecture::python_lexical::python_static_imports::{
+    PythonImportScope, PythonStaticImportError, PythonStaticImportObservation,
+};
+
 const PYTHON_LEXICAL_CONTEXT: &str = "fortress-python-lexical-context-v1";
 
 /// A lexical observation bound to revalidated original physical source and authority.
@@ -74,9 +78,32 @@ pub fn observe_python_lexical(
         sha256(&context),
         &source.binding.authority_digest,
     );
+    let observation = collect_lexical(
+        &source,
+        &evaluation_key,
+        source_path,
+        mode,
+        producer,
+        receive,
+    )?;
+    source.revalidate()?;
+    Ok(ActualPythonLexicalObservation {
+        evaluation_key,
+        observation,
+    })
+}
+
+fn collect_lexical(
+    source: &NativeSource<'_>,
+    evaluation: &EvaluationKey,
+    source_path: &str,
+    mode: PythonLexicalMode,
+    producer: &PythonLexicalProducer,
+    receive: impl FnOnce(&PythonLexicalRequest, &[u8]) -> Result<Vec<u8>, PythonObservationError>,
+) -> Result<PythonLexicalObservation, PythonObservationError> {
     let request = PythonLexicalRequest::for_source(
         &source.view,
-        &evaluation_key,
+        evaluation,
         source_path,
         mode,
         producer.clone(),
@@ -86,13 +113,12 @@ pub fn observe_python_lexical(
         .bytes(source_path)
         .ok_or(PythonLexicalError::MissingSource)?;
     let response = receive(&request, selected)?;
-    let observation =
-        PythonLexicalObservation::admit(&request, &source.view, &evaluation_key, &response)?;
-    source.revalidate()?;
-    Ok(ActualPythonLexicalObservation {
-        evaluation_key,
-        observation,
-    })
+    Ok(PythonLexicalObservation::admit(
+        &request,
+        &source.view,
+        evaluation,
+        &response,
+    )?)
 }
 
 /// Failure at the actual-state Python observation boundary.
@@ -106,7 +132,9 @@ pub enum PythonObservationError {
     HostUnavailable,
     /// The lexical selection or reply failed bounded exact-source admission.
     Lexical(PythonLexicalError),
-    /// The original selected source differs from the independent subject pin.
+    /// The independent scoped import request or observation failed admission.
+    StaticImports(PythonStaticImportError),
+    /// The selected source differs from the trusted exact subject.
     SubjectIdentityMismatch,
     /// The scoped scalar request or response failed admission.
     Scalar(PythonScalarError),
@@ -122,6 +150,7 @@ impl Display for PythonObservationError {
                 formatter.write_str("trusted Python observation host is unavailable")
             }
             Self::Lexical(error) => Display::fmt(error, formatter),
+            Self::StaticImports(error) => Display::fmt(error, formatter),
             Self::SubjectIdentityMismatch => {
                 formatter.write_str("selected Python source differs from the trusted subject pin")
             }
@@ -134,6 +163,7 @@ impl Error for PythonObservationError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
             Self::Lexical(error) => Some(error),
+            Self::StaticImports(error) => Some(error),
             Self::Scalar(error) => Some(error),
             _ => None,
         }
@@ -152,6 +182,151 @@ impl From<NativeSourceError> for PythonObservationError {
 impl From<PythonLexicalError> for PythonObservationError {
     fn from(error: PythonLexicalError) -> Self {
         Self::Lexical(error)
+    }
+}
+
+/// Exact actual-state lexical facts and static source-only lookup outcomes.
+#[derive(Debug)]
+pub struct ActualPythonStaticImportObservation {
+    evaluation_key: EvaluationKey,
+    lexical: PythonLexicalObservation,
+    outcome: PythonStaticImportOutcome,
+}
+
+impl ActualPythonStaticImportObservation {
+    /// Returns the complete physical source, selected profile and authority binding.
+    #[must_use]
+    pub const fn evaluation_key(&self) -> &EvaluationKey {
+        &self.evaluation_key
+    }
+
+    /// Returns the compiler report even when static import lookup was unavailable.
+    #[must_use]
+    pub const fn lexical(&self) -> &PythonLexicalObservation {
+        &self.lexical
+    }
+
+    /// Returns exact static import candidates or the limiting premise.
+    #[must_use]
+    pub const fn outcome(&self) -> &PythonStaticImportOutcome {
+        &self.outcome
+    }
+}
+
+/// Disposition of one explicit source-only Python import lookup.
+#[derive(Debug, serde::Serialize)]
+#[serde(tag = "status", rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum PythonStaticImportOutcome {
+    /// The lexical imports were evaluated in the bounded observed roots.
+    Observed {
+        /// The exact import observations and root and lexical provenance.
+        observation: Box<PythonStaticImportObservation>,
+    },
+    /// A required compiler or inventory premise was unavailable.
+    Unavailable {
+        /// The scoped reason for abstaining from resolution.
+        reason: PythonStaticImportLimitation,
+    },
+}
+
+/// Unavailable static import lookup with retained preceding lexical evidence.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
+pub enum PythonStaticImportLimitation {
+    /// The lexical worker could not establish import occurrence facts.
+    LexicalUnavailable,
+    /// An independently selected root had no represented source inventory.
+    RootUnavailable,
+    /// A selected root included content outside the admitted file policy.
+    UnsupportedRootContent,
+    /// The selected root inventory had ambiguous supported path spellings.
+    AmbiguousInventory,
+    /// The bounded import evaluation exceeded its resource profile.
+    ResourceLimit,
+}
+
+/// Observes static import candidates through the already trusted lexical host.
+///
+/// Root scope, producer, exact original manifest and original authority all
+/// enter the context. This operation observes actual physical source and uses
+/// the same compile-only lexical request. No synthetic candidate is selected.
+/// Original physical inputs are revalidated after evaluation.
+///
+/// # Errors
+/// Rejects stale original bindings, unsafe source, or invalid worker replies.
+/// Compiler and scoped inventory limitations are retained in the observation.
+pub fn observe_python_static_imports(
+    project_root: &Path,
+    source_path: &str,
+    producer: &PythonLexicalProducer,
+    scope: &PythonImportScope,
+    receive: impl FnOnce(&PythonLexicalRequest, &[u8]) -> Result<Vec<u8>, PythonObservationError>,
+) -> Result<ActualPythonStaticImportObservation, PythonObservationError> {
+    let source = NativeSource::capture(project_root, "Python")?;
+    let context = serde_json_canonicalizer::to_vec(&(
+        "fortress-python-static-import-context-v1",
+        source_path,
+        producer,
+        scope.scope_ref(),
+    ))
+    .map_err(PythonLexicalError::Encoding)?;
+    let evaluation_key = EvaluationKey::new(
+        &source.binding.source_manifest_digest,
+        sha256(&context),
+        &source.binding.authority_digest,
+    );
+    let roots = scope.bind(&source.view, &evaluation_key)?;
+    let lexical = collect_lexical(
+        &source,
+        &evaluation_key,
+        source_path,
+        PythonLexicalMode::Lexical,
+        producer,
+        receive,
+    )?;
+    let outcome = match PythonStaticImportObservation::evaluate(
+        &lexical,
+        &source.view,
+        &evaluation_key,
+        &roots,
+    ) {
+        Ok(observation) => PythonStaticImportOutcome::Observed {
+            observation: Box::new(observation),
+        },
+        Err(error) => PythonStaticImportOutcome::Unavailable {
+            reason: scoped_import_limitation(error)?,
+        },
+    };
+    source.revalidate()?;
+    Ok(ActualPythonStaticImportObservation {
+        evaluation_key,
+        lexical,
+        outcome,
+    })
+}
+
+fn scoped_import_limitation(
+    error: PythonStaticImportError,
+) -> Result<PythonStaticImportLimitation, PythonObservationError> {
+    Ok(match error {
+        PythonStaticImportError::LexicalUnavailable => {
+            PythonStaticImportLimitation::LexicalUnavailable
+        }
+        PythonStaticImportError::RootUnavailable => PythonStaticImportLimitation::RootUnavailable,
+        PythonStaticImportError::UnsupportedRootContent => {
+            PythonStaticImportLimitation::UnsupportedRootContent
+        }
+        PythonStaticImportError::AmbiguousInventory => {
+            PythonStaticImportLimitation::AmbiguousInventory
+        }
+        PythonStaticImportError::ResourceLimit => PythonStaticImportLimitation::ResourceLimit,
+        other => return Err(other.into()),
+    })
+}
+
+impl From<PythonStaticImportError> for PythonObservationError {
+    fn from(error: PythonStaticImportError) -> Self {
+        Self::StaticImports(error)
     }
 }
 

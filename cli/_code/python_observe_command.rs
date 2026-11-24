@@ -8,19 +8,24 @@ use std::time::Duration;
 use base64::{Engine as _, engine::general_purpose::STANDARD};
 use fortress_core::portable::{canonical, digest};
 use fortress_core::python_observation::{
-    PYTHON_LEXICAL_WORKER, PythonGrammar, PythonLexicalMode, PythonLexicalProducer,
-    PythonLexicalRequest, PythonObservationError, observe_python_lexical,
+    PYTHON_LEXICAL_WORKER, PythonGrammar, PythonImportScope, PythonLexicalMode,
+    PythonLexicalProducer, PythonLexicalRequest, PythonObservationError, observe_python_lexical,
+    observe_python_static_imports,
 };
 use fortress_core::wire::{JsonAdmissionLimits, admit_json, parse_public_json, readable_text};
 use serde::Deserialize;
 use serde_json::{Value, json};
 
-const USAGE: &str = "fortress source-artifacts --observe-python project host-registration source-path lexical|syntax";
+const USAGE: &str = concat!(
+    "fortress source-artifacts --observe-python project host-registration source-path lexical|syntax",
+    "\n       fortress source-artifacts --observe-python project host-registration source-path imports root-scope root-scope-sha256",
+);
 const REGISTRATION_SCHEMA: &str = "urn:fortress:host:v1:python-lexical-registration";
 const OBSERVATION_SCHEMA: &str = "urn:fortress:derived:v1:python-lexical-observation";
 const REQUEST_SCHEMA: &str = "fortress-research/python-lexical-request/1";
 const READY_SCHEMA: &str = "fortress-host/python-lexical-ready/1";
 const REGISTRATION_LIMIT: usize = 16 * 1024;
+const IMPORT_SCOPE_LIMIT: usize = 8192;
 const DEADLINE: Duration = Duration::from_secs(5);
 
 #[derive(Clone, Copy, Deserialize, PartialEq, Eq)]
@@ -202,9 +207,17 @@ pub(super) fn run<O: Write, E: Write>(
             Ok(super::EXIT_SUCCESS)
         }
         Err(failure) => {
+            let mode = if arguments
+                .get(3)
+                .is_some_and(|argument| argument == "imports")
+            {
+                "static import"
+            } else {
+                "lexical"
+            };
             writeln!(
                 error,
-                "Python lexical observation failed: {}",
+                "Python {mode} observation failed: {}",
                 readable_text(&failure)
             )?;
             Ok(super::EXIT_USAGE)
@@ -213,6 +226,11 @@ pub(super) fn run<O: Write, E: Write>(
 }
 
 fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
+    if let [root, registration, source, mode, scope, scope_ref] = arguments
+        && mode == "imports"
+    {
+        return collect_imports(root, registration, source, scope, scope_ref);
+    }
     let [root, registration_path, source_path, mode] = arguments else {
         return Err(format!("usage: {USAGE}"));
     };
@@ -269,4 +287,92 @@ fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
         "worker_timeout_ms": DEADLINE.as_millis(),
         "observation": observation,
     }))
+}
+
+fn collect_imports(
+    root: &str,
+    registration_path: &str,
+    source_path: &str,
+    scope_path: &str,
+    scope_ref: &str,
+) -> Result<Vec<u8>, String> {
+    let root = Path::new(root)
+        .canonicalize()
+        .map_err(|error| error.to_string())?;
+    let registration_path = Path::new(registration_path);
+    let scope_path = Path::new(scope_path);
+    super::verifier_process::require_external_asset(scope_path, &root)?;
+    let scope_bytes = super::provider_command::read_bounded(scope_path, IMPORT_SCOPE_LIMIT)?;
+    let scope =
+        PythonImportScope::admit(&scope_bytes, scope_ref).map_err(|error| error.to_string())?;
+    let (registration, registration_bytes) = Registration::load(&root, registration_path)?;
+    let worker_ref = digest(WORKER);
+    let producer = PythonLexicalProducer::new(
+        registration.grammar.into(),
+        &registration.runtime_ref,
+        &worker_ref,
+    )
+    .map_err(|error| error.to_string())?;
+    let (ready_frame, profile) =
+        readiness(registration.grammar, &registration.runtime_ref, &worker_ref)?;
+    let host_root = registration_path
+        .parent()
+        .ok_or("Missing trusted registration parent")?;
+    let command = registration.command(host_root, &worker_ref);
+    let result =
+        observe_python_static_imports(&root, source_path, &producer, &scope, |request, source| {
+            let output = one_request(
+                command,
+                &registration,
+                ready_frame,
+                request,
+                source,
+                "LEXICAL",
+            )?;
+            registration
+                .revalidate_worker(&root)
+                .map_err(|_| PythonObservationError::HostUnavailable)?;
+            verify_external_input(
+                &root,
+                registration_path,
+                REGISTRATION_LIMIT,
+                &registration_bytes,
+            )?;
+            verify_external_input(&root, scope_path, IMPORT_SCOPE_LIMIT, &scope_bytes)?;
+            Ok(output)
+        })
+        .map_err(|error| error.to_string())?;
+    encode(&json!({
+        "$schema": "urn:fortress:derived:v1:python-static-import-observation",
+        "schema_version": 1,
+        "evaluation": result.evaluation_key(),
+        "registration_ref": digest(&registration_bytes),
+        "interpreter_ref": registration.interpreter_sha256,
+        "root_scope_ref": scope.scope_ref(),
+        "resource_profile": profile,
+        "worker_timeout_ms": DEADLINE.as_millis(),
+        "lexical": result.lexical(),
+        "imports": result.outcome(),
+        "scope": {
+            "runtime_imports": "UNRESOLVED",
+            "execution": "NOT_RUN",
+            "authority": "OBSERVATION_ONLY",
+        },
+    }))
+}
+
+fn verify_external_input(
+    root: &Path,
+    path: &Path,
+    maximum: usize,
+    expected: &[u8],
+) -> Result<(), PythonObservationError> {
+    super::verifier_process::require_external_asset(path, root)
+        .map_err(|_| PythonObservationError::HostUnavailable)?;
+    let current = super::provider_command::read_bounded(path, maximum)
+        .map_err(|_| PythonObservationError::HostUnavailable)?;
+    if current != expected {
+        return Err(PythonObservationError::HostUnavailable);
+    }
+    Ok(())
 }

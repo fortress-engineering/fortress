@@ -82,3 +82,15 @@ The registration selects the exact subject file hash, function name and
 independently established exact bool parameter names. The optional output bound
 applies only under those assumptions. The result retains unresolved runtime
 argument types and an explicit unavailability status when scope is incomplete.
+
+### Static imports
+
+Use the installed lexical worker for the imports mode. Supply a trusted host
+registration and an independently pinned, absolute external root-scope file.
+The selected roots are repository-relative, ordered, disjoint, source-only
+directories. The scope digest uses canonical JSON. Use the corresponding
+root-scope schema in the installed CLI schema inventory.
+
+Run fortress source-artifacts --observe-python PROJECT HOST_REGISTRATION SOURCE_PATH imports ROOT_SCOPE ROOT_SCOPE_SHA256.
+The report preserves exact source, authority, lexical limitations and scoped
+static candidates. Runtime imports remain unresolved.
