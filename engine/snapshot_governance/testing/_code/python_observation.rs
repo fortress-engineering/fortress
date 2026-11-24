@@ -52,7 +52,14 @@ mod lexical_calls {
     ) -> (Fixture, PythonScalarSubject, PythonScalarProducer, Value) {
         let doc: Value =
             serde_json::from_slice(include_bytes!("../_data/python_call_fixture_v1.json")).unwrap();
-        let row = &doc[name];
+        lexical_fixture(&doc[name], label, vec!["v".into()])
+    }
+
+    fn lexical_fixture(
+        row: &Value,
+        label: &str,
+        exact_bool_parameters: Vec<String>,
+    ) -> (Fixture, PythonScalarSubject, PythonScalarProducer, Value) {
         let report = &row["reply"];
         let data = row["source"].as_str().unwrap();
         assert_eq!(report["source_ref"], digest(data.as_bytes()));
@@ -68,7 +75,7 @@ mod lexical_calls {
             source_path: "fixture.py".into(),
             source_ref: digest(data.as_bytes()),
             function: "outer".into(),
-            exact_bool_parameters: vec!["v".into()],
+            exact_bool_parameters,
         };
         (fixture, subject, producer, report.clone())
     }
@@ -125,6 +132,41 @@ mod lexical_calls {
                 assert_eq!(sites[0]["caller"], Value::Null);
                 assert_eq!(sites[0]["callee"], Value::Null);
             }
+        }
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R42-002`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R42
+    #[test]
+    fn exact_python_boolean_returns_refuse_unknown_operand_values() {
+        let doc: Value =
+            serde_json::from_slice(include_bytes!("../_data/python_short_circuit_v1.json"))
+                .unwrap();
+        for (name, row) in doc["cases"].as_object().unwrap() {
+            let parameters = serde_json::from_value(row["parameters"].clone()).unwrap();
+            let (fixture, subject, producer, receipt) = lexical_fixture(row, name, parameters);
+            let result =
+                observe_python_native_call_return(&fixture.root, &subject, &producer, |request| {
+                    Ok(serde_json::to_vec(&bind(&request, &receipt)).unwrap())
+                })
+                .unwrap();
+            if let Some(reason) = row["expected_limitation"].as_str() {
+                assert!(result["evaluation"].is_null(), "{name}");
+                assert_eq!(result["diagnostic"]["code"], reason, "{name}");
+            } else {
+                assert_eq!(result["evaluation"]["status"], "COMPLETE", "{name}");
+                assert_eq!(
+                    result["evaluation"]["parameters"], row["parameters"],
+                    "{name}"
+                );
+                assert_eq!(
+                    result["evaluation"]["returns"], row["expected_returns"],
+                    "{name}"
+                );
+                assert_eq!(result["target_execution"], "NOT_RUN");
+            }
+            let actual = fs::read_to_string(fixture.root.join("fixture.py")).unwrap();
+            assert_eq!(actual, row["source"].as_str().unwrap());
         }
     }
 

@@ -545,6 +545,62 @@ mod bound_call_bodies {
         );
     }
 
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R42-001`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R42
+    #[test]
+    fn exact_go_boolean_returns_keep_short_circuit_control_and_limits() {
+        let doc: Value =
+            serde_json::from_slice(include_bytes!("../_data/go_short_circuit_v1.json")).unwrap();
+        let pin = GoCollectorPin {
+            executable_sha256: doc["worker_sha256"].as_str().unwrap(),
+            ..PIN
+        };
+        let selection = GoPackageSelection {
+            package_path: "reference.test/short",
+            ..SELECTION
+        };
+        for (name, row) in doc["cases"].as_object().unwrap() {
+            let fixture = Fixture::new(name);
+            let source = row["source"].as_str().unwrap().as_bytes();
+            let file = fixture.root.join("fixture.go");
+            fs::write(&file, source).unwrap();
+            let exchange = |request: &[u8]| Ok(receipt(request, row, "bound"));
+            let bound =
+                observe_go_native_bound_calls(&fixture.root, selection, &pin, exchange).unwrap();
+            let subject = bound["observation"]["functions"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|item| item["symbol"]["name"] == "Entry")
+                .unwrap();
+            if let Some(reason) = row["expected_limitation"].as_str() {
+                assert_eq!(subject["status"], "UNAVAILABLE", "{name}");
+                assert_eq!(subject["diagnostic"]["code"], reason, "{name}");
+            } else {
+                assert_eq!(subject["status"], "LOWERED", "{name}");
+                let result = observe_go_native_call_return(
+                    &fixture.root,
+                    selection,
+                    subject["binding"].as_str().unwrap(),
+                    &pin,
+                    exchange,
+                )
+                .unwrap();
+                assert_eq!(result["evaluation"]["status"], "COMPLETE", "{name}");
+                assert_eq!(
+                    result["evaluation"]["parameters"], row["parameters"],
+                    "{name}"
+                );
+                assert_eq!(
+                    result["evaluation"]["returns"], row["expected_returns"],
+                    "{name}"
+                );
+                assert_eq!(result["scope"], "BOUNDED_CLOSED_BOOLEAN_CALL_RETURN");
+            }
+            assert_eq!(fs::read(file).unwrap(), source);
+        }
+    }
+
     /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R39-001`
     /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R39
     #[test]

@@ -691,6 +691,14 @@
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R41-001",
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R41-002"
           ]
+        },
+        {
+          "id": "AF-SNAPSHOT-GOVERNANCE-0001-R42",
+          "statement": "Pinned Go and Python native workers preserve ordered short-circuit returns over two to four exact Boolean operands through existing Program Body branches. The bounded evaluator matches finite return values without target execution. Unknown operand semantics and oversized chains retain explicit limitations.",
+          "tests": [
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R42-001",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R42-002"
+          ]
         }
       ]
     }

@@ -241,3 +241,11 @@ local call scopes, valid source continuations and explicit refusals.
 ### [`go_owned_call_v1.json`](../_data/go_owned_call_v1.json)
 
 Exact pinned Go collector reply for two static call endpoints in a native package. The authored logical Modules assign those endpoints to distinct owners. The test independently expects one observed cross-Module dependency absent from original intent.
+
+### [`go_short_circuit_v1.json`](../_data/go_short_circuit_v1.json)
+
+The exact Go worker responses for independently executed finite Boolean return fixtures. Expected return values are keyed by the existing declaration-order input mask. The fixtures also preserve refusals for constructs outside the admitted scalar and resource scope.
+
+### [`python_short_circuit_v1.json`](../_data/python_short_circuit_v1.json)
+
+The exact Python worker responses for independently executed finite Boolean return fixtures. Expected return values are keyed by the existing declaration-order input mask. The fixtures also preserve refusals for constructs outside the admitted scalar and resource scope.

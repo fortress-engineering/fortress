@@ -1,0 +1,77 @@
+{
+  "source_reference": "sha256:61617d917584be8c4356688e7f1282ad521ae98964790c8341349abf7b852f4a",
+  "cases": {
+    "go-conjunction": {
+      "source": "package fixture\nfunc Entry(v, w bool) bool { return v && !w }\n",
+      "parameters": [
+        "v",
+        "w"
+      ],
+      "expected_returns": [
+        false,
+        true,
+        false,
+        false
+      ],
+      "expected_limitation": null,
+      "bound": "{\"schema_version\":2,\"producer\":\"fortress.go-call-bodies@0.1.0\",\"go_toolchain\":\"go1.22.12\",\"request_sha256\":\"sha256:1cd744e2ea9f513a7b8bca5b7b24494b865e4054c3dea4e7a3a364249c94d458\",\"source_inventory\":[{\"path\":\"fixture.go\",\"sha256\":\"sha256:90f21c2466aecfaa62f673552992a8953fe26f04571cee48eac24200f3b82173\"}],\"status\":\"OBSERVED_BODIES\",\"functions\":[{\"symbol\":{\"name\":\"Entry\",\"span\":{\"path\":\"fixture.go\",\"start_byte\":21,\"end_byte\":26,\"start_line\":2,\"start_byte_column\":6},\"declaration_span\":{\"path\":\"fixture.go\",\"start_byte\":16,\"end_byte\":61,\"start_line\":2,\"start_byte_column\":1}},\"status\":\"LOWERABLE\",\"parameters\":[{\"name\":\"v\",\"span\":{\"path\":\"fixture.go\",\"start_byte\":27,\"end_byte\":28,\"start_line\":2,\"start_byte_column\":12},\"scalar\":\"BOOL\"},{\"name\":\"w\",\"span\":{\"path\":\"fixture.go\",\"start_byte\":30,\"end_byte\":31,\"start_line\":2,\"start_byte_column\":15},\"scalar\":\"BOOL\"}],\"result_scalar\":\"BOOL\",\"locals\":[],\"body\":[{\"kind\":\"if\",\"span\":{\"path\":\"fixture.go\",\"start_byte\":45,\"end_byte\":59,\"start_line\":2,\"start_byte_column\":30},\"condition\":{\"kind\":\"unary\",\"operator\":\"!\",\"value\":{\"kind\":\"binding\",\"name\":\"v\"}},\"then_branch\":[{\"kind\":\"return\",\"span\":{\"path\":\"fixture.go\",\"start_byte\":52,\"end_byte\":53,\"start_line\":2,\"start_byte_column\":37},\"value\":{\"kind\":\"boolean\",\"value\":false}}],\"else_branch\":[{\"kind\":\"return\",\"span\":{\"path\":\"fixture.go\",\"start_byte\":57,\"end_byte\":59,\"start_line\":2,\"start_byte_column\":42},\"value\":{\"kind\":\"unary\",\"operator\":\"!\",\"value\":{\"kind\":\"binding\",\"name\":\"w\"}}}]}]}]}\n"
+    },
+    "go-disjunction": {
+      "source": "package fixture\nfunc Entry(v, w bool) bool { return !v || w }\n",
+      "parameters": [
+        "v",
+        "w"
+      ],
+      "expected_returns": [
+        true,
+        false,
+        true,
+        true
+      ],
+      "expected_limitation": null,
+      "bound": "{\"schema_version\":2,\"producer\":\"fortress.go-call-bodies@0.1.0\",\"go_toolchain\":\"go1.22.12\",\"request_sha256\":\"sha256:fa008e4a172c70f8ce2eb9a72d6f5b5c5fd88a25dd52fbeb5143999d81bb46a8\",\"source_inventory\":[{\"path\":\"fixture.go\",\"sha256\":\"sha256:6570ada375f328015f5aee3abba16be803af605e706ed9e8f35fda045dd74b43\"}],\"status\":\"OBSERVED_BODIES\",\"functions\":[{\"symbol\":{\"name\":\"Entry\",\"span\":{\"path\":\"fixture.go\",\"start_byte\":21,\"end_byte\":26,\"start_line\":2,\"start_byte_column\":6},\"declaration_span\":{\"path\":\"fixture.go\",\"start_byte\":16,\"end_byte\":61,\"start_line\":2,\"start_byte_column\":1}},\"status\":\"LOWERABLE\",\"parameters\":[{\"name\":\"v\",\"span\":{\"path\":\"fixture.go\",\"start_byte\":27,\"end_byte\":28,\"start_line\":2,\"start_byte_column\":12},\"scalar\":\"BOOL\"},{\"name\":\"w\",\"span\":{\"path\":\"fixture.go\",\"start_byte\":30,\"end_byte\":31,\"start_line\":2,\"start_byte_column\":15},\"scalar\":\"BOOL\"}],\"result_scalar\":\"BOOL\",\"locals\":[],\"body\":[{\"kind\":\"if\",\"span\":{\"path\":\"fixture.go\",\"start_byte\":45,\"end_byte\":59,\"start_line\":2,\"start_byte_column\":30},\"condition\":{\"kind\":\"unary\",\"operator\":\"!\",\"value\":{\"kind\":\"binding\",\"name\":\"v\"}},\"then_branch\":[{\"kind\":\"return\",\"span\":{\"path\":\"fixture.go\",\"start_byte\":52,\"end_byte\":54,\"start_line\":2,\"start_byte_column\":37},\"value\":{\"kind\":\"boolean\",\"value\":true}}],\"else_branch\":[{\"kind\":\"return\",\"span\":{\"path\":\"fixture.go\",\"start_byte\":58,\"end_byte\":59,\"start_line\":2,\"start_byte_column\":43},\"value\":{\"kind\":\"binding\",\"name\":\"w\"}}]}]}]}\n"
+    },
+    "go-guarded-helper": {
+      "source": "package fixture\nfunc flip(v bool) bool { return !v }\nfunc Entry(v bool) bool { return v || flip(v) }\n",
+      "parameters": [
+        "v"
+      ],
+      "expected_returns": [
+        true,
+        true
+      ],
+      "expected_limitation": null,
+      "bound": "{\"schema_version\":2,\"producer\":\"fortress.go-call-bodies@0.1.0\",\"go_toolchain\":\"go1.22.12\",\"request_sha256\":\"sha256:ce362dfa539530c019fad4c04c0efb4ce7738319620e5bdc9b35d34ec727b3c8\",\"source_inventory\":[{\"path\":\"fixture.go\",\"sha256\":\"sha256:0b1250008a004d29741bd6e9889ad228f1170a1070990b116748ce631fac1b52\"}],\"status\":\"OBSERVED_BODIES\",\"functions\":[{\"symbol\":{\"name\":\"flip\",\"span\":{\"path\":\"fixture.go\",\"start_byte\":21,\"end_byte\":25,\"start_line\":2,\"start_byte_column\":6},\"declaration_span\":{\"path\":\"fixture.go\",\"start_byte\":16,\"end_byte\":52,\"start_line\":2,\"start_byte_column\":1}},\"status\":\"LOWERABLE\",\"parameters\":[{\"name\":\"v\",\"span\":{\"path\":\"fixture.go\",\"start_byte\":26,\"end_byte\":27,\"start_line\":2,\"start_byte_column\":11},\"scalar\":\"BOOL\"}],\"result_scalar\":\"BOOL\",\"locals\":[],\"body\":[{\"kind\":\"return\",\"span\":{\"path\":\"fixture.go\",\"start_byte\":41,\"end_byte\":50,\"start_line\":2,\"start_byte_column\":26},\"value\":{\"kind\":\"unary\",\"operator\":\"!\",\"value\":{\"kind\":\"binding\",\"name\":\"v\"}}}]},{\"symbol\":{\"name\":\"Entry\",\"span\":{\"path\":\"fixture.go\",\"start_byte\":58,\"end_byte\":63,\"start_line\":3,\"start_byte_column\":6},\"declaration_span\":{\"path\":\"fixture.go\",\"start_byte\":53,\"end_byte\":100,\"start_line\":3,\"start_byte_column\":1}},\"status\":\"LOWERABLE\",\"parameters\":[{\"name\":\"v\",\"span\":{\"path\":\"fixture.go\",\"start_byte\":64,\"end_byte\":65,\"start_line\":3,\"start_byte_column\":12},\"scalar\":\"BOOL\"}],\"result_scalar\":\"BOOL\",\"locals\":[],\"body\":[{\"kind\":\"if\",\"span\":{\"path\":\"fixture.go\",\"start_byte\":79,\"end_byte\":98,\"start_line\":3,\"start_byte_column\":27},\"condition\":{\"kind\":\"binding\",\"name\":\"v\"},\"then_branch\":[{\"kind\":\"return\",\"span\":{\"path\":\"fixture.go\",\"start_byte\":86,\"end_byte\":87,\"start_line\":3,\"start_byte_column\":34},\"value\":{\"kind\":\"boolean\",\"value\":true}}],\"else_branch\":[{\"kind\":\"return\",\"span\":{\"path\":\"fixture.go\",\"start_byte\":91,\"end_byte\":98,\"start_line\":3,\"start_byte_column\":39},\"value\":{\"kind\":\"call\",\"call\":{\"span\":{\"path\":\"fixture.go\",\"start_byte\":91,\"end_byte\":98,\"start_line\":3,\"start_byte_column\":39},\"target\":{\"name\":\"flip\",\"span\":{\"path\":\"fixture.go\",\"start_byte\":21,\"end_byte\":25,\"start_line\":2,\"start_byte_column\":6},\"declaration_span\":{\"path\":\"fixture.go\",\"start_byte\":16,\"end_byte\":52,\"start_line\":2,\"start_byte_column\":1}},\"arguments\":[{\"kind\":\"binding\",\"name\":\"v\"}]}}}]}]}]}\n"
+    },
+    "go-ordered-chain": {
+      "source": "package fixture\nfunc Entry(v, w, z bool) bool { return v && w && !z }\n",
+      "parameters": [
+        "v",
+        "w",
+        "z"
+      ],
+      "expected_returns": [
+        false,
+        false,
+        false,
+        true,
+        false,
+        false,
+        false,
+        false
+      ],
+      "expected_limitation": null,
+      "bound": "{\"schema_version\":2,\"producer\":\"fortress.go-call-bodies@0.1.0\",\"go_toolchain\":\"go1.22.12\",\"request_sha256\":\"sha256:f966ed36c27d8aacbba2c54c0d60c38263d375cf8274f786a9a0b88f2ea3ea7d\",\"source_inventory\":[{\"path\":\"fixture.go\",\"sha256\":\"sha256:2bf3c23f164251116a1bca2a3d957a5f96fda1dcaeaf69b7e5615d05d4a4aba3\"}],\"status\":\"OBSERVED_BODIES\",\"functions\":[{\"symbol\":{\"name\":\"Entry\",\"span\":{\"path\":\"fixture.go\",\"start_byte\":21,\"end_byte\":26,\"start_line\":2,\"start_byte_column\":6},\"declaration_span\":{\"path\":\"fixture.go\",\"start_byte\":16,\"end_byte\":69,\"start_line\":2,\"start_byte_column\":1}},\"status\":\"LOWERABLE\",\"parameters\":[{\"name\":\"v\",\"span\":{\"path\":\"fixture.go\",\"start_byte\":27,\"end_byte\":28,\"start_line\":2,\"start_byte_column\":12},\"scalar\":\"BOOL\"},{\"name\":\"w\",\"span\":{\"path\":\"fixture.go\",\"start_byte\":30,\"end_byte\":31,\"start_line\":2,\"start_byte_column\":15},\"scalar\":\"BOOL\"},{\"name\":\"z\",\"span\":{\"path\":\"fixture.go\",\"start_byte\":33,\"end_byte\":34,\"start_line\":2,\"start_byte_column\":18},\"scalar\":\"BOOL\"}],\"result_scalar\":\"BOOL\",\"locals\":[],\"body\":[{\"kind\":\"if\",\"span\":{\"path\":\"fixture.go\",\"start_byte\":48,\"end_byte\":67,\"start_line\":2,\"start_byte_column\":33},\"condition\":{\"kind\":\"unary\",\"operator\":\"!\",\"value\":{\"kind\":\"binding\",\"name\":\"v\"}},\"then_branch\":[{\"kind\":\"return\",\"span\":{\"path\":\"fixture.go\",\"start_byte\":55,\"end_byte\":56,\"start_line\":2,\"start_byte_column\":40},\"value\":{\"kind\":\"boolean\",\"value\":false}}],\"else_branch\":[{\"kind\":\"if\",\"span\":{\"path\":\"fixture.go\",\"start_byte\":60,\"end_byte\":67,\"start_line\":2,\"start_byte_column\":45},\"condition\":{\"kind\":\"unary\",\"operator\":\"!\",\"value\":{\"kind\":\"binding\",\"name\":\"w\"}},\"then_branch\":[{\"kind\":\"return\",\"span\":{\"path\":\"fixture.go\",\"start_byte\":60,\"end_byte\":61,\"start_line\":2,\"start_byte_column\":45},\"value\":{\"kind\":\"boolean\",\"value\":false}}],\"else_branch\":[{\"kind\":\"return\",\"span\":{\"path\":\"fixture.go\",\"start_byte\":65,\"end_byte\":67,\"start_line\":2,\"start_byte_column\":50},\"value\":{\"kind\":\"unary\",\"operator\":\"!\",\"value\":{\"kind\":\"binding\",\"name\":\"z\"}}}]}]}]}]}\n"
+    },
+    "go-overlong-boolean-chain": {
+      "source": "package fixture\nfunc Entry(v bool) bool { return v && v && v && v && v }\n",
+      "parameters": [
+        "v"
+      ],
+      "expected_returns": null,
+      "expected_limitation": "GO_SCALAR_BODY_LIMIT",
+      "bound": "{\"schema_version\":2,\"producer\":\"fortress.go-call-bodies@0.1.0\",\"go_toolchain\":\"go1.22.12\",\"request_sha256\":\"sha256:efb6bf0142fddc516baccdd9942ac0c20895c235f4bdb3c8eba3ee978d86d0a3\",\"source_inventory\":[{\"path\":\"fixture.go\",\"sha256\":\"sha256:35ba7327b1f37a337ce5f463bff5ac787a9265e25ac3c0e3c37bd20b042a409e\"}],\"status\":\"OBSERVED_BODIES\",\"functions\":[{\"symbol\":{\"name\":\"Entry\",\"span\":{\"path\":\"fixture.go\",\"start_byte\":21,\"end_byte\":26,\"start_line\":2,\"start_byte_column\":6},\"declaration_span\":{\"path\":\"fixture.go\",\"start_byte\":16,\"end_byte\":72,\"start_line\":2,\"start_byte_column\":1}},\"status\":\"UNAVAILABLE\",\"diagnostic\":{\"code\":\"GO_SCALAR_BODY_LIMIT\",\"span\":{\"path\":\"fixture.go\",\"start_byte\":69,\"end_byte\":70,\"start_line\":2,\"start_byte_column\":54}},\"parameters\":[],\"locals\":[],\"body\":[]}]}\n"
+    }
+  },
+  "worker_sha256": "sha256:776b3422fa37bcd395074d7c29a1dddc1252892b975ea5c9b146e2970e8eda33"
+}

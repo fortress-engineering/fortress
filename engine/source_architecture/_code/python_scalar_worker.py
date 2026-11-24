@@ -28,6 +28,7 @@ MAX_REQUEST_BYTES = 64 * 1024
 MAX_RESPONSE_BYTES = 256 * 1024
 MAX_UNITS = 256
 MAX_DEPTH = 20
+MAX_BOOLEAN_RETURN_OPERANDS = 4
 MAX_PARAMS = 8
 MAX_CALL_PARAMS = 4
 MAX_HELPERS = 16
@@ -278,14 +279,42 @@ class Lower:
         init[target.id] = scalar
         return {"kind": "assign", "target": target.id, "value": value}
 
+    def boolean_return(self, node, init, depth):
+        self.charge(node, depth)
+        if len(node.values) > MAX_BOOLEAN_RETURN_OPERANDS:
+            raise Refuse("SCALAR_COMPLEXITY_LIMIT", node)
+        evaluated = []
+        for operand in node.values:
+            scalar, value = self.expression(operand, init, depth + 1)
+            if scalar != "BOOL":
+                raise Refuse("TRUTH_CONVERSION_UNSUPPORTED", operand)
+            evaluated.append((operand, value))
+        final, value = evaluated[-1]
+        branch = {"kind": "return", "span": self.source.node(final), "value": value}
+        short_value = isinstance(node.op, ast.Or)
+        end_byte = self.source.node(node)["end_byte"]
+        for operand, condition in reversed(evaluated[:-1]):
+            left = self.source.node(operand)
+            if not short_value:
+                condition = {"kind": "unary", "operator": "!", "value": condition}
+            short = {"kind": "return", "span": left, "value": {"kind": "boolean", "value": short_value}}
+            branch = {"kind": "if", "span": {**left, "end_byte": end_byte},
+                      "condition": condition, "then_branch": [short], "else_branch": [branch]}
+        return branch
+
     def returned(self, node, init, depth):
         if node.value is None:
             raise Refuse("RETURN_REQUIRED_SCALAR", node)
-        scalar, value = self.expression(node.value, init, depth + 1)
+        if isinstance(node.value, ast.BoolOp):
+            scalar = "BOOL"
+            row = self.boolean_return(node.value, init, depth + 1)
+        else:
+            scalar, value = self.expression(node.value, init, depth + 1)
+            row = {"kind": "return", "value": value}
         if self.result is not None and self.result != scalar:
             raise Refuse("SCALAR_KIND_CONFLICT", node)
         self.result = scalar
-        return {"kind": "return", "value": value}
+        return row
 
     def branches(self, node, init, depth):
         scalar, condition = self.expression(node.test, init, depth + 1)

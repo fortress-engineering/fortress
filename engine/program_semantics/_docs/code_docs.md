@@ -112,6 +112,8 @@ Uses the Go standard library parser and type checker to observe one explicit sou
 
 ### [`go_body.go`](../_code/go_body.go)
 
+Return expressions with a homogeneous chain of two to four exact Boolean operands lower to the existing ordered Program Body branches. Nonconstant direct conjunction and disjunction short-circuit at the tested operand. Branch provenance retains its source span. Unadmitted operands and mixed operators remain unavailable.
+
 Adds an explicit scalar body mode when built together with the single-file
 collector. Native Go name resolution and type checking verify ordered local
 bindings. Admitted statements include short declarations, assignment,

@@ -51,6 +51,9 @@ const PRIOR_WORKER_REF: &str =
 const COMPARISON_WORKER_BYTES: usize = 17_395;
 const COMPARISON_WORKER_REF: &str =
     "sha256:ab3e9ec2a698430491b01619f350ebe3f1c4438200166fac3632ff371ab58288";
+const LEXICAL_CALL_WORKER_BYTES: usize = 22_039;
+const LEXICAL_CALL_WORKER_REF: &str =
+    "sha256:f581a2047e320eea9abdd0b19ea26f1c49ab051c747ebd330ecae0979c93796c";
 const REGISTRATION_MAX: usize = 16 * 1024;
 const DEADLINE: Duration = Duration::from_secs(5);
 
@@ -106,12 +109,14 @@ impl Registration {
             PYTHON_SCALAR_WORKER
                 .len()
                 .max(PRIOR_WORKER_BYTES)
-                .max(COMPARISON_WORKER_BYTES),
+                .max(COMPARISON_WORKER_BYTES)
+                .max(LEXICAL_CALL_WORKER_BYTES),
         )?;
         let worker_ref = digest(&worker);
         if (worker != PYTHON_SCALAR_WORKER
             && (worker.len() != PRIOR_WORKER_BYTES || worker_ref != PRIOR_WORKER_REF)
-            && (worker.len() != COMPARISON_WORKER_BYTES || worker_ref != COMPARISON_WORKER_REF))
+            && (worker.len() != COMPARISON_WORKER_BYTES || worker_ref != COMPARISON_WORKER_REF)
+            && (worker.len() != LEXICAL_CALL_WORKER_BYTES || worker_ref != LEXICAL_CALL_WORKER_REF))
             || super::provider_command::read_bounded(&self.bootstrap, PYTHON_LEXICAL_WORKER.len())?
                 != PYTHON_LEXICAL_WORKER
         {
@@ -223,7 +228,10 @@ impl<'a> RegisteredScalarHost<'a> {
     ) -> Result<Self, String> {
         let (registration, registration_bytes, worker_ref) =
             Registration::load(root, registration_path)?;
-        if lexical_calls && worker_ref != digest(PYTHON_SCALAR_WORKER) {
+        if lexical_calls
+            && worker_ref != digest(PYTHON_SCALAR_WORKER)
+            && worker_ref != LEXICAL_CALL_WORKER_REF
+        {
             return Err("PYTHON_LEXICAL_CALL_WORKER_UNAVAILABLE".into());
         }
         let bootstrap_ref = digest(PYTHON_LEXICAL_WORKER);

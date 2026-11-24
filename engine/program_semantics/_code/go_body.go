@@ -102,6 +102,7 @@ const maxBodyBindings = 128
 const maxBodyDepth = 10
 const maxBodyNodes = 256
 const maxBodyRows = 1024
+const maxBooleanReturnOperands = 4
 
 func bodyIdentifier(name string) bool {
 	if name == "" || name == "_" {
@@ -370,6 +371,65 @@ func (state *observedBody) assignment(node *ast.AssignStmt, result statement) (s
 	return result, nil
 }
 
+func (state *observedBody) booleanReturnOperands(node ast.Expr, op token.Token, operands *[]ast.Expr) *diagnostic {
+	if item, ok := node.(*ast.BinaryExpr); ok && item.Op == op {
+		if refusal := state.admitNode(node); refusal != nil {
+			return refusal
+		}
+		state.depth++
+		defer func() { state.depth-- }()
+		if refusal := state.booleanReturnOperands(item.X, op, operands); refusal != nil {
+			return refusal
+		}
+		return state.booleanReturnOperands(item.Y, op, operands)
+	}
+	if len(*operands) == maxBooleanReturnOperands {
+		return state.error(node, "GO_SCALAR_BODY_LIMIT")
+	}
+	*operands = append(*operands, node)
+	return nil
+}
+
+func (state *observedBody) booleanReturn(node *ast.BinaryExpr, result statement) (statement, *diagnostic) {
+	operands := make([]ast.Expr, 0, maxBooleanReturnOperands)
+	if refusal := state.booleanReturnOperands(node, node.Op, &operands); refusal != nil {
+		return result, refusal
+	}
+	values := make([]*expression, 0, len(operands))
+	for _, operand := range operands {
+		value, refusal := state.expr(operand, scalarBool)
+		if refusal != nil {
+			return result, refusal
+		}
+		values = append(values, value)
+	}
+	last := len(operands) - 1
+	branch := statement{
+		Kind: "return", Span: span(state.positions, operands[last].Pos(), operands[last].End()),
+		Value: values[last],
+	}
+	for index := last - 1; index >= 0; index-- {
+		left := operands[index]
+		condition := values[index]
+		resultWhenShort := node.Op == token.LOR
+		if !resultWhenShort {
+			condition = &expression{Kind: "unary", Operator: "!", Value: condition}
+		}
+		skip := statement{
+			Kind: "return", Span: span(state.positions, left.Pos(), left.End()),
+			Value: &expression{Kind: "boolean", Value: resultWhenShort},
+		}
+		skipped := []statement{skip}
+		continued := []statement{branch}
+		branch = statement{
+			Kind: "if", Span: span(state.positions, left.Pos(), node.End()),
+			Condition: condition, ThenBranch: &skipped, ElseBranch: &continued,
+		}
+	}
+	branch.Span = result.Span
+	return branch, nil
+}
+
 func (state *observedBody) lower(node ast.Stmt) (statement, *diagnostic) {
 	result := statement{Span: span(state.positions, node.Pos(), node.End())}
 	if refusal := state.admitNode(node); refusal != nil {
@@ -384,6 +444,11 @@ func (state *observedBody) lower(node ast.Stmt) (statement, *diagnostic) {
 	case *ast.ReturnStmt:
 		if len(item.Results) != 1 {
 			return result, state.error(node, "RETURN_ARITY_UNAVAILABLE")
+		}
+		if operation, ok := item.Results[0].(*ast.BinaryExpr); ok &&
+			state.resultScalar == scalarBool && state.info.Types[operation].Value == nil &&
+			(operation.Op == token.LAND || operation.Op == token.LOR) {
+			return state.booleanReturn(operation, result)
 		}
 		result.Kind = "return"
 		value, refused := state.expr(item.Results[0], state.resultScalar)

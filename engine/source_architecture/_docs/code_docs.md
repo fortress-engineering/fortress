@@ -148,6 +148,8 @@ and UTF-8 byte spans for downstream observational projections.
 
 ### [`python_scalar_worker.py`](../_code/python_scalar_worker.py)
 
+A return expression may contain a homogeneous chain of two to four exact Boolean operands. The worker preserves operand order through existing Program Body branches and withholds the projection for non-Boolean operands or unsupported nested constructs.
+
 Projects an exact, compile-only Python scalar function into a bounded native
 body witness. The worker loads its fixed sibling lexical bootstrap only after
 verifying the reviewed bootstrap digest against independently selected pins.
