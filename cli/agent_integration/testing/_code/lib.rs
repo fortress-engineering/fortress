@@ -156,9 +156,22 @@ fn installed_mcp_and_native_query_preserve_the_same_status() {
     assert_eq!(tools[0]["name"], "fortress_inspect");
     assert_eq!(tools[0]["annotations"]["readOnlyHint"], true);
     let instructions = tools[0]["description"].as_str().unwrap();
-    assert!(instructions.contains("method capabilities"));
+    assert!(instructions.contains("method protocol"));
     assert!(instructions.contains("parameters.kind"));
     assert!(instructions.contains("outer JSON-RPC ID"));
+    let discovery =
+        json!({"protocol_version":1,"request_id":"discover","method":"protocol","parameters":{}});
+    client.send(&call(4, "fortress_inspect", json!({"request":discovery})));
+    let response = client.receive();
+    assert_eq!(response["id"], 4);
+    let advertised = &response["result"]["structuredContent"];
+    assert!(advertised["error"].is_null());
+    assert_eq!(advertised["result"]["kind"], "PROTOCOL");
+    assert_eq!(
+        advertised["result"]["data"]["protocol_versions"],
+        json!([1, 2, 3, 4, 5])
+    );
+    assert_eq!(advertised["result"]["data"]["mutation"], false);
     let request =
         json!({"protocol_version":1,"request_id":"test","method":"status","parameters":{}});
     client.send(&call(3, "fortress_inspect", json!({"request":request})));

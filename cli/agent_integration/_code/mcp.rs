@@ -105,7 +105,7 @@ fn tool(name: &str, description: &str, schema: &Value) -> Value {
 fn list_tools(candidates: bool) -> Value {
     let mut tools = vec![tool(
         "fortress_inspect",
-        "Inspect one loaded repository with a native Fortress QueryRequest (versions 1–5). Start with method capabilities and empty parameters, then use status for source freshness and assurance. Use method query with parameters.kind (for example modules, routes or findings) and method explain with parameters.selector for evidence. Preserve state and context references and follow continuation cursors. Use MCP notifications/cancelled with the outer JSON-RPC ID. Stale or unavailable evidence does not establish current conformance. Inspection runs no project code.",
+        "Inspect one loaded repository with a native Fortress QueryRequest (versions 1–5). Start with method protocol and empty parameters, then use status for source freshness and assurance. Use method query with parameters.kind (for example modules, routes or findings) and method explain with parameters.selector for evidence. Preserve state and context references and follow continuation cursors. Use MCP notifications/cancelled with the outer JSON-RPC ID. Stale or unavailable evidence does not establish current conformance. Inspection runs no project code.",
         &query_argument(),
     )];
     if candidates {
