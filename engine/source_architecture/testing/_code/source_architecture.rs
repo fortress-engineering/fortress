@@ -1011,9 +1011,9 @@ fn live_fortress_inventory_is_complete_and_rust_profile_status_is_truthful() {
     let known_without_profile = expected
         .iter()
         .filter(|path| {
-            Path::new(path)
-                .extension()
-                .is_some_and(|extension| extension.eq_ignore_ascii_case("py"))
+            Path::new(path).extension().is_some_and(|extension| {
+                extension.eq_ignore_ascii_case("py") || extension.eq_ignore_ascii_case("go")
+            })
         })
         .count();
     assert_eq!(
@@ -1029,14 +1029,21 @@ fn live_fortress_inventory_is_complete_and_rust_profile_status_is_truthful() {
             Some(extension) if extension.eq_ignore_ascii_case("rs") => {
                 ArchetypeResolution::Resolved
             }
-            Some(extension) if extension.eq_ignore_ascii_case("py") => {
-                ArchetypeResolution::ProfileNotRegistered
-            }
-            Some(extension) if extension.eq_ignore_ascii_case("go") => {
-                assert!(
-                    serde_json::to_value(artifact).expect("source artifact")["language"].is_null()
+            Some("go" | "py") => {
+                let wire = serde_json::to_value(artifact).expect("source artifact");
+                let language = if artifact.path().ends_with(".go") {
+                    "go"
+                } else {
+                    "python"
+                };
+                assert_eq!(wire["language"], language, "{}", artifact.path());
+                assert_eq!(
+                    wire["language_authority"],
+                    "fortress-core/source-extension-observation-v1",
+                    "{}",
+                    artifact.path()
                 );
-                ArchetypeResolution::LanguageUnknown
+                ArchetypeResolution::ProfileNotRegistered
             }
             _ => ArchetypeResolution::LanguageUnknown,
         };
