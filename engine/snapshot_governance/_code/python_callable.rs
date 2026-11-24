@@ -7,7 +7,11 @@ use super::{
     PythonScalarSubject, bind_scalar_request,
 };
 use crate::affected_analysis::sha256;
+use crate::audit::NativeAuthorityScope;
 use crate::native_observation::NativeSource;
+use crate::native_return_observation::{
+    AuthoredNativeReturnObservation, compare_captured_native_return,
+};
 use crate::program_semantics::native_body::{NativeBodyLanguage, NativeBodyOutcome};
 use crate::program_semantics::native_callable::{
     NativeCallableLimitation as Limit, NativeCallableOutcome, VerifiedCallableLink,
@@ -42,12 +46,45 @@ pub fn observe_python_linked_callable(
     exchange: impl FnOnce(Vec<u8>) -> Result<Vec<u8>, PythonObservationError>,
 ) -> Result<NativeCallableOutcome, PythonObservationError> {
     let source = NativeSource::capture_for_dependencies(project_root, "Python")?;
-    let mut result = link(&source, selected, scope, producer, exchange)?;
+    let linked = link_with_owner(&source, selected, scope, producer, exchange)?;
+    source.revalidate()?;
+    Ok(linked)
+}
+
+/// Observes an explicit original-authority Boolean requirement and exact Python body.
+///
+/// Both the authored document and the linked source are retained from the same
+/// original physical capture. Runtime binding and execution remain unestablished.
+///
+/// # Errors
+/// Refuses incomplete original governance, an incompatible reply, or source drift.
+pub fn observe_python_authored_native_return(
+    project_root: &Path,
+    selected: PythonCallableSelection<'_>,
+    scope: &PythonImportScope,
+    producer: &PythonScalarProducer,
+    exchange: impl FnOnce(Vec<u8>) -> Result<Vec<u8>, PythonObservationError>,
+) -> Result<AuthoredNativeReturnObservation, PythonObservationError> {
+    let source =
+        NativeSource::capture_with(project_root, "Python", NativeAuthorityScope::AuthoredReturn)?;
+    let linked = link_with_owner(&source, selected, scope, producer, exchange)?;
+    let comparison = compare_captured_native_return(&source, linked);
+    source.revalidate()?;
+    Ok(comparison)
+}
+
+fn link_with_owner(
+    source: &NativeSource<'_>,
+    selected: PythonCallableSelection<'_>,
+    scope: &PythonImportScope,
+    producer: &PythonScalarProducer,
+    exchange: impl FnOnce(Vec<u8>) -> Result<Vec<u8>, PythonObservationError>,
+) -> Result<NativeCallableOutcome, PythonObservationError> {
+    let mut result = link(source, selected, scope, producer, exchange)?;
     if let NativeCallableOutcome::Linked(subject) = &mut result {
         let owner = source.original_declared_owner(subject.source_path())?;
         subject.record_original_owner(owner);
     }
-    source.revalidate()?;
     Ok(result)
 }
 

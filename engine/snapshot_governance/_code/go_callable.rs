@@ -6,7 +6,11 @@ use super::{
     GoBuildContext, GoCollectorPin, GoModuleSelection, GoObservationError, admit_go_module,
     closed_package, module_entry, source_failure,
 };
+use crate::audit::NativeAuthorityScope;
 use crate::native_observation::NativeSource;
+use crate::native_return_observation::{
+    AuthoredNativeReturnObservation, compare_captured_native_return,
+};
 use crate::program_semantics::native_callable::NativeCallableOutcome;
 
 /// Independently selected Go callable within one closed native module.
@@ -48,7 +52,44 @@ pub fn observe_go_linked_callable(
 ) -> Result<NativeCallableOutcome, GoObservationError> {
     let source =
         NativeSource::capture_for_dependencies(project_root, "Go").map_err(source_failure)?;
-    let original = closed_package(&source, module_entry(selected.module));
+    let linked = link(&source, selected, context, host, launch_module, launch_body)?;
+    source.revalidate().map_err(source_failure)?;
+    Ok(linked)
+}
+
+/// Observes an explicit original-authority Boolean requirement and exact Go body.
+///
+/// The trusted host selects the original closed package and both producers.
+/// The authored document is read from the same immutable capture as the body.
+///
+/// # Errors
+/// Refuses an incomplete original state, mismatched exchanges or source drift.
+pub fn observe_go_authored_native_return(
+    project_root: &Path,
+    selected: GoCallableSelection<'_>,
+    context: GoBuildContext,
+    host: GoCallableHost<'_>,
+    launch_module: impl FnOnce(&[u8]) -> Result<Vec<u8>, GoObservationError>,
+    launch_body: impl FnOnce(&[u8]) -> Result<Vec<u8>, GoObservationError>,
+) -> Result<AuthoredNativeReturnObservation, GoObservationError> {
+    let source =
+        NativeSource::capture_with(project_root, "Go", NativeAuthorityScope::AuthoredReturn)
+            .map_err(source_failure)?;
+    let linked = link(&source, selected, context, host, launch_module, launch_body)?;
+    let report = compare_captured_native_return(&source, linked);
+    source.revalidate().map_err(source_failure)?;
+    Ok(report)
+}
+
+fn link(
+    source: &NativeSource<'_>,
+    selected: GoCallableSelection<'_>,
+    context: GoBuildContext,
+    host: GoCallableHost<'_>,
+    launch_module: impl FnOnce(&[u8]) -> Result<Vec<u8>, GoObservationError>,
+    launch_body: impl FnOnce(&[u8]) -> Result<Vec<u8>, GoObservationError>,
+) -> Result<NativeCallableOutcome, GoObservationError> {
+    let original = closed_package(source, module_entry(selected.module));
     let admitted = admit_go_module(original, selected.module, host.module, context)?;
     let module = admitted.verify(host.module, &launch_module(admitted.request_bytes())?)?;
     let mut linked = admitted.link_callable(
@@ -65,6 +106,5 @@ pub fn observe_go_linked_callable(
             .map_err(source_failure)?;
         subject.record_original_owner(owner);
     }
-    source.revalidate().map_err(source_failure)?;
     Ok(linked)
 }

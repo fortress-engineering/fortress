@@ -615,3 +615,14 @@ Resolves an exact regular lexical module under independently selected roots,
 then binds its admitted callable to the same captured source, original
 declared ownership and worker exchange. Alternate origins, unsupported
 bodies and drift remain explicit.
+
+### [`native_return_observation.rs`](../_code/native_return_observation.rs)
+
+Compares a linked native zero-argument Boolean body with one uniquely
+authored original requirement. The exact source capture also supplies the
+declared logical Module and the protected contract in its data directory.
+The trusted host selects the native scope and verified workers. Keep a Go
+contract outside the selected closed module prefix. Application, canonical
+findings, execution, and certification are separate operations. Missing
+original authority, competing requirements, incompatible scope and opacity
+remain explicit. Publication revalidates the entire original input.

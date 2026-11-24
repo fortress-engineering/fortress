@@ -49,3 +49,10 @@ and bounded Python literal values have distinct domain identifiers. A residual
 control path or an opaque result has no inferred domain. Native bodies are
 excluded from governed Rust function contracts and findings. Their evaluation
 is not certification or proof of runtime execution.
+
+### [`native_return_contract.rs`](../_code/native_return_contract.rs)
+
+Reads the exact supported version of native Boolean return requirements. It
+bounds JSON decoding and validates canonical format and distinct sorted
+callable references. Snapshot Governance owns original territory selection
+and exact body linkage. The reader has no source mutation capability.

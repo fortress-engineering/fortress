@@ -171,3 +171,10 @@ Retains CPython scalar compiler facts for the zero-argument source, its
 relocated CRLF copy, unsupported reassignment and unavailable parameter shape.
 The controls preserve these physical facts while correlating each occurrence
 to the actual fixture request.
+
+### [`go_authored_return_v1.json`](../_data/go_authored_return_v1.json)
+
+Retains the exact bounded Go module and native body receipts for a
+zero-argument Boolean function that returns true. The independently
+computed slot reference and fixed program behavior qualify matching and
+excluding original authored requirements without updating source.

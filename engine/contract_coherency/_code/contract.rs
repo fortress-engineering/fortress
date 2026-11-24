@@ -1450,6 +1450,7 @@ const DISTRIBUTED_CONTRACT_FILE_NAMES: &[&str] = &[
     "behavior_realization_contracts.json",
     "environment_contracts.json",
     "function_contracts.json",
+    "native_function_contracts.json",
     "state_contracts.json",
 ];
 

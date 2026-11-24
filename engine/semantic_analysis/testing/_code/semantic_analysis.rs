@@ -806,3 +806,68 @@ fn scoped_native_boolean_return_needs_a_nonempty_closed_bound() {
         assert_eq!(compare(&reply, boolean), NativeBooleanReturn::Unresolved);
     }
 }
+
+/// `T-AF-SEMANTIC-ANALYSIS-0001-R07-002`
+/// Fortress requirement: AF-SEMANTIC-ANALYSIS-0001-R07
+#[test]
+fn authored_native_return_contract_refuses_ambiguous_and_noncanonical_requirements() {
+    use fortress_core::semantic_analysis::{
+        NATIVE_RETURN_CONTRACT_SCHEMA, NativeReturnContractError, NativeReturnContracts,
+    };
+
+    let go = format!("go_callable_slot:v1:sha256:{}", "a".repeat(64));
+    let python = format!("python_lexical_callable_slot:v1:sha256:{}", "b".repeat(64));
+    let expected_go = json!({"subject":go,"required_return":true});
+    let expected_python = json!({"subject":python,"required_return":false});
+    let encode = |functions: Vec<Value>| {
+        let mut bytes = serde_json_canonicalizer::to_vec(&json!({
+            "$schema": NATIVE_RETURN_CONTRACT_SCHEMA,
+            "schema_version": 1,
+            "functions": functions,
+        }))
+        .unwrap();
+        bytes.push(b'\n');
+        bytes
+    };
+    let original = encode(vec![expected_go.clone(), expected_python.clone()]);
+    let parsed = NativeReturnContracts::from_canonical_bytes(&original).unwrap();
+    assert_eq!(parsed.required_return(&go), Some(true));
+    assert_eq!(parsed.required_return(&python), Some(false));
+    assert_eq!(parsed.required_return("reserved historical symbol"), None);
+    assert!(matches!(
+        NativeReturnContracts::from_canonical_bytes(&original[..original.len() - 1]),
+        Err(NativeReturnContractError::Noncanonical)
+    ));
+
+    for invalid in [
+        encode(vec![]),
+        encode(vec![expected_python, expected_go.clone()]),
+        encode(vec![
+            expected_go.clone(),
+            json!({"subject":go,"required_return":false}),
+        ]),
+        encode(vec![
+            json!({"subject":"native_body_occurrence:v1:sha256:1234","required_return":true}),
+        ]),
+        encode(vec![
+            json!({"subject":go,"required_return":true,"approval":"GRANTED"}),
+        ]),
+        vec![b' '; 16 * 1024 + 1],
+    ] {
+        assert!(matches!(
+            NativeReturnContracts::from_canonical_bytes(&invalid),
+            Err(NativeReturnContractError::Invalid)
+        ));
+    }
+    let duplicate = String::from_utf8(encode(vec![expected_go]))
+        .unwrap()
+        .replacen(
+            r#""schema_version":1"#,
+            r#""schema_version":1,"schema_version":1"#,
+            1,
+        );
+    assert!(matches!(
+        NativeReturnContracts::from_canonical_bytes(duplicate.as_bytes()),
+        Err(NativeReturnContractError::Invalid)
+    ));
+}

@@ -3,6 +3,7 @@
   "schema_version": 2,
   "id": "fortress-schema-registry-v2",
   "schemas": [
+    "engine/semantic_analysis/_data/native_return_schema_v1.json",
     "engine/snapshot_governance/_data/python_test_schema_v1.json",
     "cli/_data/native_flow_schema_v1.json",
     "engine/snapshot_governance/_data/go_dependency_schema_v1.json",

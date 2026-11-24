@@ -43,6 +43,8 @@ pub enum AuthorityInputKind {
     ModuleContract,
     /// Distributed Function Contract authority.
     FunctionContract,
+    /// Authored native callable predicates confined to explicit native inspection.
+    NativeFunctionContract,
     /// Authored finding baseline and exception authority.
     FindingGovernance,
     /// Standard rule, schema, manifest, or profile authority.
@@ -75,6 +77,8 @@ pub fn classify_authority_path(path: &str) -> AuthorityInputKind {
         AuthorityInputKind::ModuleContract
     } else if is_distributed_data_authority(path, "function_contracts.json") {
         AuthorityInputKind::FunctionContract
+    } else if is_distributed_data_authority(path, "native_function_contracts.json") {
+        AuthorityInputKind::NativeFunctionContract
     } else if is_distributed_data_authority(path, "state_contracts.json") {
         AuthorityInputKind::StateContract
     } else if path == "__fortress/governance/effect_summaries/catalog.json"

@@ -322,6 +322,7 @@ fn input_record(path: &str, bytes: &[u8]) -> Result<AxisInput, TransitionError> 
     let axes: &[Axis] = match kind {
         K::ModuleContract
         | K::FunctionContract
+        | K::NativeFunctionContract
         | K::StateContract
         | K::InformationFlowPolicy
         | K::EnvironmentContract

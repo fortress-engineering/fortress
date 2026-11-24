@@ -1513,4 +1513,124 @@ mod callable_links {
         );
         assert!(matches!(drift, Err(GoObservationError::SourceChanged)));
     }
+
+    fn configure_authored_go_owner(fixture: &Fixture, source_path: &str) {
+        use fortress_core::contract_coherency::ModuleContract;
+
+        let write_contract = |path: &str, id: &str, root: bool| {
+            let mut document = json!({
+                "$schema":"urn:fortress:schema:v2:module-contract",
+                "schema_version":2,"id":id,"display_name":id,
+                "provides":[],"requires":[],"relationships":[],"constraints":[],
+                "guarantees":[],"features":[],"behavior":[],
+            });
+            if root {
+                document["ecosystem"] = json!({
+                    "repository_grammar":1,
+                    "standard":{"id":"STD-FORTRESS-ENGINEERING","edition":"1.0.0-draft.2"},
+                });
+            }
+            let typed: ModuleContract = serde_json::from_value(document).unwrap();
+            let absolute = fixture.root.join(path);
+            fs::create_dir_all(absolute.parent().unwrap()).unwrap();
+            fs::write(absolute, typed.to_canonical_json().unwrap()).unwrap();
+        };
+        write_contract("contract.json", "PF-GO-CALLABLE", true);
+        write_contract(
+            "_data/logical_modules/app/contract.json",
+            "AF-GO-CALLABLE-0001",
+            false,
+        );
+        fs::create_dir_all(fixture.root.join("__fortress")).unwrap();
+        fs::create_dir_all(fixture.root.join("authoring/app/data")).unwrap();
+        fs::write(
+            fixture.root.join("__fortress/.fsconfig"),
+            serde_json::to_vec(&json!({
+                "$schema":"urn:fortress:schema:v3:project-configuration",
+                "schema_version":3,"observation_exclusions":[],
+                "logical_modules":[{"module":"AF-GO-CALLABLE-0001","parent":"PF-GO-CALLABLE",
+                    "contract":"_data/logical_modules/app/contract.json",
+                    "bindings":[{"kind":"directory","path":"authoring/app"},
+                                {"kind":"file","path":source_path}]}],
+            }))
+            .unwrap(),
+        )
+        .unwrap();
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R28-024`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R28
+    #[test]
+    fn go_authored_native_return_compares_exact_original_bool_requirement() {
+        use fortress_core::go_observation::observe_go_authored_native_return;
+        use fortress_core::native_return_observation::AuthoredNativeReturnComparison;
+        use fortress_core::portable::digest;
+        use fortress_core::semantic_analysis::NativeBooleanReturn;
+
+        const CONTRACT_PATH: &str = "authoring/app/data/native_function_contracts.json";
+        const SLOT: &str = "go_callable_slot:v1:sha256:f13fd3e3d4a7a753633dd369bd15b7338bc48823fbba46c47718015230fc5540";
+
+        let fixture = Fixture::new("go-authored-native-bool");
+        let record: Value =
+            serde_json::from_slice(include_bytes!("../_data/go_authored_return_v1.json")).unwrap();
+        let case = &record["cases"][0];
+        let source_path = case["path"].as_str().unwrap();
+        stage(&fixture, &record, case);
+        configure_authored_go_owner(&fixture, source_path);
+        let module = pin(&record, "module");
+        let body = pin(&record, "body");
+        let host = GoCallableHost {
+            module: &module,
+            body: &body,
+        };
+        let mut manifests = Vec::new();
+        for (required, expected) in [
+            (true, NativeBooleanReturn::MatchesRequiredValue),
+            (false, NativeBooleanReturn::ExcludesRequiredValue),
+        ] {
+            let mut authored = serde_json_canonicalizer::to_vec(&json!({
+                "$schema":"urn:fortress:schema:v1:native-function-contracts",
+                "schema_version":1,"functions":[{"subject":SLOT,"required_return":required}],
+            }))
+            .unwrap();
+            authored.push(b'\n');
+            let contract = fixture.root.join(CONTRACT_PATH);
+            fs::write(&contract, &authored).unwrap();
+
+            let result = observe_go_authored_native_return(
+                &fixture.root,
+                selection("Keep"),
+                context(),
+                host,
+                |request| Ok(reply(case, request, "module")),
+                |request| Ok(reply(case, request, "body")),
+            )
+            .unwrap();
+            let NativeCallableOutcome::Linked(subject) = result.subject else {
+                panic!("the compiler-proven Boolean declaration must link");
+            };
+            assert_eq!(subject.slot_ref(), SLOT);
+            assert_eq!(subject.source_path(), source_path);
+            assert!(subject.body().parameters().is_empty());
+            assert_eq!(
+                subject.source_ref(),
+                digest(case["source"].as_str().unwrap().as_bytes())
+            );
+            let AuthoredNativeReturnComparison::Observed(compared) = result.comparison else {
+                panic!("one original Module owns the declaration and exact authored requirement");
+            };
+            assert_eq!(compared.author, "AF-GO-CALLABLE-0001");
+            assert_eq!(compared.contract_path, CONTRACT_PATH);
+            assert_eq!(compared.contract_ref, digest(&authored));
+            assert_eq!(compared.required_return, required);
+            assert_eq!(compared.observed_return, expected);
+            assert_eq!(fs::read(contract).unwrap(), authored);
+            assert_eq!(
+                fs::read(fixture.root.join(source_path)).unwrap(),
+                case["source"].as_str().unwrap().as_bytes()
+            );
+            manifests.push(subject.evaluation().source_manifest_digest().to_owned());
+        }
+        assert_ne!(manifests[0], manifests[1]);
+    }
 }

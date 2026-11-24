@@ -1145,12 +1145,21 @@ fn python_dependency_capture_rejects_drift_and_preserves_unavailable_scope() {
 mod callable_links {
     use super::*;
     use base64::{Engine as _, engine::general_purpose::STANDARD};
+    use fortress_core::native_return_observation::{
+        AuthoredNativeReturnComparison, NativeReturnComparisonLimitation,
+    };
     use fortress_core::program_semantics::native_callable::{
         NativeCallableLimitation, NativeCallableOutcome,
     };
     use fortress_core::python_observation::{
-        PythonCallableSelection, observe_python_linked_callable,
+        PythonCallableSelection, observe_python_authored_native_return,
+        observe_python_linked_callable,
     };
+
+    const CONSUMER_RETURN: &str = "authoring/consumer/data/native_function_contracts.json";
+    const PROVIDER_RETURN: &str = "authoring/provider/data/native_function_contracts.json";
+    // Frozen from the native namespace and symbol named in the independent fixture.
+    const PYTHON_SLOT: &str = "python_lexical_callable_slot:v1:sha256:14b23faa20cacf2547dee241035bf6957f7fa2eb449c3e0c9b6539999657210b";
 
     const UNCHANGED: &[u8] = b"def subject():\n    return True\n";
     const RELOCATED: &[u8] = b"# moved\r\ndef subject():\r\n    return True\r\n";
@@ -1337,5 +1346,149 @@ mod callable_links {
             },
         );
         assert!(matches!(result, Err(PythonObservationError::SourceChanged)));
+    }
+
+    fn contract_fixture() -> Fixture {
+        let fixture = dependency_fixture("native-return");
+        fs::write(fixture.root.join(PATH), UNCHANGED).unwrap();
+
+        let original = fixture.root.join("__fortress/.fsconfig");
+        let mut project: serde_json::Value =
+            serde_json::from_slice(&fs::read(original).unwrap()).unwrap();
+        for (entry, path) in project["logical_modules"]
+            .as_array_mut()
+            .unwrap()
+            .iter_mut()
+            .zip(["authoring/consumer", "authoring/provider"])
+        {
+            fs::create_dir_all(fixture.root.join(path).join("data")).unwrap();
+            entry["bindings"]
+                .as_array_mut()
+                .unwrap()
+                .push(json!({"kind":"directory","path":path}));
+        }
+        fixture.configure(&serde_json::to_vec(&project).unwrap());
+        fixture
+    }
+
+    fn write_return_contract(fixture: &Fixture, path: &str, required: bool) -> Vec<u8> {
+        let mut bytes = serde_json_canonicalizer::to_vec(&json!({
+            "$schema":"urn:fortress:schema:v1:native-function-contracts",
+            "schema_version":1,
+            "functions":[{"subject":PYTHON_SLOT,"required_return":required}],
+        }))
+        .unwrap();
+        bytes.push(b'\n');
+        fs::write(fixture.root.join(path), &bytes).unwrap();
+        bytes
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R30-006`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R30
+    #[test]
+    fn native_return_comparison_uses_exact_original_owner_and_bytes() {
+        use fortress_core::semantic_analysis::NativeBooleanReturn;
+
+        let fixture = contract_fixture();
+        let inspect = || {
+            observe_python_authored_native_return(
+                &fixture.root,
+                selection("source"),
+                &scope(),
+                &producer(),
+                |frame| reply(&frame),
+            )
+            .unwrap()
+        };
+        assert!(matches!(
+            inspect().comparison,
+            AuthoredNativeReturnComparison::Unavailable(
+                NativeReturnComparisonLimitation::RequirementUnavailable
+            )
+        ));
+
+        let mut evaluations = Vec::new();
+        for (required, expected) in [
+            (true, NativeBooleanReturn::MatchesRequiredValue),
+            (false, NativeBooleanReturn::ExcludesRequiredValue),
+        ] {
+            let document = write_return_contract(&fixture, CONSUMER_RETURN, required);
+            let result = inspect();
+            let NativeCallableOutcome::Linked(subject) = result.subject else {
+                panic!("fixture pins one uniquely admitted lexical declaration");
+            };
+            assert_eq!(subject.slot_ref(), PYTHON_SLOT);
+            assert_eq!(subject.source_ref(), digest(UNCHANGED));
+            let AuthoredNativeReturnComparison::Observed(observed) = result.comparison else {
+                panic!("original territory supplies a single exact requirement");
+            };
+            assert_eq!(observed.author, CONSUMER);
+            assert_eq!(observed.contract_path, CONSUMER_RETURN);
+            assert_eq!(observed.contract_ref, digest(&document));
+            assert_eq!(observed.required_return, required);
+            assert_eq!(observed.observed_return, expected);
+            assert_eq!(
+                fs::read(fixture.root.join(CONSUMER_RETURN)).unwrap(),
+                document
+            );
+            evaluations.push(subject.evaluation().source_manifest_digest().to_owned());
+        }
+        assert_ne!(evaluations[0], evaluations[1]);
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R30-007`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R30
+    #[test]
+    fn native_return_comparison_refuses_foreign_conflicting_and_drifting_authority() {
+        use NativeReturnComparisonLimitation as Limit;
+        use fortress_core::authority_roles::{ProtectedClass, protected_input_roles};
+        use fortress_core::control_layout::ControlLayout;
+
+        let fixture = contract_fixture();
+        let inspect = || {
+            observe_python_authored_native_return(
+                &fixture.root,
+                selection("source"),
+                &scope(),
+                &producer(),
+                |frame| reply(&frame),
+            )
+            .unwrap()
+        };
+        write_return_contract(&fixture, PROVIDER_RETURN, true);
+        assert!(matches!(
+            inspect().comparison,
+            AuthoredNativeReturnComparison::Unavailable(Limit::ForeignContractOwner)
+        ));
+        write_return_contract(&fixture, CONSUMER_RETURN, true);
+        assert!(matches!(
+            inspect().comparison,
+            AuthoredNativeReturnComparison::Unavailable(Limit::AmbiguousRequirement)
+        ));
+        fs::write(fixture.root.join(PROVIDER_RETURN), b"{").unwrap();
+        assert!(
+            protected_input_roles(&ControlLayout::standard(), PROVIDER_RETURN, None)
+                .contains(&ProtectedClass::ModuleIntent)
+        );
+        assert!(matches!(
+            inspect().comparison,
+            AuthoredNativeReturnComparison::Unavailable(Limit::InvalidContractDocument)
+        ));
+
+        fs::remove_file(fixture.root.join(PROVIDER_RETURN)).unwrap();
+        let drifted = observe_python_authored_native_return(
+            &fixture.root,
+            selection("source"),
+            &scope(),
+            &producer(),
+            |frame| {
+                write_return_contract(&fixture, CONSUMER_RETURN, false);
+                reply(&frame)
+            },
+        );
+        assert!(matches!(
+            drifted,
+            Err(PythonObservationError::SourceChanged)
+        ));
     }
 }

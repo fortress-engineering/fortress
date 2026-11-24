@@ -4856,19 +4856,28 @@ fn prepared_authority_binding(prepared: &PreparedAnalysis) -> Result<AuthorityBi
     ))
 }
 
+#[derive(Clone, Copy)]
+pub(crate) enum NativeAuthorityScope {
+    Observation,
+    Dependencies,
+    AuthoredReturn,
+}
+
 pub(crate) struct NativeObservationBinding {
     pub(crate) source_fingerprint: String,
     pub(crate) source_manifest_digest: String,
     pub(crate) authority_digest: String,
     pub(crate) dependency_ownership: Option<SourceOwnershipResolution>,
     pub(crate) logical_contracts: BTreeSet<String>,
+    pub(crate) native_return_contracts:
+        Vec<crate::contract_coherency::DistributedContractOwnership>,
 }
 
 /// Prepares exact source and the existing selected authority for native observation.
 pub(crate) fn bind_native_observation_source(
     source: &SourceView,
     language: &str,
-    dependencies: bool,
+    scope: NativeAuthorityScope,
 ) -> Result<NativeObservationBinding, AuditError> {
     let prepared = prepare_analysis_from_view(source.clone())?;
     if prepared.project_state == ProjectGovernanceState::Invalid
@@ -4884,7 +4893,18 @@ pub(crate) fn bind_native_observation_source(
         ));
     }
     let authority_digest = prepared_authority_binding(&prepared)?.digest();
-    let dependency_ownership = dependencies.then(|| native_dependency_ownership(&prepared));
+    let dependency_ownership = (!matches!(scope, NativeAuthorityScope::Observation))
+        .then(|| native_dependency_ownership(&prepared));
+    let native_return_contracts = match (scope, prepared.ccg()) {
+        (NativeAuthorityScope::AuthoredReturn, Some(ccg)) => ccg
+            .governance_territories()
+            .discover(
+                prepared.observed_files.keys().map(String::as_str),
+                "native_function_contracts.json",
+            )
+            .map_err(|error| AuditError::ContractState(error.to_string().into()))?,
+        _ => Vec::new(),
+    };
     let logical_contracts = prepared
         .project_configuration
         .as_ref()
@@ -4902,6 +4922,7 @@ pub(crate) fn bind_native_observation_source(
         authority_digest,
         dependency_ownership,
         logical_contracts,
+        native_return_contracts,
     })
 }
 

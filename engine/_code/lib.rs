@@ -80,6 +80,8 @@ pub mod module_index;
 mod native_observation;
 #[path = "../snapshot_governance/_code/native_regions.rs"]
 pub mod native_regions;
+#[path = "../snapshot_governance/_code/native_return_observation.rs"]
+pub mod native_return_observation;
 #[path = "../repository_observation/_code/observation.rs"]
 pub mod observation;
 #[path = "../snapshot_governance/_code/ownership.rs"]

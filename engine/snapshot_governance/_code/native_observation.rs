@@ -4,7 +4,8 @@ use std::collections::BTreeSet;
 use std::path::Path;
 
 use crate::audit::{
-    NativeObservationBinding, bind_native_observation_source, observe_candidate_source,
+    NativeAuthorityScope, NativeObservationBinding, bind_native_observation_source,
+    observe_candidate_source,
 };
 use crate::heavy_admission::{DirectoryIdentity, assert_no_incomplete_migration};
 use crate::implementation_observation::{
@@ -30,25 +31,25 @@ pub(crate) enum NativeSourceError {
 
 impl<'a> NativeSource<'a> {
     pub(crate) fn capture(root: &'a Path, language: &str) -> Result<Self, NativeSourceError> {
-        Self::capture_with(root, language, false)
+        Self::capture_with(root, language, NativeAuthorityScope::Observation)
     }
 
     pub(crate) fn capture_for_dependencies(
         root: &'a Path,
         language: &str,
     ) -> Result<Self, NativeSourceError> {
-        Self::capture_with(root, language, true)
+        Self::capture_with(root, language, NativeAuthorityScope::Dependencies)
     }
 
-    fn capture_with(
+    pub(crate) fn capture_with(
         root: &'a Path,
         language: &str,
-        dependencies: bool,
+        scope: NativeAuthorityScope,
     ) -> Result<Self, NativeSourceError> {
         let directory = DirectoryIdentity::capture(root).map_err(unavailable)?;
         let view = observe_source(root)?;
         let binding =
-            bind_native_observation_source(&view, language, dependencies).map_err(unavailable)?;
+            bind_native_observation_source(&view, language, scope).map_err(unavailable)?;
         if !directory.matches(root).map_err(unavailable)? {
             return Err(NativeSourceError::Changed);
         }

@@ -34,7 +34,9 @@ pub use python_dependencies::{
 
 #[path = "python_callable.rs"]
 mod callable;
-pub use callable::{PythonCallableSelection, observe_python_linked_callable};
+pub use callable::{
+    PythonCallableSelection, observe_python_authored_native_return, observe_python_linked_callable,
+};
 
 const PYTHON_LEXICAL_CONTEXT: &str = "fortress-python-lexical-context-v1";
 

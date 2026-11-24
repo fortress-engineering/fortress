@@ -117,12 +117,20 @@ pub fn protected_input_roles(
             }
         }
     }
+    if path
+        .strip_suffix("/native_function_contracts.json")
+        .and_then(|prefix| prefix.rsplit('/').next())
+        .is_some_and(|directory| matches!(directory, "data" | "_data"))
+    {
+        roles.insert(ModuleIntent);
+    }
     if let Some(schema) = schema.filter(|s| s.starts_with("urn:fortress:schema:")) {
         // Schema identities are registered semantic types, not incidental file paths.
         let kind = schema.rsplit(':').next().unwrap_or_default();
         let class = match kind {
             "module-contract"
             | "function-contract"
+            | "native-function-contracts"
             | "state-contract"
             | "information-flow-contract"
             | "behavior-contract"

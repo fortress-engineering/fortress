@@ -10,6 +10,8 @@ pub(crate) const PROGRAM_DOMAIN_RULE_SOURCE: &str =
 mod domain;
 #[path = "function_contract.rs"]
 mod function_contract;
+#[path = "native_return_contract.rs"]
+mod native_return_contract;
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
@@ -25,6 +27,10 @@ pub use function_contract::{
     InformationFlowTransform, InformationFlowTransformKind, ResolvedFunctionContracts,
     canonicalize_function_contract_json, load_function_contracts, resolve_domain,
 };
+pub use native_return_contract::{
+    NATIVE_RETURN_CONTRACT_SCHEMA, NativeReturnContractError, NativeReturnContracts,
+};
+
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 

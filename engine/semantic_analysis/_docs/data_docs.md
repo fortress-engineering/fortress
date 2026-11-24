@@ -49,3 +49,10 @@ Defines the retained derived Semantic Analysis v1 document envelope.
 ### [`semantic_analysis_schema_v2.json`](../_data/semantic_analysis_schema_v2.json)
 
 Defines the current deterministic Semantic Analysis projection and records exact legacy symbol-reference uses separately from canonical target identities.
+
+### [`native_return_schema_v1.json`](../_data/native_return_schema_v1.json)
+
+Defines the bounded externally authored Boolean return requirements for exact
+native callable slots. The reader requires distinct sorted subjects, JCS and
+one terminating LF. A canonical document supplies an expected value for the
+selected slot. Observation and scope establish its applicability separately.
