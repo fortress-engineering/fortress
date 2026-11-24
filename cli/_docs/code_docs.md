@@ -658,9 +658,10 @@ repository-relative Go file within the selected compiler observation.
 Use the same option with `--observe-go-module` for a file selected by
 the exact native module, build context, and reachable package traversal.
 An inventoried file excluded by that selection remains unsupported.
-Source Architecture reports scoped declarations and implementation regions
+Source Architecture reports callable declarations and implementation regions
 using the same admitted receipt. Module mode also reports verified local import
-locations in the selected file. The report retains the original authority,
+locations in the selected file. Nominal types require their separate explicit
+comparison mode and carry no declaration coverage in this report. The report retains the original authority,
 source manifest, current bytes, and native receipt identities. Regions
 outside the observed scope remain unsupported.
 

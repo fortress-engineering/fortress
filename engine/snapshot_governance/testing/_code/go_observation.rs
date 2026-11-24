@@ -2220,7 +2220,11 @@ ROOT_ECOSYSTEM  "provides": [],
         let regions = observed["regions"].as_array().unwrap();
         assert_eq!(regions.len(), 11);
         assert_eq!(regions[2]["coverage"], "OBSERVED");
-        assert_eq!(regions[2]["evidence"].as_array().unwrap().len(), 2);
+        // The v3 receipt enumerates native callable declarations. The
+        // nominal Token type on line three has no declaration occurrence in it.
+        let declarations = regions[2]["evidence"].as_array().unwrap();
+        assert_eq!(declarations.len(), 1);
+        assert_eq!(declarations[0]["start_line"], 4);
         assert_eq!(regions[6]["coverage"], "OBSERVED");
         assert_eq!(regions[6]["evidence"][0]["start_line"], 4);
         assert!(
