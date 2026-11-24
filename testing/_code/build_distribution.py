@@ -18,8 +18,8 @@ sys.path.insert(0, str(ROOT / "cli/_code"))
 sys.path.insert(0, str(ROOT / "engine/snapshot_governance/_code"))
 from execution_storage import RunWorkspace, StoragePolicy
 from quality_certificate import repository_fingerprint, run_command, validate_control_artifact_registry
-from native_go_assets import build_workers, validate_selection
-from package_install import GO_WORKERS, SCHEMA, canonical, digest, executable_name, hash_file, target_platform, verify
+from native_go_assets import WORKER_EDITIONS, build_artifacts, validate_selection
+from package_install import SCHEMA, canonical, digest, executable_name, hash_file, target_platform, verify
 
 SCHEMA_REGISTRY = "engine/standard_registry/_data/schema_manifest.json"
 STANDARD = "engine/standard_registry/_data/standard_manifest.json"
@@ -164,12 +164,12 @@ def build(destination, storage, checkout, *, go_sdk=None, go_sdk_sha256=None, go
         if any(path.name != "_owner.json" for path in owner.target.iterdir()):
             raise ValueError("independent build requires an empty compiler target")
         owner.record_preexisting(ROOT/"_data/Cargo.lock")
-        go_assets, go_binding = build_workers(
+        go_assets, go_bindings = build_artifacts(
             ROOT, go_sdk, go_sdk_sha256, go_workers, target,
             (commit, source_fingerprint.removeprefix("sha256:")), owner, run_command,
         )
         env = locked_environment(owner.target)
-        if go_binding is not None:
+        if go_bindings:
             env.update(CARGO_NET_OFFLINE="true", npm_config_offline="true")
         run_command(ROOT, ["cargo", "+"+toolchain, "--config", "_data/cargo_config.toml", "build",
                            "--manifest-path", "_data/Cargo.toml", "--locked", "--release",
@@ -218,8 +218,8 @@ def build(destination, storage, checkout, *, go_sdk=None, go_sdk_sha256=None, go
                               "semantic_scope":"bounded installed Rust analysis with explicit unsupported results"},
             "authenticity":"UNVERIFIED","release_authorization":"NOT_ESTABLISHED",
         }
-        if go_binding is not None:
-            manifest["build"]["native_go"] = go_binding
+        if go_bindings:
+            manifest["build"].update(go_bindings)
             manifest["runtime"]["native_go"] = (
                 "prebuilt workers; explicit independent external host registration; no installed Go SDK required"
             )
@@ -244,7 +244,7 @@ if __name__ == "__main__":
     parser.add_argument("--commit",required=True)
     parser.add_argument("--go-sdk", type=Path, help="absolute trusted native Go SDK root")
     parser.add_argument("--go-sdk-sha256", help="independently selected exact SDK inventory digest")
-    parser.add_argument("--go-worker", choices=tuple(GO_WORKERS), action="append", default=[],
+    parser.add_argument("--go-worker", choices=WORKER_EDITIONS, action="append", default=[],
                         help="explicit optional native worker edition; repeat to select multiple editions")
     args = parser.parse_args()
     build(args.destination.resolve(), args.storage.resolve(), args.commit,

@@ -141,3 +141,27 @@ build also uses offline Cargo and npm caches. Missing dependencies or a
 different SDK inventory fail explicitly. The older v1 package reader can
 verify new package member bytes, while the supplied current installer grants
 executable permissions to the recognized additional worker files.
+
+### Go filesystem calls
+
+To include the optional filesystem worker, pass `--go-worker filesystem-v1`
+with the pinned SDK arguments when building the package. This selection works
+alone or with the other Go workers. Use the installer supplied with the
+resulting archive, which verifies the worker's machine format and installs it
+as an executable. Read the verified manifest's `build.native_go_filesystem`
+attachment for the worker path, source and SDK identities, and embedded
+standard-library source and export-set identities. The installed worker
+does not need a Go SDK on its PATH.
+
+A trusted host independently selects the worker and records a registration
+outside the project using the installed `go_fs_registration_v1.json` schema.
+Set `executable` to the absolute installed worker path, `executable_sha256`
+to `sha256:` followed by the verified worker inventory hash, and `toolchain`
+to `sdk.version`. Copy the library's `preparation`, `package_source_ref`, and
+`export_set_ref` fields. Installation never generates or activates a registration.
+
+Run `fortress psm --observe-go-filesystem PROJECT REGISTRATION DIRECTORY
+PACKAGE_PATH go1.22 HOST amd64` with the original project, its selected Go
+source directory, exact package path, and native host (`windows` or `linux`).
+The result records source-level conditional filesystem effects for supported
+resolved calls. Runtime execution and complete effect bounds remain unavailable.

@@ -1,4 +1,5 @@
 """Independent controls for the portable package and installed-file boundary."""
+from copy import deepcopy
 import hashlib
 import json
 import os
@@ -289,6 +290,128 @@ class NativeWorkerPackageControls(unittest.TestCase):
                                           "share/fortress/native/go/LICENSE.txt",
                                           "share/fortress/native/go/PATENTS.txt"]))
         self.assertEqual(installer.parse_manifest(raw)["authenticity"], "UNVERIFIED")
+
+class GoFilesystemTransport(unittest.TestCase):
+    # Expected pins were established independently with native compiler
+    # inventory and dispatch witnesses, then frozen for transport controls.
+    EXPECTED = {
+        "linux-x64": ("go1.22.2", "debian-go-1.22-split",
+            "d19703cbb634db3ca64f038771db5a5425a98360119c1c546cba7d1ca3b8acdd",
+            "38379bebce720e1abb72fa3232d3c7b07a4e71dd1e98fa5fcc6f9a56dd084a06",
+            "f303ff6f8d3d1c289200cd4ec875383db41fa256582cf573e9e24cd02043523f",
+            "ad593385ff54ba4a158d464bc9d9ef87bf9a13f3ad26d63f5f5f26c2452aa377",
+            "cb630e93977f730416bdbe10e597be2c3c766e8155c6f8d4370b970f26b3422e",
+            38, 21748252, ["debian-copyright.txt"]),
+        "windows-x64": ("go1.22.12", "ordinary",
+            "17e7091ad29bb254d5017044cb586f076eba384ba7432127d97494de361b62a3",
+            "08cfbe81f1bf519874ce8e6670ea98768d18cc0d16b9ff9d67eb785ec9a15cf9",
+            "8f61ebb242bc4c60ebcaf6a96015ff67d0ac84d3441da63bd6c185eda13fc226",
+            "4ff2871ac521be941d7da0eaef51d1a90a6e30a504774a8b043a03943e1798bc",
+            "780da2322940f92f575718da650e6830a162568ee479da41e580519c12fe6b94",
+            40, 22745838, ["LICENSE.txt", "PATENTS.txt"]),
+    }
+
+    def setUp(self):
+        owned = TemporaryDirectory(prefix="fortress-go-filesystem-transport-")
+        self.addCleanup(owned.cleanup)
+        self.root = Path(owned.name)
+        self.target = installer.target_platform()
+        self.os = self.target[:-4]
+        self.data = b""
+        self.name = "bin/fortress-go-filesystem" + (".exe" if self.os == "windows" else "")
+        self.archive = self.root / "artifact.zip"
+
+    def filesystem_manifest(self, *, content=None, member=None):
+        version, layout, sdk, go, package, exports, generated, count, total, names = self.EXPECTED[self.target]
+        if content is None:
+            content = (
+                b"MZ" + bytes(58) + b"\x40\x00\x00\x00PE\x00\x00\x64\x86" if self.os == "windows"
+                else b"\x7fELF\x02\x01\x01" + bytes(11) + b"\x3e\x00" + bytes(44)
+            )
+        self.data = content
+        member = member or self.name
+        notice_paths = ["share/fortress/native/go-filesystem/" + path for path in names]
+        extras = [(member, content), *((name, b"independent notice fixture") for name in notice_paths)]
+        manifest = json.loads(fixture(self.archive, extras))
+        manifest["files"].extend({"path": path, "bytes": len(data), "sha256": hashlib.sha256(data).hexdigest()}
+                                 for path, data in extras)
+        manifest["files"].sort(key=lambda row: row["path"])
+        members = {item["path"]: item for item in manifest["files"]}
+        manifest["build"]["native_go_filesystem"] = {
+            "format": "fortress-native-go-filesystem-v1", "target": self.target,
+            "source_commit": manifest["source_commit"], "source_fingerprint": manifest["source_fingerprint"],
+            "build_flags": ["-trimpath", "-buildvcs=false", "-p=1", "-ldflags=-buildid="],
+            "environment": {
+                "CGO_ENABLED":"0","GO111MODULE":"off","GOAMD64":"v1","GOARCH":"amd64",
+                "GODEBUG":"gotypesalias=0","GOENV":"off","GOEXPERIMENT":"","GOFLAGS":"",
+                "GOMAXPROCS":"2","GOOS":self.os,"GOPROXY":"off","GOSUMDB":"off","GOTOOLCHAIN":"local",
+                "GOVCS":"*:off","GOWORK":"off",
+            },
+            "sdk": {"version": version, "digest": sdk, "go_executable_digest": go,
+                    "layout": layout, "files": 4, "bytes": 1234},
+            "worker": dict(members[member]), "notices": [members[name] for name in notice_paths],
+            "sources": [{"path": "engine/program_semantics/_code/collector.go", "sha256": "a" * 64},
+                        {"path": "engine/program_semantics/_code/go_fs_collector.go", "sha256": "b" * 64}],
+            "library": {"preparation": "INSTALLED_STDLIB_GC_NO_CGO_V1", "package_source_ref": "sha256:" + package,
+                        "export_set_ref": "sha256:" + exports, "generated_asset_ref": "sha256:" + generated,
+                        "export_count": count, "export_bytes": total},
+        }
+        return manifest
+
+    def test_filesystem_worker_installs_exact_inventory_without_registration(self):
+        manifest = self.filesystem_manifest()
+        raw = installer.canonical(manifest)
+        self.assertEqual(installer.verify(self.archive, raw), manifest)
+        self.assertEqual(installer.canonical(installer.parse_manifest(raw)), raw)
+        self.assertNotIn("native_go", manifest["build"])
+        store = self.root / "store"
+        slot = installer.install(self.archive, raw, store)
+        self.assertEqual((slot / self.name).read_bytes(), self.data)
+        if os.name != "nt":
+            self.assertTrue((slot / self.name).stat().st_mode & 0o111)
+        self.assertEqual({path.relative_to(slot).as_posix() for path in slot.rglob("*") if path.is_file()},
+                         {row["path"] for row in manifest["files"]} | {"manifest.json"})
+        keep = store / "mine.txt"
+        keep.write_bytes(b"mine")
+        installer.remove(store, slot.name, installer.digest(raw))
+        self.assertFalse(slot.exists())
+        self.assertEqual(keep.read_bytes(), b"mine")
+
+    def test_filesystem_members_require_matching_source_sdk_library_and_attachment(self):
+        original = self.filesystem_manifest()
+        for keys, value, reason in (
+            (("source_commit",), "0" * 40, "unsupported Go filesystem build attachment"),
+            (("source_fingerprint",), "0" * 64, "unsupported Go filesystem build attachment"),
+            (("sdk", "digest"), "0" * 64, "SDK qualification does not match"),
+            (("sdk", "go_executable_digest"), "0" * 64, "SDK qualification does not match"),
+            (("library", "package_source_ref"), "sha256:" + "0" * 64, "library qualification does not match"),
+            (("library", "export_set_ref"), "sha256:" + "0" * 64, "library qualification does not match"),
+            (("library", "generated_asset_ref"), "sha256:" + "0" * 64, "library qualification does not match"),
+            (("library", "export_count"), 0, "library qualification does not match"),
+            (("worker", "sha256"), "0" * 64, "worker differs from package membership"),
+        ):
+            with self.subTest(field=keys):
+                document = deepcopy(original)
+                mapping = document["build"]["native_go_filesystem"]
+                for key in keys[:-1]:
+                    mapping = mapping[key]
+                mapping[keys[-1]] = value
+                with self.assertRaisesRegex(installer.PackageError, reason):
+                    installer.verify(self.archive, installer.canonical(document))
+        del original["build"]["native_go_filesystem"]
+        with self.assertRaisesRegex(installer.PackageError, "no matching build attachment"):
+            installer.verify(self.archive, installer.canonical(original))
+
+    def test_new_asset_cannot_use_an_old_recipe_path_or_wrong_machine(self):
+        manifest = self.filesystem_manifest(content=b"not an x64 executable" * 8)
+        with self.assertRaisesRegex(installer.PackageError, "executable format or architecture"):
+            installer.verify(self.archive, installer.canonical(manifest))
+        self.archive = self.root / "legacy-path.zip"
+        old = "bin/fortress-go-collector-v1" + (".exe" if self.os == "windows" else "")
+        not_old = self.filesystem_manifest(member=old)
+        with self.assertRaisesRegex(installer.PackageError, "native Go worker member has no known build attachment"):
+            installer.verify(self.archive, installer.canonical(not_old))
+
 
 if __name__ == "__main__":
     unittest.main()

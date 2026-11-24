@@ -57,6 +57,33 @@ GO_WORKERS = {
         ["observe-go-v1", "select-build-go-v2", "observe-go-module-v3"],
     ),
 }
+GO_FILESYSTEM_FORMAT = "fortress-native-go-filesystem-v1"
+GO_FILESYSTEM_EDITION = "filesystem-v1"
+GO_FILESYSTEM_RECIPE = "INSTALLED_STDLIB_GC_NO_CGO_V1"
+GO_FILESYSTEM_BASE = "bin/fortress-go-filesystem"
+GO_FILESYSTEM_NOTICES = "share/fortress/native/go-filesystem/"
+GO_FILESYSTEM_SOURCES = ("collector.go", "go_fs_collector.go")
+# SDK inventory, SDK executable, os package source, export set, generated source,
+# then exact archive count and byte population for the reviewed target.
+GO_FILESYSTEM_PINS = {
+    "linux-x64": (
+        "d19703cbb634db3ca64f038771db5a5425a98360119c1c546cba7d1ca3b8acdd",
+        "38379bebce720e1abb72fa3232d3c7b07a4e71dd1e98fa5fcc6f9a56dd084a06",
+        "sha256:f303ff6f8d3d1c289200cd4ec875383db41fa256582cf573e9e24cd02043523f",
+        "sha256:ad593385ff54ba4a158d464bc9d9ef87bf9a13f3ad26d63f5f5f26c2452aa377",
+        "sha256:cb630e93977f730416bdbe10e597be2c3c766e8155c6f8d4370b970f26b3422e",
+        38, 21748252,
+    ),
+    "windows-x64": (
+        "17e7091ad29bb254d5017044cb586f076eba384ba7432127d97494de361b62a3",
+        "08cfbe81f1bf519874ce8e6670ea98768d18cc0d16b9ff9d67eb785ec9a15cf9",
+        "sha256:8f61ebb242bc4c60ebcaf6a96015ff67d0ac84d3441da63bd6c185eda13fc226",
+        "sha256:4ff2871ac521be941d7da0eaef51d1a90a6e30a504774a8b043a03943e1798bc",
+        "sha256:780da2322940f92f575718da650e6830a162568ee479da41e580519c12fe6b94",
+        40, 22745838,
+    ),
+}
+
 GO_SDK_FILES_LIMIT = 16_384
 GO_SDK_BYTES_LIMIT = 384 * 1024**2
 GO_WORKER_BYTES_LIMIT = 32 * 1024**2
@@ -123,6 +150,20 @@ def native_go_notice_paths(layout):
     return [GO_NOTICE_PREFIX + name for name in names]
 
 
+def validate_native_go_sdk(sdk, target):
+    """Validate the installed SDK binding shared by both build attachments."""
+    if (not isinstance(sdk, dict)
+            or set(sdk) != {"version", "digest", "go_executable_digest", "layout", "files", "bytes"}
+            or sdk["version"] != GO_WORKER_VERSIONS[target]
+            or not HEX.fullmatch(sdk["digest"])
+            or not HEX.fullmatch(sdk["go_executable_digest"])
+            or sdk["layout"] not in ("ordinary", "debian-go-1.22-split")
+            or (sdk["layout"] == "debian-go-1.22-split" and target != "linux-x64")
+            or type(sdk["files"]) is not int or not 1 <= sdk["files"] <= GO_SDK_FILES_LIMIT
+            or type(sdk["bytes"]) is not int or not 1 <= sdk["bytes"] <= GO_SDK_BYTES_LIMIT):
+        raise PackageError("unsupported native Go SDK binding")
+
+
 def native_go_members(manifest, files):
     """Validate the optional build attachment and bind its executable members."""
     names = sorted(name for name in files if name.casefold().startswith(GO_WORKER_PREFIX))
@@ -144,16 +185,7 @@ def native_go_members(manifest, files):
             or details["environment"] != native_go_environment(target)):
         raise PackageError("unsupported native Go worker build attachment")
     sdk = details["sdk"]
-    if (not isinstance(sdk, dict)
-            or set(sdk) != {"version", "digest", "go_executable_digest", "layout", "files", "bytes"}
-            or sdk["version"] != GO_WORKER_VERSIONS[target]
-            or not HEX.fullmatch(sdk["digest"])
-            or not HEX.fullmatch(sdk["go_executable_digest"])
-            or sdk["layout"] not in ("ordinary", "debian-go-1.22-split")
-            or (sdk["layout"] == "debian-go-1.22-split" and target != "linux-x64")
-            or type(sdk["files"]) is not int or not 1 <= sdk["files"] <= GO_SDK_FILES_LIMIT
-            or type(sdk["bytes"]) is not int or not 1 <= sdk["bytes"] <= GO_SDK_BYTES_LIMIT):
-        raise PackageError("unsupported native Go SDK binding")
+    validate_native_go_sdk(sdk, target)
     notice_paths = native_go_notice_paths(sdk["layout"])
     if notices != notice_paths or details["notices"] != [files[name] for name in notice_paths] or any(
         not 1 <= files[name]["bytes"] <= GO_NOTICE_BYTES_LIMIT for name in notice_paths
@@ -187,6 +219,66 @@ def native_go_members(manifest, files):
         raise PackageError("native Go worker inventory is incomplete, duplicated, or noncanonical")
     return expected
 
+
+def native_go_filesystem_path(target):
+    return GO_FILESYSTEM_BASE + (".exe" if target == "windows-x64" else "")
+
+
+def native_go_filesystem_notices(layout):
+    return [GO_FILESYSTEM_NOTICES + Path(path).name for path in native_go_notice_paths(layout)]
+
+
+def native_go_filesystem_members(manifest, files):
+    reserved = {native_go_filesystem_path(target) for target in GO_FILESYSTEM_PINS}
+    names = sorted(name for name in files if name.casefold() in reserved)
+    notices = sorted(name for name in files if name.casefold().startswith(GO_FILESYSTEM_NOTICES))
+    details = manifest["build"].get("native_go_filesystem")
+    if details is None:
+        if names or notices:
+            raise PackageError("Go filesystem member has no matching build attachment")
+        return []
+    target = manifest["target"]
+    if (not isinstance(details, dict)
+            or set(details) != {"format", "target", "source_commit", "source_fingerprint", "build_flags",
+                               "environment", "sdk", "worker", "sources", "notices", "library"}
+            or details["format"] != GO_FILESYSTEM_FORMAT
+            or target not in GO_FILESYSTEM_PINS or details["target"] != target
+            or details["source_commit"] != manifest["source_commit"]
+            or details["source_fingerprint"] != manifest["source_fingerprint"]
+            or details["build_flags"] != GO_WORKER_BUILD_FLAGS
+            or details["environment"] != native_go_environment(target)):
+        raise PackageError("unsupported Go filesystem build attachment")
+    sdk = details["sdk"]
+    validate_native_go_sdk(sdk, target)
+    sdk_ref, executable_ref, package_ref, export_ref, generated_ref, exports, export_bytes = GO_FILESYSTEM_PINS[target]
+    if (sdk["digest"], sdk["go_executable_digest"]) != (sdk_ref, executable_ref):
+        raise PackageError("Go filesystem SDK qualification does not match the target")
+    if details["library"] != {
+        "preparation": GO_FILESYSTEM_RECIPE, "package_source_ref": package_ref,
+        "export_set_ref": export_ref, "generated_asset_ref": generated_ref,
+        "export_count": exports, "export_bytes": export_bytes,
+    }:
+        raise PackageError("Go filesystem library qualification does not match the target")
+    sources = details["sources"]
+    if not isinstance(sources, list) or len(sources) != len(GO_FILESYSTEM_SOURCES):
+        raise PackageError("invalid Go filesystem source inventory")
+    for source, name in zip(sources, GO_FILESYSTEM_SOURCES, strict=True):
+        if (not isinstance(source, dict) or set(source) != {"path", "sha256"}
+                or source["path"] != GO_WORKER_SOURCE_ROOT + name or not HEX.fullmatch(source["sha256"])):
+            raise PackageError("invalid Go filesystem source identity")
+    path = native_go_filesystem_path(target)
+    if (names != [path] or details["worker"] != files[path]
+            or not 64 <= files[path]["bytes"] <= GO_WORKER_BYTES_LIMIT):
+        raise PackageError("Go filesystem worker differs from package membership")
+    expected_notices = native_go_filesystem_notices(sdk["layout"])
+    if (notices != expected_notices or details["notices"] != [files[name] for name in expected_notices]
+            or any(not 1 <= files[name]["bytes"] <= GO_NOTICE_BYTES_LIMIT for name in expected_notices)):
+        raise PackageError("Go filesystem notices differ from package membership")
+    return names
+
+
+def optional_executables(manifest, files):
+    return native_go_members(manifest, files) + native_go_filesystem_members(manifest, files)
 
 def parse_manifest(raw):
     def pairs(entries):
@@ -236,7 +328,7 @@ def parse_manifest(raw):
                 or sum(row["bytes"] for row in records) > LIMIT
                 or "bin/" + executable_name(m["target"]) not in names):
             raise PackageError("noncanonical or incomplete inventory")
-        native_go_members(m, {row["path"]: row for row in records})
+        optional_executables(m, {row["path"]: row for row in records})
         return m
     except (UnicodeError, TypeError, KeyError, RecursionError, AttributeError, json.JSONDecodeError) as e:
         raise PackageError("invalid package manifest") from e
@@ -324,7 +416,7 @@ def verified_zip(path, manifest):
                             or (entry.external_attr >> 16) & 0o170000 not in (0, stat.S_IFREG)
                             or entry.file_size != expected[entry.filename]["bytes"]):
                         raise PackageError("unsupported or altered ZIP member")
-                machines = ["bin/" + executable_name(manifest["target"]), *native_go_members(manifest, expected)]
+                machines = ["bin/" + executable_name(manifest["target"]), *optional_executables(manifest, expected)]
                 for name in machines:
                     with archive.open(name) as executable:
                         verify_machine(executable, manifest["target"])
@@ -353,7 +445,7 @@ def verify_machine(executable, target):
 
 def verify_members(archive, manifest, destination=None):
     files = {row["path"]: row for row in manifest["files"]}
-    executables = {"bin/" + executable_name(manifest["target"]), *native_go_members(manifest, files)}
+    executables = {"bin/" + executable_name(manifest["target"]), *optional_executables(manifest, files)}
     for member in manifest["files"]:
         with archive.open(member["path"]) as source:
             if destination is None:
