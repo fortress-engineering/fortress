@@ -34,6 +34,14 @@ collection comparison. Snapshot test replay changes only the per-request
 correlation field. The compiled observations retain their original facts,
 limitations and producer identities.
 
+### [`go_policy_request_v1.json`](../_data/go_policy_request_v1.json)
+
+Retains the exact request bytes for a resolved filesystem call inside a literal false branch. These source coordinates do not establish reachability.
+
+### [`go_policy_reply_v1.json`](../_data/go_policy_reply_v1.json)
+
+Retains the pinned native compiler reply for a resolved filesystem call inside a literal false branch. These source coordinates do not establish reachability.
+
 ### [`go_direct_request_v1.json`](../_data/go_direct_request_v1.json)
 
 Retains the exact Windows Go 1.22.12 filesystem observation request bytes for a standard library WriteFile call.

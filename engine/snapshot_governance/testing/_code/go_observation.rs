@@ -1789,3 +1789,221 @@ mod filesystem {
         assert!(matches!(stale, Err(GoObservationError::SourceChanged)));
     }
 }
+
+mod filesystem_policy {
+    use super::*;
+    use base64::{Engine as _, engine::general_purpose::STANDARD};
+    use fortress_core::contract_coherency::ModuleContract;
+    use fortress_core::go_observation::{
+        GoFilesystemHost, GoFilesystemLibraryPin, observe_go_filesystem_policy,
+    };
+
+    const PATH: &str = "src/fixture.go";
+    const CONTRACT: &str = "_data/logical_modules/effects/contract.json";
+    const OWNER: &str = "AF-GO-EFFECTS-0001";
+    const REQUEST: &[u8] = include_bytes!("../_data/go_policy_request_v1.json");
+    const REPLY: &[u8] = include_bytes!("../_data/go_policy_reply_v1.json");
+    const PIN: GoCollectorPin<'static> = GoCollectorPin {
+        executable_sha256: "sha256:f03b9fa0ef5e0d2870ae9a8663e7a5c0bc54a4af476a1d920103dcdbdada9f87",
+        supervisor_context_sha256: "sha256:0000000000000000000000000000000000000000000000000000000000000001",
+        go_toolchain: "go1.22.12",
+    };
+    const HOST: GoFilesystemHost<'static> = GoFilesystemHost {
+        collector: &PIN,
+        library: GoFilesystemLibraryPin {
+            package_source_ref: "sha256:8f61ebb242bc4c60ebcaf6a96015ff67d0ac84d3441da63bd6c185eda13fc226",
+            export_set_ref: "sha256:4ff2871ac521be941d7da0eaef51d1a90a6e30a504774a8b043a03943e1798bc",
+        },
+    };
+    const SELECTED: GoPackageSelection<'static> = GoPackageSelection {
+        directory: "src",
+        package_path: "fixture.local/effects",
+        go_version: "go1.22",
+        target_os: "windows",
+        target_arch: "amd64",
+    };
+
+    fn make_fixture() -> Fixture {
+        let fixture = Fixture::new("native-filesystem-policy");
+        // Fixture::new owns both unrelated Go inputs. Keep one ordinary source
+        // file in the selected package so no unobserved context is omitted.
+        for path in ["src/api.go", "src/target.go"] {
+            fs::remove_file(fixture.root.join(path)).unwrap();
+        }
+        let input: Value = serde_json::from_slice(REQUEST).unwrap();
+        let file = &input["files"][0];
+        assert_eq!(file["path"], PATH);
+        let bytes = STANDARD
+            .decode(file["source_base64"].as_str().unwrap())
+            .unwrap();
+        assert_eq!(file["sha256"], fortress_core::portable::digest(&bytes));
+        fs::write(fixture.root.join(PATH), bytes).unwrap();
+        fixture
+    }
+
+    fn write_contract(root: &Path, path: &str, id: &str, member: Option<Value>) {
+        let schema = if member.is_some() { 3 } else { 2 };
+        let mut doc = json!({
+            "$schema": format!("urn:fortress:schema:v{schema}:module-contract"),
+            "schema_version": schema,
+            "id": id,
+            "display_name": id,
+            "provides": [], "requires": [], "relationships": [], "constraints": [],
+            "guarantees": [], "features": [], "behavior": []
+        });
+        if let Some(policy) = member {
+            doc["semantic_policy"] = policy;
+        } else {
+            doc["ecosystem"] = json!({
+                "repository_grammar": 1,
+                "standard": {"id": "STD-FORTRESS-ENGINEERING", "edition": "1.0.0-draft.2"}
+            });
+        }
+        let contract: ModuleContract = serde_json::from_value(doc).unwrap();
+        let output = root.join(path);
+        fs::create_dir_all(output.parent().unwrap()).unwrap();
+        fs::write(output, contract.to_canonical_json().unwrap()).unwrap();
+    }
+
+    fn select_owner(root: &Path) {
+        write_contract(root, "contract.json", "PF-GO-EFFECTS", None);
+        fs::create_dir(root.join("__fortress")).unwrap();
+        fs::write(
+            root.join("__fortress/.fsconfig"),
+            serde_json::to_vec(&json!({
+                "$schema": "urn:fortress:schema:v3:project-configuration",
+                "schema_version": 3,
+                "observation_exclusions": [],
+                "logical_modules": [{
+                    "module": OWNER,
+                    "parent": "PF-GO-EFFECTS",
+                    "contract": CONTRACT,
+                    "bindings": [{"path": PATH, "kind": "file"}],
+                }],
+            }))
+            .unwrap(),
+        )
+        .unwrap();
+    }
+
+    fn countervailing_policy(root: &Path, allow_write: bool) {
+        let (effect_allow, effect_deny, capability_allow, capability_deny) = if allow_write {
+            (
+                json!(["filesystem.write"]),
+                json!([]),
+                json!([]),
+                json!(["filesystem"]),
+            )
+        } else {
+            (
+                json!([]),
+                json!(["filesystem.write"]),
+                json!(["filesystem"]),
+                json!([]),
+            )
+        };
+        write_contract(
+            root,
+            CONTRACT,
+            OWNER,
+            Some(json!({
+                "default": "UNDECLARED",
+                "capabilities": {"allow": capability_allow, "deny": capability_deny},
+                "effects": {"allow": effect_allow, "deny": effect_deny},
+            })),
+        );
+    }
+
+    fn reply(request: &[u8]) -> Vec<u8> {
+        assert_eq!(request, REQUEST);
+        REPLY.to_vec()
+    }
+
+    fn selected_report(fixture: &Fixture) -> Value {
+        let report = observe_go_filesystem_policy(&fixture.root, PATH, SELECTED, HOST, |bytes| {
+            Ok(reply(bytes))
+        })
+        .unwrap();
+        let document = serde_json::to_value(report).unwrap();
+        let schema =
+            registered_schema_path("engine/snapshot_governance/_data/go_fs_policy_v1.json");
+        let underlying =
+            registered_schema_path("engine/snapshot_governance/_data/go_fs_schema_v1.json");
+        jsonschema::draft202012::options()
+            .with_resource(
+                "urn:fortress:derived:v1:go-filesystem-effects",
+                jsonschema::Resource::from_contents(underlying).unwrap(),
+            )
+            .build(&schema)
+            .unwrap()
+            .validate(&document)
+            .expect("registered authored-policy projection");
+        document
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R28-026`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R28
+    #[test]
+    fn go_filesystem_policy_binds_original_module_without_claiming_reachability() {
+        let fixture = make_fixture();
+        let report = selected_report(&fixture);
+        assert_eq!(report["ownership"], Value::Null);
+        assert_eq!(report["authored_policy"], Value::Null);
+        assert_eq!(report["runtime_reachability"], "UNKNOWN");
+
+        select_owner(&fixture.root);
+        countervailing_policy(&fixture.root, false);
+        let denied = selected_report(&fixture);
+        assert_eq!(denied["ownership"]["owner"], OWNER);
+        assert_eq!(denied["original_contract_path"], CONTRACT);
+        assert_eq!(
+            denied["original_contract_digest"],
+            fortress_core::portable::digest(&fs::read(fixture.root.join(CONTRACT)).unwrap())
+        );
+        assert_eq!(denied["runtime_reachability"], "UNKNOWN");
+        assert_eq!(denied["canonical_conformance"], "NOT_EVALUATED");
+        let decision =
+            &denied["authored_policy"]["sites"][0]["effects"][0]["disposition"]["decision"];
+        assert_eq!(decision["governing_target_kind"], "EFFECT");
+        assert_eq!(decision["governing_target"], "filesystem.write");
+        assert_eq!(decision["disposition"], "DENY");
+        assert_eq!(
+            denied["native_receipt"]["canonical_finding_or_certificate"],
+            "NOT_ISSUED"
+        );
+
+        countervailing_policy(&fixture.root, true);
+        let allowed = selected_report(&fixture);
+        let allowed_decision =
+            &allowed["authored_policy"]["sites"][0]["effects"][0]["disposition"]["decision"];
+        assert_eq!(allowed_decision["governing_target_kind"], "EFFECT");
+        assert_eq!(allowed_decision["disposition"], "ALLOW");
+        assert_ne!(
+            allowed["original_contract_digest"],
+            denied["original_contract_digest"]
+        );
+        assert_ne!(
+            allowed["native_receipt"]["evaluation_key"],
+            denied["native_receipt"]["evaluation_key"]
+        );
+        assert_eq!(
+            allowed["native_receipt"]["native"]["response_ref"],
+            denied["native_receipt"]["native"]["response_ref"]
+        );
+        assert_eq!(allowed["runtime_reachability"], "UNKNOWN");
+        assert_eq!(allowed["canonical_conformance"], "NOT_EVALUATED");
+        assert_eq!(allowed, selected_report(&fixture));
+
+        let wrong =
+            observe_go_filesystem_policy(&fixture.root, "src/wrong.go", SELECTED, HOST, |_| {
+                panic!("wrong source selection must be refused before dispatch")
+            });
+        assert!(matches!(wrong, Err(GoObservationError::UnsupportedContext)));
+        let stale = observe_go_filesystem_policy(&fixture.root, PATH, SELECTED, HOST, |bytes| {
+            countervailing_policy(&fixture.root, false);
+            Ok(reply(bytes))
+        });
+        assert!(matches!(stale, Err(GoObservationError::SourceChanged)));
+        assert!(!fixture.root.join("file").exists());
+    }
+}

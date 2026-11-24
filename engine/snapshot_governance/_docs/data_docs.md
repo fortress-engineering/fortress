@@ -221,6 +221,10 @@ Binds the exact selection manifest and report references for each required popul
 
 Retains the existing exact maintenance proposal shape when the postimage has finding-governance v3 records. The additional admission-retirement operation keeps the original admission and attaches comparable retirement evidence. The original schema and historical proposal bytes remain valid.
 
+### [`go_fs_policy_v1.json`](../_data/go_fs_policy_v1.json)
+
+Binds the native effect sidecar to the exact original Module, authored contract and policy decision. Runtime reachability stays unknown and canonical conformance remains unevaluated.
+
 ### [`go_fs_schema_v1.json`](../_data/go_fs_schema_v1.json)
 
 Defines source-bound Go native call facts and a conditional filesystem operation sidecar

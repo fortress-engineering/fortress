@@ -32,6 +32,14 @@ Builds deterministic production Module profiles, computes physical lowest common
 
 Reconciles independent observed Module dependencies with exact direct CCG authorization, preserves all realization states, and normalizes hard architecture findings.
 
+### [`native_filesystem_policy.rs`](../_code/native_filesystem_policy.rs)
+
+Selects the original authored Module policy disposition for each typed modeled
+filesystem site through the existing effective-policy compiler and registered
+effect catalog. Absent and unlisted policy are distinct, and local, unresolved,
+or unsupported sites retain their existing observation status. Reachability
+remains unknown. This projection supplies no enforcement or certification.
+
 ### [`semantic_conformance.rs`](../_code/semantic_conformance.rs)
 
 Compiles Module Contract effect and capability entries against the pinned State/Effect catalog, preserving overridden authored entries while explicit effect policy wins. Binds disposition-independent claim slots to the current policy, context and governed universe; evaluates direct and transitive State/Effect witnesses with exact source coverage and relevant uncertainty. Raw semantic verdict, authorization and blocking eligibility remain separate. Findings retain operation-site identity across line drift and fan-in, with production-capable causal support preferred for enforcement. The stable-symbol-to-qualified-name index is presentation-only and does not change canonical machine identity. The PSM syntactic operation inventory records omissions and unsupported outcomes; claim coverage must account for its relevant barriers before a favorable result is issued.

@@ -44,7 +44,7 @@ impl<'a> NativeSource<'a> {
     pub(crate) fn capture_with(
         root: &'a Path,
         language: &str,
-        scope: NativeAuthorityScope,
+        scope: NativeAuthorityScope<'_>,
     ) -> Result<Self, NativeSourceError> {
         let directory = DirectoryIdentity::capture(root).map_err(unavailable)?;
         let view = observe_source(root)?;

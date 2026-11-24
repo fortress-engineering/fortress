@@ -51,6 +51,11 @@ filesystem write effect at the source location. Control-flow reachability,
 runtime execution, complete effect bounds, and missing or indirect effects
 remain unresolved. The command issues no canonical finding or certificate.
 
+Append `--policy SOURCE_PATH` to inspect the original declared Module policy
+for the exact selected Go source. The report retains authored effect and
+capability precedence alongside the read-only evidence. Runtime reachability
+and canonical conformance remain unevaluated.
+
 ### [`go_observation_command.rs`](../_code/go_observation_command.rs)
 
 Select the original Go module and target context using the existing module

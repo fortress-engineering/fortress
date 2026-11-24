@@ -251,6 +251,10 @@ pub(crate) fn admit_go_filesystem<'a>(
 }
 
 impl GoFilesystemRequest<'_> {
+    pub(crate) fn source_path(&self) -> &str {
+        &self.base.context.source_inventory[0].path
+    }
+
     pub(crate) fn request_bytes(&self) -> &[u8] {
         self.base.request_bytes()
     }

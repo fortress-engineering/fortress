@@ -5,18 +5,27 @@ use std::path::Path;
 use serde::Serialize;
 use serde_json::{Value, json};
 
-use super::{GoCollectorPin, GoObservationError, GoPackageSelection, observe_bound_exact};
+use super::{
+    GoCollectorPin, GoObservationError, GoPackageSelection, closed_package, observe_bound_exact,
+    source_failure,
+};
+use crate::audit::NativeAuthorityScope;
+use crate::implementation_observation::SourceOwnership;
+use crate::native_observation::NativeSource;
 use crate::portable::{canonical, digest};
 use crate::program_semantics::ContextKnowledge;
 use crate::program_semantics::go_observation::{
-    GoFilesystemCallResolution, GoFilesystemDisposition, GoFilesystemLibraryPin,
-    GoNativeFilesystemObservation, admit_go_filesystem,
+    ExactClosedPackage, GoFilesystemCallResolution, GoFilesystemDisposition,
+    GoFilesystemLibraryPin, GoNativeFilesystemObservation, admit_go_filesystem,
 };
 use crate::project::EvaluationKey;
+use crate::semantic_conformance::{
+    NativeFilesystemPolicyProjection, project_native_filesystem_policy,
+};
 use crate::state_effect_analysis::{
     NativeFilesystemBatch, NativeFilesystemBinding, NativeFilesystemCall, NativeFilesystemCallee,
-    NativeFilesystemLanguage, NativeFilesystemOperation, SummaryContext,
-    native_filesystem_catalog_source_ref, project_native_filesystem_effects,
+    NativeFilesystemLanguage, NativeFilesystemOperation, NativeFilesystemProjection,
+    SummaryContext, native_filesystem_catalog_source_ref, project_native_filesystem_effects,
 };
 
 /// Independently selected process and packaged standard-library tool context.
@@ -67,35 +76,131 @@ pub fn observe_go_filesystem_effects(
         return Err(GoObservationError::UnsupportedContext);
     }
     observe_bound_exact(project_root, selection, |source, manifest| {
-        let plan = admit_go_filesystem(source, host.collector, host.library)?;
-        let native = plan.verify(host.collector, &launch(plan.request_bytes())?)?;
-        let effect_context = canonical(&json!([
-            "fortress-go-filesystem-effect-v1",
-            native.binding_ref(),
-            native_filesystem_catalog_source_ref(),
-        ]))
-        .map_err(|_| GoObservationError::WireEncoding)?;
-        let evaluation_key =
-            EvaluationKey::new(manifest, digest(&effect_context), source.authority_digest);
-        let effects = if native.disposition() == GoFilesystemDisposition::Observed {
-            let bytes = source
-                .source
-                .bytes(native.source_path())
-                .ok_or(GoObservationError::InvalidResponse)?;
-            let evaluation_ref = evaluation_key.digest();
-            let binding = NativeFilesystemBinding {
-                snapshot_fingerprint: source.source_fingerprint,
-                source_view_sha256: source.source.digest(),
-                authority_sha256: source.authority_digest,
-                evaluation_sha256: &evaluation_ref,
-                source_path: native.source_path(),
-                source_sha256: native.source_ref(),
-            };
-            Some(project_sites(&native, bytes, binding, selection, host)?)
-        } else {
-            None
+        let result = collect_effects(source, manifest, selection, host, None, launch, |_| ())?;
+        Ok(result.receipt)
+    })
+}
+
+/// One exact original Module selection attached to independently observed effects.
+#[derive(Serialize)]
+pub struct ActualGoFilesystemPolicyObservation {
+    #[serde(rename = "$schema")]
+    schema: &'static str,
+    schema_version: u16,
+    source_path: String,
+    scope: &'static str,
+    canonical_conformance: &'static str,
+    runtime_reachability: &'static str,
+    ownership: Option<SourceOwnership>,
+    original_contract_path: Option<String>,
+    original_contract_digest: Option<String>,
+    authored_policy: Option<NativeFilesystemPolicyProjection>,
+    native_receipt: ActualGoFilesystemEffectObservation,
+}
+
+/// Appraises applicable original authored policy at the observed Go source sites.
+///
+/// It captures one immutable original source and authority for the explicitly
+/// selected file. Mechanical or ambiguous ownership does not supply a policy.
+/// The result preserves the original effect receipt and reports policy
+/// declarations without deriving an execution premise or conformance verdict.
+///
+/// # Errors
+/// Refuses missing or changed original source, mismatched selected path, and
+/// invalid trusted compiler context or observations.
+pub fn observe_go_filesystem_policy(
+    project_root: &Path,
+    source_path: &str,
+    selection: GoPackageSelection<'_>,
+    host: GoFilesystemHost<'_>,
+    launch: impl FnOnce(&[u8]) -> Result<Vec<u8>, GoObservationError>,
+) -> Result<ActualGoFilesystemPolicyObservation, GoObservationError> {
+    if !qualified_sdk(selection, host) {
+        return Err(GoObservationError::UnsupportedContext);
+    }
+    let source = NativeSource::capture_with(
+        project_root,
+        "Go",
+        NativeAuthorityScope::AuthoredEffect(source_path),
+    )
+    .map_err(source_failure)?;
+    let owner = source.binding.native_effect_policy.as_ref();
+    let result = collect_effects(
+        closed_package(&source, selection),
+        &source.binding.source_manifest_digest,
+        selection,
+        host,
+        Some(source_path),
+        launch,
+        |effect| {
+            owner.map(|binding| project_native_filesystem_policy(effect, binding.policy.as_ref()))
+        },
+    )?;
+    source.revalidate().map_err(source_failure)?;
+    Ok(ActualGoFilesystemPolicyObservation {
+        schema: "urn:fortress:derived:v1:go-filesystem-policy",
+        schema_version: 1,
+        source_path: source_path.to_owned(),
+        scope: "EXACT_ORIGINAL_DECLARED_MODULE",
+        canonical_conformance: "NOT_EVALUATED",
+        runtime_reachability: "UNKNOWN",
+        ownership: owner.map(|binding| binding.ownership.clone()),
+        original_contract_path: owner.map(|binding| binding.contract_path.clone()),
+        original_contract_digest: owner.map(|binding| binding.contract_digest.clone()),
+        authored_policy: result.projection.flatten(),
+        native_receipt: result.receipt,
+    })
+}
+
+struct GoEffectCapture<T> {
+    receipt: ActualGoFilesystemEffectObservation,
+    projection: Option<T>,
+}
+
+fn collect_effects<T>(
+    source: ExactClosedPackage<'_>,
+    manifest: &str,
+    selection: GoPackageSelection<'_>,
+    host: GoFilesystemHost<'_>,
+    expected_source_path: Option<&str>,
+    launch: impl FnOnce(&[u8]) -> Result<Vec<u8>, GoObservationError>,
+    inspect: impl FnOnce(&NativeFilesystemProjection<'_>) -> T,
+) -> Result<GoEffectCapture<T>, GoObservationError> {
+    let plan = admit_go_filesystem(source, host.collector, host.library)?;
+    if expected_source_path.is_some_and(|path| path != plan.source_path()) {
+        return Err(GoObservationError::UnsupportedContext);
+    }
+    let native = plan.verify(host.collector, &launch(plan.request_bytes())?)?;
+    let effect_context = canonical(&json!([
+        "fortress-go-filesystem-effect-v1",
+        native.binding_ref(),
+        native_filesystem_catalog_source_ref(),
+    ]))
+    .map_err(|_| GoObservationError::WireEncoding)?;
+    let evaluation_key =
+        EvaluationKey::new(manifest, digest(&effect_context), source.authority_digest);
+    let (effects, projection) = if native.disposition() == GoFilesystemDisposition::Observed {
+        let bytes = source
+            .source
+            .bytes(native.source_path())
+            .ok_or(GoObservationError::InvalidResponse)?;
+        let evaluation_ref = evaluation_key.digest();
+        let binding = NativeFilesystemBinding {
+            snapshot_fingerprint: source.source_fingerprint,
+            source_view_sha256: source.source.digest(),
+            authority_sha256: source.authority_digest,
+            evaluation_sha256: &evaluation_ref,
+            source_path: native.source_path(),
+            source_sha256: native.source_ref(),
         };
-        Ok(ActualGoFilesystemEffectObservation {
+        let (effects, projected) =
+            project_sites(&native, bytes, binding, selection, host, inspect)?;
+        (Some(effects), Some(projected))
+    } else {
+        (None, None)
+    };
+    Ok(GoEffectCapture {
+        receipt: ActualGoFilesystemEffectObservation {
             schema: "urn:fortress:derived:v1:go-filesystem-effects",
             schema_version: 1,
             runtime_execution: "NOT_RUN",
@@ -103,7 +208,8 @@ pub fn observe_go_filesystem_effects(
             evaluation_key,
             native,
             effects,
-        })
+        },
+        projection,
     })
 }
 
@@ -129,13 +235,14 @@ fn qualified_sdk(selection: GoPackageSelection<'_>, host: GoFilesystemHost<'_>) 
     source == host.library.package_source_ref && exports == host.library.export_set_ref
 }
 
-fn project_sites(
+fn project_sites<T>(
     native: &GoNativeFilesystemObservation,
     bytes: &[u8],
     binding: NativeFilesystemBinding<'_>,
     selection: GoPackageSelection<'_>,
     host: GoFilesystemHost<'_>,
-) -> Result<Value, GoObservationError> {
+    inspect: impl FnOnce(&NativeFilesystemProjection<'_>) -> T,
+) -> Result<(Value, T), GoObservationError> {
     let declaration_sha256 = native
         .declaration_ref()
         .ok_or(GoObservationError::InvalidResponse)?;
@@ -181,5 +288,8 @@ fn project_sites(
     };
     let projection = project_native_filesystem_effects(binding, bytes, &batch)
         .map_err(|failure| GoObservationError::Execution(failure.to_string()))?;
-    serde_json::to_value(projection).map_err(|_| GoObservationError::WireEncoding)
+    let inspected = inspect(&projection);
+    let serialized =
+        serde_json::to_value(projection).map_err(|_| GoObservationError::WireEncoding)?;
+    Ok((serialized, inspected))
 }

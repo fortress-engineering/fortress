@@ -7,6 +7,10 @@ use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::error::Error;
 use std::fmt::{self, Display, Formatter};
 
+#[path = "native_filesystem_policy.rs"]
+mod native_filesystem_policy;
+pub(crate) use native_filesystem_policy::{NativeFilesystemPolicyProjection, project_native_filesystem_policy};
+
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 

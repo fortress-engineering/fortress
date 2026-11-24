@@ -1,0 +1,304 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v1:go-filesystem-policy",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "source_path",
+    "scope",
+    "canonical_conformance",
+    "runtime_reachability",
+    "ownership",
+    "original_contract_path",
+    "original_contract_digest",
+    "authored_policy",
+    "native_receipt"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:derived:v1:go-filesystem-policy"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "source_path": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "scope": {
+      "const": "EXACT_ORIGINAL_DECLARED_MODULE"
+    },
+    "canonical_conformance": {
+      "const": "NOT_EVALUATED"
+    },
+    "runtime_reachability": {
+      "const": "UNKNOWN"
+    },
+    "ownership": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ownership"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "original_contract_path": {
+      "oneOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "original_contract_digest": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/sha256"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "authored_policy": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/authored"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "native_receipt": {
+      "$ref": "urn:fortress:derived:v1:go-filesystem-effects"
+    }
+  },
+  "if": {
+    "properties": {
+      "ownership": {
+        "type": "null"
+      }
+    }
+  },
+  "then": {
+    "properties": {
+      "original_contract_path": {
+        "type": "null"
+      },
+      "original_contract_digest": {
+        "type": "null"
+      },
+      "authored_policy": {
+        "type": "null"
+      }
+    }
+  },
+  "else": {
+    "properties": {
+      "original_contract_path": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 4096
+      },
+      "original_contract_digest": {
+        "$ref": "#/$defs/sha256"
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "ownership": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_path",
+        "owner",
+        "territory_path",
+        "authority",
+        "basis"
+      ],
+      "properties": {
+        "source_path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "owner": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "territory_path": {
+          "type": "string",
+          "maxLength": 4096
+        },
+        "authority": {
+          "const": "DECLARED_MODULE"
+        },
+        "basis": {
+          "enum": [
+            "PHYSICAL_MODULE_CONTAINMENT",
+            "LOGICAL_PATH_BINDING"
+          ]
+        }
+      }
+    },
+    "authored": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "authored_policy",
+        "effect_registry_sha256",
+        "reachability",
+        "sites"
+      ],
+      "properties": {
+        "authored_policy": {
+          "enum": [
+            "PRESENT",
+            "ABSENT"
+          ]
+        },
+        "effect_registry_sha256": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reachability": {
+          "const": "UNKNOWN"
+        },
+        "sites": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "start_byte",
+              "end_byte",
+              "operation",
+              "effects"
+            ],
+            "properties": {
+              "start_byte": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 65535
+              },
+              "end_byte": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 65536
+              },
+              "operation": {
+                "const": "go_os_write_file"
+              },
+              "effects": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 1,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "effect",
+                    "disposition"
+                  ],
+                  "properties": {
+                    "effect": {
+                      "const": "filesystem.write"
+                    },
+                    "disposition": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "status",
+                            "decision"
+                          ],
+                          "properties": {
+                            "status": {
+                              "const": "AUTHORED"
+                            },
+                            "decision": {
+                              "type": "object",
+                              "additionalProperties": false,
+                              "required": [
+                                "effect",
+                                "governing_target_kind",
+                                "governing_target",
+                                "disposition"
+                              ],
+                              "properties": {
+                                "effect": {
+                                  "const": "filesystem.write"
+                                },
+                                "governing_target_kind": {
+                                  "enum": [
+                                    "CAPABILITY",
+                                    "EFFECT"
+                                  ]
+                                },
+                                "governing_target": {
+                                  "enum": [
+                                    "filesystem",
+                                    "filesystem.write"
+                                  ]
+                                },
+                                "disposition": {
+                                  "enum": [
+                                    "ALLOW",
+                                    "DENY"
+                                  ]
+                                }
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "status"
+                          ],
+                          "properties": {
+                            "status": {
+                              "enum": [
+                                "UNDECLARED",
+                                "NO_AUTHORED_POLICY",
+                                "UNREGISTERED_EFFECT"
+                              ]
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "maxItems": 64
+        }
+      }
+    }
+  }
+}

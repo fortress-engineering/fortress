@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 
 use fortress_core::go_observation::{
     GoCollectorPin, GoFilesystemHost, GoFilesystemLibraryPin, GoPackageSelection,
-    observe_go_filesystem_effects,
+    observe_go_filesystem_effects, observe_go_filesystem_policy,
 };
 use fortress_core::portable::{canonical, digest};
 use fortress_core::wire::{
@@ -22,7 +22,7 @@ const SCHEMA: &str = "urn:fortress:host:v1:go-filesystem-registration";
 const RECIPE: &str = "INSTALLED_STDLIB_GC_NO_CGO_V1";
 const MODE: &str = "--observe-go-filesystem";
 const REGISTRATION_LIMIT: usize = 16 * 1024;
-const USAGE: &str = "fortress psm --observe-go-filesystem project host-registration directory package-path go-version target-os target-arch";
+const USAGE: &str = "fortress psm --observe-go-filesystem project host-registration directory package-path go-version target-os target-arch [--policy source-path]";
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -68,11 +68,17 @@ fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
         go_version,
         target_os,
         target_arch,
+        extras @ ..,
     ] = arguments
     else {
         return Err(
             "An exact project, external registration and target context are required.".into(),
         );
+    };
+    let policy_source = match extras {
+        [] => None,
+        [mode, path] if mode == "--policy" => Some(path.as_str()),
+        _ => return Err("Expected an optional exact authored policy source selection.".into()),
     };
     let root = Path::new(root)
         .canonicalize()
@@ -122,29 +128,36 @@ fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
         supervisor_context_sha256: &digest(&context),
         go_toolchain: &declared.toolchain,
     };
-    let report = observe_go_filesystem_effects(
-        &root,
-        GoPackageSelection {
-            directory: if directory == "." { "" } else { directory },
-            package_path,
-            go_version,
-            target_os,
-            target_arch,
+    let selection = GoPackageSelection {
+        directory: if directory == "." { "" } else { directory },
+        package_path,
+        go_version,
+        target_os,
+        target_arch,
+    };
+    let host = GoFilesystemHost {
+        collector: &pin,
+        library: GoFilesystemLibraryPin {
+            package_source_ref: &declared.package_source_ref,
+            export_set_ref: &declared.export_set_ref,
         },
-        GoFilesystemHost {
-            collector: &pin,
-            library: GoFilesystemLibraryPin {
-                package_source_ref: &declared.package_source_ref,
-                export_set_ref: &declared.export_set_ref,
-            },
-        },
-        |request| launch.run(request),
-    )
+    };
+    let dispatch = |request: &[u8]| launch.run(request);
+    let value = if let Some(source_path) = policy_source {
+        serde_json::to_value(
+            observe_go_filesystem_policy(&root, source_path, selection, host, dispatch)
+                .map_err(|failure| failure.to_string())?,
+        )
+    } else {
+        serde_json::to_value(
+            observe_go_filesystem_effects(&root, selection, host, dispatch)
+                .map_err(|failure| failure.to_string())?,
+        )
+    }
     .map_err(|failure| failure.to_string())?;
     require_external_asset(registration, &root)?;
     if read_bounded(registration, REGISTRATION_LIMIT)? != original {
         return Err("SOURCE_DRIFT: Native collector registration changed.".into());
     }
-    let value = serde_json::to_value(report).map_err(|failure| failure.to_string())?;
     canonical(&value).map_err(|failure| failure.to_string())
 }

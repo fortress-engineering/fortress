@@ -4857,10 +4857,11 @@ fn prepared_authority_binding(prepared: &PreparedAnalysis) -> Result<AuthorityBi
 }
 
 #[derive(Clone, Copy)]
-pub(crate) enum NativeAuthorityScope {
+pub(crate) enum NativeAuthorityScope<'a> {
     Observation,
     Dependencies,
     AuthoredReturn,
+    AuthoredEffect(&'a str),
 }
 
 pub(crate) struct NativeObservationBinding {
@@ -4871,13 +4872,21 @@ pub(crate) struct NativeObservationBinding {
     pub(crate) logical_contracts: BTreeSet<String>,
     pub(crate) native_return_contracts:
         Vec<crate::contract_coherency::DistributedContractOwnership>,
+    pub(crate) native_effect_policy: Option<NativeEffectPolicyBinding>,
+}
+
+pub(crate) struct NativeEffectPolicyBinding {
+    pub(crate) ownership: SourceOwnership,
+    pub(crate) contract_path: String,
+    pub(crate) contract_digest: String,
+    pub(crate) policy: Option<crate::contract_coherency::ModuleSemanticPolicy>,
 }
 
 /// Prepares exact source and the existing selected authority for native observation.
 pub(crate) fn bind_native_observation_source(
     source: &SourceView,
     language: &str,
-    scope: NativeAuthorityScope,
+    scope: NativeAuthorityScope<'_>,
 ) -> Result<NativeObservationBinding, AuditError> {
     let prepared = prepare_analysis_from_view(source.clone())?;
     if prepared.project_state == ProjectGovernanceState::Invalid
@@ -4905,6 +4914,12 @@ pub(crate) fn bind_native_observation_source(
             .map_err(|error| AuditError::ContractState(error.to_string().into()))?,
         _ => Vec::new(),
     };
+    let native_effect_policy = match (scope, dependency_ownership.as_ref()) {
+        (NativeAuthorityScope::AuthoredEffect(path), Some(ownership)) => {
+            native_effect_policy(&prepared, ownership, path)
+        }
+        _ => None,
+    };
     let logical_contracts = prepared
         .project_configuration
         .as_ref()
@@ -4923,6 +4938,36 @@ pub(crate) fn bind_native_observation_source(
         dependency_ownership,
         logical_contracts,
         native_return_contracts,
+        native_effect_policy,
+    })
+}
+
+fn native_effect_policy(
+    prepared: &PreparedAnalysis,
+    ownership: &SourceOwnershipResolution,
+    path: &str,
+) -> Option<NativeEffectPolicyBinding> {
+    if ownership
+        .diagnostics()
+        .iter()
+        .any(|diagnostic| diagnostic.source_path() == path)
+    {
+        return None;
+    }
+    let mut owners = ownership
+        .ownerships()
+        .iter()
+        .filter(|owner| owner.source_path() == path);
+    let owner = owners.next()?;
+    if owners.next().is_some() || owner.authority() != SourceOwnershipAuthority::DeclaredModule {
+        return None;
+    }
+    let module = prepared.ccg()?.modules().get(owner.owner())?;
+    Some(NativeEffectPolicyBinding {
+        ownership: owner.clone(),
+        contract_path: module.contract_path().to_owned(),
+        contract_digest: module.digest().to_owned(),
+        policy: module.contract().semantic_policy().cloned(),
     })
 }
 

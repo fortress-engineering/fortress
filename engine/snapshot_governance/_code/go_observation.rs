@@ -18,7 +18,8 @@ mod body_domains;
 mod filesystem;
 pub use body_domains::ActualGoNativeBodyObservation;
 pub use filesystem::{
-    ActualGoFilesystemEffectObservation, GoFilesystemHost, observe_go_filesystem_effects,
+    ActualGoFilesystemEffectObservation, ActualGoFilesystemPolicyObservation, GoFilesystemHost,
+    observe_go_filesystem_effects, observe_go_filesystem_policy,
 };
 
 #[path = "go_callable.rs"]

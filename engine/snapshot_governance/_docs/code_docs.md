@@ -633,6 +633,11 @@ remain explicit. Publication revalidates the entire original input.
 
 ### [`go_fs_observation.rs`](../_code/go_fs_observation.rs)
 
+The optional authored policy scope joins the reviewed filesystem observation to one
+exact original Module selected by the existing ownership and contract graph.
+It shows declared policy dispositions of modeled operations without extending
+actual runtime, coverage, certification, or enforcement.
+
 Binds the exact native Go call observation to original physical source and
 the separately verified installed standard-library recipe. It uses the
 existing Operation Summary catalog to project scoped positive lower facts.
