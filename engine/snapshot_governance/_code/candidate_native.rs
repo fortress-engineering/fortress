@@ -10,7 +10,7 @@ use crate::migration_governance::MigrationError;
 use crate::observation::SourceView;
 use crate::portable::digest;
 use crate::project::EvaluationKey;
-use crate::semantic_analysis::NativeBooleanSensitivity;
+use crate::semantic_analysis::{NativeBooleanCallEvaluation, NativeBooleanSensitivity};
 
 /// Exact postimage and declaration selected by the local native inspection host.
 #[derive(Clone, Copy)]
@@ -45,7 +45,7 @@ pub struct HypotheticalNativeBodyInspection {
     comparison: &'static str,
     runtime_execution: &'static str,
     actual_certificate: &'static str,
-    native: NativeCandidateBody,
+    native: NativeCandidateAnalysis,
 }
 
 impl NativeCandidateBody {
@@ -76,6 +76,21 @@ pub(crate) struct NativeCandidateBody {
     sensitivity: Option<NativeBooleanSensitivity>,
 }
 
+#[derive(Serialize)]
+#[serde(untagged)]
+enum NativeCandidateAnalysis {
+    Scalar(NativeCandidateBody),
+    Calls(NativeCandidateCalls),
+}
+
+#[derive(Serialize)]
+pub(crate) struct NativeCandidateCalls {
+    pub(crate) evaluation_key: EvaluationKey,
+    pub(crate) response_ref: String,
+    pub(crate) result: Option<NativeBooleanCallEvaluation>,
+    pub(crate) limitation: Option<String>,
+}
+
 pub(crate) fn inspect_hypothetical_native_body(
     workspace: &CandidateWorkspace,
     selected: NativeCandidateSelection<'_>,
@@ -86,6 +101,47 @@ pub(crate) fn inspect_hypothetical_native_body(
         &NativeObservationBinding,
         &HypotheticalEvaluation,
     ) -> Result<NativeCandidateBody, MigrationError>,
+) -> Result<HypotheticalNativeBodyInspection, MigrationError> {
+    inspect_hypothetical_native(
+        workspace,
+        selected,
+        subject,
+        language,
+        |view, binding, proposal| {
+            inspect(view, binding, proposal).map(NativeCandidateAnalysis::Scalar)
+        },
+    )
+}
+
+pub(crate) fn inspect_hypothetical_native_calls(
+    workspace: &CandidateWorkspace,
+    selected: NativeCandidateSelection<'_>,
+    subject: NativeCandidateSubject<'_>,
+    language: &'static str,
+    inspect: impl FnOnce(
+        &SourceView,
+        &NativeObservationBinding,
+    ) -> Result<NativeCandidateCalls, MigrationError>,
+) -> Result<HypotheticalNativeBodyInspection, MigrationError> {
+    inspect_hypothetical_native(
+        workspace,
+        selected,
+        subject,
+        language,
+        |view, binding, _| inspect(view, binding).map(NativeCandidateAnalysis::Calls),
+    )
+}
+
+fn inspect_hypothetical_native(
+    workspace: &CandidateWorkspace,
+    selected: NativeCandidateSelection<'_>,
+    subject: NativeCandidateSubject<'_>,
+    language: &'static str,
+    inspect: impl FnOnce(
+        &SourceView,
+        &NativeObservationBinding,
+        &HypotheticalEvaluation,
+    ) -> Result<NativeCandidateAnalysis, MigrationError>,
 ) -> Result<HypotheticalNativeBodyInspection, MigrationError> {
     workspace.inspect_retained_native(
         selected.client,
@@ -129,9 +185,19 @@ pub(crate) fn inspect_hypothetical_native_body(
                 bind_native_observation_source(target, language, NativeAuthorityScope::Observation)
                     .map_err(native_error)?;
             let native = inspect(target, &candidate, proposal)?;
+            let (schema, schema_version) = match &native {
+                NativeCandidateAnalysis::Scalar(_) => (
+                    "urn:fortress:derived:v1:hypothetical-native-body-inspection",
+                    1,
+                ),
+                NativeCandidateAnalysis::Calls(_) => (
+                    "urn:fortress:derived:v2:hypothetical-native-body-inspection",
+                    2,
+                ),
+            };
             Ok(HypotheticalNativeBodyInspection {
-                schema: "urn:fortress:derived:v1:hypothetical-native-body-inspection",
-                schema_version: 1,
+                schema,
+                schema_version,
                 status: "PROPOSED",
                 actual_state: false,
                 language,

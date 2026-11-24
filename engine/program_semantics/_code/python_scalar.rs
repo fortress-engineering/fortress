@@ -2,6 +2,7 @@
 
 #[path = "python_calls.rs"]
 mod python_calls;
+pub(crate) use python_calls::PythonLexicalCalls;
 /// Compile-only Python filesystem call shape and installed receiver admission.
 #[path = "python_filesystem.rs"]
 pub mod python_filesystem;

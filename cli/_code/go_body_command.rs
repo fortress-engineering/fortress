@@ -163,7 +163,7 @@ pub(super) fn with_registered_body<T>(
     with_registered_body_mode(root, registration, false, observe)
 }
 
-fn with_registered_body_mode<T>(
+pub(super) fn with_registered_body_mode<T>(
     root: &Path,
     registration: &Path,
     with_calls: bool,

@@ -3,7 +3,10 @@
 #[path = "candidate_native.rs"]
 mod native;
 pub use native::{HypotheticalNativeBodyInspection, NativeCandidateSubject};
-pub(crate) use native::{NativeCandidateBody, inspect_hypothetical_native_body, native_error};
+pub(crate) use native::{
+    NativeCandidateBody, NativeCandidateCalls, inspect_hypothetical_native_body,
+    inspect_hypothetical_native_calls, native_error,
+};
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};

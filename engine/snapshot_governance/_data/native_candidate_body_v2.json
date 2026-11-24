@@ -1,0 +1,175 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v2:hypothetical-native-body-inspection",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "status",
+    "actual_state",
+    "language",
+    "proposal_ref",
+    "proposal_digest",
+    "overlay_context_ref",
+    "original_source_view_ref",
+    "candidate_source_view_ref",
+    "original_authority_ref",
+    "candidate_authority_ref",
+    "source_path",
+    "source_ref",
+    "function",
+    "comparison",
+    "runtime_execution",
+    "actual_certificate",
+    "native"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:derived:v2:hypothetical-native-body-inspection"
+    },
+    "schema_version": {
+      "const": 2
+    },
+    "status": {
+      "const": "PROPOSED"
+    },
+    "actual_state": {
+      "const": false
+    },
+    "language": {
+      "enum": [
+        "go",
+        "python"
+      ]
+    },
+    "proposal_ref": {
+      "$ref": "#/$defs/sha256"
+    },
+    "proposal_digest": {
+      "$ref": "#/$defs/sha256"
+    },
+    "overlay_context_ref": {
+      "$ref": "#/$defs/sha256"
+    },
+    "original_source_view_ref": {
+      "$ref": "#/$defs/sha256"
+    },
+    "candidate_source_view_ref": {
+      "$ref": "#/$defs/sha256"
+    },
+    "original_authority_ref": {
+      "$ref": "#/$defs/sha256"
+    },
+    "candidate_authority_ref": {
+      "$ref": "#/$defs/sha256"
+    },
+    "source_path": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "source_ref": {
+      "$ref": "#/$defs/sha256"
+    },
+    "function": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 240,
+      "pattern": "^[A-Za-z_][A-Za-z_0-9]*$"
+    },
+    "comparison": {
+      "const": "NOT_COMPARED"
+    },
+    "runtime_execution": {
+      "const": "NOT_RUN"
+    },
+    "actual_certificate": {
+      "const": "NOT_ISSUED"
+    },
+    "native": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evaluation_key",
+        "response_ref",
+        "result",
+        "limitation"
+      ],
+      "properties": {
+        "evaluation_key": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "source_manifest_digest",
+            "program_context_digest",
+            "authority_binding_digest"
+          ],
+          "properties": {
+            "source_manifest_digest": {
+              "$ref": "#/$defs/sha256"
+            },
+            "program_context_digest": {
+              "$ref": "#/$defs/sha256"
+            },
+            "authority_binding_digest": {
+              "$ref": "#/$defs/sha256"
+            }
+          }
+        },
+        "response_ref": {
+          "$ref": "#/$defs/sha256"
+        },
+        "result": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "urn:fortress:derived:v1:go-native-call-return#/properties/evaluation"
+            }
+          ]
+        },
+        "limitation": {
+          "anyOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "pattern": "^[A-Z0-9_]{1,96}$"
+            }
+          ]
+        }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "result": {
+              "type": "object"
+            },
+            "limitation": {
+              "type": "null"
+            }
+          }
+        },
+        {
+          "properties": {
+            "result": {
+              "type": "null"
+            },
+            "limitation": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    }
+  }
+}

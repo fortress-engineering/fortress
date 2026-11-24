@@ -214,10 +214,19 @@ const PIN: GoCollectorPin<'static> = GoCollectorPin {
 
 mod bound_call_bodies {
     use super::{Fixture, GoCollectorPin, GoObservationError, GoPackageSelection, Value, fs, json};
+    use fortress_core::candidate::{
+        CandidateRequest, CandidateWorkspace, NativeCandidateSelection, NativeCandidateSubject,
+    };
+    use fortress_core::development_governance::{NoGrantValidator, UnmediatedHost};
+    use fortress_core::go_observation::observe_go_candidate_call_return;
     use fortress_core::go_observation::{
         observe_go_native_body, observe_go_native_bound_calls, observe_go_native_call_return,
     };
+    use fortress_core::migration_adapter::CanonicalMigrationAuthority;
+    use fortress_core::migration_governance::MigrationOperation;
     use fortress_core::portable::digest;
+    use fortress_core::state_governance::ComparisonContext;
+    use std::sync::atomic::AtomicBool;
 
     const PIN: GoCollectorPin<'static> = GoCollectorPin {
         executable_sha256: "sha256:0080cc402d1ec788f1222d45d9ba7352d9ebd6551908c6caabe722286533ef63",
@@ -360,6 +369,93 @@ mod bound_call_bodies {
                 "MISSING_EXACT_OCCURRENCE"
             );
         }
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R36-001`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R36
+    #[test]
+    fn go_native_call_candidate_preserves_the_actual_and_retained_sources() {
+        let (project, records) = fixture("fixed_free_function", "retained_go_call");
+        let original = b"package main\nfunc outer(v bool) bool { return v }\n";
+        let target = records["source"].as_str().unwrap().as_bytes();
+        fs::write(project.root.join("fixture.go"), original).unwrap();
+        let mut workspace = CandidateWorkspace::open_cold(&project.root).unwrap();
+        let original_view = workspace.base_source_ref().to_owned();
+        let request = CandidateRequest {
+            schema_version: 1,
+            base_source_ref: original_view.clone(),
+            context_ref: workspace.context_ref().into(),
+            operations: vec![MigrationOperation::ReplaceFile {
+                path: "fixture.go".into(),
+                preimage: original.to_vec(),
+                postimage: target.to_vec(),
+            }],
+            comparison_context: ComparisonContext::default(),
+        };
+        let authority = CanonicalMigrationAuthority {
+            policy: None,
+            host: &UnmediatedHost,
+            validator: &NoGrantValidator,
+            evaluation_time: None,
+            reviewed_initial_intent_ref: None,
+            finding_proposal: None,
+            identity_plan: None,
+        };
+        let cancelled = AtomicBool::new(false);
+        let proposal = workspace
+            .evaluate("owner", "edit", request, &authority, &cancelled)
+            .unwrap();
+        let retained = NativeCandidateSelection {
+            client: "owner",
+            candidate: "edit",
+            cancelled: &cancelled,
+        };
+        let target_ref = digest(target);
+        let subject = NativeCandidateSubject {
+            source_path: "fixture.go",
+            source_ref: &target_ref,
+            function: "outer",
+        };
+        let inspect = || {
+            observe_go_candidate_call_return(
+                &workspace,
+                retained,
+                SELECTION,
+                subject,
+                &PIN,
+                |request| Ok(receipt(request, &records, "bound")),
+            )
+            .unwrap()
+        };
+        let report = serde_json::to_value(inspect()).unwrap();
+        assert_eq!(report, serde_json::to_value(inspect()).unwrap());
+        assert_eq!(
+            report["$schema"],
+            "urn:fortress:derived:v2:hypothetical-native-body-inspection"
+        );
+        assert_eq!(report["proposal_ref"], proposal.evaluation_ref());
+        assert_eq!(report["original_source_view_ref"], original_view);
+        assert_ne!(report["candidate_source_view_ref"], original_view);
+        assert_eq!(report["actual_state"], false);
+        assert_eq!(report["status"], "PROPOSED");
+        assert_eq!(report["actual_certificate"], "NOT_ISSUED");
+        assert_eq!(report["native"]["result"]["returns"], json!([true, false]));
+        assert!(report["native"]["limitation"].is_null());
+        assert_eq!(fs::read(project.root.join("fixture.go")).unwrap(), original);
+        workspace.release("owner", "edit");
+        let error = observe_go_candidate_call_return(
+            &workspace,
+            retained,
+            SELECTION,
+            subject,
+            &PIN,
+            |_| {
+                panic!("released native candidate must not dispatch");
+            },
+        )
+        .err()
+        .unwrap();
+        assert_eq!(error.code, "NOT_FOUND");
     }
 
     /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R33-002`

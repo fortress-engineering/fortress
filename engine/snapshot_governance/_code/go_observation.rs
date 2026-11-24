@@ -7,8 +7,8 @@ use serde::Serialize;
 use crate::audit::{NativeAuthorityScope, NativeObservationBinding};
 use crate::candidate::{
     CandidateWorkspace, HypotheticalNativeBodyInspection, NativeCandidateBody,
-    NativeCandidateSelection, NativeCandidateSubject, inspect_hypothetical_native_body,
-    native_error,
+    NativeCandidateCalls, NativeCandidateSelection, NativeCandidateSubject,
+    inspect_hypothetical_native_body, inspect_hypothetical_native_calls, native_error,
 };
 use crate::implementation_observation::{NativeDependencyContext, SourceOwnershipDiagnostic};
 use crate::information_flow::NativeScalarFlowObservation;
@@ -459,6 +459,44 @@ pub fn observe_go_candidate_sensitivity(
             response_ref,
             body.as_deref(),
         ))
+    })
+}
+
+/// Compose exact Go calls from a retained unapplied candidate postimage.
+///
+/// The selected native compiler context and source are independently bound.
+/// The result remains an inspection of the candidate's finite return model.
+///
+/// # Errors
+/// Refuses stale or cancelled candidates, unsafe inputs, and mismatched native receipts.
+pub fn observe_go_candidate_call_return(
+    workspace: &CandidateWorkspace,
+    retained: NativeCandidateSelection<'_>,
+    package: GoPackageSelection<'_>,
+    subject: NativeCandidateSubject<'_>,
+    collector: &GoCollectorPin<'_>,
+    launch: impl FnOnce(&[u8]) -> Result<Vec<u8>, GoObservationError>,
+) -> Result<HypotheticalNativeBodyInspection, MigrationError> {
+    inspect_hypothetical_native_calls(workspace, retained, subject, "go", |view, binding| {
+        let source = scoped_package(view, binding, package, false);
+        let admitted = admit_go(source, collector).map_err(native_error)?;
+        let output = launch(admitted.request_bytes()).map_err(native_error)?;
+        let observed = admitted
+            .verify_bound_bodies(collector, &binding.source_manifest_digest, &output)
+            .map_err(native_error)?;
+        let targets = observed.call_targets().map_err(native_error)?;
+        let result = observed
+            .selected_call_body(subject.source_path, subject.function)
+            .map(|body| analyze_native_boolean_calls(body, &targets));
+        let (evaluation, response) = observed.call_identity();
+        Ok(NativeCandidateCalls {
+            evaluation_key: evaluation.clone(),
+            response_ref: response.into(),
+            limitation: result
+                .is_none()
+                .then(|| "SELECTED_DECLARATION_OR_BODY_UNAVAILABLE".into()),
+            result,
+        })
     })
 }
 

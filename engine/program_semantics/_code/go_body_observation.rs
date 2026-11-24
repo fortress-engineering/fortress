@@ -175,6 +175,26 @@ impl GoNativeBodyObservation {
         (self.evaluation_key, self.response_sha256, selected)
     }
 
+    pub(crate) fn selected_call_body(
+        &self,
+        source_path: &str,
+        function: &str,
+    ) -> Option<&NativeScalarBody> {
+        let mut bodies = self.functions.iter().filter_map(|row| match row {
+            GoBodyFunction::Lowered {
+                symbol, lowered, ..
+            } if symbol.span.path == source_path && symbol.name == function => {
+                Some(lowered.0.as_ref())
+            }
+            _ => None,
+        });
+        bodies.next().filter(|_| bodies.next().is_none())
+    }
+
+    pub(crate) fn call_identity(&self) -> (&EvaluationKey, &str) {
+        (&self.evaluation_key, &self.response_sha256)
+    }
+
     pub(crate) fn call_evidence(&self) -> Value {
         serde_json::json!({
             "evaluation_key": self.evaluation_key,

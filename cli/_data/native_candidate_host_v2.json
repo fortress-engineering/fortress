@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:host:v2:native-candidate-inspection",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "inspection",
+    "analysis"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:host:v2:native-candidate-inspection"
+    },
+    "schema_version": {
+      "const": 2
+    },
+    "inspection": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "language",
+            "registration",
+            "package",
+            "subject"
+          ],
+          "properties": {
+            "language": {
+              "const": "go"
+            },
+            "registration": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            },
+            "package": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "directory",
+                "package_path",
+                "go_version",
+                "target_os",
+                "target_arch"
+              ],
+              "properties": {
+                "directory": {
+                  "type": "string",
+                  "maxLength": 240
+                },
+                "package_path": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 240
+                },
+                "go_version": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 24
+                },
+                "target_os": {
+                  "enum": [
+                    "windows",
+                    "linux"
+                  ]
+                },
+                "target_arch": {
+                  "const": "amd64"
+                }
+              }
+            },
+            "subject": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "source_path",
+                "source_ref",
+                "function"
+              ],
+              "properties": {
+                "source_path": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4096
+                },
+                "source_ref": {
+                  "$ref": "#/$defs/sha256"
+                },
+                "function": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 240,
+                  "pattern": "^[A-Za-z_][A-Za-z_0-9]*$"
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "language",
+            "registration"
+          ],
+          "properties": {
+            "language": {
+              "const": "python"
+            },
+            "registration": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            }
+          }
+        }
+      ]
+    },
+    "analysis": {
+      "const": "FINITE_CALL_RETURN"
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    }
+  }
+}

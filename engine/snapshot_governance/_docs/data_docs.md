@@ -277,3 +277,9 @@ evidence, and the reasons a complete model can be unavailable.
 
 Constrains exact Python finite return inspection, compile-only observation
 bindings, admitted call sites and unresolved lexical or modeling states.
+
+
+### [`native_candidate_body_v2.json`](../_data/native_candidate_body_v2.json)
+
+Constrains exact hypothetical Go and Python call-return records. The retained
+snapshot binding stays separate from the native modeled result or limitation.

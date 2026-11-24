@@ -39,7 +39,7 @@ pub use native_sensitivity::{
     NativeBooleanSensitivityReason, inspect_native_boolean_sensitivity,
 };
 
-pub(crate) use native_calls::analyze_native_boolean_calls;
+pub(crate) use native_calls::{NativeBooleanCallEvaluation, analyze_native_boolean_calls};
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 

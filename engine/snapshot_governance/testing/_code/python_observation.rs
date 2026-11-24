@@ -34,9 +34,15 @@ const CONTEXT: &str = "sha256:f19e50baa1d1fd5a6df2123b2973d458d3806567b133d3192b
 
 mod lexical_calls {
     use super::{
+        AtomicBool, CandidateRequest, CandidateWorkspace, CanonicalMigrationAuthority,
+        ComparisonContext, MigrationOperation, NativeCandidateSelection, NoGrantValidator,
+        Ordering, UnmediatedHost,
+    };
+    use super::{
         Fixture, PythonObservationError, PythonScalarError, PythonScalarProducer,
         PythonScalarSubject, digest, fs, json, observe_python_scalar,
     };
+    use fortress_core::python_observation::observe_python_candidate_call_return;
     use fortress_core::python_observation::observe_python_native_call_return;
     use serde_json::Value;
 
@@ -131,6 +137,80 @@ mod lexical_calls {
                 );
             }
         }
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R36-002`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R36
+    #[test]
+    fn python_lexical_call_candidate_keeps_unsupported_and_cancelled_results_distinct() {
+        let (fixture, subject, producer, reply) =
+            case("later_local_rebind", "retained_python_call");
+        let source = fixture.root.join("fixture.py");
+        let target = fs::read(&source).unwrap();
+        let actual = b"def outer(v):\n    return v\n";
+        fs::write(&source, actual).unwrap();
+        let mut workspace = CandidateWorkspace::open_cold(&fixture.root).unwrap();
+        let request = CandidateRequest {
+            schema_version: 1,
+            base_source_ref: workspace.base_source_ref().into(),
+            context_ref: workspace.context_ref().into(),
+            operations: vec![MigrationOperation::ReplaceFile {
+                path: "fixture.py".into(),
+                preimage: actual.to_vec(),
+                postimage: target,
+            }],
+            comparison_context: ComparisonContext::default(),
+        };
+        let authority = CanonicalMigrationAuthority {
+            policy: None,
+            host: &UnmediatedHost,
+            validator: &NoGrantValidator,
+            evaluation_time: None,
+            reviewed_initial_intent_ref: None,
+            finding_proposal: None,
+            identity_plan: None,
+        };
+        let cancelled = AtomicBool::new(false);
+        let proposal = workspace
+            .evaluate("owner", "edit", request, &authority, &cancelled)
+            .unwrap();
+        let retained = NativeCandidateSelection {
+            client: "owner",
+            candidate: "edit",
+            cancelled: &cancelled,
+        };
+        let report = observe_python_candidate_call_return(
+            &workspace,
+            retained,
+            &subject,
+            &producer,
+            |request| Ok(serde_json::to_vec(&bind(&request, &reply)).unwrap()),
+        )
+        .unwrap();
+        let report = serde_json::to_value(report).unwrap();
+        assert_eq!(report["schema_version"], 2);
+        assert_eq!(report["language"], "python");
+        assert_eq!(report["proposal_ref"], proposal.evaluation_ref());
+        assert_eq!(report["source_ref"], subject.source_ref);
+        assert_eq!(report["actual_state"], false);
+        assert_eq!(report["comparison"], "NOT_COMPARED");
+        assert!(report["native"]["result"].is_null());
+        assert_eq!(report["native"]["limitation"], "CALL_TARGET_UNESTABLISHED");
+        let refusal = observe_python_candidate_call_return(
+            &workspace,
+            retained,
+            &subject,
+            &producer,
+            |request| {
+                let report = bind(&request, &reply);
+                cancelled.store(true, Ordering::Release);
+                Ok(serde_json::to_vec(&report).unwrap())
+            },
+        )
+        .err()
+        .unwrap();
+        assert_eq!(refusal.code, "CANCELLED");
+        assert_eq!(fs::read(&source).unwrap(), actual);
     }
 
     /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R35-002`

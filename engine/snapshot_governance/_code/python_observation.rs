@@ -5,16 +5,18 @@ use std::fmt::{self, Display, Formatter};
 use std::path::Path;
 
 use crate::affected_analysis::sha256;
+use crate::audit::NativeObservationBinding;
 use crate::candidate::{
     CandidateWorkspace, HypotheticalNativeBodyInspection, NativeCandidateBody,
-    NativeCandidateSelection, NativeCandidateSubject, inspect_hypothetical_native_body,
-    native_error,
+    NativeCandidateCalls, NativeCandidateSelection, NativeCandidateSubject,
+    inspect_hypothetical_native_body, inspect_hypothetical_native_calls, native_error,
 };
 use crate::information_flow::{NativeScalarFlowObservation, observe_native_scalar_flow};
 use crate::migration_governance::MigrationError;
 use crate::native_observation::{NativeSource, NativeSourceError};
 use crate::observation::SourceView;
 pub use crate::program_semantics::native_body::NativeBodyOutcome;
+use crate::program_semantics::python_scalar::PythonLexicalCalls;
 pub use crate::program_semantics::python_scalar::python_filesystem::{
     PythonFilesystemError, PythonFilesystemOutcome, PythonFilesystemProfile,
     PythonFilesystemRequest, PythonInstalledFilesystemReceiver,
@@ -568,21 +570,8 @@ pub fn observe_python_native_call_return(
     exchange: impl FnOnce(Vec<u8>) -> Result<Vec<u8>, PythonObservationError>,
 ) -> Result<serde_json::Value, PythonObservationError> {
     let source = NativeSource::capture(project_root, "Python")?;
-    let context = serde_json_canonicalizer::to_vec(&(
-        "fortress-python-lexical-call-context-v1",
-        subject,
-        producer,
-    ))
-    .map_err(PythonScalarError::Json)?;
-    let evaluation_key = EvaluationKey::new(
-        &source.binding.source_manifest_digest,
-        sha256(&context),
-        &source.binding.authority_digest,
-    );
-    let request = bind_scalar_request(&source.view, subject, producer, &evaluation_key)?
-        .into_lexical_calls()?;
-    let response = exchange(request.worker_payload(&source.view, &evaluation_key)?)?;
-    let observation = request.admit_lexical_calls(&source.view, &evaluation_key, &response)?;
+    let (evaluation_key, request, response_ref, observation) =
+        inspect_lexical_calls(&source.view, &source.binding, subject, producer, exchange)?;
     let targets = observation.targets()?;
     let (evaluation, diagnostic, calls) = match &observation.root {
         NativeBodyOutcome::Lowered(body) => (
@@ -604,7 +593,7 @@ pub fn observe_python_native_call_return(
         "target_execution":"NOT_RUN",
         "evaluation_key":evaluation_key,
         "exchange_sha256":request.exchange_ref(),
-        "response_sha256":sha256(&response),
+        "response_sha256":response_ref,
         "source_path":subject.source_path,
         "source_ref":request.source_ref(),
         "producer":producer,
@@ -612,6 +601,77 @@ pub fn observe_python_native_call_return(
         "evaluation":evaluation,
         "diagnostic":diagnostic,
     }))
+}
+
+/// Compose source-bound Python lexical calls in a retained candidate.
+///
+/// Reads the already admitted proposal through immutable source views.
+///
+/// # Errors
+/// Refuses stale or cancelled candidates, unsafe inputs, and mismatched native receipts.
+pub fn observe_python_candidate_call_return(
+    workspace: &CandidateWorkspace,
+    retained: NativeCandidateSelection<'_>,
+    subject: &PythonScalarSubject,
+    producer: &PythonScalarProducer,
+    exchange: impl FnOnce(Vec<u8>) -> Result<Vec<u8>, PythonObservationError>,
+) -> Result<HypotheticalNativeBodyInspection, MigrationError> {
+    let selected = NativeCandidateSubject {
+        source_path: &subject.source_path,
+        source_ref: &subject.source_ref,
+        function: &subject.function,
+    };
+    inspect_hypothetical_native_calls(workspace, retained, selected, "python", |view, binding| {
+        let (evaluation_key, _, response_ref, observation) =
+            inspect_lexical_calls(view, binding, subject, producer, exchange)
+                .map_err(native_error)?;
+        let targets = observation.targets().map_err(native_error)?;
+        let (result, limitation) = match &observation.root {
+            NativeBodyOutcome::Lowered(body) => {
+                (Some(analyze_native_boolean_calls(body, &targets)), None)
+            }
+            NativeBodyOutcome::Unavailable(diagnostic) => (None, Some(diagnostic.code().into())),
+        };
+        Ok(NativeCandidateCalls {
+            evaluation_key,
+            response_ref,
+            result,
+            limitation,
+        })
+    })
+}
+
+fn inspect_lexical_calls(
+    view: &SourceView,
+    binding: &NativeObservationBinding,
+    subject: &PythonScalarSubject,
+    producer: &PythonScalarProducer,
+    exchange: impl FnOnce(Vec<u8>) -> Result<Vec<u8>, PythonObservationError>,
+) -> Result<
+    (
+        EvaluationKey,
+        PythonScalarRequest,
+        String,
+        PythonLexicalCalls,
+    ),
+    PythonObservationError,
+> {
+    let context = serde_json_canonicalizer::to_vec(&(
+        "fortress-python-lexical-call-context-v1",
+        subject,
+        producer,
+    ))
+    .map_err(PythonScalarError::Json)?;
+    let evaluation_key = EvaluationKey::new(
+        &binding.source_manifest_digest,
+        sha256(&context),
+        &binding.authority_digest,
+    );
+    let request =
+        bind_scalar_request(view, subject, producer, &evaluation_key)?.into_lexical_calls()?;
+    let response = exchange(request.worker_payload(view, &evaluation_key)?)?;
+    let observation = request.admit_lexical_calls(view, &evaluation_key, &response)?;
+    Ok((evaluation_key, request, sha256(&response), observation))
 }
 
 /// Inspects an exact Python postimage from a retained unapplied candidate.

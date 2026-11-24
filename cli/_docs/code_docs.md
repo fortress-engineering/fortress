@@ -812,3 +812,10 @@ finite Boolean returns for a selected local call closure. The call mode
 requires the current pinned scalar worker and its matching bootstrap.
 Unresolved lexical scopes, mutable targets and unsupported arguments are
 reported with the exact source binding.
+
+
+The existing candidate `--native-inspection` option accepts
+`urn:fortress:host:v2:native-candidate-inspection` with `schema_version` set to
+`2` and `analysis` set to `FINITE_CALL_RETURN`. The same independent Go or
+Python host selection pins the exact postimage. Edition 1 descriptors retain
+their original finite single-body sensitivity behavior.

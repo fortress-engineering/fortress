@@ -708,3 +708,10 @@ The local Python call return inspection selects its Boolean input premises
 from the existing trusted scalar registration. The finite result carries
 the selected source, context, original authority and worker response digest.
 The same interpreter handles closed Go and Python scalar call tables.
+
+
+Retained Go and Python candidates can attach a separate finite call return
+model. The selected original and proposed identities remain visible with
+the native reply digest. Existing candidate cancellation, cross-client
+isolation, input revalidation and release checks apply to both inspection
+editions.

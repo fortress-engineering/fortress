@@ -156,3 +156,14 @@ Defines the canonical read-only original-source native Boolean comparison.
 A linked callable and a selected authored requirement carry separate
 provenance. The same schema represents unavailable subjects and requirements
 without allocating a finding, grant, runtime result, or certificate.
+
+
+### [`native_candidate_host_v2.json`](../_data/native_candidate_host_v2.json)
+
+Selects finite call return inspection for either supported pinned host. The
+selection binds the same source and configuration policy as earlier descriptors.
+
+### [`native_candidate_overlay_v2.json`](../_data/native_candidate_overlay_v2.json)
+
+Retains the original overlay assessment and attaches a finite candidate call
+result under the exact descriptor and retained candidate references.
