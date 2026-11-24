@@ -53,13 +53,16 @@ fn fortress_documentation_is_complete_synchronized_and_deterministic() {
         "engine/migration_governance/_docs/modules_docs.md",
         "engine/migration_governance/testing/README.md",
         "engine/migration_governance/testing/_docs/code_docs.md",
+        "engine/implementation_observation/_docs/data_docs.md",
+        "engine/semantic_analysis/testing/_docs/data_docs.md",
+        "engine/source_architecture/testing/_docs/data_docs.md",
     ] {
         assert!(
             files.contains_key(path),
             "missing registered Module document: {path}"
         );
     }
-    assert_eq!(first.summary().markdown_files_inspected(), 179);
+    assert_eq!(first.summary().markdown_files_inspected(), 182);
     assert_eq!(
         first.summary().code_bijection().0,
         first.summary().code_bijection().1
