@@ -11,8 +11,8 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 use super::{
-    ProgramBody, ProgramExpression, ProgramPattern, ProgramProvenance, ProgramSourceLocation,
-    ProgramStatement, canonical_fact_id,
+    CallTopology, ProgramBody, ProgramExpression, ProgramPattern, ProgramProvenance,
+    ProgramSourceLocation, ProgramStatement, canonical_fact_id,
 };
 use crate::observation::is_canonical_relative_path;
 use crate::project::EvaluationKey;
@@ -190,6 +190,92 @@ impl NativeScalarBody {
     #[must_use]
     pub const fn result(&self) -> NativeScalar {
         self.result
+    }
+}
+
+#[derive(Debug, Serialize)]
+#[serde(tag = "status", rename_all = "SCREAMING_SNAKE_CASE")]
+pub(crate) enum NativeCallTopology<'a> {
+    Available {
+        root: String,
+        topology: Box<CallTopology>,
+        sites: Vec<NativeCallTopologySite<'a>>,
+        unavailable_targets: Vec<String>,
+    },
+    Unavailable {
+        root: Option<String>,
+        reason: String,
+    },
+}
+
+#[derive(Debug, Serialize)]
+pub(crate) struct NativeCallTopologySite<'a> {
+    caller: &'a str,
+    call: &'a NativeBoundCall,
+    target_body: Option<&'a str>,
+}
+
+impl NativeCallTopology<'_> {
+    pub(crate) fn unavailable(root: Option<&str>, reason: &str) -> Self {
+        Self::Unavailable {
+            root: root.map(str::to_owned),
+            reason: reason.into(),
+        }
+    }
+}
+
+// The source adapters establish call bindings before this view is constructed.
+// Edges are only supplied to the common topology when both bodies are admitted.
+pub(crate) fn inspect_native_call_topology<'a>(
+    root: &'a NativeScalarBody,
+    targets: &BTreeMap<&'a str, Option<&'a NativeScalarBody>>,
+) -> NativeCallTopology<'a> {
+    const MAX_BODIES: usize = 64;
+    const MAX_CALLS: usize = 256;
+
+    let mut nodes = BTreeSet::new();
+    let mut adjacency = BTreeMap::new();
+    let mut missing = BTreeSet::new();
+    let mut caller_with_missing_target = BTreeSet::new();
+    let mut sites = Vec::new();
+    let mut pending = vec![root];
+    let mut count = 0;
+    while let Some(body) = pending.pop() {
+        if !nodes.insert(body.binding().to_owned()) {
+            continue;
+        }
+        count += body.bound_calls().len();
+        if nodes.len() > MAX_BODIES || count > MAX_CALLS {
+            return NativeCallTopology::unavailable(Some(root.binding()), "ANALYSIS_LIMIT");
+        }
+        let mut outgoing = BTreeSet::new();
+        for call in body.bound_calls() {
+            let target = targets.get(call.reference.as_str()).copied().flatten();
+            if let Some(target) = target {
+                outgoing.insert(target.binding().to_owned());
+                pending.push(target);
+            } else {
+                missing.insert(call.reference.clone());
+                caller_with_missing_target.insert(body.binding());
+            }
+            sites.push(NativeCallTopologySite {
+                caller: body.binding(),
+                call,
+                target_body: target.map(NativeScalarBody::binding),
+            });
+        }
+        adjacency.insert(body.binding().to_owned(), outgoing);
+    }
+    let mut topology = super::graph::compile_native_body_topology(&nodes, &adjacency);
+    topology
+        .leaf_symbols
+        .retain(|body| !caller_with_missing_target.contains(body.as_str()));
+    sites.sort_by(|left, right| left.call.reference.cmp(&right.call.reference));
+    NativeCallTopology::Available {
+        root: root.binding().into(),
+        topology: Box::new(topology),
+        sites,
+        unavailable_targets: missing.into_iter().collect(),
     }
 }
 

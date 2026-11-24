@@ -659,6 +659,14 @@
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R37-001",
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R37-002"
           ]
+        },
+        {
+          "id": "AF-SNAPSHOT-GOVERNANCE-0001-R38",
+          "statement": "Source-bound Go and Python call topology reuses Program Semantics graph derivations over exact admitted edges. It preserves directed sites, known recursion, and unavailable targets without implying runtime execution, unsupported reachability, or completeness of open scope.",
+          "tests": [
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R38-001",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R38-002"
+          ]
         }
       ]
     }

@@ -222,6 +222,12 @@ The Go scenarios cover a closed callee and recursion. The Python scenarios cover
 a locally declared callee and an intervening rebind. Independent return and
 authority expectations are recorded in the tests.
 
+### [`go_call_topology_limits_v1.json`](../_data/go_call_topology_limits_v1.json)
+
+Contains pinned Go compiler replies for exact source declarations with
+unavailable bodies. The controls distinguish an unavailable entry from an
+available caller with an unresolved target body.
+
 ### [`go_call_fixture_v1.json`](../_data/go_call_fixture_v1.json)
 
 Retains admitted Go source and pinned worker replies for typed declarations,

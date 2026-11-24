@@ -163,6 +163,72 @@ fn build_call_topology(
         );
         units.insert(key, unit);
     }
+    let bodies = symbols
+        .iter()
+        .filter(|symbol| symbol.has_body())
+        .map(|symbol| symbol.id.as_str());
+    let topology = complete_topology(
+        outgoing_calls,
+        incoming_calls,
+        transitive_reachability,
+        component_groups,
+        bodies,
+        cross_package_calls,
+    );
+    PreparedCallTopologyResult {
+        topology,
+        preparation: PreparedCallTopology { units },
+        recomputed_components,
+        reused_components,
+    }
+}
+
+pub(super) fn compile_native_body_topology(
+    ids: &BTreeSet<String>,
+    edges: &BTreeMap<String, BTreeSet<String>>,
+) -> CallTopology {
+    let mut incoming = ids
+        .iter()
+        .cloned()
+        .map(|id| (id, BTreeSet::new()))
+        .collect::<BTreeMap<_, _>>();
+    for (caller, targets) in edges {
+        for target in targets {
+            incoming
+                .entry(target.clone())
+                .or_default()
+                .insert(caller.clone());
+        }
+    }
+    let mut reachability = BTreeMap::new();
+    let mut groups = BTreeMap::new();
+    for members in weak_components(ids, edges, &incoming) {
+        let subset = members
+            .iter()
+            .map(|id| (id.clone(), edges.get(id).cloned().unwrap_or_default()))
+            .collect();
+        reachability.extend(component_reachability(&subset));
+        groups.extend(strongly_connected_components(&members, &subset));
+    }
+    let bodies = ids.iter().map(String::as_str);
+    complete_topology(
+        edges.clone(),
+        incoming,
+        reachability,
+        groups,
+        bodies,
+        Vec::new(),
+    )
+}
+
+fn complete_topology<'a>(
+    outgoing_calls: BTreeMap<String, BTreeSet<String>>,
+    incoming_calls: BTreeMap<String, BTreeSet<String>>,
+    transitive_reachability: BTreeMap<String, Vec<String>>,
+    component_groups: BTreeMap<String, Vec<CallComponent>>,
+    bodies: impl Clone + Iterator<Item = &'a str>,
+    mut cross_package_calls: Vec<String>,
+) -> CallTopology {
     // Tarjan may start several directed searches inside one weak component.
     // Reassemble those searches by their original global root order before
     // deriving the historically ordered recursive-symbol vector.
@@ -175,27 +241,16 @@ fn build_call_topology(
     components.sort();
     cross_package_calls.sort();
     cross_package_calls.dedup();
-    let entry_candidates = symbols
-        .iter()
-        .filter(|symbol| {
-            symbol.has_body()
-                && incoming_calls
-                    .get(&symbol.id)
-                    .is_none_or(BTreeSet::is_empty)
-        })
-        .map(|symbol| symbol.id.clone())
+    let entry_candidates = bodies
+        .clone()
+        .filter(|symbol| incoming_calls.get(*symbol).is_none_or(BTreeSet::is_empty))
+        .map(str::to_owned)
         .collect();
-    let leaf_symbols = symbols
-        .iter()
-        .filter(|symbol| {
-            symbol.has_body()
-                && outgoing_calls
-                    .get(&symbol.id)
-                    .is_none_or(BTreeSet::is_empty)
-        })
-        .map(|symbol| symbol.id.clone())
+    let leaf_symbols = bodies
+        .filter(|symbol| outgoing_calls.get(*symbol).is_none_or(BTreeSet::is_empty))
+        .map(str::to_owned)
         .collect();
-    let topology = CallTopology {
+    CallTopology {
         direct_callees: to_vectors(outgoing_calls),
         direct_callers: to_vectors(incoming_calls),
         transitive_reachability,
@@ -204,12 +259,6 @@ fn build_call_topology(
         entry_candidates,
         leaf_symbols,
         cross_package_calls,
-    };
-    PreparedCallTopologyResult {
-        topology,
-        preparation: PreparedCallTopology { units },
-        recomputed_components,
-        reused_components,
     }
 }
 

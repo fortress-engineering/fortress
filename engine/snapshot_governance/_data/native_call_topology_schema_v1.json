@@ -1,0 +1,301 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v1:native-call-topology-inspection",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "scope",
+    "language",
+    "runtime_execution",
+    "observation",
+    "graph"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:derived:v1:native-call-topology-inspection"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "scope": {
+      "const": "SOURCE_BOUND_STATIC_CALL_CLOSURE"
+    },
+    "language": {
+      "enum": [
+        "go",
+        "python"
+      ]
+    },
+    "runtime_execution": {
+      "const": "NOT_RUN"
+    },
+    "observation": {
+      "type": "object"
+    },
+    "graph": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "root",
+            "topology",
+            "sites",
+            "unavailable_targets"
+          ],
+          "properties": {
+            "status": {
+              "const": "AVAILABLE"
+            },
+            "root": {
+              "$ref": "urn:fortress:derived:v1:go-native-body#/$defs/binding"
+            },
+            "topology": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "direct_callees",
+                "direct_callers",
+                "transitive_reachability",
+                "strongly_connected_components",
+                "recursive_symbols",
+                "entry_candidates",
+                "leaf_symbols",
+                "cross_package_calls"
+              ],
+              "properties": {
+                "direct_callees": {
+                  "type": "object",
+                  "maxProperties": 64,
+                  "propertyNames": {
+                    "$ref": "urn:fortress:derived:v1:go-native-body#/$defs/binding"
+                  },
+                  "additionalProperties": {
+                    "type": "array",
+                    "maxItems": 64,
+                    "uniqueItems": true,
+                    "items": {
+                      "$ref": "urn:fortress:derived:v1:go-native-body#/$defs/binding"
+                    }
+                  }
+                },
+                "direct_callers": {
+                  "type": "object",
+                  "maxProperties": 64,
+                  "propertyNames": {
+                    "$ref": "urn:fortress:derived:v1:go-native-body#/$defs/binding"
+                  },
+                  "additionalProperties": {
+                    "type": "array",
+                    "maxItems": 64,
+                    "uniqueItems": true,
+                    "items": {
+                      "$ref": "urn:fortress:derived:v1:go-native-body#/$defs/binding"
+                    }
+                  }
+                },
+                "transitive_reachability": {
+                  "type": "object",
+                  "maxProperties": 64,
+                  "propertyNames": {
+                    "$ref": "urn:fortress:derived:v1:go-native-body#/$defs/binding"
+                  },
+                  "additionalProperties": {
+                    "type": "array",
+                    "maxItems": 64,
+                    "uniqueItems": true,
+                    "items": {
+                      "$ref": "urn:fortress:derived:v1:go-native-body#/$defs/binding"
+                    }
+                  }
+                },
+                "strongly_connected_components": {
+                  "type": "array",
+                  "maxItems": 64,
+                  "uniqueItems": true,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "id",
+                      "symbols",
+                      "recursive"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "pattern": "^call_scc:sha256:[0-9a-f]{64}$"
+                      },
+                      "symbols": {
+                        "type": "array",
+                        "maxItems": 64,
+                        "uniqueItems": true,
+                        "items": {
+                          "$ref": "urn:fortress:derived:v1:go-native-body#/$defs/binding"
+                        }
+                      },
+                      "recursive": {
+                        "type": "boolean"
+                      }
+                    }
+                  }
+                },
+                "recursive_symbols": {
+                  "type": "array",
+                  "maxItems": 64,
+                  "uniqueItems": true,
+                  "items": {
+                    "$ref": "urn:fortress:derived:v1:go-native-body#/$defs/binding"
+                  }
+                },
+                "entry_candidates": {
+                  "type": "array",
+                  "maxItems": 64,
+                  "uniqueItems": true,
+                  "items": {
+                    "$ref": "urn:fortress:derived:v1:go-native-body#/$defs/binding"
+                  }
+                },
+                "leaf_symbols": {
+                  "type": "array",
+                  "maxItems": 64,
+                  "uniqueItems": true,
+                  "items": {
+                    "$ref": "urn:fortress:derived:v1:go-native-body#/$defs/binding"
+                  }
+                },
+                "cross_package_calls": {
+                  "const": []
+                }
+              }
+            },
+            "sites": {
+              "type": "array",
+              "maxItems": 256,
+              "uniqueItems": true,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "caller",
+                  "call",
+                  "target_body"
+                ],
+                "properties": {
+                  "caller": {
+                    "$ref": "urn:fortress:derived:v1:go-native-body#/$defs/binding"
+                  },
+                  "call": {
+                    "$ref": "urn:fortress:derived:v1:python-native-call-return#/properties/calls/items"
+                  },
+                  "target_body": {
+                    "oneOf": [
+                      {
+                        "$ref": "urn:fortress:derived:v1:go-native-body#/$defs/binding"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                }
+              }
+            },
+            "unavailable_targets": {
+              "type": "array",
+              "maxItems": 256,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "pattern": "^native_call_site:v1:sha256:[0-9a-f]{64}$"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "root",
+            "reason"
+          ],
+          "properties": {
+            "status": {
+              "const": "UNAVAILABLE"
+            },
+            "root": {
+              "oneOf": [
+                {
+                  "$ref": "urn:fortress:derived:v1:go-native-body#/$defs/binding"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64,
+              "pattern": "^[A-Z][A-Z0-9_]*$"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "if": {
+    "properties": {
+      "language": {
+        "const": "go"
+      }
+    }
+  },
+  "then": {
+    "properties": {
+      "observation": {
+        "$ref": "urn:fortress:derived:v1:go-native-call-return#/properties/observation"
+      }
+    }
+  },
+  "else": {
+    "properties": {
+      "observation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "evaluation_key",
+          "exchange_sha256",
+          "response_sha256",
+          "source_path",
+          "source_ref",
+          "producer"
+        ],
+        "properties": {
+          "evaluation_key": {
+            "$ref": "urn:fortress:derived:v1:python-native-call-return#/properties/evaluation_key"
+          },
+          "exchange_sha256": {
+            "$ref": "urn:fortress:derived:v1:python-native-call-return#/properties/exchange_sha256"
+          },
+          "response_sha256": {
+            "$ref": "urn:fortress:derived:v1:python-native-call-return#/properties/response_sha256"
+          },
+          "source_path": {
+            "$ref": "urn:fortress:derived:v1:python-native-call-return#/properties/source_path"
+          },
+          "source_ref": {
+            "$ref": "urn:fortress:derived:v1:python-native-call-return#/properties/source_ref"
+          },
+          "producer": {
+            "$ref": "urn:fortress:derived:v1:python-native-call-return#/properties/producer"
+          }
+        }
+      }
+    }
+  }
+}

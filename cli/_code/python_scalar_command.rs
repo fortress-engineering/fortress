@@ -16,8 +16,9 @@ use fortress_core::python_observation::{
     PythonCallableSelection, PythonObservationError, PythonScalarError, PythonScalarProducer,
     PythonScalarSubject, observe_python_authored_call_return,
     observe_python_authored_native_return, observe_python_candidate_call_return,
-    observe_python_candidate_sensitivity, observe_python_native_call_return, observe_python_scalar,
-    observe_python_scalar_flow, observe_python_scalar_sensitivity,
+    observe_python_candidate_sensitivity, observe_python_native_call_return,
+    observe_python_native_call_topology, observe_python_scalar, observe_python_scalar_flow,
+    observe_python_scalar_sensitivity,
 };
 use fortress_core::wire::{
     JsonAdmissionLimits, admit_json, parse_strict_json_bytes, readable_text,
@@ -31,7 +32,7 @@ use super::python_observe_command::{
 use super::verifier_process::{require_external_asset, run_pinned_input_after_ready};
 
 const USAGE: &str = concat!(
-    "fortress source-artifacts --observe-python-scalar project host-registration [--flow|--return-sensitivity|--call-return]",
+    "fortress source-artifacts --observe-python-scalar project host-registration [--flow|--return-sensitivity|--call-return|--call-topology]",
     "\n       fortress source-artifacts --observe-python-scalar project host-registration --contract module root-scope root-scope-sha256",
     "\n       fortress source-artifacts --observe-python-scalar project host-registration --contract-call-return module root-scope root-scope-sha256",
 );
@@ -334,6 +335,7 @@ enum ScalarInspection {
     Flow,
     ReturnSensitivity,
     CallReturn,
+    CallTopology,
 }
 
 fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
@@ -345,6 +347,7 @@ fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
         [flag] if flag == "--flow" => (ScalarInspection::Flow, None),
         [flag] if flag == "--return-sensitivity" => (ScalarInspection::ReturnSensitivity, None),
         [flag] if flag == "--call-return" => (ScalarInspection::CallReturn, None),
+        [flag] if flag == "--call-topology" => (ScalarInspection::CallTopology, None),
         [flag, module, scope_path, scope_ref]
             if matches!(flag.as_str(), "--contract" | "--contract-call-return") =>
         {
@@ -369,19 +372,21 @@ fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
                 .map(|(scope, bytes)| (module, scope_path, scope, bytes, call_returns))
         })
         .transpose()?;
-    let lexical_calls = matches!(inspection, ScalarInspection::CallReturn)
-        || authored
-            .as_ref()
-            .is_some_and(|(_, _, _, _, call_returns)| *call_returns);
+    let lexical_calls = matches!(
+        inspection,
+        ScalarInspection::CallReturn | ScalarInspection::CallTopology
+    ) || authored
+        .as_ref()
+        .is_some_and(|(_, _, _, _, call_returns)| *call_returns);
     let host = RegisteredScalarHost::load(&root, Path::new(registration_path), lexical_calls)?;
     let exchange = |request| host.exchange(request);
     if lexical_calls && authored.is_none() {
-        let report = observe_python_native_call_return(
-            &root,
-            &host.registration.subject,
-            &host.producer,
-            exchange,
-        )
+        let subject = &host.registration.subject;
+        let report = if matches!(inspection, ScalarInspection::CallTopology) {
+            observe_python_native_call_topology(&root, subject, &host.producer, exchange)
+        } else {
+            observe_python_native_call_return(&root, subject, &host.producer, exchange)
+        }
         .map_err(|error| error.to_string())?;
         host.revalidate().map_err(|error| error.to_string())?;
         return canonical(&report).map_err(|error| error.to_string());

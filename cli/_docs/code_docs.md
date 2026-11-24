@@ -782,6 +782,12 @@ compile-only local call closure. The version 2 report retains its exact
 dependency occurrences. Rebinding, missing scope and incomplete closure
 remain explicit and there is no target execution.
 
+Use `--call-topology` with the Python scalar command to inspect the exact
+admitted lexical call graph. Use `--call-topology EXACT_OCCURRENCE` with the
+Go body command after obtaining an occurrence from `--bound-calls`. The
+topology distinguishes known directed calls, recursion, and unresolved
+targets. The selected language receipt and exact call sites are retained.
+
 ### [`native_return_command.rs`](../_code/native_return_command.rs)
 
 Use `--return-sensitivity` with the Python scalar or Go body command to compare

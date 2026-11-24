@@ -8,7 +8,7 @@ use std::time::Duration;
 use fortress_core::go_observation::{
     ActualGoNativeBodyObservation, GoCollectorPin, GoObservationError, GoPackageSelection,
     observe_go_native_body, observe_go_native_body_flow, observe_go_native_body_sensitivity,
-    observe_go_native_bound_calls, observe_go_native_call_return,
+    observe_go_native_bound_calls, observe_go_native_call_return, observe_go_native_call_topology,
 };
 use fortress_core::information_flow::NativeScalarFlowObservation;
 use fortress_core::portable::{canonical, digest};
@@ -51,7 +51,7 @@ pub(super) fn run<O: Write, E: Write>(
         Err(failure) => {
             writeln!(
                 error,
-                "Go body observation failed: {}\nusage: fortress psm --observe-go-body project host-registration directory package-path go-version target-os target-arch [--flow exact-occurrence | --return-sensitivity exact-occurrence | --bound-calls | --call-return exact-occurrence]",
+                "Go body observation failed: {}\nusage: fortress psm --observe-go-body project host-registration directory package-path go-version target-os target-arch [--flow exact-occurrence | --return-sensitivity exact-occurrence | --bound-calls | --call-return exact-occurrence | --call-topology exact-occurrence]",
                 readable_text(&failure)
             )?;
             Ok(super::EXIT_USAGE)
@@ -77,7 +77,9 @@ fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
     };
     let (occurrence, sensitivity, with_calls) = match mode {
         [flag] if flag == "--bound-calls" => (None, false, true),
-        [flag, binding] if flag == "--call-return" => (Some(binding.as_str()), false, true),
+        [flag, binding] if matches!(flag.as_str(), "--call-return" | "--call-topology") => {
+            (Some(binding.as_str()), false, true)
+        }
         [] => (None, false, false),
         [flag, binding] if flag == "--flow" => (Some(binding.as_str()), false, false),
         [flag, binding] if flag == "--return-sensitivity" => (Some(binding.as_str()), true, false),
@@ -98,7 +100,11 @@ fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
         let report = with_registered_body_mode(&root, registration, true, |pin, collector| {
             let launch = |input: &[u8]| collector.run(input);
             if let Some(binding) = occurrence {
-                observe_go_native_call_return(&root, selection, binding, pin, launch)
+                if mode.first().is_some_and(|flag| flag == "--call-topology") {
+                    observe_go_native_call_topology(&root, selection, binding, pin, launch)
+                } else {
+                    observe_go_native_call_return(&root, selection, binding, pin, launch)
+                }
             } else {
                 observe_go_native_bound_calls(&root, selection, pin, launch)
             }

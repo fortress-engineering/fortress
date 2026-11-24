@@ -304,6 +304,82 @@ mod bound_call_bodies {
         }
     }
 
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R38-001`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R38
+    #[test]
+    fn go_static_call_topology_distinguishes_reachability_recursion_and_missing_bodies() {
+        use fortress_core::go_observation::observe_go_native_call_topology;
+
+        for case in [
+            "fixed_free_function",
+            "recursive_target",
+            "unsupported_target",
+        ] {
+            let (project, record) = if case == "unsupported_target" {
+                let fixture: Value = serde_json::from_slice(include_bytes!(
+                    "../_data/go_call_topology_limits_v1.json"
+                ))
+                .unwrap();
+                let row = fixture[case].clone();
+                let project = Fixture::new("topology-go-unavailable-body");
+                fs::write(
+                    project.root.join("fixture.go"),
+                    row["source"].as_str().unwrap(),
+                )
+                .unwrap();
+                (project, row)
+            } else {
+                fixture(case, &format!("topology-go-{case}"))
+            };
+            let bound = observe_go_native_bound_calls(&project.root, SELECTION, &PIN, |request| {
+                Ok(receipt(request, &record, "bound"))
+            })
+            .unwrap();
+            let edge = &bound["calls"][0];
+            let root = edge["caller"].as_str().unwrap();
+            let report =
+                observe_go_native_call_topology(&project.root, SELECTION, root, &PIN, |request| {
+                    Ok(receipt(request, &record, "bound"))
+                })
+                .unwrap();
+            assert_eq!(report["runtime_execution"], "NOT_RUN");
+            assert_eq!(
+                report["observation"]["response_sha256"],
+                bound["observation"]["response_sha256"]
+            );
+            let graph = &report["graph"];
+            assert_eq!(graph["root"], root);
+            assert_eq!(graph["status"], "AVAILABLE");
+            assert_eq!(graph["sites"], json!([edge]));
+            let map = &graph["topology"];
+            let target = &edge["target_body"];
+            if case == "unsupported_target" {
+                assert!(target.is_null());
+                assert_eq!(
+                    graph["unavailable_targets"],
+                    json!([edge["call"]["reference"]])
+                );
+                assert_eq!(map["direct_callees"][root], json!([]));
+                assert_eq!(map["leaf_symbols"], json!([]));
+            } else {
+                let target = target.as_str().unwrap();
+                assert_eq!(map["direct_callees"][root], json!([target]));
+                assert_eq!(map["direct_callers"][target], json!([root]));
+                assert_eq!(map["transitive_reachability"][root], json!([target]));
+                assert_eq!(graph["unavailable_targets"], json!([]));
+                if case == "recursive_target" {
+                    assert_eq!(target, root);
+                    assert_eq!(map["recursive_symbols"], json!([root]));
+                    assert_eq!(map["leaf_symbols"], json!([]));
+                } else {
+                    assert_ne!(target, root);
+                    assert_eq!(map["recursive_symbols"], json!([]));
+                    assert_eq!(map["leaf_symbols"], json!([target]));
+                }
+            }
+        }
+    }
+
     /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R34-001`
     /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R34
     #[test]

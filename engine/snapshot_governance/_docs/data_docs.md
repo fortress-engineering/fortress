@@ -268,6 +268,13 @@ provenance. Reports the presence of replacement declarations without resolving
 their targets. The existing selected Module reader retains its independent
 closed context and historical schema versions.
 
+### [`native_call_topology_schema_v1.json`](../_data/native_call_topology_schema_v1.json)
+
+Defines the scoped actual-source Go and Python call topology. The report
+retains exact static call sites, unresolved body references, direction, and
+recursion over the admitted closure. A call with an unavailable body does not
+establish a runtime edge or a leaf.
+
 ### [`go_call_return_v1.json`](../_data/go_call_return_v1.json)
 
 Constrains exact Go finite return inspection, its source and producer

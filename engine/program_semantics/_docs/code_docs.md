@@ -61,6 +61,10 @@ test execution, coverage, verification or canonical PSM facts.
 ### [`graph.rs`](../_code/graph.rs)
 
 Derives deterministic call adjacency, reachability, strongly connected components, recursion, entry/leaf facts, and cross-boundary projections.
+The Go and Python scoped views reuse these graph derivations for exact admitted
+native calls. Reachability and recursion describe the observed static edges.
+Calls with missing bodies retain their original sites and prevent a leaf
+classification for the affected caller.
 
 ### [`program.rs`](../_code/program.rs)
 

@@ -176,3 +176,19 @@ fn observe_source(root: &Path) -> Result<SourceView, NativeSourceError> {
 fn unavailable(error: impl std::fmt::Display) -> NativeSourceError {
     NativeSourceError::Unavailable(error.to_string())
 }
+
+pub(crate) fn project_native_call_topology(
+    language: &str,
+    observation: &serde_json::Value,
+    graph: &crate::program_semantics::native_body::NativeCallTopology<'_>,
+) -> serde_json::Value {
+    serde_json::json!({
+        "$schema": "urn:fortress:derived:v1:native-call-topology-inspection",
+        "schema_version": 1,
+        "scope": "SOURCE_BOUND_STATIC_CALL_CLOSURE",
+        "language": language,
+        "runtime_execution": "NOT_RUN",
+        "observation": observation,
+        "graph": graph,
+    })
+}

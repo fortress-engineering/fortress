@@ -90,6 +90,52 @@ mod lexical_calls {
         response
     }
 
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R38-002`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R38
+    #[test]
+    fn python_static_call_topology_retains_lexical_provenance_and_unavailable_root() {
+        use fortress_core::python_observation::observe_python_native_call_topology;
+
+        for name in ["locally_defined_shadow_free_function", "later_local_rebind"] {
+            let (fixture, subject, producer, reply) =
+                case(name, &format!("topology-python-{name}"));
+            let examine = || {
+                observe_python_native_call_topology(&fixture.root, &subject, &producer, |request| {
+                    Ok(serde_json::to_vec(&bind(&request, &reply)).unwrap())
+                })
+                .unwrap()
+            };
+            let report = examine();
+            assert_eq!(report, examine());
+            assert_eq!(report["runtime_execution"], "NOT_RUN");
+            assert_eq!(report["observation"]["source_ref"], subject.source_ref);
+            let graph = &report["graph"];
+            if name == "later_local_rebind" {
+                assert_eq!(
+                    graph,
+                    json!({"status":"UNAVAILABLE","root":null,"reason":"CALL_TARGET_UNESTABLISHED"})
+                );
+            } else {
+                assert_eq!(graph["status"], "AVAILABLE");
+                let root = graph["root"].as_str().unwrap();
+                let site = &graph["sites"][0];
+                assert_eq!(graph["sites"].as_array().unwrap().len(), 1);
+                assert_eq!(site["caller"], root);
+                assert_eq!(site["call"]["target"]["name"], "inner");
+                assert_eq!(site["call"]["span"]["path"], subject.source_path);
+                let target = site["target_body"].as_str().unwrap();
+                assert_ne!(root, target);
+                let map = &graph["topology"];
+                assert_eq!(map["direct_callees"][root], json!([target]));
+                assert_eq!(map["direct_callers"][target], json!([root]));
+                assert_eq!(map["transitive_reachability"][root], json!([target]));
+                assert_eq!(map["recursive_symbols"], json!([]));
+                assert_eq!(map["leaf_symbols"], json!([target]));
+                assert_eq!(graph["unavailable_targets"], json!([]));
+            }
+        }
+    }
+
     /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R35-001`
     /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R35
     #[test]
