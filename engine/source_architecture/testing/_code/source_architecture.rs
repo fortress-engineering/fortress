@@ -1029,13 +1029,9 @@ fn live_fortress_inventory_is_complete_and_rust_profile_status_is_truthful() {
             Some(extension) if extension.eq_ignore_ascii_case("rs") => {
                 ArchetypeResolution::Resolved
             }
-            Some("go" | "py") => {
+            Some(extension @ ("go" | "py")) => {
                 let wire = serde_json::to_value(artifact).expect("source artifact");
-                let language = if artifact.path().ends_with(".go") {
-                    "go"
-                } else {
-                    "python"
-                };
+                let language = if extension == "go" { "go" } else { "python" };
                 assert_eq!(wire["language"], language, "{}", artifact.path());
                 assert_eq!(
                     wire["language_authority"],
