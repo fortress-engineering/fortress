@@ -135,6 +135,9 @@ impl NativeBodyLimitation {
 #[derive(Debug)]
 pub struct NativeScalarBody {
     language: NativeBodyLanguage,
+    declaration: Symbol,
+    evaluation: EvaluationKey,
+    source_ref: String,
     binding: String,
     body: ProgramBody,
     parameters: Vec<(String, NativeScalar)>,
@@ -154,6 +157,25 @@ pub(crate) struct NativeBoundCall {
 }
 
 impl NativeScalarBody {
+    pub(crate) const fn declaration(&self) -> &Symbol {
+        &self.declaration
+    }
+
+    pub(super) fn matches_declaration(
+        &self,
+        language: NativeBodyLanguage,
+        evaluation: &EvaluationKey,
+        path: &str,
+        source_ref: &str,
+        name: &str,
+    ) -> bool {
+        self.language == language
+            && &self.evaluation == evaluation
+            && self.declaration.span.path == path
+            && self.source_ref == source_ref
+            && self.declaration.name == name
+    }
+
     pub(crate) fn bound_calls(&self) -> &[NativeBoundCall] {
         &self.calls
     }
@@ -784,7 +806,7 @@ impl NativeBodyInput<'_> {
                 body,
             } => self.lower(
                 &source,
-                &symbol,
+                *symbol,
                 &parameters,
                 result_scalar,
                 &locals,
@@ -831,7 +853,7 @@ impl NativeBodyInput<'_> {
     fn lower(
         &self,
         source: &Source<'_>,
-        symbol: &Symbol,
+        symbol: Symbol,
         parameters: &[Binding],
         result: NativeScalar,
         locals: &[Binding],
@@ -855,7 +877,7 @@ impl NativeBodyInput<'_> {
         {
             return Err(NativeBodyError::InvalidResponse);
         }
-        let declaration = source.declaration(symbol)?;
+        let declaration = source.declaration(&symbol)?;
         if self.language == NativeBodyLanguage::Go && symbol.name == "_" {
             return Err(NativeBodyError::InvalidResponse);
         }
@@ -901,6 +923,9 @@ impl NativeBodyInput<'_> {
         let calls = lowering.calls;
         Ok(NativeBodyOutcome::Lowered(Box::new(NativeScalarBody {
             language: self.language,
+            declaration: symbol,
+            evaluation: self.evaluation.clone(),
+            source_ref: self.source_ref.into(),
             body: ProgramBody {
                 symbol: binding.clone(),
                 statements,

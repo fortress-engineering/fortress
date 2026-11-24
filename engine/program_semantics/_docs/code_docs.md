@@ -165,8 +165,13 @@ bytes, evaluation, runtime registration and exchange receipt. The owner checks
 ordinary portable source paths, source hashes, identifier and statement ranges,
 physical UTF-8 coordinates, declared scalar scopes, and ordered structure.
 The pinned native producer establishes language syntax, definite lexical
-binding and supported control facts. Arithmetic, calls, aliasing, arbitrary
-truthiness, scope ambiguity and non-scalar behavior are outside this intake.
+binding and supported control facts. Separately admitted exact calls can
+reference closed source declarations. Other calls, arithmetic, aliasing,
+arbitrary truthiness and scope ambiguity remain outside this intake.
+The lowered body retains the checked physical declaration and exact source
+and evaluation bindings. Callable linkage checks those bindings before it
+attaches the body. Python helper resolution uses the same checked
+declaration as the body instead of retaining a separate copy.
 
 Go fixed-width signed 64-bit values and Python bounded integer literal
 witnesses have distinct representations. Only independently selected exact

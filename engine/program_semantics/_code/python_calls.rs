@@ -19,7 +19,7 @@ const MAX_HELPERS: usize = 16;
 
 pub(crate) struct PythonLexicalCalls {
     pub(crate) root: NativeBodyOutcome,
-    helpers: Vec<(Symbol, Box<NativeScalarBody>)>,
+    helpers: Vec<NativeScalarBody>,
 }
 
 impl PythonLexicalCalls {
@@ -32,14 +32,14 @@ impl PythonLexicalCalls {
         let declarations = self
             .helpers
             .iter()
-            .map(|(symbol, body)| (symbol.name.as_str(), (symbol, body.as_ref())))
+            .map(|body| (body.declaration().name.as_str(), body))
             .collect::<BTreeMap<_, _>>();
         let mut targets = BTreeMap::new();
         for call in root.bound_calls() {
-            let (symbol, body) = declarations
+            let body = declarations
                 .get(call.target.name.as_str())
                 .ok_or(PythonScalarError::InvalidResponse)?;
-            if *symbol != &call.target
+            if body.declaration() != &call.target
                 || body.parameters().len() != call.argument_count
                 || targets
                     .insert(call.reference.as_str(), Some(*body))
@@ -98,12 +98,6 @@ impl PythonScalarRequest {
             source,
             python_bool_parameters: &parameters,
         };
-        let enclosing = selected
-            .symbol
-            .clone()
-            .map(serde_json::from_value::<Symbol>)
-            .transpose()
-            .map_err(|_| PythonScalarError::InvalidResponse)?;
         let first_statement = selected
             .body
             .first()
@@ -114,12 +108,10 @@ impl PythonScalarRequest {
             .admit_bound_calls(&selected.into_native()?)
             .map_err(PythonScalarError::Native)?;
         let helpers = match &root {
-            NativeBodyOutcome::Lowered(_) => verify_helpers(
+            NativeBodyOutcome::Lowered(body) => verify_helpers(
                 &input,
                 &helpers,
-                enclosing
-                    .as_ref()
-                    .ok_or(PythonScalarError::InvalidResponse)?,
+                body.declaration(),
                 first_statement.ok_or(PythonScalarError::InvalidResponse)?,
             )?,
             NativeBodyOutcome::Unavailable(_) if helpers.is_empty() => Vec::new(),
@@ -136,7 +128,7 @@ fn verify_helpers(
     helpers: &[Value],
     enclosing: &Symbol,
     first_statement: usize,
-) -> Result<Vec<(Symbol, Box<NativeScalarBody>)>, PythonScalarError> {
+) -> Result<Vec<NativeScalarBody>, PythonScalarError> {
     if first_statement > enclosing.declaration_span.end_byte {
         return Err(PythonScalarError::InvalidResponse);
     }
@@ -181,7 +173,7 @@ fn verify_helpers(
         if body.result() != NativeScalar::Bool {
             return Err(PythonScalarError::InvalidResponse);
         }
-        bodies.push((symbol, body));
+        bodies.push(*body);
     }
     Ok(bodies)
 }
