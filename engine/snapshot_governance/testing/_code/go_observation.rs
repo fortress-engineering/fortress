@@ -460,18 +460,18 @@ mod bound_call_bodies {
             (
                 "module-graph",
                 "_data/logical_modules/caller/contract.json",
-                "AF-NATIVE-CALLER-0001",
+                Some("AF-NATIVE-CALLER-0001"),
                 "GOVERNING_GRAPH_CHANGED",
             ),
             (
                 "original-authority",
-                "contract.json",
-                "PF-NATIVE-CALL-OWNERS",
+                "__fortress/.fsconfig",
+                None,
                 "ORIGINAL_AUTHORITY_CHANGED",
             ),
         ] {
             let bytes = record["files"][authority_path].as_str().unwrap();
-            let edited = rename_candidate_authority(authority_path, current, bytes);
+            let edited = change_candidate_authority(authority_path, current, bytes);
             let request = make_request(vec![actual.clone(), edited]);
             workspace
                 .evaluate("owner", label, request, &authority, &no_cancel)
@@ -499,9 +499,18 @@ mod bound_call_bodies {
         assert_eq!(fs::read(fixture.root.join(path)).unwrap(), initial);
     }
 
-    fn rename_candidate_authority(path: &str, name: &str, bytes: &str) -> MigrationOperation {
-        let current = format!("\"display_name\": \"{name}\"");
-        let changed = bytes.replace(&current, "\"display_name\": \"Changed original name\"");
+    fn change_candidate_authority(
+        path: &str,
+        name: Option<&str>,
+        bytes: &str,
+    ) -> MigrationOperation {
+        let changed = if let Some(name) = name {
+            let current = format!("\"display_name\": \"{name}\"");
+            bytes.replace(&current, "\"display_name\": \"Changed original name\"")
+        } else {
+            // The original authority preserves the exact bytes of the project configuration.
+            format!("{bytes}\n")
+        };
         assert_ne!(changed, bytes);
         MigrationOperation::ReplaceFile {
             path: path.into(),
