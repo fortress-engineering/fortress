@@ -181,6 +181,29 @@ Maintainers can review exact upgrade compatibility, migration plans and recovery
 
 ## Explicit Go compiler observations
 
+An independently pinned scalar-body collector can also observe a bounded Go
+body without project code execution. Its registration uses
+`urn:fortress:host:v1:go-body-registration` with the existing version,
+executable path, executable SHA-256 and toolchain fields. Build the collector
+outside the observed project with the reviewed Go compiler and the two exact
+files documented by [Program Semantics](../engine/program_semantics/README.md),
+collector.go and go_body.go.
+
+```text
+fortress psm --observe-go-body PROJECT HOST_REGISTRATION DIRECTORY PACKAGE_PATH go1.22 linux amd64
+```
+
+The receipt identifies exact original source, authority, target and native
+producer. Supported free functions have named bool or int64 inputs and one
+unnamed bool or int64 result, and use the documented bounded local scalar
+statements. Other functions have source-bound unavailable outcomes. Package
+invalidity, unsupported dependencies and resource limits are distinct. The
+observation reports conservative return value domains for admitted scalar
+inputs. Inspect the aligned `value_domains` alongside `functions`.
+An inferred integer range uses exact inclusive decimal strings, even at the
+full int64 endpoints. Unavailable bodies or inferences have an explicit reason.
+Execution, effects, conformance and certification remain separate.
+
 Ordinary PSM remains the existing Rust-backed model. The Go observation
 command uses an independently selected native helper and emits a separate
 versioned report.

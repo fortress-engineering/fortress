@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:host:v1:go-body-registration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "executable",
+    "executable_sha256",
+    "toolchain"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:host:v1:go-body-registration"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "executable": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "executable_sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "toolchain": {
+      "type": "string",
+      "pattern": "^go1[.][A-Za-z0-9.]+$",
+      "maxLength": 64
+    }
+  }
+}

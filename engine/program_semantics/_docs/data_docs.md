@@ -51,6 +51,14 @@ Defines the closed wire shape and pinned toolchain identity for the bounded Rust
 Defines the standalone exact-source Go native observation report. Its closed dispositions and source spans preserve uncertainty, wire context and process provenance without granting semantic, policy or certification authority.
 
 
+### [`go_body_schema_v1.json`](../_data/go_body_schema_v1.json)
+
+Defines exact standalone native Go body observations and their scoped result
+value domains, including source, producer, context and authority provenance.
+Boolean values remain JSON booleans. Integer bounds and exclusions use
+canonical signed decimal strings within int64. Unavailable package or body
+results retain explicit dispositions.
+
 ### [go_observation_schema_v2.json](../_data/go_observation_schema_v2.json)
 
 Defines the standalone version 2 Go build-selection projection. It binds the separately admitted target context, complete selected and excluded source inventory, physical declaration and call positions, and the original observed source and authority. No certification obligation is inferred from a matching source.

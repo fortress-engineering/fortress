@@ -51,6 +51,7 @@ pub mod github_rules;
 pub mod command;
 mod finding_command;
 mod flow_command;
+mod go_body_command;
 mod go_observation_command;
 mod inspection;
 mod layout_command;
@@ -1728,6 +1729,11 @@ fn run_psm<O: Write, E: Write>(
     output: &mut O,
     error: &mut E,
 ) -> io::Result<u8> {
+    if let Some((first, rest)) = arguments.split_first()
+        && first == "--observe-go-body"
+    {
+        return go_body_command::run(rest, output, error);
+    }
     if let Some((first, rest)) = arguments.split_first()
         && first == "--observe-go"
     {

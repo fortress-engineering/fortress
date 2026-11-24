@@ -55,14 +55,14 @@ impl Drop for Fixture {
     }
 }
 
-fn registered_schema(edition: u8) -> Value {
+fn registered_schema(name: &str) -> Value {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let manifest: Value = serde_json::from_slice(
         &fs::read(root.join("engine/standard_registry/_data/schema_manifest.json"))
             .expect("registered schemas are available in the test repository"),
     )
     .expect("registered schema manifest");
-    let relative = format!("engine/program_semantics/_data/go_observation_schema_v{edition}.json");
+    let relative = format!("engine/program_semantics/_data/{name}");
     assert!(
         manifest["schemas"]
             .as_array()
@@ -82,6 +82,273 @@ fn run_frozen(request: &[u8]) -> Vec<u8> {
     NATIVE.to_vec()
 }
 
+mod bodies {
+    use super::*;
+    use fortress_core::go_observation::observe_go_native_body;
+
+    const SOURCE: &str = concat!(
+        "// café\r\npackage fixture\r\n",
+        "func Keep(b bool) bool { if b {} ; return !b }\r\n",
+        "func Étude(b bool) bool { return b }\r\n",
+        "func _(b bool) bool { return b }\r\n",
+        "func Named(café bool) bool { return café }\r\n",
+        "func Local(b bool) bool { côté := b; return côté }\r\n",
+        "func Blank(_ bool) bool { return true }\r\n",
+        "func Unnamed(bool) bool { return true }\r\n",
+        "func Deep(b bool) bool { if b { if b { if b { if b { if b { if b { if b { if b { if b { if b { if b {} } } } } } } } } } } ; return b }\r\n",
+        "func init() {}\r\nfunc init() {}\r\n",
+    );
+    const RAW: &[u8] = include_bytes!("../_data/go_body_fixture_v1.json");
+    const DOMAIN_RAW: &[u8] = include_bytes!("../_data/go_domain_fixture_v1.json");
+    const DOMAIN_SOURCE: &str = concat!(
+        "package main\r\n\r\n",
+        "func MinLiteral() int64 { return -9223372036854775808 }\r\n",
+        "func MaxLiteral() int64 { return 9223372036854775807 }\r\n",
+        "func Copy(value int64) int64 { return value }\r\n",
+        "func Endpoints(flag bool) int64 { if flag { return -9223372036854775808 }; return 9223372036854775807 }\r\n",
+        "func Constant() bool { return true }\r\n",
+        "func Add(value int64) int64 { return value + 1 }\r\n",
+    );
+    const MIN_I64: &str = "-9223372036854775808";
+    const MAX_I64: &str = "9223372036854775807";
+
+    fn setup(case: &str) -> (Fixture, GoPackageSelection<'static>) {
+        let fixture = Fixture::new(case);
+        fs::write(fixture.root.join("fixture.go"), SOURCE).unwrap();
+        (
+            fixture,
+            GoPackageSelection {
+                directory: "",
+                package_path: "fixture.local/firstorder",
+                go_version: "go1.22",
+                target_os: "linux",
+                target_arch: "amd64",
+            },
+        )
+    }
+
+    fn replay(request: &[u8]) -> Vec<u8> {
+        assert_eq!(
+            fortress_core::portable::digest(request),
+            "sha256:00e8f3be63df46a4161881be6704d07f8035a602e651b0f08890adbd56972cb8"
+        );
+        RAW.to_vec()
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R28-009`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R28
+    #[test]
+    fn exact_scalar_body_retains_location_scope_and_limitations() {
+        let (fixture, selection) = setup("body-exact");
+        let evaluate = || {
+            serde_json::to_value(
+                observe_go_native_body(&fixture.root, selection, &PIN, |request| {
+                    Ok(replay(request))
+                })
+                .expect("valid native receipt"),
+            )
+            .unwrap()
+        };
+        let result = evaluate();
+        assert_eq!(result, evaluate());
+        assert_eq!(result["status"], "OBSERVED_BODIES");
+        assert_eq!(
+            result["provenance"]["authority_sha256"],
+            result["evaluation_key"]["authority_binding_digest"]
+        );
+        assert_eq!(
+            result["response_sha256"],
+            "sha256:cd4df8aab85fa3b12b63cd2fe861053b81adeb6558fa47b56baaa10b36a306bc"
+        );
+        let rows = result["functions"].as_array().unwrap();
+        assert_eq!(rows.len(), 10);
+        let first = &rows[0];
+        assert_eq!(first["status"], "LOWERED");
+        assert_eq!(first["symbol"]["name"], "Keep");
+        assert_eq!(first["body"]["provenance"]["location"]["line"], 3);
+        assert_eq!(first["body"]["provenance"]["location"]["column"], 6);
+        assert_eq!(first["parameters"], json!([["b", "BOOL"]]));
+        assert_eq!(first["body"]["statements"][0]["then_branch"], json!([]));
+        assert_eq!(first["body"]["statements"][1]["value"]["operator"], "!");
+        assert_eq!(rows[1]["status"], "UNAVAILABLE");
+        assert_eq!(rows[1]["code"], "IDENTIFIER_OUTSIDE_ASCII_SCOPE");
+        assert!(rows[1]["symbol"].is_null());
+        assert!(rows[1].get("body").is_none());
+        assert_eq!(rows[7]["code"], "GO_SCALAR_BODY_LIMIT");
+        assert_eq!(rows[8]["symbol"]["name"], rows[9]["symbol"]["name"]);
+        assert_ne!(rows[8]["span"], rows[9]["span"]);
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R28-010`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R28
+    #[test]
+    fn malformed_or_unbound_scalar_body_receipts_are_refused() {
+        let (fixture, selection) = setup("body-wire");
+        for (path, replacement) in [
+            ("/source_inventory/0/path", json!("other.go")),
+            ("/request_sha256", json!("wrong-exchange")),
+            ("/schema_version", json!(2)),
+            ("/producer", json!("fortress.go-observations@0.1.1")),
+            ("/status", json!("UNSUPPORTED")),
+            ("/functions/0/symbol/span/start_byte_column", json!(7)),
+            ("/functions/1/diagnostic/code", json!("PASS")),
+        ] {
+            let outcome = observe_go_native_body(&fixture.root, selection, &PIN, |request| {
+                let mut receipt: Value = serde_json::from_slice(&replay(request)).unwrap();
+                *receipt.pointer_mut(path).unwrap() = replacement;
+                let mut output = serde_json::to_vec(&receipt).unwrap();
+                output.push(b'\n');
+                Ok(output)
+            });
+            assert!(matches!(outcome, Err(GoObservationError::InvalidResponse)));
+        }
+        let duplicate = observe_go_native_body(&fixture.root, selection, &PIN, |request| {
+            let mut receipt: Value = serde_json::from_slice(&replay(request)).unwrap();
+            let first = receipt["functions"][0].clone();
+            receipt["functions"].as_array_mut().unwrap().push(first);
+            let mut output = serde_json::to_vec(&receipt).unwrap();
+            output.push(b'\n');
+            Ok(output)
+        });
+        assert!(matches!(
+            duplicate,
+            Err(GoObservationError::InvalidResponse)
+        ));
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R28-011`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R28
+    #[test]
+    fn changed_original_source_prevents_scalar_body_publication() {
+        let (fixture, selection) = setup("body-drift");
+        let changed = observe_go_native_body(&fixture.root, selection, &PIN, |request| {
+            let output = replay(request);
+            fs::write(fixture.root.join("fixture.go"), SOURCE.replace("!b", "b")).unwrap();
+            Ok(output)
+        });
+        assert!(matches!(changed, Err(GoObservationError::SourceChanged)));
+    }
+
+    fn domain_source(name: &str) -> (Fixture, GoPackageSelection<'static>) {
+        let (fixture, selection) = setup(name);
+        fs::write(fixture.root.join("fixture.go"), DOMAIN_SOURCE).unwrap();
+        (fixture, selection)
+    }
+
+    fn derived_domains(fixture: &Fixture, selection: GoPackageSelection<'_>) -> Value {
+        let result = observe_go_native_body(&fixture.root, selection, &PIN, |request| {
+            assert_eq!(
+                fortress_core::portable::digest(request),
+                "sha256:3b9aed28fff9c31cbbff0175861c4b945f0627d5b0e1de97974e42d33741fa08"
+            );
+            Ok(DOMAIN_RAW.to_vec())
+        })
+        .expect("exact native domain fixture");
+        serde_json::to_value(result).unwrap()
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R28-014`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R28
+    #[test]
+    fn exact_go_domain_endpoints_survive_canonical_json() {
+        let (fixture, selection) = domain_source("body-domains");
+        let document = derived_domains(&fixture, selection);
+        let schema: Value = super::registered_schema("go_body_schema_v1.json");
+        jsonschema::draft202012::validate(&schema, &document).expect("fully registered result");
+        let canonical = serde_json_canonicalizer::to_vec(&document).unwrap();
+        assert_eq!(
+            serde_json::from_slice::<Value>(&canonical).unwrap(),
+            document
+        );
+        let functions = document["functions"].as_array().unwrap();
+        let domains = document["value_domains"].as_array().unwrap();
+        assert_eq!(functions.len(), 6);
+        assert_eq!(domains.len(), functions.len());
+        for (index, intervals) in [
+            (0, json!([{"min": MIN_I64, "max": MIN_I64}])),
+            (1, json!([{"min": MAX_I64, "max": MAX_I64}])),
+            (2, json!([{"min": MIN_I64, "max": MAX_I64}])),
+            (
+                3,
+                json!([{"min": MIN_I64, "max": MIN_I64}, {"min": MAX_I64, "max": MAX_I64}]),
+            ),
+        ] {
+            assert_eq!(domains[index]["status"], "INFERRED");
+            assert_eq!(domains[index]["function_index"], index);
+            assert_eq!(domains[index]["binding"], functions[index]["binding"]);
+            assert_eq!(domains[index]["domain"]["kind"], "integer");
+            assert_eq!(
+                domains[index]["domain"]["type_id"],
+                "native_scalar:go:int64"
+            );
+            assert_eq!(domains[index]["domain"]["intervals"], intervals);
+            assert_eq!(domains[index]["domain"]["excluded"], json!([]));
+        }
+        assert_eq!(domains[4]["binding"], functions[4]["binding"]);
+        assert_eq!(
+            domains[4]["domain"],
+            json!({
+                "kind": "boolean", "type_id": "native_scalar:bool", "values": [true]
+            })
+        );
+        assert_eq!(
+            functions[5]["code"],
+            "RUNTIME_INTEGER_ARITHMETIC_UNAVAILABLE"
+        );
+        assert_eq!(
+            domains[5],
+            json!({
+                "status": "UNAVAILABLE", "binding": null, "function_index": 5, "reason": "BODY_UNAVAILABLE"
+            })
+        );
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R28-015`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R28
+    #[test]
+    fn scalar_result_schema_and_wire_fail_closed() {
+        let (fixture, selection) = domain_source("body-domain-wire");
+        let original = derived_domains(&fixture, selection);
+        let schema: Value = super::registered_schema("go_body_schema_v1.json");
+        for (path, replacement) in [
+            ("/value_domains/2/domain/intervals/0/min", json!(-1)),
+            (
+                "/value_domains/2/domain/intervals/0/min",
+                json!("-9223372036854775809"),
+            ),
+            (
+                "/value_domains/2/domain/intervals/0/max",
+                json!("9223372036854775808"),
+            ),
+            ("/value_domains/2/domain/intervals/0/max", json!("01")),
+            ("/value_domains/2/domain/intervals/0/max", json!("-0")),
+            ("/value_domains/2/domain/intervals/0/max", json!("5\n")),
+            ("/value_domains/2/domain/excluded", json!([2])),
+            ("/value_domains/5/status", json!("INFERRED")),
+            (
+                "/functions/0/body/statements/0/value",
+                json!({"kind":"call"}),
+            ),
+            ("/status", json!("UNSUPPORTED")),
+        ] {
+            let mut invalid = original.clone();
+            *invalid.pointer_mut(path).unwrap() = replacement;
+            assert!(
+                jsonschema::draft202012::validate(&schema, &invalid).is_err(),
+                "{path}"
+            );
+        }
+        let injected = observe_go_native_body(&fixture.root, selection, &PIN, |_| {
+            let mut forged: Value = serde_json::from_slice(DOMAIN_RAW).unwrap();
+            forged["value_domains"] = original["value_domains"].clone();
+            let mut output = serde_json::to_vec(&forged).unwrap();
+            output.push(b'\n');
+            Ok(output)
+        });
+        assert!(matches!(injected, Err(GoObservationError::InvalidResponse)));
+    }
+}
+
 /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R28-001`
 /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R28
 #[test]
@@ -92,7 +359,7 @@ fn exact_native_observation_retains_authority_and_source_occurrence() {
     })
     .expect("exact native response");
     let json = serde_json::to_value(result).unwrap();
-    jsonschema::draft202012::validate(&registered_schema(1), &json)
+    jsonschema::draft202012::validate(&registered_schema("go_observation_schema_v1.json"), &json)
         .expect("go projection matches registered wire");
     assert_eq!(json["observation"]["status"], "OBSERVED");
     assert_eq!(json["provenance"]["actual"], true);
@@ -238,8 +505,11 @@ fn build_selection_binds_exact_selected_and_excluded_go_source() {
         })
         .expect("native build selection with exact frozen result");
     let observed = serde_json::to_value(observation).unwrap();
-    jsonschema::draft202012::validate(&registered_schema(2), &observed)
-        .expect("Go build selection matches its registered output schema");
+    jsonschema::draft202012::validate(
+        &registered_schema("go_observation_schema_v2.json"),
+        &observed,
+    )
+    .expect("Go build selection matches its registered output schema");
     assert_eq!(observed["schema_version"], 2);
     assert_eq!(observed["provenance"]["actual"], true);
     assert_eq!(observed["observation"]["status"], "OBSERVED");
@@ -390,7 +660,11 @@ mod module_controls {
             )
             .unwrap();
             let rendered = serde_json::to_value(result).unwrap();
-            jsonschema::draft202012::validate(&super::registered_schema(3), &rendered).unwrap();
+            jsonschema::draft202012::validate(
+                &super::registered_schema("go_observation_schema_v3.json"),
+                &rendered,
+            )
+            .unwrap();
             assert_eq!(rendered["provenance"]["actual"], true);
             let observation = &rendered["observation"];
             assert_eq!(observation["status"], expected);

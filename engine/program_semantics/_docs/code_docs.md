@@ -88,6 +88,25 @@ Validates an exact closed Go source request and the bounded native response from
 
 Uses the Go standard library parser and type checker to observe one explicit source-only package. The reviewed host builds and selects this helper separately. It reads a bounded request on stdin and writes one bounded JSON frame to stdout. It runs no project code, package resolver, compiler or subprocess. Explicit Go 1.17 and 1.22 contexts on Windows and Linux amd64 are admitted. The closed observation refuses dependency, build directive, test, generated/foreign and unsupported context. Declaration-site resolutions and syntactic activation markers do not establish execution, control flow, effects, or stable cross-revision symbol identity.
 
+### [go_body.go](../_code/go_body.go)
+
+Adds an explicit scalar body mode when built together with the single-file
+collector. Native Go name resolution and type checking verify ordered local
+bindings. Admitted statements include short declarations, assignment,
+conditionals and return over exact bool and signed-int64 scalars. Constants
+are admitted through native type information and exact ranges. Runtime
+arithmetic, dynamic or external calls, methods, goroutines, defer, limited
+identifiers and larger bodies retain explicit refusal. The worker never
+imports or executes repository code.
+
+### [go_body_observation.rs](../_code/go_body_observation.rs)
+
+Checks the exact closed-package transport and source inventory before admitting
+each row to shared Program Semantics body construction. The body receipt binds
+the originating evaluation, producer, stdout and physical source occurrences.
+Effects, behavioral proof and conformance are outside this standalone
+observation.
+
 ### [collector_build_context.go](../_code/collector_build_context.go)
 
 Adds explicit standalone build selection for one sealed Go source directory. The trusted host builds the two named source files with the selected Go toolchain and invokes the result with the single argument `--select-build-go`. The original single-file collector source and build remain byte-identical. With no argument the combined helper also emits the existing v1 wire projection.

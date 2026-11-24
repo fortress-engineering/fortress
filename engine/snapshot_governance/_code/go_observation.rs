@@ -7,6 +7,10 @@ use crate::program_semantics::go_observation::{
     ExactClosedPackage, admit_go, admit_go_build, admit_go_module,
 };
 
+#[path = "go_body_domains.rs"]
+mod body_domains;
+pub use body_domains::ActualGoNativeBodyObservation;
+
 pub use crate::program_semantics::go_observation::{
     GoBuildContext, GoBuildTestMode, GoCollectorPin, GoModuleSelection, GoNativeBuildObservation,
     GoNativeModuleObservation, GoNativeObservation, GoObservationError, GoTypeComparison,
@@ -102,23 +106,56 @@ pub fn observe_go_native_module(
     )
 }
 
+/// Admits bounded native Go scalar bodies under the exact original closed context.
+///
+/// The host must independently select and supervise the body collector. This
+/// observation provides standalone source-bound body nodes with conservative
+/// result value domains for the admitted scalar input scope.
+///
+/// # Errors
+/// Refuses changed original source, unsupported contexts and mismatched responses.
+pub fn observe_go_native_body(
+    project_root: &Path,
+    selection: GoPackageSelection<'_>,
+    collector: &GoCollectorPin<'_>,
+    launch: impl FnOnce(&[u8]) -> Result<Vec<u8>, GoObservationError>,
+) -> Result<ActualGoNativeBodyObservation, GoObservationError> {
+    observe_bound_exact(project_root, selection, |source, manifest| {
+        let admitted = admit_go(source, collector)?;
+        let output = launch(admitted.request_bytes())?;
+        let observation = admitted.verify_bodies(collector, manifest, &output)?;
+        Ok(ActualGoNativeBodyObservation::derive(observation))
+    })
+}
+
 fn observe_exact<T>(
     project_root: &Path,
     selection: GoPackageSelection<'_>,
     operation: impl FnOnce(ExactClosedPackage<'_>) -> Result<T, GoObservationError>,
 ) -> Result<T, GoObservationError> {
+    observe_bound_exact(project_root, selection, |source, _| operation(source))
+}
+
+fn observe_bound_exact<T>(
+    project_root: &Path,
+    selection: GoPackageSelection<'_>,
+    operation: impl FnOnce(ExactClosedPackage<'_>, &str) -> Result<T, GoObservationError>,
+) -> Result<T, GoObservationError> {
     let source = NativeSource::capture(project_root, "Go").map_err(source_failure)?;
-    let observation = operation(ExactClosedPackage {
-        source: &source.view,
-        source_fingerprint: &source.binding.source_fingerprint,
-        authority_digest: &source.binding.authority_digest,
-        actual: true,
-        directory: selection.directory,
-        package_path: selection.package_path,
-        go_version: selection.go_version,
-        target_os: selection.target_os,
-        target_arch: selection.target_arch,
-    })?;
+    let observation = operation(
+        ExactClosedPackage {
+            source: &source.view,
+            source_fingerprint: &source.binding.source_fingerprint,
+            authority_digest: &source.binding.authority_digest,
+            actual: true,
+            directory: selection.directory,
+            package_path: selection.package_path,
+            go_version: selection.go_version,
+            target_os: selection.target_os,
+            target_arch: selection.target_arch,
+        },
+        &source.binding.source_manifest_digest,
+    )?;
     source.revalidate().map_err(source_failure)?;
     Ok(observation)
 }

@@ -122,3 +122,16 @@ Retains native output for the independently fixed Go module import and exact cro
 ### [go_missing_fixture_v3.json](../_data/go_missing_fixture_v3.json)
 
 Retains the exact refusal for an independently fixed unavailable in-module dependency. No reachable package observations or type comparison are asserted.
+
+### [go_body_fixture_v1.json](../_data/go_body_fixture_v1.json)
+
+Retains exact stdout from the Windows Go scalar-body worker against the
+independently frozen native function and source-position expectations. The
+Snapshot Governance test binds the original CRLF source and request SHA-256.
+
+### [`go_domain_fixture_v1.json`](../_data/go_domain_fixture_v1.json)
+
+Retains the exact pinned Go scalar-body worker response for a closed native
+fixture covering both signed int64 endpoints, a full range, a disjoint union,
+a Boolean literal and explicit runtime-arithmetic unavailability. The same
+frozen original source ran under an independently authored native reference.

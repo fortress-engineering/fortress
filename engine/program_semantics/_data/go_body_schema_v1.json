@@ -1,0 +1,1077 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v1:go-native-body",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "evaluation_key",
+    "exchange_sha256",
+    "producer_sha256",
+    "response_sha256",
+    "provenance",
+    "source_inventory",
+    "status",
+    "diagnostic",
+    "functions",
+    "limitations",
+    "value_domain_semantics",
+    "value_domains"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:derived:v1:go-native-body"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "evaluation_key": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_manifest_digest",
+        "program_context_digest",
+        "authority_binding_digest"
+      ],
+      "properties": {
+        "source_manifest_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "program_context_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "authority_binding_digest": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "exchange_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "producer_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "response_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "source_view_sha256",
+        "source_fingerprint",
+        "authority_sha256",
+        "actual",
+        "package_directory",
+        "process",
+        "wire_context_sha256",
+        "request_sha256"
+      ],
+      "properties": {
+        "kind": {
+          "const": "fortress-go-observation-input-v1"
+        },
+        "source_view_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "source_fingerprint": {
+          "$ref": "#/$defs/sha256"
+        },
+        "authority_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "actual": {
+          "const": true
+        },
+        "package_directory": {
+          "type": "string",
+          "maxLength": 240
+        },
+        "process": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "executable_sha256",
+            "supervisor_context_sha256",
+            "go_toolchain"
+          ],
+          "properties": {
+            "executable_sha256": {
+              "$ref": "#/$defs/sha256"
+            },
+            "supervisor_context_sha256": {
+              "$ref": "#/$defs/sha256"
+            },
+            "go_toolchain": {
+              "type": "string",
+              "pattern": "^go1[.][A-Za-z0-9.]*$",
+              "maxLength": 64
+            }
+          }
+        },
+        "wire_context_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "request_sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "source_inventory": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "sha256"
+        ],
+        "properties": {
+          "path": {
+            "$ref": "#/$defs/path"
+          },
+          "sha256": {
+            "$ref": "#/$defs/sha256"
+          }
+        }
+      },
+      "minItems": 1,
+      "maxItems": 64,
+      "uniqueItems": true
+    },
+    "status": {
+      "enum": [
+        "OBSERVED_BODIES",
+        "INVALID_SOURCE",
+        "UNSUPPORTED",
+        "RESOURCE_LIMIT"
+      ]
+    },
+    "diagnostic": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "code",
+            "span"
+          ],
+          "properties": {
+            "code": {
+              "enum": [
+                "GO_PARSE_FAILURE",
+                "GO_TYPE_CHECK_REJECTED",
+                "INVALID_GO_IMPORT",
+                "BUILD_CONTEXT_REQUIRED",
+                "COMPILER_DIRECTIVE_CONTEXT_REQUIRED",
+                "DEPENDENCY_CONTEXT_REQUIRED",
+                "FOREIGN_CONTEXT_REQUIRED",
+                "GO_UNRESOLVED_DECLARATION",
+                "GO_AST_LIMIT",
+                "GO_OBSERVATION_LIMIT"
+              ]
+            },
+            "span": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/span"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "functions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/function"
+      },
+      "maxItems": 1024,
+      "uniqueItems": true
+    },
+    "limitations": {
+      "const": [
+        "CLOSED_PACKAGE_ONLY",
+        "BOUNDED_BOOL_AND_SIGNED_I64_BODIES",
+        "NO_RUNTIME_EFFECT_REACHABILITY_OR_EXECUTION_PROOF",
+        "NO_PSM_CONFORMANCE_OR_CERTIFICATION"
+      ]
+    },
+    "value_domain_semantics": {
+      "const": "CONSERVATIVE_SCALAR_RETURN_UPPER_BOUND"
+    },
+    "value_domains": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/functionDomain"
+      },
+      "maxItems": 1024,
+      "uniqueItems": true
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "OBSERVED_BODIES"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "diagnostic": {
+            "type": "null"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "INVALID_SOURCE"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "diagnostic": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "code",
+              "span"
+            ],
+            "properties": {
+              "code": {
+                "enum": [
+                  "GO_PARSE_FAILURE",
+                  "GO_TYPE_CHECK_REJECTED",
+                  "INVALID_GO_IMPORT"
+                ]
+              },
+              "span": {
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/span"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          },
+          "functions": {
+            "maxItems": 0
+          },
+          "value_domains": {
+            "maxItems": 0
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "UNSUPPORTED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "diagnostic": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "code",
+              "span"
+            ],
+            "properties": {
+              "code": {
+                "enum": [
+                  "BUILD_CONTEXT_REQUIRED",
+                  "COMPILER_DIRECTIVE_CONTEXT_REQUIRED",
+                  "DEPENDENCY_CONTEXT_REQUIRED",
+                  "FOREIGN_CONTEXT_REQUIRED",
+                  "GO_UNRESOLVED_DECLARATION"
+                ]
+              },
+              "span": {
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/span"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          },
+          "functions": {
+            "maxItems": 0
+          },
+          "value_domains": {
+            "maxItems": 0
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "RESOURCE_LIMIT"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "diagnostic": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "code",
+              "span"
+            ],
+            "properties": {
+              "code": {
+                "enum": [
+                  "GO_AST_LIMIT",
+                  "GO_OBSERVATION_LIMIT"
+                ]
+              },
+              "span": {
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/span"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          },
+          "functions": {
+            "maxItems": 0
+          },
+          "value_domains": {
+            "maxItems": 0
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "binding": {
+      "type": "string",
+      "pattern": "^native_body_occurrence:v1:sha256:[0-9a-f]{64}$"
+    },
+    "signedI64": {
+      "type": "string",
+      "pattern": "^(0|-?[1-9][0-9]{0,17}|[1-8][0-9]{18}|9[0-1][0-9]{17}|92[0-1][0-9]{16}|922[0-2][0-9]{15}|9223[0-2][0-9]{14}|92233[0-6][0-9]{13}|922337[0-1][0-9]{12}|92233720[0-2][0-9]{10}|922337203[0-5][0-9]{9}|9223372036[0-7][0-9]{8}|92233720368[0-4][0-9]{7}|922337203685[0-3][0-9]{6}|9223372036854[0-6][0-9]{5}|92233720368547[0-6][0-9]{4}|922337203685477[0-4][0-9]{3}|9223372036854775[0-7][0-9]{2}|922337203685477580[0-6]|9223372036854775807|-([1-8][0-9]{18}|9[0-1][0-9]{17}|92[0-1][0-9]{16}|922[0-2][0-9]{15}|9223[0-2][0-9]{14}|92233[0-6][0-9]{13}|922337[0-1][0-9]{12}|92233720[0-2][0-9]{10}|922337203[0-5][0-9]{9}|9223372036[0-7][0-9]{8}|92233720368[0-4][0-9]{7}|922337203685[0-3][0-9]{6}|9223372036854[0-6][0-9]{5}|92233720368547[0-6][0-9]{4}|922337203685477[0-4][0-9]{3}|9223372036854775[0-7][0-9]{2}|922337203685477580[0-7]|9223372036854775808))$",
+      "not": {
+        "pattern": "[^0-9-]"
+      }
+    },
+    "name": {
+      "type": "string",
+      "pattern": "^[A-Za-z_][A-Za-z_0-9]*$",
+      "not": {
+        "const": "_"
+      }
+    },
+    "path": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 240
+    },
+    "span": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "start_byte",
+        "end_byte",
+        "start_line",
+        "start_byte_column"
+      ],
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/path"
+        },
+        "start_byte": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65536
+        },
+        "end_byte": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65536
+        },
+        "start_line": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65536
+        },
+        "start_byte_column": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65536
+        }
+      }
+    },
+    "symbol": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "span",
+        "declaration_span"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/name"
+        },
+        "span": {
+          "$ref": "#/$defs/span"
+        },
+        "declaration_span": {
+          "$ref": "#/$defs/span"
+        }
+      }
+    },
+    "scalar": {
+      "enum": [
+        "BOOL",
+        "SIGNED_I64"
+      ]
+    },
+    "typedBinding": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/name"
+        },
+        {
+          "$ref": "#/$defs/scalar"
+        }
+      ],
+      "items": false,
+      "minItems": 2
+    },
+    "programProvenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "location",
+        "symbol_context",
+        "analyzer",
+        "analyzer_semantic_version"
+      ],
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/path"
+        },
+        "location": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "line",
+            "column"
+          ],
+          "properties": {
+            "line": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "column": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "symbol_context": {
+          "$ref": "#/$defs/binding"
+        },
+        "analyzer": {
+          "const": "fortress.go.native-scalar"
+        },
+        "analyzer_semantic_version": {
+          "const": "1.0.0"
+        }
+      }
+    },
+    "expression": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "name"
+          ],
+          "properties": {
+            "kind": {
+              "const": "binding"
+            },
+            "name": {
+              "$ref": "#/$defs/name"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "value"
+          ],
+          "properties": {
+            "kind": {
+              "const": "boolean"
+            },
+            "value": {
+              "type": "boolean"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "value"
+          ],
+          "properties": {
+            "kind": {
+              "const": "integer"
+            },
+            "value": {
+              "$ref": "#/$defs/signedI64"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "operator",
+            "value"
+          ],
+          "properties": {
+            "kind": {
+              "const": "unary"
+            },
+            "operator": {
+              "const": "!"
+            },
+            "value": {
+              "$ref": "#/$defs/expression"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "operator",
+            "left",
+            "right"
+          ],
+          "properties": {
+            "kind": {
+              "const": "binary"
+            },
+            "operator": {
+              "enum": [
+                "==",
+                "!=",
+                "<",
+                "<=",
+                ">",
+                ">="
+              ]
+            },
+            "left": {
+              "$ref": "#/$defs/expression"
+            },
+            "right": {
+              "$ref": "#/$defs/expression"
+            }
+          }
+        }
+      ]
+    },
+    "statement": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "pattern",
+            "value",
+            "provenance"
+          ],
+          "properties": {
+            "kind": {
+              "const": "let"
+            },
+            "pattern": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "kind",
+                "name"
+              ],
+              "properties": {
+                "kind": {
+                  "const": "binding"
+                },
+                "name": {
+                  "$ref": "#/$defs/name"
+                }
+              }
+            },
+            "value": {
+              "$ref": "#/$defs/expression"
+            },
+            "provenance": {
+              "$ref": "#/$defs/programProvenance"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "target",
+            "value",
+            "provenance"
+          ],
+          "properties": {
+            "kind": {
+              "const": "assign"
+            },
+            "target": {
+              "$ref": "#/$defs/name"
+            },
+            "value": {
+              "$ref": "#/$defs/expression"
+            },
+            "provenance": {
+              "$ref": "#/$defs/programProvenance"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "condition",
+            "then_branch",
+            "else_branch",
+            "provenance"
+          ],
+          "properties": {
+            "kind": {
+              "const": "if"
+            },
+            "condition": {
+              "$ref": "#/$defs/expression"
+            },
+            "then_branch": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/statement"
+              }
+            },
+            "else_branch": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/statement"
+              }
+            },
+            "provenance": {
+              "$ref": "#/$defs/programProvenance"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "value",
+            "provenance"
+          ],
+          "properties": {
+            "kind": {
+              "const": "return"
+            },
+            "value": {
+              "$ref": "#/$defs/expression"
+            },
+            "provenance": {
+              "$ref": "#/$defs/programProvenance"
+            }
+          }
+        }
+      ]
+    },
+    "function": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "span",
+            "symbol",
+            "binding",
+            "parameters",
+            "locals",
+            "result_scalar",
+            "body"
+          ],
+          "properties": {
+            "status": {
+              "const": "LOWERED"
+            },
+            "span": {
+              "$ref": "#/$defs/span"
+            },
+            "symbol": {
+              "$ref": "#/$defs/symbol"
+            },
+            "binding": {
+              "$ref": "#/$defs/binding"
+            },
+            "parameters": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/typedBinding"
+              },
+              "maxItems": 128
+            },
+            "locals": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/typedBinding"
+              },
+              "maxItems": 128
+            },
+            "result_scalar": {
+              "$ref": "#/$defs/scalar"
+            },
+            "body": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "symbol",
+                "statements",
+                "provenance"
+              ],
+              "properties": {
+                "symbol": {
+                  "$ref": "#/$defs/binding"
+                },
+                "statements": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/statement"
+                  },
+                  "minItems": 1
+                },
+                "provenance": {
+                  "$ref": "#/$defs/programProvenance"
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "span",
+            "symbol",
+            "diagnostic",
+            "code"
+          ],
+          "properties": {
+            "status": {
+              "const": "UNAVAILABLE"
+            },
+            "span": {
+              "$ref": "#/$defs/span"
+            },
+            "symbol": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/symbol"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "diagnostic": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "code",
+                "span"
+              ],
+              "properties": {
+                "code": {
+                  "enum": [
+                    "IDENTIFIER_OUTSIDE_ASCII_SCOPE",
+                    "GO_SCALAR_BODY_LIMIT",
+                    "UNBOUND_OR_NONLOCAL_VALUE",
+                    "REPEATED_OR_SHADOWED_BINDING",
+                    "SCALAR_TYPE_UNAVAILABLE",
+                    "TYPE_EVIDENCE_UNAVAILABLE",
+                    "EXACT_SCALAR_LITERAL_UNAVAILABLE",
+                    "RUNTIME_INTEGER_ARITHMETIC_UNAVAILABLE",
+                    "RUNTIME_CALL_OR_CONVERSION_UNAVAILABLE",
+                    "EXPRESSION_SEMANTICS_UNAVAILABLE",
+                    "STATEMENT_SEMANTICS_UNAVAILABLE",
+                    "ASSIGNMENT_FORM_UNAVAILABLE",
+                    "ASSIGNMENT_PLACE_UNAVAILABLE",
+                    "RETURN_ARITY_UNAVAILABLE",
+                    "CONDITIONAL_INITIALIZER_UNAVAILABLE",
+                    "GOROUTINE_UNAVAILABLE",
+                    "DEFER_UNAVAILABLE",
+                    "NONFREE_OR_BODYLESS_FUNCTION",
+                    "UNRESOLVED_SYMBOL",
+                    "SIGNATURE_FORM_UNAVAILABLE",
+                    "NAMED_RETURN_UNAVAILABLE"
+                  ]
+                },
+                "span": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/$defs/span"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            },
+            "code": {
+              "enum": [
+                "IDENTIFIER_OUTSIDE_ASCII_SCOPE",
+                "GO_SCALAR_BODY_LIMIT",
+                "UNBOUND_OR_NONLOCAL_VALUE",
+                "REPEATED_OR_SHADOWED_BINDING",
+                "SCALAR_TYPE_UNAVAILABLE",
+                "TYPE_EVIDENCE_UNAVAILABLE",
+                "EXACT_SCALAR_LITERAL_UNAVAILABLE",
+                "RUNTIME_INTEGER_ARITHMETIC_UNAVAILABLE",
+                "RUNTIME_CALL_OR_CONVERSION_UNAVAILABLE",
+                "EXPRESSION_SEMANTICS_UNAVAILABLE",
+                "STATEMENT_SEMANTICS_UNAVAILABLE",
+                "ASSIGNMENT_FORM_UNAVAILABLE",
+                "ASSIGNMENT_PLACE_UNAVAILABLE",
+                "RETURN_ARITY_UNAVAILABLE",
+                "CONDITIONAL_INITIALIZER_UNAVAILABLE",
+                "GOROUTINE_UNAVAILABLE",
+                "DEFER_UNAVAILABLE",
+                "NONFREE_OR_BODYLESS_FUNCTION",
+                "UNRESOLVED_SYMBOL",
+                "SIGNATURE_FORM_UNAVAILABLE",
+                "NAMED_RETURN_UNAVAILABLE"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "domain": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "type_id",
+            "values"
+          ],
+          "properties": {
+            "kind": {
+              "const": "boolean"
+            },
+            "type_id": {
+              "const": "native_scalar:bool"
+            },
+            "values": {
+              "type": "array",
+              "items": {
+                "type": "boolean"
+              },
+              "minItems": 1,
+              "maxItems": 2,
+              "uniqueItems": true
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "type_id",
+            "intervals",
+            "excluded"
+          ],
+          "properties": {
+            "kind": {
+              "const": "integer"
+            },
+            "type_id": {
+              "const": "native_scalar:go:int64"
+            },
+            "intervals": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "min",
+                  "max"
+                ],
+                "properties": {
+                  "min": {
+                    "$ref": "#/$defs/signedI64"
+                  },
+                  "max": {
+                    "$ref": "#/$defs/signedI64"
+                  }
+                }
+              },
+              "minItems": 1,
+              "uniqueItems": true
+            },
+            "excluded": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/signedI64"
+              },
+              "uniqueItems": true
+            }
+          }
+        }
+      ]
+    },
+    "functionDomain": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "function_index",
+            "binding",
+            "domain"
+          ],
+          "properties": {
+            "status": {
+              "const": "INFERRED"
+            },
+            "function_index": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1023
+            },
+            "binding": {
+              "$ref": "#/$defs/binding"
+            },
+            "domain": {
+              "$ref": "#/$defs/domain"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "function_index",
+            "binding",
+            "reason"
+          ],
+          "properties": {
+            "status": {
+              "const": "UNAVAILABLE"
+            },
+            "function_index": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1023
+            },
+            "binding": {
+              "type": "null"
+            },
+            "reason": {
+              "const": "BODY_UNAVAILABLE"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "function_index",
+            "binding",
+            "reason"
+          ],
+          "properties": {
+            "status": {
+              "const": "UNAVAILABLE"
+            },
+            "function_index": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 1023
+            },
+            "binding": {
+              "$ref": "#/$defs/binding"
+            },
+            "reason": {
+              "const": "INFERENCE_UNAVAILABLE"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

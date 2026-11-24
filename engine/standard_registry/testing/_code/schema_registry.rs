@@ -40,6 +40,8 @@ fn registered_schemas_are_unique_json_schema_documents() {
     let mut identities = HashSet::with_capacity(paths.len());
 
     let native_schemas = [
+        "cli/_data/go_body_registration_v1.json",
+        "engine/program_semantics/_data/go_body_schema_v1.json",
         "cli/_data/go_collector_schema_v1.json",
         "cli/_data/go_collector_schema_v2.json",
         "cli/_data/go_collector_schema_v3.json",

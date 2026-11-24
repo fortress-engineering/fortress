@@ -8,10 +8,13 @@ use base64::{Engine as _, engine::general_purpose::STANDARD};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
+#[path = "go_body_observation.rs"]
+mod body_observation;
 #[path = "go_build_selection.rs"]
 mod build_selection;
 #[path = "go_module_observation.rs"]
 mod module_observation;
+pub(crate) use body_observation::GoNativeBodyObservation;
 pub(crate) use build_selection::admit_go_build;
 pub use build_selection::{GoBuildContext, GoBuildTestMode, GoNativeBuildObservation};
 pub(crate) use module_observation::admit_go_module;
@@ -319,6 +322,7 @@ pub(crate) struct GoRequest<'a> {
     context_sha256: String,
     request_sha256: String,
     binding_sha256: String,
+    authority_sha256: &'a str,
     provenance: serde_json::Value,
     pin: &'a GoCollectorPin<'a>,
 }
@@ -552,6 +556,7 @@ fn seal_go_request<'a>(
         context_sha256,
         request_sha256,
         binding_sha256: sha256(&canonical),
+        authority_sha256: authority_digest,
         provenance,
         pin,
     })
@@ -634,6 +639,15 @@ impl GoRequest<'_> {
         launched: &GoCollectorPin<'_>,
         stdout: &'o [u8],
     ) -> Result<&'o [u8], GoObservationError> {
+        self.verify_transport_depth(launched, stdout, 12)
+    }
+
+    fn verify_transport_depth<'o>(
+        &self,
+        launched: &GoCollectorPin<'_>,
+        stdout: &'o [u8],
+        depth: usize,
+    ) -> Result<&'o [u8], GoObservationError> {
         if launched != self.pin {
             return Err(GoObservationError::UnmatchedExecution);
         }
@@ -654,7 +668,7 @@ impl GoRequest<'_> {
             line,
             JsonAdmissionLimits {
                 bytes: MAX_WIRE,
-                depth: 12,
+                depth,
                 nodes: 250_000,
                 token_bytes: 16 << 10,
             },

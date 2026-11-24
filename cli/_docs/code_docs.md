@@ -21,6 +21,13 @@ Malformed input, unsupported operations, invalid repository state, or evaluated 
 
 ## Files
 
+### [`go_body_command.rs`](../_code/go_body_command.rs)
+
+Selects an independently pinned, external bodied Go collector under a separate
+registration identity and mode. Reuses the bounded verifier process, original
+repository observation and registration readback. Structured body results go
+to stdout without modifying project source.
+
 ### [`go_observation_command.rs`](../_code/go_observation_command.rs)
 
 Runs the explicitly selected, digest-pinned Go collector with the shared bounded subprocess supervisor. Returns the independent native observation projection after source and authority revalidation.

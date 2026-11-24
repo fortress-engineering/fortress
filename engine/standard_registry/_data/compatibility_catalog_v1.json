@@ -3,6 +3,50 @@
   "schema_version": 1,
   "entries": [
     {
+      "schema_id": "urn:fortress:derived:v1:go-native-body",
+      "schema_path": "engine/program_semantics/_data/go_body_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "engine/snapshot_governance/_code/go_body_domains.rs"
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "sha256-owner-exact-go-body-occurrences",
+        "source": "engine/program_semantics/_code/go_body_observation.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-owner-canonical-or-exact-bytes",
+        "source": "engine/program_semantics/_code/go_body_observation.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:host:v1:go-body-registration",
+      "schema_path": "cli/_data/go_body_registration_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "AUTHORED",
+        "source": null
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "cli/_code/go_body_command.rs"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-owner-canonical-or-exact-bytes",
+        "source": "cli/_code/go_body_command.rs"
+      }
+    },
+    {
       "schema_id": "urn:fortress:host:v1:python-static-import-scope",
       "schema_path": "cli/_data/python_scope_schema_v1.json",
       "version": 1,

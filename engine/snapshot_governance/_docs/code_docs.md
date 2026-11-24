@@ -521,6 +521,19 @@ Observes exact governed endpoints and composes existing migration, Standard and 
 
 Captures the existing bounded physical source inventory and original selected authority before passing a closed Go request to an explicit trusted host. The host selects and supervises the pinned executable. Snapshot Governance reobserves physical source and checks the native directory identity before exposing the observation. Ordinary audit, discovery, query, and candidate evaluation never launch this helper. The result remains separate from application assessment, governance decisions, and native certification.
 
+The optional scalar body mode uses the same closed original source capture and
+retains its exact source manifest in the evaluation key. The scope includes
+the selected native producer and target. Revalidation precedes publication.
+
+### [`go_body_domains.rs`](../_code/go_body_domains.rs)
+
+Derives upper bounds for admitted Go scalar return values by interpreting typed
+Program Semantics bodies with the shared Semantic Analysis domain engine.
+Report entries align with the original body rows by occurrence index and keep
+the exact binding when available. Integer bounds and exclusions retain their
+signed decimal spelling for canonical JSON. An unavailable body or inference
+retains its own reason without a domain.
+
 ### [`native_observation.rs`](../_code/native_observation.rs)
 
 Shares exact physical capture and publication checks for explicit Go and Python observations. The capture retains the native directory identity, the complete bounded source view under the existing physical observation policy, the original selected authority, and the canonical source manifest and fingerprint. It checks for incomplete migrations before and after capture. Revalidation compares the whole current view and native directory identity before publishing any result. Registered evidence and operational records remain outside source under the existing physical policy.

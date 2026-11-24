@@ -64,6 +64,12 @@ Defines the explicit host-owned Go compiler registration, including the exact
 executable and toolchain. Runtime admission requires an ordinary absolute host
 asset outside the selected repository.
 
+### [go_body_registration_v1.json](../_data/go_body_registration_v1.json)
+
+Defines the external registration for an explicitly selected pinned Go
+scalar-body worker. Its separate schema preserves the identities of the
+existing declaration and build-selection processes.
+
 ### [go_collector_schema_v2.json](../_data/go_collector_schema_v2.json)
 
 Defines the explicit external host registration for the native Go build-selection mode. The trusted host pins the combined helper and declares its exact bounded compiler and test context.
