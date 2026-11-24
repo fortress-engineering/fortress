@@ -389,28 +389,10 @@ fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
         .as_ref()
         .is_some_and(|(_, _, _, _, call_returns)| *call_returns);
     let host = RegisteredScalarHost::load(&root, Path::new(registration_path), lexical_calls)?;
-    let exchange = |request| host.exchange(request);
     if lexical_calls && authored.is_none() {
-        let subject = &host.registration.subject;
-        let report = match inspection {
-            ScalarInspection::CallTopology => {
-                observe_python_native_call_topology(&root, subject, &host.producer, exchange)
-            }
-            ScalarInspection::CallSensitivity => {
-                observe_python_native_call_sensitivity(&root, subject, &host.producer, exchange)
-            }
-            ScalarInspection::CallModuleBoundaries => observe_python_native_call_module_boundaries(
-                &root,
-                subject,
-                &host.producer,
-                exchange,
-            ),
-            _ => observe_python_native_call_return(&root, subject, &host.producer, exchange),
-        }
-        .map_err(|error| error.to_string())?;
-        host.revalidate().map_err(|error| error.to_string())?;
-        return canonical(&report).map_err(|error| error.to_string());
+        return inspect_registered_calls(&root, &host, inspection);
     }
+    let exchange = |request| host.exchange(request);
     if let Some((module, scope_path, scope, scope_bytes, call_returns)) = authored {
         let subject = &host.registration.subject;
         if !subject.exact_bool_parameters.is_empty() {
@@ -448,6 +430,30 @@ fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
         exchange,
         inspection,
     )
+}
+
+fn inspect_registered_calls(
+    root: &Path,
+    host: &RegisteredScalarHost,
+    inspection: ScalarInspection,
+) -> Result<Vec<u8>, String> {
+    let exchange = |request| host.exchange(request);
+    let subject = &host.registration.subject;
+    let report = match inspection {
+        ScalarInspection::CallTopology => {
+            observe_python_native_call_topology(root, subject, &host.producer, exchange)
+        }
+        ScalarInspection::CallSensitivity => {
+            observe_python_native_call_sensitivity(root, subject, &host.producer, exchange)
+        }
+        ScalarInspection::CallModuleBoundaries => {
+            observe_python_native_call_module_boundaries(root, subject, &host.producer, exchange)
+        }
+        _ => observe_python_native_call_return(root, subject, &host.producer, exchange),
+    }
+    .map_err(|error| error.to_string())?;
+    host.revalidate().map_err(|error| error.to_string())?;
+    canonical(&report).map_err(|error| error.to_string())
 }
 
 fn serialize_scalar_inspection(
