@@ -7,9 +7,10 @@ use serde::Serialize;
 use serde_json::Value;
 
 use super::{
-    ActualPythonStaticImportObservation, PythonImportScope, PythonLexicalProducer,
-    PythonLexicalRequest, PythonObservationError, PythonStaticImportLimitation,
-    PythonStaticImportObservation, PythonStaticImportOutcome, collect_static_imports,
+    ActualPythonStaticImportObservation, PythonImportScope, PythonLexicalError,
+    PythonLexicalProducer, PythonLexicalRequest, PythonObservationError,
+    PythonStaticImportLimitation, PythonStaticImportObservation, PythonStaticImportOutcome,
+    collect_static_imports,
 };
 use crate::affected_analysis::sha256;
 use crate::audit::NativeAuthorityScope;
