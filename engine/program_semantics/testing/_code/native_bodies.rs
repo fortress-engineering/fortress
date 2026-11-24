@@ -543,7 +543,9 @@ fn scalar_body_does_not_admit_a_call_without_a_selected_call_closure() {
         NativeBodyError::InvalidResponse
     );
     assert!(matches!(
-        lowered(fixture.admit(&original).unwrap()).body().statements()[1],
+        lowered(fixture.admit(&original).unwrap())
+            .body()
+            .statements()[1],
         ProgramStatement::Return {
             value: Some(ProgramExpression::Binding { .. }),
             ..
