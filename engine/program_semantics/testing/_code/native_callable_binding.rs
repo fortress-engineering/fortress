@@ -1,8 +1,10 @@
 //! Exact source and evaluation controls for native declaration links.
 
-use super::{NativeCallableLimitation, NativeCallableOutcome, VerifiedCallableLink};
 use crate::program_semantics::native_body::{
     NativeBodyError, NativeBodyInput, NativeBodyLanguage, NativeBodyOutcome, NativeCallBindings,
+};
+use crate::program_semantics::native_callable::{
+    NativeCallableLimitation, NativeCallableOutcome, VerifiedCallableLink,
 };
 use crate::project::EvaluationKey;
 use serde_json::json;

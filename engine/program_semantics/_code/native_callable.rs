@@ -234,7 +234,3 @@ impl VerifiedCallableLink<'_> {
 fn go_scalar(value: NativeScalar) -> bool {
     matches!(value, NativeScalar::Bool | NativeScalar::SignedI64)
 }
-
-#[cfg(test)]
-#[path = "../testing/_code/native_callable_binding.rs"]
-mod binding_tests;
