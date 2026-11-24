@@ -181,6 +181,31 @@ pub struct SourceOwnershipResolution {
 }
 
 impl SourceOwnershipResolution {
+    /// Adds already resolved physical ownership for unclaimed native sources.
+    pub(crate) fn with_physical_fallback(mut self, candidates: &[SourceOwnership]) -> Self {
+        let accounted = self
+            .ownerships
+            .iter()
+            .map(SourceOwnership::source_path)
+            .chain(
+                self.diagnostics
+                    .iter()
+                    .map(SourceOwnershipDiagnostic::source_path),
+            )
+            .collect::<BTreeSet<_>>();
+        let additions: Vec<_> = candidates
+            .iter()
+            .filter(|owner| {
+                owner.basis() == SourceOwnershipBasis::PhysicalModuleContainment
+                    && !accounted.contains(owner.source_path())
+            })
+            .cloned()
+            .collect();
+        self.ownerships.extend(additions);
+        self.ownerships.sort();
+        self
+    }
+
     /// Returns resolved declared or analysis-only ownership facts.
     #[must_use]
     pub fn ownerships(&self) -> &[SourceOwnership] {

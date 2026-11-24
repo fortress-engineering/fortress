@@ -611,16 +611,19 @@ existing Rust and Cargo resolution. Changing a native file invalidates its
 artifact projection through the exact file dependency.
 
 The explicit Go module dependency view obtains the complete occurrence ownership
-relation from the same original source, logical bindings and CCG used to seal
-the worker request. It preserves the native response and attaches a scoped
+relation from the same original source and CCG used to seal the worker request.
+Explicit logical selectors retain precedence. An unclaimed Go file can use the
+canonical physical Module relation already selected for that source. The view preserves
+the native response and attaches a scoped
 Implementation Observation projection. The full physical view is revalidated
 after the report is assembled and before its publication.
 
 ### [`python_dependencies.rs`](../_code/python_dependencies.rs)
 
-Combines an admitted Python static import receipt with original logical
-Module ownership through the native dependency adapter. Positions use the
-original UTF-8 bytes with physical CRLF retained. The result retains unknown
+Combines an admitted Python static import receipt with exact original
+Module ownership through the native dependency adapter. With no applicable
+logical claim or conflict, a selected Python file can use canonical physical
+Module ownership. Positions use the original UTF-8 bytes with physical CRLF retained. The result retains unknown
 targets and ownership ambiguity alongside exact source evidence. The
 physical revalidation boundary covers dependency projection and publication.
 

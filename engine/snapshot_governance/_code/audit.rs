@@ -4925,8 +4925,16 @@ pub(crate) fn bind_native_observation_source(
         ));
     }
     let authority_digest = prepared_authority_binding(&prepared)?.digest();
-    let dependency_ownership = (!matches!(scope, NativeAuthorityScope::Observation))
-        .then(|| native_dependency_ownership(&prepared));
+    let dependency_ownership = match scope {
+        NativeAuthorityScope::Observation => None,
+        NativeAuthorityScope::Dependencies => Some(
+            native_dependency_ownership(&prepared)
+                .with_physical_fallback(&prepared.native_source_ownerships),
+        ),
+        NativeAuthorityScope::AuthoredReturn | NativeAuthorityScope::AuthoredEffect(_) => {
+            Some(native_dependency_ownership(&prepared))
+        }
+    };
     let native_return_contracts = match (scope, prepared.ccg()) {
         (NativeAuthorityScope::AuthoredReturn, Some(ccg)) => ccg
             .governance_territories()
