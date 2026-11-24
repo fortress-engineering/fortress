@@ -347,20 +347,20 @@ mod bound_call_bodies {
                 );
             }
             assert_eq!(result["evaluation"]["occurrence"], occurrence);
-            if case != "recursive_target" {
+            if case == "recursive_target" {
+                assert_eq!(
+                    result["evaluation"],
+                    json!({
+                        "status":"UNAVAILABLE", "occurrence":occurrence, "reason":"RECURSIVE_DEPENDENCY",
+                    })
+                );
+            } else {
                 assert_eq!(result["evaluation"]["status"], "COMPLETE");
                 assert_eq!(result["evaluation"]["parameters"], json!(["v"]));
                 assert_eq!(result["evaluation"]["returns"], json!([true, false]));
                 assert_eq!(
                     result["evaluation"]["dependency_occurrences"],
                     json!([target])
-                );
-            } else {
-                assert_eq!(
-                    result["evaluation"],
-                    json!({
-                        "status":"UNAVAILABLE", "occurrence":occurrence, "reason":"RECURSIVE_DEPENDENCY",
-                    })
                 );
             }
             let missing = "native_body_occurrence:v1:sha256:0000000000000000000000000000000000000000000000000000000000000000";
