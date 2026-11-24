@@ -49,6 +49,8 @@ const LEXICAL_CALL_WORKER_REF: &str =
     "sha256:f581a2047e320eea9abdd0b19ea26f1c49ab051c747ebd330ecae0979c93796c";
 const ORDERED_BOOLEAN_WORKER_REF: &str =
     "sha256:7182cb5d525b9a54b255388d33c008f34aa2811f59b56fae56459b4c812989ea";
+const MODULE_DECLARATION_WORKER_REF: &str =
+    "sha256:e45d99c4572862455562ab23a8124272a4e10793c52cdcb877cd1dec56e1f39c";
 const PREVIOUS_WORKERS: &[(usize, &str)] = &[
     (
         16_457,
@@ -60,6 +62,7 @@ const PREVIOUS_WORKERS: &[(usize, &str)] = &[
     ),
     (22_039, LEXICAL_CALL_WORKER_REF),
     (23_476, ORDERED_BOOLEAN_WORKER_REF),
+    (24_373, MODULE_DECLARATION_WORKER_REF),
 ];
 const REGISTRATION_MAX: usize = 16 * 1024;
 const DEADLINE: Duration = Duration::from_secs(5);
@@ -238,6 +241,7 @@ impl<'a> RegisteredScalarHost<'a> {
             && worker_ref != digest(PYTHON_SCALAR_WORKER)
             && worker_ref != LEXICAL_CALL_WORKER_REF
             && worker_ref != ORDERED_BOOLEAN_WORKER_REF
+            && worker_ref != MODULE_DECLARATION_WORKER_REF
         {
             return Err("PYTHON_LEXICAL_CALL_WORKER_UNAVAILABLE".into());
         }

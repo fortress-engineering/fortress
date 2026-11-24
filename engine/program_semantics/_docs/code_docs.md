@@ -265,3 +265,7 @@ and exact call locations preserve shared Program Semantics identities.
 Admits a pinned compile-only Python reply for an exact lexical call closure.
 Checks the enclosing declaration, ordered helper spans, Boolean parameters,
 call sites and exact target symbols before exposing typed dependencies.
+Sibling helpers may call one another through closure cells established before
+the root starts evaluating statements. Local shadows, nonlocal writes and
+unresolved globals cannot establish a call target. Recursive edges remain
+visible in topology while finite return evaluation reports their limitation.

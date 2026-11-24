@@ -408,22 +408,32 @@ def describe_lexical_calls(function, source, request, report, top_scope):
             if isinstance(node, ast.Name) and node.id in names and not isinstance(node.ctx, ast.Load):
                 raise Refuse("CALL_TARGET_UNESTABLISHED", node)
 
-    callees, bodies = {}, []
+    callees, declarations = {}, []
     for helper in helpers:
         symbol = outer.lookup(helper.name)
         definitions = symbol.get_namespaces()
         if (not symbol.is_local() or symbol.is_global() or symbol.is_nonlocal()
-                or len(definitions) != 1 or definitions[0].get_lineno() != helper.lineno
-                or definitions[0].get_frees()):
+                or len(definitions) != 1 or definitions[0].get_lineno() != helper.lineno):
+            raise Refuse("LEXICAL_SCOPE_UNESTABLISHED", helper)
+        definition = definitions[0]
+        free = definition.get_frees()
+        if not names.issuperset(free) or any(definition.lookup(name).is_nonlocal() for name in free):
             raise Refuse("LEXICAL_SCOPE_UNESTABLISHED", helper)
         body = {}
         selected = function_signature(helper, source, helper.name, body)
         if len(selected) > MAX_CALL_PARAMS:
             raise Refuse("CALL_ARGUMENTS_UNSUPPORTED", helper)
-        lower_body(helper, source, helper.body, selected, body, {})
+        callees[helper.name] = (body["symbol"], len(selected))
+        declarations.append((helper, selected, body, free))
+
+    # The root calls only after all these ordinary definitions have bound their
+    # cells. CPython's symbol table distinguishes captured names from shadows.
+    bodies = []
+    for helper, selected, body, free in declarations:
+        targets = {name: callees[name] for name in free}
+        lower_body(helper, source, helper.body, selected, body, targets)
         if body["result_scalar"] != "BOOL":
             raise Refuse("CALL_TARGET_SCALAR_UNSUPPORTED", helper)
-        callees[helper.name] = (body["symbol"], len(selected))
         bodies.append(body)
     lower_body(function, source, statements, parameters, report, callees)
     report["helpers"] = bodies

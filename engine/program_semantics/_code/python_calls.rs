@@ -34,13 +34,24 @@ impl PythonLexicalCalls {
             .iter()
             .map(|body| (body.declaration().name.as_str(), body))
             .collect::<BTreeMap<_, _>>();
-        for call in root.bound_calls() {
-            let body = declarations
-                .get(call.target.name.as_str())
-                .ok_or(PythonScalarError::InvalidResponse)?;
-            targets
-                .insert(root, call, root.source_ref(), Some(*body))
-                .map_err(|_| PythonScalarError::InvalidResponse)?;
+        for caller in std::iter::once(root.as_ref()).chain(&self.helpers) {
+            for call in caller.bound_calls() {
+                let name = &call.target.name;
+                if caller
+                    .parameters()
+                    .iter()
+                    .chain(caller.locals())
+                    .any(|(binding, _)| binding == name)
+                {
+                    return Err(PythonScalarError::InvalidResponse);
+                }
+                let target = declarations
+                    .get(name.as_str())
+                    .ok_or(PythonScalarError::InvalidResponse)?;
+                targets
+                    .insert(caller, call, root.source_ref(), Some(*target))
+                    .map_err(|_| PythonScalarError::InvalidResponse)?;
+            }
         }
         Ok(targets)
     }
@@ -159,8 +170,9 @@ fn verify_helpers(
             ..*input
         };
         let payload = serde_json_canonicalizer::to_vec(row).map_err(PythonScalarError::Json)?;
-        let NativeBodyOutcome::Lowered(body) =
-            source.admit(&payload).map_err(PythonScalarError::Native)?
+        let NativeBodyOutcome::Lowered(body) = source
+            .admit_bound_calls(&payload)
+            .map_err(PythonScalarError::Native)?
         else {
             return Err(PythonScalarError::InvalidResponse);
         };

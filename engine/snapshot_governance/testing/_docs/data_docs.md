@@ -253,3 +253,10 @@ The exact Python worker responses for independently executed finite Boolean retu
 ### [`python_declaration_scope_v1.json`](../_data/python_declaration_scope_v1.json)
 
 Frozen source and exact worker responses for scalar selection in regular Python modules. Native executions establish the supported Boolean tables. The remaining controls preserve explicit refusal for ambiguous subjects, evaluated definitions, module-level statements, resource bounds, and mutable global calls.
+
+### [`python_transitive_lexical_v1.json`](../_data/python_transitive_lexical_v1.json)
+
+Frozen Python source and compile-only responses for sibling closure calls. Native
+Boolean results cover forward and backward lexical references and a shared
+callee. The records also cover recursion, mutable bindings, shadowing, and
+unresolved globals. CPython executes only the independent fixture oracle.

@@ -152,6 +152,109 @@ mod lexical_calls {
         ));
     }
 
+    const TRANSITIVE_CASES: &[u8] = include_bytes!("../_data/python_transitive_lexical_v1.json");
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R44-001`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R44
+    #[test]
+    fn python_transitive_lexical_calls_match_native_results_and_preserve_cycles() {
+        use fortress_core::python_observation::observe_python_native_call_topology;
+
+        let cases: Value = serde_json::from_slice(TRANSITIVE_CASES).unwrap();
+        for (name, row) in cases["cases"].as_object().unwrap() {
+            let (fixture, subject, producer, receipt) =
+                lexical_fixture(row, name, "chosen", vec!["value".into()]);
+            let respond =
+                |request: Vec<u8>| Ok(serde_json::to_vec(&bind(&request, &receipt)).unwrap());
+            let returned =
+                observe_python_native_call_return(&fixture.root, &subject, &producer, respond)
+                    .unwrap();
+            let topology =
+                observe_python_native_call_topology(&fixture.root, &subject, &producer, respond)
+                    .unwrap();
+            let graph = &topology["graph"];
+            if let Some(reason) = row["expected_limitation"].as_str() {
+                assert!(returned["evaluation"].is_null(), "{name}");
+                assert_eq!(returned["diagnostic"]["code"], reason, "{name}");
+                assert_eq!(graph["reason"], reason, "{name}");
+                continue;
+            }
+            assert_eq!(graph["status"], "AVAILABLE", "{name}");
+            assert_eq!(graph["unavailable_targets"], json!([]), "{name}");
+            assert_eq!(
+                graph["sites"].as_array().unwrap().len(),
+                row["expected_site_count"].as_u64().unwrap() as usize,
+                "{name}"
+            );
+            if let Some(reason) = row["expected_evaluation_limit"].as_str() {
+                assert_eq!(returned["evaluation"]["status"], "UNAVAILABLE", "{name}");
+                assert_eq!(returned["evaluation"]["reason"], reason, "{name}");
+            } else {
+                assert_eq!(returned["evaluation"]["status"], "COMPLETE", "{name}");
+                assert_eq!(
+                    returned["evaluation"]["returns"], row["expected_returns"],
+                    "{name}"
+                );
+                assert_eq!(
+                    returned["evaluation"]["dependency_occurrences"]
+                        .as_array()
+                        .unwrap()
+                        .len(),
+                    row["expected_dependency_count"].as_u64().unwrap() as usize,
+                    "{name}"
+                );
+            }
+            assert_eq!(returned["target_execution"], "NOT_RUN");
+            assert_eq!(
+                returned,
+                observe_python_native_call_return(&fixture.root, &subject, &producer, respond,)
+                    .unwrap(),
+                "{name}"
+            );
+            assert_eq!(
+                fs::read_to_string(fixture.root.join("fixture.py")).unwrap(),
+                row["source"]
+            );
+        }
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R44-002`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R44
+    #[test]
+    fn python_transitive_lexical_calls_refuse_missing_and_displaced_helpers() {
+        let cases: Value = serde_json::from_slice(TRANSITIVE_CASES).unwrap();
+        let (fixture, subject, producer, receipt) = lexical_fixture(
+            &cases["cases"]["forward"],
+            "transitive-rejected",
+            "chosen",
+            vec!["value".into()],
+        );
+        for (pointer, replacement) in [
+            ("/helpers", json!([receipt["helpers"][0]])),
+            (
+                "/helpers/0/body/0/value/call/target/span/path",
+                json!("different.py"),
+            ),
+            ("/helpers/0/body/0/value/call/arguments", json!([])),
+        ] {
+            let result =
+                observe_python_native_call_return(&fixture.root, &subject, &producer, |request| {
+                    let mut reply = bind(&request, &receipt);
+                    *reply.pointer_mut(pointer).unwrap() = replacement;
+                    Ok(serde_json::to_vec(&reply).unwrap())
+                });
+            assert!(
+                matches!(
+                    result,
+                    Err(PythonObservationError::Scalar(
+                        PythonScalarError::InvalidResponse | PythonScalarError::Native(_)
+                    ))
+                ),
+                "{pointer}"
+            );
+        }
+    }
+
     fn assert_python_native_return_cases(bytes: &[u8]) {
         let doc: Value = serde_json::from_slice(bytes).unwrap();
         for (name, row) in doc["cases"].as_object().unwrap() {

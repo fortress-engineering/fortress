@@ -706,6 +706,14 @@
           "tests": [
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R43-001"
           ]
+        },
+        {
+          "id": "AF-SNAPSHOT-GOVERNANCE-0001-R44",
+          "statement": "Bounded Python lexical call analysis follows exact helper dependencies through ordinary closure cells after their definitions have bound them. Rebinding, shadowed call targets, and unresolved globals do not establish valid edges. Recursive dependencies remain visible without yielding finite return proofs.",
+          "tests": [
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R44-001",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R44-002"
+          ]
         }
       ]
     }
