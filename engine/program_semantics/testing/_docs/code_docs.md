@@ -40,11 +40,3 @@ Exercises both native scalar scopes at the common Program Semantics owner.
 Independent expected results cover structural body nodes, physical positions,
 byte freshness, producer and context identity, unsupported operations and
 explicitly unavailable results.
-
-### [`native_callable_binding.rs`](../_code/native_callable_binding.rs)
-
-The call index control admits a known Boolean helper and rejects substitutions of the declaration, source identity, semantic context, authority, producer, or exchange. It also checks that a duplicate site cannot replace its original target.
-
-Exercises the callable admission boundary with an exact literal native body.
-The controls verify that changed language, declaration name, source path,
-source digest, or evaluation key prevents attachment.
