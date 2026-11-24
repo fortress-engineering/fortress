@@ -58,6 +58,7 @@ mod layout_command;
 #[path = "../agent_integration/_code/mediator.rs"]
 pub mod mediator;
 mod migration_command;
+mod native_return_command;
 mod onboarding_command;
 mod portable_command;
 mod presentation;

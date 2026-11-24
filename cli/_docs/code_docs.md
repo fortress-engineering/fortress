@@ -35,6 +35,16 @@ retains both the original body receipt and the scoped flow disposition.
 
 ### [`go_observation_command.rs`](../_code/go_observation_command.rs)
 
+Select the original Go module and target context using the existing module
+inspection arguments. Append `--authored-return FUNCTION BODY_REGISTRATION`
+to compare a zero-argument Boolean callable with its original requirement.
+Supply both registrations outside the repository with independent executable
+and runtime pins. Keep the authored document in its declared logical Module
+data directory outside the selected closed Go module prefix. The runtime
+produces a bounded static comparison with independently reported body and
+declaration provenance.
+
+
 Runs the explicitly selected, digest-pinned Go collector with the shared bounded subprocess supervisor. Returns the independent native observation projection after source and authority revalidation.
 
 For declaration-only test inspection, build the reviewed helper from
@@ -663,3 +673,25 @@ For direct data movement in a Python scalar body, add `--flow` to the
 explicit scalar invocation. The original scalar receipt remains available in
 the returned envelope. Condition inputs are listed separately from the
 unsupported control-influence analysis.
+
+For comparison with an original authored Boolean return requirement, run
+`fortress source-artifacts --observe-python-scalar PROJECT HOST_REGISTRATION --contract MODULE ROOT_SCOPE ROOT_SCOPE_SHA256`.
+Supply the absolute external root-scope file and independently pinned canonical
+digest used for [static import scope selection](#python_observe_commandrs).
+`MODULE` selects one top-level lexical module. The registration supplies the
+function name and pins its exact path and bytes. Use an empty
+`exact_bool_parameters` array. Fortress checks the registration against the
+original resolved subject before sending any source to the worker.
+
+The displayed requirement comes from the original Module's captured
+`native_function_contracts.json`. Missing, conflicting or unsupported
+requirements remain explicit. The result reports a compile-only, bounded
+comparison and preserves uncertainty about runtime imports, execution and
+certification.
+
+### [`native_return_command.rs`](../_code/native_return_command.rs)
+
+Serializes the same typed original native return observation for both language
+commands. It retains the exact source and governing authority even if the
+subject is unavailable. Each linked comparison preserves its separate native
+scope, exact declared owner, original intent, and static return bound.

@@ -380,10 +380,7 @@ fn collect_imports(
         .map_err(|error| error.to_string())?;
     let registration_path = Path::new(registration_path);
     let scope_path = Path::new(scope_path);
-    super::verifier_process::require_external_asset(scope_path, &root)?;
-    let scope_bytes = super::provider_command::read_bounded(scope_path, IMPORT_SCOPE_LIMIT)?;
-    let scope =
-        PythonImportScope::admit(&scope_bytes, scope_ref).map_err(|error| error.to_string())?;
+    let (scope, scope_bytes) = load_import_scope(&root, scope_path, scope_ref)?;
     let (registration, registration_bytes) = Registration::load(&root, registration_path)?;
     let worker_ref = digest(PYTHON_LEXICAL_WORKER);
     let producer = PythonLexicalProducer::new(
@@ -416,7 +413,7 @@ fn collect_imports(
             REGISTRATION_LIMIT,
             &registration_bytes,
         )?;
-        verify_external_input(&root, scope_path, IMPORT_SCOPE_LIMIT, &scope_bytes)?;
+        verify_import_scope(&root, scope_path, &scope_bytes)?;
         Ok(output)
     };
     if !with_dependencies {
@@ -443,8 +440,7 @@ fn collect_imports(
         &registration_bytes,
     )
     .map_err(|error| error.to_string())?;
-    verify_external_input(&root, scope_path, IMPORT_SCOPE_LIMIT, &scope_bytes)
-        .map_err(|error| error.to_string())?;
+    verify_import_scope(&root, scope_path, &scope_bytes).map_err(|error| error.to_string())?;
     encode(&json!({
         "$schema": "urn:fortress:derived:v1:python-static-dependency-observation",
         "schema_version": 1,
@@ -477,6 +473,25 @@ fn static_import_report(
             "authority": "OBSERVATION_ONLY",
         },
     })
+}
+
+pub(super) fn load_import_scope(
+    root: &Path,
+    path: &Path,
+    scope_ref: &str,
+) -> Result<(PythonImportScope, Vec<u8>), String> {
+    super::verifier_process::require_external_asset(path, root)?;
+    let bytes = super::provider_command::read_bounded(path, IMPORT_SCOPE_LIMIT)?;
+    let scope = PythonImportScope::admit(&bytes, scope_ref).map_err(|error| error.to_string())?;
+    Ok((scope, bytes))
+}
+
+pub(super) fn verify_import_scope(
+    root: &Path,
+    path: &Path,
+    expected: &[u8],
+) -> Result<(), PythonObservationError> {
+    verify_external_input(root, path, IMPORT_SCOPE_LIMIT, expected)
 }
 
 fn verify_external_input(

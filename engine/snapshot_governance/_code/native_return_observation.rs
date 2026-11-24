@@ -10,6 +10,12 @@ use crate::semantic_analysis::{
 /// The exact callable observation and a separately selected authored comparison.
 #[derive(Debug)]
 pub struct AuthoredNativeReturnObservation {
+    /// The complete original physical source view identity.
+    pub source_view_ref: String,
+    /// The original observed source manifest identity.
+    pub source_manifest_digest: String,
+    /// Independently bound original governing authority.
+    pub authority_binding_digest: String,
     /// Typed native scope, precise body linkage or explicit limitation.
     pub subject: NativeCallableOutcome,
     /// The separately bound authored observation.
@@ -73,6 +79,9 @@ pub(crate) fn compare_captured_native_return(
         ),
     };
     AuthoredNativeReturnObservation {
+        source_view_ref: source.view.digest().into(),
+        source_manifest_digest: source.binding.source_manifest_digest.clone(),
+        authority_binding_digest: source.binding.authority_digest.clone(),
         subject,
         comparison,
     }

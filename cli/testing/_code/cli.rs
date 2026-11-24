@@ -2631,6 +2631,148 @@ fn scalar_cli_refuses_unselected_and_repository_controlled_host_registration() {
     );
 }
 
+/// `T-TF-CLI-0001-R31-005`
+/// Fortress requirement: TF-CLI-0001-R31
+#[test]
+fn authored_python_cli_requires_external_scope_and_exact_scope_pin() {
+    let fixture = ObservationFixture::new();
+    let host = ObservationFixture::new();
+    let document = br#"{"$schema":"urn:fortress:host:v1:python-static-import-scope","inventory":"COMPLETE_SOURCE_ONLY","roots":["src"],"schema_version":1}"#;
+    let correct = fortress_core::portable::digest(document);
+    let stale = fortress_core::portable::digest(b"other scope");
+    let root = fixture.argument();
+    for (path, reference, expected) in [
+        (
+            fixture.root.join("scope.json"),
+            correct.as_str(),
+            "COLLECTOR_TRUST_REQUIRED",
+        ),
+        (
+            host.root.join("scope.json"),
+            stale.as_str(),
+            "invalid Python import root binding",
+        ),
+    ] {
+        fs::write(&path, document).unwrap();
+        let result = run(&[
+            "source-artifacts",
+            "--observe-python-scalar",
+            &root,
+            "unavailable-registration.json",
+            "--contract",
+            "subject",
+            &path.to_string_lossy(),
+            reference,
+        ]);
+        assert_eq!(result.status.code(), Some(i32::from(EXIT_USAGE)));
+        assert!(result.stdout.is_empty());
+        assert!(String::from_utf8_lossy(&result.stderr).contains(expected));
+        assert_eq!(fs::read(&path).unwrap(), document);
+    }
+    let injected = run(&[
+        "source-artifacts",
+        "--observe-python-scalar",
+        &root,
+        "unavailable-registration.json",
+        "--contract",
+        "subject",
+        "scope.json",
+        &correct,
+        "required_return=false",
+    ]);
+    assert_eq!(injected.status.code(), Some(i32::from(EXIT_USAGE)));
+    assert!(injected.stdout.is_empty());
+    assert!(String::from_utf8_lossy(&injected.stderr).contains("usage:"));
+}
+
+/// `T-TF-CLI-0001-R31-006`
+/// Fortress requirement: TF-CLI-0001-R31
+#[test]
+fn authored_python_cli_refuses_displaced_stale_or_parameterized_host_subjects() {
+    use fortress_core::portable::{canonical, digest};
+    use fortress_core::python_observation::{PYTHON_LEXICAL_WORKER, PYTHON_SCALAR_WORKER};
+    use serde_json::json;
+
+    let fixture = ObservationFixture::new();
+    let host = ObservationFixture::new();
+    let root = native_publication_fixture(&fixture.root);
+    let source = b"def subject():\n    return True\n";
+    for path in ["src/selected.py", "src/elsewhere.py"] {
+        fs::write(root.join(path), source).unwrap();
+    }
+    let scope = host.root.join("scope.json");
+    let scope_bytes = canonical(&json!({
+        "$schema":"urn:fortress:host:v1:python-static-import-scope",
+        "schema_version":1,
+        "inventory":"COMPLETE_SOURCE_ONLY",
+        "roots":["src"],
+    }))
+    .unwrap();
+    fs::write(&scope, &scope_bytes).unwrap();
+    let worker = host.root.join("python_scalar_worker.py");
+    let bootstrap = host.root.join("python_lexical_worker.py");
+    fs::write(&worker, PYTHON_SCALAR_WORKER).unwrap();
+    fs::write(&bootstrap, PYTHON_LEXICAL_WORKER).unwrap();
+    let inert = host.root.join("inert-interpreter");
+    fs::write(&inert, b"worker may not be dispatched").unwrap();
+    let registration = host.root.join("registration.json");
+    for (path, reference, parameters, expected) in [
+        (
+            "src/elsewhere.py",
+            digest(source),
+            vec![],
+            "invalid Python scalar input binding",
+        ),
+        (
+            "src/selected.py",
+            digest(b"older source"),
+            vec![],
+            "invalid Python scalar input binding",
+        ),
+        (
+            "src/selected.py",
+            digest(source),
+            vec!["false_scope"],
+            "PYTHON_AUTHORED_RETURN_REQUIRES_ZERO_ARGUMENT_SUBJECT",
+        ),
+    ] {
+        let supplied = canonical(&json!({
+            "$schema":"urn:fortress:host:v1:python-scalar-registration",
+            "schema_version":1,
+            "interpreter":inert,
+            "interpreter_sha256":digest(b"wrong executable pin"),
+            "worker":worker,
+            "bootstrap":bootstrap,
+            "runtime_ref":digest(b"controlled fixture"),
+            "grammar":"cpython3.13",
+            "subject":{"source_path":path,"source_ref":reference,
+                       "function":"subject","exact_bool_parameters":parameters}
+        }))
+        .unwrap();
+        fs::write(&registration, &supplied).unwrap();
+        let result = run(&[
+            "source-artifacts",
+            "--observe-python-scalar",
+            &root.to_string_lossy(),
+            &registration.to_string_lossy(),
+            "--contract",
+            "selected",
+            &scope.to_string_lossy(),
+            &digest(&scope_bytes),
+        ]);
+        assert_eq!(result.status.code(), Some(i32::from(EXIT_USAGE)));
+        assert!(result.stdout.is_empty());
+        assert!(
+            String::from_utf8_lossy(&result.stderr).contains(expected),
+            "{}",
+            String::from_utf8_lossy(&result.stderr)
+        );
+        assert_eq!(fs::read(&registration).unwrap(), supplied);
+        assert_eq!(fs::read(&scope).unwrap(), scope_bytes);
+        assert_eq!(fs::read(root.join("src/selected.py")).unwrap(), source);
+    }
+}
+
 /// `T-TF-CLI-0001-R31-003`
 /// Fortress requirement: TF-CLI-0001-R31
 #[test]

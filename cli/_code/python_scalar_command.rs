@@ -9,7 +9,8 @@ use std::time::Duration;
 use fortress_core::portable::{canonical, digest};
 use fortress_core::python_observation::{
     ActualPythonScalarObservation, NativeBodyOutcome, PYTHON_LEXICAL_WORKER, PYTHON_SCALAR_WORKER,
-    PythonObservationError, PythonScalarProducer, PythonScalarSubject, observe_python_scalar,
+    PythonCallableSelection, PythonObservationError, PythonScalarError, PythonScalarProducer,
+    PythonScalarSubject, observe_python_authored_native_return, observe_python_scalar,
     observe_python_scalar_flow,
 };
 use fortress_core::wire::{
@@ -18,11 +19,15 @@ use fortress_core::wire::{
 use serde::Deserialize;
 use serde_json::{Value, json};
 
-use super::python_observe_command::{Grammar, resource_profile};
+use super::python_observe_command::{
+    Grammar, load_import_scope, resource_profile, verify_import_scope,
+};
 use super::verifier_process::{require_external_asset, run_pinned_input_after_ready};
 
-const USAGE: &str =
-    "fortress source-artifacts --observe-python-scalar project host-registration [--flow]";
+const USAGE: &str = concat!(
+    "fortress source-artifacts --observe-python-scalar project host-registration [--flow]",
+    "\n       fortress source-artifacts --observe-python-scalar project host-registration --contract module root-scope root-scope-sha256",
+);
 const REGISTRATION_SCHEMA: &str = "urn:fortress:host:v1:python-scalar-registration";
 const OBSERVATION_SCHEMA: &str = "urn:fortress:derived:v1:python-scalar-observation";
 const READY_SCHEMA: &str = "fortress-host/python-scalar-ready/1";
@@ -84,6 +89,23 @@ impl Registration {
             if super::provider_command::read_bounded(path, expected.len())? != expected {
                 return Err("PYTHON_SCALAR_WORKER_BYTES_MISMATCH".into());
             }
+        }
+        Ok(())
+    }
+
+    fn revalidate(
+        &self,
+        root: &Path,
+        path: &Path,
+        expected: &[u8],
+    ) -> Result<(), PythonObservationError> {
+        self.verify_worker_files(root)
+            .map_err(|_| PythonObservationError::HostUnavailable)?;
+        require_external_asset(path, root).map_err(|_| PythonObservationError::HostUnavailable)?;
+        let current = super::provider_command::read_bounded(path, REGISTRATION_MAX)
+            .map_err(|_| PythonObservationError::HostUnavailable)?;
+        if current != expected {
+            return Err(PythonObservationError::HostUnavailable);
         }
         Ok(())
     }
@@ -161,14 +183,24 @@ fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
     let [root, registration_path, mode @ ..] = arguments else {
         return Err(format!("usage: {USAGE}"));
     };
-    let inspect_flow = match mode {
-        [] => false,
-        [flag] if flag == "--flow" => true,
+    let (inspect_flow, authored) = match mode {
+        [] => (false, None),
+        [flag] if flag == "--flow" => (true, None),
+        [flag, module, scope_path, scope_ref] if flag == "--contract" => (
+            false,
+            Some((module.as_str(), Path::new(scope_path), scope_ref.as_str())),
+        ),
         _ => return Err(format!("usage: {USAGE}")),
     };
     let root = Path::new(root)
         .canonicalize()
         .map_err(|error| error.to_string())?;
+    let authored = authored
+        .map(|(module, scope_path, scope_ref)| {
+            load_import_scope(&root, scope_path, scope_ref)
+                .map(|(scope, bytes)| (module, scope_path, scope, bytes))
+        })
+        .transpose()?;
     let registration_path = Path::new(registration_path);
     let (registration, registration_bytes) = Registration::load(&root, registration_path)?;
     let worker_ref = digest(PYTHON_SCALAR_WORKER);
@@ -193,19 +225,32 @@ fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
         if status != 0 {
             return Err(PythonObservationError::HostUnavailable);
         }
-        registration
-            .verify_worker_files(&root)
-            .map_err(|_| PythonObservationError::HostUnavailable)?;
-        require_external_asset(registration_path, &root)
-            .map_err(|_| PythonObservationError::HostUnavailable)?;
-        if super::provider_command::read_bounded(registration_path, REGISTRATION_MAX)
-            .map_err(|_| PythonObservationError::HostUnavailable)?
-            != registration_bytes
-        {
-            return Err(PythonObservationError::HostUnavailable);
-        }
+        registration.revalidate(&root, registration_path, &registration_bytes)?;
         Ok(bytes)
     };
+    if let Some((module, scope_path, scope, scope_bytes)) = authored {
+        let subject = &registration.subject;
+        if !subject.exact_bool_parameters.is_empty() {
+            return Err("PYTHON_AUTHORED_RETURN_REQUIRES_ZERO_ARGUMENT_SUBJECT".into());
+        }
+        let selected = PythonCallableSelection {
+            module,
+            function: &subject.function,
+        };
+        let result =
+            observe_python_authored_native_return(&root, selected, &scope, &producer, |request| {
+                check_contract_subject(subject, &request)?;
+                registration.revalidate(&root, registration_path, &registration_bytes)?;
+                verify_import_scope(&root, scope_path, &scope_bytes)?;
+                exchange(request)
+            })
+            .map_err(|error| error.to_string())?;
+        registration
+            .revalidate(&root, registration_path, &registration_bytes)
+            .map_err(|error| error.to_string())?;
+        verify_import_scope(&root, scope_path, &scope_bytes).map_err(|error| error.to_string())?;
+        return crate::native_return_command::serialize(&result);
+    }
     let (result, flow) = if inspect_flow {
         observe_python_scalar_flow(&root, &registration.subject, &producer, exchange)
             .map(|(report, flow)| (report, Some(flow)))
@@ -230,6 +275,30 @@ fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
         receipt
     };
     canonical(&value).map_err(|error| error.to_string())
+}
+
+fn check_contract_subject(
+    expected: &PythonScalarSubject,
+    core_request: &[u8],
+) -> Result<(), PythonObservationError> {
+    #[derive(Deserialize)]
+    struct SelectedSubject {
+        source_path: String,
+        source_ref: String,
+        function: String,
+        parameter_domains: Vec<String>,
+    }
+    // This request is built from the original source capture by Snapshot Governance.
+    let actual: SelectedSubject =
+        parse_strict_json_bytes(core_request).map_err(|_| PythonScalarError::Binding)?;
+    if actual.source_path != expected.source_path
+        || actual.source_ref != expected.source_ref
+        || actual.function != expected.function
+        || !actual.parameter_domains.is_empty()
+    {
+        return Err(PythonScalarError::Binding.into());
+    }
+    Ok(())
 }
 
 fn projection(

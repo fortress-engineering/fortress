@@ -83,7 +83,54 @@ fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
         .canonicalize()
         .map_err(|failure| failure.to_string())?;
     let registration = Path::new(registration);
-    let (declared, original) = read_host_registration(registration, &root)?;
+    let selection = GoPackageSelection {
+        directory: if directory == "." { "" } else { directory },
+        package_path,
+        go_version,
+        target_os,
+        target_arch,
+    };
+    let (result, flow) = with_registered_body(&root, registration, |pin, collector| {
+        let launch = |input: &[u8]| collector.run(input);
+        if let Some(binding) = occurrence {
+            observe_go_native_body_flow(&root, selection, pin, binding, launch)
+        } else {
+            observe_go_native_body(&root, selection, pin, launch).map(|result| (result, None))
+        }
+        .map_err(|failure| failure.to_string())
+    })?;
+    serialize_report(result, occurrence, flow.as_ref())
+}
+
+pub(super) struct BodyLaunch<'a> {
+    command: Command,
+    executable_ref: &'a str,
+}
+
+impl BodyLaunch<'_> {
+    pub(super) fn run(self, input: &[u8]) -> Result<Vec<u8>, GoObservationError> {
+        let (stdout, status) = super::verifier_process::run_pinned_input(
+            self.command,
+            input.to_vec(),
+            TIMEOUT,
+            self.executable_ref,
+        )
+        .map_err(|failure| GoObservationError::Execution(failure.code))?;
+        if status != 0 {
+            return Err(GoObservationError::Execution(
+                "NATIVE_COLLECTOR_EXIT_FAILURE".into(),
+            ));
+        }
+        Ok(stdout)
+    }
+}
+
+pub(super) fn with_registered_body<T>(
+    root: &Path,
+    registration: &Path,
+    observe: impl FnOnce(&GoCollectorPin<'_>, BodyLaunch<'_>) -> Result<T, String>,
+) -> Result<T, String> {
+    let (declared, original) = read_host_registration(registration, root)?;
     let host_directory = registration
         .parent()
         .ok_or("Host registration needs an external working directory.")?;
@@ -116,39 +163,18 @@ fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
         supervisor_context_sha256: &context_sha256,
         go_toolchain: &declared.toolchain,
     };
-    let selection = GoPackageSelection {
-        directory: if directory == "." { "" } else { directory },
-        package_path,
-        go_version,
-        target_os,
-        target_arch,
-    };
-    let launch = |input: &[u8]| {
-        let (stdout, status) = super::verifier_process::run_pinned_input(
+    let result = observe(
+        &pin,
+        BodyLaunch {
             command,
-            input.to_vec(),
-            TIMEOUT,
-            pin.executable_sha256,
-        )
-        .map_err(|failure| GoObservationError::Execution(failure.code))?;
-        if status != 0 {
-            return Err(GoObservationError::Execution(
-                "NATIVE_COLLECTOR_EXIT_FAILURE".into(),
-            ));
-        }
-        Ok(stdout)
-    };
-    let (result, flow) = if let Some(binding) = occurrence {
-        observe_go_native_body_flow(&root, selection, &pin, binding, launch)
-    } else {
-        observe_go_native_body(&root, selection, &pin, launch).map(|result| (result, None))
-    }
-    .map_err(|failure| failure.to_string())?;
-    super::verifier_process::require_external_asset(registration, &root)?;
+            executable_ref: pin.executable_sha256,
+        },
+    )?;
+    super::verifier_process::require_external_asset(registration, root)?;
     if super::provider_command::read_bounded(registration, REGISTRATION_LIMIT)? != original {
         return Err("SOURCE_DRIFT: Native collector registration changed.".into());
     }
-    serialize_report(result, occurrence, flow.as_ref())
+    Ok(result)
 }
 
 fn read_host_registration(

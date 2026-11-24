@@ -125,3 +125,10 @@ diagnostics and separately retained scoped dependency evidence.
 Defines the standalone native scalar flow envelope with the original language
 receipt and an explicitly scoped direct data observation. It retains condition
 inputs, unsupported control influence, and unavailable occurrences separately.
+
+### [`native_return_schema_v1.json`](../_data/native_return_schema_v1.json)
+
+Defines the canonical read-only original-source native Boolean comparison.
+A linked callable and a selected authored requirement carry separate
+provenance. The same schema represents unavailable subjects and requirements
+without allocating a finding, grant, runtime result, or certificate.

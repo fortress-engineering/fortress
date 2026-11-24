@@ -6,8 +6,9 @@ use std::process::Command;
 use std::time::Duration;
 
 use fortress_core::go_observation::{
-    GoBuildContext, GoCollectorPin, GoModuleSelection, GoObservationError, GoPackageSelection,
-    GoTypeComparison, GoTypeSelector, observe_go_module_dependencies, observe_go_native,
+    GoBuildContext, GoCallableHost, GoCallableSelection, GoCollectorPin, GoModuleSelection,
+    GoObservationError, GoPackageSelection, GoTypeComparison, GoTypeSelector,
+    observe_go_authored_native_return, observe_go_module_dependencies, observe_go_native,
     observe_go_native_build, observe_go_native_module, observe_go_native_tests,
 };
 use fortress_core::portable::{canonical, digest};
@@ -71,7 +72,7 @@ impl Mode {
                 "--observe-go-tests project host-registration directory package-path go-version target-os target-arch"
             }
             Self::Module => {
-                "--observe-go-module project host-registration module-directory module-path entry-path target-os target-arch [--dependencies | left-package left-type right-package right-type]"
+                "--observe-go-module project host-registration module-directory module-path entry-path target-os target-arch [--dependencies | --authored-return function body-registration | left-package left-type right-package right-type]"
             }
         }
     }
@@ -157,12 +158,7 @@ fn collect(arguments: &[String], mode: Mode) -> Result<Vec<u8>, String> {
             "Explicit source, trusted host registration and package context are required.".into(),
         );
     };
-    let dependencies = mode == Mode::Module && compare == ["--dependencies"];
-    let comparison = if dependencies {
-        None
-    } else {
-        parse_comparison(mode, compare)?
-    };
+    let operation = parse_operation(mode, compare)?;
     let root = Path::new(root)
         .canonicalize()
         .map_err(|error| error.to_string())?;
@@ -189,16 +185,9 @@ fn collect(arguments: &[String], mode: Mode) -> Result<Vec<u8>, String> {
                 entry_path: version_or_entry,
                 target_os,
                 target_arch,
-                comparison: comparison.as_ref(),
+                comparison: None,
             };
-            if dependencies {
-                observe_go_module_dependencies(&root, selection, context, &pin, launch)
-                    .map_err(|error| error.to_string())
-            } else {
-                let result = observe_go_native_module(&root, selection, context, &pin, launch)
-                    .map_err(|error| error.to_string())?;
-                encode_observation(result)
-            }
+            collect_module(&root, selection, context, operation, &pin, launch)
         }
         (mode, context) => {
             let selection = GoPackageSelection {
@@ -242,11 +231,32 @@ fn encode_observation(observation: impl Serialize) -> Result<Vec<u8>, String> {
     canonical(&projection).map_err(|error| error.to_string())
 }
 
-fn parse_comparison(mode: Mode, compare: &[String]) -> Result<Option<GoTypeComparison>, String> {
-    match (mode, compare) {
-        (_, []) => Ok(None),
+enum ModuleOperation<'a> {
+    Observe(Option<GoTypeComparison>),
+    Dependencies,
+    AuthoredReturn {
+        function: &'a str,
+        body_registration: &'a Path,
+    },
+}
+
+fn parse_operation(mode: Mode, options: &[String]) -> Result<ModuleOperation<'_>, String> {
+    match (mode, options) {
+        (_, []) => Ok(ModuleOperation::Observe(None)),
+        (Mode::Module, [flag]) if flag == "--dependencies" => Ok(ModuleOperation::Dependencies),
+        (Mode::Module, [flag, function, body_registration])
+            if flag == "--authored-return"
+                && !function.is_empty()
+                && !function.starts_with('-')
+                && Path::new(body_registration).is_absolute() =>
+        {
+            Ok(ModuleOperation::AuthoredReturn { function, body_registration: Path::new(body_registration) })
+        }
+        (Mode::Module, [flag, ..]) if flag == "--authored-return" => {
+            Err("An authored return requires one function and an absolute trusted body registration path.".into())
+        }
         (Mode::Module, [left_package, left_type, right_package, right_type]) => {
-            Ok(Some(GoTypeComparison {
+            Ok(ModuleOperation::Observe(Some(GoTypeComparison {
                 left: GoTypeSelector {
                     package_path: left_package.clone(),
                     name: left_type.clone(),
@@ -255,7 +265,7 @@ fn parse_comparison(mode: Mode, compare: &[String]) -> Result<Option<GoTypeCompa
                     package_path: right_package.clone(),
                     name: right_type.clone(),
                 },
-            }))
+            })))
         }
         (Mode::Module, _) => {
             Err("An explicit type comparison requires two complete selectors.".into())
@@ -263,6 +273,55 @@ fn parse_comparison(mode: Mode, compare: &[String]) -> Result<Option<GoTypeCompa
         _ => Err(
             "Explicit source, trusted host registration and package context are required.".into(),
         ),
+    }
+}
+
+fn collect_module(
+    root: &Path,
+    selection: GoModuleSelection<'_>,
+    context: GoBuildContext,
+    operation: ModuleOperation<'_>,
+    pin: &GoCollectorPin<'_>,
+    launch: impl FnOnce(&[u8]) -> Result<Vec<u8>, GoObservationError>,
+) -> Result<Vec<u8>, String> {
+    match operation {
+        ModuleOperation::Observe(comparison) => {
+            let selection = GoModuleSelection {
+                comparison: comparison.as_ref(),
+                ..selection
+            };
+            let result = observe_go_native_module(root, selection, context, pin, launch)
+                .map_err(|error| error.to_string())?;
+            encode_observation(result)
+        }
+        ModuleOperation::Dependencies => {
+            observe_go_module_dependencies(root, selection, context, pin, launch)
+                .map_err(|error| error.to_string())
+        }
+        ModuleOperation::AuthoredReturn {
+            function,
+            body_registration,
+        } => {
+            let result = super::go_body_command::with_registered_body(
+                root,
+                body_registration,
+                |body, process| {
+                    observe_go_authored_native_return(
+                        root,
+                        GoCallableSelection {
+                            module: selection,
+                            function,
+                        },
+                        context,
+                        GoCallableHost { module: pin, body },
+                        launch,
+                        |bytes| process.run(bytes),
+                    )
+                    .map_err(|error| error.to_string())
+                },
+            )?;
+            super::native_return_command::serialize(&result)
+        }
     }
 }
 
@@ -385,4 +444,66 @@ fn run_collector(
         ));
     }
     Ok(output)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn authored_return_requires_a_complete_separate_host_selection() {
+        let body = std::env::current_dir()
+            .unwrap()
+            .join("body-registration.json");
+        let arguments = [
+            "--authored-return".to_owned(),
+            "Keep".to_owned(),
+            body.to_str().unwrap().to_owned(),
+        ];
+        assert!(matches!(
+            parse_operation(Mode::Module, &arguments).unwrap(),
+            ModuleOperation::AuthoredReturn { function: "Keep", body_registration }
+                if body_registration == body
+        ));
+        assert!(parse_operation(Mode::Module, &arguments[..2]).is_err());
+        assert!(parse_operation(Mode::Build, &arguments).is_err());
+        for tail in [
+            ["--authored-return", "Keep", "relative.json"],
+            [
+                "--authored-return",
+                "--dependencies",
+                body.to_str().unwrap(),
+            ],
+        ] {
+            assert!(parse_operation(Mode::Module, &tail.map(str::to_owned)).is_err());
+        }
+    }
+
+    #[test]
+    fn module_options_keep_the_existing_empty_dependency_and_type_modes() {
+        for mode in [Mode::Legacy, Mode::Build, Mode::Tests] {
+            assert!(matches!(
+                parse_operation(mode, &[]).unwrap(),
+                ModuleOperation::Observe(None)
+            ));
+        }
+        assert!(matches!(
+            parse_operation(Mode::Module, &[]).unwrap(),
+            ModuleOperation::Observe(None)
+        ));
+        assert!(matches!(
+            parse_operation(Mode::Module, &["--dependencies".into()]).unwrap(),
+            ModuleOperation::Dependencies
+        ));
+        let selectors = ["example.test/left", "First", "example.test/right", "Second"];
+        let ModuleOperation::Observe(Some(comparison)) =
+            parse_operation(Mode::Module, &selectors.map(str::to_owned)).unwrap()
+        else {
+            panic!("explicit type selectors must retain their original dispatch");
+        };
+        assert_eq!(comparison.left.package_path, selectors[0]);
+        assert_eq!(comparison.left.name, selectors[1]);
+        assert_eq!(comparison.right.package_path, selectors[2]);
+        assert_eq!(comparison.right.name, selectors[3]);
+    }
 }
