@@ -32,6 +32,7 @@ MAX_BOOLEAN_RETURN_OPERANDS = 4
 MAX_PARAMS = 8
 MAX_CALL_PARAMS = 4
 MAX_HELPERS = 16
+MAX_MODULE_DEFINITIONS = 16
 IDENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]{0,63}\Z")
 PATH_PART = re.compile(r"[A-Za-z0-9_][A-Za-z0-9_.-]{0,63}\Z")
 REF = re.compile(r"sha256:[0-9a-f]{64}\Z")
@@ -428,6 +429,26 @@ def describe_lexical_calls(function, source, request, report, top_scope):
     report["helpers"] = bodies
 
 
+def selected_module_function(statements, source, name):
+    # Keep the single-statement diagnostic and source-span behavior.
+    if len(statements) == 1:
+        return statements[0]
+    if not 2 <= len(statements) <= MAX_MODULE_DEFINITIONS:
+        raise Refuse("MODULE_FORM_UNSUPPORTED")
+    definitions = {}
+    for statement in statements:
+        if not isinstance(statement, ast.FunctionDef) or statement.name in definitions:
+            raise Refuse("MODULE_FORM_UNSUPPORTED")
+        # Definitions bind names when the module executes. Their bodies do
+        # not run then, but defaults, decorators and annotations may run.
+        function_signature(statement, source, statement.name, {})
+        definitions[statement.name] = statement
+    selected = definitions.get(name)
+    if selected is None:
+        raise Refuse("FUNCTION_FORM_UNSUPPORTED")
+    return selected
+
+
 def observe(tool, request, raw, report, with_calls):
     source = Source(request["source_path"], raw, tool)
     try:
@@ -439,15 +460,14 @@ def observe(tool, request, raw, report, with_calls):
             tool["check_ast"](parsed)
             # Compile rejects contextual invalidity, without evaluating the resulting code.
             compile(text, "<fortress-scalar-source>", "exec", dont_inherit=True, optimize=0)
-        if len(parsed.body) != 1:
-            raise Refuse("MODULE_FORM_UNSUPPORTED")
+        function = selected_module_function(parsed.body, source, request["function"])
         if with_calls:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 scope = tool["symtable"].symtable(text, "<fortress-scalar-source>", "exec")
-            describe_lexical_calls(parsed.body[0], source, request, report, scope)
+            describe_lexical_calls(function, source, request, report, scope)
         else:
-            describe_function(parsed.body[0], source, request, report)
+            describe_function(function, source, request, report)
     except (SyntaxError, UnicodeError):
         report["diagnostic"] = {"code": "INVALID_SOURCE", "span": None}
     except Refuse as error:

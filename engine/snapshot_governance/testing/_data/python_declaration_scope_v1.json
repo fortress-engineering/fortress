@@ -1,0 +1,796 @@
+{
+  "source_reference": "sha256:d6aacb83b9fe80bf3e4ad12fbb14ccbda2c7ac1f776943db7ece7839df52889e",
+  "cases": {
+    "duplicate-name": {
+      "source": "def chosen():\n    return True\n\ndef chosen():\n    return False\n",
+      "subject": "chosen",
+      "parameters": [],
+      "expected_returns": null,
+      "expected_limitation": "MODULE_FORM_UNSUPPORTED",
+      "reply": {
+        "body": [],
+        "bootstrap_ref": "sha256:19ca652a6ed8908d128ac231da47b45d0b0a86a9baffaff9626fb2d1609c9836",
+        "byte_count": 62,
+        "diagnostic": {
+          "code": "MODULE_FORM_UNSUPPORTED",
+          "span": null
+        },
+        "function": "chosen",
+        "helpers": [],
+        "id": "py-declaration-ref",
+        "locals": [],
+        "parameter_domains": [],
+        "parameters": [],
+        "result_scalar": null,
+        "runtime_ref": "sha256:c3c97417572f780314efe1ac3c4d5ce5e3cef99b1d5a93e5faec954a7c3fb7ce",
+        "schema": "fortress:python:lexical-call-response:1",
+        "source_path": "fixture.py",
+        "source_ref": "sha256:4836b9e83ca41c7438aae104f0940cef1b71aa53116970951c9294f013fab006",
+        "status": "UNAVAILABLE",
+        "symbol": null,
+        "target_execution": "NOT_RUN",
+        "worker_ref": "sha256:e45d99c4572862455562ab23a8124272a4e10793c52cdcb877cd1dec56e1f39c"
+      }
+    },
+    "excess-declarations": {
+      "source": "def sibling_0():\n    return False\n\ndef sibling_1():\n    return False\n\ndef sibling_2():\n    return False\n\ndef sibling_3():\n    return False\n\ndef sibling_4():\n    return False\n\ndef sibling_5():\n    return False\n\ndef sibling_6():\n    return False\n\ndef sibling_7():\n    return False\n\ndef sibling_8():\n    return False\n\ndef sibling_9():\n    return False\n\ndef sibling_10():\n    return False\n\ndef sibling_11():\n    return False\n\ndef sibling_12():\n    return False\n\ndef sibling_13():\n    return False\n\ndef sibling_14():\n    return False\n\ndef sibling():\n    raise AssertionError('this body must not run')\n\ndef chosen():\n    return True\n",
+      "subject": "chosen",
+      "parameters": [],
+      "expected_returns": null,
+      "expected_limitation": "MODULE_FORM_UNSUPPORTED",
+      "reply": {
+        "body": [],
+        "bootstrap_ref": "sha256:19ca652a6ed8908d128ac231da47b45d0b0a86a9baffaff9626fb2d1609c9836",
+        "byte_count": 627,
+        "diagnostic": {
+          "code": "MODULE_FORM_UNSUPPORTED",
+          "span": null
+        },
+        "function": "chosen",
+        "helpers": [],
+        "id": "py-declaration-ref",
+        "locals": [],
+        "parameter_domains": [],
+        "parameters": [],
+        "result_scalar": null,
+        "runtime_ref": "sha256:c3c97417572f780314efe1ac3c4d5ce5e3cef99b1d5a93e5faec954a7c3fb7ce",
+        "schema": "fortress:python:lexical-call-response:1",
+        "source_path": "fixture.py",
+        "source_ref": "sha256:e0f2a1b961795d2b70d228901440d61401a2376e07fcf20e6ff84ce0bd899aed",
+        "status": "UNAVAILABLE",
+        "symbol": null,
+        "target_execution": "NOT_RUN",
+        "worker_ref": "sha256:e45d99c4572862455562ab23a8124272a4e10793c52cdcb877cd1dec56e1f39c"
+      }
+    },
+    "following-sibling": {
+      "source": "def chosen(value):\n    return not value\n\ndef sibling():\n    raise AssertionError('this body must not run')\n",
+      "subject": "chosen",
+      "parameters": [
+        "value"
+      ],
+      "expected_returns": [
+        true,
+        false
+      ],
+      "expected_limitation": null,
+      "reply": {
+        "body": [
+          {
+            "kind": "return",
+            "span": {
+              "end_byte": 39,
+              "path": "fixture.py",
+              "start_byte": 23,
+              "start_byte_column": 5,
+              "start_line": 2
+            },
+            "value": {
+              "kind": "unary",
+              "operator": "!",
+              "value": {
+                "kind": "binding",
+                "name": "value"
+              }
+            }
+          }
+        ],
+        "bootstrap_ref": "sha256:19ca652a6ed8908d128ac231da47b45d0b0a86a9baffaff9626fb2d1609c9836",
+        "byte_count": 107,
+        "diagnostic": null,
+        "function": "chosen",
+        "helpers": [],
+        "id": "py-declaration-ref",
+        "locals": [],
+        "parameter_domains": [
+          "BOOL"
+        ],
+        "parameters": [
+          {
+            "name": "value",
+            "scalar": "BOOL",
+            "span": {
+              "end_byte": 16,
+              "path": "fixture.py",
+              "start_byte": 11,
+              "start_byte_column": 12,
+              "start_line": 1
+            }
+          }
+        ],
+        "result_scalar": "BOOL",
+        "runtime_ref": "sha256:c3c97417572f780314efe1ac3c4d5ce5e3cef99b1d5a93e5faec954a7c3fb7ce",
+        "schema": "fortress:python:lexical-call-response:1",
+        "source_path": "fixture.py",
+        "source_ref": "sha256:ad2984db6edaf13bf4b2e0cbac5ba5d3c8768f89fb67a5106f90973cbb774684",
+        "status": "LOWERABLE",
+        "symbol": {
+          "declaration_span": {
+            "end_byte": 39,
+            "path": "fixture.py",
+            "start_byte": 0,
+            "start_byte_column": 1,
+            "start_line": 1
+          },
+          "name": "chosen",
+          "span": {
+            "end_byte": 10,
+            "path": "fixture.py",
+            "start_byte": 4,
+            "start_byte_column": 5,
+            "start_line": 1
+          }
+        },
+        "target_execution": "NOT_RUN",
+        "worker_ref": "sha256:e45d99c4572862455562ab23a8124272a4e10793c52cdcb877cd1dec56e1f39c"
+      }
+    },
+    "legacy-single": {
+      "source": "def chosen(value):\n    return not value\n",
+      "subject": "chosen",
+      "parameters": [
+        "value"
+      ],
+      "expected_returns": [
+        true,
+        false
+      ],
+      "expected_limitation": null,
+      "reply": {
+        "body": [
+          {
+            "kind": "return",
+            "span": {
+              "end_byte": 39,
+              "path": "fixture.py",
+              "start_byte": 23,
+              "start_byte_column": 5,
+              "start_line": 2
+            },
+            "value": {
+              "kind": "unary",
+              "operator": "!",
+              "value": {
+                "kind": "binding",
+                "name": "value"
+              }
+            }
+          }
+        ],
+        "bootstrap_ref": "sha256:19ca652a6ed8908d128ac231da47b45d0b0a86a9baffaff9626fb2d1609c9836",
+        "byte_count": 40,
+        "diagnostic": null,
+        "function": "chosen",
+        "helpers": [],
+        "id": "py-declaration-ref",
+        "locals": [],
+        "parameter_domains": [
+          "BOOL"
+        ],
+        "parameters": [
+          {
+            "name": "value",
+            "scalar": "BOOL",
+            "span": {
+              "end_byte": 16,
+              "path": "fixture.py",
+              "start_byte": 11,
+              "start_byte_column": 12,
+              "start_line": 1
+            }
+          }
+        ],
+        "result_scalar": "BOOL",
+        "runtime_ref": "sha256:c3c97417572f780314efe1ac3c4d5ce5e3cef99b1d5a93e5faec954a7c3fb7ce",
+        "schema": "fortress:python:lexical-call-response:1",
+        "source_path": "fixture.py",
+        "source_ref": "sha256:7892bdba2c249b58990d8dbfc994eeb02b184b68ca5c9f137be89b3e1e8793e7",
+        "status": "LOWERABLE",
+        "symbol": {
+          "declaration_span": {
+            "end_byte": 39,
+            "path": "fixture.py",
+            "start_byte": 0,
+            "start_byte_column": 1,
+            "start_line": 1
+          },
+          "name": "chosen",
+          "span": {
+            "end_byte": 10,
+            "path": "fixture.py",
+            "start_byte": 4,
+            "start_byte_column": 5,
+            "start_line": 1
+          }
+        },
+        "target_execution": "NOT_RUN",
+        "worker_ref": "sha256:e45d99c4572862455562ab23a8124272a4e10793c52cdcb877cd1dec56e1f39c"
+      }
+    },
+    "maximum-declarations": {
+      "source": "def sibling_0():\n    return False\n\ndef sibling_1():\n    return False\n\ndef sibling_2():\n    return False\n\ndef sibling_3():\n    return False\n\ndef sibling_4():\n    return False\n\ndef sibling_5():\n    return False\n\ndef sibling_6():\n    return False\n\ndef sibling_7():\n    return False\n\ndef sibling_8():\n    return False\n\ndef sibling_9():\n    return False\n\ndef sibling_10():\n    return False\n\ndef sibling_11():\n    return False\n\ndef sibling_12():\n    return False\n\ndef sibling_13():\n    return False\n\ndef sibling_14():\n    return False\n\ndef chosen():\n    return True\n",
+      "subject": "chosen",
+      "parameters": [],
+      "expected_returns": [
+        true
+      ],
+      "expected_limitation": null,
+      "reply": {
+        "body": [
+          {
+            "kind": "return",
+            "span": {
+              "end_byte": 559,
+              "path": "fixture.py",
+              "start_byte": 548,
+              "start_byte_column": 5,
+              "start_line": 47
+            },
+            "value": {
+              "kind": "boolean",
+              "value": true
+            }
+          }
+        ],
+        "bootstrap_ref": "sha256:19ca652a6ed8908d128ac231da47b45d0b0a86a9baffaff9626fb2d1609c9836",
+        "byte_count": 560,
+        "diagnostic": null,
+        "function": "chosen",
+        "helpers": [],
+        "id": "py-declaration-ref",
+        "locals": [],
+        "parameter_domains": [],
+        "parameters": [],
+        "result_scalar": "BOOL",
+        "runtime_ref": "sha256:c3c97417572f780314efe1ac3c4d5ce5e3cef99b1d5a93e5faec954a7c3fb7ce",
+        "schema": "fortress:python:lexical-call-response:1",
+        "source_path": "fixture.py",
+        "source_ref": "sha256:781a4e5aae71d3e31d5b877431fde90dcd08e423b69d2f3ac458d4210b626bc2",
+        "status": "LOWERABLE",
+        "symbol": {
+          "declaration_span": {
+            "end_byte": 559,
+            "path": "fixture.py",
+            "start_byte": 530,
+            "start_byte_column": 1,
+            "start_line": 46
+          },
+          "name": "chosen",
+          "span": {
+            "end_byte": 540,
+            "path": "fixture.py",
+            "start_byte": 534,
+            "start_byte_column": 5,
+            "start_line": 46
+          }
+        },
+        "target_execution": "NOT_RUN",
+        "worker_ref": "sha256:e45d99c4572862455562ab23a8124272a4e10793c52cdcb877cd1dec56e1f39c"
+      }
+    },
+    "missing-declaration": {
+      "source": "def chosen():\n    return True\n\ndef sibling():\n    raise AssertionError('this body must not run')\n",
+      "subject": "absent",
+      "parameters": [],
+      "expected_returns": null,
+      "expected_limitation": "FUNCTION_FORM_UNSUPPORTED",
+      "reply": {
+        "body": [],
+        "bootstrap_ref": "sha256:19ca652a6ed8908d128ac231da47b45d0b0a86a9baffaff9626fb2d1609c9836",
+        "byte_count": 97,
+        "diagnostic": {
+          "code": "FUNCTION_FORM_UNSUPPORTED",
+          "span": null
+        },
+        "function": "absent",
+        "helpers": [],
+        "id": "py-declaration-ref",
+        "locals": [],
+        "parameter_domains": [],
+        "parameters": [],
+        "result_scalar": null,
+        "runtime_ref": "sha256:c3c97417572f780314efe1ac3c4d5ce5e3cef99b1d5a93e5faec954a7c3fb7ce",
+        "schema": "fortress:python:lexical-call-response:1",
+        "source_path": "fixture.py",
+        "source_ref": "sha256:e1688be1db6ef7b78e733f6486b5d23b501cf28441a398b47d913d4502649e9b",
+        "status": "UNAVAILABLE",
+        "symbol": null,
+        "target_execution": "NOT_RUN",
+        "worker_ref": "sha256:e45d99c4572862455562ab23a8124272a4e10793c52cdcb877cd1dec56e1f39c"
+      }
+    },
+    "module-import": {
+      "source": "import side_effect_adapter\n\ndef chosen():\n    return True\n",
+      "subject": "chosen",
+      "parameters": [],
+      "expected_returns": null,
+      "expected_limitation": "MODULE_FORM_UNSUPPORTED",
+      "reply": {
+        "body": [],
+        "bootstrap_ref": "sha256:19ca652a6ed8908d128ac231da47b45d0b0a86a9baffaff9626fb2d1609c9836",
+        "byte_count": 58,
+        "diagnostic": {
+          "code": "MODULE_FORM_UNSUPPORTED",
+          "span": null
+        },
+        "function": "chosen",
+        "helpers": [],
+        "id": "py-declaration-ref",
+        "locals": [],
+        "parameter_domains": [],
+        "parameters": [],
+        "result_scalar": null,
+        "runtime_ref": "sha256:c3c97417572f780314efe1ac3c4d5ce5e3cef99b1d5a93e5faec954a7c3fb7ce",
+        "schema": "fortress:python:lexical-call-response:1",
+        "source_path": "fixture.py",
+        "source_ref": "sha256:b358eaa4f426d9a945eb32246650a2576fc52b5bc59c1892e1bf75352b0ca2fa",
+        "status": "UNAVAILABLE",
+        "symbol": null,
+        "target_execution": "NOT_RUN",
+        "worker_ref": "sha256:e45d99c4572862455562ab23a8124272a4e10793c52cdcb877cd1dec56e1f39c"
+      }
+    },
+    "module-rebind": {
+      "source": "def chosen():\n    return True\n\nchosen = None\n",
+      "subject": "chosen",
+      "parameters": [],
+      "expected_returns": null,
+      "expected_limitation": "MODULE_FORM_UNSUPPORTED",
+      "reply": {
+        "body": [],
+        "bootstrap_ref": "sha256:19ca652a6ed8908d128ac231da47b45d0b0a86a9baffaff9626fb2d1609c9836",
+        "byte_count": 45,
+        "diagnostic": {
+          "code": "MODULE_FORM_UNSUPPORTED",
+          "span": null
+        },
+        "function": "chosen",
+        "helpers": [],
+        "id": "py-declaration-ref",
+        "locals": [],
+        "parameter_domains": [],
+        "parameters": [],
+        "result_scalar": null,
+        "runtime_ref": "sha256:c3c97417572f780314efe1ac3c4d5ce5e3cef99b1d5a93e5faec954a7c3fb7ce",
+        "schema": "fortress:python:lexical-call-response:1",
+        "source_path": "fixture.py",
+        "source_ref": "sha256:62dbc1160fb0c70cd3d475142c6ef7306d71c320df777415c7247035f3044c55",
+        "status": "UNAVAILABLE",
+        "symbol": null,
+        "target_execution": "NOT_RUN",
+        "worker_ref": "sha256:e45d99c4572862455562ab23a8124272a4e10793c52cdcb877cd1dec56e1f39c"
+      }
+    },
+    "nested-local-helper": {
+      "source": "def sibling():\n    raise AssertionError('this body must not run')\n\ndef chosen(value):\n    def helper(arg):\n        return not arg\n    return helper(value)\n",
+      "subject": "chosen",
+      "parameters": [
+        "value"
+      ],
+      "expected_returns": [
+        true,
+        false
+      ],
+      "expected_limitation": null,
+      "reply": {
+        "body": [
+          {
+            "kind": "return",
+            "span": {
+              "end_byte": 154,
+              "path": "fixture.py",
+              "start_byte": 134,
+              "start_byte_column": 5,
+              "start_line": 7
+            },
+            "value": {
+              "call": {
+                "arguments": [
+                  {
+                    "kind": "binding",
+                    "name": "value"
+                  }
+                ],
+                "span": {
+                  "end_byte": 154,
+                  "path": "fixture.py",
+                  "start_byte": 141,
+                  "start_byte_column": 12,
+                  "start_line": 7
+                },
+                "target": {
+                  "declaration_span": {
+                    "end_byte": 129,
+                    "path": "fixture.py",
+                    "start_byte": 90,
+                    "start_byte_column": 5,
+                    "start_line": 5
+                  },
+                  "name": "helper",
+                  "span": {
+                    "end_byte": 100,
+                    "path": "fixture.py",
+                    "start_byte": 94,
+                    "start_byte_column": 9,
+                    "start_line": 5
+                  }
+                }
+              },
+              "kind": "call"
+            }
+          }
+        ],
+        "bootstrap_ref": "sha256:19ca652a6ed8908d128ac231da47b45d0b0a86a9baffaff9626fb2d1609c9836",
+        "byte_count": 155,
+        "diagnostic": null,
+        "function": "chosen",
+        "helpers": [
+          {
+            "body": [
+              {
+                "kind": "return",
+                "span": {
+                  "end_byte": 129,
+                  "path": "fixture.py",
+                  "start_byte": 115,
+                  "start_byte_column": 9,
+                  "start_line": 6
+                },
+                "value": {
+                  "kind": "unary",
+                  "operator": "!",
+                  "value": {
+                    "kind": "binding",
+                    "name": "arg"
+                  }
+                }
+              }
+            ],
+            "locals": [],
+            "parameters": [
+              {
+                "name": "arg",
+                "scalar": "BOOL",
+                "span": {
+                  "end_byte": 104,
+                  "path": "fixture.py",
+                  "start_byte": 101,
+                  "start_byte_column": 16,
+                  "start_line": 5
+                }
+              }
+            ],
+            "result_scalar": "BOOL",
+            "status": "LOWERABLE",
+            "symbol": {
+              "declaration_span": {
+                "end_byte": 129,
+                "path": "fixture.py",
+                "start_byte": 90,
+                "start_byte_column": 5,
+                "start_line": 5
+              },
+              "name": "helper",
+              "span": {
+                "end_byte": 100,
+                "path": "fixture.py",
+                "start_byte": 94,
+                "start_byte_column": 9,
+                "start_line": 5
+              }
+            }
+          }
+        ],
+        "id": "py-declaration-ref",
+        "locals": [],
+        "parameter_domains": [
+          "BOOL"
+        ],
+        "parameters": [
+          {
+            "name": "value",
+            "scalar": "BOOL",
+            "span": {
+              "end_byte": 83,
+              "path": "fixture.py",
+              "start_byte": 78,
+              "start_byte_column": 12,
+              "start_line": 4
+            }
+          }
+        ],
+        "result_scalar": "BOOL",
+        "runtime_ref": "sha256:c3c97417572f780314efe1ac3c4d5ce5e3cef99b1d5a93e5faec954a7c3fb7ce",
+        "schema": "fortress:python:lexical-call-response:1",
+        "source_path": "fixture.py",
+        "source_ref": "sha256:5de6f532064c96792147090edfc663fae49a48ed4273552a76717a10d7743475",
+        "status": "LOWERABLE",
+        "symbol": {
+          "declaration_span": {
+            "end_byte": 154,
+            "path": "fixture.py",
+            "start_byte": 67,
+            "start_byte_column": 1,
+            "start_line": 4
+          },
+          "name": "chosen",
+          "span": {
+            "end_byte": 77,
+            "path": "fixture.py",
+            "start_byte": 71,
+            "start_byte_column": 5,
+            "start_line": 4
+          }
+        },
+        "target_execution": "NOT_RUN",
+        "worker_ref": "sha256:e45d99c4572862455562ab23a8124272a4e10793c52cdcb877cd1dec56e1f39c"
+      }
+    },
+    "preceding-sibling": {
+      "source": "def sibling():\n    raise AssertionError('this body must not run')\n\ndef chosen(value):\n    return not value\n",
+      "subject": "chosen",
+      "parameters": [
+        "value"
+      ],
+      "expected_returns": [
+        true,
+        false
+      ],
+      "expected_limitation": null,
+      "reply": {
+        "body": [
+          {
+            "kind": "return",
+            "span": {
+              "end_byte": 106,
+              "path": "fixture.py",
+              "start_byte": 90,
+              "start_byte_column": 5,
+              "start_line": 5
+            },
+            "value": {
+              "kind": "unary",
+              "operator": "!",
+              "value": {
+                "kind": "binding",
+                "name": "value"
+              }
+            }
+          }
+        ],
+        "bootstrap_ref": "sha256:19ca652a6ed8908d128ac231da47b45d0b0a86a9baffaff9626fb2d1609c9836",
+        "byte_count": 107,
+        "diagnostic": null,
+        "function": "chosen",
+        "helpers": [],
+        "id": "py-declaration-ref",
+        "locals": [],
+        "parameter_domains": [
+          "BOOL"
+        ],
+        "parameters": [
+          {
+            "name": "value",
+            "scalar": "BOOL",
+            "span": {
+              "end_byte": 83,
+              "path": "fixture.py",
+              "start_byte": 78,
+              "start_byte_column": 12,
+              "start_line": 4
+            }
+          }
+        ],
+        "result_scalar": "BOOL",
+        "runtime_ref": "sha256:c3c97417572f780314efe1ac3c4d5ce5e3cef99b1d5a93e5faec954a7c3fb7ce",
+        "schema": "fortress:python:lexical-call-response:1",
+        "source_path": "fixture.py",
+        "source_ref": "sha256:64b34585d3fe19f09a0992080bbfcc07f755bfad489915c6e7e55bcc1a3ad3e4",
+        "status": "LOWERABLE",
+        "symbol": {
+          "declaration_span": {
+            "end_byte": 106,
+            "path": "fixture.py",
+            "start_byte": 67,
+            "start_byte_column": 1,
+            "start_line": 4
+          },
+          "name": "chosen",
+          "span": {
+            "end_byte": 77,
+            "path": "fixture.py",
+            "start_byte": 71,
+            "start_byte_column": 5,
+            "start_line": 4
+          }
+        },
+        "target_execution": "NOT_RUN",
+        "worker_ref": "sha256:e45d99c4572862455562ab23a8124272a4e10793c52cdcb877cd1dec56e1f39c"
+      }
+    },
+    "runtime-global-call": {
+      "source": "def sibling():\n    return True\n\ndef chosen():\n    return sibling()\n",
+      "subject": "chosen",
+      "parameters": [],
+      "expected_returns": null,
+      "expected_limitation": "CALL_TARGET_UNESTABLISHED",
+      "reply": {
+        "body": [],
+        "bootstrap_ref": "sha256:19ca652a6ed8908d128ac231da47b45d0b0a86a9baffaff9626fb2d1609c9836",
+        "byte_count": 67,
+        "diagnostic": {
+          "code": "CALL_TARGET_UNESTABLISHED",
+          "span": {
+            "end_byte": 66,
+            "path": "fixture.py",
+            "start_byte": 57,
+            "start_byte_column": 12,
+            "start_line": 5
+          }
+        },
+        "function": "chosen",
+        "helpers": [],
+        "id": "py-declaration-ref",
+        "locals": [],
+        "parameter_domains": [],
+        "parameters": [],
+        "result_scalar": null,
+        "runtime_ref": "sha256:c3c97417572f780314efe1ac3c4d5ce5e3cef99b1d5a93e5faec954a7c3fb7ce",
+        "schema": "fortress:python:lexical-call-response:1",
+        "source_path": "fixture.py",
+        "source_ref": "sha256:7b85cd8c973d072f2344583c7d95987243f48a437b725a2cf0c6e69ff6aa3713",
+        "status": "UNAVAILABLE",
+        "symbol": {
+          "declaration_span": {
+            "end_byte": 66,
+            "path": "fixture.py",
+            "start_byte": 32,
+            "start_byte_column": 1,
+            "start_line": 4
+          },
+          "name": "chosen",
+          "span": {
+            "end_byte": 42,
+            "path": "fixture.py",
+            "start_byte": 36,
+            "start_byte_column": 5,
+            "start_line": 4
+          }
+        },
+        "target_execution": "NOT_RUN",
+        "worker_ref": "sha256:e45d99c4572862455562ab23a8124272a4e10793c52cdcb877cd1dec56e1f39c"
+      }
+    },
+    "sibling-annotation": {
+      "source": "def chosen():\n    return True\n\ndef sibling() -> factory():\n    return False\n",
+      "subject": "chosen",
+      "parameters": [],
+      "expected_returns": null,
+      "expected_limitation": "FUNCTION_FORM_UNSUPPORTED",
+      "reply": {
+        "body": [],
+        "bootstrap_ref": "sha256:19ca652a6ed8908d128ac231da47b45d0b0a86a9baffaff9626fb2d1609c9836",
+        "byte_count": 76,
+        "diagnostic": {
+          "code": "FUNCTION_FORM_UNSUPPORTED",
+          "span": {
+            "end_byte": 75,
+            "path": "fixture.py",
+            "start_byte": 31,
+            "start_byte_column": 1,
+            "start_line": 4
+          }
+        },
+        "function": "chosen",
+        "helpers": [],
+        "id": "py-declaration-ref",
+        "locals": [],
+        "parameter_domains": [],
+        "parameters": [],
+        "result_scalar": null,
+        "runtime_ref": "sha256:c3c97417572f780314efe1ac3c4d5ce5e3cef99b1d5a93e5faec954a7c3fb7ce",
+        "schema": "fortress:python:lexical-call-response:1",
+        "source_path": "fixture.py",
+        "source_ref": "sha256:9a2fedea3a7ddfa4d147192451b82731ba40080f9b459286eaeebda204ae73c6",
+        "status": "UNAVAILABLE",
+        "symbol": null,
+        "target_execution": "NOT_RUN",
+        "worker_ref": "sha256:e45d99c4572862455562ab23a8124272a4e10793c52cdcb877cd1dec56e1f39c"
+      }
+    },
+    "sibling-decorator": {
+      "source": "def chosen():\n    return True\n\n@decorate\ndef sibling():\n    return False\n",
+      "subject": "chosen",
+      "parameters": [],
+      "expected_returns": null,
+      "expected_limitation": "FUNCTION_FORM_UNSUPPORTED",
+      "reply": {
+        "body": [],
+        "bootstrap_ref": "sha256:19ca652a6ed8908d128ac231da47b45d0b0a86a9baffaff9626fb2d1609c9836",
+        "byte_count": 73,
+        "diagnostic": {
+          "code": "FUNCTION_FORM_UNSUPPORTED",
+          "span": {
+            "end_byte": 72,
+            "path": "fixture.py",
+            "start_byte": 41,
+            "start_byte_column": 1,
+            "start_line": 5
+          }
+        },
+        "function": "chosen",
+        "helpers": [],
+        "id": "py-declaration-ref",
+        "locals": [],
+        "parameter_domains": [],
+        "parameters": [],
+        "result_scalar": null,
+        "runtime_ref": "sha256:c3c97417572f780314efe1ac3c4d5ce5e3cef99b1d5a93e5faec954a7c3fb7ce",
+        "schema": "fortress:python:lexical-call-response:1",
+        "source_path": "fixture.py",
+        "source_ref": "sha256:3e7d6c4bfa073849927baac7f623ba58a894c9ffbf71cad4b32b4083d0661f93",
+        "status": "UNAVAILABLE",
+        "symbol": null,
+        "target_execution": "NOT_RUN",
+        "worker_ref": "sha256:e45d99c4572862455562ab23a8124272a4e10793c52cdcb877cd1dec56e1f39c"
+      }
+    },
+    "sibling-default": {
+      "source": "def chosen():\n    return True\n\ndef sibling(value=initialize()):\n    return value\n",
+      "subject": "chosen",
+      "parameters": [],
+      "expected_returns": null,
+      "expected_limitation": "FUNCTION_FORM_UNSUPPORTED",
+      "reply": {
+        "body": [],
+        "bootstrap_ref": "sha256:19ca652a6ed8908d128ac231da47b45d0b0a86a9baffaff9626fb2d1609c9836",
+        "byte_count": 81,
+        "diagnostic": {
+          "code": "FUNCTION_FORM_UNSUPPORTED",
+          "span": {
+            "end_byte": 80,
+            "path": "fixture.py",
+            "start_byte": 31,
+            "start_byte_column": 1,
+            "start_line": 4
+          }
+        },
+        "function": "chosen",
+        "helpers": [],
+        "id": "py-declaration-ref",
+        "locals": [],
+        "parameter_domains": [],
+        "parameters": [],
+        "result_scalar": null,
+        "runtime_ref": "sha256:c3c97417572f780314efe1ac3c4d5ce5e3cef99b1d5a93e5faec954a7c3fb7ce",
+        "schema": "fortress:python:lexical-call-response:1",
+        "source_path": "fixture.py",
+        "source_ref": "sha256:7bc15837c13b656f739e0495dc6a16b8b9663f57da54d53aa2f95b8b8508f075",
+        "status": "UNAVAILABLE",
+        "symbol": null,
+        "target_execution": "NOT_RUN",
+        "worker_ref": "sha256:e45d99c4572862455562ab23a8124272a4e10793c52cdcb877cd1dec56e1f39c"
+      }
+    }
+  }
+}

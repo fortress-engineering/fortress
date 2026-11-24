@@ -45,15 +45,22 @@ const CALL_READY_SCHEMA: &str = "fortress-host/python-lexical-call-ready/1";
 const BOOTSTRAP_NAME: &str = "python_lexical_worker.py";
 const WORKER_NAME: &str = "python_scalar_worker.py";
 // Retain existing exact local registrations through a compatible scalar wire edition.
-const PRIOR_WORKER_BYTES: usize = 16_457;
-const PRIOR_WORKER_REF: &str =
-    "sha256:7df54ae0f4affba51191d62fbe4b12bc484ba0f7b15594222652a0a2ce2abc0f";
-const COMPARISON_WORKER_BYTES: usize = 17_395;
-const COMPARISON_WORKER_REF: &str =
-    "sha256:ab3e9ec2a698430491b01619f350ebe3f1c4438200166fac3632ff371ab58288";
-const LEXICAL_CALL_WORKER_BYTES: usize = 22_039;
 const LEXICAL_CALL_WORKER_REF: &str =
     "sha256:f581a2047e320eea9abdd0b19ea26f1c49ab051c747ebd330ecae0979c93796c";
+const ORDERED_BOOLEAN_WORKER_REF: &str =
+    "sha256:7182cb5d525b9a54b255388d33c008f34aa2811f59b56fae56459b4c812989ea";
+const PREVIOUS_WORKERS: &[(usize, &str)] = &[
+    (
+        16_457,
+        "sha256:7df54ae0f4affba51191d62fbe4b12bc484ba0f7b15594222652a0a2ce2abc0f",
+    ),
+    (
+        17_395,
+        "sha256:ab3e9ec2a698430491b01619f350ebe3f1c4438200166fac3632ff371ab58288",
+    ),
+    (22_039, LEXICAL_CALL_WORKER_REF),
+    (23_476, ORDERED_BOOLEAN_WORKER_REF),
+];
 const REGISTRATION_MAX: usize = 16 * 1024;
 const DEADLINE: Duration = Duration::from_secs(5);
 
@@ -104,19 +111,18 @@ impl Registration {
         }
         require_external_asset(&self.worker, root)?;
         require_external_asset(&self.bootstrap, root)?;
-        let worker = super::provider_command::read_bounded(
-            &self.worker,
-            PYTHON_SCALAR_WORKER
-                .len()
-                .max(PRIOR_WORKER_BYTES)
-                .max(COMPARISON_WORKER_BYTES)
-                .max(LEXICAL_CALL_WORKER_BYTES),
-        )?;
+        let limit = PREVIOUS_WORKERS
+            .iter()
+            .fold(PYTHON_SCALAR_WORKER.len(), |limit, (length, _)| {
+                limit.max(*length)
+            });
+        let worker = super::provider_command::read_bounded(&self.worker, limit)?;
         let worker_ref = digest(&worker);
-        if (worker != PYTHON_SCALAR_WORKER
-            && (worker.len() != PRIOR_WORKER_BYTES || worker_ref != PRIOR_WORKER_REF)
-            && (worker.len() != COMPARISON_WORKER_BYTES || worker_ref != COMPARISON_WORKER_REF)
-            && (worker.len() != LEXICAL_CALL_WORKER_BYTES || worker_ref != LEXICAL_CALL_WORKER_REF))
+        let known = worker == PYTHON_SCALAR_WORKER
+            || PREVIOUS_WORKERS
+                .iter()
+                .any(|(length, identity)| worker.len() == *length && worker_ref == *identity);
+        if !known
             || super::provider_command::read_bounded(&self.bootstrap, PYTHON_LEXICAL_WORKER.len())?
                 != PYTHON_LEXICAL_WORKER
         {
@@ -231,6 +237,7 @@ impl<'a> RegisteredScalarHost<'a> {
         if lexical_calls
             && worker_ref != digest(PYTHON_SCALAR_WORKER)
             && worker_ref != LEXICAL_CALL_WORKER_REF
+            && worker_ref != ORDERED_BOOLEAN_WORKER_REF
         {
             return Err("PYTHON_LEXICAL_CALL_WORKER_UNAVAILABLE".into());
         }

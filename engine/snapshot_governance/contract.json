@@ -699,6 +699,13 @@
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R42-001",
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R42-002"
           ]
+        },
+        {
+          "id": "AF-SNAPSHOT-GOVERNANCE-0001-R43",
+          "statement": "Explicit Python scalar inspection binds an independently selected function in a bounded module of distinct ordinary definitions to its exact source. Evaluated definition signatures, ambiguous names, and runtime global call targets remain unavailable.",
+          "tests": [
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R43-001"
+          ]
         }
       ]
     }

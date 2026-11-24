@@ -249,3 +249,7 @@ The exact Go worker responses for independently executed finite Boolean return f
 ### [`python_short_circuit_v1.json`](../_data/python_short_circuit_v1.json)
 
 The exact Python worker responses for independently executed finite Boolean return fixtures. Expected return values are keyed by the existing declaration-order input mask. The fixtures also preserve refusals for constructs outside the admitted scalar and resource scope.
+
+### [`python_declaration_scope_v1.json`](../_data/python_declaration_scope_v1.json)
+
+Frozen source and exact worker responses for scalar selection in regular Python modules. Native executions establish the supported Boolean tables. The remaining controls preserve explicit refusal for ambiguous subjects, evaluated definitions, module-level statements, resource bounds, and mutable global calls.

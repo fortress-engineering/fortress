@@ -52,12 +52,13 @@ mod lexical_calls {
     ) -> (Fixture, PythonScalarSubject, PythonScalarProducer, Value) {
         let doc: Value =
             serde_json::from_slice(include_bytes!("../_data/python_call_fixture_v1.json")).unwrap();
-        lexical_fixture(&doc[name], label, vec!["v".into()])
+        lexical_fixture(&doc[name], label, "outer", vec!["v".into()])
     }
 
     fn lexical_fixture(
         row: &Value,
         label: &str,
+        function: &str,
         exact_bool_parameters: Vec<String>,
     ) -> (Fixture, PythonScalarSubject, PythonScalarProducer, Value) {
         let report = &row["reply"];
@@ -74,7 +75,7 @@ mod lexical_calls {
         let subject = PythonScalarSubject {
             source_path: "fixture.py".into(),
             source_ref: digest(data.as_bytes()),
-            function: "outer".into(),
+            function: function.into(),
             exact_bool_parameters,
         };
         (fixture, subject, producer, report.clone())
@@ -139,12 +140,26 @@ mod lexical_calls {
     /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R42
     #[test]
     fn exact_python_boolean_returns_refuse_unknown_operand_values() {
-        let doc: Value =
-            serde_json::from_slice(include_bytes!("../_data/python_short_circuit_v1.json"))
-                .unwrap();
+        assert_python_native_return_cases(include_bytes!("../_data/python_short_circuit_v1.json"));
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R43-001`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R43
+    #[test]
+    fn python_module_declarations_keep_exact_selection_and_unknown_globals() {
+        assert_python_native_return_cases(include_bytes!(
+            "../_data/python_declaration_scope_v1.json"
+        ));
+    }
+
+    fn assert_python_native_return_cases(bytes: &[u8]) {
+        let doc: Value = serde_json::from_slice(bytes).unwrap();
         for (name, row) in doc["cases"].as_object().unwrap() {
             let parameters = serde_json::from_value(row["parameters"].clone()).unwrap();
-            let (fixture, subject, producer, receipt) = lexical_fixture(row, name, parameters);
+            let function = row["subject"].as_str().unwrap_or("outer");
+            let (fixture, subject, producer, receipt) =
+                lexical_fixture(row, name, function, parameters);
+            assert_eq!(receipt["function"], function, "{name}");
             let result =
                 observe_python_native_call_return(&fixture.root, &subject, &producer, |request| {
                     Ok(serde_json::to_vec(&bind(&request, &receipt)).unwrap())

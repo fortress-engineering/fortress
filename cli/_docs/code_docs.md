@@ -749,7 +749,10 @@ bytes without the framing LF. Under `subject`, supply `source_path`,
 `source_ref`, `function` and `exact_bool_parameters`. The source path is
 repository-relative and the SHA-256 pin binds the exact subject bytes.
 List only independently established exact bool parameters in declaration order.
-For a zero-parameter function use the empty array.
+For a zero-parameter function use the empty array. The current worker can
+select an ordinary function from a source file with up to sixteen distinct
+ordinary definitions. Module-level execution and runtime global call targets
+remain unresolved. The receipt pins the worker that established the result.
 
 An admitted body with a conditional output bound appears as `LOWERED` and
 `UPPER_BOUND_UNDER_EXACT_INPUT_ASSUMPTIONS`. A body can be lowered while an

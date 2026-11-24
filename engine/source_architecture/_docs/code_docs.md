@@ -160,7 +160,14 @@ its reply protocol retain their existing bytes. The explicit scalar CLI mode
 selects this worker through a separate trusted registration.
 
 The request names one ordinary Python source file, exact source bytes, one
-function, and independently selected exact-bool parameter domains. Annotations
+function, and independently selected exact-bool parameter domains. A module
+may contain up to sixteen uniquely named ordinary function definitions.
+Definitions with decorators, defaults or annotations, and other module-level
+statements, remain outside this scope. The worker selects one exact
+declaration and does not infer calls to sibling functions through the mutable
+module namespace.
+
+Annotations
 do not establish those domains. Supported bodies use exact bool values and
 bounded signed 32-bit integer literals, definitely initialized local bindings,
 simple assignment, Boolean negation, same-kind scalar comparisons, if/else,
