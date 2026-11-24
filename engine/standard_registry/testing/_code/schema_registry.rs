@@ -346,6 +346,84 @@ fn full_snapshot_certification_profile_cannot_hide_mandatory_evidence() {
     }
 }
 
+/// `T-AF-STANDARD-REGISTRY-0001-R03-016`
+/// Fortress requirement: AF-STANDARD-REGISTRY-0001-R03
+#[test]
+fn authored_call_schema_requires_consistent_return_evidence() {
+    use serde_json::json;
+
+    let schema = read_json("cli/_data/native_return_schema_v2.json");
+    let body = read_json("engine/program_semantics/_data/go_body_schema_v1.json");
+    let resource = body["$id"]
+        .as_str()
+        .expect("body schema identity")
+        .to_owned();
+    let validator = jsonschema::draft202012::options()
+        .with_resource(resource, jsonschema::Resource::from_contents(body).unwrap())
+        .build(&schema)
+        .expect("authored return schema");
+    let digest = format!("sha256:{}", "a".repeat(64));
+    let occurrence = format!("native_body_occurrence:v1:{digest}");
+    let report = json!({
+        "$schema":schema["$id"],"schema_version":2,
+        "scope":"ACTUAL_ORIGINAL_SOURCE_SCOPED_NATIVE_BOOLEAN_CALL_RETURN",
+        "runtime_execution":"NOT_RUN","authority_scope":"ORIGINAL_DECLARED_LOGICAL_MODULE",
+        "canonical_finding_or_certificate":"NOT_ISSUED",
+        "source_binding":{
+            "source_view_ref":digest,"source_manifest_digest":digest,"authority_binding_digest":digest,
+        },
+        "subject":{
+            "status":"LINKED","language":"python","namespace":"source","function":"subject",
+            "source_path":"_code/source.py","source_ref":digest,"origin_ref":digest,"exchange_ref":digest,
+            "slot_ref":format!("python_lexical_callable_slot:v1:{digest}"),
+            "link_ref":format!("native_callable_owned_link:v1:{digest}"),
+            "body_occurrence":occurrence,"original_declared_owner":"AF-EXACT-CALL-0001",
+            "evaluation_key":{
+                "source_manifest_digest":digest,"program_context_digest":digest,"authority_binding_digest":digest,
+            },
+        },
+        "comparison":{
+            "status":"OBSERVED","author":"AF-EXACT-CALL-0001",
+            "contract_path":"authoring/app/data/native_function_contracts.json","contract_ref":digest,
+            "required_return":true,"observed_return":"MATCHES_REQUIRED_VALUE",
+        },
+        "call_evaluation":{
+            "status":"COMPLETE","occurrence":occurrence,"parameters":[],"returns":[true],
+            "dependency_occurrences":[],
+        },
+    });
+    for (required, derived, returns) in [
+        (true, "MATCHES_REQUIRED_VALUE", true),
+        (false, "MATCHES_REQUIRED_VALUE", false),
+        (true, "EXCLUDES_REQUIRED_VALUE", false),
+        (false, "EXCLUDES_REQUIRED_VALUE", true),
+    ] {
+        let mut variant = report.clone();
+        variant["comparison"]["required_return"] = json!(required);
+        variant["comparison"]["observed_return"] = json!(derived);
+        variant["call_evaluation"]["returns"] = json!([returns]);
+        validator
+            .validate(&variant)
+            .expect("consistent finite return");
+        variant["call_evaluation"]["returns"] = json!([!returns]);
+        assert!(
+            !validator.is_valid(&variant),
+            "contradicting return {variant}"
+        );
+        variant["call_evaluation"] = Value::Null;
+        assert!(!validator.is_valid(&variant), "missing proof {variant}");
+    }
+
+    let mut unresolved = report;
+    unresolved["comparison"]["observed_return"] = json!("UNRESOLVED");
+    assert!(
+        !validator.is_valid(&unresolved),
+        "unresolved with complete evaluation"
+    );
+    unresolved["call_evaluation"] = Value::Null;
+    validator.validate(&unresolved).expect("honest uncertainty");
+}
+
 /// `T-AF-STANDARD-REGISTRY-0001-R03-015`
 /// Fortress requirement: AF-STANDARD-REGISTRY-0001-R03
 #[test]

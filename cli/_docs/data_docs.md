@@ -162,7 +162,8 @@ without allocating a finding, grant, runtime result, or certificate.
 
 Defines the original-source Boolean comparison when a bounded native call
 closure supplies the return observation. Version 1 retains its isolated body
-scope. Missing or unprovable call dependencies remain unresolved.
+scope. Missing or unprovable call dependencies remain unresolved. A definite
+comparison requires a complete evaluation with the corresponding Boolean return.
 
 ### [`native_candidate_host_v2.json`](../_data/native_candidate_host_v2.json)
 

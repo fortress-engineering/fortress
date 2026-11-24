@@ -416,5 +416,229 @@
         }
       }
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "comparison": {
+            "required": [
+              "status",
+              "required_return",
+              "observed_return"
+            ],
+            "properties": {
+              "status": {
+                "const": "OBSERVED"
+              },
+              "required_return": {
+                "const": false
+              },
+              "observed_return": {
+                "const": "MATCHES_REQUIRED_VALUE"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "call_evaluation": {
+            "type": "object",
+            "required": [
+              "status",
+              "returns"
+            ],
+            "properties": {
+              "status": {
+                "const": "COMPLETE"
+              },
+              "returns": {
+                "const": [
+                  false
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "comparison": {
+            "required": [
+              "status",
+              "required_return",
+              "observed_return"
+            ],
+            "properties": {
+              "status": {
+                "const": "OBSERVED"
+              },
+              "required_return": {
+                "const": false
+              },
+              "observed_return": {
+                "const": "EXCLUDES_REQUIRED_VALUE"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "call_evaluation": {
+            "type": "object",
+            "required": [
+              "status",
+              "returns"
+            ],
+            "properties": {
+              "status": {
+                "const": "COMPLETE"
+              },
+              "returns": {
+                "const": [
+                  true
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "comparison": {
+            "required": [
+              "status",
+              "required_return",
+              "observed_return"
+            ],
+            "properties": {
+              "status": {
+                "const": "OBSERVED"
+              },
+              "required_return": {
+                "const": true
+              },
+              "observed_return": {
+                "const": "MATCHES_REQUIRED_VALUE"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "call_evaluation": {
+            "type": "object",
+            "required": [
+              "status",
+              "returns"
+            ],
+            "properties": {
+              "status": {
+                "const": "COMPLETE"
+              },
+              "returns": {
+                "const": [
+                  true
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "comparison": {
+            "required": [
+              "status",
+              "required_return",
+              "observed_return"
+            ],
+            "properties": {
+              "status": {
+                "const": "OBSERVED"
+              },
+              "required_return": {
+                "const": true
+              },
+              "observed_return": {
+                "const": "EXCLUDES_REQUIRED_VALUE"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "call_evaluation": {
+            "type": "object",
+            "required": [
+              "status",
+              "returns"
+            ],
+            "properties": {
+              "status": {
+                "const": "COMPLETE"
+              },
+              "returns": {
+                "const": [
+                  false
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "comparison": {
+            "required": [
+              "status",
+              "observed_return"
+            ],
+            "properties": {
+              "status": {
+                "const": "OBSERVED"
+              },
+              "observed_return": {
+                "const": "UNRESOLVED"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "call_evaluation": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "status"
+                ],
+                "properties": {
+                  "status": {
+                    "const": "UNAVAILABLE"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
 }
