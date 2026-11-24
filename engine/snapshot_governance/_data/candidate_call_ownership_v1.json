@@ -1,0 +1,204 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "scope",
+    "language",
+    "target_execution",
+    "canonical_finding_or_certificate",
+    "source_view_sha256",
+    "source_manifest_sha256",
+    "authority_sha256",
+    "observation",
+    "topology",
+    "ownership_sites",
+    "original_intent"
+  ],
+  "$id": "urn:fortress:derived:v1:hypothetical-native-call-module-boundaries",
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:derived:v1:hypothetical-native-call-module-boundaries"
+    },
+    "schema_version": {
+      "$ref": "urn:fortress:derived:v1:native-call-module-boundaries#/properties/schema_version"
+    },
+    "scope": {
+      "$ref": "urn:fortress:derived:v1:native-call-module-boundaries#/properties/scope"
+    },
+    "language": {
+      "$ref": "urn:fortress:derived:v1:native-call-module-boundaries#/properties/language"
+    },
+    "target_execution": {
+      "$ref": "urn:fortress:derived:v1:native-call-module-boundaries#/properties/target_execution"
+    },
+    "canonical_finding_or_certificate": {
+      "$ref": "urn:fortress:derived:v1:native-call-module-boundaries#/properties/canonical_finding_or_certificate"
+    },
+    "source_view_sha256": {
+      "$ref": "urn:fortress:derived:v1:native-call-module-boundaries#/properties/source_view_sha256"
+    },
+    "source_manifest_sha256": {
+      "$ref": "urn:fortress:derived:v1:native-call-module-boundaries#/properties/source_manifest_sha256"
+    },
+    "authority_sha256": {
+      "$ref": "urn:fortress:derived:v1:native-call-module-boundaries#/properties/authority_sha256"
+    },
+    "observation": {
+      "type": "object"
+    },
+    "topology": {
+      "$ref": "urn:fortress:derived:v1:native-call-module-boundaries#/properties/topology"
+    },
+    "ownership_sites": {
+      "$ref": "urn:fortress:derived:v1:native-call-module-boundaries#/properties/ownership_sites"
+    },
+    "original_intent": {
+      "$ref": "urn:fortress:derived:v1:native-call-module-boundaries#/properties/original_intent"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "language": {
+            "const": "go"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "observation": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "evaluation_key",
+              "exchange_sha256",
+              "producer_sha256",
+              "response_sha256",
+              "provenance",
+              "source_inventory",
+              "status",
+              "diagnostic"
+            ],
+            "properties": {
+              "evaluation_key": {
+                "$ref": "urn:fortress:derived:v1:go-native-body#/properties/evaluation_key"
+              },
+              "exchange_sha256": {
+                "$ref": "urn:fortress:derived:v1:go-native-body#/properties/exchange_sha256"
+              },
+              "producer_sha256": {
+                "$ref": "urn:fortress:derived:v1:go-native-body#/properties/producer_sha256"
+              },
+              "response_sha256": {
+                "$ref": "urn:fortress:derived:v1:go-native-body#/properties/response_sha256"
+              },
+              "provenance": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "kind",
+                  "source_view_sha256",
+                  "source_fingerprint",
+                  "authority_sha256",
+                  "actual",
+                  "package_directory",
+                  "process",
+                  "wire_context_sha256",
+                  "request_sha256"
+                ],
+                "properties": {
+                  "kind": {
+                    "$ref": "urn:fortress:derived:v1:go-native-body#/properties/provenance/properties/kind"
+                  },
+                  "source_view_sha256": {
+                    "$ref": "urn:fortress:derived:v1:go-native-body#/properties/provenance/properties/source_view_sha256"
+                  },
+                  "source_fingerprint": {
+                    "$ref": "urn:fortress:derived:v1:go-native-body#/properties/provenance/properties/source_fingerprint"
+                  },
+                  "authority_sha256": {
+                    "$ref": "urn:fortress:derived:v1:go-native-body#/properties/provenance/properties/authority_sha256"
+                  },
+                  "actual": {
+                    "const": false
+                  },
+                  "package_directory": {
+                    "$ref": "urn:fortress:derived:v1:go-native-body#/properties/provenance/properties/package_directory"
+                  },
+                  "process": {
+                    "$ref": "urn:fortress:derived:v1:go-native-body#/properties/provenance/properties/process"
+                  },
+                  "wire_context_sha256": {
+                    "$ref": "urn:fortress:derived:v1:go-native-body#/properties/provenance/properties/wire_context_sha256"
+                  },
+                  "request_sha256": {
+                    "$ref": "urn:fortress:derived:v1:go-native-body#/properties/provenance/properties/request_sha256"
+                  }
+                }
+              },
+              "source_inventory": {
+                "$ref": "urn:fortress:derived:v1:go-native-body#/properties/source_inventory"
+              },
+              "status": {
+                "$ref": "urn:fortress:derived:v1:go-native-body#/properties/status"
+              },
+              "diagnostic": {
+                "$ref": "urn:fortress:derived:v1:go-native-body#/properties/diagnostic"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "language": {
+            "const": "python"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "observation": {
+            "$ref": "urn:fortress:derived:v1:native-call-return-sensitivity#/allOf/1/then/properties/observation"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "topology": {
+            "properties": {
+              "status": {
+                "const": "UNAVAILABLE"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "ownership_sites": {
+            "maxItems": 0
+          },
+          "original_intent": {
+            "properties": {
+              "status": {
+                "enum": [
+                  "ORIGINAL_INTENT_UNAVAILABLE",
+                  "NATIVE_OBSERVATION_UNAVAILABLE"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

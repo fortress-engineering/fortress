@@ -311,3 +311,7 @@ snapshot binding stays separate from the native modeled result or limitation.
 ### [`native_candidate_body_v3.json`](../_data/native_candidate_body_v3.json)
 
 The retained candidate's exact source identities and original call dependency inspection. The original authority and governing graph must agree before projected calls can be compared. A change in either produces explicit unavailability.
+
+### [`candidate_call_ownership_v1.json`](../_data/candidate_call_ownership_v1.json)
+
+Exact native call Module ownership for retained postimage source. This schema shares the existing call, ownership and dependency comparison structures. The retained Go observation explicitly records hypothetical provenance. The enclosing candidate inspection retains original and target identities.

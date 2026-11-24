@@ -15,7 +15,7 @@ use crate::implementation_observation::{NativeDependencyContext, SourceOwnership
 use crate::information_flow::NativeScalarFlowObservation;
 use crate::migration_governance::MigrationError;
 use crate::native_observation::{
-    NativeSource, NativeSourceError, project_native_call_ownership,
+    NativeOwnershipProjectionKind, NativeSource, NativeSourceError, project_native_call_ownership,
     project_native_call_sensitivity, project_native_call_topology,
 };
 use crate::observation::SourceView;
@@ -521,6 +521,7 @@ pub fn observe_go_native_call_module_boundaries(
         &source.view,
         &source.binding,
         &source.binding,
+        NativeOwnershipProjectionKind::Actual,
         "go",
         &observed.call_evidence(),
         &graph,
@@ -691,6 +692,7 @@ pub fn observe_go_candidate_call_module_boundaries(
                 view,
                 candidate,
                 original,
+                NativeOwnershipProjectionKind::Hypothetical,
                 "go",
                 &observed.call_evidence(),
                 &graph,
