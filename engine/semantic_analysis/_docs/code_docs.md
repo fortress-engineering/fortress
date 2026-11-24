@@ -45,7 +45,10 @@ Prepared evaluation retains exact initialized and synchronous symbol-round domai
 The same statement interpreter can evaluate an explicitly admitted native
 scalar body against its declared parameter premises. The returned result is a
 conservative type-bound set of possible return values. Go fixed-width int64
-and bounded Python literal values have distinct domain identifiers. A residual
+and bounded Python literal values have distinct domain identifiers. Native
+Boolean equality and inequality use exact admitted input values. Ordering and
+equality of singleton integer domains are decided within the same native scalar
+type. A singleton native comparison can rule out an unreachable branch. A residual
 control path or an opaque result has no inferred domain. Native bodies are
 excluded from governed Rust function contracts and findings. Their evaluation
 is not certification or proof of runtime execution.

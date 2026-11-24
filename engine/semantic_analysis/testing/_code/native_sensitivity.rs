@@ -224,3 +224,107 @@ fn structurally_admitted_residual_branch_never_yields_a_partial_comparison() {
         }
     );
 }
+
+/// `T-AF-SEMANTIC-ANALYSIS-0001-R08-003`
+/// Fortress requirement: AF-SEMANTIC-ANALYSIS-0001-R08
+#[test]
+fn admitted_native_comparison_distinguishes_exact_and_unknown_values() {
+    use fortress_core::semantic_analysis::SemanticDomain;
+
+    for (expression, parameter, left, right, operator, expected) in [
+        (
+            "flag == True",
+            Some("flag"),
+            json!({"kind":"binding","name":"flag"}),
+            json!({"kind":"boolean","value":true}),
+            "==",
+            vec![false, true],
+        ),
+        (
+            "flag != True",
+            Some("flag"),
+            json!({"kind":"binding","name":"flag"}),
+            json!({"kind":"boolean","value":true}),
+            "!=",
+            vec![false, true],
+        ),
+        (
+            "-2 < 1",
+            None,
+            json!({"kind":"integer","value":"-2"}),
+            json!({"kind":"integer","value":"1"}),
+            "<",
+            vec![true],
+        ),
+        (
+            "1 < -2",
+            None,
+            json!({"kind":"integer","value":"1"}),
+            json!({"kind":"integer","value":"-2"}),
+            "<",
+            vec![false],
+        ),
+    ] {
+        let source = format!(
+            "def selected({}):\n    return {expression}\n",
+            parameter.unwrap_or_default()
+        );
+        let symbol = source.find("selected").unwrap();
+        let returned = source.find("return").unwrap();
+        let parameters = parameter
+            .map(|name| {
+                let position = source.find(name).unwrap();
+                json!({"name":name,"scalar":"BOOL","span":location(&source,position,position+name.len())})
+            })
+            .into_iter()
+            .collect::<Vec<_>>();
+        let reply = json!({
+            "status":"LOWERABLE",
+            "symbol":{"name":"selected","span":location(&source,symbol,symbol+8),
+                      "declaration_span":location(&source,0,source.len()-1)},
+            "parameters":parameters,"locals":[],"result_scalar":"BOOL",
+            "body":[{"kind":"return","value":{"kind":"binary","operator":operator,"left":left,"right":right},
+                     "span":location(&source,returned,source.len()-1)}]
+        });
+        let names = parameter.into_iter().collect::<Vec<_>>();
+        let input = NativeBodyInput {
+            language: NativeBodyLanguage::Python,
+            evaluation: &EvaluationKey::new(REF, REF, REF),
+            exchange_ref: REF,
+            producer_ref: REF,
+            source_path: PATH,
+            source_ref: &digest(source.as_bytes()),
+            source: source.as_bytes(),
+            python_bool_parameters: &names,
+        };
+        let NativeBodyOutcome::Lowered(body) =
+            input.admit(&serde_json::to_vec(&reply).unwrap()).unwrap()
+        else {
+            panic!("expected an admitted native comparison");
+        };
+        assert_eq!(
+            infer_native_scalar_output(&body),
+            Some(SemanticDomain::boolean("native_scalar:bool", expected))
+        );
+        if parameter.is_some() {
+            let NativeBooleanSensitivity::Complete {
+                parameters,
+                valuation_count,
+                ..
+            } = inspect_native_boolean_sensitivity(&body)
+            else {
+                panic!("expected exact sensitivity for {expression}");
+            };
+            assert_eq!(valuation_count, 2);
+            assert_eq!(
+                parameters[0].disposition,
+                NativeBooleanParameterDisposition::ReturnChanges {
+                    inputs_with_parameter_false: vec![false],
+                    inputs_with_parameter_true: vec![true],
+                    return_with_parameter_false: operator == "!=",
+                    return_with_parameter_true: operator == "==",
+                }
+            );
+        }
+    }
+}

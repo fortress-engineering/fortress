@@ -112,8 +112,9 @@ Adds an explicit scalar body mode when built together with the single-file
 collector. Native Go name resolution and type checking verify ordered local
 bindings. Admitted statements include short declarations, assignment,
 conditionals and return over exact bool and signed-int64 scalars. Constants
-are admitted through native type information and exact ranges. Runtime
-arithmetic, dynamic or external calls, methods, goroutines, defer, limited
+are admitted through native type information and exact ranges. Exact bool
+equality and inequality plus ordering and equality of exact int64 values use
+the existing comparison expression. Runtime arithmetic, dynamic or external calls, methods, goroutines, defer, limited
 identifiers and larger bodies retain explicit refusal. The worker never
 imports or executes repository code.
 

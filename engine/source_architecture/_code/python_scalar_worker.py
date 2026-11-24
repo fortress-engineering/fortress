@@ -34,6 +34,9 @@ SOURCE_KEYS = {"schema", "id", "source", "byte_count", "source_ref", "source_pat
 PIN_KEYS = ["worker_ref", "bootstrap_ref", "runtime_ref"]
 MODULE_VALUE_KINDS = (ast.List, ast.Dict, ast.Set, ast.Tuple, ast.Attribute, ast.Subscript,
                       ast.NamedExpr, ast.Lambda, ast.GeneratorExp, ast.ListComp, ast.SetComp, ast.DictComp)
+COMPARISON_OPERATORS = {
+    ast.Eq: "==", ast.NotEq: "!=", ast.Lt: "<", ast.LtE: "<=", ast.Gt: ">", ast.GtE: ">=",
+}
 
 
 class Refuse(Exception):
@@ -213,6 +216,8 @@ class Lower:
             if isinstance(node.op, ast.USub) and isinstance(node.operand, ast.Constant) and type(node.operand.value) is int:
                 return self.integer(-node.operand.value, node)
             raise Refuse("INTEGER_OPERATION_UNSUPPORTED", node)
+        if isinstance(node, ast.Compare):
+            return self.comparison(node, initialized, depth)
         if isinstance(node, ast.Call):
             raise Refuse("CALL_UNSUPPORTED", node)
         if isinstance(node, ast.BinOp):
@@ -220,6 +225,18 @@ class Lower:
         if isinstance(node, MODULE_VALUE_KINDS):
             raise Refuse("OBJECT_OR_ALIAS_UNSUPPORTED", node)
         raise Refuse("EXPRESSION_UNSUPPORTED", node)
+
+    def comparison(self, node, initialized, depth):
+        if len(node.ops) != 1:
+            raise Refuse("COMPARISON_FORM_UNSUPPORTED", node)
+        operator = COMPARISON_OPERATORS.get(type(node.ops[0]))
+        if operator is None:
+            raise Refuse("COMPARISON_FORM_UNSUPPORTED", node)
+        left_type, left = self.expression(node.left, initialized, depth + 1)
+        right_type, right = self.expression(node.comparators[0], initialized, depth + 1)
+        if left_type != right_type or (left_type == "BOOL" and operator not in ("==", "!=")):
+            raise Refuse("COMPARISON_TYPES_UNSUPPORTED", node)
+        return "BOOL", {"kind": "binary", "operator": operator, "left": left, "right": right}
 
     def assign(self, node, init, depth):
         if len(node.targets) != 1 or not isinstance(node.targets[0], ast.Name):

@@ -116,7 +116,8 @@
           "statement": "The finite native Boolean return comparison reuses the existing admitted scalar interpreter and compares one-to-four exact Boolean inputs at singleton valuations. It reports ordered paired witnesses or stable returns within the modeled input population only after every output is established. Residual control paths, opaque or nonsingleton returns, and unsupported scalar scopes supply no comparison or runtime conclusion.",
           "tests": [
             "T-AF-SEMANTIC-ANALYSIS-0001-R08-001",
-            "T-AF-SEMANTIC-ANALYSIS-0001-R08-002"
+            "T-AF-SEMANTIC-ANALYSIS-0001-R08-002",
+            "T-AF-SEMANTIC-ANALYSIS-0001-R08-003"
           ]
         }
       ]

@@ -705,8 +705,10 @@ runtime execution, physical write effects and their upper bound stay unresolved.
 ### [`python_scalar_command.rs`](../_code/python_scalar_command.rs)
 
 Implements explicit scalar inspection using a separately registered external
-CPython interpreter and exact embedded worker and bootstrap bytes. The
-compile-only process receives an immutable request after an exact scalar
+CPython interpreter and exact reviewed worker and bootstrap bytes. Current
+packages supply the current scalar worker. The compatible earlier worker
+remains selectable by its exact retained digest. The selected worker identity
+is revalidated before and after each exchange. The compile-only process receives an immutable request after an exact scalar
 readiness frame on the existing verifier supervisor. The command rechecks
 host inputs, consumes Snapshot Governance's revalidated result, and serializes
 a scoped native body or limitation. Inference remains a separate conditional

@@ -161,8 +161,10 @@ The request names one ordinary Python source file, exact source bytes, one
 function, and independently selected exact-bool parameter domains. Annotations
 do not establish those domains. Supported bodies use exact bool values and
 bounded signed 32-bit integer literals, definitely initialized local bindings,
-simple assignment, Boolean negation, if/else and explicit uniform scalar
-returns. Source spans use one-based byte columns and retain physical UTF-8
+simple assignment, Boolean negation, same-kind scalar comparisons, if/else,
+and explicit uniform scalar returns. Boolean comparisons admit equality and
+inequality. Bounded integer operands also admit ordering. Mixed operand
+kinds, chained comparisons, identity and membership remain unavailable. Source spans use one-based byte columns and retain physical UTF-8
 byte offsets, including CRLF. Any unsupported construct clears the body,
 including calls, object or alias behavior, implicit returns, exceptional
 control and integer operations outside the literal surface.
