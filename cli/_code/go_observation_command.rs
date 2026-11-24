@@ -12,6 +12,8 @@ use fortress_core::go_observation::{
     observe_go_module_dependencies, observe_go_module_dependency_intent, observe_go_native,
     observe_go_native_build, observe_go_native_module, observe_go_native_tests,
 };
+use fortress_core::native_regions::{NativeRegionInput, project_native_source_regions};
+use fortress_core::observation::is_canonical_relative_path;
 use fortress_core::portable::{canonical, digest};
 use fortress_core::wire::{JsonAdmissionLimits, admit_json, parse_public_json, readable_text};
 use serde::{Deserialize, Serialize};
@@ -64,7 +66,7 @@ impl Mode {
     fn cli_usage(self) -> &'static str {
         match self {
             Self::Legacy => {
-                "--observe-go project host-registration directory package-path go-version target-os target-arch"
+                "--observe-go project host-registration directory package-path go-version target-os target-arch [--source-regions source-path]"
             }
             Self::Build => {
                 "--observe-go-build project host-registration directory package-path go-version target-os target-arch"
@@ -212,7 +214,18 @@ fn collect(arguments: &[String], mode: Mode) -> Result<Vec<u8>, String> {
                 (Mode::Legacy, None) => {
                     let result = observe_go_native(&root, selection, &pin, launch)
                         .map_err(|error| error.to_string())?;
-                    encode_observation(result)
+                    if let ObservationOperation::SourceRegions(path) = operation {
+                        let regions = project_native_source_regions(
+                            &root,
+                            path,
+                            NativeRegionInput::Go(&result),
+                            &[],
+                        )
+                        .map_err(|error| error.to_string())?;
+                        encode_observation(regions)
+                    } else {
+                        encode_observation(result)
+                    }
                 }
                 _ => return Err("UNSUPPORTED_COLLECTOR_REGISTRATION_VERSION".into()),
             }
@@ -232,8 +245,9 @@ fn encode_observation(observation: impl Serialize) -> Result<Vec<u8>, String> {
     canonical(&projection).map_err(|error| error.to_string())
 }
 
-enum ModuleOperation<'a> {
+enum ObservationOperation<'a> {
     Observe(Option<GoTypeComparison>),
+    SourceRegions(&'a str),
     Dependencies,
     DependencyIntent,
     AuthoredReturn {
@@ -243,24 +257,30 @@ enum ModuleOperation<'a> {
     },
 }
 
-fn parse_operation(mode: Mode, options: &[String]) -> Result<ModuleOperation<'_>, String> {
+fn parse_operation(mode: Mode, options: &[String]) -> Result<ObservationOperation<'_>, String> {
     match (mode, options) {
-        (_, []) => Ok(ModuleOperation::Observe(None)),
-        (Mode::Module, [flag]) if flag == "--dependencies" => Ok(ModuleOperation::Dependencies),
-        (Mode::Module, [flag]) if flag == "--dependency-intent" => Ok(ModuleOperation::DependencyIntent),
+        (_, []) => Ok(ObservationOperation::Observe(None)),
+        (Mode::Legacy, [flag, path]) if flag == "--source-regions" => {
+            if !is_canonical_relative_path(path) || !path.ends_with(".go") {
+                return Err("Source regions require a canonical repository-relative Go file.".into());
+            }
+            Ok(ObservationOperation::SourceRegions(path))
+        }
+        (Mode::Module, [flag]) if flag == "--dependencies" => Ok(ObservationOperation::Dependencies),
+        (Mode::Module, [flag]) if flag == "--dependency-intent" => Ok(ObservationOperation::DependencyIntent),
         (Mode::Module, [flag, function, body_registration])
             if matches!(flag.as_str(), "--authored-return" | "--authored-call-return")
                 && !function.is_empty()
                 && !function.starts_with('-')
                 && Path::new(body_registration).is_absolute() =>
         {
-            Ok(ModuleOperation::AuthoredReturn { function, body_registration: Path::new(body_registration), call_returns: flag == "--authored-call-return" })
+            Ok(ObservationOperation::AuthoredReturn { function, body_registration: Path::new(body_registration), call_returns: flag == "--authored-call-return" })
         }
         (Mode::Module, [flag, ..]) if matches!(flag.as_str(), "--authored-return" | "--authored-call-return") => {
             Err("An authored return requires one function and an absolute trusted body registration path.".into())
         }
         (Mode::Module, [left_package, left_type, right_package, right_type]) => {
-            Ok(ModuleOperation::Observe(Some(GoTypeComparison {
+            Ok(ObservationOperation::Observe(Some(GoTypeComparison {
                 left: GoTypeSelector {
                     package_path: left_package.clone(),
                     name: left_type.clone(),
@@ -284,12 +304,15 @@ fn collect_module(
     root: &Path,
     selection: GoModuleSelection<'_>,
     context: GoBuildContext,
-    operation: ModuleOperation<'_>,
+    operation: ObservationOperation<'_>,
     pin: &GoCollectorPin<'_>,
     launch: impl FnOnce(&[u8]) -> Result<Vec<u8>, GoObservationError>,
 ) -> Result<Vec<u8>, String> {
     match operation {
-        ModuleOperation::Observe(comparison) => {
+        ObservationOperation::SourceRegions(_) => {
+            Err("Use --observe-go for source regions.".into())
+        }
+        ObservationOperation::Observe(comparison) => {
             let selection = GoModuleSelection {
                 comparison: comparison.as_ref(),
                 ..selection
@@ -298,15 +321,15 @@ fn collect_module(
                 .map_err(|error| error.to_string())?;
             encode_observation(result)
         }
-        ModuleOperation::Dependencies => {
+        ObservationOperation::Dependencies => {
             observe_go_module_dependencies(root, selection, context, pin, launch)
                 .map_err(|error| error.to_string())
         }
-        ModuleOperation::DependencyIntent => {
+        ObservationOperation::DependencyIntent => {
             observe_go_module_dependency_intent(root, selection, context, pin, launch)
                 .map_err(|error| error.to_string())
         }
-        ModuleOperation::AuthoredReturn {
+        ObservationOperation::AuthoredReturn {
             function,
             body_registration,
             call_returns,
@@ -489,7 +512,7 @@ mod tests {
             let arguments = [flag, "Keep", registration].map(str::to_owned);
             assert!(matches!(
                 parse_operation(Mode::Module, &arguments).unwrap(),
-                ModuleOperation::AuthoredReturn { function: "Keep", body_registration, call_returns }
+                ObservationOperation::AuthoredReturn { function: "Keep", body_registration, call_returns }
                     if body_registration == body && call_returns == composed
             ));
             assert!(parse_operation(Mode::Module, &arguments[..2]).is_err());
@@ -510,19 +533,19 @@ mod tests {
         for mode in [Mode::Legacy, Mode::Build, Mode::Tests] {
             assert!(matches!(
                 parse_operation(mode, &[]).unwrap(),
-                ModuleOperation::Observe(None)
+                ObservationOperation::Observe(None)
             ));
         }
         assert!(matches!(
             parse_operation(Mode::Module, &[]).unwrap(),
-            ModuleOperation::Observe(None)
+            ObservationOperation::Observe(None)
         ));
         assert!(matches!(
             parse_operation(Mode::Module, &["--dependencies".into()]).unwrap(),
-            ModuleOperation::Dependencies
+            ObservationOperation::Dependencies
         ));
         let selectors = ["example.test/left", "First", "example.test/right", "Second"];
-        let ModuleOperation::Observe(Some(comparison)) =
+        let ObservationOperation::Observe(Some(comparison)) =
             parse_operation(Mode::Module, &selectors.map(str::to_owned)).unwrap()
         else {
             panic!("explicit type selectors must retain their original dispatch");

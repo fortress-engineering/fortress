@@ -122,6 +122,7 @@ versioned report.
 
 ~~~text
 fortress psm --observe-go PROJECT HOST_REGISTRATION DIRECTORY PACKAGE_PATH go1.22 linux amd64
+fortress psm --observe-go PROJECT HOST_REGISTRATION DIRECTORY PACKAGE_PATH go1.22 linux amd64 --source-regions src/entry.go
 ~~~
 
 Use a host-owned registration outside the project. Declare the absolute
@@ -650,9 +651,24 @@ frame. It checks an independently pinned external ordered root scope before
 dispatch, then rechecks the external scope and host assets after the exchange.
 Snapshot Governance supplies the actual-state result and scoped limitations.
 
+**Exact native source regions**
+
+The Go command accepts `--source-regions SOURCE_PATH` for a canonical
+repository-relative Go file within the selected compiler observation.
+Source Architecture reports scoped declarations and implementation regions
+using the same admitted receipt. The report retains the original authority,
+source manifest, current bytes, and native receipt identities. Regions
+outside the observed scope remain unsupported.
+
 **Explicit Python lexical observations**
 
 Use `fortress source-artifacts --observe-python PROJECT HOST_REGISTRATION SOURCE_PATH lexical` from a trusted host. The selected path is a repository-relative `.py` file. Use `syntax` for the narrower parser-only result. The mode returns a separate machine-readable observation.
+
+Append `--source-regions` to either mode to inspect the corresponding
+Source Architecture region report. Lexical mode can expose observed
+declarations and limitations on unresolved imports. Syntax mode records
+the narrower syntax-only availability. Each report revalidates the exact
+source state and retains the native receipt reference.
 
 Keep the host registration, interpreter and exact reviewed worker outside the project. The supplied registration pins the interpreter executable, selected CPython runtime descriptor and grammar. The worker must match the bytes shipped with Fortress. Review the available runtime context and platform limits before launching. See [Python worker setup](code_docs.md#python_observe_commandrs).
 

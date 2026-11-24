@@ -2515,6 +2515,52 @@ fn native_go_observation_refuses_project_selected_tools() {
     assert_eq!(fs::read(&registration).unwrap(), supplied);
 }
 
+/// `T-TF-CLI-0001-R32-001`
+/// Fortress requirement: TF-CLI-0001-R32
+#[test]
+fn native_source_regions_require_safe_paths_and_independently_selected_hosts() {
+    let fixture = ObservationFixture::new();
+    let root = fixture.argument();
+    let registration = fixture.root.join("region-host.json");
+    let original = b"{}";
+    fs::write(&registration, original).unwrap();
+    let registration_arg = registration.to_str().unwrap();
+    let go = [
+        "psm",
+        "--observe-go",
+        &root,
+        registration_arg,
+        ".",
+        "probe.local/regions",
+        "go1.22",
+        std::env::consts::OS,
+        "amd64",
+        "--source-regions",
+    ];
+    for (path, expected) in [
+        ("../fixture.go", "canonical repository-relative Go file"),
+        ("fixture.go", "asset belongs to the project"),
+    ] {
+        let result = run(&[go.as_slice(), &[path]].concat());
+        assert_eq!(result.status.code(), Some(i32::from(EXIT_USAGE)));
+        assert!(result.stdout.is_empty());
+        assert!(String::from_utf8_lossy(&result.stderr).contains(expected));
+    }
+    let result = run(&[
+        "source-artifacts",
+        "--observe-python",
+        &root,
+        registration_arg,
+        "fixture.py",
+        "lexical",
+        "--source-regions",
+    ]);
+    assert_eq!(result.status.code(), Some(i32::from(EXIT_USAGE)));
+    assert!(result.stdout.is_empty());
+    assert!(String::from_utf8_lossy(&result.stderr).contains("COLLECTOR_TRUST_REQUIRED"));
+    assert_eq!(fs::read(registration).unwrap(), original);
+}
+
 /// `T-CLI-GO-BUILD-REGISTRATION-IS-VERSIONED`
 /// Fortress classification: infrastructure
 #[test]

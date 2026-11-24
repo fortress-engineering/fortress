@@ -6,6 +6,7 @@ use std::process::Command;
 use std::time::Duration;
 
 use base64::{Engine as _, engine::general_purpose::STANDARD};
+use fortress_core::native_regions::{NativeRegionInput, project_native_source_regions};
 use fortress_core::portable::{canonical, digest};
 use fortress_core::python_observation::{
     PYTHON_LEXICAL_WORKER, PythonGrammar, PythonImportScope, PythonLexicalMode,
@@ -18,7 +19,7 @@ use serde::Deserialize;
 use serde_json::{Value, json};
 
 const USAGE: &str = concat!(
-    "fortress source-artifacts --observe-python project host-registration source-path lexical|syntax",
+    "fortress source-artifacts --observe-python project host-registration source-path lexical|syntax [--source-regions]",
     "\n       fortress source-artifacts --observe-python project host-registration source-path imports|dependencies|dependency-intent root-scope root-scope-sha256",
 );
 const REGISTRATION_SCHEMA: &str = "urn:fortress:host:v1:python-lexical-registration";
@@ -339,8 +340,13 @@ fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
     {
         return collect_imports(root, registration, source, scope, scope_ref, mode);
     }
-    let [root, registration_path, source_path, mode] = arguments else {
+    let [root, registration_path, source_path, mode, options @ ..] = arguments else {
         return Err(format!("usage: {USAGE}"));
+    };
+    let source_regions = match options {
+        [] => false,
+        [flag] if flag == "--source-regions" => true,
+        _ => return Err(format!("usage: {USAGE}")),
     };
     let (mode, wire_mode) = match mode.as_str() {
         "lexical" => (PythonLexicalMode::Lexical, "LEXICAL"),
@@ -376,12 +382,27 @@ fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
         )
     })
     .map_err(|error| error.to_string())?;
+    let regions = source_regions
+        .then(|| {
+            project_native_source_regions(
+                &root,
+                source_path,
+                NativeRegionInput::Python(&result),
+                &[],
+            )
+        })
+        .transpose()
+        .map_err(|error| error.to_string())?;
     registration.revalidate_worker(&root)?;
     super::verifier_process::require_external_asset(registration_path, &root)?;
     if super::provider_command::read_bounded(registration_path, REGISTRATION_LIMIT)?
         != registration_bytes
     {
         return Err("PYTHON_WORKER_REGISTRATION_CHANGED".into());
+    }
+    if let Some(regions) = regions {
+        let projection = serde_json::to_value(regions).map_err(|error| error.to_string())?;
+        return encode(&projection);
     }
     let observation =
         serde_json::to_value(result.observation()).map_err(|error| error.to_string())?;

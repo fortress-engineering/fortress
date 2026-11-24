@@ -318,6 +318,13 @@
             "T-TF-CLI-0001-R31-005",
             "T-TF-CLI-0001-R31-006"
           ]
+        },
+        {
+          "id": "TF-CLI-0001-R32",
+          "statement": "Explicit native source-region inspection reuses the admitted Go or Python compiler observation for one current, canonical source path. Host custody and snapshot bindings remain required. The report preserves the observed, unsupported, and unavailable region states with exact provenance.",
+          "tests": [
+            "T-TF-CLI-0001-R32-001"
+          ]
         }
       ]
     }
