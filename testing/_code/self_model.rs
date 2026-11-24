@@ -174,33 +174,7 @@ fn live_contract_v2_v3_ecosystem_resolves_completely() {
     }
     let admission = &resolved.requirements()["AF-SNAPSHOT-GOVERNANCE-0001-R26"];
     assert_eq!(admission.tests().len(), 8);
-    for (requirement, count) in [
-        ("TF-AGENT-INTEGRATION-0001-R01", 6),
-        ("TF-AGENT-INTEGRATION-0001-R02", 7),
-        ("TF-AGENT-INTEGRATION-0001-R03", 2),
-        ("TF-AGENT-INTEGRATION-0001-R04", 1),
-        ("AF-MIGRATION-GOVERNANCE-0001-R08", 5),
-        ("AF-CERTIFICATION-0001-R06", 17),
-        ("AF-PROJECT-MODEL-0001-R06", 1),
-        ("AF-IMPLEMENTATION-OBSERVATION-0001-R03", 3),
-        ("AF-INFORMATION-FLOW-0001-R07", 2),
-        ("AF-PROGRAM-SEMANTICS-0001-R11", 4),
-        ("AF-PROGRAM-SEMANTICS-0001-R12", 1),
-        ("AF-SEMANTIC-ANALYSIS-0001-R06", 1),
-        ("AF-SEMANTIC-ANALYSIS-0001-R07", 2),
-        ("AF-SEMANTIC-ANALYSIS-0001-R08", 2),
-        ("AF-SNAPSHOT-GOVERNANCE-0001-R28", 28),
-        ("AF-SNAPSHOT-GOVERNANCE-0001-R29", 17),
-        ("AF-SNAPSHOT-GOVERNANCE-0001-R30", 9),
-        ("AF-SOURCE-ARCHITECTURE-0001-R05", 6),
-        ("AF-SOURCE-ARCHITECTURE-0001-R06", 3),
-        ("AF-STATE-EFFECT-ANALYSIS-0001-R08", 4),
-        ("TF-CLI-0001-R31", 6),
-        ("AF-REPOSITORY-OBSERVATION-0001-R01", 4),
-        ("AF-REPOSITORY-OBSERVATION-0001-R02", 5),
-        ("AF-REPOSITORY-OBSERVATION-0001-R03", 6),
-        ("AF-REPOSITORY-OBSERVATION-0001-R04", 4),
-    ] {
+    for &(requirement, count) in REQUIRED_SELF_MODEL_TEST_COUNTS {
         assert_eq!(resolved.requirements()[requirement].tests().len(), count);
     }
     assert_eq!(resolved.guarantees().len(), 17);
@@ -284,6 +258,34 @@ fn real_reference_scope_has_authored_purity_and_nonvacuous_semantic_support() {
         );
     }
 }
+
+const REQUIRED_SELF_MODEL_TEST_COUNTS: &[(&str, usize)] = &[
+    ("TF-AGENT-INTEGRATION-0001-R01", 6),
+    ("TF-AGENT-INTEGRATION-0001-R02", 7),
+    ("TF-AGENT-INTEGRATION-0001-R03", 2),
+    ("TF-AGENT-INTEGRATION-0001-R04", 1),
+    ("AF-MIGRATION-GOVERNANCE-0001-R08", 5),
+    ("AF-CERTIFICATION-0001-R06", 17),
+    ("AF-PROJECT-MODEL-0001-R06", 1),
+    ("AF-IMPLEMENTATION-OBSERVATION-0001-R03", 3),
+    ("AF-INFORMATION-FLOW-0001-R07", 2),
+    ("AF-PROGRAM-SEMANTICS-0001-R11", 4),
+    ("AF-PROGRAM-SEMANTICS-0001-R12", 1),
+    ("AF-SEMANTIC-ANALYSIS-0001-R06", 1),
+    ("AF-SEMANTIC-ANALYSIS-0001-R07", 2),
+    ("AF-SEMANTIC-ANALYSIS-0001-R08", 2),
+    ("AF-SNAPSHOT-GOVERNANCE-0001-R28", 28),
+    ("AF-SNAPSHOT-GOVERNANCE-0001-R29", 17),
+    ("AF-SNAPSHOT-GOVERNANCE-0001-R30", 9),
+    ("AF-SOURCE-ARCHITECTURE-0001-R05", 6),
+    ("AF-SOURCE-ARCHITECTURE-0001-R06", 3),
+    ("AF-STATE-EFFECT-ANALYSIS-0001-R08", 4),
+    ("TF-CLI-0001-R31", 6),
+    ("AF-REPOSITORY-OBSERVATION-0001-R01", 4),
+    ("AF-REPOSITORY-OBSERVATION-0001-R02", 5),
+    ("AF-REPOSITORY-OBSERVATION-0001-R03", 6),
+    ("AF-REPOSITORY-OBSERVATION-0001-R04", 4),
+];
 
 const REQUIRED_SELF_MODEL_REQUIREMENTS: &[&str] = &[
     "AF-PROJECT-MODEL-0001-R06",
