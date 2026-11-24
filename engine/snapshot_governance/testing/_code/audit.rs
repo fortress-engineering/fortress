@@ -426,6 +426,95 @@ fn a_go_edit_invalidates_the_artifact_projection_without_entering_rust_inputs() 
     assert_eq!(key(ProjectionKind::Psm), psm_key);
 }
 
+fn write_nested_native_bindings(repository: &TestRepository, exact: &str) {
+    let modules = [
+        ("AF-BASE-0001", "PF-FIXTURE", "base", "directory", "src"),
+        (
+            "AF-DETAIL-0001",
+            "AF-BASE-0001",
+            "detail",
+            "directory",
+            "src/core",
+        ),
+        ("AF-EXACT-0001", "AF-DETAIL-0001", "exact", "file", exact),
+    ];
+    let declarations = modules.map(|(id, parent, directory, kind, path)| {
+        let contract = format!("_data/logical_modules/{directory}/contract.json");
+        repository.write(&contract, &minimal_contract(id, directory, false));
+        serde_json::json!({
+            "module":id,"parent":parent,"contract":contract,
+            "bindings":[{"kind":kind,"path":path}]
+        })
+    });
+    let configuration = serde_json::json!({
+        "$schema":"urn:fortress:schema:v3:project-configuration",
+        "schema_version":3,"observation_exclusions":[".git"],"logical_modules":declarations
+    });
+    repository.write("__fortress/.fsconfig", &configuration.to_string());
+}
+
+/// `T-NATIVE-OWNERSHIP-EXACT-PRECEDENCE-001`
+/// Fortress classification: infrastructure
+#[test]
+fn native_owner_precedence_and_module_identity_survive_explicit_relocation() {
+    for (suffix, bytes) in [("go", "package fixture\n"), ("py", "value = 1\n")] {
+        let repository = TestRepository::new("nested-native-ownership");
+        repository.write(
+            "contract.json",
+            &minimal_contract("PF-FIXTURE", "Fixture", true),
+        );
+        let general = format!("src/general.{suffix}");
+        let nested = format!("src/core/nested.{suffix}");
+        let exact = format!("src/core/exact.{suffix}");
+        let moved = format!("src/core/relocated.{suffix}");
+        let unowned = format!("outside/unowned.{suffix}");
+        for path in [&general, &nested, &exact, &unowned] {
+            repository.write(path, bytes);
+        }
+        write_nested_native_bindings(&repository, &exact);
+        let original = compile_repository_source_artifact_model(repository.path()).unwrap();
+        let original_exact = original
+            .artifacts()
+            .iter()
+            .find(|row| row.path() == exact)
+            .unwrap();
+        fs::rename(
+            repository.path().join(&exact),
+            repository.path().join(&moved),
+        )
+        .unwrap();
+        write_nested_native_bindings(&repository, &moved);
+        let relocated = compile_repository_source_artifact_model(repository.path()).unwrap();
+        let owners = |report: &fortress_core::source_architecture::SourceArtifactModel| {
+            report
+                .artifacts()
+                .iter()
+                .map(|artifact| (artifact.path().to_owned(), artifact.module_id().to_owned()))
+                .collect::<std::collections::BTreeMap<_, _>>()
+        };
+        for (candidate, observed) in [(&exact, &original), (&moved, &relocated)] {
+            let expected = [
+                (general.clone(), "AF-BASE-0001".to_owned()),
+                (nested.clone(), "AF-DETAIL-0001".to_owned()),
+                (candidate.to_string(), "AF-EXACT-0001".to_owned()),
+            ]
+            .into_iter()
+            .collect::<std::collections::BTreeMap<_, _>>();
+            assert_eq!(owners(observed), expected);
+        }
+        let relocated_exact = relocated
+            .artifacts()
+            .iter()
+            .find(|row| row.path() == moved)
+            .unwrap();
+        assert_ne!(original_exact.id(), relocated_exact.id());
+        assert_eq!(
+            original_exact.content_digest(),
+            relocated_exact.content_digest()
+        );
+    }
+}
+
 /// `T-DISTRIBUTED-CONTRACT-LOGICAL-LOADERS-001`
 /// Fortress classification: infrastructure
 #[test]
