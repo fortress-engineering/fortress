@@ -15,6 +15,10 @@ use crate::program_semantics::go_observation::{
 mod body_domains;
 pub use body_domains::ActualGoNativeBodyObservation;
 
+#[path = "go_callable.rs"]
+mod callable;
+pub use callable::{GoCallableHost, GoCallableSelection, observe_go_linked_callable};
+
 pub use crate::program_semantics::go_observation::{
     GoBuildContext, GoBuildTestMode, GoCollectorPin, GoModuleSelection, GoNativeBuildObservation,
     GoNativeModuleObservation, GoNativeObservation, GoNativeTestObservation, GoObservationError,

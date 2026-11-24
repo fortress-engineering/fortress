@@ -11,6 +11,7 @@ use super::{
 use crate::program_semantics::native_body::{
     NativeBodyError, NativeBodyInput, NativeBodyLanguage, NativeBodyOutcome, NativeScalarBody,
 };
+use crate::program_semantics::native_callable::NativeCallableLimitation as Limit;
 use crate::project::EvaluationKey;
 use crate::wire::parse_strict_json_bytes;
 
@@ -99,7 +100,41 @@ pub(crate) struct GoNativeBodyObservation {
     limitations: [&'static str; 4],
 }
 
+pub(super) struct LinkedBody {
+    pub(super) evaluation: EvaluationKey,
+    pub(super) exchange: String,
+    pub(super) body: Box<NativeScalarBody>,
+}
+
 impl GoNativeBodyObservation {
+    pub(super) fn into_callable(self, name: &str, position: &Span) -> Result<LinkedBody, Limit> {
+        if !matches!(self.status, BodyStatus::ObservedBodies) {
+            return Err(Limit::BodyUnavailable);
+        }
+
+        for row in self.functions {
+            match row {
+                GoBodyFunction::Lowered {
+                    symbol, lowered, ..
+                } if symbol.name == name && &symbol.span == position => {
+                    return Ok(LinkedBody {
+                        evaluation: self.evaluation_key,
+                        exchange: self.exchange_sha256,
+                        body: lowered.0,
+                    });
+                }
+                GoBodyFunction::Unavailable {
+                    symbol: Some(symbol),
+                    ..
+                } if symbol.name == name && &symbol.span == position => {
+                    return Err(Limit::BodyUnavailable);
+                }
+                _ => {}
+            }
+        }
+        Err(Limit::OccurrenceUnresolved)
+    }
+
     pub(crate) fn lowered_bodies(&self) -> impl Iterator<Item = Option<&NativeScalarBody>> {
         self.functions.iter().map(|function| match function {
             GoBodyFunction::Lowered { lowered, .. } => Some(lowered.0.as_ref()),

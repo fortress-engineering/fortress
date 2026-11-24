@@ -597,3 +597,21 @@ Module ownership through the native dependency adapter. Positions use the
 original UTF-8 bytes with physical CRLF retained. The result retains unknown
 targets and ownership ambiguity alongside exact source evidence. The
 physical revalidation boundary covers dependency projection and publication.
+
+### [`go_callable.rs`](../_code/go_callable.rs)
+
+Links a scoped declaration and admitted scalar body from the same actual
+physical capture. The Go entry uses the verified v3 module recipe and a
+separately supervised scalar worker. The Python entry requires a unique
+top-level regular source origin in independently pinned roots. Alternate
+source, package or namespace origins stay unresolved. Both retain original
+authored logical ownership when established, and reobserve physical source
+and directory identity before returning. These library observations remain
+outside runtime resolution and canonical conformance.
+
+### [`python_callable.rs`](../_code/python_callable.rs)
+
+Resolves an exact regular lexical module under independently selected roots,
+then binds its admitted callable to the same captured source, original
+declared ownership and worker exchange. Alternate origins, unsupported
+bodies and drift remain explicit.

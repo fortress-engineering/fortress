@@ -208,3 +208,8 @@ original declared Module owners, preserve byte offsets across UTF-8 and
 CRLF, and distinguish target precedence, unresolved members, missing files,
 namespaces and unowned files. They reject target drift and retain unsupported
 root scope explicitly.
+
+The linked callable tests replay pinned Go module and body receipts and
+CPython scalar facts. They check stable slot versus exact occurrence after
+relocation, unresolved alternate origins, original ownership availability,
+stale exchanges and post-capture source drift.

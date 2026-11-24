@@ -159,3 +159,15 @@ frozen original source ran under an independently authored native reference.
 Retains a pinned CPython compiler-only reply for a fixed CRLF file with a UTF-8
 comment, async function and unresolved import. Snapshot Governance tests replay
 its immutable source, facts and producer pins under the exact live request ID.
+
+### [`go_callable_fixture_v1.json`](../_data/go_callable_fixture_v1.json)
+
+Retains exact Windows-produced native v3 and scalar worker receipts for the
+same two ordinary package source selections and frozen request identities.
+
+### [`python_callable_fixture_v1.json`](../_data/python_callable_fixture_v1.json)
+
+Retains CPython scalar compiler facts for the zero-argument source, its
+relocated CRLF copy, unsupported reassignment and unavailable parameter shape.
+The controls preserve these physical facts while correlating each occurrence
+to the actual fixture request.

@@ -15,6 +15,10 @@ mod model_digest;
 #[path = "native_body.rs"]
 pub mod native_body;
 
+/// Scoped native callable declaration and exact body links.
+#[path = "native_callable.rs"]
+pub mod native_callable;
+
 /// Exact Python scalar worker request and response binding.
 #[path = "python_scalar.rs"]
 pub mod python_scalar;

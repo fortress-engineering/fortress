@@ -1336,3 +1336,181 @@ ROOT_ECOSYSTEM  "provides": [],
         }
     }
 }
+
+mod callable_links {
+    use super::*;
+    use fortress_core::go_observation::{
+        GoCallableHost, GoCallableSelection, GoModuleSelection, observe_go_linked_callable,
+    };
+    use fortress_core::program_semantics::native_callable::{
+        NativeCallableLimitation, NativeCallableOutcome,
+    };
+
+    const FROZEN: &[u8] = include_bytes!("../_data/go_callable_fixture_v1.json");
+
+    fn selection(function: &str) -> GoCallableSelection<'_> {
+        GoCallableSelection {
+            module: GoModuleSelection {
+                directory: "subject",
+                module_path: "example.test/fortresscallable",
+                entry_path: "example.test/fortresscallable/app",
+                target_os: "linux",
+                target_arch: "amd64",
+                comparison: None,
+            },
+            function,
+        }
+    }
+
+    fn context() -> GoBuildContext {
+        GoBuildContext {
+            compiler: "gc".into(),
+            release_minor: 22,
+            cgo_enabled: false,
+            test_mode: GoBuildTestMode::RequireSeparateTestContext,
+            custom_tags: vec![],
+            tool_tags: vec!["amd64.v1".into()],
+        }
+    }
+
+    fn pin<'a>(receipt: &'a Value, name: &str) -> GoCollectorPin<'a> {
+        GoCollectorPin {
+            executable_sha256: receipt["worker_refs"][name].as_str().unwrap(),
+            supervisor_context_sha256: "sha256:0000000000000000000000000000000000000000000000000000000000000001",
+            go_toolchain: "go1.22.12",
+        }
+    }
+
+    fn stage(fixture: &Fixture, record: &Value, row: &Value) {
+        let path = fixture.root.join(row["path"].as_str().unwrap());
+        fs::create_dir_all(path.parent().unwrap()).unwrap();
+        fs::write(path, row["source"].as_str().unwrap()).unwrap();
+        fs::write(
+            fixture.root.join("subject/go.mod"),
+            record["definition"].as_str().unwrap(),
+        )
+        .unwrap();
+    }
+
+    fn reply(row: &Value, request: &[u8], role: &str) -> Vec<u8> {
+        assert_eq!(
+            row[format!("{role}_request_ref")],
+            fortress_core::portable::digest(request),
+            "exact v3 and scalar worker requests",
+        );
+        row[format!("{role}_reply")]
+            .as_str()
+            .unwrap()
+            .as_bytes()
+            .to_vec()
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R28-022`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R28
+    #[test]
+    fn go_callable_links_retained_native_module_and_body_from_the_same_selected_input() {
+        let record: Value = serde_json::from_slice(FROZEN).unwrap();
+        let fixture = Fixture::new("callable-link");
+        let module = pin(&record, "module");
+        let body = pin(&record, "body");
+        let host = GoCallableHost {
+            module: &module,
+            body: &body,
+        };
+        let mut links = Vec::new();
+        for row in record["cases"].as_array().unwrap() {
+            stage(&fixture, &record, row);
+            let result = observe_go_linked_callable(
+                &fixture.root,
+                selection("Keep"),
+                context(),
+                host,
+                |request| Ok(reply(row, request, "module")),
+                |request| Ok(reply(row, request, "body")),
+            )
+            .unwrap();
+            let NativeCallableOutcome::Linked(linked) = result else {
+                panic!("correlated proven compiler occurrence did not link");
+            };
+            assert_eq!(linked.function(), "Keep");
+            assert_eq!(linked.namespace(), record["package"].as_str().unwrap());
+            assert_eq!(linked.source_path(), row["path"].as_str().unwrap());
+            assert_eq!(
+                linked.source_ref(),
+                fortress_core::portable::digest(row["source"].as_str().unwrap().as_bytes())
+            );
+            assert_eq!(linked.body().parameters().len(), 1);
+            assert!(linked.declared_source_owner().is_none());
+            assert!(linked.slot_ref().starts_with("go_callable_slot:v1:sha256:"));
+            assert_ne!(linked.link_ref(), linked.body().binding());
+            links.push(linked);
+            fs::remove_file(fixture.root.join(row["path"].as_str().unwrap())).unwrap();
+        }
+        assert_eq!(links[0].slot_ref(), links[1].slot_ref());
+        assert_ne!(links[0].link_ref(), links[1].link_ref());
+        assert_ne!(links[0].body().binding(), links[1].body().binding());
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R28-023`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R28
+    #[test]
+    fn go_callable_rejects_other_exchanges_and_reobserves_original_source() {
+        let record: Value = serde_json::from_slice(FROZEN).unwrap();
+        let fixture = Fixture::new("callable-stale");
+        let module = pin(&record, "module");
+        let body = pin(&record, "body");
+        let host = GoCallableHost {
+            module: &module,
+            body: &body,
+        };
+        let first = &record["cases"][0];
+        stage(&fixture, &record, first);
+
+        let missing = observe_go_linked_callable(
+            &fixture.root,
+            selection("Other"),
+            context(),
+            host,
+            |request| Ok(reply(first, request, "module")),
+            |_| panic!("an unavailable subject must not start the body worker"),
+        )
+        .unwrap();
+        assert!(matches!(
+            missing,
+            NativeCallableOutcome::Unavailable(NativeCallableLimitation::MissingSubject)
+        ));
+
+        let stale = observe_go_linked_callable(
+            &fixture.root,
+            selection("Keep"),
+            context(),
+            host,
+            |request| Ok(reply(first, request, "module")),
+            |_| {
+                Ok(record["cases"][1]["body_reply"]
+                    .as_str()
+                    .unwrap()
+                    .as_bytes()
+                    .to_vec())
+            },
+        );
+        assert!(matches!(stale, Err(GoObservationError::InvalidResponse)));
+
+        let drift = observe_go_linked_callable(
+            &fixture.root,
+            selection("Keep"),
+            context(),
+            host,
+            |request| Ok(reply(first, request, "module")),
+            |request| {
+                fs::write(
+                    fixture.root.join(first["path"].as_str().unwrap()),
+                    b"package app\n",
+                )
+                .unwrap();
+                Ok(reply(first, request, "body"))
+            },
+        );
+        assert!(matches!(drift, Err(GoObservationError::SourceChanged)));
+    }
+}

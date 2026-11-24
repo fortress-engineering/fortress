@@ -543,7 +543,7 @@ fn location(span: &Span) -> Result<ProgramSourceLocation, NativeBodyError> {
     Ok(ProgramSourceLocation::new(line, column))
 }
 
-fn digest(value: &str) -> bool {
+pub(super) fn digest(value: &str) -> bool {
     value.strip_prefix("sha256:").is_some_and(|hex| {
         hex.len() == 64
             && hex

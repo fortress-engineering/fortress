@@ -187,3 +187,19 @@ ownership. Exact logical Module contract files selected by that authority
 remain part of the original snapshot and separate from the Go compiler input.
 Unrecognized files in the selected module still prevent observation. Native
 scope remains source-level and bounded by the original worker request.
+
+### [`native_callable.rs`](../_code/native_callable.rs)
+
+Defines a linked native declaration and lowered body separate from canonical
+PSM assembly. The Go slot uses package, declaration name, and ordered compiler
+scalar types. The Python slot is restricted to a zero-argument lexical
+function in a separately verified regular module. Both retain exact origin,
+exchange, source, and body occurrence identities. The optional original
+logical owner is recorded independently from the slot.
+
+### [`go_callable.rs`](../_code/go_callable.rs)
+
+Checks the exact v3 package selection and rebuilds a legacy body request from
+its admitted immutable files. The initial join uses one import-free ordinary
+package, the same pinned Go version, and bounded default build tags. The body
+must refer to the same declaration name and exact physical identifier span.

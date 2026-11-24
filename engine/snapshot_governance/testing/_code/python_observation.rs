@@ -1141,3 +1141,201 @@ fn python_dependency_capture_rejects_drift_and_preserves_unavailable_scope() {
         PythonLexicalOutcome::Lexical
     );
 }
+
+mod callable_links {
+    use super::*;
+    use base64::{Engine as _, engine::general_purpose::STANDARD};
+    use fortress_core::program_semantics::native_callable::{
+        NativeCallableLimitation, NativeCallableOutcome,
+    };
+    use fortress_core::python_observation::{
+        PythonCallableSelection, observe_python_linked_callable,
+    };
+
+    const UNCHANGED: &[u8] = b"def subject():\n    return True\n";
+    const RELOCATED: &[u8] = b"# moved\r\ndef subject():\r\n    return True\r\n";
+    const RUNTIME: &str = "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+
+    fn producer() -> PythonScalarProducer {
+        PythonScalarProducer::new(RUNTIME, digest(b"worker"), digest(b"bootstrap")).unwrap()
+    }
+
+    fn selection(module: &str) -> PythonCallableSelection<'_> {
+        PythonCallableSelection {
+            module,
+            function: "subject",
+        }
+    }
+
+    fn scope() -> PythonImportScope {
+        let (wire, reference) = import_scope(&["_code", "vendor"], "COMPLETE_SOURCE_ONLY");
+        PythonImportScope::admit(&wire, &reference).unwrap()
+    }
+
+    fn replay_path(value: &mut serde_json::Value, path: &str) {
+        match value {
+            serde_json::Value::Object(fields) => {
+                if let Some(value) = fields.get_mut("path") {
+                    *value = json!(path);
+                }
+                for child in fields.values_mut() {
+                    replay_path(child, path);
+                }
+            }
+            serde_json::Value::Array(rows) => {
+                for child in rows {
+                    replay_path(child, path);
+                }
+            }
+            _ => {}
+        }
+    }
+
+    fn reply(payload: &[u8]) -> Result<Vec<u8>, PythonObservationError> {
+        let request: serde_json::Value = serde_json::from_slice(payload).unwrap();
+        let source = STANDARD
+            .decode(request["source"].as_str().unwrap())
+            .unwrap();
+        let reference = digest(&source);
+        let fixture: serde_json::Value =
+            serde_json::from_slice(include_bytes!("../_data/python_callable_fixture_v1.json"))
+                .unwrap();
+        let mut report = fixture["checked"]
+            .as_object()
+            .unwrap()
+            .values()
+            .find(|row| row["source_ref"] == reference)
+            .expect("exact native compiler fixture")
+            .clone();
+        // Only the host's per-request correlation and selected file labels
+        // differ. Scalar facts, physical coordinates and limitations stay frozen.
+        for field in [
+            "id",
+            "source_path",
+            "runtime_ref",
+            "worker_ref",
+            "bootstrap_ref",
+        ] {
+            report[field] = request[field].clone();
+        }
+        replay_path(&mut report, request["source_path"].as_str().unwrap());
+        serde_json::to_vec(&report).map_err(|error| PythonScalarError::Json(error).into())
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R30-004`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R30
+    #[test]
+    fn python_callable_keeps_lexical_module_and_body_identity_separate() {
+        let fixture = dependency_fixture("python-callable");
+        let mut subjects = Vec::new();
+        for (path, source) in [
+            ("_code/source.py", UNCHANGED),
+            ("vendor/source.py", RELOCATED),
+        ] {
+            fs::write(fixture.root.join(path), source).unwrap();
+            let outcome = observe_python_linked_callable(
+                &fixture.root,
+                selection("source"),
+                &scope(),
+                &producer(),
+                |frame| reply(&frame),
+            )
+            .unwrap();
+            let NativeCallableOutcome::Linked(subject) = outcome else {
+                panic!("unique selected source and closed body should link");
+            };
+            assert_eq!(subject.namespace(), "source");
+            assert_eq!(subject.function(), "subject");
+            assert_eq!(subject.source_path(), path);
+            assert_eq!(subject.source_ref(), digest(source));
+            assert!(subject.body().parameters().is_empty());
+            let declared = subject.declared_source_owner();
+            if path == PATH {
+                assert_eq!(declared.unwrap().owner(), CONSUMER);
+            } else {
+                assert!(declared.is_none());
+            }
+            assert_ne!(subject.link_ref(), subject.body().binding());
+            subjects.push(subject);
+            fs::remove_file(fixture.root.join(path)).unwrap();
+        }
+        assert_eq!(subjects[0].slot_ref(), subjects[1].slot_ref());
+        assert_ne!(subjects[0].link_ref(), subjects[1].link_ref());
+        assert_ne!(subjects[0].body().binding(), subjects[1].body().binding());
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R30-005`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R30
+    #[test]
+    fn python_callable_refuses_alternate_origins_and_stale_physical_source() {
+        let fixture = import_fixture("python-callable-ambiguity");
+        fs::write(fixture.root.join(PATH), UNCHANGED).unwrap();
+        let alternate = fixture.root.join("vendor/source.py");
+        fs::write(&alternate, RELOCATED).unwrap();
+        let result = observe_python_linked_callable(
+            &fixture.root,
+            selection("source"),
+            &scope(),
+            &producer(),
+            |_| panic!("ambiguous static origin must never dispatch"),
+        )
+        .unwrap();
+        assert!(matches!(
+            result,
+            NativeCallableOutcome::Unavailable(NativeCallableLimitation::AmbiguousSubject)
+        ));
+        fs::remove_file(alternate).unwrap();
+
+        fs::create_dir(fixture.root.join("vendor/source")).unwrap();
+        fs::write(
+            fixture.root.join("vendor/source/portion.py"),
+            b"flag = False\n",
+        )
+        .unwrap();
+        let namespace = observe_python_linked_callable(
+            &fixture.root,
+            selection("source"),
+            &scope(),
+            &producer(),
+            |_| panic!("namespace alternative must never dispatch"),
+        )
+        .unwrap();
+        assert!(matches!(
+            namespace,
+            NativeCallableOutcome::Unavailable(NativeCallableLimitation::AmbiguousSubject)
+        ));
+
+        fs::remove_file(fixture.root.join("vendor/source/portion.py")).unwrap();
+
+        fs::write(
+            fixture.root.join(PATH),
+            b"def subject():\n    return True\nsubject = None\n",
+        )
+        .unwrap();
+        let rebound = observe_python_linked_callable(
+            &fixture.root,
+            selection("source"),
+            &scope(),
+            &producer(),
+            |frame| reply(&frame),
+        )
+        .unwrap();
+        assert!(matches!(
+            rebound,
+            NativeCallableOutcome::Unavailable(NativeCallableLimitation::BodyUnavailable)
+        ));
+        fs::write(fixture.root.join(PATH), UNCHANGED).unwrap();
+        let result = observe_python_linked_callable(
+            &fixture.root,
+            selection("source"),
+            &scope(),
+            &producer(),
+            |frame| {
+                let report = reply(&frame)?;
+                fs::write(fixture.root.join("note.txt"), b"late source change").unwrap();
+                Ok(report)
+            },
+        );
+        assert!(matches!(result, Err(PythonObservationError::SourceChanged)));
+    }
+}

@@ -8,7 +8,8 @@ use crate::audit::{
 };
 use crate::heavy_admission::{DirectoryIdentity, assert_no_incomplete_migration};
 use crate::implementation_observation::{
-    ImplementationObservationInput, SnapshotBoundFile, SourceOwnershipDiagnostic,
+    ImplementationObservationInput, SnapshotBoundFile, SourceOwnership, SourceOwnershipAuthority,
+    SourceOwnershipBasis, SourceOwnershipDiagnostic,
 };
 use crate::observation::SourceView;
 
@@ -101,6 +102,27 @@ impl<'a> NativeSource<'a> {
                 .collect(),
         );
         Ok((input, ownership.diagnostics()))
+    }
+
+    pub(crate) fn original_declared_owner(
+        &self,
+        path: &str,
+    ) -> Result<Option<SourceOwnership>, NativeSourceError> {
+        let (input, diagnostics) = self.dependency_input([path])?;
+        if diagnostics
+            .iter()
+            .any(|diagnostic| diagnostic.source_path() == path)
+        {
+            return Ok(None);
+        }
+        let [owner] = input.ownerships() else {
+            return Ok(None);
+        };
+        Ok(
+            (owner.authority() == SourceOwnershipAuthority::DeclaredModule
+                && owner.basis() == SourceOwnershipBasis::LogicalPathBinding)
+                .then(|| owner.clone()),
+        )
     }
 
     pub(crate) fn revalidate(&self) -> Result<(), NativeSourceError> {

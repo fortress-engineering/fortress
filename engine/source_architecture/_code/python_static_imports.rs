@@ -182,6 +182,48 @@ impl PythonImportScope {
     }
 }
 
+pub(crate) enum UniquePythonModule<'a> {
+    File { path: &'a str, source_ref: String },
+    Missing,
+    Ambiguous,
+    Unsupported,
+}
+
+impl PythonImportScope {
+    /// Selects one regular top-level source module without alternatives.
+    pub(crate) fn unique_regular_module<'a>(
+        &'a self,
+        view: &'a SourceView,
+        module: &str,
+    ) -> Result<UniquePythonModule<'a>, PythonStaticImportError> {
+        if module.len() > MAX_NAME_BYTES || !identifier(module) || module == "__main__" {
+            return Ok(UniquePythonModule::Unsupported);
+        }
+        let index = Index::new(view, &self.selection.roots)?;
+        let mut file = None;
+        let mut directory = false;
+        for root in &self.selection.roots {
+            let prefix = format!("{root}/{module}");
+            directory |= index.directories.contains(prefix.as_str());
+            if let Some((&path, digest)) =
+                index.files.get_key_value(format!("{prefix}.py").as_str())
+                && file.replace((path, digest)).is_some()
+            {
+                return Ok(UniquePythonModule::Ambiguous);
+            }
+        }
+        Ok(match (file, directory) {
+            (Some(_), true) => UniquePythonModule::Ambiguous,
+            (Some((path, source_ref)), false) => UniquePythonModule::File {
+                path,
+                source_ref: source_ref.clone(),
+            },
+            (None, true) => UniquePythonModule::Unsupported,
+            (None, false) => UniquePythonModule::Missing,
+        })
+    }
+}
+
 fn validate_roots(roots: &[String]) -> Result<(), PythonStaticImportError> {
     if roots.is_empty() || roots.len() > MAX_ROOTS || roots.iter().any(|root| !admitted_path(root))
     {

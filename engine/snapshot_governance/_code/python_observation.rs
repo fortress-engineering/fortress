@@ -32,6 +32,10 @@ pub use python_dependencies::{
     observe_python_static_dependencies,
 };
 
+#[path = "python_callable.rs"]
+mod callable;
+pub use callable::{PythonCallableSelection, observe_python_linked_callable};
+
 const PYTHON_LEXICAL_CONTEXT: &str = "fortress-python-lexical-context-v1";
 
 #[path = "python_test_observation.rs"]
@@ -475,22 +479,7 @@ fn observe_scalar_with<T>(
         sha256(&context),
         &source.binding.authority_digest,
     );
-    let parameters = subject
-        .exact_bool_parameters
-        .iter()
-        .map(String::as_str)
-        .collect::<Vec<_>>();
-    let request = PythonScalarRequest::bind(
-        &source.view,
-        &evaluation_key,
-        &subject.source_path,
-        &subject.function,
-        &parameters,
-        producer,
-    )?;
-    if request.source_ref() != subject.source_ref {
-        return Err(PythonObservationError::SubjectIdentityMismatch);
-    }
+    let request = bind_scalar_request(&source, subject, producer, &evaluation_key)?;
     let payload = request.worker_payload(&source.view, &evaluation_key)?;
     let response = exchange(payload)?;
     let outcome = request.admit(&source.view, &evaluation_key, &response)?;
@@ -509,6 +498,31 @@ fn observe_scalar_with<T>(
         },
         projected,
     ))
+}
+
+fn bind_scalar_request(
+    source: &NativeSource<'_>,
+    subject: &PythonScalarSubject,
+    producer: &PythonScalarProducer,
+    evaluation_key: &EvaluationKey,
+) -> Result<PythonScalarRequest, PythonObservationError> {
+    let parameters = subject
+        .exact_bool_parameters
+        .iter()
+        .map(String::as_str)
+        .collect::<Vec<_>>();
+    let request = PythonScalarRequest::bind(
+        &source.view,
+        evaluation_key,
+        &subject.source_path,
+        &subject.function,
+        &parameters,
+        producer,
+    )?;
+    if request.source_ref() != subject.source_ref {
+        return Err(PythonObservationError::SubjectIdentityMismatch);
+    }
+    Ok(request)
 }
 
 impl From<PythonScalarError> for PythonObservationError {

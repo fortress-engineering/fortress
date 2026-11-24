@@ -21,6 +21,9 @@ use crate::implementation_observation::{
 };
 use crate::wire::parse_strict_json_bytes;
 
+#[path = "go_callable.rs"]
+mod callable;
+
 const SCHEMA: &str = "urn:fortress:derived:v3:go-native-module-observation";
 const PRODUCER: &str = "fortress.go-module-observations@0.1.0";
 const LIMITATIONS: [&str; 6] = [

@@ -528,7 +528,7 @@
         },
         {
           "id": "AF-SNAPSHOT-GOVERNANCE-0001-R28",
-          "statement": "Explicit trusted Go observation binds complete physical source and original selected authority, admits closed target context, verifies exact received observations, and refuses changed inputs before publication. Explicit Go module dependency inspection relates the exact selected import sites and package source files to existing original Module ownership. The output retains unavailable and unowned scope as separate observational evidence, with no conformance or certification authority.",
+          "statement": "Explicit trusted Go observation binds complete physical source and original selected authority, admits closed target context, verifies exact received observations, and refuses changed inputs before publication. Explicit Go module dependency inspection relates the exact selected import sites and package source files to existing original Module ownership. The output retains unavailable and unowned scope as separate observational evidence, with no conformance or certification authority. Callable inspection links the verified module declaration to an admitted scalar body over the exact selected source in the same original capture.",
           "tests": [
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R28-001",
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R28-002",
@@ -550,7 +550,9 @@
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R28-018",
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R28-019",
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R28-020",
-            "T-AF-SNAPSHOT-GOVERNANCE-0001-R28-021"
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R28-021",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R28-022",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R28-023"
           ]
         },
         {
@@ -575,11 +577,13 @@
         },
         {
           "id": "AF-SNAPSHOT-GOVERNANCE-0001-R30",
-          "statement": "Explicit Python scalar inspection binds the independently selected subject and exact input assumptions to actual source, context, and original authority, revalidates physical input before publication, and labels conservative inferred output separately from runtime execution or assessment.",
+          "statement": "Explicit Python scalar inspection binds the independently selected subject and exact input assumptions to actual source, context, and original authority, revalidates physical input before publication, and labels conservative inferred output separately from runtime execution or assessment. Lexical callable inspection requires a unique regular origin under independently selected roots and records its admitted body and original declared ownership separately.",
           "tests": [
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R30-001",
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R30-002",
-            "T-AF-SNAPSHOT-GOVERNANCE-0001-R30-003"
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R30-003",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R30-004",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R30-005"
           ]
         }
       ]
