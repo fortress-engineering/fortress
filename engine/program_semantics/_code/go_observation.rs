@@ -10,8 +10,14 @@ use sha2::{Digest, Sha256};
 
 #[path = "go_build_selection.rs"]
 mod build_selection;
+#[path = "go_module_observation.rs"]
+mod module_observation;
 pub(crate) use build_selection::admit_go_build;
 pub use build_selection::{GoBuildContext, GoBuildTestMode, GoNativeBuildObservation};
+pub(crate) use module_observation::admit_go_module;
+pub use module_observation::{
+    GoModuleSelection, GoNativeModuleObservation, GoTypeComparison, GoTypeSelector,
+};
 
 use crate::observation::SourceView;
 use crate::wire::{
@@ -181,7 +187,7 @@ impl<'a> SourceText<'a> {
     }
 }
 
-#[derive(Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
+#[derive(Clone, Deserialize, Eq, Ord, PartialEq, PartialOrd, Serialize)]
 #[serde(deny_unknown_fields)]
 struct Span {
     path: String,
@@ -215,7 +221,7 @@ struct Declaration {
     span: Span,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 enum Resolution {
     DirectFunction,
@@ -229,7 +235,7 @@ enum Resolution {
     UnresolvedDeclaration,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 enum Activation {
     Ordinary,
@@ -370,12 +376,12 @@ fn admit_go_with<'a>(
         source,
         source_fingerprint,
         authority_digest,
-        actual,
         directory,
         package_path,
         go_version,
         target_os,
         target_arch,
+        ..
     } = selection;
     if ![
         source_fingerprint,
@@ -495,14 +501,35 @@ fn admit_go_with<'a>(
         serde_json::to_vec(&context)
     }
     .map_err(|_| GoObservationError::WireEncoding)?;
+    let kind = if build.is_some() {
+        "fortress-go-build-observation-input-v2"
+    } else {
+        "fortress-go-observation-input-v1"
+    };
+    seal_go_request(selection, pin, files, context, (wire, context_bytes), kind)
+}
+
+fn seal_go_request<'a>(
+    selection: ExactClosedPackage<'a>,
+    pin: &'a GoCollectorPin<'a>,
+    files: BTreeMap<&'a str, SourceText<'a>>,
+    context: Context,
+    encoded: (Vec<u8>, Vec<u8>),
+    kind: &'static str,
+) -> Result<GoRequest<'a>, GoObservationError> {
+    let (wire, context_bytes) = encoded;
+    let ExactClosedPackage {
+        source,
+        source_fingerprint,
+        authority_digest,
+        actual,
+        directory,
+        ..
+    } = selection;
     let context_sha256 = sha256(&context_bytes);
     let request_sha256 = sha256(&wire);
     let envelope = Provenance {
-        kind: if build.is_some() {
-            "fortress-go-build-observation-input-v2"
-        } else {
-            "fortress-go-observation-input-v1"
-        },
+        kind,
         source_view_sha256: source.digest(),
         source_fingerprint,
         authority_sha256: authority_digest,
@@ -666,8 +693,16 @@ impl GoRequest<'_> {
     }
 
     fn verify_records(&self, answer: &Response) -> Result<(), GoObservationError> {
+        self.verify_record_lists(&answer.declarations, &answer.calls)
+    }
+
+    fn verify_record_lists<'b>(
+        &self,
+        declarations_in: impl IntoIterator<Item = &'b Declaration>,
+        calls_in: impl IntoIterator<Item = &'b Call>,
+    ) -> Result<(), GoObservationError> {
         let mut declarations = BTreeMap::new();
-        for declaration in &answer.declarations {
+        for declaration in declarations_in {
             if self.span(&declaration.span)? != declaration.name
                 || declaration.name == "_"
                 || !display_name(&declaration.name)
@@ -682,7 +717,7 @@ impl GoRequest<'_> {
             }
         }
         let mut calls = BTreeSet::new();
-        for call in &answer.calls {
+        for call in calls_in {
             if self.span(&call.span)?.is_empty()
                 || call.name.as_deref().is_some_and(|name| !display_name(name))
                 || !calls.insert(&call.span)

@@ -135,67 +135,77 @@ func validGoBuildSourcePath(value string) bool {
 		strings.HasSuffix(name, ".go") && name != ".go"
 }
 
-func decodeGoBuildRequest(raw []byte) (goBuildRequest, string) {
-	var result goBuildRequest
+func decodeGoBuildWire(raw []byte, out any) string {
 	if !utf8.Valid(raw) {
-		return result, "INVALID_JSON"
+		return "INVALID_JSON"
 	}
 	shape := json.NewDecoder(bytes.NewReader(raw))
 	shape.UseNumber()
 	if err := rejectDuplicateKeys(shape, 0); err != nil {
-		return result, "INVALID_OR_EXCESSIVE_JSON"
+		return "INVALID_OR_EXCESSIVE_JSON"
 	}
 	if _, err := shape.Token(); err != io.EOF {
-		return result, "TRAILING_JSON"
+		return "TRAILING_JSON"
 	}
 	decoder := json.NewDecoder(bytes.NewReader(raw))
 	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(&result); err != nil {
-		return result, "UNEXPECTED_REQUEST_FIELDS"
+	if err := decoder.Decode(out); err != nil {
+		return "UNEXPECTED_REQUEST_FIELDS"
+	}
+	return ""
+}
+
+func decodeGoBuildFiles(files []sourceFile, singleDirectory bool) string {
+	root := path.Dir(files[0].Path)
+	folded := make(map[string]bool, len(files))
+	total := 0
+	for index := range files {
+		file := &files[index]
+		if !validGoBuildSourcePath(file.Path) || !hostSHA.MatchString(file.SHA256) {
+			return "INVALID_SOURCE_IDENTITY"
+		}
+		if singleDirectory && path.Dir(file.Path) != root {
+			return "PACKAGE_DIRECTORY_CONTEXT_REQUIRED"
+		}
+		key := strings.ToLower(file.Path)
+		if folded[key] {
+			return "SOURCE_PATH_COLLISION"
+		}
+		folded[key] = true
+		if len(file.Base64) > base64.StdEncoding.EncodedLen(maxFileBytes) {
+			return "FILE_BYTE_LIMIT"
+		}
+		value, err := base64.StdEncoding.Strict().DecodeString(file.Base64)
+		if err != nil || base64.StdEncoding.EncodeToString(value) != file.Base64 {
+			return "INVALID_BASE64"
+		}
+		if len(value) > maxFileBytes {
+			return "FILE_BYTE_LIMIT"
+		}
+		total += len(value)
+		if total > maxSourceBytes {
+			return "SOURCE_BYTE_LIMIT"
+		}
+		if sha(value) != file.SHA256 {
+			return "SOURCE_DIGEST_MISMATCH"
+		}
+		file.bytes = value
+	}
+	slices.SortFunc(files, func(left, right sourceFile) int {
+		return strings.Compare(left.Path, right.Path)
+	})
+	return ""
+}
+
+func decodeGoBuildRequest(raw []byte) (goBuildRequest, string) {
+	var result goBuildRequest
+	if code := decodeGoBuildWire(raw, &result); code != "" {
+		return result, code
 	}
 	if failure := validateGoBuildContext(&result); failure != "" {
 		return result, failure
 	}
-
-	root := path.Dir(result.Files[0].Path)
-	folded := make(map[string]bool, len(result.Files))
-	total := 0
-	for index := range result.Files {
-		file := &result.Files[index]
-		if !validGoBuildSourcePath(file.Path) || !hostSHA.MatchString(file.SHA256) {
-			return result, "INVALID_SOURCE_IDENTITY"
-		}
-		if path.Dir(file.Path) != root {
-			return result, "PACKAGE_DIRECTORY_CONTEXT_REQUIRED"
-		}
-		key := strings.ToLower(file.Path)
-		if folded[key] {
-			return result, "SOURCE_PATH_COLLISION"
-		}
-		folded[key] = true
-		if len(file.Base64) > base64.StdEncoding.EncodedLen(maxFileBytes) {
-			return result, "FILE_BYTE_LIMIT"
-		}
-		value, err := base64.StdEncoding.Strict().DecodeString(file.Base64)
-		if err != nil || base64.StdEncoding.EncodeToString(value) != file.Base64 {
-			return result, "INVALID_BASE64"
-		}
-		if len(value) > maxFileBytes {
-			return result, "FILE_BYTE_LIMIT"
-		}
-		total += len(value)
-		if total > maxSourceBytes {
-			return result, "SOURCE_BYTE_LIMIT"
-		}
-		if sha(value) != file.SHA256 {
-			return result, "SOURCE_DIGEST_MISMATCH"
-		}
-		file.bytes = value
-	}
-	slices.SortFunc(result.Files, func(left, right sourceFile) int {
-		return strings.Compare(left.Path, right.Path)
-	})
-	return result, ""
+	return result, decodeGoBuildFiles(result.Files, true)
 }
 
 var errUnknownVirtualGoFile = errors.New("unbound virtual Go file")
@@ -273,7 +283,7 @@ func goSelectionFailureStatus(code string) string {
 	}
 }
 
-func selectedGoFile(req goBuildRequest, source sourceFile, positions *token.FileSet, nodes *int) (goFileSelection, *ast.File) {
+func selectedGoFile(req goBuildRequest, source sourceFile, positions *token.FileSet, nodes *int, localImports bool) (goFileSelection, *ast.File) {
 	result := goFileSelection{Path: source.Path, SHA256: source.SHA256, Disposition: "EXCLUDED_BY_NAME_OR_CONSTRAINT"}
 	matched, err := matchVirtualGoFile(req, source)
 	if errors.Is(err, errUnknownVirtualGoFile) || errors.Is(err, errUnexpectedGoBuildAccess) {
@@ -322,16 +332,18 @@ func selectedGoFile(req goBuildRequest, source sourceFile, positions *token.File
 			}
 		}
 	}
-	for _, imported := range file.Imports {
-		name, err := strconv.Unquote(imported.Path.Value)
-		if err != nil {
-			result.Disposition = "GO_PARSE_FAILURE"
-		} else if name == "C" {
-			result.Disposition = "CGO_CONTEXT_UNSUPPORTED"
-		} else {
-			result.Disposition = "DEPENDENCY_CONTEXT_REQUIRED"
+	if !localImports {
+		for _, imported := range file.Imports {
+			name, err := strconv.Unquote(imported.Path.Value)
+			if err != nil {
+				result.Disposition = "GO_PARSE_FAILURE"
+			} else if name == "C" {
+				result.Disposition = "CGO_CONTEXT_UNSUPPORTED"
+			} else {
+				result.Disposition = "DEPENDENCY_CONTEXT_REQUIRED"
+			}
+			return result, nil
 		}
-		return result, nil
 	}
 	depth := 0
 	exceeded := false
@@ -402,7 +414,7 @@ func observeGoBuild(raw []byte) goBuildResponse {
 	selected := make([]*ast.File, 0, len(req.Files))
 	nodes := 0
 	for _, source := range req.Files {
-		selection, file := selectedGoFile(req, source, positions, &nodes)
+		selection, file := selectedGoFile(req, source, positions, &nodes, false)
 		base.Selection = append(base.Selection, selection)
 		if status := goSelectionFailureStatus(selection.Disposition); status != "" && base.Status == "" {
 			base.response = refuse(base.response, status, selection.Disposition, nil)
@@ -450,11 +462,18 @@ func executeSelectedGoBuild() int {
 	return 0
 }
 
+// A combined worker optionally links the module-local mode while two-file workers
+// retain their original protocol. Package variable initialization precedes init.
+var goLocalImportsMode func() int
+
 // This file is linked only into trusted builds exposing the explicit v2 mode.
 // The single-file v1 collector and its byte identity remain untouched.
 func init() {
 	if len(os.Args) == 1 {
 		return
+	}
+	if len(os.Args) == 2 && os.Args[1] == "--observe-go-module" && goLocalImportsMode != nil {
+		os.Exit(goLocalImportsMode())
 	}
 	if len(os.Args) != 2 || os.Args[1] != goBuildSelectionFlag {
 		fmt.Fprintln(os.Stderr, "unsupported Go collector invocation")

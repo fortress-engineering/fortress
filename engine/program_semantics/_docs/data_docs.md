@@ -54,3 +54,7 @@ Defines the standalone exact-source Go native observation report. Its closed dis
 ### [go_observation_schema_v2.json](../_data/go_observation_schema_v2.json)
 
 Defines the standalone version 2 Go build-selection projection. It binds the separately admitted target context, complete selected and excluded source inventory, physical declaration and call positions, and the original observed source and authority. No certification obligation is inferred from a matching source.
+
+### [go_observation_schema_v3.json](../_data/go_observation_schema_v3.json)
+
+Defines the actual-state, exact-source native Go module observation, its explicit build and module context, physical imports and locations, and verified observation status. Earlier single-package projections keep their historical wire contracts.

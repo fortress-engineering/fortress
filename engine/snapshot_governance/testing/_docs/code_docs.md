@@ -191,3 +191,5 @@ Exercises exact physical capture, native output verification, original authority
 ### [`python_observation.rs`](../_code/python_observation.rs)
 
 Checks exact retained Python source and the current canonical manifest, scoped context, and original absent or selected authority. Independently specified syntax-only replies are admitted without executing source. Controls reject ancillary or authority drift, same-byte directory replacement, unavailable original authority or authored exclusions, and candidate-bound replies. Source and unrelated files remain unchanged by the observation entry point.
+
+The v3 Go module controls in [go_observation.rs](../_code/go_observation.rs) use retained exact replies from the independent native package reference. They assert the same input digest, verify supported import and unavailable dependency outcomes against the registered schema, and reject source drift, incomplete ordinary module context, unknown status, inconsistent spans and incomplete package evidence.

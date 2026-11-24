@@ -3,11 +3,14 @@
 use std::path::Path;
 
 use crate::native_observation::{NativeSource, NativeSourceError};
-use crate::program_semantics::go_observation::{ExactClosedPackage, admit_go, admit_go_build};
+use crate::program_semantics::go_observation::{
+    ExactClosedPackage, admit_go, admit_go_build, admit_go_module,
+};
 
 pub use crate::program_semantics::go_observation::{
-    GoBuildContext, GoBuildTestMode, GoCollectorPin, GoNativeBuildObservation, GoNativeObservation,
-    GoObservationError,
+    GoBuildContext, GoBuildTestMode, GoCollectorPin, GoModuleSelection, GoNativeBuildObservation,
+    GoNativeModuleObservation, GoNativeObservation, GoObservationError, GoTypeComparison,
+    GoTypeSelector,
 };
 
 /// Independently selected observation context for a closed Go source directory.
@@ -68,6 +71,35 @@ pub fn observe_go_native_build(
         let output = launch(admitted.request_bytes())?;
         admitted.verify(collector, &output)
     })
+}
+
+/// Observes an exact module and reachable ordinary local libraries through a pinned worker.
+///
+/// # Errors
+/// Refuses unsupported or changed actual source, unclosed module inputs, and
+/// malformed, stale, or incompatible worker output.
+pub fn observe_go_native_module(
+    project_root: &Path,
+    selected: GoModuleSelection<'_>,
+    build_context: GoBuildContext,
+    collector: &GoCollectorPin<'_>,
+    launch: impl FnOnce(&[u8]) -> Result<Vec<u8>, GoObservationError>,
+) -> Result<GoNativeModuleObservation, GoObservationError> {
+    observe_exact(
+        project_root,
+        GoPackageSelection {
+            directory: selected.directory,
+            package_path: selected.entry_path,
+            go_version: "go1.22",
+            target_os: selected.target_os,
+            target_arch: selected.target_arch,
+        },
+        |source| {
+            let admitted = admit_go_module(source, selected, collector, build_context)?;
+            let output = launch(admitted.request_bytes())?;
+            admitted.verify(collector, &output)
+        },
+    )
 }
 
 fn observe_exact<T>(

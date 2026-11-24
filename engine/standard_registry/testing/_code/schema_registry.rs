@@ -42,10 +42,12 @@ fn registered_schemas_are_unique_json_schema_documents() {
     let native_schemas = [
         "cli/_data/go_collector_schema_v1.json",
         "cli/_data/go_collector_schema_v2.json",
+        "cli/_data/go_collector_schema_v3.json",
         "cli/_data/python_lexical_schema_v1.json",
         "cli/_data/python_worker_schema_v1.json",
         "engine/program_semantics/_data/go_observation_schema_v1.json",
         "engine/program_semantics/_data/go_observation_schema_v2.json",
+        "engine/program_semantics/_data/go_observation_schema_v3.json",
     ];
     assert_eq!(paths.len(), 178 + native_schemas.len());
     for path in native_schemas {

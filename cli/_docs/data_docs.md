@@ -75,3 +75,7 @@ Versioned host registration for the independently selected interpreter. The sche
 ### [python_lexical_schema_v1.json](../_data/python_lexical_schema_v1.json)
 
 Versioned Python lexical observation envelope. It records the exact source, context, authority, selected interpreter, registration and resource profile. The nested Source Architecture report retains syntax, scope, module validity, source spans and explicit runtime limitations. This shape is an observational projection, with no portable authority or assessment meaning.
+
+### [go_collector_schema_v3.json](../_data/go_collector_schema_v3.json)
+
+Defines the external host registration for the bounded native Go module observer. The host supplies a reviewed executable digest, the exact runtime edition, and the selected build context independently of repository bytes.

@@ -314,3 +314,188 @@ fn go_build_rejects_context_and_inventory_overclaims_and_excluded_source_drift()
         });
     assert!(matches!(changed, Err(GoObservationError::SourceChanged)));
 }
+
+// Frozen native module controls reuse the independent Go reference source and replies.
+mod module_controls {
+    use super::*;
+    use fortress_core::go_observation::{GoModuleSelection, observe_go_native_module};
+
+    const MOD: &[u8] = b"module example.test/fortresslocal\n\ngo 1.22\n";
+    const APP: &[u8] = b"package app\nimport q \"example.test/fortresslocal/base\"\nfunc Use() int { return q.Number() }\n";
+    const LIBRARY: &[u8] = b"package shared\n\ntype Token int\nfunc Number() int { return 1 }\n";
+    const MISSING: &[u8] = b"package app\nimport _ \"example.test/fortresslocal/wrong\"\n";
+    const OBSERVED: &[u8] = include_bytes!("../_data/go_module_observed_fixture_v3.json");
+    const UNAVAILABLE: &[u8] = include_bytes!("../_data/go_module_missing_fixture_v3.json");
+
+    fn selection() -> GoModuleSelection<'static> {
+        GoModuleSelection {
+            directory: "",
+            module_path: "example.test/fortresslocal",
+            entry_path: "example.test/fortresslocal/app",
+            target_os: "linux",
+            target_arch: "amd64",
+            comparison: None,
+        }
+    }
+
+    fn context() -> GoBuildContext {
+        GoBuildContext {
+            compiler: "gc".into(),
+            release_minor: 22,
+            cgo_enabled: false,
+            test_mode: GoBuildTestMode::RequireSeparateTestContext,
+            custom_tags: vec![],
+            tool_tags: vec!["amd64.v1".into()],
+        }
+    }
+
+    fn project(name: &str) -> Fixture {
+        let fixture = Fixture::new(name);
+        fs::remove_file(fixture.root.join("src/api.go")).unwrap();
+        fs::remove_file(fixture.root.join("src/target.go")).unwrap();
+        for (directory, filename, bytes) in [("app", "app.go", APP), ("base", "base.go", LIBRARY)] {
+            fs::create_dir(fixture.root.join(directory)).unwrap();
+            fs::write(fixture.root.join(directory).join(filename), bytes).unwrap();
+        }
+        fs::write(fixture.root.join("go.mod"), MOD).unwrap();
+        fixture
+    }
+
+    fn frozen(req: &[u8], response: &[u8]) -> Vec<u8> {
+        assert_eq!(
+            fortress_core::portable::digest(req),
+            serde_json::from_slice::<Value>(response).unwrap()["request_sha256"]
+                .as_str()
+                .unwrap(),
+        );
+        response.to_vec()
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R28-006`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R28
+    #[test]
+    fn native_module_exact_import_and_unavailable_package() {
+        let fixture = project("module-source");
+        for (source, response, expected) in [
+            (APP, OBSERVED, "OBSERVED"),
+            (MISSING, UNAVAILABLE, "UNSUPPORTED"),
+        ] {
+            fs::write(fixture.root.join("app/app.go"), source).unwrap();
+            let result = observe_go_native_module(
+                &fixture.root,
+                selection(),
+                context(),
+                &BUILD_PIN,
+                |request| Ok(frozen(request, response)),
+            )
+            .unwrap();
+            let rendered = serde_json::to_value(result).unwrap();
+            jsonschema::draft202012::validate(&super::registered_schema(3), &rendered).unwrap();
+            assert_eq!(rendered["provenance"]["actual"], true);
+            let observation = &rendered["observation"];
+            assert_eq!(observation["status"], expected);
+            if expected == "OBSERVED" {
+                let app = &observation["observed_packages"][0];
+                assert_eq!(
+                    app["imports"][0]["target_package"],
+                    "example.test/fortresslocal/base"
+                );
+                assert_eq!(app["imports"][0]["alias"], "q");
+                assert_eq!(app["calls"][0]["declaration"]["path"], "base/base.go");
+                assert_eq!(
+                    app["calls"][0]["declaration_package"],
+                    "example.test/fortresslocal/base"
+                );
+                assert_eq!(
+                    observation["observed_packages"][1]["package_name"],
+                    "shared"
+                );
+            } else {
+                assert_eq!(observation["diagnostic"]["code"], "MISSING_LOCAL_PACKAGE");
+                assert_eq!(observation["observed_packages"], json!([]));
+            }
+        }
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R28-007`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R28
+    #[test]
+    fn native_module_refuses_wrong_scope_and_changed_source() {
+        let fixture = project("module-drift");
+        let drift = observe_go_native_module(
+            &fixture.root,
+            selection(),
+            context(),
+            &BUILD_PIN,
+            |request| {
+                fs::write(fixture.root.join("base/base.go"), b"package shared\n").unwrap();
+                Ok(frozen(request, OBSERVED))
+            },
+        );
+        assert!(matches!(drift, Err(GoObservationError::SourceChanged)));
+        fs::write(fixture.root.join("base/base.go"), LIBRARY).unwrap();
+
+        for (path, content) in [
+            ("go.work", b"go 1.22\n".as_slice()),
+            ("base/go.mod", MOD),
+            (
+                "base/native.syso",
+                b"not an ordinaryGo build input".as_slice(),
+            ),
+        ] {
+            let path = fixture.root.join(path);
+            fs::write(&path, content).unwrap();
+            let refusal =
+                observe_go_native_module(&fixture.root, selection(), context(), &BUILD_PIN, |_| {
+                    panic!("incomplete ordinary module cannot start the worker")
+                });
+            assert!(matches!(
+                refusal,
+                Err(GoObservationError::UnsupportedContext)
+            ));
+            fs::remove_file(path).unwrap();
+        }
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R28-008`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R28
+    #[test]
+    fn native_module_refuses_malformed_stale_and_partial_replies() {
+        let fixture = project("module-wire");
+        for (pointer, replacement) in [
+            ("/status", json!("UNKNOWN")),
+            ("/context_sha256", json!("bogus")),
+            ("/module/definition/sha256", json!("bogus")),
+            (
+                "/observed_packages/0/imports/0/target_package",
+                json!("example.test/fortresslocal/app"),
+            ),
+            ("/observed_packages/0/imports/0/span/start_line", json!(1)),
+            (
+                "/observed_packages/0/calls/0/declaration_package",
+                json!("example.test/fortresslocal/app"),
+            ),
+            ("/observed_packages/0/imports", json!([])),
+            ("/selection", json!([])),
+        ] {
+            let result = observe_go_native_module(
+                &fixture.root,
+                selection(),
+                context(),
+                &BUILD_PIN,
+                |request| {
+                    let mut body: Value =
+                        serde_json::from_slice(&frozen(request, OBSERVED)).unwrap();
+                    *body.pointer_mut(pointer).unwrap() = replacement;
+                    let mut bytes = serde_json::to_vec(&body).unwrap();
+                    bytes.push(b'\n');
+                    Ok(bytes)
+                },
+            );
+            assert!(
+                matches!(result, Err(GoObservationError::InvalidResponse)),
+                "{pointer}"
+            );
+        }
+    }
+}

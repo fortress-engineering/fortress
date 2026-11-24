@@ -50,7 +50,10 @@ pub struct GoBuildContext {
 }
 
 impl GoBuildContext {
-    fn admit(&mut self, selection: ExactClosedPackage<'_>) -> Result<(), GoObservationError> {
+    pub(super) fn admit(
+        &mut self,
+        selection: ExactClosedPackage<'_>,
+    ) -> Result<(), GoObservationError> {
         if self.custom_tags.len() > 8 || self.tool_tags.len() > 4 {
             return Err(GoObservationError::ResourceLimit);
         }
@@ -138,7 +141,8 @@ pub(super) fn encode_context(
 
 #[derive(Clone, Copy, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-enum Disposition {
+pub(super) enum Disposition {
+    UnvisitedModulePackage,
     ExcludedByNameOrConstraint,
     ProductionTestExcluded,
     SelectedGoSource,
@@ -155,9 +159,10 @@ enum Disposition {
 }
 
 impl Disposition {
-    fn failure(self) -> Option<(Status, &'static str)> {
+    pub(super) fn failure(self) -> Option<(Status, &'static str)> {
         Some(match self {
-            Self::SelectedGoSource
+            Self::UnvisitedModulePackage
+            | Self::SelectedGoSource
             | Self::ProductionTestExcluded
             | Self::ExcludedByNameOrConstraint => return None,
             Self::NativeSelectionError => (Status::InvalidSource, "NATIVE_SELECTION_ERROR"),
@@ -179,8 +184,14 @@ impl Disposition {
         })
     }
 
-    fn agrees(self, native_match: Option<bool>, is_test: bool, mode: GoBuildTestMode) -> bool {
+    pub(super) fn agrees(
+        self,
+        native_match: Option<bool>,
+        is_test: bool,
+        mode: GoBuildTestMode,
+    ) -> bool {
         match self {
+            Self::UnvisitedModulePackage => false,
             Self::ExcludedByNameOrConstraint => native_match == Some(false),
             Self::ProductionTestExcluded => {
                 is_test && native_match == Some(true) && mode == GoBuildTestMode::ProductionOnly

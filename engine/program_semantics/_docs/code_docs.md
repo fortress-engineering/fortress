@@ -97,6 +97,20 @@ Version 2 binds the exact complete supplied inventory, sorted source digests, pa
 This standalone interface projects direct source-body and external-declaration observations for the selected inputs. It grants no repository authority or complete package, linkage, effect, runtime, or certification conclusion. Snapshot Governance integration must independently bind the complete physical source inventory and the trusted build context before using the selected source set. Targets describe compile selection and do not establish operational platform support.
 
 
+### [collector_local_imports.go](../_code/collector_local_imports.go)
+
+Adds explicit module-local type observations for a closed pure-Go library package graph. A trusted build links all three Go collector source files and passes only `--observe-go-module`. Version 3 accepts only a selected Go 1.22 release and Windows or Linux amd64 target context, with the qualified Go 1.22.12 Windows or Go 1.22.2 Linux helper and `GODEBUG=gotypesalias=0`. The no-argument v1 and explicit `--select-build-go` v2 modes retain their wire shapes and meanings.
+
+The request adds an exact module root directory, declared module path, digest-bound `go.mod` bytes and explicit directory-to-import-path mappings to the build-selection input. The observer accepts a bounded `go.mod` containing only its module and Go 1.22 directives. The context digest covers the sorted source inventory, build context and exact module file identity and mapping. An optional type comparison names two independently selected package-scoped type declarations. Request hashing retains the comparison selectors as exact input. All spans refer to the physical source bytes and use the existing byte/line conventions.
+
+The Go file matcher reads only admitted virtual bytes. A single `go/types` package universe resolves local imports reachable from the selected entry. No standard library, ambient source, default importer, cgo, generated or foreign inputs, runnable main packages, separate test context, module replacements, vendoring, internal visibility or workspace behavior is inferred. The trusted host still has to establish the complete original ordinary source inventory, its module boundaries and exact build context before admitting a request. The worker does not discover these from the project filesystem.
+
+A successful result gives per-package lexical import occurrences, aliases, declaration and call positions, and any requested native nominal-type identity comparison. Static qualified function and method associations include the exact declaring package and source site. Function values, interface calls and unsupported call forms retain unresolved states. An unavailable import, unsupported input, cycle, resource limit or type checking error yields a typed refusal with no projected package facts. This protocol exposes source observations only. It establishes neither runtime behavior nor semantic or certification authority. The explicit CLI and Snapshot Governance admission bind actual source and an independently registered worker.
+
 ### [go_build_selection.rs](../_code/go_build_selection.rs)
 
 Shares legacy native response admission and verifies the explicit Go build-context receipt. Every returned source path and digest must match the complete admitted inventory in order. Physical declaration, call and diagnostic spans can reference only selected files.
+
+### [go_module_observation.rs](../_code/go_module_observation.rs)
+
+Admits the exact current Go module and package map from independently captured ordinary source. It checks the separately selected build context, source and module digests, known worker and request identity, package reachability, returned file dispositions and bounded declaration, call, import and type-comparison coordinates. Unsupported paths and contexts fail closed. A public projection contains only these actual native observations and their provenance.

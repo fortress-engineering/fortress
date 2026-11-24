@@ -230,3 +230,15 @@ outside the reported build-selection scope.
 Use `fortress source-artifacts --observe-python PROJECT HOST_REGISTRATION SOURCE_PATH lexical` from a trusted host. The selected path is a repository-relative `.py` file. Use `syntax` for the narrower parser-only result. The mode returns a separate machine-readable observation.
 
 Keep the host registration, interpreter and exact reviewed worker outside the project. The supplied registration pins the interpreter executable, selected CPython runtime descriptor and grammar. The worker must match the bytes shipped with Fortress. Review the available runtime context and platform limits before launching. See [Python worker setup](_docs/code_docs.md#python_observe_commandrs).
+
+### Closed Go module observations
+
+Use the separate v3 [host registration](_data/go_collector_schema_v3.json) with the worker built from all three Go collector sources. The registration and executable live outside the observed repository. The qualified host runs Go 1.22.12 on Windows x64 or Go 1.22.2 on Linux x64.
+
+~~~text
+fortress psm --observe-go-module PROJECT HOST_REGISTRATION . example.test/module example.test/module/app linux amd64
+~~~
+
+The module directory is relative to the project. A dot selects the project root. The selected module path must match the captured go.mod bytes. The supported module file declares only a module and Go 1.22. Its source consists of ordinary Go library packages with explicit target selection. Dependency resolution is confined to captured directories in that module. Module and workspace indirection, vendoring, external dependencies, cgo, generated or non-Go compiler input and ambiguous module roots are outside the supported scope. The command invokes no project tools.
+
+Optionally append four arguments giving the left package, left type name, right package and right type name. Both declarations must be in the reachable package graph. The receipt distinguishes lexical imports, static declaration associations and unresolved dispatch. It carries exact actual-source, governing authority, build context and worker identities, separately from PSM analysis and certification.

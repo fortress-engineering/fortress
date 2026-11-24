@@ -2550,3 +2550,54 @@ fn native_go_build_selection_refuses_legacy_registration() {
     );
     assert_eq!(fs::read(&registration).unwrap(), supplied);
 }
+
+/// `T-CLI-GO-MODULE-REGISTRATION-IS-VERSIONED`
+/// Fortress classification: infrastructure
+#[test]
+fn native_go_module_requires_external_v3_registration() {
+    let fixture = ObservationFixture::new();
+    let host = ObservationFixture::new();
+    let supplied = serde_json::to_vec(&serde_json::json!({
+        "$schema": "urn:fortress:host:v2:go-build-collector-registration",
+        "schema_version": 2,
+        "executable": host.root.join("unavailable-collector"),
+        "executable_sha256": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+        "toolchain": "go1.22.12",
+        "build_context": {
+            "compiler": "gc",
+            "release_minor": 22,
+            "cgo_enabled": false,
+            "test_mode": "PRODUCTION_ONLY",
+            "custom_tags": [],
+            "tool_tags": ["amd64.v1"]
+        }
+    }))
+    .unwrap();
+    for (path, expected) in [
+        (
+            fixture.root.join("go-host.json"),
+            "asset belongs to the project",
+        ),
+        (
+            host.root.join("go-host.json"),
+            "UNSUPPORTED_COLLECTOR_REGISTRATION_VERSION",
+        ),
+    ] {
+        fs::write(&path, &supplied).unwrap();
+        let result = run(&[
+            "psm",
+            "--observe-go-module",
+            &fixture.argument(),
+            path.to_str().unwrap(),
+            ".",
+            "probe.local/module",
+            "probe.local/module/app",
+            "linux",
+            "amd64",
+        ]);
+        assert_eq!(result.status.code(), Some(i32::from(EXIT_USAGE)));
+        assert!(result.stdout.is_empty());
+        assert!(String::from_utf8(result.stderr).unwrap().contains(expected));
+        assert_eq!(fs::read(&path).unwrap(), supplied);
+    }
+}
