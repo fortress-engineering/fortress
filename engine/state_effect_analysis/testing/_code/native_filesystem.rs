@@ -104,7 +104,7 @@ fn native<'a>(
     }
 }
 
-/// T-AF-STATE-EFFECT-ANALYSIS-0001-R08-001
+/// `T-AF-STATE-EFFECT-ANALYSIS-0001-R08-001`
 /// Fortress requirement: AF-STATE-EFFECT-ANALYSIS-0001-R08
 #[test]
 fn one_reviewed_write_per_context_and_no_name_only_effect() {
@@ -157,7 +157,7 @@ fn one_reviewed_write_per_context_and_no_name_only_effect() {
     }
 }
 
-/// T-AF-STATE-EFFECT-ANALYSIS-0001-R08-002
+/// `T-AF-STATE-EFFECT-ANALYSIS-0001-R08-002`
 /// Fortress requirement: AF-STATE-EFFECT-ANALYSIS-0001-R08
 #[test]
 fn exact_declaration_without_exact_context_does_not_select_any_effect() {
@@ -210,7 +210,7 @@ fn exact_declaration_without_exact_context_does_not_select_any_effect() {
     }
 }
 
-/// T-AF-STATE-EFFECT-ANALYSIS-0001-R08-003
+/// `T-AF-STATE-EFFECT-ANALYSIS-0001-R08-003`
 /// Fortress requirement: AF-STATE-EFFECT-ANALYSIS-0001-R08
 #[test]
 fn native_effects_have_no_stale_or_malformed_positive_paths() {

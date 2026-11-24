@@ -484,7 +484,7 @@ mod native_dependency_controls {
         )
     }
 
-    /// T-AF-IMPLEMENTATION-OBSERVATION-0001-R03-001
+    /// `T-AF-IMPLEMENTATION-OBSERVATION-0001-R03-001`
     /// Fortress requirement: AF-IMPLEMENTATION-OBSERVATION-0001-R03
     #[test]
     fn native_closed_go_package_normalizes_one_exact_direction() {
@@ -545,7 +545,7 @@ mod native_dependency_controls {
         ));
     }
 
-    /// T-AF-IMPLEMENTATION-OBSERVATION-0001-R03-002
+    /// `T-AF-IMPLEMENTATION-OBSERVATION-0001-R03-002`
     /// Fortress requirement: AF-IMPLEMENTATION-OBSERVATION-0001-R03
     #[test]
     fn python_static_file_origin_retains_scope_and_unknown_runtime() {
@@ -603,7 +603,7 @@ mod native_dependency_controls {
         );
     }
 
-    /// T-AF-IMPLEMENTATION-OBSERVATION-0001-R03-003
+    /// `T-AF-IMPLEMENTATION-OBSERVATION-0001-R03-003`
     /// Fortress requirement: AF-IMPLEMENTATION-OBSERVATION-0001-R03
     #[test]
     fn native_adapter_refuses_rebinding_and_conflicting_receipts() {
