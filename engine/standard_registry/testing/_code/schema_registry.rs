@@ -44,6 +44,8 @@ fn registered_schemas_are_unique_json_schema_documents() {
         "cli/_data/go_collector_schema_v2.json",
         "cli/_data/go_collector_schema_v3.json",
         "cli/_data/python_lexical_schema_v1.json",
+        "cli/_data/python_scalar_schema_v1.json",
+        "cli/_data/python_scalar_worker_schema_v1.json",
         "cli/_data/python_worker_schema_v1.json",
         "engine/program_semantics/_data/go_observation_schema_v1.json",
         "engine/program_semantics/_data/go_observation_schema_v2.json",
@@ -65,6 +67,8 @@ fn registered_schemas_are_unique_json_schema_documents() {
         "engine/project_model/_data/layout_extension_schema_v1.json",
         "engine/certification/_data/adapter_exchange_schema_v1.json",
         "cli/_data/collector_report_schema_v1.json",
+        "cli/_data/python_scalar_worker_schema_v1.json",
+        "cli/_data/python_scalar_schema_v1.json",
     ] {
         assert!(paths.iter().any(|path| path == extension));
     }

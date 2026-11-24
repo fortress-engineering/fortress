@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:host:v1:python-scalar-registration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "interpreter",
+    "interpreter_sha256",
+    "worker",
+    "bootstrap",
+    "runtime_ref",
+    "grammar",
+    "subject"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:host:v1:python-scalar-registration"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "interpreter": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "interpreter_sha256": {
+      "$ref": "#/$defs/digest"
+    },
+    "worker": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "bootstrap": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "runtime_ref": {
+      "$ref": "#/$defs/digest"
+    },
+    "grammar": {
+      "$ref": "#/$defs/grammar"
+    },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_path",
+        "source_ref",
+        "function",
+        "exact_bool_parameters"
+      ],
+      "properties": {
+        "source_path": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 240
+        },
+        "source_ref": {
+          "$ref": "#/$defs/digest"
+        },
+        "function": {
+          "$ref": "#/$defs/identifier"
+        },
+        "exact_bool_parameters": {
+          "type": "array",
+          "maxItems": 8,
+          "items": {
+            "$ref": "#/$defs/identifier"
+          },
+          "uniqueItems": true
+        }
+      }
+    }
+  },
+  "$defs": {
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "grammar": {
+      "enum": [
+        "cpython3.12",
+        "cpython3.13"
+      ]
+    },
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z_][A-Za-z0-9_]{0,63}$"
+    }
+  }
+}

@@ -242,3 +242,33 @@ fortress psm --observe-go-module PROJECT HOST_REGISTRATION . example.test/module
 The module directory is relative to the project. A dot selects the project root. The selected module path must match the captured go.mod bytes. The supported module file declares only a module and Go 1.22. Its source consists of ordinary Go library packages with explicit target selection. Dependency resolution is confined to captured directories in that module. Module and workspace indirection, vendoring, external dependencies, cgo, generated or non-Go compiler input and ambiguous module roots are outside the supported scope. The command invokes no project tools.
 
 Optionally append four arguments giving the left package, left type name, right package and right type name. Both declarations must be in the reachable package graph. The receipt distinguishes lexical imports, static declaration associations and unresolved dispatch. It carries exact actual-source, governing authority, build context and worker identities, separately from PSM analysis and certification.
+
+## Explicit Python scalar inspection
+
+Run `fortress source-artifacts --observe-python-scalar PROJECT HOST_REGISTRATION`
+on a Windows x64 or Linux x64 host with an independently pinned CPython 3.12 or
+3.13 installation. Use the matching `python_scalar_worker.py` and
+`python_lexical_worker.py` assets beside the installed `bin` directory under
+`share/fortress/workers`. Select the absolute paths to both sibling files
+outside the project. The installation
+must keep the interpreter, libraries and assets under independent trusted
+control. The registration and interpreter paths are also absolute and
+external to the project.
+
+The separate registration uses
+`urn:fortress:host:v1:python-scalar-registration` and schema version 1. Supply
+`interpreter`, `interpreter_sha256`, `worker`, `bootstrap`, `runtime_ref` and
+`grammar`. The grammar values are `cpython3.12` and `cpython3.13`. Select the
+runtime independently from the lexical worker's isolated
+`--describe-runtime` descriptor. Its digest uses exact canonical descriptor
+bytes without the framing LF. Under `subject`, supply `source_path`,
+`source_ref`, `function` and `exact_bool_parameters`. The source path is
+repository-relative and the SHA-256 pin binds the exact subject bytes.
+List only independently established exact bool parameters in declaration order.
+For a zero-parameter function use the empty array.
+
+An admitted body with a conditional output bound appears as `LOWERED` and
+`UPPER_BOUND_UNDER_EXACT_INPUT_ASSUMPTIONS`. A body can be lowered while an
+inferred domain remains unavailable. Unsupported syntax or scope has an
+explicit unavailable disposition. The observation reports unproven runtime
+argument types, compile-only execution, and no assessment.

@@ -431,3 +431,13 @@ The explicit Python mode accepts host-owned registration and worker files outsid
 The one-process exchange releases exact source only after the bounded worker emits the expected readiness frame. Linux checks 96 MiB address-space and one second CPU limits. Windows verifies a 96 MiB nested Job commit limit and one active process, with the parent's five-second wall deadline. Hard Windows CPU enforcement remains unavailable in the tested nested configuration. Dependency custody stays with the independently selected host. The worker does not evaluate, import or build the project.
 
 Readiness failure and changed tool or source bytes yield explicit unavailable errors. Successful output carries the exact original source and authority, selected grammar, and scoped lexical observations. Runtime import and call targets, effects and execution remain unresolved. This path contributes no current findings, assessment, grant or certificate. Default source-artifact and PSM behavior stays on the existing paths.
+
+### [python_scalar_command.rs](../_code/python_scalar_command.rs)
+
+Implements explicit scalar inspection using a separately registered external
+CPython interpreter and exact embedded worker and bootstrap bytes. The
+compile-only process receives an immutable request after an exact scalar
+readiness frame on the existing verifier supervisor. The command rechecks
+host inputs, consumes Snapshot Governance's revalidated result, and serializes
+a scoped native body or limitation. Inference remains a separate conditional
+output bound.

@@ -179,6 +179,66 @@ def selected_python_worker(run, exe, slot, manifest, results):
             "observation": "sha256:" + distribution.digest(emitted), "source_unchanged": True}
 
 
+def selected_python_scalar_worker(run, exe, slot, manifest, results, lexical):
+    """Exercise the separate installed scalar mode and its pinned lexical bootstrap."""
+    resources = {
+        name: slot / "share/fortress/workers" / name
+        for name in ("python_scalar_worker.py", "python_lexical_worker.py")
+    }
+    asset_refs = {}
+    for name, asset in resources.items():
+        path = asset.relative_to(slot).as_posix()
+        asset_refs[name] = "sha256:" + distribution.hash_file(asset)[1]
+        assert asset_refs[name] == "sha256:" + next(
+            record["sha256"] for record in manifest["files"] if record["path"] == path
+        )
+    if lexical["status"] != "PASS":
+        return {"status": "UNAVAILABLE", "reason": lexical["reason"], "assets": asset_refs}
+
+    interpreter = Path(sys.executable).resolve(strict=True)
+    subject = results / "isolated python scalar project"
+    subject.mkdir()
+    source = subject / "subject.py"
+    source.write_bytes(b"def subject(gate):\n    return not gate\n")
+    before = snapshot(subject)
+    record = {
+        "$schema": "urn:fortress:host:v1:python-scalar-registration",
+        "schema_version": 1,
+        "interpreter": str(interpreter),
+        "interpreter_sha256": "sha256:" + distribution.hash_file(interpreter)[1],
+        "worker": str(resources["python_scalar_worker.py"]),
+        "bootstrap": str(resources["python_lexical_worker.py"]),
+        "runtime_ref": lexical["runtime"],
+        "grammar": f"cpython{sys.version_info.major}.{sys.version_info.minor}",
+        "subject": {"source_path": "subject.py", "source_ref": "sha256:" + before["subject.py"],
+                    "function": "subject", "exact_bool_parameters": ["gate"]},
+    }
+    registration = results / "python-scalar-registration.json"
+    registration.write_text(json.dumps(record), encoding="utf-8")
+    mode = ("source-artifacts", "--observe-python-scalar", subject, registration)
+    emitted = run(exe, *mode)
+    assert emitted == run(exe, *mode)
+    report = json.loads(emitted)
+    assert report["scope"] == {"execution": "NOT_RUN", "runtime_argument_types": "UNPROVEN",
+                               "canonical_model": "NOT_INCLUDED", "assessment": "NOT_PERFORMED"}
+    assert report["request"]["source_ref"] == record["subject"]["source_ref"]
+    assert report["request"]["producer"]["worker"] == asset_refs["python_scalar_worker.py"]
+    assert report["request"]["producer"]["bootstrap"] == asset_refs["python_lexical_worker.py"]
+    observation = report["observation"]
+    assert observation["status"] == "LOWERED"
+    assert observation["inference"]["status"] == "UPPER_BOUND_UNDER_EXACT_INPUT_ASSUMPTIONS"
+    assert observation["inference"]["output_domain"]["values"] == [False, True]
+    invalid = results / "stale-python-scalar-registration.json"
+    invalid.write_text(json.dumps(record | {"subject": record["subject"] | {
+        "source_ref": "sha256:" + "0" * 64,
+    }}), encoding="utf-8")
+    assert run(exe, "source-artifacts", "--observe-python-scalar", subject, invalid, success=(2,)) == b""
+    assert snapshot(subject) == before
+    return {"status": "PASS", "assets": asset_refs, "runtime": lexical["runtime"],
+            "observation": "sha256:" + distribution.digest(emitted), "source_unchanged": True,
+            "stale_subject_refused": True}
+
+
 def execute(package, results, history=None):
     results.mkdir()
     transfer = results / "received"
@@ -271,6 +331,7 @@ def execute(package, results, history=None):
         evidence_state = "selected historical integrity verified and malformed or unavailable refused"
     external_evidence = selected_external_evidence(run, exe, slot, results)
     python_worker = selected_python_worker(run, exe, slot, m, results)
+    python_scalar = selected_python_scalar_worker(run, exe, slot, m, results, python_worker)
     native = results / "uninitialized project"
     (native/"src").mkdir(parents=True)
     (native/"src/lib.rs").write_bytes(b"pub fn original() -> u8 { 7 }\n")
@@ -291,7 +352,7 @@ def execute(package, results, history=None):
         "fixture_source_ref":edition["source_ref"],"runtime_path":"isolated empty working directory",
         "source_unchanged":True,"bootstrap_preserved_source":True,"mcp":"PASS","optional_verifier":evidence_state,
         "extension_kits":extensions,"external_evidence":external_evidence,
-        "python_lexical_worker":python_worker},indent=2),encoding="utf-8")
+        "python_lexical_worker":python_worker,"python_scalar_worker":python_scalar},indent=2),encoding="utf-8")
     return slot
 
 

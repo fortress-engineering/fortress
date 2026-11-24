@@ -14,6 +14,10 @@ use fortress_core::python_observation::{
 };
 use serde_json::json;
 
+use fortress_core::python_observation::{
+    PythonScalarError, PythonScalarProducer, PythonScalarSubject, observe_python_scalar,
+};
+
 const PATH: &str = "_code/source.py";
 const SOURCE: &[u8] = b"value: int = 7\r\n";
 const OTHER: &[u8] = b"original ancillary input\n";
@@ -296,4 +300,102 @@ fn candidate_bound_python_reply_cannot_be_used_for_actual_source() {
         ))
     ));
     assert_eq!(fs::read(fixture.root.join("note.txt")).unwrap(), OTHER);
+}
+
+const SCALAR_SOURCE: &[u8] = b"def subject(gate):\n    return not gate\n";
+
+fn scalar_fixture(name: &str) -> (Fixture, PythonScalarSubject, PythonScalarProducer) {
+    let fixture = Fixture::new(name);
+    fs::write(fixture.root.join(PATH), SCALAR_SOURCE).expect("write exact scalar fixture");
+    let subject = PythonScalarSubject {
+        source_path: PATH.into(),
+        source_ref: digest(SCALAR_SOURCE),
+        function: "subject".into(),
+        exact_bool_parameters: vec!["gate".into()],
+    };
+    let producer = PythonScalarProducer::new(
+        format!("sha256:{}", "d".repeat(64)),
+        format!("sha256:{}", "e".repeat(64)),
+        format!("sha256:{}", "f".repeat(64)),
+    )
+    .expect("fixed scalar producer pins");
+    (fixture, subject, producer)
+}
+
+fn scalar_reply(payload: &[u8]) -> Result<Vec<u8>, PythonObservationError> {
+    let request: serde_json::Value =
+        serde_json::from_slice(payload).expect("exact worker frame parses");
+    let first_line = |start: usize, end: usize| {
+        json!({
+            "path":PATH,"start_byte":start,"end_byte":end,
+            "start_line":1,"start_byte_column":start+1,
+        })
+    };
+    let value = json!({
+        "schema":"fortress:python:scalar-response:1",
+        "id":request["id"],"byte_count":SCALAR_SOURCE.len(),
+        "source_path":PATH,"source_ref":digest(SCALAR_SOURCE),"function":"subject",
+        "parameter_domains":["BOOL"],"worker_ref":request["worker_ref"],
+        "bootstrap_ref":request["bootstrap_ref"],"runtime_ref":request["runtime_ref"],
+        "target_execution":"NOT_RUN","status":"LOWERABLE",
+        "symbol":{"name":"subject","span":first_line(4,11),"declaration_span":first_line(0,38)},
+        "parameters":[{"name":"gate","scalar":"BOOL","span":first_line(12,16)}],
+        "locals":[],"result_scalar":"BOOL","diagnostic":null,
+        "body":[{"kind":"return",
+            "span":{"path":PATH,"start_byte":23,"end_byte":38,"start_line":2,"start_byte_column":5},
+            "value":{"kind":"unary","operator":"!","value":{"kind":"binding","name":"gate"}}}],
+    });
+    serde_json::to_vec(&value).map_err(|error| PythonScalarError::Json(error).into())
+}
+
+/// `T-AF-SNAPSHOT-GOVERNANCE-0001-R30-001`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R30
+#[test]
+fn exact_python_scalar_body_carries_an_upper_bound_under_independent_assumptions() {
+    use fortress_core::program_semantics::native_body::NativeBodyOutcome;
+    use fortress_core::semantic_analysis::SemanticDomain;
+
+    let (fixture, subject, producer) = scalar_fixture("scalar-actual");
+    let result = observe_python_scalar(&fixture.root, &subject, &producer, |request| {
+        scalar_reply(&request)
+    })
+    .expect("bounded original-source native observation");
+    assert!(matches!(result.outcome(), NativeBodyOutcome::Lowered(_)));
+    assert!(matches!(
+        result.inferred_output(),
+        Some(SemanticDomain::Boolean { values, .. }) if values == &[false, true]
+    ));
+    assert_eq!(result.request().source_ref(), digest(SCALAR_SOURCE));
+    assert_eq!(
+        fs::read(fixture.root.join(PATH)).expect("unchanged source"),
+        SCALAR_SOURCE
+    );
+}
+
+/// `T-AF-SNAPSHOT-GOVERNANCE-0001-R30-002`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R30
+#[test]
+fn stale_subject_pin_and_physical_drift_refuse_scalar_publication() {
+    let (fixture, mut subject, producer) = scalar_fixture("scalar-refusal");
+    subject.source_ref = digest(b"different independently selected bytes");
+    let wrong = observe_python_scalar(&fixture.root, &subject, &producer, |_| {
+        panic!("a stale subject pin must refuse before process dispatch")
+    });
+    assert!(matches!(
+        wrong,
+        Err(PythonObservationError::SubjectIdentityMismatch)
+    ));
+    subject.source_ref = digest(SCALAR_SOURCE);
+    let changed = observe_python_scalar(&fixture.root, &subject, &producer, |request| {
+        fs::write(
+            fixture.root.join("note.txt"),
+            b"scope changed during launch",
+        )
+        .expect("fixture changes");
+        scalar_reply(&request)
+    });
+    assert!(matches!(
+        changed,
+        Err(PythonObservationError::SourceChanged)
+    ));
 }

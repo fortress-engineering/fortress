@@ -14,6 +14,10 @@ mod model_digest;
 /// Exact native scalar bodies awaiting integration into a versioned model.
 #[path = "native_body.rs"]
 pub mod native_body;
+
+/// Exact Python scalar worker request and response binding.
+#[path = "python_scalar.rs"]
+pub mod python_scalar;
 #[path = "reachability.rs"]
 mod reachability;
 #[path = "rust.rs"]

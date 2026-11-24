@@ -1,0 +1,494 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v1:python-scalar-observation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "evaluation",
+    "registration_ref",
+    "interpreter_ref",
+    "grammar",
+    "resource_profile",
+    "worker_timeout_ms",
+    "request",
+    "observation",
+    "scope"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:derived:v1:python-scalar-observation"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "evaluation": {
+      "$ref": "#/$defs/evaluation"
+    },
+    "registration_ref": {
+      "$ref": "#/$defs/digest"
+    },
+    "interpreter_ref": {
+      "$ref": "#/$defs/digest"
+    },
+    "grammar": {
+      "$ref": "#/$defs/grammar"
+    },
+    "resource_profile": {
+      "enum": [
+        "LINUX_AS_CPU_V1",
+        "WINDOWS_JOB_WALL_V1"
+      ]
+    },
+    "worker_timeout_ms": {
+      "const": 5000
+    },
+    "request": {
+      "$ref": "#/$defs/request"
+    },
+    "observation": {
+      "$ref": "#/$defs/observation"
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "execution",
+        "runtime_argument_types",
+        "canonical_model",
+        "assessment"
+      ],
+      "properties": {
+        "execution": {
+          "const": "NOT_RUN"
+        },
+        "runtime_argument_types": {
+          "const": "UNPROVEN"
+        },
+        "canonical_model": {
+          "const": "NOT_INCLUDED"
+        },
+        "assessment": {
+          "const": "NOT_PERFORMED"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "grammar": {
+      "enum": [
+        "cpython3.12",
+        "cpython3.13"
+      ]
+    },
+    "scalar": {
+      "enum": [
+        "BOOL",
+        "INTEGER_LITERAL"
+      ]
+    },
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z_][A-Za-z0-9_]{0,63}$"
+    },
+    "binding": {
+      "type": "string",
+      "pattern": "^native_body_occurrence:v1:sha256:[0-9a-f]{64}$"
+    },
+    "pair": {
+      "type": "array",
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/identifier"
+        },
+        {
+          "$ref": "#/$defs/scalar"
+        }
+      ],
+      "minItems": 2,
+      "maxItems": 2,
+      "items": false
+    },
+    "location": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "line",
+        "column"
+      ],
+      "properties": {
+        "line": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "column": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "assumption": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "runtime",
+        "worker",
+        "bootstrap"
+      ],
+      "properties": {
+        "runtime": {
+          "$ref": "#/$defs/digest"
+        },
+        "worker": {
+          "$ref": "#/$defs/digest"
+        },
+        "bootstrap": {
+          "$ref": "#/$defs/digest"
+        }
+      }
+    },
+    "evaluation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_manifest_digest",
+        "program_context_digest",
+        "authority_binding_digest"
+      ],
+      "properties": {
+        "source_manifest_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "program_context_digest": {
+          "$ref": "#/$defs/digest"
+        },
+        "authority_binding_digest": {
+          "$ref": "#/$defs/digest"
+        }
+      }
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "exchange_ref",
+        "source_view_ref",
+        "evaluation_ref",
+        "source_path",
+        "source_ref",
+        "function",
+        "parameters",
+        "producer"
+      ],
+      "properties": {
+        "exchange_ref": {
+          "$ref": "#/$defs/digest"
+        },
+        "source_view_ref": {
+          "$ref": "#/$defs/digest"
+        },
+        "evaluation_ref": {
+          "$ref": "#/$defs/digest"
+        },
+        "source_path": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 240
+        },
+        "source_ref": {
+          "$ref": "#/$defs/digest"
+        },
+        "function": {
+          "$ref": "#/$defs/identifier"
+        },
+        "parameters": {
+          "type": "array",
+          "maxItems": 8,
+          "items": {
+            "$ref": "#/$defs/identifier"
+          },
+          "uniqueItems": true
+        },
+        "producer": {
+          "$ref": "#/$defs/assumption"
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "location",
+        "symbol_context",
+        "analyzer",
+        "analyzer_semantic_version"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 240
+        },
+        "location": {
+          "$ref": "#/$defs/location"
+        },
+        "symbol_context": {
+          "$ref": "#/$defs/binding"
+        },
+        "analyzer": {
+          "const": "fortress.python.native-scalar"
+        },
+        "analyzer_semantic_version": {
+          "const": "1.0.0"
+        }
+      }
+    },
+    "expr": {
+      "$ref": "urn:fortress:schema:v6:program-semantic-model#/$defs/expression"
+    },
+    "definition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "symbol",
+        "statements",
+        "provenance"
+      ],
+      "properties": {
+        "symbol": {
+          "$ref": "#/$defs/binding"
+        },
+        "statements": {
+          "type": "array",
+          "maxItems": 256,
+          "items": {
+            "$ref": "#/$defs/statement"
+          }
+        },
+        "provenance": {
+          "$ref": "#/$defs/provenance"
+        }
+      }
+    },
+    "statement": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "target",
+            "value",
+            "provenance"
+          ],
+          "properties": {
+            "kind": {
+              "const": "assign"
+            },
+            "target": {
+              "$ref": "#/$defs/identifier"
+            },
+            "value": {
+              "$ref": "#/$defs/expr"
+            },
+            "provenance": {
+              "$ref": "#/$defs/provenance"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "value",
+            "provenance"
+          ],
+          "properties": {
+            "kind": {
+              "const": "return"
+            },
+            "value": {
+              "$ref": "#/$defs/expr"
+            },
+            "provenance": {
+              "$ref": "#/$defs/provenance"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "condition",
+            "then_branch",
+            "else_branch",
+            "provenance"
+          ],
+          "properties": {
+            "kind": {
+              "const": "if"
+            },
+            "condition": {
+              "$ref": "#/$defs/expr"
+            },
+            "then_branch": {
+              "type": "array",
+              "maxItems": 256,
+              "items": {
+                "$ref": "#/$defs/statement"
+              }
+            },
+            "else_branch": {
+              "type": "array",
+              "maxItems": 256,
+              "items": {
+                "$ref": "#/$defs/statement"
+              }
+            },
+            "provenance": {
+              "$ref": "#/$defs/provenance"
+            }
+          }
+        }
+      ]
+    },
+    "domain": {
+      "allOf": [
+        {
+          "$ref": "urn:fortress:schema:v2:semantic-analysis#/$defs/domain"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "enum": [
+                "boolean",
+                "integer"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "inference": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "output_domain"
+          ],
+          "properties": {
+            "status": {
+              "const": "UPPER_BOUND_UNDER_EXACT_INPUT_ASSUMPTIONS"
+            },
+            "output_domain": {
+              "$ref": "#/$defs/domain"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "output_domain"
+          ],
+          "properties": {
+            "status": {
+              "const": "UNAVAILABLE"
+            },
+            "output_domain": {
+              "type": "null"
+            }
+          }
+        }
+      ]
+    },
+    "observation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "binding",
+            "parameters",
+            "locals",
+            "result_scalar",
+            "body",
+            "inference"
+          ],
+          "properties": {
+            "status": {
+              "const": "LOWERED"
+            },
+            "binding": {
+              "$ref": "#/$defs/binding"
+            },
+            "parameters": {
+              "type": "array",
+              "maxItems": 8,
+              "items": {
+                "$ref": "#/$defs/pair"
+              }
+            },
+            "locals": {
+              "type": "array",
+              "maxItems": 128,
+              "items": {
+                "$ref": "#/$defs/pair"
+              }
+            },
+            "result_scalar": {
+              "$ref": "#/$defs/scalar"
+            },
+            "body": {
+              "$ref": "#/$defs/definition"
+            },
+            "inference": {
+              "$ref": "#/$defs/inference"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "code",
+            "location"
+          ],
+          "properties": {
+            "status": {
+              "const": "UNAVAILABLE"
+            },
+            "code": {
+              "type": "string",
+              "pattern": "^[A-Z0-9_]{1,96}$"
+            },
+            "location": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/$defs/location"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}

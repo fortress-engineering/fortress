@@ -2601,3 +2601,32 @@ fn native_go_module_requires_external_v3_registration() {
         assert_eq!(fs::read(&path).unwrap(), supplied);
     }
 }
+
+/// `T-TF-CLI-0001-R31-002`
+/// Fortress requirement: TF-CLI-0001-R31
+#[test]
+fn scalar_cli_refuses_unselected_and_repository_controlled_host_registration() {
+    let fixture = ObservationFixture::new();
+    let root = fixture.argument();
+    let missing = run(&["source-artifacts", "--observe-python-scalar", &root]);
+    assert_eq!(missing.status.code(), Some(i32::from(EXIT_USAGE)));
+    assert!(missing.stdout.is_empty());
+    assert!(String::from_utf8_lossy(&missing.stderr).contains("host-registration"));
+
+    let local = fixture.root.join("scalar-registration.json");
+    let source = br#"{"approve":true,"interpreter":"candidate-owned.exe"}"#;
+    fs::write(&local, source).expect("write controlled rejected registration");
+    let output = run(&[
+        "source-artifacts",
+        "--observe-python-scalar",
+        &root,
+        &local.to_string_lossy(),
+    ]);
+    assert_eq!(output.status.code(), Some(i32::from(EXIT_USAGE)));
+    assert!(output.stdout.is_empty());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("COLLECTOR_TRUST_REQUIRED"));
+    assert_eq!(
+        fs::read(local).expect("candidate configuration stays untouched"),
+        source
+    );
+}

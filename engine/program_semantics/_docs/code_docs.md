@@ -133,3 +133,12 @@ ProgramBody, ProgramStatement and ProgramExpression values and preserves the
 original version 6 model. Its digest names one exact occurrence. It grants
 no authority to infer stable symbol equivalence, project conformance, effect
 freedom, or execution evidence.
+
+### [`python_scalar.rs`](../_code/python_scalar.rs)
+
+Binds the independently selected Python scalar function, ordered exact boolean
+parameter names, interpreter and worker identities to the immutable source and
+evaluation key. It emits the exact worker request and strictly correlates
+the bounded reply. The common native body boundary validates and lowers
+the result to Program Semantics types. This adapter leaves the historical
+Rust model and its test populations untouched.

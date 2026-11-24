@@ -66,3 +66,19 @@ On a supported native host, use the pinned Rust toolchain, Python 3.11+, and Nod
 The verified installed slot includes the compile-only worker at `share/fortress/workers/python_lexical_worker.py`.
 Use it with a trusted CPython 3.12 or 3.13 installation outside the project. An independent host registers the absolute interpreter and installed worker paths, exact interpreter digest, exact runtime descriptor and grammar. Select the original repository and a single repository-relative Python file explicitly through `fortress source-artifacts --observe-python PROJECT HOST_REGISTRATION SOURCE_PATH lexical`.
 The registration schema is available in the installed CLI schema inventory. The observation has compile-only scope and retains unsupported import, call, effect and execution behavior.
+
+## Optional Python scalar inspection
+
+The installed executable has both verified worker assets one directory above
+its bin directory, under share/fortress/workers. Select the absolute paths to
+python_scalar_worker.py and its sibling python_lexical_worker.py in the trusted
+host registration. The CLI verifies the exact installed bytes. Bring an
+independently pinned CPython 3.12 or 3.13 installation on Windows x64 or Linux
+x64. The installed slot supplies the worker and the separate scalar registration
+schema.
+
+Use fortress source-artifacts --observe-python-scalar PROJECT HOST_REGISTRATION.
+The registration selects the exact subject file hash, function name and
+independently established exact bool parameter names. The optional output bound
+applies only under those assumptions. The result retains unresolved runtime
+argument types and an explicit unavailability status when scope is incomplete.

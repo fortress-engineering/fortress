@@ -532,3 +532,9 @@ Accepts one physical repository path and one selected ordinary Python source ent
 The library starts no process, writes no source and makes no execution, semantic proof, or certification decision. Ordinary audit, discovery, query, and candidate evaluation do not call this entry point. Physical revalidation supplies a bounded observation check and is separate from transaction ownership and execution custody.
 
 The explicit Go module entry point in [go_observation.rs](../_code/go_observation.rs) binds the pure-Go module to the same complete immutable physical source and original authority as the other native observations. It revalidates the whole source and directory before publishing. The callback receives only admitted bytes and uses the trusted host's separate pin.
+
+The scalar entrypoint in `python_observation.rs` uses the same physical source
+capture. It verifies the trusted subject digest before dispatch, consumes the
+shared native body admission, and revalidates the captured bytes and directory
+after optional conservative domain inference. The result retains the exact
+subject scope with independent original authority.

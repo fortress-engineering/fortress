@@ -3,6 +3,50 @@
   "schema_version": 1,
   "entries": [
     {
+      "schema_id": "urn:fortress:host:v1:python-scalar-registration",
+      "schema_path": "cli/_data/python_scalar_worker_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "AUTHORED",
+        "source": null
+      },
+      "reader": {
+        "status": "SUPPORTED",
+        "source": "cli/_code/python_scalar_command.rs"
+      },
+      "migration": "NONE",
+      "identity_algorithm": {
+        "id": "no-document-level-identity-algorithm",
+        "source": null
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-owner-canonical-or-exact-bytes",
+        "source": "cli/_code/python_scalar_command.rs"
+      }
+    },
+    {
+      "schema_id": "urn:fortress:derived:v1:python-scalar-observation",
+      "schema_path": "cli/_data/python_scalar_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "cli/_code/python_scalar_command.rs"
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "sha256-owner-exact-python-scalar-binding",
+        "source": "engine/program_semantics/_code/python_scalar.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-owner-canonical-or-exact-bytes",
+        "source": "cli/_code/python_scalar_command.rs"
+      }
+    },
+    {
       "schema_id": "urn:fortress:derived:v3:go-native-module-observation",
       "schema_path": "engine/program_semantics/_data/go_observation_schema_v3.json",
       "version": 3,
@@ -314,11 +358,23 @@
       "schema_id": "urn:fortress:schema:v1:package-manifest",
       "schema_path": "cli/_data/package_manifest_schema_v1.json",
       "version": 1,
-      "writer": {"status": "ACTIVE", "source": "testing/_code/build_distribution.py"},
-      "reader": {"status": "ACTIVE", "source": "cli/_code/package_install.py"},
+      "writer": {
+        "status": "ACTIVE",
+        "source": "testing/_code/build_distribution.py"
+      },
+      "reader": {
+        "status": "ACTIVE",
+        "source": "cli/_code/package_install.py"
+      },
       "migration": "NOT_APPLICABLE",
-      "identity_algorithm": {"id": "sha256-rfc8785-package-manifest-v1", "source": "cli/_code/package_install.py"},
-      "content_hash_algorithm": {"id": "sha256-exact-file-bytes-v1", "source": "cli/_code/package_install.py"}
+      "identity_algorithm": {
+        "id": "sha256-rfc8785-package-manifest-v1",
+        "source": "cli/_code/package_install.py"
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-exact-file-bytes-v1",
+        "source": "cli/_code/package_install.py"
+      }
     },
     {
       "schema_id": "urn:fortress:schema:v1:affected-analysis",

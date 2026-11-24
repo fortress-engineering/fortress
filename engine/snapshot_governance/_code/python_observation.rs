@@ -6,11 +6,18 @@ use std::path::Path;
 
 use crate::affected_analysis::sha256;
 use crate::native_observation::{NativeSource, NativeSourceError};
+pub use crate::program_semantics::native_body::NativeBodyOutcome;
 use crate::project::EvaluationKey;
+use crate::semantic_analysis::{SemanticDomain, infer_native_scalar_output};
+
+pub use crate::program_semantics::python_scalar::{
+    PythonScalarError, PythonScalarProducer, PythonScalarRequest,
+};
 
 pub use crate::source_architecture::python_lexical::{
-    PYTHON_LEXICAL_WORKER, PythonGrammar, PythonLexicalError, PythonLexicalMode,
-    PythonLexicalObservation, PythonLexicalOutcome, PythonLexicalProducer, PythonLexicalRequest,
+    PYTHON_LEXICAL_WORKER, PYTHON_SCALAR_WORKER, PythonGrammar, PythonLexicalError,
+    PythonLexicalMode, PythonLexicalObservation, PythonLexicalOutcome, PythonLexicalProducer,
+    PythonLexicalRequest,
 };
 
 const PYTHON_LEXICAL_CONTEXT: &str = "fortress-python-lexical-context-v1";
@@ -99,6 +106,10 @@ pub enum PythonObservationError {
     HostUnavailable,
     /// The lexical selection or reply failed bounded exact-source admission.
     Lexical(PythonLexicalError),
+    /// The original selected source differs from the independent subject pin.
+    SubjectIdentityMismatch,
+    /// The scoped scalar request or response failed admission.
+    Scalar(PythonScalarError),
 }
 
 impl Display for PythonObservationError {
@@ -111,6 +122,10 @@ impl Display for PythonObservationError {
                 formatter.write_str("trusted Python observation host is unavailable")
             }
             Self::Lexical(error) => Display::fmt(error, formatter),
+            Self::SubjectIdentityMismatch => {
+                formatter.write_str("selected Python source differs from the trusted subject pin")
+            }
+            Self::Scalar(error) => Display::fmt(error, formatter),
         }
     }
 }
@@ -119,6 +134,7 @@ impl Error for PythonObservationError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
             Self::Lexical(error) => Some(error),
+            Self::Scalar(error) => Some(error),
             _ => None,
         }
     }
@@ -136,5 +152,118 @@ impl From<NativeSourceError> for PythonObservationError {
 impl From<PythonLexicalError> for PythonObservationError {
     fn from(error: PythonLexicalError) -> Self {
         Self::Lexical(error)
+    }
+}
+
+/// Independently selected exact subject and scalar input assumptions.
+///
+/// A trusted caller selects these premises outside subject repository content.
+#[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct PythonScalarSubject {
+    /// Canonical physical source path relative to the selected repository.
+    pub source_path: String,
+    /// Expected SHA-256 of the exact selected subject bytes.
+    pub source_ref: String,
+    /// Selected function name.
+    pub function: String,
+    /// Exact boolean parameter names in declaration order.
+    pub exact_bool_parameters: Vec<String>,
+}
+
+/// A scoped native body and optional conservative output bound at an actual state.
+#[derive(Debug)]
+pub struct ActualPythonScalarObservation {
+    evaluation_key: EvaluationKey,
+    request: PythonScalarRequest,
+    outcome: NativeBodyOutcome,
+    inferred_output: Option<SemanticDomain>,
+}
+
+impl ActualPythonScalarObservation {
+    /// Returns the exact source, independent context, and original authority identities.
+    #[must_use]
+    pub const fn evaluation_key(&self) -> &EvaluationKey {
+        &self.evaluation_key
+    }
+
+    /// Returns the exact source and producer exchange binding.
+    #[must_use]
+    pub const fn request(&self) -> &PythonScalarRequest {
+        &self.request
+    }
+
+    /// Returns the admitted body or supported limitation.
+    #[must_use]
+    pub const fn outcome(&self) -> &NativeBodyOutcome {
+        &self.outcome
+    }
+
+    /// Returns an upper bound under the selected scalar premises, when available.
+    #[must_use]
+    pub const fn inferred_output(&self) -> Option<&SemanticDomain> {
+        self.inferred_output.as_ref()
+    }
+}
+
+/// Observes an exact physical Python source through an independently trusted host.
+///
+/// The provided exchange receives one bounded worker request. Program Semantics
+/// admits typed body facts. Semantic Analysis may infer an output bound under
+/// the selected premises. Original physical inputs are revalidated after both.
+///
+/// # Errors
+/// Refuses wrong source pins, unavailable authority, stale physical source,
+/// untrusted host operations, and incompatible worker output.
+pub fn observe_python_scalar(
+    project_root: &Path,
+    subject: &PythonScalarSubject,
+    producer: &PythonScalarProducer,
+    exchange: impl FnOnce(Vec<u8>) -> Result<Vec<u8>, PythonObservationError>,
+) -> Result<ActualPythonScalarObservation, PythonObservationError> {
+    let source = NativeSource::capture(project_root, "Python")?;
+    let context =
+        serde_json_canonicalizer::to_vec(&("fortress-python-scalar-context-v1", subject, producer))
+            .map_err(PythonScalarError::Json)?;
+    let evaluation_key = EvaluationKey::new(
+        &source.binding.source_manifest_digest,
+        sha256(&context),
+        &source.binding.authority_digest,
+    );
+    let parameters = subject
+        .exact_bool_parameters
+        .iter()
+        .map(String::as_str)
+        .collect::<Vec<_>>();
+    let request = PythonScalarRequest::bind(
+        &source.view,
+        &evaluation_key,
+        &subject.source_path,
+        &subject.function,
+        &parameters,
+        producer,
+    )?;
+    if request.source_ref() != subject.source_ref {
+        return Err(PythonObservationError::SubjectIdentityMismatch);
+    }
+    let payload = request.worker_payload(&source.view, &evaluation_key)?;
+    let response = exchange(payload)?;
+    let outcome = request.admit(&source.view, &evaluation_key, &response)?;
+    let inferred_output = match &outcome {
+        NativeBodyOutcome::Lowered(body) => infer_native_scalar_output(body),
+        NativeBodyOutcome::Unavailable(_) => None,
+    };
+    source.revalidate()?;
+    Ok(ActualPythonScalarObservation {
+        evaluation_key,
+        request,
+        outcome,
+        inferred_output,
+    })
+}
+
+impl From<PythonScalarError> for PythonObservationError {
+    fn from(error: PythonScalarError) -> Self {
+        Self::Scalar(error)
     }
 }

@@ -110,3 +110,29 @@ byte spans, and exact source target paths and digests when available.
 Runtime imports, dynamic calls, runtime reachability, installed packages,
 built-ins and native extensions remain outside the projection. It creates
 no ownership, Architecture Evaluation edge or certification evidence.
+
+### [`python_scalar_worker.py`](../_code/python_scalar_worker.py)
+
+Projects an exact, compile-only Python scalar function into a bounded native
+body witness. The worker loads its fixed sibling lexical bootstrap only after
+verifying the reviewed bootstrap digest against independently selected pins.
+It installs the same pre-input operating-system gate, verifies its own and
+the runtime identities, then emits a bounded
+`fortress-host/python-scalar-ready/1` readiness record. The lexical worker and
+its reply protocol retain their existing bytes. The explicit scalar CLI mode
+selects this worker through a separate trusted registration.
+
+The request names one ordinary Python source file, exact source bytes, one
+function, and independently selected exact-bool parameter domains. Annotations
+do not establish those domains. Supported bodies use exact bool values and
+bounded signed 32-bit integer literals, definitely initialized local bindings,
+simple assignment, Boolean negation, if/else and explicit uniform scalar
+returns. Source spans use one-based byte columns and retain physical UTF-8
+byte offsets, including CRLF. Any unsupported construct clears the body,
+including calls, object or alias behavior, implicit returns, exceptional
+control and integer operations outside the literal surface.
+
+The worker compiles the source for contextual validation without running it.
+It reports conditional native facts before Program Semantics admission and
+does not establish actual caller argument types, runtime execution, semantic
+conformance, governance, or certification.

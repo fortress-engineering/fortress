@@ -63,6 +63,7 @@ mod presentation;
 mod projection_command;
 mod provider_command;
 mod python_observe_command;
+mod python_scalar_command;
 pub mod rpc;
 pub mod sarif;
 mod transition_command;
@@ -716,6 +717,12 @@ fn run_source_artifacts<O: Write, E: Write>(
         .is_some_and(|argument| argument == "--observe-python")
     {
         return python_observe_command::run(&arguments[1..], output, error);
+    }
+    if arguments
+        .first()
+        .is_some_and(|argument| argument == "--observe-python-scalar")
+    {
+        return python_scalar_command::run(&arguments[1..], output, error);
     }
     let (root, destination, format) = match parse_source_artifact_arguments(arguments) {
         Ok(value) => value,

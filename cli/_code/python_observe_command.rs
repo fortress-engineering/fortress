@@ -24,7 +24,7 @@ const REGISTRATION_LIMIT: usize = 16 * 1024;
 const DEADLINE: Duration = Duration::from_secs(5);
 
 #[derive(Clone, Copy, Deserialize, PartialEq, Eq)]
-enum Grammar {
+pub(super) enum Grammar {
     #[serde(rename = "cpython3.12")]
     Cpython312,
     #[serde(rename = "cpython3.13")]
@@ -32,7 +32,7 @@ enum Grammar {
 }
 
 impl Grammar {
-    const fn wire_name(self) -> &'static str {
+    pub(super) const fn wire_name(self) -> &'static str {
         match self {
             Self::Cpython312 => "cpython3.12",
             Self::Cpython313 => "cpython3.13",
@@ -124,17 +124,7 @@ fn readiness(
     runtime_ref: &str,
     worker_ref: &str,
 ) -> Result<(Vec<u8>, &'static str), String> {
-    let (profile, limits) = match std::env::consts::OS {
-        "linux" => (
-            "LINUX_AS_CPU_V1",
-            json!({"address_space_bytes":100_663_296,"cpu_seconds":1,"core_bytes":0}),
-        ),
-        "windows" => (
-            "WINDOWS_JOB_WALL_V1",
-            json!({"commit_bytes":100_663_296,"active_processes":1,"kill_on_close":true}),
-        ),
-        _ => return Err("PYTHON_WORKER_RESOURCE_PROFILE_UNAVAILABLE".into()),
-    };
+    let (profile, limits) = resource_profile()?;
     let mut ready_frame = encode(&json!({
         "schema": READY_SCHEMA,
         "status": "READY",
@@ -146,6 +136,21 @@ fn readiness(
     }))?;
     ready_frame.push(b'\n');
     Ok((ready_frame, profile))
+}
+
+pub(super) fn resource_profile() -> Result<(&'static str, Value), String> {
+    let limits = match std::env::consts::OS {
+        "linux" => (
+            "LINUX_AS_CPU_V1",
+            json!({"address_space_bytes":100_663_296,"cpu_seconds":1,"core_bytes":0}),
+        ),
+        "windows" => (
+            "WINDOWS_JOB_WALL_V1",
+            json!({"commit_bytes":100_663_296,"active_processes":1,"kill_on_close":true}),
+        ),
+        _ => return Err("PYTHON_WORKER_RESOURCE_PROFILE_UNAVAILABLE".into()),
+    };
+    Ok(limits)
 }
 
 fn encode(value: &Value) -> Result<Vec<u8>, String> {
