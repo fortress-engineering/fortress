@@ -172,6 +172,16 @@
             "T-AF-PROGRAM-SEMANTICS-0001-R10-002",
             "T-AF-PROGRAM-SEMANTICS-0001-R10-003"
           ]
+        },
+        {
+          "id": "AF-PROGRAM-SEMANTICS-0001-R11",
+          "statement": "Program Semantics admits an explicitly selected native Go or Python scalar body only within its configured source, producer, context, authority, resource and input-type bounds. It lowers admitted control structure through the existing Program Body types, preserves typed unavailability and does not add an unqualified body to the governed Program Semantic Model.",
+          "tests": [
+            "T-AF-PROGRAM-SEMANTICS-0001-R11-001",
+            "T-AF-PROGRAM-SEMANTICS-0001-R11-002",
+            "T-AF-PROGRAM-SEMANTICS-0001-R11-003",
+            "T-AF-PROGRAM-SEMANTICS-0001-R11-004"
+          ]
         }
       ]
     }

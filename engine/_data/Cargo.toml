@@ -322,3 +322,7 @@ path = "../program_semantics/testing/_code/lib.rs"
 [[test]]
 name = "performance_equivalence"
 path = "../snapshot_governance/testing/_code/performance.rs"
+
+[[test]]
+name = "native_bodies"
+path = "../program_semantics/testing/_code/native_bodies.rs"

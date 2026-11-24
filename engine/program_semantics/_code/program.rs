@@ -11,6 +11,9 @@ pub(crate) mod go_observation;
 mod graph;
 #[path = "model_digest.rs"]
 mod model_digest;
+/// Exact native scalar bodies awaiting integration into a versioned model.
+#[path = "native_body.rs"]
+pub mod native_body;
 #[path = "reachability.rs"]
 mod reachability;
 #[path = "rust.rs"]

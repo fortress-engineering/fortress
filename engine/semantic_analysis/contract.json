@@ -95,6 +95,13 @@
             "T-AF-SEMANTIC-ANALYSIS-0001-R05-004",
             "T-AF-SEMANTIC-ANALYSIS-0001-R05-005"
           ]
+        },
+        {
+          "id": "AF-SEMANTIC-ANALYSIS-0001-R06",
+          "statement": "Semantic Analysis uses its existing control and value-domain interpreter for admitted native scalar bodies. Its observation bounds possible results under the admitted parameter premises, keeps Go and Python integer scopes distinct, refuses a residual unresolved path, and grants no kind of certification or contract assessment.",
+          "tests": [
+            "T-AF-SEMANTIC-ANALYSIS-0001-R06-001"
+          ]
         }
       ]
     }

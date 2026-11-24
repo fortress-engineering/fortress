@@ -33,3 +33,10 @@ Defines the explicit Cargo integration-test crate root and binds the existing pa
 ### [`reachability_controls.rs`](../_code/reachability_controls.rs)
 
 An independent original traversal checks 1,024 deterministic directed graphs, cycles, direction, changed edges, incomplete dependencies and exact scratch admission. These are correctness controls, with no numerical latency assertions.
+
+### [native_bodies.rs](../_code/native_bodies.rs)
+
+Exercises both native scalar scopes at the common Program Semantics owner.
+Independent expected results cover structural body nodes, physical positions,
+byte freshness, producer and context identity, unsupported operations and
+explicitly unavailable results.

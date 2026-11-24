@@ -6,13 +6,19 @@ use fortress_core::audit::{compile_repository_psm, compile_repository_semantic_a
 use fortress_core::implementation_observation::{
     ImplementationObservationInput, ModuleTerritory, SnapshotBoundFile,
 };
+use fortress_core::program_semantics::native_body::{
+    NativeBodyInput, NativeBodyLanguage, NativeBodyOutcome,
+};
 use fortress_core::program_semantics::{ProgramSemanticInput, compile_program_semantic_model};
+use fortress_core::project::EvaluationKey;
+use fortress_core::semantic_analysis::infer_native_scalar_output;
 use fortress_core::semantic_analysis::{
     DomainSpecification, FunctionContractError, FunctionContractSource, IntegerInterval,
     SemanticDomain, analyze_program_domains, canonicalize_function_contract_json,
     load_function_contracts,
 };
 use serde_json::{Value, json};
+use sha2::{Digest, Sha256};
 
 fn repository_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -606,5 +612,110 @@ fn live_fortress_semantic_analysis_is_fresh_and_contradiction_free() {
 fn domain_specification_is_publicly_constructible() -> DomainSpecification {
     DomainSpecification::Boolean {
         include: vec![true],
+    }
+}
+
+/// `T-AF-SEMANTIC-ANALYSIS-0001-R06-001`
+/// Fortress requirement: AF-SEMANTIC-ANALYSIS-0001-R06
+#[test]
+fn shared_scalar_domain_interpreter_retains_exact_native_scope() {
+    let reference = "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    let key = EvaluationKey::new(reference, reference, reference);
+    for (
+        language,
+        path,
+        source,
+        name_column,
+        statement_start,
+        statement_line,
+        statement_column,
+        scalar,
+    ) in [
+        (
+            NativeBodyLanguage::Go,
+            "package/f.go",
+            "func F() int64 { return -9 }",
+            6,
+            17,
+            1,
+            18,
+            "SIGNED_I64",
+        ),
+        (
+            NativeBodyLanguage::Python,
+            "package/f.py",
+            "def F():\n    return -9",
+            5,
+            13,
+            2,
+            5,
+            "INTEGER_LITERAL",
+        ),
+    ] {
+        let name_start = name_column - 1;
+        let occurrence = |start: usize, end: usize, line: usize, column: usize| {
+            json!({
+                "path": path, "start_byte": start, "end_byte": end,
+                "start_line": line, "start_byte_column": column,
+            })
+        };
+        let source_ref = format!("sha256:{:x}", Sha256::digest(source));
+        let input = NativeBodyInput {
+            language,
+            evaluation: &key,
+            exchange_ref: reference,
+            producer_ref: reference,
+            source_path: path,
+            source_ref: &source_ref,
+            source: source.as_bytes(),
+            python_bool_parameters: &[],
+        };
+        let mut reply = json!({
+            "status":"LOWERABLE",
+            "symbol":{
+                "name":"F", "span": occurrence(name_start, name_start + 1, 1, name_column),
+                "declaration_span": occurrence(0, source.len(), 1, 1)
+            },
+            "parameters":[], "locals":[], "result_scalar":scalar,
+            "body":[{
+                "kind":"return",
+                "span":occurrence(statement_start, statement_start + "return -9".len(), statement_line, statement_column),
+                "value":{"kind":"integer","value":"-9"}
+            }]
+        });
+        let analyze = |value: &Value| {
+            let NativeBodyOutcome::Lowered(body) =
+                input.admit(&serde_json::to_vec(value).unwrap()).unwrap()
+            else {
+                panic!("fixture is a typed exact native body");
+            };
+            infer_native_scalar_output(&body)
+        };
+        let Some(SemanticDomain::Integer {
+            type_id,
+            intervals,
+            excluded,
+        }) = analyze(&reply)
+        else {
+            panic!("fixture has an independently known scalar result");
+        };
+        let expected_type = if language == NativeBodyLanguage::Go {
+            "native_scalar:go:int64"
+        } else {
+            "native_scalar:python:bounded_integer_literal"
+        };
+        assert_eq!(type_id, expected_type);
+        assert_eq!(intervals, [IntegerInterval::new(-9, -9).unwrap()]);
+        assert!(excluded.is_empty());
+
+        // A bounded structurally admitted attachment cannot establish a return
+        // domain if its selected control path leaves a residual fall-through.
+        let branch = reply["body"][0].clone();
+        reply["body"][0] = json!({
+            "kind":"if", "span": branch["span"],
+            "condition":{"kind":"boolean","value":false},
+            "then_branch":[branch], "else_branch":[]
+        });
+        assert!(analyze(&reply).is_none());
     }
 }

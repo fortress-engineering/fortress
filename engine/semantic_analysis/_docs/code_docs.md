@@ -33,3 +33,11 @@ Interprets PSM control/value facts, derives recursive summaries, checks contract
 An impossible-state assertion reached only through unmodeled pattern selection has an unsupported reachability check. This includes a later match arm whose selection depends on an earlier unmodeled pattern and loop entry conditioned on an unmodeled pattern. Supported reachable contradictions still generate findings. Semantic Analysis 2.0.1 records the new producer semantics under the existing artifact schema. Historical artifacts retain their original producer identity.
 
 Prepared evaluation retains exact initialized and synchronous symbol-round domains under current program context, type, contract, body, caller and reverse-dependency bindings. A changed provider invalidates every dependent trajectory. Replayed units use their original round index; missing later rounds execute the same transfer, join and widening functions through the current global stop and cap. Final summaries, checks, diagnostics, headers and findings are always rebuilt from current inputs. Configurable owner retention caps bound admitted round payloads; omitted caches cause reconstruction and never change domain meaning.
+
+The same statement interpreter can evaluate an explicitly admitted native
+scalar body against its declared parameter premises. The returned result is a
+conservative type-bound set of possible return values. Go fixed-width int64
+and bounded Python literal values have distinct domain identifiers. A residual
+control path or an opaque result has no inferred domain. Native bodies are
+excluded from governed Rust function contracts and findings. Their evaluation
+is not certification or proof of runtime execution.

@@ -32,6 +32,7 @@ use crate::finding::{
     CanonicalFinding, EvaluatorProvenance, FindingCategory, FindingError, FindingLocation,
     FindingOccurrence, RuleFindingDefinition, SourceSpan,
 };
+use crate::program_semantics::native_body::{NativeScalar, NativeScalarBody};
 use crate::program_semantics::{
     CallResolutionState, ExecutableSymbol, ProgramBody, ProgramCall, ProgramExpression,
     ProgramPattern, ProgramProvenance, ProgramSemanticModel, ProgramStatement, ProgramType,
@@ -650,8 +651,133 @@ fn invalidate_domain_dependents(edges: &BTreeSet<(String, String)>, dirty: &mut 
     }
 }
 
+#[derive(Clone, Copy)]
+enum BodySubject<'a> {
+    Governed(&'a ExecutableSymbol),
+    Native(&'a NativeScalarBody),
+}
+
+impl<'a> BodySubject<'a> {
+    fn id(self) -> &'a str {
+        match self {
+            Self::Governed(symbol) => symbol.id(),
+            Self::Native(body) => body.binding(),
+        }
+    }
+
+    fn return_type(self) -> &'a str {
+        match self {
+            Self::Governed(symbol) => symbol.return_type().type_id(),
+            Self::Native(body) => native_type_id(body.result()),
+        }
+    }
+
+    fn is_parameter(self, name: &str) -> bool {
+        match self {
+            Self::Governed(symbol) => symbol
+                .parameters()
+                .iter()
+                .any(|parameter| parameter.name() == name),
+            Self::Native(body) => body
+                .parameters()
+                .iter()
+                .any(|(parameter, _)| parameter == name),
+        }
+    }
+}
+
+const NATIVE_BOOL: &str = "native_scalar:bool";
+const NATIVE_GO_INT64: &str = "native_scalar:go:int64";
+const NATIVE_PYTHON_LITERAL: &str = "native_scalar:python:bounded_integer_literal";
+
+const fn native_type_id(scalar: NativeScalar) -> &'static str {
+    match scalar {
+        NativeScalar::Bool => NATIVE_BOOL,
+        NativeScalar::SignedI64 => NATIVE_GO_INT64,
+        NativeScalar::IntegerLiteral => NATIVE_PYTHON_LITERAL,
+    }
+}
+
+fn native_scalar_domain(scalar: NativeScalar) -> SemanticDomain {
+    let type_id = native_type_id(scalar);
+    let (min, max) = match scalar {
+        NativeScalar::Bool => return SemanticDomain::boolean(type_id, [false, true]),
+        NativeScalar::SignedI64 => (i128::from(i64::MIN), i128::from(i64::MAX)),
+        NativeScalar::IntegerLiteral => (i128::from(i32::MIN), i128::from(i32::MAX)),
+    };
+    SemanticDomain::integer(
+        type_id,
+        [IntegerInterval::new(min, max).expect("native scalar limits are ordered")],
+        [],
+    )
+}
+
+fn native_domain_for_type(type_id: &str) -> Option<SemanticDomain> {
+    let scalar = match type_id {
+        NATIVE_BOOL => NativeScalar::Bool,
+        NATIVE_GO_INT64 => NativeScalar::SignedI64,
+        NATIVE_PYTHON_LITERAL => NativeScalar::IntegerLiteral,
+        _ => return None,
+    };
+    Some(native_scalar_domain(scalar))
+}
+
+/// Infers a conservative result domain for one admitted first-order native body.
+///
+/// This executes the existing Program Semantics domain interpreter against the
+/// pinned scalar input premises. It returns an upper bound, without inferring
+/// runtime reachability, contract compliance or certification. No domain is
+/// exposed if there is a residual fall-through path or opaque result.
+#[must_use]
+pub fn infer_native_scalar_output(body: &NativeScalarBody) -> Option<SemanticDomain> {
+    let subject = BodySubject::Native(body);
+    let context = AnalysisContext {
+        contracts: None,
+        symbols: BTreeMap::new(),
+        types: BTreeMap::new(),
+        bodies: BTreeMap::new(),
+        local_types: body
+            .locals()
+            .iter()
+            .chain(body.parameters())
+            .map(|(name, scalar)| ((body.binding(), name.as_str()), native_type_id(*scalar)))
+            .collect(),
+        calls_by_caller: BTreeMap::new(),
+    };
+    let environment = Environment {
+        values: body
+            .parameters()
+            .iter()
+            .map(|(name, scalar)| (name.clone(), native_scalar_domain(*scalar)))
+            .collect(),
+        reachable: true,
+        unsupported_pattern_reachability: false,
+    };
+    let mut output = SemanticDomain::bottom(subject.return_type());
+    let mut state = AnalysisState::default();
+    let remainder = context.interpret_statements(
+        subject,
+        body.body().statements(),
+        environment,
+        &BTreeMap::new(),
+        &mut state,
+        &mut output,
+    );
+    if remainder.reachable
+        || !state.checks.is_empty()
+        || !state.exceptional.is_empty()
+        || !matches!(
+            output,
+            SemanticDomain::Boolean { .. } | SemanticDomain::Integer { .. }
+        )
+    {
+        return None;
+    }
+    Some(output)
+}
+
 struct AnalysisContext<'a> {
-    contracts: &'a ResolvedFunctionContracts,
+    contracts: Option<&'a ResolvedFunctionContracts>,
     symbols: BTreeMap<&'a str, &'a ExecutableSymbol>,
     types: BTreeMap<&'a str, &'a ProgramType>,
     bodies: BTreeMap<&'a str, &'a ProgramBody>,
@@ -702,7 +828,7 @@ impl<'a> AnalysisContext<'a> {
             calls_by_caller.entry(call.caller()).or_default().push(call);
         }
         Self {
-            contracts,
+            contracts: Some(contracts),
             symbols,
             types,
             bodies,
@@ -715,10 +841,21 @@ impl<'a> AnalysisContext<'a> {
         self.calls_by_caller.get(caller).map_or(&[], Vec::as_slice)
     }
 
+    fn contract(&self, symbol: &str) -> Option<&'a FunctionContract> {
+        self.contracts.and_then(|contracts| contracts.get(symbol))
+    }
+
     fn static_domain(&self, type_id: &str) -> SemanticDomain {
         self.types.get(type_id).map_or_else(
-            || SemanticDomain::Top {
-                type_id: type_id.into(),
+            || {
+                if self.contracts.is_none()
+                    && let Some(domain) = native_domain_for_type(type_id)
+                {
+                    return domain;
+                }
+                SemanticDomain::Top {
+                    type_id: type_id.into(),
+                }
             },
             |value| SemanticDomain::from_static_type(type_id, value.semantic()),
         )
@@ -728,7 +865,7 @@ impl<'a> AnalysisContext<'a> {
         &self,
         symbol: &ExecutableSymbol,
     ) -> BTreeMap<String, SemanticDomain> {
-        let contract = self.contracts.get(symbol.id());
+        let contract = self.contract(symbol.id());
         symbol
             .parameters()
             .iter()
@@ -756,7 +893,7 @@ impl<'a> AnalysisContext<'a> {
     }
 
     fn contract_output_domain(&self, symbol: &ExecutableSymbol) -> Option<SemanticDomain> {
-        let guarantee = self.contracts.get(symbol.id())?.return_guarantee()?;
+        let guarantee = self.contract(symbol.id())?.return_guarantee()?;
         let type_fact = self.types.get(symbol.return_type().type_id())?;
         function_contract::resolve_domain(guarantee.domain(), type_fact).ok()
     }
@@ -838,7 +975,9 @@ impl<'a> AnalysisContext<'a> {
         let binding_digest = prepared_domain_digest(&(
             psm.program_context(),
             &type_shapes,
-            self.contracts.digest(),
+            self.contracts
+                .expect("governed preparation requires a resolved Function Contract set")
+                .digest(),
         ))?;
         let symbols = self
             .symbols
@@ -1143,16 +1282,15 @@ impl<'a> AnalysisContext<'a> {
         FunctionSemanticSummary {
             symbol: symbol.id().into(),
             input_domains,
-            authored_preconditions: self.contracts.get(symbol.id()).map_or_else(
-                Vec::new,
-                |contract| {
+            authored_preconditions: self
+                .contract(symbol.id())
+                .map_or_else(Vec::new, |contract| {
                     contract
                         .requires()
                         .iter()
                         .map(|requirement| requirement.parameter().into())
                         .collect()
-                },
-            ),
+                }),
             inferred_output_domain,
             authored_postcondition,
             postcondition_proven,
@@ -1210,7 +1348,7 @@ impl<'a> AnalysisContext<'a> {
         };
         let mut output = SemanticDomain::bottom(symbol.return_type().type_id());
         self.interpret_statements(
-            symbol,
+            BodySubject::Governed(symbol),
             body.statements(),
             environment,
             outputs,
@@ -1234,7 +1372,7 @@ impl<'a> AnalysisContext<'a> {
     #[allow(clippy::too_many_lines)]
     fn interpret_statements(
         &self,
-        symbol: &ExecutableSymbol,
+        symbol: BodySubject<'_>,
         statements: &[ProgramStatement],
         mut environment: Environment,
         outputs: &BTreeMap<String, SemanticDomain>,
@@ -1301,12 +1439,12 @@ impl<'a> AnalysisContext<'a> {
                 }
                 ProgramStatement::Return { value, provenance } => {
                     let domain = value.as_ref().map_or_else(
-                        || self.static_domain(symbol.return_type().type_id()),
+                        || self.static_domain(symbol.return_type()),
                         |value| {
                             self.evaluate_expression(
                                 symbol,
                                 value,
-                                Some(symbol.return_type().type_id()),
+                                Some(symbol.return_type()),
                                 &environment,
                                 outputs,
                                 state,
@@ -1438,7 +1576,7 @@ impl<'a> AnalysisContext<'a> {
     #[allow(clippy::too_many_lines)]
     fn evaluate_expression(
         &self,
-        symbol: &ExecutableSymbol,
+        symbol: BodySubject<'_>,
         expression: &ProgramExpression,
         expected_type: Option<&str>,
         environment: &Environment,
@@ -1679,7 +1817,7 @@ impl<'a> AnalysisContext<'a> {
     #[allow(clippy::too_many_arguments)]
     fn evaluate_construction(
         &self,
-        symbol: &ExecutableSymbol,
+        symbol: BodySubject<'_>,
         constructor: &str,
         arguments: &[ProgramExpression],
         expected_type: &str,
@@ -1778,7 +1916,7 @@ impl<'a> AnalysisContext<'a> {
     #[allow(clippy::too_many_arguments)]
     fn evaluate_call(
         &self,
-        caller: &ExecutableSymbol,
+        caller: BodySubject<'_>,
         reference: &str,
         arguments: &[ProgramExpression],
         expected_type: &str,
@@ -1822,7 +1960,7 @@ impl<'a> AnalysisContext<'a> {
                 state,
                 provenance,
             );
-            let Some(requirement) = self.contracts.get(target_symbol.id()).and_then(|contract| {
+            let Some(requirement) = self.contract(target_symbol.id()).and_then(|contract| {
                 contract
                     .requires()
                     .iter()
@@ -1872,7 +2010,7 @@ impl<'a> AnalysisContext<'a> {
     #[allow(clippy::too_many_arguments)]
     fn evaluate_method_call(
         &self,
-        symbol: &ExecutableSymbol,
+        symbol: BodySubject<'_>,
         receiver: &ProgramExpression,
         method: &str,
         arguments: &[ProgramExpression],
@@ -1962,7 +2100,7 @@ impl<'a> AnalysisContext<'a> {
     #[allow(clippy::too_many_arguments)]
     fn evaluate_unwrap(
         &self,
-        symbol: &ExecutableSymbol,
+        symbol: BodySubject<'_>,
         method: &str,
         receiver: SemanticDomain,
         expected_type: &str,
@@ -2014,7 +2152,7 @@ impl<'a> AnalysisContext<'a> {
     #[allow(clippy::too_many_arguments)]
     fn evaluate_binary(
         &self,
-        symbol: &ExecutableSymbol,
+        symbol: BodySubject<'_>,
         operator: &str,
         left: &ProgramExpression,
         right: &ProgramExpression,
@@ -2139,16 +2277,11 @@ impl<'a> AnalysisContext<'a> {
 }
 
 fn expression_domain_coverage(
-    symbol: &ExecutableSymbol,
+    symbol: BodySubject<'_>,
     expression: &ProgramExpression,
 ) -> AnalysisCoverageState {
     match expression {
-        ProgramExpression::Binding { name }
-            if symbol
-                .parameters()
-                .iter()
-                .any(|parameter| parameter.name() == name) =>
-        {
+        ProgramExpression::Binding { name } if symbol.is_parameter(name) => {
             AnalysisCoverageState::Proven
         }
         ProgramExpression::Boolean { .. }

@@ -114,3 +114,22 @@ Shares legacy native response admission and verifies the explicit Go build-conte
 ### [go_module_observation.rs](../_code/go_module_observation.rs)
 
 Admits the exact current Go module and package map from independently captured ordinary source. It checks the separately selected build context, source and module digests, known worker and request identity, package reachability, returned file dispositions and bounded declaration, call, import and type-comparison coordinates. Unsupported paths and contexts fail closed. A public projection contains only these actual native observations and their provenance.
+
+### [native_body.rs](../_code/native_body.rs)
+
+Accepts the selected native frontend's bounded scalar body attachment after
+verified exchange framing. The attachment binds the exact physical source
+bytes, evaluation, runtime registration and exchange receipt. The owner checks
+ordinary portable source paths, source hashes, identifier and statement ranges,
+physical UTF-8 coordinates, declared scalar scopes, and ordered structure.
+The pinned native producer establishes language syntax, definite lexical
+binding and supported control facts. Arithmetic, calls, aliasing, arbitrary
+truthiness, scope ambiguity and non-scalar behavior are outside this intake.
+
+Go fixed-width signed 64-bit values and Python bounded integer literal
+witnesses have distinct representations. Only independently selected exact
+boolean assumptions bind Python parameters. The attachment constructs existing
+ProgramBody, ProgramStatement and ProgramExpression values and preserves the
+original version 6 model. Its digest names one exact occurrence. It grants
+no authority to infer stable symbol equivalence, project conformance, effect
+freedom, or execution evidence.
