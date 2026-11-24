@@ -612,7 +612,9 @@ artifact projection through the exact file dependency.
 
 The explicit Go module dependency view obtains the complete occurrence ownership
 relation from the same original source and CCG used to seal the worker request.
-The Go package selection retains its closed native layout scope. The view preserves
+The Go package selection retains its closed native layout scope, including explicit
+canonical code paths. Logical selectors retain precedence over physical Module
+containment. The view preserves
 the native response and attaches a scoped
 Implementation Observation projection. The full physical view is revalidated
 after the report is assembled and before its publication.

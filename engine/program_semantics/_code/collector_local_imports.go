@@ -112,7 +112,7 @@ func refuseGoModule(code, status string, location *sourceSpan) *goModuleRefusal 
 	return &goModuleRefusal{Status: status, Diagnostic: diagnostic{Code: code, Span: location}}
 }
 
-var goSimpleDirectory = regexp.MustCompile(`^[a-z][a-z0-9]*(/[a-z][a-z0-9]*)*$`)
+var goSimpleDirectory = regexp.MustCompile(`^([a-z][a-z0-9]*|_code)(/([a-z][a-z0-9]*|_code))*$`)
 var goModulePathPattern = regexp.MustCompile(`^[a-z0-9]+([.-][a-z0-9]+)*[.][a-z]+(/[a-z][a-z0-9._-]*)*$`)
 var goTypeName = regexp.MustCompile(`^[A-Za-z_][A-Za-z_0-9]{0,95}$`)
 

@@ -1340,6 +1340,65 @@ ROOT_ECOSYSTEM  "provides": [],
         ));
     }
 
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R28-029`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R28
+    #[test]
+    fn admits_explicit_go_code_containment_and_refuses_other_hidden_directories() {
+        let fixture = project("go-explicit-code-containment");
+        for (directory, file, source) in [("app", "app.go", APP), ("base", "base.go", LIBRARY)] {
+            let member = fixture.root.join(directory);
+            fs::remove_file(member.join(file)).unwrap();
+            let physical = member.join("_code");
+            fs::create_dir(&physical).unwrap();
+            let source = std::str::from_utf8(source).unwrap().replace(
+                "example.test/fortresslocal/base",
+                "example.test/fortresslocal/base/_code",
+            );
+            fs::write(physical.join(file), source).unwrap();
+        }
+        let selection = GoModuleSelection {
+            entry_path: "example.test/fortresslocal/app/_code",
+            ..selection()
+        };
+        let result = observe_go_module_dependencies(
+            &fixture.root,
+            selection,
+            context(),
+            &BUILD_PIN,
+            |request| {
+                let request: Value = serde_json::from_slice(request).unwrap();
+                assert_eq!(
+                    request["module"]["packages"],
+                    json!([
+                        {"directory":"app/_code","import_path":"example.test/fortresslocal/app/_code"},
+                        {"directory":"base/_code","import_path":"example.test/fortresslocal/base/_code"}
+                    ])
+                );
+                Err(GoObservationError::Execution(
+                    "dispatch boundary reached".into(),
+                ))
+            },
+        );
+        assert!(
+            matches!(result, Err(GoObservationError::Execution(detail)) if detail == "dispatch boundary reached")
+        );
+        fs::create_dir(fixture.root.join("hidden")).unwrap();
+        fs::create_dir(fixture.root.join("hidden/_alternative")).unwrap();
+        fs::write(
+            fixture.root.join("hidden/_alternative/other.go"),
+            b"package other\n",
+        )
+        .unwrap();
+        let refused =
+            observe_go_module_dependencies(&fixture.root, selection, context(), &BUILD_PIN, |_| {
+                panic!("unadmitted directory must prevent worker dispatch")
+            });
+        assert!(matches!(
+            refused,
+            Err(GoObservationError::UnsupportedContext)
+        ));
+    }
+
     /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R28-017`
     /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R28
     #[test]
