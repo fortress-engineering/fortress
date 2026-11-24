@@ -39,4 +39,5 @@ An independent original traversal checks 1,024 deterministic directed graphs, cy
 Exercises both native scalar scopes at the common Program Semantics owner.
 Independent expected results cover structural body nodes, physical positions,
 byte freshness, producer and context identity, unsupported operations and
-explicitly unavailable results.
+explicitly unavailable results. The declaration test rejects crossed names and
+  ranges. The scalar-only test refuses calls without a selected call closure.

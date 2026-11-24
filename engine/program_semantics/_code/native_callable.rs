@@ -275,8 +275,8 @@ mod binding_tests {
         .unwrap()
     }
 
-    /// `T-AF-PROGRAM-SEMANTICS-0001-R11-005`
-    /// Fortress requirement: AF-PROGRAM-SEMANTICS-0001-R11
+    /// `T-NATIVE-CALLABLE-INVARIANT-5`
+    /// Fortress classification: infrastructure
     #[test]
     fn native_callable_requires_the_retained_exact_declaration_and_evaluation() {
         let source_ref = format!("sha256:{:x}", Sha256::digest(SOURCE.as_bytes()));
@@ -388,8 +388,8 @@ mod binding_tests {
         (caller_reply, target_reply)
     }
 
-    /// `T-AF-PROGRAM-SEMANTICS-0001-R11-006`
-    /// Fortress requirement: AF-PROGRAM-SEMANTICS-0001-R11
+    /// `T-NATIVE-CALLABLE-INVARIANT-6`
+    /// Fortress classification: infrastructure
     #[test]
     fn native_calls_reject_mixed_evaluations_exchanges_and_declarations() {
         let file_ref = format!("sha256:{:x}", Sha256::digest(CALL_SOURCE.as_bytes()));

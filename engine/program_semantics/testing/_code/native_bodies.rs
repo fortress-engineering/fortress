@@ -495,3 +495,58 @@ fn unavailable_results_are_not_empty_success_or_partial_bodies() {
         NativeBodyError::ResourceLimit
     );
 }
+
+/// `T-AF-PROGRAM-SEMANTICS-0001-R11-005`
+/// Fortress requirement: AF-PROGRAM-SEMANTICS-0001-R11
+#[test]
+fn scalar_body_rejects_mixed_declaration_identity() {
+    let (fixture, original) = python();
+    let baseline = lowered(fixture.admit(&original).unwrap());
+    for (pointer, replacement) in [
+        ("/symbol/name", json!("inverted")),
+        ("/symbol/span", fixture.span("local", 0)),
+        (
+            "/symbol/declaration_span",
+            fixture.span("    local = not a\n    return local", 0),
+        ),
+    ] {
+        let mut mismatched = original.clone();
+        *mismatched.pointer_mut(pointer).unwrap() = replacement;
+        assert_eq!(
+            fixture.admit(&mismatched).unwrap_err(),
+            NativeBodyError::InvalidResponse,
+            "{pointer}"
+        );
+    }
+    assert_eq!(
+        lowered(fixture.admit(&original).unwrap()).binding(),
+        baseline.binding()
+    );
+}
+
+/// `T-AF-PROGRAM-SEMANTICS-0001-R11-006`
+/// Fortress requirement: AF-PROGRAM-SEMANTICS-0001-R11
+#[test]
+fn scalar_body_does_not_admit_a_call_without_a_selected_call_closure() {
+    let (fixture, original) = python();
+    let mut unbound = original.clone();
+    unbound["body"][1]["value"] = json!({
+        "kind":"call",
+        "call":{
+            "span":fixture.span("local", fixture.text.find("return").unwrap()),
+            "target":original["symbol"],
+            "arguments":[{"kind":"binding","name":"a"}]
+        }
+    });
+    assert_eq!(
+        fixture.admit(&unbound).unwrap_err(),
+        NativeBodyError::InvalidResponse
+    );
+    assert!(matches!(
+        lowered(fixture.admit(&original).unwrap()).body().statements()[1],
+        ProgramStatement::Return {
+            value: Some(ProgramExpression::Binding { .. }),
+            ..
+        }
+    ));
+}
