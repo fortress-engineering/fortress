@@ -32,7 +32,7 @@ mod test_declarations {
         for file in request["files"].as_array().unwrap() {
             let name = file["path"].as_str().unwrap();
             assert!(
-                name.ends_with(".go")
+                Path::new(name).extension() == Some(std::ffi::OsStr::new("go"))
                     && name
                         .bytes()
                         .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'.' | b'_'))
