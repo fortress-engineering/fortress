@@ -443,7 +443,20 @@ fn physical_native_code_ownership_is_independent_of_responsibility_docs() {
     repository.write("native/_code/check.py", "enabled = True\n");
     repository.write("outside/unowned.go", "package outside\n");
     repository.write("native/_data/unowned.py", "ignored = True\n");
+    let undeclared = inspect_repository_modules(repository.path()).unwrap();
+    assert_eq!(undeclared.project_authority_state(), "ABSENT");
+    assert!(
+        undeclared
+            .modules()
+            .iter()
+            .all(|module| module.observed_sources() == 0)
+    );
+    repository.write(
+        "__fortress/.fsconfig",
+        r#"{"$schema":"urn:fortress:schema:v3:project-configuration","schema_version":3,"observation_exclusions":[],"logical_modules":[]}"#,
+    );
     let inspection = inspect_repository_modules(repository.path()).unwrap();
+    assert_eq!(inspection.project_authority_state(), "DECLARED");
     let module = inspection
         .modules()
         .iter()
@@ -486,7 +499,7 @@ fn physical_native_code_ownership_is_independent_of_responsibility_docs() {
                 .contains(&"authority:native/contract.json".to_owned())
         );
         assert!(
-            !source
+            source
                 .dependencies()
                 .contains(&"authority:__fortress/.fsconfig".to_owned())
         );

@@ -4703,13 +4703,10 @@ fn build_affected_snapshot(
     let mut native_source_units = Vec::new();
     for ownership in &prepared.native_source_ownerships {
         let path = ownership.source_path();
-        let mut dependencies = vec![format!("authority:{path}")];
-        if prepared
-            .observed_files
-            .contains_key(PROJECT_CONFIGURATION_PATH)
-        {
-            dependencies.push(format!("authority:{PROJECT_CONFIGURATION_PATH}"));
-        }
+        let mut dependencies = vec![
+            format!("authority:{path}"),
+            format!("authority:{PROJECT_CONFIGURATION_PATH}"),
+        ];
         if let Some(module) = prepared
             .ccg()
             .and_then(|ccg| ccg.modules().get(ownership.owner()))
