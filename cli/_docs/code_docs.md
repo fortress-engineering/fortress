@@ -655,6 +655,9 @@ Snapshot Governance supplies the actual-state result and scoped limitations.
 
 The Go command accepts `--source-regions SOURCE_PATH` for a canonical
 repository-relative Go file within the selected compiler observation.
+Use the same option with `--observe-go-module` for a file selected by
+the exact native module, build context, and reachable package traversal.
+An inventoried file excluded by that selection remains unsupported.
 Source Architecture reports scoped declarations and implementation regions
 using the same admitted receipt. The report retains the original authority,
 source manifest, current bytes, and native receipt identities. Regions

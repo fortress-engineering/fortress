@@ -2186,6 +2186,61 @@ ROOT_ECOSYSTEM  "provides": [],
         .unwrap()
     }
 
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R28-031`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R28
+    #[test]
+    fn go_regions_reuse_exact_selected_module_declarations_and_refuse_drift() {
+        let fixture = project("go-module-regions");
+        let native = observe_go_native_module(
+            &fixture.root,
+            selection(),
+            context(),
+            &BUILD_PIN,
+            |request| Ok(frozen(request, OBSERVED)),
+        )
+        .unwrap();
+        let report = |path| {
+            project_native_source_regions(
+                &fixture.root,
+                path,
+                NativeRegionInput::GoModule(&native),
+                &[],
+            )
+        };
+        let observed = serde_json::to_value(report("base/base.go").unwrap()).unwrap();
+        assert_eq!(
+            observed,
+            serde_json::to_value(report("base/base.go").unwrap()).unwrap()
+        );
+        assert_eq!(observed["availability"], "OBSERVED");
+        assert_eq!(
+            observed["source_ref"],
+            fortress_core::portable::digest(LIBRARY)
+        );
+        let regions = observed["regions"].as_array().unwrap();
+        assert_eq!(regions.len(), 11);
+        assert_eq!(regions[2]["coverage"], "OBSERVED");
+        assert_eq!(regions[2]["evidence"].as_array().unwrap().len(), 2);
+        assert_eq!(regions[6]["coverage"], "OBSERVED");
+        assert_eq!(regions[6]["evidence"][0]["start_line"], 4);
+        assert!(
+            regions[6]["evidence"][0]["source_reference"]
+                .as_str()
+                .unwrap()
+                .contains("#/observation/observed_packages/1/declarations/")
+        );
+        assert_eq!(regions[8]["coverage"], "UNSUPPORTED");
+        assert!(matches!(
+            report("go.mod"),
+            Err(NativeRegionError::SubjectMismatch)
+        ));
+        fs::write(fixture.root.join("app/app.go"), [APP, b"\n"].concat()).unwrap();
+        assert!(matches!(
+            report("base/base.go"),
+            Err(NativeRegionError::StaleReceipt)
+        ));
+    }
+
     /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R28-016`
     /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R28
     #[test]

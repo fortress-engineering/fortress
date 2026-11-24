@@ -10,9 +10,10 @@ use serde::{Deserialize, Serialize};
 use super::build_selection::{Disposition, valid_source_path};
 use super::{
     Activation, Call, Context, Declaration, Diagnostic, ExactClosedPackage, GoBuildContext,
-    GoCollectorPin, GoObservationError, GoRequest, MAX_FILE, MAX_FILES, MAX_RECORDS, MAX_SOURCE,
-    MAX_WIRE, Request, RequestFile, Resolution, SourceIdentity, SourceText, Span, Status, digest,
-    display_name, has_case_alias, portable_ascii_path, seal_go_request, sha256,
+    GoCollectorPin, GoObservationError, GoRequest, Implementation, MAX_FILE, MAX_FILES,
+    MAX_RECORDS, MAX_SOURCE, MAX_WIRE, Request, RequestFile, Resolution, SourceIdentity,
+    SourceText, Span, Status, digest, display_name, has_case_alias, portable_ascii_path,
+    seal_go_request, sha256,
 };
 use crate::implementation_observation::{
     ImplementationObservationInput, NativeDependencyBatch, NativeDependencyContext,
@@ -180,6 +181,55 @@ pub struct GoNativeModuleObservation {
     response_sha256: String,
     provenance: serde_json::Value,
     observation: Response,
+}
+
+impl GoNativeModuleObservation {
+    pub(crate) const fn status(&self) -> &Status {
+        &self.observation.status
+    }
+
+    pub(crate) fn matches_actual_source(&self, view_digest: &str, authority_digest: &str) -> bool {
+        self.provenance["actual"] == true
+            && self.provenance["source_view_sha256"] == view_digest
+            && self.provenance["authority_sha256"] == authority_digest
+    }
+
+    pub(crate) fn region_source(&self, path: &str) -> Option<(&str, bool)> {
+        let entry = self
+            .observation
+            .selection
+            .iter()
+            .find(|entry| entry.path == path)?;
+        Some((
+            entry.sha256.as_str(),
+            entry.disposition == Disposition::SelectedGoSource,
+        ))
+    }
+
+    pub(crate) fn declaration_regions<'a>(
+        &'a self,
+        path: &'a str,
+    ) -> impl Iterator<Item = (usize, usize, usize, bool)> + 'a {
+        self.observation
+            .observed_packages
+            .iter()
+            .enumerate()
+            .flat_map(move |(package, facts)| {
+                facts
+                    .declarations
+                    .iter()
+                    .enumerate()
+                    .filter(move |(_, declaration)| declaration.span.path == path)
+                    .map(move |(index, declaration)| {
+                        (
+                            package,
+                            index,
+                            declaration.span.start_line,
+                            declaration.implementation == Implementation::SourceBody,
+                        )
+                    })
+            })
+    }
 }
 
 pub(crate) struct GoModuleRequest<'a> {

@@ -75,7 +75,7 @@ impl Mode {
                 "--observe-go-tests project host-registration directory package-path go-version target-os target-arch"
             }
             Self::Module => {
-                "--observe-go-module project host-registration module-directory module-path entry-path target-os target-arch [--dependencies | --dependency-intent | --authored-return function body-registration | --authored-call-return function body-registration | left-package left-type right-package right-type]"
+                "--observe-go-module project host-registration module-directory module-path entry-path target-os target-arch [--source-regions source-path | --dependencies | --dependency-intent | --authored-return function body-registration | --authored-call-return function body-registration | left-package left-type right-package right-type]"
             }
         }
     }
@@ -260,7 +260,7 @@ enum ObservationOperation<'a> {
 fn parse_operation(mode: Mode, options: &[String]) -> Result<ObservationOperation<'_>, String> {
     match (mode, options) {
         (_, []) => Ok(ObservationOperation::Observe(None)),
-        (Mode::Legacy, [flag, path]) if flag == "--source-regions" => {
+        (Mode::Legacy | Mode::Module, [flag, path]) if flag == "--source-regions" => {
             if !is_canonical_relative_path(path) || !path.ends_with(".go") {
                 return Err("Source regions require a canonical repository-relative Go file.".into());
             }
@@ -309,8 +309,17 @@ fn collect_module(
     launch: impl FnOnce(&[u8]) -> Result<Vec<u8>, GoObservationError>,
 ) -> Result<Vec<u8>, String> {
     match operation {
-        ObservationOperation::SourceRegions(_) => {
-            Err("Use --observe-go for source regions.".into())
+        ObservationOperation::SourceRegions(path) => {
+            let result = observe_go_native_module(root, selection, context, pin, launch)
+                .map_err(|error| error.to_string())?;
+            let regions = project_native_source_regions(
+                root,
+                path,
+                NativeRegionInput::GoModule(&result),
+                &[],
+            )
+            .map_err(|error| error.to_string())?;
+            encode_observation(regions)
         }
         ObservationOperation::Observe(comparison) => {
             let selection = GoModuleSelection {

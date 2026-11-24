@@ -4,7 +4,7 @@ use std::path::Path;
 
 use crate::affected_analysis::sha256;
 use crate::filing::{LayoutExtension, ObservedLayoutPath, inspect_layout_extensions};
-use crate::go_observation::GoNativeObservation;
+use crate::go_observation::{GoNativeModuleObservation, GoNativeObservation};
 use crate::native_observation::{NativeSource, NativeSourceError};
 use crate::observation::is_canonical_relative_path;
 use crate::program_semantics::go_observation::Status as GoStatus;
@@ -24,6 +24,8 @@ const PYTHON_ANALYZER: &str = "fortress-core/python-lexical-regions-v1";
 pub enum NativeRegionInput<'a> {
     /// The closed Go declaration and call observation.
     Go(&'a GoNativeObservation),
+    /// Exact selected local-package declarations of the admitted native Go module.
+    GoModule(&'a GoNativeModuleObservation),
     /// The admitted Python compile-only observation.
     Python(&'a ActualPythonLexicalObservation),
 }
@@ -31,7 +33,7 @@ pub enum NativeRegionInput<'a> {
 impl NativeRegionInput<'_> {
     const fn language(self) -> &'static str {
         match self {
-            Self::Go(_) => "go",
+            Self::Go(_) | Self::GoModule(_) => "go",
             Self::Python(_) => "python",
         }
     }
@@ -115,6 +117,9 @@ pub fn project_native_source_regions(
     let source_ref = sha256(bytes);
     let (availability, receipt, observations) = match input {
         NativeRegionInput::Go(admitted) => go_regions(&source, source_path, &source_ref, admitted)?,
+        NativeRegionInput::GoModule(admitted) => {
+            go_module_regions(&source, source_path, &source_ref, admitted)?
+        }
         NativeRegionInput::Python(admitted) => {
             python_regions(&source, source_path, &source_ref, admitted)?
         }
@@ -154,19 +159,85 @@ fn go_regions(
     {
         return Err(NativeRegionError::StaleReceipt);
     }
-    let availability = match admitted.status() {
+    let availability = go_availability(admitted.status())?;
+    let receipt = hash_receipt(admitted)?;
+    let observations = go_declarations(
+        path,
+        admitted
+            .declaration_regions(path)
+            .map(|(index, line, has_body)| {
+                (
+                    format!("{receipt}#/observation/declarations/{index}"),
+                    line,
+                    has_body,
+                )
+            }),
+    );
+    Ok((availability, receipt, observations))
+}
+
+fn go_module_regions(
+    source: &NativeSource<'_>,
+    path: &str,
+    source_ref: &str,
+    admitted: &GoNativeModuleObservation,
+) -> Result<Regions, NativeRegionError> {
+    let (received, selected) = admitted
+        .region_source(path)
+        .ok_or(NativeRegionError::SubjectMismatch)?;
+    if received != source_ref
+        || !admitted.matches_actual_source(source.view.digest(), &source.binding.authority_digest)
+    {
+        return Err(NativeRegionError::StaleReceipt);
+    }
+    let receipt = hash_receipt(admitted)?;
+    let availability = go_availability(admitted.status())?;
+    if !selected || availability != NativeRegionAvailability::Observed {
+        let unavailable = if availability == NativeRegionAvailability::Observed {
+            NativeRegionAvailability::Unsupported
+        } else {
+            availability
+        };
+        return Ok((unavailable, receipt, Vec::new()));
+    }
+    let observations = go_declarations(
+        path,
+        admitted
+            .declaration_regions(path)
+            .map(|(package, index, line, has_body)| {
+                (
+                    format!(
+                        "{receipt}#/observation/observed_packages/{package}/declarations/{index}"
+                    ),
+                    line,
+                    has_body,
+                )
+            }),
+    );
+    Ok((availability, receipt, observations))
+}
+
+fn go_availability(status: &GoStatus) -> Result<NativeRegionAvailability, NativeRegionError> {
+    Ok(match status {
         GoStatus::Observed => NativeRegionAvailability::Observed,
         GoStatus::InvalidSource => NativeRegionAvailability::InvalidSource,
         GoStatus::Unsupported => NativeRegionAvailability::Unsupported,
         GoStatus::ResourceLimit => NativeRegionAvailability::ResourceLimit,
         GoStatus::InvalidRequest => return Err(NativeRegionError::SubjectMismatch),
-    };
-    let receipt =
-        serde_json_canonicalizer::to_vec(admitted).map_err(NativeRegionError::Encoding)?;
-    let receipt = sha256(&receipt);
+    })
+}
+
+fn hash_receipt<T: serde::Serialize>(value: &T) -> Result<String, NativeRegionError> {
+    let bytes = serde_json_canonicalizer::to_vec(value).map_err(NativeRegionError::Encoding)?;
+    Ok(sha256(&bytes))
+}
+
+fn go_declarations(
+    path: &str,
+    declarations: impl Iterator<Item = (String, usize, bool)>,
+) -> Vec<SourceObservation> {
     let mut observations = Vec::new();
-    for (index, line, has_body) in admitted.declaration_regions(path) {
-        let reference = format!("{receipt}#/observation/declarations/{index}");
+    for (reference, line, has_body) in declarations {
         observations.push(SourceObservation::new(
             path,
             SemanticRegion::Declarations,
@@ -186,7 +257,7 @@ fn go_regions(
             ));
         }
     }
-    Ok((availability, receipt, observations))
+    observations
 }
 
 fn python_regions(
