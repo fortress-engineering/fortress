@@ -10,6 +10,7 @@ use fortress_core::portable::{canonical, digest};
 use fortress_core::python_observation::{
     ActualPythonScalarObservation, NativeBodyOutcome, PYTHON_LEXICAL_WORKER, PYTHON_SCALAR_WORKER,
     PythonObservationError, PythonScalarProducer, PythonScalarSubject, observe_python_scalar,
+    observe_python_scalar_flow,
 };
 use fortress_core::wire::{
     JsonAdmissionLimits, admit_json, parse_strict_json_bytes, readable_text,
@@ -20,7 +21,8 @@ use serde_json::{Value, json};
 use super::python_observe_command::{Grammar, resource_profile};
 use super::verifier_process::{require_external_asset, run_pinned_input_after_ready};
 
-const USAGE: &str = "fortress source-artifacts --observe-python-scalar project host-registration";
+const USAGE: &str =
+    "fortress source-artifacts --observe-python-scalar project host-registration [--flow]";
 const REGISTRATION_SCHEMA: &str = "urn:fortress:host:v1:python-scalar-registration";
 const OBSERVATION_SCHEMA: &str = "urn:fortress:derived:v1:python-scalar-observation";
 const READY_SCHEMA: &str = "fortress-host/python-scalar-ready/1";
@@ -156,8 +158,13 @@ pub(super) fn run<O: Write, E: Write>(
 }
 
 fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
-    let [root, registration_path] = arguments else {
+    let [root, registration_path, mode @ ..] = arguments else {
         return Err(format!("usage: {USAGE}"));
+    };
+    let inspect_flow = match mode {
+        [] => false,
+        [flag] if flag == "--flow" => true,
+        _ => return Err(format!("usage: {USAGE}")),
     };
     let root = Path::new(root)
         .canonicalize()
@@ -174,7 +181,7 @@ fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
         .parent()
         .ok_or("Missing trusted registration parent")?;
     let command = registration.command(host, &worker_ref, &bootstrap_ref);
-    let result = observe_python_scalar(&root, &registration.subject, &producer, |request| {
+    let exchange = |request| {
         let (bytes, status) = run_pinned_input_after_ready(
             command,
             request,
@@ -198,9 +205,31 @@ fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
             return Err(PythonObservationError::HostUnavailable);
         }
         Ok(bytes)
-    })
+    };
+    let (result, flow) = if inspect_flow {
+        observe_python_scalar_flow(&root, &registration.subject, &producer, exchange)
+            .map(|(report, flow)| (report, Some(flow)))
+    } else {
+        observe_python_scalar(&root, &registration.subject, &producer, exchange)
+            .map(|report| (report, None))
+    }
     .map_err(|error| error.to_string())?;
-    projection(&registration, &registration_bytes, profile, &result)
+    let receipt = projection(&registration, &registration_bytes, profile, &result);
+    let value = if let Some(flow) = flow {
+        json!({
+            "$schema":"urn:fortress:derived:v1:native-scalar-flow-inspection",
+            "schema_version":1,
+            "language":"python",
+            "scope":"SCOPED_EXPLICIT_TRANSFERS",
+            "requested_occurrence":null,
+            "selection":"BOUND",
+            "native_receipt":receipt,
+            "flow":flow,
+        })
+    } else {
+        receipt
+    };
+    canonical(&value).map_err(|error| error.to_string())
 }
 
 fn projection(
@@ -208,7 +237,7 @@ fn projection(
     registration_bytes: &[u8],
     profile: &str,
     result: &ActualPythonScalarObservation,
-) -> Result<Vec<u8>, String> {
+) -> Value {
     let observation = match result.outcome() {
         NativeBodyOutcome::Lowered(body) => {
             let inference = result.inferred_output().map_or_else(
@@ -231,7 +260,7 @@ fn projection(
             "location":reason.location(),
         }),
     };
-    let report: Value = json!({
+    json!({
         "$schema": OBSERVATION_SCHEMA,
         "schema_version": 1,
         "evaluation": result.evaluation_key(),
@@ -248,6 +277,5 @@ fn projection(
             "canonical_model": "NOT_INCLUDED",
             "assessment": "NOT_PERFORMED",
         },
-    });
-    canonical(&report).map_err(|error| error.to_string())
+    })
 }

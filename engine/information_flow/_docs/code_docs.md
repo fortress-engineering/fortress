@@ -44,3 +44,8 @@ overwrite. Condition records show which bindings occur in the guard, while
 actual control influence remains unsupported. The projection stays outside the
 canonical operation lanes. Empty edge lists, partial coverage, missing
 bodies and resource refusals confer no classification, proof or policy result.
+
+Snapshot Governance can project the same source-site analysis from a
+previously admitted native body before its physical revalidation. Both
+language routes preserve conditional scope, exact provenance and the bounded
+unavailable disposition.

@@ -2,7 +2,7 @@
 
 use serde::Serialize;
 
-use crate::program_semantics::native_body::NativeBodyOutcome;
+use crate::program_semantics::native_body::{NativeBodyOutcome, NativeScalarBody};
 use crate::program_semantics::{
     ProgramBody, ProgramProvenance, ProgramSourceLocation, ProgramStatement, canonical_fact_id,
 };
@@ -124,6 +124,12 @@ pub fn observe_native_scalar_flow(outcome: &NativeBodyOutcome) -> NativeScalarFl
             );
         }
     };
+    observe_lowered_native_scalar_flow(body)
+}
+
+pub(crate) fn observe_lowered_native_scalar_flow(
+    body: &NativeScalarBody,
+) -> NativeScalarFlowObservation {
     let occurrence = body.binding();
     let unavailable = || {
         NativeScalarFlowObservation::unavailable(

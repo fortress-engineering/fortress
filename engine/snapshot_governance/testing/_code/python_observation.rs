@@ -555,6 +555,48 @@ fn stale_subject_pin_and_physical_drift_refuse_scalar_publication() {
     ));
 }
 
+/// `T-AF-SNAPSHOT-GOVERNANCE-0001-R30-003`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R30
+#[test]
+fn python_scalar_flow_keeps_exact_input_and_refuses_physical_drift() {
+    use fortress_core::python_observation::{NativeBodyOutcome, observe_python_scalar_flow};
+
+    let (fixture, subject, producer) = scalar_fixture("scalar-flow");
+    let evaluate = || {
+        observe_python_scalar_flow(&fixture.root, &subject, &producer, |request| {
+            scalar_reply(&request)
+        })
+    };
+    let (native, observed) = evaluate().unwrap();
+    let NativeBodyOutcome::Lowered(body) = native.outcome() else {
+        panic!("the frozen Boolean function lowers");
+    };
+    let report = serde_json::to_value(&observed).unwrap();
+    let edges = report["facts"]["explicit_data_edges"].as_array().unwrap();
+    assert_eq!(edges.len(), 1);
+    assert_eq!(edges[0]["producer"]["name"], "gate");
+    assert_eq!(edges[0]["consumer"]["role"], "return");
+    assert_eq!(edges[0]["line"], 2);
+    assert_eq!(edges[0]["column"], 5);
+    assert_eq!(report["occurrence_ref"], body.binding());
+    assert_eq!(report["facts"]["condition_inputs"], json!([]));
+    assert_eq!(report["control_influence_coverage"], "UNSUPPORTED");
+    assert_eq!(report["classification_authority"], "UNKNOWN");
+    assert_eq!(
+        observed.to_canonical_json().unwrap(),
+        evaluate().unwrap().1.to_canonical_json().unwrap()
+    );
+    let drift = observe_python_scalar_flow(&fixture.root, &subject, &producer, |request| {
+        fs::write(
+            fixture.root.join("note.txt"),
+            "changed while native worker returns",
+        )
+        .unwrap();
+        scalar_reply(&request)
+    });
+    assert!(matches!(drift, Err(PythonObservationError::SourceChanged)));
+}
+
 const IMPORT_SOURCE: &[u8] = b"import chosen\r\n";
 
 fn import_scope(roots: &[&str], inventory: &str) -> (Vec<u8>, String) {

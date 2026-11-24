@@ -3,6 +3,28 @@
   "schema_version": 1,
   "entries": [
     {
+      "schema_id": "urn:fortress:derived:v1:native-scalar-flow-inspection",
+      "schema_path": "cli/_data/native_flow_schema_v1.json",
+      "version": 1,
+      "writer": {
+        "status": "ACTIVE",
+        "source": "cli/_code/go_body_command.rs"
+      },
+      "reader": {
+        "status": "UNSUPPORTED",
+        "source": null
+      },
+      "migration": "NOT_APPLICABLE",
+      "identity_algorithm": {
+        "id": "sha256-exact-native-flow-occurrence",
+        "source": "engine/information_flow/_code/native_scalar_flow.rs"
+      },
+      "content_hash_algorithm": {
+        "id": "sha256-owner-canonical-or-exact-bytes",
+        "source": "cli/_code/go_body_command.rs"
+      }
+    },
+    {
       "schema_id": "urn:fortress:derived:v1:go-native-test-declarations",
       "schema_path": "engine/program_semantics/_data/go_test_schema_v1.json",
       "version": 1,

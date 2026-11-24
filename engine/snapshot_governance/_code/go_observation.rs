@@ -5,6 +5,7 @@ use std::path::Path;
 use serde::Serialize;
 
 use crate::implementation_observation::{NativeDependencyContext, SourceOwnershipDiagnostic};
+use crate::information_flow::NativeScalarFlowObservation;
 use crate::native_observation::{NativeSource, NativeSourceError};
 use crate::program_semantics::go_observation::{
     ExactClosedPackage, admit_go, admit_go_build, admit_go_module, admit_go_tests,
@@ -213,11 +214,59 @@ pub fn observe_go_native_body(
     collector: &GoCollectorPin<'_>,
     launch: impl FnOnce(&[u8]) -> Result<Vec<u8>, GoObservationError>,
 ) -> Result<ActualGoNativeBodyObservation, GoObservationError> {
+    observe_go_body_with(project_root, selection, collector, launch, |_| ())
+        .map(|(observation, ())| observation)
+}
+
+/// Produces scoped flow evidence for one exact occurrence in an admitted Go body report.
+///
+/// The occurrence must match the selected source, context and producer exchange.
+/// Physical source is revalidated after interpretation.
+///
+/// # Errors
+/// Refuses a malformed occurrence reference, changed source or incompatible worker output.
+pub fn observe_go_native_body_flow(
+    project_root: &Path,
+    selection: GoPackageSelection<'_>,
+    collector: &GoCollectorPin<'_>,
+    occurrence: &str,
+    launch: impl FnOnce(&[u8]) -> Result<Vec<u8>, GoObservationError>,
+) -> Result<
+    (
+        ActualGoNativeBodyObservation,
+        Option<NativeScalarFlowObservation>,
+    ),
+    GoObservationError,
+> {
+    let suffix = occurrence
+        .strip_prefix("native_body_occurrence:v1:sha256:")
+        .ok_or(GoObservationError::InvalidTrustedBinding)?;
+    if suffix.len() != 64
+        || !suffix
+            .bytes()
+            .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+    {
+        return Err(GoObservationError::InvalidTrustedBinding);
+    }
+    observe_go_body_with(project_root, selection, collector, launch, |result| {
+        result.inspect_flow(occurrence)
+    })
+}
+
+fn observe_go_body_with<T>(
+    project_root: &Path,
+    selection: GoPackageSelection<'_>,
+    collector: &GoCollectorPin<'_>,
+    launch: impl FnOnce(&[u8]) -> Result<Vec<u8>, GoObservationError>,
+    project: impl FnOnce(&ActualGoNativeBodyObservation) -> T,
+) -> Result<(ActualGoNativeBodyObservation, T), GoObservationError> {
     observe_bound_exact(project_root, selection, |source, manifest| {
         let admitted = admit_go(source, collector)?;
         let output = launch(admitted.request_bytes())?;
         let observation = admitted.verify_bodies(collector, manifest, &output)?;
-        Ok(ActualGoNativeBodyObservation::derive(observation))
+        let actual = ActualGoNativeBodyObservation::derive(observation);
+        let projected = project(&actual);
+        Ok((actual, projected))
     })
 }
 

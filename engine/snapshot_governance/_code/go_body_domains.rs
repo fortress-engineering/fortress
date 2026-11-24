@@ -2,6 +2,8 @@
 
 use serde::Serialize;
 
+use crate::information_flow::{NativeScalarFlowObservation, observe_lowered_native_scalar_flow};
+
 use crate::program_semantics::go_observation::GoNativeBodyObservation;
 use crate::program_semantics::native_body::{NativeScalar, NativeScalarBody};
 use crate::semantic_analysis::{SemanticDomain, infer_native_scalar_output};
@@ -22,6 +24,19 @@ pub struct ActualGoNativeBodyObservation {
 }
 
 impl ActualGoNativeBodyObservation {
+    pub(super) fn inspect_flow(&self, binding: &str) -> Option<NativeScalarFlowObservation> {
+        let mut matches = self
+            .observation
+            .lowered_bodies()
+            .flatten()
+            .filter(|body| body.binding() == binding);
+        let body = matches.next()?;
+        matches
+            .next()
+            .is_none()
+            .then(|| observe_lowered_native_scalar_flow(body))
+    }
+
     pub(super) fn derive(observation: GoNativeBodyObservation) -> Self {
         let value_domains = observation
             .lowered_bodies()

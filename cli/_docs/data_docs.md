@@ -119,3 +119,9 @@ or unavailable reasons, and unresolved runtime behavior.
 Versioned static dependency inspection envelope. It binds the original
 Python import report to admitted source origins, explicit ownership
 diagnostics and separately retained scoped dependency evidence.
+
+### [`native_flow_schema_v1.json`](../_data/native_flow_schema_v1.json)
+
+Defines the standalone native scalar flow envelope with the original language
+receipt and an explicitly scoped direct data observation. It retains condition
+inputs, unsupported control influence, and unavailable occurrences separately.

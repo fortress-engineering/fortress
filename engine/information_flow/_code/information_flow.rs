@@ -8,6 +8,7 @@ mod policy;
 
 #[path = "native_scalar_flow.rs"]
 mod native_scalar_flow;
+pub(crate) use native_scalar_flow::observe_lowered_native_scalar_flow;
 pub use native_scalar_flow::{NativeScalarFlowObservation, observe_native_scalar_flow};
 
 #[path = "operation.rs"]

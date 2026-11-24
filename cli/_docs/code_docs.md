@@ -28,6 +28,11 @@ registration identity and mode. Reuses the bounded verifier process, original
 repository observation and registration readback. Structured body results go
 to stdout without modifying project source.
 
+Add `--flow EXACT_OCCURRENCE` to the existing Go scalar body invocation to
+inspect one lowered body. Copy the exact `binding` from its original receipt.
+A changed source or producer can make the occurrence unavailable. The report
+retains both the original body receipt and the scoped flow disposition.
+
 ### [`go_observation_command.rs`](../_code/go_observation_command.rs)
 
 Runs the explicitly selected, digest-pinned Go collector with the shared bounded subprocess supervisor. Returns the independent native observation projection after source and authority revalidation.
@@ -637,3 +642,8 @@ An admitted body with a conditional output bound appears as `LOWERED` and
 inferred domain remains unavailable. Unsupported syntax or scope has an
 explicit unavailable disposition. The observation reports unproven runtime
 argument types, compile-only execution, and no assessment.
+
+For direct data movement in a Python scalar body, add `--flow` to the
+explicit scalar invocation. The original scalar receipt remains available in
+the returned envelope. Condition inputs are listed separately from the
+unsupported control-influence analysis.

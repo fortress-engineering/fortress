@@ -7,6 +7,7 @@ use std::time::Duration;
 
 use fortress_core::go_observation::{
     GoCollectorPin, GoObservationError, GoPackageSelection, observe_go_native_body,
+    observe_go_native_body_flow,
 };
 use fortress_core::portable::{canonical, digest};
 use fortress_core::wire::{
@@ -48,7 +49,7 @@ pub(super) fn run<O: Write, E: Write>(
         Err(failure) => {
             writeln!(
                 error,
-                "Go body observation failed: {}\nusage: fortress psm --observe-go-body project host-registration directory package-path go-version target-os target-arch",
+                "Go body observation failed: {}\nusage: fortress psm --observe-go-body project host-registration directory package-path go-version target-os target-arch [--flow exact-occurrence]",
                 readable_text(&failure)
             )?;
             Ok(super::EXIT_USAGE)
@@ -65,11 +66,17 @@ fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
         go_version,
         target_os,
         target_arch,
+        mode @ ..,
     ] = arguments
     else {
         return Err(
             "Explicit source, trusted host registration and package context are required.".into(),
         );
+    };
+    let occurrence = match mode {
+        [] => None,
+        [flag, binding] if flag == "--flow" => Some(binding.as_str()),
+        _ => return Err("Expected an exact flow occurrence selection.".into()),
     };
     let root = Path::new(root)
         .canonicalize()
@@ -132,7 +139,7 @@ fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
         target_os,
         target_arch,
     };
-    let result = observe_go_native_body(&root, selection, &pin, |input| {
+    let launch = |input: &[u8]| {
         let (stdout, status) = super::verifier_process::run_pinned_input(
             command,
             input.to_vec(),
@@ -146,12 +153,31 @@ fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
             ));
         }
         Ok(stdout)
-    })
+    };
+    let (result, flow) = if let Some(binding) = occurrence {
+        observe_go_native_body_flow(&root, selection, &pin, binding, launch)
+    } else {
+        observe_go_native_body(&root, selection, &pin, launch).map(|result| (result, None))
+    }
     .map_err(|failure| failure.to_string())?;
     super::verifier_process::require_external_asset(registration, &root)?;
     if super::provider_command::read_bounded(registration, REGISTRATION_LIMIT)? != original {
         return Err("SOURCE_DRIFT: Native collector registration changed.".into());
     }
     let projection = serde_json::to_value(result).map_err(|failure| failure.to_string())?;
-    canonical(&projection).map_err(|failure| failure.to_string())
+    let report = if let Some(binding) = occurrence {
+        json!({
+            "$schema":"urn:fortress:derived:v1:native-scalar-flow-inspection",
+            "schema_version":1,
+            "language":"go",
+            "scope":"SCOPED_EXPLICIT_TRANSFERS",
+            "requested_occurrence":binding,
+            "selection":if flow.is_some() {"BOUND"} else {"OCCURRENCE_UNAVAILABLE"},
+            "native_receipt":projection,
+            "flow":flow,
+        })
+    } else {
+        projection
+    };
+    canonical(&report).map_err(|failure| failure.to_string())
 }

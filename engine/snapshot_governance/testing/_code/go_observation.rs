@@ -375,6 +375,55 @@ mod bodies {
         assert_ne!(rows[8]["span"], rows[9]["span"]);
     }
 
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R28-021`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R28
+    #[test]
+    fn flow_for_exact_go_occurrence_keeps_return_and_condition_separate() {
+        use fortress_core::go_observation::observe_go_native_body_flow;
+        let (fixture, selection) = setup("body-flow");
+        let original = observe_go_native_body(&fixture.root, selection, &PIN, |request| {
+            Ok(replay(request))
+        })
+        .unwrap();
+        let original = serde_json::to_value(original).unwrap();
+        let binding = original["functions"][0]["binding"].as_str().unwrap();
+        let inspect = |binding| {
+            observe_go_native_body_flow(&fixture.root, selection, &PIN, binding, |request| {
+                Ok(replay(request))
+            })
+        };
+        let (retained, observed) = inspect(binding).unwrap();
+        assert_eq!(serde_json::to_value(retained).unwrap(), original);
+        let observed = observed.unwrap();
+        assert_eq!(observed.explicit_edge_count(), Some(1));
+        let body = serde_json::to_value(&observed).unwrap();
+        assert_eq!(body["occurrence_ref"], binding);
+        assert_eq!(
+            body["facts"]["explicit_data_edges"][0]["producer"]["name"],
+            "b"
+        );
+        assert_eq!(
+            body["facts"]["explicit_data_edges"][0]["consumer"]["role"],
+            "return"
+        );
+        assert_eq!(
+            body["facts"]["condition_inputs"][0]["sources"][0]["name"],
+            "b"
+        );
+        assert_eq!(body["control_influence_coverage"], "UNSUPPORTED");
+        assert_eq!(body["classification_authority"], "UNKNOWN");
+        let stale = format!("native_body_occurrence:v1:sha256:{}", "0".repeat(64));
+        assert!(inspect(&stale).unwrap().1.is_none());
+        let malformed =
+            observe_go_native_body_flow(&fixture.root, selection, &PIN, "invalid", |_| {
+                panic!("invalid selection refuses before dispatch")
+            });
+        assert!(matches!(
+            malformed,
+            Err(GoObservationError::InvalidTrustedBinding)
+        ));
+    }
+
     /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R28-010`
     /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R28
     #[test]

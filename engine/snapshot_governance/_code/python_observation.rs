@@ -5,6 +5,7 @@ use std::fmt::{self, Display, Formatter};
 use std::path::Path;
 
 use crate::affected_analysis::sha256;
+use crate::information_flow::{NativeScalarFlowObservation, observe_native_scalar_flow};
 use crate::native_observation::{NativeSource, NativeSourceError};
 pub use crate::program_semantics::native_body::NativeBodyOutcome;
 use crate::project::EvaluationKey;
@@ -418,6 +419,39 @@ pub fn observe_python_scalar(
     producer: &PythonScalarProducer,
     exchange: impl FnOnce(Vec<u8>) -> Result<Vec<u8>, PythonObservationError>,
 ) -> Result<ActualPythonScalarObservation, PythonObservationError> {
+    observe_scalar_with(project_root, subject, producer, exchange, |_| ())
+        .map(|(observation, ())| observation)
+}
+
+/// Observes scoped direct data movement for the exact admitted Python scalar subject.
+///
+/// The independently selected subject, host and compile-only profile retain
+/// their original bindings. Physical source is revalidated after projection.
+///
+/// # Errors
+/// Refuses unavailable authority, stale physical source or incompatible worker output.
+pub fn observe_python_scalar_flow(
+    project_root: &Path,
+    subject: &PythonScalarSubject,
+    producer: &PythonScalarProducer,
+    exchange: impl FnOnce(Vec<u8>) -> Result<Vec<u8>, PythonObservationError>,
+) -> Result<(ActualPythonScalarObservation, NativeScalarFlowObservation), PythonObservationError> {
+    observe_scalar_with(
+        project_root,
+        subject,
+        producer,
+        exchange,
+        observe_native_scalar_flow,
+    )
+}
+
+fn observe_scalar_with<T>(
+    project_root: &Path,
+    subject: &PythonScalarSubject,
+    producer: &PythonScalarProducer,
+    exchange: impl FnOnce(Vec<u8>) -> Result<Vec<u8>, PythonObservationError>,
+    project: impl FnOnce(&NativeBodyOutcome) -> T,
+) -> Result<(ActualPythonScalarObservation, T), PythonObservationError> {
     let source = NativeSource::capture(project_root, "Python")?;
     let context =
         serde_json_canonicalizer::to_vec(&("fortress-python-scalar-context-v1", subject, producer))
@@ -450,13 +484,17 @@ pub fn observe_python_scalar(
         NativeBodyOutcome::Lowered(body) => infer_native_scalar_output(body),
         NativeBodyOutcome::Unavailable(_) => None,
     };
+    let projected = project(&outcome);
     source.revalidate()?;
-    Ok(ActualPythonScalarObservation {
-        evaluation_key,
-        request,
-        outcome,
-        inferred_output,
-    })
+    Ok((
+        ActualPythonScalarObservation {
+            evaluation_key,
+            request,
+            outcome,
+            inferred_output,
+        },
+        projected,
+    ))
 }
 
 impl From<PythonScalarError> for PythonObservationError {

@@ -1,0 +1,454 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v1:native-scalar-flow-inspection",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "language",
+    "scope",
+    "requested_occurrence",
+    "selection",
+    "native_receipt",
+    "flow"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:derived:v1:native-scalar-flow-inspection"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "language": {
+      "enum": [
+        "go",
+        "python"
+      ]
+    },
+    "scope": {
+      "const": "SCOPED_EXPLICIT_TRANSFERS"
+    },
+    "requested_occurrence": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/occurrence"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "selection": {
+      "enum": [
+        "BOUND",
+        "OCCURRENCE_UNAVAILABLE"
+      ]
+    },
+    "native_receipt": {
+      "oneOf": [
+        {
+          "$ref": "urn:fortress:derived:v1:go-native-body"
+        },
+        {
+          "$ref": "urn:fortress:derived:v1:python-scalar-observation"
+        }
+      ]
+    },
+    "flow": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/flow"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "language": {
+            "const": "go"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "native_receipt": {
+            "$ref": "urn:fortress:derived:v1:go-native-body"
+          },
+          "requested_occurrence": {
+            "$ref": "#/$defs/occurrence"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "language": {
+            "const": "python"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "native_receipt": {
+            "$ref": "urn:fortress:derived:v1:python-scalar-observation"
+          },
+          "requested_occurrence": {
+            "type": "null"
+          },
+          "selection": {
+            "const": "BOUND"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "selection": {
+            "const": "BOUND"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "flow": {
+            "$ref": "#/$defs/flow"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "selection": {
+            "const": "OCCURRENCE_UNAVAILABLE"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "flow": {
+            "type": "null"
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "occurrence": {
+      "type": "string",
+      "pattern": "^native_body_occurrence:v1:sha256:[0-9a-f]{64}$"
+    },
+    "projection": {
+      "type": "string",
+      "pattern": "^native_scalar_flow_observation:v1:sha256:[0-9a-f]{64}$"
+    },
+    "location": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "line",
+        "column"
+      ],
+      "properties": {
+        "line": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "column": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "node": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "symbol",
+        "role",
+        "name"
+      ],
+      "properties": {
+        "symbol": {
+          "$ref": "#/$defs/occurrence"
+        },
+        "role": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        }
+      }
+    },
+    "edge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "producer",
+        "consumer",
+        "kind",
+        "path",
+        "line",
+        "column"
+      ],
+      "properties": {
+        "producer": {
+          "$ref": "#/$defs/node"
+        },
+        "consumer": {
+          "$ref": "#/$defs/node"
+        },
+        "kind": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4096
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "column": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "condition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sources",
+        "provenance"
+      ],
+      "properties": {
+        "sources": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          },
+          "maxItems": 4096
+        },
+        "provenance": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "path",
+            "location",
+            "symbol_context",
+            "analyzer",
+            "analyzer_semantic_version"
+          ],
+          "properties": {
+            "path": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            },
+            "location": {
+              "$ref": "#/$defs/location"
+            },
+            "symbol_context": {
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/occurrence"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "analyzer": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            },
+            "analyzer_semantic_version": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            }
+          }
+        }
+      }
+    },
+    "flow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "occurrence_ref",
+        "projection_ref",
+        "explicit_data_coverage",
+        "control_influence_coverage",
+        "classification_authority",
+        "facts"
+      ],
+      "properties": {
+        "schema": {
+          "const": "fortress:native-scalar-flow-observation:1"
+        },
+        "occurrence_ref": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/occurrence"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "projection_ref": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/projection"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "explicit_data_coverage": {
+          "enum": [
+            "PARTIAL",
+            "UNKNOWN"
+          ]
+        },
+        "control_influence_coverage": {
+          "const": "UNSUPPORTED"
+        },
+        "classification_authority": {
+          "const": "UNKNOWN"
+        },
+        "facts": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "status",
+                "explicit_data_edges",
+                "condition_inputs"
+              ],
+              "properties": {
+                "status": {
+                  "const": "OBSERVED"
+                },
+                "explicit_data_edges": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/edge"
+                  },
+                  "maxItems": 4096
+                },
+                "condition_inputs": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/condition"
+                  },
+                  "maxItems": 1024
+                }
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "status",
+                "code",
+                "location"
+              ],
+              "properties": {
+                "status": {
+                  "const": "UNAVAILABLE"
+                },
+                "code": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4096
+                },
+                "location": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/$defs/location"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "explicit_data_coverage": {
+                "const": "PARTIAL"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "facts": {
+                "properties": {
+                  "status": {
+                    "const": "OBSERVED"
+                  }
+                }
+              },
+              "occurrence_ref": {
+                "$ref": "#/$defs/occurrence"
+              },
+              "projection_ref": {
+                "$ref": "#/$defs/projection"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "explicit_data_coverage": {
+                "const": "UNKNOWN"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "facts": {
+                "properties": {
+                  "status": {
+                    "const": "UNAVAILABLE"
+                  }
+                }
+              },
+              "projection_ref": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
