@@ -274,7 +274,8 @@ Defines the actual-source finite Boolean return-sensitivity report for Go and
 Python. A complete report contains an exact occurrence, the retained dependency
 occurrences, and one parameter comparison per declaration. Zero parameters
 yield one valuation and an empty comparison list. Incomplete closures retain
-an explicit reason and omit parameter outcomes.
+an explicit reason and omit parameter outcomes. Reasons use the established
+native diagnostic bounds.
 
 ### [`native_call_topology_schema_v1.json`](../_data/native_call_topology_schema_v1.json)
 

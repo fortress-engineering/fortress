@@ -355,8 +355,7 @@
               ]
             },
             "reason": {
-              "type": "string",
-              "pattern": "^[A-Z][A-Z0-9_]{0,63}$"
+              "$ref": "urn:fortress:derived:v1:python-native-call-return#/properties/diagnostic/anyOf/1/properties/code"
             }
           }
         }
