@@ -4246,7 +4246,7 @@ fn audit_repository_with_prepared(
     unsupported_analysis.dedup();
     Ok((
         result_from_evaluation(
-            &prepared,
+            prepared,
             &evaluation,
             &architecture_diagnostics,
             unsupported_analysis,
@@ -5369,6 +5369,35 @@ fn prepare_analysis_from_view(view: SourceView) -> Result<PreparedAnalysis, Audi
     prepare_analysis_from_observed(project, observation, observed_files)
 }
 
+fn project_native_artifact_ownership(
+    files: &SourceView,
+    project: &LoadedProjectAuthority,
+    known_modules: &BTreeSet<String>,
+    rust_ownership: &SourceOwnershipResolution,
+) -> (Vec<SourceOwnership>, Vec<SourceOwnershipDiagnostic>) {
+    let mut diagnostics = rust_ownership.diagnostics().to_vec();
+    let logical_modules = project
+        .configuration
+        .as_ref()
+        .map_or(&[][..], ProjectConfiguration::logical_modules);
+    if project.state != ProjectGovernanceState::Declared || logical_modules.is_empty() {
+        return (Vec::new(), diagnostics);
+    }
+    let selected = resolve_inventory_ownership_with_logical_modules(
+        files
+            .keys()
+            .map(String::as_str)
+            .filter(|path| is_native_artifact_path(path)),
+        &[],
+        logical_modules,
+        known_modules,
+    );
+    diagnostics.extend_from_slice(selected.diagnostics());
+    diagnostics.sort();
+    diagnostics.dedup();
+    (selected.ownerships().to_vec(), diagnostics)
+}
+
 fn prepare_analysis_from_observed(
     project: LoadedProjectAuthority,
     observation: RepositoryObservation,
@@ -5436,23 +5465,12 @@ fn prepare_analysis_from_observed(
         &known_module_ids,
     );
     let ownerships = ownership_resolution.ownerships().to_vec();
-    let mut ownership_diagnostics = ownership_resolution.diagnostics().to_vec();
-    let mut native_source_ownerships = Vec::new();
-    if project.state == ProjectGovernanceState::Declared && !logical_modules.is_empty() {
-        let native = resolve_inventory_ownership_with_logical_modules(
-            observed_files
-                .keys()
-                .map(String::as_str)
-                .filter(|path| is_native_artifact_path(path)),
-            &[],
-            logical_modules,
-            &known_module_ids,
-        );
-        native_source_ownerships.extend_from_slice(native.ownerships());
-        ownership_diagnostics.extend_from_slice(native.diagnostics());
-        ownership_diagnostics.sort();
-        ownership_diagnostics.dedup();
-    }
+    let (native_source_ownerships, ownership_diagnostics) = project_native_artifact_ownership(
+        &observed_files,
+        &project,
+        &known_module_ids,
+        &ownership_resolution,
+    );
     let module_ids = ccg_compilation
         .graph()
         .map(|ccg| ccg.modules().keys().cloned().collect::<BTreeSet<_>>())
