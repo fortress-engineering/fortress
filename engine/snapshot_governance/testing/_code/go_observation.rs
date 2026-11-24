@@ -231,11 +231,11 @@ mod bound_call_bodies {
         target_arch: "amd64",
     };
 
-    fn fixture(name: &str) -> (Fixture, Value) {
+    fn fixture(name: &str, label: &str) -> (Fixture, Value) {
         let all: Value =
             serde_json::from_slice(include_bytes!("../_data/go_call_fixture_v1.json")).unwrap();
         let row = &all[name];
-        let fixture = Fixture::new(name);
+        let fixture = Fixture::new(label);
         fs::write(
             fixture.root.join("fixture.go"),
             row["source"].as_str().unwrap(),
@@ -259,7 +259,7 @@ mod bound_call_bodies {
             ("fixed_free_function", "inner"),
             ("recursive_target", "outer"),
         ] {
-            let (project, records) = fixture(case);
+            let (project, records) = fixture(case, case);
             let inspect = || {
                 observe_go_native_bound_calls(&project.root, SELECTION, &PIN, |request| {
                     Ok(receipt(request, &records, "bound"))
@@ -296,7 +296,7 @@ mod bound_call_bodies {
     /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R33
     #[test]
     fn go_bound_call_declarations_preserve_dynamic_and_legacy_modes() {
-        let (project, data) = fixture("function_value_can_change");
+        let (project, data) = fixture("function_value_can_change", "function_value_can_change");
         let result = observe_go_native_bound_calls(&project.root, SELECTION, &PIN, |request| {
             Ok(receipt(request, &data, "bound"))
         })
@@ -327,7 +327,7 @@ mod bound_call_bodies {
     /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R33
     #[test]
     fn go_bound_call_declarations_refuse_forged_locations_and_stale_source() {
-        let (project, data) = fixture("fixed_free_function");
+        let (project, data) = fixture("fixed_free_function", "forged_bound_call");
         for (pointer, value) in [
             (
                 "/functions/1/body/0/value/call/target/span/path",
