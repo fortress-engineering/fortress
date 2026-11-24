@@ -79,6 +79,9 @@ pub mod migration_adapter;
 pub mod migration_governance;
 #[path = "../project_model/_code/module_index.rs"]
 pub mod module_index;
+#[cfg(test)]
+#[path = "../program_semantics/testing/_code/native_callable_binding.rs"]
+mod native_callable_binding_tests;
 #[path = "../snapshot_governance/_code/native_observation.rs"]
 mod native_observation;
 #[path = "../snapshot_governance/_code/native_regions.rs"]
