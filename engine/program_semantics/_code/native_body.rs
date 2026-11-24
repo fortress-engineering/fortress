@@ -134,6 +134,7 @@ impl NativeBodyLimitation {
 /// symbol. No deployed PSM version automatically consumes this result.
 #[derive(Debug)]
 pub struct NativeScalarBody {
+    language: NativeBodyLanguage,
     binding: String,
     body: ProgramBody,
     parameters: Vec<(String, NativeScalar)>,
@@ -142,6 +143,10 @@ pub struct NativeScalarBody {
 }
 
 impl NativeScalarBody {
+    pub(crate) const fn integer_scalar(&self) -> NativeScalar {
+        self.language.integer()
+    }
+
     /// Returns the digest-bound occurrence identity.
     #[must_use]
     pub fn binding(&self) -> &str {
@@ -712,6 +717,7 @@ impl NativeBodyInput<'_> {
         let (statements, _) = lowering.statements(body, &declaration)?;
         let provenance = lowering.provenance(&symbol.span)?;
         Ok(NativeBodyOutcome::Lowered(Box::new(NativeScalarBody {
+            language: self.language,
             body: ProgramBody {
                 symbol: binding.clone(),
                 statements,

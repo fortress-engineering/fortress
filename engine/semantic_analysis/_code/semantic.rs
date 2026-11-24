@@ -1525,10 +1525,24 @@ impl<'a> AnalysisContext<'a> {
                     condition,
                     then_branch,
                     else_branch,
-                    provenance: _,
+                    provenance,
                 } => {
-                    let (then_environment, else_environment) =
+                    let (mut then_environment, mut else_environment) =
                         Self::refine_condition(condition, &environment);
+                    if matches!(symbol, BodySubject::Native(_))
+                        && let SemanticDomain::Boolean { values, .. } = self.evaluate_expression(
+                            symbol,
+                            condition,
+                            Some(NATIVE_BOOL),
+                            &environment,
+                            outputs,
+                            state,
+                            provenance,
+                        )
+                    {
+                        then_environment.reachable &= values.contains(&true);
+                        else_environment.reachable &= values.contains(&false);
+                    }
                     let then_result = self.interpret_statements(
                         symbol,
                         then_branch,
@@ -1658,18 +1672,28 @@ impl<'a> AnalysisContext<'a> {
                 .cloned()
                 .unwrap_or_else(|| self.static_domain(fallback_type)),
             ProgramExpression::Boolean { value } => {
-                SemanticDomain::boolean(fallback_type, [*value])
+                let type_id = match symbol {
+                    BodySubject::Native(_) => NATIVE_BOOL,
+                    BodySubject::Governed(_) => fallback_type,
+                };
+                SemanticDomain::boolean(type_id, [*value])
             }
-            ProgramExpression::Integer { value } => parse_integer(value).map_or_else(
-                || self.static_domain(fallback_type),
-                |value| {
-                    SemanticDomain::integer(
-                        fallback_type,
-                        [IntegerInterval::new(value, value).expect("equal bounds are valid")],
-                        [],
-                    )
-                },
-            ),
+            ProgramExpression::Integer { value } => {
+                let type_id = match symbol {
+                    BodySubject::Native(body) => native_type_id(body.integer_scalar()),
+                    BodySubject::Governed(_) => fallback_type,
+                };
+                parse_integer(value).map_or_else(
+                    || self.static_domain(type_id),
+                    |value| {
+                        SemanticDomain::integer(
+                            type_id,
+                            [IntegerInterval::new(value, value).expect("equal bounds are valid")],
+                            [],
+                        )
+                    },
+                )
+            }
             ProgramExpression::Variant { name } => {
                 if last_path_segment(name) == "None"
                     && let Some(SemanticType::Option { value }) =
@@ -2248,6 +2272,9 @@ impl<'a> AnalysisContext<'a> {
         );
         match operator {
             "==" | "!=" | "<" | "<=" | ">" | ">=" => {
+                if matches!(symbol, BodySubject::Native(_)) {
+                    return native_comparison(operator, &left_domain, &right_domain);
+                }
                 SemanticDomain::boolean(expected_type, [false, true])
             }
             "/" | "%" => {
@@ -2582,6 +2609,68 @@ fn refine_wrapper_binding(name: &str, predicate: &str, truth: bool, environment:
         _ => return,
     };
     environment.values.insert(name.into(), refined);
+}
+
+fn native_comparison(
+    operator: &str,
+    left: &SemanticDomain,
+    right: &SemanticDomain,
+) -> SemanticDomain {
+    match (left, right) {
+        (
+            SemanticDomain::Boolean {
+                type_id: left_id,
+                values: left_values,
+            },
+            SemanticDomain::Boolean {
+                type_id: right_id,
+                values: right_values,
+            },
+        ) if left_id == NATIVE_BOOL && right_id == left_id && matches!(operator, "==" | "!=") => {
+            let equal = operator == "==";
+            return SemanticDomain::boolean(
+                NATIVE_BOOL,
+                left_values.iter().flat_map(|left| {
+                    right_values
+                        .iter()
+                        .map(move |right| (left == right) == equal)
+                }),
+            );
+        }
+        (
+            SemanticDomain::Integer {
+                type_id: left_id,
+                intervals: left_values,
+                excluded: left_excluded,
+            },
+            SemanticDomain::Integer {
+                type_id: right_id,
+                intervals: right_values,
+                excluded: right_excluded,
+            },
+        ) if left_id == right_id
+            && matches!(left_id.as_str(), NATIVE_GO_INT64 | NATIVE_PYTHON_LITERAL)
+            && left_excluded.is_empty()
+            && right_excluded.is_empty()
+            && let ([left], [right]) = (left_values.as_slice(), right_values.as_slice())
+            && left.lower() == left.upper()
+            && right.lower() == right.upper() =>
+        {
+            let (left, right) = (left.lower(), right.lower());
+            let result = match operator {
+                "==" => left == right,
+                "!=" => left != right,
+                "<" => left < right,
+                "<=" => left <= right,
+                ">" => left > right,
+                ">=" => left >= right,
+                _ => return SemanticDomain::boolean(NATIVE_BOOL, [false, true]),
+            };
+            return SemanticDomain::boolean(NATIVE_BOOL, [result]);
+        }
+        _ => {}
+    }
+    SemanticDomain::boolean(NATIVE_BOOL, [false, true])
 }
 
 fn refine_comparison(
