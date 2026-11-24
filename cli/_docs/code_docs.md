@@ -612,6 +612,14 @@ The reproducible `native_edition_upgrade_reuses_review_and_preserves_original_so
 
 ### [`python_observe_command.rs`](../_code/python_observe_command.rs)
 
+Run `fortress source-artifacts --observe-python-project PROJECT PYPROJECT_PATH`
+to inspect selected static declarations from an explicit repository-relative
+pyproject.toml. It includes exact identities for conventional lock files and a
+colocated environment marker when observed. Runtime and dependency selection
+remain unestablished. No Python interpreter, packaging backend, or project
+command runs.
+
+
 The explicit Python mode accepts host-owned registration and worker files outside the candidate repository. Independently select the installed CPython image and its protected runtime-library dependencies. Run the same reviewed worker with the selected interpreter's `-I -S -B --describe-runtime` entry to inspect the runtime descriptor before trusting it. The invocation is `PYTHON -I -S -B WORKER --describe-runtime`. The runtime reference is the SHA-256 of the canonical descriptor without its terminal newline. File digests use the original bytes. The trusted registration fields are recorded in [CLI data documentation](data_docs.md).
 
 The one-process exchange releases exact source only after the bounded worker emits the expected readiness frame. Linux checks 96 MiB address-space and one second CPU limits. Windows verifies a 96 MiB nested Job commit limit and one active process, with the parent's five-second wall deadline. Hard Windows CPU enforcement remains unavailable in the tested nested configuration. Dependency custody stays with the independently selected host. The worker does not evaluate, import or build the project.

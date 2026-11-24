@@ -676,3 +676,12 @@ the separately verified installed standard-library recipe. It uses the
 existing Operation Summary catalog to project scoped positive lower facts.
 Unknown context, effects outside the scope, and runtime execution remain
 explicit. The original physical view is revalidated before publication.
+
+### [`python_project_observation.rs`](../_code/python_project_observation.rs)
+
+Captures the ordinary physical source and original authority using native
+observation. Inspects one explicit pyproject.toml and fingerprints conventional
+sibling lock files and a colocated environment marker when present in the
+admitted view. Revalidates exact source and directory identity before returning
+the report. File presence does not establish lock resolution, interpreter
+selection, ownership, or permission to execute a backend.

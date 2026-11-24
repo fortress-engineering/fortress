@@ -346,6 +346,210 @@ mod regions {
     }
 }
 
+mod project_metadata {
+    use super::{Fixture, fs, json};
+    use fortress_core::portable::{canonical, digest};
+    use fortress_core::python_project_observation::{
+        PythonProjectObservationError, observe_python_project_metadata,
+    };
+    use serde_json::Value;
+
+    const MANIFEST: &str = "packages/native lib/pyproject.toml";
+    const STATIC: &[u8] =
+        b"[project]\r\nname = 'density'\r\nversion = '1.0.0'\r\nrequires-python = '>=3.12'\r\n";
+    const DYNAMIC: &[u8] = b"[project]\nname = 'density'\ndynamic = ['version', 'dependencies']\n";
+    const BACKEND: &[u8] = b"[build-system]\nrequires = ['test-backend>=1']\nbuild-backend = 'test_backend.core'\nbackend-path = ['../untrusted']\n[project]\nname = 'density'\nversion = '1.0'\n";
+
+    fn write(fixture: &Fixture, relative: &str, bytes: &[u8]) {
+        let file = fixture.root.join(relative);
+        fs::create_dir_all(file.parent().unwrap()).unwrap();
+        fs::write(file, bytes).unwrap();
+    }
+
+    fn observe(fixture: &Fixture) -> Value {
+        serde_json::to_value(observe_python_project_metadata(&fixture.root, MANIFEST).unwrap())
+            .unwrap()
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R31-001`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R31
+    #[test]
+    fn python_project_metadata_binds_declarations_and_exact_ordinary_inputs() {
+        let fixture = Fixture::new("project-metadata");
+        write(&fixture, MANIFEST, STATIC);
+        write(
+            &fixture,
+            "packages/native lib/pylock.toml",
+            b"sample lock bytes",
+        );
+        write(
+            &fixture,
+            "packages/native lib/uv.lock",
+            b"second lock input",
+        );
+        write(
+            &fixture,
+            "packages/native lib/.venv/pyvenv.cfg",
+            b"home = /not/a/runtime",
+        );
+        write(&fixture, "other/poetry.lock", b"outside selected scope");
+        let origin = observe(&fixture);
+        let original_bytes = canonical(&origin).unwrap();
+        assert_eq!(original_bytes, canonical(&observe(&fixture)).unwrap());
+        assert_eq!(origin["scope"], "STATIC_DECLARATIONS_ONLY");
+        assert_eq!(origin["manifest_path"], MANIFEST);
+        assert_eq!(origin["manifest_sha256"], digest(STATIC));
+        assert_eq!(origin["runtime_selection"], "UNESTABLISHED");
+        assert_eq!(
+            origin["metadata"],
+            json!({"status":"DECLARED","project":{"name":"density","version":"1.0.0",
+                "requires_python":">=3.12","dynamic":[]},"build_system":null})
+        );
+        assert_eq!(
+            origin["lock_files"],
+            json!([
+                {"path":"packages/native lib/pylock.toml","sha256":digest(b"sample lock bytes")},
+                {"path":"packages/native lib/uv.lock","sha256":digest(b"second lock input")}
+            ])
+        );
+        assert_eq!(
+            origin["environment_marker"],
+            json!({"path":"packages/native lib/.venv/pyvenv.cfg","sha256":digest(b"home = /not/a/runtime")})
+        );
+        assert!(
+            !String::from_utf8(original_bytes.clone())
+                .unwrap()
+                .contains("/not/a/runtime")
+        );
+        let schema: Value = serde_json::from_str(include_str!(
+            "../../_data/python_project_metadata_schema_v1.json"
+        ))
+        .unwrap();
+        let validator = jsonschema::validator_for(&schema).unwrap();
+        assert!(validator.is_valid(&origin));
+        let mut false_runtime = origin.clone();
+        false_runtime["runtime_selection"] = json!("SELECTED");
+        assert!(!validator.is_valid(&false_runtime));
+        write(
+            &fixture,
+            "packages/native lib/uv.lock",
+            b"changed lock input",
+        );
+        let changed = observe(&fixture);
+        assert_ne!(changed["source_fingerprint"], origin["source_fingerprint"]);
+        assert_ne!(changed["source_view_digest"], origin["source_view_digest"]);
+        assert_ne!(
+            changed["source_manifest_digest"],
+            origin["source_manifest_digest"]
+        );
+        assert_eq!(changed["authority_digest"], origin["authority_digest"]);
+        assert_eq!(changed["metadata"], origin["metadata"]);
+        write(
+            &fixture,
+            "packages/native lib/uv.lock",
+            b"second lock input",
+        );
+        assert_eq!(original_bytes, canonical(&observe(&fixture)).unwrap());
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R31-002`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R31
+    #[test]
+    fn python_project_metadata_leaves_dynamic_and_backend_execution_unestablished() {
+        let fixture = Fixture::new("dynamic-metadata");
+        write(&fixture, MANIFEST, DYNAMIC);
+        assert_eq!(
+            observe(&fixture)["metadata"],
+            json!({"status":"DECLARED","project":{"name":"density","version":null,
+                "requires_python":null,"dynamic":["dependencies","version"]},"build_system":null})
+        );
+        write(&fixture, MANIFEST, BACKEND);
+        let backend_path = "packages/untrusted/test_backend/core.py";
+        write(
+            &fixture,
+            backend_path,
+            b"from pathlib import Path\nPath('must-not-execute').touch()\n",
+        );
+        let report = observe(&fixture);
+        assert_eq!(
+            report["metadata"]["build_system"],
+            json!({"backend":"test_backend.core","backend_path_declared":true})
+        );
+        assert_eq!(report["runtime_selection"], "UNESTABLISHED");
+        assert!(!fixture.root.join("must-not-execute").exists());
+        assert!(
+            !fixture
+                .root
+                .join("packages/native lib/must-not-execute")
+                .exists()
+        );
+        assert_eq!(report["manifest_sha256"], digest(BACKEND));
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R31-003`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R31
+    #[test]
+    fn python_project_metadata_distinguishes_missing_invalid_and_refused_paths() {
+        let fixture = Fixture::new("invalid-metadata");
+        let missing = observe(&fixture);
+        assert_eq!(missing["metadata"], json!({"status":"MISSING"}));
+        assert!(missing["manifest_sha256"].is_null());
+        for (bytes, reason) in [
+            (
+                &b"[project]\nname = 'one'\nname = 'two'\n"[..],
+                "INVALID_TOML",
+            ),
+            (
+                &b"[project]\ndynamic = ['name','version']\n"[..],
+                "INVALID_SELECTED_PROJECT_DECLARATIONS",
+            ),
+            (
+                &b"[project]\nname = 'density'\nversion = '1'\ndynamic = ['version']\n"[..],
+                "INVALID_SELECTED_PROJECT_DECLARATIONS",
+            ),
+            (
+                &b"[project]\nname = 'density'\n"[..],
+                "INVALID_SELECTED_PROJECT_DECLARATIONS",
+            ),
+            (
+                &b"[build-system]\nrequires = 'untyped backend list'\n"[..],
+                "INVALID_SELECTED_BUILD_DECLARATIONS",
+            ),
+            (&[255u8][..], "INVALID_UTF8"),
+        ] {
+            write(&fixture, MANIFEST, bytes);
+            let actual = observe(&fixture);
+            assert_eq!(
+                actual["metadata"],
+                json!({"status":"INVALID","reason":reason})
+            );
+            assert_eq!(actual["manifest_sha256"], digest(bytes));
+        }
+        write(&fixture, MANIFEST, &vec![b' '; (128 << 10) + 1]);
+        assert_eq!(
+            observe(&fixture)["metadata"],
+            json!({"status":"UNAVAILABLE","reason":"RESOURCE_LIMIT"})
+        );
+        for unsafe_path in [
+            "../pyproject.toml",
+            "/pyproject.toml",
+            "C:/pyproject.toml",
+            "pkg\\pyproject.toml",
+            "pkg//pyproject.toml",
+            "pkg/PYPROJECT.TOML",
+            "pkg/spoofed-pyproject.toml",
+        ] {
+            assert!(
+                matches!(
+                    observe_python_project_metadata(&fixture.root, unsafe_path),
+                    Err(PythonProjectObservationError::InvalidManifestPath)
+                ),
+                "{unsafe_path}"
+            );
+        }
+    }
+}
+
 struct Fixture {
     container: PathBuf,
     root: PathBuf,

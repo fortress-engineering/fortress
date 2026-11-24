@@ -1,0 +1,295 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:fortress:derived:v1:python-project-metadata",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "scope",
+    "source_fingerprint",
+    "source_view_digest",
+    "source_manifest_digest",
+    "authority_digest",
+    "manifest_path",
+    "manifest_sha256",
+    "metadata",
+    "lock_files",
+    "environment_marker",
+    "runtime_selection"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "urn:fortress:derived:v1:python-project-metadata"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "scope": {
+      "const": "STATIC_DECLARATIONS_ONLY"
+    },
+    "source_fingerprint": {
+      "$ref": "#/$defs/sha256"
+    },
+    "source_view_digest": {
+      "$ref": "#/$defs/sha256"
+    },
+    "source_manifest_digest": {
+      "$ref": "#/$defs/sha256"
+    },
+    "authority_digest": {
+      "$ref": "#/$defs/sha256"
+    },
+    "manifest_path": {
+      "type": "string",
+      "maxLength": 4096,
+      "pattern": "(^|/)pyproject\\.toml$"
+    },
+    "manifest_sha256": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/sha256"
+        }
+      ]
+    },
+    "metadata": {
+      "$ref": "#/$defs/metadata"
+    },
+    "lock_files": {
+      "type": "array",
+      "maxItems": 5,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/file"
+      }
+    },
+    "environment_marker": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/file"
+        }
+      ]
+    },
+    "runtime_selection": {
+      "const": "UNESTABLISHED"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "metadata": {
+            "properties": {
+              "status": {
+                "const": "MISSING"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "manifest_sha256": {
+            "type": "null"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "manifest_sha256": {
+            "$ref": "#/$defs/sha256"
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "declaration": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048,
+      "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]+$"
+    },
+    "file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4098
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "metadata": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status"
+          ],
+          "properties": {
+            "status": {
+              "const": "MISSING"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "reason"
+          ],
+          "properties": {
+            "status": {
+              "const": "UNAVAILABLE"
+            },
+            "reason": {
+              "const": "RESOURCE_LIMIT"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "reason"
+          ],
+          "properties": {
+            "status": {
+              "const": "INVALID"
+            },
+            "reason": {
+              "enum": [
+                "INVALID_UTF8",
+                "INVALID_TOML",
+                "INVALID_SELECTED_PROJECT_DECLARATIONS",
+                "INVALID_SELECTED_BUILD_DECLARATIONS"
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "project",
+            "build_system"
+          ],
+          "properties": {
+            "status": {
+              "const": "DECLARED"
+            },
+            "project": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/$defs/project"
+                }
+              ]
+            },
+            "build_system": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "$ref": "#/$defs/build_system"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "project": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version",
+        "requires_python",
+        "dynamic"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/declaration"
+        },
+        "version": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/declaration"
+            }
+          ]
+        },
+        "requires_python": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/declaration"
+            }
+          ]
+        },
+        "dynamic": {
+          "type": "array",
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/declaration"
+          }
+        }
+      }
+    },
+    "build_system": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "backend",
+        "backend_path_declared"
+      ],
+      "properties": {
+        "backend": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/declaration"
+            }
+          ]
+        },
+        "backend_path_declared": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

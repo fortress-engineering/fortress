@@ -102,6 +102,9 @@ pub mod project;
 pub mod proof;
 #[path = "../snapshot_governance/_code/python_observation.rs"]
 pub mod python_observation;
+/// Exact-source inspection of static Python project declarations.
+#[path = "../snapshot_governance/_code/python_project_observation.rs"]
+pub mod python_project_observation;
 #[path = "../reference_resolution/_code/reference.rs"]
 pub mod reference_resolution;
 #[path = "../snapshot_governance/_code/resident_worker.rs"]

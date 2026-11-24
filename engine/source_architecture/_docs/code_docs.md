@@ -173,3 +173,10 @@ The worker compiles the source for contextual validation without running it.
 It reports conditional native facts before Program Semantics admission and
 does not establish actual caller argument types, runtime execution, semantic
 conformance, governance, or certification.
+
+### [`python_project_metadata.rs`](../_code/python_project_metadata.rs)
+
+Reads bounded UTF-8 TOML using the existing locked parser. Projects selected
+Python packaging declarations and preserves static, dynamic, absent, malformed,
+and resource-limited states. It executes no packaging hooks, derives no
+dependency closure, and reports no effective runtime.

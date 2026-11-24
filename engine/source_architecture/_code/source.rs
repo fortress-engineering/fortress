@@ -14,6 +14,9 @@ pub mod native_regions;
 #[path = "python_lexical.rs"]
 pub mod python_lexical;
 
+#[path = "python_project_metadata.rs"]
+pub(crate) mod python_project_metadata;
+
 #[path = "rust.rs"]
 mod rust;
 

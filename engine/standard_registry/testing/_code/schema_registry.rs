@@ -58,6 +58,7 @@ fn registered_schemas_are_unique_json_schema_documents() {
         "engine/program_semantics/_data/go_test_schema_v1.json",
         "engine/snapshot_governance/_data/go_dependency_schema_v1.json",
         "engine/snapshot_governance/_data/native_dependency_intent_schema_v1.json",
+        "engine/snapshot_governance/_data/python_project_metadata_schema_v1.json",
         "engine/snapshot_governance/_data/python_test_schema_v1.json",
         "engine/source_architecture/_data/native_region_schema_v1.json",
         "cli/_data/go_body_registration_v1.json",

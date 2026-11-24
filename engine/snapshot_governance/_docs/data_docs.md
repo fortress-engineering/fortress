@@ -254,3 +254,9 @@ disposition. Scope covers observed edges and uncertainty.
 Defines exact Go module dependency inspection with the original native receipt,
 scoped normalized sites, and authored ownership diagnostics. Unavailable native
 module observations retain a null dependency projection.
+
+### [`python_project_metadata_schema_v1.json`](../_data/python_project_metadata_schema_v1.json)
+
+Defines the static Python packaging observation and its source and authority
+binding. Its independent version leaves Python lexical, import, and canonical
+source-artifact document identities unchanged.

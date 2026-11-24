@@ -601,6 +601,15 @@
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R30-008",
             "T-AF-SNAPSHOT-GOVERNANCE-0001-R30-009"
           ]
+        },
+        {
+          "id": "AF-SNAPSHOT-GOVERNANCE-0001-R31",
+          "statement": "Explicit Python packaging metadata inspection binds one repository-relative manifest and the selected original governance to ordinary immutable source. It distinguishes static and dynamic declarations, missing inputs and unavailable or invalid data, revalidates the physical snapshot before publication, and infers no effective runtime, dependency resolution or execution authority.",
+          "tests": [
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R31-001",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R31-002",
+            "T-AF-SNAPSHOT-GOVERNANCE-0001-R31-003"
+          ]
         }
       ]
     }

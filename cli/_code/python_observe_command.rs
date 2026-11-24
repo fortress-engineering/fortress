@@ -223,6 +223,39 @@ pub(super) fn run<O: Write, E: Write>(
     }
 }
 
+pub(super) fn run_project<O: Write, E: Write>(
+    arguments: &[String],
+    output: &mut O,
+    error: &mut E,
+) -> io::Result<u8> {
+    let [project, manifest] = arguments else {
+        writeln!(
+            error,
+            "usage: fortress source-artifacts --observe-python-project PROJECT PYPROJECT_PATH"
+        )?;
+        return Ok(super::EXIT_USAGE);
+    };
+    let observation =
+        match fortress_core::python_project_observation::observe_python_project_metadata(
+            Path::new(project),
+            manifest,
+        ) {
+            Ok(result) => result,
+            Err(failure) => {
+                writeln!(
+                    error,
+                    "Python project observation failed: {}",
+                    readable_text(&failure.to_string())
+                )?;
+                return Ok(super::EXIT_USAGE);
+            }
+        };
+    let report = serde_json::to_value(observation).map_err(io::Error::other)?;
+    let bytes = canonical(&report).map_err(io::Error::other)?;
+    super::write_projection(None, output, &bytes)?;
+    Ok(super::EXIT_SUCCESS)
+}
+
 pub(super) fn run_tests<O: Write, E: Write>(
     arguments: &[String],
     output: &mut O,
