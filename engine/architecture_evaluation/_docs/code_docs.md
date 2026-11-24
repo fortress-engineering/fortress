@@ -34,6 +34,8 @@ Reconciles independent observed Module dependencies with exact direct CCG author
 
 ### [`native_filesystem_policy.rs`](../_code/native_filesystem_policy.rs)
 
+The Python view uses the same effect registry and authored precedence on the typed closed hypothesis. Its scope stays conditional and supplies no evidence of actual binding or conformance.
+
 Selects the original authored Module policy disposition for each typed modeled
 filesystem site through the existing effective-policy compiler and registered
 effect catalog. Absent and unlisted policy are distinct, and local, unresolved,

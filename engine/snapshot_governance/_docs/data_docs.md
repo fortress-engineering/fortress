@@ -22,6 +22,10 @@ Maintainers update Data through reviewed semantic changes; schema versions chang
 
 ## Files
 
+### [`python_fs_policy_v1.json`](../_data/python_fs_policy_v1.json)
+
+Defines the optional original Module policy view over the existing closed Python hypothesis. The original contract digest and exact underlying receipt remain visible. No conformance verdict or execution claim is added.
+
 ### [`python_fs_schema_v1.json`](../_data/python_fs_schema_v1.json)
 
 Defines the exact original source identities and hypothetical operation projection. Retains incomplete evidence and unknown whole-operation effects.

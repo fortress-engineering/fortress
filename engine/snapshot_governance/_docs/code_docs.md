@@ -44,6 +44,8 @@ Invalid inputs and inability to fulfill the responsibility return explicit typed
 
 ### [`python_fs_observation.rs`](../_code/python_fs_observation.rs)
 
+The opt-in policy view selects one original declared Module from the same verified capture. It projects authored policy only for an exact conditional modeled operation while retaining the underlying hypothesis unchanged.
+
 Captures the exact source and original authority before a bounded compile-only exchange. The selected import scope can veto local alternatives. When the closed shape and a separate live isolated origin agree, the existing Operation Summary catalog reports a conditional effect under explicit closed startup and invocation premises. The source-only workflow reports no actual project binding, write outcome, finding, or certificate.
 
 ### [`python_test_observation.rs`](../_code/python_test_observation.rs)

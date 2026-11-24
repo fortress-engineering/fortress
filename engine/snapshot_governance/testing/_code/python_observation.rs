@@ -1498,6 +1498,7 @@ mod filesystem {
     use fortress_core::portable::canonical;
     use fortress_core::python_observation::{
         PythonFilesystemHost, PythonFilesystemProfile, observe_hypothetical_python_filesystem,
+        observe_hypothetical_python_filesystem_policy,
     };
     use serde_json::Value;
 
@@ -1621,5 +1622,209 @@ mod filesystem {
         assert_eq!(local["status"], "LOCAL_IMPORT_OR_SCOPE_UNRESOLVED");
         assert_eq!(local["effect"], Value::Null);
         assert_eq!(local["installed_origin_ref"], Value::Null);
+    }
+
+    const EFFECT_CONTRACT: &str = "_data/logical_modules/effects/contract.json";
+    const EFFECT_OWNER: &str = "AF-PYTHON-EFFECTS-0001";
+
+    fn select_effect_owner(fixture: &Fixture) {
+        write_dependency_contract(
+            &fixture.root.join("contract.json"),
+            json!({
+                "$schema":"urn:fortress:schema:v2:module-contract", "schema_version":2,
+                "id":"PF-PYTHON-EFFECTS", "display_name":"Python effect fixture",
+                "ecosystem":{"repository_grammar":1,
+                    "standard":{"id":"STD-FORTRESS-ENGINEERING","edition":"1.0.0-draft.2"}},
+                "provides":[],"requires":[],"relationships":[],"constraints":[],
+                "guarantees":[],"features":[],"behavior":[]
+            }),
+        );
+        fixture.configure(&serde_json::to_vec(&json!({
+            "$schema":"urn:fortress:schema:v3:project-configuration", "schema_version":3,
+            "observation_exclusions":[],
+            "logical_modules":[{"module":EFFECT_OWNER,"contract":EFFECT_CONTRACT,
+                "parent":"PF-PYTHON-EFFECTS","bindings":[{"kind":"file","path":"src/effect.py"}]}]
+        })).unwrap());
+    }
+
+    fn write_effect_contract(fixture: &Fixture, allow_write: Option<bool>) -> String {
+        let output = fixture.root.join(EFFECT_CONTRACT);
+        fs::create_dir_all(output.parent().unwrap()).unwrap();
+        let mut contract = json!({
+            "$schema":"urn:fortress:schema:v2:module-contract", "schema_version":2,
+            "id":EFFECT_OWNER, "display_name":"Python effect owner",
+            "provides":[],"requires":[],"relationships":[],"constraints":[],
+            "guarantees":[],"features":[],"behavior":[]
+        });
+        if let Some(allow) = allow_write {
+            contract["$schema"] = json!("urn:fortress:schema:v3:module-contract");
+            contract["schema_version"] = json!(3);
+            let (effect_allow, effect_deny) = if allow {
+                (["filesystem.write"].as_slice(), [].as_slice())
+            } else {
+                ([].as_slice(), ["filesystem.write"].as_slice())
+            };
+            let (capability_allow, capability_deny) = if allow {
+                ([].as_slice(), ["filesystem"].as_slice())
+            } else {
+                (["filesystem"].as_slice(), [].as_slice())
+            };
+            contract["semantic_policy"] = json!({
+                "default":"UNDECLARED",
+                "capabilities":{"allow":capability_allow, "deny":capability_deny},
+                "effects":{"allow":effect_allow, "deny":effect_deny}
+            });
+        }
+        write_dependency_contract(&output, contract);
+        digest(&fs::read(output).unwrap())
+    }
+
+    fn policy_receipt(
+        fixture: &Fixture,
+        native: &Value,
+        subject: &PythonScalarSubject,
+        scope: &PythonImportScope,
+    ) -> Value {
+        let producer = selected_producer(native);
+        let report = observe_hypothetical_python_filesystem_policy(
+            &fixture.root,
+            subject,
+            scope,
+            host(&producer),
+            |request, ready| Ok(replay(native, request, ready)),
+            || Ok(ORIGIN.to_vec()),
+        )
+        .unwrap();
+        let document = serde_json::to_value(report).unwrap();
+        let schema: Value =
+            serde_json::from_str(include_str!("../../_data/python_fs_policy_v1.json")).unwrap();
+        let underlying: Value = serde_json::from_str(SCHEMA).unwrap();
+        jsonschema::draft202012::options()
+            .with_resource(
+                "urn:fortress:derived:v1:python-hypothetical-filesystem",
+                jsonschema::Resource::from_contents(underlying).unwrap(),
+            )
+            .build(&schema)
+            .unwrap()
+            .validate(&document)
+            .expect("strict hypothetical policy schema");
+        document
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R29-016`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R29
+    #[test]
+    fn hypothetical_python_filesystem_policy_projects_exact_original_owner_and_precedence() {
+        let (fixture, native, subject, scope) = make_fixture("conditional-effect-policy");
+        let run = || policy_receipt(&fixture, &native, &subject, &scope);
+        let unowned = run();
+        assert_eq!(unowned["ownership"], Value::Null);
+        assert_eq!(unowned["authored_policy"], Value::Null);
+
+        select_effect_owner(&fixture);
+        let absent_digest = write_effect_contract(&fixture, None);
+        let absent = run();
+        assert_eq!(absent["original_contract_digest"], absent_digest);
+        assert_eq!(absent["authored_policy"]["authored_policy"], "ABSENT");
+        assert_eq!(
+            absent["authored_policy"]["site"]["effects"][0]["disposition"]["status"],
+            "NO_AUTHORED_POLICY"
+        );
+        for (allow, expected) in [(false, "DENY"), (true, "ALLOW")] {
+            let contract_digest = write_effect_contract(&fixture, Some(allow));
+            let report = run();
+            assert_eq!(report["original_contract_digest"], contract_digest);
+            assert_eq!(report["original_contract_path"], EFFECT_CONTRACT);
+            assert_eq!(report["ownership"]["owner"], EFFECT_OWNER);
+            assert_eq!(report["ownership"]["source_path"], subject.source_path);
+            assert_eq!(report["runtime_reachability"], "UNKNOWN");
+            assert_eq!(report["canonical_conformance"], "NOT_EVALUATED");
+            let view = &report["authored_policy"];
+            assert_eq!(view["scope"], "HYPOTHETICAL_CLOSED_REFERENCE_ONLY");
+            let site = &view["site"];
+            assert_eq!(site["start_byte"], 63);
+            assert_eq!(site["end_byte"], 104);
+            let decision = &site["effects"][0]["disposition"]["decision"];
+            assert_eq!(decision["governing_target_kind"], "EFFECT");
+            assert_eq!(decision["governing_target"], "filesystem.write");
+            assert_eq!(decision["disposition"], expected);
+            let old = observe_hypothetical_python_filesystem(
+                &fixture.root,
+                &subject,
+                &scope,
+                host(&selected_producer(&native)),
+                |request, ready| Ok(replay(&native, request, ready)),
+                || Ok(ORIGIN.to_vec()),
+            )
+            .unwrap();
+            assert_eq!(
+                report["hypothetical_receipt"],
+                serde_json::to_value(old).unwrap()
+            );
+            assert_eq!(report, run());
+        }
+        assert!(!fixture.root.join("sentinel.bin").exists());
+    }
+
+    /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R29-017`
+    /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R29
+    #[test]
+    fn hypothetical_python_filesystem_policy_withholds_stale_or_vetoed_operation() {
+        let (fixture, native, subject, scope) = make_fixture("conditional-effect-policy-stale");
+        select_effect_owner(&fixture);
+        write_effect_contract(&fixture, Some(false));
+        let producer = selected_producer(&native);
+        let drift = observe_hypothetical_python_filesystem_policy(
+            &fixture.root,
+            &subject,
+            &scope,
+            host(&producer),
+            |request, ready| Ok(replay(&native, request, ready)),
+            || {
+                write_effect_contract(&fixture, Some(true));
+                Ok(ORIGIN.to_vec())
+            },
+        );
+        assert!(matches!(drift, Err(PythonObservationError::SourceChanged)));
+
+        let refused = observe_hypothetical_python_filesystem_policy(
+            &fixture.root,
+            &subject,
+            &scope,
+            host(&producer),
+            |request, ready| Ok(replay(&native, request, ready)),
+            || Ok(b"{}".to_vec()),
+        );
+        assert!(matches!(
+            refused,
+            Err(PythonObservationError::HostUnavailable)
+        ));
+
+        fs::write(
+            fixture.root.join("src/pathlib.py"),
+            "# original local alternative\n",
+        )
+        .unwrap();
+        let local = observe_hypothetical_python_filesystem_policy(
+            &fixture.root,
+            &subject,
+            &scope,
+            host(&producer),
+            |_, _| panic!("local alternative must veto the source worker"),
+            || panic!("local alternative must veto the origin worker"),
+        )
+        .unwrap();
+        let local = serde_json::to_value(local).unwrap();
+        assert_eq!(local["ownership"]["owner"], EFFECT_OWNER);
+        assert_eq!(local["authored_policy"], Value::Null);
+        assert_eq!(
+            local["hypothetical_receipt"]["status"],
+            "LOCAL_IMPORT_OR_SCOPE_UNRESOLVED"
+        );
+        assert_eq!(
+            local["hypothetical_receipt"]["actual_project_binding"],
+            "UNESTABLISHED"
+        );
+        assert!(!fixture.root.join("sentinel.bin").exists());
     }
 }

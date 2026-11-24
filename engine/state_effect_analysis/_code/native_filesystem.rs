@@ -270,6 +270,20 @@ pub struct HypotheticalPythonFilesystemProjection<'a> {
     upper_bound: SummaryEffectBound,
 }
 
+impl<'a> HypotheticalPythonFilesystemProjection<'a> {
+    /// Original UTF-8 byte extent of the method call under the closed model.
+    #[must_use]
+    pub const fn site(&self) -> [usize; 2] {
+        self.site
+    }
+
+    /// Existing catalog resolution under the independently selected assumptions.
+    #[must_use]
+    pub const fn catalog_disposition(&self) -> &NativeFilesystemDisposition<'a> {
+        &self.catalog_disposition
+    }
+}
+
 /// Failure at the narrow native effect observation boundary.
 #[derive(Debug)]
 pub enum NativeFilesystemError {

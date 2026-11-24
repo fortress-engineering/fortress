@@ -6,8 +6,8 @@ use super::{EffectiveEffectDecision, EffectivePolicy, compile_effective_policy};
 use crate::contract_coherency::ModuleSemanticPolicy;
 use crate::semantic_analysis::FunctionEffect;
 use crate::state_effect_analysis::{
-    NativeFilesystemDisposition, NativeFilesystemOperation, NativeFilesystemProjection,
-    registered_effect_catalog,
+    HypotheticalPythonFilesystemProjection, NativeFilesystemDisposition, NativeFilesystemOperation,
+    NativeFilesystemProjection, registered_effect_catalog,
 };
 
 /// Authored policy context for modeled sites in one exact native filesystem report.
@@ -66,18 +66,12 @@ pub(crate) fn project_native_filesystem_policy(
             continue;
         };
         let range = site.byte_range();
-        sites.push(NativeFilesystemPolicySite {
-            start_byte: range.start,
-            end_byte: range.end,
-            operation: *operation,
-            effects: effects
-                .iter()
-                .map(|&effect| NativeFilesystemPolicyEffect {
-                    effect,
-                    disposition: inspect_effect(effect, compiled.as_ref()),
-                })
-                .collect(),
-        });
+        sites.push(describe_site(
+            [range.start, range.end],
+            *operation,
+            effects,
+            compiled.as_ref(),
+        ));
     }
     NativeFilesystemPolicyProjection {
         authored_policy: if original_policy.is_some() {
@@ -88,6 +82,61 @@ pub(crate) fn project_native_filesystem_policy(
         effect_registry_sha256: compiled.map(|policy| policy.registry_digest().to_owned()),
         reachability: "UNKNOWN",
         sites,
+    }
+}
+
+/// Original policy at a single operation under the closed Python model.
+#[derive(Serialize)]
+pub(crate) struct HypotheticalPythonFilesystemPolicyProjection {
+    scope: &'static str,
+    authored_policy: &'static str,
+    effect_registry_sha256: Option<String>,
+    site: NativeFilesystemPolicySite,
+}
+
+/// Describes policy only where the conditional catalog decision models the site.
+pub(crate) fn project_hypothetical_python_filesystem_policy(
+    observation: &HypotheticalPythonFilesystemProjection<'_>,
+    original_policy: Option<&ModuleSemanticPolicy>,
+) -> Option<HypotheticalPythonFilesystemPolicyProjection> {
+    let NativeFilesystemDisposition::ModeledOperation {
+        operation, effects, ..
+    } = observation.catalog_disposition()
+    else {
+        return None;
+    };
+    let compiled = original_policy
+        .map(|policy| compile_effective_policy(policy, &registered_effect_catalog()));
+    let site = describe_site(observation.site(), *operation, effects, compiled.as_ref());
+    Some(HypotheticalPythonFilesystemPolicyProjection {
+        scope: "HYPOTHETICAL_CLOSED_REFERENCE_ONLY",
+        authored_policy: if original_policy.is_some() {
+            "PRESENT"
+        } else {
+            "ABSENT"
+        },
+        effect_registry_sha256: compiled.map(|policy| policy.registry_digest().to_owned()),
+        site,
+    })
+}
+
+fn describe_site(
+    [start_byte, end_byte]: [usize; 2],
+    operation: NativeFilesystemOperation,
+    effects: &[FunctionEffect],
+    policy: Option<&EffectivePolicy>,
+) -> NativeFilesystemPolicySite {
+    NativeFilesystemPolicySite {
+        start_byte,
+        end_byte,
+        operation,
+        effects: effects
+            .iter()
+            .map(|&effect| NativeFilesystemPolicyEffect {
+                effect,
+                disposition: inspect_effect(effect, policy),
+            })
+            .collect(),
     }
 }
 

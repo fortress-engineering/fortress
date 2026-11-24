@@ -46,8 +46,9 @@ pub use callable::{
 mod filesystem;
 pub use crate::source_architecture::python_lexical::PYTHON_FILESYSTEM_WORKER;
 pub use filesystem::{
-    HypotheticalPythonFilesystemObservation, PYTHON_ORIGIN_WORKER, PythonFilesystemHost,
-    observe_hypothetical_python_filesystem,
+    HypotheticalPythonFilesystemObservation, HypotheticalPythonFilesystemPolicyObservation,
+    PYTHON_ORIGIN_WORKER, PythonFilesystemHost, observe_hypothetical_python_filesystem,
+    observe_hypothetical_python_filesystem_policy,
 };
 
 const PYTHON_LEXICAL_CONTEXT: &str = "fortress-python-lexical-context-v1";

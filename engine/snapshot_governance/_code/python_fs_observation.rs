@@ -9,14 +9,20 @@ use super::{
     PythonFilesystemOutcome, PythonFilesystemProfile, PythonFilesystemRequest, PythonImportScope,
     PythonObservationError, PythonScalarProducer, PythonScalarSubject,
 };
+use crate::audit::NativeAuthorityScope;
+use crate::implementation_observation::SourceOwnership;
 use crate::native_observation::NativeSource;
 use crate::portable::{canonical, digest};
 use crate::program_semantics::ContextKnowledge;
 use crate::project::EvaluationKey;
+use crate::semantic_conformance::{
+    HypotheticalPythonFilesystemPolicyProjection, project_hypothetical_python_filesystem_policy,
+};
 use crate::source_architecture::python_lexical::python_static_imports::UniquePythonModule;
 use crate::state_effect_analysis::{
-    HypotheticalPythonFilesystemCall, NativeFilesystemBinding, SummaryContext,
-    native_filesystem_catalog_source_ref, project_hypothetical_python_filesystem,
+    HypotheticalPythonFilesystemCall, HypotheticalPythonFilesystemProjection,
+    NativeFilesystemBinding, SummaryContext, native_filesystem_catalog_source_ref,
+    project_hypothetical_python_filesystem,
 };
 
 /// Reviewed isolated worker that observes an installed import spec without loading it.
@@ -103,10 +109,89 @@ pub fn observe_hypothetical_python_filesystem(
     compile: impl FnOnce(&[u8], &[u8]) -> Result<Vec<u8>, PythonObservationError>,
     origin: impl FnOnce() -> Result<Vec<u8>, PythonObservationError>,
 ) -> Result<HypotheticalPythonFilesystemObservation, PythonObservationError> {
+    let source = capture(project_root, host, NativeAuthorityScope::Observation)?;
+    observe_captured(&source, subject, scope, host, compile, origin, |_| {})
+}
+
+/// Original authored policy viewed against a conditional closed reference.
+#[derive(Serialize)]
+pub struct HypotheticalPythonFilesystemPolicyObservation {
+    #[serde(rename = "$schema")]
+    schema: &'static str,
+    schema_version: u16,
+    scope: &'static str,
+    canonical_conformance: &'static str,
+    runtime_reachability: &'static str,
+    ownership: Option<SourceOwnership>,
+    original_contract_path: Option<String>,
+    original_contract_digest: Option<String>,
+    authored_policy: Option<HypotheticalPythonFilesystemPolicyProjection>,
+    hypothetical_receipt: HypotheticalPythonFilesystemObservation,
+}
+
+/// Inspects the original Module's declared policy under the closed Python model.
+///
+/// Original ownership and the operation premises share a single capture. The
+/// policy is displayed only for a modeled conditional operation. It establishes
+/// no actual project binding, reachability, conformance, or authorization.
+///
+/// # Errors
+/// Refuses unsafe or stale input, invalid host context, and malformed exchanges.
+pub fn observe_hypothetical_python_filesystem_policy(
+    project_root: &Path,
+    subject: &PythonScalarSubject,
+    scope: &PythonImportScope,
+    host: PythonFilesystemHost<'_>,
+    compile: impl FnOnce(&[u8], &[u8]) -> Result<Vec<u8>, PythonObservationError>,
+    origin: impl FnOnce() -> Result<Vec<u8>, PythonObservationError>,
+) -> Result<HypotheticalPythonFilesystemPolicyObservation, PythonObservationError> {
+    let source = capture(
+        project_root,
+        host,
+        NativeAuthorityScope::AuthoredEffect(&subject.source_path),
+    )?;
+    let owner = source.binding.native_effect_policy.as_ref();
+    let mut authored_policy = None;
+    let hypothetical_receipt =
+        observe_captured(&source, subject, scope, host, compile, origin, |effect| {
+            authored_policy = owner.and_then(|binding| {
+                project_hypothetical_python_filesystem_policy(effect, binding.policy.as_ref())
+            });
+        })?;
+    Ok(HypotheticalPythonFilesystemPolicyObservation {
+        schema: "urn:fortress:derived:v1:python-hypothetical-filesystem-policy",
+        schema_version: 1,
+        scope: "HYPOTHETICAL_CLOSED_REFERENCE_ONLY",
+        canonical_conformance: "NOT_EVALUATED",
+        runtime_reachability: "UNKNOWN",
+        ownership: owner.map(|binding| binding.ownership.clone()),
+        original_contract_path: owner.map(|binding| binding.contract_path.clone()),
+        original_contract_digest: owner.map(|binding| binding.contract_digest.clone()),
+        authored_policy,
+        hypothetical_receipt,
+    })
+}
+
+fn capture<'a>(
+    project_root: &'a Path,
+    host: PythonFilesystemHost<'_>,
+    authority: NativeAuthorityScope<'_>,
+) -> Result<NativeSource<'a>, PythonObservationError> {
     if !trusted_digest(host.supervisor_ref) {
         return Err(PythonObservationError::HostUnavailable);
     }
-    let source = NativeSource::capture(project_root, "Python")?;
+    NativeSource::capture_with(project_root, "Python", authority).map_err(Into::into)
+}
+
+fn observe_captured(
+    source: &NativeSource<'_>,
+    subject: &PythonScalarSubject,
+    scope: &PythonImportScope,
+    host: PythonFilesystemHost<'_>,
+    compile: impl FnOnce(&[u8], &[u8]) -> Result<Vec<u8>, PythonObservationError>,
+    origin: impl FnOnce() -> Result<Vec<u8>, PythonObservationError>,
+    inspect: impl FnOnce(&HypotheticalPythonFilesystemProjection<'_>),
+) -> Result<HypotheticalPythonFilesystemObservation, PythonObservationError> {
     if !subject.exact_bool_parameters.is_empty()
         || !scope.contains_source_path(&subject.source_path)
     {
@@ -163,12 +248,13 @@ pub fn observe_hypothetical_python_filesystem(
             let origin_ref = digest(&live);
             let receiver = observed.installed_receiver();
             report.effect = Some(project_closed(
-                &source,
+                source,
                 &report,
                 host,
                 &receiver,
                 &origin_ref,
                 [site.start_byte, site.end_byte],
+                inspect,
             )?);
             report.installed_origin_ref = Some(origin_ref);
             "CONDITIONAL"
@@ -197,6 +283,7 @@ fn project_closed(
     receiver: &super::PythonInstalledFilesystemReceiver,
     origin_ref: &str,
     site: [usize; 2],
+    inspect: impl FnOnce(&HypotheticalPythonFilesystemProjection<'_>),
 ) -> Result<Value, PythonObservationError> {
     let observation_ref = report
         .observation_ref
@@ -250,6 +337,7 @@ fn project_closed(
         .ok_or(PythonObservationError::SubjectIdentityMismatch)?;
     let effect = project_hypothetical_python_filesystem(binding, bytes, &proposed)
         .map_err(PythonObservationError::FilesystemEffect)?;
+    inspect(&effect);
     serde_json::to_value(effect).map_err(PythonObservationError::FilesystemJson)
 }
 

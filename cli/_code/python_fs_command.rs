@@ -9,7 +9,7 @@ use fortress_core::portable::{canonical, digest};
 use fortress_core::python_observation::{
     PYTHON_FILESYSTEM_WORKER, PYTHON_LEXICAL_WORKER, PYTHON_ORIGIN_WORKER, PythonFilesystemHost,
     PythonFilesystemProfile, PythonObservationError, PythonScalarProducer, PythonScalarSubject,
-    observe_hypothetical_python_filesystem,
+    observe_hypothetical_python_filesystem, observe_hypothetical_python_filesystem_policy,
 };
 use fortress_core::wire::{
     JsonAdmissionLimits, admit_json, parse_strict_json_bytes, readable_text,
@@ -25,7 +25,7 @@ const REGISTRATION_SCHEMA: &str = "urn:fortress:host:v1:python-filesystem-regist
 const REGISTRATION_LIMIT: usize = 16 * 1024;
 const DEADLINE: Duration = Duration::from_secs(5);
 const MODELS: &str = "ISOLATED_CLOSED_REFERENCE_V1";
-const USAGE: &str = "fortress source-artifacts --observe-python-filesystem PROJECT REGISTRATION ROOT_SCOPE ROOT_SCOPE_SHA256";
+const USAGE: &str = "fortress source-artifacts --observe-python-filesystem PROJECT REGISTRATION ROOT_SCOPE ROOT_SCOPE_SHA256 [--policy]";
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -127,7 +127,11 @@ pub(super) fn run<O: Write, E: Write>(
     output: &mut O,
     error: &mut E,
 ) -> io::Result<u8> {
-    match collect(arguments) {
+    let (arguments, policy) = match arguments.split_last() {
+        Some((flag, preceding)) if flag == "--policy" => (preceding, true),
+        _ => (arguments, false),
+    };
+    match collect(arguments, policy) {
         Ok(bytes) => {
             super::write_projection(None, output, &bytes)?;
             Ok(super::EXIT_SUCCESS)
@@ -143,7 +147,7 @@ pub(super) fn run<O: Write, E: Write>(
     }
 }
 
-fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
+fn collect(arguments: &[String], policy: bool) -> Result<Vec<u8>, String> {
     let [root, registration, scope_path, scope_ref] = arguments else {
         return Err("An exact project, trusted filesystem registration and independent import root scope are required.".into());
     };
@@ -208,21 +212,38 @@ fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
             &selected.interpreter_sha256,
         ))
     };
-    let result = observe_hypothetical_python_filesystem(
-        &root,
-        &selected.subject,
-        &scope,
-        PythonFilesystemHost {
-            producer: &producer,
-            profile,
-            supervisor_ref: &digest(&supervisor),
-        },
-        compile,
-        origin,
-    )
+    let host = PythonFilesystemHost {
+        producer: &producer,
+        profile,
+        supervisor_ref: &digest(&supervisor),
+    };
+    let value = if policy {
+        observe_hypothetical_python_filesystem_policy(
+            &root,
+            &selected.subject,
+            &scope,
+            host,
+            compile,
+            origin,
+        )
+        .and_then(|report| {
+            serde_json::to_value(report).map_err(PythonObservationError::FilesystemJson)
+        })
+    } else {
+        observe_hypothetical_python_filesystem(
+            &root,
+            &selected.subject,
+            &scope,
+            host,
+            compile,
+            origin,
+        )
+        .and_then(|report| {
+            serde_json::to_value(report).map_err(PythonObservationError::FilesystemJson)
+        })
+    }
     .map_err(|failure| failure.to_string())?;
     revalidate().map_err(|failure| failure.to_string())?;
-    let value = serde_json::to_value(result).map_err(|failure| failure.to_string())?;
     canonical(&value).map_err(|failure| failure.to_string())
 }
 

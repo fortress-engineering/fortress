@@ -660,8 +660,10 @@ worker files and registration outside the repository. Select and pin an
 independent ordinary Python import root scope.
 
 ```text
-fortress source-artifacts --observe-python-filesystem PROJECT REGISTRATION ROOT_SCOPE ROOT_SCOPE_SHA256
+fortress source-artifacts --observe-python-filesystem PROJECT REGISTRATION ROOT_SCOPE ROOT_SCOPE_SHA256 [--policy]
 ```
+
+With `--policy`, the report includes the selected original Module contract and its authored disposition for a modeled hypothetical site. Without the option, the original receipt retains its existing schema and meaning.
 
 The supported operation has one closed literal `pathlib.Path.write_bytes`
 shape. A local alternative, unsupported source, missing installed origin or
