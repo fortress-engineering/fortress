@@ -2696,6 +2696,12 @@ fn authored_python_cli_refuses_displaced_stale_or_parameterized_host_subjects() 
     let fixture = ObservationFixture::new();
     let host = ObservationFixture::new();
     let root = native_publication_fixture(&fixture.root);
+    // This control needs complete original authority before checking the host pin.
+    let config = root.join("__fortress/.fsconfig");
+    let mut original: serde_json::Value =
+        serde_json::from_slice(&fs::read(&config).unwrap()).unwrap();
+    original["observation_exclusions"] = json!([]);
+    fs::write(config, canonical(&original).unwrap()).unwrap();
     let source = b"def subject():\n    return True\n";
     for path in ["src/selected.py", "src/elsewhere.py"] {
         fs::write(root.join(path), source).unwrap();
