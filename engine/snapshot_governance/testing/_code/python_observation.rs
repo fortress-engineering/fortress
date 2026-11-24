@@ -155,10 +155,27 @@ fn exact_original_source_and_selected_authority_bind_python_observation() {
     fixture.configure(current_config);
     fs::write(
         fixture.root.join("contract.json"),
-        br#"{"$schema":"urn:fortress:schema:v2:module-contract","schema_version":2,
-"id":"PF-PYTHON-FIXTURE","display_name":"Python lexical fixture",
-"ecosystem":{"repository_grammar":1,"standard":{"id":"STD-FORTRESS-ENGINEERING","edition":"1.0.0-draft.2"}},
-"provides":[],"requires":[],"relationships":[],"constraints":[],"guarantees":[],"features":[],"behavior":[]}"#,
+        br#"{
+  "$schema": "urn:fortress:schema:v2:module-contract",
+  "schema_version": 2,
+  "id": "PF-PYTHON-FIXTURE",
+  "display_name": "Python lexical fixture",
+  "ecosystem": {
+    "repository_grammar": 1,
+    "standard": {
+      "id": "STD-FORTRESS-ENGINEERING",
+      "edition": "1.0.0-draft.2"
+    }
+  },
+  "provides": [],
+  "requires": [],
+  "relationships": [],
+  "constraints": [],
+  "guarantees": [],
+  "features": [],
+  "behavior": []
+}
+"#,
     )
     .unwrap();
     let declared = observe_python_lexical(
