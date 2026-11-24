@@ -113,7 +113,7 @@ mod lexical_calls {
             if name == "later_local_rebind" {
                 assert_eq!(
                     graph,
-                    json!({"status":"UNAVAILABLE","root":null,"reason":"CALL_TARGET_UNESTABLISHED"})
+                    &json!({"status":"UNAVAILABLE","root":null,"reason":"CALL_TARGET_UNESTABLISHED"})
                 );
             } else {
                 assert_eq!(graph["status"], "AVAILABLE");
