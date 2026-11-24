@@ -243,7 +243,11 @@ fn below(path: &str, root: &str) -> bool {
 
 fn matches_filename(path: &str) -> bool {
     let name = path.rsplit('/').next().unwrap_or_default();
-    (name.starts_with("test_") && name.ends_with(".py")) || name.ends_with("_test.py")
+    // The Python collector accepts the literal lowercase suffix on both hosts.
+    let Some((stem, "py")) = name.rsplit_once('.') else {
+        return false;
+    };
+    stem.starts_with("test_") || stem.ends_with("_test")
 }
 
 fn marker_in_scope(path: &str, roots: &[TestRoot]) -> bool {

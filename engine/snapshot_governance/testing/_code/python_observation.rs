@@ -81,6 +81,9 @@ mod test_declarations {
             "# observed hook file\n",
         )
         .unwrap();
+        for path in ["tests/test_upper_suffix.PY", "tests/upper_suffix_test.PY"] {
+            fs::write(fixture.root.join(path), "def test_unselected(): pass\n").unwrap();
+        }
         let evaluate = |roots: &[&str]| {
             let observed =
                 observe_python_tests(&fixture.root, roots, &producer, |request, bytes| {
