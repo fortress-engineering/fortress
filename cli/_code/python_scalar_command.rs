@@ -38,6 +38,10 @@ const OBSERVATION_SCHEMA: &str = "urn:fortress:derived:v1:python-scalar-observat
 const READY_SCHEMA: &str = "fortress-host/python-scalar-ready/1";
 const BOOTSTRAP_NAME: &str = "python_lexical_worker.py";
 const WORKER_NAME: &str = "python_scalar_worker.py";
+// Retain existing exact local registrations through a compatible scalar wire edition.
+const PRIOR_WORKER_BYTES: usize = 16_457;
+const PRIOR_WORKER_REF: &str =
+    "sha256:7df54ae0f4affba51191d62fbe4b12bc484ba0f7b15594222652a0a2ce2abc0f";
 const REGISTRATION_MAX: usize = 16 * 1024;
 const DEADLINE: Duration = Duration::from_secs(5);
 
@@ -57,7 +61,7 @@ struct Registration {
 }
 
 impl Registration {
-    fn load(root: &Path, path: &Path) -> Result<(Self, Vec<u8>), String> {
+    fn load(root: &Path, path: &Path) -> Result<(Self, Vec<u8>, String), String> {
         require_external_asset(path, root)?;
         let bytes = super::provider_command::read_bounded(path, REGISTRATION_MAX)?;
         admit_json(
@@ -76,26 +80,31 @@ impl Registration {
             return Err("UNSUPPORTED_PYTHON_SCALAR_REGISTRATION".into());
         }
         require_external_asset(&registration.interpreter, root)?;
-        registration.verify_worker_files(root)?;
-        Ok((registration, bytes))
+        let worker_ref = registration.verify_worker_files(root)?;
+        Ok((registration, bytes, worker_ref))
     }
 
-    fn verify_worker_files(&self, root: &Path) -> Result<(), String> {
+    fn verify_worker_files(&self, root: &Path) -> Result<String, String> {
         if self.worker.file_name() != Some(OsStr::new(WORKER_NAME))
             || self.bootstrap != self.worker.with_file_name(BOOTSTRAP_NAME)
         {
             return Err("PYTHON_SCALAR_WORKER_SIBLING_MISMATCH".into());
         }
-        for (path, expected) in [
-            (&self.worker, PYTHON_SCALAR_WORKER),
-            (&self.bootstrap, PYTHON_LEXICAL_WORKER),
-        ] {
-            require_external_asset(path, root)?;
-            if super::provider_command::read_bounded(path, expected.len())? != expected {
-                return Err("PYTHON_SCALAR_WORKER_BYTES_MISMATCH".into());
-            }
+        require_external_asset(&self.worker, root)?;
+        require_external_asset(&self.bootstrap, root)?;
+        let worker = super::provider_command::read_bounded(
+            &self.worker,
+            PYTHON_SCALAR_WORKER.len().max(PRIOR_WORKER_BYTES),
+        )?;
+        let worker_ref = digest(&worker);
+        if (worker != PYTHON_SCALAR_WORKER
+            && (worker.len() != PRIOR_WORKER_BYTES || worker_ref != PRIOR_WORKER_REF))
+            || super::provider_command::read_bounded(&self.bootstrap, PYTHON_LEXICAL_WORKER.len())?
+                != PYTHON_LEXICAL_WORKER
+        {
+            return Err("PYTHON_SCALAR_WORKER_BYTES_MISMATCH".into());
         }
-        Ok(())
+        Ok(worker_ref)
     }
 
     fn revalidate(
@@ -103,9 +112,14 @@ impl Registration {
         root: &Path,
         path: &Path,
         expected: &[u8],
+        expected_worker: &str,
     ) -> Result<(), PythonObservationError> {
-        self.verify_worker_files(root)
+        let worker_ref = self
+            .verify_worker_files(root)
             .map_err(|_| PythonObservationError::HostUnavailable)?;
+        if worker_ref != expected_worker {
+            return Err(PythonObservationError::HostUnavailable);
+        }
         require_external_asset(path, root).map_err(|_| PythonObservationError::HostUnavailable)?;
         let current = super::provider_command::read_bounded(path, REGISTRATION_MAX)
             .map_err(|_| PythonObservationError::HostUnavailable)?;
@@ -178,8 +192,8 @@ struct RegisteredScalarHost<'a> {
 
 impl<'a> RegisteredScalarHost<'a> {
     fn load(root: &'a Path, registration_path: &'a Path) -> Result<Self, String> {
-        let (registration, registration_bytes) = Registration::load(root, registration_path)?;
-        let worker_ref = digest(PYTHON_SCALAR_WORKER);
+        let (registration, registration_bytes, worker_ref) =
+            Registration::load(root, registration_path)?;
         let bootstrap_ref = digest(PYTHON_LEXICAL_WORKER);
         let producer =
             PythonScalarProducer::new(&worker_ref, &bootstrap_ref, &registration.runtime_ref)
@@ -203,8 +217,12 @@ impl<'a> RegisteredScalarHost<'a> {
     }
 
     fn revalidate(&self) -> Result<(), PythonObservationError> {
-        self.registration
-            .revalidate(self.root, self.registration_path, &self.registration_bytes)
+        self.registration.revalidate(
+            self.root,
+            self.registration_path,
+            &self.registration_bytes,
+            &self.worker_ref,
+        )
     }
 
     fn exchange(&self, request: Vec<u8>) -> Result<Vec<u8>, PythonObservationError> {

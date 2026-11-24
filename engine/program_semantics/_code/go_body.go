@@ -31,10 +31,12 @@ type bindingPattern struct {
 }
 
 type expression struct {
-	Kind     string `json:"kind"`
-	Name     string `json:"name,omitempty"`
-	Operator string `json:"operator,omitempty"`
-	Value    any    `json:"value,omitempty"`
+	Kind     string      `json:"kind"`
+	Name     string      `json:"name,omitempty"`
+	Operator string      `json:"operator,omitempty"`
+	Value    any         `json:"value,omitempty"`
+	Left     *expression `json:"left,omitempty"`
+	Right    *expression `json:"right,omitempty"`
 }
 
 type identifier struct {
@@ -184,7 +186,7 @@ func (state *observedBody) expr(node ast.Expr, expected string) (*expression, *d
 		}
 		return nil, state.error(node, "EXACT_SCALAR_LITERAL_UNAVAILABLE")
 	}
-	if goScalar(info.Type) != expected {
+	if goScalar(info.Type) != expected && !(expected == scalarBool && info.Type == types.Typ[types.UntypedBool]) {
 		return nil, state.error(node, "SCALAR_TYPE_UNAVAILABLE")
 	}
 	switch item := node.(type) {
@@ -211,10 +213,35 @@ func (state *observedBody) expr(node ast.Expr, expected string) (*expression, *d
 		if expected == scalarInt64 {
 			return nil, state.error(node, "RUNTIME_INTEGER_ARITHMETIC_UNAVAILABLE")
 		}
+		return state.comparison(item)
 	case *ast.CallExpr:
 		return nil, state.error(node, "RUNTIME_CALL_OR_CONVERSION_UNAVAILABLE")
 	}
 	return nil, state.error(node, "EXPRESSION_SEMANTICS_UNAVAILABLE")
+}
+
+func (state *observedBody) comparison(node *ast.BinaryExpr) (*expression, *diagnostic) {
+	switch node.Op {
+	case token.EQL, token.NEQ, token.LSS, token.LEQ, token.GTR, token.GEQ:
+	default:
+		return nil, state.error(node, "EXPRESSION_SEMANTICS_UNAVAILABLE")
+	}
+	scalar := goScalar(state.info.Types[node.X].Type)
+	if scalar == "" {
+		scalar = goScalar(state.info.Types[node.Y].Type)
+	}
+	if scalar != scalarInt64 && (scalar != scalarBool || node.Op != token.EQL && node.Op != token.NEQ) {
+		return nil, state.error(node, "EXPRESSION_SEMANTICS_UNAVAILABLE")
+	}
+	left, refusal := state.expr(node.X, scalar)
+	if refusal != nil {
+		return nil, refusal
+	}
+	right, refusal := state.expr(node.Y, scalar)
+	if refusal != nil {
+		return nil, refusal
+	}
+	return &expression{Kind: "binary", Operator: node.Op.String(), Left: left, Right: right}, nil
 }
 
 func (state *observedBody) block(items []ast.Stmt) ([]statement, *diagnostic) {
