@@ -24,7 +24,7 @@ const PYTHON_ANALYZER: &str = "fortress-core/python-lexical-regions-v1";
 pub enum NativeRegionInput<'a> {
     /// The closed Go declaration and call observation.
     Go(&'a GoNativeObservation),
-    /// Exact selected local-package declarations of the admitted native Go module.
+    /// Exact selected declarations and import sites of the admitted native Go module.
     GoModule(&'a GoNativeModuleObservation),
     /// The admitted Python compile-only observation.
     Python(&'a ActualPythonLexicalObservation),
@@ -200,7 +200,7 @@ fn go_module_regions(
         };
         return Ok((unavailable, receipt, Vec::new()));
     }
-    let observations = go_declarations(
+    let mut observations = go_declarations(
         path,
         admitted
             .declaration_regions(path)
@@ -214,6 +214,16 @@ fn go_module_regions(
                 )
             }),
     );
+    observations.extend(admitted.import_regions(path).map(|(package, index, line)| {
+        SourceObservation::new(
+            path,
+            SemanticRegion::Dependencies,
+            RegionCoverage::Observed,
+            GO_ANALYZER,
+            format!("{receipt}#/observation/observed_packages/{package}/imports/{index}"),
+            u32::try_from(line).ok(),
+        )
+    }));
     Ok((availability, receipt, observations))
 }
 

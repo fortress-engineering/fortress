@@ -230,6 +230,24 @@ impl GoNativeModuleObservation {
                     })
             })
     }
+
+    pub(crate) fn import_regions<'a>(
+        &'a self,
+        path: &'a str,
+    ) -> impl Iterator<Item = (usize, usize, usize)> + 'a {
+        self.observation
+            .observed_packages
+            .iter()
+            .enumerate()
+            .flat_map(move |(package, facts)| {
+                facts
+                    .imports
+                    .iter()
+                    .enumerate()
+                    .filter(move |(_, import)| import.span.path == path)
+                    .map(move |(index, import)| (package, index, import.span.start_line))
+            })
+    }
 }
 
 pub(crate) struct GoModuleRequest<'a> {

@@ -2230,6 +2230,23 @@ ROOT_ECOSYSTEM  "provides": [],
                 .contains("#/observation/observed_packages/1/declarations/")
         );
         assert_eq!(regions[8]["coverage"], "UNSUPPORTED");
+        let app = serde_json::to_value(report("app/app.go").unwrap()).unwrap();
+        let imports = app["regions"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|region| region["region"] == "DEPENDENCIES")
+            .unwrap();
+        assert_eq!(imports["coverage"], "OBSERVED");
+        let sites = imports["evidence"].as_array().unwrap();
+        assert_eq!(sites.len(), 1);
+        assert_eq!(sites[0]["start_line"], 2);
+        assert!(
+            sites[0]["source_reference"]
+                .as_str()
+                .unwrap()
+                .ends_with("#/observation/observed_packages/0/imports/0")
+        );
         assert!(matches!(
             report("go.mod"),
             Err(NativeRegionError::SubjectMismatch)
