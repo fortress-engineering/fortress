@@ -448,10 +448,9 @@ mod bound_call_bodies {
             "unsupported_target",
         ] {
             let (project, record) = if case == "unsupported_target" {
-                let fixture: Value = serde_json::from_slice(include_bytes!(
-                    "../_data/go_call_topology_limits_v1.json"
-                ))
-                .unwrap();
+                let fixture: Value =
+                    serde_json::from_slice(include_bytes!("../_data/go_topology_limits_v1.json"))
+                        .unwrap();
                 let row = fixture[case].clone();
                 let project = Fixture::new("topology-go-unavailable-body");
                 fs::write(

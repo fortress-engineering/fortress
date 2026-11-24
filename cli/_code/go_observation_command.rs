@@ -481,27 +481,25 @@ mod tests {
         let body = std::env::current_dir()
             .unwrap()
             .join("body-registration.json");
-        let arguments = [
-            "--authored-return".to_owned(),
-            "Keep".to_owned(),
-            body.to_str().unwrap().to_owned(),
-        ];
-        assert!(matches!(
-            parse_operation(Mode::Module, &arguments).unwrap(),
-            ModuleOperation::AuthoredReturn { function: "Keep", body_registration }
-                if body_registration == body
-        ));
-        assert!(parse_operation(Mode::Module, &arguments[..2]).is_err());
-        assert!(parse_operation(Mode::Build, &arguments).is_err());
-        for tail in [
-            ["--authored-return", "Keep", "relative.json"],
-            [
-                "--authored-return",
-                "--dependencies",
-                body.to_str().unwrap(),
-            ],
+        let registration = body.to_str().unwrap();
+        for (flag, composed) in [
+            ("--authored-return", false),
+            ("--authored-call-return", true),
         ] {
-            assert!(parse_operation(Mode::Module, &tail.map(str::to_owned)).is_err());
+            let arguments = [flag, "Keep", registration].map(str::to_owned);
+            assert!(matches!(
+                parse_operation(Mode::Module, &arguments).unwrap(),
+                ModuleOperation::AuthoredReturn { function: "Keep", body_registration, call_returns }
+                    if body_registration == body && call_returns == composed
+            ));
+            assert!(parse_operation(Mode::Module, &arguments[..2]).is_err());
+            assert!(parse_operation(Mode::Build, &arguments).is_err());
+            for tail in [
+                [flag, "Keep", "relative.json"],
+                [flag, "--dependencies", registration],
+            ] {
+                assert!(parse_operation(Mode::Module, &tail.map(str::to_owned)).is_err());
+            }
         }
     }
 
