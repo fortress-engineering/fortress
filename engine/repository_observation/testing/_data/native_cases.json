@@ -1,0 +1,97 @@
+{
+  "provenance_sha256": "sha256:bdee296951ef9011f6c9143a18cefd4059550773aab38bd908c4574d5a3c0da1",
+  "inventories": [
+    {
+      "language": "go",
+      "source_bytes": 224,
+      "files": [
+        {
+          "bytes": 0,
+          "path": "assets/empty.txt",
+          "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "content": ""
+        },
+        {
+          "bytes": 45,
+          "path": "go.mod",
+          "sha256": "sha256:638b36f7563f3f17be53e23f287db9a1d3a7c4be92b2d846a0acaa32ee394b71",
+          "content": "module example.test/sourceinventory\n\ngo 1.22\n"
+        },
+        {
+          "bytes": 15,
+          "path": "go.work",
+          "sha256": "sha256:902785f08ec803acb486e6ad878656e7a776d03f31b401af9b6d1cfde222a75d",
+          "content": "go 1.22\n\nuse .\n"
+        },
+        {
+          "bytes": 64,
+          "path": "inventory.go",
+          "sha256": "sha256:3cb1fe583c4cfd0586009c95fab8a0e9d5ac1f10751d539276a92adec609e097",
+          "content": "// café\r\npackage inventory\r\n\r\nfunc Answer() int { return 42 }\r\n"
+        },
+        {
+          "bytes": 100,
+          "path": "inventory_test.go",
+          "sha256": "sha256:935e5bc6aa5bed6895130c511544d83c0f7cad022a116c5993ebf04914b0d99e",
+          "content": "package inventory\nimport \"testing\"\nfunc TestAnswer(t *testing.T) { if Answer() != 42 { t.Fail() } }\n"
+        }
+      ],
+      "manifest_ref": "sha256:598232d5c182648b0bbdeb99c3f57517c58a3da0af2d01d2ebdfadd1aca3384f",
+      "scoped_manifest_ref": "sha256:ed4184e36fd23966bde54e1b4fc4816f32077b6bfdd27bd3a4be54f9f6e2d843",
+      "view_ref": "sha256:9afb3e39328eefaf814faaa7695e01d69e1e07644c42ba997f2a91fa2db0cc4c",
+      "drift": {
+        "path": "inventory.go",
+        "content": "// café\r\npackage inventory\r\n\r\nfunc Answer() int { return 43 }\r\n",
+        "sha256": "sha256:f4c8949e63f6c69e89b81c7621e77991c9c3a72062cbdfa62c623f0a409d3e5e",
+        "manifest_ref": "sha256:d19f2ec34ff2037c61bc7121b00f9ea85fd1cf0c1e2ce11d9e20808f0f41ca2a",
+        "view_ref": "sha256:bcab1616b10d73ed1abacdaaad35a9e78ce4c7b893f08d2508f9410a28a17dcb"
+      }
+    },
+    {
+      "language": "python",
+      "source_bytes": 197,
+      "files": [
+        {
+          "bytes": 0,
+          "path": "assets/empty.txt",
+          "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "content": ""
+        },
+        {
+          "bytes": 54,
+          "path": "pyproject.toml",
+          "sha256": "sha256:7b9461ab53b4217cb240f8620c8457df870dd12bf5339883592730ad9acc5604",
+          "content": "[project]\nname = \"source-inventory\"\nversion = \"0.1.0\"\n"
+        },
+        {
+          "bytes": 30,
+          "path": "src/inventory/__init__.py",
+          "sha256": "sha256:df17fd628b43bffbda708d3142af77f8bcb1bda937cbfaa58d061fa3fc226303",
+          "content": "from .normalize import Answer\n"
+        },
+        {
+          "bytes": 39,
+          "path": "src/inventory/normalize.py",
+          "sha256": "sha256:f8251d517fc673e7cb62314733a74b80f0f19e76c2fd0d9f81b5426d37712f53",
+          "content": "# café\r\ndef Answer():\r\n    return 42\r\n"
+        },
+        {
+          "bytes": 74,
+          "path": "tests/test_inventory.py",
+          "sha256": "sha256:5c67af1b14c23397e619ff33ce468ee2b7bb5ad55187b97914beb56b2d5a7f16",
+          "content": "from inventory import Answer\ndef test_answer():\n    assert Answer() == 42\n"
+        }
+      ],
+      "manifest_ref": "sha256:57d5e59805ff146669af9677fac242717b263ee01527d70109137b43fcbe7797",
+      "scoped_manifest_ref": "sha256:488fb87c319a4570a54155d696b4257134acf64227091420a46e5c417f4a6ad7",
+      "view_ref": "sha256:a0ad2993e4a1d8011df69822f1543693afb642b983c3ef29f2613aca03a1d27e",
+      "drift": {
+        "path": "src/inventory/normalize.py",
+        "content": "# café\r\ndef Answer():\r\n    return 43\r\n",
+        "sha256": "sha256:37c7b6827f33e0b77121b50a81230cab66a0775e57173dc78921ee547b79169f",
+        "manifest_ref": "sha256:b59aa08bf0caada0aa99f10984f570c9744a1b23c7ada40846c5d5b520ab5ddf",
+        "view_ref": "sha256:af4b6c160b85a9a6a4953fd6291f2f79428f24dd4434ad50ec092cbb2ecef79d"
+      }
+    }
+  ]
+}

@@ -1,5 +1,8 @@
 //! Preallocation quotas over the unchanged universal observation facts.
 
+#[path = "native_inventory.rs"]
+mod native_inventory;
+
 use std::fs;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};

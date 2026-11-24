@@ -25,3 +25,13 @@ Materializes disposable fixture repositories and verifies deterministic observat
 ### [`bounded_observation.rs`](../_code/bounded_observation.rs)
 
 Verifies R04-001 through R04-003: bounded and ordinary canonical equality for admitted inputs, source/file admission rejection before unbounded reads, and total-entry/path admission including empty-directory inventories. Resident-enabled retained-input behavior is additionally exercised through the production composition lifecycle controls.
+
+### [`native_inventory.rs`](../_code/native_inventory.rs)
+
+Freezes complete Go and Python physical inventories under R01-004, R02-005,
+R03-006, and R04-004. Checks exact UTF-8 and CRLF bytes, nested portable
+paths, exclusion of a native source subtree, same-size drift and exact
+restoration, and an independently known one-byte source quota excess.
+Each case exercises the ordinary file boundary in a disposable repository.
+The existing R03-003 link control and Snapshot Governance R24-006 and
+R24-007 remain the filesystem link, reparse point, and collision controls.
