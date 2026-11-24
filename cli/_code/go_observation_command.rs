@@ -450,6 +450,8 @@ fn run_collector(
 mod tests {
     use super::*;
 
+    /// `T-GO-AUTHORED-HOST-OPTIONS-001`
+    /// Fortress classification: infrastructure
     #[test]
     fn authored_return_requires_a_complete_separate_host_selection() {
         let body = std::env::current_dir()
@@ -479,6 +481,8 @@ mod tests {
         }
     }
 
+    /// `T-GO-MODULE-OPTIONS-LEGACY-001`
+    /// Fortress classification: infrastructure
     #[test]
     fn module_options_keep_the_existing_empty_dependency_and_type_modes() {
         for mode in [Mode::Legacy, Mode::Build, Mode::Tests] {

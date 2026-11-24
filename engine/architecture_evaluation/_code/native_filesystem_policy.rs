@@ -262,6 +262,8 @@ mod tests {
         serde_json::to_value(project_native_filesystem_policy(observation, policy)).unwrap()
     }
 
+    /// `T-NATIVE-EFFECT-PRECEDENCE-001`
+    /// Fortress classification: infrastructure
     #[test]
     fn selects_original_effect_before_capability_in_both_directions() {
         with_observation(|observation| {
@@ -317,6 +319,8 @@ mod tests {
         });
     }
 
+    /// `T-NATIVE-EFFECT-LIMITS-001`
+    /// Fortress classification: infrastructure
     #[test]
     fn separates_unlisted_policy_absent_policy_and_unmodeled_sites() {
         with_observation(|observation| {
@@ -353,6 +357,8 @@ mod tests {
         });
     }
 
+    /// `T-NATIVE-EFFECT-EMPTY-001`
+    /// Fortress classification: infrastructure
     #[test]
     fn empty_modeled_inventory_keeps_denial_and_reachability_separate() {
         let batch = NativeFilesystemBatch {

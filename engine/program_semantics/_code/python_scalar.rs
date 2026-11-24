@@ -463,6 +463,8 @@ mod tests {
         )
     }
 
+    /// `T-PYTHON-SCALAR-REPLY-SCOPE-001`
+    /// Fortress classification: infrastructure
     #[test]
     fn python_native_reply_reaches_shared_program_body_without_assuming_runtime_values() {
         let (view, key, req) = test_binding(&["gate"]);
@@ -491,6 +493,8 @@ mod tests {
         ));
     }
 
+    /// `T-PYTHON-SCALAR-REPLY-REFUSAL-001`
+    /// Fortress classification: infrastructure
     #[test]
     fn malformed_forged_or_displaced_scalar_replies_never_produce_a_shared_body() {
         let (view, key, req) = test_binding(&["gate"]);

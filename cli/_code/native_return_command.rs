@@ -117,6 +117,8 @@ mod tests {
     use super::*;
     use fortress_core::program_semantics::native_callable::NativeCallableLimitation;
 
+    /// `T-NATIVE-RETURN-UNAVAILABLE-001`
+    /// Fortress classification: infrastructure
     #[test]
     fn unavailable_subject_keeps_original_source_binding_and_no_favorable_result() {
         let source_view_ref = format!("sha256:{}", "a".repeat(64));

@@ -667,6 +667,8 @@ mod tests {
         SnapshotBoundFile, SourceOwnership, SourceOwnershipBasis,
     };
 
+    /// `T-NATIVE-DEPENDENCY-SCAFFOLD-001`
+    /// Fortress classification: infrastructure
     #[test]
     fn analysis_scaffold_stays_out_of_governed_dependency_map() {
         let fingerprint = "sha256:1111111111111111111111111111111111111111111111111111111111111111";

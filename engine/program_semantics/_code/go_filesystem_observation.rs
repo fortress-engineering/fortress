@@ -451,6 +451,8 @@ mod tests {
         frame
     }
 
+    /// `T-GO-FILESYSTEM-OCCURRENCE-001`
+    /// Fortress classification: infrastructure
     #[test]
     fn reports_exact_standard_declaration_and_physical_occurrence() {
         let source = view();
@@ -481,6 +483,8 @@ mod tests {
         );
     }
 
+    /// `T-GO-FILESYSTEM-IDENTITY-001`
+    /// Fortress classification: infrastructure
     #[test]
     fn refuses_wrong_header_sdk_source_and_call_identity() {
         let source = view();
@@ -525,6 +529,8 @@ mod tests {
         ));
     }
 
+    /// `T-GO-FILESYSTEM-WIRE-001`
+    /// Fortress classification: infrastructure
     #[test]
     fn rejects_duplicate_bounded_and_unrecognized_wire_records() {
         let source = view();
@@ -562,6 +568,8 @@ mod tests {
         ));
     }
 
+    /// `T-GO-FILESYSTEM-UNAVAILABLE-001`
+    /// Fortress classification: infrastructure
     #[test]
     fn preserves_unavailability_with_no_positive_call_facts() {
         let source = view();
@@ -599,6 +607,8 @@ mod tests {
         }
     }
 
+    /// `T-GO-FILESYSTEM-RESPONSE-BINDING-001`
+    /// Fortress classification: infrastructure
     #[test]
     fn admits_only_one_actual_source_and_exact_trusted_process() {
         let source = view();
