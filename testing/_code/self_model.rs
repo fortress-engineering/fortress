@@ -164,10 +164,8 @@ fn live_contract_v2_v3_ecosystem_resolves_completely() {
     assert_eq!(resolved.capabilities().len(), 27);
     assert_eq!(resolved.features().len(), 28);
     assert_eq!(resolved.requirements().len(), 202);
-    assert_eq!(
-        resolved.requirements()["TF-CLI-0001-R32"].tests(),
-        ["T-TF-CLI-0001-R32-001"]
-    );
+    let source_region_tests = resolved.requirements()["TF-CLI-0001-R32"].tests();
+    assert_eq!(source_region_tests, ["T-TF-CLI-0001-R32-001"]);
     assert_eq!(
         resolved.requirements()["AF-SNAPSHOT-GOVERNANCE-0001-R43"].tests(),
         ["T-AF-SNAPSHOT-GOVERNANCE-0001-R43-001"]
