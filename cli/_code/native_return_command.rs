@@ -1,5 +1,6 @@
 //! Canonical CLI view of an exact, original authored native return observation.
 
+use fortress_core::implementation_observation::SourceOwnership;
 use fortress_core::native_return_observation::{
     AuthoredNativeReturnComparison, AuthoredNativeReturnObservation,
     NativeReturnComparisonLimitation,
@@ -25,7 +26,7 @@ pub(super) fn serialize(report: &AuthoredNativeReturnObservation) -> Result<Vec<
             "origin_ref": link.origin_ref(),
             "exchange_ref": link.exchange_ref(),
             "body_occurrence": link.body().binding(),
-            "original_declared_owner": link.declared_source_owner().map(|owner| owner.owner()),
+            "original_declared_owner": link.declared_source_owner().map(SourceOwnership::owner),
             "evaluation_key": link.evaluation(),
         }),
         NativeCallableOutcome::Unavailable(reason) => json!({
