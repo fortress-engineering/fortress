@@ -1243,6 +1243,145 @@ fn scoped_python_dependencies_join_only_exact_declared_file_origins() {
     );
 }
 
+/// `T-AF-SNAPSHOT-GOVERNANCE-0001-R29-019`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R29
+#[test]
+fn scoped_python_intent_retains_only_admitted_edges_and_explicit_unavailability() {
+    use fortress_core::python_observation::observe_python_static_dependency_intent;
+
+    let fixture = dependency_fixture("python-dependency-intent");
+    let (bytes, scope_ref) = import_scope(&["_code", "vendor"], "COMPLETE_SOURCE_ONLY");
+    let scope = PythonImportScope::admit(&bytes, &scope_ref).unwrap();
+    let inspect = || {
+        observe_python_static_dependency_intent(
+            &fixture.root,
+            PATH,
+            &pin(),
+            &scope,
+            dependency_reply,
+        )
+        .unwrap()
+    };
+    let first = inspect();
+    let report = first.intent().unwrap();
+    assert_eq!(report["status"], "COMPARED");
+    assert_eq!(report, inspect().intent().unwrap());
+    let records = report["records"].as_array().unwrap();
+    assert_eq!(
+        records
+            .iter()
+            .filter(|row| row["state"] == "OBSERVED_UNDECLARED")
+            .count(),
+        1
+    );
+    assert!(
+        records
+            .iter()
+            .all(|row| row["state"] != "DECLARED_UNOBSERVED")
+    );
+    let edge = records
+        .iter()
+        .find(|row| row["state"] == "OBSERVED_UNDECLARED")
+        .unwrap();
+    assert_eq!(edge["source_module"], CONSUMER);
+    assert_eq!(edge["target_module"], PROVIDER);
+    assert_eq!(edge["evidence"][0]["source_path"], PATH);
+    fs::write(
+        fixture.root.join("_code/unsupported.pyd"),
+        b"not Python source",
+    )
+    .unwrap();
+    assert_eq!(
+        inspect().intent().unwrap(),
+        &json!({"status":"NATIVE_OBSERVATION_UNAVAILABLE"})
+    );
+}
+
+/// `T-AF-SNAPSHOT-GOVERNANCE-0001-R29-018`
+/// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R29
+#[test]
+fn scoped_python_dependencies_use_physical_ownership_after_logical_selection() {
+    use fortress_core::python_observation::{
+        PythonStaticDependencyOutcome, observe_python_static_dependencies,
+    };
+
+    let fixture = dependency_fixture("physical-dependency-ownership");
+    let provider = fixture.root.join("library");
+    fs::create_dir_all(provider.join("_code")).unwrap();
+    fs::copy(
+        fixture
+            .root
+            .join("_data/logical_modules/provider/contract.json"),
+        provider.join("contract.json"),
+    )
+    .unwrap();
+    let selected = b"member = 7\n";
+    fs::write(provider.join("_code/chosen.py"), selected).unwrap();
+    fixture.configure(
+        &serde_json::to_vec(&json!({
+            "$schema":"urn:fortress:schema:v3:project-configuration","schema_version":3,
+            "observation_exclusions":[],
+            "logical_modules":[{
+                "module":CONSUMER,
+                "contract":"_data/logical_modules/consumer/contract.json",
+                "parent":"PF-PYTHON-FIXTURE",
+                "bindings":[{"kind":"file","path":PATH}]
+            }],
+        }))
+        .unwrap(),
+    );
+    let inspect = |roots: &[&str]| {
+        let (bytes, scope_ref) = import_scope(roots, "COMPLETE_SOURCE_ONLY");
+        let scope = PythonImportScope::admit(&bytes, &scope_ref).unwrap();
+        let report = observe_python_static_dependencies(
+            &fixture.root,
+            PATH,
+            &pin(),
+            &scope,
+            dependency_reply,
+        )
+        .unwrap();
+        let PythonStaticDependencyOutcome::Observed {
+            projection,
+            ownership_diagnostics,
+            ..
+        } = report.dependencies()
+        else {
+            panic!("expected scoped dependency observation")
+        };
+        assert!(ownership_diagnostics.is_empty());
+        projection.clone()
+    };
+    let exact = inspect(&["library/_code", "_code", "vendor"]);
+    assert_eq!(
+        exact["sites"][0]["target"]["file"]["path"],
+        "library/_code/chosen.py"
+    );
+    assert_eq!(exact["sites"][0]["target"]["ownership"]["module"], PROVIDER);
+    assert_eq!(exact["sites"][0]["source_ownership"]["module"], CONSUMER);
+    let edges = exact["observation"]["module_dependencies"]
+        .as_array()
+        .unwrap();
+    assert_eq!(edges.len(), 1);
+    assert_eq!(edges[0]["source_module"], CONSUMER);
+    assert_eq!(edges[0]["target_module"], PROVIDER);
+    assert_eq!(exact, inspect(&["library/_code", "_code", "vendor"]));
+    let alternate = inspect(&["vendor", "library/_code", "_code"]);
+    assert_eq!(
+        alternate["sites"][0]["target"]["file"]["path"],
+        "vendor/chosen.py"
+    );
+    assert_eq!(
+        alternate["sites"][0]["target"]["ownership"]["state"],
+        "ownership_unavailable"
+    );
+    assert_eq!(alternate["observation"]["module_dependencies"], json!([]));
+    assert_eq!(
+        fs::read(provider.join("_code/chosen.py")).unwrap(),
+        selected
+    );
+}
+
 /// `T-AF-SNAPSHOT-GOVERNANCE-0001-R29-011`
 /// Fortress requirement: AF-SNAPSHOT-GOVERNANCE-0001-R29
 #[test]

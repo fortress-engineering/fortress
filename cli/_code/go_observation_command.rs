@@ -8,8 +8,9 @@ use std::time::Duration;
 use fortress_core::go_observation::{
     GoBuildContext, GoCallableHost, GoCallableSelection, GoCollectorPin, GoModuleSelection,
     GoObservationError, GoPackageSelection, GoTypeComparison, GoTypeSelector,
-    observe_go_authored_native_return, observe_go_module_dependencies, observe_go_native,
-    observe_go_native_build, observe_go_native_module, observe_go_native_tests,
+    observe_go_authored_native_return, observe_go_module_dependencies,
+    observe_go_module_dependency_intent, observe_go_native, observe_go_native_build,
+    observe_go_native_module, observe_go_native_tests,
 };
 use fortress_core::portable::{canonical, digest};
 use fortress_core::wire::{JsonAdmissionLimits, admit_json, parse_public_json, readable_text};
@@ -72,7 +73,7 @@ impl Mode {
                 "--observe-go-tests project host-registration directory package-path go-version target-os target-arch"
             }
             Self::Module => {
-                "--observe-go-module project host-registration module-directory module-path entry-path target-os target-arch [--dependencies | --authored-return function body-registration | left-package left-type right-package right-type]"
+                "--observe-go-module project host-registration module-directory module-path entry-path target-os target-arch [--dependencies | --dependency-intent | --authored-return function body-registration | left-package left-type right-package right-type]"
             }
         }
     }
@@ -234,6 +235,7 @@ fn encode_observation(observation: impl Serialize) -> Result<Vec<u8>, String> {
 enum ModuleOperation<'a> {
     Observe(Option<GoTypeComparison>),
     Dependencies,
+    DependencyIntent,
     AuthoredReturn {
         function: &'a str,
         body_registration: &'a Path,
@@ -244,6 +246,7 @@ fn parse_operation(mode: Mode, options: &[String]) -> Result<ModuleOperation<'_>
     match (mode, options) {
         (_, []) => Ok(ModuleOperation::Observe(None)),
         (Mode::Module, [flag]) if flag == "--dependencies" => Ok(ModuleOperation::Dependencies),
+        (Mode::Module, [flag]) if flag == "--dependency-intent" => Ok(ModuleOperation::DependencyIntent),
         (Mode::Module, [flag, function, body_registration])
             if flag == "--authored-return"
                 && !function.is_empty()
@@ -296,6 +299,10 @@ fn collect_module(
         }
         ModuleOperation::Dependencies => {
             observe_go_module_dependencies(root, selection, context, pin, launch)
+                .map_err(|error| error.to_string())
+        }
+        ModuleOperation::DependencyIntent => {
+            observe_go_module_dependency_intent(root, selection, context, pin, launch)
                 .map_err(|error| error.to_string())
         }
         ModuleOperation::AuthoredReturn {

@@ -10,7 +10,8 @@ use fortress_core::portable::{canonical, digest};
 use fortress_core::python_observation::{
     PYTHON_LEXICAL_WORKER, PythonGrammar, PythonImportScope, PythonLexicalMode,
     PythonLexicalProducer, PythonLexicalRequest, PythonObservationError, observe_python_lexical,
-    observe_python_static_dependencies, observe_python_static_imports, observe_python_tests,
+    observe_python_static_dependencies, observe_python_static_dependency_intent,
+    observe_python_static_imports, observe_python_tests,
 };
 use fortress_core::wire::{JsonAdmissionLimits, admit_json, parse_public_json, readable_text};
 use serde::Deserialize;
@@ -18,7 +19,7 @@ use serde_json::{Value, json};
 
 const USAGE: &str = concat!(
     "fortress source-artifacts --observe-python project host-registration source-path lexical|syntax",
-    "\n       fortress source-artifacts --observe-python project host-registration source-path imports|dependencies root-scope root-scope-sha256",
+    "\n       fortress source-artifacts --observe-python project host-registration source-path imports|dependencies|dependency-intent root-scope root-scope-sha256",
 );
 const REGISTRATION_SCHEMA: &str = "urn:fortress:host:v1:python-lexical-registration";
 const OBSERVATION_SCHEMA: &str = "urn:fortress:derived:v1:python-lexical-observation";
@@ -209,7 +210,7 @@ pub(super) fn run<O: Write, E: Write>(
         Err(failure) => {
             let mode = match arguments.get(3).map(String::as_str) {
                 Some("imports") => "static import",
-                Some("dependencies") => "static dependency",
+                Some("dependencies" | "dependency-intent") => "static dependency",
                 _ => "lexical",
             };
             writeln!(
@@ -298,16 +299,12 @@ fn collect_tests(arguments: &[String]) -> Result<Vec<u8>, String> {
 
 fn collect(arguments: &[String]) -> Result<Vec<u8>, String> {
     if let [root, registration, source, mode, scope, scope_ref] = arguments
-        && matches!(mode.as_str(), "imports" | "dependencies")
+        && matches!(
+            mode.as_str(),
+            "imports" | "dependencies" | "dependency-intent"
+        )
     {
-        return collect_imports(
-            root,
-            registration,
-            source,
-            scope,
-            scope_ref,
-            mode == "dependencies",
-        );
+        return collect_imports(root, registration, source, scope, scope_ref, mode);
     }
     let [root, registration_path, source_path, mode] = arguments else {
         return Err(format!("usage: {USAGE}"));
@@ -373,7 +370,7 @@ fn collect_imports(
     source_path: &str,
     scope_path: &str,
     scope_ref: &str,
-    with_dependencies: bool,
+    mode: &str,
 ) -> Result<Vec<u8>, String> {
     let root = Path::new(root)
         .canonicalize()
@@ -416,7 +413,7 @@ fn collect_imports(
         verify_import_scope(&root, scope_path, &scope_bytes)?;
         Ok(output)
     };
-    if !with_dependencies {
+    if mode == "imports" {
         let report = observe_python_static_imports(&root, source_path, &producer, &scope, receive)
             .map_err(|error| error.to_string())?;
         return encode(&static_import_report(
@@ -427,9 +424,12 @@ fn collect_imports(
             profile,
         ));
     }
-    let dependency_report =
+    let dependency_report = if mode == "dependency-intent" {
+        observe_python_static_dependency_intent(&root, source_path, &producer, &scope, receive)
+    } else {
         observe_python_static_dependencies(&root, source_path, &producer, &scope, receive)
-            .map_err(|error| error.to_string())?;
+    }
+    .map_err(|error| error.to_string())?;
     // The static dependency projection can take longer than the existing
     // import-only lookup. Recheck distinct host inputs before publishing it.
     registration.revalidate_worker(&root)?;
@@ -441,12 +441,22 @@ fn collect_imports(
     )
     .map_err(|error| error.to_string())?;
     verify_import_scope(&root, scope_path, &scope_bytes).map_err(|error| error.to_string())?;
-    encode(&json!({
+    let evidence = json!({
         "$schema": "urn:fortress:derived:v1:python-static-dependency-observation",
         "schema_version": 1,
         "static_imports": static_import_report(dependency_report.imports(), &registration, &registration_bytes, &scope, profile),
         "dependencies": dependency_report.dependencies(),
-    }))
+    });
+    if let Some(comparison) = dependency_report.intent() {
+        return encode(&json!({
+            "$schema": "urn:fortress:derived:v1:native-source-dependency-intent",
+            "schema_version": 1,
+            "scope": "OBSERVED_EDGES_ONLY",
+            "evidence": evidence,
+            "comparison": comparison,
+        }));
+    }
+    encode(&evidence)
 }
 
 fn static_import_report(

@@ -43,7 +43,7 @@ pub use crate::source_architecture::python_lexical::python_static_imports::{
 mod python_dependencies;
 pub use python_dependencies::{
     ActualPythonStaticDependencyObservation, PythonStaticDependencyOutcome,
-    observe_python_static_dependencies,
+    observe_python_static_dependencies, observe_python_static_dependency_intent,
 };
 
 #[path = "python_callable.rs"]

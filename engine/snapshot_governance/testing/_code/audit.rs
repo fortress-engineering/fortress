@@ -239,6 +239,362 @@ fn logical_contracts_and_native_paths_feed_one_semantic_ownership_relation() {
     assert_native_profile_has_no_filing_noise(repository.path());
 }
 
+fn mixed_native_artifact_repository(conflicting_binding: bool) -> TestRepository {
+    let repository = TestRepository::new("mixed-native-artifacts");
+    let mut declarations = vec![serde_json::json!({
+        "module": "AF-NATIVE-0001", "parent": "PF-FIXTURE",
+        "contract": "_data/logical_modules/native/contract.json",
+        "bindings": [
+            {"kind":"file","path":"left/guard.go"},
+            {"kind":"directory","path":"pytools"},
+            {"kind":"file","path":"right/guard.go"}
+        ]
+    })];
+    if conflicting_binding {
+        declarations.push(serde_json::json!({
+            "module":"AF-OTHER-0001", "parent":"PF-FIXTURE",
+            "contract":"_data/logical_modules/other/contract.json",
+            "bindings":[{"kind":"file","path":"left/guard.go"}]
+        }));
+        repository.write(
+            "_data/logical_modules/other/contract.json",
+            &minimal_contract("AF-OTHER-0001", "Other", false),
+        );
+    }
+    repository.write(
+        "contract.json",
+        &minimal_contract("PF-FIXTURE", "Fixture", true),
+    );
+    repository.write(
+        "_data/logical_modules/native/contract.json",
+        &minimal_contract("AF-NATIVE-0001", "Native", false),
+    );
+    repository.write(
+        "__fortress/.fsconfig",
+        &serde_json::to_string(&serde_json::json!({
+            "$schema":"urn:fortress:schema:v3:project-configuration", "schema_version":3,
+            "observation_exclusions":[".git"], "logical_modules": declarations
+        }))
+        .unwrap(),
+    );
+    repository.write(
+        "left/guard.go",
+        "package left\nfunc Allow() bool { return true }\n",
+    );
+    repository.write(
+        "right/guard.go",
+        "package right\nfunc Allow() bool { return false }\n",
+    );
+    repository.write("pytools/guard.py", "def allow():\n    return True\n");
+    repository.write("outside/guard.py", "def allow():\n    return False\n");
+    repository.write("scratch.rs", "pub fn scratch() {}\n");
+    repository
+}
+
+/// `T-NATIVE-ARTIFACT-BOUND-OWNERSHIP-001`
+/// Fortress classification: infrastructure
+#[test]
+fn logical_go_and_python_artifacts_keep_exact_paths_and_unsupported_profiles() {
+    use fortress_core::source_architecture::{
+        ArchetypeResolution, SourceArtifactOwnershipAuthority,
+    };
+    use sha2::{Digest, Sha256};
+
+    let repository = mixed_native_artifact_repository(false);
+    let inspection = inspect_repository_modules(repository.path()).expect("inspect declarations");
+    let owner = inspection
+        .modules()
+        .iter()
+        .find(|module| module.module() == "AF-NATIVE-0001")
+        .unwrap_or_else(|| {
+            panic!(
+                "declared owner unavailable: {:?}",
+                inspection.governance_detail()
+            )
+        });
+    assert_eq!(owner.observed_sources(), 3);
+    assert!(inspection.ownership_diagnostics().is_empty());
+    let model = compile_repository_source_artifact_model(repository.path())
+        .expect("compile source artifacts");
+    assert_eq!(model.artifacts().len(), 3);
+    let json: serde_json::Value =
+        serde_json::from_str(&model.to_canonical_json().unwrap()).unwrap();
+    let mut ids = std::collections::BTreeSet::new();
+    for (path, language) in [
+        ("left/guard.go", "go"),
+        ("right/guard.go", "go"),
+        ("pytools/guard.py", "python"),
+    ] {
+        let artifact = model
+            .artifacts()
+            .iter()
+            .find(|artifact| artifact.path() == path)
+            .expect("bound artifact");
+        assert_eq!(artifact.module_id(), "AF-NATIVE-0001");
+        assert_eq!(
+            artifact.ownership_authority(),
+            SourceArtifactOwnershipAuthority::DeclaredModule
+        );
+        assert!(
+            ids.insert(artifact.id()),
+            "exact native paths must disambiguate same-name artifacts"
+        );
+        assert_eq!(
+            artifact.content_digest(),
+            format!(
+                "sha256:{:x}",
+                Sha256::digest(fs::read(repository.path().join(path)).unwrap())
+            )
+        );
+        assert_eq!(
+            artifact.profile().status(),
+            ArchetypeResolution::ProfileNotRegistered
+        );
+        let row = json["artifacts"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|row| row["path"] == path)
+            .unwrap();
+        assert_eq!(row["language"], language);
+        assert_eq!(row["module_relative_path"], path);
+        assert_eq!(row["structural_observations"], serde_json::json!([]));
+        assert_eq!(row["verification_relationships"], serde_json::json!([]));
+    }
+    let audit = audit_repository(repository.path()).expect("audit completes");
+    let audit_json: serde_json::Value =
+        serde_json::from_str(&audit.to_json_pretty().unwrap()).unwrap();
+    assert_eq!(audit_json["governance"]["declared_source_owners"], 3);
+    assert_eq!(audit_json["governance"]["analysis_source_owners"], 0);
+    assert_eq!(audit_json["governance"]["project_authority"], "DECLARED");
+}
+
+/// `T-NATIVE-ARTIFACT-AMBIGUITY-001`
+/// Fortress classification: infrastructure
+#[test]
+fn conflicting_native_file_claims_have_no_artifact_owner() {
+    let repository = mixed_native_artifact_repository(true);
+    let inspection =
+        inspect_repository_modules(repository.path()).expect("inspect conflicting declarations");
+    assert_eq!(inspection.project_authority_state(), "INVALID");
+    assert!(
+        inspection
+            .governance_detail()
+            .is_some_and(|detail| detail.contains("left/guard.go"))
+    );
+    let model = compile_repository_source_artifact_model(repository.path())
+        .expect("incomplete source model remains inspectable");
+    assert!(model.artifacts().is_empty());
+}
+
+/// `T-NATIVE-ARTIFACT-AFFECTED-001`
+/// Fortress classification: infrastructure
+#[test]
+fn a_go_edit_invalidates_the_artifact_projection_without_entering_rust_inputs() {
+    let repository = mixed_native_artifact_repository(false);
+    let key = |kind| {
+        prepare_repository_projection_cache(repository.path(), kind)
+            .unwrap()
+            .key()
+            .digest()
+            .to_owned()
+    };
+    let artifact_key = key(ProjectionKind::SourceArtifacts);
+    let psm_key = key(ProjectionKind::Psm);
+    let affected =
+        fortress_core::audit::compile_repository_affected_snapshot(repository.path()).unwrap();
+    let dependencies = |id| {
+        affected
+            .units()
+            .iter()
+            .find(|unit| unit.id() == id)
+            .unwrap()
+            .dependencies()
+    };
+    assert!(
+        dependencies("projection:source-artifacts").contains(&"source:left/guard.go".to_owned())
+    );
+    assert!(!dependencies("projection:psm").contains(&"source:left/guard.go".to_owned()));
+    assert!(
+        dependencies("source:left/guard.go").contains(&"authority:__fortress/.fsconfig".to_owned())
+    );
+    repository.write(
+        "left/guard.go",
+        "package left\nfunc Allow() bool { return false }\n",
+    );
+    assert_ne!(key(ProjectionKind::SourceArtifacts), artifact_key);
+    assert_eq!(key(ProjectionKind::Psm), psm_key);
+}
+
+/// `T-NATIVE-PHYSICAL-OWNERSHIP-001`
+/// Fortress classification: infrastructure
+#[test]
+fn physical_native_code_ownership_is_independent_of_responsibility_docs() {
+    let repository = TestRepository::new("physical-native-ownership");
+    repository.write(
+        "contract.json",
+        &minimal_contract("PF-FIXTURE", "Fixture", true),
+    );
+    repository.write(
+        "native/contract.json",
+        &minimal_contract("AF-NATIVE-0001", "Native", false),
+    );
+    repository.write("native/_code/check.go", "package native\n");
+    repository.write("native/_code/check.py", "enabled = True\n");
+    repository.write("outside/unowned.go", "package outside\n");
+    repository.write("native/_data/unowned.py", "ignored = True\n");
+    let undeclared = inspect_repository_modules(repository.path()).unwrap();
+    assert_eq!(undeclared.project_authority_state(), "MISSING");
+    assert!(
+        undeclared
+            .modules()
+            .iter()
+            .all(|module| module.observed_sources() == 0)
+    );
+    repository.write(
+        "__fortress/.fsconfig",
+        r#"{"$schema":"urn:fortress:schema:v3:project-configuration","schema_version":3,"observation_exclusions":[],"logical_modules":[]}"#,
+    );
+    let inspection = inspect_repository_modules(repository.path()).unwrap();
+    assert_eq!(inspection.project_authority_state(), "DECLARED");
+    let module = inspection
+        .modules()
+        .iter()
+        .find(|module| module.module() == "AF-NATIVE-0001")
+        .unwrap();
+    assert_eq!(module.observed_sources(), 2);
+    let inspect = || compile_repository_source_artifact_model(repository.path()).unwrap();
+    let expected = ["native/_code/check.go", "native/_code/check.py"];
+    let ownership = |model: &fortress_core::source_architecture::SourceArtifactModel| {
+        let mut ids = Vec::new();
+        for path in expected {
+            let artifact = model
+                .artifacts()
+                .iter()
+                .find(|row| row.path() == path)
+                .unwrap();
+            assert_eq!(artifact.module_id(), "AF-NATIVE-0001");
+            ids.push(artifact.id().to_owned());
+        }
+        assert_eq!(model.artifacts().len(), expected.len());
+        ids
+    };
+    let undocumented = ownership(&inspect());
+    repository.write(
+        "native/_docs/code_docs.md",
+        "# Code\n\n## Files\n\n### `check.go`\n\nDeclares the native Go fixture package.\n\n### `check.py`\n\nDefines the flag used by the native Python fixture.\n",
+    );
+    assert_eq!(ownership(&inspect()), undocumented);
+    let affected =
+        fortress_core::audit::compile_repository_affected_snapshot(repository.path()).unwrap();
+    for path in expected {
+        let source = affected
+            .units()
+            .iter()
+            .find(|unit| unit.id() == format!("source:{path}"))
+            .unwrap();
+        assert!(
+            source
+                .dependencies()
+                .contains(&"authority:native/contract.json".to_owned())
+        );
+        assert!(
+            source
+                .dependencies()
+                .contains(&"authority:__fortress/.fsconfig".to_owned())
+        );
+    }
+}
+
+fn write_nested_native_bindings(repository: &TestRepository, exact: &str) {
+    let modules = [
+        ("AF-BASE-0001", "PF-FIXTURE", "base", "directory", "src"),
+        (
+            "AF-DETAIL-0001",
+            "AF-BASE-0001",
+            "detail",
+            "directory",
+            "src/core",
+        ),
+        ("AF-EXACT-0001", "AF-DETAIL-0001", "exact", "file", exact),
+    ];
+    let declarations = modules.map(|(id, parent, directory, kind, path)| {
+        let contract = format!("_data/logical_modules/{directory}/contract.json");
+        repository.write(&contract, &minimal_contract(id, directory, false));
+        serde_json::json!({
+            "module":id,"parent":parent,"contract":contract,
+            "bindings":[{"kind":kind,"path":path}]
+        })
+    });
+    let configuration = serde_json::json!({
+        "$schema":"urn:fortress:schema:v3:project-configuration",
+        "schema_version":3,"observation_exclusions":[".git"],"logical_modules":declarations
+    });
+    repository.write("__fortress/.fsconfig", &configuration.to_string());
+}
+
+/// `T-NATIVE-OWNERSHIP-EXACT-PRECEDENCE-001`
+/// Fortress classification: infrastructure
+#[test]
+fn native_owner_precedence_and_module_identity_survive_explicit_relocation() {
+    for (suffix, bytes) in [("go", "package fixture\n"), ("py", "value = 1\n")] {
+        let repository = TestRepository::new("nested-native-ownership");
+        repository.write(
+            "contract.json",
+            &minimal_contract("PF-FIXTURE", "Fixture", true),
+        );
+        let general = format!("src/general.{suffix}");
+        let nested = format!("src/core/nested.{suffix}");
+        let exact = format!("src/core/exact.{suffix}");
+        let moved = format!("src/core/relocated.{suffix}");
+        let unowned = format!("outside/unowned.{suffix}");
+        for path in [&general, &nested, &exact, &unowned] {
+            repository.write(path, bytes);
+        }
+        write_nested_native_bindings(&repository, &exact);
+        let original = compile_repository_source_artifact_model(repository.path()).unwrap();
+        let original_exact = original
+            .artifacts()
+            .iter()
+            .find(|row| row.path() == exact)
+            .unwrap();
+        fs::rename(
+            repository.path().join(&exact),
+            repository.path().join(&moved),
+        )
+        .unwrap();
+        write_nested_native_bindings(&repository, &moved);
+        let relocated = compile_repository_source_artifact_model(repository.path()).unwrap();
+        let owners = |report: &fortress_core::source_architecture::SourceArtifactModel| {
+            report
+                .artifacts()
+                .iter()
+                .map(|artifact| (artifact.path().to_owned(), artifact.module_id().to_owned()))
+                .collect::<std::collections::BTreeMap<_, _>>()
+        };
+        for (candidate, observed) in [(&exact, &original), (&moved, &relocated)] {
+            let expected = [
+                (general.clone(), "AF-BASE-0001".to_owned()),
+                (nested.clone(), "AF-DETAIL-0001".to_owned()),
+                (candidate.clone(), "AF-EXACT-0001".to_owned()),
+            ]
+            .into_iter()
+            .collect::<std::collections::BTreeMap<_, _>>();
+            assert_eq!(owners(observed), expected);
+        }
+        let relocated_exact = relocated
+            .artifacts()
+            .iter()
+            .find(|row| row.path() == moved)
+            .unwrap();
+        assert_ne!(original_exact.id(), relocated_exact.id());
+        assert_eq!(
+            original_exact.content_digest(),
+            relocated_exact.content_digest()
+        );
+    }
+}
+
 /// `T-DISTRIBUTED-CONTRACT-LOGICAL-LOADERS-001`
 /// Fortress classification: infrastructure
 #[test]

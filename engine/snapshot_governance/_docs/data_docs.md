@@ -241,6 +241,14 @@ Defines source-bound Go native call facts and a conditional filesystem operation
 with an unknown upper effect bound. An unavailable compiler observation carries an
 empty inventory and no sidecar.
 
+### [`native_dependency_intent_schema_v1.json`](../_data/native_dependency_intent_schema_v1.json)
+
+Defines the explicit comparison of exact positive native dependency evidence
+with independently resolved original CCG relationships. The report retains
+the existing Go or Python dependency observation and the compared graph
+digest. Unavailable native evidence or original intent has an explicit
+disposition. Scope covers observed edges and uncertainty.
+
 ### [`go_dependency_schema_v1.json`](../_data/go_dependency_schema_v1.json)
 
 Defines exact Go module dependency inspection with the original native receipt,

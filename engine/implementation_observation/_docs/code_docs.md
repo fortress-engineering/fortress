@@ -24,6 +24,12 @@ The complete-inventory ownership port reuses the same authored logical-selector 
 
 Defines the language-neutral snapshot input, source observation, evidence, normalized dependency, issue, and result contracts.
 
+Explicitly selected native source inventory uses the same physical code containment
+as Rust after authored logical binding resolution. An ambiguous logical binding
+keeps ownership unresolved. Native containment establishes authored placement
+from the declared Module and physical path while language observation remains
+independently scoped.
+
 ### [`rust.rs`](../_code/rust.rs)
 
 Implements structural Cargo and Rust namespace discovery, source ownership, target classification, facade-preserving resolution, and deterministic observation normalization. Both Rust tokenization entry points invoke Repository Observation's neutral retained-input admission helper before parsing; inactive admission preserves ordinary analysis behavior.

@@ -163,7 +163,7 @@ Use the separate v3 [host registration](../_data/go_collector_schema_v3.json) wi
 fortress psm --observe-go-module PROJECT HOST_REGISTRATION . example.test/module example.test/module/app linux amd64
 ~~~
 
-The module directory is relative to the project. A dot selects the project root. The selected module path must match the captured go.mod bytes. The supported module file declares only a module and Go 1.22. Its source consists of ordinary Go library packages with explicit target selection. Dependency resolution is confined to captured directories in that module. Module and workspace indirection, vendoring, external dependencies, cgo, generated or non-Go compiler input and ambiguous module roots are outside the supported scope. The command invokes no project tools.
+The module directory is relative to the project. A dot selects the project root. The selected module path must match the captured go.mod bytes. The supported module file declares only a module and Go 1.22. Its source consists of ordinary Go library packages with explicit target selection. An exact package path may include the canonical _code directory. This selection does not expand native wildcard discovery. Dependency resolution is confined to captured directories in that module. Module and workspace indirection, vendoring, external dependencies, cgo, generated or non-Go compiler input and ambiguous module roots are outside the supported scope. The command invokes no project tools.
 
 Optionally append four arguments giving the left package, left type name, right package and right type name. Both declarations must be in the reachable package graph. The receipt distinguishes lexical imports, static declaration associations and unresolved dispatch. It carries exact actual-source, governing authority, build context and worker identities, separately from PSM analysis and certification.
 
@@ -175,6 +175,11 @@ option:
 ```text
 fortress psm --observe-go-module PROJECT HOST_REGISTRATION . example.org/component example.org/component/api linux amd64 --dependencies
 ```
+
+Use `--dependency-intent` in place of `--dependencies` to compare the exact
+positive Go observations with directed original CCG relationships. The
+report preserves the original dependency evidence. Missing native evidence
+or original intent has its own disposition.
 
 The report embeds the original native receipt and relates each admitted import
 to the exact selected files of its target package. Where the original governing
@@ -645,6 +650,13 @@ Use the same independently pinned CPython lexical host with
 Keep the root-scope file outside the repository. Its independently selected
 digest is SHA-256 over its canonical JSON bytes, including the exact root order.
 A scope is an analysis selection, with no project authority or execution grant.
+
+Use `dependency-intent` in place of `imports` to compare admitted static
+dependency edges with authored Module relationships. The selected roots
+and exact static origin remain in the evidence. The comparison covers
+observed edges and their original governing intent. Runtime import behavior,
+absence of a dependency, and full-project conformance remain unestablished.
+
 
 The scope uses `urn:fortress:host:v1:python-static-import-scope`, schema version 1,
 an `inventory` value of `COMPLETE_SOURCE_ONLY`, and one to four explicitly

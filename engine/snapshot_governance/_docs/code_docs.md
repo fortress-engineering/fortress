@@ -601,19 +601,39 @@ that exact source and context. Compiler and inventory limitations retain the
 preceding lexical observation. Publication revalidates the complete physical
 source and original authority inputs.
 
+Ordinary ownership inspection and Source Artifact Model compilation include
+observed Go and Python files selected by an unambiguous authored logical Module
+binding. These artifacts use their exact project-relative location as the
+owner location because separately bound files may have identical basenames.
+The artifact model records extension-based language attribution and its
+profile status. Rust analyzer input and symbol ownership remain scoped to the
+existing Rust and Cargo resolution. Changing a native file invalidates its
+artifact projection through the exact file dependency.
+
 The explicit Go module dependency view obtains the complete occurrence ownership
-relation from the same original source, logical bindings and CCG used to seal
-the worker request. It preserves the native response and attaches a scoped
+relation from the same original source and CCG used to seal the worker request.
+The Go package selection retains its closed native layout scope, including explicit
+canonical code paths. Logical selectors retain precedence over physical Module
+containment. The view preserves
+the native response and attaches a scoped
 Implementation Observation projection. The full physical view is revalidated
 after the report is assembled and before its publication.
 
 ### [`python_dependencies.rs`](../_code/python_dependencies.rs)
 
-Combines an admitted Python static import receipt with original logical
-Module ownership through the native dependency adapter. Positions use the
-original UTF-8 bytes with physical CRLF retained. The result retains unknown
+Combines an admitted Python static import receipt with exact original
+Module ownership through the native dependency adapter. With no applicable
+logical claim or conflict, a selected Python file can use canonical physical
+Module ownership. Positions use the original UTF-8 bytes with physical CRLF retained. The result retains unknown
 targets and ownership ambiguity alongside exact source evidence. The
 physical revalidation boundary covers dependency projection and publication.
+
+The explicit dependency intent modes reuse positive edge classification from
+Architecture Evaluation. They require a complete unambiguous original CCG
+from the same physical capture and retain its digest. Unavailable inputs
+produce an explicit comparison state. The observational result preserves
+the distinction between closed Go import resolution and scoped Python
+static lookup. It does not issue findings or application assessments.
 
 ### [`go_callable.rs`](../_code/go_callable.rs)
 
