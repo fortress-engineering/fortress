@@ -261,7 +261,8 @@ fn parse_operation(mode: Mode, options: &[String]) -> Result<ObservationOperatio
     match (mode, options) {
         (_, []) => Ok(ObservationOperation::Observe(None)),
         (Mode::Legacy | Mode::Module, [flag, path]) if flag == "--source-regions" => {
-            if !is_canonical_relative_path(path) || !path.ends_with(".go") {
+            let extension = Path::new(path).extension().and_then(std::ffi::OsStr::to_str);
+            if !is_canonical_relative_path(path) || !matches!(extension, Some("go")) {
                 return Err("Source regions require a canonical repository-relative Go file.".into());
             }
             Ok(ObservationOperation::SourceRegions(path))

@@ -2539,6 +2539,7 @@ fn native_source_regions_require_safe_paths_and_independently_selected_hosts() {
     ];
     for (path, expected) in [
         ("../fixture.go", "canonical repository-relative Go file"),
+        ("fixture.GO", "canonical repository-relative Go file"),
         ("fixture.go", "asset belongs to the project"),
     ] {
         let result = run(&[go.as_slice(), &[path]].concat());
